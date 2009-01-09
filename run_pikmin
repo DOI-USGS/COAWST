@@ -1,0 +1,9 @@
+#!/bin/bash
+#PBS -N joe_tc
+#PBS -l ncpus=24
+#PBS -l nodes=6:ppn=4
+
+cd /home/jwarner/help_cases/JOE_TC
+
+mpirun -n 24 -hostfile $PBS_NODEFILE ./oceanM Projects/JOE_TC/coupling_joe_tc.in > joe_tc.out
+

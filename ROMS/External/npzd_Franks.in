@@ -1,0 +1,207 @@
+!  Nutrient-Phytoplankton-Zooplankton-Detritus Biological Model Parameters.
+!
+!svn $Id: npzd_Franks.in 576 2008-03-13 21:16:46Z arango $
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2008 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  Comments will be ignored  during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+! NOTICE: Input parameter units are specified within brackets and default 
+! ******  values are specified within braces.
+!
+! Switch to control the computation of biology within nested and/or multiple
+! connected grids.
+
+    Lbiology == T
+
+! Maximum number of iterations to achieve convergence of the nonlinear
+! solution.
+
+     BioIter == 1
+
+! Initial concentration for analytical uniform initial conditions.
+! [millimole/meter3].
+
+BioIni(iNO3_) == 1.67d0                          ! nitrate
+BioIni(iPhyt) == 0.08d0                          ! phytoplankton
+BioIni(iZoop) == 0.06d0                          ! zooplankton
+BioIni(iSDet) == 0.04d0                          ! detritus
+
+! Light extinction coefficient, [1/m], {0.067}.
+
+        K_ext == 0.06d0                          ! k_ext
+
+! Inverse half-saturation for phytoplankton nitrate uptake
+! [1/(millimole_N m-3)], {1.0d0}.
+
+        K_NO3 == 0.1d0                           ! k_n
+
+! Phytoplankton saturation coefficient, [millimole_N m-3], {0.4d0}.
+
+        K_Phy == 0.4d0                           ! k_p
+
+! Nitrate uptake rate, [1/day], {1.5d0}.
+
+       Vm_NO3 == 2.0d0                           ! Vm
+
+! Phytoplankton senescence/mortality rate, [1/day], {0.1d0}.
+
+        PhyMR == 0.05d0                          ! p_m
+
+! Zooplankton maximum growth rate, [1/day], {0.52}.
+
+        ZooGR == 0.6d0                           ! R_m
+
+! Zooplankton mortality rate, [1/day], {0.145d0}.
+
+        ZooMR == 0.2d0                           ! zeta_mn
+
+! Zooplankton death bits rate, [1/day], {0.05d0}.
+
+        ZooMD == 0.05d0                          ! zeta_md
+
+! Zooplankton grazing inefficiency, [nondimensional], {0.3d0}.
+
+        ZooGA == 0.3d0                           ! g_a
+
+! Zooplankton excreted fraction, [nondimensional], {0.15d0}.
+
+        ZooEC == 0.15d0                          ! e_c
+
+! Detritus remineralization rate, [1/day], {0.1d0}.
+
+        DetRR == 0.1d0                           ! r_d
+
+! Detrital sinking rate, [m/day], {8.0d0}.
+
+         wDet == 5.0d0                           ! wDet
+
+! Lateral, constant, harmonic/biharmonic horizontal diffusion of biological
+! tracer: [1:NBT,Ngrids].
+
+         TNU2 == 4*0.0d0                         ! m2/s
+         TNU4 == 4*0.0d0                         ! m4/s
+
+! Vertical mixing coefficients for biological tracers: [1:NBT,Ngrids].
+
+      AKT_BAK == 4*1.0d-6                        ! m2/s
+
+! Nudging/relaxation time scales, inverse scales will be computed
+! internally: [1:NBT,Ngrids].
+
+        TNUDG == 4*0.0d0                         ! days
+
+! Logical switches (TRUE/FALSE) to activate writing of biological tracers
+! into HISTORY/AVERAGE output files: [1:NBT,Ngrids].
+
+ Hout(idTvar) == 4*T                             ! biological tracer
+ Hout(idTsur) == 4*F                             ! surface tracer flux
+
+!
+!  GLOSSARY:
+!  =========
+!
+!------------------------------------------------------------------------------
+! Fasham, Nitrogen-based Biological Model Parameters.
+!------------------------------------------------------------------------------
+!
+!  Lbiology  Switch to control the computation of a particular module within
+!              nested and/or multiple connected grids. By default this switch
+!              is set to TRUE in "mod_scalars" for all grids.  Ngrids values
+!              are expected. The USER has the option, for example, to compute
+!              the biology in just one of the nested grids. If so, this switch
+!              needs to be consistent with the dimension parameter NBT in
+!              "mod_param".  In order to make the model more efficient in
+!              memory usage, NBT(:) should be zero in such grids.
+!
+!  BioIter   Maximum number of iterations to achieve convergence of
+!              the nonlinear solution.
+!
+!  BioIni    Initial concentration for analytical uniform initial conditions,
+!              [millimole/meter3]. It is only used when ANA_BIOLOGY is
+!              activated.
+!
+!              BioIni(iNO3_)               nitrate
+!              BioIni(iPhyt)               phytoplankton
+!              BioIni(iZoop)               zooplankton
+!              BioIni(iSDet)               detritus
+!
+!  K_ext     Light extinction coefficient, [1/m].
+!
+!  K_NO3     Inverse half-saturation for phytoplankton nitrate uptake
+!              [1/(millimole_N m-3)].
+!
+!  K_Phy     Phytoplankton saturation coefficient, [millimole m-3].
+!
+!  Vm_NO3    Nitrate uptake rate, [1/day].
+!
+!  PhyMR     Phytoplankton senescence/mortality rate, [1/day].
+!
+!  ZooGR     Zooplankton maximum growth rate, [1/day].
+!
+!  ZooMR     Zooplankton mortality rate, [1/day].
+!
+!  ZooMD     Zooplankton death bits rate, [1/day].
+!
+!  ZooGA     Zooplankton grazing inefficiency, [nondimensional].
+!
+!  ZooEC     Zooplankton excreted fraction, [nondimensional].
+!
+!  DetRR     Detritus remineralization rate, [1/day].
+!
+!  wDet      Detrital sinking rate, [m/day].
+!
+!  TNU2      Lateral, Laplacian, constant, mixing coefficient (m2/s) for
+!              biological tracer variables; [1:NBT,1:Ngrids] values are
+!              expected.  If variable horizontal diffusion is activated,
+!              TNU2 is the mixing coefficient for the largest grid-cell
+!              in the domain.
+!
+!  TNU4      Lateral, biharmonic, constant, mixing coefficient (m4/s) for
+!              biological tracer variables; [1:NBT,1:Ngrids] values are
+!              expected.  If variable horizontal diffusion is activated,
+!              TNU4 is the mixing coefficient for the largest grid-cell
+!              in the domain.
+!
+!  AKT_BAK   Background vertical mixing coefficient (m2/s) for biological
+!              tracer variables, [1:NBT,1:Ngrids] values are expected.
+!
+!  TNUDG     Nudging time scale (days), [1:NBT,1:Ngrids].  Inverse scale will
+!              be computed internally.
+!
+!  Hout      Logical switches (T/F) to write out biological data into output
+!              History/Average NetCDF file, [1:NBT,1:Ngrids] values are
+!              expected.
+!
+!              Hout(idTvar)     biological tracers
+!              Hout(idTsur)     biological tracers surface flux
+!

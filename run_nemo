@@ -1,0 +1,25 @@
+#!/bin/bash
+### Job name
+#PBS -N isabel_105
+### Number of nodes
+#PBS -l nodes=6:ppn=8,walltime=120:00:00
+### Mail to user
+#PBS -m ae
+#PBS -M jcwarner@usgs.gov
+### Out files
+###PBS -e isabel_105.err
+###PBS -o isabel_105.out
+### PBS queue
+#PBS -q standard
+
+echo "this job is running on:"
+cat $PBS_NODEFILE
+
+NPROCS=`wc -l < $PBS_NODEFILE`
+
+cd /raid1/jcwarner/Projects/Isabel/run105
+
+/usr/local/mpi/bin/mpirun -np 48 -machinefile $PBS_NODEFILE ./oceanM Projects/Isabel/ocean_isabel.in > isabel_105.out 
+
+
+

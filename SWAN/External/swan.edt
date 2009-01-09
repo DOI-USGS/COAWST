@@ -1,0 +1,209 @@
+!   PROJECT  'name'  'nr'
+!            'title1'
+!            'title2'
+!            'title3'
+!
+!   SET  [level]  [nor]  [depmin]  [maxmes]                                 &
+!        [maxerr]  [grav]  [rho]  [inrhog]                                  &
+!        [hsrerr]  CARTesian|NAUTical  [pwtail]                             &
+!        [froudmax]  [printf]  [prtest]
+!
+!   MODE  / STATIONARY \  / TWODimensional
+!         \ DYNAMIC    /  \ ONEDimensional
+!
+!   COORDinates  /  -> CARTesian          \   REPeating
+!                \ SPHErical      CCM|QC  /
+!
+!   CGRID  / REGular [xpc] [ypc] [alpc] [xlenc] [ylenc] [mxc] [myc] \
+!          \ CURVilinear [mxc] [myc]  [excval]                      /       &
+!
+!          / CIRcle               \
+!          \ SECtor [dir1] [dir2] /  [mdc]  [flow]  [fhig]  [msc]
+!
+!   INPgrid  (GRID)                                                         &
+!      BOTtom | WLEVel | CURrent | VX | VY | FRiction | WInd | WX | WY      &
+!
+!      / REG [xpinp] [ypinp] [alpinp]  [mxinp] [myinp]  [dxinp] [dyinp] \
+!     <                                                                  >  &
+!      \ CURVilinear [stagrx] [stagry] [mxinp] [myinp]                  /
+!
+!      (NONSTATionary [tbeginp] [deltinp] SEC|MIN|HR|DAY [tendinp])
+!
+!   READinp    BOTtom|WLevel|CURrent|FRiction|WInd|COORdinates              &
+!        [fac]  / 'fname1'        \
+!               \ SERIES 'fname2' /  [idla] [nhedf] ([nhedt]) (nhedvec])    &
+!        FREE | FORMAT 'form' | [idfm] | UNFORMATTED
+!
+!   WIND  [vel] [dir]
+!
+!                       |  JONswap  [gamma]  |
+!   BOUNd SHAPespec     |  PM                |
+!                      <   GAUSs  [sigfr]     >  PEAK|MEAN   DSPR  POWer|DEGRees
+!                       |  BIN               |
+!
+!              / -> SIDE  North|NW|West|SW|South|SE|East|NE   CCW|CLOCKWise   \
+!   BOUNdspec <                                                                > &
+!              \    SEGment  / -> XY  <  [x]  [y]  >  \                       /
+!                            \    IJ  <  [i]  [j]  >  /
+!
+!            /  UNIForm   /  PAR  [hs] [per] [dir] [dd]
+!           <             \  FILE  'fname'  [seq]
+!            \  VARiable  /  PAR  < [len] [hs] [per] [dir] [dd] >
+!                         \  FILE < [len] 'fname' [seq] >
+!
+!   BOUNdnest1  NEST 'fname'  CLOSed|OPEN
+!
+!   BOUNdnest2  WAMNest 'fname' / UNFormatted  CRAY|WKstat  \
+!                               \ FREE                      /   [xgc] [ygc]
+!
+!   BOUNdnest3  WWIII 'fname'  CLOSed|OPEN  [xgc] [ygc]
+!
+!             | -> DEFault
+!             |
+!   INITial  <   ZERO
+!             |
+!             |  PAR  [hs] [per] [dir] [dd]
+!             |
+!             |            | -> MULTiple |
+!             |  HOTStart <               >  'fname'
+!             |            |    SINGle   |
+!
+!   GEN1  [cf10] [cf20] [cf30] [cf40] [edmlpm] [cdrag] [umin]
+!
+!   GEN2  [cf10] [cf20] [cf30] [cf40] [cf50] [cf60] [edmlpm] [cdrag] [umin]
+!
+!         | JANSSEN  [cds1] [delta]     |
+!         |                             |
+!         | -> KOMEN [cds2] [stpm]      |
+!   GEN3 <                               >    (AGROW [a])
+!         | YAN                         |
+!         |                             |
+!         | WESTHuysen                  |
+!
+!
+!         | ->KOMen    [cds2] [stpm] [powst] [delta] [powk]  |
+!         |                                                  |
+!         |   JANSsen  [cds1]  [delta] [pwtail]              |
+!         |                                                  |
+!         |   LHIG     [cflhig]                              |
+!         |                                                  |
+!   WCAP <    BJ       [bjstp] [bjalf]                        >
+!         |                                                  |
+!         |   KBJ      [bjstp] [bjalf] [kconv]               |
+!         |                                                  |
+!         |   CSM      [cst] [pow]                           |
+!         |                                                  |
+!         |   AB       [cds2] [br] [p0] [powst] [powk]       |
+!
+!   QUADrupl [iquad] [limiter] [lambda] [cnl4] [csh1] [csh2] [csh3]
+!
+!                             | CNL4 < [cnl4] >               |
+!   MDIA LAMbda < [lambda] > <                                 >
+!                             | CNL4_12 < [cnl4_1] [cnl4_2] > |
+!
+!   BREaking CONSTANT [alpha] [gamma]
+!
+!   FRICTION  JONSWAP [cfjon] | COLLINS [cfw] | MADSEN [kn]
+!
+!   TRIAD   [trfac] [cutfr] [urcrit] [urslim]
+!
+!   LIMiter [ursell] [qb]
+!
+!               |  TRANSm [trcoef]                          |
+!   OBSTacle   <                                            |
+!               |       | -> GODA [hgt] [alpha] [beta]       >              &
+!               |  DAM <                                    |
+!                       |    DANGremond [hgt] [slope] [Bk]  |
+!
+!                          | -> RSPEC        |
+!        ( REFLec [reflc] <                   > )                           &
+!                          |    RDIFF [pown] |
+!
+!               LINe < [xp] [yp] >
+!
+!   SETUP  [supcor]
+!
+!   DIFFRac  [idiffr] [smpar] [smnum] [cgmod]
+!
+!   OFF WINDGrowth | QUADrupl | WCAPping | BREaking | REFrac | FSHift | BNDCHK
+!
+!   PROP   /  BSBT
+!          \  GSE  [waveage] SEC|MIN|HR|DAY
+!
+!             | -> ACCUR [drel] [dhoval] [dtoval] [npnts] |
+!   NUMeric (<                                             >                &
+!             |    STOPC [dabs] [drel] [curvat] [npnts]   |
+!
+!                    | -> STAT  [mxitst] [alfa] |
+!                   <                            >  [limiter]   )           &
+!                    | NONSTat  [mxitns]        |
+!
+!           ( DIRimpl [cdd] [cdlim]                             )           &
+!
+!           ( SIGIMpl [css] [eps2] [outp] [niter]               )           &
+!
+!           ( SETUP [eps2] [outp] [niter]                       )
+!
+!   FRAME   'sname'  [xpfr] [ypfr] [alpfr] [xlenfr] [ylenfr] [mxfr] [myfr]
+!
+!   GROUP   'sname'  SUBGRID [ix1] [ix2] [iy1] [iy2]
+!
+!   CURVE   'sname'  [xp1] [yp1]   < [int]  [xp]  [yp] >
+!
+!   RAY     'rname'  [xp1] [yp1] [xq1] [yq1]                                &
+!                    <  [int]  [xp]  [yp]  [xq]  [yq]  >
+!
+!   ISOLINE 'sname'  'rname'  DEPTH|BOTTOM  [dep]
+!
+!   POINTS  'sname'  < [xp]  [yp]  >     |    FILE 'fname'
+!
+!   NGRID   'sname'  [xpn] [ypn] [alpn] [xlenn] [ylenn] [mxn] [myn]
+!
+!              |...|
+!   QUANTity  <     >   'short'  'long'  [lexp]  [hexp]  [exc]              &
+!              |...|
+!
+!             [power]   [ref]   [fswell]                                    &
+!
+!             / -> PROBLEMcoord \
+!             \ FRAME           /
+!
+!   OUTPut OPTIons  'comment'  (TABle [field])  (BLOck  [ndec]  [len])      &
+!                              (SPEC  [ndec])
+!
+!   BLOCK   'sname'  HEADER | NOHEADER  'fname' (LAY-OUT [idla])            &
+!          <  DSPR|HSIGN|DIR|PDIR|TDIR|TM01|RTM01|RTP|TM02|FSPR|DEPTH|VEL|  &
+!             FRCOEFF|WIND|DISSIP|QB|TRANSP|FORCE|UBOT|URMS|WLEN|STEEPNESS| &
+!             DHSIGN|DRTM01|LEAK|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|        &
+!             TMBOT|QP|BFI|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP  >      &
+!             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC|MIN|HR|DAY)
+!
+!   TABLE   'sname'  HEADER | NOHEADER | INDEXED 'fname'                    &
+!          <  DSPR|HSIGN|DIR|PDIR|TDIR|TM01|RTM01|RTP|TM02|FSPR|DEPTH|VEL|  &
+!             FRCOEFF|WIND|DISSIP|QB|TRANSP|FORCE|UBOT|URMS|WLEN|STEEPNESS| &
+!             DHSIGN|DRTM01|LEAK|TIME|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|   &
+!             TMBOT|QP|BFI|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP  >      &
+!             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC|MIN|HR|DAY)
+!
+!   SPECout 'sname'  SPEC1D|SPEC2D  ABS|REL   'fname'                       &
+!                    (OUTput [tbeg] [delt] SEC|MIN|HR|DAY)
+!
+!   NESTout 'sname'  'fname'                                                &
+!                    (OUTput [tbeg] [delt] SEC|MIN|HR|DAY)
+!
+!                                 / -> IJ < [i] [j] > \
+!   TEST [itest] [itrace] POINTS <                     >  PAR 'fname'       &
+!                                 \    XY < [x] [y] > /
+!
+!                         S1D 'fname'  S2D 'fname'
+!
+!              |  STATionary  [time]                      |
+!   COMPute ( <                                            > )
+!              |                    | -> Sec  |           |
+!              |  ([tbegc] [deltc] <     MIn   > [tendc]) |
+!                                   |    HR   |
+!                                   |    DAy  |
+!
+!   HOTFile 'fname'
+!
+!   STOP

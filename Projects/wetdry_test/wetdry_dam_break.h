@@ -1,0 +1,49 @@
+/*
+** svn $Id: shoreface.h 139 2008-01-10 00:17:29Z arango $
+*******************************************************************************
+** Copyright (c) 2002-2008 The ROMS/TOMS Group                               **
+**   Licensed under a MIT/X style license                                    **
+**   See License_ROMS.txt                                                    **
+*******************************************************************************
+**
+** Options for Shore Face Planar Beach Test Case.
+**
+** Application flag:   WETDRY_SLOPE_CHAN
+*/
+
+#define WET_DRY
+#define OUT_DOUBLE
+#define UV_ADV
+#define TS_U3HADVECTION
+#define DJ_GRADPS
+#undef  SALINITY
+#define SOLVE3D
+#define SPLINES
+#define NORTHERN_WALL
+#define SOUTHERN_WALL
+#define WESTERN_WALL
+#define EASTERN_WALL
+
+#define ANA_SMFLUX
+#define ANA_INITIAL
+#define ANA_GRID
+#define ANA_MASK
+#define UV_LDRAG
+
+#ifdef SOLVE3D
+# define ANA_STFLUX
+# define ANA_SSFLUX
+# define ANA_BPFLUX
+# define ANA_BTFLUX
+# define ANA_BSFLUX
+# define ANA_SPFLUX
+# define ANA_SRFLUX
+# undef  ANA_VMIX
+
+# define GLS_MIXING
+# if defined GLS_MIXING
+#  define KANTHA_CLAYSON
+#  define N2S2_HORAVG
+# endif
+
+#endif

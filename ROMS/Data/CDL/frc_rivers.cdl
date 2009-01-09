@@ -1,0 +1,73 @@
+netcdf frc_rivers {
+
+dimensions:
+	xi_rho = 386 ;
+	xi_u = 385 ;
+	xi_v = 386 ;
+	eta_rho = 130 ;
+	eta_u = 130 ;
+	eta_v = 129 ;
+	s_rho = 30 ;
+	river = 18 ;
+	time = UNLIMITED ; // (0 currently)
+
+variables:
+	double river(river) ;
+		river:long_name = "river runoff identification number" ;
+		river:units = "nondimensional" ;
+		river:field = "river, scalar" ;
+	double river_Xposition(river) ;
+		river_Xposition:long_name = "river XI-position at RHO-points" ;
+		river_Xposition:units = "nondimensional" ;
+		river_Xposition:valid_min = 1. ;
+		river_Xposition:valid_max = 385. ;
+		river_Xposition:field = "river_Xposition, scalar" ;
+	double river_Eposition(river) ;
+		river_Eposition:long_name = "river ETA-position at RHO-points" ;
+		river_Eposition:units = "nondimensional" ;
+		river_Eposition:valid_min = 1. ;
+		river_Eposition:valid_max = 129. ;
+		river_Eposition:field = "river_Eposition, scalar" ;
+	double river_direction(river) ;
+		river_direction:long_name = "river runoff direction" ;
+		river_direction:units = "nondimensional" ;
+		river_direction:field = "river_direction, scalar" ;
+	double river_flag(river) ;
+		river_flag:long_name = "river runoff tracer flag" ;
+		river_flag:option_0 = "all tracers are off" ;
+		river_flag:option_1 = "only temperature is on" ;
+		river_flag:option_2 = "only salinity is on" ;
+		river_flag:option_3 = "both temperature and salinity are on" ;
+		river_flag:units = "nondimensional" ;
+		river_flag:field = "river_flag, scalar" ;
+	double river_Vshape(s_rho, river) ;
+		river_Vshape:long_name = "river runoff mass transport vertical profile" ;
+		river_Vshape:units = "nondimensional" ;
+		river_Vshape:field = "river_Vshape, scalar" ;
+	double river_time(time) ;
+		river_time:long_name = "river runoff time" ;
+		river_time:units = "days since 1992-01-01 00:00:00" ;
+		river_time:add_offset = 2448623. ;
+		river_time:field = "river_time, scalar, series" ;
+	double river_transport(time, river) ;
+		river_transport:long_name = "river runoff vertically integrated mass transport" ;
+		river_transport:units = "meter3 second-1" ;
+		river_transport:field = "river_transport, scalar, series" ;
+		river_transport:time = "river_time" ;
+	double river_temp(time, s_rho, river) ;
+		river_temp:long_name = "river runoff potential temperature" ;
+		river_temp:units = "Celsius" ;
+		river_temp:field = "river_temp, scalar, series" ;
+		river_temp:time = "river_time" ;
+	double river_salt(time, s_rho, river) ;
+		river_salt:long_name = "river runoff salinity" ;
+		river_salt:units = "PSU" ;
+		river_salt:field = "river_salt, scalar, series" ;
+		river_salt:time = "river_time" ;
+
+// global attributes:
+		:type = "ROMS FORCING file" ;
+		:title = "NENA River Forcing" ;
+		:grd_file = "roms_nena_grid_3.nc" ;
+		:rivers = "(1)MISSISSIPPI RIVER AT VICKSBURG, MS,(2)SUSQUEHANNA RIVER AT CONOWINGO, MD,(3)TOMBIGBEE R AT COFFEEVILLE L&D NR COFFEEVILLE,,(4)APALACHICOLA RIVER NR SUMATRA,FLA.,(5)CONNECTICUT R AT HARTFORD,CT.,(6)HUDSON RIVER AT GREEN ISLAND NY,(7)Penobscot River at Eddington, Maine,(8)DELAWARE RIVER AT TRENTON NJ,(9)ALTAMAHA RIVER AT DOCTORTOWN, GA,(10)POTOMAC RIVER NEAR WASH, DC LITTLE FALLS PUMP,(11)SAVANNAH RIVER NEAR CLYO, GA,(12)ROANOKE RIVER AT ROANOKE RAPIDS, NC,(13)PEE DEE RIVER AT PEEDEE, SC,(14)PEARL R NR BOGALUSA, LA,(15) SUWANNEE RIVER NEAR WILCOX, FLA.,(16)Kennebec River at North Sidney, ME,(17)ESCAMBIA RIVER NR MOLINO, FLA.,(18)JAMES RIVER NEAR RICHMOND, VA" ;
+}

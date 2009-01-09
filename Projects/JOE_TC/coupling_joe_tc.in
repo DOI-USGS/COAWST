@@ -1,0 +1,92 @@
+!
+! Multiple model coupling parameters.
+!
+!==============================================================================
+!  Copyright (c) 2005 ROMS/TOMS Group, version 3.0                          ===
+!========================================================= Hernan G. Arango ===
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  All comments will ignored during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+! Number of parallel nodes assigned to each model in the coupled system.
+! Their sum must be equal to the total number of processors.
+
+  NnodesATM =  8                     ! atmospheric model
+  NnodesWAV =  4                     ! wave model
+  NnodesOCN =  8                     ! ocean model
+
+! Time interval (seconds) between coupling of models.
+
+ TI_ATM_WAV =   300.0d0              ! atmosphere-wave coupling interval
+ TI_ATM_OCN =   300.0d0              ! atmosphere-ocean coupling interval
+ TI_WAV_OCN =   300.0d0              ! wave-ocean coupling interval
+
+! Coupled model standard input file name.
+
+   ATM_name = atmos.in                          ! atmospheric model, not used yet
+   WAV_name = Projects/JOE_TC/INPUT_JOE_TC      ! wave model
+   OCN_name = Projects/JOE_TC/ocean_joe_tc.in   ! ocean model
+
+!
+!  GLOSSARY:
+!  =========
+!
+!------------------------------------------------------------------------------
+! Number of parallel nodes assigned to each model in the coupled system.
+!------------------------------------------------------------------------------
+!
+! NnodesATM     Number of processes allocated to the atmospheric model.
+! NnodesWAV     Number of processes allocated to the wave model.
+! NnodesOCN     Number of processes allocated to the ocean model.
+!
+! The total sum of active coupled model must be equal to the total number
+! of processors. Currently, ROMS/TOMS supports the following modes of
+! coupling with CPP-options (see Drivers/master.F):
+!
+!               AIR_OCEAN      Atmosphere-ocean coupling
+!               WAVES_OCEAN    Waves-ocean coupling
+!
+!------------------------------------------------------------------------------
+! Time interval between coupling of models.
+!------------------------------------------------------------------------------
+!
+! It is assumed that the time interval is an integer multiple of the
+! individual coupled models in the system.
+!
+! TI_ATM_WAV    Atmosphere-wave coupling interval (seconds; integer).
+! TI_ATM_OCN    Atmosphere-ocean coupling interval (seconds; integer).
+! TI_WAV_OCN    Wave-ocean coupling interval (seconds).
+!
+!------------------------------------------------------------------------------
+! Coupled models standard input file names.
+!------------------------------------------------------------------------------
+!
+!  ATM_name     Atmospheric model standand input.
+!  WAV_name     Wave model standard input.
+!  OCN_name     Ocean model standard input.
+!

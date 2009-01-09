@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+#
+# svn $Id: substitute 503 2008-01-10 00:11:51Z arango $
+#######################################################################
+# Copyright (c) 2002-2008 The ROMS/TOMS Group                         #
+#   Licensed under a MIT/X style license                              #
+#   See License_ROMS.txt                                              #
+################################################## Hernan G. Arango ###
+#                                                                     #
+#  This script is used to globally substitute a string in specified   #
+#  file:                                                              #
+#                                                                     #
+#  Usage:                                                             #
+#                                                                     #
+#           substitute $ARGV[0] $ARGV[1] $ARGV[2]                     #
+#                                                                     #
+#  where                                                              #
+#                                                                     #
+#           $ARGV[0]    file name                                     #
+#           $ARGV[1]    old string                                    #
+#           $ARGV[2]    new string                                    #
+#                                                                     #
+#######################################################################
+
+use strict;
+my $file = $ARGV[0];
+my $tmp = "tmp.$$";
+open(FILE, "$file");
+open(TMP, ">$tmp") || die "Can't open tmp file";
+$/=undef;
+my $string = <FILE>;
+close FILE;
+
+$string=~ s|$ARGV[1]|$ARGV[2]|g;
+
+print TMP "$string";
+close(TMP);
+rename ($tmp, $file)

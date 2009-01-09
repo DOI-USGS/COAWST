@@ -1,0 +1,21 @@
+#!/bin/csh
+# @ job_type		= parallel
+# @ environment		= COPY_ALL;MP_EUILIB=us
+# @ job_name		= ndown
+# @ output		= ndown_out
+# @ error		= ndown_err
+# @ network.MPI		= csss,shared,us
+# @ node_usage		= shared
+# @ checkpoint		= no
+# @ wall_clock_limit	= 3600
+# @ node		= 1
+# @ total_tasks		= 8
+# @ class		= share
+# @ ja_report		= yes
+# @ queue
+
+cd PWD
+
+rm rsl* wrfo*
+
+wrf.exe

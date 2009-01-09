@@ -1,0 +1,56 @@
+ROMS/TOMS Metadata
+==================
+
+This directory contains several CDL files showing ROMS input NetCDF
+files structure. There is a lot of software out there to generate
+such input files. It is very difficult to write generic programs
+because it depends on the application. However, there is a very easy
+way to generate these files using the CDL and the NetCDF "ncgen"
+program. 
+
+The ROMS metadata design is very rich and extensive. See "varinfo.dat"
+for a list of all the variables names, units, attributes, associated time
+variables, and scale factors. This is an user friendly file and variable
+parameters can be changed very easily. As a matter of fact, some users like
+to change the long-name attribute to a language other than English to
+facilitate automatic labeling during plotting. However, for portability
+I recommend to use the provided field variable name.
+
+Currently, you can find the following CDL scripts:
+
+    grd_spherical.cdl        Spherical grid NetCDF file
+
+    ini_hydro.cdl            Initial conditions NetCDF file (hydrodynamics)
+    ini_fasham.cdl           Initial conditions NetCDF file (hydrodynamics and biology)
+    ini_ecosim.cdl           Initial conditions NetCDF file (hydrodynamics and bio-optics)
+    ini_sed.cdl              Initial conditions NetCDF file (hydrodynamics and sediment)
+
+    clm_ts.cdl               Temperature-Salinity climatology NetCDF file
+
+    frc_uvstress.cdl         Forcing NetCDF file (surface momentum stresses)
+    frc_fluxclm.cdl          Forcing NetCDF file (climatological heat fluxes variables)
+    frc_bulk.cdl             Forcing NetCDF file (atmospheric variable for bulk fluxes)
+
+    frc_rivers.cdl           Forcing NetCDF file (River point/sources)
+    frc_tides.cdl            Forcing NetCDF file (tidal elevation and currents)
+
+    bry_limit.cdl            Boundary NetCDF file (various time dimensions)
+    bry_unlimit.cdl          Boundary NetCDF file (unlimited time dimensions)
+
+    s4dvar_obs.cdl           4DVAR observation
+    s4dvar_std.cdl           4DVAR background error covariance standard deviation
+
+You can easily edit any of these files to change NetCDF file name, change
+dimensions, add and remove variables, and add and modify global attibutes.
+A NetCDF file can be created by typing:
+
+    ncgen -b my_file.cdl
+
+Then, you can use any program to write your data into the created NetCDF
+file. I usually use the MeXCDF interface of Matlab to write the processed
+data with just a single command line.
+
+Notice that ROMS now allows for multiple forcing NetCDF files. See
+input script.
+
+

@@ -1,0 +1,445 @@
+!  4DVar assimilation input parameters.
+!
+!svn $Id: s4dvar.in 678 2008-08-05 20:51:42Z arango $
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2008 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  Comments will be ignored  during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+
+! Switch to recycle records in initial file, [1:Ngrids].
+
+     LcycleINI == T
+
+! Simple descent (numerical recipes) algorithm method:
+!
+!   [0]  Fletcher-Reeves scheme
+!   [1]  Polak-Riviere scheme
+
+           ICG =  1
+
+! Number of iterations between each steepest descent step.
+
+       NiterSD =  5
+
+! Strong constraint conjugate gradient orthogonality tolerance: dot
+! product orthogonality between current and previous search.
+
+         CGtol =  0.1d+2
+
+! Conjugate gradient algorithm initial step size.
+
+       CGstepI =  1.0d-4
+
+! Weak constraint conjugate gradient algorithm convergence criteria.
+
+         CGeps =  1.0d-8
+
+! Cosfunction convergence factor.
+
+    CostFunFac =  5.0d-5
+
+! Upper bound on the relative error of the gradient for the Lanczos
+! conjugate gradient algorithm.
+
+       GradErr = 1.0d-4
+
+! Maximum error bound on Hessian eigenvectors in the Lanczos conjugate
+! gradient algorithm.  Note that even quite inaccurate eigenvectors are
+! useful for pre-conditioning purposes.
+
+      HevecErr = 1.0d-1
+
+! Switch (T/F) to compute approximated Hessian eigenpairs in the Lanzos
+! conjugate gradient algorithm.
+
+    LhessianEV = F
+
+! Switch (T/F) to pre-conditioning with Hessian eigenpairs computed
+! by the Lanczos algorithm and saved in HSSname NetCDF file.
+ 
+      Lprecond = F 
+
+! If preconditioning, specify number of eigenpairs to use.  If zero,
+! use all available vectors.
+
+       NritzEV = 0
+
+! If weak constraint 4DVar, set diffusive relaxation coefficients (m2/s)
+! used to relax representer tangent linear solution to privious Picard
+! iteration linearized trajectory.
+
+     tl_M2diff ==   0.0d0                 ! 2D momentum
+     tl_M3diff == 100.0d0                 ! 3D momentum
+
+      tl_Tdiff ==  50.0d0  50.0d0         ! NT tracers
+
+! Switches (T/F) to create and write correlation normalization coefficients
+! for background or model error covariance. If TRUE, these factors are
+! computed and written to NRMname NetCDF file. If FALSE, they are read
+! from NRMname NetCDF file. The computation of these factors is very
+! expensive and need to be computed only once for a particular application
+! provided that grid land/sea masking, and decorrelation scales remains
+! the same.
+
+       LdefNRM == T                       ! Create a new normalization file
+       LwrtNRM == T                       ! Compute and write normalization
+
+! Switches to compute the correlation normalization coefficients for each
+! state variable.  Since this is a very expensive computation, the user
+! can control which state variable to compute (see glossary for details).
+
+ Cnorm(isFsur) = T                        ! 2D variable at RHO-points
+ Cnorm(isUbar) = T                        ! 2D variable at U-points
+ Cnorm(isVbar) = T                        ! 2D variable at V-points
+ Cnorm(isUstr) = T                        ! surface U-momentum stress
+ Cnorm(isVstr) = T                        ! surface V-momentum stress
+ Cnorm(isUvel) = T                        ! 3D variable at U-points
+ Cnorm(isVvel) = T                        ! 3D variable at V-points
+ Cnorm(isTvar) = T T                      ! NT tracers
+ Cnorm(isTsur) = T T                      ! NT surface tracers flux
+
+! Correlation normalization method:
+!
+!      [0] Exact, very expensive
+!      [1] Approximated, randomization
+
+       Nmethod == 0
+
+! If randomization, select random number generation scheme:
+!
+!      [1] Gaussian distributed deviates, numerical recipes
+
+       Rscheme == 1
+
+! Number of iterations to compute correlation normalization coefficients
+! via the randomization approach. A large number is required to be
+! statistically meaningful and achieve zero expectation mean and unit
+! variance. These factors insure that the error covariance diagonal
+! elements are equal to unity.
+
+       Nrandom =  5000
+
+! Horizontal and vertical stability and accuracy factors (< 1) used to
+! time-step discretized convolution operators below its theoretical limit.
+
+        Hgamma =  0.5                              ! horizontal operator
+        Vgamma =  0.05                             ! vertical operator
+ 
+! Horizontal, isotropic decorrelation scales (m).
+
+Hdecay(isFsur) == 100.0d+3                         ! free-surface
+Hdecay(isUbar) == 100.0d+3                         ! 2D U-momentum
+Hdecay(isVbar) == 100.0d+3                         ! 2D V-momentum
+Hdecay(isUstr) == 100.0d+3                         ! surface U-momentum stress
+Hdecay(isVstr) == 100.0d+3                         ! surface V-momentum stress
+Hdecay(isUvel) == 100.0d+3                         ! 3D U-momentum
+Hdecay(isVvel) == 100.0d+3                         ! 3D V-momentum
+Hdecay(isTvar) == 100.0d+3  100.0d+3               ! 1:NT tracers
+Hdecay(isTsur) == 100.0d+3  100.0d+3               ! 1:NT surface tracers flux
+
+! Vertical, isotropic decorrelation scales (m).
+
+Vdecay(isUvel) == 100.0d0                          ! 3D U-momentum
+Vdecay(isVvel) == 100.0d0                          ! 3D V-momentum
+Vdecay(isTvar) == 100.0d0   100.0d0                ! 1:NT tracers
+
+! In the weak-constraint algorithms, the forcing error covariance matrix
+! is estimated by scaling the background error covariance matrix. These values
+! provide the scaling factors for each state variable.
+
+ Cfscale(isFsur) = 0.3d0                   ! 2D variable at RHO-points
+ Cfscale(isUbar) = 0.3d0                   ! 2D variable at U-points
+ Cfscale(isVbar) = 0.3d0                   ! 2D variable at V-points
+ Cfscale(isUstr) = 0.3d0                   ! surface U-momentum stress
+ Cfscale(isVstr) = 0.3d0                   ! surface V-momentum stress
+ Cfscale(isUvel) = 0.3d0                   ! 3D variable at U-points
+ Cfscale(isVvel) = 0.3d0                   ! 3D variable at V-points
+ Cfscale(isTvar) = 0.3d0  0.3d0            ! NT tracers
+ Cfscale(isTsur) = 0.3d0  0.3d0            ! NT surface tracers flux
+
+! Polynomial coefficients for Brunt-Vaisala frequency squared (N2) used for
+! normalization of tracer misfit cost function. The first value in each line
+! is the polynomial order whereas the second value is the polynomial expansion
+! coefficient. The values can be entered in any order, [0:npN2] values are
+! expected.  Coeffiecient are derived from a typical North Atlantic profile.
+
+          npN2 =  9                                ! degree of polynomial
+
+      Pcoef_N2 =   ORDER        COEFFICIENT
+
+                     0          0.00014377915637d+00
+                     1          8.22721559660467d-07
+                     2          2.01838193105922d-09
+                     3          2.50856113444129d-12
+                     4          1.76963644333035d-15
+                     5          7.53464079555416d-19
+                     6          1.97494078419000d-22
+                     7          3.11823869844803d-26
+                     8          2.72050044674897d-30
+                     9          1.00753302045407d-34
+
+! Input background-error standard deviation file name, [1:Ngrids].
+
+       STDname == ocean_std.nc
+
+! Input/output background-error normalization factors file name, [1:Ngrids].
+
+       NRMname == ocean_nrm.nc
+
+! Input/output observation file name, [1:Ngrids].
+
+       OBSname == ocean_obs.nc
+
+! Input/output Hessian eigenvectors file name, [1:Ngrids].
+
+       HSSname == ocean_hss.nc
+
+! Input/output Lanczos vectors file name, [1:Ngrids].
+
+       LCZname == ocean_lcz.nc
+
+! Output model data at observation locations file name, [1:Ngrids].
+
+       MODname == ocean_mod.nc
+
+!
+!  GLOSSARY:
+!  =========
+!
+!------------------------------------------------------------------------------
+! Switches.
+!------------------------------------------------------------------------------
+!
+!  LcycleINI       Logical switch (T/F) used to recycle time records in output
+!                  initial file.  If TRUE,  only the latest two adjusted
+!                  initial conditions fields are maintained.  If FALSE, all
+!                  initial conditions fields are saved at the end of each
+!                  descent algorithm without recycling.
+!
+!------------------------------------------------------------------------------
+! Descent algorithm (descent.F, downhill.F) parameters.
+!------------------------------------------------------------------------------
+!
+!  ICG            Simple conjugate gradient algorithm.  This alorithm is
+!                 similar to the one found in numerical recipes.  
+!
+!                   ICG = 0   Fletcher-Reeves scheme
+!                   ICG = 1   Polak-Riviere scheme
+!
+!  NiterSD        Number of iterations between each steepest descent step.
+!                 The descent algorithm is reinitialized every NiterSD
+!                 iterations to avoid searching in directions which have
+!                 been searched previously.
+!
+!  CGtol          Strong constraint conjugate gradient orthogonality
+!                 tolerance: dot product orthogonality between current and
+!                 previous search.
+!
+!------------------------------------------------------------------------------
+! Conjugate gradient parameters.
+!------------------------------------------------------------------------------
+!
+!  CGstepI        Conjugate gradient algorithm initial step size.
+!
+!
+!  CGeps          Weak constraint conjugate gradient algorithm convergence
+!                 criteria.
+!
+!------------------------------------------------------------------------------
+! Misfit cost function convergence.
+!------------------------------------------------------------------------------
+!
+!  CostFunFac     Cost function percentage change between succesive
+!                 iterations for convergence.  The inner iteration
+!                 loop is stoped when the following condition is
+!                 false:
+!
+!                 DO WHILE ((inner.le.Ninner).or.
+!    &                      (ABS(CostFunOld(0)-CostFun(0)).le.
+!    &                       CostFunFac*CostFunOld(0)) THEN
+!
+!------------------------------------------------------------------------------
+! Lanczos conjugate gradient algorithm parameters.
+!------------------------------------------------------------------------------
+!
+!  GradErr        Upper bound on the relative error of the gradient.
+!
+!  HevecErr       Maximum error bound on Hessian eigenvectors. Note that
+!                 even quite inaccurate eigenvectors are useful
+!                 for pre-conditioning purposes.
+!
+!  LhessianEV     Switch (T/F) to compute approximated Hessian eigenvalues
+!                 and eigenvectors.
+!
+!  Lprecond       Switch (T/F) to pre-conditioning with Hessian eigenpairs
+!                 computed by the Lanczos algorithm and saved in HSSname
+!                 NetCDF file.
+!
+!  NritzEV        If preconditioning, specify number of eigenpairs to use.
+!                   If zero, use all available vectors.
+!
+!------------------------------------------------------------------------------
+! Diffusive relaxation coefficients.
+!------------------------------------------------------------------------------
+!
+! If weak constraint 4DVar and RPM_RELAXATION flag is activated, this 
+! coefficients are use to relax the representer tangent lineas solution
+! to previous outer loop linearized trajectory during the Picard
+! iterations. The user may turn off relaxation on a particular variable
+! by setting the coefficient to zero.
+!
+!  tl_M2diff      2D momentum diffusion relaxation coefficient (m2/s).
+!
+!  tl_M3diff      3D momentum diffusion relaxation coefficient (m2/s).
+!
+!  tl_Tdiff       Tracers type variables diffusion relaxation coefficients
+!                 (m2/s).  NT values are expected.
+!
+!------------------------------------------------------------------------------
+! Background/model correlation parameters.
+!------------------------------------------------------------------------------
+!
+!  LdefNRM        Switch (T/F) to create a new normalization NetCDF file.
+!                 The computation of the correlation normalization
+!                 coefficients is very expensive and needs to be computed
+!                 only once for a particular application provided that grid,
+!                 land/sea masking (if any), and decorrelation scales (see
+!                 below) remains the same.  The user can use this switch
+!                 in conjunction with the Cnorm (see below) switches to
+!                 compute each coefficient separately.  The normalization
+!                 NetCDF only needs to be created once and simultaneous
+!                 runs can write to the same NetCDF.  If using this approach,
+!                 compute the normalization factors with the CORRELATION
+!                 CPP-option and not IS4DVAR or W4DVAR.
+!            
+!  LwrtNRM        Switch (T/F) to write out correlation normalization factors.
+!                 If TRUE, these factors computed and written to NRMname NetCDF
+!                 file. If FALSE, they are read from NRMname NetCDF file.
+!
+!  Cnorm(isFsur)  Compute 2D normalization factors at RHO-points.
+!  Cnorm(isUbar)  Compute 2D normalization factors at U-points.
+!  Cnorm(isVbar)  Compute 2D normalization factors at V-points.
+!  Cnorm(isUstr)  Compute normalization factors for surface U-stress.
+!  Cnorm(isVstr)  Compute normalization factors for surface V-stress.
+!  Cnorm(isUvel)  Compute 3D normalization factors at U-points.
+!  Cnorm(isVvel)  Compute 3D normalization factors at V-points.
+!  Cnorm(isTvar)  Compute tracer normalization factors at RHO-points.
+!  Cnorm(isTsur)  Compute surface tracers flux normalization factors.
+!
+!  Nmethod        Correlation normalization method:
+!
+!                   [0] Exact, very expensive
+!                   [1] Approximated, randomization
+!
+!  Rscheme        Random number generation scheme if randomization:
+!
+!                   [1] Gaussian distributed deviates, numerical recipes
+!
+!  Nrandom        Number of iterations to compute correlation normalization
+!                 factors using the randomization approach of Fisher and
+!                 Courtier (1995). A large number is required to be
+!                 statistically meaningful and achieve zero expectation
+!                 mean and unit variance, approximately. These factors insure
+!                 that the error covariance diagonal elements are equal to
+!                 unity.
+!
+!  Hgamma         Horizontal stability and accuracy factor (< 1) used to
+!                 scale the time-step of the convolution operator below its
+!                 theoretical limit.
+!
+!  Vgamma         Vertical stability and accuracy factor (< 1) used to
+!                 scale the time-step of the convolution operator below its
+!                 theoretical limit.
+!
+!  Hdecay         Horizontal, isotropic decorrelation scale (m):
+!
+!                   Hdecay(isFsur)                free-surface
+!                   Hdecay(isUbar)                2D U-momentum
+!                   Hdecay(isVbar)                2D V-momentum
+!                   Hdecay(isUstr)                surface U-stress
+!                   Hdecay(isVstr)                surface V-stress
+!                   Hdecay(isUvel)                3D U-momentum
+!                   Hdecay(isVvel)                3D V-momentum
+!                   Hdecay(isTvar)                tracers (1:NT)
+!                   Hdecay(isTsur)                surfce tracers flux (1:NT)
+!
+!  Vdecay         Vertical, isotropic decorrelation scale (m):
+!
+!                   Hdecay(isUvel)                3D U-momentum
+!                   Hdecay(isVvel)                3D V-momentum
+!                   Hdecay(isTvar)                tracers (1:NT)
+!
+!------------------------------------------------------------------------------
+!  If weak constraint, the model error covariance matrix is estimated by
+!  scaling the background error covariance matrix.
+!------------------------------------------------------------------------------
+!
+!  Cfscale(isFsur)  free-surface scale.
+!  Cfscale(isUbar)  scale for 2D variable at U-points
+!  Cfscale(isVbar)  scale for 2D variable at V-points
+!  Cfscale(isUstr)  surface U-momentum stress scale
+!  Cfscale(isVstr)  surface V-momentum stress scale
+!  Cfscale(isUvel)  scale for 3D variable at U-points
+!  Cfscale(isVvel)  scale for 3D variable at V-points
+!  Cfscale(isTvar)  scale for tracers (1:NT)
+!  Cfscale(isTsur)  surface tracers flux scale (1:NT)
+!
+!------------------------------------------------------------------------------
+! Parameters for Brunt-Vaisala frequency squared.
+!------------------------------------------------------------------------------
+!
+!  npN2           Order of the polynomial representing the basis functions
+!                 used for N2(z).
+!
+!  Pcoef_N2       Polynomial coefficients for N2(z), (0:npN2) values are
+!                 expected.
+!
+!                 N2(z) = pcoef_N2(0) + pcoef_N2(1)*z + pcoef_N2(2)*z*z + ...
+!
+!------------------------------------------------------------------------------
+!  Input/Output NetCDF files (a string with a maximum of eighty characters).
+!------------------------------------------------------------------------------
+!
+!  STDname        Input background-error standard deviation file name.
+!
+!  NRMname        Input/output background-error normalization factors file
+!                   name.
+!
+!  OBSname        Input/Output observations data file name.
+!
+!  HSSname        Input/Output Hessian eigenvectors file name.
+!
+!  LCZname        Input/output Lanczos vectors file name.
+!
+!  MODname        Output model data at observations locations file name.
+!

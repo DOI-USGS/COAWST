@@ -1,0 +1,331 @@
+!  Floats Input Parameters.
+!
+!svn $Id: floats_adria02.in 734 2008-09-07 01:58:06Z jcwarner $
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2008 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  Comments will be ignored  during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+! Switch to control the computation of floats trajectories within nested
+! and/or multiple connected grids, [1:Ngrids].
+!
+     Lfloats == T
+
+! Flag indicating re-start from previous solution. If FRREC = 0, a new
+! NetCDF output file is created.
+
+       FRREC == 0
+
+! Number of floats to release in each nested grid.  These values are
+! essential because the FLOATS structure in "mod_floats" is dynamically
+! allocated using these values, [1:Ngrids].
+
+     NFLOATS == 432
+
+! Initial floats locations for all grids:
+!
+!   G      Nested grid number
+!   C      Initial horizontal coordinate type (0: grid units, 1: spherical)
+!   T      Float trajectory type (1: neutral 3D Lagrangian, 2:isobaric)
+!   N      Number floats to be released at (Fx0,Fy0,Fz0)
+!   Ft0    Float release time (days) after model initialization
+!   Fx0    Initial float X-location (grid units or longitude)
+!   Fy0    Initial float Y-location (grid units or latitude)
+!   Fz0    Initial float Z-location (grid units or depth)
+!   Fdt    Float cluster release time interval (days)
+!   Fdx    Float cluster X-distribution parameter
+!   Fdy    Float cluster Y-distribution parameter
+!   Fdz    Float cluster Z-distribution parameter
+
+POS = G, C, T, N,   Ft0,    Fx0,    Fy0,    Fz0,    Fdt,    Fdx,    Fdy,   Fdz
+
+1 1 1 3   1.3958  15.40819  43.47256 -0.50 0.1 0 0 0
+1 1 1 3   1.4167  15.48294  43.53850 -0.50 0.1 0 0 0
+1 1 1 3   1.4583  15.57653  43.59864 -0.50 0.1 0 0 0
+1 1 1 3   1.6250  14.83765  43.83536 -0.50 0.1 0 0 0
+1 1 1 3   1.6667  14.76323  43.79159 -0.50 0.1 0 0 0
+1 1 1 3   1.7292  14.51397  43.62368 -0.50 0.1 0 0 0
+1 1 1 3   1.7500  14.59711  43.67926 -0.50 0.1 0 0 0
+1 1 1 3   1.7708  14.43468  43.56571 -0.50 0.1 0 0 0
+1 1 1 3   7.1875  12.51712  44.55795 -0.50 0.1 0 0 0
+1 1 1 3   7.2500  12.38789  44.53405 -0.50 0.1 0 0 0
+1 1 1 3   7.7708  13.69602  44.69645 -0.50 0.1 0 0 0
+1 1 1 3   7.8125  13.79593  44.72839 -0.50 0.1 0 0 0
+1 1 1 3   7.8333  13.56058  44.66103 -0.50 0.1 0 0 0
+1 1 1 3   8.0000  14.28596  44.48260 -0.50 0.1 0 0 0
+1 1 1 3   8.0208  14.20247  44.42703 -0.50 0.1 0 0 0
+1 1 1 3   8.0625  14.11067  44.37523 -0.50 0.1 0 0 0
+1 1 1 3   8.3125  13.42738  43.93172 -0.50 0.1 0 0 0
+1 1 1 3   8.3750  13.35011  43.86801 -0.50 0.1 0 0 0
+1 1 1 3   8.4167  13.28014  43.80503 -0.50 0.1 0 0 0
+1 1 1 3   8.9375  13.06197  44.94010 -0.50 0.1 0 0 0
+1 1 1 3   8.9792  13.03965  45.09918 -0.50 0.1 0 0 0
+1 1 1 3   9.7917  13.11209  45.55102 -0.50 0.1 0 0 0
+1 1 1 3   9.8542  13.15551  45.47392 -0.50 0.1 0 0 0
+1 1 1 3   9.8750  13.19146  45.39569 -0.50 0.1 0 0 0
+1 1 1 3  13.6875  13.03618  45.18492 -0.50 0.1 0 0 0
+1 1 1 3  13.7708  13.41224  45.09367 -0.50 0.1 0 0 0
+1 1 1 3  13.8125  13.53628  45.05945 -0.50 0.1 0 0 0
+1 1 1 3  14.4167  12.60496  44.95079 -0.50 0.1 0 0 0
+1 1 1 3  41.6458  13.57205  45.09554 -0.50 0.1 0 0 0
+1 1 1 3  47.4583  12.55999  44.47494 -0.50 0.1 0 0 0
+1 1 1 3  67.9167  15.94134  43.46878 -0.50 0.1 0 0 0
+1 1 1 3  67.9375  15.84418  43.48019 -0.50 0.1 0 0 0
+1 1 1 3  67.9583  15.74465  43.48677 -0.50 0.1 0 0 0
+1 1 1 3  71.4167  14.71751  44.17044 -0.50 0.1 0 0 0
+1 1 1 3  71.4792  14.61126  44.11145 -0.50 0.1 0 0 0
+1 1 1 3  71.5000  14.50903  44.04869 -0.50 0.1 0 0 0
+1 1 1 3 104.9167  15.87439  43.47814 -0.50 0.1 0 0 0
+1 1 1 3 104.9375  15.78441  43.49226 -0.50 0.1 0 0 0
+1 1 1 3 117.6458  14.72688  44.17018 -0.50 0.1 0 0 0
+1 1 1 3 117.6875  14.61599  44.10917 -0.50 0.1 0 0 0
+1 1 1 3 117.7292  14.52014  44.06427 -0.50 0.1 0 0 0
+1 1 1 3 135.1250  13.79694  44.72948 -0.50 0.1 0 0 0
+1 1 1 3 135.1875  13.68725  44.70009 -0.50 0.1 0 0 0
+1 1 1 3 135.3750  13.58845  44.66537 -0.50 0.1 0 0 0
+1 1 1 3 140.1042  15.29450  43.62110 -0.50 0.1 0 0 0
+1 1 1 3 140.1042  15.29450  43.62110 -0.50 0.1 0 0 0
+1 1 1 3 140.1042  15.30891  43.63539 -0.50 0.1 0 0 0
+1 1 1 3 140.1250  15.32360  43.64910 -0.50 0.1 0 0 0
+1 1 1 3 142.8125  15.36194  43.60993 -0.50 0.1 0 0 0
+1 1 1 3 142.9167  15.84965  43.47744 -0.50 0.1 0 0 0
+1 1 1 3 142.9167  15.93560  43.47010 -0.50 0.1 0 0 0
+1 1 1 3 142.9375  15.75035  43.48306 -0.50 0.1 0 0 0
+1 1 1 3 144.6875  14.11792  44.48601 -0.50 0.1 0 0 0
+1 1 1 3 144.7292  14.09450  44.52592 -0.50 0.1 0 0 0
+1 1 1 3 144.7500  14.05656  44.60122 -0.50 0.1 0 0 0
+1 1 1 3 144.7708  14.02756  44.68310 -0.50 0.1 0 0 0
+1 1 1 3 144.8125  14.05944  44.73577 -0.50 0.1 0 0 0
+1 1 1 3 144.8542  14.12808  44.61714 -0.50 0.1 0 0 0
+1 1 1 3 144.8958  14.16120  44.53943 -0.50 0.1 0 0 0
+1 1 1 3 146.3958  13.77238  44.65568 -0.50 0.1 0 0 0
+1 1 1 3 148.9792  12.94858  44.24060 -0.50 0.1 0 0 0
+1 1 1 3 149.1250  13.34659  44.44219 -0.50 0.1 0 0 0
+1 1 1 3 151.3125  13.19492  43.95164 -0.50 0.1 0 0 0
+1 1 1 3 153.1667  13.11076  45.55014 -0.50 0.1 0 0 0
+1 1 1 3 153.1667  13.15649  45.47493 -0.50 0.1 0 0 0
+1 1 1 3 153.1875  13.19128  45.39606 -0.50 0.1 0 0 0
+1 1 1 3 153.3333  14.71681  44.17078 -0.50 0.1 0 0 0
+1 1 1 3 153.3542  14.61701  44.11054 -0.50 0.1 0 0 0
+1 1 1 3 153.3958  12.87867  44.82000 -0.50 0.1 0 0 0
+1 1 1 3 153.4167  14.51686  44.05008 -0.50 0.1 0 0 0
+1 1 1 3 153.4583  13.00956  44.68292 -0.50 0.1 0 0 0
+1 1 1 3 155.0208  16.47281  41.67470 -0.50 0.1 0 0 0
+1 1 1 3 159.2917  13.89808  43.31387 -0.50 0.1 0 0 0
+1 1 1 3 176.0000  15.61028  42.02047 -0.50 0.1 0 0 0
+1 1 1 3 176.4583  15.83137  43.51656 -0.50 0.1 0 0 0
+1 1 1 3 176.4583  15.93957  43.48067 -0.50 0.1 0 0 0
+1 1 1 3 176.4792  15.73027  43.54557 -0.50 0.1 0 0 0
+1 1 1 3 189.5417  14.51627  44.04943 -0.50 0.1 0 0 0
+1 1 1 3 189.5833  14.62129  44.11009 -0.50 0.1 0 0 0
+1 1 1 3 189.6458  14.71305  44.17259 -0.50 0.1 0 0 0
+1 1 1 3 195.3333  12.65874  44.28934 -0.50 0.1 0 0 0
+1 1 1 3 215.3333  14.51373  44.05071 -0.50 0.1 0 0 0
+1 1 1 3 215.3750  14.61632  44.11017 -0.50 0.1 0 0 0
+1 1 1 3 215.3958  14.71639  44.17000 -0.50 0.1 0 0 0
+1 1 1 3 215.8750  15.87448  43.47777 -0.50 0.1 0 0 0
+1 1 1 3 219.0208  15.62727  43.59761 -0.50 0.1 0 0 0
+1 1 1 3 220.7500  18.66574  40.56157 -0.50 0.1 0 0 0
+1 1 1 3 221.5208  12.37795  44.54755 -0.50 0.1 0 0 0
+1 1 1 3 221.5417  12.49671  44.55853 -0.50 0.1 0 0 0
+1 1 1 3 226.0417  13.11064  45.55111 -0.50 0.1 0 0 0
+1 1 1 3 226.0625  13.15930  45.47481 -0.50 0.1 0 0 0
+1 1 1 3 226.1042  13.19493  45.39385 -0.50 0.1 0 0 0
+1 1 1 3 227.8125  13.79853  44.72983 -0.50 0.1 0 0 0
+1 1 1 3 227.8333  13.68972  44.69638 -0.50 0.1 0 0 0
+1 1 1 3 227.8542  13.58373  44.66644 -0.50 0.1 0 0 0
+1 1 1 3 240.8542  16.58578  39.72785 -0.50 0.1 0 0 0
+1 1 1 3 241.9583  14.51808  44.01208 -0.50 0.1 0 0 0
+1 1 1 3 242.0000  14.61767  44.11126 -0.50 0.1 0 0 0
+1 1 1 3 242.9167  15.78994  43.48853 -0.50 0.1 0 0 0
+1 1 1 3 242.9167  15.90664  43.47396 -0.50 0.1 0 0 0
+1 1 1 3 249.9792  12.62412  44.70482 -0.50 0.1 0 0 0
+1 1 1 3 250.0000  12.57324  44.66422 -0.50 0.1 0 0 0
+1 1 1 3 250.0625  12.68604  44.67966 -0.50 0.1 0 0 0
+1 1 1 3 251.0000  15.27641  43.62018 -0.50 0.1 0 0 0
+1 1 1 3 251.0208  15.33311  43.59025 -0.50 0.1 0 0 0
+1 1 1 3 251.0417  15.39383  43.55865 -0.50 0.1 0 0 0
+1 1 1 3 251.1458  15.39466  43.58974 -0.50 0.1 0 0 0
+1 1 1 3 251.1458  15.43843  43.58964 -0.50 0.1 0 0 0
+1 1 1 3 251.1875  15.45008  43.62778 -0.50 0.1 0 0 0
+1 1 1 3 251.2083  15.39104  43.65985 -0.50 0.1 0 0 0
+1 1 1 3 251.2292  15.32867  43.62533 -0.50 0.1 0 0 0
+1 1 1 3 251.2500  15.29760  43.66594 -0.50 0.1 0 0 0
+1 1 1 3 255.5625  15.57660  43.46090 -0.50 0.1 0 0 0
+1 1 1 3 255.5833  15.49951  43.50512 -0.50 0.1 0 0 0
+1 1 1 3 257.8333  13.82741  44.71832 -0.50 0.1 0 0 0
+1 1 1 3 257.9583  13.83918  44.64469 -0.50 0.1 0 0 0
+1 1 1 3 257.9792  13.80231  44.68349 -0.50 0.1 0 0 0
+1 1 1 3 258.0000  13.73650  44.75413 -0.50 0.1 0 0 0
+1 1 1 3 258.0000  13.77188  44.71459 -0.50 0.1 0 0 0
+1 1 1 3 258.1250  13.73961  44.68439 -0.50 0.1 0 0 0
+1 1 1 3 258.8125  15.50924  43.77138 -0.50 0.1 0 0 0
+1 1 1 3 259.7917  12.69470  44.92411 -0.50 0.1 0 0 0
+1 1 1 3 259.8333  12.72386  44.80816 -0.50 0.1 0 0 0
+1 1 1 3 266.1250  14.27595  44.46995 -0.50 0.1 0 0 0
+1 1 1 3 273.3750  14.64637  42.53038 -0.50 0.1 0 0 0
+1 1 1 3 283.7917  12.41015  44.77608 -0.50 0.1 0 0 0
+1 1 1 3 283.8125  12.42561  44.76163 -0.50 0.1 0 0 0
+1 1 1 3 286.6458  12.51542  45.26645 -0.50 0.1 0 0 0
+1 1 1 3 305.5417  13.60448  45.64879 -0.50 0.1 0 0 0
+1 1 1 3 307.6042  14.26537  44.45770 -0.50 0.1 0 0 0
+1 1 1 3 307.6042  14.27560  44.46200 -0.50 0.1 0 0 0
+1 1 1 3 307.6042  14.28615  44.46733 -0.50 0.1 0 0 0
+1 1 1 3 333.3958  13.58010  44.81369 -0.50 0.1 0 0 0
+1 1 1 3 333.3958  13.63435  44.83089 -0.50 0.1 0 0 0
+1 1 1 3 340.9375  13.62189  43.64557 -0.50 0.1 0 0 0
+1 1 1 3 340.9375  13.65269  43.64441 -0.50 0.1 0 0 0
+1 1 1 3 341.0417  13.71435  43.60331 -0.50 0.1 0 0 0
+1 1 1 3 349.4167  13.10791  45.55004 -0.50 0.1 0 0 0
+1 1 1 3 349.4167  13.11999  45.53520 -0.50 0.1 0 0 0
+1 1 1 3 359.3542  12.56851  45.24399 -0.50 0.1 0 0 0
+1 1 1 3 420.4375  13.74156  44.80313 -0.50 0.1 0 0 0
+1 1 1 3 420.4583  13.80559  44.72680 -0.50 0.1 0 0 0
+1 1 1 3 420.4792  13.87607  44.65326 -0.50 0.1 0 0 0
+1 1 1 3 432.8333  12.39425  45.21003 -0.50 0.1 0 0 0
+
+!
+!  GLOSSARY:
+!  =========
+!
+!  This input file provides the initial locations of the float trajectories
+!  to compute.
+!
+!------------------------------------------------------------------------------
+! Control Switches.
+!------------------------------------------------------------------------------
+!
+! Lfloats   Switch to control the computation of floats trajectories within 
+!             nested and/or multiple connected grids. Ngrids values are
+!             expected. By default this switch is set to TRUE in "mod_scalars"
+!             for all grids when the CPP option FLOATS is activated. The
+!             USER can control which grid to process by turning on/off this
+!             switch.
+!
+! FRREC     Flag to indicate re-start from a previous solution.  Use
+!             FRREC=0 for new solutions. In a re-start solution, FRREC
+!             is the time index in the floats NetCDF file assigned for
+!             initialization.  If FRREC is negative (say FRREC=-1), the
+!             floats will re-start from the most recent time record.
+!             That is, the initialization record is assigned internally.
+!
+!------------------------------------------------------------------------------
+! Number of floats.
+!------------------------------------------------------------------------------
+!
+!  NFLOATS   Number of floats to release in each nested grid.  Provide
+!              the exact number of floats.  These values are used to
+!              dynamically allocate the arrays in FLOATS array structure.
+!
+!------------------------------------------------------------------------------
+! Initial float location KEYWORDS.  The model variable name is not used as
+! keyword in some parameters.  However, it namce is provided in brackets.
+!------------------------------------------------------------------------------
+!
+!  G         Nested grid number [ng].
+!
+!  C         Initial horizontal location coordinate type [Fcoor]:
+!
+!              Fcoor = 0,  rho grid units
+!                             0.5 =< Fx0 =< Lm(ng)+0.5,
+!                             0.5 =< Fy0 =< Mm(ng)+0.5
+!
+!              Fcoor = 1,  Fx0 is longitude (west values are negative).
+!                          Fy0 is latitude (south values are negative).
+!
+!  T         Float trajectory type [Ftype]:
+!
+!              Ftype = 0,  neutral density 3D Lagrangian floats.
+!
+!              Ftype = 1,  isobaric (constant depth) floats.
+!
+!              Ftype = 2,  isobaric (constant elevation below free surface)
+!                          floats.
+!
+!  N         Number of floats [Fcount] to be released at the (Fx0,Fy0,Fz0)
+!              location.  It must be equal or greater than one. If Fcount
+!              is greater than one, a cluster distribution of floats
+!              centered at (Fx0,Fy0,Fz0) is activated.
+!
+!              NOTE:  The total number of floats trajectories to compute
+!              ====   must add to NFLOATS. 
+!
+!  Ft0       Time (days) of float release after model initialization (real).
+!
+!  Fx0       Initial float x-location (real; grid units or longitude).
+!
+!  Fy0       Initial float y-location (real; grid units or latitude).
+!
+!  Fz0       Initial float z-location (real; vertical level or depth).
+!              If Fz0 is less than or equal to zero, Fz0 is the initial
+!              depth in meters.  Otherwise, if Fz0 is positive and
+!
+!                             0 < Fz0 =< N(ng),
+!
+!              Fz0 is the initial position relative to the W grid
+!              (0 = bottom; N = surface).
+!
+!              WARNING: If the depth in meters at particular horizontal
+!                       is not bounded, the floats are released at the
+!                       surface.
+!
+!  Fdt       Float cluster release time interval (real; days), only used
+!              if Fcount > 1:
+!
+!              Fdt = 0,  Fcount floats will be deployed simultaneously
+!                        with a distribution centered at (Fx0,Fy0,Fz0)
+!                        and defined by (Fdx,Fdy,Fdz).
+!
+!              Fdt > 0,  a cluster of floats will be deployed from
+!                        (Fx0,Fy0,Fz0) at Fdt intervals until Fcount
+!                        floats are released.
+!
+!  Fdx       Cluster x-distribution parameter (real), only used if
+!              Fcount > 1 and Fdt = 0.
+!
+!  Fdy       Cluster y-distribution parameter (real), only used if
+!              Fcount > 1 and Fdt = 0.
+!
+!  Fdz       Cluster z-distribution parameter (real), only used if
+!              Fcount > 1 and Fdt = 0.
+!
+!            NOTE:  the parameters (Fdx,Fdy,Fdz) can be used to specify
+!            ====   any type of cluster distribution, for instance:
+!
+!                   * Lines of floats:
+!
+!                         Fdx > 0,  Fdy = 0,  Fdz = 0
+!                         Fdx = 0,  Fdy > 0,  Fdz = 0
+!                         Fdx = 0,  Fdy = 0,  Fdz > 0
+!
+!             The USER can use any of these parameters to design any
+!             cluster distribution in routine "init_floats.F".

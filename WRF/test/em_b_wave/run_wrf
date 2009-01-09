@@ -1,0 +1,9 @@
+#!/bin/bash
+#PBS -N wrf
+#PBS -l ncpus=1
+#PBS -l nodes=1:ppn=4
+
+cd /home/jwarner/WRF/WRFV2/test/em_b_wave
+
+##mpirun -n 1 -hostfile $PBS_NODEFILE ./ideal.exe 
+mpirun -n 1 -hostfile $PBS_NODEFILE ./wrf.exe 

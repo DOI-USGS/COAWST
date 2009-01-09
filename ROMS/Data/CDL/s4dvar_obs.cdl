@@ -1,0 +1,63 @@
+netcdf s4dvar_obs {
+
+dimensions:
+	survey = 1 ;
+	state_variable = 7 ;
+	datum = UNLIMITED ; // (0 currently)
+variables:
+	char spherical(survey) ;
+		spherical:long_name = "grid type logical switch" ;
+		spherical:option_T = "spherical" ;
+		spherical:option_F = "Cartesian" ;
+	int Nobs(survey) ;
+		Nobs:long_name = "number of observations with the same survey time" ;
+	double survey_time(survey) ;
+		survey_time:long_name = "survey time" ;
+		survey_time:units = "day" ;
+	double obs_variance(state_variable) ;
+		obs_variance:long_name = "global time and space observation variance" ;
+		obs_variance:units = "squared state variable units" ;
+	int obs_type(datum) ;
+		obs_type:long_name = "model state variable associated with observation" ;
+		obs_type:option_1 = "free-surface" ;
+		obs_type:option_2 = "vertically integrated u-momentum component" ;
+		obs_type:option_3 = "vertically integrated v-momentum component" ;
+		obs_type:option_4 = "u-momentum component" ;
+		obs_type:option_5 = "v-momentum component" ;
+		obs_type:option_6 = "potential temperature" ;
+		obs_type:option_7 = "salinity" ;
+	double obs_time(datum) ;
+		obs_time:long_name = "time of observation" ;
+		obs_time:units = "day" ;
+	double obs_depth(datum) ;
+		obs_depth:long_name = "depth of observation" ;
+		obs_depth:units = "meter" ;
+		obs_depth:negative = "downwards" ;
+	double obs_Xgrid(datum) ;
+		obs_Xgrid:long_name = "x-grid observation location" ;
+		obs_Xgrid:units = "nondimensional" ;
+		obs_Xgrid:left = "INT(obs_Xgrid(datum))" ;
+		obs_Xgrid:right = "INT(obs_Xgrid(datum))+1" ;
+	double obs_Ygrid(datum) ;
+		obs_Ygrid:long_name = "y-grid observation location" ;
+		obs_Ygrid:units = "nondimensional" ;
+		obs_Ygrid:top = "INT(obs_Ygrid(datum))+1" ;
+		obs_Ygrid:bottom = "INT(obs_Ygrid(datum))" ;
+	double obs_Zgrid(datum) ;
+		obs_Zgrid:long_name = "z-grid observation location" ;
+		obs_Zgrid:units = "nondimensional" ;
+		obs_Zgrid:up = "INT(obs_Zgrid(datum))+1" ;
+		obs_Zgrid:down = "INT(obs_Zgrid(datum))" ;
+	double obs_error(datum) ;
+		obs_error:long_name = "observation error covariance" ;
+		obs_error:units = "squared state variable units" ;
+	double obs_value(datum) ;
+		obs_value:long_name = "observation value" ;
+		obs_value:units = "state variable units" ;
+
+// global attributes:
+		:type = "ROMS Observation file" ;
+		:title = "ROMS/TOMS 3.0 - Eastern Australia Current 1/4 Application" ;
+		:state_units = "Free-sruface (m), 2D momentum (m/s), 3D momentum (m/s), potential temperature (Celsius), salinity (PSU)" ;
+		:history = "4DVAR observations, Wednesday - February 15, 2006 - 1:37:14.3733 AM" ;
+}

@@ -1,0 +1,91 @@
+netcdf frc_bulk {
+
+dimensions:
+	xi_rho = 111 ;
+	eta_rho = 241 ;
+	xi_u = 110 ;
+	eta_u = 241 ;
+	xi_v = 111 ;
+	eta_v = 240 ;
+	time = UNLIMITED ; // (0 currently)
+
+variables:
+	double wind_time(time) ;
+		wind_time:long_name = "surface wind time" ;
+		wind_time:units = "modified Julian day" ;
+		wind_time:field = "wind_time, scalar, series" ;
+	double pair_time(time) ;
+		pair_time:long_name = "surface air pressure time" ;
+		pair_time:units = "modified Julian day" ;
+		pair_time:field = "pair_time, scalar, series" ;
+	double tair_time(time) ;
+		tair_time:long_name = "surface air temperature time" ;
+		tair_time:units = "modified Julian day" ;
+		tair_time:field = "tair_time, scalar, series" ;
+	double qair_time(time) ;
+		qair_time:long_name = "surface relative humidity time" ;
+		qair_time:units = "modified Julian day" ;
+		qair_time:field = "qair_time, scalar, series" ;
+	double rain_time(time) ;
+		rain_time:long_name = "rain fall rate time" ;
+		rain_time:units = "modified Julian day" ;
+		rain_time:field = "rain_time, scalar, series" ;
+	double srf_time(time) ;
+		srf_time:long_name = "solar shortwave radiation time" ;
+		srf_time:units = "modified Julian day" ;
+		srf_time:field = "srf_time, scalar, series" ;
+	double lrf_time(time) ;
+		lrf_time:long_name = "net longwave radiation time" ;
+		lrf_time:units = "modified Julian day" ;
+		lrf_time:field = "lrf_time, scalar, series" ;
+	float Uwind(time, eta_rho, xi_rho) ;
+		Uwind:long_name = "surface u-wind component" ;
+		Uwind:units = "meter second-1" ;
+		Uwind:field = "u-wind, scalar, series" ;
+		Uwind:time = "wind_time" ;
+	float Vwind(time, eta_rho, xi_rho) ;
+		Vwind:long_name = "surface v-wind component" ;
+		Vwind:units = "meter second-1" ;
+		Vwind:field = "v-wind, scalar, series" ;
+		Vwind:time = "wind_time" ;
+	float Pair(time, eta_rho, xi_rho) ;
+		Pair:long_name = "surface air pressure" ;
+		Pair:units = "milibar" ;
+		Pair:field = "Pair, scalar, series" ;
+		Pair:time = "pair_time" ;
+	float Tair(time, eta_rho, xi_rho) ;
+		Tair:long_name = "surface air temperature" ;
+		Tair:units = "Celsius" ;
+		Tair:field = "Tair, scalar, series" ;
+		Tair:time = "tair_time" ;
+	float Qair(time, eta_rho, xi_rho) ;
+		Qair:long_name = "surface air relative humidity" ;
+		Qair:units = "percentage" ;
+		Qair:field = "Qair, scalar, series" ;
+		Qair:time = "qair_time" ;
+	float rain(time, eta_rho, xi_rho) ;
+		rain:long_name = "rain fall rate" ;
+		rain:units = "kilogram meter-2 second-1" ;
+		rain:field = "rain, scalar, series" ;
+		rain:time = "rain_time" ;
+	float swrad(time, eta_rho, xi_rho) ;
+		swrad:long_name = "solar shortwave radiation" ;
+		swrad:units = "Watts meter-2" ;
+		swrad:positive = "downward flux, heating" ;
+		swrad:negative = "upward flux, cooling" ;
+		swrad:field = "shortwave radiation, scalar, series" ;
+		swrad:time = "srf_time" ;
+	float lwrad(time, eta_rho, xi_rho) ;
+		lwrad:long_name = "net longwave radiation flux" ;
+		lwrad:units = "Watts meter-2" ;
+		lwrad:positive = "downward flux, heating" ;
+		lwrad:negative = "upward flux, cooling" ;
+		lwrad:field = "longwave radiation, scalar, series" ;
+		lwrad:time = "lrf_time" ;
+
+// global attributes:
+		:type = "FORCING file" ;
+                :title = "NJB COAMPS Atmospheric Fields" ;
+		:history = "FORCING file, 1.0, Thursday - July 12, 2001 - 10:55:42.8034 AM" ;
+
+}

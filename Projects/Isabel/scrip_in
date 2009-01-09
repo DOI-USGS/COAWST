@@ -1,0 +1,16 @@
+&remap_inputs
+    num_maps = 2
+    grid1_file = 'Isabel_scrip_roms_grid.nc'
+    grid2_file = 'Isabel_scrip_wrf_grid.nc'
+    interp_file1 = 'Isabel_roms2wrf_weights.nc'
+    interp_file2 = 'Isabel_wrf2roms_weights.nc'
+    map1_name = 'ROMS to WRF Mapping'
+    map2_name = 'WRF to ROMS Mapping'
+    map_method = 'bilinear'
+    normalize_opt = 'frac'
+    output_opt = 'scrip'
+    restrict_type = 'latitude'
+    num_srch_bins = 90 
+    luse_grid1_area = .false.
+    luse_grid2_area = .false.
+/

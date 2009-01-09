@@ -1,0 +1,3039 @@
+#include "cppdefs.h"
+      MODULE distribute_mod
+#ifdef DISTRIBUTE
+
+# define BOUNDARY_ALLREDUCE /* use mpi_allreduce in mp_boundary */
+# undef  COLLECT_ALLGATHER  /* use mpi_allgather in mp_collect  */
+# define COLLECT_ALLREDUCE  /* use mpi_allreduce in mp_collect  */
+# define REDUCE_ALLGATHER   /* use mpi_allgather in mp_reduce   */
+# undef  REDUCE_ALLREDUCE   /* use mpi_allreduce in mp_reduce   */
+!
+!svn $Id: distribute.F 733 2008-09-07 01:56:45Z jcwarner $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!    Licensed under a MIT/X style license                              !
+!    See License_ROMS.txt                                              !
+!=======================================================================
+!                                                                      !
+!  These routines are used for distrubuted-memory communications       !
+!  between parallel nodes:                                             !
+!                                                                      !
+!  mp_barrier        barrier sychronization                            !
+!  mp_bcastf         broadcast floating point variables                !
+!  mp_bcasti         broadcast integer variables                       !
+!  mp_bcastl         broadcast local variable                          !
+!  mp_bcasts         broadcast character variables                     !
+!  mp_boundary       exchange boundary data between tiles              !
+!  mp_collect        collect 1D vector data from tiles                 !
+!  mp_dump           writes 2D and 3D tiles arrays for debugging       !
+!  mp_gather         collect I,J tiled 2D and 3D for output purposes   !
+!  mp_gather_state   collect state vector for unpacking of variables   !
+!  mp_ncread         read in state vector/matrix from NetCDF file      ! 
+!  mp_ncwrite        write out state vector/matrix into NetCDF file    !
+!  mp_reduce         global reduction operations                       !
+!  mp_scatter        scatter input data to 2D and 3D I,J tiled arrays  !
+!  mp_scatter_state  scatter global data for packing of state vector   !
+!                                                                      !
+!  Notice that the tile halo exchange can be found in "mp_exchange.F"  !
+!                                                                      !
+!=======================================================================
+!
+      implicit none
+
+      INTERFACE mp_bcastf
+        MODULE PROCEDURE mp_bcastf_s
+        MODULE PROCEDURE mp_bcastf_v
+        MODULE PROCEDURE mp_bcastf_m
+      END INTERFACE mp_bcastf
+
+      INTERFACE mp_bcastl
+        MODULE PROCEDURE mp_bcastl_s
+        MODULE PROCEDURE mp_bcastl_v
+      END INTERFACE mp_bcastl
+
+      INTERFACE mp_bcasti
+        MODULE PROCEDURE mp_bcasti_s
+        MODULE PROCEDURE mp_bcasti_v
+        MODULE PROCEDURE mp_bcasti_m
+      END INTERFACE mp_bcasti
+
+      INTERFACE mp_reduce
+        MODULE PROCEDURE mp_reduce_s
+        MODULE PROCEDURE mp_reduce_v
+      END INTERFACE mp_reduce
+
+      CONTAINS
+
+      SUBROUTINE mp_barrier (ng)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine blocks the caller until all group members have called  !
+!  it.                                                                 !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng
+!
+!  Local variable declarations.
+!
+      integer :: MyError
+!
+!-----------------------------------------------------------------------
+!  Synchronize all distribute-memory nodes in the group.
+!-----------------------------------------------------------------------
+!
+# ifdef MPI
+      CALL mpi_barrier (OCN_COMM_WORLD, MyError)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_barrier
+
+      SUBROUTINE mp_bcastf_s (ng, model, A, Asize)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine broadcasts a floating-point scalar variable to all     !
+!  processors in the group. It is called by all the members in the     !
+!  group.                                                              !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     A          Variable to broadcast.                                !
+!     Asize      Number of entries to broadcast.                       !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Broadcasted variable.                                 !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model
+      integer, intent(in), optional :: Asize
+
+      real(r8), intent(inout) :: A
+!
+!  Local variable declarations
+!
+      integer :: Lstr, MyError, Serror
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 42)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Broadcast requested variable.
+!-----------------------------------------------------------------------
+!
+# ifdef MPI
+      CALL mpi_bcast (A, 1, MP_FLOAT, MyMaster, OCN_COMM_WORLD, MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+ 10     FORMAT (/,' MP_BCASTF_S - error during ',a,' call, Node = ',    &
+     &          i3.3,' Error = ',i3,/,13x,a)
+        exit_flag=2
+        RETURN
+      END IF
+# endif
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 42)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_bcastf_s
+
+      SUBROUTINE mp_bcastf_v (ng, model, A, Asize)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine broadcasts a floating-point vector variable to all     !
+!  processors in the group. It is called by all the members in the     !
+!  group.                                                              !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     A          Variable to broadcast.                                !
+!     Asize      Number of entries to broadcast.                       !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Broadcasted variable.                                 !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, Asize
+
+      real(r8), intent(inout) :: A(Asize)
+!
+!  Local variable declarations
+!
+      integer :: Lstr, MyError, Serror
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 42)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Broadcast requested variable.
+!-----------------------------------------------------------------------
+!
+# ifdef MPI
+      CALL mpi_bcast (A, Asize, MP_FLOAT, MyMaster, OCN_COMM_WORLD,     &
+     &                MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+ 10     FORMAT (/,' MP_BCASTF_V - error during ',a,' call, Node = ',    &
+     &          i3.3,' Error = ',i3,/,13x,a)
+        exit_flag=2
+        RETURN
+      END IF
+# endif
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 42)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_bcastf_v
+
+      SUBROUTINE mp_bcastf_m (ng, model, A, Isize, Jsize)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine broadcasts a floating-point 2D-array variable to       !
+!  all processors in the group.  It is called by all the members       !
+!  in the group.                                                       !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     A          Variable to broadcast.                                !
+!     Isize      Number of columns to broadcast.                       !
+!     Jsize      Number of rows to broadcast.                          !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Broadcasted variable.                                 !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, Isize, Jsize
+
+      real(r8), intent(inout) :: A(Isize,Jsize)
+!
+!  Local variable declarations
+!
+      integer :: Asize, Lstr, MyError, Serror
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 42)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Broadcast requested variable.
+!-----------------------------------------------------------------------
+!
+# ifdef MPI
+      Asize=Isize*Jsize
+      CALL mpi_bcast (A, Asize, MP_FLOAT, MyMaster, OCN_COMM_WORLD,     &
+     &                MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+ 10     FORMAT (/,' MP_BCASTF_M - error during ',a,' call, Node = ',    &
+     &          i3.3,' Error = ',i3,/,13x,a)
+        exit_flag=2
+        RETURN
+      END IF
+# endif
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 42)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_bcastf_m
+
+      SUBROUTINE mp_bcasti_s (ng, model, A, Asize)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine broadcasts an integer scalar variable to all processors!
+!  the in group. It is called by all the members in the group.         !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     A          Variable to broadcast.                                !
+!     Asize      Number of entries to broadcast.                       !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Broadcasted variable.                                 !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model
+      integer, intent(in), optional :: Asize
+
+      integer, intent(inout) :: A
+!
+!  Local variable declarations
+!
+      integer :: Lstr, MyError, Serror
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+      
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 42)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Broadcast requested variable.
+!-----------------------------------------------------------------------
+!
+# ifdef MPI
+      CALL mpi_bcast (A, 1, MPI_INTEGER, MyMaster, OCN_COMM_WORLD,      &
+     &                MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+ 10     FORMAT (/,' MP_BCASTI_S - error during ',a,' call, Node = ',    &
+     &          i3.3,' Error = ',i3,/,13x,a)
+        RETURN
+      END IF
+# endif
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 42)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_bcasti_s
+
+      SUBROUTINE mp_bcasti_v (ng, model, A, Asize)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine broadcasts an integer vector variable to all processors! 
+!  in the group. It is called by all the members in the group.         !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     A          Variable to broadcast.                                !
+!     Asize      Number of entries to broadcast.                       !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Broadcasted variable.                                 !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, Asize
+
+      integer, intent(inout) :: A(Asize)
+!
+!  Local variable declarations
+!
+      integer :: Lstr, MyError, Serror
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+      
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 42)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Broadcast requested variable.
+!-----------------------------------------------------------------------
+!
+# ifdef MPI
+      CALL mpi_bcast (A, Asize, MPI_INTEGER, MyMaster, OCN_COMM_WORLD,  &
+     &                MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+ 10     FORMAT (/,' MP_BCASTI_V - error during ',a,' call, Node = ',    &
+     &          i3.3,' Error = ',i3,/,13x,a)
+        exit_flag=2
+        RETURN
+      END IF
+# endif
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 42)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_bcasti_v
+
+      SUBROUTINE mp_bcasti_m (ng, model, A, Isize, Jsize)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine broadcasts an integer 2D-array variable to all         !
+!  processors in the group. It is called by all the members in         !
+!  the group.                                                          !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     A          Variable to broadcast.                                !
+!     Isize      Number of columns to broadcast.                       !
+!     Jsize      Number of rows to broadcast.                          !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Broadcasted variable.                                 !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, Isize, Jsize
+
+      integer, intent(inout) :: A(Isize,Jsize)
+!
+!  Local variable declarations
+!
+      integer :: Asize, Lstr, MyError, Serror
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 42)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Broadcast requested variable.
+!-----------------------------------------------------------------------
+!
+# ifdef MPI
+      Asize=Isize*Jsize
+      CALL mpi_bcast (A, Asize, MP_FLOAT, MyMaster, OCN_COMM_WORLD,     &
+     &                MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+ 10     FORMAT (/,' MP_BCASTI_M - error during ',a,' call, Node = ',    &
+     &          i3.3,' Error = ',i3,/,13x,a)
+        exit_flag=2
+        RETURN
+      END IF
+# endif
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 42)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_bcasti_m
+
+      SUBROUTINE mp_bcastl_s (ng, model, A, Asize)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine broadcasts a logical scalar variable to all processors !
+!  in the group. It is called by all the members in the group.         !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     A          Variable to broadcast.                                !
+!     Asize      Number of entries to broadcast.                       !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Broadcasted variable.                                 !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model
+      integer, intent(in), optional :: Asize
+
+      logical, intent(inout) :: A
+!
+!  Local variable declarations
+!
+      integer :: Lstr, MyError, Serror
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 42)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Broadcast requested variable.
+!-----------------------------------------------------------------------
+!
+# ifdef MPI
+      CALL mpi_bcast (A, 1, MPI_LOGICAL, MyMaster, OCN_COMM_WORLD,      &
+     &                MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+ 10     FORMAT (/,' MP_BCASTL_S - error during ',a,' call, Node = ',    &
+     &          i3.3,' Error = ',i3,/,13x,a)
+        exit_flag=2
+        RETURN
+      END IF
+# endif
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 42)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_bcastl_s
+
+      SUBROUTINE mp_bcastl_v (ng, model, A, Asize)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine broadcasts a logical vector variable to all processors !
+!  in the group. It is called by all the members in the group.         !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     A          Variable to broadcast.                                !
+!     Asize      Number of entries to broadcast.                       !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Broadcasted variable.                                 !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, Asize
+
+      logical, intent(inout) :: A(Asize)
+!
+!  Local variable declarations
+!
+      integer :: Lstr, MyError, Serror
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 42)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Broadcast requested variable.
+!-----------------------------------------------------------------------
+!
+# ifdef MPI
+      CALL mpi_bcast (A, Asize, MPI_LOGICAL, MyMaster, OCN_COMM_WORLD,  &
+     &                MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+ 10     FORMAT (/,' MP_BCASTL_V - error during ',a,' call, Node = ',    &
+     &          i3.3,' Error = ',i3,/,13x,a)
+        exit_flag=2
+        RETURN
+      END IF
+# endif
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 42)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_bcastl_v
+
+      SUBROUTINE mp_bcasts (ng, model, A, Asize)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine broadcasts a string variable to all processors in the  !
+!  group. It is called by all the members in the group.                !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     A          Variable to broadcast.                                !
+!     Asize      Number of entries to broadcast.                       !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Broadcasted variable.                                 !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, Asize
+
+      character (len=*), intent(inout) :: A
+!
+!  Local variable declarations
+!
+      integer :: Lstr, MyError, Serror
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 42)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Broadcast requested variable.
+!-----------------------------------------------------------------------
+!
+# ifdef MPI
+      CALL mpi_bcast (A, Asize, MPI_BYTE, MyMaster, OCN_COMM_WORLD,     &
+     &                MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+ 10     FORMAT (/,' MP_BCASTS - error during ',a,' call, Node = ',i3.3, &
+     &          ' Error = ',i3,/,13x,a)
+        exit_flag=2
+        RETURN
+      END IF
+# endif
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 42)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_bcasts
+
+      SUBROUTINE mp_boundary (ng, model, Imin, Imax,                    &
+     &                        LBi, UBi, LBk, UBk,                       &
+     &                        update, A)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine exchanges boundary arrays between tiles.               !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     Imin       Starting tile index.                                  !
+!     Imax       Ending   tile index.                                  !
+!     Jstr       Starting tile index in the J-direction.               !
+!     Jend       Ending   tile index in the J-direction.               !
+!     LBi        I-dimension Lower bound.                              !
+!     UBi        I-dimension Upper bound.                              !
+!     LBk        K-dimension Lower bound, if any. Otherwise, a value   !
+!                  of one is expected.                                 !
+!     LBk        K-dimension Upper bound, if any. Otherwise, a value   !
+!                  of one is expected.                                 !
+!     UBk        K-dimension Upper bound.                              !
+!     update     Switch activated by the node that updated the         !
+!                  boundary data.                                      !
+!     A          Boundary array (1D or 2D) to process.                 !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Updated boundary array (1D or 2D).                    !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits 
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      logical, intent(in) :: update
+
+      integer, intent(in) :: ng, model, Imin, Imax
+      integer, intent(in) :: LBi, UBi, LBk, UBk
+
+      real(r8), intent(inout) :: A(LBi:UBi,LBk:UBk)
+!
+!  Local variable declarations.
+!
+      integer :: Ilen, Ioff, Lstr, MyError, Nnodes, Npts, Serror
+      integer :: i, ik, k, kc, rank
+
+      real(r8), dimension((UBi-LBi+1)*(UBk-LBk+1)) :: Asend
+
+# ifdef BOUNDARY_ALLREDUCE
+      real(r8), dimension((UBi-LBi+1)*(UBk-LBk+1)) :: Arecv
+# else
+      real(r8), dimension((UBi-LBi+1)*(UBk-LBk+1),                      &
+     &                    0:NtileI(ng)*NtileJ(ng)-1) :: Arecv
+# endif
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 46)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Pack boundary data.  Zero-out boundary array except points updated
+!  by the appropriate node, so sum reduction can be perfomed during
+!  unpacking.
+!-----------------------------------------------------------------------
+!
+!  Initialize buffer to the full range so unpacking is correct with
+!  summation.  This also allows even exchange of segments with
+!  communication routine "mpi_allgather".
+!
+      Ilen=UBi-LBi+1
+      Ioff=1-LBi
+      Npts=Ilen*(UBk-LBk+1)
+      DO i=1,Npts
+        Asend(i)=0.0_r8
+      END DO
+!
+!  If a boundary tile, load boundary data.
+!
+      IF (update) THEN
+        DO k=LBk,UBk
+          kc=(k-LBk)*Ilen
+          DO i=Imin,Imax
+            ik=i+Ioff+kc
+            Asend(ik)=A(i,k)
+          END DO
+        END DO
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Collect data from all nodes.
+!-----------------------------------------------------------------------
+!
+# ifdef MPI
+#  ifdef BOUNDARY_ALLREDUCE
+      CALL mpi_allreduce (Asend, Arecv, Npts, MP_FLOAT, MPI_SUM,        &
+     &                    OCN_COMM_WORLD, MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_ALLREDUCE', MyRank, MyError,             &
+     &                    string(1:Lstr)
+ 10     FORMAT (/,' MP_BOUNDARY - error during ',a,' call, Node = ',    &
+     &          i3.3,' Error = ',i3,/,15x,a)
+        exit_flag=2
+        RETURN
+      END IF
+#  else
+      CALL mpi_allgather (Asend, Npts, MP_FLOAT, Arecv, Npts, MP_FLOAT, &
+     &                    OCN_COMM_WORLD, MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_ALLGATHER', MyRank, MyError,             &
+     &                    string(1:Lstr)
+ 10     FORMAT (/,' MP_BOUNDARY - error during ',a,' call, Node = ',    &
+     &          i3.3,' Error = ',i3,/,15x,a)
+        exit_flag=2
+        RETURN
+      END IF
+#  endif
+# endif
+!
+!-----------------------------------------------------------------------
+!  Unpack data: reduction sum.
+!-----------------------------------------------------------------------
+!
+# ifdef BOUNDARY_ALLREDUCE
+      ik=0
+      DO k=LBk,UBk
+        DO i=LBi,UBi
+          ik=ik+1
+          A(i,k)=Arecv(ik)
+        END DO
+      END DO
+# else 
+      Nnodes=NtileI(ng)*NtileJ(ng)-1
+      ik=0
+      DO k=LBk,UBk
+        DO i=LBi,UBi
+          A(i,k)=0.0_r8
+          ik=ik+1
+          DO rank=0,Nnodes
+            A(i,k)=A(i,k)+Arecv(ik,rank)
+          END DO
+        END DO
+      END DO
+# endif
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 46)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_boundary
+
+      SUBROUTINE mp_collect (ng, model, Npts, Aspv, A)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine collects requested buffer from all members in the      !
+!  group. Then, it packs distributed data by removing the special      !
+!  values. This routine is used when extracting station data from      !
+!  tiled arrays.                                                       !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     Npts       Number of extracted data points.                      !
+!     Aspv       Special value indicating no data.  This implies that  !
+!                  desired data is tile unbouded.                      !
+!     A          Extracted data.                                       !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Collected data.                                       !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits 
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, Npts
+
+      real(r8), intent(in) :: Aspv
+
+      real(r8), intent(inout) :: A(Npts)
+!
+!  Local variable declarations.
+!
+      integer :: Lstr, MyError, Nnodes, Serror
+      integer :: i, rank, request
+
+      integer, dimension(MPI_STATUS_SIZE) :: status
+
+# if defined COLLECT_ALLGATHER
+      real(r8), dimension(Npts,0:NtileI(ng)*NtileJ(ng)-1) :: Arecv
+# elif defined COLLECT_ALLREDUCE
+      real(r8), dimension(Npts) :: Asend
+# else
+      real(r8), allocatable :: Arecv(:)
+# endif
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 47)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Collect data from all nodes.
+!-----------------------------------------------------------------------
+!
+# if defined COLLECT_ALLGATHER
+      CALL mpi_allgather (A, Npts, MP_FLOAT, Arecv, Npts, MP_FLOAT,     &
+     &                    OCN_COMM_WORLD, MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_ALLGATHER', MyRank, MyError,             &
+     &                    string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+!
+!  Pack data according to special values: sum or ignore.
+!
+      Nnodes=NtileI(ng)*NtileJ(ng)-1
+      IF (Aspv.eq.0.0_r8) THEN
+        DO i=1,Npts
+          A(i)=0.0_r8
+          DO rank=0,Nnodes
+            A(i)=A(i)+Arecv(i,rank)
+          END DO
+        END DO
+      ELSE
+        DO i=1,Npts
+          DO rank=0,Nnodes
+            IF (Arecv(i,rank).ne.Aspv) THEN
+              A(i)=Arecv(i,rank)
+            END IF
+          END DO
+        END DO
+      END IF
+# elif defined COLLECT_ALLREDUCE
+!
+!  Copy data to send.
+!
+      DO i=1,Npts
+        Asend(i)=A(i)
+      END DO
+!
+!  Collect data from all nodes as a reduced sum.
+!
+      CALL mpi_allreduce (Asend, A, Npts, MP_FLOAT, MPI_SUM,            &
+     &                    OCN_COMM_WORLD, MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_ALLREDUCE', MyRank, MyError,             &
+     &                    string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+# else
+      IF (MyRank.eq.MyMaster) THEN
+!
+!  If master node, allocate and receive buffer.
+!
+        IF (.not.allocated(Arecv)) THEN
+          allocate (Arecv(Npts))
+        END IF
+!
+!  If master node, loop over other nodes to receive and accumulate the
+!  data.
+!
+        DO rank=1,NtileI(ng)*NtileJ(ng)-1
+          CALL mpi_irecv (Arecv, Npts, MP_FLOAT, rank, rank+5,          &
+     &                    OCN_COMM_WORLD, request, MyError)
+          CALL mpi_wait (request, status, MyError)
+          IF (MyError.ne.MPI_SUCCESS) THEN
+            CALL mpi_error_string (MyError, string, Lstr, Serror)
+            Lstr=LEN_TRIM(string)
+            WRITE (stdout,10) 'MPI_IRECV', rank, MyError, string(1:Lstr)
+            exit_flag=2
+            RETURN
+          END IF
+          DO i=1,Npts
+            A(i)=A(i)+Arecv(i)
+          END DO
+        END DO
+        deallocate (Arecv)
+!
+!  Otherwise, send data to master node.
+!
+      ELSE
+        CALL mpi_isend (A, Npts, MP_FLOAT, MyMaster, MyRank+5,          &
+     &                  OCN_COMM_WORLD, request, MyError)
+        CALL mpi_wait (request, status, MyError)
+        IF (MyError.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (MyError, string, Lstr, Serror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,10) 'MPI_ISEND', MyRank, MyError, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+      END IF
+!
+!  Broadcast accumulated (full) data to all nodes.
+!
+      CALL mpi_bcast (A, Npts, MP_FLOAT, MyMaster, OCN_COMM_WORLD,      &
+     &                MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+# endif
+ 10   FORMAT (/,' MP_COLLECT - error during ',a,' call, Node = ',       &
+     &        i3.3,' Error = ',i3,/,14x,a)
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 47)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_collect
+
+      SUBROUTINE mp_gather (ng, model, LBi, UBi, LBj, UBj, LBk, UBk,    &
+     &                      gtype, Ascl,                                &
+# ifdef MASKING
+     &                      Amask,                                      &
+# endif
+     &                      A, Npts, Aout)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine collects requested real tile array (2D or 3D) from     !
+!  each spawned MPI node and stores it into one dimensional global     !
+!  array. This routine is used by the "Master Node" to collect and     !
+!  pack output data.                                                   !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     LBi        I-dimension Lower bound.                              !
+!     UBi        I-dimension Upper bound.                              !
+!     LBj        J-dimension Lower bound.                              !
+!     UBj        J-dimension Upper bound.                              !
+!     LBk        K-dimension Lower bound, if any. Otherwise, a value   !
+!                  of one is expected.                                 !
+!     LBk        K-dimension Upper bound, if any. Otherwise, a value   !
+!                  of one is expected.                                 !
+!     UBk        K-dimension Upper bound.                              !
+!     gtype      C-grid type. If negative and Land-Sea is available,   !
+!                  only water-points processed.                        !
+!     Ascl       Factor to scale field before writing.                 !
+!     Amask      Land/Sea mask, if any.                                !
+!     A          Tile array (2D or 3D) to process.                     !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     Npts       Number of points processed in Aout.                   !
+!     Aout       Collected data from each node packed into 1D array    !
+!                  in column-major order. That is, in the same way     !
+!                  that Fortran multi-dimensional arrays are stored    !
+!                  in memory.                                          !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits 
+      USE mod_ncparam
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, gtype
+      integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk
+      integer, intent(out) :: Npts
+
+      real(r8), intent(in) :: Ascl
+
+# ifdef MASKING
+      real(r8), intent(in) :: Amask(LBi:UBi,LBj:UBj)
+# endif
+      real(r8), intent(in)  :: A(LBi:UBi,LBj:UBj,LBk:UBk)
+# ifdef REFINED_GRID
+      real(r8), intent(out) :: Aout(Npts)
+# else
+      real(r8), intent(out) :: Aout((Lm(ng)+2)*(Mm(ng)+2)*(UBk-LBk+1))
+# endif
+!
+!  Local variable declarations.
+!
+      integer :: Itile, Jtile, Nghost
+      integer :: Io, Ie, Jo, Je, Ioff, Joff, Koff
+      integer :: Ilen, Jlen, Klen, IJlen
+      integer :: Lstr, MyError, MyType, Serror, Srequest
+      integer :: i, ic, j, jc, k, kc, np, rank
+
+      integer, dimension(0:NtileI(ng)*NtileJ(ng)-1) :: Imin, Imax
+      integer, dimension(0:NtileI(ng)*NtileJ(ng)-1) :: Jmin, Jmax
+      integer, dimension(0:NtileI(ng)*NtileJ(ng)-1) :: MySize
+      integer, dimension(0:NtileI(ng)*NtileJ(ng)-1) :: Rrequest
+
+      integer, dimension(MPI_STATUS_SIZE) :: Rstatus
+      integer, dimension(MPI_STATUS_SIZE) :: Sstatus
+
+      real(r8), dimension(TileSize(ng)*(UBk-LBk+1)) :: Asend
+
+      real(r8), dimension(TileSize(ng)*(UBk-LBk+1),                     &
+     &                     NtileI(ng)*NtileJ(ng)-1) :: Arecv
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 44)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Set horizontal starting and ending indices for parallel domain
+!  partitions in the XI- and ETA-directions.
+!-----------------------------------------------------------------------
+!
+!  Set first and last grid point according to staggered C-grid
+!  classification.
+!
+#ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+        Io=0
+        Ie=Lm(ng)+1
+        Jo=0
+        Je=Mm(ng)+1
+        MyType=ABS(gtype)
+        IF ((MyType.eq.p2dvar).or.(MyType.eq.u2dvar).or.                  &
+     &      (MyType.eq.p3dvar).or.(MyType.eq.u3dvar)) Io=1
+        IF ((MyType.eq.p2dvar).or.(MyType.eq.v2dvar).or.                  &
+     &      (MyType.eq.p3dvar).or.(MyType.eq.v3dvar)) Jo=1
+        IF (Io.eq.0) THEN
+          Ioff=1
+        ELSE
+          Ioff=0
+        END IF
+        IF (Jo.eq.0) THEN
+          Joff=0
+        ELSE
+          Joff=1
+        END IF
+      ELSE
+        Io=LOWER_BOUND_I
+        Ie=Lm(ng)+GHOST_POINTS
+        Jo=LOWER_BOUND_J
+        Je=Mm(ng)+GHOST_POINTS
+        MyType=ABS(gtype)
+        IF ((MyType.eq.p2dvar).or.(MyType.eq.u2dvar).or.                  &
+     &      (MyType.eq.p3dvar).or.(MyType.eq.u3dvar)) Io=LOWER_BOUND_I+1
+        IF ((MyType.eq.p2dvar).or.(MyType.eq.v2dvar).or.                  &
+     &      (MyType.eq.p3dvar).or.(MyType.eq.v3dvar)) Jo=LOWER_BOUND_J+1
+        IF (Io.eq.LOWER_BOUND_I) THEN
+          Ioff=4
+        ELSE
+          Ioff=3
+        END IF
+        IF (Jo.eq.LOWER_BOUND_J) THEN
+          Joff=-3
+        ELSE
+          Joff=-2
+        END IF
+      END IF
+#else
+      Io=0
+      Ie=Lm(ng)+1
+      Jo=0
+      Je=Mm(ng)+1
+      MyType=ABS(gtype)
+      IF ((MyType.eq.p2dvar).or.(MyType.eq.u2dvar).or.                  &
+     &    (MyType.eq.p3dvar).or.(MyType.eq.u3dvar)) Io=1
+      IF ((MyType.eq.p2dvar).or.(MyType.eq.v2dvar).or.                  &
+     &    (MyType.eq.p3dvar).or.(MyType.eq.v3dvar)) Jo=1
+      IF (Io.eq.0) THEN
+        Ioff=1
+      ELSE
+        Ioff=0
+      END IF
+      IF (Jo.eq.0) THEN
+        Joff=0
+      ELSE
+        Joff=1
+      END IF
+#endif
+      IF (LBk.eq.0) THEN
+        Koff=0
+      ELSE
+        Koff=1
+      END IF
+      Ilen=Ie-Io+1
+      Jlen=Je-Jo+1
+      Klen=UBk-LBk+1
+      IJlen=Ilen*Jlen
+      Npts=IJlen*Klen
+!
+!  Set physical, non-overlaping (no ghost-points) ranges according to
+!  tile rank. Compute size of distributed buffers.
+!
+      Nghost=0
+      DO rank=0,NtileI(ng)*NtileJ(ng)-1
+        CALL get_bounds (ng, rank, gtype, Nghost, Itile, Jtile,         &
+     &                   Imin(rank), Imax(rank),                        &
+     &                   Jmin(rank), Jmax(rank))
+        MySize(rank)=(Imax(rank)-Imin(rank)+1)*                         &
+     &               (Jmax(rank)-Jmin(rank)+1)*(UBk-LBk+1)
+      END DO
+!
+!-----------------------------------------------------------------------
+!  Collect requested array data. 
+!-----------------------------------------------------------------------
+!
+!  Pack and scale input data.
+!
+      np=0
+      DO k=LBk,UBk
+        DO j=Jmin(MyRank),Jmax(MyRank)
+          DO i=Imin(MyRank),Imax(MyRank)
+            np=np+1
+            Asend(np)=A(i,j,k)*Ascl
+          END DO
+        END DO
+      END DO
+# ifdef MASKING
+!
+!  If processing water-points only, flag land-points.
+!
+      IF (gtype.lt.0) THEN
+        np=0
+        DO k=LBk,UBk
+          DO j=Jmin(MyRank),Jmax(MyRank)
+            DO i=Imin(MyRank),Imax(MyRank)
+              np=np+1
+              IF (Amask(i,j).eq.0.0_r8) THEN
+                Asend(np)=spval
+              END IF
+            END DO
+          END DO
+        END DO
+      END IF
+# endif
+!
+!  If master processor, unpack the send buffer since there is not
+!  need to distribute.
+!
+      IF (MyRank.eq.MyMaster) THEN
+        np=0
+        DO k=LBk,UBk
+          kc=(k-Koff)*IJlen
+          DO j=Jmin(MyRank),Jmax(MyRank)
+            jc=(j-Joff)*Ilen+kc
+            DO i=Imin(MyRank),Imax(MyRank)
+              np=np+1
+              ic=i+Ioff+jc
+              Aout(ic)=Asend(np)
+            END DO
+          END DO
+        END DO
+      END IF
+!
+!  Send, receive, and unpack data.
+!
+      IF (MyRank.eq.MyMaster) THEN
+        DO rank=1,NtileI(ng)*NtileJ(ng)-1
+          CALL mpi_irecv (Arecv(1,rank), MySize(rank), MP_FLOAT, rank,  &
+     &                    rank+5, OCN_COMM_WORLD, Rrequest(rank),       &
+     &                    MyError)
+        END DO
+        DO rank=1,NtileI(ng)*NtileJ(ng)-1
+          CALL mpi_wait (Rrequest(rank), Rstatus, MyError)
+          IF (MyError.ne.MPI_SUCCESS) THEN
+            CALL mpi_error_string (MyError, string, Lstr, Serror)
+            Lstr=LEN_TRIM(string)
+            WRITE (stdout,10) 'MPI_IRECV', rank, MyError, string(1:Lstr)
+ 10         FORMAT (/,' MP_GATHER - error during ',a,' call, Node = ',  &
+     &              i3.3,' Error = ',i3,/,13x,a)
+            exit_flag=2
+            RETURN
+          END IF
+          np=0
+          DO k=LBk,UBk
+            kc=(k-Koff)*IJlen
+            DO j=Jmin(rank),Jmax(rank)
+              jc=(j-Joff)*Ilen+kc
+              DO i=Imin(rank),Imax(rank)
+                np=np+1
+                ic=i+Ioff+jc
+                Aout(ic)=Arecv(np,rank)
+              END DO
+            END DO
+          END DO
+        END DO
+      ELSE
+        CALL mpi_isend (Asend, MySize(MyRank), MP_FLOAT, MyMaster,      &
+     &                  MyRank+5, OCN_COMM_WORLD, Srequest, MyError)
+        CALL mpi_wait (Srequest, Sstatus, MyError)
+        IF (MyError.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (MyError, string, Lstr, Serror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,10) 'MPI_ISEND', MyRank, MyError, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+      END IF
+
+# ifdef MASKING
+!
+! If pocessing only water-points, remove land points and repack.
+!
+      IF ((MyRank.eq.MyMaster).and.(gtype.lt.0)) THEN
+        ic=0
+        np=IJlen*Klen
+        DO i=1,np
+          IF (Aout(i).lt.spval) THEN
+            ic=ic+1
+            Aout(ic)=Aout(i)
+          END IF
+        END DO
+        Npts=ic
+      END IF
+# endif
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 44)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_gather
+
+      SUBROUTINE mp_gather_state (ng, model, Nstr, Nend, Asize,         &
+     &                            A, Aout)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine gathers (threaded to global) state data to all nodes   !
+!  in the group. This  routine  is used to unpack the state data for   !
+!  the GST analysis propagators.                                       !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     Nstr       Threaded array lower bound.                           !
+!     Nend       Threaded array upper bound.                           !
+!     Asize      Size of the full state.                               !
+!     A          Threaded 1D array process.                            !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     Aout       Collected data from each node packed into 1D full     !
+!                  state array.                                        !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits 
+      USE mod_ncparam
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model
+      integer, intent(in) :: Nstr, Nend, Asize
+
+      real(r8), intent(in)  :: A(Nstr:Nend)
+      real(r8), intent(out) :: Aout(Asize)
+!
+!  Local variable declarations.
+!
+      integer :: LB, Lstr, MyError, Serror
+      integer :: i, np, rank, request
+
+      integer :: my_bounds(2)
+      integer, dimension(MPI_STATUS_SIZE) :: status
+      integer, dimension(2,0:NtileI(ng)*NtileJ(ng)-1) :: Abounds
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 44)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Collect data from all nodes.
+!-----------------------------------------------------------------------
+!
+!  Collect data lower and upper bound dimensions.
+!
+      my_bounds(1)=Nstr
+      my_bounds(2)=Nend
+      CALL mpi_allgather (my_bounds, 2, MPI_INTEGER, Abounds, 2,        &
+     &                    MPI_INTEGER, OCN_COMM_WORLD, MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_ALLGATHER', MyRank, MyError,             &
+     &                    string(1:Lstr)
+ 10     FORMAT (/,' MP_GATHER_STATE - error during ',a,                 &
+     &          ' call, Node = ',i3.3,' Error = ',i3,/,13x,a)
+        exit_flag=2
+        RETURN
+      END IF
+!
+!  If master node, loop over other nodes and receive the data.
+!
+      IF (MyRank.eq.MyMaster) THEN
+        DO rank=1,NtileI(ng)*NtileJ(ng)-1
+          np=Abounds(2,rank)-Abounds(1,rank)+1
+          LB=Abounds(1,rank)
+          CALL mpi_irecv (Aout(LB:), np, MP_FLOAT, rank, rank+5,        &
+     &                    OCN_COMM_WORLD, request, MyError)
+          CALL mpi_wait (request, status, MyError)
+          IF (MyError.ne.MPI_SUCCESS) THEN
+            CALL mpi_error_string (MyError, string, Lstr, Serror)
+            Lstr=LEN_TRIM(string)
+            WRITE (stdout,10) 'MPI_IRECV', rank, MyError, string(1:Lstr)
+            exit_flag=2
+            RETURN
+          END IF
+        END DO
+!
+!  Load master node contribution.
+!
+        DO i=Nstr,Nend
+          Aout(i)=A(i)
+        END DO
+!
+!  Otherwise, send data to master node.
+!
+      ELSE
+        np=Nend-Nstr+1
+        CALL mpi_isend (A(Nstr:), np, MP_FLOAT, MyMaster, MyRank+5,     &
+     &                  OCN_COMM_WORLD, request, MyError)
+        CALL mpi_wait (request, status, MyError)
+        IF (MyError.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (MyError, string, Lstr, Serror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,10) 'MPI_ISEND', MyRank, MyError, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+      END IF
+!
+!  Broadcast collected data to all nodes.
+!
+      CALL mpi_bcast (Aout, Asize, MP_FLOAT, MyMaster, OCN_COMM_WORLD,  &
+     &                MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 44)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_gather_state
+
+      FUNCTION mp_ncread (ng, model, ncid, ncvar, ncname, ncrec,        &
+     &                    LB1, UB1, LB2, UB2, Ascale, A)
+!
+!***********************************************************************
+!                                                                      !
+!  This function reads floating point data from specified NetCDF file  !
+!  and scatters it to the other nodes.  This  routine is used to read  !
+!  model state vectors or matrices. If both LB2 and UB2 are zero, its  !
+!  assumed that the second dimension is a parallel node dimension.     !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     ncid       NetCDF file ID.                                       !
+!     ncvar      NetCDF variable name.                                 !
+!     ncname     NetCDF file name.                                     !
+!     ncrec      NetCDF record index to write. If negative, it assumes !
+!                  that the variable is recordless.                    !
+!     LB1        First-dimension Lower bound.                          !
+!     UB1        First-dimension Upper bound.                          !
+!     LB2        Second-dimension Lower bound.                         !
+!     UB2        Second-dimension Upper bound.                         !
+!     Ascale     Factor to scale field after reading (real).           !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Field to read in (real).                              !
+!     mp_ncread  Error flag (integer).                                 !
+!                                                                      !
+!  Note: We cannot use mod_netcdf here because of cyclic dependency.   !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_ncparam
+      USE netcdf
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, ncid, ncrec
+      integer, intent(in) :: LB1, UB1, LB2, UB2
+
+      real(r8), intent(in) :: Ascale
+
+      real(r8), intent(out) :: A(LB1:UB1,LB2:UB2)
+
+      character (len=*), intent(in) :: ncvar
+      character (len=*), intent(in) :: ncname
+!
+!  Local variable declarations.
+!
+      logical :: IsNodeDim
+
+      integer :: Lstr, MyError, Npts, Serror
+      integer :: i, j, np, rank, request, varid
+      integer :: my_bounds(4), start(2), total(2)
+
+      integer, dimension(MPI_STATUS_SIZE) :: status
+      integer, dimension(4,0:NtileI(ng)*NtileJ(ng)-1) :: Asize
+
+      integer :: mp_ncread
+
+      real(r8), allocatable :: Asend(:)
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 45)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Read requested NetCDF file and scatter it to all nodes.
+!-----------------------------------------------------------------------
+!
+      mp_ncread=nf90_noerr
+      IF ((LB2.eq.0).and.(UB2.eq.0)) THEN
+        IsNodeDim=.TRUE.
+      ELSE
+        IsNodeDim=.FALSE.
+      END IF
+!
+!  Collect data lower and upper bounds dimensions.
+!
+      my_bounds(1)=LB1
+      my_bounds(2)=UB1
+      my_bounds(3)=LB2
+      my_bounds(4)=UB2
+      CALL mpi_gather (my_bounds, 4, MPI_INTEGER, Asize, 4,             &
+     &                 MPI_INTEGER, MyMaster, OCN_COMM_WORLD, MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_GATHER', MyRank, MyError,                &
+     &                    string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+!
+!  If not master node, receive data from master node.
+!
+      IF (MyRank.ne.MyMaster) THEN
+        np=(UB1-LB1+1)*(UB2-LB2+1)
+        CALL mpi_irecv (A(LB1,LB2), np, MP_FLOAT, MyMaster, MyRank+5,   &
+     &                  OCN_COMM_WORLD, request, MyError)
+        CALL mpi_wait (request, status, MyError)
+        IF (MyError.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (MyError, string, Lstr, Serror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,10) 'MPI_IRECV', MyRank, MyError, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+!
+!  Scale recieved (read) data.
+!        
+        DO j=LB2,UB2
+          DO i=LB1,UB1
+            A(i,j)=A(i,j)*Ascale
+          END DO
+        END DO
+!
+!  Otherwise, if master node allocate the send buffer.
+!
+      ELSE
+        Npts=0
+        DO rank=0,NtileI(ng)*NtileJ(ng)-1
+          np=(Asize(2,rank)-Asize(1,rank)+1)*                           &
+     &       (Asize(4,rank)-Asize(3,rank)+1)
+          Npts=MAX(Npts, np)
+        END DO
+        IF (.not.allocated(Asend)) THEN
+          allocate (Asend(Npts))
+        END IF
+!
+!  If master node, loop over all nodes and read buffers to send.
+!
+        DO rank=0,NtileI(ng)*NtileJ(ng)-1
+          start(1)=Asize(1,rank)
+          total(1)=Asize(2,rank)-Asize(1,rank)+1
+          IF (IsNodeDim) THEN
+            start(2)=rank+1
+            total(2)=1
+          ELSE
+            start(2)=Asize(3,rank)
+            total(2)=Asize(4,rank)-Asize(3,rank)+1
+          END IF
+          mp_ncread=nf90_inq_varid(ncid, TRIM(ncvar), varid)
+          mp_ncread=nf90_get_var(ncid, varid,  Asend, start, total)
+!
+!  Send buffer to all nodes, except itself.
+!
+          IF (rank.eq.MyMaster) THEN
+            np=0
+            DO j=LB2,UB2
+              DO i=LB1,UB1
+                np=np+1
+                A(i,j)=Asend(np)*Ascale
+              END DO
+            END DO
+          ELSE
+            np=(Asize(2,rank)-Asize(1,rank)+1)*                         &
+     &         (Asize(4,rank)-Asize(3,rank)+1)
+            CALL mpi_isend (Asend, np, MP_FLOAT, rank, rank+5,          &
+     &                      OCN_COMM_WORLD, request, MyError)
+            CALL mpi_wait (request, status, MyError)
+            IF (MyError.ne.MPI_SUCCESS) THEN
+              CALL mpi_error_string (MyError, string, Lstr, Serror)
+              Lstr=LEN_TRIM(string)
+              WRITE (stdout,10) 'MPI_ISEND', rank, MyError,             &
+     &                          string(1:Lstr)
+              exit_flag=2
+              RETURN
+            END IF
+          END IF
+        END DO
+      END IF
+!
+!  Deallocate send buffer.
+!
+      IF (allocated(Asend).and.(MyRank.eq.MyMaster)) THEN
+        deallocate (Asend)
+      END IF
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 45)
+# endif
+
+ 10   FORMAT (/,' MP_NCREAD - error during ',a,' call, Node = ',        &
+     &          i3.3,' Error = ',i3,/,13x,a)
+
+      RETURN
+      END FUNCTION mp_ncread
+
+      FUNCTION mp_ncwrite (ng, model, ncid, ncvar, ncname, ncrec,       &
+     &                     LB1, UB1, LB2, UB2, Ascale, A)
+!
+!***********************************************************************
+!                                                                      !
+!  This function collects floating point data from the other nodes and !
+!  writes it into specified NetCDF file. This routine is used to write !
+!  model state vectors or matrices. It boths LB2 and UB2 are zero, its !
+!  assumed that the second dimension is a parallel node dimension.     !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     ncid       NetCDF file ID.                                       !
+!     ncvar      NetCDF variable name.                                 !
+!     ncname     NetCDF file name.                                     !
+!     ncrec      NetCDF record index to write. If negative, it assumes !
+!                  that the variable is recordless.                    !
+!     LB1        First-dimension Lower bound.                          !
+!     UB1        First-dimension Upper bound.                          !
+!     LB2        Second-dimension Lower bound.                         !
+!     UB2        Second-dimension Upper bound.                         !
+!     Ascale     Factor to scale field before writing (real).          !
+!     A          Field to write out (real).                            !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     mp_ncwrite Error flag (integer).                                 !
+!                                                                      !
+!  Note: We cannot use mod_netcdf here because of cyclic dependency.   !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_ncparam
+      USE netcdf
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, ncid, ncrec
+      integer, intent(in) :: LB1, UB1, LB2, UB2
+
+      real(r8), intent(in) :: Ascale
+
+      real(r8), intent(in) :: A(LB1:UB1,LB2:UB2)
+
+      character (len=*), intent(in) :: ncvar
+      character (len=*), intent(in) :: ncname
+!
+!  Local variable declarations.
+!
+      logical :: IsNodeDim
+
+      integer :: Lstr, MyError, Npts, Serror
+      integer :: i, j, np, rank, request, varid
+      integer :: my_bounds(4), start(2), total(2)
+
+      integer, dimension(MPI_STATUS_SIZE) :: status
+      integer, dimension(4,0:NtileI(ng)*NtileJ(ng)-1) :: Asize
+
+      integer :: mp_ncwrite
+
+      real(r8), allocatable :: Arecv(:)
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 44)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Collect and write data into requested NetCDF file.
+!-----------------------------------------------------------------------
+!
+      mp_ncwrite=nf90_noerr
+      IF ((LB2.eq.0).and.(UB2.eq.0)) THEN
+        IsNodeDim=.TRUE.
+      ELSE
+        IsNodeDim=.FALSE.
+      END IF
+!
+!  Collect data lower and upper bounds dimensions.
+!
+      my_bounds(1)=LB1
+      my_bounds(2)=UB1
+      my_bounds(3)=LB2
+      my_bounds(4)=UB2
+      CALL mpi_gather (my_bounds, 4, MPI_INTEGER, Asize, 4,             &
+     &                 MPI_INTEGER, MyMaster, OCN_COMM_WORLD, MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_GATHER', MyRank, MyError,                &
+     &                    string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+!
+!  If master node, allocate the receive buffer.
+!
+      IF (MyRank.eq.MyMaster) THEN
+        Npts=0
+        DO rank=0,NtileI(ng)*NtileJ(ng)-1
+          np=(Asize(2,rank)-Asize(1,rank)+1)*                           &
+     &       (Asize(4,rank)-Asize(3,rank)+1)
+          Npts=MAX(Npts, np)
+        END DO
+        IF (.not.allocated(Arecv)) THEN
+          allocate (Arecv(Npts))
+        END IF
+!
+!  Write out master node contribution.
+!
+        start(1)=LB1
+        total(1)=UB1-LB1+1
+        IF (IsNodeDim) THEN
+          start(2)=MyRank+1
+          total(2)=1
+        ELSE
+          start(2)=LB2
+          total(2)=UB2-LB2+1
+        END IF
+        np=0
+        DO j=LB2,UB2
+          DO i=LB1,UB1
+            np=np+1
+            Arecv(np)=A(i,j)
+          END DO
+        END DO
+        mp_ncwrite=nf90_inq_varid(ncid, TRIM(ncvar), varid)
+        mp_ncwrite=nf90_put_var(ncid, varid, Arecv, start, total)
+!
+!  If master node, loop over other nodes and receive the data.
+!
+        DO rank=1,NtileI(ng)*NtileJ(ng)-1
+          np=(Asize(2,rank)-Asize(1,rank)+1)*                           &
+     &       (Asize(4,rank)-Asize(3,rank)+1)
+          CALL mpi_irecv (Arecv, np, MP_FLOAT, rank, rank+5,            &
+     &                    OCN_COMM_WORLD, request, MyError)
+          CALL mpi_wait (request, status, MyError)
+          IF (MyError.ne.MPI_SUCCESS) THEN
+            CALL mpi_error_string (MyError, string, Lstr, Serror)
+            Lstr=LEN_TRIM(string)
+            WRITE (stdout,10) 'MPI_IRECV', rank, MyError, string(1:Lstr)
+            exit_flag=2
+            RETURN
+          END IF
+!
+!  Write out data into NetCDF file.
+!
+          start(1)=Asize(1,rank)
+          total(1)=Asize(2,rank)-Asize(1,rank)+1
+          IF (IsNodeDim) THEN
+            start(2)=rank+1
+            total(2)=1
+          ELSE
+            start(2)=Asize(3,rank)
+            total(2)=Asize(4,rank)-Asize(3,rank)+1
+          END IF
+          DO i=1,np
+            Arecv(i)=Arecv(i)*Ascale
+          END DO
+          mp_ncwrite=nf90_put_var(ncid, varid, Arecv, start, total)
+        END DO
+!
+!  Otherwise, send data to master node.
+!
+      ELSE
+        np=(UB1-LB1+1)*(UB2-LB2+1)
+        CALL mpi_isend (A(LB1:,LB2:), np, MP_FLOAT, MyMaster, MyRank+5, &
+     &                  OCN_COMM_WORLD, request, MyError)
+        CALL mpi_wait (request, status, MyError)
+        IF (MyError.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (MyError, string, Lstr, Serror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,10) 'MPI_ISEND', MyRank, MyError, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+      END IF
+!
+!  Deallocate receive buffer.
+!
+      IF (allocated(Arecv).and.(MyRank.eq.MyMaster)) THEN
+        deallocate (Arecv)
+      END IF
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 44)
+# endif
+
+ 10   FORMAT (/,' MP_NCWRITE - error during ',a,' call, Node = ',       &
+     &          i3.3,' Error = ',i3,/,13x,a)
+
+      RETURN
+      END FUNCTION mp_ncwrite
+
+      SUBROUTINE mp_reduce_s (ng, model, Asize, A, op_handle)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine collects and reduces requested variables from all      !
+!  nodes in the group.  Then,  it broadcasts reduced variables to      !
+!  all nodes in the group.                                             !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     Asize      Number of scalar variables to reduce.                 !
+!     A          Vector of scalar variables to reduce.                 !
+!     op_handle  Reduction operation handle (string).  The following   !
+!                  reduction operations are supported:                 !
+!                  'MIN', 'MAX', 'SUM'                                 !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Vector of reduced scalar variables.                   !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits 
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, Asize
+
+      character (len=*), intent(in) :: op_handle
+
+      real(r8), intent(inout) :: A
+!
+!  Local variable declarations.
+!
+      integer :: Lstr, MyError, Serror
+      integer :: handle, i, rank, request
+
+      integer, dimension(0:NtileI(ng)*NtileJ(ng)-1) :: Rrequest
+
+      integer, dimension(MPI_STATUS_SIZE) :: Rstatus
+      integer, dimension(MPI_STATUS_SIZE) :: Sstatus
+
+      real(r8) :: Areduce
+      real(r8) :: Asend
+      real(r8), dimension(0:NtileI(ng)*NtileJ(ng)-1) :: Arecv
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 43)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Collect and reduce requested scalar variables.
+!-----------------------------------------------------------------------
+!
+!  Pack data to reduce.
+!
+      Asend=A
+!
+!  Collect and reduce.
+!
+# if defined REDUCE_ALLREDUCE
+      IF (op_handle(1:3).eq.'MIN') THEN
+        handle=MPI_MIN
+      ELSE IF (op_handle(1:3).eq.'MAX') THEN
+        handle=MPI_MAX
+      ELSE IF (op_handle(1:3).eq.'SUM') THEN
+        handle=MPI_SUM
+      END IF
+      CALL mpi_allreduce (Asend, Areduce, 1, MP_FLOAT, handle,          &
+     &                    OCN_COMM_WORLD, MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_ALLREDUCE', MyRank, MyError,             &
+     &                    string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+# elif defined REDUCE_ALLGATHER
+      CALL mpi_allgather (Asend, 1, MP_FLOAT,                           &
+     &                    Arecv, 1, MP_FLOAT,                           &
+     &                    OCN_COMM_WORLD, MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_ALLGATHER', MyRank, MyError,             &
+     &                    string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+      Areduce=Arecv(0)
+      DO rank=1,NtileI(ng)*NtileJ(ng)-1
+        IF (op_handle(1:3).eq.'MIN') THEN
+          Areduce=MIN(Areduce,Arecv(rank))
+        ELSE IF (op_handle(1:3).eq.'MAX') THEN
+          Areduce=MAX(Areduce,Arecv(rank))
+        ELSE IF (op_handle(1:3).eq.'SUM') THEN
+          Areduce=Areduce+Arecv(rank)
+        END IF
+      END DO
+# else
+      IF (MyRank.eq.MyMaster) THEN
+        DO rank=1,NtileI(ng)*NtileJ(ng)-1
+          CALL mpi_irecv (Arecv(rank), 1, MP_FLOAT, rank,               &
+     &                    rank+500, OCN_COMM_WORLD, Rrequest(rank),     &
+     &                    MyError)
+        END DO
+        Areduce=Asend
+        DO rank=1,NtileI(ng)*NtileJ(ng)-1
+          CALL mpi_wait (Rrequest(rank), Rstatus, MyError)
+          IF (MyError.ne.MPI_SUCCESS) THEN
+            CALL mpi_error_string (MyError, string, Lstr, Serror)
+            Lstr=LEN_TRIM(string)
+            WRITE (stdout,10) 'MPI_IRECV', rank, Rerror, string(1:Lstr)
+            exit_flag=2
+            RETURN
+          END IF
+          IF (op_handle(1:3).eq.'MIN') THEN
+            Areduce=MIN(Areduce,Arecv(rank))
+          ELSE IF (op_handle(1:3).eq.'MAX') THEN
+            Areduce=MAX(Areduce,Arecv(rank))
+          ELSE IF (op_handle(1:3).eq.'SUM') THEN
+            Areduce=Areduce+Arecv(rank)
+          END IF
+        END DO
+      ELSE
+        CALL mpi_isend (Asend, 1, MP_FLOAT, MyMaster, MyRank+500,       &
+     &                  OCN_COMM_WORLD, request, MyError)
+        CALL mpi_wait (request, Sstatus, MyError)
+        IF (Serror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (MyError, string, Lstr, Serror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,10) 'MPI_ISEND', MyRank, Serror, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+      END IF
+!
+!  Broadcast reduced variables from process to all processes in the
+!  group.
+!
+      CALL mpi_bcast (Areduce, 1, MP_FLOAT, MyMaster,                   &
+     &                OCN_COMM_WORLD, MyError)
+      IF (Serror.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+# endif
+ 10   FORMAT (/,' MP_REDUCE - error during ',a,' call, Node = ',        &
+     &        i3.3,' Error = ',i3,/,13x,a)
+!
+!  Unpack.
+!
+      A=Areduce
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 43)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_reduce_s
+
+      SUBROUTINE mp_reduce_v (ng, model, Asize, A, op_handle)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine collects and reduces requested variables from all      !
+!  nodes in the group.  Then,  it broadcasts reduced variables to      !
+!  all nodes in the group.                                             !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     Asize      Number of scalar variables to reduce.                 !
+!     A          Vector of scalar variables to reduce.                 !
+!     op_handle  Reduction operation handle (string).  The following   !
+!                  reduction operations are supported:                 !
+!                  'MIN', 'MAX', 'SUM'                                 !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Vector of reduced scalar variables.                   !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits 
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, Asize
+
+      character (len=*), intent(in) :: op_handle(Asize)
+
+      real(r8), intent(inout) :: A(Asize)
+!
+!  Local variable declarations.
+!
+      integer :: Lstr, MyError, Serror
+      integer :: handle, i, rank, request
+
+      integer, dimension(0:NtileI(ng)*NtileJ(ng)-1) :: Rrequest
+
+      integer, dimension(MPI_STATUS_SIZE) :: Rstatus
+      integer, dimension(MPI_STATUS_SIZE) :: Sstatus
+
+      real(r8), dimension(Asize,0:NtileI(ng)*NtileJ(ng)-1) :: Arecv
+      real(r8), dimension(Asize) :: Areduce
+      real(r8), dimension(Asize) :: Asend
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 43)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Collect and reduce requested scalar variables.
+!-----------------------------------------------------------------------
+!
+!  Pack data to reduce.
+!
+      DO i=1,Asize
+        Asend(i)=A(i)
+      END DO
+!
+!  Collect and reduce.
+!
+# if defined REDUCE_ALLREDUCE
+      DO i=1,Asize
+        IF (op_handle(i)(1:3).eq.'MIN') THEN
+          handle=MPI_MIN
+        ELSE IF (op_handle(i)(1:3).eq.'MAX') THEN
+          handle=MPI_MAX
+        ELSE IF (op_handle(i)(1:3).eq.'SUM') THEN
+          handle=MPI_SUM
+        END IF
+        CALL mpi_allreduce (Asend(i), Areduce(i), 1, MP_FLOAT, handle,  &
+     &                      OCN_COMM_WORLD, MyError)
+        IF (MyError.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (MyError, string, Lstr, Serror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,10) 'MPI_ALLREDUCE', MyRank, MyError,           &
+     &                      string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+      END DO
+# elif defined REDUCE_ALLGATHER
+      CALL mpi_allgather (Asend, Asize, MP_FLOAT,                       &
+     &                    Arecv, Asize, MP_FLOAT,                       &
+     &                    OCN_COMM_WORLD, MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_ALLGATHER', MyRank, MyError,             &
+     &                    string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+      DO i=1,Asize
+        Areduce(i)=Arecv(i,0)
+        DO rank=1,NtileI(ng)*NtileJ(ng)-1
+          IF (op_handle(i)(1:3).eq.'MIN') THEN
+            Areduce(i)=MIN(Areduce(i),Arecv(i,rank))
+          ELSE IF (op_handle(i)(1:3).eq.'MAX') THEN
+            Areduce(i)=MAX(Areduce(i),Arecv(i,rank))
+          ELSE IF (op_handle(i)(1:3).eq.'SUM') THEN
+            Areduce(i)=Areduce(i)+Arecv(i,rank)
+          END IF
+        END DO
+      END DO
+# else
+      IF (MyRank.eq.MyMaster) THEN
+        DO rank=1,NtileI(ng)*NtileJ(ng)-1
+          CALL mpi_irecv (Arecv(1,rank), Asize, MP_FLOAT, rank,         &
+     &                    rank+500, OCN_COMM_WORLD, Rrequest(rank),     &
+     &                    MyError)
+        END DO
+        DO i=1,Asize
+          Areduce(i)=Asend(i)
+        END DO
+        DO rank=1,NtileI(ng)*NtileJ(ng)-1
+          CALL mpi_wait (Rrequest(rank), Rstatus, MyError)
+          IF (MyError.ne.MPI_SUCCESS) THEN
+            CALL mpi_error_string (MyError, string, Lstr, Serror)
+            Lstr=LEN_TRIM(string)
+            WRITE (stdout,10) 'MPI_IRECV', rank, Rerror, string(1:Lstr)
+            exit_flag=2
+            RETURN
+          END IF
+          DO i=1,Asize
+            IF (op_handle(i)(1:3).eq.'MIN') THEN
+              Areduce(i)=MIN(Areduce(i),Arecv(i,rank))
+            ELSE IF (op_handle(i)(1:3).eq.'MAX') THEN
+              Areduce(i)=MAX(Areduce(i),Arecv(i,rank))
+            ELSE IF (op_handle(i)(1:3).eq.'SUM') THEN
+              Areduce(i)=Areduce(i)+Arecv(i,rank)
+            END IF
+          END DO
+        END DO
+      ELSE
+        CALL mpi_isend (Asend, Asize, MP_FLOAT, MyMaster, MyRank+500,   &
+     &                  OCN_COMM_WORLD, request, MyError)
+        CALL mpi_wait (request, Sstatus, MyError)
+        IF (Serror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (MyError, string, Lstr, Serror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,10) 'MPI_ISEND', MyRank, Serror, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+      END IF
+!
+!  Broadcast reduced variables from process to all processes in the
+!  group.
+!
+      CALL mpi_bcast (Areduce, Asize, MP_FLOAT, MyMaster,               &
+     &                OCN_COMM_WORLD, MyError)
+      IF (Serror.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+# endif
+ 10   FORMAT (/,' MP_REDUCE - error during ',a,' call, Node = ',        &
+     &        i3.3,' Error = ',i3,/,13x,a)
+!
+!  Unpack.
+!
+      DO i=1,Asize
+        A(i)=Areduce(i)
+      END DO
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 43)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_reduce_v
+
+      SUBROUTINE mp_scatter (ng, model, LBi, UBi, LBj, UBj, LBk, UBk,   &
+     &                       Nghost, gtype, Amin, Amax,                 &
+# if defined READ_WATER && defined MASKING
+     &                       NWpts, IJ_water,                           &
+# endif
+     &                       Npts, A, Aout)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine broadcasts input global data, packed as 1D real array, !
+!  to each spawned MPI node.  Because this routine is also used by the !
+!  adjoint model,  the ghost-points in the halo region are NOT updated !
+!  in the ouput tile array (Aout).  It is used by the  master node  to !
+!  scatter input global data to each tiled node.                       !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     LBi        I-dimension Lower bound.                              !
+!     UBi        I-dimension Upper bound.                              !
+!     LBj        J-dimension Lower bound.                              !
+!     UBj        J-dimension Upper bound.                              !
+!     LBk        K-dimension Lower bound, if any. Otherwise, a value   !
+!                  of one is expected.                                 !
+!     LBk        K-dimension Upper bound, if any. Otherwise, a value   !
+!                  of one is expected.                                 !
+!     UBk        K-dimension Upper bound.                              !
+!     Nghost     Number of ghost-points in the halo region.            !
+!     gtype      C-grid type. If negative and Land-Sea mask is         !
+!                  available, only water-points are processed.         !
+!     Amin       Input array minimum value.                            !
+!     Amax       Input array maximum value.                            !
+!     NWpts      Number of water points.                               !
+!     IJ_water   IJ-indices for water points.                          !
+!     Npts       Number of points to processes in A.                   !
+!     A          Input global data from each node packed into 1D array !
+!                  in column-major order. That is, in the same way     !
+!                  that Fortran multi-dimensional arrays are stored    !
+!                  in memory.                                          !
+!     Npts       Number of points to processes in A.                   !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     Aout       Tile array (2D or 3D).                                !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits 
+      USE mod_ncparam
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model
+      integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk
+      integer, intent(in) :: Nghost, gtype, Npts
+
+# if defined READ_WATER && defined MASKING
+      integer, intent(in) :: NWpts
+      integer, intent(in) :: IJ_water(NWpts)
+# endif
+      real(r8), intent(inout) :: Amin, Amax
+      real(r8), intent(inout) :: A(Npts+2)
+      real(r8), intent(out) :: Aout(LBi:UBi,LBj:UBj,LBk:UBk)
+!
+!  Local variable declarations.
+!
+      integer :: Io, Ie, Jo, Je, Ioff, Joff, Koff
+      integer :: Ilen, Jlen, Klen, IJlen
+      integer :: Lstr, MyError, MySize, MyType, Serror, rank
+      integer :: i, ic, ij, j, jc, k, kc, mc, nc
+
+      integer, dimension(0:NtileI(ng)*NtileJ(ng)-1) :: Imin, Imax
+      integer, dimension(0:NtileI(ng)*NtileJ(ng)-1) :: Jmin, Jmax
+      integer, dimension(0:NtileI(ng)*NtileJ(ng)-1) :: Itile, Jtile
+
+# ifdef REFINED_GRID
+      real(r8) :: Arecv(Npts)
+# else
+      real(r8), dimension((Lm(ng)+2)*(Mm(ng)+2)*(UBk-LBk+1)) :: Arecv
+#endif
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 45)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Set horizontal starting and ending indices for parallel domain
+!  partitions in the XI- and ETA-directions.
+!-----------------------------------------------------------------------
+!
+!  Set first and last grid point according to staggered C-grid
+!  classification. The, set 1D counter offsets.
+!
+#ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+        Io=0
+        Ie=Lm(ng)+1
+        Jo=0
+        Je=Mm(ng)+1
+        MyType=ABS(gtype)
+        IF ((MyType.eq.p2dvar).or.(MyType.eq.u2dvar).or.                  &
+     &      (MyType.eq.p3dvar).or.(MyType.eq.u3dvar)) Io=1
+        IF ((MyType.eq.p2dvar).or.(MyType.eq.v2dvar).or.                  &
+     &      (MyType.eq.p3dvar).or.(MyType.eq.v3dvar)) Jo=1
+        IF (Io.eq.0) THEN
+          Ioff=1
+        ELSE
+          Ioff=0
+        END IF
+        IF (Jo.eq.0) THEN
+          Joff=0
+        ELSE
+          Joff=1
+        END IF
+      ELSE
+        Io=LOWER_BOUND_I
+        Ie=Lm(ng)+GHOST_POINTS
+        Jo=LOWER_BOUND_J
+        Je=Mm(ng)+GHOST_POINTS
+        MyType=ABS(gtype)
+        IF ((MyType.eq.p2dvar).or.(MyType.eq.u2dvar).or.                  &
+     &      (MyType.eq.p3dvar).or.(MyType.eq.u3dvar)) Io=LOWER_BOUND_I+1
+        IF ((MyType.eq.p2dvar).or.(MyType.eq.v2dvar).or.                  &
+     &      (MyType.eq.p3dvar).or.(MyType.eq.v3dvar)) Jo=LOWER_BOUND_J+1
+        IF (Io.eq.LOWER_BOUND_I) THEN
+          Ioff=4
+        ELSE
+          Ioff=3
+        END IF
+        IF (Jo.eq.LOWER_BOUND_J) THEN
+          Joff=-3
+        ELSE
+          Joff=-2
+        END IF
+      END IF
+#else
+      Io=0
+      Ie=Lm(ng)+1
+      Jo=0
+      Je=Mm(ng)+1
+      MyType=ABS(gtype)
+      IF ((MyType.eq.p2dvar).or.(MyType.eq.u2dvar).or.                  &
+     &    (MyType.eq.p3dvar).or.(MyType.eq.u3dvar)) Io=1
+      IF ((MyType.eq.p2dvar).or.(MyType.eq.v2dvar).or.                  &
+     &    (MyType.eq.p3dvar).or.(MyType.eq.v3dvar)) Jo=1
+      IF (Io.eq.0) THEN
+        Ioff=1
+      ELSE
+        Ioff=0
+      END IF
+      IF (Jo.eq.0) THEN
+        Joff=0
+      ELSE
+        Joff=1
+      END IF
+#endif
+      IF (LBk.eq.0) THEN
+        Koff=0
+      ELSE
+        Koff=1
+      END IF
+      Ilen=Ie-Io+1
+      Jlen=Je-Jo+1
+      Klen=UBk-LBk+1
+      IJlen=Ilen*Jlen
+!
+!  Set physical, non-overlaping (no ghost-points) ranges according to
+!  tile rank.
+!
+      DO rank=0,NtileI(ng)*NtileJ(ng)-1
+        CALL get_bounds (ng, rank, gtype, Nghost,                       &
+     &                   Itile(rank), Jtile(rank),                      &
+     &                   Imin(rank), Imax(rank),                        &
+     &                   Jmin(rank), Jmax(rank))
+      END DO
+!
+!  Size of broadcast buffer.
+!
+      IF (gtype.gt.0) THEN
+        MySize=IJlen*Klen
+      ELSE
+        MySize=Npts
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Scatter requested array data. 
+!-----------------------------------------------------------------------
+!
+!  If master processor, append minimum and maximum values to the end of
+!  the buffer. 
+!
+      IF (MyRank.eq.MyMaster) Then
+        A(MySize+1)=Amin
+        A(MySize+2)=Amax
+      END IF
+      MySize=MySize+2
+!
+!  Broadcast data to all processes in the group, itself included.
+!
+      CALL mpi_bcast (A, MySize, MP_FLOAT, MyMaster, OCN_COMM_WORLD,    &
+     &                MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+         Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+ 10     FORMAT (/,' MP_SCATTER - error during ',a,' call, Node = ',     &
+     &          i3.3, ' Error = ',i3,/,15x,a)
+        exit_flag=2
+        RETURN
+      END IF
+!
+!  If water points only, fill land points.
+!
+      IF (gtype.gt.0) THEN
+        DO nc=1,MySize-2
+          Arecv(nc)=A(nc)
+        END DO
+# if defined READ_WATER && defined MASKING
+      ELSE
+        nc=0
+        DO k=LBk,UBk
+          kc=(k-Koff)*IJlen
+          ij=0
+          mc=0
+          DO j=Jo,Je
+            jc=(j-Joff)*Ilen+kc
+            DO i=Io,Ie
+              ij=ij+1
+              ic=i+Ioff+jc
+              IF (IJ_water(mc+1).eq.ij) THEN
+                mc=mc+1
+                nc=nc+1
+                Arecv(ic)=A(nc)
+              ELSE
+                Arecv(ic)=0.0_r8
+              ENDIF
+            END DO
+          END DO
+        END DO
+# endif
+      END IF
+!
+!  Unpack data buffer.
+!
+      DO k=LBk,UBk
+        kc=(k-Koff)*IJlen
+        DO j=Jmin(MyRank),Jmax(MyRank)
+          jc=(j-Joff)*Ilen+kc
+          DO i=Imin(MyRank),Imax(MyRank)
+            ic=i+Ioff+jc
+            Aout(i,j,k)=Arecv(ic)
+          END DO
+        END DO
+      END DO
+      Amin=A(MySize-1)
+      Amax=A(MySize)
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 45)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_scatter
+
+      SUBROUTINE mp_scatter_state (ng, model, Nstr, Nend, Asize,        &
+     &                             A, Aout)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine scatters (global to threaded) state data to all nodes  !
+!  in the group. Before this can be done, the global data needs to be  !
+!  collected from all the  nodes  by the master.  This is achieved by  !
+!  summing the input values at each point.  This  routine  is used to  !
+!  pack the state data for the GST analysis propagators.               !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     Nstr       Threaded array lower bound.                           !
+!     Nend       Threaded array upper bound.                           !
+!     Asize      Size of the .                                         !
+!     A          Threaded 1D array process.                            !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Collected data from all nodes.                        !
+!     Aout       Threaded block of data.                               !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits 
+      USE mod_ncparam
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model
+      integer, intent(in) :: Nstr, Nend, Asize
+
+      real(r8), intent(inout)  :: A(Asize)
+
+      real(r8), intent(out) :: Aout(Nstr:Nend)
+!
+!  Local variable declarations.
+!
+      integer :: Lstr, MyError, Serror
+      integer :: i, rank, request
+
+      integer, dimension(0:NtileI(ng)*NtileJ(ng)-1) :: Rrequest
+
+      integer, dimension(MPI_STATUS_SIZE) :: status
+
+      real(r8), allocatable :: Arecv(:)
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 44)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Collect data blocks from all nodes and scatter the data to all nodes.
+!-----------------------------------------------------------------------
+!
+!  All nodes have distinct pieces of the data and zero everywhere else.
+!  So the strategy here is for the master node to receive the data from
+!  the other nodes (excluding itself) and accumulate the sum at each
+!  point. Then, the master node broadcast (itself included) its copy of
+!  the accumlated data to other the nodes in the group. After this, each
+!  node loads only the required block of the data into output array.
+!
+!  Notice that only the master node allocates the recieving buffer
+!  (Arecv). It also receives only buffer at the time to avoid having
+!  a very large communication array.  So here memory is more important
+!  than time.
+!
+      IF (MyRank.eq.MyMaster) THEN
+!
+!  If master node, allocate and receive buffer.
+!
+        IF (.not.allocated(Arecv)) THEN
+          allocate (Arecv(Asize))
+        END IF
+!
+!  If master node, loop over other nodes to receive and accumulate the
+!  data.
+!
+        DO rank=1,NtileI(ng)*NtileJ(ng)-1
+          CALL mpi_irecv (Arecv, Asize, MP_FLOAT, rank, rank+5,         &
+     &                    OCN_COMM_WORLD, Rrequest(rank), MyError)
+          CALL mpi_wait (Rrequest(rank), status, MyError)
+          IF (MyError.ne.MPI_SUCCESS) THEN
+            CALL mpi_error_string (MyError, string, Lstr, Serror)
+            Lstr=LEN_TRIM(string)
+            WRITE (stdout,10) 'MPI_IRECV', rank, MyError, string(1:Lstr)
+ 10         FORMAT (/,' MP_SCATTER_STATE - error during ',a,            &
+     &              ' call, Node = ', i3.3,' Error = ',i3,/,13x,a)
+            exit_flag=2
+            RETURN
+          END IF
+          DO i=1,Asize
+            A(i)=A(i)+Arecv(i)
+          END DO
+        END DO
+!
+!  Otherwise, send data to master node.
+!
+      ELSE
+        CALL mpi_isend (A, Asize, MP_FLOAT, MyMaster, MyRank+5,         &
+     &                  OCN_COMM_WORLD, request, MyError)
+        CALL mpi_wait (request, status, MyError)
+        IF (MyError.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (MyError, string, Lstr, Serror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,10) 'MPI_ISEND', MyRank, MyError, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+      END IF
+!
+!  Broadcast accumulated (full) data to all nodes.
+!
+      CALL mpi_bcast (A, Asize, MP_FLOAT, MyMaster, OCN_COMM_WORLD,     &
+     &                MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+!
+!  Load appropriate data block into output array.
+!
+      DO i=Nstr,Nend
+        Aout(i)=A(i)
+      END DO
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 44)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_scatter_state
+
+      SUBROUTINE mp_dump (ng, tile, gtype,                              &
+     &                    ILB, IUB, JLB, JUB, KLB, KUB, A, name)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine is used to debug distributed-memory communications.    !
+!  It writes field into an ASCII file for further post-processing.     !
+!                                                                      !
+!***********************************************************************
+!
+
+      USE mod_param
+      USE mod_parallel
+      USE mod_ncparam
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile, gtype
+      integer, intent(in) :: ILB, IUB, JLB, JUB, KLB, KUB
+
+      real(r8), intent(in) :: A(ILB:IUB,JLB:JUB,KLB:KUB)
+
+      character (len=*) :: name
+!
+!  Local variable declarations.
+!
+      common /counter/ nc
+      integer :: nc
+
+      logical, save :: first = .TRUE.
+
+      integer :: Imin, Imax, Ioff, Jmin, Jmax, Joff
+      integer :: unit
+
+# include "set_bounds.h"
+!
+!------------------------------------------------------------------------
+!  Write out requested field.
+!------------------------------------------------------------------------
+!
+      IF (first) THEN
+        nc=0
+        first=.FALSE.
+      END IF
+      nc=nc+1
+      IF (Master) THEN
+        WRITE (10,'(a,i3.3,a,a)') 'file ', nc, ': ', TRIM(name)
+        CALL my_flush (10)
+      END IF
+!
+!  Write out field including ghost-points.
+!
+      Imin=0
+      Imax=Lm(ng)+1
+# ifdef EW_PERIODIC
+      Ioff=3
+# else
+      Ioff=1
+# endif
+      Jmin=0
+      Jmax=Mm(ng)+1
+# ifdef NS_PERIODIC
+      Joff=3
+# else
+      Joff=1
+# endif
+      IF ((gtype.eq.p2dvar).or.(gtype.eq.p3dvar).or.                    &
+     &    (gtype.eq.u2dvar).or.(gtype.eq.u3dvar)) THEN
+        Imin=1
+      END IF
+      IF ((gtype.eq.p2dvar).or.(gtype.eq.p3dvar).or.                    &
+     &    (gtype.eq.v2dvar).or.(gtype.eq.v3dvar)) THEN
+        Jmin=1
+      END IF
+
+      unit=(MyRank+1)*1000+nc
+      WRITE (unit,*) ILB, IUB, JLB, JUB, KLB, KUB,                      &
+     &               Ioff, Joff, Imin, Imax, Jmin, Jmax,                &
+     &               A(ILB:IUB,JLB:JUB,KLB:KUB)
+      CALL my_flush (unit)
+!
+!  Write out non-overlapping field.
+!
+      Imin=IstrR
+      Imax=IendR
+# ifdef EW_PERIODIC
+      Ioff=2
+# else
+      Ioff=1
+# endif
+      Jmin=JstrR
+      Jmax=JendR
+# ifdef NS_PERIODIC
+      Joff=2
+# else
+      Joff=1
+# endif
+      IF ((gtype.eq.p2dvar).or.(gtype.eq.p3dvar).or.                    &
+     &    (gtype.eq.u2dvar).or.(gtype.eq.u3dvar)) THEN
+        Imin=Istr
+        Ioff=Ioff-1
+      END IF
+      IF ((gtype.eq.p2dvar).or.(gtype.eq.p3dvar).or.                    &
+     &    (gtype.eq.v2dvar).or.(gtype.eq.v3dvar)) THEN
+        Jmin=Jstr
+        Joff=Joff-1
+      END IF
+
+      unit=(MyRank+1)*10000+nc
+      WRITE (unit,*) Imin, Imax, Jmin, Jmax, KLB, KUB,                  &
+     &               Ioff, Joff, Imin, Imax, Jmin, Jmax,                &
+     &               A(Imin:Imax,Jmin:Jmax,KLB:KUB)
+      CALL my_flush (unit)
+
+      RETURN
+      END SUBROUTINE mp_dump
+
+      SUBROUTINE mp_aggregate (ng, model, gtype,                        &
+     &                         LBi, UBi, LBj, UBj, LBk, UBk,            &
+# ifdef MASKING
+     &                         Amask,                                   &
+# endif
+     &                         A)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine is used to aggregate tiled data into a full 2D/3D      !
+!  array for debugging purposes.                                       !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, gtype
+      integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk
+
+# ifdef MASKING
+      real(r8), intent(in) :: Amask(LBi:UBi,LBj:UBj)
+# endif
+      real(r8), intent(in) :: A(LBi:UBi,LBj:UBj,LBk:UBk)
+!
+!  Local variable declarations.
+!
+      integer :: Npts
+
+      real(r8) :: Ascl
+
+      real(r8), dimension(0:Lm(ng)+1,0:Mm(ng)+1,LBk:UBk) :: Aout
+!
+!------------------------------------------------------------------------
+!  Aggregate all tile data into a single array.
+!------------------------------------------------------------------------
+!
+      Ascl=1.0_r8
+      CALL mp_gather (ng, model, LBi, UBi, LBj, UBj, LBk, UBk,           &
+     &                gtype, Ascl,                                       &
+# ifdef MASKING
+     &                Amask(LBi:,LBj:),                                  &
+# endif
+     &                A(LBi:,LBj:,LBk:),                                 &
+     &                Npts, Aout(0:,0:,LBk:))
+
+      RETURN
+      END SUBROUTINE mp_aggregate
+#endif
+      END MODULE distribute_mod
