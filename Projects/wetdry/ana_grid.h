@@ -236,9 +236,8 @@
 !-----------------------------------------------------------------------
 !
 #if defined WETDRY_DAM_BREAK
-!     Xsize=31.0_r8
-      Xsize=15.0_r8
-      Esize=8.3_r8
+      Xsize=4.0_r8
+      Esize=2.0_r8
       depth=0.6_r8
       f0=0.0E-0_r8
       beta=0.0E-0_r8
@@ -289,35 +288,10 @@
         Jmax=Jend
       END IF
 
-#if defined BENCHMARK
-!
-!  Spherical coordinates set-up.
-!
-      dx=Xsize/REAL(Lm(ng),r8)
-      dy=Esize/REAL(Mm(ng),r8)
-      spherical=.TRUE.
-      DO j=Jmin,Jmax
-        val1=-70.0_r8+dy*(REAL(j,r8)-0.5_r8)
-        val2=-70.0_r8+dy*REAL(j,r8)
-        DO i=Imin,Imax
-          lonr(i,j)=dx*(REAL(i,r8)-0.5_r8)
-          latr(i,j)=val1
-          lonu(i,j)=dx*REAL(i,r8)
-          lonp(i,j)=lonu(i,j)
-          latu(i,j)=latr(i,j)
-          lonv(i,j)=lonr(i,j)
-          latv(i,j)=val2
-          latp(i,j)=latv(i,j)
-        END DO
-      END DO
-#else
       dx=Xsize/REAL(Lm(ng),r8)
       dy=Esize/REAL(Mm(ng),r8)
       DO j=Jmin,Jmax
         DO i=Imin,Imax
-# ifdef BL_TEST
-          dx=0.5_r8*(4000.0_r8/REAL(Lm(ng)+1,r8))*REAL(i,r8)+675.0_r8
-# endif
           xp(i,j)=dx*REAL(i-1,r8)
           xr(i,j)=dx*(REAL(i-1,r8)+0.5_r8)
           xu(i,j)=xp(i,j)
@@ -328,7 +302,6 @@
           yv(i,j)=yp(i,j)
         END DO
       END DO
-#endif
 #ifdef DISTRIBUTE
 # ifdef SPHERICAL
       CALL mp_exchange2d (ng, tile, model, 4,                           &
@@ -360,30 +333,12 @@
 #define J_RANGE MIN(JstrR,Jstr-1),MAX(Jend+1,JendR)
 #define I_RANGE MIN(IstrR,Istr-1),MAX(Iend+1,IendR)
 
-#if defined BENCHMARK
-!
-!  Spherical coordinates set-up.
-!
-      val1=REAL(Lm(ng),r8)/(2.0_r8*pi*Eradius)
-      val2=REAL(Mm(ng),r8)*360.0_r8/(2.0_r8*pi*Eradius*Esize)
-      DO j=J_RANGE
-         cff=1.0_r8/COS((-70.0_r8+dy*(REAL(j,r8)-0.5_r8))*deg2rad)
-        DO i=I_RANGE
-          wrkX(i,j)=val1*cff
-          wrkY(i,j)=val2
-        END DO
-      END DO
-#else
       DO j=J_RANGE
         DO i=I_RANGE
-# ifdef BL_TEST
-          dx=0.5_r8*(4000.0_r8/REAL(Lm(ng)+1,r8))*REAL(i,r8)+675.0_r8
-# endif
           wrkX(i,j)=1.0_r8/dx
           wrkY(i,j)=1.0_r8/dy
         END DO
       END DO
-#endif
 #undef J_RANGE
 #undef I_RANGE
       DO j=JstrR,JendR
@@ -440,24 +395,11 @@
 ! Angle (radians) between XI-axis and true EAST at RHO-points.
 !-----------------------------------------------------------------------
 !
-#if defined LAB_CANYON
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          theta=-pi+                                                    &
-     &          0.5_r8*dth*((cff+1.0_r8)*(REAL(j-1,r8)+0.5_r8)+         &
-     &                      (cff-1.0_r8)*(REAL(Mm(ng),r8)/twopi)*       &
-     &                      SIN(twopi*(REAL(j-1,r8)+0.5_r8)/            &
-     &                          REAL(Mm(ng),r8)))
-          angler(i,j)=theta
-        END DO
-      END DO
-#else
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           angler(i,j)=0.0_r8
         END DO
       END DO
-#endif
 #if defined EW_PERIODIC || defined NS_PERIODIC
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -474,21 +416,12 @@
 !  Compute Coriolis parameter (1/s) at RHO-points.
 !-----------------------------------------------------------------------
 !
-#if defined BENCHMARK
-      val1=2.0_r8*(2.0_r8*pi*366.25_r8/365.25_r8)/86400.0_r8
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          f(i,j)=val1*SIN(latr(i,j)*deg2rad)
-        END DO
-      END DO
-#else
       val1=0.5_r8*Esize
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           f(i,j)=f0+beta*(yr(i,j)-val1)
         END DO
       END DO
-#endif
 #if defined EW_PERIODIC || defined NS_PERIODIC
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -508,13 +441,13 @@
 #if defined WETDRY_DAM_BREAK
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-          h(i,j)=0.0_r8
+          h(i,j)=0.001_r8
         END DO
       END DO
 #elif defined WETDRY_SLOPE_CHAN
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-          h(i,j)=10.0_r8*xr(i,j)/25125.0_r8
+          h(i,j)=10.0_r8*xr(i,j)/25250.0_r8
         END DO
       END DO
 #else
@@ -576,43 +509,5 @@
 #endif
       END IF
 !$OMP END CRITICAL (H_RANGE)
-#ifdef ICESHELF
-!
-!-----------------------------------------------------------------------
-!  Set depth of ice shelf (meters; negative) at RHO-points.
-!-----------------------------------------------------------------------
-!
-# ifdef WEDDELL
-      val1=340.0_r8/16.0_r8
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          IF (i.gt.20) THEN
-            zice(i,j)=0.0_r8
-          ELSE IF (i.gt.4) THEN
-            zice(i,j)=-340.0_r8+REAL(i-1,r8)*val1
-          ELSE
-            zice(i,j)=-340.0_r8
-          END IF
-        END DO
-      END DO
-# else
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          zice(i,j)=0.0_r8
-        END DO
-      END DO
-# endif
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        zice)
-# endif
-# ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, tile, model, 1,                           &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    zice)
-# endif
-#endif
       RETURN
       END SUBROUTINE ana_grid_tile

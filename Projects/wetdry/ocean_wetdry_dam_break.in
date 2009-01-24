@@ -42,7 +42,7 @@
 
 ! C-preprocessing Flag, default configuration.
 
-    MyAppCPP = WETDRY_SLOPE_CHAN
+    MyAppCPP = WETDRY_DAM_BREAK
 
 ! Input variable information file name.  This file needs to be processed
 ! first so all information arrays can be initialized properly.
@@ -53,8 +53,8 @@
 ! these parameters correctly.
 
           Lm == 100           ! Number of I-direction INTERIOR RHO-points
-          Mm == 5             ! Number of J-direction INTERIOR RHO-points
-           N == 10            ! Number of vertical levels
+          Mm == 25            ! Number of J-direction INTERIOR RHO-points
+           N == 8             ! Number of vertical levels
 
         Nbed =  1             ! Number of sediment bed layers
 
@@ -72,9 +72,9 @@
 
 ! Time-Stepping parameters.
 
-      NTIMES == 4320
-          DT == 10.0d0
-     NDTFAST == 20
+      NTIMES == 10000    !100000
+          DT == 0.001d0  !0.0001d0
+     NDTFAST == 30       !1
 
 ! Model iteration loops parameters.
 
@@ -95,7 +95,7 @@
 
        NRREC == 0
    LcycleRST == T
-        NRST == 720
+        NRST == 10000
         NSTA == 1
         NFLT == 1
        NINFO == 1
@@ -103,7 +103,7 @@
 ! Output history, average, diagnostic files parameters.
 
      LDEFOUT == T
-        NHIS == 432
+        NHIS == 100
      NDEFHIS == 0
       NTSAVG == 1
         NAVG == 720
@@ -139,7 +139,7 @@
 
 ! Harmononic/biharmonic, horizontal viscosity coefficient: [Ngrids].
 
-       VISC2 == 0.0d0                           ! m2/s
+       VISC2 == 0.0001d0                         ! m2/s
        VISC4 == 0.0d0                           ! m4/s
 
 ! Vertical mixing coefficients for active tracers: [1:NAT+NPT,Ngrids]
@@ -182,8 +182,8 @@
 
 ! Constants used in momentum stress computation.
 
-        RDRG == 0.0025d0   !0.0025d0   !0.01d0                 ! m/s
-       RDRG2 == 0.0015d0                   ! nondimensional
+        RDRG == 0.005d0                   ! m/s
+       RDRG2 == 0.005d0                   ! nondimensional
          Zob == 0.015d0                    ! m
          Zos == 0.02d0                     ! m
 
@@ -195,7 +195,7 @@
 
 ! Minimum depth for wetting and drying.
 
-       DCRIT == 0.10d0                   !m
+       DCRIT == 0.001d0                   !m
 
 ! Various parameters.
 
@@ -410,8 +410,8 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == Projects/wetdry_slope_chan/ocean_wetdry_slope_chan_grd.nc
-     ININAME == Projects/wetdry_slope_chan/ocean_wetdry_slope_chan_ini.nc
+     GRDNAME == ocean_grd.nc
+     ININAME == ocean_ini.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
@@ -432,13 +432,13 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 
      NFFILES == 1                          ! number of forcing files
 
-     FRCNAME == Data/ROMS/Forcing/swan_shoreface_angle_forc.nc
+     FRCNAME == forc.nc
 
 ! Output NetCDF file names, [1:Ngrids].
 
      GSTNAME == ocean_gst.nc
      RSTNAME == ocean_rst.nc
-     HISNAME == ocean_wetdry_slope_chan_his.nc
+     HISNAME == wetdry_dam_break_his.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc

@@ -63,8 +63,9 @@ $(if $(filter $(MAKE_VERSION),$(NEED_VERSION)),,        \
 #ROMS_APPLICATION ?= SOLITON_REFINED
 #ROMS_APPLICATION ?= HOLE7s
 #ROMS_APPLICATION ?= DOGBONE
-ROMS_APPLICATION ?= INLET_TEST
+#ROMS_APPLICATION ?= WETDRY_DAM_BREAK
 #ROMS_APPLICATION ?= LIP
+ROMS_APPLICATION ?= Grizzly_Bay
 
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
@@ -75,7 +76,7 @@ ROMS_APPLICATION ?= INLET_TEST
 #MY_HEADER_DIR ?= /cygdrive/c/work/models/roms/roms_sed_rutgers_cygwin/coawst/Projects/Soliton_refined
 #MY_HEADER_DIR ?= /cygdrive/c/work/models/roms/help_cases/refined5/Projects/Dogbone
 #MY_HEADER_DIR ?= /cygdrive/c/work/models/roms/roms_sed_rutgers_cygwin/coawst/Projects/Isabel
-MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inlet_test
+MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Grizzly_Bay
 
 #  If your application requires analytical expressions and they are not
 #  located in "ROMS/Functionals", provide an alternate directory.
@@ -88,7 +89,7 @@ MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inlet_test
 #MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/roms/roms_sed_rutgers_cygwin/coawst/Projects/Soliton_refined
 #MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/roms/help_cases/refined5/Projects/Dogbone
 #MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/roms/roms_sed_rutgers_cygwin/coawst/Projects/Isabel
-MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inlet_test
+MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Grizzly_Bay
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying

@@ -206,12 +206,13 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           zeta(i,j,1)=0.60_r8
-          IF (xr(i,j).ge.8.0_r8) THEN
+          IF (xr(i,j).ge.1.0_r8) THEN
             zeta(i,j,1)=0.0_r8
           END IF
         END DO
+        zeta(25,j,1)=0.3_r8
       END DO
-#elif defined WETDRY_DAM_SLOPE_CHAN
+#elif defined WETDRY_SLOPE_CHAN
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           zeta(i,j,1)=-10.0_r8

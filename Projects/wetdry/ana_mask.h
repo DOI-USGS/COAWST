@@ -108,34 +108,36 @@
           mask(Istr-1,j)=0.0_r8
         END DO
       END IF
-      IF (EASTERN_EDGE) THEN
-        DO j=JstrR,JendR
-          mask(Iend+1,j)=0.0_r8
-        END DO
-      END IF
       IF (SOUTHERN_EDGE) THEN
         DO i=IstrR,IendR
-          mask(i,Jstr-1)=0.0_r8
+          IF (i.le.25) THEN
+            mask(i,Jstr-1)=0.0_r8
+          END IF
         END DO
       END IF
       IF (NORTHERN_EDGE) THEN
         DO i=IstrR,IendR
-          mask(i,Jend+1)=0.0_r8
+          IF (i.le.25) THEN
+            mask(i,Jend+1)=0.0_r8
+          END IF
         END DO
       END IF
       DO j=JstrR,JendR
-!        mask(41,j)=0.0_r8
-        IF (Istr.ne.1) THEN
-          mask(322,j)=0.0_r8
+        IF (j.le.10) THEN
+          mask(25,j)=0.0_r8
         END IF
       END DO
-!     DO j=41,44
-	DO j=158,173
-!        mask(41,j)=1.0_r8
-        mask(322,j)=1.0_r8
+      DO j=JstrR,JendR
+        IF (j.ge.16) THEN
+          mask(25,j)=0.0_r8
+        END IF
       END DO
 #else
-      ana_mask.h: no values provided for mask.
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          mask(i,j)=1.0_r8
+        END DO
+      END DO
 #endif
 !
       DO j=JstrR,JendR

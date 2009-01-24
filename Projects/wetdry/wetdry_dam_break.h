@@ -6,33 +6,39 @@
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
 **
-** Options for Shore Face Planar Beach Test Case.
+** Dam break test case.
 **
-** Application flag:   WETDRY_SLOPE_CHAN
+** Application flag:   WETDRY_DAM_BREAK
 */
 
 #define WET_DRY
-#define OUT_DOUBLE
+#define MASKING
+#undef  OUT_DOUBLE
 #define UV_ADV
 #define TS_U3HADVECTION
 #define DJ_GRADPS
 #undef  SALINITY
 #define SOLVE3D
 #define SPLINES
-#define NORTHERN_WALL
-#define SOUTHERN_WALL
-#define WESTERN_WALL
-#define EAST_FSCLAMPED
-#define EAST_M2REDUCED
-#define FSOBC_REDUCED
-#define EAST_M3GRADIENT
 
+#define WESTERN_WALL
+#define EAST_FSGRADIENT
+#define EAST_M2GRADIENT
+#define EAST_M3GRADIENT
+#define NORTH_FSGRADIENT
+#define NORTH_M2GRADIENT
+#define NORTH_M3GRADIENT
+#define SOUTH_FSGRADIENT
+#define SOUTH_M2GRADIENT
+#define SOUTH_M3GRADIENT
+
+#define ANA_SMFLUX
 #define ANA_INITIAL
 #define ANA_GRID
-#define ANA_FSOBC
-#define ANA_M2OBC
-#define ANA_SMFLUX
-#define UV_LDRAG
+#define ANA_MASK
+#define UV_QDRAG
+#define UV_VIS2
+#define MIX_GEO_UV
 
 #ifdef SOLVE3D
 # define ANA_STFLUX

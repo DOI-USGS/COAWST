@@ -42,7 +42,7 @@
 
 ! C-preprocessing Flag, default configuration.
 
-    MyAppCPP = WETDRY_DAM_BREAK
+    MyAppCPP = WETDRY_SLOPE_CHAN
 
 ! Input variable information file name.  This file needs to be processed
 ! first so all information arrays can be initialized properly.
@@ -52,9 +52,9 @@
 ! Grid dimension parameters. See notes below in the Glossary for how to set
 ! these parameters correctly.
 
-          Lm == 600 !155      ! Number of I-direction INTERIOR RHO-points
-          Mm == 332 !83       ! Number of J-direction INTERIOR RHO-points
-           N == 8             ! Number of vertical levels
+          Lm == 100           ! Number of I-direction INTERIOR RHO-points
+          Mm == 5             ! Number of J-direction INTERIOR RHO-points
+           N == 10            ! Number of vertical levels
 
         Nbed =  1             ! Number of sediment bed layers
 
@@ -67,14 +67,14 @@
 ! shared-memory configurations used to determine tile horizontal range
 ! indices (Istr,Iend) and (Jstr,Jend), [1:Ngrids].
 
-      NtileI == 2                               ! I-direction partition
+      NtileI == 1                               ! I-direction partition
       NtileJ == 1                               ! J-direction partition
 
 ! Time-Stepping parameters.
 
-      NTIMES == 5000
-          DT == 0.001d0
-     NDTFAST == 20
+      NTIMES == 43200 !4320
+          DT == 1.0d0 !10.0d0
+     NDTFAST == 1     !20
 
 ! Model iteration loops parameters.
 
@@ -98,12 +98,12 @@
         NRST == 720
         NSTA == 1
         NFLT == 1
-       NINFO == 1
+       NINFO == 60
 
 ! Output history, average, diagnostic files parameters.
 
      LDEFOUT == T
-        NHIS == 100
+        NHIS == 4320 !432
      NDEFHIS == 0
       NTSAVG == 1
         NAVG == 720
@@ -182,7 +182,7 @@
 
 ! Constants used in momentum stress computation.
 
-        RDRG == 0.0025d0                   ! m/s
+        RDRG == 0.0025d0   !0.0025d0   !0.01d0                 ! m/s
        RDRG2 == 0.0015d0                   ! nondimensional
          Zob == 0.015d0                    ! m
          Zos == 0.02d0                     ! m
@@ -195,7 +195,7 @@
 
 ! Minimum depth for wetting and drying.
 
-       DCRIT == 0.05d0                   !m
+       DCRIT == 0.10d0                   !m
 
 ! Various parameters.
 
@@ -304,7 +304,7 @@ SO_sdev(isTsur) == 1.0d0 1.0d0             ! NT surface tracer flux
 Hout(idUvel) == T                          ! 3D U-velocity
 Hout(idVvel) == T                          ! 3D V-velocity
 Hout(idWvel) == T                          ! 3D W-velocity
-Hout(idOvel) == T                          ! omega vertical velocity
+Hout(idOvel) == F                          ! omega vertical velocity
 Hout(idUbar) == T                          ! 2D U-velocity
 Hout(idVbar) == T                          ! 2D V-velocity
 Hout(idFsur) == T                          ! free-surface
@@ -432,13 +432,13 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 
      NFFILES == 1                          ! number of forcing files
 
-     FRCNAME == forc.nc
+     FRCNAME == ocean_forc.nc
 
 ! Output NetCDF file names, [1:Ngrids].
 
      GSTNAME == ocean_gst.nc
      RSTNAME == ocean_rst.nc
-     HISNAME == ocean_wetdry_dam_break_his.nc
+     HISNAME == wetdry_slope_chan0025_his.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc
