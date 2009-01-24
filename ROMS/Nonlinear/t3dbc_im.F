@@ -591,7 +591,7 @@
       END IF
 # endif
 
-#ifdef REFINED_GRID
+# ifdef REFINED_GRID
 !set this for Parent Grid ONLY
       END IF
 # endif
