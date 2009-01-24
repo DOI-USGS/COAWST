@@ -22,7 +22,7 @@
 #ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasts
 #endif
-      USE ran_state, ONLY: ran_seed
+!     USE ran_state, ONLY: ran_seed
 !
       implicit none
 !
@@ -447,8 +447,8 @@
 !  everytime that we run the same solution.
 !-----------------------------------------------------------------------
 !
-      sequence=759
-      CALL ran_seed (sequence)
+!     sequence=759
+!     CALL ran_seed (sequence)
 
       RETURN
       END SUBROUTINE inp_par
