@@ -588,33 +588,13 @@
           DO j=jds,jde
             DO i=ids,ide
               ij=ij+1
-              grid%sst(i,j)=REAL(AA(ij)+273.15,r4)
+              grid%sst(i,j)=(AA(ij)+273.15)*(1-grid%landmask(i,j))+     &
+     &                       grid%sst(i,j)*grid%landmask(i,j)
             END DO
           END DO
 
         END SELECT
       END DO
-!
-!  Report. (HGA: need to find a WRF current time value or string).
-!
-      IF (Nthreads(Iatmos).gt.1) THEN
-        inpbuffer(1)=RecvTime
-        inpbuffer(2)=SendTime
-        handle(1)=MPI_SUM
-        handle(2)=MPI_SUM
-        CALL mpi_allreduce (inpbuffer, outbuffer, 2,                    &
-     &                      MPI_DOUBLE_PRECISION, handle,               &
-     &                      ATM_COMM_WORLD, MyError)
-        RecvTime=outbuffer(1)
-        SendTime=outbuffer(2)
-      END IF
-      IF (MyRank.eq.0) THEN
-        IF ((Iimport.gt.0).or.(Iexport.gt.0)) THEN
-          WRITE (6,30) Iimport, Iexport, wrf_time,                      &
-     &                 RecvTime, SendTime
-          CALL my_flush (6)
-        END IF
-      END IF
 !
 !  Deallocate communication arrays.
 !
