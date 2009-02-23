@@ -110,8 +110,10 @@
      &                    FORCES(ng) % bvstr,                           &
 # endif
      &                    OCEAN(ng) % t,                                &
+# ifdef SUSPLOAD
      &                    OCEAN(ng) % ero_flux,                         &
      &                    OCEAN(ng) % settling_flux,                    &
+# endif
 # if defined SED_MORPH
      &                    GRID(ng) % bed_thick,                         &
 # endif
@@ -140,7 +142,9 @@
      &                          bustr, bvstr,                           &
 # endif
      &                          t,                                      &
+# ifdef SUSPLOAD
      &                          ero_flux, settling_flux,                &
+# endif
 # if defined SED_MORPH
      &                          bed_thick,                              &
 # endif
@@ -185,8 +189,10 @@
       real(r8), intent(inout):: bed_thick(LBi:,LBj:,:)
 #  endif
       real(r8), intent(inout) :: t(LBi:,LBj:,:,:,:) 
+#  ifdef SUSPLOAD
       real(r8), intent(inout) :: ero_flux(LBi:,LBj:,:) 
       real(r8), intent(inout) :: settling_flux(LBi:,LBj:,:) 
+#  endif
       real(r8), intent(inout) :: bed(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: bed_frac(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: bed_mass(LBi:,LBj:,:,:,:)
@@ -210,8 +216,10 @@
       real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,2)
 #  endif
       real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
+#  ifdef SUSPLOAD
       real(r8), intent(inout) :: ero_flux(LBi:UBi,LBj:UBj,:) 
       real(r8), intent(inout) :: settling_flux(LBi:UBi,LBj:UBj,:) 
+#  endif
       real(r8), intent(inout) :: bed(LBi:UBi,LBj:UBj,Nbed,MBEDP)
       real(r8), intent(inout) :: bed_frac(LBi:UBi,LBj:UBj,Nbed,NST)
       real(r8), intent(inout) :: bed_mass(LBi:UBi,LBj:UBj,Nbed,1:2,NST)

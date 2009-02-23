@@ -39,12 +39,11 @@
       integer :: Istr, Iend, Jstr, Jend
       integer :: IstrR, IendR, JstrR, JendR, IstrU, JstrV
       integer :: Asize, Jsize, MyError
-      integer :: j, jc, nprocs
+      integer :: i, ic, j, jc, nprocs
       integer :: nRows, nCols, num_sparse_elems
-!      integer, dimension(:), pointer :: points
 
-      integer, allocatable :: length(:)
-      integer, allocatable :: start(:)
+      integer, allocatable  :: length(:)
+      integer, allocatable  :: start(:)
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       character (len=70)    :: nc_name
 !
@@ -137,6 +136,9 @@
 !        IF (allocated(sparse_weights)) THEN
           deallocate ( sparse_weights )
 !        END IF
+!        IF (allocated(sparse_weights)) THEN
+          deallocate ( dst_grid_imask )
+!        END IF
       END IF
 
 !!!!!!!!!!!!!!!!!!!!!!
@@ -152,6 +154,17 @@
 !
         nRows=dst_grid_dims(1)*dst_grid_dims(2)
         nCols=src_grid_dims(1)*src_grid_dims(2)
+!
+! Zero out the destination cells with masking.
+!
+        ic=1
+        DO i=1,nRows
+          DO ic=i*4-3,i*4
+            sparse_weights(ic)=sparse_weights(ic)*                      &
+     &                         REAL(dst_grid_imask(i),r8)
+          END DO
+        END DO
+
 !
 ! Create sparse matrix.
 !
@@ -174,7 +187,14 @@
 !        IF (allocated(sparse_weights)) THEN
           deallocate ( sparse_weights )
 !        END IF
+!        IF (allocated(sparse_weights)) THEN
+          deallocate ( dst_grid_imask )
+!        END IF
       END IF
+!
+      CALL mpi_bcast(dst_grid_dims, 2, MPI_INTEGER, MyMaster,           &
+     &               OCN_COMM_WORLD, MyError)
+
 #endif
 #if !defined WAVES_OCEAN && !defined MCT_INTERP_OC2AT
 !
@@ -223,19 +243,7 @@
         start (jc)=j*(Lm(ng)+2)+IstrR+1
         length(jc)=(IendR-IstrR+1)
       END DO
-!      Isize=IendR-IstrR+1
-!      IF (.not.allocated(start)) THEN
-!        allocate ( start(Isize) )
-!      END IF
-!      IF (.not.allocated(length)) THEN
-!        allocate ( length(Isize) )
-!      END IF
-!      ic=0
-!      DO i=IstrR,IendR
-!        ic=ic+1
-!        start (ic)=i*(Mm(ng)+2)+JstrR+1
-!        length(ic)=(JendR-JstrR+1)
-!      END DO
+
       CALL GlobalSegMap_init (GSMapROMS, start, length, 0,              &
      &                        OCN_COMM_WORLD, OCNid)
 !
@@ -252,33 +260,17 @@
 !  Determine start and lengths for domain decomposition
 !  of the atm model.
 !
-      Jsize=dst_grid_dims(1)
+      Jsize=dst_grid_dims(1)*dst_grid_dims(2)/nprocs
       IF (.not.allocated(start)) THEN
-        allocate ( start(Jsize) )
+        allocate ( start(1) )
       END IF
       IF (.not.allocated(length)) THEN
-        allocate ( length(Jsize) )
+        allocate ( length(1) )
       END IF
-      jc=0
-      DO j=0,Jsize-1
-        jc=jc+1
-        start (jc)=j*dst_grid_dims(2)+1
-        length(jc)=dst_grid_dims(2)
-      END DO
-
-!      Isize=dst_grid_dims(2)
-!      IF (.not.allocated(start)) THEN
-!        allocate ( start(Isize) )
-!      END IF
-!      IF (.not.allocated(length)) THEN
-!        allocate ( length(Isize) )
-!      END IF
-!      ic=0
-!      DO i=0,Isize-1
-!        ic=ic+1
-!        start (ic)=i*dst_grid_dims(1)+1
-!        length(ic)=dst_grid_dims(1)
-!      END DO
+!      allocate ( start(1) )
+!      allocate ( length(1) )
+      start(1)=(MyRank*Jsize)+1
+      length(1)=Jsize
 
       CALL GlobalSegMap_init (GSMapWRF, start, length, 0,              &
      &                        OCN_COMM_WORLD, OCNid)
@@ -291,11 +283,14 @@
       IF (allocated(length)) THEN
         deallocate (length)
       END IF
+
+      call mpi_barrier(OCN_COMM_WORLD)
+
 !
 ! Create ATM sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
 !
-        call SparseMatrixPlus_init(A2OMatPlus, sMatA,                   &
+        call SparseMatrixPlus_init(A2OMatPlus, sMatA,                  &
      &                             GSMapWRF, GSMapROMS, Xonly,         &
      &                             MyMaster, OCN_COMM_WORLD, OCNid)
         call SparseMatrix_clean(sMatA)
@@ -303,7 +298,7 @@
 ! Create Ocean sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
 !
-         call SparseMatrixPlus_init(O2AMatPlus, sMatO,                  &
+         call SparseMatrixPlus_init(O2AMatPlus, sMatO,                 &
      &                              GSMapROMS, GSMapWRF, Xonly,        &
      &                              MyMaster, OCN_COMM_WORLD, OCNid)
         call SparseMatrix_clean(sMatO)
@@ -328,13 +323,11 @@
 !  the ocean model.
 !
       Asize=GlobalSegMap_lsize(GSmapWRF, OCN_COMM_WORLD)
-      CALL AttrVect_init (ocn2atm_AV2, rList=TRIM(ExportList(Iocean)),   &
-     &                    lsize=Asize)
+      CALL AttrVect_init (ocn2atm_AV2,rList="SST",lsize=Asize)
       CALL AttrVect_zero (ocn2atm_AV2)
 !
       Asize=GlobalSegMap_lsize(GSmapROMS, OCN_COMM_WORLD)
-      CALL AttrVect_init (ocn2atm_AV, rList=TRIM(ExportList(Iocean)),   &
-     &                    lsize=Asize)
+      CALL AttrVect_init (ocn2atm_AV,rList="SST",lsize=Asize)
       CALL AttrVect_zero (ocn2atm_AV)
 !
 !  Initialize a router to the wave model component.
@@ -521,7 +514,7 @@
 !
       CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
       buffer(1)=my_wtime(wtime)
-#ifdef MCT_INTERP_OC2WV
+#ifdef MCT_INTERP_OC2AT
       CALL MCT_Recv (atm2ocn_AV2, ROMStoWRF, MyError)
       CALL MCT_MatVecMul(atm2ocn_AV2, A2OMatPlus, atm2ocn_AV)
 #else
@@ -600,7 +593,7 @@
 #endif
 #if defined BULK_FLUXES || defined ECOSIM
 
-          CASE ('Uwind')                  ! U-wind (10m) component
+          CASE ('UWind')                  ! U-wind (10m) component
 
             CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
             Iimport=Iimport+1
@@ -615,7 +608,7 @@
      &                          FORCES(ng)%Uwind,                       &
      &                          status)
 
-          CASE ('Vwind')                  ! V-wind (10m) component
+          CASE ('VWind')                  ! V-wind (10m) component
 
             CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
             Iimport=Iimport+1
@@ -678,6 +671,7 @@
      &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
      &                          FORCES(ng)%lrflx,                       &
      &                          status)
+# ifdef RUOYING_CASE1
 
           CASE ('Lheat')                  ! latent heat flux
 
@@ -708,6 +702,7 @@
      &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
      &                          FORCES(ng)%shflx,                       &
      &                          status)
+# endif
 #endif
 #ifdef SHORTWAVE
 
@@ -715,7 +710,8 @@
 
             CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
             Iimport=Iimport+1
-            scale=-1.0_r8/(rho0*Cp)       ! Watts/m2 to Celsius m/s
+!           scale=-1.0_r8/(rho0*Cp)       ! Watts/m2 to Celsius m/s
+            scale=1.0_r8/(rho0*Cp)       ! Watts/m2 to Celsius m/s, rhe
             add_offset=0.0_r8
             CALL ROMS_import2d (ng, tile,                               &
      &                          id, gtype, scale, add_offset,           &
@@ -743,7 +739,7 @@
      &                          FORCES(ng)%stflx(:,:,itemp),            &
      &                          status)
 
-          CASE ('Ustr')                   ! surface U-wind stress
+          CASE ('USTRESS')                   ! surface U-wind stress
 
             CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
             Iimport=Iimport+1
@@ -758,7 +754,7 @@
      &                          FORCES(ng)%sustr,                       &
      &                          status)
 
-          CASE ('Vstr')                   ! surface V-wind stress
+          CASE ('VSTRESS')                   ! surface V-wind stress
 
             CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
             Iimport=Iimport+1
@@ -811,7 +807,7 @@
 !
       IF (Iexport.gt.0) THEN
         buffer(2)=my_wtime(wtime)
-#ifdef MCT_INTERP_OC2WV
+#ifdef MCT_INTERP_OC2AT
         call MCT_MatVecMul(ocn2atm_AV,O2AMatPlus,ocn2atm_AV2)
         CALL MCT_Send (ocn2atm_AV2, ROMStoWRF, MyError)
 #else

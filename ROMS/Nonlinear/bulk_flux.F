@@ -361,7 +361,7 @@
 !
 !  Input bulk parameterization fields.
 !
-          Wmag(i)=SQRT(Uwind(i,j)*Uwind(i,j)+Vwind(i,j)*Vwind(i,j))
+          Wmag(i)=SQRT(Uwind(i,j)*Uwind(i,j)+Vwind(i,j)*Vwind(i,j))+eps
           PairM=Pair(i,j)
           TairC(i)=Tair(i,j)
           TairK(i)=TairC(i)+273.16_r8
@@ -464,7 +464,7 @@
 !
           IF (RH.lt.2.0_r8) THEN                       !RH fraction
             cff=cff*RH                                 !Vapor pres (mb)
-            Q(i)=0.62197_r8*(cff/(PairM-0.378_r8*cff)) !Spec hum (kg/kg)
+            Q(i)=0.62197_r8*(cff/(PairM-0.378_r8*cff+eps)) !Spec hum (kg/kg)
           ELSE          !RH input was actually specific humidity in g/kg
             Q(i)=RH/1000.0_r8                          !Spec Hum (kg/kg)
           END IF
@@ -534,7 +534,7 @@
           Ribcu(i)=-blk_ZW(ng)/(blk_Zabl*0.004_r8*blk_beta**3)
           Ri(i)=-g*blk_ZW(ng)*((delT(i)-delTc(i))+                      &
      &                          0.61_r8*TairK(i)*delQ(i))/              &
-     &          (TairK(i)*delW(i)*delW(i))
+     &          (TairK(i)*delW(i)*delW(i)+eps)
           IF (Ri(i).lt.0.0_r8) THEN
             Zetu(i)=CC(i)*Ri(i)/(1.0_r8+Ri(i)/Ribcu(i))       ! Unstable
           ELSE
@@ -785,7 +785,7 @@
           stflx(i,j,itemp)=(srflx(i,j)+lrflx(i,j)+                      &
      &                      lhflx(i,j)+shflx(i,j))
 # ifdef EMINUSP
-          evap(i,j)=LHeat(i,j)/Hlv(i,j)
+          evap(i,j)=LHeat(i,j)/(Hlv(i,j)+eps)
           stflx(i,j,isalt)=cff*(evap(i,j)-rain(i,j))
 # endif
 # ifdef MASKING

@@ -932,6 +932,12 @@
 #ifdef MODEL_COUPLING
       INTEGER WAV_COMM_WORLD
 #endif
+#ifdef REFINED_GRID
+      INTEGER, SAVE, WAV_COMM_WORLD, Numspec, ac2size, NBGRPT_last
+      INTEGER, Numspecl
+      INTEGER, SAVE, ALLOCATABLE :: BGRIDPL(:),BGRIDPG(:)
+#endif
+
 !
 !  8. Subroutines and functions used
 !
@@ -1023,7 +1029,10 @@
       REAL, SAVE,    ALLOCATABLE :: BSPECS(:,:,:,:)
       REAL, SAVE,    ALLOCATABLE :: AC1(:,:,:), COMPDA(:,:)
       REAL, SAVE,    ALLOCATABLE    :: OURQT(:)
-
+#ifdef REFINED_GRID
+      REAL, SAVE,    ALLOCATABLE :: AC2_parent(:)
+      REAL, SAVE,    ALLOCATABLE :: AC2_parent2(:)
+#endif
       END MODULE M_PARALL2
 #endif
 

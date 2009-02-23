@@ -5,7 +5,11 @@
 !
 !*****************************************************************
 !                                                                *
+#ifdef MODEL_COUPLING
+      SUBROUTINE OCPINI (ng,INIFIL, LREAD, INERR)
+#else
       SUBROUTINE OCPINI (INIFIL, LREAD, INERR)
+#endif
 !                                                                *
 !*****************************************************************
 !
@@ -91,6 +95,7 @@
 !
       LOGICAL    LREAD, FILEXI
 #ifdef MODEL_COUPLING
+      INTEGER, intent(in) :: ng
       CHARACTER  OUTFIL *40, INIFIL *(*), TSTFIL *40,
 #else
       CHARACTER  INPFIL *40, OUTFIL *40, INIFIL *(*), TSTFIL *40,
@@ -192,7 +197,13 @@
         INPFIL = 'INPUT'
 #endif
         PRINTF = 4
+#ifdef REFINED_GRID
         OUTFIL = 'PRINT'
+        WRITE(OUTFIL(6:7),181) ng
+ 181    FORMAT(I2.2)
+#else
+        OUTFIL = 'PRINT'
+#endif
 !       unit ref. numbers for output to screen and to separate
 !       test print file:
         PRTEST = PRINTF

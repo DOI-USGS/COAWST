@@ -375,6 +375,12 @@
       INTEGER, SAVE :: LWINDR = 0     ! if non-zero, there is wind
       INTEGER, SAVE :: LWINDM = 3     ! type of wind growth formulation
       INTEGER, ALLOCATABLE :: IARR(:)                                     40.31
+#if defined AIR_OCEAN
+      REAL, ALLOCATABLE :: TARR(:)                                        40.31
+#endif
+#ifdef REFINED_GRID
+      Numspecl=0
+#endif
 
       CALL STRACE (IENT, 'SWREAD')
 !
@@ -1134,8 +1140,27 @@
           IGRD = 5
           IGR2 = 6                                                        10.26
           PSNAME = 'WXGRID  '
-#ifdef MODEL_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME)
+#if defined AIR_OCEAN
+          LWINDR = 2                                                        30.10
+          IWIND  = LWINDM                                                   30.10
+          IGR1   = 5
+          IGR2   = 6
+          VARWI  = .TRUE.
+          IF (JWX2.EQ.0) THEN
+            MCMVAR = MCMVAR + 2
+            JWX2   = MCMVAR - 1
+            JWY2   = MCMVAR
+          ENDIF
+          IF (.NOT.ALLOCATED(TARR)) THEN                                    40.41
+             ALLOCATE( TARR(MXG(IGR2)*MYG(IGR2)) )                          40.41
+             TARR = 0.                                                      40.41
+          END IF                                                            40.41
+          IF (.NOT.ALLOCATED(WXI)) ALLOCATE(WXI(MXG(IGR1),MYG(IGR1)))      40.31
+          CALL SWCOPR( TARR, WXI, MXG(IGR1)*MYG(IGR1) )                    40.31
+          IF (.NOT.ALLOCATED(WYI)) ALLOCATE(WYI(MXG(IGR2),MYG(IGR2)))    40.31
+          CALL SWCOPR( TARR, WYI, MXG(IGR2)*MYG(IGR2) )                    40.31
+          DEALLOCATE(TARR)
 #endif
         ELSE IF (KEYWIS ('WX')) THEN
           IGRD = 5
@@ -1495,6 +1520,17 @@
         MCGRD  = MCGRDGL                                                  40.31
         NGRBND = NGRBGL                                                   40.31
         CALL SWBOUN ( XGRDGL, YGRDGL, KGRPGL, XYTST, KGRBGL )             40.31
+#ifdef REFINED_GRID
+! Accumulate the total number of spec BCs for this grid
+        Numspecl=Numspecl+1
+! Use array NBGRPT_last as a temp value here to store last number of bndry pts.
+        IF (Numspecl.gt.1) THEN
+          DO I=NBGRPT_last+1,NBGRPT
+            BGRIDPG(I)=Numspecl-1
+          END DO
+          NBGRPT_last=NBGRPT
+        END IF
+#endif
         IF (STPNOW()) RETURN                                              34.01
         MXC    = ITMP1                                                    40.31
         MYC    = ITMP2                                                    40.31

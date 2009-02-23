@@ -126,7 +126,11 @@
 !***********************************************************************
 !                                                                      *
 #ifdef MODEL_COUPLING
+# ifdef REFINED_GRID
+      SUBROUTINE SWAN_INITIALIZE (ng, MyComm, WNAME, MTC_out)
+# else
       SUBROUTINE SWAN_INITIALIZE (MyComm, WNAME)
+# endif
 #else
       SUBROUTINE SWMAIN                                                   40.31 34.01
 #endif
@@ -268,7 +272,12 @@
 !
 #ifdef MODEL_COUPLING
       CHARACTER*80, intent(in) :: WNAME
+# ifdef REFINED_GRID
+      INTEGER, INTENT(in) :: ng, MyCOMM
+      INTEGER, INTENT(out) :: MTC_out
+# else
       INTEGER, INTENT(in) :: MyCOMM
+# endif
 #endif
       INTEGER   IUNIT                                                     34.01
       INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN                             40.30
@@ -378,7 +387,11 @@
       INERR =0                                                            40.31
 
       CALL SWTSTA(2)                                                      40.23
+#if defined MODEL_COUPLING && defined REFINED_GRID
+      CALL SWINIT (ng, INERR)                                             40.31 34.01
+#else
       CALL SWINIT (INERR)                                                 40.31 34.01
+#endif
       CALL SWTSTO(2)                                                      40.23
       IF (INERR.GT.0) RETURN                                              34.01
       IF (STPNOW()) RETURN                                                34.01
@@ -393,6 +406,9 @@
 
         CALL SWTSTA(3)                                                    40.23
         CALL SWREAD (COMPUT)                                              40.31 30.90
+#if defined MODEL_COUPLING && defined REFINED_GRID
+        MTC_out=MTC
+#endif
         CALL SWTSTO(3)                                                    40.23
         IF (STPNOW()) RETURN                                              34.01
 
@@ -422,7 +438,14 @@
         ENDIF                                                             34.01
         IF (.NOT.ALLOCATED(BSPECS)) ALLOCATE(BSPECS(MDC,MSC,NBSPEC,2))    40.31
         IF (.NOT.ALLOCATED(BGRIDP)) ALLOCATE(BGRIDP(6*NBGRPT))            40.31
-
+#if defined REFINED_GRID
+!       how do we determine number of 2d spec points
+        IF (.NOT.ALLOCATED(AC2_parent))                                  &
+     &            ALLOCATE(AC2_parent(MSC*MDC*Numspec))
+        IF (.NOT.ALLOCATED(AC2_parent2))                                 &
+     &            ALLOCATE(AC2_parent2(MSC*MDC*Numspec))
+        AC2_parent2=0.
+#endif
 !       --- do some preparations before computation                       40.31
 
         CALL SWTSTA(4)                                                    40.23
@@ -535,13 +558,20 @@
 !
 !         --- initialize MCT coupling
 !
+#  ifdef REFINED_GRID
+            CALL INITIALIZE_WAV2OCN_COUPLING (ng)
+#  else
             CALL INITIALIZE_WAV2OCN_COUPLING
+#  endif
 !
 !         --- exchange initial conditions with ocean model.
 !
+#  ifdef REFINED_GRID
+#  else
             CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
      &                    KGRPNT, XCGRID, YCGRID, KGRBND, OURQT ,
      &                    0, 0)
+#  endif
             CALL SWTSTO(1)
 # endif
  900  CONTINUE
@@ -551,7 +581,11 @@
 !
 !***********************************************************************
 !                                                                      *
+# ifdef REFINED_GRID
+      SUBROUTINE SWAN_RUN (CouplingTime, IT_in, ng, first)
+# else
       SUBROUTINE SWAN_RUN (CouplingTime)
+# endif
 !                                                                      *
 !***********************************************************************
 !
@@ -570,6 +604,9 @@
       IMPLICIT NONE
 !
       REAL,  intent(in) :: CouplingTime
+# ifdef REFINED_GRID
+      INTEGER,  intent(in) :: IT_in, ng, first
+# endif
       INTEGER   IUNIT
       INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN
       INTEGER   INERR
@@ -594,14 +631,19 @@
 
 !         --- loop over time steps                                        40.00
 
-#ifdef MODEL_COUPLING
+#ifndef REFINED_GRID
+# ifdef MODEL_COUPLING
           IF (NSTATC.EQ.1) THEN
             IT0 = 0
           ELSE
             IT0 = 1
           ENDIF
-#endif
+# endif
           DO 500 IT = IT0, MTC                                            40.00
+#endif
+#ifdef REFINED_GRID
+           IT=IT_in
+#endif
 !
             IF (LEVERR.GT.MAXERR) THEN                                    30.82
               WRITE (PRINTF, 6030) LEVERR                                 30.82
@@ -623,10 +665,17 @@
 !           --- update boundary conditions and input fields
 !
             CALL SWTSTA(7)                                                40.23
+#ifdef REFINED_GRID
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
-     &                    UYB   , WXI   , WYI   )                         40.31
+     &                    UYB   , WXI   , WYI   , ng, first, IT_in)
+#else
+            CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
+     &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
+     &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
+     &                    UYB   , WXI   , WYI)                            40.31
+#endif
             CALL SWTSTO(7)                                                40.23
             IF (STPNOW()) RETURN                                          34.01
 !
@@ -688,10 +737,16 @@
 
             IF (IT.gt.0) THEN
               numsteps = numsteps + 1
+# ifdef REFINED_GRID
+              CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
+     &                      KGRPNT, XCGRID, YCGRID, KGRBND, OURQT ,
+     &                      IT, CouplingTime, ng,first)
+# else
               CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
      &                      KGRPNT, XCGRID, YCGRID, KGRBND, OURQT ,
      &                      numsteps, CouplingTime)
             END IF
+# endif
 #else
             CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,         40.31
      &                    KGRPNT, XCGRID, YCGRID, KGRBND, OURQT )         40.51 40.31
@@ -711,7 +766,9 @@
  222          FORMAT(' Time of computation ->  ',A,' in sec:', F12.0)     40.00
             ENDIF                                                         40.00
 
+#ifndef REFINED_GRID
  500      CONTINUE
+#endif
 
 #ifdef MODEL_COUPLING
       RETURN
@@ -822,7 +879,11 @@
 #endif
 !***********************************************************************
 !                                                                      *
+#ifdef REFINED_GRID
+      SUBROUTINE SWINIT (ng, NERR)
+#else
       SUBROUTINE SWINIT (INERR)                                           40.31 34.01
+#endif
 !                                                                      *
 !***********************************************************************
 
@@ -1006,7 +1067,11 @@
       CALL BUGFIX ('A')
       CALL BUGFIX ('B')
 !
+#ifdef REFINED_GRID
+      CALL OCPINI (ng, 'swaninit', .TRUE.,INERR)
+#else
       CALL OCPINI ('swaninit', .TRUE.,INERR)                              34.01
+#endif
       IF (INERR.GT.0) RETURN                                              34.01
       IF (STPNOW()) RETURN                                                34.01
 !
@@ -1164,7 +1229,17 @@
 !     Set the defaults for the MDIA:                                      40.17
 
       MDIA  = 6                                                           40.17
-      ALLOCATE(LAMBDA(MDIA),CNL4_1(MDIA),CNL4_2(MDIA))                    40.17
+!jcw
+!     ALLOCATE(LAMBDA(MDIA),CNL4_1(MDIA),CNL4_2(MDIA))                    40.17
+      IF (.not.ALLOCATED (LAMBDA)) THEN
+        ALLOCATE(LAMBDA(MDIA))
+      END IF
+      IF (.not.ALLOCATED (CNL4_1)) THEN
+        ALLOCATE(CNL4_1(MDIA))
+      END IF
+      IF (.not.ALLOCATED (CNL4_2)) THEN
+        ALLOCATE(CNL4_2(MDIA))
+      END IF
       LAMBDA = (/0.08,0.09,0.11,0.15,0.16,0.29/)                          40.17
       CNL4_1 = (/8.77,-13.82,10.02,-15.92,14.41,0.65/)                    40.17
       CNL4_2 = CNL4_1                                                     40.17
@@ -2501,6 +2576,28 @@
             END DO                                                        40.31
          END DO                                                           40.31
       END DO                                                              40.31
+#ifdef REFINED_GRID
+!
+!     Associate parent forcing to local tiled child grid.
+!
+      IF (.not.ALLOCATED(BGRIDPL)) ALLOCATE(BGRIDPL(NBGRPT))
+      NBGRPT = 0                                                          40.31
+      DO IX = MXF, MXL                                                    40.31
+         DO IY = MYF, MYL                                                 40.31
+            INDX = KGRPGL(IX,IY)                                          40.31
+            CURBGP => FBGP                                                40.31
+            DO II = 1, NBGGL                                              40.31
+               INDXGR = CURBGP%BGP(1)                                     40.31
+               IF ( INDXGR.EQ.INDX ) THEN                                 40.31
+                  NBGRPT = NBGRPT + 1                                     40.31
+                  BGRIDPL(NBGRPT)=BGRIDPG(II)
+               END IF                                                     40.31
+               IF (.NOT.ASSOCIATED(CURBGP%NEXTBGP)) EXIT                  40.31
+               CURBGP => CURBGP%NEXTBGP                                   40.31
+            END DO                                                        40.31
+         END DO                                                           40.31
+      END DO                                                              40.31
+#endif
 !
 !     --- allocate arrays for diffraction and set prop scheme to BSBT     40.41
 !                                                                         40.21
@@ -4419,10 +4516,17 @@
       END
 !*********************************************************************
 !                                                                    *
+#ifdef REFINED_GRID
+      SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
+     &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
+     &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
+     &                   UYB   , WXI   , WYI, ng, first, ITjcw )
+#else
       SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
      &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
      &                   UYB   , WXI   , WYI   )                          40.31
+#endif
 !                                                                    *
 !*********************************************************************
 !
@@ -4434,6 +4538,11 @@
       USE SWCOMM4                                                         40.41
       USE M_BNDSPEC                                                       40.31
       USE M_PARALL                                                        40.31
+#ifdef REFINED_GRID
+      USE M_PARALL2                                                       40.31
+      USE M_MPI
+      USE mod_param
+#endif
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -4516,6 +4625,14 @@
 ! i   KGRPNT: computational grid point addresses
 ! i   XYTST : test points
 !
+#if defined MODEL_COUPLING && defined REFINED_GRID
+      INTEGER offset, offset2
+#endif
+#if defined MODEL_COUPLING && defined REFINED_GRID
+      INTEGER, intent(in) :: ng, first, ITjcw
+      INTEGER ngp, ngc
+      INTEGER MyRank, MySize, MyError, MyStatus, MyHandle
+#endif
       INTEGER  BGRIDP(*), XYTST(*), KGRPNT(MXC,MYC)
 !
 ! i   AC1   : action density spectra on old time level
@@ -4610,11 +4727,118 @@
 
 !     --- update boundary conditions
 
-#ifdef REFINED_GRID
-!only be here if not parent !!
-      IF (INODE.EQ.MASTER) THEN
-! mpi_gather AC 2d spec, put them into Bspecs
-! set nbfils ?
+#if defined MODEL_COUPLING && defined REFINED_GRID
+      IF (ng.eq.1) THEN
+        IF (INODE.EQ.MASTER) THEN                                           40.30
+         IF (ITEST.GE.80) WRITE (PRTEST,*) ' number of boundary files ',
+     &             NBFILS
+         CURBFL => FBNDFIL
+         DO IBFILE = 1, NBFILS
+
+!          --- read values from boundary file, and interpolate in time
+
+           CALL RBFILE ( SPCSIG, SPCDIR,                                  40.31
+     &                   CURBFL%BFILED, CURBFL%BSPLOC,                    40.31
+     &                   CURBFL%BSPDIR, CURBFL%BSPFRQ,                    40.31
+     &                   BSPECS, XYTST )                                  40.31
+           IF (STPNOW()) RETURN                                           34.01
+           IF (.NOT.ASSOCIATED(CURBFL%NEXTBSPC)) EXIT                     40.31
+           CURBFL => CURBFL%NEXTBSPC                                      40.31
+
+         END DO
+        END IF
+
+!     --- scatter array BSPECS to all nodes
+
+        CALL SWBROADC ( BSPECS, 2*MDC*MSC*NBSPEC, SWREAL )                  40.30
+        IF (STPNOW()) RETURN                                                40.30
+
+!     --- determine spectra on boundary points of grid
+        IF ( NBGRPT.GT.0 ) THEN
+           DO IBGRID = 1, NBGRPT
+             INDXGR = BGRIDP(6*IBGRID-5)
+             IF (BGRIDP(6*IBGRID-4).EQ.1) THEN
+!              obtain spectrum in boundary point from interpolation in space
+               W1 = 0.001 * REAL(BGRIDP(6*IBGRID-3))
+               K1 = BGRIDP(6*IBGRID-2)
+               W2 = 1.-W1
+               K2 = BGRIDP(6*IBGRID)
+               CALL SINTRP (W1, W2, BSPECS(1,1,K1,1), BSPECS(1,1,K2,1),
+     &                      AC2(1,1,INDXGR), SPCDIR, SPCSIG)
+!              --- store Hs from boundary condition in array HSOBND
+               ETOT = 0.
+               DO IS = 1, MSC
+                 SIG2 = SPCSIG(IS) ** 2
+                 DO ID = 1, MDC
+                   ETOT = ETOT + SIG2 * AC2(ID,IS,INDXGR)
+                 ENDDO
+               ENDDO
+               IF (ETOT.GT.0.) THEN
+                 HS = 4. * SQRT(FRINTF*DDIR*ETOT)
+               ELSE
+                 HS = 0.
+               ENDIF
+               COMPDA(INDXGR,JHSIBC) = HS
+             END IF
+           END DO
+        END IF
+      ELSE
+!       we are getting 2dspec AC2 from parent grid
+!       only do this for 1 of each 5 steps 
+!       IF ((ITjcw.gt.0).and.(ng.gt.1).and.(first.eq.1)                     &
+!    &               .and.(NBGRPT.GT.0)) THEN
+        IF ((ITjcw.gt.0).and.(ng.gt.1)                                      &
+     &               .and.(NBGRPT.GT.0)) THEN
+          CALL mpi_comm_rank (WAV_COMM_WORLD, MyRank, MyError)
+          CALL mpi_comm_size (WAV_COMM_WORLD, MySize, MyError)
+!         ac2size=MSC*MDC*Numspec
+          ngp=myparent(ng)
+          ngc=mychild(ng)
+
+           DO IBGRID = 1, NBGRPT
+             INDXGR = BGRIDP(6*IBGRID-5)
+             IF (BGRIDP(6*IBGRID-4).EQ.1) THEN
+!              obtain spectrum in boundary point from interpolation in space
+!
+! Array BGRIDPL has the offset index for each bndry point to the 
+! AC2 spec data in array AC2_parent2.
+
+!              offset=MSC*MDC*(IBGRID-1)
+               offset=MSC*MDC*(BGRIDPL(IBGRID)-1)
+
+!               if (myrank.eq.0) then
+!           write(*,*) 'swanmain offset ', ibgrid,offset, bgridpl(ibgrid)
+!               endif
+
+               DO IS = 1, MSC
+                 DO ID = 1, MDC
+                   offset=offset+1
+                   AC2(ID,IS,INDXGR)=AC2_parent2(offset)
+                 END DO
+               END DO
+               W1 = 0.001 * REAL(BGRIDP(6*IBGRID-3))
+               K1 = BGRIDP(6*IBGRID-2)
+               W2 = 1.-W1
+               K2 = BGRIDP(6*IBGRID)
+!              CALL SINTRP (W1, W2, BSPECS(1,1,K1,1), BSPECS(1,1,K2,1),
+!     &                     AC2(1,1,INDXGR), SPCDIR, SPCSIG)
+!             --- store Hs from boundary condition in array HSOBND
+               ETOT = 0.
+               DO IS = 1, MSC
+                 SIG2 = SPCSIG(IS) ** 2
+                 DO ID = 1, MDC
+                   ETOT = ETOT + SIG2 * AC2(ID,IS,INDXGR)
+                 ENDDO
+               ENDDO
+               IF (ETOT.GT.0.) THEN
+                 HS = 4. * SQRT(FRINTF*DDIR*ETOT)
+               ELSE
+                 HS = 0.
+               ENDIF
+               COMPDA(INDXGR,JHSIBC) = HS
+             END IF
+           END DO
+        END IF
       END IF
 #else
       IF (INODE.EQ.MASTER) THEN                                           40.30
@@ -4635,14 +4859,12 @@
 
          END DO
       END IF
-#endif
 !     --- scatter array BSPECS to all nodes
 
       CALL SWBROADC ( BSPECS, 2*MDC*MSC*NBSPEC, SWREAL )                  40.30
       IF (STPNOW()) RETURN                                                40.30
 
 !     --- determine spectra on boundary points of grid
-
       IF ( NBGRPT.GT.0 ) THEN
          IF (ITEST.GE.80) WRITE(PRTEST,*) ' number of boundary points ',
      &             NBGRPT
@@ -4715,6 +4937,7 @@
            END IF
          END DO
       END IF
+#endif
 !
 !     --- update input fields (wind, water level etc.)
 !

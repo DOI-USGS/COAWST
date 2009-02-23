@@ -94,11 +94,14 @@
 !  Number of models to couple.
 !
       integer :: Nmodels
+!# ifdef REFINED_GRID
+      integer :: N_mctmodels
+!# endif
 !
 !  Coupled model components IDs.
 !
-      integer :: ATMid = 3
-      integer :: WAVid = 2
+      integer :: ATMid = 2
+      integer :: WAVid = 3
       integer :: OCNid = 1
 !
 !  Logical switch to report verbose import/export field ranges.
@@ -149,6 +152,11 @@
 !
       integer, allocatable :: CoupleSteps(:,:)
 !
+# ifdef REFINED_GRID
+!  Number of swan time steps
+      integer :: NumSWANsteps
+      integer, dimension(Ngrids) :: sc
+# endif
 !  Export/Import fields information structure.  This information is read
 !  from input CPLname file.
 !
@@ -175,6 +183,14 @@
 !
       character (len=240), allocatable :: ExportList(:)
 
+# if defined MCT_INTERP_WV2AT
+!
+!  Sparse matrix weights
+!
+      integer, dimension(:), pointer :: sparse_rows2
+      integer, dimension(:), pointer :: sparse_cols2
+      real(r8), dimension(:), pointer :: sparse_weights2
+# endif
 # if defined MCT_INTERP_OC2WV || defined MCT_INTERP_OC2AT
 !
 !  Sparse matrix weights
@@ -182,6 +198,7 @@
       integer, dimension(:), pointer :: sparse_rows
       integer, dimension(:), pointer :: sparse_cols
       real(r8), dimension(:), pointer :: sparse_weights
+      integer, dimension(:), pointer :: dst_grid_imask
 # endif
 !
 # if defined ESMF_COUPLING || defined ESMF_LIB

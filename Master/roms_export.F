@@ -103,8 +103,8 @@
 !
       IF (gtype.eq.r2dvar) THEN
         ij=0
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             ij=ij+1
             OutField(ij)=InpField(i,j)
             range(1)=MIN(range(1),OutField(ij))
@@ -115,6 +115,40 @@
 !  U-type variables.
 !
       ELSE IF (gtype.eq.u2dvar) THEN
+#  ifdef REFINED_GRID
+        DO j=JstrT,JendT
+          DO i=IstrTU+1,IendTU
+            Awork(i,j)=0.5_r8*(InpField(i  ,j)+                         &
+     &                         InpField(i+1,j))
+          END DO
+        END DO
+        IF (WESTERN_EDGE) THEN
+          DO j=JstrT,JendT
+            Awork(IstrT,j)=Awork(IstrT+1,j)
+          END DO
+        END IF
+        IF (EASTERN_EDGE) THEN
+          DO j=JstrT,JendT
+            Awork(IendT,j)=Awork(IendT-1,j)
+          END DO
+        END IF
+        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+!          Awork(Istr-1,Jstr-1)=0.5_r8*(Awork(Istr  ,Jstr-1)+            &
+!     &                                 Awork(Istr-1,Jstr  ))
+        END IF
+        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+!          Awork(Iend+1,Jstr-1)=0.5_r8*(Awork(Iend  ,Jstr-1)+            &
+!     &                                 Awork(Iend+1,Jstr  ))
+        END IF
+        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+!          Awork(Istr-1,Jend+1)=0.5_r8*(Awork(Istr-1,Jend  )+            &
+!     &                                 Awork(Istr  ,Jend+1))
+        END IF
+        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+!          Awork(Iend+1,Jend+1)=0.5_r8*(Awork(Iend+1,Jend  )+            &
+!     &                                 Awork(Iend  ,Jend+1))
+        END IF
+#  else
         DO j=JstrR,JendR
           DO i=Istr,Iend
             Awork(i,j)=0.5_r8*(InpField(i  ,j)+                         &
@@ -147,12 +181,13 @@
           Awork(Iend+1,Jend+1)=0.5_r8*(Awork(Iend+1,Jend  )+            &
      &                                 Awork(Iend  ,Jend+1))
         END IF
+#  endif
 !
 !  Pack into export vector.
 !
         ij=0
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             ij=ij+1
             OutField(ij)=Awork(i,j)
             range(1)=MIN(range(1),OutField(ij))
@@ -163,6 +198,40 @@
 !  V-type variables.
 !
       ELSE IF (gtype.eq.v2dvar) THEN
+#  ifdef REFINED_GRID
+        DO j=JstrTV+1,JendTV
+          DO i=IstrT,IendT
+            Awork(i,j)=0.5_r8*(InpField(i,j  )+                         &
+     &                         InpField(i,j+1))
+          END DO
+        END DO
+        IF (NORTHERN_EDGE) THEN
+          DO i=IstrT,IendT
+            Awork(i,JendT)=Awork(i,JendT-1)
+          END DO
+        END IF
+        IF (SOUTHERN_EDGE) THEN
+          DO i=IstrT,IendT
+            Awork(i,JstrT)=Awork(i,JstrT+1)
+          END DO
+        END IF
+        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+!          Awork(Istr-1,Jstr-1)=0.5_r8*(Awork(Istr  ,Jstr-1)+            &
+!     &                                 Awork(Istr-1,Jstr  ))
+        END IF
+        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+!          Awork(Iend+1,Jstr-1)=0.5_r8*(Awork(Iend  ,Jstr-1)+            &
+!     &                                 Awork(Iend+1,Jstr  ))
+        END IF
+        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+!          Awork(Istr-1,Jend+1)=0.5_r8*(Awork(Istr-1,Jend  )+            &
+!     &                                 Awork(Istr  ,Jend+1))
+        END IF
+        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+!          Awork(Iend+1,Jend+1)=0.5_r8*(Awork(Iend+1,Jend  )+            &
+!     &                                 Awork(Iend  ,Jend+1))
+        END IF
+#  else
         DO j=Jstr,Jend
           DO i=IstrR,IendR
             Awork(i,j)=0.5_r8*(InpField(i,j  )+                         &
@@ -195,12 +264,13 @@
           Awork(Iend+1,Jend+1)=0.5_r8*(Awork(Iend+1,Jend  )+            &
      &                                 Awork(Iend  ,Jend+1))
         END IF
+#  endif
 !
 !  Pack into export vector.
 !
         ij=0
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             ij=ij+1
             OutField(ij)=Awork(i,j)
             range(1)=MIN(range(1),OutField(ij))

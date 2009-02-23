@@ -1,9 +1,7 @@
 #include "cppdefs.wrf"
       MODULE atm_coupler_mod
-
-#if defined MODEL_COUPLING && defined MCT_LIB
-!
-!svn $Id: atm_coupler.F 601 2008-04-06 22:17:22Z arango $
+#ifdef ATM_OCEAN
+!svn $Id$
 !==================================================== John C. Warner ===
 !  Copyright (c) 2002-2008 The ROMS/TOMS Group      Hernan G. Arango   !
 !   Licensed under a MIT/X style license                               !
@@ -53,9 +51,9 @@
 !
       PRIVATE
 
-      PUBLIC :: initialize_atm2ocn_coupling
+      PUBLIC :: initialize_ocean_coupling
       PUBLIC :: atm2ocn_coupling
-      PUBLIC :: finalize_atm2ocn_coupling
+      PUBLIC :: finalize_ocean_coupling
 
       include 'mpif.h'
 !
@@ -63,18 +61,27 @@
 !
       TYPE(GlobalSegMap) :: GSMapWRF          ! GloabalSegMap variables
  
-      TYPE(AttrVect) :: atm2ocn_AV            ! AttrVect variables
-      TYPE(AttrVect) :: ocn2atm_AV 
-      type(Router)   :: WRFtoROMS             ! Router variables
+      TYPE(AttrVect) :: ToOceanAV             ! AttrVect variables
+      TYPE(AttrVect) :: FromOceanAV 
+      type(Router) :: RoutWRFtoROMS           ! Router variables
+# if defined SWAN_COUPLING
+      TYPE(AttrVect) :: ToWavesAV             ! AttrVect variables
+      type(Router) :: RoutWRFtoSWAN           ! Router variables
+# endif
+
 
 # if defined SWAN_COUPLING
-      TYPE(AttrVect) :: atm2wav_AV            ! AttrVect variables
-      type(Router)   :: WRFtoSWAN             ! Router variables
+      integer :: ncomps = 3
+# else
+      integer :: ncomps = 2
 # endif
+      integer :: OCNid = 1
+      integer :: ATMid = 2
+      integer :: WAVid = 3
 
       CONTAINS
 
-      SUBROUTINE initialize_atm2ocn_coupling (grid)
+      SUBROUTINE initialize_ocean_coupling(grid)
 !
 !=======================================================================
 !                                                                      !
@@ -87,15 +94,14 @@
       USE module_domain
 !     USE module_dm
       USE module_parallel
-      USE mod_coupler
-!
-!  Imported variable definitions.
-!
-      TYPE(domain), INTENT (IN) :: grid 
-!
+
+      implicit none
+
+      TYPE(domain) , INTENT (IN) :: grid 
+
       include 'mpif.h'
 !
-!  Local variable declarations.
+!  Local variable declarations.  
 !
       integer :: MyError, MyRank
       integer :: npoints, gsmsize, nprocs, localsize
@@ -103,7 +109,7 @@
       integer :: ids, ide, jds, jde
 
       integer, pointer :: start(:), length(:)
-!
+
 !-----------------------------------------------------------------------
 !  Begin initialization phase.
 !-----------------------------------------------------------------------
@@ -115,8 +121,7 @@
 !
 !  Initialize MCT coupled model registry.
 !
-      CALL MCTWorld_init (Nmodels, MPI_COMM_WORLD, ATM_COMM_WORLD,      &
-     &                    ATMid)
+      CALL MCTWorld_init (ncomps,MPI_COMM_WORLD,ATM_COMM_WORLD,AtmId)
 !
 !  Initialize a Global Segment Map for non-haloed transfer of data out
 !  of WRF. Determine non-haloed start and length arrays for this
@@ -148,34 +153,32 @@
 !
 !  Initialize attribute vector holding the export data code strings of
 !  the atmosphere model.
-!
-      CALL AttrVect_init (atm2ocn_AV, rlist=TRIM(ExportList(Iatmos)),   &
-     &                    lsize=gsmsize)
-      CALL AttrVect_zero (atm2ocn_AV)
+!     CALL AttrVect_init (ToOceanAV, rlist="PSFC:RELH:T2:U10:V10:CLDFRA:&
+!    &RAIN:SWDOWN:GLW:USTRESS:VSTRESS:LH:HFX",lsize=gsmsize)
+       CALL AttrVect_init (ToOceanAV, rlist="Pair:Hair:Tair:UWind:VWind:&
+     &cloud:rain:SWrad:LWrad:USTRESS:VSTRESS:Lheat:Sheat",lsize=gsmsize)
+      CALL AttrVect_zero (ToOceanAV)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
-!
-      CALL AttrVect_init (ocn2atm_AV, rList=TRIM(ExportList(Iocean)),   &
-     &                    lsize=gsmsize)
-      CALL AttrVect_zero (ocn2atm_AV)
+      CALL AttrVect_init (FromOceanAV,rList="SST",lsize=gsmsize)
+      CALL AttrVect_zero (FromOceanAV)
 !
 !  Initialize a router to the ocean model component.
 !
-      CALL Router_init (OCNid, GSMapWRF, ATM_COMM_WORLD, WRFtoROMS)
+      CALL Router_init (OcnId,GSMapWRF,ATM_COMM_WORLD,RoutWRFtoROMS)
 
 # ifdef SWAN_COUPLING
 !
 !  Initialize attribute vector holding the export data code string of
 !  the wave model.
 !
-      CALL AttrVect_init (atm2wav_AV, rList=TRIM(ExportList(Iwaves)),   &
-     &                    lsize=gsmsize)
-      CALL AttrVect_zero (atm2wav_AV)
+      CALL AttrVect_init (ToWavesAV, rlist="UWind:VWind",lsize=gsmsize)
+      CALL AttrVect_zero (ToWavesAV)
 !
 ! Initialize a router to the SWAN component.
 !
-      CALL Router_init (WAVid, GSMapWRF, ATM_COMM_WORLD, WRFtoSWAN)
+      CALL Router_init (WavId,GSMapWRF,ATM_COMM_WORLD,RoutWRFtoSWAN)
 # endif
 
       deallocate (start)
@@ -192,27 +195,28 @@
 !  ocean and wave models. Currently, the following data streams are    !
 !  processed:                                                          !
 !                                                                      !
-!  Fields exported to the OCEAN Model:                                 !
-!                                                                      !
-!     * Surface atmospheric pressure (Pa)                              !
-!     * Surface air relative humidity (percent)                        !
-!     * Surface (2 m) air temperature (Celsius)                        !
-!     * Surface (10 m) U-wind speed (m/s)                              !
-!     * Surface (10 m) V-wind speed (m/s)                              !
-!     * Cloud fraction (percent/100)                                   !
-!     * Precipitation (m/s)                                            !
-!     * Shortwave radiation (Watts/m2)                                 !
-!     * Long wave raditaion (Watts/m2)                                 !
-!     * Latent heat flux (Watts/m2)                                    !
-!     * Sensible heat flux (Watts/m2)                                  !
-!     * Net surface heat flux (Watts/2)                                !
-!     * Surface U-wind stress (Pa)                                     !
-!     * Surface V-wind stress (Pa)                                     !
-!                                                                      !
 !  Fields imported from the OCEAN Model:                               !
 !                                                                      !
 !     * Sea surface potential temperature (Celsius)                    !
 !                                                                      !
+!     * PSFC       Surface atmospheric pressure (Pa)                   !
+!     * RELH       Surface air relative humidity (percent)             !
+!     * T2         Surface 2m air temperature (Celsius)                !
+!     * U10        U-Wind speed at 10 m (m/s)                          !
+!     * V10        V-Wind speed at 10 m (m/s)                          !
+!     * CLDFRA     Cloud fraction       (percent/100)                  !
+!     * RAIN       Precipitation        (m/s)                          !
+!     * SWDOWN     Short wave radiation (Watts/m2)                     !
+!     * GLW        Long wave raditaion  (Watts/m2)                     !
+!     * USTRESS    Surface U-wind stress (Pa)                          !
+!     * VSTRESS    Surface v-stress      (Pa)                          !
+!     * LH         Latent heat flux     (Watts/m2)                     !
+!     * HFX        Sensible heat flux   (Watts/m2)                     !
+!     *            Net surface heat flux (Watts/m2)                    !
+!                                                                      !
+!  Fields acquired from the OCEAN Model:                               !
+!                                                                      !
+!     * SST        Sea surface temperature                             !
 !=======================================================================
 !
       USE module_domain
@@ -220,34 +224,35 @@
 !     USE module_io_domain
 !     USE module_configure
       USE module_parallel
-      USE mod_coupler
 !
       implicit none
+      TYPE(domain) , INTENT (IN) :: grid 
 !
 !  Imported variable declarations.
 !
-      type(domain) , intent(in) :: grid 
+
 !
 !  Local variable declarations.
 !
-      integer :: Asize, i, j, ids, ide, jds, jde, ij
-      integer :: nprocs, MyError, MyRank, ierr
-      integer :: Iexport, Iimport, id, ifield
+      integer :: ids, ide, jds, jde, ij
+      integer :: MyStatus, i, j, Asize, ierr, MyRank
+      integer :: MyError, MySize, indx, Istr, Iend, Jstr, Jend
+      integer :: Isize, Jsize, INDXG, NPROCS, OFFSET
 
-!     integer, pointer :: points(:)
+      integer, dimension(MPI_STATUS_SIZE,4) :: status
 
       real, parameter :: eps=1.0e-10
-
-      real :: cff1, cff2, cff3, rnum, rden, c04, c05
-
-      real(r8) :: RecvTime, SendTime, wtime(2)
-      real(r8) :: inpbuffer(2), outbuffer(2)
-
       real(r8), pointer :: AA(:)
+      real :: cff1, cff2, cff3, rnum, rden, c04, c05
+!  Set grid range.
+!
+      ids = grid%sp31
+      ide = grid%ep31
+      jds = grid%sp33
+      jde = grid%ep33
 
-      character (len=3 ), dimension(2) :: op_handle
-      character (len=20) :: wrf_time
-      character (len=40) :: code
+
+
 !
 !-----------------------------------------------------------------------
 !  Send atmosphere fields to ROMS.
@@ -272,344 +277,247 @@
 !-----------------------------------------------------------------------
 !  Export fields from atmosphere (WRF) to ocean (ROMS) model.
 !-----------------------------------------------------------------------
+!     PSFC       Surface atmospheric pressure (Pa).
 !
-!  Set grid range.
-!
-!!    ids = grid%sm31+6
-!!    ide = grid%em31-6
-!!    jds = grid%sm33+6
-!!    jde = grid%em33-6
-      ids = grid%sp31
-      ide = grid%ep31
-      jds = grid%sp33
-      jde = grid%ep33
-!
-!  Initialize coupling wait time clocks.
-!
-      RecvTime=0.0_r8
-      SendTime=0.0_r8
-!
-!  Schedule sending fields to the ocean model.
-!
-      Iexport=0
-      DO ifield=1,Nexport(Iocean)
-        id=ExportID(Iocean)%val(ifield)
-        code=ADJUSTL(Fields(id)%code)
-
-        SELECT CASE (TRIM(code))
-
-          CASE ('Pair')                   ! surface air pressure
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                ij=ij+1
-                AA(ij)=REAL(grid%PSFC(i,j),r8)
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-            Iexport=Iexport+1
-
-          CASE ('Hair')                   ! surface air humidity
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                ij=ij+1
-!
-!  Calculate pressure at 2 m using hypsometric equation.
-!  Assume temperature at 2 m as surface (0 m) temperature.
-!
-                cff1 = grid%PSFC(i,j) /                                 &
-     &                 (exp((9.81*2.0)/(287.0*grid%T2(i,j))))
-!
-!  Compute specific humidity using the 2-m mixing ratio and 2-m pressure.
-!
-                rnum = grid%Q2(i,j)*cff1
-                rden = (grid%Q2(i,j)*(1.-0.622)+0.622)
-                cff2 = rnum/rden 
-!
-!  Compute saturation specific humidity using Bolton equation 10.
-!
-                c04 = 17.67*(grid%T2(i,j)-273.15)
-                c05 = (grid%T2(i,j)-273.15) + 243.5
-                cff3 = 6.112*exp(c04/c05)
-!
-                AA(ij)=REAL(cff2/cff3,r8)
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-            Iexport=Iexport+1
-
-          CASE ('Tair')                   ! surface (2m) air temperature
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                ij=ij+1
-                AA(ij)=REAL(grid%T2(i,j)-273.15,r8)
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-            Iexport=Iexport+1
-
-          CASE ('Uwind')                  ! U-wind (10m) component
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                ij=ij+1
-                AA(ij)=REAL(grid%U10(i,j),r8)
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-            Iexport=Iexport+1
-
-          CASE ('Vwind')                  ! V-wind (10m) component
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                ij=ij+1
-                AA(ij)=REAL(grid%V10(i,j),r8)
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-            Iexport=Iexport+1
-
-          CASE ('cloud')                  ! cloud fraction
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                ij=ij+1
-                AA(ij)=REAL(grid%CLDFRA(i,1,j),r8)
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-            Iexport=Iexport+1
-
-          CASE ('rain')                   ! precipitation
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                ij=ij+1
-                AA(ij)=REAL(0.001*                                      &
-     &                      (grid%RAINCV(i,j)+grid%RAINNCV(i,j)),r8)
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-            Iexport=Iexport+1
-
-          CASE ('LWrad')                  ! longwave radiation
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                ij=ij+1
-                AA(ij)=REAL(grid%GLW(i,j),r8)
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-            Iexport=Iexport+1
-
-          CASE ('SWrad')                  ! shortwave radiation
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                ij=ij+1
-                AA(ij)=REAL(grid%SWDOWN(i,j),r8)
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-            Iexport=Iexport+1
-
-          CASE ('Lheat')                  ! latent heat flux
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                ij=ij+1
-                AA(ij)=REAL(grid%LH(i,j),r8)
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-            Iexport=Iexport+1
-
-          CASE ('Sheat')                  ! sensible heat flux
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                ij=ij+1
-                AA(ij)=REAL(grid%HFX(i,j),r8)
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-            Iexport=Iexport+1
-
-          CASE ('Ustr')                   ! surface U-wind stress (Pa)
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                cff1=1.0/(grid%em_alt(i,1,j)+eps)
-                cff2=1.0/((grid%em_u_2(i,1,j)**2+                       &
-     &                     grid%em_v_2(i,1,j)**2)**0.5+eps)
-                ij=ij+1
-                AA(ij)=REAL(cff1*cff2*                                  &
-     &                      (grid%UST(i,j)**2)*(grid%em_u_2(i,1,j)),r8)
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-            Iexport=Iexport+1
-
-          CASE ('Vstr')                   ! surface V-wind stress (Pa)
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                cff1=1.0/(grid%em_alt(i,1,j)+eps)
-                cff2=1.0/((grid%em_u_2(i,1,j)**2+                       &
-     &                     grid%em_v_2(i,1,j)**2)**0.5+eps)
-                ij=ij+1
-                AA(ij)=REAL(cff1*cff2*                                  &
-     &                      (grid%UST(i,j)**2)*(grid%em_v_2(i,1,j))
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-
-        END SELECT
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+          ij=ij+1
+          AA(ij)=grid%PSFC(i,j)
+        END DO
       END DO
+!     CALL AttrVect_importRAttr (ToOceanAV, "PSFC", AA, Asize)
+      CALL AttrVect_importRAttr (ToOceanAV, "Pair", AA, Asize)
 !
+!-----------------------------------------------------------------------
+!     RELH       Surface air relative humidity (-).
+!
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+!
+!         Calculate 2-m pressure using hypsometric equation. 
+!         Assume temp at 2m = temp at 0m.
+!
+          cff1 = grid%PSFC(i,j) / (exp((9.81*2.0)/(287.0*grid%T2(i,j))))
+!
+!         Compute specific humidity using the 2-m mixing ratio and 2-m pressure.
+!
+          rnum = grid%Q2(i,j)*cff1
+          rden  = (grid%Q2(i,j)*(1.-0.622)+0.622)
+          cff2 = rnum/rden                         ! e is the specific humidity
+!
+!         Compute saturation specific humidity using Bolton equation 10.
+!
+          c04 = 17.67*(grid%T2(i,j)-273.15)
+          c05 = (grid%T2(i,j)-273.15) + 243.5
+          cff3  = 6.112*exp(c04/c05)
+!
+          ij=ij+1
+          AA(ij)=cff2/cff3
+        END DO
+      END DO
+!     CALL AttrVect_importRAttr (ToOceanAV, "RELH", AA, Asize)
+      CALL AttrVect_importRAttr (ToOceanAV, "Hair", AA, Asize)
+!-----------------------------------------------------------------------
+!     T2         Surface 2m air temperature (Convert to C).
+!
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+          ij=ij+1
+          AA(ij)=grid%T2(i,j)-273.15
+        END DO
+      END DO
+!     CALL AttrVect_importRAttr (ToOceanAV, "T2", AA, Asize)
+      CALL AttrVect_importRAttr (ToOceanAV, "Tair", AA, Asize)
+!-----------------------------------------------------------------------
+!     U10        U-Wind speed at 10 m (m s-1).
+!
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+          ij=ij+1
+          AA(ij)=grid%U10(i,j)
+        END DO
+      END DO
+!     CALL AttrVect_importRAttr (ToOceanAV, "U10", AA, Asize)
+      CALL AttrVect_importRAttr (ToOceanAV, "UWind", AA, Asize)
+# if defined SWAN_COUPLING
+!     CALL AttrVect_importRAttr (ToWavesAV, "U10", AA, Asize)
+      CALL AttrVect_importRAttr (ToWavesAV, "UWind", AA, Asize)
+# endif
+!-----------------------------------------------------------------------
+!     V10        V-Wind speed at 10 m (m s-1).
+!
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+          ij=ij+1
+          AA(ij)=grid%V10(i,j)
+        END DO
+      END DO
+!     CALL AttrVect_importRAttr (ToOceanAV, "V10", AA, Asize) 
+      CALL AttrVect_importRAttr (ToOceanAV, "VWind", AA, Asize)
+# if defined SWAN_COUPLING
+!     CALL AttrVect_importRAttr (ToWavesAV, "V10", AA, Asize)
+      CALL AttrVect_importRAttr (ToWavesAV, "VWind", AA, Asize)
+# endif
+!-----------------------------------------------------------------------
+!     CLDFRA     Cloud fraction (--, 0-1.0).
+!
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+          ij=ij+1
+          AA(ij)=grid%CLDFRA(i,1,j)
+        END DO
+      END DO
+!     CALL AttrVect_importRAttr (ToOceanAV, "CLDFRA", AA, Asize)
+      CALL AttrVect_importRAttr (ToOceanAV, "cloud", AA, Asize)
+!-----------------------------------------------------------------------
+!     RAIN       Precipitation (Convert to m s-1).
+!
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+          ij=ij+1
+          AA(ij)=0.001*(grid%RAINCV(i,j)+grid%RAINNCV(i,j))
+        END DO
+      END DO
+!     CALL AttrVect_importRAttr (ToOceanAV, "RAIN", AA, Asize)
+      CALL AttrVect_importRAttr (ToOceanAV, "rain", AA, Asize)
+!-----------------------------------------------------------------------
+!     GLW        Long wave raditaion (W m-2).
+!
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+          ij=ij+1
+          AA(ij)=grid%GLW(i,j)
+        END DO
+      END DO
+!     CALL AttrVect_importRAttr (ToOceanAV, "GLW", AA, Asize)
+      CALL AttrVect_importRAttr (ToOceanAV, "LWrad", AA, Asize)
+!-----------------------------------------------------------------------
+!     SWDOWN     Short wave radiation (W m-2).
+!
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+          ij=ij+1
+          AA(ij)=grid%SWDOWN(i,j)
+        END DO
+      END DO
+!     CALL AttrVect_importRAttr (ToOceanAV, "SWDOWN", AA, Asize)
+      CALL AttrVect_importRAttr (ToOceanAV, "SWrad", AA, Asize)
+!-----------------------------------------------------------------------
+!     USTRESS    Surface u-stress (N m-2).
+!
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+          cff1=1.0/(grid%em_alt(i,1,j)+eps)
+          cff2=1.0/((grid%em_u_2(i,1,j)**2+grid%em_v_2(i,1,j)**2)**0.5+eps)
+          ij=ij+1
+          AA(ij)=cff1*cff2*(grid%UST(i,j)**2)*(grid%em_u_2(i,1,j))
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (ToOceanAV, "USTRESS", AA, Asize)
+!-----------------------------------------------------------------------
+!     VSTRESS    Surface v-stress (N m-2).
+!
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+          cff1=1.0/(grid%em_alt(i,1,j)+eps)
+          cff2=1.0/((grid%em_u_2(i,1,j)**2+grid%em_v_2(i,1,j)**2)**0.5+eps)
+          ij=ij+1
+          AA(ij)=cff1*cff2*(grid%UST(i,j)**2)*(grid%em_v_2(i,1,j))
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (ToOceanAV, "VSTRESS", AA, Asize)
+!-----------------------------------------------------------------------
+!     LH     Latent heat flux (W m-2).
+!
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+          ij=ij+1
+          AA(ij)=grid%LH(i,j)
+        END DO
+      END DO
+!     CALL AttrVect_importRAttr (ToOceanAV, "LH", AA, Asize)
+      CALL AttrVect_importRAttr (ToOceanAV, "Lheat", AA, Asize)
+!-----------------------------------------------------------------------
+!     HFX     Sensible heat flux (W m-2).
+!
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+          ij=ij+1
+          AA(ij)=grid%HFX(i,j)
+        END DO
+      END DO
+!     CALL AttrVect_importRAttr (ToOceanAV, "HFX", AA, Asize)
+      CALL AttrVect_importRAttr (ToOceanAV, "Sheat", AA, Asize)
+!-----------------------------------------------------------------------
 !  Send fields to ocean model.
 !
-      IF (Iexport.gt.0) THEN
-        inpbuffer(2)=my_wtime(wtime)
-        CALL MCT_SEND (atm2ocn_AV, WRFtoROMS, MyError)
-        SendTime=SendTime+my_wtime(wtime)-inpbuffer(2)
-        IF (MyError.ne.0) THEN
-          IF (MyRank) THEN
-            WRITE (6,10) 'ocean model, MyError = ', MyError
-          END IF
-          RETURN
-        END IF
+      CALL MCT_SEND (ToOceanAV,RoutWRFtoROMS,MyError)
+      IF (MYRANK.EQ.0) THEN
+        WRITE (*,*) '== WRF sent atm fields to ROMS and Myerror= ',MyError
+      ENDIF
+      IF (MyError.ne.0) THEN
+        WRITE (*,*) 'coupling send fail atm_coupler, error= ', MyError
+        CALL finalize_ocean_coupling ("Coupling failed atm_coupler")
       END IF
-
-# ifdef SWAN_COUPLING
-!
-!-----------------------------------------------------------------------
-!  Export fields from atmosphere (WRF) to wave (SWAN) model.
-!-----------------------------------------------------------------------
-!
-!  Schedule sending fields to the wave model.
-!
-      DO ifield=1,Nexport(Iwaves)
-        id=ExportID(Iwaves)%val(ifield)
-        code=ADJUSTL(Fields(id)%code)
-
-        SELECT CASE (TRIM(code))
-
-          CASE ('Uwind')                  ! U-wind (10m) component
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                ij=ij+1
-                AA(ij)=REAL(grid%U10(i,j),r8)
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-            Iexport=Iexport+1
-
-          CASE ('Vwind')                  ! V-wind (10m) component
-
-            ij=0
-            DO j=jds,jde
-              DO i=ids,ide
-                ij=ij+1
-                AA(ij)=REAL(grid%V10(i,j),r8)
-              END DO
-            END DO
-            CALL AttrVect_importRAttr (atm2ocn_AV, TRIM(code), AA, Asize)
-            Iexport=Iexport+1
-
-        END SELECT
-      END DO
-!
-!  Send ocean fields to wave model.
-!
-      IF (Iexport.gt.0) THEN
-        inpbuffer(2)=my_wtime(wtime)
-        CALL MCT_SEND (atm2wav_AV, WRFtoSWAN, MyError)
-        SendTime=SendTime+my_wtime(wtime)-inpbuffer(2)
-        IF (MyError.ne.0) THEN
-          IF (MyRank.eq.0) THEN
-            WRITE (6,10) 'wave model, MyError = ', MyError
-          END IF
-          RETURN
-        END IF
-      END IF
-!
-!-----------------------------------------------------------------------
-!  Import fields from ocean model (ROMS) to ocean atmosphere (WRF).
-!  Currently, both atmosphere and ocean model grids are the same.
-!  We need to revisit this logic to allow interpolation.
-!-----------------------------------------------------------------------
 !
 !  Schedule receiving fields from ocean model.
 !
-      inpbuffer(1)=my_wtime(wtime)
-      CALL MCT_Recv (ocn2atm_AV, WRFtoROMS, MyError)
-      RecvTime=RecvTime+my_wtime(wtime)-inpbuffer(1)
-      IF (MyError.ne.0) THEN
-        IF (Master) THEN
-          WRITE (stdout,20) 'ocean model, MyError = ', MyError
+
+        CALL MCT_Recv (FromOceanAV,RoutWRFtoROMS,MyError)
+        IF (MYRANK.EQ.0) THEN
+          WRITE (*,*) '== WRF recvd ocean fields and Myerror= ',       &
+     &                MyError
         END IF
-        exit_flag=2
-        RETURN
-      END IF
+        IF (MyError.ne.0) THEN
+          WRITE (*,*) 'coupling fail wrfcplr, MyStatus= ', MyError
+          CALL finalize_ocean_coupling ("Coupling failed wrfcplr")
+        END IF
+
 !
-!  Receive fields from atmosphere model.
+!  SST (Convert to K).
 !
-      Iimport=0
-      DO ifield=1,Nimport(Iocean)
-        id=ImportID(Iocean)%val(ifield)
-        code=ADJUSTL(Fields(id)%code)
-
-        SELECT CASE (TRIM(code))
-
-          CASE ('SST')                    ! sea surface temperature
-
-          CALL AttrVect_exportRAttr (ocn2atm_AV, TRIM(code), AA, Asize)
-          ij=0
-          DO j=jds,jde
-            DO i=ids,ide
-              ij=ij+1
+      CALL AttrVect_exportRAttr (FromOceanAV, "SST", AA, Asize)
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+          ij=ij+1
+          IF (AA(ij).gt.0.10) THEN
               grid%sst(i,j)=(AA(ij)+273.15)*(1-grid%landmask(i,j))+     &
      &                       grid%sst(i,j)*grid%landmask(i,j)
-            END DO
-          END DO
-
-        END SELECT
+          END IF
+        END DO
       END DO
+!-----------------------------------------------------------------------
+!  Send atm fields to SWAN.
+!-----------------------------------------------------------------------
+!
+# if defined SWAN_COUPLING
+      CALL MCT_SEND (ToWavesAV,RoutWRFtoSWAN,MyError)
+      IF (MYRANK.EQ.0) THEN
+        WRITE (*,*) '== WRF sent atm fields to SWAN and Myerror= ',MyError
+      ENDIF
+      IF (MyError.ne.0) THEN
+        WRITE (*,*) 'coupling send fail atm_coupler, error= ', MyError
+        CALL finalize_ocean_coupling ("Coupling failed atm_coupler")
+      END IF
+# endif
 !
 !  Deallocate communication arrays.
 !
       deallocate (AA)
-!!    deallocate (points)
-!
- 10   FORMAT (' ATM2OCN_COUPLING - error while sending fields to ',     &
-     &        a, i4)
- 20   FORMAT (' ATM2OCN_COUPLING - error while receiving fields from ', &
-     &        a, i4)
- 30   FORMAT (6x,'ATM2OCN   - (', i2.2, ') imported and (', i2.2,       &
-     &        ') exported fields,', t62, 't = ', a,/, 16x,              &
-     &        '- SWAN coupling exchanges wait clock (s):',/, 19x,       &
-     &        '(Recv= ', 1p,e14.8,0p, ' Send= ', 1p,e14.8,0p,')')
-
       RETURN
       END SUBROUTINE atm2ocn_coupling
 
@@ -625,15 +533,17 @@
 !
 !  Local variable declarations.
 !
-      integer :: MyError
+      integer :: MyStatus
 !
 !-----------------------------------------------------------------------
 !  Terminate MPI execution environment.
 !-----------------------------------------------------------------------
 !
-      CALL Router_clean (WRFtoROMS, MyError)
-      CALL AttrVect_clean (atm2ocn_AV, MyError)
-      CALL GlobalSegMap_clean (GSMapWRF, MyError)
+      CALL Router_clean (RoutWRFtoROMS)
+      CALL AttrVect_clean (ToOceanAV)
+      CALL AttrVect_clean (FromOceanAV)
+      CALL GlobalSegMap_clean (GSMapWRF)
+      CALL MCTWorld_clean ()
 
       END SUBROUTINE finalize_atm2ocn_coupling
 #endif

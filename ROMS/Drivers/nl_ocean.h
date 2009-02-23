@@ -124,11 +124,11 @@
 !  Initialize coupling streams between model(s).
 !
         DO ng=1,Ngrids
-# ifdef AIR_OCEAN
-          CALL initialize_ocn2atm_coupling (ng, MyRank)
-# endif
 # ifdef WAVES_OCEAN
           CALL initialize_ocn2wav_coupling (ng, MyRank)
+# endif
+# ifdef AIR_OCEAN
+          CALL initialize_ocn2atm_coupling (ng, MyRank)
 # endif
         END DO
 #endif
@@ -263,8 +263,8 @@
 
       NL_LOOP : DO my_iic=Tstr(1),Tend(1)
 
+          CALL mpi_barrier(OCN_COMM_WORLD, MyError)
           DO count1=1,nrefined(1)
-            CALL mpi_barrier(OCN_COMM_WORLD, MyError)
             ng=1
             iic(ng)=(my_iic-Tstr(1))*nrefined(1)+count1
 # ifdef SOLVE3D
@@ -273,9 +273,9 @@
             CALL main2d (ng)
 # endif
 
-            DO count2=1,nrefined(2)
-              CALL mpi_barrier(OCN_COMM_WORLD, MyError)
-              ng=2
+            CALL mpi_barrier(OCN_COMM_WORLD, MyError)
+            ng=2
+            DO count2=1,nrefined(ng)
               iic(ng)=(my_iic-Tstr(1))*nrefined(1)*nrefined(2)+         &
      &                count2
 # ifdef SOLVE3D
@@ -284,26 +284,26 @@
               CALL main2d (ng)
 # endif
 
+              CALL mpi_barrier(OCN_COMM_WORLD, MyError)
               IF (Ngrids.ge.3) THEN
-                DO count3=1,nrefined(3)
-                  CALL mpi_barrier(OCN_COMM_WORLD, MyError)
-                  ng=3
+                ng=3
+                DO count3=1,nrefined(ng)
                   iic(ng)=(my_iic-Tstr(1))*nrefined(1)*nrefined(2)*     &
-     &                    nrefined(3)+(count2-1)*nrefined(3)+count3
+     &                    nrefined(ng)+(count2-1)*nrefined(ng)+count3
 # ifdef SOLVE3D
                   CALL main3d (ng)
 # else
                   CALL main2d (ng)
 # endif
 
+                  CALL mpi_barrier(OCN_COMM_WORLD, MyError)
                   IF (Ngrids.ge.4) THEN
-                    DO count4=1,nrefined(4)
-                      CALL mpi_barrier(OCN_COMM_WORLD, MyError)
-                      ng=4
+                    ng=4
+                    DO count4=1,nrefined(ng)
                       iic(ng)=(my_iic-Tstr(1))*nrefined(1)*nrefined(2)* &
-     &                        nrefined(3)*nrefined(4)+                  &
-     &                        (count2-1)*nrefined(2)*nrefined(3)+       &
-     &                        (count3-1)*nrefined(3)+count4
+     &                        nrefined(ng-1)*nrefined(ng)+                  &
+     &                        (count2-1)*nrefined(2)*nrefined(ng-1)+       &
+     &                        (count3-1)*nrefined(ng-1)+count4
 # ifdef SOLVE3D
                       CALL main3d (ng)
 # else

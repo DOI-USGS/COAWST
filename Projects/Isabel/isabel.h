@@ -28,8 +28,8 @@
 #undef  WET_DRY
 #define ATM_PRESS
 #undef  NEARSHORE_MELLOR
-#define REFINED_GRID
-#define REFINED_GRID_BC
+#undef  REFINED_GRID
+#undef  REFINED_GRID_BC
 
 #define UV_ADV
 #define DJ_GRADPS
@@ -37,9 +37,9 @@
 #define UV_QDRAG
 #define UV_VIS2
 #define MIX_S_UV
-#define TS_U3HADVECTION
-#define TS_SVADVECTION
-#undef  TS_MPDATA
+#undef  TS_U3HADVECTION
+#undef  TS_SVADVECTION
+#define TS_MPDATA
 #define TS_DIF2
 #define MIX_GEO_TS
 

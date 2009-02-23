@@ -5,7 +5,7 @@ MODULE module_integrate
 
 CONTAINS
 
-RECURSIVE SUBROUTINE integrate ( grid, CouplingTime )
+RECURSIVE SUBROUTINE integrate ( grid, CouplingTime, last_step )
 
    USE module_domain
    USE module_driver_constants
@@ -23,6 +23,7 @@ RECURSIVE SUBROUTINE integrate ( grid, CouplingTime )
    TYPE(domain) , POINTER :: grid
 !jcw
    REAL, intent(in) :: CouplingTime
+   INTEGER, intent(in) :: last_step
 
 ! module_integrate:integrate
 ! <DESCRIPTION> 
@@ -177,7 +178,8 @@ RECURSIVE SUBROUTINE integrate ( grid, CouplingTime )
      END SUBROUTINE med_calc_model_time
        ! mediation-supplied routine that gives mediation layer opportunity to 
        ! perform I/O before the call to the solve routine
-     SUBROUTINE med_before_solve_io ( grid , config_flags, nATM_steps )
+!     SUBROUTINE med_before_solve_io ( grid , config_flags, nATM_steps )
+     SUBROUTINE med_before_solve_io ( grid , config_flags)
        USE module_domain
        USE module_configure
        TYPE (domain) grid
@@ -304,7 +306,8 @@ RECURSIVE SUBROUTINE integrate ( grid, CouplingTime )
                CALL set_overlaps ( grid )   ! find overlapping and set pointers
             END IF
          ENDIF
-         CALL med_before_solve_io ( grid , config_flags, nATM_steps )
+!         CALL med_before_solve_io ( grid , config_flags, nATM_steps )
+         CALL med_before_solve_io ( grid , config_flags)
          IF ( grid%return_after_training_io ) THEN
            CALL wrf_debug( 1, 'DEBUG:  module_integrate() returned after training' )
            RETURN  ! an ugly hack for sure, only needed for ESMF
@@ -324,9 +327,11 @@ RECURSIVE SUBROUTINE integrate ( grid, CouplingTime )
             CALL domain_clock_get( grid, minutesSinceSimulationStart=minutesSinceSimulationStart )
             num_steps=minutesSinceSimulationStart*60.0/grid%dt
             nATM_steps=MAX(1,INT(CouplingTime/grid%dt))
-            IF (MOD(num_steps, nATM_steps).eq.0) THEN
+            IF ((num_steps.gt.last_step).and.(MOD(num_steps, nATM_steps).eq.0)) THEN
               CALL atm2ocn_coupling (grid)
+              last_step=num_steps
             ENDIF
+
          END DO
          CALL set_current_grid_ptr( grid )
          CALL med_calc_model_time ( grid , config_flags )
@@ -344,7 +349,7 @@ RECURSIVE SUBROUTINE integrate ( grid, CouplingTime )
                   domain_get_current_time(grid) - domain_get_time_step(grid)
                 grid_ptr%nests(kid)%ptr%stop_subtime = &
                   domain_get_current_time(grid)
-                CALL integrate ( grid_ptr%nests(kid)%ptr, CouplingTime ) 
+                CALL integrate ( grid_ptr%nests(kid)%ptr, CouplingTime, last_step ) 
                 CALL wrf_debug( 100 , 'module_integrate: back from recursive call to integrate ' )
                 CALL wrf_debug( 100 , 'module_integrate: calling med_nest_feedback ' )
                 CALL med_nest_feedback ( grid_ptr , grid_ptr%nests(kid)%ptr , config_flags )

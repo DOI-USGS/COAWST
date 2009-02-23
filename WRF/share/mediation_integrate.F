@@ -25,14 +25,15 @@ SUBROUTINE med_calc_model_time ( grid , config_flags )
 
 END SUBROUTINE med_calc_model_time
 
-SUBROUTINE med_before_solve_io ( grid , config_flags, nATM_steps )
+!jcwSUBROUTINE med_before_solve_io ( grid , config_flags, nATM_steps)
+SUBROUTINE med_before_solve_io ( grid , config_flags)
   ! Driver layer
    USE module_domain
    USE module_configure
   ! Model layer
    USE module_utility
 !jcw
-   USE ATM_COUPLER_MOD, ONLY: OCEAN_COUPLING
+   USE ATM_COUPLER_MOD, ONLY: atm2ocn_coupling
 
    IMPLICIT NONE
 
@@ -42,7 +43,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags, nATM_steps )
   ! Local
    INTEGER                                    :: rc
 !jcw
-   INTEGER, intent(inout) :: nATM_steps
+!   INTEGER, intent(inout) :: nATM_steps
 
  ! Note that when grid%return_after_training_io == .TRUE. this routine 
  ! will return after the training phase for all auxiliary I/O streams.  
@@ -199,7 +200,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags, nATM_steps )
    CALL wrf_debug ( 1 , 'DEBUG:  med_before_solve_io():  returned after training aux I/O' )
  ENDIF
 
-    nATM_steps=1
+!jcw     nATM_steps=1
 !   write(*,*) 'jcw hard wiring natmsteps here ', nATM_steps
 !jcw, call the MCT Coupler
 ! IF (MOD(numsteps, nATM_steps).eq.0) THEN

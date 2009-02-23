@@ -66,7 +66,7 @@ CONTAINS
 !jcw
    USE module_parallel
    USE ATM_COUPLER_MOD, ONLY: initialize_ocean_coupling
-   USE ATM_COUPLER_MOD, ONLY: ocean_coupling
+   USE ATM_COUPLER_MOD, ONLY: atm2ocn_coupling
      integer, intent(in) :: MyComm_r
      LOGICAL, OPTIONAL, INTENT(IN) :: no_init1
 #include "version_decl"
@@ -282,7 +282,7 @@ CONTAINS
    write(*,*) "WRF INIT 7"
 !jcw
    CALL initialize_ocean_coupling (head_grid)
-   CALL OCEAN_COUPLING(head_grid)
+   CALL atm2ocn_coupling(head_grid)
 
    END SUBROUTINE wrf_init
 
@@ -314,11 +314,13 @@ CONTAINS
    !  integration is from the first step (1) to the last step of the simulation.
 !jcw
    REAL, intent(in) :: TI_ATM_OCN
+   INTEGER :: last_step
 
+   last_step=0
    write(*,*) 'ti_atm_ocean from roms jcw ', TI_ATM_OCN
 
    CALL       wrf_debug ( 100 , 'wrf: calling integrate' )
-   CALL integrate ( head_grid, TI_ATM_OCN )
+   CALL integrate ( head_grid, TI_ATM_OCN, last_step )
    CALL       wrf_debug ( 100 , 'wrf: back from integrate' )
    END SUBROUTINE wrf_run
 

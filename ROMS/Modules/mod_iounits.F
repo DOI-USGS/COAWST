@@ -132,6 +132,7 @@
         character (len=80), dimension(Ngrids) :: RSTname
         character (len=80), dimension(Ngrids) :: STAname
         character (len=80), dimension(Ngrids) :: STDname
+        character (len=80), dimension(Ngrids) :: SWAN_infile
 
         character (len=80) :: Iname
         character (len=80) :: Wname

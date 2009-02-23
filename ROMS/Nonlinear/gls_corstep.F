@@ -214,6 +214,9 @@
 # endif
       integer :: i, itrc, j, k
 
+#ifdef AKLIMIT
+      real(r8), parameter :: Ak_max = 1000.0_r8
+#endif
       real(r8), parameter :: Gadv = 1.0_r8/3.0_r8
       real(r8), parameter :: eps = 1.0E-10_r8
       real(r8) :: Zos_min, Zob_min
@@ -1077,8 +1080,14 @@
             ql=sqrt2*0.5_r8*(Ls_lmt*SQRT(tke(i,j,k,nnew))+              &
      &                       Lscale(i,j,k)*SQRT(tke(i,j,k,nstp)))
             Akv(i,j,k)=Akv_bak(ng)+Sm*ql
+#ifdef AKLIMIT
+            Akv(i,j,k)=MIN(Ak_max,Akv(i,j,k))
+#endif
             DO itrc=1,NAT
               Akt(i,j,k,itrc)=Akt_bak(itrc,ng)+Sh*ql
+#ifdef AKLIMIT
+              Akt(i,j,k,itrc)=MIN(Ak_max,Akt(i,j,k,itrc))
+#endif
             END DO
 !
 !  Compute vertical mixing (m2/s) coefficents of turbulent kinetic
@@ -1112,8 +1121,14 @@
 !
           Akv(i,j,N(ng))=Akv_bak(ng)+L_sft*Zos_eff(i)*gls_cmu0(ng)*     &
      &                   SQRT(tke(i,j,N(ng),nnew))
+#ifdef AKLIMIT
+          Akv(i,j,N(ng))=MIN(Ak_max,Akv(i,j,N(ng)))
+#endif
           Akv(i,j,0)=Akv_bak(ng)+vonKar*Zob_min*gls_cmu0(ng)*           &
      &               SQRT(tke(i,j,0,nnew))
+#ifdef AKLIMIT
+          Akv(i,j,0)=MIN(Ak_max,Akv(i,j,0))
+#endif
 !
           Akk(i,j,N(ng))=Akk_bak(ng)+Akv(i,j,N(ng))/gls_sigk(ng)
           Akk(i,j,0)=Akk_bak(ng)+Akv(i,j,0)/gls_sigk(ng)

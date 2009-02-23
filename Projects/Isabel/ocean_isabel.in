@@ -38,7 +38,7 @@
 !
 ! Application title.
 
-       TITLE = Isabel ref14
+       TITLE = COAWST - Isabel run103
 
 ! C-preprocessing Flag, default configuration.
 
@@ -440,6 +440,12 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 
      FWDNAME == ocean_fwd.nc
      ADSNAME == ocean_ads.nc
+!    SP1NAME == Data/ROMS/Grid/swan2roms_weights.nc   !wav2ocn
+!    SP2NAME == Data/ROMS/Grid/roms2swan_weights.nc   !ocn2wav
+     AP1NAME == ../forcings/Isabel_wrf2roms_weights_wrfgrd2.nc     !at2oc
+     AP2NAME == ../forcings/Isabel_roms2wrf_weights_USeastgrd3.nc  !oc2at
+!    FP1NAME == Data/ROMS/Grid/swan2roms_weights.nc
+!    FP2NAME == Data/ROMS/Grid/roms2swan_weights.nc
 
 ! Input forcing NetCDF file name(s).  The USER has the option to enter
 ! several files names per each nested grid.  For example, the USER may

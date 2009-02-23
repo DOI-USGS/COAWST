@@ -1,5 +1,5 @@
 #include "cppdefs.h"
-#ifdef USE_MCT
+#if defined MCT_INTERP_OC2AT || defined MCT_INTERP_OC2WV
       SUBROUTINE get_sparse_matrix (ng, nc_name, num_sparse_elems,      &
      &                              src_grid_dims, dst_grid_dims)
 !
@@ -34,7 +34,7 @@
 !
 !  Local variable declarations
 !
-      integer ::  ndims, status, varid, ncid
+      integer ::  ndims, status, varid, ncid, numelem
 
       integer, dimension(2) :: start, total
       integer, dimension(nf90_max_var_dims) :: dimIDs
@@ -44,6 +44,10 @@
 !  Open grid NetCDF file for reading.
 !
 !     ncname=SPSname(ng)
+
+!  Hard code this for now, since swan does not init it.
+      ncSPSid(ng)=-1
+
       IF (ncSPSid(ng).eq.-1) THEN
         status=nf90_open(TRIM(nc_name), nf90_nowrite, ncSPSid(ng))
         IF (status.ne.nf90_noerr) THEN
@@ -139,6 +143,20 @@
       total(1)=1
       status=nf90_get_var(ncid, varid, sparse_weights, start, total)
 !
+! Get the destination grid mask
+!
+      status=nf90_inq_varid(ncSPSid(ng),'dst_grid_imask', varid)
+      IF (status.ne.nf90_noerr) THEN
+        WRITE (stdout,30) TRIM('dst_grid_imask')
+        exit_flag=4
+        ioerror=status
+      END IF
+      numelem=dst_grid_dims(1)*dst_grid_dims(2)
+      allocate ( dst_grid_imask(numelem) )
+      start(1)=1
+      total(1)=numelem
+      status=nf90_get_var(ncid, varid, dst_grid_imask, start, total)
+!
 ! Close GRID NetCDF file.
 !
       status=nf90_close(ncSPSid(ng))
@@ -154,11 +172,10 @@
  40   FORMAT (/,' GET_SPARSE - error while inquiring dimensions',   &
      &          ' for variable: ', a)
  50   FORMAT (/,' GET_SPARSE - error while reading variable: ', a)
-
       RETURN
       END SUBROUTINE get_sparse_matrix
 #else
-      SUBROUTINE get_sparse_matrix
+      SUBROUTINE get_sparse_matrix (ng, tile)
       RETURN
       END SUBROUTINE get_sparse_matrix
 #endif

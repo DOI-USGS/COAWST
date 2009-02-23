@@ -207,12 +207,15 @@
 
 !     --- determine whether this is a parallel run or not
 
+#ifdef REFINED_GRID
+      PARLL = .TRUE.
+#else
       IF ( NPROC.GT.1 ) THEN
          PARLL = .TRUE.
       ELSE
          PARLL = .FALSE.
       END IF
-
+#endif
 !     --- define MPI constants for communication within SWAN
 
       SWINT  = MPI_INTEGER

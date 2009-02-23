@@ -29,6 +29,7 @@
 #define ATM_PRESS
 #undef  NEARSHORE_MELLOR
 #undef  REFINED_GRID
+#undef  REFINED_GRID_BC
 
 #define UV_ADV
 #define DJ_GRADPS

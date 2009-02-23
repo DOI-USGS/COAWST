@@ -57,10 +57,10 @@ ifdef USE_NETCDF4
     NETCDF_LIBDIR ?= /opt/pgisoft/netcdf4/lib
       HDF5_LIBDIR ?= /opt/pgisoft/hdf5/lib
 else
-    NETCDF_INCDIR ?= /opt/pgisoft/netcdf/include
-    NETCDF_LIBDIR ?= /opt/pgisoft/netcdf/lib
+    NETCDF_INCDIR ?= /usr/local/apps/netcdf-3.6.1/pgi/6.0/x86_64/include
+    NETCDF_LIBDIR ?= /usr/local/apps/netcdf-3.6.1/pgi/6.0/x86_64/lib
 endif
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
+             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf -L/opt/mx/lib64
 ifdef USE_NETCDF4
              LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
 endif
@@ -127,7 +127,7 @@ endif
 
 ifdef USE_WRF
            FFLAGS += -I$(MCT_INCDIR)
-             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+             LIBS += -L$(MCT_LIBDIR)
              LIBS += Atmosphere/WRF/main/libwrflib.a
              LIBS += Atmosphere/WRF/external/io_netcdf/libwrfio_nf.a
 #             LIBS += Atmosphere/WRF/external/RSL/RSL/librsl.a

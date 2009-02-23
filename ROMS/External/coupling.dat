@@ -59,14 +59,6 @@
   0.0d0
   1.0d0
 
-'Tair'                                             ! at 2 m, usually
-  'Tair'
-  'surface air temperature'
-  'Celsius'                                        ! [Kelvin]
-  'r2dvar'
-  273.16d0                                         ! Kelvin to Celsius
-  1.0d0
-
 'Hair'                                             ! at 10 m, usually
   'Hair'
   'surface air relative humidity'
@@ -75,6 +67,30 @@
   0.0d0
   0.01d0                                           ! 1/100
 
+'Tair'                                             ! at 2 m, usually
+  'Tair'
+  'surface air temperature'
+  'Celsius'                                        ! [Kelvin]
+  'r2dvar'
+  273.16d0                                         ! Kelvin to Celsius
+  1.0d0
+
+'UWind'                                            ! at 10 m, usually
+  'UWind'
+  'surface u-wind component'
+  'meter second-1'                                 ! [m/s]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
+'VWind'                                            ! at 10 m, usually
+  'VWind'
+  'surface v-wind component'
+  'meter second-1'                                 ! [m/s]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
 'cloud'                                            ! at 10 m, usually
   'cloud'
   'cloud fraction'
@@ -82,6 +98,14 @@
   'r2dvar'
   0.0d0
   1.0d0
+
+'rain'                                             ! at 10 m, usually
+  'rain'
+  'rain fall rate'
+  'kilogram meter-2 second-1'                      ! [kg m2/s]
+  'r2dvar'
+  0.0d0
+  1.0d0                                            ! 1/rhow (0.001 m3/kg) if m/s
 
 'SWrad'                                            ! at 10 m, usually
   'swrad'
@@ -99,30 +123,6 @@
   0.0d0
   1.0d0                                            ! 1/rho0/Cp
 
-'rain'                                             ! at 10 m, usually
-  'rain'
-  'rain fall rate'
-  'kilogram meter-2 second-1'                      ! [kg m2/s]
-  'r2dvar'
-  0.0d0
-  1.0d0                                            ! 1/rhow (0.001 m3/kg) if m/s
-
-'Uwind'                                            ! at 10 m, usually
-  'Uwind'
-  'surface u-wind component'
-  'meter second-1'                                 ! [m/s]
-  'r2dvar'
-  0.0d0
-  1.0d0
-
-'Vwind'                                            ! at 10 m, usually
-  'Vwind'
-  'surface v-wind component'
-  'meter second-1'                                 ! [m/s]
-  'r2dvar'
-  0.0d0
-  1.0d0
-
 !
 !  If BULK_FLUXES is not activated, the following fields are needed.
 !
@@ -135,7 +135,7 @@
   0.0d0
   1.0d0                                            ! 1/rho0/Cp
 
-'Ustr'
+'USTRESS'
   'sustr'
   'surface u-momentum stress'
   'meter2 second-2'                                ! [N/m2]
@@ -143,13 +143,29 @@
   0.0d0
   1.0d0                                            ! 1/rho0
 
-'Vstr'
+'VSTRESS'
   'svstr'
   'surface v-momentum stress'
   'meter2 second-2'                                ! [N/m2]
   'v2dvar'
   0.0d0
   1.0d0                                            ! 1/rho0
+
+'Lheat'
+  'lhflux'
+  'surface latent heat flux'
+  'Celsius meter second-1'                         ! [Watt/m2]
+  'r2dvar'
+  0.0d0
+  1.0d0                                            ! 1/rho0/Cp
+
+'Sheat'
+  'shflux'
+  'sensible net heat flux'
+  'Celsius meter second-1'                         ! [Watt/m2]
+  'r2dvar'
+  0.0d0
+  1.0d0                                            ! 1/rho0/Cp
 
 !
 !------------------------------------------------------------------------------

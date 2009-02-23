@@ -62,7 +62,11 @@
       USE m_SparseMatrix, ONLY : SparseMatrix_importMatrixElts =>       &
      &                           importMatrixElements
       USE m_SparseMatrix, only : SparseMatrix_lsize => lsize
+      USE m_SparseMatrix, only : SparseMatrix_nRows => nRows
+      USE m_SparseMatrix, only : SparseMatrix_nCols => nCols
       USE m_SparseMatrix, only : SparseMatrix_clean => clean
+      USE m_SparseMatrix, only : SparseMatrix_GNumElem =>               &
+     &                           GlobalNumElements
       USE m_SparseMatrixPlus, ONLY : SparseMatrixPlus
       USE m_SparseMatrixPlus, ONLY : SparseMatrixPlus_init => init
       USE m_SparseMatrixPlus, ONLY : SparseMatrixPlus_clean => clean
@@ -110,14 +114,17 @@
 !     TYPE(AttrVect) :: wav2atm_AV2 
 
       TYPE(SparseMatrix) :: sMatW             ! Sparse matrix elements
-      TYPE(SparseMatrix) :: sMatA             ! Sparse matrix elements
+      TYPE(SparseMatrix) :: sMatA2             ! Sparse matrix elements
       TYPE(SparseMatrixPlus) :: A2WMatPlus    ! Sparse matrix plus elements
       TYPE(SparseMatrixPlus) :: W2AMatPlus    ! Sparse matrix plus elements
 #endif
 
       CONTAINS
-
+#ifdef REFINED_GRID
+      SUBROUTINE INITIALIZE_WAV2OCN_COUPLING (ng)
+#else
       SUBROUTINE INITIALIZE_WAV2OCN_COUPLING
+#endif
 !
 !=======================================================================
 !                                                                      !
@@ -134,19 +141,32 @@
       USE mod_coupler
 !
       include 'mpif.h'
+#ifdef REFINED_GRID
+      integer, intent(in) :: ng
+#else
+      integer :: ng
+#endif
 !
 !  Local variable declarations.
 !
       integer :: MyError, MyRank
       integer :: npoints, gsmsize, nprocs, localsize
-      integer :: j, Isize, Jsize, ng, jc, Asize
+      integer :: j, Isize, Jsize, jc, Asize
       character (len=70)    :: nc_name
       integer :: nRows, nCols, num_sparse_elems
 
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       integer, pointer :: start(:), length(:)
-
+#ifdef REFINED_GRID
+      integer, dimension(:), pointer :: ocnids
+      integer, dimension(:), pointer :: wavids
+#else
       ng=1
+#endif
+      integer :: SMlsize, SMgnumel
+      integer :: SMlsize1, SMlsize2
+      integer :: MyMasterswan
+      MyMasterswan=0
 !
 !-----------------------------------------------------------------------
 !  Begin initialization phase.
@@ -159,8 +179,23 @@
 !
 !  Initialize MCT coupled model registry.
 !
-      CALL MCTWorld_init (Nmodels, MPI_COMM_WORLD, WAV_COMM_WORLD,      &
+#ifdef REFINED_GRID
+      CALL initialize_param
+
+      allocate ( wavids(Ngrids) )
+      allocate ( ocnids(Ngrids) )
+      DO j=1,Ngrids
+        ocnids(j)=j
+        wavids(j)=Ngrids+j
+      END DO
+      WAVid=wavids(ng)
+      OCNid=ocnids(ng)
+      CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, WAV_COMM_WORLD,  &
      &                    WAVid)
+#else
+      CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, WAV_COMM_WORLD,  &
+     &                    WAVid)
+#endif
 #ifdef MCT_INTERP_WV2AT
 !
 !  If wave grid and atm grids are different sizes, then
@@ -170,11 +205,11 @@
 ! First work on atm to wave.
 !!!!!!!!!!!!!!!!!!!!!!
 !
-!     IF (Myrank.eq.MyMaster) THEN
-      IF (INODE.EQ.MASTER) THEN
+      IF (Myrank.eq.MyMasterswan) THEN
+!      IF (INODE.EQ.MASTER) THEN
 !       nc_name=FP1name
-        nc_name='swan2wrf_weights.nc'
-        call get_sparse_matrix (ng, nc_name, num_sparse_elems,          &
+        nc_name='../forcings/Isabel_wrf2swan_weights_wrfgrd2.nc'
+        call get_sparse_waves_matrix (ng, nc_name, num_sparse_elems,    &
      &                          src_grid_dims, dst_grid_dims)
 !
 ! Init the sparse matrix.
@@ -184,24 +219,27 @@
 !
 ! Create sparse matrix.
 !
-        call SparseMatrix_init(sMatA,nRows,nCols,num_sparse_elems)
-        call SparseMatrix_importGRowInd(sMatA, sparse_rows,              &
-     &                                  size(sparse_rows))
-        call SparseMatrix_importGColInd(sMatA, sparse_cols,              &
-     &                                  size(sparse_cols))
-        call SparseMatrix_importMatrixElts(sMatA, sparse_weights,        &
-     &                                     size(sparse_weights))
+        call SparseMatrix_init(sMatA2,nRows,nCols,num_sparse_elems)
+        call SparseMatrix_importGRowInd(sMatA2, sparse_rows2,              &
+     &                                  size(sparse_rows2))
+        call SparseMatrix_importGColInd(sMatA2, sparse_cols2,              &
+     &                                  size(sparse_cols2))
+        call SparseMatrix_importMatrixElts(sMatA2, sparse_weights2,        &
+     &                                     size(sparse_weights2))
 !
 ! Deallocate arrays.
 !
 !        IF (allocated(sparse_rows)) THEN
-          deallocate ( sparse_rows )
+          deallocate ( sparse_rows2 )
 !        END IF
 !        IF (allocated(sparse_cols)) THEN
-          deallocate ( sparse_cols )
+          deallocate ( sparse_cols2 )
 !        END IF
 !        IF (allocated(sparse_weights)) THEN
-          deallocate ( sparse_weights )
+          deallocate ( sparse_weights2 )
+!        END IF
+!        IF (allocated(sparse_weights)) THEN
+!          deallocate ( dst_grid_imask2 )
 !        END IF
       END IF
 
@@ -209,42 +247,49 @@
 ! Second work on waves to atm.
 !!!!!!!!!!!!!!!!!!!!!!
 !
-!     IF (Myrank.eq.MyMaster) THEN
-      IF (INODE.EQ.MASTER) THEN
+      IF (Myrank.eq.MyMasterswan) THEN
+!      IF (INODE.EQ.MASTER) THEN
 !       nc_name=FP2name
-        nc_name='wrf2swan_weights.nc'
-        call get_sparse_matrix (ng, nc_name, num_sparse_elems,          &
+        nc_name='../forcings/Isabel_swan2wrf_weights_USeastgrd3.nc'
+        call get_sparse_waves_matrix (ng, nc_name, num_sparse_elems,    &
      &                          src_grid_dims, dst_grid_dims)
 !
 ! Init the sparse matrix.
 !
         nRows=dst_grid_dims(1)*dst_grid_dims(2)
         nCols=src_grid_dims(1)*src_grid_dims(2)
+!      IF (INODE.EQ.MASTER) THEN
 !
 ! Create sparse matrix.
 !
         call SparseMatrix_init(sMatW,nRows,nCols,num_sparse_elems)
-        call SparseMatrix_importGRowInd(sMatW, sparse_rows,              &
-     &                                  size(sparse_rows))
-        call SparseMatrix_importGColInd(sMatW, sparse_cols,              &
-     &                                  size(sparse_cols))
-        call SparseMatrix_importMatrixElts(sMatW, sparse_weights,        &
-     &                                     size(sparse_weights))
+        call SparseMatrix_importGRowInd(sMatW, sparse_rows2,              &
+     &                                  size(sparse_rows2))
+        call SparseMatrix_importGColInd(sMatW, sparse_cols2,              &
+     &                                  size(sparse_cols2))
+        call SparseMatrix_importMatrixElts(sMatW, sparse_weights2,        &
+     &                                     size(sparse_weights2))
 !
 ! Deallocate arrays.
 !
 !        IF (allocated(sparse_rows)) THEN
-          deallocate ( sparse_rows )
+          deallocate ( sparse_rows2 )
 !        END IF
 !        IF (allocated(sparse_cols)) THEN
-          deallocate ( sparse_cols )
+          deallocate ( sparse_cols2 )
 !        END IF
 !        IF (allocated(sparse_weights)) THEN
-          deallocate ( sparse_weights )
+          deallocate ( sparse_weights2 )
+!        END IF
+!        IF (allocated(sparse_weights)) THEN
+!          deallocate ( dst_grid_imask )
 !        END IF
       END IF
+      CALL mpi_bcast(dst_grid_dims, 2, MPI_INTEGER, MyMasterswan,       &
+     &               WAV_COMM_WORLD, MyError)
+!      END IF
 #endif
-#if !defined MCT_INTERP_OC2AT
+#if !defined MCT_INTERP_WV2AT
 !
 !  Initialize a Global Segment Map for non-haloed transfer of data out
 !  of SWAN. Determine non-haloed start and length arrays for this
@@ -337,40 +382,55 @@
 !  Initialize a Global Segment Map for non-haloed transfer of data
 !  for the atmosphere model.
 !
-      Jsize=dst_grid_dims(1)
-!      IF (.not.allocated(start)) THEN
-        allocate ( start(Jsize) )
-!      END IF
-!      IF (.not.allocated(length)) THEN
-        allocate ( length(Jsize) )
-!      END IF
-      jc=0
-      DO j=0,Jsize-1
-        jc=jc+1
-        start (jc)=j*dst_grid_dims(2)+1
-        length(jc)=dst_grid_dims(2)
-      END DO
+      Jsize=dst_grid_dims(1)*dst_grid_dims(2)/nprocs
+      allocate ( start(1) )
+      allocate ( length(1) )
+      start(1)=(MyRank*Jsize)+1
+      length(1)=Jsize
 
       CALL GlobalSegMap_init (GSMapWRF, start, length, 0,              &
      &                        WAV_COMM_WORLD, WAVid)
       deallocate (start)
       deallocate (length)
+
+      call mpi_barrier(WAV_COMM_WORLD)
+
 !
 ! Create ATM sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
 !
-        call SparseMatrixPlus_init(A2WMatPlus, sMatA,                   &
+
+!      IF (INODE.EQ.MASTER) THEN
+!        SMlsize=SparseMatrix_lsize(sMatA2)
+!        SMlsize1=SparseMatrix_nRows(sMatA2)
+!        SMlsize2=SparseMatrix_nCols(sMatA2)
+!        write(*,*) 'num rows cols = ', SMlsize1, SMlsize2
+!        SMgnumel=SparseMatrix_GNumElem(sMatA2, WAV_COMM_WORLD)
+!        write(*,*) 'sparse sizesw1 ', SMlsize, SMgnumel, MyRank
+!        SMlsize=GlobalSegMap_lsize(GSMapWRF,WAV_COMM_WORLD)
+!        write(*,*) 'size wrf ', SMlsize
+!        SMlsize=GlobalSegMap_lsize(GSMapSWAN,WAV_COMM_WORLD)
+!        write(*,*) 'size swan ', SMlsize, master
+
+        call SparseMatrixPlus_init(A2WMatPlus, sMatA2,                  &
      &                             GSMapWRF, GSMapSWAN, Xonly,         &
-     &                             MASTER, WAV_COMM_WORLD, WAVid)
-        call SparseMatrix_clean(sMatA)
+     &                             0, WAV_COMM_WORLD, WAVid)
+        call SparseMatrix_clean(sMatA2)
 !
 ! Create Wave sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
 !
+        SMlsize=SparseMatrix_lsize(sMatW)
+        SMgnumel=SparseMatrix_GNumElem(sMatW, WAV_COMM_WORLD)
+!       write(*,*) 'sparse sizesw2 ', SMlsize, SMgnumel
+
+
          call SparseMatrixPlus_init(W2AMatPlus, sMatW,                  &
      &                              GSMapSWAN, GSMapWRF, Xonly,         &
-     &                              MASTER, WAV_COMM_WORLD, WAVid)
+     &                              0, WAV_COMM_WORLD, WAVid)
         call SparseMatrix_clean(sMatW)
+!      END IF
+
 #endif
 !
 !  Initialize attribute vector holding the export data code strings of
@@ -396,8 +456,9 @@
 !  Initialize attribute vector holding the export data code string of
 !  the atmosphere model.
 !
-      CALL AttrVect_init (atm2wav_AV, rList=TRIM(ExportList(Iatmos)),   &
-     &                    lsize=gsmsize)
+!      CALL AttrVect_init (atm2wav_AV, rList=TRIM(ExportList(Iatmos)),   &
+!     &                    lsize=gsmsize)
+      CALL AttrVect_init (atm2wav_AV, rlist="UWind:VWind",lsize=gsmsize)
       CALL AttrVect_zero (atm2wav_AV)
 !
 ! Initialize a router to the WRF component.
@@ -405,19 +466,23 @@
       CALL Router_init (ATMid, GSMapSWAN, WAV_COMM_WORLD, WRFtoSWAN)
 !
 #endif
-#ifdef MCT_INTERP_OC2AT
+#ifdef MCT_INTERP_WV2AT
 !
 !  Initialize attribute vector holding the export data code strings of
 !  the atm model. The Asize is the number of grid point on this
 !  processor.
 !
       Asize=GlobalSegMap_lsize(GSMapWRF, WAV_COMM_WORLD)
-      CALL AttrVect_init (atm2wav_AV2, rList=TRIM(ExportList(Iatmos)),  &
+!     CALL AttrVect_init (atm2wav_AV2, rList=TRIM(ExportList(Iatmos)),  &
+!    &                    lsize=Asize)
+      CALL AttrVect_init (atm2wav_AV2, rlist="UWind:VWind",             &
      &                    lsize=Asize)
       CALL AttrVect_zero (atm2wav_AV2)
 !
       Asize=GlobalSegMap_lsize(GSMapSWAN, WAV_COMM_WORLD)
-      CALL AttrVect_init (atm2wav_AV, rList=TRIM(ExportList(Iatmos)),   &
+!     CALL AttrVect_init (atm2wav_AV, rList=TRIM(ExportList(Iatmos)),   &
+!    &                    lsize=Asize)
+      CALL AttrVect_init (atm2wav_AV, rlist="UWind:VWind",             &
      &                    lsize=Asize)
       CALL AttrVect_zero (atm2wav_AV)
 !
@@ -436,7 +501,11 @@
 !
 !  Initialize a router to the wave model component.
 !
-      CALL Router_init (ATMid, GSMapSWAN, WAV_COMM_WORLD, WRFtoSWAN)
+      CALL Router_init (ATMid, GSMapWRF, WAV_COMM_WORLD, WRFtoSWAN)
+#endif
+#ifdef REFINED_GRID
+      deallocate ( wavids )
+      deallocate ( ocnids )
 #endif
 
       RETURN
@@ -769,7 +838,7 @@
 
 # ifdef AIR_OCEAN
 
-            CASE ('Uwind')               ! surface wind u-velocity
+            CASE ('UWind')               ! surface wind u-velocity
 
               CALL AttrVect_exportRAttr (atm2wav_AV, TRIM(code),        &
      &                                   avdata, gsmsize)
@@ -783,7 +852,7 @@
                 END DO
               END DO
 
-            CASE ('Vwind')              ! surface wind v-velocity
+            CASE ('VWind')              ! surface wind v-velocity
 
               CALL AttrVect_exportRAttr (atm2wav_AV, TRIM(code),        &
      &                                   avdata, gsmsize)
@@ -1032,6 +1101,10 @@
           COMPDA(INDX,JVX1) =COMPDA(INDX,JVX2)
           COMPDA(INDX,JVY1) =COMPDA(INDX,JVY2)
           COMPDA(INDX,JFRC3) =COMPDA(INDX,JFRC2)
+# ifdef AIR_OCEAN
+          COMPDA(INDX,JWX3) =COMPDA(INDX,JWX2)
+          COMPDA(INDX,JWY3) =COMPDA(INDX,JWY2)
+# endif
         END DO
 !
 ! Insert water level, velx, and vely into SWAN arrays.

@@ -37,12 +37,17 @@
 !  Local variable declarations.  
 !
       integer :: Istr, Iend, Jstr, Jend
+      integer :: IstrT, IendT, JstrT, JendT
       integer :: IstrR, IendR, JstrR, JendR, IstrU, JstrV
       integer :: Asize, Isize, Jsize, MyError
       integer :: i, ic, j, jc, nprocs
       integer :: nRows, nCols, num_sparse_elems
-!      integer, dimension(:), pointer :: points
-
+!     integer, dimension(:), pointer :: points
+      integer :: ioff, joff, ieff
+#ifdef REFINED_GRID
+      integer, dimension(:), pointer :: ocnids
+      integer, dimension(:), pointer :: wavids
+#endif
       integer, allocatable :: length(:)
       integer, allocatable :: start(:)
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
@@ -59,6 +64,10 @@
       Iend=BOUNDS(ng)%Iend(tile)
       Jstr=BOUNDS(ng)%Jstr(tile)
       Jend=BOUNDS(ng)%Jend(tile)
+      IstrT=BOUNDS(ng)%IstrT(tile)
+      IendT=BOUNDS(ng)%IendT(tile)
+      JstrT=BOUNDS(ng)%JstrT(tile)
+      JendT=BOUNDS(ng)%JendT(tile)
 !
       IF (WESTERN_EDGE) THEN
         IstrR=BOUNDS(ng)%Istr(tile)-1
@@ -92,8 +101,21 @@
 !
 !  Initialize MCT coupled model registry.
 !
-      CALL MCTWorld_init (Nmodels, MPI_COMM_WORLD, OCN_COMM_WORLD,      &
+#ifdef REFINED_GRID
+      allocate ( ocnids(Ngrids) )
+      allocate ( wavids(Ngrids) )
+      DO i=1,Ngrids
+        ocnids(i)=i
+        wavids(i)=Ngrids+i
+      END DO
+      WAVid=wavids(ng)
+      OCNid=ocnids(ng) 
+      CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                &
+     &                    OCN_COMM_WORLD, OCNid, ocnids)
+#else
+      CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, OCN_COMM_WORLD,  &
      &                    OCNid)
+#endif
 #ifdef MCT_INTERP_OC2WV
 !
 !  If ocean grid and wave grids are different sizes, then
@@ -134,6 +156,9 @@
 !        IF (allocated(sparse_weights)) THEN
           deallocate ( sparse_weights )
 !        END IF
+!        IF (allocated(sparse_weights)) THEN
+          deallocate ( dst_grid_imask )
+!        END IF
       END IF
 
 !!!!!!!!!!!!!!!!!!!!!!
@@ -171,13 +196,16 @@
 !        IF (allocated(sparse_weights)) THEN
           deallocate ( sparse_weights )
 !        END IF
+!        IF (allocated(sparse_weights)) THEN
+          deallocate ( dst_grid_imask )
+!        END IF
       END IF
 #endif
 #if !defined MCT_INTERP_OC2WV
 !
 !  Determine start and lengths for roms domain decomposition.
 !
-      Jsize=JendR-JstrR+1
+      Jsize=JendT-JstrT+1
       IF (.not.allocated(start)) THEN
         allocate ( start(Jsize) )
       END IF
@@ -185,13 +213,33 @@
         allocate ( length(Jsize) )
       END IF
       jc=0
-      DO j=JstrR,JendR
+      ioff=0
+      joff=0
+      ieff=0
+#ifdef REFINED_GRID
+      IF (ng.gt.1) THEN
+        ioff=5
+        joff=3
+        ieff=3
+      END IF
+#endif
+      DO j=JstrT,JendT
         jc=jc+1
-        start (jc)=j*(Lm(ng)+2)+IstrR+1
-        length(jc)=(IendR-IstrR+1)
+        start (jc)=(j+joff)*(Lm(ng)+2+ioff)+(IstrT+ieff)+1
+        length(jc)=(IendT-IstrT+1)
       END DO
+#ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+        CALL GlobalSegMap_init (GSMapROMS1, start, length, 0,           &
+     &                        OCN_COMM_WORLD, OCNid)
+      ELSE IF (ng.eq.2) THEN
+        CALL GlobalSegMap_init (GSMapROMS2, start, length, 0,           &
+     &                        OCN_COMM_WORLD, OCNid)
+      END IF
+#else
       CALL GlobalSegMap_init (GSMapROMS, start, length, 0,              &
      &                        OCN_COMM_WORLD, OCNid)
+#endif
 !
 !  Deallocate working arrays.
 !
@@ -219,19 +267,6 @@
         start (jc)=j*(Lm(ng)+2)+IstrR+1
         length(jc)=(IendR-IstrR+1)
       END DO
-!      Isize=IendR-IstrR+1
-!      IF (.not.allocated(start)) THEN
-!        allocate ( start(Isize) )
-!      END IF
-!      IF (.not.allocated(length)) THEN
-!        allocate ( length(Isize) )
-!      END IF
-!      ic=0
-!      DO i=IstrR,IendR
-!        ic=ic+1
-!        start (ic)=i*(Mm(ng)+2)+JstrR+1
-!        length(ic)=(JendR-JstrR+1)
-!      END DO
       CALL GlobalSegMap_init (GSMapROMS, start, length, 0,              &
      &                        OCN_COMM_WORLD, OCNid)
 !
@@ -260,20 +295,6 @@
         start (jc)=j*dst_grid_dims(2)+1
         length(jc)=dst_grid_dims(2)
       END DO
-
-!      Isize=dst_grid_dims(2)
-!      IF (.not.allocated(start)) THEN
-!        allocate ( start(Isize) )
-!      END IF
-!      IF (.not.allocated(length)) THEN
-!        allocate ( length(Isize) )
-!      END IF
-!      ic=0
-!      DO i=0,Isize-1
-!        ic=ic+1
-!        start (ic)=i*dst_grid_dims(1)+1
-!        length(ic)=dst_grid_dims(1)
-!      END DO
 
       CALL GlobalSegMap_init (GSMapSWAN, start, length, 0,              &
      &                        OCN_COMM_WORLD, OCNid)
@@ -337,6 +358,46 @@
 !
       CALL Router_init (WAVid, GSMapSWAN, OCN_COMM_WORLD, ROMStoSWAN)
 #else
+# ifdef REFINED_GRID
+!
+!  Initialize attribute vector holding the export data code strings of
+!  the wave model. The Asize is the number of grid point on this
+!  processor.
+!
+      IF (ng.eq.1) THEN
+        Asize=GlobalSegMap_lsize(GSMapROMS1, OCN_COMM_WORLD)
+        CALL AttrVect_init (wav2ocn_AV1, rList=TRIM(ExportList(Iwaves)),  &
+     &                      lsize=Asize)
+        CALL AttrVect_zero (wav2ocn_AV1)
+!
+!  Initialize attribute vector holding the export data code string of
+!  the ocean model.
+!
+        CALL AttrVect_init (ocn2wav_AV1, rList=TRIM(ExportList(Iocean)),  &
+     &                    lsize=Asize)
+        CALL AttrVect_zero (ocn2wav_AV1)
+!
+!  Initialize a router to the wave model component.
+!
+        CALL Router_init (WAVid, GSMapROMS1, OCN_COMM_WORLD, ROMStoSWAN1)
+      ELSE IF (ng.eq.2) THEN
+        Asize=GlobalSegMap_lsize(GSMapROMS2, OCN_COMM_WORLD)
+        CALL AttrVect_init (wav2ocn_AV2, rList=TRIM(ExportList(Iwaves)),  &
+     &                      lsize=Asize)
+        CALL AttrVect_zero (wav2ocn_AV2)
+!
+!  Initialize attribute vector holding the export data code string of
+!  the ocean model.
+!
+        CALL AttrVect_init (ocn2wav_AV2, rList=TRIM(ExportList(Iocean)),  &
+     &                    lsize=Asize)
+        CALL AttrVect_zero (ocn2wav_AV2)
+!
+!  Initialize a router to the wave model component.
+!
+        CALL Router_init (WAVid, GSMapROMS2, OCN_COMM_WORLD, ROMStoSWAN2)
+      END IF
+# else
 !
 !  Initialize attribute vector holding the export data code strings of
 !  the wave model. The Asize is the number of grid point on this
@@ -357,8 +418,12 @@
 !  Initialize a router to the wave model component.
 !
       CALL Router_init (WAVid, GSMapROMS, OCN_COMM_WORLD, ROMStoSWAN)
+# endif
 #endif
-
+#ifdef REFINED_GRID
+      deallocate ( wavids )
+      deallocate ( ocnids )
+#endif
       RETURN
       END SUBROUTINE initialize_ocn2wav_coupling
 
@@ -447,6 +512,7 @@
 !  Local variable declarations.
 !
       integer :: Istr, Iend, Jstr, Jend
+      integer :: IstrT, IendT, JstrT, JendT
       integer :: IstrR, IendR, JstrR, JendR, IstrU, JstrV
       integer :: Asize, Iimport, Iexport, MyError
       integer :: gtype, i, id, ifield, ij, j, k, status
@@ -479,6 +545,10 @@
       Iend=BOUNDS(ng)%Iend(tile)
       Jstr=BOUNDS(ng)%Jstr(tile)
       Jend=BOUNDS(ng)%Jend(tile)
+      IstrT=BOUNDS(ng)%IstrT(tile)
+      IendT=BOUNDS(ng)%IendT(tile)
+      JstrT=BOUNDS(ng)%JstrT(tile)
+      JendT=BOUNDS(ng)%JendT(tile)
 !
       IF (WESTERN_EDGE) THEN
         IstrR=BOUNDS(ng)%Istr(tile)-1
@@ -505,7 +575,15 @@
 !  Allocate communications array.
 !-----------------------------------------------------------------------
 !
+#ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+        Asize=GlobalSegMap_lsize (GSMapROMS1, OCN_COMM_WORLD)
+      ELSE IF (ng.eq.2) THEN
+        Asize=GlobalSegMap_lsize (GSMapROMS2, OCN_COMM_WORLD)
+      END IF
+#else
       Asize=GlobalSegMap_lsize (GSMapROMS, OCN_COMM_WORLD)
+#endif
       allocate ( A(Asize) )
       A=0.0_r8
 !
@@ -528,7 +606,20 @@
       CALL MCT_Recv (wav2ocn_AV2, ROMStoSWAN, MyError)
       CALL MCT_MatVecMul(wav2ocn_AV2, W2OMatPlus, wav2ocn_AV)
 #else
+# ifdef REFINED_GRID
+      CALL AttrVect_init (wav2ocn_AV, rList=TRIM(ExportList(Iwaves)),   &
+     &                    lsize=Asize)
+      CALL AttrVect_zero (wav2ocn_AV)
+      IF (ng.eq.1) THEN
+        CALL MCT_Recv (wav2ocn_AV1, ROMStoSWAN1, MyError)
+        CALL AttrVect_copy(wav2ocn_AV1,wav2ocn_AV)
+      ELSE IF (ng.eq.2) THEN
+        CALL MCT_Recv (wav2ocn_AV2, ROMStoSWAN2, MyError)
+        CALL AttrVect_copy(wav2ocn_AV2,wav2ocn_AV)
+      END IF
+# else
       CALL MCT_Recv (wav2ocn_AV, ROMStoSWAN, MyError)
+# endif
 #endif
       RecvTime=RecvTime+my_wtime(wtime)-buffer(1)
       IF (MyError.ne.0) THEN
@@ -563,7 +654,7 @@
             CALL ROMS_import2d (ng, tile,                               &
      &                          id, gtype, scale, add_offset,           &
      &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
+     &                          IstrT, IendT, JstrT, JendT,             &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
      &                          FORCES(ng)%Dwave,                       &
@@ -581,7 +672,7 @@
             CALL ROMS_import2d (ng, tile,                               &
      &                          id, gtype, scale, add_offset,           &
      &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
+     &                          IstrT, IendT, JstrT, JendT,             &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
      &                          FORCES(ng)%Hwave,                       &
@@ -602,7 +693,7 @@
             CALL ROMS_import2d (ng, tile,                               &
      &                          id, gtype, scale, add_offset,           &
      &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
+     &                          IstrT, IendT, JstrT, JendT,             &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
      &                          FORCES(ng)%Lwave,                       &
@@ -620,7 +711,7 @@
             CALL ROMS_import2d (ng, tile,                               &
      &                          id, gtype, scale, add_offset,           &
      &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
+     &                          IstrT, IendT, JstrT, JendT,             &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
      &                          FORCES(ng)%Pwave_top,                   &
@@ -638,7 +729,7 @@
             CALL ROMS_import2d (ng, tile,                               &
      &                          id, gtype, scale, add_offset,           &
      &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
+     &                          IstrT, IendT, JstrT, JendT,             &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
      &                          FORCES(ng)%Pwave_bot,                   &
@@ -656,7 +747,7 @@
             CALL ROMS_import2d (ng, tile,                               &
      &                          id, gtype, scale, add_offset,           &
      &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
+     &                          IstrT, IendT, JstrT, JendT,             &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
      &                          FORCES(ng)%Wave_dissip,                 &
@@ -674,7 +765,7 @@
             CALL ROMS_import2d (ng, tile,                               &
      &                          id, gtype, scale, add_offset,           &
      &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
+     &                          IstrT, IendT, JstrT, JendT,             &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
      &                          FORCES(ng)%Ub_swan,                     &
@@ -694,7 +785,7 @@
             CALL ROMS_import2d (ng, tile,                               &
      &                          id, gtype, scale, add_offset,           &
      &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
+     &                          IstrT, IendT, JstrT, JendT,             &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
      &                          FORCES(ng)%Wave_break,                  &
@@ -706,6 +797,13 @@
 !-----------------------------------------------------------------------
 !  Export fields from ocean (ROMS) to wave (SWAN) model.
 !-----------------------------------------------------------------------
+
+
+# ifdef REFINED_GRID
+      CALL AttrVect_init (ocn2wav_AV, rList=TRIM(ExportList(Iocean)),   &
+     &                    lsize=Asize)
+      CALL AttrVect_zero (ocn2wav_AV)
+# endif
 !
 !  Schedule sending fields to the wave model.
 !
@@ -750,19 +848,23 @@
 !           Advanced series on Ocean Engineering, p.86 eq 2.144.        !
 !
 !            DO j=JstrR,JendR
-!              DO i=Istr,Iend+1
-!                waven=2.0_r8*pi/FORCES(ng)%Lwave(i,j)
+!              DO i=Istr,Iend
+!                waven=2.0_r8*pi/MAX(Lwave_min,FORCES(ng)%Lwave(i,j))
 !                cff=0.0_r8
 !                DO k=1,N(ng)
 !                  cff=cff+OCEAN(ng)%u(i,j,k,NOUT)*cosh(2.0_r8*waven*    &
 !     &                (GRID(ng)%z_r(i,j,k)+GRID(ng)%h(i,j)))*           &
 !     &                GRID(ng)%Hz(i,j,k)
 !                END DO
+!                uavg(i,j)=2.0_r8*waven*cff/                             &
 !     &               sinh(2.0_r8*waven*GRID(ng)%h(i,j))
+!                uavg(i,j)=0.5_r8*(OCEAN(ng)%u(i,j,N(ng),NOUT)+          &
+!     &                            OCEAN(ng)%u(i+1,j,N(ng),NOUT))
 !              END DO
 !            END DO
 !     &                          uavg(LBi:UBi,LBj:UBj),                  &
 
+!    &                          uavg(LBi:UBi,LBj:UBj),                  &
             CALL ROMS_export2d (ng, tile,                               &
      &                          id, gtype, scale, add_offset,           &
      &                          LBi, UBi, LBj, UBj,                     &
@@ -810,8 +912,8 @@
 
           CASE ('ZO')                   ! bottom roughness
 
-            DO j=JstrR,JendR
-              DO i=IstrR,IendR
+            DO j=JstrT,JendT
+              DO i=IstrT,IendT
 #ifdef BBL_MODEL
                 AA(i,j)=MAX(0.0001_r8,                                  &
      &                      OCEAN(ng)%bottom(i,j,izNik)*30.0_r8)
@@ -841,7 +943,20 @@
         call MCT_MatVecMul(ocn2wav_AV,O2WMatPlus,ocn2wav_AV2)
         CALL MCT_Send (ocn2wav_AV2, ROMStoSWAN, MyError)
 #else
+# ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+        CALL AttrVect_copy(ocn2wav_AV,ocn2wav_AV1)
+        CALL MCT_Send (ocn2wav_AV1, ROMStoSWAN1, MyError)
+      ELSE IF (ng.eq.2) THEN
+        CALL AttrVect_copy(ocn2wav_AV,ocn2wav_AV2)
+        CALL MCT_Send (ocn2wav_AV2, ROMStoSWAN2, MyError)
+      END IF
+!
+      CALL AttrVect_clean (ocn2wav_AV, MyError)
+      CALL AttrVect_clean (wav2ocn_AV, MyError)
+# else
         CALL MCT_Send (ocn2wav_AV, ROMStoSWAN, MyError)
+# endif
 #endif
         SendTime=SendTime+my_wtime(wtime)-buffer(2)
         IF (MyError.ne.0) THEN
@@ -917,10 +1032,21 @@
 !  Deallocate MCT environment.
 !-----------------------------------------------------------------------
 !
+#ifdef REFINED_GRID
+!      IF (ng.eq.1) THEN
+        CALL Router_clean (ROMStoSWAN1, MyError)
+        CALL AttrVect_clean (ocn2wav_AV1, MyError)
+        CALL GlobalSegMap_clean (GSMapROMS1, MyError)
+!      ELSE IF (ng.eq.2) THEN
+        CALL Router_clean (ROMStoSWAN2, MyError)
+        CALL AttrVect_clean (ocn2wav_AV2, MyError)
+        CALL GlobalSegMap_clean (GSMapROMS2, MyError)
+!      END IF
+#else
       CALL Router_clean (ROMStoSWAN, MyError)
       CALL AttrVect_clean (ocn2wav_AV, MyError)
       CALL GlobalSegMap_clean (GSMapROMS, MyError)
-
+#endif
       RETURN
 
       END SUBROUTINE finalize_ocn2wav_coupling

@@ -57,8 +57,8 @@ ifdef USE_NETCDF4
     NETCDF_LIBDIR ?= /opt/pgisoft/netcdf4/lib
       HDF5_LIBDIR ?= /opt/pgisoft/hdf5/lib
 else
-    NETCDF_INCDIR ?= /opt/pgisoft/netcdf/include
-    NETCDF_LIBDIR ?= /opt/pgisoft/netcdf/lib
+    NETCDF_INCDIR ?= /usr/local/apps/netcdf-3.6.1/pgi/6.0/x86_64/include
+    NETCDF_LIBDIR ?= /usr/local/apps/netcdf-3.6.1/pgi/6.0/x86_64/lib
 endif
              LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
 ifdef USE_NETCDF4
@@ -99,7 +99,8 @@ ifdef USE_DEBUG
            FFLAGS += -g -C
 #          FFLAGS += -g
 else
-           FFLAGS += -u -Bstatic -fastsse -Mipa=fast -tp k8-64
+#          FFLAGS += -u -Bstatic -fastsse -Mipa=fast -tp k8-64
+           FFLAGS += -fastsse -Mipa=fast -tp k8-64
 endif
 
 # Save compiler flags without the MCT or ESMF libraries additions
