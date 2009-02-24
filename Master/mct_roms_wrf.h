@@ -46,6 +46,7 @@
       integer, allocatable  :: start(:)
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       character (len=70)    :: nc_name
+      character (len=200)   :: avstring
 !
 !-----------------------------------------------------------------------
 !  Compute lower and upper bounds over a particular domain partition or
@@ -164,7 +165,6 @@
      &                         REAL(dst_grid_imask(i),r8)
           END DO
         END DO
-
 !
 ! Create sparse matrix.
 !
@@ -174,7 +174,7 @@
         call SparseMatrix_importGColInd(sMatO, sparse_cols,              &
      &                                  size(sparse_cols))
         call SparseMatrix_importMatrixElts(sMatO, sparse_weights,        &
-     &                                     size(sparse_weights))
+     &                                  size(sparse_weights))
 !
 ! Deallocate arrays.
 !
@@ -243,7 +243,6 @@
         start (jc)=j*(Lm(ng)+2)+IstrR+1
         length(jc)=(IendR-IstrR+1)
       END DO
-
       CALL GlobalSegMap_init (GSMapROMS, start, length, 0,              &
      &                        OCN_COMM_WORLD, OCNid)
 !
@@ -303,6 +302,24 @@
      &                              MyMaster, OCN_COMM_WORLD, OCNid)
         call SparseMatrix_clean(sMatO)
 #endif
+!
+!  Initialize attribute vector holding the export data code strings of
+!  the atmosphere model.
+!
+      avstring='PSFC'
+      avstring=avstring//':RELH'
+      avstring=avstring//':T2'
+      avstring=avstring//':U10'
+      avstring=avstring//':V10'
+      avstring=avstring//':CLDFRA'
+      avstring=avstring//':RAIN'
+      avstring=avstring//':SWDOWN'
+      avstring=avstring//':GLW'
+      avstring=avstring//':USTRESS'
+      avstring=avstring//':VSTRESS'
+      avstring=avstring//':LH'
+      avstring=avstring//':HFX'
+!
 #ifdef MCT_INTERP_OC2AT
 !
 !  Initialize attribute vector holding the export data code strings of
@@ -310,13 +327,11 @@
 !  processor.
 !
       Asize=GlobalSegMap_lsize(GSMapWRF, OCN_COMM_WORLD)
-      CALL AttrVect_init (atm2ocn_AV2, rList=TRIM(ExportList(Iatmos)),  &
-     &                    lsize=Asize)
+      CALL AttrVect_init (atm2ocn_AV2, rList=TRIM(avstring),lsize=Asize)
       CALL AttrVect_zero (atm2ocn_AV2)
 !
       Asize=GlobalSegMap_lsize(GSMapROMS, OCN_COMM_WORLD)
-      CALL AttrVect_init (atm2ocn_AV, rList=TRIM(ExportList(Iatmos)),   &
-     &                    lsize=Asize)
+      CALL AttrVect_init (atm2ocn_AV, rList=TRIM(avstring),lsize=Asize)
       CALL AttrVect_zero (atm2ocn_AV)
 !
 !  Initialize attribute vector holding the export data code string of
@@ -340,14 +355,12 @@
 !  processor.
 !
       Asize=GlobalSegMap_lsize(GSMapROMS, OCN_COMM_WORLD)
-      CALL AttrVect_init (atm2ocn_AV, rList=TRIM(ExportList(Iatmos)),   &
-     &                    lsize=Asize)
+      CALL AttrVect_init (atm2ocn_AV, rList=TRIM(avstring),lsize=Asize)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
-      CALL AttrVect_init (ocn2atm_AV, rList=TRIM(ExportList(Iocean)),   &
-     &                    lsize=Asize)
+      CALL AttrVect_init (ocn2atm_AV, rList="SST",lsize=Asize)
       CALL AttrVect_zero (ocn2atm_AV)
 !
 !  Initialize a router to the atmosphere model component.
@@ -371,24 +384,23 @@
 !                                                                      !
 !  Fields imported WRF model:                                          !
 !                                                                      !
-!     * Surface atmospheric pressure (Pa), [mb]                        !
-!     * Surface air relative humidity (percent), [fraction]            !
-!     * Surface (2 m) air temperature (Celsius), [Celsius]             !
-!     * Surface (10 m) U-wind speed (m/s), [m/s]                       !
-!     * Surface (10 m) V-wind speed (m/s), [m/s]                       !
-!     * Cloud fraction (percent/100), [percent/100]                    !
-!     * Precipitation (m/s), [kg/m2/s]                                 !
-!     * Shortwave radiation (Watts/m2), [Celsius m/s]                  !
-!     * Long wave raditaion (Watts/m2), [Celsius m/s]                  !
-!     * Latent heat flux (Watts/m2), [Celsius m/s]                     !
-!     * Sensible heat flux (Watts/m2), [Celsius m/s]                   !
-!     * Net surface heat flux (Watts/2), [Celsius m/s]                 !
-!     * Surface U-wind stress (Pa), [m2/s2]                            !
-!     * Surface V-wind stress (Pa), [m2/s2]                            !
+!     * PSFC    Surface atmospheric pressure (Pa), [mb]                !
+!     * RELH    Surface air relative humidity (percent), [fraction]    !
+!     * T2      Surface (2 m) air temperature (Celsius), [Celsius]     !
+!     * U10     Surface (10 m) U-wind speed (m/s), [m/s]               !
+!     * V10     Surface (10 m) V-wind speed (m/s), [m/s]               !
+!     * CLDFRA  Cloud fraction (percent/100), [percent/100]            !
+!     * RAIN    Precipitation (m/s), [kg/m2/s]                         !
+!     * SWDOWN  Shortwave radiation (Watts/m2), [Celsius m/s]          !
+!     * GLW     Long wave raditaion (Watts/m2), [Celsius m/s]          !
+!     * USTRESS Surface U-wind stress (Pa), [m2/s2]                    !
+!     * VSTRESS Surface V-wind stress (Pa), [m2/s2]                    !
+!     * LH      Latent heat flux (Watts/m2), [Celsius m/s]             !
+!     * HFX     Sensible heat flux (Watts/m2), [Celsius m/s]           !
 !                                                                      !
 !  Fields exported to WRF model:                                       !
 !                                                                      !
-!     * Sea surface potential temperature (Celsius), [Celsius]         !
+!     * SST     Sea surface potential temperature (Kelvin), [Celsius]  !
 !                                                                      !
 !=======================================================================
 !
@@ -430,9 +442,14 @@
       USE mod_stepping
       USE mod_iounits
 !
-      USE distribute_mod, ONLY : mp_reduce
-      USE ROMS_import_mod, ONLY : ROMS_import2d
-      USE ROMS_export_mod, ONLY : ROMS_export2d
+#if defined EW_PERIODIC || defined NS_PERIODIC
+      USE exchange_2d_mod, ONLY : exchange_r2d_tile
+      USE exchange_2d_mod, ONLY : exchange_u2d_tile
+      USE exchange_2d_mod, ONLY : exchange_v2d_tile
+#endif
+#ifdef DISTRIBUTE
+      USE mp_exchange_mod, ONLY : mp_exchange2d
+#endif
 !
       implicit none
 !
@@ -501,355 +518,406 @@
 !
 !  Initialize coupling wait time clocks.
 !
-      RecvTime=0.0_r8
-      SendTime=0.0_r8
-!
 !-----------------------------------------------------------------------
 !  Import fields from atmosphere model (WRF) to ocean model (ROMS).
-!  Currently, both atmosphere and ocean model grids are the same.
-!  We need to revisit this logic to allow interpolation.
 !-----------------------------------------------------------------------
 !
-!  Schedule receiving fields from atmosphere model.
+!  Receive fields from atmosphere model.
 !
       CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
-      buffer(1)=my_wtime(wtime)
 #ifdef MCT_INTERP_OC2AT
       CALL MCT_Recv (atm2ocn_AV2, ROMStoWRF, MyError)
       CALL MCT_MatVecMul(atm2ocn_AV2, A2OMatPlus, atm2ocn_AV)
 #else
       CALL MCT_Recv (atm2ocn_AV, ROMStoWRF, MyError)
 #endif
-      RecvTime=RecvTime+my_wtime(wtime)-buffer(1)
       IF (MyError.ne.0) THEN
         IF (Master) THEN
           WRITE (stdout,10) 'atmosphere model, MyError = ', MyError
         END IF
-        exit_flag=2
-        RETURN
+        CALL finalize_ocn2atm_coupling
       END IF
+!
+!  Set ramp coefficient.
+!
+!!    ramp=MIN((tdays(ng)-dstart)*4.0_r8,1.0_r8)
+      ramp=1.0_r8
 !
 !  Receive fields from atmosphere model.
 !
-      Iimport=0
-      DO ifield=1,Nimport(Iocean)
-        id=ImportID(Iocean)%val(ifield)
-        code=ADJUSTL(Fields(id)%code)
-        gtype=Fields(id)%GridType
-        scale=Fields(id)%scale
-        add_offset=Fields(id)%AddOffset
-
-        SELECT CASE (TRIM(code))
-
 #if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
-
-          CASE ('Pair')                   ! surface air pressure
-
-            CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            scale=0.01_r8                 ! Pa to mb
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%Pair,                        &
-     &                          status)
+!
+!  Surface atmospheric pressure  (mb).
+!  Need to scale PSFC in Pa to mb.
+!
+      CALL AttrVect_exportRAttr (atm2ocn_AV, "PSFC", A, Asize)
+      ij=0
+      cff=0.01_r8
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          Pair(i,j)=A(ij)*cff
+        END DO
+      END DO
 #endif
 #if defined BULK_FLUXES || defined ECOSIM || \
    (defined SHORTWAVE && defined ANA_SRFLUX)
-
-          CASE ('Hair')                   ! surface air humidity
-
-            CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            scale=0.01_r8                 ! percent to fraction
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%Hair,                        &
-     &                          status)
-
-          CASE ('Tair')                   ! surface (2m) air temperature
-
-            CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            scale=1.0_r8                  ! Celsius
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%Tair,                        &
-     &                          status)
+!
+!  Surface air relative humidity (-)
+!  Convert RELH from percent to fraction.
+!
+      CALL AttrVect_exportRAttr (atm2ocn_AV, "RELH", A, Asize)
+      ij=0
+      cff=0.01_r8
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          Hair(i,j)=A(ij)*cff
+        END DO
+      END DO
+!
+!  Surface 2m air temperature    (degC)
+!
+      CALL AttrVect_exportRAttr (atm2ocn_AV, "T2", A, Asize)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          Tair(i,j)=A(ij)
+        END DO
+      END DO
 #endif
 #if defined BULK_FLUXES || defined ECOSIM
-
-          CASE ('UWind')                  ! U-wind (10m) component
-
-            CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            scale=1.0_r8                  ! m/s
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%Uwind,                       &
-     &                          status)
-
-          CASE ('VWind')                  ! V-wind (10m) component
-
-            CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            scale=1.0_r8                  ! m/s
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%Vwind,                       &
-     &                          status)
+!
+!  U-Wind speed at 10 m          (m/s)
+!
+      CALL AttrVect_exportRAttr (atm2ocn_AV, "U10", A, Asize)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          Uwind(i,j)=A(ij)
+        END DO
+      END DO
+!
+!  V-Wind speed at 10 m          (m/s)
+!
+      CALL AttrVect_exportRAttr (atm2ocn_AV, "V10", A, Asize)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          Vwind(i,j)=A(ij)
+        END DO
+      END DO
 #endif
 #ifdef CLOUDS
-
-          CASE ('cloud')                  ! cloud fraction
-
-            CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            scale=1.0_r8                  ! percent/100, so 0 to 1
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%cloud,                       &
-     &                          status)
+!
+!  Cloud fraction                (percent/100, so 0-1)
+!
+      CALL AttrVect_exportRAttr (atm2ocn_AV, "CLDFRA", A, Asize)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          cloud(i,j)=A(ij)
+        END DO
+      END DO
 #endif
 #ifdef BULK_FLUXES
-
-          CASE ('rain')                   ! precipitation
-
-            CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            scale=rho0                    ! kg/m2/s
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%rain,                        &
-     &                          status)
-
-          CASE ('LWrad')                  ! longwave radiation
-
-            CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            scale=-1.0_r8/(rho0*Cp)       ! Watts/m2 to Celsius m/s
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%lrflx,                       &
-     &                          status)
+!
+!  Precipitation                 (kg/m2/s)
+!
+      CALL AttrVect_exportRAttr (atm2ocn_AV, "RAIN", A, Asize)
+      cff=rho0
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          rain(i,j)=A(ij)*cff
+        END DO
+      END DO
+!
+!  Long wave radiation          (Celsius m/s)
+!
+      CALL AttrVect_exportRAttr (atm2ocn_AV, "GLW", A, Asize)
+      Hscale=-1.0_r8/(rho0*Cp)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          lrflx(i,j)=A(ij)*Hscale
+        END DO
+      END DO
 # ifdef RUOYING_CASE1
-
-          CASE ('Lheat')                  ! latent heat flux
-
-            CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            scale=1.0_r8                  ! Watts/m2
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%lhflx,                       &
-     &                          status)
-
-          CASE ('Sheat')                  ! sensible heat flux
-
-            CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            scale=1.0_r8                  ! Watts/m2
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%shflx,                       &
-     &                          status)
+!
+!  Latent heat flux            (W/m^2)
+!
+      CALL AttrVect_exportRAttr (atm2ocn_AV, "LH", A, Asize)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          lhflx(i,j)=A(ij)
+        END DO
+      END DO
+!
+!  Sensible heat flux            (W/m^2)
+!
+      CALL AttrVect_exportRAttr (atm2ocn_AV, "HFX", A, Asize)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          shflx(i,j)=A(ij)
+        END DO
+      END DO
 # endif
 #endif
 #ifdef SHORTWAVE
-
-          CASE ('SWrad')                  ! shortwave radiation
-
-            CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-!           scale=-1.0_r8/(rho0*Cp)       ! Watts/m2 to Celsius m/s
-            scale=1.0_r8/(rho0*Cp)       ! Watts/m2 to Celsius m/s, rhe
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%srflx,                       &
-     &                          status)
-#endif
-#ifndef BULK_FLUXES
-
-          CASE ('heat')                   ! surface net heat flux
-
-            CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            scale=-1.0_r8/(rho0*Cp)       ! Watts/m2 to Celsius m/s
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, MyRank,                             &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A                                &
-     &                          IstrR, IendR, JstrR, JendR,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%stflx(:,:,itemp),            &
-     &                          status)
-
-          CASE ('USTRESS')                   ! surface U-wind stress
-
-            CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            scale=1.0_r8/rho0             ! Pa to m2/s2
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%sustr,                       &
-     &                          status)
-
-          CASE ('VSTRESS')                   ! surface V-wind stress
-
-            CALL AttrVect_exportRAttr (atm2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            scale=1.0_r8/rho0             ! Pa to m2/s2
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrR, IendR, JstrR, JendR,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%svstr,                       &
-     &                          status)
-#endif
-        END SELECT
+!
+!  Short wave radiation          (Celsius m/s)
+!
+      CALL AttrVect_exportRAttr (atm2ocn_AV, "SWDOWN", A, Asize)
+!      Hscale=-1.0_r8/(rho0*Cp)
+      Hscale=1.0_r8/(rho0*Cp)   ! changed RHE 03/30/08
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          srflx(i,j)=A(ij)*Hscale
+        END DO
       END DO
+#endif
+!
+!  Surface u-stress              (m2/s2)
+!
+! THIS NEEDS TO BE AVERAGED TO U POINTS
+
+!      CALL AttrVect_exportRAttr (atm2ocn_AV, "USTRESS", A, Asize)
+!      cff=1.0_r8/rho0
+!      ij=0
+!      DO j=JstrT,JendT
+!        DO i=IstrU,IendR
+!          ij=ij+1
+!          sustr(i,j)=A(ij)*cff
+!        END DO
+!      END DO
+!
+!  Surface v-stress              (m2/s2)
+!
+! THIS NEEDS TO BE AVERAGED TO V POINTS
+
+!      CALL AttrVect_exportRAttr (atm2ocn_AV, "VSTRESS", A, Asize)
+!      cff=1.0_r8/rho0
+!      ij=0
+!      DO j=JstrV,JendR
+!        DO i=IstrT,IendT
+!          ij=ij+1
+!          svstr(i,j)=A(ij)*cff
+!        END DO
+!      END DO
+!
+!  Apply boundary conditions.
+!
+#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  Pair)
+#endif
+#if defined BULK_FLUXES || defined ECOSIM || \
+   (defined SHORTWAVE && defined ANA_SRFLUX)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  Hair)
+       CALL bc_r2d_tile (ng, tile,                                      &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  Tair)
+#endif
+#if defined BULK_FLUXES || defined ECOSIM
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  Uwind)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  Vwind)
+#endif
+#ifdef CLOUDS
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  cloud)
+#endif
+#ifdef BULK_FLUXES
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  rain)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  lrflx)
+# ifdef RUOYING_CASE1
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  lhflx)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  shflx)
+# endif
+#endif
+#ifdef SHORTWAVE
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  srflx)
+#endif
+#if defined EW_PERIODIC || defined NS_PERIODIC
+!
+!-----------------------------------------------------------------------
+!  Apply periodic boundary conditions.
+!-----------------------------------------------------------------------
+!
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Pair)
+# endif
+# if defined BULK_FLUXES || defined ECOSIM || \
+    (defined SHORTWAVE && defined ANA_SRFLUX)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Hair)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Tair)
+# endif
+# if defined BULK_FLUXES || defined ECOSIM
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Uwind)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Vwind)
+# endif
+# ifdef CLOUDS
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        cloud)
+# endif
+# ifdef BULK_FLUXES
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        rain)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        lrflx)
+#  ifdef RUOYING_CASE1
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        lhflx)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        shflx)
+#  endif
+# endif
+# ifdef SHORTWAVE
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        srflx)
+# endif
+!      CALL exchange_u2d_tile (ng, tile,                                &
+!     &                        LBi, UBi, LBj, UBj,                      &
+!     &                        sustr)
+!      CALL exchange_v2d_tile (ng, tile,                                &
+!     &                        LBi, UBi, LBj, UBj,                      &
+!     &                        svstr)
+#endif
+#ifdef DISTRIBUTE
+!
+!-----------------------------------------------------------------------
+!  Exchange tile boundaries.
+!-----------------------------------------------------------------------
+!
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+      CALL mp_exchange2d (ng, iNLM, 1, tile,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    Pair)
+# endif
+# if defined BULK_FLUXES || defined ECOSIM || \
+    (defined SHORTWAVE && defined ANA_SRFLUX)
+      CALL mp_exchange2d (ng, iNLM, 2, tile,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    Hair, Tair)
+# endif
+# if defined BULK_FLUXES || defined ECOSIM
+      CALL mp_exchange2d (ng, iNLM, 2, tile,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    Uwind, Vwind)
+# endif
+# ifdef CLOUDS
+      CALL mp_exchange2d (ng, iNLM, 1, tile,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    cloud)
+# endif
+# ifdef BULK_FLUXES
+      CALL mp_exchange2d (ng, iNLM, 2, tile,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    rain, lrflx)
+#  ifdef RUOYING_CASE1
+      CALL mp_exchange2d (ng, iNLM, 2, tile,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    lhflx, shflx)
+#  endif
+# endif
+# ifdef SHORTWAVE
+      CALL mp_exchange2d (ng, iNLM, 1, tile,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    srflx)
+# endif
+!      CALL mp_exchange2d (ng, iNLM, 2, tile,                           &
+!     &                    LBi, UBi, LBj, UBj,                          &
+!     &                    NghostPoints, EWperiodic, NSperiodic,        &
+!     &                    sustr, svstr)
+#endif
 !
 !-----------------------------------------------------------------------
 !  Export fields from ocean (ROMS) to atmosphere (WRF) model.
 !-----------------------------------------------------------------------
 !
-!  Schedule sending fields to the atmosphere model.
 !
-      Iexport=0
-      DO ifield=1,Nexport(Iocean)
-        id=ExportID(Iocean)%val(ifield)
-        code=ADJUSTL(Fields(id)%code)
-        gtype=Fields(id)%GridType
-        scale=Fields(id)%scale
-        add_offset=Fields(id)%AddOffset
-
-        SELECT CASE (TRIM(code))
-
-          CASE ('SST')                    ! sea surface temperature
-
-            CALL ROMS_export2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          OCEAN(ng)%t(:,:,N(ng),NOUT,itemp),      &
-     &                          Fields(id)%ExpMin, Fields(id)%ExpMax,   &
-     &                          Asize, A,                               &
-     &                          status)
-            CALL AttrVect_importRAttr (ocn2atm_AV, TRIM(code), A, Asize)
-            Iexport=Iexport+1
-
-        END SELECT
+!  Sea surface temperature       (degC)
+!
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+#ifdef SST_CONST
+          A(ij)=29.0_r8  ! exp A. rhe 03/13/08
+#else       
+          A(ij)=t(i,j,N(ng),nstp,itemp)
+#endif
+        END DO
       END DO
+      CALL AttrVect_importRAttr (FrOCNToATMAV, "SST", A, Asize)
 !
 !  Send ocean fields to atmosphere model.
 !
-      IF (Iexport.gt.0) THEN
-        buffer(2)=my_wtime(wtime)
 #ifdef MCT_INTERP_OC2AT
         call MCT_MatVecMul(ocn2atm_AV,O2AMatPlus,ocn2atm_AV2)
         CALL MCT_Send (ocn2atm_AV2, ROMStoWRF, MyError)
 #else
         CALL MCT_Send (ocn2atm_AV, ROMStoWRF, MyError)
 #endif
-        SendTime=SendTime+my_wtime(wtime)-buffer(2)
         IF (MyError.ne.0) THEN
           IF (Master) THEN
             WRITE (stdout,20) 'atmosphere model, MyError = ', MyError
           END IF
           exit_flag=2
           RETURN
-        END IF
-      END IF
-!
-!-----------------------------------------------------------------------
-!  Report.
-!-----------------------------------------------------------------------
-!
-      IF (Nthreads(Iocean).gt.1) THEN
-        buffer(1)=RecvTime
-        buffer(2)=SendTime
-        op_handle(1)='SUM'
-        op_handle(2)='SUM'
-        CALL mp_reduce (ng, iNLM, 2, buffer, op_handle)
-        RecvTime=buffer(1)
-        SendTime=buffer(2)
-      END IF
-      IF (Master.and.((Iimport.gt.0).or.(Iexport.gt.0))) THEN
-        WRITE (stdout,30) Iimport, Iexport, time_code(ng),              &
-     &                    RecvTime, SendTime
-        IF (Lreport) THEN
-          DO ifield=1,Nimport(Iocean)
-            id=ImportID(Iocean)%val(ifield)
-            WRITE (stdout,40) 'ROMS Import: ',TRIM(fields(id)%name),    &
-     &                        Fields(id)%ImpMin, Fields(id)%ImpMax
-          END DO
-          DO ifield=1,Nexport(Iocean)
-            id=ExportID(Iocean)%val(ifield)
-            WRITE (stdout,40) 'ROMS Export: ',TRIM(fields(id)%name),    &
-     &                        Fields(id)%ExpMin, Fields(id)%ExpMax
-          END DO
         END IF
       END IF
 !
@@ -861,13 +929,6 @@
      &        a, i4)
  20   FORMAT (' OCN2ATM_COUPLING - error while sending fields to ',     &
      &        a, i4)
- 30   FORMAT (6x,'OCN2ATM   - (', i2.2, ') imported and (', i2.2,       &
-     &        ') exported fields,', t62, 't = ', a,/, 16x,              &
-     &        '- ROMS coupling exchages wait clock (s):',/, 19x,        &
-     &        '(Recv= ', 1p,e14.8,0p, ' Send= ', 1p,e14.8,0p,')')
- 40   FORMAT (16x,'- ',a,a,                                             &
-     &        /,19x,'(Min= ',1p,e15.8,0p,' Max= ',1p,e15.8,0p,')')
-
       RETURN
       END SUBROUTINE ocn2atm_coupling_tile
 

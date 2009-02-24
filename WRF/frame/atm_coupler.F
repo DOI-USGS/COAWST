@@ -61,11 +61,11 @@
 !
       TYPE(GlobalSegMap) :: GSMapWRF          ! GloabalSegMap variables
  
-      TYPE(AttrVect) :: ToOceanAV             ! AttrVect variables
-      TYPE(AttrVect) :: FromOceanAV 
+      TYPE(AttrVect) :: atm2ocn_AV             ! AttrVect variables
+      TYPE(AttrVect) :: ocn2atm_AV 
       type(Router) :: RoutWRFtoROMS           ! Router variables
 # if defined SWAN_COUPLING
-      TYPE(AttrVect) :: ToWavesAV             ! AttrVect variables
+      TYPE(AttrVect) :: atm2wav_AV             ! AttrVect variables
       type(Router) :: RoutWRFtoSWAN           ! Router variables
 # endif
 
@@ -109,6 +109,7 @@
       integer :: ids, ide, jds, jde
 
       integer, pointer :: start(:), length(:)
+      character (len=200)   :: avstring
 
 !-----------------------------------------------------------------------
 !  Begin initialization phase.
@@ -141,8 +142,6 @@
       jc=0
       DO j=jds,jde
         jc=jc+1
-!       start(jc)=Isize*(j-1)+1
-!       start(jc)=j*grid%ed31+ids+1
         start(jc)=(j-1)*grid%ed31+ids
         length(jc)=Isize
       END DO
@@ -153,16 +152,26 @@
 !
 !  Initialize attribute vector holding the export data code strings of
 !  the atmosphere model.
-!     CALL AttrVect_init (ToOceanAV, rlist="PSFC:RELH:T2:U10:V10:CLDFRA:&
-!    &RAIN:SWDOWN:GLW:USTRESS:VSTRESS:LH:HFX",lsize=gsmsize)
-       CALL AttrVect_init (ToOceanAV, rlist="Pair:Hair:Tair:UWind:VWind:&
-     &cloud:rain:SWrad:LWrad:USTRESS:VSTRESS:Lheat:Sheat",lsize=gsmsize)
-      CALL AttrVect_zero (ToOceanAV)
+      avstring='PSFC'
+      avstring=avstring//':RELH'
+      avstring=avstring//':T2'
+      avstring=avstring//':U10'
+      avstring=avstring//':V10'
+      avstring=avstring//':CLDFRA'
+      avstring=avstring//':RAIN'
+      avstring=avstring//':SWDOWN'
+      avstring=avstring//':GLW'
+      avstring=avstring//':USTRESS'
+      avstring=avstring//':VSTRESS'
+      avstring=avstring//':LH'
+      avstring=avstring//':HFX'
+      CALL AttrVect_init (atm2ocn_AV,rlist=TRIM(avstring),lsize=gsmsize)
+      CALL AttrVect_zero (atm2ocn_AV)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
-      CALL AttrVect_init (FromOceanAV,rList="SST",lsize=gsmsize)
-      CALL AttrVect_zero (FromOceanAV)
+      CALL AttrVect_init (ocn2atm_AV,rList="SST",lsize=gsmsize)
+      CALL AttrVect_zero (ocn2atm_AV)
 !
 !  Initialize a router to the ocean model component.
 !
@@ -173,8 +182,8 @@
 !  Initialize attribute vector holding the export data code string of
 !  the wave model.
 !
-      CALL AttrVect_init (ToWavesAV, rlist="UWind:VWind",lsize=gsmsize)
-      CALL AttrVect_zero (ToWavesAV)
+      CALL AttrVect_init (atm2wav_AV, rlist="UWind:VWind",lsize=gsmsize)
+      CALL AttrVect_zero (atm2wav_AV)
 !
 ! Initialize a router to the SWAN component.
 !
@@ -220,17 +229,10 @@
 !=======================================================================
 !
       USE module_domain
-!     USE module_dm
-!     USE module_io_domain
-!     USE module_configure
       USE module_parallel
 !
       implicit none
       TYPE(domain) , INTENT (IN) :: grid 
-!
-!  Imported variable declarations.
-!
-
 !
 !  Local variable declarations.
 !
@@ -250,9 +252,6 @@
       ide = grid%ep31
       jds = grid%sp33
       jde = grid%ep33
-
-
-
 !
 !-----------------------------------------------------------------------
 !  Send atmosphere fields to ROMS.
@@ -268,11 +267,6 @@
 !  Allocate attribute vector array used to export/import data.
 !
       allocate ( AA(Asize), stat=ierr )
-!     allocate ( points(Asize), stat=ierr )
-!
-!  Ask for points in this tile.
-!
-!      CALL GlobalSegMap_Ordpnts (GSMapWRF,MyRank,points)
 !
 !-----------------------------------------------------------------------
 !  Export fields from atmosphere (WRF) to ocean (ROMS) model.
@@ -286,8 +280,7 @@
           AA(ij)=grid%PSFC(i,j)
         END DO
       END DO
-!     CALL AttrVect_importRAttr (ToOceanAV, "PSFC", AA, Asize)
-      CALL AttrVect_importRAttr (ToOceanAV, "Pair", AA, Asize)
+      CALL AttrVect_importRAttr (atm2ocn_AV, "PSFC", AA, Asize)
 !
 !-----------------------------------------------------------------------
 !     RELH       Surface air relative humidity (-).
@@ -317,8 +310,7 @@
           AA(ij)=cff2/cff3
         END DO
       END DO
-!     CALL AttrVect_importRAttr (ToOceanAV, "RELH", AA, Asize)
-      CALL AttrVect_importRAttr (ToOceanAV, "Hair", AA, Asize)
+      CALL AttrVect_importRAttr (atm2ocn_AV, "RELH", AA, Asize)
 !-----------------------------------------------------------------------
 !     T2         Surface 2m air temperature (Convert to C).
 !
@@ -329,8 +321,7 @@
           AA(ij)=grid%T2(i,j)-273.15
         END DO
       END DO
-!     CALL AttrVect_importRAttr (ToOceanAV, "T2", AA, Asize)
-      CALL AttrVect_importRAttr (ToOceanAV, "Tair", AA, Asize)
+      CALL AttrVect_importRAttr (atm2ocn_AV, "T2", AA, Asize)
 !-----------------------------------------------------------------------
 !     U10        U-Wind speed at 10 m (m s-1).
 !
@@ -341,11 +332,9 @@
           AA(ij)=grid%U10(i,j)
         END DO
       END DO
-!     CALL AttrVect_importRAttr (ToOceanAV, "U10", AA, Asize)
-      CALL AttrVect_importRAttr (ToOceanAV, "UWind", AA, Asize)
+      CALL AttrVect_importRAttr (atm2ocn_AV, "U10", AA, Asize)
 # if defined SWAN_COUPLING
-!     CALL AttrVect_importRAttr (ToWavesAV, "U10", AA, Asize)
-      CALL AttrVect_importRAttr (ToWavesAV, "UWind", AA, Asize)
+      CALL AttrVect_importRAttr (atm2wav_AV, "U10", AA, Asize)
 # endif
 !-----------------------------------------------------------------------
 !     V10        V-Wind speed at 10 m (m s-1).
@@ -357,11 +346,9 @@
           AA(ij)=grid%V10(i,j)
         END DO
       END DO
-!     CALL AttrVect_importRAttr (ToOceanAV, "V10", AA, Asize) 
-      CALL AttrVect_importRAttr (ToOceanAV, "VWind", AA, Asize)
+      CALL AttrVect_importRAttr (atm2ocn_AV, "V10", AA, Asize) 
 # if defined SWAN_COUPLING
-!     CALL AttrVect_importRAttr (ToWavesAV, "V10", AA, Asize)
-      CALL AttrVect_importRAttr (ToWavesAV, "VWind", AA, Asize)
+      CALL AttrVect_importRAttr (atm2wav_AV, "V10", AA, Asize)
 # endif
 !-----------------------------------------------------------------------
 !     CLDFRA     Cloud fraction (--, 0-1.0).
@@ -373,8 +360,7 @@
           AA(ij)=grid%CLDFRA(i,1,j)
         END DO
       END DO
-!     CALL AttrVect_importRAttr (ToOceanAV, "CLDFRA", AA, Asize)
-      CALL AttrVect_importRAttr (ToOceanAV, "cloud", AA, Asize)
+      CALL AttrVect_importRAttr (atm2ocn_AV, "CLDFRA", AA, Asize)
 !-----------------------------------------------------------------------
 !     RAIN       Precipitation (Convert to m s-1).
 !
@@ -385,20 +371,7 @@
           AA(ij)=0.001*(grid%RAINCV(i,j)+grid%RAINNCV(i,j))
         END DO
       END DO
-!     CALL AttrVect_importRAttr (ToOceanAV, "RAIN", AA, Asize)
-      CALL AttrVect_importRAttr (ToOceanAV, "rain", AA, Asize)
-!-----------------------------------------------------------------------
-!     GLW        Long wave raditaion (W m-2).
-!
-      ij=0
-      DO j=jds,jde
-        DO i=ids,ide
-          ij=ij+1
-          AA(ij)=grid%GLW(i,j)
-        END DO
-      END DO
-!     CALL AttrVect_importRAttr (ToOceanAV, "GLW", AA, Asize)
-      CALL AttrVect_importRAttr (ToOceanAV, "LWrad", AA, Asize)
+      CALL AttrVect_importRAttr (atm2ocn_AV, "RAIN", AA, Asize)
 !-----------------------------------------------------------------------
 !     SWDOWN     Short wave radiation (W m-2).
 !
@@ -409,8 +382,18 @@
           AA(ij)=grid%SWDOWN(i,j)
         END DO
       END DO
-!     CALL AttrVect_importRAttr (ToOceanAV, "SWDOWN", AA, Asize)
-      CALL AttrVect_importRAttr (ToOceanAV, "SWrad", AA, Asize)
+      CALL AttrVect_importRAttr (atm2ocn_AV, "SWDOWN", AA, Asize)
+!-----------------------------------------------------------------------
+!     GLW        Long wave raditaion (W m-2).
+!
+      ij=0
+      DO j=jds,jde
+        DO i=ids,ide
+          ij=ij+1
+          AA(ij)=grid%GLW(i,j)
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (atm2ocn_AV, "GLW", AA, Asize)
 !-----------------------------------------------------------------------
 !     USTRESS    Surface u-stress (N m-2).
 !
@@ -418,12 +401,13 @@
       DO j=jds,jde
         DO i=ids,ide
           cff1=1.0/(grid%em_alt(i,1,j)+eps)
-          cff2=1.0/((grid%em_u_2(i,1,j)**2+grid%em_v_2(i,1,j)**2)**0.5+eps)
+          cff2=1.0/((grid%em_u_2(i,1,j)**2+grid%em_v_2(i,1,j)**2)**0.5+ &
+     &               eps)
           ij=ij+1
           AA(ij)=cff1*cff2*(grid%UST(i,j)**2)*(grid%em_u_2(i,1,j))
         END DO
       END DO
-      CALL AttrVect_importRAttr (ToOceanAV, "USTRESS", AA, Asize)
+      CALL AttrVect_importRAttr (atm2ocn_AV, "USTRESS", AA, Asize)
 !-----------------------------------------------------------------------
 !     VSTRESS    Surface v-stress (N m-2).
 !
@@ -431,12 +415,13 @@
       DO j=jds,jde
         DO i=ids,ide
           cff1=1.0/(grid%em_alt(i,1,j)+eps)
-          cff2=1.0/((grid%em_u_2(i,1,j)**2+grid%em_v_2(i,1,j)**2)**0.5+eps)
+          cff2=1.0/((grid%em_u_2(i,1,j)**2+grid%em_v_2(i,1,j)**2)**0.5+ &
+     &               eps)
           ij=ij+1
           AA(ij)=cff1*cff2*(grid%UST(i,j)**2)*(grid%em_v_2(i,1,j))
         END DO
       END DO
-      CALL AttrVect_importRAttr (ToOceanAV, "VSTRESS", AA, Asize)
+      CALL AttrVect_importRAttr (atm2ocn_AV, "VSTRESS", AA, Asize)
 !-----------------------------------------------------------------------
 !     LH     Latent heat flux (W m-2).
 !
@@ -447,8 +432,7 @@
           AA(ij)=grid%LH(i,j)
         END DO
       END DO
-!     CALL AttrVect_importRAttr (ToOceanAV, "LH", AA, Asize)
-      CALL AttrVect_importRAttr (ToOceanAV, "Lheat", AA, Asize)
+      CALL AttrVect_importRAttr (atm2ocn_AV, "LH", AA, Asize)
 !-----------------------------------------------------------------------
 !     HFX     Sensible heat flux (W m-2).
 !
@@ -459,14 +443,14 @@
           AA(ij)=grid%HFX(i,j)
         END DO
       END DO
-!     CALL AttrVect_importRAttr (ToOceanAV, "HFX", AA, Asize)
-      CALL AttrVect_importRAttr (ToOceanAV, "Sheat", AA, Asize)
+      CALL AttrVect_importRAttr (atm2ocn_AV, "HFX", AA, Asize)
 !-----------------------------------------------------------------------
 !  Send fields to ocean model.
 !
-      CALL MCT_SEND (ToOceanAV,RoutWRFtoROMS,MyError)
+      CALL MCT_SEND (atm2ocn_AV,RoutWRFtoROMS,MyError)
       IF (MYRANK.EQ.0) THEN
-        WRITE (*,*) '== WRF sent atm fields to ROMS and Myerror= ',MyError
+        WRITE (*,*) '== WRF sent atm fields to ROMS and Myerror= ',     &
+     &              MyError
       ENDIF
       IF (MyError.ne.0) THEN
         WRITE (*,*) 'coupling send fail atm_coupler, error= ', MyError
@@ -475,21 +459,19 @@
 !
 !  Schedule receiving fields from ocean model.
 !
-
-        CALL MCT_Recv (FromOceanAV,RoutWRFtoROMS,MyError)
+        CALL MCT_Recv (ocn2atm_AV,RoutWRFtoROMS,MyError)
         IF (MYRANK.EQ.0) THEN
-          WRITE (*,*) '== WRF recvd ocean fields and Myerror= ',       &
+          WRITE (*,*) '== WRF recvd ocean fields and Myerror= ',        &
      &                MyError
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling fail wrfcplr, MyStatus= ', MyError
           CALL finalize_ocean_coupling ("Coupling failed wrfcplr")
         END IF
-
 !
 !  SST (Convert to K).
 !
-      CALL AttrVect_exportRAttr (FromOceanAV, "SST", AA, Asize)
+      CALL AttrVect_exportRAttr (ocn2atm_AV, "SST", AA, Asize)
       ij=0
       DO j=jds,jde
         DO i=ids,ide
@@ -505,9 +487,10 @@
 !-----------------------------------------------------------------------
 !
 # if defined SWAN_COUPLING
-      CALL MCT_SEND (ToWavesAV,RoutWRFtoSWAN,MyError)
+      CALL MCT_SEND (atm2wav_AV,RoutWRFtoSWAN,MyError)
       IF (MYRANK.EQ.0) THEN
-        WRITE (*,*) '== WRF sent atm fields to SWAN and Myerror= ',MyError
+        WRITE (*,*) '== WRF sent atm fields to SWAN and Myerror= ',     &
+     &               MyError
       ENDIF
       IF (MyError.ne.0) THEN
         WRITE (*,*) 'coupling send fail atm_coupler, error= ', MyError
@@ -540,8 +523,8 @@
 !-----------------------------------------------------------------------
 !
       CALL Router_clean (RoutWRFtoROMS)
-      CALL AttrVect_clean (ToOceanAV)
-      CALL AttrVect_clean (FromOceanAV)
+      CALL AttrVect_clean (atm2ocn_AV)
+      CALL AttrVect_clean (ocn2atm_AV)
       CALL GlobalSegMap_clean (GSMapWRF)
       CALL MCTWorld_clean ()
 

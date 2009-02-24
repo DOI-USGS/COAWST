@@ -436,15 +436,19 @@
 !  Initialize attribute vector holding the export data code strings of
 !  the wave model.
 !
-      CALL AttrVect_init (wav2ocn_AV, rlist=TRIM(ExportList(Iwaves)),   &
-     &                    lsize=gsmsize)
+      CALL AttrVect_init(wav2ocn_AV,                                    &
+     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",          &
+     &  lsize=Asize)
       CALL AttrVect_zero (wav2ocn_AV)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
-      CALL AttrVect_init (ocn2wav_AV, rList=TRIM(ExportList(Iocean)),   &
-     &                    lsize=gsmsize)
+!     CALL AttrVect_init (ocn2wav_AV, rList=TRIM(ExportList(Iocean)),   &
+!    &                    lsize=gsmsize)
+      CALL AttrVect_init (ocn2wav_AV,                                   &
+     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
+     &                    lsize=Asize)
       CALL AttrVect_zero (ocn2wav_AV)
 !
 !  Initialize a router to the waves model component.
@@ -456,8 +460,6 @@
 !  Initialize attribute vector holding the export data code string of
 !  the atmosphere model.
 !
-!      CALL AttrVect_init (atm2wav_AV, rList=TRIM(ExportList(Iatmos)),   &
-!     &                    lsize=gsmsize)
       CALL AttrVect_init (atm2wav_AV, rlist="UWind:VWind",lsize=gsmsize)
       CALL AttrVect_zero (atm2wav_AV)
 !
@@ -473,16 +475,12 @@
 !  processor.
 !
       Asize=GlobalSegMap_lsize(GSMapWRF, WAV_COMM_WORLD)
-!     CALL AttrVect_init (atm2wav_AV2, rList=TRIM(ExportList(Iatmos)),  &
-!    &                    lsize=Asize)
       CALL AttrVect_init (atm2wav_AV2, rlist="UWind:VWind",             &
      &                    lsize=Asize)
       CALL AttrVect_zero (atm2wav_AV2)
 !
       Asize=GlobalSegMap_lsize(GSMapSWAN, WAV_COMM_WORLD)
-!     CALL AttrVect_init (atm2wav_AV, rList=TRIM(ExportList(Iatmos)),   &
-!    &                    lsize=Asize)
-      CALL AttrVect_init (atm2wav_AV, rlist="UWind:VWind",             &
+      CALL AttrVect_init (atm2wav_AV, rlist="UWind:VWind",              &
      &                    lsize=Asize)
       CALL AttrVect_zero (atm2wav_AV)
 !
@@ -490,13 +488,11 @@
 !  the wave model.
 !
 !      Asize=GlobalSegMap_lsize(GSmapWRF, WAV_COMM_WORLD)
-!      CALL AttrVect_init (wav2atm_AV2, rList=TRIM(ExportList(Iwaves)),   &
-!     &                    lsize=Asize)
+!      CALL AttrVect_init(wav2atm_AV2, rList="HSIGN", lsize=Asize)
 !      CALL AttrVect_zero (wav2atm_AV2)
 !
 !      Asize=GlobalSegMap_lsize(GSmapSWAN, WAV_COMM_WORLD)
-!      CALL AttrVect_init (wav2atm_AV, rList=TRIM(ExportList(Iwaves)),   &
-!     &                    lsize=Asize)
+!      CALL AttrVect_init(wav2atm_AV, rList="HSIGN", lsize=Asize)
 !      CALL AttrVect_zero (wav2atm_AV)
 !
 !  Initialize a router to the wave model component.
@@ -620,47 +616,29 @@
         DO IP=1,gsmsize
           avdata(IP)=REAL( VOQ(points(IP),VOQR(IVTYPE)),r8 )
         END DO
+      END IF
 !
-        DO ifield=1,Nexport(Iwaves)
-          id=ExportID(Iwaves)%val(ifield)
-          code=ADJUSTL(Fields(id)%code)
-          IF ((TRIM(code).eq.'Wdiss').and.(IVTYPE.eq.7)) THEN
-            CALL AttrVect_importRAttr (wav2ocn_AV, TRIM(code), avdata)
-            Iexport=Iexport+1
-          ELSE IF ((TRIM(code).eq.'Wamp' ).and.(IVTYPE.eq.10)) THEN
-            CALL AttrVect_importRAttr (wav2ocn_AV, TRIM(code), avdata)
-            Iexport=Iexport+1
-          ELSE IF ((TRIM(code).eq.'Wptop').and.(IVTYPE.eq.12)) THEN
-            CALL AttrVect_importRAttr (wav2ocn_AV, TRIM(code), avdata)
-            Iexport=Iexport+1
-          ELSE IF ((TRIM(code).eq.'TM01' ).and.(IVTYPE.eq.11)) THEN
-            CALL AttrVect_importRAttr (wav2ocn_AV, TRIM(code), avdata)
-            Iexport=Iexport+1
-          ELSE IF ((TRIM(code).eq.'Wpbot').and.(IVTYPE.eq.50)) THEN
-            CALL AttrVect_importRAttr (wav2ocn_AV, TRIM(code), avdata)
-            Iexport=Iexport+1
-          ELSE IF ((TRIM(code).eq.'Wubot').and.(IVTYPE.eq.6 )) THEN
-            CALL AttrVect_importRAttr (wav2ocn_AV, TRIM(code), avdata)
-            Iexport=Iexport+1
-          ELSE IF ((TRIM(code).eq.'Wdir' ).and.(IVTYPE.eq.13)) THEN
-            CALL AttrVect_importRAttr (wav2ocn_AV, TRIM(code), avdata)
-            Iexport=Iexport+1
-          ELSE IF ((TRIM(code).eq.'Wlen' ).and.(IVTYPE.eq.17)) THEN
-            CALL AttrVect_importRAttr (wav2ocn_AV, TRIM(code), avdata)
-            Iexport=Iexport+1
-          ELSE IF ((TRIM(code).eq.'Wbrk' ).and.(IVTYPE.eq.8 )) THEN
-            CALL AttrVect_importRAttr (wav2ocn_AV, TRIM(code), avdata)
-            Iexport=Iexport+1
-          END IF
-        END DO
+      IF (IVTYPE.eq.7) THEN
+        CALL AttrVect_importRAttr (wav2ocn_AV,"DISSIP",avdata)
+      ELSE IF (IVTYPE.eq.10) THEN
+        CALL AttrVect_importRAttr (wav2ocn_AV,"HSIGN",avdata)
+      ELSE IF (IVTYPE.eq.12) THEN
+        CALL AttrVect_importRAttr (wav2ocn_AV,"RTP",avdata)
+      ELSE IF (IVTYPE.eq.39) THEN
+        CALL AttrVect_importRAttr (wav2ocn_AV,"SETUP",avdata)
+      ELSE IF (IVTYPE.eq.50) THEN
+        CALL AttrVect_importRAttr (wav2ocn_AV,"TMBOT",avdata)
+      ELSE IF (IVTYPE.eq.6) THEN
+        CALL AttrVect_importRAttr (wav2ocn_AV,"UBOT",avdata)
+      ELSE IF (IVTYPE.eq.13) THEN
+        CALL AttrVect_importRAttr (wav2ocn_AV,"DIR",avdata)
+      ELSE IF (IVTYPE.eq.17) THEN
+        CALL AttrVect_importRAttr (wav2ocn_AV,"WLEN",avdata)
+      ELSE IF (IVTYPE.eq.8) THEN
+        CALL AttrVect_importRAttr (wav2ocn_AV,"QB",avdata)
       END IF
 !
       IF (IRQ.eq.NREOQ) THEN
-!
-!  Initialize coupling wait time clocks.
-!
-        RecvTime=0.0_r8
-        SendTime=0.0_r8
 !
 !-----------------------------------------------------------------------
 !  Create a restart file.
@@ -672,14 +650,14 @@
 !  Send wave fields bundle to ocean model, ROMS.
 !-----------------------------------------------------------------------
 !
-        inpbuffer(2)=my_wtime(wtime)
         CALL MCT_Send (wav2ocn_AV, SWANtoROMS, MyError)
-        SendTime=SendTime+my_wtime(wtime)-inpbuffer(2)
+        IF (MYRANK.EQ.0) THEN
+          WRITE (*,*) '== SWAN sent wave fields to ROMS and Myerror= ', &
+     &                MyError
+        END IF
         IF (MyError.ne.0) THEN
-          IF (MyRank.eq.0) THEN
-            WRITE (6,10) 'ocean model, MyError = ', MyError
-          END IF
-!!        CALL finalize_wav2ocn_coupling
+          WRITE (*,*) 'coupling send fail swancplr, MyStatus= ', MyError
+          CALL fin_waves_to_ocean_coupling ("Coupl fail swancplr")
         END IF
 !
 !-----------------------------------------------------------------------
@@ -688,41 +666,39 @@
 !
 !  Schedule receiving field from ocean model.
 !
-        inpbuffer(1)=my_wtime(wtime)
         CALL MCT_Recv (ocn2wav_AV, SWANtoROMS, MyError)
-        RecvTime=RecvTime+my_wtime(wtime)-inpbuffer(1)
-        IF (MyError.ne.0) THEN
-          IF (MyRank.eq.0) THEN
-             WRITE (6,20) 'ocean model, MyError = ', MyError
-          END IF
-!!        CALL finalize_wav2ocn_coupling
+        IF (MYRANK.EQ.0) THEN
+          WRITE (*,*) '== SWAN recvd ocean fields and Myerror= ',       &
+     &                MyError
         END IF
-
+        IF (MyError.ne.0) THEN
+          WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
+          CALL fin_waves_to_ocean_coupling ("Coupl fail swancplr")
+        END IF
 # ifdef AIR_OCEAN
 !
-!  Schedule receiving fields from atmosphere model.
+!  Receive fields from atmosphere model.
 !
-!       IF (numsteps.gt.1) THEN
-          inpbuffer(1)=my_wtime(wtime)
-#ifdef MCT_INTERP_WV2AT
-          CALL MCT_Recv (atm2wav_AV2, WRFtoSWAN, MyError)
-          CALL MCT_MatVecMul(atm2wav_AV2, A2WMatPlus, atm2wav_AV)
-#else
-          CALL MCT_Recv (atm2wav_AV, WRFtoSWAN, MyError)
-#endif
-          RecvTime=RecvTime+my_wtime(wtime)-inpbuffer(1)
-          IF (MyError.ne.0) THEN
-            IF (MyRank.eq.0) THEN
-              WRITE (6,20) 'atmosphere model, MyError = ', MyError
-            END IF
-!!          CALL finalize_wav2ocn_coupling
-          END IF
-!       END IF
+        NUMTRANSFER=7
+#  ifdef MCT_INTERP_WV2AT
+        CALL MCT_Recv (atm2wav_AV2, WRFtoSWAN, MyError)
+        CALL MCT_MatVecMul(atm2wav_AV2, A2WMatPlus, atm2wav_AV)
+#  else
+        CALL MCT_Recv (atm2wav_AV, WRFtoSWAN, MyError)
+#  endif
+        IF (MYRANK.EQ.0) THEN
+          WRITE (*,*) '== SWAN recvd atm fields and Myerror= ',         &
+     &                 MyError
+        END IF
+        IF (MyError.ne.0) THEN
+          WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
+          CALL fin_waves_to_ocean_coupling ("Fail swancplr")
+        END IF
+# else
+        NUMTRANSFER=5
 # endif
 !
 ! Pass the non-halo data from MCT into tempmct array.
-!
-        NUMTRANSFER=Nimport(Iwaves)
 !
         NNEIGH = IBLKAD(1)
         IF (nprocs.eq.1) THEN
@@ -758,138 +734,93 @@
 !
         allocate ( TEMPMCT(MXC*MYC,NUMTRANSFER),stat=ierr )
         TEMPMCT=0.0
-
-        Iimport=0
-        DO ifield=1,Nimport(Iwaves)
-          id=ImportID(Iwaves)%val(ifield)
-          code=ADJUSTL(Fields(id)%code)
-
-          SELECT CASE (TRIM(code))
-
-            CASE ('bath')               ! bathymetry
-
-              CALL AttrVect_exportRAttr (ocn2wav_AV, TRIM(code),        &
-     &                                   avdata, gsmsize)
-              Iimport=Iimport+1
-              IP=0
-              DO IY=Jstr,Jend
-                DO IX=Istr,Iend
-                  IP=IP+1
-                  INDXG=(IY-1)*MXC+IX
-                  TEMPMCT(INDXG,1)=REAL( avdata(IP) )
-                END DO
-              END DO
-
-            CASE ('SSH')                ! Water surface elevation.
-
-              CALL AttrVect_exportRAttr (ocn2wav_AV, TRIM(code),        &
-     &                                   avdata, gsmsize)
-              Iimport=Iimport+1
-              IP=0
-              DO IY=Jstr,Jend
-                DO IX=Istr,Iend
-                  IP=IP+1
-                  INDXG=(IY-1)*MXC+IX
-                  TEMPMCT(INDXG,2)=REAL( avdata(IP) )
-                END DO
-              END DO
-
-            CASE ('Ubar')               ! Depth-integrated u-velocity
-
-              CALL AttrVect_exportRAttr (ocn2wav_AV, TRIM(code),        &
-     &                                   avdata, gsmsize)
-              Iimport=Iimport+1
-              IP=0
-              DO IY=Jstr,Jend
-                DO IX=Istr,Iend
-                  IP=IP+1
-                  INDXG=(IY-1)*MXC+IX
-                  TEMPMCT(INDXG,3)=REAL( avdata(IP) )
-                END DO
-              END DO
-
-            CASE ('Vbar')               !  Depth-integrated v-velocity
-
-              CALL AttrVect_exportRAttr (ocn2wav_AV, TRIM(code),        &
-     &                                   avdata, gsmsize)
-              Iimport=Iimport+1
-              IP=0
-              DO IY=Jstr,Jend
-                DO IX=Istr,Iend
-                  IP=IP+1
-                  INDXG=(IY-1)*MXC+IX
-                  TEMPMCT(INDXG,4)=REAL( avdata(IP) )
-                END DO
-              END DO
-
-            CASE ('ZO')               !  Bottom roughness
-
-              CALL AttrVect_exportRAttr (ocn2wav_AV, TRIM(code),        &
-     &                                   avdata, gsmsize)
-              Iimport=Iimport+1
-              IP=0
-              DO IY=Jstr,Jend
-                DO IX=Istr,Iend
-                  IP=IP+1
-                  INDXG=(IY-1)*MXC+IX
-                  TEMPMCT(INDXG,5)=REAL( avdata(IP) )
-                END DO
-              END DO
-
-# ifdef AIR_OCEAN
-
-            CASE ('UWind')               ! surface wind u-velocity
-
-              CALL AttrVect_exportRAttr (atm2wav_AV, TRIM(code),        &
-     &                                   avdata, gsmsize)
-              Iimport=Iimport+1
-              IP=0
-              DO IY=Jstr,Jend
-                DO IX=Istr,Iend
-                  IP=IP+1
-                  INDXG=(IY-1)*MXC+IX
-                  TEMPMCT(INDXG,6)=REAL( avdata(IP) )
-                END DO
-              END DO
-
-            CASE ('VWind')              ! surface wind v-velocity
-
-              CALL AttrVect_exportRAttr (atm2wav_AV, TRIM(code),        &
-     &                                   avdata, gsmsize)
-              Iimport=Iimport+1
-              IP=0
-              DO IY=Jstr,Jend
-                DO IX=Istr,Iend
-                  IP=IP+1
-                  INDXG=(IY-1)*MXC+IX
-                  TEMPMCT(INDXG,7)=REAL( avdata(IP) )
-                END DO
-              END DO
-# endif
-          END SELECT
+!
+!  Bottom elevation.
+!
+        CALL AttrVect_exportRAttr (ocn2wav_AV,"DEPTH",avdata,gsmsize)
+        IP=0
+        DO IY=Jstr,Jend
+          DO IX=Istr,Iend
+            IP=IP+1
+            INDXG=(IY-1)*MXC+IX
+            TEMPMCT(INDXG,1)=avdata(IP)
+          END DO
         END DO
 !
-!  Report.
+!  Water surface elevation.
 !
-        IF (Nthreads(Iwaves).gt.1) THEN
-          inpbuffer(1)=RecvTime
-          inpbuffer(2)=SendTime
-          handle(1)=MPI_SUM
-          handle(2)=MPI_SUM
-          CALL mpi_allreduce (inpbuffer, outbuffer, 2,                  &
-     &                        MPI_DOUBLE_PRECISION, handle,             &
-     &                        WAV_COMM_WORLD, MyError)
-          RecvTime=outbuffer(1)
-          SendTime=outbuffer(2)
-        END IF
-        IF (MyRank.eq.0) THEN
-          IF ((Iimport.gt.0).or.(Iexport.gt.0)) THEN
-            WRITE (6,30) Iimport, Iexport, TRIM(CHTIME),                &
-     &                   RecvTime, SendTime 
-           CALL my_flush (6)
-          END IF
-        END IF
-        Iexport=0
+        CALL AttrVect_exportRAttr (ocn2wav_AV,"WLEV",avdata,gsmsize)
+        IP=0
+        DO IY=Jstr,Jend
+          DO IX=Istr,Iend
+            IP=IP+1
+            INDXG=(IY-1)*MXC+IX
+            TEMPMCT(INDXG,2)=avdata(IP)
+          END DO
+        END DO
+!
+!  Depth-integrated u-velocity.
+!
+        CALL AttrVect_exportRAttr(ocn2wav_AV,"VELX",avdata,gsmsize)
+        IP=0
+        DO IY=Jstr,Jend
+          DO IX=Istr,Iend
+            IP=IP+1
+            INDXG=(IY-1)*MXC+IX
+            TEMPMCT(INDXG,3)=avdata(IP)
+          END DO
+        END DO
+!
+!  Depth-integrated v-velocity.
+!
+        CALL AttrVect_exportRAttr(ocn2wav_AV,"VELY",avdata,gsmsize)
+        IP=0
+        DO IY=Jstr,Jend
+          DO IX=Istr,Iend
+            IP=IP+1
+            INDXG=(IY-1)*MXC+IX
+            TEMPMCT(INDXG,4)=avdata(IP)
+          END DO
+        END DO
+!
+!  Bottom roughness.
+!
+        CALL AttrVect_exportRAttr(ocn2wav_AV,"ZO",avdata,gsmsize)
+        IP=0
+        DO IY=Jstr,Jend
+          DO IX=Istr,Iend
+            IP=IP+1
+            INDXG=(IY-1)*MXC+IX
+            TEMPMCT(INDXG,5)=avdata(IP)
+          END DO
+        END DO
+
+# ifdef AIR_OCEAN
+!
+!  U-wind.
+!
+        CALL AttrVect_exportRAttr(atm2wav_AV,"UWind",avdata,gsmsize)
+        IP=0
+        DO IY=Jstr,Jend
+          DO IX=Istr,Iend
+            IP=IP+1
+            INDXG=(IY-1)*MXC+IX
+            TEMPMCT(INDXG,6)=avdata(IP)
+          END DO
+        END DO
+!
+!  V-wind.
+!
+        CALL AttrVect_exportRAttr(atm2wav_AV,"VWind",avdata,gsmsize)
+        IP=0
+        DO IY=Jstr,Jend
+          DO IX=Istr,Iend
+            IP=IP+1
+            INDXG=(IY-1)*MXC+IX
+            TEMPMCT(INDXG,7)=avdata(IP)
+          END DO
+        END DO
+# endif
 !
 !  Pack and send halo regions to be exchanged with adjacent tiles.
 !  IBLKAD contains the tile data.
@@ -1131,15 +1062,6 @@
       END IF
       deallocate (avdata, points)
 !
- 10   FORMAT (' WAV2OCN_COUPLING - error while sending fields to ',     &
-     &        a,i4)
- 20   FORMAT (' WAV2OCN_COUPLING - error while receiving fields from ', &
-     &        a,i4)
- 30   FORMAT (6x,'WAV2OCN   - (', i2.2, ') imported and (', i2.2,       &
-     &        ') exported fields,', t62, 't = ', a,/, 16x,              &
-     &        '- SWAN coupling exchanges wait clock (s):',/, 19x,       &
-     &        '(Recv= ', 1p,e14.8,0p, ' Send= ', 1p,e14.8,0p,')')
-
       RETURN
       END SUBROUTINE WAV2OCN_COUPLING
 

@@ -332,18 +332,14 @@
 !
 !     call GlobalSegMap_Ordpnts(xPrimeGSMap,MyRank,points)
       Asize=GlobalSegMap_lsize(GSMapSWAN, OCN_COMM_WORLD)
-!     CALL AttrVect_init (wav2ocn_AV2, rList=TRIM(ExportList(Iwaves)),  &
-!    &                    lsize=Asize)
       CALL AttrVect_init(wav2ocn_AV2,                                   &
-     &     rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:TM01:QB",  &
+     &     rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",       &
      &     lsize=Asize)
       CALL AttrVect_zero (wav2ocn_AV2)
 !
       Asize=GlobalSegMap_lsize(GSMapROMS, OCN_COMM_WORLD)
-!     CALL AttrVect_init (wav2ocn_AV, rList=TRIM(ExportList(Iwaves)),   &
-!    &                    lsize=Asize)
       CALL AttrVect_init(wav2ocn_AV2,                                   &
-     &     rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:TM01:QB",  &
+     &     rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",       &
      &     lsize=Asize)
       CALL AttrVect_zero (wav2ocn_AV)
 !
@@ -351,16 +347,12 @@
 !  the ocean model.
 !
       Asize=GlobalSegMap_lsize(GSmapSWAN, OCN_COMM_WORLD)
-!     CALL AttrVect_init (ocn2wav_AV2, rList=TRIM(ExportList(Iocean)),  &
-!    &                    lsize=Asize)
       CALL AttrVect_init (ocn2wav_AV2,                                  &
      &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
      &                    lsize=Asize)
       CALL AttrVect_zero (ocn2wav_AV2)
 !
       Asize=GlobalSegMap_lsize(GSmapROMS, OCN_COMM_WORLD)
-!     CALL AttrVect_init (ocn2wav_AV, rList=TRIM(ExportList(Iocean)),   &
-!    &                    lsize=Asize)
       CALL AttrVect_init (ocn2wav_AV,                                   &
      &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
      &                    lsize=Asize)
@@ -378,18 +370,14 @@
 !
       IF (ng.eq.1) THEN
         Asize=GlobalSegMap_lsize(GSMapROMS1, OCN_COMM_WORLD)
-!       CALL AttrVect_init (wav2ocn_AV1, rList=TRIM(ExportList(Iwaves)),  &
-!    &                      lsize=Asize)
         CALL AttrVect_init(wav2ocn_AV1,                                   &
-     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:TM01:QB",       &
+     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",            &
      &  lsize=Asize)
         CALL AttrVect_zero (wav2ocn_AV1)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
-!       CALL AttrVect_init (ocn2wav_AV1, rList=TRIM(ExportList(Iocean)),  &
-!    &                    lsize=Asize)
         CALL AttrVect_init (ocn2wav_AV1,                                  &
      &                    rList="DEPTH:WLEV:VELX:VELY:ZO",                &
      &                    lsize=Asize)
@@ -400,18 +388,14 @@
         CALL Router_init (WAVid, GSMapROMS1, OCN_COMM_WORLD, ROMStoSWAN1)
       ELSE IF (ng.eq.2) THEN
         Asize=GlobalSegMap_lsize(GSMapROMS2, OCN_COMM_WORLD)
-!       CALL AttrVect_init (wav2ocn_AV2, rList=TRIM(ExportList(Iwaves)),  &
-!    &                      lsize=Asize)
         CALL AttrVect_init(wav2ocn_AV2,                                   &
-     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:TM01:QB",       &
+     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",            &
      &  lsize=Asize)
         CALL AttrVect_zero (wav2ocn_AV2)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
-!       CALL AttrVect_init (ocn2wav_AV2, rList=TRIM(ExportList(Iocean)),  &
-!    &                    lsize=Asize)
         CALL AttrVect_init (ocn2wav_AV2,                                  &
      &                    rList="DEPTH:WLEV:VELX:VELY:ZO",                &
      &                    lsize=Asize)
@@ -428,20 +412,16 @@
 !  processor.
 !
       Asize=GlobalSegMap_lsize(GSMapROMS, OCN_COMM_WORLD)
-!     CALL AttrVect_init (wav2ocn_AV, rList=TRIM(ExportList(Iwaves)),     &
-!    &                    lsize=Asize)
-      CALL AttrVect_init(wav2ocn_AV,                                      &
-     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:TM01:QB",       &
+      CALL AttrVect_init(wav2ocn_AV,                                     &
+     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",           &
      &  lsize=Asize)
       CALL AttrVect_zero (wav2ocn_AV)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
-!     CALL AttrVect_init (ocn2wav_AV, rList=TRIM(ExportList(Iocean)),     &
-!    &                    lsize=Asize)
-      CALL AttrVect_init (ocn2wav_AV,                                     &
-     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",                &
+      CALL AttrVect_init (ocn2wav_AV,                                    &
+     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",               &
      &                    lsize=Asize)
       CALL AttrVect_zero (ocn2wav_AV)
 !
@@ -637,8 +617,9 @@
       CALL MCT_MatVecMul(wav2ocn_AV2, W2OMatPlus, wav2ocn_AV)
 #else
 # ifdef REFINED_GRID
-      CALL AttrVect_init (wav2ocn_AV, rList=TRIM(ExportList(Iwaves)),   &
-     &                    lsize=Asize)
+      CALL AttrVect_init(wav2ocn_AV,                                     &
+     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",           &
+     &  lsize=Asize)
       CALL AttrVect_zero (wav2ocn_AV)
       IF (ng.eq.1) THEN
         CALL MCT_Recv (wav2ocn_AV1, ROMStoSWAN1, MyError)
@@ -660,13 +641,12 @@
         RETURN
       END IF
 !
-!  Receive fields from wave model.
-!
-!
 !  Set ramp coefficient.
 !
 !!    ramp=MIN((tdays(ng)-dstart)*4.0_r8,1.0_r8)
       ramp=1.0_r8
+!
+!  Receive fields from wave model.
 !
 !  Wave dissipation.
 !
@@ -691,7 +671,7 @@
         END DO
       END DO
 !
-!  Surface wave period.
+!  Surface peak wave period.
 !
       CALL AttrVect_exportRAttr(FrWAVToOCNAV, "RTP", A, Asize)
       ij=0
@@ -702,7 +682,7 @@
         END DO
       END DO
 !
-!  Bottom wave period.
+!  Bottom mean wave period.
 !
       CALL AttrVect_exportRAttr (FrWAVToOCNAV, "TMBOT", A, Asize)
       ij=0
@@ -749,7 +729,6 @@
             LWave(i,j)=MIN(Lwave_max,A(ij))
         END DO
       END DO
-
 #ifdef SVENDSEN_ROLLER
 !
 !  Percent wave breaking.
