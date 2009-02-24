@@ -15,6 +15,7 @@
 /*#define DIAGNOSTICS_TS
   #define DIAGNOSTICS_UV*/
 #define SWAN_COUPLING
+#define MCT_LIB
 
 #define NEARSHORE_MELLOR
 #define SSW_BBL
