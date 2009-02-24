@@ -508,9 +508,14 @@
       USE mod_iounits
       USE mod_sediment
 !
-      USE distribute_mod, ONLY : mp_reduce
-      USE ROMS_import_mod, ONLY : ROMS_import2d
-      USE ROMS_export_mod, ONLY : ROMS_export2d
+#if defined EW_PERIODIC || defined NS_PERIODIC
+      USE exchange_2d_mod, ONLY : exchange_r2d_tile
+      USE exchange_2d_mod, ONLY : exchange_u2d_tile
+      USE exchange_2d_mod, ONLY : exchange_v2d_tile
+#endif
+#ifdef DISTRIBUTE
+      USE mp_exchange_mod, ONLY : mp_exchange2d
+#endif
 !
       implicit none
 !
@@ -531,18 +536,24 @@
       real(r8), parameter ::  Lwave_max = 500.0_r8
 
       real(r8) :: add_offset, scale
-      real(r8) :: RecvTime, SendTime, buffer(2), wtime(2)
+      real(r8) :: cff, ramp
 
-      real(r8) :: my_wtime, cff, waven
-
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: AA
-!     real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: uavg
-!     real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: vavg
+      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: ubar_rho
+      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: vbar_rho
 
       real(r8), pointer :: A(:)
-
-      character (len=3 ), dimension(2) :: op_handle
-      character (len=40) :: code
+#ifdef DISTRIBUTE
+# ifdef EW_PERIODIC
+      logical :: EWperiodic=.TRUE.
+# else
+      logical :: EWperiodic=.FALSE.
+# endif
+# ifdef NS_PERIODIC
+      logical :: NSperiodic=.TRUE.
+# else
+      logical :: NSperiodic=.FALSE.
+# endif
+#endif
 !
 !-----------------------------------------------------------------------
 !  Compute lower and upper bounds over a particular domain partition or
@@ -597,11 +608,6 @@
       allocate ( A(Asize) )
       A=0.0_r8
 !
-!  Initialize coupling wait time clocks.
-!
-      RecvTime=0.0_r8
-      SendTime=0.0_r8
-!
 !-----------------------------------------------------------------------
 !  Import fields from wave model (SWAN) to ocean model (ROMS).
 !  Currently, both waves and ocean model grids are the same.
@@ -611,7 +617,6 @@
 !  Schedule receiving fields from wave model.
 !
       CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
-      buffer(1)=my_wtime(wtime)
 #ifdef MCT_INTERP_OC2WV
       CALL MCT_Recv (wav2ocn_AV2, ROMStoSWAN, MyError)
       CALL MCT_MatVecMul(wav2ocn_AV2, W2OMatPlus, wav2ocn_AV)
@@ -632,13 +637,14 @@
       CALL MCT_Recv (wav2ocn_AV, ROMStoSWAN, MyError)
 # endif
 #endif
-      RecvTime=RecvTime+my_wtime(wtime)-buffer(1)
       IF (MyError.ne.0) THEN
         IF (Master) THEN
           WRITE (stdout,10) 'wave model, MyError = ', MyError
         END IF
         exit_flag=2
         RETURN
+      ELSE
+        WRITE (stdout,11) 'ROMS recv Wave fields and error = ', MyError
       END IF
 !
 !  Set ramp coefficient.
@@ -650,95 +656,91 @@
 !
 !  Wave dissipation.
 !
-      CALL AttrVect_exportRAttr (FrWAVToOCNAV, "DISSIP", A, Asize)
+      CALL AttrVect_exportRAttr (wav2ocn_AV, "DISSIP", A, Asize)
       ij=0
       cff=1.0_r8/rho0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          Wave_dissip(i,j)=MAX(0.0_r8,A(ij)*ramp)*cff
+          FORCES(ng)%Wave_dissip(i,j)=MAX(0.0_r8,A(ij)*ramp)*cff
         END DO
       END DO
 !
 !  Wave height.
 !
-      CALL AttrVect_exportRAttr (FrWAVToOCNAV, "HSIGN", A, Asize)
+      CALL AttrVect_exportRAttr (wav2ocn_AV, "HSIGN", A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          Hwave(i,j)=MAX(0.0_r8,A(ij)*ramp)
+          FORCES(ng)%Hwave(i,j)=MAX(0.0_r8,A(ij)*ramp)
         END DO
       END DO
 !
 !  Surface peak wave period.
 !
-      CALL AttrVect_exportRAttr(FrWAVToOCNAV, "RTP", A, Asize)
+      CALL AttrVect_exportRAttr(wav2ocn_AV, "RTP", A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          Pwave_top(i,j)=MAX(0.0_r8,A(ij))
+          FORCES(ng)%Pwave_top(i,j)=MAX(0.0_r8,A(ij))
         END DO
       END DO
 !
 !  Bottom mean wave period.
 !
-      CALL AttrVect_exportRAttr (FrWAVToOCNAV, "TMBOT", A, Asize)
+      CALL AttrVect_exportRAttr (wav2ocn_AV, "TMBOT", A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          Pwave_bot(i,j)=MAX(0.0_r8,A(ij))
+          FORCES(ng)%Pwave_bot(i,j)=MAX(0.0_r8,A(ij))
         END DO
       END DO
 !
 !  Bottom orbital velocity (m/s).
 !
-      CALL AttrVect_exportRAttr(FrWAVToOCNAV, "UBOT", A, Asize)
+      CALL AttrVect_exportRAttr(wav2ocn_AV, "UBOT", A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          Ub_swan(i,j)=MAX(0.0_r8,A(ij)*ramp)
+          FORCES(ng)%Ub_swan(i,j)=MAX(0.0_r8,A(ij)*ramp)
         END DO
       END DO
 !
 !  Wave direction (radians).
 !
-      CALL AttrVect_exportRAttr (FrWAVToOCNAV, "DIR", A, Asize)
+      CALL AttrVect_exportRAttr (wav2ocn_AV, "DIR", A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          Dwave(i,j)=MAX(0.0_r8,A(ij))*deg2rad
+          FORCES(ng)%Dwave(i,j)=MAX(0.0_r8,A(ij))*deg2rad
         END DO
       END DO
 !
 !  Wave length (m).
 !
-      CALL AttrVect_exportRAttr (FrWAVToOCNAV, "WLEN", A, Asize)
+      CALL AttrVect_exportRAttr (wav2ocn_AV, "WLEN", A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-            Lwave(i,j)=MAX(1.0_r8,A(ij))
-!            IF (Lwave(i,j).eq.1.0_r8/0.0_r8) THEN
-!              Lwave(i,j)=Lwave_max
-!            END IF
-            LWave(i,j)=MIN(Lwave_max,A(ij))
+          FORCES(ng)%Lwave(i,j)=MIN(Lwave_max,MAX(1.0_r8,A(ij)))
         END DO
       END DO
 #ifdef SVENDSEN_ROLLER
 !
 !  Percent wave breaking.
 !  
-      CALL AttrVect_exportRAttr (FrWAVToOCNAV, "QB", A, Asize)
+      CALL AttrVect_exportRAttr (wav2ocn_AV, "QB", A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          Wave_break(i,j)=MAX(0.0_r8,A(ij))
+          FORCES(ng)%Wave_break(i,j)=MAX(0.0_r8,A(ij))
         END DO
       END DO
 #endif
@@ -750,29 +752,29 @@
 !
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        Wave_dissip)
+     &                        FORCES(ng)%Wave_dissip)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        Hwave)
+     &                        FORCES(ng)%Hwave)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        Pwave_top)
+     &                        FORCES(ng)%Pwave_top)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        Pwave_bot)
+     &                        FORCES(ng)%Pwave_bot)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        Ub_swan)
+     &                        FORCES(ng)%Ub_swan)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        Dwave)
+     &                        FORCES(ng)%Dwave)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        Lwave)
+     &                        FORCES(ng)%Lwave)
 # ifdef SVENDSEN_ROLLER
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        Wave_break)
+     &                        FORCES(ng)%Wave_break)
 # endif
 #endif
 #ifdef DISTRIBUTE
@@ -781,19 +783,21 @@
 !  Exchange tile boundaries.
 !-----------------------------------------------------------------------
 !
-      CALL mp_exchange2d (ng, iNLM, 4, tile,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    Wave_dissip, Hwave, Dwave, Lwave)
-      CALL mp_exchange2d (ng, iNLM, 3, tile,                            &
+     &                    FORCES(ng)%Wave_dissip, FORCES(ng)%Hwave,     &
+     &                    FORCES(ng)%Dwave, FORCES(ng)%Lwave)
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    Pwave_top, Pwave_bot, Ub_swan)
+     &                    FORCES(ng)%Pwave_top, FORCES(ng)%Pwave_bot,   &
+     &                    FORCES(ng)%Ub_swan)
 # ifdef SVENDSEN_ROLLER
-      CALL mp_exchange2d (ng, iNLM, 1, tile,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    wave_break)
+     &                    FORCES(ng)%wave_break)
 # endif
 #endif
 !
@@ -815,7 +819,7 @@
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          A(ij)=h(i,j)
+          A(ij)=GRID(ng)%h(i,j)
         END DO
       END DO
       CALL AttrVect_importRAttr (ocn2wav_AV, "DEPTH", A, Asize)
@@ -826,7 +830,7 @@
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          A(ij)=zeta(i,j,knew)
+          A(ij)=OCEAN(ng)%zeta(i,j,knew(ng))
         END DO
       END DO
       CALL AttrVect_importRAttr (ocn2wav_AV, "WLEV", A, Asize)
@@ -836,8 +840,8 @@
 #  ifdef REFINED_GRID
         DO j=JstrT,JendT
           DO i=IstrTU+1,IendTU
-            ubar_rho(i,j)=0.5_r8*                                       &
-     &                  (u(i,j,N(ng),nstp)+u(i+1,j,N(ng),nstp))
+            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%u(i,j,N(ng),nstp(ng))+          &
+     &                            OCEAN(ng)%u(i+1,j,N(ng),nstp(ng)))
           END DO
         END DO
         IF (WESTERN_EDGE) THEN
@@ -853,8 +857,8 @@
 #  else
         DO j=JstrR,JendR
           DO i=Istr,Iend
-            ubar_rho(i,j)=0.5_r8*                                       &
-     &                  (u(i,j,N(ng),nstp)+u(i+1,j,N(ng),nstp))
+            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%u(i,j,N(ng),nstp(ng))+          &
+     &                            OCEAN(ng)%u(i+1,j,N(ng),nstp(ng)))
           END DO
         END DO
         IF (WESTERN_EDGE) THEN
@@ -902,8 +906,8 @@
 #  ifdef REFINED_GRID
         DO j=JstrTV+1,JendTV
           DO i=IstrT,IendT
-            vbar_rho(i,j)=0.5_r8*                                       &
-     &                  (v(i,j,N(ng),nstp)+v(i,j+1,N(ng),nstp))
+            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j,N(ng),nstp(ng))+      &
+     &                            OCEAN(ng)%v(i,j+1,N(ng),nstp(ng)))
           END DO
         END DO
         IF (NORTHERN_EDGE) THEN
@@ -919,8 +923,8 @@
 #  else
         DO j=Jstr,Jend
           DO i=IstrR,IendR
-            vbar_rho(i,j)=0.5_r8*                                       &
-     &                  (v(i,j,N(ng),nstp)+v(i,j+1,N(ng),nstp))
+            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j,N(ng),nstp(ng))+      &
+     &                            OCEAN(ng)%v(i,j+1,N(ng),nstp(ng)))
           END DO
         END DO
         IF (NORTHERN_EDGE) THEN
@@ -934,19 +938,19 @@
           END DO
         END IF
         IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          vbar_rho(Istr-1,Jstr-1)=0.5_r8*(vbar_rho(Istr  ,Jstr-1)+            &
+          vbar_rho(Istr-1,Jstr-1)=0.5_r8*(vbar_rho(Istr  ,Jstr-1)+      &
      &                                 vbar_rho(Istr-1,Jstr  ))
         END IF
         IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          vbar_rho(Iend+1,Jstr-1)=0.5_r8*(vbar_rho(Iend  ,Jstr-1)+            &
+          vbar_rho(Iend+1,Jstr-1)=0.5_r8*(vbar_rho(Iend  ,Jstr-1)+      &
      &                                 vbar_rho(Iend+1,Jstr  ))
         END IF
         IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          vbar_rho(Istr-1,Jend+1)=0.5_r8*(vbar_rho(Istr-1,Jend  )+            &
+          vbar_rho(Istr-1,Jend+1)=0.5_r8*(vbar_rho(Istr-1,Jend  )+      &
      &                                 vbar_rho(Istr  ,Jend+1))
         END IF
         IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          vbar_rho(Iend+1,Jend+1)=0.5_r8*(vbar_rho(Iend+1,Jend  )+            &
+          vbar_rho(Iend+1,Jend+1)=0.5_r8*(vbar_rho(Iend+1,Jend  )+      &
      &                                 vbar_rho(Iend  ,Jend+1))
         END IF
 #  endif
@@ -970,12 +974,11 @@
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          A(ij)=h(i,j)
 #ifdef BBL_MODEL
-                AA(ij)=MAX(0.0001_r8,                                  &
+                A(ij)=MAX(0.0001_r8,                                    &
      &                      OCEAN(ng)%bottom(i,j,izNik)*30.0_r8)
 #else
-                AA(ij)=MAX(0.0001_r8,rdrg2(ng))
+                A(ij)=MAX(0.0001_r8,rdrg2(ng))
 #endif
         END DO
       END DO
@@ -999,16 +1002,17 @@
       CALL AttrVect_clean (ocn2wav_AV, MyError)
       CALL AttrVect_clean (wav2ocn_AV, MyError)
 # else
-        CALL MCT_Send (ocn2wav_AV, ROMStoSWAN, MyError)
+      CALL MCT_Send (ocn2wav_AV, ROMStoSWAN, MyError)
 # endif
 #endif
-        IF (MyError.ne.0) THEN
-          IF (Master) THEN
-            WRITE (stdout,20) 'wave model, MyError = ', MyError
-          END IF
-          exit_flag=2
-          RETURN
+      IF (MyError.ne.0) THEN
+        IF (Master) THEN
+          WRITE (stdout,20) 'wave model, MyError = ', MyError
         END IF
+        exit_flag=2
+        RETURN
+      ELSE
+        WRITE (stdout,11) 'ROMS sent data to SWAN and error = ', MyError
       END IF
 !
 !  Deallocate communication arrays.
@@ -1017,15 +1021,9 @@
 !
  10   FORMAT (' OCN2WAV_COUPLING - error while receiving fields from ', &
      &        a, i4)
+ 11   FORMAT ( a, i4)
  20   FORMAT (' OCN2WAV_COUPLING - error while sending fields to: ',    &
      &        a, i4)
- 30   FORMAT (6x,'OCN2WAV   - (', i2.2, ') imported and (', i2.2,       &
-     &        ') exported fields,', t62, 't = ', a,/, 16x,              &
-     &        '- ROMS coupling exchanges wait clock (s):',/, 19x,       &
-     &        '(Recv= ', 1p,e14.8,0p, ' Send= ', 1p,e14.8,0p,')')
- 40   FORMAT (16x,'- ',a,a,                                             &
-     &        /,19x,'(Min= ',1p,e15.8,0p,' Max= ',1p,e15.8,0p,')')
-
       RETURN
       END SUBROUTINE ocn2wav_coupling_tile
 

@@ -5,7 +5,7 @@
 !
 !*****************************************************************
 !                                                                *
-#ifdef MODEL_COUPLING
+#ifdef REFINED_GRID
       SUBROUTINE OCPINI (ng,INIFIL, LREAD, INERR)
 #else
       SUBROUTINE OCPINI (INIFIL, LREAD, INERR)
@@ -94,8 +94,10 @@
 !                        and command reading must be initialised
 !
       LOGICAL    LREAD, FILEXI
-#ifdef MODEL_COUPLING
+#ifdef REFINED_GRID
       INTEGER, intent(in) :: ng
+#endif
+#ifdef MODEL_COUPLING
       CHARACTER  OUTFIL *40, INIFIL *(*), TSTFIL *40,
 #else
       CHARACTER  INPFIL *40, OUTFIL *40, INIFIL *(*), TSTFIL *40,

@@ -836,49 +836,49 @@
 !-----------------------------------------------------------------------
 !
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
-      CALL mp_exchange2d (ng, iNLM, 1, tile,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    Pair)
 # endif
 # if defined BULK_FLUXES || defined ECOSIM || \
     (defined SHORTWAVE && defined ANA_SRFLUX)
-      CALL mp_exchange2d (ng, iNLM, 2, tile,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    Hair, Tair)
 # endif
 # if defined BULK_FLUXES || defined ECOSIM
-      CALL mp_exchange2d (ng, iNLM, 2, tile,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    Uwind, Vwind)
 # endif
 # ifdef CLOUDS
-      CALL mp_exchange2d (ng, iNLM, 1, tile,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    cloud)
 # endif
 # ifdef BULK_FLUXES
-      CALL mp_exchange2d (ng, iNLM, 2, tile,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rain, lrflx)
 #  ifdef RUOYING_CASE1
-      CALL mp_exchange2d (ng, iNLM, 2, tile,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    lhflx, shflx)
 #  endif
 # endif
 # ifdef SHORTWAVE
-      CALL mp_exchange2d (ng, iNLM, 1, tile,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    srflx)
 # endif
-!      CALL mp_exchange2d (ng, iNLM, 2, tile,                           &
+!      CALL mp_exchange2d (ng, tile, iNLM, 2,                           &
 !     &                    LBi, UBi, LBj, UBj,                          &
 !     &                    NghostPoints, EWperiodic, NSperiodic,        &
 !     &                    sustr, svstr)

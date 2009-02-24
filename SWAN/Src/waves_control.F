@@ -1,5 +1,6 @@
 #include "cppdefs.h"
       MODULE waves_control_mod
+# ifdef REFINED_GRID
 !
 !svn $Id: waves_control.F 814 2008-10-29 01:42:17Z jcwarner $
 !================================================== John C. Warner  ====
@@ -316,5 +317,5 @@
 
       RETURN
       END SUBROUTINE SWAN_driver_finalize
-
+#endif
       END MODULE waves_control_mod

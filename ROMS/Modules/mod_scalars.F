@@ -349,7 +349,31 @@
 !
 !  Number of coupling models.
 !
-        integer :: Ncouple
+        integer :: N_mctmodels
+
+# ifdef REFINED_GRID
+!  Number of swan time steps
+      integer :: NumSWANsteps
+      integer, dimension(Ngrids) :: sc
+# endif
+
+# if defined MCT_INTERP_WV2AT
+!
+!  Sparse matrix weights
+!
+      integer, dimension(:), pointer :: sparse_rows2
+      integer, dimension(:), pointer :: sparse_cols2
+      real(r8), dimension(:), pointer :: sparse_weights2
+# endif
+# if defined MCT_INTERP_OC2WV || defined MCT_INTERP_OC2AT
+!
+!  Sparse matrix weights
+!
+      integer, dimension(:), pointer :: sparse_rows
+      integer, dimension(:), pointer :: sparse_cols
+      real(r8), dimension(:), pointer :: sparse_weights
+      integer, dimension(:), pointer :: dst_grid_imask
+# endif
 !
 !  Number of parallel nodes assigned to each model in the coupled
 !  system.
@@ -375,17 +399,18 @@
 #if defined AIR_OCEAN && defined WAVES_OCEAN
         integer :: ATMid = 2
         integer :: WAVid = 3
-        integer :: ncomps = 3
+        integer :: Ncouple = 3
 #elif defined AIR_OCEAN
         integer :: ATMid = 2
         integer :: WAVid = 3
-        integer :: ncomps = 2
+        integer :: Ncouple = 2
 #elif defined WAVES_OCEAN
         integer :: ATMid = 3
         integer :: WAVid = 2
-        integer :: ncomps = 2
+        integer :: Ncouple = 2
+#else
+        integer :: Ncouple = 1
 #endif
-
 !
 !  Starting, current, and ending ensemble run parameters.
 !
@@ -2001,16 +2026,6 @@
      &       vonKar*(lmd_cs*vonKar*lmd_epsilon)**(1.0_r8/3.0_r8)
 #endif
 !
-!  Set number of couple models.
-!
-      Ncouple=1
-#ifdef AIR_OCEAN
-      Ncouple=Ncouple+1
-#endif
-#ifdef WAVES_OCEAN
-      Ncouple=Ncouple+1
-#endif
-!
 !  Initialize several IO flags.
 !
       DO ng=1,Ngrids
@@ -2123,6 +2138,15 @@
       my_Sm4=18.0_r8*my_A1*my_A1+9.0_r8*my_A1*my_A2
 # endif
 #endif
+
+!#if defined AIR_OCEAN && defined WAVES_OCEAN
+!        Ncouple=Ncouple+2
+!#elif defined AIR_OCEAN
+!        Ncouple=Ncouple+1
+!#elif defined WAVES_OCEAN
+!        Ncouple=Ncouple+1
+!#endif
+
 
       RETURN
       END SUBROUTINE initialize_scalars

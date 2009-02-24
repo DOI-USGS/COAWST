@@ -138,7 +138,7 @@
       USE SWCOMM3
       USE M_GENARR
       USE M_PARALL
-      USE mod_coupler
+      USE mod_scalars
 !
       include 'mpif.h'
 #ifdef REFINED_GRID
@@ -157,15 +157,15 @@
 
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       integer, pointer :: start(:), length(:)
+      integer :: SMlsize, SMgnumel
+      integer :: SMlsize1, SMlsize2
+      integer :: MyMasterswan
 #ifdef REFINED_GRID
       integer, dimension(:), pointer :: ocnids
       integer, dimension(:), pointer :: wavids
 #else
       ng=1
 #endif
-      integer :: SMlsize, SMgnumel
-      integer :: SMlsize1, SMlsize2
-      integer :: MyMasterswan
       MyMasterswan=0
 !
 !-----------------------------------------------------------------------
@@ -438,7 +438,7 @@
 !
       CALL AttrVect_init(wav2ocn_AV,                                    &
      &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",          &
-     &  lsize=Asize)
+     &  lsize=gsmsize)
       CALL AttrVect_zero (wav2ocn_AV)
 !
 !  Initialize attribute vector holding the export data code string of
@@ -448,7 +448,7 @@
 !    &                    lsize=gsmsize)
       CALL AttrVect_init (ocn2wav_AV,                                   &
      &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
-     &                    lsize=Asize)
+     &                    lsize=gsmsize)
       CALL AttrVect_zero (ocn2wav_AV)
 !
 !  Initialize a router to the waves model component.
@@ -657,7 +657,7 @@
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling send fail swancplr, MyStatus= ', MyError
-          CALL fin_waves_to_ocean_coupling ("Coupl fail swancplr")
+          CALL FINALIZE_WAV2OCN_COUPLING
         END IF
 !
 !-----------------------------------------------------------------------
@@ -673,7 +673,7 @@
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
-          CALL fin_waves_to_ocean_coupling ("Coupl fail swancplr")
+          CALL FINALIZE_WAV2OCN_COUPLING
         END IF
 # ifdef AIR_OCEAN
 !
@@ -692,7 +692,7 @@
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
-          CALL fin_waves_to_ocean_coupling ("Fail swancplr")
+          CALL FINALIZE_WAV2OCN_COUPLING
         END IF
 # else
         NUMTRANSFER=5

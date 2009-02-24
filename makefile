@@ -65,7 +65,8 @@ $(if $(filter $(MAKE_VERSION),$(NEED_VERSION)),,        \
 #ROMS_APPLICATION ?= DOGBONE
 #ROMS_APPLICATION ?= WETDRY_DAM_BREAK
 #ROMS_APPLICATION ?= LIP
-ROMS_APPLICATION ?= Griz_Bay
+#ROMS_APPLICATION ?= Griz_Bay
+ROMS_APPLICATION ?= INLET_TEST
 
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
@@ -76,7 +77,7 @@ ROMS_APPLICATION ?= Griz_Bay
 #MY_HEADER_DIR ?= /cygdrive/c/work/models/roms/roms_sed_rutgers_cygwin/coawst/Projects/Soliton_refined
 #MY_HEADER_DIR ?= /cygdrive/c/work/models/roms/help_cases/refined5/Projects/Dogbone
 #MY_HEADER_DIR ?= /cygdrive/c/work/models/roms/roms_sed_rutgers_cygwin/coawst/Projects/Isabel
-MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Griz_Bay
+MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test
 
 #  If your application requires analytical expressions and they are not
 #  located in "ROMS/Functionals", provide an alternate directory.
@@ -89,7 +90,7 @@ MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Griz_Bay
 #MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/roms/roms_sed_rutgers_cygwin/coawst/Projects/Soliton_refined
 #MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/roms/help_cases/refined5/Projects/Dogbone
 #MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/roms/roms_sed_rutgers_cygwin/coawst/Projects/Isabel
-MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Griz_Bay
+MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying
@@ -115,7 +116,7 @@ MY_CPP_FLAGS ?=
 #  If parallel applications, use at most one of these definitions
 #  (leave both definitions blank in serial applications):
 
-     USE_MPI ?=
+     USE_MPI ?= on
   USE_OpenMP ?=
 
 #  If distributed-memory, turn on compilation via the script "mpif90".

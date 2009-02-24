@@ -26,7 +26,7 @@
 !
       USE mod_param
       USE mod_parallel
-      USE mod_coupler
+!     USE mod_coupler
       USE mod_iounits
       USE mod_scalars
 !
@@ -54,7 +54,7 @@
       logical, save :: first
 
       integer :: MyColor, MyCOMM, MyError, MyKey, Nnodes
-	integer :: ng, pelast
+      integer :: ng, pelast
 
       integer, dimension(Ngrids) :: Tstr   ! starting ROMS time-step
       integer, dimension(Ngrids) :: Tend   ! ending   ROMS time-step
@@ -91,35 +91,13 @@
 !
 #ifdef REFINED_GRID
 # ifndef AIR_OCEAN
-      N_mctmodels=Nmodels*Ngrids
+      N_mctmodels=Ncouple*Ngrids
 # else
-      N_mctmodels=Nmodels*Ngrids+1
+      N_mctmodels=Ncouple*Ngrids+1
 # endif
 #else
-      N_mctmodels=Nmodels
+      N_mctmodels=Ncouple
 #endif
-!
-!  Split the communicator into coupled models sub-groups based 
-!  on color and key.
-!
-!      MyKey=0
-!      IF ((pets(Iocean)%val(1).le.MyRank).and.                          &
-!     &    (MyRank.le.pets(Iocean)%val(Nthreads(Iocean)))) THEN
-!        MyColor=OCNid
-!      END IF
-!#ifdef AIR_OCEAN
-!      IF ((pets(Iatmos)%val(1).le.MyRank).and.                          &
-!     &    (MyRank.le.pets(Iatmos)%val(Nthreads(Iatmos)))) THEN
-!        MyColor=ATMid
-!      END IF
-!#endif
-!#ifdef WAVES_OCEAN
-!      IF ((pets(Iwaves)%val(1).le.MyRank).and.                          &
-!     &    (MyRank.le.pets(Iwaves)%val(Nthreads(Iwaves)))) THEN
-!        MyColor=WAVid
-!      END IF
-!#endif
-
 !
 !  Assign processors to the models.
 !
@@ -136,9 +114,9 @@
       peATM_last=peATM_frst+NnodesATM-1
       pelast=peATM_last
 #endif
-      IF (pelast.ne.MySize-1) THEN
+      IF (pelast.ne.Nnodes-1) THEN
         IF (Master) THEN
-          WRITE (stdout,10) pelast, MySize
+          WRITE (stdout,10) pelast, Nnodes
  10       FORMAT (/,' mct_coupler - Number assigned processors: '       &
      &            ,i3.3,/,15x,'not equal to spawned MPI nodes: ',i3.3)
         END IF
@@ -166,13 +144,16 @@
       IF ((peOCN_frst.le.MyRank).and.(MyRank.le.peOCN_last)) THEN
         MyColor=OCNid
       END IF
+#ifdef WAVES_OCEAN
       IF ((peWAV_frst.le.MyRank).and.(MyRank.le.peWAV_last)) THEN
         MyColor=WAVid
       END IF
+#endif
+#ifdef AIR_OCEAN
       IF ((peATM_frst.le.MyRank).and.(MyRank.le.peATM_last)) THEN
         MyColor=ATMid
       END IF
-
+#endif
       CALL mpi_comm_split (MPI_COMM_WORLD, MyColor, MyKey, MyCOMM,      &
      &                     MyError)
 !

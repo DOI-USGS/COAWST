@@ -815,13 +815,14 @@
             Npts=load_i(Nval, Rval, Ngrids, ntimes)
           ELSE IF (TRIM(KeyWord).eq.'DT') THEN
             Npts=load_r(Nval, Rval, Ngrids, dt)
-#ifdef MODEL_COUPLING
+#ifdef AIR_OCEAN
             DO ng=1,Ngrids
-              DO i=1,Nmodels
-                CoupleSteps(i,ng)=MAX(1,                                &
-     &                                INT(TimeInterval(Iocean,i)/       &
-     &                                dt(ng)))
-              END DO
+              nOCN_ATM(ng)=MAX(1,INT(TI_ATM_OCN/dt(ng)))
+            END DO
+#endif
+#ifdef WAVES_OCEAN
+            DO ng=1,Ngrids
+              nOCN_WAV(ng)=MAX(1,INT(TI_WAV_OCN/dt(ng)))
             END DO
 #endif
           ELSE IF (TRIM(KeyWord).eq.'NDTFAST') THEN
@@ -1904,6 +1905,18 @@
           WRITE (out,130) ndtfast(ng), 'ndtfast',                       &
      &          'Number of timesteps for 2-D equations between',        &
      &          'each 3D timestep.'
+#ifdef AIR_OCEAN
+          WRITE (out,140) TI_ATM_OCN, 'TI_ATM_OCN',                     &
+     &          'Time interval (s) between coupling ATM-OCN models.'
+          WRITE (out,120) nOCN_ATM(ng), 'nOCN_ATM',                     &
+     &          'Number of OCN timesteps between coupling to ATM.'
+#endif
+#ifdef WAVES_OCEAN
+          WRITE (out,140) TI_WAV_OCN, 'TI_WAV_OCN',                     &
+     &          'Time interval (s) between coupling WAV-OCN models.'
+          WRITE (out,120) nOCN_WAV(ng), 'nOCN_WAV',                     &
+     &          'Number of OCN timesteps between coupling to WAV.'
+#endif
           WRITE (out,120) ERstr, 'ERstr',                               &
      &          'Starting ensemble/perturbation run number.'
           WRITE (out,120) ERend, 'ERend',                               &
