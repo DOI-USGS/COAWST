@@ -54,7 +54,7 @@
       logical, save :: first
 
       integer :: MyColor, MyCOMM, MyError, MyKey, Nnodes
-      integer :: ng
+	integer :: ng, pelast
 
       integer, dimension(Ngrids) :: Tstr   ! starting ROMS time-step
       integer, dimension(Ngrids) :: Tend   ! ending   ROMS time-step
@@ -87,7 +87,7 @@
 !
 !  Allocate several coupling variables.
 !
-      CALL allocate_coupler (Nnodes)
+!     CALL allocate_coupler (Nnodes)
 !
 #ifdef REFINED_GRID
 # ifndef AIR_OCEAN
@@ -102,23 +102,77 @@
 !  Split the communicator into coupled models sub-groups based 
 !  on color and key.
 !
+!      MyKey=0
+!      IF ((pets(Iocean)%val(1).le.MyRank).and.                          &
+!     &    (MyRank.le.pets(Iocean)%val(Nthreads(Iocean)))) THEN
+!        MyColor=OCNid
+!      END IF
+!#ifdef AIR_OCEAN
+!      IF ((pets(Iatmos)%val(1).le.MyRank).and.                          &
+!     &    (MyRank.le.pets(Iatmos)%val(Nthreads(Iatmos)))) THEN
+!        MyColor=ATMid
+!      END IF
+!#endif
+!#ifdef WAVES_OCEAN
+!      IF ((pets(Iwaves)%val(1).le.MyRank).and.                          &
+!     &    (MyRank.le.pets(Iwaves)%val(Nthreads(Iwaves)))) THEN
+!        MyColor=WAVid
+!      END IF
+!#endif
+
+!
+!  Assign processors to the models.
+!
+      peOCN_frst=0
+      peOCN_last=peOCN_frst+NnodesOCN-1
+      pelast=peOCN_last
+#ifdef WAVES_OCEAN
+      peWAV_frst=peOCN_last+1
+      peWAV_last=peWAV_frst+NnodesWAV-1
+      pelast=peWAV_last
+#endif
+#ifdef AIR_OCEAN
+      peATM_frst=peWAV_last+1
+      peATM_last=peATM_frst+NnodesATM-1
+      pelast=peATM_last
+#endif
+      IF (pelast.ne.MySize-1) THEN
+        IF (Master) THEN
+          WRITE (stdout,10) pelast, MySize
+ 10       FORMAT (/,' mct_coupler - Number assigned processors: '       &
+     &            ,i3.3,/,15x,'not equal to spawned MPI nodes: ',i3.3)
+        END IF
+        STOP
+      ELSE
+        IF (MyRank.eq.0) THEN
+          WRITE (stdout,20) peOCN_frst, peOCN_last
+ 20       FORMAT (/,' Model Coupling: ',/,                              &
+     &            /,7x,'Ocean Model MPI nodes: ',i3.3,' - ', i3.3)
+#ifdef WAVES_OCEAN
+          WRITE (stdout,21) peWAV_frst, peWAV_last
+ 21       FORMAT (/,7x,'Waves Model MPI nodes: ',i3.3,' - ', i3.3)
+#endif
+#ifdef AIR_OCEAN
+          WRITE (stdout,22) peATM_frst, peATM_last
+ 22       FORMAT (/,7x,'ATM Model MPI nodes: ',i3.3,' - ', i3.3)
+#endif
+        END IF
+      END IF
+!
+!  Split the communicator into SWAN, WRF, and ROMS subgroups based 
+!  on color and key.
+!
       MyKey=0
-      IF ((pets(Iocean)%val(1).le.MyRank).and.                          &
-     &    (MyRank.le.pets(Iocean)%val(Nthreads(Iocean)))) THEN
+      IF ((peOCN_frst.le.MyRank).and.(MyRank.le.peOCN_last)) THEN
         MyColor=OCNid
       END IF
-#ifdef AIR_OCEAN
-      IF ((pets(Iatmos)%val(1).le.MyRank).and.                          &
-     &    (MyRank.le.pets(Iatmos)%val(Nthreads(Iatmos)))) THEN
-        MyColor=ATMid
-      END IF
-#endif
-#ifdef WAVES_OCEAN
-      IF ((pets(Iwaves)%val(1).le.MyRank).and.                          &
-     &    (MyRank.le.pets(Iwaves)%val(Nthreads(Iwaves)))) THEN
+      IF ((peWAV_frst.le.MyRank).and.(MyRank.le.peWAV_last)) THEN
         MyColor=WAVid
       END IF
-#endif
+      IF ((peATM_frst.le.MyRank).and.(MyRank.le.peATM_last)) THEN
+        MyColor=ATMid
+      END IF
+
       CALL mpi_comm_split (MPI_COMM_WORLD, MyColor, MyKey, MyCOMM,      &
      &                     MyError)
 !
@@ -128,14 +182,13 @@
 !
 #if defined SWAN_COUPLING
       IF (MyColor.eq.WAVid) THEN
-        CouplingTime=REAL(TimeInterval(Iocean,Iwaves))
 # ifdef REFINED_GRID
         CALL SWAN_driver (MyCOMM, CouplingTime, INPname(Iwaves))
-!        CALL SWAN_driver_run (CouplingTime)
+!       CALL SWAN_driver_run (CouplingTime)
         CALL SWAN_driver_finalize
 # else
-        CALL SWAN_INITIALIZE (MyCOMM, INPname(Iwaves))
-        CALL SWAN_RUN (CouplingTime)
+        CALL SWAN_INITIALIZE (MyCOMM, Wname)
+        CALL SWAN_RUN (REAL(TI_WAV_OCN))
         CALL SWAN_FINALIZE
 # endif
       END IF
@@ -149,12 +202,11 @@
 #endif
 #ifdef WRF_COUPLING
       IF (MyColor.eq.ATMid) THEN
-        CouplingTime=REAL(TimeInterval(Iocean,Iatmos))
 !!      CALL module_wrf_top_mp_wrf_init (MyCOMM)
-!!      CALL module_wrf_top_mp_wrf_run (TimeInterval(Iocean,Iwaves))
+!!      CALL module_wrf_top_mp_wrf_run (REAL(TI_ATM_OCN))
 !!      CALL module_wrf_top_mp_wrf_finalize
         CALL module_wrf_top_wrf_init (MyCOMM)
-        CALL module_wrf_top_wrf_run (CouplingTime)
+        CALL module_wrf_top_wrf_run (REAL(TI_ATM_OCN))
         CALL module_wrf_top_wrf_finalize
       END IF
 #endif

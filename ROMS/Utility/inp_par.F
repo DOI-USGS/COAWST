@@ -464,7 +464,7 @@
 !
       USE mod_param
       USE mod_parallel
-      USE mod_coupler
+!     USE mod_coupler
       USE mod_iounits
       USE mod_scalars
 
@@ -489,8 +489,9 @@
 
       real(r8), dimension(100) :: Rval
 
-      real(r8), allocatable :: MyRval(:)
+!     real(r8), allocatable :: MyRval(:)
 
+      character (len=1 ), parameter :: blank = ' '
       character (len=40) :: KeyWord
       character (len=80) :: Cname
       character (len=160) :: line
@@ -546,197 +547,38 @@
         READ (inp,'(a)',ERR=40,END=50) line
         status=decode_line(line, KeyWord, Nval, Cval, Rval)
         IF (status.gt.0) THEN
-          IF (TRIM(KeyWord).eq.'Nmodels') THEN
-            Npts=load_i(Nval, Rval, 1, Nmodels)
-            IF (.not.allocated(MyRval) ) THEN
-              i=0
-              DO ic=1,Nmodels-1
-                i=i+ic
-              END DO
-              allocate ( MyRval(i) )
-            END IF
-            IF (.not.allocated(OrderLabel) ) THEN
-              allocate ( OrderLabel(Nmodels) )
-            END IF
-            IF (.not.allocated(Nthreads) ) THEN
-              allocate ( Nthreads(Nmodels) )
-              Nthreads=0
-            END IF
-            IF (.not.allocated(TimeInterval) ) THEN
-              allocate ( TimeInterval(Nmodels,Nmodels) )
-              TimeInterval=0.0_r8
-            END IF
-            IF (.not.allocated(CoupleSteps) ) THEN
-              allocate ( CoupleSteps(Nmodels,Ngrids) )
-              CoupleSteps=0
-            END IF
-            IF (.not.allocated(INPname) ) THEN
-              allocate ( INPname(Nmodels) )
-            END IF
-            IF (.not.allocated(Nexport) ) THEN
-              allocate ( Nexport(Nmodels) )
-              Nexport=0
-            END IF
-            IF (.not.allocated(Nimport) ) THEN
-              allocate ( Nimport(Nmodels) )
-              Nimport=0
-            END IF
-         ELSE IF (TRIM(KeyWord).eq.'Lreport') THEN
-            Npts=load_l(Nval, Cval, 1, Lreport)
-         ELSE IF (TRIM(KeyWord).eq.'OrderLabel') THEN
-            DO i=1,Nmodels
-              IF (i.eq.Nval) THEN
-                OrderLabel(i)=TRIM(ADJUSTL(Cval(Nval)))
-                IF (INDEX(TRIM(OrderLabel(i)),'ocean').ne.0) THEN
-                  Iocean=i
-                ELSE IF (INDEX(TRIM(OrderLabel(i)),'waves').ne.0) THEN
-                  Iwaves=i
-                ELSE IF (INDEX(TRIM(OrderLabel(i)),'atmos').ne.0) THEN
-                  Iatmos=i
-                END IF
-              END IF  
+          IF (TRIM(KeyWord).eq.'VARNAME') THEN
+            DO i=1,LEN(USRname)
+              varname(i:i)=blank
             END DO
-          ELSE IF (TRIM(KeyWord).eq.'Nthreads(ocean)') THEN
-            IF ((0.lt.Iocean).and.(Iocean.le.Nmodels)) THEN
-              Npts=load_i(Nval, Rval, 1, Nthreads(Iocean))
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'Nthreads(waves)') THEN
-            IF ((0.lt.Iwaves).and.(Iwaves.le.Nmodels)) THEN
-              Npts=load_i(Nval, Rval, 1, Nthreads(Iwaves))
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'Nthreads(atmos)') THEN
-            IF ((0.lt.Iatmos).and.(Iatmos.le.Nmodels)) THEN
-              Npts=load_i(Nval, Rval, 1, Nthreads(Iatmos))
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'TimeInterval') THEN
-            Npts=load_r(Nval, Rval, Nmodels, MyRval)
-            ic=0
-            DO j=1,Nmodels
-              DO i=1,Nmodels
-                IF (i.gt.j) THEN
-                  ic=ic+1
-                  TimeInterval(i,j)=MyRval(ic)
-                  TimeInterval(j,i)=MyRval(ic)
-                END IF
-              END DO
+            varname=TRIM(ADJUSTL(Cval(Nval)))
+          ELSE IF (TRIM(KeyWord).eq.'NnodesATM') THEN
+            Npts=load_i(Nval, Rval, 1, NnodesATM)
+          ELSE IF (TRIM(KeyWord).eq.'NnodesWAV') THEN
+            Npts=load_i(Nval, Rval, 1, NnodesWAV)
+          ELSE IF (TRIM(KeyWord).eq.'NnodesOCN') THEN
+            Npts=load_i(Nval, Rval, 1, NnodesOCN)
+          ELSE IF (TRIM(KeyWord).eq.'TI_ATM_WAV') THEN
+            Npts=load_r(Nval, Rval, 1, TI_ATM_WAV)
+          ELSE IF (TRIM(KeyWord).eq.'TI_ATM_OCN') THEN
+            Npts=load_r(Nval, Rval, 1, TI_ATM_OCN)
+          ELSE IF (TRIM(KeyWord).eq.'TI_WAV_OCN') THEN
+            Npts=load_r(Nval, Rval, 1, TI_WAV_OCN)
+          ELSE IF (TRIM(KeyWord).eq.'OCN_name') THEN
+            DO i=1,LEN(Iname)
+              Iname(i:i)=blank
             END DO
-          ELSE IF (TRIM(KeyWord).eq.'INPname(ocean)') THEN
-            IF ((0.lt.Iocean).and.(Iocean.le.Nmodels)) THEN
-              INPname(Iocean)=TRIM(ADJUSTL(Cval(Nval)))
-              Iname=TRIM(INPname(Iocean))
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'INPname(waves)') THEN
-            IF ((0.lt.Iwaves).and.(Iwaves.le.Nmodels)) THEN
-              INPname(Iwaves)=TRIM(ADJUSTL(Cval(Nval)))
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'INPname(atmos)') THEN
-            IF ((0.lt.Iatmos).and.(Iatmos.le.Nmodels)) THEN
-              INPname(Iatmos)=TRIM(ADJUSTL(Cval(Nval)))
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'CPLname') THEN
-            CPLname=TRIM(ADJUSTL(Cval(Nval)))
-          ELSE IF (TRIM(KeyWord).eq.'Nexport(ocean)') THEN
-            IF ((0.lt.Iocean).and.(Iocean.le.Nmodels)) THEN
-              Npts=load_i(Nval, Rval, 1, Nexport(Iocean))
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'Nexport(waves)') THEN
-            IF ((0.lt.Iwaves).and.(Iwaves.le.Nmodels)) THEN
-              Npts=load_i(Nval, Rval, 1, Nexport(Iwaves))
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'Nexport(atmos)') THEN
-            IF ((0.lt.Iatmos).and.(Iatmos.le.Nmodels)) THEN
-              Npts=load_i(Nval, Rval, 1, Nexport(Iatmos))
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'Export(ocean)') THEN
-            IF (.not.allocated(Export)) THEN
-              allocate ( Export(Nmodels) )
-              DO i=1,Nmodels
-                allocate ( Export(i)%code(MAX(1,Nexport(i))) )
-                Export(i)%code=' '
-              END DO
-            END IF
-            IF ((0.lt.Iocean).and.(Iocean.le.Nmodels)) THEN
-              IF (Nval.le.Nexport(Iocean)) THEN
-                Export(Iocean)%code(Nval)=TRIM(ADJUSTL(Cval(Nval)))
-              END IF
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'Export(waves)') THEN
-            IF (.not.allocated(Export)) THEN
-              allocate ( Export(Nmodels) )
-              DO i=1,Nmodels
-                allocate ( Export(i)%code(MAX(1,Nexport(i))) )
-                Export(i)%code=' '
-              END DO
-            END IF
-            IF ((0.lt.Iwaves).and.(Iwaves.le.Nmodels)) THEN
-              IF (Nval.le.Nexport(Iwaves)) THEN
-                Export(Iwaves)%code(Nval)=TRIM(ADJUSTL(Cval(Nval)))
-              END IF
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'Export(atmos)') THEN
-            IF (.not.allocated(Export)) THEN
-              allocate ( Export(Nmodels) )
-              DO i=1,Nmodels
-                allocate ( Export(i)%code(MAX(1,Nexport(i))) )
-                Export(i)%code=' '
-              END DO
-            END IF
-            IF ((0.lt.Iatmos).and.(Iatmos.le.Nmodels)) THEN
-              IF (Nval.le.Nexport(Iatmos)) THEN
-                Export(Iatmos)%code(Nval)=TRIM(ADJUSTL(Cval(Nval)))
-              END IF
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'Nimport(ocean)') THEN
-            IF ((0.lt.Iocean).and.(Iocean.le.Nmodels)) THEN
-              Npts=load_i(Nval, Rval, 1, Nimport(Iocean))
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'Nimport(waves)') THEN
-            IF ((0.lt.Iwaves).and.(Iwaves.le.Nmodels)) THEN
-              Npts=load_i(Nval, Rval, 1, Nimport(Iwaves))
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'Nimport(atmos)') THEN
-            IF ((0.lt.Iatmos).and.(Iatmos.le.Nmodels)) THEN
-              Npts=load_i(Nval, Rval, 1, Nimport(Iatmos))
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'Import(ocean)') THEN
-            IF (.not.allocated(Import)) THEN
-              allocate ( Import(Nmodels) )
-              DO i=1,Nmodels
-                allocate ( Import(i)%code(MAX(1,Nimport(i))) )
-                Import(i)%code=' '
-              END DO
-            END IF
-            IF ((0.lt.Iocean).and.(Iocean.le.Nmodels)) THEN
-              IF (Nval.le.Nimport(Iocean)) THEN
-                Import(Iocean)%code(Nval)=TRIM(ADJUSTL(Cval(Nval)))
-              END IF
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'Import(waves)') THEN
-            IF (.not.allocated(Import)) THEN
-              allocate ( Import(Nmodels) )
-              DO i=1,Nmodels
-                allocate ( Import(i)%code(MAX(1,Nimport(i))) )
-                Import(i)%code=' '
-              END DO
-            END IF
-            IF ((0.lt.Iwaves).and.(Iwaves.le.Nmodels)) THEN
-              IF (Nval.le.Nimport(Iwaves)) THEN
-                Import(Iwaves)%code(Nval)=TRIM(ADJUSTL(Cval(Nval)))
-              END IF
-            END IF
-          ELSE IF (TRIM(KeyWord).eq.'Import(atmos)') THEN
-            IF (.not.allocated(Import)) THEN
-              allocate ( Import(Nmodels) )
-              DO i=1,Nmodels
-                allocate ( Import(i)%code(MAX(1,Nimport(i))) )
-                Import(i)%code=' '
-              END DO
-            END IF
-            IF ((0.lt.Iatmos).and.(Iatmos.le.Nmodels)) THEN
-              IF (Nval.le.Nimport(Iatmos)) THEN
-                Import(Iatmos)%code(Nval)=TRIM(ADJUSTL(Cval(Nval)))
-              END IF
-            END IF
+            Iname=TRIM(ADJUSTL(Cval(Nval)))
+          ELSE IF (TRIM(KeyWord).eq.'WAV_name') THEN
+            DO i=1,LEN(Wname)
+              Wname(i:i)=blank
+            END DO
+            Wname=TRIM(ADJUSTL(Cval(Nval)))
+          ELSE IF (TRIM(KeyWord).eq.'ATM_name') THEN
+            DO i=1,LEN(Aname)
+              Aname(i:i)=blank
+            END DO
+            Aname=TRIM(ADJUSTL(Cval(Nval)))
           END IF
         END IF
       END DO

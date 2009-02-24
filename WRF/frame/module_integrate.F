@@ -5,7 +5,7 @@ MODULE module_integrate
 
 CONTAINS
 
-RECURSIVE SUBROUTINE integrate ( grid, CouplingTime, last_step )
+RECURSIVE SUBROUTINE integrate ( grid, TI_ATM_OCN, last_step )
 
    USE module_domain
    USE module_driver_constants
@@ -22,7 +22,7 @@ RECURSIVE SUBROUTINE integrate ( grid, CouplingTime, last_step )
 
    TYPE(domain) , POINTER :: grid
 !jcw
-   REAL, intent(in) :: CouplingTime
+   REAL, intent(in) :: TI_ATM_OCN
    INTEGER, intent(in) :: last_step
 
 ! module_integrate:integrate
@@ -326,7 +326,7 @@ RECURSIVE SUBROUTINE integrate ( grid, CouplingTime, last_step )
             !jcw call to MCT coupler
             CALL domain_clock_get( grid, minutesSinceSimulationStart=minutesSinceSimulationStart )
             num_steps=minutesSinceSimulationStart*60.0/grid%dt
-            nATM_steps=MAX(1,INT(CouplingTime/grid%dt))
+            nATM_steps=MAX(1,INT(TI_ATM_OCN/grid%dt))
             IF ((num_steps.gt.last_step).and.(MOD(num_steps, nATM_steps).eq.0)) THEN
               CALL atm2ocn_coupling (grid)
               last_step=num_steps
@@ -349,7 +349,7 @@ RECURSIVE SUBROUTINE integrate ( grid, CouplingTime, last_step )
                   domain_get_current_time(grid) - domain_get_time_step(grid)
                 grid_ptr%nests(kid)%ptr%stop_subtime = &
                   domain_get_current_time(grid)
-                CALL integrate ( grid_ptr%nests(kid)%ptr, CouplingTime, last_step ) 
+                CALL integrate ( grid_ptr%nests(kid)%ptr, TI_ATM_OCN, last_step ) 
                 CALL wrf_debug( 100 , 'module_integrate: back from recursive call to integrate ' )
                 CALL wrf_debug( 100 , 'module_integrate: calling med_nest_feedback ' )
                 CALL med_nest_feedback ( grid_ptr , grid_ptr%nests(kid)%ptr , config_flags )

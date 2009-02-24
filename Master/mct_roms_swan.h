@@ -332,25 +332,37 @@
 !
 !     call GlobalSegMap_Ordpnts(xPrimeGSMap,MyRank,points)
       Asize=GlobalSegMap_lsize(GSMapSWAN, OCN_COMM_WORLD)
-      CALL AttrVect_init (wav2ocn_AV2, rList=TRIM(ExportList(Iwaves)),   &
-     &                    lsize=Asize)
+!     CALL AttrVect_init (wav2ocn_AV2, rList=TRIM(ExportList(Iwaves)),  &
+!    &                    lsize=Asize)
+      CALL AttrVect_init(wav2ocn_AV2,                                   &
+     &     rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:TM01:QB",  &
+     &     lsize=Asize)
       CALL AttrVect_zero (wav2ocn_AV2)
 !
       Asize=GlobalSegMap_lsize(GSMapROMS, OCN_COMM_WORLD)
-      CALL AttrVect_init (wav2ocn_AV, rList=TRIM(ExportList(Iwaves)),   &
-     &                    lsize=Asize)
+!     CALL AttrVect_init (wav2ocn_AV, rList=TRIM(ExportList(Iwaves)),   &
+!    &                    lsize=Asize)
+      CALL AttrVect_init(wav2ocn_AV2,                                   &
+     &     rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:TM01:QB",  &
+     &     lsize=Asize)
       CALL AttrVect_zero (wav2ocn_AV)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
       Asize=GlobalSegMap_lsize(GSmapSWAN, OCN_COMM_WORLD)
-      CALL AttrVect_init (ocn2wav_AV2, rList=TRIM(ExportList(Iocean)),   &
+!     CALL AttrVect_init (ocn2wav_AV2, rList=TRIM(ExportList(Iocean)),  &
+!    &                    lsize=Asize)
+      CALL AttrVect_init (ocn2wav_AV2,                                  &
+     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
      &                    lsize=Asize)
       CALL AttrVect_zero (ocn2wav_AV2)
 !
       Asize=GlobalSegMap_lsize(GSmapROMS, OCN_COMM_WORLD)
-      CALL AttrVect_init (ocn2wav_AV, rList=TRIM(ExportList(Iocean)),   &
+!     CALL AttrVect_init (ocn2wav_AV, rList=TRIM(ExportList(Iocean)),   &
+!    &                    lsize=Asize)
+      CALL AttrVect_init (ocn2wav_AV,                                   &
+     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
      &                    lsize=Asize)
       CALL AttrVect_zero (ocn2wav_AV)
 !
@@ -366,14 +378,20 @@
 !
       IF (ng.eq.1) THEN
         Asize=GlobalSegMap_lsize(GSMapROMS1, OCN_COMM_WORLD)
-        CALL AttrVect_init (wav2ocn_AV1, rList=TRIM(ExportList(Iwaves)),  &
-     &                      lsize=Asize)
+!       CALL AttrVect_init (wav2ocn_AV1, rList=TRIM(ExportList(Iwaves)),  &
+!    &                      lsize=Asize)
+        CALL AttrVect_init(wav2ocn_AV1,                                   &
+     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:TM01:QB",       &
+     &  lsize=Asize)
         CALL AttrVect_zero (wav2ocn_AV1)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
-        CALL AttrVect_init (ocn2wav_AV1, rList=TRIM(ExportList(Iocean)),  &
+!       CALL AttrVect_init (ocn2wav_AV1, rList=TRIM(ExportList(Iocean)),  &
+!    &                    lsize=Asize)
+        CALL AttrVect_init (ocn2wav_AV1,                                  &
+     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",                &
      &                    lsize=Asize)
         CALL AttrVect_zero (ocn2wav_AV1)
 !
@@ -382,14 +400,20 @@
         CALL Router_init (WAVid, GSMapROMS1, OCN_COMM_WORLD, ROMStoSWAN1)
       ELSE IF (ng.eq.2) THEN
         Asize=GlobalSegMap_lsize(GSMapROMS2, OCN_COMM_WORLD)
-        CALL AttrVect_init (wav2ocn_AV2, rList=TRIM(ExportList(Iwaves)),  &
-     &                      lsize=Asize)
+!       CALL AttrVect_init (wav2ocn_AV2, rList=TRIM(ExportList(Iwaves)),  &
+!    &                      lsize=Asize)
+        CALL AttrVect_init(wav2ocn_AV2,                                   &
+     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:TM01:QB",       &
+     &  lsize=Asize)
         CALL AttrVect_zero (wav2ocn_AV2)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
-        CALL AttrVect_init (ocn2wav_AV2, rList=TRIM(ExportList(Iocean)),  &
+!       CALL AttrVect_init (ocn2wav_AV2, rList=TRIM(ExportList(Iocean)),  &
+!    &                    lsize=Asize)
+        CALL AttrVect_init (ocn2wav_AV2,                                  &
+     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",                &
      &                    lsize=Asize)
         CALL AttrVect_zero (ocn2wav_AV2)
 !
@@ -404,14 +428,20 @@
 !  processor.
 !
       Asize=GlobalSegMap_lsize(GSMapROMS, OCN_COMM_WORLD)
-      CALL AttrVect_init (wav2ocn_AV, rList=TRIM(ExportList(Iwaves)),   &
-     &                    lsize=Asize)
+!     CALL AttrVect_init (wav2ocn_AV, rList=TRIM(ExportList(Iwaves)),     &
+!    &                    lsize=Asize)
+      CALL AttrVect_init(wav2ocn_AV,                                      &
+     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:TM01:QB",       &
+     &  lsize=Asize)
       CALL AttrVect_zero (wav2ocn_AV)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
-      CALL AttrVect_init (ocn2wav_AV, rList=TRIM(ExportList(Iocean)),   &
+!     CALL AttrVect_init (ocn2wav_AV, rList=TRIM(ExportList(Iocean)),     &
+!    &                    lsize=Asize)
+      CALL AttrVect_init (ocn2wav_AV,                                     &
+     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",                &
      &                    lsize=Asize)
       CALL AttrVect_zero (ocn2wav_AV)
 !
@@ -632,173 +662,165 @@
 !
 !  Receive fields from wave model.
 !
-      Iimport=0
-      DO ifield=1,Nimport(Iocean)
-        id=ImportID(Iocean)%val(ifield)
-        code=ADJUSTL(Fields(id)%code)
-        gtype=Fields(id)%GridType
-        scale=Fields(id)%scale
-        add_offset=Fields(id)%AddOffset
-
-        SELECT CASE (TRIM(code))
-
-          CASE ('Wdir')                   ! wave direction
-
-            CALL AttrVect_exportRAttr (wav2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            DO i=1,Asize
-              A(i)=MAX(0.0_r8,A(i))
-            END DO
-            scale=deg2rad                 ! degress to radians
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrT, IendT, JstrT, JendT,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%Dwave,                       &
-     &                          status)
-
-          CASE ('Wamp')                   ! significant wave hight
-
-            CALL AttrVect_exportRAttr (wav2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            DO i=1,Asize
-              A(i)=MAX(0.0_r8,A(i))
-            END DO
-            scale=1.0_r8                  ! m
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrT, IendT, JstrT, JendT,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%Hwave,                       &
-     &                          status)
-
-          CASE ('Wlen')                   ! wave length
-
-            CALL AttrVect_exportRAttr (wav2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            DO i=1,Asize
-              A(i)=MAX(Lwave_min,A(i))
-              IF (A(i).eq.1.0_r8/0.0_r8) THEN
-                A(i)=Lwave_max
-              END IF
-            END DO
-            scale=1.0_r8                  ! m
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrT, IendT, JstrT, JendT,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%Lwave,                       &
-     &                          status)
-
-          CASE ('Wptop')                  ! peak surface wave period
-
-            CALL AttrVect_exportRAttr (wav2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            DO i=1,Asize
-              A(i)=MAX(0.0_r8,A(i))
-            END DO
-            scale=1.0_r8
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrT, IendT, JstrT, JendT,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%Pwave_top,                   &
-     &                          status)
-
-          CASE ('Wpbot')                  ! mean bottom wave period
-
-            CALL AttrVect_exportRAttr (wav2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            DO i=1,Asize
-              A(i)=MAX(0.0_r8,A(i))
-            END DO
-            scale=1.0_r8
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrT, IendT, JstrT, JendT,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%Pwave_bot,                   &
-     &                          status)
-
-          CASE ('Wdiss')                  ! wave dissipation
-
-            CALL AttrVect_exportRAttr (wav2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            DO i=1,Asize
-              A(i)=MAX(0.0_r8,A(i))
-            END DO
-            scale=1.0_r8/rho0
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrT, IendT, JstrT, JendT,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%Wave_dissip,                 &
-     &                          status)
-
-          CASE ('Wubot')                  ! bottom orbital velocity
-
-            CALL AttrVect_exportRAttr (wav2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            DO i=1,Asize
-              A(i)=MAX(0.0_r8,A(i))
-            END DO
-            scale=1.0_r8                  ! m/s
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrT, IendT, JstrT, JendT,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%Ub_swan,                     &
-     &                          status)
+!
+!  Set ramp coefficient.
+!
+!!    ramp=MIN((tdays(ng)-dstart)*4.0_r8,1.0_r8)
+      ramp=1.0_r8
+!
+!  Wave dissipation.
+!
+      CALL AttrVect_exportRAttr (FrWAVToOCNAV, "DISSIP", A, Asize)
+      ij=0
+      cff=1.0_r8/rho0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          Wave_dissip(i,j)=MAX(0.0_r8,A(ij)*ramp)*cff
+        END DO
+      END DO
+!
+!  Wave height.
+!
+      CALL AttrVect_exportRAttr (FrWAVToOCNAV, "HSIGN", A, Asize)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          Hwave(i,j)=MAX(0.0_r8,A(ij)*ramp)
+        END DO
+      END DO
+!
+!  Surface wave period.
+!
+      CALL AttrVect_exportRAttr(FrWAVToOCNAV, "RTP", A, Asize)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          Pwave_top(i,j)=MAX(0.0_r8,A(ij))
+        END DO
+      END DO
+!
+!  Bottom wave period.
+!
+      CALL AttrVect_exportRAttr (FrWAVToOCNAV, "TMBOT", A, Asize)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          Pwave_bot(i,j)=MAX(0.0_r8,A(ij))
+        END DO
+      END DO
+!
+!  Bottom orbital velocity (m/s).
+!
+      CALL AttrVect_exportRAttr(FrWAVToOCNAV, "UBOT", A, Asize)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          Ub_swan(i,j)=MAX(0.0_r8,A(ij)*ramp)
+        END DO
+      END DO
+!
+!  Wave direction (radians).
+!
+      CALL AttrVect_exportRAttr (FrWAVToOCNAV, "DIR", A, Asize)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          Dwave(i,j)=MAX(0.0_r8,A(ij))*deg2rad
+        END DO
+      END DO
+!
+!  Wave length (m).
+!
+      CALL AttrVect_exportRAttr (FrWAVToOCNAV, "WLEN", A, Asize)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+            Lwave(i,j)=MAX(1.0_r8,A(ij))
+!            IF (Lwave(i,j).eq.1.0_r8/0.0_r8) THEN
+!              Lwave(i,j)=Lwave_max
+!            END IF
+            LWave(i,j)=MIN(Lwave_max,A(ij))
+        END DO
+      END DO
 
 #ifdef SVENDSEN_ROLLER
-
-          CASE ('Wbrk')                   ! percent wave breaking
-
-            CALL AttrVect_exportRAttr (wav2ocn_AV, TRIM(code), A, Asize)
-            Iimport=Iimport+1
-            DO i=1,Asize
-              A(i)=MAX(0.0_r8,A(i))
-            END DO
-            scale=1.0_r8
-            add_offset=0.0_r8
-            CALL ROMS_import2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          Asize, A,                               &
-     &                          IstrT, IendT, JstrT, JendT,             &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fields(id)%ImpMin, Fields(id)%ImpMax,   &
-     &                          FORCES(ng)%Wave_break,                  &
-     &                          status)
-#endif
-        END SELECT
+!
+!  Percent wave breaking.
+!  
+      CALL AttrVect_exportRAttr (FrWAVToOCNAV, "QB", A, Asize)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          Wave_break(i,j)=MAX(0.0_r8,A(ij))
+        END DO
       END DO
+#endif
+#if defined EW_PERIODIC || defined NS_PERIODIC
+!
+!-----------------------------------------------------------------------
+!  Apply periodic boundary conditions.
+!-----------------------------------------------------------------------
+!
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Wave_dissip)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Hwave)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Pwave_top)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Pwave_bot)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Ub_swan)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Dwave)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Lwave)
+# ifdef SVENDSEN_ROLLER
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Wave_break)
+# endif
+#endif
+#ifdef DISTRIBUTE
+!
+!-----------------------------------------------------------------------
+!  Exchange tile boundaries.
+!-----------------------------------------------------------------------
+!
+      CALL mp_exchange2d (ng, iNLM, 4, tile,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    Wave_dissip, Hwave, Dwave, Lwave)
+      CALL mp_exchange2d (ng, iNLM, 3, tile,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    Pwave_top, Pwave_bot, Ub_swan)
+# ifdef SVENDSEN_ROLLER
+      CALL mp_exchange2d (ng, iNLM, 1, tile,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    wave_break)
+# endif
+#endif
 !
 !-----------------------------------------------------------------------
 !  Export fields from ocean (ROMS) to wave (SWAN) model.
 !-----------------------------------------------------------------------
-
-
 # ifdef REFINED_GRID
       CALL AttrVect_init (ocn2wav_AV, rList=TRIM(ExportList(Iocean)),   &
      &                    lsize=Asize)
@@ -807,138 +829,181 @@
 !
 !  Schedule sending fields to the wave model.
 !
-      Iexport=0
-      DO ifield=1,Nexport(Iocean)
-        id=ExportID(Iocean)%val(ifield)
-        code=ADJUSTL(Fields(id)%code)
-        gtype=Fields(id)%GridType
-        scale=Fields(id)%scale
-        add_offset=Fields(id)%AddOffset
-
-        SELECT CASE (TRIM(code))
-
-          CASE ('bath')                   ! bathymetry (depth)
-
-            CALL ROMS_export2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          GRID(ng)%h,                             &
-     &                          Fields(id)%ExpMin, Fields(id)%ExpMax,   &
-     &                          Asize, A,                               &
-     &                          status)
-            CALL AttrVect_importRAttr (ocn2wav_AV, TRIM(code), A, Asize)
-            Iexport=Iexport+1
-
-          CASE ('SSH')                    ! free-surface (water level)
-
-            CALL ROMS_export2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          OCEAN(ng)%zeta(:,:,KOUT),               &
-     &                          Fields(id)%ExpMin, Fields(id)%ExpMax,   &
-     &                          Asize, A,                               &
-     &                          status)
-            CALL AttrVect_importRAttr (ocn2wav_AV, TRIM(code), A, Asize)
-            Iexport=Iexport+1
-
-          CASE ('Ubar')                   ! 2D U-momentum
 !
-!           Vertically integrate the velicties according to             !
-!           Dingemans (1997) Water wave propagation over uneven bottoms,!
-!           Advanced series on Ocean Engineering, p.86 eq 2.144.        !
+!  Depth (bathymetry).
 !
-!            DO j=JstrR,JendR
-!              DO i=Istr,Iend
-!                waven=2.0_r8*pi/MAX(Lwave_min,FORCES(ng)%Lwave(i,j))
-!                cff=0.0_r8
-!                DO k=1,N(ng)
-!                  cff=cff+OCEAN(ng)%u(i,j,k,NOUT)*cosh(2.0_r8*waven*    &
-!     &                (GRID(ng)%z_r(i,j,k)+GRID(ng)%h(i,j)))*           &
-!     &                GRID(ng)%Hz(i,j,k)
-!                END DO
-!                uavg(i,j)=2.0_r8*waven*cff/                             &
-!     &               sinh(2.0_r8*waven*GRID(ng)%h(i,j))
-!                uavg(i,j)=0.5_r8*(OCEAN(ng)%u(i,j,N(ng),NOUT)+          &
-!     &                            OCEAN(ng)%u(i+1,j,N(ng),NOUT))
-!              END DO
-!            END DO
-!     &                          uavg(LBi:UBi,LBj:UBj),                  &
-
-!    &                          uavg(LBi:UBi,LBj:UBj),                  &
-            CALL ROMS_export2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          LBi, UBi, LBj, UBj,                     &
-#ifdef SOLVE3D
-     &                          OCEAN(ng)%u(:,:,N(ng),NOUT),            &
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          A(ij)=h(i,j)
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (ocn2wav_AV, "DEPTH", A, Asize)
+!
+!  Water level (free-surface).
+!
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          A(ij)=zeta(i,j,knew)
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (ocn2wav_AV, "WLEV", A, Asize)
+!
+!  Vertically-integrated U-velocity at RHO-points.
+!
+#  ifdef REFINED_GRID
+        DO j=JstrT,JendT
+          DO i=IstrTU+1,IendTU
+            ubar_rho(i,j)=0.5_r8*                                       &
+     &                  (u(i,j,N(ng),nstp)+u(i+1,j,N(ng),nstp))
+          END DO
+        END DO
+        IF (WESTERN_EDGE) THEN
+          DO j=JstrT,JendT
+            ubar_rho(IstrT,j)=ubar_rho(IstrT+1,j)
+          END DO
+        END IF
+        IF (EASTERN_EDGE) THEN
+          DO j=JstrT,JendT
+            ubar_rho(IendT,j)=ubar_rho(IendT-1,j)
+          END DO
+        END IF
+#  else
+        DO j=JstrR,JendR
+          DO i=Istr,Iend
+            ubar_rho(i,j)=0.5_r8*                                       &
+     &                  (u(i,j,N(ng),nstp)+u(i+1,j,N(ng),nstp))
+          END DO
+        END DO
+        IF (WESTERN_EDGE) THEN
+          DO j=Jstr,Jend
+            ubar_rho(Istr-1,j)=ubar_rho(Istr,j)
+          END DO
+        END IF
+        IF (EASTERN_EDGE) THEN
+          DO j=Jstr,Jend
+            ubar_rho(Iend+1,j)=ubar_rho(Iend,j)
+          END DO
+        END IF
+        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+          ubar_rho(Istr-1,Jstr-1)=0.5_r8*(ubar_rho(Istr  ,Jstr-1)+      &
+     &                                 ubar_rho(Istr-1,Jstr  ))
+        END IF
+        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+          ubar_rho(Iend+1,Jstr-1)=0.5_r8*(ubar_rho(Iend  ,Jstr-1)+      &
+     &                                 ubar_rho(Iend+1,Jstr  ))
+        END IF
+        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+          ubar_rho(Istr-1,Jend+1)=0.5_r8*(ubar_rho(Istr-1,Jend  )+      &
+     &                                 ubar_rho(Istr  ,Jend+1))
+        END IF
+        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+          ubar_rho(Iend+1,Jend+1)=0.5_r8*(ubar_rho(Iend+1,Jend  )+      &
+     &                                 ubar_rho(Iend  ,Jend+1))
+        END IF
+#  endif
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+#ifdef UV_CONST
+          A(ij)=0.0_r8
 #else
-     &                          OCEAN(ng)%ubar(:,:,KOUT),               &
+          A(ij)=ubar_rho(i,j)
 #endif
-     &                          Fields(id)%ExpMin, Fields(id)%ExpMax,   &
-     &                          Asize, A,                               &
-     &                          status)
-            CALL AttrVect_importRAttr (ocn2wav_AV, TRIM(code), A, Asize)
-            Iexport=Iexport+1
-
-          CASE ('Vbar')                   ! 2D V-momentum
-
-!            DO j=Jstr,Jend+1
-!              DO i=IstrR,IendR
-!                waven=2.0_r8*pi/FORCES(ng)%Lwave(i,j)
-!                cff=0.0_r8
-!                DO k=1,N(ng)
-!                  cff=cff+OCEAN(ng)%v(i,j,k,NOUT)*cosh(2.0_r8*waven*    &
-!     &                (GRID(ng)%z_r(i,j,k)+GRID(ng)%h(i,j)))*           &
-!     &                GRID(ng)%Hz(i,j,k)
-!                END DO
-!                vavg(i,j)=2.0_r8*waven*cff/                             &
-!     &                    sinh(2.0_r8*waven*GRID(ng)%h(i,j))
-!              END DO
-!            END DO
-!     &                          vavg(LBi:UBi,LBj:UBj),                  &
-
-            CALL ROMS_export2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          LBi, UBi, LBj, UBj,                     &
-#ifdef SOLVE3D
-     &                          OCEAN(ng)%v(:,:,N(ng),NOUT),            &
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (ocn2wav_AV, "VELX", A, Asize)
+!
+!  Vertically-integrated V-velocity at RHO-points.
+!
+#  ifdef REFINED_GRID
+        DO j=JstrTV+1,JendTV
+          DO i=IstrT,IendT
+            vbar_rho(i,j)=0.5_r8*                                       &
+     &                  (v(i,j,N(ng),nstp)+v(i,j+1,N(ng),nstp))
+          END DO
+        END DO
+        IF (NORTHERN_EDGE) THEN
+          DO i=IstrT,IendT
+            vbar_rho(i,JendT)=vbar_rho(i,JendT-1)
+          END DO
+        END IF
+        IF (SOUTHERN_EDGE) THEN
+          DO i=IstrT,IendT
+            vbar_rho(i,JstrT)=vbar_rho(i,JstrT+1)
+          END DO
+        END IF
+#  else
+        DO j=Jstr,Jend
+          DO i=IstrR,IendR
+            vbar_rho(i,j)=0.5_r8*                                       &
+     &                  (v(i,j,N(ng),nstp)+v(i,j+1,N(ng),nstp))
+          END DO
+        END DO
+        IF (NORTHERN_EDGE) THEN
+          DO i=Istr,Iend
+            vbar_rho(i,Jend+1)=vbar_rho(i,Jend)
+          END DO
+        END IF
+        IF (SOUTHERN_EDGE) THEN
+          DO i=Istr,Iend
+            vbar_rho(i,Jstr-1)=vbar_rho(i,Jstr)
+          END DO
+        END IF
+        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+          vbar_rho(Istr-1,Jstr-1)=0.5_r8*(vbar_rho(Istr  ,Jstr-1)+            &
+     &                                 vbar_rho(Istr-1,Jstr  ))
+        END IF
+        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+          vbar_rho(Iend+1,Jstr-1)=0.5_r8*(vbar_rho(Iend  ,Jstr-1)+            &
+     &                                 vbar_rho(Iend+1,Jstr  ))
+        END IF
+        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+          vbar_rho(Istr-1,Jend+1)=0.5_r8*(vbar_rho(Istr-1,Jend  )+            &
+     &                                 vbar_rho(Istr  ,Jend+1))
+        END IF
+        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+          vbar_rho(Iend+1,Jend+1)=0.5_r8*(vbar_rho(Iend+1,Jend  )+            &
+     &                                 vbar_rho(Iend  ,Jend+1))
+        END IF
+#  endif
+!
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+#ifdef UV_CONST
+          A(ij)=0.0_r8
 #else
-     &                          OCEAN(ng)%vbar(:,:,KOUT),               &
+          A(ij)=vbar_rho(i,j)
 #endif
-     &                          Fields(id)%ExpMin, Fields(id)%ExpMax,   &
-     &                          Asize, A,                               &
-     &                          status)
-            CALL AttrVect_importRAttr (ocn2wav_AV, TRIM(code), A, Asize)
-            Iexport=Iexport+1
-
-          CASE ('ZO')                   ! bottom roughness
-
-            DO j=JstrT,JendT
-              DO i=IstrT,IendT
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (ocn2wav_AV, "VELY", A, Asize)
+!
+!  bottom roughness.
+!
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          A(ij)=h(i,j)
 #ifdef BBL_MODEL
-                AA(i,j)=MAX(0.0001_r8,                                  &
+                AA(ij)=MAX(0.0001_r8,                                  &
      &                      OCEAN(ng)%bottom(i,j,izNik)*30.0_r8)
 #else
-                AA(i,j)=MAX(0.0001_r8,rdrg2(ng))
+                AA(ij)=MAX(0.0001_r8,rdrg2(ng))
 #endif
-              END DO
-            END DO
-            CALL ROMS_export2d (ng, tile,                               &
-     &                          id, gtype, scale, add_offset,           &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          AA(LBi:UBi,LBj:UBj),                    &
-     &                          Fields(id)%ExpMin, Fields(id)%ExpMax,   &
-     &                          Asize, A,                               &
-     &                          status)
-            CALL AttrVect_importRAttr (ocn2wav_AV, TRIM(code), A, Asize)
-            Iexport=Iexport+1
-
-        END SELECT
+        END DO
       END DO
+      CALL AttrVect_importRAttr (ocn2wav_AV, "ZO", A, Asize)
 !
 !  Send ocean fields to wave model.
 !
-      IF (Iexport.gt.0) THEN
-        buffer(2)=my_wtime(wtime)
 #ifdef MCT_INTERP_OC2WV
         call MCT_MatVecMul(ocn2wav_AV,O2WMatPlus,ocn2wav_AV2)
         CALL MCT_Send (ocn2wav_AV2, ROMStoSWAN, MyError)
@@ -958,43 +1023,12 @@
         CALL MCT_Send (ocn2wav_AV, ROMStoSWAN, MyError)
 # endif
 #endif
-        SendTime=SendTime+my_wtime(wtime)-buffer(2)
         IF (MyError.ne.0) THEN
           IF (Master) THEN
             WRITE (stdout,20) 'wave model, MyError = ', MyError
           END IF
           exit_flag=2
           RETURN
-        END IF
-      END IF
-!
-!-----------------------------------------------------------------------
-!  Report.
-!-----------------------------------------------------------------------
-!
-      IF (Nthreads(Iocean).gt.1) THEN
-        buffer(1)=RecvTime
-        buffer(2)=SendTime
-        op_handle(1)='SUM'
-        op_handle(2)='SUM'
-        CALL mp_reduce (ng, iNLM, 2, buffer, op_handle)
-        RecvTime=buffer(1)
-        SendTime=buffer(2)
-      END IF
-      IF (Master.and.((Iimport.gt.0).or.(Iexport.gt.0))) THEN
-        WRITE (stdout,30) Iimport, Iexport, time_code(ng),              &
-     &                    RecvTime, SendTime
-        IF (Lreport) THEN
-          DO ifield=1,Nimport(Iocean)
-            id=ImportID(Iocean)%val(ifield)
-            WRITE (stdout,40) 'ROMS Import: ',TRIM(fields(id)%name),    &
-     &                        Fields(id)%ImpMin, Fields(id)%ImpMax
-          END DO
-          DO ifield=1,Nexport(Iocean)
-            id=ExportID(Iocean)%val(ifield)
-            WRITE (stdout,40) 'ROMS Export: ',TRIM(fields(id)%name),    &
-     &                        Fields(id)%ExpMin, Fields(id)%ExpMax
-          END DO
         END IF
       END IF
 !

@@ -317,7 +317,7 @@ CONTAINS
    INTEGER :: last_step
 
    last_step=0
-   write(*,*) 'ti_atm_ocean from roms jcw ', TI_ATM_OCN
+!  write(*,*) 'ti_atm_ocean from roms jcw ', TI_ATM_OCN
 
    CALL       wrf_debug ( 100 , 'wrf: calling integrate' )
    CALL integrate ( head_grid, TI_ATM_OCN, last_step )

@@ -347,6 +347,46 @@
 !
         integer :: Nintervals = 1
 !
+!  Number of coupling models.
+!
+        integer :: Ncouple
+!
+!  Number of parallel nodes assigned to each model in the coupled
+!  system.
+!
+        integer :: NnodesATM
+        integer :: NnodesWAV
+        integer :: NnodesOCN
+!
+!  Time interval (seconds) between coupling of models.
+!
+        real(r8) :: TI_ATM_WAV        ! atmosphere-wave coupling interval
+        real(r8) :: TI_ATM_OCN        ! atmosphere-ocean coupling interval
+        real(r8) :: TI_WAV_OCN        ! wave-ocean coupling interval
+!
+!  Number of atmosphere model time-steps and atmosphere model ID.
+!
+        integer, dimension(Ngrids) :: nOCN_ATM
+        integer, dimension(Ngrids) :: nOCN_WAV
+!
+!  Coupled model components IDs.
+!
+        integer :: OCNid = 1
+#if defined AIR_OCEAN && defined WAVES_OCEAN
+        integer :: ATMid = 2
+        integer :: WAVid = 3
+        integer :: ncomps = 3
+#elif defined AIR_OCEAN
+        integer :: ATMid = 2
+        integer :: WAVid = 3
+        integer :: ncomps = 2
+#elif defined WAVES_OCEAN
+        integer :: ATMid = 3
+        integer :: WAVid = 2
+        integer :: ncomps = 2
+#endif
+
+!
 !  Starting, current, and ending ensemble run parameters.
 !
         integer :: ERstr = 1                    ! Starting value
@@ -1959,6 +1999,16 @@
 !
       lmd_Cg=lmd_Cstar*                                                 &
      &       vonKar*(lmd_cs*vonKar*lmd_epsilon)**(1.0_r8/3.0_r8)
+#endif
+!
+!  Set number of couple models.
+!
+      Ncouple=1
+#ifdef AIR_OCEAN
+      Ncouple=Ncouple+1
+#endif
+#ifdef WAVES_OCEAN
+      Ncouple=Ncouple+1
 #endif
 !
 !  Initialize several IO flags.
