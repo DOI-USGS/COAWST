@@ -338,7 +338,7 @@
       CALL AttrVect_zero (wav2ocn_AV2)
 !
       Asize=GlobalSegMap_lsize(GSMapROMS, OCN_COMM_WORLD)
-      CALL AttrVect_init(wav2ocn_AV2,                                   &
+      CALL AttrVect_init(wav2ocn_AV,                                    &
      &     rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",       &
      &     lsize=Asize)
       CALL AttrVect_zero (wav2ocn_AV)
