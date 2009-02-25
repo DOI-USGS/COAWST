@@ -17,7 +17,8 @@
 
 %1) set your case here to = 1.
 WET_DRY_SLOPE_CHAN=0;
-JOE_TC=1;
+JOE_TC=0;
+JOE_TC_fine=1;
 MY_APP=0;
 
 if (WET_DRY_SLOPE_CHAN)
@@ -65,6 +66,32 @@ elseif (JOE_TC)
     f=zeros(size(depth))+4.988e-5; %20N
   %7) enter output file name
     fname='joe_tc_grd.nc';
+elseif (JOE_TC_fine)
+  %2) enter x and y coordinates of rho points
+    ncellsx=400;  dx=6000;
+    ncellsy=300;  dy=6000;
+    x=[-dx/2:dx:dx*(ncellsx-1)];
+    y=[-dy/2:dy:dy*(ncellsy-1)];
+  % 
+    x=repmat(x,length(y),1);
+    y=repmat(y',1,length(x));
+  %3) set depth 
+    depth=zeros(size(x))+10;
+    depth(:,98:137)=repmat(10+5*([98:137]-97),size(x,1),1);
+    depth(:,138:177)=repmat(200+20*([138:177]-137),size(x,1),1);
+    depth(:,178:end)=1000;
+  %4) set grid angle
+    roms_angle=zeros(size(depth));
+  %5) set masking
+    mask_rho=ones(size(depth));
+    mask_rho(:,1:98)=0;
+    mask_rho(:,end-6:end)=0;
+    mask_rho(1:30,:)=0;
+    mask_rho(end-6:end,:)=0;
+  %6) set coriolis f
+    f=zeros(size(depth))+4.988e-5; %20N
+  %7) enter output file name
+    fname='joe_tc_fine_grd.nc';
 elseif (MY_APP)
   disp('set MY_APP=1 and then put your stuff in here')
 end
