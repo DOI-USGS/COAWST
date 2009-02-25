@@ -1,4 +1,4 @@
-% script create_roms_wetdry_slope_chan_init
+% script create_roms_init
 %
 % Create a netcdf file that contains initialization data for ROMS.
 % Initializes temp, salt, u, v, ubar, vbar, and 
@@ -7,7 +7,6 @@
 % In cppdefs.h you should have 
 % #undef ana_initial
 % #undef ana_sediment
-% This m file is set to initalize a wetdry test for ocean3.0 release.
 %
 % Users can adapt this file to their own application.
 %
@@ -49,7 +48,7 @@
 
 %1) Enter name of netcdf initial file to be created.
 %   If it already exists it will be overwritten!!.
-     init_file='ocean_wetdry_slope_chan_ini.nc';
+     init_file='joe_tc_ocean_init.nc';
 
 %2) Enter start time of initial file, in seconds.
 %   This time needs to be consistent with model time (ie dstart and time_ref).
@@ -58,12 +57,12 @@
 
 %3) Enter number of vertical sigma levels in model.
 %   This will be same value as entered in mod_param.F
-    N=10;
+    N=21;
 
 %4) Enter the values of theta_s, theta_b, and Tcline from your *.in file.
-    theta_s = 0;  
-    theta_b = 0;  
-    Tcline =  0;  
+    theta_s = 3.0;  
+    theta_b = 0.4;  
+    Tcline =  50.0;  
 
 %5) Enter value of h, Lm, and Mm.
 %   This info can come from a grid file or user supplied here.
@@ -72,7 +71,7 @@
     get_grid = 1;    %<--- put a 1 or 0 here
   
     if (get_grid)
-       grid_file='ocean_wetdry_slope_chan_grd.nc'    %<-enter name of grid here
+       grid_file='joe_tc_grd.nc'    %<-enter name of grid here
 
 %
 % Get some grid info, do not change this.
@@ -144,7 +143,7 @@
     for j=1:eta_rho
       for i=1:xi_rho
         for time=1:length(init_time)
-          zeta(time,j,i) = -10;
+          zeta(time,j,i) = 0;
         end
       end
     end
@@ -194,8 +193,8 @@
       for i=1:xi_rho
         for time=1:length(init_time)
           for k=1:N
-            salt(time,k,j,i) = 30;
-            temp(time,k,j,i) = 10;
+            salt(time,k,j,i) = 35;
+            temp(time,k,j,i) = 18+11*exp(z_r(k,j,i)/100);
           end
         end
       end
@@ -204,7 +203,7 @@
 
 %7) Enter number of mud sediments (NCS) and number of sand sediments (NNS).
 %   These values should be the same as in mod_param.F
-    NCS = 1;   %number of cohesive sed classes
+    NCS = 0;   %number of cohesive sed classes
     NNS = 1;   %number of non-cohesive sed classes
 %
 % calc sed parameters. Do not alter.
@@ -219,14 +218,14 @@
 %9) Sediment class properties (in order, mud first then sand).
 %  These values should coincide with your sediment.in file.
   mud_Srho=ones(1,NCS)*2650;        %kg m-3, NCS values
-  mud_Sd50=[0.01 0.06]/1000;        %m,      NCS values
-  mud_Wsed=[0 1.0]/1000;            %m s-1,  NCS values
-  mud_tau_ce=[0.05 0.05];           %N m-2,  NCS values
-  mud_Erate=[5 5]*1e-5;             %kg m-2 s-1, NCS values
+  mud_Sd50=[0.06]/1000;             %m,      NCS values
+  mud_Wsed=[1.0]/1000;              %m s-1,  NCS values
+  mud_tau_ce=[0.05];                %N m-2,  NCS values
+  mud_Erate=[5]*1e-5;               %kg m-2 s-1, NCS values
   sand_Srho=ones(1,NNS)*2650;       %kg m-3, NNS values
-  sand_Sd50=[1.0]/1000;             %m,      NNS values
-  sand_Wsed=[1.0]/1000;             %m s-1,  NNS values
-  sand_tau_ce=[0.07];               %N m-2,  NNS values
+  sand_Sd50=[0.2]/1000;             %m,      NNS values
+  sand_Wsed=[27]/1000;              %m s-1,  NNS values
+  sand_tau_ce=[0.19];               %N m-2,  NNS values
   sand_Erate=[1]*1e-5;              %kg m-2 s-1, NNS values
 %
 % make some combined arrays.  Do not alter.
@@ -284,9 +283,9 @@ for k=1:Nbed
   for j=1:eta_rho
     for i=1:xi_rho
       for time=1:length(init_time)
-        bed_thickness(time,k,j,i) = 0.1;
+        bed_thickness(time,k,j,i) = 1.0;
         bed_age(time,k,j,i)       = init_time(1);
-        bed_porosity(time,k,j,i)  = 0.9;
+        bed_porosity(time,k,j,i)  = 0.5;
         bed_biodiff(time,k,j,i)   = 0.0;
       end
     end
@@ -312,8 +311,8 @@ end
 %
 % for sand
 %
-for isand=1:NNS
- count=['0',num2str(isand)];
+for idsed=1:NNS
+ count=['0',num2str(idsed)];
  count=count(end-1:end);
   for k=1:Nbed
     for j=1:eta_rho
