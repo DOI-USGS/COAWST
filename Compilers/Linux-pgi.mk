@@ -128,17 +128,17 @@ endif
 ifdef USE_WRF
            FFLAGS += -I$(MCT_INCDIR)
              LIBS += -L$(MCT_LIBDIR)
-             LIBS += Atmosphere/WRF/main/libwrflib.a
-             LIBS += Atmosphere/WRF/external/io_netcdf/libwrfio_nf.a
-#             LIBS += Atmosphere/WRF/external/RSL/RSL/librsl.a
-             LIBS += Atmosphere/WRF/external/RSL_LITE/librsl_lite.a
-             LIBS += Atmosphere/WRF/external/io_grib1/libio_grib1.a
-             LIBS += Atmosphere/WRF/external/io_grib_share/libio_grib_share.a
-             LIBS += Atmosphere/WRF/external/io_int/libwrfio_int.a
-             LIBS += Atmosphere/WRF/external/esmf_time_f90/libesmf_time.a
-             LIBS += Atmosphere/WRF/main/libWRF.a
-             LIBS += Atmosphere/WRF/frame/module_internal_header_util.o
-             LIBS += Atmosphere/WRF/frame/pack_utils.o
+             LIBS += WRF/main/libwrflib.a
+             LIBS += WRF/external/io_netcdf/libwrfio_nf.a
+#            LIBS += WRF/external/RSL/RSL/librsl.a
+             LIBS += WRF/external/RSL_LITE/librsl_lite.a
+             LIBS += WRF/external/io_grib1/libio_grib1.a
+             LIBS += WRF/external/io_grib_share/libio_grib_share.a
+             LIBS += WRF/external/io_int/libwrfio_int.a
+             LIBS += WRF/external/esmf_time_f90/libesmf_time.a
+             LIBS += WRF/main/libWRF.a
+             LIBS += WRF/frame/module_internal_header_util.o
+             LIBS += WRF/frame/pack_utils.o
 endif
 
        clean_list += ifc* work.pc*

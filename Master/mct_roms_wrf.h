@@ -46,7 +46,7 @@
       integer, allocatable  :: start(:)
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       character (len=70)    :: nc_name
-      character (len=200)   :: avstring
+      character (len=66)   :: avstring
 !
 !-----------------------------------------------------------------------
 !  Compute lower and upper bounds over a particular domain partition or
@@ -94,7 +94,7 @@
 !
 !  Initialize MCT coupled model registry.
 !
-      CALL MCTWorld_init (Nmodels, MPI_COMM_WORLD, OCN_COMM_WORLD,      &
+      CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, OCN_COMM_WORLD,  &
      &                    OCNid)
 #endif
 #ifdef MCT_INTERP_OC2AT
@@ -108,7 +108,7 @@
 !
       IF (Myrank.eq.MyMaster) THEN
        nc_name=AP1name(ng)
-       call get_sparse_matrix (ng, nc_name, num_sparse_elems,          &
+       call get_sparse_matrix (ng, nc_name, num_sparse_elems,           &
      &                          src_grid_dims, dst_grid_dims)
 !
 ! Init the sparse matrix.
@@ -119,11 +119,11 @@
 ! Create sparse matrix.
 !
         call SparseMatrix_init(sMatA,nRows,nCols,num_sparse_elems)
-        call SparseMatrix_importGRowInd(sMatA, sparse_rows,              &
+        call SparseMatrix_importGRowInd(sMatA, sparse_rows,             &
      &                                  size(sparse_rows))
-        call SparseMatrix_importGColInd(sMatA, sparse_cols,              &
+        call SparseMatrix_importGColInd(sMatA, sparse_cols,             &
      &                                  size(sparse_cols))
-        call SparseMatrix_importMatrixElts(sMatA, sparse_weights,        &
+        call SparseMatrix_importMatrixElts(sMatA, sparse_weights,       &
      &                                     size(sparse_weights))
 !
 ! Deallocate arrays.
@@ -169,11 +169,11 @@
 ! Create sparse matrix.
 !
         call SparseMatrix_init(sMatO,nRows,nCols,num_sparse_elems)
-        call SparseMatrix_importGRowInd(sMatO, sparse_rows,              &
+        call SparseMatrix_importGRowInd(sMatO, sparse_rows,             &
      &                                  size(sparse_rows))
-        call SparseMatrix_importGColInd(sMatO, sparse_cols,              &
+        call SparseMatrix_importGColInd(sMatO, sparse_cols,             &
      &                                  size(sparse_cols))
-        call SparseMatrix_importMatrixElts(sMatO, sparse_weights,        &
+        call SparseMatrix_importMatrixElts(sMatO, sparse_weights,       &
      &                                  size(sparse_weights))
 !
 ! Deallocate arrays.
@@ -306,19 +306,19 @@
 !  Initialize attribute vector holding the export data code strings of
 !  the atmosphere model.
 !
-      avstring='PSFC'
-      avstring=avstring//':RELH'
-      avstring=avstring//':T2'
-      avstring=avstring//':U10'
-      avstring=avstring//':V10'
-      avstring=avstring//':CLDFRA'
-      avstring=avstring//':RAIN'
-      avstring=avstring//':SWDOWN'
-      avstring=avstring//':GLW'
-      avstring=avstring//':USTRESS'
-      avstring=avstring//':VSTRESS'
-      avstring=avstring//':LH'
-      avstring=avstring//':HFX'
+      avstring(1:4)='PSFC'
+      avstring(5:9)=':RELH'
+      avstring(10:12)=':T2'
+      avstring(13:16)=':U10'
+      avstring(17:20)=':V10'
+      avstring(21:27)=':CLDFRA'
+      avstring(28:32)=':RAIN'
+      avstring(33:39)=':SWDOWN'
+      avstring(40:43)=':GLW'
+      avstring(44:51)=':USTRESS'
+      avstring(52:59)=':VSTRESS'
+      avstring(60:62)=':LH'
+      avstring(63:66)=':HFX'
 !
 #ifdef MCT_INTERP_OC2AT
 !
@@ -455,20 +455,31 @@
 !
 !  Imported variable declarations.
 !
+#ifdef DISTRIBUTE
+# ifdef EW_PERIODIC
+      logical :: EWperiodic=.TRUE.
+# else
+      logical :: EWperiodic=.FALSE.
+# endif
+# ifdef NS_PERIODIC
+      logical :: NSperiodic=.TRUE.
+# else
+      logical :: NSperiodic=.FALSE.
+# endif
+#endif
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
 !
 !  Local variable declarations.
 !
       integer :: Istr, Iend, Jstr, Jend
+      integer :: IstrT, IendT, JstrT, JendT
       integer :: IstrR, IendR, JstrR, JendR, IstrU, JstrV
       integer :: Asize, Iimport, Iexport, MyError
-      integer :: gtype, i, id, ifield, j, status
+      integer :: gtype, i, id, ifield, j, ij,  status
 
-      real(r8) :: add_offset, scale
+      real(r8) :: add_offset, cff, scale, ramp
       real(r8) :: RecvTime, SendTime, buffer(2), wtime(2)
-
-      real(r8) :: my_wtime
 
       real(r8), pointer :: A(:)
 
@@ -486,6 +497,10 @@
       Iend=BOUNDS(ng)%Iend(tile)
       Jstr=BOUNDS(ng)%Jstr(tile)
       Jend=BOUNDS(ng)%Jend(tile)
+      IstrT=BOUNDS(ng)%IstrT(tile)
+      IendT=BOUNDS(ng)%IendT(tile)
+      JstrT=BOUNDS(ng)%JstrT(tile)
+      JendT=BOUNDS(ng)%JendT(tile)
 !
       IF (WESTERN_EDGE) THEN
         IstrR=BOUNDS(ng)%Istr(tile)-1
@@ -536,6 +551,10 @@
           WRITE (stdout,10) 'atmosphere model, MyError = ', MyError
         END IF
         CALL finalize_ocn2atm_coupling
+      ELSE
+        IF (Master) THEN
+          WRITE (stdout,'a') 'ROMS recv Atm fields'
+        END IF
       END IF
 !
 !  Set ramp coefficient.
@@ -556,7 +575,7 @@
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          Pair(i,j)=A(ij)*cff
+          FORCES(ng)%Pair(i,j)=A(ij)*cff
         END DO
       END DO
 #endif
@@ -572,7 +591,7 @@
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          Hair(i,j)=A(ij)*cff
+          FORCES(ng)%Hair(i,j)=A(ij)*cff
         END DO
       END DO
 !
@@ -583,7 +602,7 @@
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          Tair(i,j)=A(ij)
+          FORCES(ng)%Tair(i,j)=A(ij)
         END DO
       END DO
 #endif
@@ -596,7 +615,7 @@
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          Uwind(i,j)=A(ij)
+          FORCES(ng)%Uwind(i,j)=A(ij)
         END DO
       END DO
 !
@@ -607,7 +626,7 @@
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          Vwind(i,j)=A(ij)
+          FORCES(ng)%Vwind(i,j)=A(ij)
         END DO
       END DO
 #endif
@@ -620,7 +639,7 @@
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          cloud(i,j)=A(ij)
+          FORCES(ng)%cloud(i,j)=A(ij)
         END DO
       END DO
 #endif
@@ -634,19 +653,19 @@
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          rain(i,j)=A(ij)*cff
+          FORCES(ng)%rain(i,j)=A(ij)*cff
         END DO
       END DO
 !
 !  Long wave radiation          (Celsius m/s)
 !
       CALL AttrVect_exportRAttr (atm2ocn_AV, "GLW", A, Asize)
-      Hscale=-1.0_r8/(rho0*Cp)
+      cff=-1.0_r8/(rho0*Cp)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          lrflx(i,j)=A(ij)*Hscale
+          FORCES(ng)%lrflx(i,j)=A(ij)*cff
         END DO
       END DO
 # ifdef RUOYING_CASE1
@@ -658,7 +677,7 @@
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          lhflx(i,j)=A(ij)
+          FORCES(ng)%lhflx(i,j)=A(ij)
         END DO
       END DO
 !
@@ -669,7 +688,7 @@
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          shflx(i,j)=A(ij)
+          FORCES(ng)%shflx(i,j)=A(ij)
         END DO
       END DO
 # endif
@@ -679,13 +698,12 @@
 !  Short wave radiation          (Celsius m/s)
 !
       CALL AttrVect_exportRAttr (atm2ocn_AV, "SWDOWN", A, Asize)
-!      Hscale=-1.0_r8/(rho0*Cp)
-      Hscale=1.0_r8/(rho0*Cp)   ! changed RHE 03/30/08
+      cff=1.0_r8/(rho0*Cp)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          srflx(i,j)=A(ij)*Hscale
+          FORCES(ng)%srflx(i,j)=A(ij)*cff
         END DO
       END DO
 #endif
@@ -720,54 +738,6 @@
 !
 !  Apply boundary conditions.
 !
-#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  Pair)
-#endif
-#if defined BULK_FLUXES || defined ECOSIM || \
-   (defined SHORTWAVE && defined ANA_SRFLUX)
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  Hair)
-       CALL bc_r2d_tile (ng, tile,                                      &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  Tair)
-#endif
-#if defined BULK_FLUXES || defined ECOSIM
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  Uwind)
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  Vwind)
-#endif
-#ifdef CLOUDS
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  cloud)
-#endif
-#ifdef BULK_FLUXES
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  rain)
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  lrflx)
-# ifdef RUOYING_CASE1
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  lhflx)
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  shflx)
-# endif
-#endif
-#ifdef SHORTWAVE
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  srflx)
-#endif
 #if defined EW_PERIODIC || defined NS_PERIODIC
 !
 !-----------------------------------------------------------------------
@@ -777,50 +747,50 @@
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        Pair)
+     &                        FORCES(ng)%Pair)
 # endif
 # if defined BULK_FLUXES || defined ECOSIM || \
     (defined SHORTWAVE && defined ANA_SRFLUX)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        Hair)
+     &                        FORCES(ng)%Hair)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        Tair)
+     &                        FORCES(ng)%Tair)
 # endif
 # if defined BULK_FLUXES || defined ECOSIM
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        Uwind)
+     &                        FORCES(ng)%Uwind)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        Vwind)
+     &                        FORCES(ng)%Vwind)
 # endif
 # ifdef CLOUDS
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        cloud)
+     &                        FORCES(ng)%cloud)
 # endif
 # ifdef BULK_FLUXES
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        rain)
+     &                        FORCES(ng)%rain)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        lrflx)
+     &                        FORCES(ng)%lrflx)
 #  ifdef RUOYING_CASE1
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        lhflx)
+     &                        FORCES(ng)%lhflx)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        shflx)
+     &                        FORCES(ng)%shflx)
 #  endif
 # endif
 # ifdef SHORTWAVE
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        srflx)
+     &                        FORCES(ng)%srflx)
 # endif
 !      CALL exchange_u2d_tile (ng, tile,                                &
 !     &                        LBi, UBi, LBj, UBj,                      &
@@ -839,44 +809,44 @@
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    Pair)
+     &                    FORCES(ng)%Pair)
 # endif
 # if defined BULK_FLUXES || defined ECOSIM || \
     (defined SHORTWAVE && defined ANA_SRFLUX)
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    Hair, Tair)
+     &                    FORCES(ng)%Hair, FORCES(ng)%Tair)
 # endif
 # if defined BULK_FLUXES || defined ECOSIM
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    Uwind, Vwind)
+     &                    FORCES(ng)%Uwind, FORCES(ng)%Vwind)
 # endif
 # ifdef CLOUDS
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    cloud)
+     &                    FORCES(ng)%cloud)
 # endif
 # ifdef BULK_FLUXES
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    rain, lrflx)
+     &                    FORCES(ng)%rain, FORCES(ng)%lrflx)
 #  ifdef RUOYING_CASE1
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    lhflx, shflx)
+     &                    FORCES(ng)%lhflx, FORCES(ng)%shflx)
 #  endif
 # endif
 # ifdef SHORTWAVE
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    srflx)
+     &                    FORCES(ng)%srflx)
 # endif
 !      CALL mp_exchange2d (ng, tile, iNLM, 2,                           &
 !     &                    LBi, UBi, LBj, UBj,                          &
@@ -898,26 +868,29 @@
 #ifdef SST_CONST
           A(ij)=29.0_r8  ! exp A. rhe 03/13/08
 #else       
-          A(ij)=t(i,j,N(ng),nstp,itemp)
+          A(ij)=OCEAN(ng)%t(i,j,N(ng),nstp(ng),itemp)
 #endif
         END DO
       END DO
-      CALL AttrVect_importRAttr (FrOCNToATMAV, "SST", A, Asize)
+      CALL AttrVect_importRAttr (ocn2atm_AV, "SST", A, Asize)
 !
 !  Send ocean fields to atmosphere model.
 !
 #ifdef MCT_INTERP_OC2AT
-        call MCT_MatVecMul(ocn2atm_AV,O2AMatPlus,ocn2atm_AV2)
-        CALL MCT_Send (ocn2atm_AV2, ROMStoWRF, MyError)
+      call MCT_MatVecMul(ocn2atm_AV,O2AMatPlus,ocn2atm_AV2)
+      CALL MCT_Send (ocn2atm_AV2, ROMStoWRF, MyError)
 #else
-        CALL MCT_Send (ocn2atm_AV, ROMStoWRF, MyError)
+      CALL MCT_Send (ocn2atm_AV, ROMStoWRF, MyError)
 #endif
-        IF (MyError.ne.0) THEN
-          IF (Master) THEN
-            WRITE (stdout,20) 'atmosphere model, MyError = ', MyError
-          END IF
-          exit_flag=2
-          RETURN
+      IF (MyError.ne.0) THEN
+        IF (Master) THEN
+          WRITE (stdout,20) 'atmosphere model, MyError = ', MyError
+        END IF
+        exit_flag=2
+        RETURN
+      ELSE
+        IF (Master) THEN
+          WRITE (stdout,'a') 'ROMS sent data to WRF '
         END IF
       END IF
 !

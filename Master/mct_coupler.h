@@ -110,7 +110,7 @@
       pelast=peWAV_last
 #endif
 #ifdef AIR_OCEAN
-      peATM_frst=peWAV_last+1
+      peATM_frst=pelast+1
       peATM_last=peATM_frst+NnodesATM-1
       pelast=peATM_last
 #endif

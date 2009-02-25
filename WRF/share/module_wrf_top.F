@@ -348,7 +348,7 @@ CONTAINS
    ENDIF
 
 !jcw
-   CALL finalize_ocean_coupling("finalizing")
+   CALL finalize_ocean_coupling
 
    END SUBROUTINE wrf_finalize
 

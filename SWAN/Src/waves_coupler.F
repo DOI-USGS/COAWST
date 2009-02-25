@@ -460,7 +460,7 @@
 !  Initialize attribute vector holding the export data code string of
 !  the atmosphere model.
 !
-      CALL AttrVect_init (atm2wav_AV, rlist="UWind:VWind",lsize=gsmsize)
+      CALL AttrVect_init (atm2wav_AV, rlist="U10:V10",lsize=gsmsize)
       CALL AttrVect_zero (atm2wav_AV)
 !
 ! Initialize a router to the WRF component.
@@ -475,12 +475,12 @@
 !  processor.
 !
       Asize=GlobalSegMap_lsize(GSMapWRF, WAV_COMM_WORLD)
-      CALL AttrVect_init (atm2wav_AV2, rlist="UWind:VWind",             &
+      CALL AttrVect_init (atm2wav_AV2, rlist="U10:V10",                 &
      &                    lsize=Asize)
       CALL AttrVect_zero (atm2wav_AV2)
 !
       Asize=GlobalSegMap_lsize(GSMapSWAN, WAV_COMM_WORLD)
-      CALL AttrVect_init (atm2wav_AV, rlist="UWind:VWind",              &
+      CALL AttrVect_init (atm2wav_AV, rlist="U10:V10",                  &
      &                    lsize=Asize)
       CALL AttrVect_zero (atm2wav_AV)
 !
@@ -652,8 +652,7 @@
 !
         CALL MCT_Send (wav2ocn_AV, SWANtoROMS, MyError)
         IF (MYRANK.EQ.0) THEN
-          WRITE (*,*) '== SWAN sent wave fields to ROMS and Myerror= ', &
-     &                MyError
+          WRITE (*,*) '== SWAN sent wave fields to ROMS'
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling send fail swancplr, MyStatus= ', MyError
@@ -668,8 +667,7 @@
 !
         CALL MCT_Recv (ocn2wav_AV, SWANtoROMS, MyError)
         IF (MYRANK.EQ.0) THEN
-          WRITE (*,*) '== SWAN recvd ocean fields and Myerror= ',       &
-     &                MyError
+          WRITE (*,*) '== SWAN recvd ocean fields'
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
@@ -687,8 +685,7 @@
         CALL MCT_Recv (atm2wav_AV, WRFtoSWAN, MyError)
 #  endif
         IF (MYRANK.EQ.0) THEN
-          WRITE (*,*) '== SWAN recvd atm fields and Myerror= ',         &
-     &                 MyError
+          WRITE (*,*) '== SWAN recvd atm fields'
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
@@ -799,7 +796,7 @@
 !
 !  U-wind.
 !
-        CALL AttrVect_exportRAttr(atm2wav_AV,"UWind",avdata,gsmsize)
+        CALL AttrVect_exportRAttr(atm2wav_AV,"U10",avdata,gsmsize)
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
@@ -811,7 +808,7 @@
 !
 !  V-wind.
 !
-        CALL AttrVect_exportRAttr(atm2wav_AV,"VWind",avdata,gsmsize)
+        CALL AttrVect_exportRAttr(atm2wav_AV,"V10",avdata,gsmsize)
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend

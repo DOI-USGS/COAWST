@@ -109,7 +109,7 @@
       integer :: ids, ide, jds, jde
 
       integer, pointer :: start(:), length(:)
-      character (len=200)   :: avstring
+      character (len=66)   :: avstring
 
 !-----------------------------------------------------------------------
 !  Begin initialization phase.
@@ -152,19 +152,20 @@
 !
 !  Initialize attribute vector holding the export data code strings of
 !  the atmosphere model.
-      avstring='PSFC'
-      avstring=avstring//':RELH'
-      avstring=avstring//':T2'
-      avstring=avstring//':U10'
-      avstring=avstring//':V10'
-      avstring=avstring//':CLDFRA'
-      avstring=avstring//':RAIN'
-      avstring=avstring//':SWDOWN'
-      avstring=avstring//':GLW'
-      avstring=avstring//':USTRESS'
-      avstring=avstring//':VSTRESS'
-      avstring=avstring//':LH'
-      avstring=avstring//':HFX'
+      avstring(1:4)='PSFC'
+      avstring(5:9)=':RELH'
+      avstring(10:12)=':T2'
+      avstring(13:16)=':U10'
+      avstring(17:20)=':V10'
+      avstring(21:27)=':CLDFRA'
+      avstring(28:32)=':RAIN'
+      avstring(33:39)=':SWDOWN'
+      avstring(40:43)=':GLW'
+      avstring(44:51)=':USTRESS'
+      avstring(52:59)=':VSTRESS'
+      avstring(60:62)=':LH'
+      avstring(63:66)=':HFX'
+
       CALL AttrVect_init (atm2ocn_AV,rlist=TRIM(avstring),lsize=gsmsize)
       CALL AttrVect_zero (atm2ocn_AV)
 !
@@ -182,7 +183,7 @@
 !  Initialize attribute vector holding the export data code string of
 !  the wave model.
 !
-      CALL AttrVect_init (atm2wav_AV, rlist="UWind:VWind",lsize=gsmsize)
+      CALL AttrVect_init (atm2wav_AV, rlist="U10:V10",lsize=gsmsize)
       CALL AttrVect_zero (atm2wav_AV)
 !
 ! Initialize a router to the SWAN component.
@@ -194,7 +195,7 @@
       deallocate (length)
 
       RETURN
-      END SUBROUTINE initialize_atm2ocn_coupling
+      END SUBROUTINE initialize_ocean_coupling
 
       SUBROUTINE atm2ocn_coupling (grid)
 !
@@ -244,7 +245,7 @@
       integer, dimension(MPI_STATUS_SIZE,4) :: status
 
       real, parameter :: eps=1.0e-10
-      real(r8), pointer :: AA(:)
+      real, pointer :: AA(:)
       real :: cff1, cff2, cff3, rnum, rden, c04, c05
 !  Set grid range.
 !
@@ -449,24 +450,22 @@
 !
       CALL MCT_SEND (atm2ocn_AV,RoutWRFtoROMS,MyError)
       IF (MYRANK.EQ.0) THEN
-        WRITE (*,*) '== WRF sent atm fields to ROMS and Myerror= ',     &
-     &              MyError
+        WRITE (*,*) '== WRF sent atm fields to ROMS'
       ENDIF
       IF (MyError.ne.0) THEN
         WRITE (*,*) 'coupling send fail atm_coupler, error= ', MyError
-        CALL finalize_ocean_coupling ("Coupling failed atm_coupler")
+        CALL finalize_ocean_coupling
       END IF
 !
 !  Schedule receiving fields from ocean model.
 !
         CALL MCT_Recv (ocn2atm_AV,RoutWRFtoROMS,MyError)
         IF (MYRANK.EQ.0) THEN
-          WRITE (*,*) '== WRF recvd ocean fields and Myerror= ',        &
-     &                MyError
+          WRITE (*,*) '== WRF recvd ocean fields'
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling fail wrfcplr, MyStatus= ', MyError
-          CALL finalize_ocean_coupling ("Coupling failed wrfcplr")
+          CALL finalize_ocean_coupling
         END IF
 !
 !  SST (Convert to K).
@@ -489,12 +488,11 @@
 # if defined SWAN_COUPLING
       CALL MCT_SEND (atm2wav_AV,RoutWRFtoSWAN,MyError)
       IF (MYRANK.EQ.0) THEN
-        WRITE (*,*) '== WRF sent atm fields to SWAN and Myerror= ',     &
-     &               MyError
+        WRITE (*,*) '== WRF sent atm fields to SWAN'
       ENDIF
       IF (MyError.ne.0) THEN
         WRITE (*,*) 'coupling send fail atm_coupler, error= ', MyError
-        CALL finalize_ocean_coupling ("Coupling failed atm_coupler")
+        CALL finalize_ocean_coupling
       END IF
 # endif
 !
@@ -504,7 +502,7 @@
       RETURN
       END SUBROUTINE atm2ocn_coupling
 
-      SUBROUTINE finalize_atm2ocn_coupling
+      SUBROUTINE finalize_ocean_coupling
 !
 !=======================================================================
 !                                                                    ===
@@ -528,6 +526,6 @@
       CALL GlobalSegMap_clean (GSMapWRF)
       CALL MCTWorld_clean ()
 
-      END SUBROUTINE finalize_atm2ocn_coupling
+      END SUBROUTINE finalize_ocean_coupling
 #endif
       END MODULE atm_coupler_mod

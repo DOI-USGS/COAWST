@@ -71,7 +71,7 @@ ROMS_APPLICATION ?= JOE_TC
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
 
-MY_HEADER_DIR ?= /raid1/jcwarner/Models/COAWST/Projects/JOE_TC
+MY_HEADER_DIR ?= /raid2/jcwarner/Projects/JOE_TC/coawst_test/Projects/JOE_TC
 #MY_HEADER_DIR ?= /raid1/jcwarner/Projects/Isabel/run105/Projects/Isabel
 #MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST_GS/Projects/LIP
 #MY_HEADER_DIR ?= /cygdrive/d/data/models/roms/roms_sed_rutgers_cygwin/branches/coawst/ROMS/Include
@@ -85,7 +85,7 @@ MY_HEADER_DIR ?= /raid1/jcwarner/Models/COAWST/Projects/JOE_TC
 #  Notice that a set analytical expressions templates can be found in
 #  "User/Functionals".
 
-MY_ANALYTICAL_DIR ?= /raid1/jcwarner/Models/COAWST/Projects/JOE_TC
+MY_ANALYTICAL_DIR ?= /raid2/jcwarner/Projects/JOE_TC/coawst_test/Projects/JOE_TC
 #MY_ANALYTICAL_DIR ?= /raid1/jcwarner/Projects/Isabel/run105/Projects/Isabel
 #MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/COAWST_GS/Projects/LIP
 #MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/roms/roms_sed_rutgers_cygwin/branches/coawst/ROMS/Functionals
@@ -546,7 +546,7 @@ endif
 .PHONY: tarfile
 
 tarfile:
-		tar --exclude=".svn" --exclude Output -cvf roms-3_0.tar *
+		tar --exclude=".svn" --exclude Output -cvf coawst_test.tar *
 
 .PHONY: zipfile
 

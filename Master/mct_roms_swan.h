@@ -644,7 +644,9 @@
         exit_flag=2
         RETURN
       ELSE
-        WRITE (stdout,11) 'ROMS recv Wave fields and error = ', MyError
+        IF (Master) THEN
+          WRITE (stdout,'a') 'ROMS recv Wave fields'
+        END IF
       END IF
 !
 !  Set ramp coefficient.
@@ -1012,7 +1014,9 @@
         exit_flag=2
         RETURN
       ELSE
-        WRITE (stdout,11) 'ROMS sent data to SWAN and error = ', MyError
+        IF (Master) THEN
+          WRITE (stdout,'a') 'ROMS sent data to SWAN'
+        END IF
       END IF
 !
 !  Deallocate communication arrays.
@@ -1021,7 +1025,6 @@
 !
  10   FORMAT (' OCN2WAV_COUPLING - error while receiving fields from ', &
      &        a, i4)
- 11   FORMAT ( a, i4)
  20   FORMAT (' OCN2WAV_COUPLING - error while sending fields to: ',    &
      &        a, i4)
       RETURN
