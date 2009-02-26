@@ -17,8 +17,8 @@
 
 %1) set your case here to = 1.
 WET_DRY_SLOPE_CHAN=0;
-JOE_TC=0;
-JOE_TC_fine=1;
+JOE_TC=1;
+JOE_TC_fine=0;
 MY_APP=0;
 
 if (WET_DRY_SLOPE_CHAN)
