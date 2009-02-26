@@ -106,7 +106,7 @@
       integer :: MyError, MyRank
       integer :: npoints, gsmsize, nprocs, localsize
       integer :: j, jc, Isize, Jsize
-      integer :: ids, ide, jds, jde
+      integer :: is, ie, js, je
 
       integer, pointer :: start(:), length(:)
       character (len=66)   :: avstring
@@ -128,21 +128,27 @@
 !  of WRF. Determine non-haloed start and length arrays for this
 !  processor.
 !
-      ids = grid%sp31
-      ide = grid%ep31
-      jds = grid%sp33
-      jde = grid%ep33
+      is = grid%sp31
+      ie = grid%ep31
+      js = grid%sp33
+      je = grid%ep33
+      IF (grid%ed31.eq.ie) THEN
+        ie=ie-1
+      END IF
+      IF (grid%ed33.eq.je) THEN
+        je=je-1
+      END IF
 !
 !  Determine tile size
 !
-      Isize=ide-ids+1
-      Jsize=jde-jds+1
+      Isize=ie-is+1
+      Jsize=je-js+1
       allocate( start(Jsize) )
       allocate( length(Jsize) )
       jc=0
-      DO j=jds,jde
+      DO j=js,je
         jc=jc+1
-        start(jc)=(j-1)*grid%ed31+ids
+        start(jc)=(j-1)*(grid%ed31-1)+is
         length(jc)=Isize
       END DO
       gsmsize=Isize*Jsize
@@ -237,7 +243,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: ids, ide, jds, jde, ij
+      integer :: is, ie, js, je, ij
       integer :: MyStatus, i, j, Asize, ierr, MyRank
       integer :: MyError, MySize, indx, Istr, Iend, Jstr, Jend
       integer :: Isize, Jsize, INDXG, NPROCS, OFFSET
@@ -249,10 +255,16 @@
       real :: cff1, cff2, cff3, rnum, rden, c04, c05
 !  Set grid range.
 !
-      ids = grid%sp31
-      ide = grid%ep31
-      jds = grid%sp33
-      jde = grid%ep33
+      is = grid%sp31
+      ie = grid%ep31
+      js = grid%sp33
+      je = grid%ep33
+      IF (grid%ed31.eq.ie) THEN
+        ie=ie-1
+      END IF
+      IF (grid%ed33.eq.je) THEN
+        je=je-1
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Send atmosphere fields to ROMS.
@@ -275,8 +287,8 @@
 !     PSFC       Surface atmospheric pressure (Pa).
 !
       ij=0
-      DO j=jds,jde
-        DO i=ids,ide
+      DO j=js,je
+        DO i=is,ie
           ij=ij+1
           AA(ij)=grid%PSFC(i,j)
         END DO
@@ -287,8 +299,8 @@
 !     RELH       Surface air relative humidity (-).
 !
       ij=0
-      DO j=jds,jde
-        DO i=ids,ide
+      DO j=js,je
+        DO i=is,ie
 !
 !         Calculate 2-m pressure using hypsometric equation. 
 !         Assume temp at 2m = temp at 0m.
@@ -316,8 +328,8 @@
 !     T2         Surface 2m air temperature (Convert to C).
 !
       ij=0
-      DO j=jds,jde
-        DO i=ids,ide
+      DO j=js,je
+        DO i=is,ie
           ij=ij+1
           AA(ij)=grid%T2(i,j)-273.15
         END DO
@@ -327,8 +339,8 @@
 !     U10        U-Wind speed at 10 m (m s-1).
 !
       ij=0
-      DO j=jds,jde
-        DO i=ids,ide
+      DO j=js,je
+        DO i=is,ie
           ij=ij+1
           AA(ij)=grid%U10(i,j)
         END DO
@@ -341,8 +353,8 @@
 !     V10        V-Wind speed at 10 m (m s-1).
 !
       ij=0
-      DO j=jds,jde
-        DO i=ids,ide
+      DO j=js,je
+        DO i=is,ie
           ij=ij+1
           AA(ij)=grid%V10(i,j)
         END DO
@@ -355,8 +367,8 @@
 !     CLDFRA     Cloud fraction (--, 0-1.0).
 !
       ij=0
-      DO j=jds,jde
-        DO i=ids,ide
+      DO j=js,je
+        DO i=is,ie
           ij=ij+1
           AA(ij)=grid%CLDFRA(i,1,j)
         END DO
@@ -366,8 +378,8 @@
 !     RAIN       Precipitation (Convert to m s-1).
 !
       ij=0
-      DO j=jds,jde
-        DO i=ids,ide
+      DO j=js,je
+        DO i=is,ie
           ij=ij+1
           AA(ij)=0.001*(grid%RAINCV(i,j)+grid%RAINNCV(i,j))
         END DO
@@ -377,8 +389,8 @@
 !     SWDOWN     Short wave radiation (W m-2).
 !
       ij=0
-      DO j=jds,jde
-        DO i=ids,ide
+      DO j=js,je
+        DO i=is,ie
           ij=ij+1
           AA(ij)=grid%SWDOWN(i,j)
         END DO
@@ -388,8 +400,8 @@
 !     GLW        Long wave raditaion (W m-2).
 !
       ij=0
-      DO j=jds,jde
-        DO i=ids,ide
+      DO j=js,je
+        DO i=is,ie
           ij=ij+1
           AA(ij)=grid%GLW(i,j)
         END DO
@@ -399,8 +411,8 @@
 !     USTRESS    Surface u-stress (N m-2).
 !
       ij=0
-      DO j=jds,jde
-        DO i=ids,ide
+      DO j=js,je
+        DO i=is,ie
           cff1=1.0/(grid%em_alt(i,1,j)+eps)
           cff2=1.0/((grid%em_u_2(i,1,j)**2+grid%em_v_2(i,1,j)**2)**0.5+ &
      &               eps)
@@ -413,8 +425,8 @@
 !     VSTRESS    Surface v-stress (N m-2).
 !
       ij=0
-      DO j=jds,jde
-        DO i=ids,ide
+      DO j=js,je
+        DO i=is,ie
           cff1=1.0/(grid%em_alt(i,1,j)+eps)
           cff2=1.0/((grid%em_u_2(i,1,j)**2+grid%em_v_2(i,1,j)**2)**0.5+ &
      &               eps)
@@ -427,8 +439,8 @@
 !     LH     Latent heat flux (W m-2).
 !
       ij=0
-      DO j=jds,jde
-        DO i=ids,ide
+      DO j=js,je
+        DO i=is,ie
           ij=ij+1
           AA(ij)=grid%LH(i,j)
         END DO
@@ -438,8 +450,8 @@
 !     HFX     Sensible heat flux (W m-2).
 !
       ij=0
-      DO j=jds,jde
-        DO i=ids,ide
+      DO j=js,je
+        DO i=is,ie
           ij=ij+1
           AA(ij)=grid%HFX(i,j)
         END DO
@@ -472,8 +484,8 @@
 !
       CALL AttrVect_exportRAttr (ocn2atm_AV, "SST", AA, Asize)
       ij=0
-      DO j=jds,jde
-        DO i=ids,ide
+      DO j=js,je
+        DO i=is,ie
           ij=ij+1
           IF (AA(ij).gt.0.10) THEN
               grid%sst(i,j)=(AA(ij)+273.15)*(1-grid%landmask(i,j))+     &
