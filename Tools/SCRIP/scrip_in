@@ -1,0 +1,16 @@
+&remap_inputs
+    num_maps = 2
+    grid1_file = 'ROMS_USeast_grd3_scrip.nc'
+    grid2_file = 'WRF_USeast_grd3_scrip.nc'
+    interp_file1 = 'ROMS_USeast_grd3_to WRF_USeast_grd3_weights.nc'
+    interp_file2 = 'WRF_USeast_grd3_to_ROMS_USeast_grd3_weights.nc'
+    map1_name = 'ROMS to WRf distwgt Mapping'
+    map2_name = 'WRF to ROMS distwgt Mapping'
+    map_method = 'distwgt'
+    normalize_opt = 'frac'
+    output_opt = 'scrip'
+    restrict_type = 'latitude'
+    num_srch_bins = 90 
+    luse_grid1_area = .false.
+    luse_grid2_area = .false.
+/
