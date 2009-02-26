@@ -1,24 +1,26 @@
 % create_roms_grid.m
 %
-% input:         x = array x values
-%                y = array of y values
-%                depth = array of depth values
-%                angle = assumed to = 0.
-%                ncfile_name = name for the grid to be produced.
-% output:        netcdf roms grid.
+% input:         See below.
+% output:        Netcdf roms grid.
 %
-% jcwarner March 3, 2007
+% This is intended to be a simple roms grid, typically
+% rectilinear. For more complicated grids use seagrid of
+% something else.
+%
+% jcwarner 21Feb2009
 %
 
 %%%%%%%%%%%%% START OF USER SECTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% select your app and then fill in steps 2-7 for that application %
+% Select your app and then fill in steps 2-7 for that application.
+% Required values are :
+% x, y, dx, dy, depth, angle, mask, f, and file name.
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %1) set your case here to = 1.
 WET_DRY_SLOPE_CHAN=0;
-JOE_TC=1;
-JOE_TC_fine=0;
+JOE_TC=0;
+JOE_TC_coarse=1;
 MY_APP=0;
 
 if (WET_DRY_SLOPE_CHAN)
@@ -42,11 +44,11 @@ if (WET_DRY_SLOPE_CHAN)
     fname='ocean_wetdry_slope_chan_grd.nc';
 elseif (JOE_TC)
   %2) enter x and y coordinates of rho points
-    ncellsx=200;  dx=12000;
-    ncellsy=150;  dy=12000;
+    ncellsx=199;  dx=12000;
+    ncellsy=149;  dy=12000;
     x=[-dx/2:dx:dx*(ncellsx-1)];
     y=[-dy/2:dy:dy*(ncellsy-1)];
-  % 
+%
     x=repmat(x,length(y),1);
     y=repmat(y',1,length(x));
   %3) set depth 
@@ -66,20 +68,20 @@ elseif (JOE_TC)
     f=zeros(size(depth))+4.988e-5; %20N
   %7) enter output file name
     fname='joe_tc_grd.nc';
-elseif (JOE_TC_fine)
+elseif (JOE_TC_coarse)
   %2) enter x and y coordinates of rho points
-    ncellsx=400;  dx=6000;
-    ncellsy=300;  dy=6000;
-    x=[-dx/2:dx:dx*(ncellsx-1)];
-    y=[-dy/2:dy:dy*(ncellsy-1)];
+    ncellsx=100;  dx=24000;
+    ncellsy=75;   dy=24000;
+    x=[-dx/2:dx:dx*(ncellsx-1)]-48*111000;
+    y=[-dy/2:dy:dy*(ncellsy-1)]+12.4*111000;
   % 
     x=repmat(x,length(y),1);
     y=repmat(y',1,length(x));
   %3) set depth 
     depth=zeros(size(x))+10;
-    depth(:,98:137)=repmat(10+5*([98:137]-97),size(x,1),1);
-    depth(:,138:177)=repmat(200+20*([138:177]-137),size(x,1),1);
-    depth(:,178:end)=1000;
+    depth(:,26:35)=repmat(10+20*([26:35]-25),size(x,1),1);
+    depth(:,36:45)=repmat(200+80*([36:45]-35),size(x,1),1);
+    depth(:,46:end)=1000;
   %4) set grid angle
     roms_angle=zeros(size(depth));
   %5) set masking
@@ -91,7 +93,7 @@ elseif (JOE_TC_fine)
   %6) set coriolis f
     f=zeros(size(depth))+4.988e-5; %20N
   %7) enter output file name
-    fname='joe_tc_fine_grd.nc';
+    fname='joe_tc_coarse_grd.nc';
 elseif (MY_APP)
   disp('set MY_APP=1 and then put your stuff in here')
 end
@@ -100,7 +102,7 @@ end
 
 %create roms grid
   rho.x=x;
-  rho.y=y;
+  rho.y=y;  
   rho.dx=dx;
   rho.dy=dy;
   rho.depth=depth;

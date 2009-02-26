@@ -48,7 +48,8 @@
 
 %1) Enter name of netcdf initial file to be created.
 %   If it already exists it will be overwritten!!.
-     init_file='joe_tc_ocean_init.nc';
+%    init_file='joe_tc_ocean_init.nc';
+     init_file='joe_tc_coarse_ocean_init.nc';
 
 %2) Enter start time of initial file, in seconds.
 %   This time needs to be consistent with model time (ie dstart and time_ref).
@@ -71,7 +72,8 @@
     get_grid = 1;    %<--- put a 1 or 0 here
   
     if (get_grid)
-       grid_file='joe_tc_grd.nc'    %<-enter name of grid here
+%      grid_file='joe_tc_grd.nc'    %<-enter name of grid here
+       grid_file='joe_tc_coarse_grd.nc'    %<-enter name of grid here
 
 %
 % Get some grid info, do not change this.
