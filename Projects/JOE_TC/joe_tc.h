@@ -116,7 +116,8 @@
 /* Forcing */
 #if defined WRF_COUPLING || defined SWAN_COUPLING
 # define MCT_LIB
-# undef  MCT_INTERP_OC2WV
+# undef  MCT_INTERP_WV2AT
+# undef  MCT_INTERP_OC2AT
 #endif
 #ifdef WRF_COUPLING
 # define BULK_FLUXES
