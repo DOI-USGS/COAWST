@@ -9,10 +9,10 @@
 %%%%%%%%%% BEGIN user input   %%%%%%%%%%%%
 %
 %1) Enter name of roms netcdf grid file.
-grid_file = '../../Projects/JOE_TC/joe_tc_coarse_grd.nc';
+grid_file = 'joe_tc_coarse_grd.nc';
 
 %2) Enter name of netcdf output file to use by scrip.
-out_file = '../../Projects/JOE_TC/joe_tc_coarse_roms_scrip.nc';
+out_file = 'joe_tc_coarse_roms_scrip.nc';
 
 %%%%%%%%%% END of user input   %%%%%%%%%%%%
 
@@ -33,7 +33,7 @@ end
 %create the srcip netcdf grid file
 
 nc = netcdf(out_file, 'clobber');
- 
+
 %% Global attributes:
 disp(' ## Defining Global Attributes...')
  

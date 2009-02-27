@@ -1,3 +1,23 @@
+% script scrip_masking.m
+%
+% adjusts the masking in the wrf scrip grid.
+%
+% jcw Sept 7, 2008
+%     Feb 20, 2009
+%
+
+%%%%%%%%%% BEGIN user input   %%%%%%%%%%%%
+%
+%1) Enter name of roms netcdf grid file.
+grid_file = 'joe_tc_coarse_grd.nc';
+
+%2) Enter name of netcdf output file to use by scrip.
+out_file = 'joe_tc_coarse_roms_scrip.nc';
+
+%%%%%%%%%% END of user input   %%%%%%%%%%%%
+
+
+
 
 %4) Set masking in roms2wrf file
 % determine masking for wrf grid
