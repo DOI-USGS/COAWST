@@ -22,10 +22,10 @@ ncload(grid_file)
 [MP,LP]=size(h);
 gridsize=LP*MP;
 
-if ((spherical=='F')||(spherical=='f'))
-  lon_rho=x_rho;
-  lat_rho=y_rho;
-end
+%if ((spherical=='F')||(spherical=='f'))
+%  lon_rho=x_rho;
+%  lat_rho=y_rho;
+%end
 
 %create a full set of psi points
 [x_full_grid,y_full_grid]=create_extra_rho_grid(lon_rho,lat_rho);
