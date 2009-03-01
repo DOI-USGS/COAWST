@@ -139,6 +139,7 @@
       USE M_GENARR
       USE M_PARALL
       USE mod_scalars
+      USE mod_iounits
 !
       include 'mpif.h'
 #ifdef REFINED_GRID
@@ -206,9 +207,7 @@
 !!!!!!!!!!!!!!!!!!!!!!
 !
       IF (Myrank.eq.MyMasterswan) THEN
-!      IF (INODE.EQ.MASTER) THEN
-!       nc_name=FP1name
-        nc_name='../forcings/Isabel_wrf2swan_weights_wrfgrd2.nc'
+        nc_name=A2Wname(ng)
         call get_sparse_waves_matrix (ng, nc_name, num_sparse_elems,    &
      &                          src_grid_dims, dst_grid_dims)
 !
@@ -248,9 +247,7 @@
 !!!!!!!!!!!!!!!!!!!!!!
 !
       IF (Myrank.eq.MyMasterswan) THEN
-!      IF (INODE.EQ.MASTER) THEN
-!       nc_name=FP2name
-        nc_name='../forcings/Isabel_swan2wrf_weights_USeastgrd3.nc'
+        nc_name=W2Aname(ng)
         call get_sparse_waves_matrix (ng, nc_name, num_sparse_elems,    &
      &                          src_grid_dims, dst_grid_dims)
 !
@@ -258,7 +255,6 @@
 !
         nRows=dst_grid_dims(1)*dst_grid_dims(2)
         nCols=src_grid_dims(1)*src_grid_dims(2)
-!      IF (INODE.EQ.MASTER) THEN
 !
 ! Create sparse matrix.
 !
@@ -382,12 +378,19 @@
 !  Initialize a Global Segment Map for non-haloed transfer of data
 !  for the atmosphere model.
 !
-      Jsize=dst_grid_dims(1)*dst_grid_dims(2)/nprocs
-      allocate ( start(1) )
-      allocate ( length(1) )
-      start(1)=(MyRank*Jsize)+1
-      length(1)=Jsize
-
+      Isize=INT(dst_grid_dims(1)/nprocs)
+      IF (MyRank.eq.nprocs-1) THEN
+        Isize=dst_grid_dims(1)-Isize*(nprocs-1)
+      ENDIF
+      IF (.not.allocated(start)) THEN
+        allocate ( start(1) )
+      END IF
+      IF (.not.allocated(length)) THEN
+        allocate ( length(1) )
+      END IF
+      start=(MyRank*INT(dst_grid_dims(1)/nprocs))*dst_grid_dims(2)+1
+      length=Isize*dst_grid_dims(2)
+!
       CALL GlobalSegMap_init (GSMapWRF, start, length, 0,              &
      &                        WAV_COMM_WORLD, WAVid)
       deallocate (start)
@@ -399,19 +402,6 @@
 ! Create ATM sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
 !
-
-!      IF (INODE.EQ.MASTER) THEN
-!        SMlsize=SparseMatrix_lsize(sMatA2)
-!        SMlsize1=SparseMatrix_nRows(sMatA2)
-!        SMlsize2=SparseMatrix_nCols(sMatA2)
-!        write(*,*) 'num rows cols = ', SMlsize1, SMlsize2
-!        SMgnumel=SparseMatrix_GNumElem(sMatA2, WAV_COMM_WORLD)
-!        write(*,*) 'sparse sizesw1 ', SMlsize, SMgnumel, MyRank
-!        SMlsize=GlobalSegMap_lsize(GSMapWRF,WAV_COMM_WORLD)
-!        write(*,*) 'size wrf ', SMlsize
-!        SMlsize=GlobalSegMap_lsize(GSMapSWAN,WAV_COMM_WORLD)
-!        write(*,*) 'size swan ', SMlsize, master
-
         call SparseMatrixPlus_init(A2WMatPlus, sMatA2,                  &
      &                             GSMapWRF, GSMapSWAN, Xonly,         &
      &                             0, WAV_COMM_WORLD, WAVid)
@@ -420,16 +410,12 @@
 ! Create Wave sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
 !
-        SMlsize=SparseMatrix_lsize(sMatW)
-        SMgnumel=SparseMatrix_GNumElem(sMatW, WAV_COMM_WORLD)
-!       write(*,*) 'sparse sizesw2 ', SMlsize, SMgnumel
-
-
+!        SMlsize=SparseMatrix_lsize(sMatW)
+!        SMgnumel=SparseMatrix_GNumElem(sMatW, WAV_COMM_WORLD)
          call SparseMatrixPlus_init(W2AMatPlus, sMatW,                  &
      &                              GSMapSWAN, GSMapWRF, Xonly,         &
      &                              0, WAV_COMM_WORLD, WAVid)
         call SparseMatrix_clean(sMatW)
-!      END IF
 
 #endif
 !

@@ -126,7 +126,7 @@
 !!!!!!!!!!!!!!!!!!!!!!
 !
       IF (Myrank.eq.MyMaster) THEN
-        nc_name=SP1name(ng)
+        nc_name=W2Oname(ng)
         call get_sparse_matrix (ng, nc_name, num_sparse_elems,          &
      &                          src_grid_dims, dst_grid_dims)
 !
@@ -166,7 +166,7 @@
 !!!!!!!!!!!!!!!!!!!!!!
 !
       IF (Myrank.eq.MyMaster) THEN
-        nc_name=SP2name(ng)
+        nc_name=O2Wname(ng)
         call get_sparse_matrix (ng, nc_name, num_sparse_elems,          &
      &                          src_grid_dims, dst_grid_dims)
 !

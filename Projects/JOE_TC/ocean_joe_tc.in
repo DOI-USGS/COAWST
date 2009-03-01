@@ -437,7 +437,7 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 
      GSTNAME == ocean_gst.nc
      RSTNAME == ocean_rst.nc
-     HISNAME == ocean_his.nc
+     HISNAME == ocean_joe_tc_his.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc

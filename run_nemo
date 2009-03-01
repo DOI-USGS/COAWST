@@ -19,4 +19,4 @@ NPROCS=`wc -l < $PBS_NODEFILE`
 
 cd /raid2/jcwarner/Projects/JOE_TC/tests
 
-/usr/local/mpi/bin/mpirun -np 44 -machinefile $PBS_NODEFILE ./oceanM Projects/JOE_TC/coupling_joe_tc.in > joe_tc.out
+/usr/local/mpi/bin/mpirun -np 44 -machinefile $PBS_NODEFILE ./coawstM Projects/JOE_TC/coupling_joe_tc.in > joe_tc.out

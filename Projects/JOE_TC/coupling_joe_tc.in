@@ -48,9 +48,20 @@
 
 ! Coupled model standard input file name.
 
-   ATM_name = namelist.input                    ! atmospheric model, not used yet
-   WAV_name = Projects/JOE_TC/INPUT_JOE_TC      ! wave model
-   OCN_name = Projects/JOE_TC/ocean_joe_tc.in   ! ocean model
+   ATM_name = namelist.input                           ! atmospheric model, not used yet
+!  WAV_name = Projects/JOE_TC/INPUT_JOE_TC             ! wave model
+!  OCN_name = Projects/JOE_TC/ocean_joe_tc.in          ! ocean model
+   WAV_name = Projects/JOE_TC/INPUT_JOE_TC_COARSE      ! wave model
+   OCN_name = Projects/JOE_TC/ocean_joe_tc_coarse.in   ! ocean model
+
+! Sparse matrix interpolation weights files.
+
+   W2ONAME == Projects/JOE_TC/wav2ocn_weights.nc
+   W2ANAME == Projects/JOE_TC/wav2atm_weights.nc
+   A2ONAME == Projects/JOE_TC/atm2ocn_weights.nc
+   A2WNAME == Projects/JOE_TC/atm2wav_weights.nc
+   O2ANAME == Projects/JOE_TC/ocn2atm_weights.nc
+   O2WNAME == Projects/JOE_TC/ocn2wav_weights.nc
 
 !
 !  GLOSSARY:

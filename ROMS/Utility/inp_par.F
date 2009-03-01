@@ -579,6 +579,36 @@
               Aname(i:i)=blank
             END DO
             Aname=TRIM(ADJUSTL(Cval(Nval)))
+          ELSE IF (TRIM(KeyWord).eq.'O2ANAME') THEN
+            DO i=1,LEN(O2Aname(Nval))
+              O2Aname(Nval)(i:i)=blank
+            END DO
+            O2Aname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
+          ELSE IF (TRIM(KeyWord).eq.'O2WNAME') THEN
+            DO i=1,LEN(O2Wname(Nval))
+              O2Wname(Nval)(i:i)=blank
+            END DO
+            O2Wname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
+          ELSE IF (TRIM(KeyWord).eq.'A2ONAME') THEN
+            DO i=1,LEN(A2Oname(Nval))
+              A2Oname(Nval)(i:i)=blank
+            END DO
+            A2Oname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
+          ELSE IF (TRIM(KeyWord).eq.'A2WNAME') THEN
+            DO i=1,LEN(A2Wname(Nval))
+              A2Wname(Nval)(i:i)=blank
+            END DO
+            A2Wname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
+          ELSE IF (TRIM(KeyWord).eq.'W2ANAME') THEN
+            DO i=1,LEN(W2Aname(Nval))
+              W2Aname(Nval)(i:i)=blank
+            END DO
+            W2Aname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
+          ELSE IF (TRIM(KeyWord).eq.'W2ONAME') THEN
+            DO i=1,LEN(W2Oname(Nval))
+              W2Oname(Nval)(i:i)=blank
+            END DO
+            W2Oname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
           END IF
         END IF
       END DO
@@ -1676,26 +1706,6 @@
               IADname(Nval)(i:i)=blank
             END DO
             IADname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
-          ELSE IF (TRIM(KeyWord).eq.'SP1NAME') THEN
-            DO i=1,LEN(SP1name(Nval))
-              SP1name(Nval)(i:i)=blank
-            END DO
-            SP1name(Nval)=TRIM(ADJUSTL(Cval(Nval)))
-          ELSE IF (TRIM(KeyWord).eq.'SP2NAME') THEN
-            DO i=1,LEN(SP2name(Nval))
-              SP2name(Nval)(i:i)=blank
-            END DO
-            SP2name(Nval)=TRIM(ADJUSTL(Cval(Nval)))
-          ELSE IF (TRIM(KeyWord).eq.'AP1NAME') THEN
-            DO i=1,LEN(AP1name(Nval))
-              AP1name(Nval)(i:i)=blank
-            END DO
-            AP1name(Nval)=TRIM(ADJUSTL(Cval(Nval)))
-          ELSE IF (TRIM(KeyWord).eq.'AP2NAME') THEN
-            DO i=1,LEN(AP2name(Nval))
-              AP2name(Nval)(i:i)=blank
-            END DO
-            AP2name(Nval)=TRIM(ADJUSTL(Cval(Nval)))
           ELSE IF (TRIM(KeyWord).eq.'NFFILES') THEN
             Npts=load_i(Nval, Rval, Ngrids, nFfiles)
             DO ng=1,Ngrids

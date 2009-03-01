@@ -116,10 +116,12 @@
         character (len=80), dimension(Ngrids) :: NRMname
         character (len=80), dimension(Ngrids) :: OBSname
         character (len=80), dimension(Ngrids) :: REPname
-        character (len=80), dimension(Ngrids) :: SP1name
-        character (len=80), dimension(Ngrids) :: SP2name
-        character (len=80), dimension(Ngrids) :: AP1name
-        character (len=80), dimension(Ngrids) :: AP2name
+        character (len=80), dimension(Ngrids) :: O2Aname
+        character (len=80), dimension(Ngrids) :: O2Wname
+        character (len=80), dimension(Ngrids) :: W2Aname
+        character (len=80), dimension(Ngrids) :: W2Oname
+        character (len=80), dimension(Ngrids) :: A2Wname
+        character (len=80), dimension(Ngrids) :: A2Oname
         character (len=80), dimension(Ngrids) :: SSHname
         character (len=80), dimension(Ngrids) :: SSTname
         character (len=80), dimension(Ngrids) :: TIDEname

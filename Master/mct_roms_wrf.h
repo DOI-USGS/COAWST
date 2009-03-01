@@ -38,7 +38,7 @@
 !
       integer :: Istr, Iend, Jstr, Jend
       integer :: IstrR, IendR, JstrR, JendR, IstrU, JstrV
-      integer :: Asize, Jsize, MyError
+      integer :: Asize, Isize, Jsize, MyError
       integer :: i, ic, j, jc, nprocs
       integer :: nRows, nCols, num_sparse_elems
 
@@ -107,7 +107,7 @@
 !!!!!!!!!!!!!!!!!!!!!!
 !
       IF (Myrank.eq.MyMaster) THEN
-       nc_name=AP1name(ng)
+       nc_name=A2Oname(ng)
        call get_sparse_matrix (ng, nc_name, num_sparse_elems,           &
      &                          src_grid_dims, dst_grid_dims)
 !
@@ -147,7 +147,7 @@
 !!!!!!!!!!!!!!!!!!!!!!
 !
       IF (Myrank.eq.MyMaster) THEN
-        nc_name=AP2name(ng)
+        nc_name=O2Aname(ng)
         call get_sparse_matrix (ng, nc_name, num_sparse_elems,          &
      &                          src_grid_dims, dst_grid_dims)
 !
@@ -259,18 +259,19 @@
 !  Determine start and lengths for domain decomposition
 !  of the atm model.
 !
-      Jsize=dst_grid_dims(1)*dst_grid_dims(2)/nprocs
+      Isize=INT(dst_grid_dims(1)/nprocs)
+      IF (MyRank.eq.nprocs-1) THEN
+        Isize=dst_grid_dims(1)-Isize*(nprocs-1)
+      ENDIF
       IF (.not.allocated(start)) THEN
         allocate ( start(1) )
       END IF
       IF (.not.allocated(length)) THEN
         allocate ( length(1) )
       END IF
-!      allocate ( start(1) )
-!      allocate ( length(1) )
-      start(1)=(MyRank*Jsize)+1
-      length(1)=Jsize
-
+      start=(MyRank*INT(dst_grid_dims(1)/nprocs))*dst_grid_dims(2)+1
+      length=Isize*dst_grid_dims(2)
+!
       CALL GlobalSegMap_init (GSMapWRF, start, length, 0,              &
      &                        OCN_COMM_WORLD, OCNid)
 !
