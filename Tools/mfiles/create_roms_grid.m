@@ -18,22 +18,22 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %1) set your case here to = 1.
-WET_DRY_SLOPE_CHAN=0;
+WET_DRY_SLOPE_CHAN=1;
 JOE_TC=0;
-JOE_TC_coarse=1;
+JOE_TC_coarse=0;
 MY_APP=0;
 
 if (WET_DRY_SLOPE_CHAN)
   %2) enter x and y coordinates of rho points
-    ncellsx=101;  dx=250;
+    ncellsx=102;  dx=250;
     ncellsy=6;    dy=200;
-    x=[-125:dx:25125];
-    y=[-100:dy:1100];
+    x=[-dx/2:dx:dx*(ncellsx-1)];
+    y=[-dy/2:dy:dy*(ncellsy-1)];
   % 
     x=repmat(x,length(y),1);
     y=repmat(y',1,length(x));
   %3) set depth 
-    depth=10*x/25125;
+    depth=10*x/25250;
   %4) set grid angle
     roms_angle=zeros(size(depth));
   %5) set masking

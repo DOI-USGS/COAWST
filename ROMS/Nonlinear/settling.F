@@ -202,7 +202,11 @@
           indx=idsed(ised)
           DO k=1,N(ng)
             DO i=Istr,Iend
+# ifdef TS_MPDATA
+              qc(i,k)=t(i,j,k,3,indx)
+# else
               qc(i,k)=t(i,j,k,nnew,indx)*Hz_inv(i,k)
+# endif
             END DO
           END DO
 !

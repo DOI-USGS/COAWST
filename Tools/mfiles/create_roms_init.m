@@ -240,9 +240,9 @@
 
 
 %9) Provide initial sediment properties in water column.
+    display('Initializing suspended sediments.')
 %
 % mud.
-  display('Initializing suspended sediments.')
 %
 for idmud=1:NCS
   count=['0',num2str(idmud)];
@@ -257,8 +257,6 @@ for idmud=1:NCS
     end
   end
 end
-%           mud_01(1,1:10,8:18,9) = 1;    % whole, grd1
-
 %
 % sand.
 %
