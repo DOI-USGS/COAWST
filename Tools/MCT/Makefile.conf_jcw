@@ -1,0 +1,106 @@
+
+# COMPILER, LIBRARY, AND MACHINE MAKE VARIABLES
+
+# FORTRAN COMPILER VARIABLES #
+
+# FORTRAN COMPILER COMMAND
+FC		= ifort
+
+# FORTRAN AND FORTRAN90 COMPILER FLAGS
+FCFLAGS		= -O2  
+
+# FORTRAN90 ONLY COMPILER FLAGS 
+#F90FLAGS        = -w -ftz -assume byterecl
+#F90FLAGS        = -free /align /G7 /iface:cvf /O2 /MD
+F90FLAGS        = -free /align /G7 /O2 /MD
+
+# FORTRAN COMPILE FLAG FOR AUTOPROMOTION 
+# OF NATIVE REAL TO 8 BIT REAL
+REAL8           = -r8
+
+# FORTRAN COMPILE FLAG FOR CHANGING BYTE ORDERING
+ENDIAN          = -convert big_endian
+
+# INCLUDE FLAG FOR LOCATING MODULES (-I, -M, or -p)
+INCFLAG         = -I
+
+# INCLUDE PATHS (PREPEND INCLUDE FLAGS -I, -M or -p)
+INCPATH         = -IC:\\work\\models\\MPICH2\\include -Ic:\\work\\models\\MCT\\MCT_v2.2_0u\\mpeu
+
+# MPI LIBRARIES (USUALLY -lmpi)
+#MPILIBS         = C:\\work\\models\\MPICH2\\lib\fmpich2s.lib
+MPILIBS         = C:\\work\\models\\MPICH2\\lib\fmpich2.lib
+
+# PREPROCESSOR VARIABLES #
+
+# COMPILER AND OS DEFINE FLAGS
+DEFS            = -DSYSUNKNOWNOS -DCPRINTEL
+
+# SET A SEPARATE PREPROCESSOR COMMAND IF FORTRAN COMPILER 
+# DOES NOT HANDLE PREPROCESSING OF SOURCE FILES
+
+# FORTRAN PREPROCESSOR COMMAND
+FPP		= cpp
+
+# FOTRAN PREPROCESSOR FLAGS
+FPPFLAGS	= -P -C -N -traditional -I/cygdrive/c/work/models/MPICH2/include
+
+# C COMPILER VARIABLES #
+
+# C COMPILER
+CC		= cc
+
+# C COMPILER FLAGS - APPEND CFLAGS
+ALLCFLAGS       = -DFORTRAN_MANGLING_UNKNOWN -O 
+
+# LIBRARY SPECIFIC VARIABLES #
+
+# USED BY MCT BABEL BINDINGS
+COMPILER_ROOT = 
+BABELROOT     = 
+PYTHON        = 
+PYTHONOPTS    = 
+
+# USED BY MPI-SERIAL LIBRARY
+
+# SIZE OF FORTRAN REAL AND DOUBLE
+FORT_SIZE = 
+
+# SOURCE FILE TARGETS #
+
+# ENABLE RULE FOR PROCESSING C SOURCE FILES
+# BY SETTING TO .c.o
+CRULE           = .c.o
+
+# ENABLE RULE FOR PROCESSING F90 SOURCE FILES 
+# BY SETTING TO .F90.o AND DISABLING F90RULECPP
+F90RULE         =
+
+# ENABLE RULE FOR PROCESSING F90 SOURCE FILES
+# WITH SEPARATE PREPROCESSING INVOCATION
+# BY SETTING TO .F90.o AND DISABLING F90RULE
+F90RULECPP      = .F90.o 
+
+# INSTALLATION VARIABLES #
+
+# INSTALL COMMANDS
+INSTALL         = /cygdrive/c/work/models/MCT/MCT_v2.2_0u/install-sh -c
+MKINSTALLDIRS   = /cygdrive/c/work/models/MCT/MCT_v2.2_0u/mkinstalldirs
+
+# INSTALLATION DIRECTORIES
+abs_top_builddir= /cygdrive/c/work/models/MCT/MCT_v2.2_0u
+MCTPATH         = /cygdrive/c/work/models/MCT/MCT_v2.2_0u/mct
+MPEUPATH        = /cygdrive/c/work/models/MCT/MCT_v2.2_0u/mpeu
+EXAMPLEPATH     = /cygdrive/c/work/models/MCT/MCT_v2.2_0u/examples
+MPISERPATH      = 
+libdir          = /usr/local/lib
+includedir      = /usr/local/include
+
+# OTHER COMMANDS #
+AR		= ar cq
+RM		= rm -f
+
+
+
+
+
