@@ -18,31 +18,11 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %1) set your case here to = 1.
-WET_DRY_SLOPE_CHAN=1;
-JOE_TC=0;
+JOE_TC=1;
 JOE_TC_coarse=0;
 MY_APP=0;
 
-if (WET_DRY_SLOPE_CHAN)
-  %2) enter x and y coordinates of rho points
-    ncellsx=102;  dx=250;
-    ncellsy=6;    dy=200;
-    x=[-dx/2:dx:dx*(ncellsx-1)];
-    y=[-dy/2:dy:dy*(ncellsy-1)];
-  % 
-    x=repmat(x,length(y),1);
-    y=repmat(y',1,length(x));
-  %3) set depth 
-    depth=10*x/25250;
-  %4) set grid angle
-    roms_angle=zeros(size(depth));
-  %5) set masking
-    mask_rho=ones(size(depth));
-  %6) set coriolis f
-    f=zeros(size(depth));
-  %7) enter output file name
-    fname='ocean_wetdry_slope_chan_grd.nc';
-elseif (JOE_TC)
+if (JOE_TC)
   %2) enter x and y coordinates of rho points
     ncellsx=199;  dx=12000;
     ncellsy=149;  dy=12000;
