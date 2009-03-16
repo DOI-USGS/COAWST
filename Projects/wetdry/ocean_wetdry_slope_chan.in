@@ -410,8 +410,8 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == ocean_grd.nc
-     ININAME == ocean_ini.nc
+     GRDNAME == wetdry_slope_chan_grd.nc
+     ININAME == wetdry_slope_chan_init.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
@@ -453,7 +453,7 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
      SPOSNAM =  ROMS/External/stations.in
      FPOSNAM =  ROMS/External/floats.in
      BPARNAM =  ROMS/External/bioFasham.in
-     SPARNAM =  ROMS/External/sediment_shoreface.in
+     SPARNAM =  ROMS/External/sediment.in
      USRNAME =  ROMS/External/MyFile.dat
 
 !

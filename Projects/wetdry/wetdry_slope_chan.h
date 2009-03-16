@@ -12,7 +12,6 @@
 */
 
 #define WET_DRY
-#define OUT_DOUBLE
 #define UV_ADV
 #define TS_U3HADVECTION
 #define DJ_GRADPS
@@ -41,11 +40,9 @@
 # define ANA_SPFLUX
 # define ANA_SRFLUX
 # undef  ANA_VMIX
-
 # define GLS_MIXING
 # if defined GLS_MIXING
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
 # endif
-
 #endif
