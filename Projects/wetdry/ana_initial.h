@@ -212,7 +212,7 @@
         END DO
         zeta(25,j,1)=0.3_r8
       END DO
-#elif defined WETDRY_SLOPE_CHAN
+#elif defined WETDRY_SLOPE_CHAN_nouse
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           zeta(i,j,1)=-10.0_r8

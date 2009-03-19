@@ -60,14 +60,13 @@ $(if $(filter $(MAKE_VERSION),$(NEED_VERSION)),,        \
 #  "upwelling.h" header file.  
 
 #ROMS_APPLICATION ?= JOE_TC
-ROMS_APPLICATION ?= TIDALFLAT
+ROMS_APPLICATION ?= WETDRY_SLOPE_CHAN
 
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
 
 #MY_HEADER_DIR ?= /raid1/jcwarner/Models/COAWST/Projects/JOE_TC
-#MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/JOE_TC
-MY_HEADER_DIR ?= /cygdrive/c/work/models/test_cases/shihnan_sedtest/Beach_Sed_NoWs
+MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/wetdry
 
 #  If your application requires analytical expressions and they are not
 #  located in "ROMS/Functionals", provide an alternate directory.
@@ -75,8 +74,7 @@ MY_HEADER_DIR ?= /cygdrive/c/work/models/test_cases/shihnan_sedtest/Beach_Sed_No
 #  "User/Functionals".
 
 #MY_ANALYTICAL_DIR ?= /raid1/jcwarner/Models/COAWST/Projects/JOE_TC
-#MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/COAWST
-MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/test_cases/shihnan_sedtest/Beach_Sed_NoWs
+MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/COAWST
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying

@@ -14,21 +14,18 @@
 #define WET_DRY
 #define UV_ADV
 #define TS_U3HADVECTION
-#define DJ_GRADPS
 #define NORTHERN_WALL
 #define SOUTHERN_WALL
 #define WESTERN_WALL
 #define EAST_FSCLAMPED
 #define EAST_M2REDUCED
 #define FSOBC_REDUCED
-
-#define ANA_FSOBC
-#define ANA_M2OBC
 #define ANA_SMFLUX
 #define UV_LDRAG
 
 #undef SOLVE3D
 #ifdef SOLVE3D
+# define DJ_GRADPS
 # undef  SALINITY
 # define EAST_M3GRADIENT
 # define SPLINES

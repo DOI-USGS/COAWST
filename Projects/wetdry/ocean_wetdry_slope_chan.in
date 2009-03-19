@@ -53,7 +53,7 @@
 ! these parameters correctly.
 
           Lm == 100           ! Number of I-direction INTERIOR RHO-points
-          Mm == 5             ! Number of J-direction INTERIOR RHO-points
+          Mm == 4             ! Number of J-direction INTERIOR RHO-points
            N == 10            ! Number of vertical levels
 
         Nbed =  1             ! Number of sediment bed layers
@@ -182,7 +182,7 @@
 
 ! Constants used in momentum stress computation.
 
-        RDRG == 0.0025d0   !0.0025d0   !0.01d0                 ! m/s
+        RDRG == 0.01d0   !0.0025d0   !0.01d0         ! m/s
        RDRG2 == 0.0015d0                   ! nondimensional
          Zob == 0.015d0                    ! m
          Zos == 0.02d0                     ! m
@@ -410,13 +410,13 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == wetdry_slope_chan_grd.nc
-     ININAME == wetdry_slope_chan_init.nc
+     GRDNAME == Projects/wetdry/wetdry_slope_chan_grd.nc
+     ININAME == Projects/wetdry/wetdry_slope_chan_init.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
      CLMNAME == ocean_clm.nc
-     BRYNAME == ocean_bry.nc
+     BRYNAME == Projects/wetdry/wetdry_slope_chan_forc.nc
      FWDNAME == ocean_fwd.nc
      ADSNAME == ocean_ads.nc
 
@@ -438,7 +438,8 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 
      GSTNAME == ocean_gst.nc
      RSTNAME == ocean_rst.nc
-     HISNAME == wetdry_slope_chan0025_his.nc
+!    HISNAME == wetdry_slope_chan0025_his.nc
+     HISNAME == wetdry_slope_chan01_his.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc

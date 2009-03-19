@@ -241,7 +241,7 @@
       depth=0.6_r8
       f0=0.0E-0_r8
       beta=0.0E-0_r8
-#elif defined WETDRY_SLOPE_CHAN
+#elif defined WETDRY_SLOPE_CHAN_nouse
       Xsize=25000.0_r8
       Esize=1000.0_r8
       depth=10.0_r8
@@ -444,7 +444,7 @@
           h(i,j)=0.001_r8
         END DO
       END DO
-#elif defined WETDRY_SLOPE_CHAN
+#elif defined WETDRY_SLOPE_CHAN_nouse
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           h(i,j)=10.0_r8*xr(i,j)/25250.0_r8

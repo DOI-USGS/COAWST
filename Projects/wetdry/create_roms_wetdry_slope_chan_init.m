@@ -71,7 +71,7 @@
     get_grid = 1;    %<--- put a 1 or 0 here
   
     if (get_grid)
-       grid_file='ocean_wetdry_slope_chan_grd.nc'    %<-enter name of grid here
+       grid_file='wetdry_slope_chan_grd.nc'    %<-enter name of grid here
 
 %
 % Get some grid info, do not change this.

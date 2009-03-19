@@ -14,8 +14,8 @@ grid_file='wetdry_slope_chan_grd.nc';
 forc_name='wetdry_slope_chan_forc.nc';
 
 %3) enter time series of zeta_east
-zeta_time=[0:10:43200*1];                                     %secs
-zeta_east=10.0*sin(2.0*pi/1.0*zeta_time*3600*24)-10.0+0.10;   %m
+zeta_time=[0:10:43200*1]/(3600*24);            %days
+zeta_east=10.0*sin(2*pi/1*zeta_time)-10+0.1;   %m
 
 %%%%%%%%%%%%%%%%%  END of USER SECTION %%%%%%%%%%%%%%%%%
 
@@ -60,7 +60,7 @@ disp(' ## Defining Variables and Attributes...')
  
 nc{'zeta_time'} = ncdouble('zeta_time');
 nc{'zeta_time'}.long_name = ncchar('zeta_time');
-nc{'zeta_time'}.units = ncchar('s');
+nc{'zeta_time'}.units = ncchar('days');
 nc{'zeta_time'}.field = ncchar('scalar');
 
 nc{'zeta_east'} = ncdouble('zeta_time','eta_rho');
