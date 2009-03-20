@@ -13,11 +13,9 @@
 
 #define WET_DRY
 #define MASKING
-#undef  OUT_DOUBLE
 #define UV_ADV
 #define TS_U3HADVECTION
 #define DJ_GRADPS
-#undef  SALINITY
 #define SOLVE3D
 #define SPLINES
 
@@ -33,9 +31,6 @@
 #define SOUTH_M3GRADIENT
 
 #define ANA_SMFLUX
-#define ANA_INITIAL
-#define ANA_GRID
-#define ANA_MASK
 #define UV_QDRAG
 #define UV_VIS2
 #define MIX_GEO_UV
@@ -48,12 +43,9 @@
 # define ANA_BSFLUX
 # define ANA_SPFLUX
 # define ANA_SRFLUX
-# undef  ANA_VMIX
-
 # define GLS_MIXING
 # if defined GLS_MIXING
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
 # endif
-
 #endif

@@ -410,8 +410,8 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == ocean_grd.nc
-     ININAME == ocean_ini.nc
+     GRDNAME == Projects/wetdry/wetdry_dam_break_grd.nc
+     ININAME == Projects/wetdry/wetdry_dam_break_init.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc

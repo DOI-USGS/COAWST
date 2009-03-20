@@ -61,8 +61,4 @@ end
   !del temp_jcw33.mat
   disp(['Created roms grid -->   ',fname])
 
-%to create swan grid then use:
-  disp(['Created swan grid + bathy files:'])
-  roms2swan(rho.x,rho.y,rho.depth,rho.mask);
-
 

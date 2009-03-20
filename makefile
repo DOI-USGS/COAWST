@@ -60,13 +60,13 @@ $(if $(filter $(MAKE_VERSION),$(NEED_VERSION)),,        \
 #  "upwelling.h" header file.  
 
 #ROMS_APPLICATION ?= JOE_TC
-ROMS_APPLICATION ?= WETDRY_SLOPE_CHAN
+ROMS_APPLICATION ?= GRIZ_BAY
 
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
 
 #MY_HEADER_DIR ?= /raid1/jcwarner/Models/COAWST/Projects/JOE_TC
-MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/wetdry
+MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Griz_Bay
 
 #  If your application requires analytical expressions and they are not
 #  located in "ROMS/Functionals", provide an alternate directory.
