@@ -194,7 +194,7 @@
   
 ! Minimum depth for wetting and drying.
 
-       DCRIT == 0.10d0                     ! m
+       DCRIT == 0.20d0                     ! m
 
 ! Various parameters.
 
