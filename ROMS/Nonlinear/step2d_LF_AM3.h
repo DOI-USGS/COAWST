@@ -116,6 +116,9 @@
 # ifndef SOLVE3D
      &                  FORCES(ng) % sustr,     FORCES(ng) % svstr,     &
      &                  FORCES(ng) % bustr,     FORCES(ng) % bvstr,     &
+#  ifdef ATM_PRESS
+     &                  FORCES(ng) % Pair,                              &
+#  endif
 # else
 #  ifdef VAR_RHO_2D
      &                  COUPLING(ng) % rhoA,    COUPLING(ng) % rhoS,    &
@@ -203,6 +206,9 @@
 # endif
 # ifndef SOLVE3D
      &                        sustr, svstr, bustr, bvstr,               &
+#  ifdef ATM_PRESS
+     &                        Pair,                                     &
+#  endif
 # else
 #  ifdef VAR_RHO_2D
      &                        rhoA, rhoS,                               &
@@ -333,6 +339,9 @@
       real(r8), intent(in) :: svstr(LBi:,LBj:)
       real(r8), intent(in) :: bustr(LBi:,LBj:)
       real(r8), intent(in) :: bvstr(LBi:,LBj:)
+#   ifdef ATM_PRESS
+      real(r8), intent(in) :: Pair(LBi:,LBj:)
+#   endif
 #  else
 #   ifdef VAR_RHO_2D
       real(r8), intent(in) :: rhoA(LBi:,LBj:)
@@ -459,6 +468,9 @@
       real(r8), intent(in) :: svstr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: bustr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: bvstr(LBi:UBi,LBj:UBj)
+#   ifdef ATM_PRESS
+      real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
+#   endif
 #  else
 #   ifdef VAR_RHO_2D
       real(r8), intent(in) :: rhoA(LBi:UBi,LBj:UBj)
@@ -1060,6 +1072,9 @@
 !
       cff1=0.5_r8*g
       cff2=1.0_r8/3.0_r8
+# if !defined SOLVE3D && defined ATM_PRESS
+      fac3=0.5_r8*100.0_r8/rho0
+# endif
       DO j=Jstr,Jend
         DO i=IstrU,Iend
           rhs_ubar(i,j)=cff1*on_u(i,j)*                                 &
@@ -1079,6 +1094,13 @@
 # endif
      &                   (gzeta2(i-1,j)-                                &
      &                    gzeta2(i  ,j)))
+# if defined ATM_PRESS && !defined SOLVE3D
+          rhs_ubar(i,j)=rhs_ubar(i,j)+                                  &
+     &                  fac3*on_u(i,j)*                                 &
+     &                  (h(i-1,j)+h(i,j)+                               &
+     &                   gzeta(i-1,j)+gzeta(i,j))*                      &
+     &                  (Pair(i-1,j)-Pair(i,j))
+# endif
 # ifdef DIAGNOSTICS_UV
           DiaU2rhs(i,j,M2pgrd)=rhs_ubar(i,j)
 # endif
@@ -1102,6 +1124,13 @@
 # endif
      &                     (gzeta2(i,j-1)-                              &
      &                      gzeta2(i,j  )))
+# if defined ATM_PRESS && !defined SOLVE3D
+            rhs_vbar(i,j)=rhs_vbar(i,j)+                                &
+     &                    fac3*om_v(i,j)*                               &
+     &                    (h(i,j-1)+h(i,j)+                             &
+     &                     gzeta(i,j-1)+gzeta(i,j))*                    &
+     &                    (Pair(i,j-1)-Pair(i,j))
+# endif
 # ifdef DIAGNOSTICS_UV
             DiaV2rhs(i,j,M2pgrd)=rhs_vbar(i,j)
 # endif

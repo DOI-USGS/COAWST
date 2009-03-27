@@ -160,7 +160,7 @@
       real(r8) :: GRho, GRho0,  HalfGRho
       real(r8) :: cff, cff1, cff2
 #ifdef ATM_PRESS
-	real(r8) :: fac1
+	real(r8) :: OneAtm, fac1
 #endif
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,N(ng)) :: P
 
@@ -183,6 +183,7 @@
       HalfGRho=0.5_r8*GRho
 #ifdef ATM_PRESS
       fac1=100.0_r8/rho0
+      OneAtm=1013.25_r8                  ! 1 atm = 1013.25 mb
 #endif
 !
       DO j=JstrV-1,Jend
@@ -217,7 +218,7 @@
      &                 GRho*(rho(i,j,N(ng))+cff2)*                      &
      &                 (z_w(i,j,N(ng))-z_r(i,j,N(ng)))
 #ifdef ATM_PRESS
-          P(i,j,N(ng))=P(i,j,N(ng))+fac1*Pair(i,j)
+          P(i,j,N(ng))=P(i,j,N(ng))+fac1*(Pair(i,j)-OneAtm)
 #endif
         END DO
         DO k=N(ng)-1,1,-1
