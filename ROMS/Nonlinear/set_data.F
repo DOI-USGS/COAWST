@@ -724,6 +724,47 @@
 #   endif
       END IF
 #  endif
+#  if defined WET_DRY
+!
+!-----------------------------------------------------------------------
+! Ensure that water level on boundary cells is above bed elevation.
+!-----------------------------------------------------------------------
+      IF (SOUTH_WEST_TEST) THEN
+        cff=Dcrit(ng)
+#   ifdef WEST_FSOBC
+        DO j=JLB,JUB
+          IF (BOUNDARY(ng)%zeta_west(j).le.                             &
+     &       (Dcrit(ng)-GRID(ng)%h(0,j))) THEN
+            BOUNDARY(ng)%zeta_west(j)=cff-GRID(ng)%h(0,j)
+          END IF
+        END DO
+#   endif
+#   ifdef EAST_FSOBC
+        DO j=JLB,JUB
+          IF (BOUNDARY(ng)%zeta_east(j).le.                             &
+     &       (Dcrit(ng)-GRID(ng)%h(Lm(ng)+1))) THEN
+            BOUNDARY(ng)%zeta_est(j)=cff-GRID(ng)%h(Lm(ng)+1,j)
+          END IF
+        END DO
+#   endif
+#   ifdef SOUTH_FSOBC
+        DO i=ILB,IUB
+          IF (BOUNDARY(ng)%zeta_south(i).le.                            &
+     &       (Dcrit(ng)-GRID(ng)%h(i,0))) THEN
+            BOUNDARY(ng)%zeta_south(i)=cff-GRID(ng)%h(i,0)
+          END IF
+        END DO
+#   endif
+#   ifdef NORTH_FSOBC
+        DO i=ILB,IUB
+          IF (BOUNDARY(ng)%zeta_north(i).le.                            &
+     &       (Dcrit(ng)-GRID(ng)%h(i,Mm(ng)+1))) THEN
+            BOUNDARY(ng)%zeta_north(i)=cff-GRID(ng)%h(i,Mm(ng)+1)
+          END IF
+        END DO
+#   endif
+      END IF
+#  endif
 #  ifdef ANA_M2OBC
       CALL ana_m2obc (ng, tile, iNLM)
 #  else
