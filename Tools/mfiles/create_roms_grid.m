@@ -26,11 +26,11 @@ if (JOE_TC)
   %2) enter x and y coordinates of rho points
     ncellsx=199;  dx=12000;
     ncellsy=149;  dy=12000;
-    x=[-dx/2:dx:dx*(ncellsx-1)];
-    y=[-dy/2:dy:dy*(ncellsy-1)];
+    xx=[-dx/2:dx:dx*(ncellsx-1)];
+    yy=[-dy/2:dy:dy*(ncellsy-1)];
 %
-    x=repmat(x,length(y),1);
-    y=repmat(y',1,length(x));
+    x=repmat(xx,length(yy),1);
+    y=repmat(yy',1,length(xx));
   %3) set depth 
     depth=zeros(size(x))+10;
     depth(:,50:69)=repmat(10+10*([50:69]-49),size(x,1),1);
@@ -52,11 +52,11 @@ elseif (JOE_TC_coarse)
   %2) enter x and y coordinates of rho points
     ncellsx=100;  dx=24000;
     ncellsy=75;   dy=24000;
-    x=[-dx/2:dx:dx*(ncellsx-1)]-48*111000;
-    y=[-dy/2:dy:dy*(ncellsy-1)]+12.4*111000;
+    xx=[-dx/2:dx:dx*(ncellsx-1)]-48*111000;
+    yy=[-dy/2:dy:dy*(ncellsy-1)]+12.4*111000;
   % 
-    x=repmat(x,length(y),1);
-    y=repmat(y',1,length(x));
+    x=repmat(xx,length(yy),1);
+    y=repmat(yy',1,length(xx));
   %3) set depth 
     depth=zeros(size(x))+10;
     depth(:,26:35)=repmat(10+20*([26:35]-25),size(x,1),1);

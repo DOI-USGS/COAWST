@@ -742,7 +742,7 @@
         cff=Dcrit(ng)-GRID(ng)%h(Lm(ng)+1,j)
         DO j=JLB,JUB
           IF (BOUNDARY(ng)%zeta_east(j).le.cff) THEN
-            BOUNDARY(ng)%zeta_est(j)=cff
+            BOUNDARY(ng)%zeta_east(j)=cff
           END IF
         END DO
 #   endif
