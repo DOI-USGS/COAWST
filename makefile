@@ -529,7 +529,7 @@ endif
 .PHONY: tarfile
 
 tarfile:
-		tar --exclude=".svn" --exclude Output -cvf coawst_v1.0.tar *
+		tar --exclude=".svn" --exclude Output -cvf coawst_v1.1.tar *
 #		tar --exclude=".svn" --exclude Output -cvf coawst_v1.0.tar run_* SWAN/ WRF/ ROMS/ Projects/JOE_TC Projects/Rip_current Projects/wetdry Projects/Visser Projects/Hole7s Projects/Griz_Bay Projects/Dogbone Projects/Inlet_test *.TBl *.tbl RRTM* Compilers/ makefile Tools/ Master/
 
 .PHONY: zipfile
