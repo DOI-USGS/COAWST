@@ -1,0 +1,68 @@
+ $***************************** HEADING *********************************
+ $                                                                    
+ PROJECT  '                '  '    '                                  
+     '                                                                        '
+     '                                                                        '
+     '                                                                        '
+ $                                                                    
+ $***************************** MODEL INPUT *****************************
+ $                                                                    
+ SET   LEVEL =   0.00  NOR =  90.00    DEPMIN =   0.05 _              
+       GRAV =    9.81  RHO =  1025.00  INRHOG =      1 _              
+       NAUT                                                           
+ $                                                                    
+ MODE STAT                                                            
+ CGRID CURV  195  150          EXCEPT  0.0    0.0         _           
+       SEC        0.00     180.00  72       0.05       1.00   24      
+ $                                                                    
+ READ COOR 1. 'TMP_grid2swan01' _                                     
+  4   0   1                                                           
+ $                                                                    
+ INPGRID _                                                            
+ BOTTOM CURV 0. 0.  195  150                                          
+ READINP BOTTOM 1.0   'BOTNOW' 4 0 FREE                               
+ INPGRID _                                                            
+ CURREN CURV 0. 0.  195  150                                          
+ READ CUR FAC= 1.    _                                                
+ 'CURNOW'  IDLA=4 FREE                                                
+ $                                                                    
+ $                                                                    
+ $                                                                    
+ $                                                                    
+ $                                                                    
+ BOUN SHAPE JONSWAP   3.30 PEAK DSPR DEGR                             
+ BOUN SIDE N  CLOCKW  _                                               
+                     CON  PAR     2.00   10.00   70.00   15.00        
+ BOUN SHAPE JONSWAP   3.30 PEAK DSPR DEGR                             
+ BOUN SIDE E  CLOCKW  _                                               
+                     CON  PAR     2.00   10.00   70.00   15.00        
+ BOUN SHAPE JONSWAP   3.30 PEAK DSPR DEGR                             
+ BOUN SIDE S  CLOCKW  _                                               
+                     CON  PAR     2.00   10.00   70.00   15.00        
+ $                                                                    
+ GEN3                                                                 
+ BREAK CON       1.00    0.73                                         
+ FRIC JON      0.0670                                                 
+ OFF WINDG                                                            
+ OFF QUAD                                                             
+ OFF WCAP                                                             
+ LIM  10 1                                                            
+ NUM DIR cdd=   0.50 SIGIM css=   0.50                                
+ $                                                                    
+ NUM ACCUR        0.020    0.020    0.020   98.000    1               
+ $                                                                    
+ $***************************** OUTPUT REQUEST **************************
+ $                                                                    
+ TABLE 'COMPGRID' NOHEAD 'SWANOUT'  _                                 
+  HSIGN    DIR      TM01     DEPTH    VELOC    TRANSP _               
+  DSPR     DISSIP   LEAK     QB       XP       YP     _               
+  DIST     UBOT     STEEPW   WLENGTH  FORCES   RTP    _               
+  PDIR     WIND                                                       
+ $                                                                    
+ $                                                                    
+ $                                                                    
+ $                                                                    
+ TEST  ITEST=   0  ITRACE=   0                                        
+ COMPUTE                                                              
+ HOTF 'hot101'                                                        
+ STOP                                                                 

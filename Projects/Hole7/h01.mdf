@@ -1,0 +1,154 @@
+Ident = #Delft3D-FLOW  .03.02 3.39.25#
+Commnt=                              
+Filcco= #shelf01_exp_hole7.grd#
+Fmtcco= #FR#
+Anglat=  3.6000000e+001
+Grdang=  0.0000000e+000
+Filgrd= #shelf01_exp_hole7.enc#
+Fmtgrd= #FR#
+MNKmax= 107 152 14
+Thick =  2.0000000e+000
+         3.0000000e+000
+         4.0000000e+000
+         6.0000000e+000
+         8.0000000e+000
+         1.1000000e+001
+         1.6000000e+001
+         1.6000000e+001
+         1.1000000e+001
+         8.0000000e+000
+         6.0000000e+000
+         4.0000000e+000
+         3.0000000e+000
+         2.0000000e+000
+Commnt=                              
+Fildep= #shelf01_exp_hole7.dep#
+Fmtdep= #FR#
+Commnt=                              
+Commnt=                              no. dry points: 0
+Commnt=                              no. thin dams: 0
+Commnt=                              
+Itdate= #2005-07-21#
+Tunit = #M#
+Tstart=  0.0000000e+000
+Tstop =  6.4800000e+003
+Dt    = 0.2
+Tzone = 0
+Commnt=                              
+Sub1  = #    #
+Sub2  = # CW#
+Namc1 = #Sediment Sand       #
+Commnt=                              
+Wnsvwp= #N#
+Wndint= #Y#
+Commnt=                              
+Zeta0 =  0.0000000e+000
+U0    = [.]
+V0    = [.]
+S0    = [.]
+C01   =  0.0000000e+000
+         0.0000000e+000
+         0.0000000e+000
+         0.0000000e+000
+         0.0000000e+000
+         0.0000000e+000
+         0.0000000e+000
+         0.0000000e+000
+         0.0000000e+000
+         0.0000000e+000
+         0.0000000e+000
+         0.0000000e+000
+         0.0000000e+000
+         0.0000000e+000
+Commnt=                              
+Commnt=                              no. open boundaries: 3
+Filbnd= #h01.bnd#
+Fmtbnd= #FR#
+Filana= #astronomic_components.bca#
+Fmtana= #FR#
+FilbcC= #h01.bcc#
+FmtbcC= #FR#
+Rettis=  0.0000000e+000
+         0.0000000e+000
+         0.0000000e+000
+Rettib=  0.0000000e+000
+         0.0000000e+000
+         0.0000000e+000
+Commnt=                              
+Ag    =  9.8100004e+000
+Rhow  =  1.0250000e+003
+Alph0 = [.]
+Tempw =  1.5000000e+001
+Salw  =  3.1000000e+001
+Rouwav= #FR84#
+Wstres=  6.3000002e-004  0.0000000e+000  7.2300001e-003  1.0000000e+002
+Rhoa  =  1.0000000e+000
+Betac =  5.0000000e-001
+Equili= #N#
+Tkemod= #K-epsilon   #
+Ktemp = 0
+Fclou =  0.0000000e+000
+Sarea =  0.0000000e+000
+Temint= #Y#
+Commnt=                              
+Roumet= #C#
+Ccofu =  6.5000000e+001
+Ccofv =  6.5000000e+001
+Xlo   =  0.0000000e+000
+Vicouv=  1.0000000e+000
+Dicouv=  7.5000000e+000
+Htur2d= #N#
+Vicoww=  0.0000000e+000
+Dicoww=  0.0000000e+000
+Irov  = 0
+Filsed= #h01.sed#
+Fmtsed= #FR#
+Filmor= #h01.mor#
+Fmtmor= #FR#
+Commnt=                              
+Iter  =      2
+Dryflp= #YES#
+Dpsopt= #MEAN#
+Dpuopt= #MOR#
+Dryflc=  1.0000000e-001
+Dco   = -9.9900000e+002
+Tlfsmo=  0.0000000e+000
+ThetQH=  0.0000000e+000
+Forfuv= #Y#
+Forfww= #N#
+Sigcor= #N#
+Trasol= #Cyclic-method#
+Momsol= #Cyclic#
+Commnt=                              
+Commnt=                              no. discharges: 0
+Commnt=                              no. observation points: 0
+Commnt=                              no. drogues: 0
+Commnt=                              
+Commnt=                              
+Commnt=                              no. cross sections: 0
+Commnt=                              
+SMhydr= #YYYYY#     
+SMderv= #YYYYYY#    
+SMproc= #YYYYYYYYYY#
+PMhydr= #YYYYYY#    
+PMderv= #YYY#       
+PMproc= #YYYYYYYYYY#
+SHhydr= #YYYY#      
+SHderv= #YYYYY#     
+SHproc= #YYYYYYYYYY#
+SHflux= #YYYY#      
+PHhydr= #YYYYYY#    
+PHderv= #YYY#       
+PHproc= #YYYYYYYYYY#
+PHflux= #YYYY#      
+Online= #N#
+Waqmod= #N#
+WaveOL= #Y#
+Flmap =  0.0000000e+000 60  6.4800000e+003
+Flhis =  0.0000000e+000 0  6.4800000e+003
+Flpp  =  0.0000000e+000 30  6.4800000e+003
+Flrst = 1440
+Commnt=                              
+Cstbnd= #YES#
+Roller= #YES#
+Commnt=                              

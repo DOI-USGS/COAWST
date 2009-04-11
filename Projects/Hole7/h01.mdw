@@ -1,0 +1,160 @@
+Delft3D WAVE GUI version 4.92.00
+*
+********** Datagroup Description ***************************************
+*
+* Project name
+''
+* Project number
+''
+* Description
+''
+''
+''
+*
+********** Datagroup Hydrodynamics *************************************
+*
+* Y/N Use bathmetry, use waterlevel, use current, use wind
+1 1 1 0
+*
+********** Datagroup Grids *********************************************
+*
+* Number of computational grids
+1
+* Filename computational grid
+'shelf02_exp_hole7.grd'
+* Y/N bathymetry is based on computational grid, filename bathymetry grid
+1 ''
+* Filename bathymetry data
+'shelf02_exp_hole7.dep'
+* Directional space: type, number of directions,
+*                    start-direction, end-direction
+*   - type: 1 = circle, 2 = sector
+2 72  0.0000000e+000  1.8000000e+002
+* Frequency space: lowest frequency, highest frequency, number of frequency bins,
+*                  grid to nest in, Y/N write output for this grid
+ 5.0000001e-002  1.0000000e+000 24 0 1
+*
+********** Datagroup Time frame ****************************************
+*
+* Number of tidal time points, Reference date
+1 2005-07-21
+* Time, h, u, v
+ 0.0000000e+000  0.0000000e+000  0.0000000e+000  0.0000000e+000
+* Water level correction, extend flow data on the last # grid(s),
+* extend bathymetry, water level, current, wind
+ 0.0000000e+000 1 1 1 1 0
+*
+********** Datagroup Boundaries ****************************************
+*
+* Number of boundaries
+3
+* Boundary name, specifications, defined-by, conditions-along-boundary
+*   - specifications: 1 = from-file, 2 = parametric
+*   - defined-by: 1 = orientation,
+*                 2 = grid-coordinates,
+*                 3 = xy-coordinates
+*   - conditions-along-boundary: 1 = uniform, 2 = space-varying
+'North' 2 1 1
+* Orientation
+*   1 = N, 2 = NW, 3 = W, 4 = SW, 5 = S, 6 = SE, 7 = E, 8 = NE
+1
+* Shape, period, width-energy, peak enhancement factor, spreading
+*   - shape: 1 = Jonswap, 2 = Pierson-Moskowitz, 3 = Gauss
+*   - period: 1 = Peak, 2 = Mean
+*   - width-energy: 1 = Power, 2 = Degrees
+1 1 2  3.3000000e+000  9.9999998e-003
+* Significant wave height, peak period, direction, energy distribution
+ 2.0000000e+000  1.0000000e+001  7.0000000e+001  1.5000000e+001
+* Boundary name, specifications, defined-by, conditions-along-boundary
+*   - specifications: 1 = from-file, 2 = parametric
+*   - defined-by: 1 = orientation,
+*                 2 = grid-coordinates,
+*                 3 = xy-coordinates
+*   - conditions-along-boundary: 1 = uniform, 2 = space-varying
+'East' 2 1 1
+* Orientation
+*   1 = N, 2 = NW, 3 = W, 4 = SW, 5 = S, 6 = SE, 7 = E, 8 = NE
+7
+* Shape, period, width-energy, peak enhancement factor, spreading
+*   - shape: 1 = Jonswap, 2 = Pierson-Moskowitz, 3 = Gauss
+*   - period: 1 = Peak, 2 = Mean
+*   - width-energy: 1 = Power, 2 = Degrees
+1 1 2  3.3000000e+000  9.9999998e-003
+* Significant wave height, peak period, direction, energy distribution
+ 2.0000000e+000  1.0000000e+001  7.0000000e+001  1.5000000e+001
+* Boundary name, specifications, defined-by, conditions-along-boundary
+*   - specifications: 1 = from-file, 2 = parametric
+*   - defined-by: 1 = orientation,
+*                 2 = grid-coordinates,
+*                 3 = xy-coordinates
+*   - conditions-along-boundary: 1 = uniform, 2 = space-varying
+'South' 2 1 1
+* Orientation
+*   1 = N, 2 = NW, 3 = W, 4 = SW, 5 = S, 6 = SE, 7 = E, 8 = NE
+5
+* Shape, period, width-energy, peak enhancement factor, spreading
+*   - shape: 1 = Jonswap, 2 = Pierson-Moskowitz, 3 = Gauss
+*   - period: 1 = Peak, 2 = Mean
+*   - width-energy: 1 = Power, 2 = Degrees
+1 1 2  3.3000000e+000  9.9999998e-003
+* Significant wave height, peak period, direction, energy distribution
+ 2.0000000e+000  1.0000000e+001  7.0000000e+001  1.5000000e+001
+*
+********** Datagroup Obstacles *****************************************
+*
+* Number of obstacles
+0
+*
+********** Datagroup Physical parameters *******************************
+*
+* Gravity, water density, north, minimum depth
+ 9.8100004e+000  1.0250000e+003  9.0000000e+001  5.0000001e-002
+* Convention, set-up, forces
+*   - convention: 1 = nautical, 2 = cartesian
+*   - set-up: 0 = no set-up, 1 = activated
+*   - forces: 1 = radiation stress, 2 = wave energy dissipation rate
+1 0 1
+* Wind type (1 = uniform, 2 = space-varying)
+1
+* Wind speed, wind direction
+ 0.0000000e+000  0.0000000e+000
+* Type of formulations
+*   0 = none, 1 = 1st, 2 = 2nd, 3 = 3rd generation
+3
+* Depth induced breaking, alpha, gamma
+*   - breaking: 0 = de-activated, 1 = B&J model
+1  1.0000000e+000  7.3000002e-001
+* Bottom friction, friction coefficient
+*   - friction: 0 = de-activated, 1 = Jonswap,
+*               2 = Collins, 3 = Madsen et al.
+1  6.7000002e-002
+* Non-linear triad interactions, alpha, beta
+*   - interactions: 0 = de-activated, 1 = LTA
+0  1.0000000e-001  2.2000000e+000
+* Diffraction, smoothing coefficient, smoothing steps, adaptation of propagation
+*   - interactions: 0 = de-activated, 1 = activated
+0  2.0000000e-001 5 1
+* Y/N windgrowth, white-capping, quadruplets, refraction, frequency shift
+0 0 0 1 1
+*
+********** Datagroup Numerical parameters ******************************
+*
+* Directional space, frequency space
+ 5.0000000e-001  5.0000000e-001
+* Hs-Tm01, Hs, Tm01, percentage of wet grid points, maximum number of iterations
+ 2.0000000e-002  2.0000000e-002  2.0000000e-002  9.8000000e+001 1
+*
+********** Datagroup Output curves *************************************
+*
+* Number of output curves
+0
+*
+********** Datagroup Output parameters *********************************
+*
+* Level of test output, debug level, Y/N compute waves, Y/N activate hotstart file
+* Output time interval, Computational mode: 0 = stationary, 1 = non-stationary
+0 0 1 1  6.0000000e+001 0
+* Y/N output to Flow grid; filename of Flow grid
+1 'shelf01_exp_hole7.grd'
+* Y/N output to locations
+0
