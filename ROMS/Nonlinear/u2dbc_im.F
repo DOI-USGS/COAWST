@@ -960,6 +960,11 @@
 #endif   !ref grid bcs
 !
 #if defined WET_DRY
+!
+!-----------------------------------------------------------------------
+!  Impose wetting and drying conditions.
+!-----------------------------------------------------------------------
+!
 # ifndef EW_PERIODIC
       IF (WESTERN_EDGE) THEN
         DO j=Jstr,Jend
