@@ -274,8 +274,8 @@
 # endif
 
             CALL mpi_barrier(OCN_COMM_WORLD, MyError)
-            ng=2
-            DO count2=1,nrefined(ng)
+            DO count2=1,nrefined(2)
+              ng=2
               iic(ng)=(my_iic-Tstr(1))*nrefined(1)*nrefined(2)+         &
      &                count2
 # ifdef SOLVE3D
@@ -286,8 +286,8 @@
 
               CALL mpi_barrier(OCN_COMM_WORLD, MyError)
               IF (Ngrids.ge.3) THEN
-                ng=3
-                DO count3=1,nrefined(ng)
+                DO count3=1,nrefined(3)
+                  ng=3
                   iic(ng)=(my_iic-Tstr(1))*nrefined(1)*nrefined(2)*     &
      &                    nrefined(ng)+(count2-1)*nrefined(ng)+count3
 # ifdef SOLVE3D
@@ -298,8 +298,8 @@
 
                   CALL mpi_barrier(OCN_COMM_WORLD, MyError)
                   IF (Ngrids.ge.4) THEN
-                    ng=4
-                    DO count4=1,nrefined(ng)
+                    DO count4=1,nrefined(4)
+                      ng=4
                       iic(ng)=(my_iic-Tstr(1))*nrefined(1)*nrefined(2)* &
      &                        nrefined(ng-1)*nrefined(ng)+                  &
      &                        (count2-1)*nrefined(2)*nrefined(ng-1)+       &
