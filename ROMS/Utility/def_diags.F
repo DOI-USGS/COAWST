@@ -46,7 +46,7 @@
       logical :: got_var(NV)
 
       integer :: i, ifield, itrc, ivar, j, nrec, nvd, nvd3, nvd4
-      integer :: recdim, status
+      integer :: recdim, status, ofst
 
       integer :: DimIDs(29), t2dgrd(3), u2dgrd(3), v2dgrd(3)
       integer :: Vsize(4)
@@ -103,22 +103,33 @@
 !  Define the dimensions of staggered fields.
 !-----------------------------------------------------------------------
 !
+#ifdef COMPOSED_GRID
+            ofst=6
+#elif defined REFINED_GRID
+      IF (ng.eq.1) THEN
+        ofst=1
+      ELSE
+        ofst=6
+      ENDIF
+#else
+            ofst=1
+#endif
       IF (ldef.and.OutThread) THEN
-        status=nf90_def_dim(ncDIAid(ng),'xi_rho'  ,Lm(ng)+2,            &
+        status=nf90_def_dim(ncDIAid(ng),'xi_rho'  ,Lm(ng)+ofst+1,       &
      &                      DimIDs( 1))
-        status=nf90_def_dim(ncDIAid(ng),'xi_u'    ,Lm(ng)+1,            &
+        status=nf90_def_dim(ncDIAid(ng),'xi_u'    ,Lm(ng)+ofst,         &
      &                      DimIDs( 2))
-        status=nf90_def_dim(ncDIAid(ng),'xi_v'    ,Lm(ng)+2,            &
+        status=nf90_def_dim(ncDIAid(ng),'xi_v'    ,Lm(ng)+ofst+1,       &
      &                      DimIDs( 3))
-        status=nf90_def_dim(ncDIAid(ng),'xi_psi'  ,Lm(ng)+1,            &
+        status=nf90_def_dim(ncDIAid(ng),'xi_psi'  ,Lm(ng)+ofst,         &
      &                      DimIDs( 4))
-        status=nf90_def_dim(ncDIAid(ng),'eta_rho' ,Mm(ng)+2,            &
+        status=nf90_def_dim(ncDIAid(ng),'eta_rho' ,Mm(ng)+ofst+1,       &
      &                      DimIDs( 5))
-        status=nf90_def_dim(ncDIAid(ng),'eta_u'   ,Mm(ng)+2,            &
+        status=nf90_def_dim(ncDIAid(ng),'eta_u'   ,Mm(ng)+ofst+1,       &
      &                      DimIDs( 6))
-        status=nf90_def_dim(ncDIAid(ng),'eta_v'   ,Mm(ng)+1,            &
+        status=nf90_def_dim(ncDIAid(ng),'eta_v'   ,Mm(ng)+ofst,         &
      &                      DimIDs( 7))
-        status=nf90_def_dim(ncDIAid(ng),'eta_psi' ,Mm(ng)+1,            &
+        status=nf90_def_dim(ncDIAid(ng),'eta_psi' ,Mm(ng)+ofst,         &
      &                      DimIDs( 8))
 # if defined WRITE_WATER && defined MASKING
         status=nf90_def_dim(ncDIAid(ng),'xy_rho'  ,Nxyr(ng),            &
