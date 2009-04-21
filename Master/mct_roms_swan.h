@@ -645,7 +645,7 @@
         RETURN
       ELSE
         IF (Master) THEN
-          WRITE (stdout,'a') 'ROMS recv Wave fields'
+          WRITE (stdout,'(a)') 'ROMS recv Wave fields'
         END IF
       END IF
 !
@@ -1015,7 +1015,7 @@
         RETURN
       ELSE
         IF (Master) THEN
-          WRITE (stdout,'a') 'ROMS sent data to SWAN'
+          WRITE (stdout,'(a)') 'ROMS sent data to SWAN'
         END IF
       END IF
 !
