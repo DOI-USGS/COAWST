@@ -23,7 +23,7 @@ T2=datenum(2003,12,1); %end date
 wdr='g:\data2\Carolinas\modeling\bc_ic';
 
 %3) Enter path/grid_name here.
-gridname='g:\data2\Carolinas\modeling\Grids\USeast_grd8.nc';
+gridname='g:\data2\Carolinas\modeling\Grids\USeast_grd13.nc';
 
 %4) Set grid vertical coordinate params here.
 theta_s=5;
