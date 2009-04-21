@@ -1,8 +1,7 @@
-function create_roms_netcdf_init(fn,gn,t_clim,Nbed,NNS,NCS)
+function create_roms_netcdf_init(init_file,gn,t_clim,Nbed,NNS,NCS)
 
 %create init file
-nc_init=netcdf(fn,'clobber');
-if isempty(nc_init), return, end
+nc_init=netcdf(init_file,'clobber');
  
 %% Global attributes:
 
@@ -257,7 +256,7 @@ nc_init{'dmix_time'}.units = ncchar('seconds');
 nc_init{'dmix_time'}.time = ncchar('ocean_time');
 nc_init{'dmix_time'}.field = ncchar('dmix_time, scalar, series');
 
-ncclose(nc_init)
+close(nc_init)
 
 
 

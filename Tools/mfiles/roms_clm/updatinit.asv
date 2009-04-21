@@ -29,8 +29,7 @@ t_clim=nc_clm{'ocean_time'}(:);
 %   This time needs to be consistent with model time (ie dstart and time_ref).
 %   See *.in files for more detail. 
     tidx=1;
-    init_time=nc_clm{'ocean_time'}(1);
-    tidx=1;% for date specific hycom nc files
+    init_time=nc_clm{'ocean_time'}(tidx);
 
 %3) Enter number of vertical sigma levels in model.
 %   This will be same value as entered in mod_param.F
@@ -58,6 +57,30 @@ t_clim=nc_clm{'ocean_time'}(:);
   eta_v   = M;
   s       = gn.N;
 
+%5)
+   hmin=0;
+   hc=min([hmin,Tcline]);
+   if (theta_s~=0.0)
+     cff1=1.0/sinh(theta_s);
+     cff2=0.5/tanh(0.5*theta_s);
+   end
+   sc_w(1)=-1.0;
+   Cs_w(1)=-1.0;
+   cff=1.0/N;
+   for k=1:N
+     sc_w(k+1)=cff*(k-N);
+     sc_r(k)=cff*((k-N)-0.5);
+     if (theta_s~=0)
+       Cs_w(k+1)=(1.0-theta_b)*cff1*sinh(theta_s*sc_w(k+1))+   ...
+                      theta_b*(cff2*tanh(theta_s*(sc_w(k+1)+0.5))-0.5);
+       Cs_r(k)  =(1.0-theta_b)*cff1*sinh(theta_s*sc_r(k))+   ...
+                      theta_b*(cff2*tanh(theta_s*(sc_r(k)+0.5))-0.5);
+     else
+       Cs_w(k+1)=sc_w(k+1);
+       Cs_r(k)=sc_r(k);
+      end
+    end
+ 
     
 %6) Initialize zeta, salt, temp, u, v, ubar, vbar.
 %
@@ -125,21 +148,14 @@ NAT=2;                            % Number of active tracers. Usually 2 (temp + 
 
 %9) Provide initial sediment properties in water column.
 %
-% mud.
   display('Initializing suspended sediments.')
+%
+% mud.
 %
 for idmud=1:NCS
   count=['0',num2str(idmud)];
   count=count(end-1:end);
-  for k=1:N
-    for j=1:eta_rho
-      for i=1:xi_rho
-        for time=1:length(init_time)
-          eval(['mud_',count,'(time,k,j,i) = 0;'])               %mud conc in water column
-        end
-      end
-    end
-  end
+  eval(['mud_',count,'(1:length(init_time),1:N,1:eta_rho,1:xi_rho) = 0;'])               %mud conc in water column
 end
 %
 % sand.
@@ -147,15 +163,7 @@ end
 for isand=1:NNS
   count=['0',num2str(isand)];
   count=count(end-1:end);
-  for k=1:N
-    for j=1:eta_rho
-      for i=1:xi_rho
-        for time=1:length(init_time)
-          eval(['sand_',count,'(time,k,j,i) = 0;'])               %sand conc in water column
-        end
-      end
-    end
-  end
+  eval(['sand_',count,'(1:length(init_time),1:N,1:eta_rho,1:xi_rho) = 0;'])               %mud conc in water column
 end
 
 %10) Provide initial sediment properties in bed.
@@ -249,6 +257,11 @@ for j=1:eta_rho
   end
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%now create the netcdf file first
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+create_roms_netcdf_init(init_file,gn,t_clim,Nbed,NNS,NCS)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %now write the data from the arrays to the netcdf file

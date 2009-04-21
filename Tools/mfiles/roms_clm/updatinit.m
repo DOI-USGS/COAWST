@@ -57,6 +57,30 @@ t_clim=nc_clm{'ocean_time'}(:);
   eta_v   = M;
   s       = gn.N;
 
+%5)
+   hmin=0;
+   hc=min([hmin,Tcline]);
+   if (theta_s~=0.0)
+     cff1=1.0/sinh(theta_s);
+     cff2=0.5/tanh(0.5*theta_s);
+   end
+   sc_w(1)=-1.0;
+   Cs_w(1)=-1.0;
+   cff=1.0/N;
+   for k=1:N
+     sc_w(k+1)=cff*(k-N);
+     sc_r(k)=cff*((k-N)-0.5);
+     if (theta_s~=0)
+       Cs_w(k+1)=(1.0-theta_b)*cff1*sinh(theta_s*sc_w(k+1))+   ...
+                      theta_b*(cff2*tanh(theta_s*(sc_w(k+1)+0.5))-0.5);
+       Cs_r(k)  =(1.0-theta_b)*cff1*sinh(theta_s*sc_r(k))+   ...
+                      theta_b*(cff2*tanh(theta_s*(sc_r(k)+0.5))-0.5);
+     else
+       Cs_w(k+1)=sc_w(k+1);
+       Cs_r(k)=sc_r(k)
+      end
+    end
+ 
     
 %6) Initialize zeta, salt, temp, u, v, ubar, vbar.
 %
@@ -124,21 +148,14 @@ NAT=2;                            % Number of active tracers. Usually 2 (temp + 
 
 %9) Provide initial sediment properties in water column.
 %
-% mud.
   display('Initializing suspended sediments.')
+%
+% mud.
 %
 for idmud=1:NCS
   count=['0',num2str(idmud)];
   count=count(end-1:end);
-  for k=1:N
-    for j=1:eta_rho
-      for i=1:xi_rho
-        for time=1:length(init_time)
-          eval(['mud_',count,'(time,k,j,i) = 0;'])               %mud conc in water column
-        end
-      end
-    end
-  end
+  eval(['mud_',count,'(1:length(init_time),1:N,1:eta_rho,1:xi_rho) = 0;'])               %mud conc in water column
 end
 %
 % sand.
@@ -146,15 +163,7 @@ end
 for isand=1:NNS
   count=['0',num2str(isand)];
   count=count(end-1:end);
-  for k=1:N
-    for j=1:eta_rho
-      for i=1:xi_rho
-        for time=1:length(init_time)
-          eval(['sand_',count,'(time,k,j,i) = 0;'])               %sand conc in water column
-        end
-      end
-    end
-  end
+  eval(['sand_',count,'(1:length(init_time),1:N,1:eta_rho,1:xi_rho) = 0;'])               %mud conc in water column
 end
 
 %10) Provide initial sediment properties in bed.
@@ -163,15 +172,11 @@ end
   display('Initializing sediment bed.')
 %
 for k=1:Nbed
-  for j=1:eta_rho
-    for i=1:xi_rho
-      for time=1:length(init_time)
-        bed_thickness(time,k,j,i) = 0.1;
-        bed_age(time,k,j,i)       = init_time(1);
-        bed_porosity(time,k,j,i)  = 0.9;
-        bed_biodiff(time,k,j,i)   = 0.0;
-      end
-    end
+  for time=1:length(init_time)
+    bed_thickness(time,k,1:eta_rho,1:xi_rho) = 0.1;
+    bed_age(time,k,1:eta_rho,1:xi_rho)       = init_time(1);
+    bed_porosity(time,k,1:eta_rho,1:xi_rho)  = 0.9;
+    bed_biodiff(time,k,1:eta_rho,1:xi_rho)   = 0.0;
   end
 end
 %
@@ -181,13 +186,9 @@ for idsed=1:NCS
   count=['0',num2str(idsed)];
   count=count(end-1:end);
   for k=1:Nbed
-    for j=1:eta_rho
-      for i=1:xi_rho
-        for time=1:length(init_time)
-          eval(['mudfrac_',count,'(time,k,j,i) = 1/NST;'])      %fraction of each sed class in each bed cell
-          eval(['mudmass_',count,'(time,k,j,i) = bed_thickness(time,k,j,i)*Srho(idsed)*(1.0-bed_porosity(time,k,j,i))*mudfrac_',count,'(time,k,j,i);'])          %mass of each sed class in each bed cell
-        end
-      end
+    for time=1:length(init_time)
+      eval(['mudfrac_',count,'(time,k,1:eta_rho,1:xi_rho) = 1/NST;'])      %fraction of each sed class in each bed cell
+      eval(['mudmass_',count,'(time,k,1:eta_rho,1:xi_rho) = squeeze(bed_thickness(time,k,1:eta_rho,1:xi_rho)).*Srho(idsed).*(1.0-squeeze(bed_porosity(time,k,1:eta_rho,1:xi_rho))).*squeeze(mudfrac_',count,'(time,k,1:eta_rho,1:xi_rho));'])          %mass of each sed class in each bed cell
     end
   end
 end
@@ -198,13 +199,9 @@ for isand=1:NNS
  count=['0',num2str(isand)];
  count=count(end-1:end);
   for k=1:Nbed
-    for j=1:eta_rho
-      for i=1:xi_rho
-        for time=1:length(init_time)
-          eval(['sandfrac_',count,'(time,k,j,i) = 1/NST;'])      %fraction of each sed class in each bed cell
-          eval(['sandmass_',count,'(time,k,j,i) = bed_thickness(time,k,j,i)*Srho(isand)*(1.0-bed_porosity(time,k,j,i))*sandfrac_',count,'(time,k,j,i);'])          %mass of each sed class in each bed cell
-        end
-      end
+    for time=1:length(init_time)
+      eval(['sandfrac_',count,'(time,k,1:eta_rho,1:xi_rho) = 1/NST;'])      %fraction of each sed class in each bed cell
+      eval(['sandmass_',count,'(time,k,1:eta_rho,1:xi_rho) = squeeze(bed_thickness(time,k,1:eta_rho,1:xi_rho)).*Srho(isand).*(1.0-squeeze(bed_porosity(time,k,1:eta_rho,1:xi_rho))).*squeeze(sandfrac_',count,'(time,k,1:eta_rho,1:xi_rho));'])          %mass of each sed class in each bed cell
     end
   end
 end
@@ -214,8 +211,6 @@ end
 % set some surface properties
   display('Initializing sediment surface properties.')
 %
-for j=1:eta_rho
-  for i=1:xi_rho
     cff1=1.0;
     cff2=1.0;
     cff3=1.0;
@@ -223,30 +218,28 @@ for j=1:eta_rho
     for ised=1:NCS
       count=['0',num2str(ised)];
       count=count(end-1:end);
-      eval(['cff1=cff1*mud_Sd50(ised)^squeeze(mudfrac_',count,'(1,1,j,i));'])
-      eval(['cff2=cff2*mud_Srho(ised)^squeeze(mudfrac_',count,'(1,1,j,i));'])
-      eval(['cff3=cff3*mud_Wsed(ised)^squeeze(mudfrac_',count,'(1,1,j,i));'])
-      eval(['cff4=cff4*mud_tau_ce(ised)^squeeze(mudfrac_',count,'(1,1,j,i));'])
+      eval(['cff1=cff1*mud_Sd50(ised)^squeeze(mudfrac_',count,'(1,1,1:eta_rho,1:xi_rho));'])
+      eval(['cff2=cff2*mud_Srho(ised)^squeeze(mudfrac_',count,'(1,1,1:eta_rho,1:xi_rho));'])
+      eval(['cff3=cff3*mud_Wsed(ised)^squeeze(mudfrac_',count,'(1,1,1:eta_rho,1:xi_rho));'])
+      eval(['cff4=cff4*mud_tau_ce(ised)^squeeze(mudfrac_',count,'(1,1,1:eta_rho,1:xi_rho));'])
     end
     for ised=1:NNS
       count=['0',num2str(ised)];
       count=count(end-1:end);
-      eval(['cff1=cff1*sand_Sd50(ised)^squeeze(sandfrac_',count,'(1,1,j,i));'])
-      eval(['cff2=cff2*sand_Srho(ised)^squeeze(sandfrac_',count,'(1,1,j,i));'])
-      eval(['cff3=cff3*sand_Wsed(ised)^squeeze(sandfrac_',count,'(1,1,j,i));'])
-      eval(['cff4=cff4*sand_tau_ce(ised)^squeeze(sandfrac_',count,'(1,1,j,i));'])
+      eval(['cff1=cff1*sand_Sd50(ised).^squeeze(sandfrac_',count,'(1,1,1:eta_rho,1:xi_rho));'])
+      eval(['cff2=cff2*sand_Srho(ised).^squeeze(sandfrac_',count,'(1,1,1:eta_rho,1:xi_rho));'])
+      eval(['cff3=cff3*sand_Wsed(ised).^squeeze(sandfrac_',count,'(1,1,1:eta_rho,1:xi_rho));'])
+      eval(['cff4=cff4*sand_tau_ce(ised).^squeeze(sandfrac_',count,'(1,1,1:eta_rho,1:xi_rho));'])
     end
-    grain_diameter(time,j,i)=cff1;
-    grain_density(time,j,i)=cff2;
-    settling_vel(time,j,i)=cff3;
-    erosion_stress(time,j,i)=cff4;
-    ripple_length(time,j,i)=0.10;
-    ripple_height(time,j,i)=0.01;
-    dmix_offset(time,j,i)=0.0;
-    dmix_slope(time,j,i)=0.0;
-    dmix_time(time,j,i)=0.0;
-  end
-end
+    grain_diameter(time,1:eta_rho,1:xi_rho)=cff1;
+    grain_density(time,1:eta_rho,1:xi_rho)=cff2;
+    settling_vel(time,1:eta_rho,1:xi_rho)=cff3;
+    erosion_stress(time,1:eta_rho,1:xi_rho)=cff4;
+    ripple_length(time,1:eta_rho,1:xi_rho)=0.10;
+    ripple_height(time,1:eta_rho,1:xi_rho)=0.01;
+    dmix_offset(time,1:eta_rho,1:xi_rho)=0.0;
+    dmix_slope(time,1:eta_rho,1:xi_rho)=0.0;
+    dmix_time(time,1:eta_rho,1:xi_rho)=0.0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %now create the netcdf file first
@@ -260,11 +253,11 @@ create_roms_netcdf_init(init_file,gn,t_clim,Nbed,NNS,NCS)
 
 disp(' ## Filling Variables in netcdf file with data...')
 
-nc_init=netcdf('init_file');
+nc_init=netcdf(init_file,'w');
 nc_init{'theta_s'}(:) = theta_s;
 nc_init{'theta_b'}(:) = theta_b;
 nc_init{'Tcline'}(:)  = Tcline;
-nc_init{'Cs_r'}(:) = Cs_r
+nc_init{'Cs_r'}(:) = Cs_r;
 nc_init{'Cs_w'}(:) = Cs_w;
 nc_init{'sc_w'}(:) = sc_w;
 nc_init{'sc_r'}(:) = sc_r;
