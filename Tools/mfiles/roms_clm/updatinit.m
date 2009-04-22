@@ -1,4 +1,4 @@
-function updatinit(fn,gn)
+function updatinit(fn,gn,tag,wdr)
 % script create_roms_init
 %
 % Create a netcdf file that contains initialization data for ROMS.
@@ -21,8 +21,7 @@ t_clim=nc_clm{'ocean_time'}(:);
 
 %1) Enter name of netcdf initial file to be created.
 %   If it already exists it will be overwritten!!.
-    init_file='USE_init.nc'
-%   create_roms_netcdf_init(init_file,gn,t_clim, Nbed, NNS,NCS)
+    init_file=[wdr 'USE_' tag '_ini.nc'];
     
 %2) Enter start time of initial file, in seconds and time step if file
 % has more than one

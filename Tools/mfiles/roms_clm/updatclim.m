@@ -47,9 +47,9 @@ disp([num2str(tid2-tid1+1) ' available record(s): ' num2str([tid1 tid2])]);
 disp(['interpolating from ' datestr(T1) ' to ' datestr(T2)]);
 
 %Create netcdf clm file
-tag=datestr(tg(tid1),'yyyymm');
+tag=datestr(tg(tid1),'yyyymmdd');
 disp([datestr(tg(tid1)) ' at ' datestr(now)]);
-fn=[wdr 'ncoda_' tag '.nc'];
+fn=[wdr 'USE_' tag '_clm.nc'];
 disp(['creating netcdf file ',fn]);
 create_roms_netcdf_clm(fn,gn,tid1,tid2);
 
@@ -200,9 +200,5 @@ for t=tid1:tid2
     
 end
 
-toc
-
-%% Call to create and fill boundary file
-%udatbdry(tg,fn);
 
 
