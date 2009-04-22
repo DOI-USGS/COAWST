@@ -15,8 +15,8 @@ warning off
 
 %1) Enter start and end dates to get climatology data here.
 %(time step is 1 day).
-T1=datenum(2003,12,1); %start date
-T2=datenum(2003,12,1); %end date
+T1=datenum(2005,12,1); %start date
+T2=datenum(2005,12,1); %end date
 
 %2) Enter working directory here.
 wdr='g:\data2\Carolinas\modeling\bc_ic\';
