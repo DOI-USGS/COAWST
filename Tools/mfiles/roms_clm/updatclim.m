@@ -177,12 +177,12 @@ for t=tid1:tid2
       RN{'u'}(tid,:,:,:)=u;
       RN{'v'}(tid,:,:,:)=v;
 %    end
-    RN{'ocean_time'}(tid)=(tg(t)-tr0)*3600*24;
-    RN{'zeta_time'}(tid)=(tg(t)-tr0)*3600*24;
-    RN{'v2d_time'}(tid)=(tg(t)-tr0)*3600*24;
-    RN{'v3d_time'}(tid)=(tg(t)-tr0)*3600*24;
-    RN{'salt_time'}(tid)=(tg(t)-tr0)*3600*24;
-    RN{'temp_time'}(tid)=(tg(t)-tr0)*3600*24;
+    RN{'ocean_time'}(tid)=(tg(t)-tr0);
+    RN{'zeta_time'}(tid)=(tg(t)-tr0);
+    RN{'v2d_time'}(tid)=(tg(t)-tr0);
+    RN{'v3d_time'}(tid)=(tg(t)-tr0);
+    RN{'salt_time'}(tid)=(tg(t)-tr0);
+    RN{'temp_time'}(tid)=(tg(t)-tr0);
     close(RN);
 
     %== Depth averaging u, v to get Ubar

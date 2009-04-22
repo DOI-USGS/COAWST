@@ -18,11 +18,11 @@ nc_bndry=netcdf(bndry_file,'w');
 %now write the data from the arrays to the netcdf file
 disp(' ## Filling Variables in netcdf file with data...')
 
-nc_bndry{'zeta_time'}(:) = ocean_time*3600*24;
-nc_bndry{'v2d_time'}(:) = ocean_time*3600*24;
-nc_bndry{'v3d_time'}(:) = ocean_time*3600*24;
-nc_bndry{'salt_time'}(:) = ocean_time*3600*24;
-nc_bndry{'temp_time'}(:) = ocean_time*3600*24;
+nc_bndry{'zeta_time'}(:) = ocean_time;
+nc_bndry{'v2d_time'}(:) = ocean_time;
+nc_bndry{'v3d_time'}(:) = ocean_time;
+nc_bndry{'salt_time'}(:) = ocean_time;
+nc_bndry{'temp_time'}(:) = ocean_time;
 
 %zeta
 zeta_south=nc_clm{'zeta'}(:,1,:);

@@ -43,32 +43,32 @@ disp(' ## Defining Dimensions, Variables, and Attributes...')
 
 nc{'ocean_time'} = ncdouble('ocean_time'); %% 1 element.
 nc{'ocean_time'}.long_name = ncchar('wind field time');
-nc{'ocean_time'}.units = ncchar('seconds');
+nc{'ocean_time'}.units = ncchar('days');
 nc{'ocean_time'}.field = ncchar('wave_time, scalar, series');
 
 nc{'zeta_time'} = ncdouble('zeta_time');
 nc{'zeta_time'}.long_name = ncchar('zeta_time');
-nc{'zeta_time'}.units = ncchar('seconds');
+nc{'zeta_time'}.units = ncchar('days');
 nc{'zeta_time'}.field = ncchar('zeta_time, scalar, series');
 
 nc{'v2d_time'} = ncdouble('v2d_time');
 nc{'v2d_time'}.long_name = ncchar('v2d_time');
-nc{'v2d_time'}.units = ncchar('seconds');
+nc{'v2d_time'}.units = ncchar('days');
 nc{'v2d_time'}.field = ncchar('v2d_time, scalar, series');
 
 nc{'v3d_time'} = ncdouble('v3d_time');
 nc{'v3d_time'}.long_name = ncchar('v3d_time');
-nc{'v3d_time'}.units = ncchar('seconds');
+nc{'v3d_time'}.units = ncchar('days');
 nc{'v3d_time'}.field = ncchar('v3d_time, scalar, series');
 
 nc{'salt_time'} = ncdouble('salt_time');
 nc{'salt_time'}.long_name = ncchar('salt_time');
-nc{'salt_time'}.units = ncchar('seconds');
+nc{'salt_time'}.units = ncchar('days');
 nc{'salt_time'}.field = ncchar('salt_time, scalar, series');
 
 nc{'temp_time'} = ncdouble('temp_time');
 nc{'temp_time'}.long_name = ncchar('temp_time');
-nc{'temp_time'}.units = ncchar('seconds');
+nc{'temp_time'}.units = ncchar('days');
 nc{'temp_time'}.field = ncchar('temp_time, scalar, series');
 
 nc{'lon_rho'} = ncfloat('eta_rho', 'xi_rho');

@@ -28,7 +28,7 @@ t_clim=nc_clm{'ocean_time'}(:);
 %   This time needs to be consistent with model time (ie dstart and time_ref).
 %   See *.in files for more detail. 
     tidx=1;
-    init_time=nc_clm{'ocean_time'}(tidx)*3600*24;
+    init_time=nc_clm{'ocean_time'}(tidx);
 
 %3) Enter number of vertical sigma levels in model.
 %   This will be same value as entered in mod_param.F

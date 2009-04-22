@@ -95,7 +95,7 @@ nc_init{'sc_w'}.field = ncchar('sc_w, scalar');
 
 nc_init{'ocean_time'} = ncdouble('time'); %% 1 element.
 nc_init{'ocean_time'}.long_name = ncchar('time since initialization');
-nc_init{'ocean_time'}.units = ncchar('second');
+nc_init{'ocean_time'}.units = ncchar('days');
 nc_init{'ocean_time'}.field = ncchar('ocean_time, scalar, series');
 
 nc_init{'salt'} = ncfloat('time', 's_rho', 'eta_rho', 'xi_rho');

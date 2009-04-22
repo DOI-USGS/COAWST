@@ -60,27 +60,27 @@ disp(' ## Defining Dimensions, Variables, and Attributes...')
  
 nc_bndry{'zeta_time'} = ncdouble('zeta_time');
 nc_bndry{'zeta_time'}.long_name = ncchar('zeta_time');
-nc_bndry{'zeta_time'}.units = ncchar('seconds');
+nc_bndry{'zeta_time'}.units = ncchar('days');
 nc_bndry{'zeta_time'}.field = ncchar('zeta_time, scalar, series');
 
 nc_bndry{'v2d_time'} = ncdouble('v2d_time');
 nc_bndry{'v2d_time'}.long_name = ncchar('v2d_time');
-nc_bndry{'v2d_time'}.units = ncchar('seconds');
+nc_bndry{'v2d_time'}.units = ncchar('days');
 nc_bndry{'v2d_time'}.field = ncchar('v2d_time, scalar, series');
 
 nc_bndry{'v3d_time'} = ncdouble('v3d_time');
 nc_bndry{'v3d_time'}.long_name = ncchar('v3d_time');
-nc_bndry{'v3d_time'}.units = ncchar('seconds');
+nc_bndry{'v3d_time'}.units = ncchar('days');
 nc_bndry{'v3d_time'}.field = ncchar('v3d_time, scalar, series');
 
 nc_bndry{'salt_time'} = ncdouble('salt_time');
 nc_bndry{'salt_time'}.long_name = ncchar('salt_time');
-nc_bndry{'salt_time'}.units = ncchar('seconds');
+nc_bndry{'salt_time'}.units = ncchar('days');
 nc_bndry{'salt_time'}.field = ncchar('salt_time, scalar, series');
 
 nc_bndry{'temp_time'} = ncdouble('temp_time');
 nc_bndry{'temp_time'}.long_name = ncchar('temp_time');
-nc_bndry{'temp_time'}.units = ncchar('seconds');
+nc_bndry{'temp_time'}.units = ncchar('days');
 nc_bndry{'temp_time'}.field = ncchar('temp_time, scalar, series');
 
 nc_bndry{'zeta_south'} = ncdouble('zeta_time','xi_rho');
