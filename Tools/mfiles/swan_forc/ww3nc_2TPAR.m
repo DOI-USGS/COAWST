@@ -1,4 +1,10 @@
-function ww3nc_2TPAR(modelgrid,yearww3,mmww3,working_dir,working_drive,ww3_area,ddww3)
+function ww3nc_2TPAR(modelgrid,yearww3,mmww3,working_dir,working_drive,ww3_area,ddww3,specres)
+
+%this assumes data is historical data and is already downloaded to working
+    %directory
+    eval(['dpname=''',working_drive,'\',working_dir,ww3_area,'.dp.',yearww3,mmww3,'.grb'';']);
+    eval(['hsname=''',working_drive,'\',working_dir,ww3_area,'.hs.',yearww3,mmww3,'.grb'';']);
+    eval(['tpname=''',working_drive,'\',working_dir,ww3_area,'.tp.',yearww3,mmww3,'.grb'';']);
 
 t=[yearww3,mmww3,ddww3];
 dirt=[ww3_area,t];
@@ -17,7 +23,7 @@ if length(s)>1000
     
     %determine spec pts from grid
     % specpoints assumes a masking of 0 for land and NaN for water
-    [specpts]=ww3_specpoints(modelgrid,50);
+    [specpts]=ww3_specpoints(modelgrid,specres);
     
     for i=1:length(specpts)
         gx=specpts(i,1);
@@ -73,7 +79,7 @@ if length(s)>1000
             TPAR(1:length(time.time),1)=str2num(datestr(time.time+datenum(0000,12,30,0,0,0),'yyyymmdd.HHMM'));
             TPAR(1:length(time.time),5)=20;
             l=num2str(i);
-            ofile=['TPAR',l,'.txt'];
+            ofile=['TPAR',l,'.txt']; 
             fid=fopen(ofile,'w');
             fprintf(fid,'TPAR \n');
             fprintf(fid,'%8.4f         %3.2f        %3.2f     %3.f.       %2.f\n',TPAR');

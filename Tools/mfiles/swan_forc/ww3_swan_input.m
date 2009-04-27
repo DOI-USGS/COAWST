@@ -1,39 +1,74 @@
-% Download, convert and interpolate WW3 data to TPAR input for SWAN
+% script ww3_swan_input.m
+%
+% This script is the main driver to 
+% download, convert and interpolate WW3 data to TPAR input for SWAN.
+%
 % Written 4/23/09 by Brandy Armstrong
-
-
-% *************USER INPUT****************************
-
-% working directory, location of ww3 grb files downloaded from 
+% some mods, jcwarner Arpil 27, 2009
+%
+% READ THE INSTRUCTIONS IN THE COAWST MANUAL 
+% FOR SWAN BC's SECTION 11.
+% If you are using this to run in hindcast mode, then
+% it is assumed that you have already installed
+% the njToolbox and the jar files from
+% http://www2.msstate.edu/~skb12/nopp/njTbx/index.html
+% and that you have acquired the grib files from
 % ftp://polar.ncep.noaa.gov/pub/history/waves/
-working_drive='D:';
-% ***WARNING*** TPAR files are saved in the working directory and are named
-% generically (numbered), so make sure your working directory does not already have
-% TPAR files with the same names
-working_dir='Temporary\ww3\';
+%
+% For forecast mode, just plow ahead below.
+%
+
+% ************* BEGIN USER INPUT   ****************************
+
+%1) Enter WORKING DIRECTORY.
+% This is the location of ww3 grb files downloaded (if needed) and the
+% location of output for the TPAR files to be created.
+% ***WARNING***
+% The TPAR files created are saved in the working directory and are named
+% generically (numbered). Any existing TPAR files will be overwritten !!!!
+%
+working_drive='g:';
+working_dir='data2\Carolinas\modeling\bc_ic\ww3_grib\';
 eval(['cd ',working_drive,'\',working_dir,';']);
 
-% dates of data requested
-yearww3='2005';%input year of data yyyy 
-mmww3='12';%input month of data mm
-% for recent data, last 7 days, input exact day, time period covered is 
-% approximately 7.5 days
-% if older than the last 7 days keep ddww3='00'; for archived grb files
-ddww3='00';% dd
+%2) Enter dates of data requested.
+yearww3='2005';    %input year of data yyyy 
+mmww3='12';        %input month of data mm
 
-% Enter the ww3 area needed to cover the grid
-% akw, enp, nah, nph, nww3, wna
-ww3_area='wna'; %western north atlantic
+% For recent data, i.e. the last 7 days, input ddww3='dd'
+% For HISTORICAL data, keep ddww3='00'
+ddww3='00';        % dd
 
-% location/name of netcdf grid
-modelgrid='D:\BNA\data\Grids\USeast_grd12.nc';
+%3) Enter the ww3 grid area
+% choices are: akw, enp, nah, nph, nww3, wna
+ww3_area='wna';    %western north atlantic
 
-% determine spec points and interpolate spec for TPAR files
+%4) Enter path\name of SWAN netcdf grid. This is typically the same
+% as the roms grid.
+modelgrid='G:\data2\Carolinas\modeling\Grids\USeast_grd15.nc';
+
+%5) Enter the spacings of TPAR file locations around the perimeter
+% of the grid. One TPAR file every 'specres' point.
 % ww3_specpoints assumes masking of 0 for land and NaN for water
+specres=20; % spec point resolution
+
+
+% *************END OF USER INPUT****************************
+
+% Call routine to compute TPAR files.
+% ww3gb_2TPAR = for hindcast mode
+% ww3nc_2TPAR = for forecast mode
 if str2num(ddww3)==0; %assumes these are grb files
-    ww3gb_2TPAR(modelgrid,yearww3,mmww3,working_dir,working_drive,ww3_area,ddww3)
+    ww3gb_2TPAR(modelgrid,yearww3,mmww3,working_dir,working_drive,ww3_area,ddww3,specres)
 else
-    ww3nc_2TPAR(modelgrid,yearww3,mmww3,working_dir,working_drive,ww3_area,ddww3)
+    ww3nc_2TPAR(modelgrid,yearww3,mmww3,working_dir,working_drive,ww3_area,ddww3,specres)
 end
+
+% After creating the TPAR files, tell the user what info is needed to 
+% be added to INPUT file.
+% Write out boundary file lines for INPUT file
+bdry_com %script writes out file Bound_spec_command to working directory
+display('BOUNDSPEC command lines can be found in the file Bound_spec_command');
+display('You must copy the lines from that file into your SWAN INPUT file');
 
 

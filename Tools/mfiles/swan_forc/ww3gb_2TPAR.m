@@ -1,4 +1,4 @@
-function ww3gb_2TPAR(modelgrid,yearww3,mmww3,working_dir,working_drive,ww3_area,ddww3)
+function ww3gb_2TPAR(modelgrid,yearww3,mmww3,working_dir,working_drive,ww3_area,ddww3,specres)
 
 %this assumes data is historical data and is already downloaded to working
 %directory
@@ -11,14 +11,14 @@ xg=dpnc{'lon'}(:);%lat of ww3 data
 xg(xg>0)=xg(xg>0)-360;
 yg=dpnc{'lat'}(:);%lon of ww3 data
 [xg,yg]=meshgrid(xg,yg);
-time=dpnc{'time'}(:);%time interval 3 hours, length 8 days from next day, not now
+time=dpnc{'time'}(:);%time interval 3 hours
 time2=datenum(str2num(yearww3),str2num(mmww3),str2num(ddww3)+1):3/24:datenum(str2num(yearww3),str2num(mmww3),str2num(ddww3)+((length(time)-1)/(24/3))+1);
 time=time2;
 close(dpnc)
 
 %determine spec pts from grid
 % specpoints assumes a masking of 0 for land and NaN for water
-[specpts]=ww3_specpoints(modelgrid,50);
+[specpts]=ww3_specpoints(modelgrid,specres);
 
 for i=1:length(specpts)
     gx=specpts(i,1);
@@ -72,13 +72,17 @@ for i=1:length(specpts)
         Z1=interp2(daplon,daplat,dpt,gx,gy);
         TPAR(wavet,4)=Z1;
     end
-    TPAR(1:length(time),1)=str2num(datestr(time,'yyyymmdd.HHMM'));
     TPAR(1:length(time),5)=20;
+    TPAR_time(1:length(time),1)=str2num(datestr(time,'yyyymmdd.HHMM'));
     l=num2str(i);
     ofile=['TPAR',l,'.txt'];
     fid=fopen(ofile,'w');
     fprintf(fid,'TPAR \n');
-    fprintf(fid,'%8.4f         %3.2f        %3.2f     %3.f.       %2.f\n',TPAR');
+%   fprintf(fid,'%8.4f         %3.2f        %3.2f     %3.f.       %2.f\n',TPAR');
+    for wavet=1:length(time)
+      fprintf(fid,'%8.4f',TPAR_time(wavet));
+      fprintf(fid,'         %3.2f        %3.2f     %3.f.       %2.f\n',TPAR(wavet,2:5)');
+    end
     fclose(fid);
 end
 
