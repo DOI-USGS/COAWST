@@ -9,15 +9,17 @@
 ** Options for SOUTH_CAR Application.
 **
 */
+#undef  UV_CONST
+#define UV_ONEPOINT
 #define NEARSHORE_MELLOR
 #define WET_DRY
 #define SWAN_COUPLING
 #define MCT_LIB
 #define MCT_INTERP_OC2WV
-#undef  SVENDSEN_ROLLER
+#define SVENDSEN_ROLLER
 #undef  DIAGNOSTICS_UV
-#undef  UV_VIS2
-#undef  MIX_S_UV
+#define UV_VIS2
+#define MIX_S_UV
 #define UV_ADV
 #undef  UV_COR
 #define SALINITY
@@ -26,9 +28,8 @@
 #define MASKING
 #define DJ_GRADPS
 #undef  SPLINES
-#define TS_U3HADVECTION
-#undef  TS_MPDATA
-#define ANA_INITIAL
+#undef  TS_U3HADVECTION
+#define TS_MPDATA
 #define ANA_SMFLUX
 #ifdef SOLVE3D
 # define ANA_STFLUX
@@ -85,11 +86,11 @@
 # undef  ZOS_HSIG
 # undef  TKE_WAVEDISS
 #endif
-#define ANA_SEDIMENT
-#undef SEDIMENT
+#define SEDIMENT
 #ifdef SEDIMENT
-# undef SUSPLOAD
-# undef BEDLOAD_SOULSBY
+# define SUSPLOAD
+# define SED_MORPH
+# define BEDLOAD_SOULSBY
 #endif
 #undef UV_LOGDRAG
 #define SSW_BBL

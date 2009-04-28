@@ -60,8 +60,8 @@
 
          NAT =  2             ! Number of active tracers (usually, 2)
          NPT =  0             ! Number of inactive passive tracers
-         NCS =  1             ! Number of cohesive (mud) sediment tracers
-         NNS =  0             ! Number of non-cohesive (sand) sediment tracers
+         NCS =  0             ! Number of cohesive (mud) sediment tracers
+         NNS =  1             ! Number of non-cohesive (sand) sediment tracers
 
 ! Domain decomposition parameters for serial, distributed-memory or
 ! shared-memory configurations used to determine tile horizontal range
@@ -72,8 +72,8 @@
 
 ! Time-Stepping parameters.
 
-      NTIMES == 8640
-          DT == 5.0d0
+      NTIMES == 8640   !8640
+          DT == 20.0d0 !5.0d0
      NDTFAST == 30
 
 ! Model iteration loops parameters.
@@ -109,7 +109,7 @@
         NAVG == 3600
      NDEFAVG == 0
       NTSDIA == 1
-        NDIA == 360
+        NDIA == 180
      NDEFDIA == 0
 
 ! Output tangent linear and adjoint models parameters.
@@ -138,7 +138,7 @@
 
 ! Harmononic/biharmonic, horizontal viscosity coefficient: [Ngrids].
 
-       VISC2 == 0.001d0                         ! m2/s
+       VISC2 == 0.10d0                          ! m2/s
        VISC4 == 0.0d0                           ! m4/s
 
 ! Vertical mixing coefficients for active tracers: [1:NAT+NPT,Ngrids]
@@ -182,7 +182,7 @@
 ! Constants used in momentum stress computation.
 
         RDRG == 3.0d-04                    ! m/s
-       RDRG2 == 0.025d0                    ! nondimensional
+       RDRG2 == 0.05d0                    ! nondimensional
          Zob == 0.005d0                    ! m
          Zos == 0.5d0                      ! m
 
@@ -307,7 +307,7 @@ Hout(idOvel) == F                          ! omega vertical velocity
 Hout(idUbar) == T                          ! 2D U-velocity
 Hout(idVbar) == T                          ! 2D V-velocity
 Hout(idFsur) == T                          ! free-surface
-Hout(idBath) == F                          ! time-dependent bathymetry
+Hout(idBath) == T                          ! time-dependent bathymetry
 
 Hout(idTvar) == T F                        ! temperature and salinity
 
@@ -410,7 +410,7 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 ! Input NetCDF file names, [1:Ngrids].
 
      GRDNAME == Projects/Hole7/hole7_ocean_grid.nc
-     ININAME == ocean_ini.nc
+     ININAME == Projects/Hole7/hole7_ocean_init.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
@@ -435,18 +435,29 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 
 ! Output NetCDF file names, [1:Ngrids].
 
-! test 1 = base case
-! test 2 = 1, added #def rad2d
-! test 3 = 2, undef uv_logdrag, def ssw_bbl, def ana_sed
+! test  1 = base case
+! test  2 = 1, added #def rad2d
+! test  3 = 2, undef uv_logdrag, def ssw_bbl, created init file
+! test  4 = 3, add uv_vis2 0.1
+! test  5 = 4, uncomment limiter (3 lines) INPUT   (no effect)
+! test  6 = 5, comment prop bsbt, reduce swan dt to = 10s (worse than test 5)
+! test  7 = 4, DIFFRACT in input
+! test  8 = 4, rdrg2 = 0.05, not 0.025
+! test  9 = 8, #define UV_CONST
+! test 10 = 8, #define UV_ONEPOINT
+! test 11 = 10, #define DIAGS, run 48 hours, dt = 20 sec (was 10)
+! test 12 = 11, #define SVENDSEN_ROLLER
+! test 13 = 12, #define SUSP_SED and SED_MORPH
+! test 14 = 13, #define SUSP_SED and SED_MORPH and SOULSBY_BL
 
      GSTNAME == ocean_gst.nc
      RSTNAME == ocean_rst.nc
-     HISNAME == hole7_test3_his.nc
+     HISNAME == hole7_test14_his.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc
      AVGNAME == ocean_avg.nc
-     DIANAME == hole7_test1_dia.nc
+     DIANAME == hole7_test14_dia.nc
      STANAME == ocean_sta.nc
      FLTNAME == ocean_flt.nc
 
@@ -456,7 +467,7 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
      SPOSNAM =  ROMS/External/stations.in
      FPOSNAM =  ROMS/External/floats.in
      BPARNAM =  ROMS/External/bioFasham.in
-     SPARNAM =  ROMS/External/sediment_inlet_test.in
+     SPARNAM =  Projects/Hole7/sediment_hole7.in
      USRNAME =  ROMS/External/MyFile.dat
 
 !

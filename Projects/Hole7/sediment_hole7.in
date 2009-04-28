@@ -56,7 +56,7 @@
 
 ! Bed load transport rate coefficient. [1:Ngrids].
 
-    BEDLOAD_COEFF == 0.15d0
+    BEDLOAD_COEFF == 1.0d0
 
 !------------------------------------------------------------------------------
 ! Suspended Cohesive Sediment Parameters, [1:NCS,1:Ngrids] values expected.
@@ -141,7 +141,7 @@ Hout(iMVbld) == T                               ! bed load at V-points
 
 ! Surface erosion rate (kg/m2/s).
 
-  SAND_ERATE == 1.0d-5
+  SAND_ERATE == 1.0d-4
 
 ! Critical shear for erosion and deposition (N/m2).
 
@@ -169,7 +169,7 @@ SAND_AKT_BAK == 5.0d-6                          ! m2/s
 ! Morphological time scale factor (greater than or equal to 1.0). A
 ! value of 1.0 has no scale effect.
 
-SAND_MORPH_FAC == 1.0d0 1.0d0 1.0d0             ! nondimensional
+SAND_MORPH_FAC == 10.0d0 1.0d0 1.0d0             ! nondimensional
 
 ! Logical switches (TRUE/FALSE) to activate writing of non-cohesive
 ! sediment into HISTORY output file.
