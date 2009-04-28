@@ -5,16 +5,21 @@
 % determine the boudnary points for swan refined grids
 %
 
-%1) enter name of netcdf grid file
+%1) enter name of netcdf file for the child grid
 %ncfile='CH_shoals_grd4.nc';
-ncfile='KH_CH_grd4_min5.nc';
+ncfile='inlet_test_grid_ref5.nc';
 
 %2) enter number of points / side
-incx=12;
-incy=12;
+incx=10;
+incy=10;
 
 %%%%%%%%%%%  end of user input %%%%%%%%%%%%%%%%%%
 eval(['ncload ',ncfile,' ']);
+
+if (spherical~='T')
+  lon_rho=x_rho;
+  lat_rho=y_rho;
+end
 
 figure
 pcolorjw(lon_rho,lat_rho,h);colorbar
