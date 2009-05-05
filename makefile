@@ -60,14 +60,14 @@ $(if $(filter $(MAKE_VERSION),$(NEED_VERSION)),,        \
 #  "upwelling.h" header file.  
 
 #ROMS_APPLICATION ?= JOE_TC
-ROMS_APPLICATION ?= TEIGN
+ROMS_APPLICATION ?= INLET_TEST
 
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
 
 #MY_HEADER_DIR ?= /raid1/jcwarner/Models/COAWST/Projects/JOE_TC
-#MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Griz_Bay
-MY_HEADER_DIR ?= /cygdrive/g/data2/help_cases/teignmouth
+MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inlet_test
+#MY_HEADER_DIR ?= /cygdrive/g/data2/help_cases/teignmouth
 
 #  If your application requires analytical expressions and they are not
 #  located in "ROMS/Functionals", provide an alternate directory.
@@ -75,7 +75,7 @@ MY_HEADER_DIR ?= /cygdrive/g/data2/help_cases/teignmouth
 #  "User/Functionals".
 
 #MY_ANALYTICAL_DIR ?= /raid1/jcwarner/Models/COAWST/Projects/JOE_TC
-MY_ANALYTICAL_DIR ?= /cygdrive/g/data2/help_cases/teignmouth
+MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inlet_test
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying
@@ -101,7 +101,7 @@ MY_CPP_FLAGS ?=
 #  If parallel applications, use at most one of these definitions
 #  (leave both definitions blank in serial applications):
 
-     USE_MPI ?=
+     USE_MPI ?= on
   USE_OpenMP ?=
 
 #  If distributed-memory, turn on compilation via the script "mpif90".
