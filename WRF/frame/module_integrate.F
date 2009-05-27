@@ -23,7 +23,7 @@ RECURSIVE SUBROUTINE integrate ( grid, TI_ATM_OCN, last_step )
    TYPE(domain) , POINTER :: grid
 !jcw
    REAL, intent(in) :: TI_ATM_OCN
-   INTEGER, intent(in) :: last_step
+   INTEGER, intent(inout) :: last_step
 
 ! module_integrate:integrate
 ! <DESCRIPTION> 

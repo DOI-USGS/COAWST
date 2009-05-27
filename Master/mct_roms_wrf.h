@@ -284,7 +284,7 @@
         deallocate (length)
       END IF
 
-      call mpi_barrier(OCN_COMM_WORLD)
+!     call mpi_barrier(OCN_COMM_WORLD)
 
 !
 ! Create ATM sparse matrix plus for interpolation.
