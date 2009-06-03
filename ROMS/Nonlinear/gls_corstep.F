@@ -757,6 +757,21 @@
 !  Compute production and dissipation terms.
 !
         DO i=Istr,Iend
+# if defined CRAIG_BANNER && defined GERBI_TKE_FLUX
+!
+!  Compute metrics for Gerbi vertical surface tke flux option.
+!
+          oroller(i)=0.0_r8
+          gamw(i)=1.0_r8/(Hwave(i,j)+eps)
+          DO k=1,N(ng)-1
+            cff3=SCALARS(ng)%Cs_w(k)
+            cff=0.5_r8*(Hz(i,j,k)+Hz(i,j,k+1))
+!! tanh s^4 functional
+            oroller(i)=oroller(i)+cff*                                  &
+     &                   (1.0_r8-TANH((2.0_r8*cff3*gamw(i))**4))
+          END DO
+          oroller(i)=1.0_r8/(oroller(i)+eps)
+# endif
           DO k=1,N(ng)-1
 !
 !  Compute shear and bouyant production of turbulent energy (m3/s3)
@@ -796,6 +811,32 @@
             gls(i,j,k,nnew)=gls(i,j,k,nnew)+                            &
      &                      dt(ng)*cff*Pprod*gls(i,j,k,nstp)/           &
      &                      MAX(tke(i,j,k,nstp),gls_Kmin(ng))
+# if defined CRAIG_BANNER && defined GERBI_TKE_FLUX
+!
+!  Compute metrics for Gerbi vertical surface tke flux option.
+!
+            cff3=SCALARS(ng)%Cs_w(k)
+!! tanh s^4 functional
+            cff4=(1.0_r8-TANH((2.0_r8*cff3*gamw(i))**4))
+            tke_fluxt(i)=dt(ng)*crgban_cw(ng)*                          &
+     &                 (0.50_r8*                                        &
+     &                  SQRT((sustr(i,j)+sustr(i+1,j))**2+              &
+     &                       (svstr(i,j)+svstr(i,j+1))**2))**1.5_r8
+            tke(i,j,k,nnew)=tke(i,j,k,nnew)+                            &
+     &                      dt(ng)*cff*tke_fluxt(i)*cff4*oroller(i)
+!
+            gls_fluxt(i)=gls_fluxt(i)-dt(ng)*                           &
+     &                 gls_m(ng)*(gls_cmu0(ng)**gls_p(ng))*             &
+     &                 cff**(gls_m(ng)-1.0_r8)*                         &
+     &                 ((Zos_eff(i)+0.5_r8*Hz(i,j,N(ng)))*L_sft)**      &
+     &                 gls_n(ng)*                                       &
+     &                 gls_sigk(ng)*ogls_sigp*crgban_cw(ng)*            &
+     &                 (0.5_r8*                                         &
+     &                  SQRT((sustr(i,j)+sustr(i+1,j))**2+              &
+     &                       (svstr(i,j)+svstr(i,j+1))**2))**1.5_r8
+            gls(i,j,k,nnew)=gls(i,j,k,nnew)+                            &
+     &                      dt(ng)*cff*gls_fluxt(i)*cff4*oroller(i)
+# endif
 !
 !  Compute dissipation of turbulent energy (m3/s3).
 !
@@ -905,10 +946,14 @@
 !
         DO i=Istr,Iend
 # if defined CRAIG_BANNER
+#  if defined GERBI_TKE_FLUX
+          tke_fluxt(i)=0.0_r8
+#  else
           tke_fluxt(i)=dt(ng)*crgban_cw(ng)*                            &
      &                 (0.50_r8*                                        &
      &                  SQRT((sustr(i,j)+sustr(i+1,j))**2+              &
      &                       (svstr(i,j)+svstr(i,j+1))**2))**1.5_r8
+#  endif
 # elif defined TKE_WAVEDISS
           tke_fluxt(i)=dt(ng)*sz_alpha(ng)*Wave_dissip(i,j)
 # else
@@ -945,6 +990,8 @@
      &                 (gls_n(ng)-1.0_r8)*                              &
      &                 0.5_r8*(Akp(i,j,N(ng))+Akp(i,j,N(ng)-1))
 # ifdef CRAIG_BANNER
+#  if defined GERBI_TKE_FLUX
+#  else
           gls_fluxt(i)=gls_fluxt(i)-dt(ng)*                             &
      &                 gls_m(ng)*(gls_cmu0(ng)**gls_p(ng))*             &
      &                 cff**(gls_m(ng)-1.0_r8)*                         &
@@ -954,6 +1001,7 @@
      &                 (0.5_r8*                                         &
      &                  SQRT((sustr(i,j)+sustr(i+1,j))**2+              &
      &                       (svstr(i,j)+svstr(i,j+1))**2))**1.5_r8
+#  endif
 # elif defined TKE_WAVEDISS
           gls_fluxt(i)=gls_fluxt(i)-dt(ng)*                             &
      &                 gls_m(ng)*(gls_cmu0(ng)**gls_p(ng))*             &
