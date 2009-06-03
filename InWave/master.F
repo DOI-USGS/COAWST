@@ -1,9 +1,9 @@
       PROGRAM InWave
 !
 !svn $Id: InWave 001 2008-04-01 18:11:31Z jcwarner $
-!================================================== Hernan G. Arango ===
+!=======================================================================
 !    Licensed under a MIT/X style license                              !
-!    See License_InWave.txt                                              !
+!    See License_InWave.txt                                            !
 !======================================================================= 
 !                                                                      !
 !  Infragravity Wave propagation model (InWave).                       !
@@ -13,7 +13,7 @@
 !  coordinates in the horizontal.                                      !
 !                                                                      !
 !  Dr. Maitane Olabarrieta                                             !
-!  University Cantabria, Spain                                         !
+!    University Cantabria, Spain                                       !
 !                                                                      !
 !  Dr. John C. Warner                                                  !
 !    U.S. Geological Survey                                            !
