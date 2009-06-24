@@ -444,7 +444,9 @@
       USE mod_scalars
       USE mod_stepping
       USE mod_iounits
-!
+#ifdef CURVGRID
+      USE mod_grid
+#endif
 #if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
       USE exchange_2d_mod, ONLY : exchange_u2d_tile
@@ -485,7 +487,7 @@
       real(r8) :: RecvTime, SendTime, buffer(2), wtime(2)
 
       real(r8), pointer :: A(:)
-      real(r8) :: BBR
+      real(r8) :: BBR, cff1, cff2
 
       character (len=3 ), dimension(2) :: op_handle
       character (len=40) :: code
