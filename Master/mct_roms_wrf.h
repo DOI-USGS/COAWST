@@ -46,7 +46,7 @@
       integer, allocatable  :: start(:)
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       character (len=70)    :: nc_name
-      character (len=66)   :: avstring
+      character (len=70)   :: avstring
 !
 !-----------------------------------------------------------------------
 !  Compute lower and upper bounds over a particular domain partition or
@@ -320,6 +320,7 @@
       avstring(52:59)=':VSTRESS'
       avstring(60:62)=':LH'
       avstring(63:66)=':HFX'
+      avstring(67:70)=':GSW'
 !
 #ifdef MCT_INTERP_OC2AT
 !
@@ -393,6 +394,7 @@
 !     * CLDFRA  Cloud fraction (percent/100), [percent/100]            !
 !     * RAIN    Precipitation (m/s), [kg/m2/s]                         !
 !     * SWDOWN  Shortwave radiation (Watts/m2), [Celsius m/s]          !
+!     * GSW     Net shortwave radiation (Watts/m2), [Celsius m/s]      !
 !     * GLW     Long wave raditaion (Watts/m2), [Celsius m/s]          !
 !     * USTRESS Surface U-wind stress (Pa), [m2/s2]                    !
 !     * VSTRESS Surface V-wind stress (Pa), [m2/s2]                    !
@@ -483,6 +485,7 @@
       real(r8) :: RecvTime, SendTime, buffer(2), wtime(2)
 
       real(r8), pointer :: A(:)
+      real(r8) :: BBR
 
       character (len=3 ), dimension(2) :: op_handle
       character (len=40) :: code
@@ -658,14 +661,30 @@
         END DO
       END DO
 !
-!  Long wave radiation          (Celsius m/s)
+!  Short wave radiation          (Celsius m/s)
 !
-      CALL AttrVect_exportRAttr (atm2ocn_AV, "GLW", A, Asize)
-      cff=-1.0_r8/(rho0*Cp)
+      CALL AttrVect_exportRAttr (atm2ocn_AV, "GSW", A, Asize)
+      cff=1.0_r8/(rho0*Cp)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
+          FORCES(ng)%srflx(i,j)=A(ij)*cff
+        END DO
+      END DO
+!
+!  Long wave radiation          (Celsius m/s)
+!
+      CALL AttrVect_exportRAttr (atm2ocn_AV, "GLW", A, Asize)
+      cff=1.0_r8/(rho0*Cp)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          BBR=OCEAN(ng)%t(i,j,N(ng),nstp(ng),itemp)+273.16_r8
+          BBR=BBR*BBR*BBR*BBR
+          BBR=0.97_r8*5.67E-8_r8*BBR
+          A(ij)=A(ij)-BBR
           FORCES(ng)%lrflx(i,j)=A(ij)*cff
         END DO
       END DO

@@ -109,7 +109,7 @@
       integer :: is, ie, js, je
 
       integer, pointer :: start(:), length(:)
-      character (len=66)   :: avstring
+      character (len=70)  :: avstring
 
 !-----------------------------------------------------------------------
 !  Begin initialization phase.
@@ -171,6 +171,7 @@
       avstring(52:59)=':VSTRESS'
       avstring(60:62)=':LH'
       avstring(63:66)=':HFX'
+      avstring(67:70)=':GSW'
 
       CALL AttrVect_init (atm2ocn_AV,rlist=TRIM(avstring),lsize=gsmsize)
       CALL AttrVect_zero (atm2ocn_AV)
@@ -381,7 +382,7 @@
       DO j=js,je
         DO i=is,ie
           ij=ij+1
-          AA(ij)=0.001*(grid%RAINCV(i,j)+grid%RAINNCV(i,j))
+          AA(ij)=0.001*(grid%RAINCV(i,j)+grid%RAINNCV(i,j))/grid%dt
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "RAIN", AA, Asize)
@@ -407,6 +408,17 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "GLW", AA, Asize)
+!-----------------------------------------------------------------------
+!     GSW        Long wave raditaion (W m-2).
+!
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+          AA(ij)=grid%GSW(i,j)
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (atm2ocn_AV, "GSW", AA, Asize)
 !-----------------------------------------------------------------------
 !     USTRESS    Surface u-stress (N m-2).
 !
