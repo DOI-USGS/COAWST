@@ -633,6 +633,22 @@
           FORCES(ng)%Vwind(i,j)=A(ij)
         END DO
       END DO
+# ifdef CURVGRID
+!
+!  If input point surface winds or interpolated from coarse data, rotate
+!  to curvilinear grid.
+!
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
+            cff1=FORCES(ng)%Uwind(i,j)*GRID(ng)%CosAngler(i,j)+         &
+     &           FORCES(ng)%Vwind(i,j)*GRID(ng)%SinAngler(i,j)
+            cff2=FORCES(ng)%Vwind(i,j)*GRID(ng)%CosAngler(i,j)-         &
+     &           FORCES(ng)%Uwind(i,j)*GRID(ng)%SinAngler(i,j)
+            FORCES(ng)%Uwind(i,j)=cff1
+            FORCES(ng)%Vwind(i,j)=cff2
+          END DO
+        END DO
+# endif
 #endif
 #ifdef CLOUDS
 !
