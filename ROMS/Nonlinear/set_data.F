@@ -877,7 +877,11 @@
       CALL ana_tobc (ng, tile, iNLM)
 #   else
       IF (SOUTH_WEST_TEST) THEN
+#    ifdef NOSED_OBC
+        DO itrc=1,NAT
+#    else
         DO itrc=1,NT(ng)
+#    endif
 #    ifdef WEST_TOBC
           CALL set_ngfld (ng, iNLM, idTbry(iwest,itrc),                 &
      &                    JLB, JUB, N(ng), 0, Mm(ng)+1, N(ng),          &

@@ -634,7 +634,11 @@
 #  endif
 #  ifndef ANA_TOBC
 #   ifdef WEST_TOBC
-      DO i=1,NT(ng)
+#    ifdef NOSED_OBC
+        DO i=1,NAT
+#    else
+        DO i=1,NT(ng)
+#    endif
         CALL get_ngfld (ng, iNLM, idTbry(iwest,i), ncBRYid(ng), 1,      &
      &                  BRYname(ng), update(1),                         &
      &                  JLB, JUB, N(ng), 2, 0, Mm(ng)+1, N(ng),         &
@@ -642,7 +646,11 @@
       END DO
 #   endif
 #   ifdef EAST_TOBC
-      DO i=1,NT(ng)
+#    ifdef NOSED_OBC
+        DO i=1,NAT
+#    else
+        DO i=1,NT(ng)
+#    endif
         CALL get_ngfld (ng, iNLM, idTbry(ieast,i), ncBRYid(ng), 1,      &
      &                  BRYname(ng), update(1),                         &
      &                  JLB, JUB, N(ng), 2, 0, Mm(ng)+1, N(ng),         &
@@ -650,7 +658,11 @@
       END DO
 #   endif
 #   ifdef SOUTH_TOBC
-      DO i=1,NT(ng)
+#    ifdef NOSED_OBC
+        DO i=1,NAT
+#    else
+        DO i=1,NT(ng)
+#    endif
         CALL get_ngfld (ng, iNLM, idTbry(isouth,i), ncBRYid(ng), 1,     &
      &                  BRYname(ng), update(1),                         &
      &                  ILB, IUB, N(ng), 2, 0, Lm(ng)+1, N(ng),         &
@@ -658,7 +670,11 @@
       END DO
 #   endif
 #   ifdef NORTH_TOBC
-      DO i=1,NT(ng)
+#    ifdef NOSED_OBC
+        DO i=1,NAT
+#    else
+        DO i=1,NT(ng)
+#    endif
         CALL get_ngfld (ng, iNLM, idTbry(inorth,i), ncBRYid(ng), 1,     &
      &                  BRYname(ng), update(1),                         &
      &                  ILB, IUB, N(ng), 2, 0, Lm(ng)+1, N(ng),         &
