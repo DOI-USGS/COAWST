@@ -170,8 +170,8 @@
 #  ifdef BEDLOAD
       IF (nrrec(ng).ne.0) THEN
         DO itrc=1,NST
-          get_var(idUbld(itrc))=.FALSE.
-          get_var(idVbld(itrc))=.FALSE.
+          get_var(idUbld(itrc))=.TRUE.
+          get_var(idVbld(itrc))=.TRUE.
         END DO
       END IF
 #  endif
@@ -348,11 +348,10 @@
       END IF
 #if defined SEDIMENT && defined SED_MORPH
       IF (.not.have_var(idbath).and.get_var(idbath)) THEN
-        get_var(idbath)=.FALSE.
-!       IF (Master) WRITE (stdout,10) string, TRIM(Vname(1,idbath)),    &
-!    &                                TRIM(ncname)
-!       exit_flag=2
-!       RETURN
+        IF (Master) WRITE (stdout,10) string, TRIM(Vname(1,idbath)),    &
+     &                                TRIM(ncname)
+        exit_flag=2
+        RETURN
       END IF
 #endif
       IF (.not.have_var(idFsur).and.get_var(idFsur)) THEN
