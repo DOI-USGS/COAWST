@@ -16,12 +16,12 @@
 
 #define UV_VIS2
 #define MIX_S_UV
+#undef  ANA_GRID
 #define MASKING
 #define UV_ADV
 #undef  UV_COR
 #define TS_MPDATA
 #define DJ_GRADPS
-
 #define SOUTHERN_WALL
 #define FSOBC_REDUCED
 #define NORTH_FSGRADIENT
@@ -33,7 +33,6 @@
 #define EAST_FSGRADIENT
 #define EAST_M2GRADIENT
 #define EAST_M3GRADIENT
-
 #define SOLVE3D
 #define SPLINES
 #define SWAN_COUPLING
@@ -45,10 +44,9 @@
 
 #ifdef SWAN_COUPLING
 # define MCT_LIB
-# undef  MCT_INTERP_OC2WV
+# define MCT_INTERP_OC2WV
 #endif
 #undef REFINED_GRID
-#undef REFINED_GRID_BC
 
 /* define only one of the following 5 */
 #undef  UV_LOGDRAG

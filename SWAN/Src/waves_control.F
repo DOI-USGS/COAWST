@@ -1,6 +1,5 @@
 #include "cppdefs.h"
       MODULE waves_control_mod
-# ifdef REFINED_GRID
 !
 !svn $Id: waves_control.F 814 2008-10-29 01:42:17Z jcwarner $
 !================================================== John C. Warner  ====
@@ -47,7 +46,9 @@
       USE M_PARALL
       USE M_PARALL2
       USE SWCOMM3
+      USE TIMECOMM
       USE M_MPI
+      USE M_COUPLING
 !
 !  Imported variable declarations.
 !
@@ -57,27 +58,33 @@
 !
 !  Local variable declarations.
 !
-      integer :: ng, inp, ModelId
-      integer :: MyColor, MyKey
-      INTEGER :: MySize, MyError, MyTag, MyStatus, MyHandle
-      integer :: MyCOMM_wave
-      integer :: count1, MyRank
-#if defined REFINED_GRID
-      integer :: count2, count3, count4
-#endif
-!      ALLOCATE(WAV_COMM_WORLDS(Ngrids))
+      integer :: i, inp, ModelId
+      integer :: MyColor, MyKey, MyRank
+      INTEGER :: MySize, MyError, MyStatus, MyHandle
+      logical, allocatable :: run_grid(:)
+      integer, allocatable :: count(:)
+      real :: rtime, rtime_start, rtime_end, cff
+
       MyKey=0
-      MyTag=52
       inp=22
-      Numspec=17
-!      Numspecl=0
+!
+! Allocate some arrays
+!
+      IF (.not.allocated(Numspec)) allocate (Numspec(Ngrids))
+      IF (.not.allocated(ac2size)) allocate (ac2size(Ngrids))
+!     IF (.not.allocated(BGRIDPL)) allocate (BGRIDPL(Ngrids,100000))
+      IF (.not.allocated(BGRIDPG)) allocate (BGRIDPG(Ngrids,100000))
+      DO ng=1,Ngrids
+        BGRIDPG(ng,:)=9999
+      END DO
+      Numspec(1)=46
+      Numspec(2)=46
       NBGRPT_last=0
 !
 !-----------------------------------------------------------------------
 !  Set distribute-memory (MPI) world communicator.
 !-----------------------------------------------------------------------
 !
-      CALL mpi_barrier(MyCOMM, MyError)
       CALL mpi_comm_rank (MyCOMM, MyRank, MyError)
       CALL mpi_comm_size (MyCOMM, MySize, MyError)
 !
@@ -96,100 +103,80 @@
 
 !     END IF
 !
-!  Initialize coupling streams between model(s).
+!  Initialize the grids.
 !
-!  NEED to be consistent with mysize/ngridsand mpi_send / recv below.
-!      DO ng=1,Ngrids
-!        WAV_COMM_WORLDS(ng)=0
-!      END DO
-      IF (MyRank.le.(MySize/Ngrids-1)) THEN
-        ng=1
-        Modelid=Ngrids+ng
-        MyColor=Modelid
-      ELSE
-        ng=2
-        Modelid=Ngrids+ng
-        MyColor=Modelid
-      END IF
-      CALL mpi_comm_split (MyCOMM, MyColor, MyKey, MyCOMM_wave,         &
-     &                     MyError)
-! send all wave worlds to all processors
-!      CALL mpi_allgather(MyCOMM_WAVE,1,MPI_INTEGER,WAV_COMM_WORLDS,1,   &
-!     &                   MPI_INTEGER,MyCOMM,MyError)
-
-!       if (ng.eq.1) then 
-!         CALL MPI_Intercomm_create(WAV_COMM_WORLDS(1),0,       &
-!     &            WAV_COMM_WORLDS(2),0,MyTag,WAVCOM,MyError)
-!         CALL mpi_comm_rank (WAVCOM, MyRank, MyError)
-!         CALL mpi_comm_size (WAVCOM, MySize, MyError)
-!       endif
-
-      IF (.not.ALLOCATED(BGRIDPG)) ALLOCATE(BGRIDPG(100000))
-      BGRIDPG=9999
-
-      CALL SWAN_INITIALIZE (ng, MyCOMM_wave, SWAN_infile(ng),           &
-     &                      NumSWANsteps)
-      CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,             &
-     &              KGRPNT, XCGRID, YCGRID, KGRBND, OURQT ,             &
-     &              0, 0, ng, -1)
-
-! Broadcast the number of boundary arrays to be passed
-
-      ac2size=MSC*MDC*Numspec
+      DO ng=1,Ngrids
+        CALL SWAN_INITIALIZE (ng, Ngrids, MyCOMM, SWAN_infile(ng))
 !
-! Start big time loop here.
+!  Compute number of boundary arrays to be passed.
 !
-      NL_LOOP : DO count1=0, NumSWANsteps
-        MyTag=0
+        ac2size(ng)=MSC*MDC*Numspec(ng)
+      END DO
 !
-! Do a barrier so we all start together.
+!  The call to run here does not do a time step, it fills the bc arrays,
+!  fill AC2 array of bound spec data for child grids, and enters into MCT.
 !
-        CALL mpi_barrier(MyCOMM, MyError)
-!        write(*,*) 'mycomm barrier ', ng
-!        CALL mpi_comm_rank (MyCOMM, MyRank, MyError)
-!        CALL mpi_comm_size (MyCOMM, MySize, MyError)
-!
-! First grid.
-!
-        sc(1)=count1
-        IF (ng.eq.1) THEN
-!          write(*,*) 'call swan run ng = ', ng
-          CALL SWAN_RUN (CouplingTime, sc(1), ng, count1)
-!         IF (count1.gt.1) THEN
-!            CALL MPI_SEND(AC2_parent2,ac2size,MPI_REAL,              &
-!     &                         1,MyTag,MyCOMM, MyError)
-!          END IF
+      DO ng=1,Ngrids
+        CALL SWAN_RUN (CouplingTime, 0, ng, 0)
+        IF (ng.lt.Ngrids) THEN
+          CALL MPI_BCAST(PARALL2_MOD(ng)%AC2_parent2_G,                 &
+     &      ac2size(ng),SWREAL,0,MyCOMM,MyError)
         END IF
-#if defined REFINED_GRID
-!        CALL SWBROADC ( AC2_parent2, ac2size, SWREAL )
-
-        CALL MPI_BCAST(AC2_parent2,ac2size,SWREAL,                 &
-     &                0,MyCOMM,MyError)
+      END DO
 !
-! Second grid.
+!  Set some initial run time parameters here.
 !
-!        CALL mpi_barrier(MyCOMM, MyError)
-        IF (ng.eq.2) THEN
-          DO count2=1,5           !nrefined(2)
-!            write(*,*) 'call swan run ng = ', ng
-            IF (count2.eq.1) THEN
-!              CALL MPI_RECV(AC2_parent2,ac2size,MPI_REAL,               &
-!     &                      0,MyTag,MyCOMM, MyStatus,MyError)
+      IF (.not.ALLOCATED(run_grid)) ALLOCATE (run_grid(Ngrids))
+      IF (.not.ALLOCATED(count)) ALLOCATE (count(Ngrids))
+      DO ng=1,Ngrids
+        run_grid(ng)=.TRUE.
+        count(ng)=0
+      END DO
+      rtime_start=0.
+      rtime_end=9999999.00
+      rtime=rtime_start
+!
+!  Main job control loop here.
+!
+      DO WHILE (rtime.lt.rtime_end)
+!
+!  Advance grids in time that have run_grid flag == True.
+!  For the first entry, all grids step individual dt's.
+!
+        DO ng=1,Ngrids
+!         ngp=myparent(ng)
+!         ngc=mychild(ng)
+          IF (run_grid(ng).eq..TRUE.) THEN
+            CALL SWAN_RUN (CouplingTime, count(ng), ng, 1)
+            count(ng)=count(ng)+1
+!
+!  Get AC data from parent.
+!
+            IF (ng.lt.Ngrids) THEN
+              CALL MPI_BCAST(PARALL2_MOD(ng)%AC2_parent2_G,           &
+     &                         ac2size(ng),SWREAL,0,MyCOMM,MyError)
             END IF
-!           sc(2)=sc(1)*nrefined(1)*nrefined(2)+count2
-            sc(2)=sc(1)*1*5+count2-1
-            CALL SWAN_RUN (CouplingTime, sc(2), ng, count2-1)
-          END DO
-        END IF
-#endif
-        IF (exit_flag.ne.NoError) THEN
-          IF (MyRank.eq.0) THEN
-            WRITE (stdout,'(/,a,i3,/)') Rerror(exit_flag), exit_flag
+!
+!  Run each grid
+!
           END IF
-          RETURN
-        END IF
-      END DO NL_LOOP
-!      DEALLOCATE(WAV_COMM_WORLDS)
+          run_grid(ng)=.FALSE.
+        END DO
+!
+!  Advance the time counter by the smallest dt.
+!
+        rtime=rtime+DT_G(Ngrids)
+!
+!  Determine what grids can be time stepped. This is determined
+!  by comparing dt(each grid) to global time rtime.
+!
+        DO ng=1,Ngrids
+          cff=rtime-rtime_start
+          IF (MOD(cff,REAL(DT_G(ng))).eq.0) THEN
+            run_grid(ng)=.TRUE.
+          END IF
+        END DO
+      END DO
 
       RETURN
       END SUBROUTINE SWAN_driver
@@ -221,7 +208,7 @@
       integer :: ng, my_iic, MyError
       integer :: count1, MyCOMM_wave
 #if defined REFINED_GRID
-      integer :: count2, count3, count4
+      integer :: count2
 #endif
 !
 !-----------------------------------------------------------------------
@@ -244,41 +231,6 @@
           END DO
         END IF
 
-
-!        IF (Ngrids.ge.2) THEN
-!          DO count2=1,nrefined(2)
-!            CALL mpi_barrier(MyCOMM_wave, MyError)
-!            ng=2
-!            sc(2)=sc(1)*nrefined(1)*nrefined(2)+count2
-
-!            CALL SWAN_RUN (CouplingTime, sc(ng))
-
-!            IF (Ngrids.ge.3) THEN
-!              ng=3
-!              DO count3=1,nrefined(ng)
-!                CALL mpi_barrier(MyCOMM_wave, MyError)
-!                sc(ng)=sc(1)*nrefined(1)*nrefined(2)*                  &
-!     &                nrefined(ng)+(count2-1)*nrefined(ng)+count3
-
-!                CALL SWAN_RUN (CouplingTime, sc(ng))
-
-!                IF (Ngrids.ge.4) THEN
-!                  ng=4
-!                  DO count4=1,nrefined(ng)
-!                    CALL mpi_barrier(MyCOMM_wave, MyError)
-!                    sc(ng)=sc(1)*nrefined(1)*nrefined(2)*              &
-!     &                      nrefined(ng-1)*nrefined(ng)+                  &
-!     &                      (count2-1)*nrefined(2)*nrefined(ng-1)+       &
-!     &                      (count3-1)*nrefined(ng-1)+count4
-
-!                    CALL SWAN_RUN (CouplingTime, sc(ng))
-
-!                  END DO
-!                END IF
-!              END DO
-!            END IF
-!          END DO
-!        END IF
 #endif
         IF (exit_flag.ne.NoError) THEN
           IF (MyRank.eq.0) THEN
@@ -317,5 +269,5 @@
 
       RETURN
       END SUBROUTINE SWAN_driver_finalize
-#endif
+
       END MODULE waves_control_mod

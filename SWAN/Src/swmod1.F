@@ -857,6 +857,17 @@
 ! UT    [   'sec'] unit of time (change to s ???)
 ! UV    [   'm/s'] unit of velocity
 !
+#ifdef MODEL_COUPLING
+      CHARACTER*20, POINTER :: CHTIME
+      CHARACTER*20, SAVE, TARGET, ALLOCATABLE :: CHTIME_G(:)
+
+      CHARACTER*36 FBCL,          FBCR,        FNEST
+      CHARACTER*8  OVKEYW(NMOVAR)
+      CHARACTER*40 OVLNAM(NMOVAR)
+      CHARACTER*6  OVSNAM(NMOVAR)
+      CHARACTER*16 OVUNIT(NMOVAR)
+      CHARACTER*8  SNAME
+#else
       CHARACTER*20 CHTIME
       CHARACTER*36 FBCL,          FBCR,        FNEST
       CHARACTER*8  OVKEYW(NMOVAR)
@@ -864,10 +875,10 @@
       CHARACTER*6  OVSNAM(NMOVAR)
       CHARACTER*16 OVUNIT(NMOVAR)
       CHARACTER*8  SNAME
+#endif
       CHARACTER*6  UAP,           UD,          UDI,         UDL
       CHARACTER*6  UET,           UF,          UH,          UL
       CHARACTER*6  UP,            UST,         UT,          UV
-
 !     *** information for output ***
 !
 ! AKPOWR [       ] power in expression for computation of average wave number
@@ -1380,6 +1391,81 @@
 ! YOFFS         [    0.] offset value in y
 !                        (from user coord. system to internal coord. system)
 !
+#ifdef MODEL_COUPLING
+      LOGICAL, POINTER :: CVLEFT
+      LOGICAL, SAVE, TARGET, ALLOCATABLE :: CVLEFT_G(:)
+      LOGICAL, POINTER :: LXOFFS
+      LOGICAL, SAVE, TARGET, ALLOCATABLE :: LXOFFS_G(:)
+      LOGICAL, POINTER :: VARFR
+      LOGICAL, SAVE, TARGET, ALLOCATABLE :: VARFR_G(:)
+      LOGICAL, POINTER :: VARWI
+      LOGICAL, SAVE, TARGET, ALLOCATABLE :: VARWI_G(:)
+      LOGICAL, POINTER :: VARWLV
+      LOGICAL, SAVE, TARGET, ALLOCATABLE :: VARWLV_G(:)
+      LOGICAL, POINTER :: DYNDEP
+      LOGICAL, SAVE, TARGET, ALLOCATABLE :: DYNDEP_G(:)
+      LOGICAL, POINTER :: VARAST
+      LOGICAL, SAVE, TARGET, ALLOCATABLE :: VARAST_G(:)
+
+      INTEGER, POINTER :: ICOND
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: ICOND_G(:)
+      INTEGER, POINTER :: NWAMN
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: NWAMN_G(:)
+      INTEGER, POINTER :: OPTG
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: OPTG_G(:)
+      INTEGER, POINTER :: NBFILS
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: NBFILS_G(:)
+      INTEGER, POINTER :: NBSPEC
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: NBSPEC_G(:)
+      INTEGER, POINTER :: NBGRPT
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: NBGRPT_G(:)
+
+      INTEGER, POINTER :: MXG(:)
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MXG_G(:,:)
+      INTEGER, POINTER :: MYG(:)
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MYG_G(:,:)
+      INTEGER, POINTER :: IGTYPE(:)
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: IGTYPE_G(:,:)
+      INTEGER, POINTER :: LEDS(:)
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: LEDS_G(:,:)
+
+      REAL, POINTER :: COSVC
+      REAL, SAVE, TARGET, ALLOCATABLE :: COSVC_G(:)
+      REAL, POINTER :: COSWC
+      REAL, SAVE, TARGET, ALLOCATABLE :: COSWC_G(:)
+      REAL, POINTER :: RDTIM
+      REAL, SAVE, TARGET, ALLOCATABLE :: RDTIM_G(:)
+      REAL, POINTER :: SINVC
+      REAL, SAVE, TARGET, ALLOCATABLE :: SINVC_G(:)
+      REAL, POINTER :: SINWC
+      REAL, SAVE, TARGET, ALLOCATABLE :: SINWC_G(:)
+      REAL, POINTER :: XOFFS
+      REAL, SAVE, TARGET, ALLOCATABLE :: XOFFS_G(:)
+      REAL, POINTER :: YOFFS
+      REAL, SAVE, TARGET, ALLOCATABLE :: YOFFS_G(:)
+
+      REAL, POINTER :: ALPG(:)
+      REAL, SAVE, TARGET, ALLOCATABLE :: ALPG_G(:,:)
+      REAL, POINTER :: COSPG(:)
+      REAL, SAVE, TARGET, ALLOCATABLE :: COSPG_G(:,:)
+      REAL, POINTER :: DXG(:)
+      REAL, SAVE, TARGET, ALLOCATABLE :: DXG_G(:,:)
+      REAL, POINTER :: DYG(:)
+      REAL, SAVE, TARGET, ALLOCATABLE :: DYG_G(:,:)
+      REAL, POINTER :: EXCFLD(:)
+      REAL, SAVE, TARGET, ALLOCATABLE :: EXCFLD_G(:,:)
+      REAL, POINTER :: SINPG(:)
+      REAL, SAVE, TARGET, ALLOCATABLE :: SINPG_G(:,:)
+      REAL, POINTER :: STAGX(:)
+      REAL, SAVE, TARGET, ALLOCATABLE :: STAGX_G(:,:)
+      REAL, POINTER :: STAGY(:)
+      REAL, SAVE, TARGET, ALLOCATABLE :: STAGY_G(:,:)
+      REAL, POINTER :: XPG(:)
+      REAL, SAVE, TARGET, ALLOCATABLE :: XPG_G(:,:)
+      REAL, POINTER :: YPG(:)
+      REAL, SAVE, TARGET, ALLOCATABLE :: YPG_G(:,:)
+
+#else
       INTEGER ICOND
       INTEGER IGTYPE(NUMGRD),           LEDS(NUMGRD)
       INTEGER MXG(NUMGRD), MYG(NUMGRD), NWAMN
@@ -1394,6 +1480,7 @@
       LOGICAL CVLEFT,      LXOFFS,      VARFR
       LOGICAL VARWI,       VARWLV,      DYNDEP
       LOGICAL VARAST
+#endif
 !
 !     *** variables for input files ***
 !
@@ -1706,6 +1793,36 @@
 !                  origin of user coordinates w.r.t. computational coordinates
 ! YPC    [    0.]  y coordinate of origin of computational grid
 !
+#ifdef MODEL_COUPLING
+      INTEGER             ICOMP
+      INTEGER, POINTER :: MXC
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MXC_G(:)
+      INTEGER, POINTER :: MYC
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MYC_G(:)
+      INTEGER, POINTER :: MCGRD
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MCGRD_G(:)
+      INTEGER, POINTER :: NGRBND
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: NGRBND_G(:)
+      INTEGER, POINTER :: MSC
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MSC_G(:)
+      INTEGER, POINTER :: MDC
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MDC_G(:)
+      INTEGER, POINTER :: MTC
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MTC_G(:)
+
+      INTEGER             IXCGRD(MICMAX), IYCGRD(MICMAX), KCGRD(MICMAX)
+      INTEGER             MDC4MA,      MDC4MI,      MMCGR
+      INTEGER             MSC4MA,      MSC4MI
+      INTEGER             NX,          NY
+      REAL                ALCP,        ALPC,        COSPC,       DDIR
+      REAL                DX,          DXRP,        DY,          DYRP
+      REAL                FRINTF,      FRINTH,      SHIG,        SINPC
+      REAL                SLOW,        SPDIR1,      SPDIR2,      XCLEN
+      REAL                XCP,         XPC,         YCLEN,       YCP
+      REAL                YPC
+      REAL                XCGMIN,      XCGMAX,      YCGMIN,      YCGMAX
+      LOGICAL             FULCIR
+#else
       INTEGER             IXCGRD(MICMAX), IYCGRD(MICMAX), KCGRD(MICMAX)
       INTEGER             ICOMP,       MCGRD
       INTEGER             MDC,         MDC4MA,      MDC4MI,      MMCGR
@@ -1720,6 +1837,7 @@
       REAL                YPC
       REAL                XCGMIN,      XCGMAX,      YCGMIN,      YCGMAX
       LOGICAL             FULCIR
+#endif
 !$OMP THREADPRIVATE(IXCGRD,IYCGRD,KCGRD)
 !
 !     *** physical parameters ***
@@ -2445,7 +2563,18 @@
 ! TIMCO     [    ] Time and date of the computation during the simulation (in
 !                  seconds since the reference day (REFDAY))
 !
+#ifdef MODEL_COUPLING
+      REAL, POINTER :: TINIC
+      REAL, SAVE, TARGET, ALLOCATABLE :: TINIC_G(:)
+      REAL, POINTER :: DT
+      REAL, SAVE, TARGET, ALLOCATABLE :: DT_G(:)
+      REAL, POINTER :: TFINC
+      REAL, SAVE, TARGET, ALLOCATABLE :: TFINC_G(:)
+      REAL, POINTER :: TIMCO
+      REAL, SAVE, TARGET, ALLOCATABLE :: TIMCO_G(:)
+#else
       REAL TINIC, DT, TFINC, TIMCO
+#endif
 !
 !     *** Time related variables for nested runs ***
 !

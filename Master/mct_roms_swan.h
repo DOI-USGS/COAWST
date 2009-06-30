@@ -842,8 +842,13 @@
 #  ifdef REFINED_GRID
         DO j=JstrT,JendT
           DO i=IstrTU+1,IendTU
-            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%u(i,j,N(ng),nstp(ng))+          &
-     &                            OCEAN(ng)%u(i+1,j,N(ng),nstp(ng)))
+#   ifdef SOLVE3D
+            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%u(i,  j,N(ng),NOUT)+        &
+     &                            OCEAN(ng)%u(i+1,j,N(ng),NOUT))
+#   else
+            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%ubar(i,  j,KOUT)+           &
+     &                            OCEAN(ng)%ubar(i+1,j,KOUT))
+#   endif
           END DO
         END DO
         IF (WESTERN_EDGE) THEN
@@ -859,8 +864,13 @@
 #  else
         DO j=JstrR,JendR
           DO i=Istr,Iend
-            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%u(i,j,N(ng),nstp(ng))+          &
-     &                            OCEAN(ng)%u(i+1,j,N(ng),nstp(ng)))
+#   ifdef SOLVE3D
+            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%u(i,  j,N(ng),NOUT)+        &
+     &                            OCEAN(ng)%u(i+1,j,N(ng),NOUT))
+#   else
+            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%ubar(i,  j,KOUT)+           &
+     &                            OCEAN(ng)%ubar(i+1,j,KOUT))
+#   endif
           END DO
         END DO
         IF (WESTERN_EDGE) THEN
@@ -908,8 +918,13 @@
 #  ifdef REFINED_GRID
         DO j=JstrTV+1,JendTV
           DO i=IstrT,IendT
-            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j,N(ng),nstp(ng))+      &
-     &                            OCEAN(ng)%v(i,j+1,N(ng),nstp(ng)))
+#   ifdef SOLVE3D
+            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,N(ng),NOUT)+        &
+     &                            OCEAN(ng)%v(i,j+1,N(ng),NOUT))
+#   else
+            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,KOUT)+              &
+     &                            OCEAN(ng)%v(i,j+1,KOUT))
+#   endif
           END DO
         END DO
         IF (NORTHERN_EDGE) THEN
@@ -925,8 +940,13 @@
 #  else
         DO j=Jstr,Jend
           DO i=IstrR,IendR
-            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j,N(ng),nstp(ng))+      &
-     &                            OCEAN(ng)%v(i,j+1,N(ng),nstp(ng)))
+#   ifdef SOLVE3D
+            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,N(ng),NOUT)+        &
+     &                            OCEAN(ng)%v(i,j+1,N(ng),NOUT))
+#   else
+            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,KOUT)+              &
+     &                            OCEAN(ng)%v(i,j+1,KOUT))
+#   endif
           END DO
         END DO
         IF (NORTHERN_EDGE) THEN
@@ -958,8 +978,8 @@
 #  endif
 !
       ij=0
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           ij=ij+1
 #ifdef UV_CONST
           A(ij)=0.0_r8

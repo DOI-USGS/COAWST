@@ -62,11 +62,7 @@
       USE m_SparseMatrix, ONLY : SparseMatrix_importMatrixElts =>       &
      &                           importMatrixElements
       USE m_SparseMatrix, only : SparseMatrix_lsize => lsize
-      USE m_SparseMatrix, only : SparseMatrix_nRows => nRows
-      USE m_SparseMatrix, only : SparseMatrix_nCols => nCols
       USE m_SparseMatrix, only : SparseMatrix_clean => clean
-      USE m_SparseMatrix, only : SparseMatrix_GNumElem =>               &
-     &                           GlobalNumElements
       USE m_SparseMatrixPlus, ONLY : SparseMatrixPlus
       USE m_SparseMatrixPlus, ONLY : SparseMatrixPlus_init => init
       USE m_SparseMatrixPlus, ONLY : SparseMatrixPlus_clean => clean
@@ -98,11 +94,21 @@
 !
 !  Declarations.
 !
-      TYPE(GlobalSegMap) :: GSMapSWAN         ! GloabalSegMap variables
+      TYPE T_GlobalSegMap_G
+        TYPE(GlobalSegMap) :: GSMapSWAN         ! GloabalSegMap variables
+      END TYPE T_GlobalSegMap_G
+      TYPE (T_GlobalSegMap_G), ALLOCATABLE :: GlobalSegMap_G(:)
 
-      TYPE(AttrVect) :: wav2ocn_AV            ! AttrVect variables
-      TYPE(AttrVect) :: ocn2wav_AV
-      type(Router)   :: SWANtoROMS            ! Router variables
+      TYPE T_AttrVect_G
+        TYPE(AttrVect) :: wav2ocn_AV            ! AttrVect variables
+        TYPE(AttrVect) :: ocn2wav_AV
+      END TYPE T_AttrVect_G
+      TYPE (T_AttrVect_G), ALLOCATABLE :: AttrVect_G(:)
+
+      TYPE T_Router_G
+        type(Router)   :: SWANtoROMS            ! Router variables
+      END TYPE T_Router_G
+      TYPE (T_Router_G), ALLOCATABLE :: Router_G(:)
 
 # if defined WRF_COUPLING
       TYPE(AttrVect) :: atm2wav_AV            ! AttrVec variables
@@ -114,17 +120,14 @@
 !     TYPE(AttrVect) :: wav2atm_AV2 
 
       TYPE(SparseMatrix) :: sMatW             ! Sparse matrix elements
-      TYPE(SparseMatrix) :: sMatA2             ! Sparse matrix elements
+      TYPE(SparseMatrix) :: sMatA             ! Sparse matrix elements
       TYPE(SparseMatrixPlus) :: A2WMatPlus    ! Sparse matrix plus elements
       TYPE(SparseMatrixPlus) :: W2AMatPlus    ! Sparse matrix plus elements
 #endif
 
       CONTAINS
-#ifdef REFINED_GRID
+
       SUBROUTINE INITIALIZE_WAV2OCN_COUPLING (ng)
-#else
-      SUBROUTINE INITIALIZE_WAV2OCN_COUPLING
-#endif
 !
 !=======================================================================
 !                                                                      !
@@ -142,11 +145,7 @@
       USE mod_iounits
 !
       include 'mpif.h'
-#ifdef REFINED_GRID
       integer, intent(in) :: ng
-#else
-      integer :: ng
-#endif
 !
 !  Local variable declarations.
 !
@@ -158,16 +157,14 @@
 
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       integer, pointer :: start(:), length(:)
-      integer :: SMlsize, SMgnumel
-      integer :: SMlsize1, SMlsize2
+!     integer :: SMlsize, SMgnumel
+!     integer :: SMlsize1, SMlsize2
       integer :: MyMasterswan
 #ifdef REFINED_GRID
       integer, dimension(:), pointer :: ocnids
       integer, dimension(:), pointer :: wavids
-#else
-      ng=1
 #endif
-      MyMasterswan=0
+
 !
 !-----------------------------------------------------------------------
 !  Begin initialization phase.
@@ -179,6 +176,12 @@
       CALL mpi_comm_size (WAV_COMM_WORLD, nprocs, MyError)
 !
 !  Initialize MCT coupled model registry.
+!
+      IF (ng.eq.1) THEN
+        ALLOCATE(GlobalSegMap_G(Ngrids))
+        ALLOCATE(AttrVect_G(Ngrids))
+        ALLOCATE(Router_G(Ngrids))
+      END IF
 !
 #ifdef REFINED_GRID
       CALL initialize_param
@@ -192,7 +195,7 @@
       WAVid=wavids(ng)
       OCNid=ocnids(ng)
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, WAV_COMM_WORLD,  &
-     &                    WAVid)
+     &                    WAVid, wavids)
 #else
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, WAV_COMM_WORLD,  &
      &                    WAVid)
@@ -206,9 +209,9 @@
 ! First work on atm to wave.
 !!!!!!!!!!!!!!!!!!!!!!
 !
-      IF (Myrank.eq.MyMasterswan) THEN
+      IF (INODE.eq.MASTER) THEN
         nc_name=A2Wname(ng)
-        call get_sparse_waves_matrix (ng, nc_name, num_sparse_elems,    &
+        call get_sparse_matrix (ng, nc_name, num_sparse_elems,    &
      &                          src_grid_dims, dst_grid_dims)
 !
 ! Init the sparse matrix.
@@ -218,27 +221,27 @@
 !
 ! Create sparse matrix.
 !
-        call SparseMatrix_init(sMatA2,nRows,nCols,num_sparse_elems)
-        call SparseMatrix_importGRowInd(sMatA2, sparse_rows2,              &
-     &                                  size(sparse_rows2))
-        call SparseMatrix_importGColInd(sMatA2, sparse_cols2,              &
-     &                                  size(sparse_cols2))
-        call SparseMatrix_importMatrixElts(sMatA2, sparse_weights2,        &
-     &                                     size(sparse_weights2))
+        call SparseMatrix_init(sMatA,nRows,nCols,num_sparse_elems)
+        call SparseMatrix_importGRowInd(sMatA, sparse_rows,              &
+     &                                  size(sparse_rows))
+        call SparseMatrix_importGColInd(sMatA, sparse_cols,              &
+     &                                  size(sparse_cols))
+        call SparseMatrix_importMatrixElts(sMatA, sparse_weights,        &
+     &                                     size(sparse_weights))
 !
 ! Deallocate arrays.
 !
 !        IF (allocated(sparse_rows)) THEN
-          deallocate ( sparse_rows2 )
+          deallocate ( sparse_rows )
 !        END IF
 !        IF (allocated(sparse_cols)) THEN
-          deallocate ( sparse_cols2 )
+          deallocate ( sparse_cols )
 !        END IF
 !        IF (allocated(sparse_weights)) THEN
-          deallocate ( sparse_weights2 )
+          deallocate ( sparse_weights )
 !        END IF
 !        IF (allocated(sparse_weights)) THEN
-!          deallocate ( dst_grid_imask2 )
+!          deallocate ( dst_grid_imask )
 !        END IF
       END IF
 
@@ -246,9 +249,9 @@
 ! Second work on waves to atm.
 !!!!!!!!!!!!!!!!!!!!!!
 !
-      IF (Myrank.eq.MyMasterswan) THEN
+      IF (INODE.EQ.MASTER) THEN
         nc_name=W2Aname(ng)
-        call get_sparse_waves_matrix (ng, nc_name, num_sparse_elems,    &
+        call get_sparse_matrix (ng, nc_name, num_sparse_elems,    &
      &                          src_grid_dims, dst_grid_dims)
 !
 ! Init the sparse matrix.
@@ -259,23 +262,23 @@
 ! Create sparse matrix.
 !
         call SparseMatrix_init(sMatW,nRows,nCols,num_sparse_elems)
-        call SparseMatrix_importGRowInd(sMatW, sparse_rows2,              &
-     &                                  size(sparse_rows2))
-        call SparseMatrix_importGColInd(sMatW, sparse_cols2,              &
-     &                                  size(sparse_cols2))
-        call SparseMatrix_importMatrixElts(sMatW, sparse_weights2,        &
-     &                                     size(sparse_weights2))
+        call SparseMatrix_importGRowInd(sMatW, sparse_rows,              &
+     &                                  size(sparse_rows))
+        call SparseMatrix_importGColInd(sMatW, sparse_cols,              &
+     &                                  size(sparse_cols))
+        call SparseMatrix_importMatrixElts(sMatW, sparse_weights,        &
+     &                                     size(sparse_weights))
 !
 ! Deallocate arrays.
 !
 !        IF (allocated(sparse_rows)) THEN
-          deallocate ( sparse_rows2 )
+          deallocate ( sparse_rows )
 !        END IF
 !        IF (allocated(sparse_cols)) THEN
-          deallocate ( sparse_cols2 )
+          deallocate ( sparse_cols )
 !        END IF
 !        IF (allocated(sparse_weights)) THEN
-          deallocate ( sparse_weights2 )
+          deallocate ( sparse_weights )
 !        END IF
 !        IF (allocated(sparse_weights)) THEN
 !          deallocate ( dst_grid_imask )
@@ -325,8 +328,8 @@
       END DO
       gsmsize=Isize*Jsize
 !
-      CALL GlobalSegMap_init (GSMapSWAN, start, length, 0,              &
-     &                        WAV_COMM_WORLD, WAVid)
+      CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapSWAN, start,      &
+     &                        length, 0, WAV_COMM_WORLD, WAVid)
       deallocate (start)
       deallocate (length)
 #endif
@@ -370,8 +373,8 @@
       END DO
       gsmsize=Isize*Jsize
 !
-      CALL GlobalSegMap_init (GSMapSWAN, start, length, 0,              &
-     &                        WAV_COMM_WORLD, WAVid)
+      CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapSWAN, start,      &
+     &                        length, 0, WAV_COMM_WORLD, WAVid)
       deallocate (start)
       deallocate (length)
 !
@@ -402,44 +405,42 @@
 ! Create ATM sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
 !
-        call SparseMatrixPlus_init(A2WMatPlus, sMatA2,                  &
-     &                             GSMapWRF, GSMapSWAN, Xonly,         &
-     &                             0, WAV_COMM_WORLD, WAVid)
-        call SparseMatrix_clean(sMatA2)
+        call SparseMatrixPlus_init(A2WMatPlus, sMatA,                   &
+     &                             GSMapWRF,                            &
+     &                             GlobalSegMap_G(ng)%GSMapSWAN, Xonly, &
+     &                             MASTER, WAV_COMM_WORLD, WAVid)
+        call SparseMatrix_clean(sMatA)
 !
 ! Create Wave sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
 !
-!        SMlsize=SparseMatrix_lsize(sMatW)
-!        SMgnumel=SparseMatrix_GNumElem(sMatW, WAV_COMM_WORLD)
          call SparseMatrixPlus_init(W2AMatPlus, sMatW,                  &
-     &                              GSMapSWAN, GSMapWRF, Xonly,         &
-     &                              0, WAV_COMM_WORLD, WAVid)
+     &                              GlobalSegMap_G(ng)%GSMapSWAN,       &
+     &                              GSMapWRF, Xonly,                    &
+     &                              MASTER, WAV_COMM_WORLD, WAVid)
         call SparseMatrix_clean(sMatW)
-
 #endif
 !
 !  Initialize attribute vector holding the export data code strings of
 !  the wave model.
 !
-      CALL AttrVect_init(wav2ocn_AV,                                    &
+      CALL AttrVect_init (AttrVect_G(ng)%wav2ocn_AV,                    &
      &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",          &
      &  lsize=gsmsize)
-      CALL AttrVect_zero (wav2ocn_AV)
+      CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
-!     CALL AttrVect_init (ocn2wav_AV, rList=TRIM(ExportList(Iocean)),   &
-!    &                    lsize=gsmsize)
-      CALL AttrVect_init (ocn2wav_AV,                                   &
+      CALL AttrVect_init (AttrVect_G(ng)%ocn2wav_AV,                    &
      &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
      &                    lsize=gsmsize)
-      CALL AttrVect_zero (ocn2wav_AV)
+      CALL AttrVect_zero (AttrVect_G(ng)%ocn2wav_AV)
 !
 !  Initialize a router to the waves model component.
 !
-      CALL Router_init (OCNid, GSMapSWAN, WAV_COMM_WORLD, SWANtoROMS)
+      CALL Router_init (OCNid, GlobalSegMap_G(ng)%GSMapSWAN,            &
+     &                  WAV_COMM_WORLD, Router_G(ng)%SWANtoROMS)
 !
 #if defined WRF_COUPLING && !defined MCT_INTERP_OC2AT
 !
@@ -451,7 +452,8 @@
 !
 ! Initialize a router to the WRF component.
 !
-      CALL Router_init (ATMid, GSMapSWAN, WAV_COMM_WORLD, WRFtoSWAN)
+      CALL Router_init (ATMid, GlobalSegMap_G(ng)%GSMapSWAN,            &
+     &                  WAV_COMM_WORLD, WRFtoSWAN)
 !
 #endif
 #ifdef MCT_INTERP_WV2AT
@@ -465,7 +467,8 @@
      &                    lsize=Asize)
       CALL AttrVect_zero (atm2wav_AV2)
 !
-      Asize=GlobalSegMap_lsize(GSMapSWAN, WAV_COMM_WORLD)
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapSWAN,            &
+     &                         WAV_COMM_WORLD)
       CALL AttrVect_init (atm2wav_AV, rlist="U10:V10",                  &
      &                    lsize=Asize)
       CALL AttrVect_zero (atm2wav_AV)
@@ -494,7 +497,7 @@
       END SUBROUTINE INITIALIZE_WAV2OCN_COUPLING
 
       SUBROUTINE WAV2OCN_COUPLING (MIP, NVOQP, VOQR, VOQ, IRQ,          &
-     &                             IVTYPE, COMPDA, numsteps)
+     &                             IVTYPE, COMPDA, numsteps, ng)
 !
 !=======================================================================
 !                                                                      !
@@ -535,7 +538,7 @@
 !
 !  Imported variable declarations.
 !
-      integer :: MIP, IRQ, nvoqp, numsteps
+      integer :: MIP, IRQ, nvoqp, numsteps, ng
       integer :: VOQR(NMOVAR), IVTYPE, IP, IX, IY
 
       real :: COMPDA(MCGRD,MCMVAR)
@@ -580,7 +583,8 @@
 !
 !  Get the number of grid point on this processor.
 !
-      gsmsize=GlobalSegMap_lsize(GSMapSWAN, WAV_COMM_WORLD)
+      gsmsize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapSWAN,          &
+     &                           WAV_COMM_WORLD)
 !
 !  Allocate attribute vector array used to export/import data.
 !
@@ -591,7 +595,8 @@
 !
 !  Ask for points in this tile.
 !
-      CALL GlobalSegMap_Ordpnts (GSMapSWAN, MyRank, points)
+      CALL GlobalSegMap_Ordpnts (GlobalSegMap_G(ng)%GSMapSWAN,          &
+     &                           MyRank, points)
 !
 !  Load SWAN exporting data into MCT storage buffers.  Since this
 !  routine is called several times from main, only load field
@@ -605,23 +610,32 @@
       END IF
 !
       IF (IVTYPE.eq.7) THEN
-        CALL AttrVect_importRAttr (wav2ocn_AV,"DISSIP",avdata)
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "DISSIP",avdata)
       ELSE IF (IVTYPE.eq.10) THEN
-        CALL AttrVect_importRAttr (wav2ocn_AV,"HSIGN",avdata)
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "HSIGN",avdata)
       ELSE IF (IVTYPE.eq.12) THEN
-        CALL AttrVect_importRAttr (wav2ocn_AV,"RTP",avdata)
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "RTP",avdata)
       ELSE IF (IVTYPE.eq.39) THEN
-        CALL AttrVect_importRAttr (wav2ocn_AV,"SETUP",avdata)
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "SETUP",avdata)
       ELSE IF (IVTYPE.eq.50) THEN
-        CALL AttrVect_importRAttr (wav2ocn_AV,"TMBOT",avdata)
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "TMBOT",avdata)
       ELSE IF (IVTYPE.eq.6) THEN
-        CALL AttrVect_importRAttr (wav2ocn_AV,"UBOT",avdata)
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "UBOT",avdata)
       ELSE IF (IVTYPE.eq.13) THEN
-        CALL AttrVect_importRAttr (wav2ocn_AV,"DIR",avdata)
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "DIR",avdata)
       ELSE IF (IVTYPE.eq.17) THEN
-        CALL AttrVect_importRAttr (wav2ocn_AV,"WLEN",avdata)
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "WLEN",avdata)
       ELSE IF (IVTYPE.eq.8) THEN
-        CALL AttrVect_importRAttr (wav2ocn_AV,"QB",avdata)
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "QB",avdata)
       END IF
 !
       IF (IRQ.eq.NREOQ) THEN
@@ -636,7 +650,8 @@
 !  Send wave fields bundle to ocean model, ROMS.
 !-----------------------------------------------------------------------
 !
-        CALL MCT_Send (wav2ocn_AV, SWANtoROMS, MyError)
+        CALL MCT_Send (AttrVect_G(ng)%wav2ocn_AV,                       &
+     &                 Router_G(ng)%SWANtoROMS, MyError)
         IF (MYRANK.EQ.0) THEN
           WRITE (*,*) '== SWAN sent wave fields to ROMS'
         END IF
@@ -651,7 +666,8 @@
 !
 !  Schedule receiving field from ocean model.
 !
-        CALL MCT_Recv (ocn2wav_AV, SWANtoROMS, MyError)
+        CALL MCT_Recv (AttrVect_G(ng)%ocn2wav_AV,                       &
+     &                 Router_G(ng)%SWANtoROMS, MyError)
         IF (MYRANK.EQ.0) THEN
           WRITE (*,*) '== SWAN recvd ocean fields'
         END IF
@@ -720,7 +736,8 @@
 !
 !  Bottom elevation.
 !
-        CALL AttrVect_exportRAttr (ocn2wav_AV,"DEPTH",avdata,gsmsize)
+        CALL AttrVect_exportRAttr (AttrVect_G(ng)%ocn2wav_AV,           &
+     &                             "DEPTH",avdata,gsmsize)
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
@@ -732,7 +749,8 @@
 !
 !  Water surface elevation.
 !
-        CALL AttrVect_exportRAttr (ocn2wav_AV,"WLEV",avdata,gsmsize)
+        CALL AttrVect_exportRAttr (AttrVect_G(ng)%ocn2wav_AV,           &
+     &                             "WLEV",avdata,gsmsize)
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
@@ -744,7 +762,8 @@
 !
 !  Depth-integrated u-velocity.
 !
-        CALL AttrVect_exportRAttr(ocn2wav_AV,"VELX",avdata,gsmsize)
+        CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,           &
+     &                             "VELX",avdata,gsmsize)
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
@@ -756,7 +775,8 @@
 !
 !  Depth-integrated v-velocity.
 !
-        CALL AttrVect_exportRAttr(ocn2wav_AV,"VELY",avdata,gsmsize)
+        CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,           &
+     &                             "VELY",avdata,gsmsize)
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
@@ -768,7 +788,8 @@
 !
 !  Bottom roughness.
 !
-        CALL AttrVect_exportRAttr(ocn2wav_AV,"ZO",avdata,gsmsize)
+        CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,           &
+     &                             "ZO",avdata,gsmsize)
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
@@ -1048,7 +1069,7 @@
       RETURN
       END SUBROUTINE WAV2OCN_COUPLING
 
-      SUBROUTINE FINALIZE_WAV2OCN_COUPLING
+      SUBROUTINE FINALIZE_WAV2OCN_COUPLING (ng)
 !
 !=======================================================================
 !                                                                    ===
@@ -1058,19 +1079,19 @@
 !
 !  Local variable declarations.
 !
-      integer :: MyError
+      integer :: ng, MyError
 !
 !-----------------------------------------------------------------------
 !  Deallocate MCT environment.
 !-----------------------------------------------------------------------
 !
-      CALL Router_clean (SWANtoROMS, MyError)
-      CALL AttrVect_clean (wav2ocn_AV, MyError)
+      CALL Router_clean (Router_G(ng)%SWANtoROMS, MyError)
+      CALL AttrVect_clean (AttrVect_G(ng)%wav2ocn_AV, MyError)
 # ifdef WRF_COUPLING
       CALL Router_clean (WRFtoSWAN, MyError)
       CALL AttrVect_clean (atm2wav_AV, MyError)
 # endif
-      CALL GlobalSegMap_clean (GSMapSWAN, MyError)
+      CALL GlobalSegMap_clean (GlobalSegMap_G(ng)%GSMapSWAN, MyError)
 
       END SUBROUTINE FINALIZE_WAV2OCN_COUPLING
 #endif

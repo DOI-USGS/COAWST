@@ -18,7 +18,11 @@
 !
 !***********************************************************************
 !                                                                      *
+#ifdef MODEL_COUPLING
+      SUBROUTINE SPROUT (FOUND, BOTLEV, WATLEV, ng)
+#else
       SUBROUTINE SPROUT (FOUND, BOTLEV, WATLEV)                           40.31
+#endif
 !                                                                      *
 !***********************************************************************
 !
@@ -102,6 +106,9 @@
 ! i   BOTLEV: Bottom levels                                               30.70
 ! i   WATLEV: Water levels                                                30.70
 !
+#ifdef MODEL_COUPLING
+      INTEGER, INTENT(IN) :: ng
+#endif
       REAL    BOTLEV(*)                                                   30.70
       REAL    WATLEV(*)                                                   30.70
 !
@@ -148,13 +155,21 @@
 !
 !     definition of output point sets
 !
+#ifdef MODEL_COUPLING
+      CALL SWREPS ( FOUND, BOTLEV, WATLEV, ng)
+#else
       CALL SWREPS ( FOUND, BOTLEV, WATLEV )                               40.31
+#endif
       IF (STPNOW()) RETURN                                                34.01
       IF (FOUND) RETURN
 !
 !     output requests
 !
-      CALL SWREOQ ( FOUND )                                               40.31 30.90
+#ifdef MODEL_COUPLING
+      CALL SWREOQ ( FOUND, ng)
+#else
+      CALL SWREOQ ( FOUND )                                         40.31
+#endif
       IF (STPNOW()) RETURN                                                34.01
       IF (FOUND) RETURN
 !
@@ -177,7 +192,11 @@
       END
 !***********************************************************************
 !                                                                      *
+#ifdef MODEL_COUPLING
+      SUBROUTINE SWREPS ( FOUND, BOTLEV, WATLEV, ng)
+#else
       SUBROUTINE SWREPS ( FOUND, BOTLEV, WATLEV )                         40.31
+#endif
 !                                                                      *
 !***********************************************************************
 !
@@ -265,6 +284,9 @@
 !     BOTLEV: input  bottom levels                                        30.70
 !     WATLEV: input  water levels                                         30.70
 !
+#ifdef MODEL_COUPLING
+      INTEGER, INTENT(IN) :: ng
+#endif
       REAL      BOTLEV(*), WATLEV(*)                                      30.70
 !
 !     FOUND : output  parameter indicating whether command
@@ -277,7 +299,11 @@
 
       REAL :: XPFR, YPFR, XLENFR, YLENFR                                  40.31
 
+#if defined MODEL_COUPLING
+      TYPE(OPSDAT), POINTER :: ROPS
+#else
       TYPE(OPSDAT), POINTER :: OPSTMP, ROPS                               40.31
+#endif
 
       TYPE XYPT                                                           40.31
         REAL                :: X, Y, XQ, YQ
@@ -326,6 +352,44 @@
           GOTO 800                                                        32.02
         ELSE                                                              32.02
 !         ver 30.20: names of input variables changed, order of data changed
+#ifdef MODEL_COUPLING
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                40.31
+!          ALLOCATE(OPSDATZ_MOD(ng)%COPS)
+!          ALLOCATE(OPSDATZ_MOD(ng)%FOPS)
+          CALL INCSTR ('SNAME',PSNAME,'REQ',' ')
+          IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
+          OPSDATZ_MOD(ng)%OPSTMP%PSNAME = PSNAME                                          40.31
+          CALL READXY ('XPFR', 'YPFR', XPFR, YPFR, 'REQ', 0., 0.)         40.31 30.20
+          OPSDATZ_MOD(ng)%OPSTMP%OPR(1) = XPFR                                            40.31
+          OPSDATZ_MOD(ng)%OPSTMP%OPR(2) = YPFR                                            40.31
+          CALL INREAL('ALPFR',ALPK,'REQ',0.)                              30.20
+          IF (KSPHER.GT.0 .AND. .NOT.EQREAL(ALPK,0.)) CALL MSGERR (2,
+     &          '[alpfr] must be 0 with spherical coordinates')           33.09
+          CALL INREAL('XLENFR', XLENFR,'REQ',0.)                          40.31 30.20
+          CALL INREAL('YLENFR', YLENFR,'REQ',0.)                          40.31 30.20
+          OPSDATZ_MOD(ng)%OPSTMP%OPR(3)=XLENFR                                          40.31
+          OPSDATZ_MOD(ng)%OPSTMP%OPR(4)=YLENFR                                          40.31
+          OPSDATZ_MOD(ng)%OPSTMP%OPR(5)=PI2*(ALPK/360.-NINT(ALPK/360.))
+!           ***** the user gives number of meshes along each side *****
+!           ***** program uses the number of points               *****
+          CALL ININTG ('MXFR',MXK,'STA',20)                               30.20
+          CALL ININTG ('MYFR',MYK,'STA',20)                               30.20
+          OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'F'                                             40.31
+          OPSDATZ_MOD(ng)%OPSTMP%OPI(1) = MXK+1                                           40.31
+          OPSDATZ_MOD(ng)%OPSTMP%OPI(2) = MYK+1                                           40.31
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(0))                                          40.31
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(0))                                          40.31
+          NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                                         40.31
+          IF ( .NOT.LOPS ) THEN                                           40.31
+             OPSDATZ_MOD(ng)%FOPS = OPSDATZ_MOD(ng)%OPSTMP                40.31
+             OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS                 40.31
+             LOPS = .TRUE.                                                40.31
+          ELSE                                                            40.31
+             OPSDATZ_MOD(ng)%COPS%NEXTOPS => OPSDATZ_MOD(ng)%OPSTMP       40.31
+             OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%OPSTMP               40.31
+          END IF                                                          40.31
+          GOTO 800
+#else
           ALLOCATE(OPSTMP)                                                40.31
           CALL INCSTR ('SNAME',PSNAME,'REQ',' ')
           IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
@@ -360,6 +424,7 @@
              COPS => OPSTMP                                               40.31
           END IF                                                          40.31
           GOTO 800
+#endif
         ENDIF                                                             32.02
       ENDIF
 !
@@ -375,10 +440,17 @@
         ELSE                                                              32.02
 !         mod 970221: GROUP is introduced as a new command instead of
 !         an option SUBG within the Frame command
+#ifdef MODEL_COUPLING
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                40.31
+          CALL INCSTR ('SNAME',PSNAME,'REQ',' ')
+          IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
+          OPSDATZ_MOD(ng)%OPSTMP%PSNAME = PSNAME                          40.31
+#else
           ALLOCATE(OPSTMP)                                                40.31
           CALL INCSTR ('SNAME',PSNAME,'REQ',' ')
           IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
           OPSTMP%PSNAME = PSNAME                                          40.31
+#endif
           CALL INKEYW ('STA', ' ')
           CALL IGNORE ('SUBG')                                            970221
           CALL ININTG ('IX1', IX1, 'REQ', 0)
@@ -399,6 +471,55 @@
 !             *** FLOAT(IX1) ,FLOAT(IY1) , 0 ,MXK+1 ,MYK+1           ***
 !              *** Here frame type H is introduce, means that regular***
 !              *** frame is required from a curvilinear compt. grid  ***
+#ifdef MODEL_COUPLING
+            OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'H'                                           40.31
+            MXK = IX2-IX1
+            MYK = IY2-IY1
+            OPSDATZ_MOD(ng)%OPSTMP%OPR(1) = FLOAT(IX2)                                    40.31
+            OPSDATZ_MOD(ng)%OPSTMP%OPR(2) = FLOAT(IY2)                                    40.31
+            OPSDATZ_MOD(ng)%OPSTMP%OPR(3) = FLOAT(IX1)                                    40.31
+            OPSDATZ_MOD(ng)%OPSTMP%OPR(4) = FLOAT(IY1)                                    40.31
+            OPSDATZ_MOD(ng)%OPSTMP%OPR(5) = 0.                                            40.31
+            OPSDATZ_MOD(ng)%OPSTMP%OPI(1) = MXK+1                                         40.31
+            OPSDATZ_MOD(ng)%OPSTMP%OPI(2) = MYK+1                                         40.31
+          ELSE IF (OPTG .EQ. 1) THEN
+            OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'F'                                           40.31
+            IF (IX1.NE.IX2) THEN
+              OPSDATZ_MOD(ng)%OPSTMP%OPR(3) = (IX2-IX1)*DX                                40.31
+            ELSE
+              OPSDATZ_MOD(ng)%OPSTMP%OPR(3) = 0.01                                        40.31
+            ENDIF
+            IF (IY1.NE.IY2) THEN
+              OPSDATZ_MOD(ng)%OPSTMP%OPR(4) = (IY2-IY1)*DY                                40.31
+            ELSE
+              OPSDATZ_MOD(ng)%OPSTMP%OPR(4) = 0.01                                        40.31
+            ENDIF
+            OPSDATZ_MOD(ng)%OPSTMP%OPR(1) = XPC + IX1*DX*COSPC -        &
+     &                                      IY1*DY*SINPC                 40.31
+            OPSDATZ_MOD(ng)%OPSTMP%OPR(2) = YPC + IX1*DX*SINPC +        &
+     &                                      IY1*DY*COSPC                 40.31
+            OPSDATZ_MOD(ng)%OPSTMP%OPR(5) = ALPC                                          40.31
+            MXK = IX2-IX1
+            MYK = IY2-IY1
+            OPSDATZ_MOD(ng)%OPSTMP%OPI(1) = MXK+1                                         40.31
+            OPSDATZ_MOD(ng)%OPSTMP%OPI(2) = MYK+1                         40.31
+            IF (ITEST .GE. 20 .OR. INTES .GE. 10)                       &
+     &        WRITE (PRINTF, 6020) (OPSDATZ_MOD(ng)%OPSTMP%OPR(II),     & 
+     &               II=2,6)                                             40.31
+ 6020       FORMAT (' Subgrid parms.', 6(1X,E12.4))
+          ENDIF
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(0))                          40.31
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(0))                          40.31
+          NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                         40.31
+          IF ( .NOT.LOPS ) THEN                                           40.31
+             OPSDATZ_MOD(ng)%FOPS = OPSDATZ_MOD(ng)%OPSTMP                40.31
+             OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS                 40.31
+             LOPS = .TRUE.                                                40.31
+          ELSE                                                            40.31
+             OPSDATZ_MOD(ng)%COPS%NEXTOPS => OPSDATZ_MOD(ng)%OPSTMP       40.31
+             OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%OPSTMP               40.31
+          END IF                                                          40.31
+#else
             OPSTMP%PSTYPE = 'H'                                           40.31
             MXK = IX2-IX1
             MYK = IY2-IY1
@@ -443,6 +564,7 @@
              COPS%NEXTOPS => OPSTMP                                       40.31
              COPS => OPSTMP                                               40.31
           END IF                                                          40.31
+#endif
           GOTO 800
         ENDIF                                                             32.01
       ENDIF
@@ -453,6 +575,15 @@
 !   command CURVE, MIP is number of point on a curve
 
       IF (KEYWIS ('CURV')) THEN
+#ifdef MODEL_COUPLING
+        ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                  40.31
+        CALL INCSTR('SNAME',PSNAME,'REQ',' ')
+        IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
+        OPSDATZ_MOD(ng)%OPSTMP%PSNAME = PSNAME                            40.31
+        OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'C'                               40.31
+        MIP  = 0
+        OPSDATZ_MOD(ng)%OPSTMP%MIP = MIP                                  40.31
+#else
         ALLOCATE(OPSTMP)                                                  40.31
         CALL INCSTR('SNAME',PSNAME,'REQ',' ')
         IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
@@ -460,6 +591,7 @@
         OPSTMP%PSTYPE = 'C'                                               40.31
         MIP  = 0
         OPSTMP%MIP = MIP                                                  40.31
+#endif
 !       ***** first point of a curve *****
    30   CALL NWLINE
         IF (STPNOW()) RETURN                                              34.01
@@ -494,6 +626,35 @@
    36     CONTINUE
           GOTO 33
         ENDIF
+#ifdef MODEL_COUPLING
+        ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(MIP))                          40.31
+        ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(MIP))                          40.31
+!        ALLOCATE(OPSDATZ_MOD(ng)%COPS)
+!        ALLOCATE(OPSDATZ_MOD(ng)%FOPS)
+        CURR => FRST                                                      40.31
+        DO JJ = 1, MIP                                                    40.31
+           OPSDATZ_MOD(ng)%OPSTMP%XP(JJ) = CURR%X                         40.31
+           OPSDATZ_MOD(ng)%OPSTMP%YP(JJ) = CURR%Y                         40.31
+           IF (ITEST .GE. 200 .OR. INTES .GE. 50) THEN                    40.31
+              WRITE(PRINTF,32) JJ, CURR%X, CURR%Y                         40.31
+   32         FORMAT(' POINT(',I4,')','  (IX,IY) -> ',2F10.2)             40.31
+           ENDIF                                                          40.31
+           CURR => CURR%NEXTXY                                            40.31
+        END DO                                                            40.31
+        DEALLOCATE(TMP)                                                   40.31
+!       ***** store number of points of the curve *****
+        OPSDATZ_MOD(ng)%OPSTMP%MIP = MIP                                  40.31
+        IF (MIP .EQ. 0) CALL MSGERR(1,'No output points found')
+        NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                           40.31
+        IF ( .NOT.LOPS ) THEN                                             40.31
+           OPSDATZ_MOD(ng)%FOPS = OPSDATZ_MOD(ng)%OPSTMP                  40.31
+           OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS                   40.31
+           LOPS = .TRUE.                                                  40.31
+        ELSE                                                              40.31
+           OPSDATZ_MOD(ng)%COPS%NEXTOPS => OPSDATZ_MOD(ng)%OPSTMP         40.31
+           OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%OPSTMP                 40.31
+        END IF                                                            40.31
+#else
         ALLOCATE(OPSTMP%XP(MIP))                                          40.31
         ALLOCATE(OPSTMP%YP(MIP))                                          40.31
         CURR => FRST                                                      40.31
@@ -519,6 +680,7 @@
            COPS%NEXTOPS => OPSTMP                                         40.31
            COPS => OPSTMP                                                 40.31
         END IF                                                            40.31
+#endif
         GOTO 800
       ENDIF
 !
@@ -527,6 +689,15 @@
 !   ------------------------------------------------------------------
 !   POINTS     set of individual output points
       IF (KEYWIS ('POIN')) THEN
+#ifdef MODEL_COUPLING
+        ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                                  40.31
+        CALL INCSTR('SNAME',PSNAME,'REQ',' ')
+        IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
+        OPSDATZ_MOD(ng)%OPSTMP%PSNAME = PSNAME                                            40.31
+        OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'P'                                               40.31
+        MIP  = 0
+        OPSDATZ_MOD(ng)%OPSTMP%MIP = MIP                                                  40.31
+#else
         ALLOCATE(OPSTMP)                                                  40.31
         CALL INCSTR('SNAME',PSNAME,'REQ',' ')
         IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
@@ -534,6 +705,7 @@
         OPSTMP%PSTYPE = 'P'                                               40.31
         MIP  = 0
         OPSTMP%MIP = MIP                                                  40.31
+#endif
         CALL INKEYW ('STA', ' ')
         IF (KEYWIS('FILE')) THEN
           IOSTAT = 0
@@ -570,6 +742,31 @@
           CURR%NEXTXY => TMP                                              40.31
           CURR => TMP                                                     40.31
         ENDDO
+#ifdef MODEL_COUPLING
+  47    ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(MIP))                          40.31
+        ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(MIP))                          40.31
+!        ALLOCATE(OPSDATZ_MOD(ng)%COPS)
+!        ALLOCATE(OPSDATZ_MOD(ng)%FOPS)
+        CURR => FRST%NEXTXY                                               40.31
+        DO JJ = 1, MIP                                                    40.31
+           OPSDATZ_MOD(ng)%OPSTMP%XP(JJ) = CURR%X                         40.31
+           OPSDATZ_MOD(ng)%OPSTMP%YP(JJ) = CURR%Y                         40.31
+           CURR => CURR%NEXTXY                                            40.31
+        END DO                                                            40.31
+        DEALLOCATE(TMP)                                                   40.31
+!       ***** store number of output points *****
+        OPSDATZ_MOD(ng)%OPSTMP%MIP = MIP                                  40.31
+        IF (MIP .EQ. 0) CALL MSGERR (2, 'No output points found')         10.32
+        NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                           40.31
+        IF ( .NOT.LOPS ) THEN                                             40.31
+           OPSDATZ_MOD(ng)%FOPS = OPSDATZ_MOD(ng)%OPSTMP                  40.31
+           OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS                   40.31
+           LOPS = .TRUE.                                                  40.31
+        ELSE                                                              40.31
+           OPSDATZ_MOD(ng)%COPS%NEXTOPS => OPSDATZ_MOD(ng)%OPSTMP         40.31
+           OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%OPSTMP                 40.31
+        END IF                                                            40.31
+#else
   47    ALLOCATE(OPSTMP%XP(MIP))                                          40.31
         ALLOCATE(OPSTMP%YP(MIP))                                          40.31
         CURR => FRST%NEXTXY                                               40.31
@@ -591,6 +788,7 @@
            COPS%NEXTOPS => OPSTMP                                         40.31
            COPS => OPSTMP                                                 40.31
         END IF                                                            40.31
+#endif
         GOTO 800
       ENDIF
 !
@@ -606,6 +804,15 @@
      &                   ' with 1D-computation')                          32.02
           GOTO 800                                                        32.02
         ELSE                                                              32.02
+#ifdef MODEL_COUPLING
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                40.31
+          CALL INCSTR('RNAME',PSNAME,'REQ',' ')
+          IF (LENCST.GT.8) CALL MSGERR (2, 'RNAME is too long')
+          OPSDATZ_MOD(ng)%OPSTMP%PSNAME = PSNAME                          40.31
+          OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'R'                             40.31
+          MIP  = 1
+          OPSDATZ_MOD(ng)%OPSTMP%MIP = MIP                                40.31
+#else
           ALLOCATE(OPSTMP)                                                40.31
           CALL INCSTR('RNAME',PSNAME,'REQ',' ')
           IF (LENCST.GT.8) CALL MSGERR (2, 'RNAME is too long')
@@ -613,6 +820,7 @@
           OPSTMP%PSTYPE = 'R'                                             40.31
           MIP  = 1
           OPSTMP%MIP = MIP                                                40.31
+#endif
 !         first ray
           CALL NWLINE
           IF (STPNOW()) RETURN                                            34.01
@@ -650,6 +858,36 @@
   115       CONTINUE
             GOTO 110
           ENDIF
+#ifdef MODEL_COUPLING
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(MIP))                        40.31
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(MIP))                        40.31
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XQ(MIP))                        40.31
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YQ(MIP))                        40.31
+!          ALLOCATE(OPSDATZ_MOD(ng)%COPS)
+!          ALLOCATE(OPSDATZ_MOD(ng)%FOPS)
+          CURR => FRST                                                    40.31
+          DO JJ = 1, MIP                                                  40.31
+             OPSDATZ_MOD(ng)%OPSTMP%XP(JJ) = CURR%X                       40.31
+             OPSDATZ_MOD(ng)%OPSTMP%YP(JJ) = CURR%Y                       40.31
+             OPSDATZ_MOD(ng)%OPSTMP%XQ(JJ) = CURR%XQ                      40.31
+             OPSDATZ_MOD(ng)%OPSTMP%YQ(JJ) = CURR%YQ                      40.31
+             CURR => CURR%NEXTXY                                          40.31
+          END DO                                                          40.31
+          DEALLOCATE(TMP)                                                 40.31
+!
+!         ***** termination *****
+          OPSDATZ_MOD(ng)%OPSTMP%MIP = MIP                                40.31
+          IF (MIP .EQ. 1) CALL MSGERR (1,'Only one ray is defined')
+          NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                         40.31
+          IF ( .NOT.LOPS ) THEN                                           40.31
+             OPSDATZ_MOD(ng)%FOPS = OPSDATZ_MOD(ng)%OPSTMP                40.31
+             OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS                 40.31
+             LOPS = .TRUE.                                                40.31
+          ELSE                                                            40.31
+             OPSDATZ_MOD(ng)%COPS%NEXTOPS => OPSDATZ_MOD(ng)%OPSTMP       40.31
+             OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%OPSTMP               40.31
+          END IF                                                          40.31
+#else
           ALLOCATE(OPSTMP%XP(MIP))                                        40.31
           ALLOCATE(OPSTMP%YP(MIP))                                        40.31
           ALLOCATE(OPSTMP%XQ(MIP))                                        40.31
@@ -676,6 +914,7 @@
              COPS%NEXTOPS => OPSTMP                                       40.31
              COPS => OPSTMP                                               40.31
           END IF                                                          40.31
+#endif
           GOTO 800
         ENDIF                                                             32.02
       ENDIF
@@ -691,10 +930,18 @@
      &                   ' with 1D-computation')                          32.02
           GOTO 800                                                        32.02
         ELSE                                                              32.02
+#ifdef MODEL_COUPLING
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                40.31
+#else
           ALLOCATE(OPSTMP)                                                40.31
+#endif
           CALL INCSTR ('SNAME',PSNAME,'REQ',' ')
           IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
+#ifdef MODEL_COUPLING
+          OPSDATZ_MOD(ng)%OPSTMP%PSNAME = PSNAME                          40.31
+#else
           OPSTMP%PSNAME = PSNAME                                          40.31
+#endif
           CALL INCSTR ('RNAME', PRNAME, 'REQ', ' ')
           IF (LENCST.GT.8) CALL MSGERR (2, 'RNAME is too long')
           CALL INKEYW ('STA', 'DEP')
@@ -706,7 +953,11 @@
             IF (DYNDEP) CALL MSGERR (2,'depths will vary with time')      40.00
           ENDIF
           CALL INREAL ('DEP',DP,'REP',-1.E10)
+#ifdef MODEL_COUPLING
+          ROPS => OPSDATZ_MOD(ng)%FOPS
+#else
           ROPS => FOPS                                                    40.31
+#endif
           DO                                                              40.31
             IF (ROPS%PSNAME.EQ.PRNAME) EXIT                               40.31
             IF (.NOT.ASSOCIATED(ROPS%NEXTOPS)) THEN                       40.31
@@ -722,9 +973,15 @@
              GOTO 800                                                     40.31
           END IF                                                          40.31
           MIPR  = ROPS%MIP                                                40.31
+#ifdef MODEL_COUPLING
+          OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'C'                             40.31
+          MIP  = 0
+          OPSDATZ_MOD(ng)%OPSTMP%MIP = MIP                                40.31
+#else
           OPSTMP%PSTYPE = 'C'                                             40.31
           MIP  = 0
           OPSTMP%MIP = MIP                                                40.31
+#endif
           FRST%X = 0.                                                     40.31
           FRST%Y = 0.                                                     40.31
           NULLIFY(FRST%NEXTXY)                                            40.31
@@ -751,6 +1008,32 @@
                 CURR => TMP                                               40.31
              ENDIF
   125     CONTINUE
+#ifdef MODEL_COUPLING
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(MIP))                        40.31
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(MIP))                        40.31
+!          ALLOCATE(OPSDATZ_MOD(ng)%COPS)
+!          ALLOCATE(OPSDATZ_MOD(ng)%FOPS)
+          CURR => FRST%NEXTXY                                             40.31
+          DO IK = 1, MIP                                                  40.31
+             OPSDATZ_MOD(ng)%OPSTMP%XP(IK) = CURR%X                       40.31
+             OPSDATZ_MOD(ng)%OPSTMP%YP(IK) = CURR%Y                       40.31
+             CURR => CURR%NEXTXY                                          40.31
+          END DO                                                          40.31
+          DEALLOCATE(TMP)                                                 40.31
+          IF (MIP.EQ.0) CALL MSGERR
+     &               (2, 'No points with valid depth found')
+!             ***** store number of points of the curve *****
+          OPSDATZ_MOD(ng)%OPSTMP%MIP = MIP                                40.31
+          NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                         40.31
+          IF ( .NOT.LOPS ) THEN                                           40.31
+             OPSDATZ_MOD(ng)%FOPS = OPSDATZ_MOD(ng)%OPSTMP                40.31
+             OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS                 40.31
+             LOPS = .TRUE.                                                40.31
+          ELSE                                                            40.31
+             OPSDATZ_MOD(ng)%COPS%NEXTOPS => OPSDATZ_MOD(ng)%OPSTMP       40.31
+             OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%OPSTMP               40.31
+          END IF                                                          40.31
+#else
           ALLOCATE(OPSTMP%XP(MIP))                                        40.31
           ALLOCATE(OPSTMP%YP(MIP))                                        40.31
           CURR => FRST%NEXTXY                                             40.31
@@ -773,6 +1056,7 @@
              COPS%NEXTOPS => OPSTMP                                       40.31
              COPS => OPSTMP                                               40.31
           END IF                                                          40.31
+#endif
           GOTO 800
         ENDIF                                                             32.02
       ENDIF
@@ -795,11 +1079,19 @@
           GOTO 800                                                        32.02
         ELSE                                                              32.02
 !         ver 30.20: names changed, order changed
+#ifdef MODEL_COUPLING
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                40.31
+          CALL INCSTR('SNAME',PSNAME,'REQ',' ')
+          IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
+          OPSDATZ_MOD(ng)%OPSTMP%PSNAME = PSNAME                          40.31
+          OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'N'                             40.31
+#else
           ALLOCATE(OPSTMP)                                                40.31
           CALL INCSTR('SNAME',PSNAME,'REQ',' ')
           IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
           OPSTMP%PSNAME = PSNAME                                          40.31
           OPSTMP%PSTYPE = 'N'                                             40.31
+#endif
           CALL READXY ('XPN', 'YPN', XPCN, YPCN , 'REQ', 0., 0.)          30.20
           CALL INREAL('ALPN',ALPCN,'REQ',0.)                              30.20
           CALL INREAL('XLENN',XNLEN,'REQ',0.)                             30.20
@@ -820,8 +1112,15 @@
           CALL ININTG ('MXN',MXN,'STA',MAX(1,NINT(XNLEN/DXN)))            40.00
           CALL ININTG ('MYN',MYN,'STA',MAX(1,NINT(YNLEN/DYN)))            40.00
           MIP = 0
+#ifdef MODEL_COUPLING
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(2*(MXN+MYN)))                40.31
+          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(2*(MXN+MYN)))                40.31
+!          ALLOCATE(OPSDATZ_MOD(ng)%COPS)
+!          ALLOCATE(OPSDATZ_MOD(ng)%FOPS)
+#else
           ALLOCATE(OPSTMP%XP(2*(MXN+MYN)))                                40.31
           ALLOCATE(OPSTMP%YP(2*(MXN+MYN)))                                40.31
+#endif
           XF=XPCN
           YF=YPCN
 !         *****   start to calculate the positions       ********
@@ -840,6 +1139,34 @@
             YF=YI+ALON*SIN(ANGLE)
             DO 55 KK=1,INTE
               MIP=MIP+1
+#ifdef MODEL_COUPLING
+              OPSDATZ_MOD(ng)%OPSTMP%XP(MIP)=XI+REAL(KK)*(XF-XI)/       &
+     &                                       REAL(INTE)
+              OPSDATZ_MOD(ng)%OPSTMP%YP(MIP)=YI+REAL(KK)*(YF-YI)/       &
+     &                                       REAL(INTE)
+   55       CONTINUE
+   50     CONTINUE
+!             ***** store number of points of the curve *****
+          OPSDATZ_MOD(ng)%OPSTMP%MIP = MIP                                40.31
+          OPSDATZ_MOD(ng)%OPSTMP%OPR(1) = XNLEN                           40.31
+          OPSDATZ_MOD(ng)%OPSTMP%OPR(2) = YNLEN                           40.31
+          OPSDATZ_MOD(ng)%OPSTMP%OPR(3) = XPCN                            40.31
+          OPSDATZ_MOD(ng)%OPSTMP%OPR(4) = YPCN                            40.31
+          OPSDATZ_MOD(ng)%OPSTMP%OPR(5) = PI2 *                         &
+     &                          (ALPCN/360.-NINT(ALPCN/360.))             40.31
+          OPSDATZ_MOD(ng)%OPSTMP%OPI(1) = MXN                             40.31
+          OPSDATZ_MOD(ng)%OPSTMP%OPI(2) = MYN                             40.31
+          IF (MIP .EQ. 0) CALL MSGERR(1,'No output points found')
+          NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                         40.31
+          IF ( .NOT.LOPS ) THEN                                           40.31
+             OPSDATZ_MOD(ng)%FOPS = OPSDATZ_MOD(ng)%OPSTMP                40.31
+             OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS                 40.31
+             LOPS = .TRUE.                                                40.31
+          ELSE                                                            40.31
+             OPSDATZ_MOD(ng)%COPS%NEXTOPS => OPSDATZ_MOD(ng)%OPSTMP       40.31
+             OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%OPSTMP               40.31
+          END IF                                                          40.31
+#else
               OPSTMP%XP(MIP)=XI+REAL(KK)*(XF-XI)/REAL(INTE)
               OPSTMP%YP(MIP)=YI+REAL(KK)*(YF-YI)/REAL(INTE)
    55       CONTINUE
@@ -863,6 +1190,7 @@
              COPS%NEXTOPS => OPSTMP                                       40.31
              COPS => OPSTMP                                               40.31
           END IF                                                          40.31
+#endif
           GOTO 800
         ENDIF                                                             32.02
       ENDIF
@@ -875,7 +1203,11 @@
       END
 !***********************************************************************
 !                                                                      *
+#ifdef MODEL_COUPLING
+      SUBROUTINE SWREOQ ( FOUND, ng)
+#else
       SUBROUTINE SWREOQ ( FOUND )                                         40.31
+#endif
 !                                                                      *
 !***********************************************************************
 !
@@ -991,12 +1323,17 @@
 !
 ! 13. Source text
 !
+#ifdef MODEL_COUPLING
+      INTEGER, INTENT(IN) :: ng
+#endif
       INTEGER IERR                                                        40.31
       CHARACTER PSNAME *16, STYPE *1, RTYPE *4                            40.31
       LOGICAL   KEYWIS                                                    40.31
       TYPE(ORQDAT), POINTER :: ORQTMP                                     40.31
       TYPE(ORQDAT), SAVE, POINTER :: CORQ                                 40.31
+#if !defined MODEL_COUPLING
       LOGICAL, SAVE :: LORQ = .FALSE.                                     40.31
+#endif
       TYPE AUXT                                                           40.31
         INTEGER             :: I
         REAL                :: R
@@ -1024,7 +1361,11 @@
      &                   ' with 1D-computation')                          32.02
           GOTO 800                                                        32.02
         ELSE                                                              32.02
+#ifdef MODEL_COUPLING
+          CALL SWNMPS (PSNAME, STYPE, MIP, IERR, ng)
+#else
           CALL SWNMPS (PSNAME, STYPE, MIP, IERR)                          40.31
+#endif
           IF (IERR.NE.0) GOTO 800
           IF (STYPE .NE. 'F' .AND. STYPE .NE. 'H') THEN                   30.21
             CALL MSGERR(2,'Set of output locations is not type frame')
@@ -1161,8 +1502,15 @@
           ORQTMP%OQI(3) = NVAR                                            40.31
           NULLIFY(ORQTMP%NEXTORQ)                                         40.31
           IF ( .NOT.LORQ ) THEN                                           40.31
+#ifdef MODEL_COUPLING
+             ALLOCATE (ORQDATZ_MOD(ng)%FORQ%IVTYP(NVAR))
+             ALLOCATE (ORQDATZ_MOD(ng)%FORQ%FAC(NVAR))
+             ORQDATZ_MOD(ng)%FORQ = ORQTMP                                40.31
+             CORQ => ORQDATZ_MOD(ng)%FORQ                                 40.31
+#else
              FORQ = ORQTMP                                                40.31
              CORQ => FORQ                                                 40.31
+#endif
              LORQ = .TRUE.                                                40.31
           ELSE                                                            40.31
              CORQ%NEXTORQ => ORQTMP                                       40.31
@@ -1182,7 +1530,11 @@
 !   TABLE   output in the form of a table
 
       IF (KEYWIS ('TAB')) THEN
-        CALL SWNMPS (PSNAME, STYPE, MIP, IERR)                            40.31
+#ifdef MODEL_COUPLING
+          CALL SWNMPS (PSNAME, STYPE, MIP, IERR, ng)
+#else
+          CALL SWNMPS (PSNAME, STYPE, MIP, IERR)                          40.31
+#endif
         IF (IERR.NE.0) GOTO 800
 !
 !       output points exist
@@ -1296,8 +1648,13 @@
         ORQTMP%OQI(3) = NVAR                                              40.31
         NULLIFY(ORQTMP%NEXTORQ)                                           40.31
         IF ( .NOT.LORQ ) THEN                                             40.31
+#ifdef MODEL_COUPLING
+           ORQDATZ_MOD(ng)%FORQ = ORQTMP                                  40.31
+           CORQ => ORQDATZ_MOD(ng)%FORQ                                   40.31
+#else
            FORQ = ORQTMP                                                  40.31
            CORQ => FORQ                                                   40.31
+#endif
            LORQ = .TRUE.                                                  40.31
         ELSE                                                              40.31
            CORQ%NEXTORQ => ORQTMP                                         40.31
@@ -1322,7 +1679,11 @@
 !   SPEC   output of spectra
 
       IF (KEYWIS ('SPEC')) THEN
-        CALL SWNMPS (PSNAME, STYPE, MIP, IERR)                            40.31
+#ifdef MODEL_COUPLING
+          CALL SWNMPS (PSNAME, STYPE, MIP, IERR, ng)
+#else
+          CALL SWNMPS (PSNAME, STYPE, MIP, IERR)                          40.31
+#endif
         IF (IERR.NE.0) GOTO 800
 !
 !       output points exist
@@ -1379,8 +1740,13 @@
         ENDIF
         NULLIFY(ORQTMP%NEXTORQ)                                           40.31
         IF ( .NOT.LORQ ) THEN                                             40.31
+#ifdef MODEL_COUPLING
+           ORQDATZ_MOD(ng)%FORQ = ORQTMP                                  40.31
+           CORQ => ORQDATZ_MOD(ng)%FORQ                                   40.31
+#else
            FORQ = ORQTMP                                                  40.31
            CORQ => FORQ                                                   40.31
+#endif
            LORQ = .TRUE.                                                  40.31
         ELSE                                                              40.31
            CORQ%NEXTORQ => ORQTMP                                         40.31
@@ -1413,7 +1779,11 @@
      &                   ' combination with 1D-computation')              32.02
           GOTO 800                                                        32.02
         ELSE                                                              32.02
+#ifdef MODEL_COUPLING
+          CALL SWNMPS (PSNAME, STYPE, MIP, IERR, ng)
+#else
           CALL SWNMPS (PSNAME, STYPE, MIP, IERR)                          40.31
+#endif
           IF (IERR.NE.0) GOTO 800
           IF (STYPE .NE. 'N') THEN
             CALL MSGERR(2,'Set of output locations is not correct type')
@@ -1458,8 +1828,13 @@
 !
           NULLIFY(ORQTMP%NEXTORQ)                                         40.31
           IF ( .NOT.LORQ ) THEN                                           40.31
+#ifdef MODEL_COUPLING
+             ORQDATZ_MOD(ng)%FORQ = ORQTMP                                40.31
+             CORQ => ORQDATZ_MOD(ng)%FORQ                                 40.31
+#else
              FORQ = ORQTMP                                                40.31
              CORQ => FORQ                                                 40.31
+#endif
              LORQ = .TRUE.                                                40.31
           ELSE                                                            40.31
              CORQ%NEXTORQ => ORQTMP                                       40.31
@@ -1647,7 +2022,11 @@
       END
 !************************************************************************
 !                                                                       *
+#ifdef MODEL_COUPLING
+      SUBROUTINE SWNMPS (PSNAME, PSTYPE, MIP, IERR, ng)
+#else
       SUBROUTINE SWNMPS (PSNAME, PSTYPE, MIP, IERR)                       40.31
+#endif
 !                                                                       *
 !************************************************************************
 !
@@ -1729,9 +2108,12 @@
 !
 ! 10. SOURCE TEXT
 !
+#ifdef MODEL_COUPLING
+      INTEGER, INTENT(IN) :: ng
+#endif
       INTEGER   MIP                                                       40.31
       CHARACTER PSNAME *(*), PSTYPE *1                                    40.31
-      TYPE(OPSDAT), POINTER :: CUOPS                                       40.31
+      TYPE(OPSDAT), POINTER :: CUOPS                                      40.31
       SAVE IENT
       DATA IENT/0/
       CALL STRACE (IENT,'SWNMPS')
@@ -1739,7 +2121,11 @@
       IERR = 0
       CALL INCSTR ('SNAME', PSNAME, 'STA', 'BOTTGRID')
       IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
+#ifdef MODEL_COUPLING
+      CUOPS => OPSDATZ_MOD(ng)%FOPS
+#else
       CUOPS => FOPS                                                       40.31
+#endif
       DO                                                                  40.31
         IF (CUOPS%PSNAME.EQ.PSNAME) EXIT                                  40.31
         IF (.NOT.ASSOCIATED(CUOPS%NEXTOPS)) THEN                          40.31
@@ -1892,7 +2278,11 @@
       END
 !************************************************************************
 !                                                                       *
+#ifdef MODEL_COUPLING
+      SUBROUTINE SWBOUN ( XCGRID, YCGRID, KGRPNT, XYTST, KGRBND, ng)
+#else
       SUBROUTINE SWBOUN ( XCGRID, YCGRID, KGRPNT, XYTST, KGRBND )         40.31
+#endif
 !                                                                       *
 !************************************************************************
 !
@@ -1976,6 +2366,9 @@
 ! i   XCGRID: Coordinates of computational grid in x-direction            30.82
 ! i   YCGRID: Coordinates of computational grid in y-direction            30.82
 !
+#ifdef MODEL_COUPLING
+      INTEGER, INTENT(in) :: ng
+#endif
       REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.82
 !
 !     KGRBND  int   inp    grid indices of boundary points                40.31
@@ -2005,15 +2398,18 @@
 
       LOGICAL, SAVE :: LBFILS = .FALSE.                                   40.31
       LOGICAL, SAVE :: LBS    = .FALSE.                                   40.31
+#if !defined MODEL_COUPLING
       LOGICAL, SAVE :: LBGP   = .FALSE.                                   40.31
-
+#endif
       TYPE(BSPCDAT), POINTER :: BFLTMP                                    40.31
       TYPE(BSPCDAT), SAVE, POINTER :: CUBFL                               40.31
 
       TYPE(BSDAT), POINTER :: BSTMP                                       40.31
       TYPE(BSDAT), SAVE, POINTER :: CUBS                                  40.31
 
+#if !defined MODEL_COUPLING
       TYPE(BGPDAT), POINTER :: BGPTMP                                     40.31
+#endif
 
       TYPE XYPT                                                           40.31
         INTEGER             :: JX, JY
@@ -2172,8 +2568,13 @@
         NBFILS = NBFILS + 1
         ALLOCATE(BFLTMP)                                                  40.31
         CALL INCSTR ('FNAME',FILENM,'REQ', ' ')
+#ifdef MODEL_COUPLING
+        CALL BCWAMN (FILENM, 'NEST', BFLTMP, LBGP,
+     &               XCGRID, YCGRID, KGRPNT, XYTST, ng)
+#else
         CALL BCWAMN (FILENM, 'NEST', BFLTMP, LBGP,                        40.31
      &               XCGRID, YCGRID, KGRPNT, XYTST)                       40.31
+#endif
         IF (STPNOW()) RETURN                                              34.01
         NULLIFY(BFLTMP%NEXTBSPC)                                          40.31
         IF ( .NOT.LBFILS ) THEN                                           40.31
@@ -2225,9 +2626,15 @@
         ELSE                                                              40.05
            CALL WRNKEY                                                    40.05
         ENDIF                                                             40.05
+#ifdef MODEL_COUPLING
+        CALL BCWW3N (FILENM, 'NEST', BFLTMP, LBGP,                        40.31 40.05
+     &               XCGRID, YCGRID, KGRPNT, XYTST, KGRBND,               40.31 40.05
+     &               DONALL, ng)                                          40.31 40.05
+#else
         CALL BCWW3N (FILENM, 'NEST', BFLTMP, LBGP,                        40.31 40.05
      &               XCGRID, YCGRID, KGRPNT, XYTST, KGRBND,               40.31 40.05
      &               DONALL)                                              40.31 40.05
+#endif
         IF (STPNOW()) RETURN
         NULLIFY(BFLTMP%NEXTBSPC)                                          40.31
         IF ( .NOT.LBFILS ) THEN                                           40.31
@@ -2276,10 +2683,15 @@
         ELSE                                                              40.05
            CALL WRNKEY                                                    40.05
         ENDIF                                                             40.05
-
+#ifdef MODEL_COUPLING
+        CALL BCFILE (FILENM, 'NEST', BFLTMP, LBGP,                        40.31
+     &               XCGRID, YCGRID, KGRPNT, XYTST,  KGRBND,              40.31
+     &               DONALL, ng)                                          40.05
+#else
         CALL BCFILE (FILENM, 'NEST', BFLTMP, LBGP,                        40.31
      &               XCGRID, YCGRID, KGRPNT, XYTST,  KGRBND,              40.31
      &               DONALL)                                              40.05
+#endif
         IF (STPNOW()) RETURN                                              34.01
         NULLIFY(BFLTMP%NEXTBSPC)                                          40.31
         IF ( .NOT.LBFILS ) THEN                                           40.31
@@ -2732,9 +3144,15 @@
             NBFILS = NBFILS + 1
             NBSPSS = NBSPEC
             ALLOCATE(BFLTMP)                                              40.31
+#ifdef MODEL_COUPLING
+            CALL BCFILE (FILENM, 'PNTS', BFLTMP, LBGP,                    40.31
+     &                   XCGRID, YCGRID, KGRPNT, XYTST, KGRBND,           40.31
+     &                   DONALL, ng)                                      40.05
+#else
             CALL BCFILE (FILENM, 'PNTS', BFLTMP, LBGP,                    40.31
      &                   XCGRID, YCGRID, KGRPNT, XYTST, KGRBND,           40.31
      &                   DONALL)                                          40.05
+#endif
             IF (STPNOW()) RETURN                                          34.01
             NULLIFY(BFLTMP%NEXTBSPC)                                      40.31
             IF ( .NOT.LBFILS ) THEN                                       40.31
@@ -2752,6 +3170,28 @@
             IX = CURR%JX                                                  40.31
             IY = CURR%JY                                                  40.31
             CURR => CURR%NEXTXY                                           40.31
+#ifdef MODEL_COUPLING
+!            ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
+!            ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
+            ALLOCATE(BGPDATZ_MOD(ng)%BGPTMP)
+            BGPDATZ_MOD(ng)%BGPTMP%BGP(1) = KGRPNT(IX,IY)
+            BGPDATZ_MOD(ng)%BGPTMP%BGP(2) = 1
+            BGPDATZ_MOD(ng)%BGPTMP%BGP(3) = 1000
+            BGPDATZ_MOD(ng)%BGPTMP%BGP(4) = NBSPSS
+            BGPDATZ_MOD(ng)%BGPTMP%BGP(5) = 0
+            BGPDATZ_MOD(ng)%BGPTMP%BGP(6) = 1
+            NULLIFY(BGPDATZ_MOD(ng)%BGPTMP%NEXTBGP)
+            IF ( .NOT.LBGP ) THEN                                         40.31
+               write(*,*) 'swanpre2 r we here 1'
+
+               BGPDATZ_MOD(ng)%FBGP = BGPDATZ_MOD(ng)%BGPTMP
+               BGPDATZ_MOD(ng)%CUBGP => BGPDATZ_MOD(ng)%FBGP
+               LBGP = .TRUE.                                              40.31
+            ELSE                                                          40.31
+               BGPDATZ_MOD(ng)%CUBGP%NEXTBGP => BGPDATZ_MOD(ng)%BGPTMP
+               BGPDATZ_MOD(ng)%CUBGP => BGPDATZ_MOD(ng)%BGPTMP
+            END IF                                                        40.31
+#else
             ALLOCATE(BGPTMP)                                              40.31
             BGPTMP%BGP(1) = KGRPNT(IX,IY)                                 40.31
             BGPTMP%BGP(2) = 1                                             40.31
@@ -2768,6 +3208,7 @@
                CUBGP%NEXTBGP => BGPTMP                                    40.31
                CUBGP => BGPTMP                                            40.31
             END IF                                                        40.31
+#endif
           ENDDO
           NBGRPT = NBGRPT + KOUNTR
         ELSE IF (KEYWIS('VAR')) THEN
@@ -2845,9 +3286,15 @@
                   NBFILS = NBFILS + 1
                   NBSPSS = NBSPEC
                   ALLOCATE(BFLTMP)                                        40.31
+#ifdef MODEL_COUPLING
+                  CALL BCFILE (FILENM, 'PNTS', BFLTMP, LBGP,              40.31
+     &                   XCGRID, YCGRID, KGRPNT, XYTST, KGRBND,           40.31
+     &                   DONALL, ng)                                      40.05
+#else
                   CALL BCFILE (FILENM, 'PNTS', BFLTMP, LBGP,              40.31
      &                   XCGRID, YCGRID, KGRPNT, XYTST, KGRBND,           40.31
      &                   DONALL)                                          40.05
+#endif
                   IF (STPNOW()) RETURN                                    34.01
                   NULLIFY(BFLTMP%NEXTBSPC)                                40.31
                   IF ( .NOT.LBFILS ) THEN                                 40.31
@@ -2880,6 +3327,30 @@
               XC1 = XC2
               YC1 = YC2
               IF (RDIST.GT.RLEN2) GOTO 340
+#ifdef MODEL_COUPLING
+              ALLOCATE(BGPDATZ_MOD(ng)%BGPTMP)
+!              ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
+!              ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
+              BGPDATZ_MOD(ng)%BGPTMP%BGP(1) = KGRPNT(IX,IY)
+              BGPDATZ_MOD(ng)%BGPTMP%BGP(2) = 1
+              W1 = (RLEN2-RDIST)/(RLEN2-RLEN1)
+              BGPDATZ_MOD(ng)%BGPTMP%BGP(3) = NINT(1000.*W1)
+              BGPDATZ_MOD(ng)%BGPTMP%BGP(4) = IBSPC1
+              BGPDATZ_MOD(ng)%BGPTMP%BGP(5) = NINT(1000.*(1.-W1))
+              BGPDATZ_MOD(ng)%BGPTMP%BGP(6) = IBSPC2
+              NULLIFY(BGPDATZ_MOD(ng)%BGPTMP%NEXTBGP)
+              IF ( .NOT.LBGP ) THEN                                         40.31
+
+               write(*,*) 'swanpre2 r we here 2'
+
+                 BGPDATZ_MOD(ng)%FBGP => BGPDATZ_MOD(ng)%BGPTMP
+                 BGPDATZ_MOD(ng)%CUBGP => BGPDATZ_MOD(ng)%FBGP
+                 LBGP = .TRUE.                                              40.31
+              ELSE                                                          40.31
+                 BGPDATZ_MOD(ng)%CUBGP%NEXTBGP => BGPDATZ_MOD(ng)%BGPTMP
+                 BGPDATZ_MOD(ng)%CUBGP => BGPDATZ_MOD(ng)%BGPTMP
+              END IF                                                        40.31
+#else
               ALLOCATE(BGPTMP)                                            40.31
               BGPTMP%BGP(1) = KGRPNT(IX,IY)                               40.31
               BGPTMP%BGP(2) = 1                                           40.31
@@ -2897,6 +3368,7 @@
                  CUBGP%NEXTBGP => BGPTMP                                  40.31
                  CUBGP => BGPTMP                                          40.31
               END IF                                                      40.31
+#endif
               IKO = IKO + 1
               IF (IKO.GT.KOUNTR) GOTO 340                                 40.00
               IF (.NOT.ASSOCIATED(CURR%NEXTXY)) EXIT                      40.31
@@ -2918,9 +3390,15 @@
       END
 !*********************************************************************
 !                                                                    *
+#ifdef MODEL_COUPLING
+      SUBROUTINE BCFILE (FBCNAM, BCTYPE, BSPFIL, LBGP,                    40.31
+     &                   XCGRID, YCGRID, KGRPNT,                          40.31
+     &                   XYTST,  KGRBND, DONALL, ng)                      40.31 40.05
+#else
       SUBROUTINE BCFILE (FBCNAM, BCTYPE, BSPFIL, LBGP,                    40.31
      &                   XCGRID, YCGRID, KGRPNT,                          40.31
      &                   XYTST,  KGRBND, DONALL)                          40.31 40.05
+#endif
 !                                                                    *
 !*********************************************************************
 !
@@ -3001,6 +3479,9 @@
 !
 !  4. Argument variables
 !
+#ifdef MODEL_COUPLING
+      INTEGER, INTENT(in) :: ng
+#endif
       REAL      XCGRID(MXC,MYC), YCGRID(MXC,MYC)
 !
       INTEGER   KGRPNT(MXC,MYC)                                           40.31
@@ -3198,9 +3679,15 @@
 !                 the SWAN computational grid
 !
               NBGRPT_PREV = NBGRPT                                        40.05
+#ifdef MODEL_COUPLING
+              CALL SWBCPT (  LBGP, XCGRID, YCGRID,                        40.41 40.31 40.05
+     &                       KGRPNT, XYTST,  KGRBND,XP2,YP2,IBOUNC,       40.05
+     &                       NBOUNC,DONALL, ng )                              40.05
+#else
               CALL SWBCPT (  LBGP, XCGRID, YCGRID,                        40.41 40.31 40.05
      &                       KGRPNT, XYTST,  KGRBND,XP2,YP2,IBOUNC,       40.05
      &                       NBOUNC,DONALL )                              40.05
+#endif
 !             check if the grid points are on nested boundary.
 !             if not, stop the calculation and give an error message
               IF (NBGRPT.NE.NBGRPT_PREV) THEN                             40.05
@@ -3410,8 +3897,13 @@
       END
 !*********************************************************************
 !                                                                    *
+#ifdef MODEL_COUPLING
+      SUBROUTINE BCWAMN (FBCNAM, BCTYPE, BSPFIL, LBGP,
+     &                   XCGRID, YCGRID, KGRPNT, XYTST, ng)
+#else
       SUBROUTINE BCWAMN (FBCNAM, BCTYPE, BSPFIL, LBGP,                    40.31
      &                   XCGRID, YCGRID, KGRPNT, XYTST)                   40.31
+#endif
 !                                                                    *
 !*********************************************************************
 
@@ -3508,6 +4000,9 @@
 !
 !       Ocean Pack command reading routines
 !
+#ifdef MODEL_COUPLING
+      INTEGER, INTENT(in) :: ng
+#endif
       LOGICAL :: STPNOW                                                   34.01
 
 
@@ -3639,8 +4134,9 @@
 !     XLON0     longitude of origin of computational grid
 !     XLAT0     latitude of origin of computational grid
 
+#if !defined MODEL_COUPLING
       TYPE(BGPDAT), POINTER :: BGPTMP                                     40.31
-
+#endif
 !     subroutines used
 
       LOGICAL :: KEYWIS
@@ -3893,6 +4389,30 @@
                           NBGRPT = NBGRPT + 1
                           IIPT1 = IIPT1 + 1                               40.03
                           IIPT2 = IIPT2 + 1                               40.03
+#ifdef MODEL_COUPLING
+                          ALLOCATE(BGPDATZ_MOD(ng)%BGPTMP)
+!                          ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
+!                          ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
+                          BGPDATZ_MOD(ng)%BGPTMP%BGP(1) = INDXGR
+!                         next item indicates type of boundary condition
+                          BGPDATZ_MOD(ng)%BGPTMP%BGP(2) = 1
+                          BGPDATZ_MOD(ng)%BGPTMP%BGP(3) = NINT(1000.*W2)
+                          BGPDATZ_MOD(ng)%BGPTMP%BGP(4) = IBSP2
+                          BGPDATZ_MOD(ng)%BGPTMP%BGP(5) = NINT(1000. *  &
+     &                                                   (1.-W2))
+                          BGPDATZ_MOD(ng)%BGPTMP%BGP(6) = IBSP1
+                          NULLIFY(BGPDATZ_MOD(ng)%BGPTMP%NEXTBGP)
+                          IF ( .NOT.LBGP ) THEN
+                            BGPDATZ_MOD(ng)%FBGP=>BGPDATZ_MOD(ng)%BGPTMP
+                            BGPDATZ_MOD(ng)%CUBGP=>BGPDATZ_MOD(ng)%FBGP
+                            LBGP = .TRUE.
+                          ELSE
+                            BGPDATZ_MOD(ng)%CUBGP%NEXTBGP =>            &
+     &                      BGPDATZ_MOD(ng)%BGPTMP
+                            BGPDATZ_MOD(ng)%CUBGP =>                    &
+     &                      BGPDATZ_MOD(ng)%BGPTMP
+                          END IF
+#else
                           ALLOCATE(BGPTMP)                                40.31
                           BGPTMP%BGP(1) = INDXGR                          40.31
 !                         next item indicates type of boundary condition
@@ -3910,6 +4430,7 @@
                              CUBGP%NEXTBGP => BGPTMP                      40.31
                              CUBGP => BGPTMP                              40.31
                           END IF                                          40.31
+#endif
 !                         test output if point is a test point
                           IF (NPTST.GT.0) THEN
                             DO IPTST = 1, NPTST
@@ -3999,9 +4520,15 @@
 
 !*********************************************************************
 !                                                                    *
+#ifdef MODEL_COUPLING
+      SUBROUTINE BCWW3N (FBCNAM, BCTYPE, BSPFIL, LBGP,                    40.31
+     &                   XCGRID, YCGRID, KGRPNT,                          40.31
+     &                   XYTST,  KGRBND, DONALL, ng)                      40.31
+#else
       SUBROUTINE BCWW3N (FBCNAM, BCTYPE, BSPFIL, LBGP,                    40.31
      &                   XCGRID, YCGRID, KGRPNT,                          40.31
      &                   XYTST,  KGRBND, DONALL)                          40.31
+#endif
 !                                                                    *
 !*********************************************************************
 !
@@ -4071,6 +4598,9 @@
 !
 !  4. Argument variables
 !
+#ifdef MODEL_COUPLING
+      INTEGER, INTENT(IN)     ::  ng
+#endif
       INTEGER, INTENT(IN)     ::  KGRPNT(MXC,MYC)
 !                                 indirect addresses of computational grid points
       INTEGER, INTENT(IN)     ::  KGRBND(*)
@@ -4384,9 +4914,15 @@
 !           the SWAN computational grid
 !
         NBGRPT_PREV = NBGRPT
+#ifdef MODEL_COUPLING
+        CALL SWBCPT (  LBGP, XCGRID, YCGRID,                              40.41 40.31
+     &                 KGRPNT, XYTST,  KGRBND,XP2,YP2,IBOUNC,
+     &                 NBOUNC, DONALL, ng )
+#else
         CALL SWBCPT (  LBGP, XCGRID, YCGRID,                              40.41 40.31
      &                 KGRPNT, XYTST,  KGRBND,XP2,YP2,IBOUNC,
      &                 NBOUNC, DONALL )
+#endif
 !       check if the grid points are on nested boundary.
 !       if not, stop the calculation and give an error message
         IF (NBGRPT.NE.NBGRPT_PREV) THEN
@@ -4459,9 +4995,15 @@
 
 !***********************************************************************
 !
+#ifdef MODEL_COUPLING
+      SUBROUTINE SWBCPT ( LBGP, XCGRID, YCGRID,                           40.41 40.31
+     &                    KGRPNT, XYTST,  KGRBND,XP2,YP2,IBOUNC,
+     &                    NBOUNC,DONALL, ng )
+#else
       SUBROUTINE SWBCPT ( LBGP, XCGRID, YCGRID,                           40.41 40.31
      &                    KGRPNT, XYTST,  KGRBND,XP2,YP2,IBOUNC,
      &                    NBOUNC,DONALL )
+#endif
 !
 !************************************************************************
 !
@@ -4535,6 +5077,9 @@
 !     IBOUNC:     counter
 !
 !
+#ifdef MODEL_COUPLING
+      INTEGER, INTENT(in) :: ng
+#endif
       INTEGER, INTENT(IN)     ::  KGRPNT(MXC,MYC)  ! indirect addresses of computational grid points
       INTEGER, INTENT(IN)     ::  KGRBND(*)        ! array of boundary grid points
       INTEGER, INTENT(IN)     ::  XYTST(*)         ! array of (ix,iy) of test points
@@ -4571,7 +5116,9 @@
       REAL, SAVE         :: XP0=0., XP1=0., YP0=0., YP1=0.                40.31
       REAL               :: XP2, YP2, XP, YP, RX, RY, RL2
       REAL               :: DISXY, W2
+#if !defined MODEL_COUPLING
       TYPE(BGPDAT), POINTER :: BGPTMP                                     40.31
+#endif
 !
 !  7. Common blocks used
 !
@@ -4656,6 +5203,30 @@
                     NBGRPT = NBGRPT + 1
                     IIPT1 = IIPT1 + 1
 !
+#ifdef MODEL_COUPLING
+                    ALLOCATE(BGPDATZ_MOD(ng)%BGPTMP)
+!                    ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
+!                    ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
+                    BGPDATZ_MOD(ng)%BGPTMP%BGP(1) = INDXGR
+!                   next item indicates type of boundary condition
+                    BGPDATZ_MOD(ng)%BGPTMP%BGP(2) = 1
+                    BGPDATZ_MOD(ng)%BGPTMP%BGP(3) = NINT(1000.*W2)
+                    BGPDATZ_MOD(ng)%BGPTMP%BGP(4) = IBSP2
+                    BGPDATZ_MOD(ng)%BGPTMP%BGP(5) = NINT(1000. *  &
+     &                                             (1.-W2))
+                    BGPDATZ_MOD(ng)%BGPTMP%BGP(6) = IBSP1
+                    NULLIFY(BGPDATZ_MOD(ng)%BGPTMP%NEXTBGP)
+                    IF ( .NOT.LBGP ) THEN
+                      BGPDATZ_MOD(ng)%FBGP=>BGPDATZ_MOD(ng)%BGPTMP
+                      BGPDATZ_MOD(ng)%CUBGP=>BGPDATZ_MOD(ng)%FBGP
+                      LBGP = .TRUE.
+                    ELSE
+                      BGPDATZ_MOD(ng)%CUBGP%NEXTBGP =>            &
+     &                BGPDATZ_MOD(ng)%BGPTMP
+                      BGPDATZ_MOD(ng)%CUBGP =>                    &
+     &                BGPDATZ_MOD(ng)%BGPTMP
+                    END IF
+#else
                     ALLOCATE(BGPTMP)                                      40.31
                     BGPTMP%BGP(1) = INDXGR                                40.31
 !                   next item indicates type of boundary condition
@@ -4673,6 +5244,7 @@
                        CUBGP%NEXTBGP => BGPTMP                            40.31
                        CUBGP => BGPTMP                                    40.31
                     END IF                                                40.31
+#endif
 !
 !                   test output if point is a test point
 !
@@ -4877,8 +5449,13 @@
       END
 !*********************************************************************
 !                                                                    *
+#ifdef MODEL_COUPLING
+      SUBROUTINE RETSTP (MPTST, XYTST, KGRPNT, KGRBND, XCGRID, YCGRID,
+     &                   SPCSIG, SPCDIR, ng)
+#else
       SUBROUTINE RETSTP (MPTST, XYTST, KGRPNT, KGRBND, XCGRID, YCGRID,
      &                   SPCSIG, SPCDIR)                                  40.31
+#endif
 !                                                                    *
 !*********************************************************************
 !
@@ -4965,6 +5542,9 @@
 ! i   XCGRID: Coordinates of computational grid in x-direction            30.82
 ! i   YCGRID: Coordinates of computational grid in y-direction            30.82
 !
+#if defined MODEL_COUPLING
+      INTEGER, INTENT(IN) :: ng
+#endif
       REAL    SPCDIR(MDC,6)                                               30.82
       REAL    SPCSIG(MSC)                                                 30.82
       REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.82
@@ -5012,7 +5592,9 @@
 !
       INTEGER   KGRPNT(MXC,MYC), KGRBND(*)                                40.31
       LOGICAL   KEYWIS, LOCGRI                                            40.00
+#if !defined MODEL_COUPLING
       TYPE(OPSDAT), POINTER :: OPSTMP                                     40.31
+#endif
       SAVE      IENT
       DATA      IENT /0/
       CALL STRACE (IENT, 'RETSTP')
@@ -5083,6 +5665,32 @@
 !
 !     generate output point set 'TESTPNTS'
 !
+#ifdef MODEL_COUPLING
+  60  ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                    40.31
+      ALLOCATE(OPSDATZ_MOD(ng)%COPS)
+      ALLOCATE(OPSDATZ_MOD(ng)%FOPS)
+      OPSDATZ_MOD(ng)%OPSTMP%PSNAME = 'TESTPNTS'                          40.31
+      OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'P'                                 40.31
+      OPSDATZ_MOD(ng)%OPSTMP%MIP    = NPTST                               40.31
+      ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(NPTST))                          40.31
+      ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(NPTST))                          40.31
+      DO 140 IPTST = 1, NPTST
+        LXDMP = XYTST(2*IPTST-1)                                          40.00
+        LYDMP = XYTST(2*IPTST)                                            40.00
+        OPSDATZ_MOD(ng)%OPSTMP%XP(IPTST) = XCGRID(LXDMP,LYDMP)            40.31
+        OPSDATZ_MOD(ng)%OPSTMP%YP(IPTST) = YCGRID(LXDMP,LYDMP)            40.31
+ 140  CONTINUE
+      NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                             40.31
+      IF ( .NOT.LOPS ) THEN                                               40.31
+         OPSDATZ_MOD(ng)%FOPS = OPSDATZ_MOD(ng)%OPSTMP                    40.31
+         OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS                     40.31
+         LOPS = .TRUE.                                                    40.31
+      ELSE                                                                40.31
+         OPSDATZ_MOD(ng)%COPS%NEXTOPS => OPSDATZ_MOD(ng)%OPSTMP           40.31
+         OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%OPSTMP                   40.31
+      END IF                                                              40.31
+
+#else
   60  ALLOCATE(OPSTMP)                                                    40.31
       OPSTMP%PSNAME = 'TESTPNTS'                                          40.31
       OPSTMP%PSTYPE = 'P'                                                 40.31
@@ -5104,6 +5712,7 @@
          COPS%NEXTOPS => OPSTMP                                           40.31
          COPS => OPSTMP                                                   40.31
       END IF                                                              40.31
+#endif
 !
 !     open output file for test output of wave parameters                 40.00
 !

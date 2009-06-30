@@ -578,7 +578,17 @@
       myparent(3)=2
 !      myparent(4)=3
       mychild(2)=3
-      mychild(3)=4
+!      mychild(3)=4
+!      mychild(4)=5
+# elif defined HATTERAS
+      nrefined(2)=5
+!      nrefined(3)=5
+!      nrefined(4)=5
+      myparent(2)=1
+!      myparent(3)=2
+!      myparent(4)=3
+      mychild(2)=3
+!      mychild(3)=4
 !      mychild(4)=5
 # elif defined SOLITON_REFINED
       nrefined(2)=5

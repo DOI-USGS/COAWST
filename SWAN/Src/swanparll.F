@@ -1986,7 +1986,11 @@
       END
 !****************************************************************
 !
+#ifdef MODEL_COUPLING
+      SUBROUTINE SWDECOMP(ng)
+#else
       SUBROUTINE SWDECOMP
+#endif
 !
 !****************************************************************
 !
@@ -2058,6 +2062,9 @@
 !     IY    :     loop counter
 !     IPOWN :     array giving the subdomain number of each gridpoint
 !
+#ifdef MODEL_COUPLING
+      INTEGER, intent(in) :: ng
+#endif
       INTEGER IENT, IX, IY
       INTEGER, ALLOCATABLE :: IPOWN(:,:)
 !
@@ -2100,8 +2107,13 @@
       IF (LTRACE) CALL STRACE (IENT,'SWDECOMP')
 
 !     --- allocate and initialize array for block administration
-
+#ifdef MODEL_COUPLING
+      IF (.NOT.ALLOCATED(PARALL_MOD(ng)%IBLKAD_G))                      &
+     &         ALLOCATE (PARALL_MOD(ng)%IBLKAD_G(41+20*MAX(MXC,MYC)))
+      IBLKAD=>PARALL_MOD(ng)%IBLKAD_G
+#else
       IF (.NOT.ALLOCATED(IBLKAD)) ALLOCATE(IBLKAD(41+20*MAX(MXC,MYC)))
+#endif
       IBLKAD = 0
 
 !     --- store the original values of MXC, MYC and MCGRD of
@@ -2933,7 +2945,11 @@
       END
 !****************************************************************
 !
+#ifdef MODEL_COUPLING
+      SUBROUTINE SWCOLOUT ( OURQT, BLKND, ng)
+#else
       SUBROUTINE SWCOLOUT ( OURQT, BLKND )                                40.51
+#endif
 !
 !****************************************************************
 !
@@ -3006,6 +3022,9 @@
 !     OURQT       array indicating at what time requested output          40.51
 !                 is processed                                            40.51
 !
+#ifdef MODEL_COUPLING
+      INTEGER, INTENT(IN) :: ng
+#endif
       REAL    BLKND(MXCGL,MYCGL), OURQT(MAX_OUTP_REQ)                     40.51
 !
 !  6. Local variables
@@ -3126,7 +3145,11 @@
 
 !           --- do for all output requests
 
-            CORQ => FORQ
+#ifdef MODEL_COUPLING
+            CORQ => ORQDATZ_MOD(ng)%FORQ
+#else
+            CORQ => FORQ                                                  40.51
+#endif
             DO 100 IRQ = 1, NREOQ
 
 !              --- processing of output instructions necessary
@@ -3149,8 +3172,12 @@
 
                RTYPE  = CORQ%RQTYPE
                SNAMPF = CORQ%PSNAME
-
+#ifdef MODEL_COUPLING
+               CUOPS => OPSDATZ_MOD(ng)%FOPS
+#else
                CUOPS => FOPS
+#endif
+
                DO
                  IF (CUOPS%PSNAME.EQ.SNAMPF) EXIT
                  IF (.NOT.ASSOCIATED(CUOPS%NEXTOPS)) GOTO 50

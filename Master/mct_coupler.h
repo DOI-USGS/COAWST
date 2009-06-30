@@ -26,7 +26,6 @@
 !
       USE mod_param
       USE mod_parallel
-!     USE mod_coupler
       USE mod_iounits
       USE mod_scalars
 !
@@ -86,8 +85,6 @@
       CALL read_CouplePar (iNLM)
 !
 !  Allocate several coupling variables.
-!
-!     CALL allocate_coupler (Nnodes)
 !
 #ifdef REFINED_GRID
 # ifndef AIR_OCEAN
@@ -164,7 +161,7 @@
 #if defined SWAN_COUPLING
       IF (MyColor.eq.WAVid) THEN
 # ifdef REFINED_GRID
-        CALL SWAN_driver (MyCOMM, CouplingTime, INPname(Iwaves))
+        CALL SWAN_driver (MyCOMM, REAL(TI_WAV_OCN), INPname(Iwaves))
 !       CALL SWAN_driver_run (CouplingTime)
         CALL SWAN_driver_finalize
 # else

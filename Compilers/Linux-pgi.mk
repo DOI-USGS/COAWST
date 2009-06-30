@@ -127,7 +127,7 @@ endif
 
 ifdef USE_WRF
            FFLAGS += -I$(MCT_INCDIR)
-             LIBS += -L$(MCT_LIBDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
              LIBS += WRF/main/libwrflib.a
              LIBS += WRF/external/io_netcdf/libwrfio_nf.a
 #            LIBS += WRF/external/RSL/RSL/librsl.a

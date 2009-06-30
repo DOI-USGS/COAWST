@@ -283,9 +283,6 @@
       IF (allocated(length)) THEN
         deallocate (length)
       END IF
-
-!     call mpi_barrier(OCN_COMM_WORLD)
-
 !
 ! Create ATM sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.

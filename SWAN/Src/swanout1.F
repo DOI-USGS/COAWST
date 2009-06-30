@@ -24,11 +24,7 @@
      &                   YCGRID          ,KGRBND  ,                       40.30
 #ifdef MODEL_COUPLING
      &                   OURQT           ,
-# ifdef REFINED_GRID
      &                   numsteps        ,CouplingTime, ng, first)
-# else
-     &                   numsteps        ,CouplingTime)
-# endif
 #else
      &                   OURQT                    )                       40.51 40.30
 #endif
@@ -43,8 +39,10 @@
       USE OUTP_DATA                                                       40.31
       USE M_PARALL                                                        40.31
 #ifdef MODEL_COUPLING
-!
+      USE M_MPI
       USE WAVES_COUPLER_MOD, ONLY: WAV2OCN_COUPLING
+      USE mod_param
+      USE M_PARALL2
 #endif
 !
 !
@@ -145,14 +143,11 @@
       REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.72
 
 #ifdef MODEL_COUPLING
-      LOGICAL cplout, userout
-      INTEGER numsteps
-      REAL    CouplingTime
-# ifdef REFINED_GRID
       INTEGER, intent(in) :: ng, first
-      INTEGER ngp, ngc, offset, spcount, XC, YC
-      INTEGER MyRank, MySize, MyError, MyTag, MyStatus, MyHandle         !, WAVCOM
-# endif
+      LOGICAL cplout, userout
+      INTEGER numsteps, ngp, ngc, offset, spcount, XC, YC
+      INTEGER MyRank, MySize, MyError, MyTag, MyStatus, MyHandle
+      REAL    CouplingTime
 #endif
 !
 !     AC2     real arr input  action density in all computational points
@@ -263,7 +258,7 @@
       SAVE IENT
       DATA IENT /0/
       CALL STRACE (IENT, 'SWOUTP')
-#ifdef REFINED_GRID
+#ifdef MODEL_COUPLING
       spcount=0
       AC2_parent=0.
       IF (ng.eq.1) THEN
@@ -284,7 +279,11 @@
 !
 !     Repeat for all output requests:
 !
+#ifdef MODEL_COUPLING
+      CORQ => ORQDATZ_MOD(ng)%FORQ                                        40.31
+#else
       CORQ => FORQ                                                        40.31
+#endif
       DO 70 IRQ = 1, NREOQ
 !
 !       ***** processing of output instructions *****
@@ -324,7 +323,11 @@
            GOTO 70                                                        40.31 30.00
         END IF
 !
+#ifdef MODEL_COUPLING
+        CUOPS => OPSDATZ_MOD(ng)%FOPS
+#else
         CUOPS => FOPS                                                     40.31
+#endif
         DO                                                                40.31
           IF (CUOPS%PSNAME.EQ.SNAME) EXIT                                 40.31
           IF (.NOT.ASSOCIATED(CUOPS%NEXTOPS)) THEN                        40.31
@@ -467,7 +470,6 @@
            spcount=spcount+1
            ngp=myparent(ng)
            ngc=mychild(ng)
-           ac2size=MSC*MDC*Numspec
            IF (ng.lt.Ngrids) THEN
              IF (IONOD(1).NE.INODE) GOTO 700
              offset=MSC*MDC*(spcount-1)
@@ -489,13 +491,8 @@
              IF ((first.ge.0).and.(IRQ.eq.NREOQ)) THEN
 !              IF (MyRank.eq.0) THEN
                IF (INODE.EQ.MASTER) THEN
-                 DO ID=1,ac2size
+                 DO ID=1,ac2size(ng)
                    AC2_parent2(ID)=AC2_parent2(ID)+AC2_parent(ID)
-
-!                  if (ac2_parent(id).gt.0.) then
-!                    write(*,*) ac2_parent(id)
-!                   end if
-
                  END DO
 !
 ! Gather all the ac2_parent arrays from all processors and add them up. 
@@ -506,9 +503,9 @@
                    ID=IS
 !                      write(*,*) 'swout recv', ng, inode, mytag,IS
 
-                   CALL MPI_RECV(AC2_parent,ac2size,MPI_REAL,ID,MyTag,  &
-     &                           WAV_COMM_WORLD,MyStatus,MyError)
-                   DO ID=1,ac2size
+                   CALL MPI_RECV(AC2_parent,ac2size(ng),MPI_REAL,ID,    &
+     &                           MyTag,WAV_COMM_WORLD,MyStatus,MyError)
+                   DO ID=1,ac2size(ng)
                      AC2_parent2(ID)=AC2_parent2(ID)+AC2_parent(ID)
 
 !                  if (ac2_parent(id).gt.0.) then
@@ -520,32 +517,9 @@
                  END DO
                ELSE
                  MyTag=INODE
-
-!                     write(*,*) 'swout sned', ng, inode, mytag
-
-                 CALL MPI_SEND(AC2_parent,ac2size,MPI_REAL,0,MyTag,    &
+                 CALL MPI_SEND(AC2_parent,ac2size(ng),MPI_REAL,0,MyTag, &
      &                         WAV_COMM_WORLD,MyError)
-!     &                         WAV_COMM_WORLDS(ng),MyError)
                END IF
-! now send the full ac2 array to the other comm
-
-!               CALL MPI_Intercomm_create(WAV_COMM_WORLDS(ng),0,         &
-!     &                     WAV_COMM_WORLDS(ngc),0,MyTag,WAVCOM,MyError)
-
-
-!           CALL mpi_comm_rank (WAVCOM, MyRank, MyError)
-!           CALL mpi_comm_size (WAVCOM, MySize, MyError)
-
-!            write(*,*) 'swanout call mpi send to ',MyRank, MySize,WAVCOM
-
-!               CALL MPI_BCAST(AC2_parent2,ac2size,MPI_REAL,             &
-!     &                         0,WAVCOM, MyError)
-
-!                CALL MPI_SEND(AC2_parent2,ac2size,MPI_REAL,              &
-!     &                        0,MyTag,WAVCOM,MyError)
-
-!                write(*,*) 'swanout after mpi send'
-
              END IF
            END IF
 #endif
@@ -565,10 +539,10 @@
 #ifdef MODEL_COUPLING
 
 !     Couple to ocean model
-
-        IF (cplout) THEN
+!        IF (cplout) THEN
+        IF ((cplout).and.(first.ge.0)) THEN
           CALL WAV2OCN_COUPLING (MIP, NVOQP, VOQR, VOQ(1), IRQ,
-     &                           IVTYPE, COMPDA, numsteps)
+     &                           IVTYPE, COMPDA, numsteps, ng)
           IF (STPNOW()) RETURN
         ENDIF
 #endif

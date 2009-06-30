@@ -126,11 +126,7 @@
 !***********************************************************************
 !                                                                      *
 #ifdef MODEL_COUPLING
-# ifdef REFINED_GRID
-      SUBROUTINE SWAN_INITIALIZE (ng, MyComm, WNAME, MTC_out)
-# else
-      SUBROUTINE SWAN_INITIALIZE (MyComm, WNAME)
-# endif
+      SUBROUTINE SWAN_INITIALIZE (ng, Ngrids, MyComm, WNAME)
 #else
       SUBROUTINE SWMAIN                                                   40.31 34.01
 #endif
@@ -150,6 +146,9 @@
 #ifdef WAVES_OCEAN
       USE M_PARALL2
       USE WAVES_COUPLER_MOD, ONLY: INITIALIZE_WAV2OCN_COUPLING
+#endif
+#ifdef MODEL_COUPLING
+      USE M_BNDSPEC
 #endif
 !
       IMPLICIT NONE
@@ -272,12 +271,7 @@
 !
 #ifdef MODEL_COUPLING
       CHARACTER*80, intent(in) :: WNAME
-# ifdef REFINED_GRID
-      INTEGER, INTENT(in) :: ng, MyCOMM
-      INTEGER, INTENT(out) :: MTC_out
-# else
-      INTEGER, INTENT(in) :: MyCOMM
-# endif
+      INTEGER, INTENT(in) :: ng, Ngrids, MyCOMM
 #endif
       INTEGER   IUNIT                                                     34.01
       INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN                             40.30
@@ -370,6 +364,192 @@
 #ifdef MODEL_COUPLING
 
 !     --- initialize MPI
+!
+!  Allocate Type arrays
+!
+      IF (ng.eq.1) THEN
+        ALLOCATE (M_GENARR_MOD(Ngrids))
+        ALLOCATE (PARALL_MOD(Ngrids))
+        ALLOCATE (PARALL2_MOD(Ngrids))
+        ALLOCATE (BGPDATZ_MOD(Ngrids))
+        ALLOCATE (OPSDATZ_MOD(Ngrids))
+        ALLOCATE (ORQDATZ_MOD(Ngrids))
+
+!new here tiontie
+        ALLOCATE(BGPDATZ_MOD(Ngrids))
+      END IF
+
+!new here tiontie
+      ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
+      ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
+
+      Numgrids=Ngrids
+!
+!  Allocate pointers
+!
+!  M_BNDSPEC
+!
+      IF (.not.allocated(LBGP_G)) ALLOCATE (LBGP_G(Numgrids))
+      LBGP_G(ng)=.FALSE.
+      LBGP=>LBGP_G(ng)
+!
+!  M_PARALL
+!
+      IF (.not.allocated(MCGRDGL_G)) ALLOCATE (MCGRDGL_G(Numgrids))
+      MCGRDGL=>MCGRDGL_G(ng)
+      IF (.not.allocated(NGRBGL_G)) ALLOCATE (NGRBGL_G(Numgrids))
+      NGRBGL=>NGRBGL_G(ng)
+      IF (.not.allocated(MXCGL_G)) ALLOCATE (MXCGL_G(Numgrids))
+      MXCGL=>MXCGL_G(ng)
+      IF (.not.allocated(MYCGL_G)) ALLOCATE (MYCGL_G(Numgrids))
+      MYCGL=>MYCGL_G(ng)
+      IF (.not.allocated(MXF_G)) ALLOCATE (MXF_G(Numgrids))
+      MXF=>MXF_G(ng)
+      IF (.not.allocated(MXL_G)) ALLOCATE (MXL_G(Numgrids))
+      MXL=>MXL_G(ng)
+      IF (.not.allocated(MYF_G)) ALLOCATE (MYF_G(Numgrids))
+      MYF=>MYF_G(ng)
+      IF (.not.allocated(MYL_G)) ALLOCATE (MYL_G(Numgrids))
+      MYL=>MYL_G(ng)
+      IF (.not.allocated(NBGGL_G)) ALLOCATE (NBGGL_G(Numgrids))
+      NBGGL=>NBGGL_G(ng)
+      IF (.not.allocated(XCLMAX_G)) ALLOCATE (XCLMAX_G(Numgrids))
+      XCLMAX=>XCLMAX_G(ng)
+      IF (.not.allocated(YCLMAX_G)) ALLOCATE (YCLMAX_G(Numgrids))
+      YCLMAX=>YCLMAX_G(ng)
+      IF (.not.allocated(XCLMIN_G)) ALLOCATE (XCLMIN_G(Numgrids))
+      XCLMIN=>XCLMIN_G(ng)
+      IF (.not.allocated(YCLMIN_G)) ALLOCATE (YCLMIN_G(Numgrids))
+      YCLMIN=>YCLMIN_G(ng)
+      IF (.not.allocated(LMXF_G)) ALLOCATE (LMXF_G(Numgrids))
+      LMXF=>LMXF_G(ng)
+      IF (.not.allocated(LMXL_G)) ALLOCATE (LMXL_G(Numgrids))
+      LMXL=>LMXL_G(ng)
+      IF (.not.allocated(LMYF_G)) ALLOCATE (LMYF_G(Numgrids))
+      LMYF=>LMYF_G(ng)
+      IF (.not.allocated(LMYL_G)) ALLOCATE (LMYL_G(Numgrids))
+      LMYL=>LMYL_G(ng)
+!
+!  SWANCOMM3
+!
+      IF (.not.allocated(MXC_G)) ALLOCATE (MXC_G(Numgrids))
+      MXC=>MXC_G(ng)
+      IF (.not.allocated(MYC_G)) ALLOCATE (MYC_G(Numgrids))
+      MYC=>MYC_G(ng)
+      IF (.not.allocated(MCGRD_G)) ALLOCATE (MCGRD_G(Numgrids))
+      MCGRD=>MCGRD_G(ng)
+      IF (.not.allocated(NGRBND_G)) ALLOCATE (NGRBND_G(Numgrids))
+      NGRBND=>NGRBND_G(ng)
+      IF (.not.allocated(MSC_G)) ALLOCATE (MSC_G(Numgrids))
+      MSC=>MSC_G(ng)
+      IF (.not.allocated(MDC_G)) ALLOCATE (MDC_G(Numgrids))
+      MDC=>MDC_G(ng)
+      IF (.not.allocated(MTC_G)) ALLOCATE (MTC_G(Numgrids))
+      MTC=>MTC_G(ng)
+!
+!  TIMECOMM
+!
+      IF (.not.allocated(TINIC_G)) ALLOCATE (TINIC_G(Numgrids))
+      TINIC=>TINIC_G(ng)
+      IF (.not.allocated(DT_G)) ALLOCATE (DT_G(Numgrids))
+      DT=>DT_G(ng)
+      IF (.not.allocated(TFINC_G)) ALLOCATE (TFINC_G(Numgrids))
+      TFINC=>TFINC_G(ng)
+      IF (.not.allocated(TIMCO_G)) ALLOCATE (TIMCO_G(Numgrids))
+      TIMCO=>TIMCO_G(ng)
+!
+!  SWCOMM1
+!
+      IF (.not.allocated(CHTIME_G)) ALLOCATE (CHTIME_G(Numgrids))
+      CHTIME=>CHTIME_G(ng)
+!
+! OUTP_DATA
+!
+      IF (.not.allocated(NREOQ_G)) ALLOCATE (NREOQ_G(Numgrids))
+      NREOQ_G(ng)=0
+      NREOQ=>NREOQ_G(ng)
+      IF (.not.allocated(LOPS_G)) ALLOCATE (LOPS_G(Numgrids))
+      LOPS_G(ng)=.FALSE.
+      LOPS=>LOPS_G(ng)
+      IF (.not.allocated(LORQ_G)) ALLOCATE (LORQ_G(Numgrids))
+      LORQ_G(ng)=.FALSE.
+      LORQ=>LORQ_G(ng)
+!
+      ALLOCATE (ORQDATZ_MOD(ng)%FORQ)
+!
+!  SWANCOMM2
+!
+      IF (.not.allocated(CVLEFT_G)) ALLOCATE (CVLEFT_G(Numgrids))
+      CVLEFT=>CVLEFT_G(ng)
+      IF (.not.allocated(LXOFFS_G)) ALLOCATE (LXOFFS_G(Numgrids))
+      LXOFFS=>LXOFFS_G(ng)
+      IF (.not.allocated(VARFR_G)) ALLOCATE (VARFR_G(Numgrids))
+      VARFR=>VARFR_G(ng)
+      IF (.not.allocated(VARWI_G)) ALLOCATE (VARWI_G(Numgrids))
+      VARWI=>VARWI_G(ng)
+      IF (.not.allocated(VARWLV_G)) ALLOCATE (VARWLV_G(Numgrids))
+      VARWLV=>VARWLV_G(ng)
+      IF (.not.allocated(DYNDEP_G)) ALLOCATE (DYNDEP_G(Numgrids))
+      DYNDEP=>DYNDEP_G(ng)
+      IF (.not.allocated(VARAST_G)) ALLOCATE (VARAST_G(Numgrids))
+      VARAST=>VARAST_G(ng)
+      IF (.not.allocated(ICOND_G)) ALLOCATE (ICOND_G(Numgrids))
+      ICOND=>ICOND_G(ng)
+      IF (.not.allocated(NWAMN_G)) ALLOCATE (NWAMN_G(Numgrids))
+      NWAMN=>NWAMN_G(ng)
+      IF (.not.allocated(OPTG_G)) ALLOCATE (OPTG_G(Numgrids))
+      OPTG=>OPTG_G(ng)
+      IF (.not.allocated(NBFILS_G)) ALLOCATE (NBFILS_G(Numgrids))
+      NBFILS=>NBFILS_G(ng)
+      IF (.not.allocated(NBSPEC_G)) ALLOCATE (NBSPEC_G(Numgrids))
+      NBSPEC=>NBSPEC_G(ng)
+      IF (.not.allocated(NBGRPT_G)) ALLOCATE (NBGRPT_G(Numgrids))
+      NBGRPT=>NBGRPT_G(ng)
+
+      IF (.not.allocated(MXG_G)) ALLOCATE (MXG_G(Numgrids,NUMGRD))
+      MXG=>MXG_G(ng,:)
+      IF (.not.allocated(MYG_G)) ALLOCATE (MYG_G(Numgrids,NUMGRD))
+      MYG=>MYG_G(ng,:)
+      IF (.not.allocated(IGTYPE_G)) ALLOCATE (IGTYPE_G(Numgrids,NUMGRD))
+      IGTYPE=>IGTYPE_G(ng,:)
+      IF (.not.allocated(LEDS_G)) ALLOCATE (LEDS_G(Numgrids,NUMGRD))
+      LEDS=>LEDS_G(ng,:)
+
+      IF (.not.allocated(COSVC_G)) ALLOCATE (COSVC_G(Numgrids))
+      COSVC=>COSVC_G(ng)
+      IF (.not.allocated(COSWC_G)) ALLOCATE (COSWC_G(Numgrids))
+      COSWC=>COSWC_G(ng)
+      IF (.not.allocated(RDTIM_G)) ALLOCATE (RDTIM_G(Numgrids))
+      RDTIM=>RDTIM_G(ng)
+      IF (.not.allocated(SINVC_G)) ALLOCATE (SINVC_G(Numgrids))
+      SINVC=>SINVC_G(ng)
+      IF (.not.allocated(SINWC_G)) ALLOCATE (SINWC_G(Numgrids))
+      SINWC=>SINWC_G(ng)
+      IF (.not.allocated(XOFFS_G)) ALLOCATE (XOFFS_G(Numgrids))
+      XOFFS=>XOFFS_G(ng)
+      IF (.not.allocated(YOFFS_G)) ALLOCATE (YOFFS_G(Numgrids))
+      YOFFS=>YOFFS_G(ng)
+
+      IF (.not.allocated(ALPG_G)) ALLOCATE (ALPG_G(Numgrids,NUMGRD))
+      ALPG=>ALPG_G(ng,:)
+      IF (.not.allocated(COSPG_G)) ALLOCATE (COSPG_G(Numgrids,NUMGRD))
+      COSPG=>COSPG_G(ng,:)
+      IF (.not.allocated(DXG_G)) ALLOCATE (DXG_G(Numgrids,NUMGRD))
+      DXG=>DXG_G(ng,:)
+      IF (.not.allocated(DYG_G)) ALLOCATE (DYG_G(Numgrids,NUMGRD))
+      DYG=>DYG_G(ng,:)
+      IF (.not.allocated(EXCFLD_G)) ALLOCATE (EXCFLD_G(Numgrids,NUMGRD))
+      EXCFLD=>EXCFLD_G(ng,:)
+      IF (.not.allocated(SINPG_G)) ALLOCATE (SINPG_G(Numgrids,NUMGRD))
+      SINPG=>SINPG_G(ng,:)
+      IF (.not.allocated(STAGX_G)) ALLOCATE (STAGX_G(Numgrids,NUMGRD))
+      STAGX=>STAGX_G(ng,:)
+      IF (.not.allocated(STAGY_G)) ALLOCATE (STAGY_G(Numgrids,NUMGRD))
+      STAGY=>STAGY_G(ng,:)
+      IF (.not.allocated(XPG_G)) ALLOCATE (XPG_G(Numgrids,NUMGRD))
+      XPG=>XPG_G(ng,:)
+      IF (.not.allocated(YPG_G)) ALLOCATE (YPG_G(Numgrids,NUMGRD))
+      YPG=>YPG_G(ng,:)
 
       CALL SWINITMPI (MyComm)
       INPFIL = WNAME
@@ -387,7 +567,7 @@
       INERR =0                                                            40.31
 
       CALL SWTSTA(2)                                                      40.23
-#if defined MODEL_COUPLING && defined REFINED_GRID
+#ifdef MODEL_COUPLING
       CALL SWINIT (ng, INERR)                                             40.31 34.01
 #else
       CALL SWINIT (INERR)                                                 40.31 34.01
@@ -405,9 +585,10 @@
 !       --- read and process user commands
 
         CALL SWTSTA(3)                                                    40.23
+#ifdef MODEL_COUPLING
+        CALL SWREAD (COMPUT, ng, Ngrids)
+#else
         CALL SWREAD (COMPUT)                                              40.31 30.90
-#if defined MODEL_COUPLING && defined REFINED_GRID
-        MTC_out=MTC
 #endif
         CALL SWTSTO(3)                                                    40.23
         IF (STPNOW()) RETURN                                              34.01
@@ -430,7 +611,24 @@
         ENDIF                                                             40.13
 
 !       --- allocate some arrays meant for computation                    40.31
-
+#ifdef MODEL_COUPLING
+        IF (NUMOBS .GT. 0) THEN
+           IF (.NOT.ALLOCATED(PARALL2_MOD(ng)%CROSS_G))                 &
+     &              ALLOCATE (PARALL2_MOD(ng)%CROSS_G(2,MCGRD))
+        ELSE
+           IF (.NOT.ALLOCATED(PARALL2_MOD(ng)%CROSS_G))                 &
+     &              ALLOCATE (PARALL2_MOD(ng)%CROSS_G(0,0))
+        ENDIF
+        CROSS=>PARALL2_MOD(ng)%CROSS_G
+!
+        IF (.NOT.ALLOCATED(PARALL2_MOD(ng)%BSPECS_G))                   &
+     &           ALLOCATE (PARALL2_MOD(ng)%BSPECS_G(MDC,MSC,NBSPEC,2))
+        BSPECS=>PARALL2_MOD(ng)%BSPECS_G
+!
+        IF (.NOT.ALLOCATED(PARALL2_MOD(ng)%BGRIDP_G))                   &
+     &           ALLOCATE (PARALL2_MOD(ng)%BGRIDP_G(6*NBGRPT))
+        BGRIDP=>PARALL2_MOD(ng)%BGRIDP_G
+#else
         IF (NUMOBS .GT. 0) THEN
            IF (.NOT.ALLOCATED(CROSS)) ALLOCATE(CROSS(2,MCGRD))            40.31
         ELSE
@@ -438,19 +636,26 @@
         ENDIF                                                             34.01
         IF (.NOT.ALLOCATED(BSPECS)) ALLOCATE(BSPECS(MDC,MSC,NBSPEC,2))    40.31
         IF (.NOT.ALLOCATED(BGRIDP)) ALLOCATE(BGRIDP(6*NBGRPT))            40.31
-#if defined REFINED_GRID
-!       how do we determine number of 2d spec points
-        IF (.NOT.ALLOCATED(AC2_parent))                                  &
-     &            ALLOCATE(AC2_parent(MSC*MDC*Numspec))
-        IF (.NOT.ALLOCATED(AC2_parent2))                                 &
-     &            ALLOCATE(AC2_parent2(MSC*MDC*Numspec))
+#endif
+#ifdef REFINED_GRID
+        IF (.NOT.ALLOCATED(PARALL2_MOD(ng)%AC2_parent_G))               &
+     &      ALLOCATE (PARALL2_MOD(ng)%AC2_parent_G(MSC*MDC*Numspec(ng)))
+        IF (.NOT.ALLOCATED(PARALL2_MOD(ng)%AC2_parent2_G))              &
+     &     ALLOCATE (PARALL2_MOD(ng)%AC2_parent2_G(MSC*MDC*Numspec(ng)))
+        AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
+        AC2_parent2=>PARALL2_MOD(ng)%AC2_parent2_G
         AC2_parent2=0.
 #endif
 !       --- do some preparations before computation                       40.31
 
         CALL SWTSTA(4)                                                    40.23
+#ifdef MODEL_COUPLING
+        CALL SWPREP ( BSPECS, BGRIDP, CROSS , XCGRID, YCGRID, KGRPNT,     40.31
+     &                KGRBND, SPCDIR, SPCSIG, ng )
+#else
         CALL SWPREP ( BSPECS, BGRIDP, CROSS , XCGRID, YCGRID, KGRPNT,     40.31
      &                KGRBND, SPCDIR, SPCSIG )                            40.31
+#endif
         CALL SWTSTO(4)                                                    40.23
 
 !       --- check all possible flags and if necessary change
@@ -462,8 +667,15 @@
 !       --- initialisation of necessary grids for depth,
 !           current, wind and friction
 
+#ifdef MODEL_COUPLING
+        IF(.NOT.ALLOCATED(PARALL2_MOD(ng)%COMPDA_G)) THEN                
+            ALLOCATE (PARALL2_MOD(ng)%COMPDA_G(MCGRD,MCMVAR),STAT=ISTAT)
+        ENDIF
+        COMPDA=>PARALL2_MOD(ng)%COMPDA_G
+#else
         IF(.NOT.ALLOCATED(COMPDA))
      &                        ALLOCATE(COMPDA(MCGRD,MCMVAR),STAT=ISTAT)   40.41 40.31
+#endif
         IF ( ISTAT.NE.0 ) THEN                                            40.41
            CHARS(1) = NUMSTR(ISTAT,RNAN,'(I6)')                           40.41
            CALL TXPBLA(CHARS(1),IF1,IL1)                                  40.41
@@ -482,11 +694,23 @@
 !           of using the S&L scheme                                       40.31
 
         IF ( NSTATM.EQ.1 .AND. MXITNS.GT.1 .OR. PROPSC.EQ.3 ) THEN        40.31
+#ifdef MODEL_COUPLING
+           IF (.NOT.ALLOCATED(PARALL2_MOD(ng)%AC1_G)) THEN
+              ALLOCATE (PARALL2_MOD(ng)%AC1_G(MDC,MSC,MCGRD),STAT=ISTAT)
+              AC1=>PARALL2_MOD(ng)%AC1_G
+#else
            IF (.NOT.ALLOCATED(AC1)) THEN                                  40.41 40.31
               ALLOCATE(AC1(MDC,MSC,MCGRD),STAT=ISTAT)                     40.41
+#endif
            ELSE IF (SIZE(AC1).EQ.0) THEN                                  40.41
+#ifdef MODEL_COUPLING
+              DEALLOCATE(PARALL2_MOD(ng)%AC1_G)
+              ALLOCATE (PARALL2_MOD(ng)%AC1_G(MDC,MSC,MCGRD),STAT=ISTAT)
+              AC1=>PARALL2_MOD(ng)%AC1_G
+#else
               DEALLOCATE(AC1)                                             40.41
               ALLOCATE(AC1(MDC,MSC,MCGRD),STAT=ISTAT)                     40.41
+#endif
            END IF                                                         40.41
            IF ( ISTAT.NE.0 ) THEN                                         40.41
               CHARS(1) = NUMSTR(ISTAT,RNAN,'(I6)')                        40.41
@@ -550,28 +774,20 @@
 
 #ifdef MODEL_COUPLING
           IT=0
-          IF ( IT.EQ.IT0 .AND. .NOT.ALLOCATED(OURQT) ) THEN
-             ALLOCATE (OURQT(MAX_OUTP_REQ))
+          IF ( IT.EQ.IT0 .AND.                                          &
+     &                   .NOT.ALLOCATED(PARALL2_MOD(ng)%OURQT_G) ) THEN
+             ALLOCATE (PARALL2_MOD(ng)%OURQT_G(MAX_OUTP_REQ))
+             OURQT=>PARALL2_MOD(ng)%OURQT_G
              OURQT = -9999.
           ENDIF
 # ifdef WAVES_OCEAN
 !
 !         --- initialize MCT coupling
 !
-#  ifdef REFINED_GRID
             CALL INITIALIZE_WAV2OCN_COUPLING (ng)
-#  else
-            CALL INITIALIZE_WAV2OCN_COUPLING
-#  endif
 !
 !         --- exchange initial conditions with ocean model.
 !
-#  ifdef REFINED_GRID
-#  else
-            CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
-     &                    KGRPNT, XCGRID, YCGRID, KGRBND, OURQT ,
-     &                    0, 0)
-#  endif
             CALL SWTSTO(1)
 # endif
  900  CONTINUE
@@ -581,11 +797,7 @@
 !
 !***********************************************************************
 !                                                                      *
-# ifdef REFINED_GRID
       SUBROUTINE SWAN_RUN (CouplingTime, IT_in, ng, first)
-# else
-      SUBROUTINE SWAN_RUN (CouplingTime)
-# endif
 !                                                                      *
 !***********************************************************************
 !
@@ -604,9 +816,7 @@
       IMPLICIT NONE
 !
       REAL,  intent(in) :: CouplingTime
-# ifdef REFINED_GRID
       INTEGER,  intent(in) :: IT_in, ng, first
-# endif
       INTEGER   IUNIT
       INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN
       INTEGER   INERR
@@ -622,6 +832,136 @@
 !         ---  Time-stepping SWAN.
 
           numsteps=0
+!
+!  Create list of pointers for each ng instance.
+!
+!  Modules M_GENARR
+!
+      KGRPNT=>M_GENARR_MOD(ng)%KGRPNT_G
+      KGRBND=>M_GENARR_MOD(ng)%KGRBND_G
+      XYTST=> M_GENARR_MOD(ng)%XYTST_G
+      AC2=>   M_GENARR_MOD(ng)%AC2_G
+      XCGRID=>M_GENARR_MOD(ng)%XCGRID_G
+      YCGRID=>M_GENARR_MOD(ng)%YCGRID_G
+      SPCSIG=>M_GENARR_MOD(ng)%SPCSIG_G
+      SPCDIR=>M_GENARR_MOD(ng)%SPCDIR_G
+      DEPTH=> M_GENARR_MOD(ng)%DEPTH_G
+      FRIC=>  M_GENARR_MOD(ng)%FRIC_G
+      UXB=>   M_GENARR_MOD(ng)%UXB_G
+      UYB=>   M_GENARR_MOD(ng)%UYB_G
+      WXI=>   M_GENARR_MOD(ng)%WXI_G
+      WYI=>   M_GENARR_MOD(ng)%WYI_G
+      WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
+      ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
+!
+!  Module M_PARALL
+!
+      MCGRDGL=>MCGRDGL_G(ng)
+      NGRBGL=>NGRBGL_G(ng)
+      MXCGL=>MXCGL_G(ng)
+      MYCGL=>MYCGL_G(ng)
+      MXF=>MXF_G(ng)
+      MXL=>MXL_G(ng)
+      MYF=>MYF_G(ng)
+      MYL=>MYL_G(ng)
+      NBGGL=>NBGGL_G(ng)
+
+      IBLKAD=>PARALL_MOD(ng)%IBLKAD_G
+      KGRPGL=>PARALL_MOD(ng)%KGRPGL_G
+      KGRBGL=>PARALL_MOD(ng)%KGRBGL_G
+      BGRIDPL=>PARALL_MOD(ng)%BGRIDPL_G
+      XGRDGL=>PARALL_MOD(ng)%XGRDGL_G
+      YGRDGL=>PARALL_MOD(ng)%YGRDGL_G
+
+      XCLMAX=>XCLMAX_G(ng)
+      YCLMAX=>YCLMAX_G(ng)
+      XCLMIN=>XCLMIN_G(ng)
+      YCLMIN=>YCLMIN_G(ng)
+      LMXF=>LMXF_G(ng)
+      LMXL=>LMXL_G(ng)
+      LMYF=>LMYF_G(ng)
+      LMYL=>LMYL_G(ng)
+!
+!  Module PARALL2
+!
+      BSPECS=>PARALL2_MOD(ng)%BSPECS_G
+      CROSS=> PARALL2_MOD(ng)%CROSS_G
+      BGRIDP=>PARALL2_MOD(ng)%BGRIDP_G
+      AC1=>   PARALL2_MOD(ng)%AC1_G
+      COMPDA=>PARALL2_MOD(ng)%COMPDA_G
+      OURQT=> PARALL2_MOD(ng)%OURQT_G
+#ifdef REFINED_GRID
+! jcw needs to redo this
+      AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
+      AC2_parent2=>PARALL2_MOD(ng)%AC2_parent2_G
+#endif
+!
+!  Module SWCOMM3
+!
+        MXC=>MXC_G(ng)
+        MYC=>MYC_G(ng)
+        MCGRD=>MCGRD_G(ng)
+        NGRBND=>NGRBND_G(ng)
+        MSC=>MSC_G(ng)
+        MDC=>MDC_G(ng)
+        MTC=>MTC_G(ng)
+!
+!  Module TIMECOMM
+!
+        TINIC=>TINIC_G(ng)
+        DT=>DT_G(ng)
+        TFINC=>TFINC_G(ng)
+        TIMCO=>TIMCO_G(ng)
+!
+!  Module SWCOMM1
+!
+        CHTIME=>CHTIME_G(ng)
+!
+!  Module OUTP_DATA
+!
+        NREOQ=>NREOQ_G(ng)
+        LOPS=>LOPS_G(ng)
+!       LORQ=>LORQ_G(ng)
+!
+!  Module SWANCOMM2
+!
+      CVLEFT=>CVLEFT_G(ng)
+      LXOFFS=>LXOFFS_G(ng)
+      VARFR=>VARFR_G(ng)
+      VARWI=>VARWI_G(ng)
+      VARWLV=>VARWLV_G(ng)
+      DYNDEP=>DYNDEP_G(ng)
+      VARAST=>VARAST_G(ng)
+      ICOND=>ICOND_G(ng)
+      NWAMN=>NWAMN_G(ng)
+      OPTG=>OPTG_G(ng)
+      NBFILS=>NBFILS_G(ng)
+      NBSPEC=>NBSPEC_G(ng)
+      NBGRPT=>NBGRPT_G(ng)
+
+      MXG=>MXG_G(ng,:)
+      MYG=>MYG_G(ng,:)
+      IGTYPE=>IGTYPE_G(ng,:)
+      LEDS=>LEDS_G(ng,:)
+
+      COSVC=>COSVC_G(ng)
+      COSWC=>COSWC_G(ng)
+      RDTIM=>RDTIM_G(ng)
+      SINVC=>SINVC_G(ng)
+      SINWC=>SINWC_G(ng)
+      XOFFS=>XOFFS_G(ng)
+      YOFFS=>YOFFS_G(ng)
+
+      ALPG=>ALPG_G(ng,:)
+      COSPG=>COSPG_G(ng,:)
+      DXG=>DXG_G(ng,:)
+      DYG=>DYG_G(ng,:)
+      EXCFLD=>EXCFLD_G(ng,:)
+      SINPG=>SINPG_G(ng,:)
+      STAGX=>STAGX_G(ng,:)
+      STAGY=>STAGY_G(ng,:)
+      XPG=>XPG_G(ng,:)
+      YPG=>YPG_G(ng,:)
 #endif
 
 !         --- synchronize nodes                                           40.30
@@ -631,27 +971,24 @@
 
 !         --- loop over time steps                                        40.00
 
-#ifndef REFINED_GRID
-# ifdef MODEL_COUPLING
+#ifndef MODEL_COUPLING
           IF (NSTATC.EQ.1) THEN
             IT0 = 0
           ELSE
             IT0 = 1
           ENDIF
-# endif
+
           DO 500 IT = IT0, MTC                                            40.00
-#endif
-#ifdef REFINED_GRID
+#else
+
            IT=IT_in
 #endif
 !
             IF (LEVERR.GT.MAXERR) THEN                                    30.82
               WRITE (PRINTF, 6030) LEVERR                                 30.82
               IF (LEVERR.LT.4) WRITE (PRINTF, 6011)                       40.30 30.82
-#ifdef MODEL_COUPLING
- 6011     FORMAT(' ** To ignore this error, change [maxerr] with the',
-     &           ' SET command')
-#endif
+ 6011         FORMAT(' ** To ignore this error, change [maxerr] with',
+     &           ' the SET command')
  6030         FORMAT(' ** No continuation of computation because ',       30.82
      &               'of error level:',I3)                                30.82
               EXIT                                                        40.30
@@ -665,7 +1002,7 @@
 !           --- update boundary conditions and input fields
 !
             CALL SWTSTA(7)                                                40.23
-#ifdef REFINED_GRID
+#ifdef MODEL_COUPLING
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
@@ -735,18 +1072,10 @@
 
 !           --- couple models during output computations
 
-            IF (IT.gt.0) THEN
               numsteps = numsteps + 1
-# ifdef REFINED_GRID
               CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
      &                      KGRPNT, XCGRID, YCGRID, KGRBND, OURQT ,
      &                      IT, CouplingTime, ng,first)
-# else
-              CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
-     &                      KGRPNT, XCGRID, YCGRID, KGRBND, OURQT ,
-     &                      numsteps, CouplingTime)
-            END IF
-# endif
 #else
             CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,         40.31
      &                    KGRPNT, XCGRID, YCGRID, KGRBND, OURQT )         40.51 40.31
@@ -766,7 +1095,7 @@
  222          FORMAT(' Time of computation ->  ',A,' in sec:', F12.0)     40.00
             ENDIF                                                         40.00
 
-#ifndef REFINED_GRID
+#ifndef MODEL_COUPLING
  500      CONTINUE
 #endif
 
@@ -776,7 +1105,7 @@
 
 !***********************************************************************
 !                                                                      *
-      SUBROUTINE SWAN_FINALIZE
+      SUBROUTINE SWAN_FINALIZE (ng)
 !                                                                      *
 !***********************************************************************
 !
@@ -802,6 +1131,7 @@
 !     BLKND :     array giving node number per subdomain
 !     BLKNDC:     auxiliary array for collecting the array BLKND
 !
+      INTEGER, INTENT(IN) :: ng
       LOGICAL STPNOW
       LOGICAL LOPEN
       INTEGER MyStatus
@@ -835,7 +1165,11 @@
          CALL SWCOLLECT ( BLKNDC, BLKND, .TRUE. )                         40.51 40.41
          IF (STPNOW()) RETURN                                             40.41
          IF ( INODE.EQ.MASTER ) THEN                                      40.30
+#ifdef MODEL_COUPLING
+            CALL SWCOLOUT ( OURQT, BLKNDC, ng)
+#else
             CALL SWCOLOUT ( OURQT, BLKNDC )                               40.51 40.41 40.30
+#endif
             DEALLOCATE(BLKNDC)                                            40.41 40.30
          END IF                                                           40.30
       END IF                                                              40.30
@@ -864,7 +1198,7 @@
 !
 !  Terminate MCT coupling.
 !
-      CALL finalize_wav2ocn_coupling
+      CALL finalize_wav2ocn_coupling(ng)
 !#  ifdef WRF_COUPLING
 !      CALL finalize_wav2atm_coupling
 !#  endif
@@ -879,7 +1213,7 @@
 #endif
 !***********************************************************************
 !                                                                      *
-#ifdef REFINED_GRID
+#ifdef MODEL_COUPLING
       SUBROUTINE SWINIT (ng, NERR)
 #else
       SUBROUTINE SWINIT (INERR)                                           40.31 34.01
@@ -1061,13 +1395,16 @@
 !
 ! 13. Source text
 !
+#ifdef MODEL_COUPLING
+      INTEGER, intent(in) :: ng
+#endif
       VERTXT = BLANK                                                      40.03
       VERNUM = 40.51
       WRITE (VERTXT, '(F5.2)') VERNUM                                     40.03
       CALL BUGFIX ('A')
       CALL BUGFIX ('B')
 !
-#ifdef REFINED_GRID
+#ifdef MODEL_COUPLING
       CALL OCPINI (ng, 'swaninit', .TRUE.,INERR)
 #else
       CALL OCPINI ('swaninit', .TRUE.,INERR)                              34.01
@@ -1082,10 +1419,12 @@
      &        /,20X,'         VERSION NUMBER ', A,                        40.03
      &        /,20X,'---------------------------------------',//)
 !
-      IF (SCREEN.NE.PRINTF.AND.INODE.EQ.MASTER) WRITE (SCREEN,6020)       40.30
 #ifdef MODEL_COUPLING
- 6020 FORMAT (/, ' SWAN is preparing computation ...',/)
+      IF (SCREEN.NE.PRINTF.AND.INODE.EQ.MASTER)                         &
+     & WRITE (SCREEN,6020) 'SWAN grid', ng, ' is preparing computation'
+ 6020 FORMAT (/,a9,i4,a25,/)
 #else
+      IF (SCREEN.NE.PRINTF.AND.INODE.EQ.MASTER) WRITE (SCREEN,6020)       40.30
  6020 FORMAT (/, ' SWAN is preparing computation',/)
 #endif
 !
@@ -2287,8 +2626,13 @@
 !
 !***********************************************************************
 !                                                                      *
+#ifdef MODEL_COUPLING
+      SUBROUTINE SWPREP ( BSPECS, BGRIDP, CROSS , XCGRID ,YCGRID ,        40.31
+     &                    KGRPNT, KGRBND, SPCDIR, SPCSIG, ng)
+#else
       SUBROUTINE SWPREP ( BSPECS, BGRIDP, CROSS , XCGRID ,YCGRID ,        40.31
      &                    KGRPNT, KGRBND, SPCDIR, SPCSIG )                40.31
+#endif
 !                                                                      *
 !***********************************************************************
 !
@@ -2368,6 +2712,9 @@
 !  4. Argument variables
 !
       INTEGER, INTENT(INOUT) :: KGRBND(*)                                 40.02
+#ifdef MODEL_COUPLING
+      INTEGER, INTENT(IN) :: ng
+#endif
 !
 !     XCGRID: input  Coordinates of computational grid in x-direction     30.72
 !     YCGRID: input  Coordinates of computational grid in y-direction     30.72
@@ -2409,7 +2756,13 @@
       INTEGER, ALLOCATABLE :: CROSSGL(:,:)                                40.31
 !
       TYPE(BSDAT) , POINTER :: CURRBS                                     40.31
+#ifdef MODEL_COUPLING
+!      TYPE(BGPDAT), TARGET, ALLOCATABLE :: CURBGP(:)
+!     TYPE(BGPDAT), ALLOCATABLE :: CURBGP(:)
+!      TYPE(BGPDAT), POINTER :: CURBGP                                     40.31
+#else
       TYPE(BGPDAT), POINTER :: CURBGP                                     40.31
+#endif
       SAVE IENT
       DATA IENT/0/
       CALL STRACE (IENT, 'SWPREP')
@@ -2485,7 +2838,11 @@
 !
 !     check location of output areas
 !
+#ifdef MODEL_COUPLING
+      CALL SPRCON ( XCGRID, YCGRID, KGRPNT, KGRBND, ng)
+#else
       CALL SPRCON ( XCGRID, YCGRID, KGRPNT, KGRBND )                      40.31
+#endif
 !
 !     *** for the four sweeps find                           ***
 !     *** obstacles crossing the points in the stencil       ***
@@ -2556,6 +2913,32 @@
       BGRIDP = 0                                                          40.31
       IF (NBGGL.EQ.0) NBGGL  = NBGRPT                                     40.51 40.31
       NBGRPT = 0                                                          40.31
+
+#ifdef MODEL_COUPLING
+!curbgp is now BGPDATZ_MOD(ng)%CURBGP
+      ALLOCATE(BGPDATZ_MOD(ng)%CURBGP)
+
+      DO IX = MXF, MXL                                                    40.31
+         DO IY = MYF, MYL                                                 40.31
+            INDX = KGRPGL(IX,IY)                                          40.31
+            BGPDATZ_MOD(ng)%CURBGP => BGPDATZ_MOD(ng)%FBGP
+            DO II = 1, NBGGL                                              40.31
+               INDXGR = BGPDATZ_MOD(ng)%CURBGP%BGP(1)                                  40.31
+               IF ( INDXGR.EQ.INDX ) THEN                                 40.31
+                  NBGRPT = NBGRPT + 1                                     40.31
+                  BGRIDP(6*NBGRPT-5) = KGRPNT(IX-MXF+1,IY-MYF+1)          40.31
+                  BGRIDP(6*NBGRPT-4) = BGPDATZ_MOD(ng)%CURBGP%BGP(2)                   40.31
+                  BGRIDP(6*NBGRPT-3) = BGPDATZ_MOD(ng)%CURBGP%BGP(3)                   40.31
+                  BGRIDP(6*NBGRPT-2) = BGPDATZ_MOD(ng)%CURBGP%BGP(4)                   40.31
+                  BGRIDP(6*NBGRPT-1) = BGPDATZ_MOD(ng)%CURBGP%BGP(5)                   40.31
+                  BGRIDP(6*NBGRPT  ) = BGPDATZ_MOD(ng)%CURBGP%BGP(6)                   40.31
+               END IF                                                     40.31
+               IF (.NOT.ASSOCIATED(BGPDATZ_MOD(ng)%CURBGP%NEXTBGP)) EXIT           40.31
+               BGPDATZ_MOD(ng)%CURBGP => BGPDATZ_MOD(ng)%CURBGP%NEXTBGP   40.31
+            END DO                                                        40.31
+         END DO                                                           40.31
+      END DO                                                              40.31
+#else
       DO IX = MXF, MXL                                                    40.31
          DO IY = MYF, MYL                                                 40.31
             INDX = KGRPGL(IX,IY)                                          40.31
@@ -2576,24 +2959,28 @@
             END DO                                                        40.31
          END DO                                                           40.31
       END DO                                                              40.31
-#ifdef REFINED_GRID
+#endif
+#ifdef MODEL_COUPLING
 !
 !     Associate parent forcing to local tiled child grid.
 !
-      IF (.not.ALLOCATED(BGRIDPL)) ALLOCATE(BGRIDPL(NBGRPT))
+      IF (.not.ALLOCATED(PARALL_MOD(ng)%BGRIDPL_G))                     &
+     &         ALLOCATE (PARALL_MOD(ng)%BGRIDPL_G(NBGRPT))
+      BGRIDPL=>PARALL_MOD(ng)%BGRIDPL_G
       NBGRPT = 0                                                          40.31
       DO IX = MXF, MXL                                                    40.31
          DO IY = MYF, MYL                                                 40.31
             INDX = KGRPGL(IX,IY)                                          40.31
-            CURBGP => FBGP                                                40.31
+            BGPDATZ_MOD(ng)%CURBGP => BGPDATZ_MOD(ng)%FBGP
             DO II = 1, NBGGL                                              40.31
-               INDXGR = CURBGP%BGP(1)                                     40.31
+               INDXGR = BGPDATZ_MOD(ng)%CURBGP%BGP(1)                     40.31
+!              INDXGR = CURBGP(ng)%BGP(1)                                 40.31
                IF ( INDXGR.EQ.INDX ) THEN                                 40.31
                   NBGRPT = NBGRPT + 1                                     40.31
-                  BGRIDPL(NBGRPT)=BGRIDPG(II)
+                  BGRIDPL(NBGRPT)=BGRIDPG(ng,II)
                END IF                                                     40.31
-               IF (.NOT.ASSOCIATED(CURBGP%NEXTBGP)) EXIT                  40.31
-               CURBGP => CURBGP%NEXTBGP                                   40.31
+               IF (.NOT.ASSOCIATED(BGPDATZ_MOD(ng)%CURBGP%NEXTBGP)) EXIT  40.31
+               BGPDATZ_MOD(ng)%CURBGP => BGPDATZ_MOD(ng)%CURBGP%NEXTBGP   40.31
             END DO                                                        40.31
          END DO                                                           40.31
       END DO                                                              40.31
@@ -2619,7 +3006,11 @@
 !
 !***********************************************************************
 !                                                                      *
+#ifdef MODEL_COUPLING
+      SUBROUTINE SPRCON (XCGRID, YCGRID, KGRPNT, KGRBND, ng)
+#else
       SUBROUTINE SPRCON (XCGRID, YCGRID, KGRPNT, KGRBND)                  40.31 40.00
+#endif
 !                                                                      *
 !***********************************************************************
 !
@@ -2698,6 +3089,9 @@
 !     XCGRID: input  Coordinates of computational grid in x-direction     30.72
 !     YCGRID: input  Coordinates of computational grid in y-direction     30.72
 !
+#ifdef MODEL_COUPLING
+      INTEGER, INTENT(IN) :: ng
+#endif
       INTEGER :: KGRBND(*)                                                40.02
 !
       REAL    :: XCGRID(MXC,MYC), YCGRID(MXC,MYC)                         30.72
@@ -2774,7 +3168,9 @@
       INTEGER  KGRPNT(MXC,MYC), IERR                                      40.02
       LOGICAL  SINBTG
       CHARACTER STYPE *1
+!#if !defined MODEL_COUPLING
       TYPE(OPSDAT), POINTER :: CUOPS                                      40.31
+!#endif
       SAVE IENT
       DATA IENT /0/
       CALL STRACE (IENT,'SPRCON')
@@ -2837,7 +3233,11 @@
 !
 !     ***** test location of output pointsets *****
       IF (LOPS) THEN                                                      40.31
+#ifdef MODEL_COUPLING
+        CUOPS => OPSDATZ_MOD(ng)%FOPS
+#else
         CUOPS => FOPS                                                     40.31
+#endif
         DO                                                                40.31
 !         --- get name of point set                                       40.31
           SNAME = CUOPS%PSNAME                                            40.31
@@ -4516,7 +4916,7 @@
       END
 !*********************************************************************
 !                                                                    *
-#ifdef REFINED_GRID
+#ifdef MODEL_COUPLING
       SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
      &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
@@ -4538,7 +4938,7 @@
       USE SWCOMM4                                                         40.41
       USE M_BNDSPEC                                                       40.31
       USE M_PARALL                                                        40.31
-#ifdef REFINED_GRID
+#ifdef MODEL_COUPLING
       USE M_PARALL2                                                       40.31
       USE M_MPI
       USE mod_param
@@ -4628,10 +5028,9 @@
 #if defined MODEL_COUPLING && defined REFINED_GRID
       INTEGER offset, offset2
 #endif
-#if defined MODEL_COUPLING && defined REFINED_GRID
+#ifdef MODEL_COUPLING
       INTEGER, intent(in) :: ng, first, ITjcw
       INTEGER ngp, ngc
-      INTEGER MyRank, MySize, MyError, MyStatus, MyHandle
 #endif
       INTEGER  BGRIDP(*), XYTST(*), KGRPNT(MXC,MYC)
 !
@@ -4783,37 +5182,35 @@
            END DO
         END IF
       ELSE
-!       we are getting 2dspec AC2 from parent grid
-!       only do this for 1 of each 5 steps 
-!       IF ((ITjcw.gt.0).and.(ng.gt.1).and.(first.eq.1)                     &
-!    &               .and.(NBGRPT.GT.0)) THEN
-        IF ((ITjcw.gt.0).and.(ng.gt.1)                                      &
-     &               .and.(NBGRPT.GT.0)) THEN
-          CALL mpi_comm_rank (WAV_COMM_WORLD, MyRank, MyError)
-          CALL mpi_comm_size (WAV_COMM_WORLD, MySize, MyError)
-!         ac2size=MSC*MDC*Numspec
+!
+!     Obtain 2dspec array AC2 from parent grid.
+!
+!       IF ((ITjcw.gt.0).and.(ng.gt.Ngrids).and.(NBGRPT.GT.0)) THEN
+        IF ((ng.gt.1).and.(NBGRPT.GT.0)) THEN
+!         ac2size=MSC*MDC*Numspec(ng)
           ngp=myparent(ng)
           ngc=mychild(ng)
-
-           DO IBGRID = 1, NBGRPT
+          DO IBGRID = 1, NBGRPT
              INDXGR = BGRIDP(6*IBGRID-5)
              IF (BGRIDP(6*IBGRID-4).EQ.1) THEN
-!              obtain spectrum in boundary point from interpolation in space
 !
 ! Array BGRIDPL has the offset index for each bndry point to the 
 ! AC2 spec data in array AC2_parent2.
 
 !              offset=MSC*MDC*(IBGRID-1)
                offset=MSC*MDC*(BGRIDPL(IBGRID)-1)
-
-!               if (myrank.eq.0) then
-!           write(*,*) 'swanmain offset ', ibgrid,offset, bgridpl(ibgrid)
-!               endif
-
                DO IS = 1, MSC
                  DO ID = 1, MDC
                    offset=offset+1
-                   AC2(ID,IS,INDXGR)=AC2_parent2(offset)
+
+                   if (ibgrid.eq.1) then
+!                   write(*,*) 'ac2parnet = ',AC2_parent2(offset)
+                    endif
+
+!                  AC2(ID,IS,INDXGR)=AC2_parent2(offset)
+                   AC2(ID,IS,INDXGR)=                                   &
+     &              PARALL2_MOD(ngp)%AC2_parent2_G(offset)
+
                  END DO
                END DO
                W1 = 0.001 * REAL(BGRIDP(6*IBGRID-3))

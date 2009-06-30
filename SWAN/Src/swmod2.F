@@ -220,6 +220,56 @@
       CHARACTER (LEN=LENFNM) :: OUTP_FILES(1:MAX_OUTP_REQ)
       ! filenames for output; index is output request sequence number
 
+
+#ifdef MODEL_COUPLING
+
+      INTEGER, POINTER, SAVE :: NREOQ != 0         ! actual number of requests saved
+      INTEGER, POINTER, SAVE :: NREOQ_G(:)
+
+      TYPE OPSDAT
+         CHARACTER (LEN=1)     :: PSTYPE                     ! type (F, C, P, ...)
+         CHARACTER (LEN=8)     :: PSNAME                     ! name of point set
+         INTEGER               :: OPI(2)                     ! integer coefficients
+         REAL                  :: OPR(5)                     ! real coefficients
+         INTEGER               :: MIP                        ! number of points
+         REAL, POINTER         :: XP(:), YP(:), XQ(:), YQ(:) ! point coordinates
+         TYPE(OPSDAT), POINTER :: NEXTOPS
+      END TYPE OPSDAT
+
+      TYPE OPSDAT_Z
+!       TYPE(OPSDAT), POINTER :: CUOPS
+        TYPE(OPSDAT), POINTER :: FOPS
+        TYPE(OPSDAT), POINTER :: COPS
+!        TYPE(OPSDAT), POINTER :: ROPS
+        TYPE(OPSDAT), POINTER :: OPSTMP
+      END TYPE OPSDAT_Z
+      TYPE (OPSDAT_Z), ALLOCATABLE :: OPSDATZ_MOD(:)
+
+      LOGICAL, POINTER, SAVE :: LOPS     ! = .FALSE.
+      LOGICAL, POINTER, SAVE :: LOPS_G(:)
+
+
+      TYPE ORQDAT
+         CHARACTER (LEN=4)      :: RQTYPE   ! type (BLK, TAB, SPC ...)
+         CHARACTER (LEN=8)      :: PSNAME   ! name of point set
+         INTEGER                :: OQI(4)   ! integer coefficients
+         REAL                   :: OQR(2)   ! real coefficients
+         INTEGER, POINTER       :: IVTYP(:) ! type of output variable
+         REAL, POINTER          :: FAC(:)   ! multiplication factor of block output
+         TYPE(ORQDAT), POINTER  :: NEXTORQ
+      END TYPE ORQDAT
+
+!      TYPE(ORQDAT), SAVE, TARGET  :: FORQ
+      TYPE ORQDAT_Z
+        TYPE(ORQDAT), POINTER :: FORQ
+!       TYPE(ORQDAT), POINTER :: ORQTMP
+      END TYPE ORQDAT_Z
+      TYPE (ORQDAT_Z), ALLOCATABLE :: ORQDATZ_MOD(:)
+
+      LOGICAL, POINTER, SAVE :: LORQ
+      LOGICAL, POINTER, SAVE :: LORQ_G(:)
+
+#else
       INTEGER, SAVE :: NREOQ = 0         ! actual number of requests saved
 
       TYPE OPSDAT
@@ -247,6 +297,7 @@
       END TYPE ORQDAT
 
       TYPE(ORQDAT), SAVE, TARGET  :: FORQ
+#endif
 !
 !  8. Subroutines and functions used
 !
@@ -500,6 +551,27 @@
 
       TYPE(BSDAT), SAVE, TARGET :: FBS
 
+#ifdef MODEL_COUPLING
+!
+!    This is called a linked list.
+!
+      TYPE BGPDAT
+         INTEGER                :: BGP(6)
+         TYPE(BGPDAT), POINTER  :: NEXTBGP
+      END TYPE BGPDAT
+
+      TYPE BGPDAT_Z
+         TYPE(BGPDAT), POINTER :: CURBGP
+         TYPE(BGPDAT), POINTER :: FBGP
+         TYPE(BGPDAT), POINTER :: CUBGP
+         TYPE(BGPDAT), POINTER :: BGPTMP
+      END TYPE BGPDAT_Z
+      TYPE (BGPDAT_Z), ALLOCATABLE :: BGPDATZ_MOD(:)
+
+      LOGICAL, POINTER, SAVE :: LBGP     ! = .FALSE.
+      LOGICAL, POINTER, SAVE :: LBGP_G(:)
+
+#else
       TYPE BGPDAT
          INTEGER                :: BGP(6)
          TYPE(BGPDAT), POINTER  :: NEXTBGP
@@ -507,7 +579,7 @@
 
       TYPE(BGPDAT), SAVE, TARGET  :: FBGP
       TYPE(BGPDAT), SAVE, POINTER :: CUBGP
-
+#endif
 !  8. Subroutines and functions used
 !
 !     ---
@@ -741,6 +813,44 @@
 !     XYTST : Grid point indices of test points
 !     YCGRID: Coordinates of computational grid in y-direction
 
+#ifdef MODEL_COUPLING
+      TYPE T_M_GENARR_MOD
+        INTEGER, POINTER :: KGRPNT_G(:,:)
+        INTEGER, POINTER :: KGRBND_G(:)
+        INTEGER, POINTER :: XYTST_G(:)
+        REAL, POINTER :: AC2_G(:,:,:)
+        REAL, POINTER :: XCGRID_G(:,:)
+        REAL, POINTER :: YCGRID_G(:,:)
+        REAL, POINTER :: SPCSIG_G(:)
+        REAL, POINTER :: SPCDIR_G(:,:)
+        REAL, POINTER :: DEPTH_G(:,:)
+        REAL, POINTER :: FRIC_G(:,:)
+        REAL, POINTER :: UXB_G(:,:)
+        REAL, POINTER :: UYB_G(:,:)
+        REAL, POINTER :: WXI_G(:,:)
+        REAL, POINTER :: WYI_G(:,:)
+        REAL, POINTER :: WLEVL_G(:,:)
+        REAL, POINTER :: ASTDF_G(:,:)
+      END TYPE T_M_GENARR_MOD
+      TYPE (T_M_GENARR_MOD), ALLOCATABLE :: M_GENARR_MOD(:)
+
+      INTEGER, POINTER :: KGRPNT(:,:)
+      INTEGER, POINTER :: KGRBND(:)
+      INTEGER, POINTER :: XYTST(:)
+      REAL   , POINTER :: AC2(:,:,:)
+      REAL   , POINTER :: XCGRID(:,:)
+      REAL   , POINTER :: YCGRID(:,:)
+      REAL   , POINTER :: SPCSIG(:)
+      REAL   , POINTER :: SPCDIR(:,:)
+      REAL   , POINTER :: DEPTH(:,:)
+      REAL   , POINTER :: FRIC(:,:)
+      REAL   , POINTER :: UXB(:,:)
+      REAL   , POINTER :: UYB(:,:)
+      REAL   , POINTER :: WXI(:,:)
+      REAL   , POINTER :: WYI(:,:)
+      REAL   , POINTER :: WLEVL(:,:)
+      REAL   , POINTER :: ASTDF(:,:)
+#else
       INTEGER, SAVE, ALLOCATABLE :: KGRPNT(:,:), KGRBND(:)
       INTEGER, SAVE, ALLOCATABLE :: XYTST(:)
       REAL   , SAVE, ALLOCATABLE :: AC2(:,:,:)
@@ -750,6 +860,7 @@
       REAL   , SAVE, ALLOCATABLE :: UXB(:,:)   , UYB(:,:)
       REAL   , SAVE, ALLOCATABLE :: WXI(:,:)   , WYI(:,:)
       REAL   , SAVE, ALLOCATABLE :: WLEVL(:,:) , ASTDF(:,:)
+#endif
 
 !  8. Subroutines and functions used
 !
@@ -916,6 +1027,73 @@
 !     XGRDGL  : x-coordinate of computational grid in global domain
 !     YGRDGL  : y-coordinate of computational grid in global domain
 !
+
+#ifdef MODEL_COUPLING
+! Mine
+      INTEGER, SAVE :: WAV_COMM_WORLD
+      INTEGER :: Numspecl
+      INTEGER :: NBGRPT_last
+      INTEGER, SAVE, ALLOCATABLE :: Numspec(:)
+      INTEGER, SAVE, ALLOCATABLE :: ac2size(:)
+      INTEGER, SAVE, ALLOCATABLE :: BGRIDPG(:,:)
+!
+      INTEGER, POINTER :: MCGRDGL
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MCGRDGL_G(:)
+      INTEGER, POINTER :: NGRBGL
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: NGRBGL_G(:)
+      INTEGER, POINTER :: MXCGL
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MXCGL_G(:)
+      INTEGER, POINTER :: MYCGL
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MYCGL_G(:)
+      INTEGER, POINTER :: MXF
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MXF_G(:)
+      INTEGER, POINTER :: MXL
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MXL_G(:)
+      INTEGER, POINTER :: MYF
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MYF_G(:)
+      INTEGER, POINTER :: MYL
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: MYL_G(:)
+      INTEGER, POINTER :: NBGGL
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: NBGGL_G(:)
+
+      TYPE T_PARALL_MOD
+        INTEGER, POINTER :: IBLKAD_G(:)
+        INTEGER, POINTER :: KGRPGL_G(:,:)
+        INTEGER, POINTER :: KGRBGL_G(:)
+        INTEGER, POINTER :: BGRIDPL_G(:)
+        REAL, POINTER :: XGRDGL_G(:,:)
+        REAL, POINTER :: YGRDGL_G(:,:)
+      END TYPE T_PARALL_MOD
+      TYPE (T_PARALL_MOD), ALLOCATABLE :: PARALL_MOD(:)
+      INTEGER, POINTER :: IBLKAD(:)
+      INTEGER, POINTER :: KGRPGL(:,:)
+      INTEGER, POINTER :: KGRBGL(:)
+      INTEGER, POINTER :: BGRIDPL(:)
+      REAL, POINTER :: XGRDGL(:,:)
+      REAL, POINTER :: YGRDGL(:,:)
+
+      REAL, POINTER :: XCLMAX
+      REAL, SAVE, TARGET, ALLOCATABLE :: XCLMAX_G(:)
+      REAL, POINTER :: YCLMAX
+      REAL, SAVE, TARGET, ALLOCATABLE :: YCLMAX_G(:)
+      REAL, POINTER :: XCLMIN
+      REAL, SAVE, TARGET, ALLOCATABLE :: XCLMIN_G(:)
+      REAL, POINTER :: YCLMIN
+      REAL, SAVE, TARGET, ALLOCATABLE :: YCLMIN_G(:)
+
+      LOGICAL, POINTER :: LMXF
+      LOGICAL, SAVE, TARGET, ALLOCATABLE :: LMXF_G(:)
+      LOGICAL, POINTER :: LMXL
+      LOGICAL, SAVE, TARGET, ALLOCATABLE :: LMXL_G(:)
+      LOGICAL, POINTER :: LMYF
+      LOGICAL, SAVE, TARGET, ALLOCATABLE :: LMYF_G(:)
+      LOGICAL, POINTER :: LMYL
+      LOGICAL, SAVE, TARGET, ALLOCATABLE :: LMYL_G(:)
+
+!Orig
+      INTEGER :: LENSPO = 1000
+      INTEGER, SAVE, ALLOCATABLE :: IWEIG(:)
+#else
       INTEGER MCGRDGL, MXCGL, MYCGL
       INTEGER MXF, MXL, MYF, MYL
       INTEGER NGRBGL, NBGGL
@@ -929,15 +1107,7 @@
       INTEGER, SAVE, ALLOCATABLE :: IWEIG(:)
       INTEGER, SAVE, ALLOCATABLE :: KGRPGL(:,:), KGRBGL(:)
       REAL   , SAVE, ALLOCATABLE :: XGRDGL(:,:), YGRDGL(:,:)
-#ifdef MODEL_COUPLING
-      INTEGER WAV_COMM_WORLD
 #endif
-#ifdef REFINED_GRID
-      INTEGER, SAVE, WAV_COMM_WORLD, Numspec, ac2size, NBGRPT_last
-      INTEGER, Numspecl
-      INTEGER, SAVE, ALLOCATABLE :: BGRIDPL(:),BGRIDPG(:)
-#endif
-
 !
 !  8. Subroutines and functions used
 !
@@ -961,6 +1131,7 @@
 !
 ! 13. Source text
 !
+
       END MODULE M_PARALL
 
 #ifdef MODEL_COUPLING
@@ -1024,15 +1195,43 @@
 !  6. Parameter variables
 !
 !
+#ifdef MODEL_COUPLING
+      INTEGER, SAVE :: Numgrids
+
+      TYPE T_PARALL2_MOD
+        REAL, POINTER :: BSPECS_G(:,:,:,:)
+        INTEGER, POINTER :: CROSS_G(:,:)
+        INTEGER, POINTER :: BGRIDP_G(:)
+        REAL, POINTER :: AC1_G(:,:,:)
+        REAL, POINTER :: COMPDA_G(:,:)
+        REAL, POINTER :: OURQT_G(:)
+# ifdef REFINED_GRID
+        REAL, POINTER :: AC2_parent_G(:)
+        REAL, POINTER :: AC2_parent2_G(:)
+# endif
+      END TYPE T_PARALL2_MOD
+      TYPE (T_PARALL2_MOD), ALLOCATABLE :: PARALL2_MOD(:)
+
+      REAL, POINTER :: BSPECS(:,:,:,:)
+      INTEGER, POINTER :: CROSS(:,:)
+      INTEGER, POINTER :: BGRIDP(:)
+      REAL, POINTER :: AC1(:,:,:)
+      REAL, POINTER :: COMPDA(:,:)
+      REAL, POINTER :: OURQT(:)
+# ifdef REFINED_GRID
+      REAL, POINTER :: AC2_parent(:)
+      REAL, POINTER :: AC2_parent2(:)
+# endif
+#else
+      REAL, SAVE,    ALLOCATABLE :: BSPECS(:,:,:,:)
       INTEGER, SAVE, ALLOCATABLE :: CROSS(:,:)
       INTEGER, SAVE, ALLOCATABLE :: BGRIDP(:)
-      REAL, SAVE,    ALLOCATABLE :: BSPECS(:,:,:,:)
-      REAL, SAVE,    ALLOCATABLE :: AC1(:,:,:), COMPDA(:,:)
-      REAL, SAVE,    ALLOCATABLE    :: OURQT(:)
-#ifdef REFINED_GRID
-      REAL, SAVE,    ALLOCATABLE :: AC2_parent(:)
-      REAL, SAVE,    ALLOCATABLE :: AC2_parent2(:)
+      REAL, SAVE,    ALLOCATABLE :: AC1(:,:,:)
+      REAL, SAVE,    ALLOCATABLE :: COMPDA(:,:)
+      REAL, SAVE,    ALLOCATABLE :: OURQT(:)
+
 #endif
+
       END MODULE M_PARALL2
 #endif
 
