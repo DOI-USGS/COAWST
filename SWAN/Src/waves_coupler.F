@@ -657,7 +657,7 @@
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling send fail swancplr, MyStatus= ', MyError
-          CALL FINALIZE_WAV2OCN_COUPLING
+          CALL FINALIZE_WAV2OCN_COUPLING(ng)
         END IF
 !
 !-----------------------------------------------------------------------
@@ -673,7 +673,7 @@
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
-          CALL FINALIZE_WAV2OCN_COUPLING
+          CALL FINALIZE_WAV2OCN_COUPLING(ng)
         END IF
 # ifdef AIR_OCEAN
 !
@@ -691,7 +691,7 @@
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
-          CALL FINALIZE_WAV2OCN_COUPLING
+          CALL FINALIZE_WAV2OCN_COUPLING(ng)
         END IF
 # else
         NUMTRANSFER=5
@@ -1069,7 +1069,7 @@
       RETURN
       END SUBROUTINE WAV2OCN_COUPLING
 
-      SUBROUTINE FINALIZE_WAV2OCN_COUPLING (ng)
+      SUBROUTINE FINALIZE_WAV2OCN_COUPLING(ng)
 !
 !=======================================================================
 !                                                                    ===

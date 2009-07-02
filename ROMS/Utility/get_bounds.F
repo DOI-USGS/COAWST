@@ -51,7 +51,7 @@
       integer :: Imin, Imax, Jmin, Jmax
       integer :: Istr, IstrR, IstrT, IstrU, Iend, IendR, IendT
       integer :: Jstr, JstrR, JstrT, JstrV, Jend, JendR, JendT
-      integer :: IstrTU, JstrTV
+      integer :: IstrTU, JstrTV, IendTU, JendTV
       integer :: MyType
 !
 !-----------------------------------------------------------------------
@@ -112,7 +112,7 @@
      &               Istr, Iend, Jstr, Jend,                            &
      &               IstrR, IstrT, IstrU, IendR, IendT,                 &
      &               JstrR, JstrT, JstrV, JendR, JendT,                 &
-     &               IstrTU, JstrTV)
+     &               IstrTU, JstrTV, IendTU, JendTV)
 !
       IF (Itile.eq.0) THEN
         LBi=Imin
@@ -155,7 +155,7 @@
      &                     Istr, Iend, Jstr, Jend,                      &
      &                     IstrR, IstrT, IstrU, IendR, IendT,           &
      &                     JstrR, JstrT, JstrV, JendR, JendT,           &
-     &                     IstrTU, JstrTV)
+     &                     IstrTU, JstrTV, IendTU, JendTV)
 
 !
 !=======================================================================
@@ -202,7 +202,7 @@
       integer, intent(out) :: Iend, Istr, Jend, Jstr
       integer, intent(out) :: IstrR, IstrT, IstrU, IendR, IendT
       integer, intent(out) :: JstrR, JstrT, JstrV, JendR, JendT
-      integer, intent(out) :: IstrTU, JstrTV
+      integer, intent(out) :: IstrTU, JstrTV, IendTU, JendTV
 !
 !  Local variable declarations.
 !
@@ -254,7 +254,7 @@
       CALL var_bounds (ng, Istr, Iend, Jstr, Jend,                      &
      &                 IstrR, IstrT, IstrU, IendR, IendT,               &
      &                 JstrR, JstrT, JstrV, JendR, JendT,               &
-     &                 IstrTU, JstrTV)
+     &                 IstrTU, JstrTV, IendTU, JendTV)
 
       RETURN
       END SUBROUTINE get_tile
@@ -262,7 +262,7 @@
       SUBROUTINE var_bounds (ng, Istr, Iend, Jstr, Jend,                &
      &                       IstrR, IstrT, IstrU, IendR, IendT,         &
      &                       JstrR, JstrT, JstrV, JendR, JendT,         &
-     &                       IstrTU, JstrTV)
+     &                       IstrTU, JstrTV, IendTU, JendTV)
 !
 !=======================================================================
 !                                                                      !
@@ -303,7 +303,7 @@
       integer, intent(in) :: ng, Iend, Istr, Jend, Jstr
       integer, intent(out) :: IstrR, IstrT, IstrU, IendR, IendT
       integer, intent(out) :: JstrR, JstrT, JstrV, JendR, JendT
-      integer, intent(out) :: IstrTU, JstrTV
+      integer, intent(out) :: IstrTU, JstrTV, IendTU, JendTV
 !
 !-----------------------------------------------------------------------
 !  Compute lower and upper bounds over a particular domain partition or
@@ -508,8 +508,10 @@
         IendR=Iend+1
         IF (ng.eq.1) THEN
           IendT=IendR
+          IendTU=IendT-1
         ELSE
           IendT=Iend+NghostPoints
+          IendTU=IendT-1
         END IF
 #else
         IendR=Iend+1
@@ -518,6 +520,7 @@
       ELSE                        ! Interior Tile
         IendR=Iend
         IendT=IendR
+        IendTU=Iend
       END IF
       IF (SOUTHERN_EDGE) THEN     ! Southern Boundary Tile
 #if defined NS_PERIODIC
@@ -561,8 +564,10 @@
         JendR=Jend+1
         IF (ng.eq.1) THEN
           JendT=JendR
+          JendTV=JendT-1
         ELSE
           JendT=Jend+NghostPoints
+          JendTV=JendT-1
         END IF
 #else
         JendR=Jend+1
@@ -571,6 +576,7 @@
       ELSE                        ! Interior Tile
         JendR=Jend
         JendT=JendR
+        JendTV=Jend
       END IF
 
       RETURN

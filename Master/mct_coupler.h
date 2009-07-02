@@ -39,11 +39,9 @@
 #endif
 #if defined SWAN_COUPLING || defined REFDIF_COUPLING
       USE ocean_coupler_mod, ONLY : finalize_ocn2wav_coupling
-# ifdef REFINED_GRID
       USE waves_control_mod, ONLY : SWAN_driver
       USE waves_control_mod, ONLY : SWAN_driver_run
       USE waves_control_mod, ONLY : SWAN_driver_finalize
-# endif
 #endif
 !
       implicit none
@@ -160,15 +158,15 @@
 !
 #if defined SWAN_COUPLING
       IF (MyColor.eq.WAVid) THEN
-# ifdef REFINED_GRID
-        CALL SWAN_driver (MyCOMM, REAL(TI_WAV_OCN), INPname(Iwaves))
+!# ifdef REFINED_GRID
+        CALL SWAN_driver (MyCOMM, REAL(TI_WAV_OCN), Wname)
 !       CALL SWAN_driver_run (CouplingTime)
-        CALL SWAN_driver_finalize
-# else
-        CALL SWAN_INITIALIZE (MyCOMM, Wname)
-        CALL SWAN_RUN (REAL(TI_WAV_OCN))
-        CALL SWAN_FINALIZE
-# endif
+!        CALL SWAN_driver_finalize
+!# else
+!        CALL SWAN_INITIALIZE (MyCOMM, Wname)
+!        CALL SWAN_RUN (REAL(TI_WAV_OCN))
+!        CALL SWAN_FINALIZE
+!# endif
       END IF
 #elif defined REFDIF_COUPLING
       IF (MyColor.eq.WAVid) THEN

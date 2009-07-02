@@ -2398,7 +2398,10 @@
 
       LOGICAL, SAVE :: LBFILS = .FALSE.                                   40.31
       LOGICAL, SAVE :: LBS    = .FALSE.                                   40.31
-#if !defined MODEL_COUPLING
+#if defined MODEL_COUPLING
+      LOGICAL, SAVE, POINTER :: LBGP
+!     LBGP=>LBGP_G(ng)
+#else
       LOGICAL, SAVE :: LBGP   = .FALSE.                                   40.31
 #endif
       TYPE(BSPCDAT), POINTER :: BFLTMP                                    40.31
@@ -2484,6 +2487,10 @@
       DATA IENT/0/
       CALL STRACE (IENT,'SWBOUN')
 !
+#if defined MODEL_COUPLING
+      LBGP=>LBGP_G(ng)
+      LBGP = .FALSE.
+#endif
       CALL INKEYW ('REQ',' ')
       IF (KEYWIS ('SHAP')) THEN
 !
@@ -3340,9 +3347,6 @@
               BGPDATZ_MOD(ng)%BGPTMP%BGP(6) = IBSPC2
               NULLIFY(BGPDATZ_MOD(ng)%BGPTMP%NEXTBGP)
               IF ( .NOT.LBGP ) THEN                                         40.31
-
-               write(*,*) 'swanpre2 r we here 2'
-
                  BGPDATZ_MOD(ng)%FBGP => BGPDATZ_MOD(ng)%BGPTMP
                  BGPDATZ_MOD(ng)%CUBGP => BGPDATZ_MOD(ng)%FBGP
                  LBGP = .TRUE.                                              40.31

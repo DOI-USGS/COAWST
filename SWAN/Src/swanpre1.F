@@ -549,8 +549,7 @@
           IF (STPNOW()) RETURN                                            34.01
           NPTSTA = MAX(1,NPTST)                                           40.00
 #ifdef MODEL_COUPLING
-          IF (.NOT.ALLOCATED(M_GENARR_MOD(ng)%XYTST_G))                 &
-     &             ALLOCATE (M_GENARR_MOD(ng)%XYTST_G(2*NPTSTA))
+          ALLOCATE (M_GENARR_MOD(ng)%XYTST_G(2*NPTSTA))
           XYTST=>M_GENARR_MOD(ng)%XYTST_G
 #else
           IF (.NOT.ALLOCATED(XYTST)) ALLOCATE(XYTST(2*NPTSTA))            40.31
@@ -1139,11 +1138,9 @@
             JVY2   = MCMVAR
           ENDIF
 # ifdef MODEL_COUPLING
-          IF (.NOT.ALLOCATED(M_GENARR_MOD(ng)%UXB_G))                   &
-     &            ALLOCATE (M_GENARR_MOD(ng)%UXB_G(MXG(IGR1),MYG(IGR1)))  40.31
+          ALLOCATE (M_GENARR_MOD(ng)%UXB_G(MXG(IGR1),MYG(IGR1)))            40.31
           UXB=>M_GENARR_MOD(ng)%UXB_G
-          IF (.NOT.ALLOCATED(M_GENARR_MOD(ng)%UYB_G))                   &
-     &            ALLOCATE (M_GENARR_MOD(ng)%UYB_G(MXG(IGR2),MYG(IGR2)))  40.31
+          ALLOCATE (M_GENARR_MOD(ng)%UYB_G(MXG(IGR2),MYG(IGR2)))            40.31
           UYB=>M_GENARR_MOD(ng)%UYB_G
 # else
           IF (.NOT.ALLOCATED(UXB)) ALLOCATE(UXB(MXG(IGR1),MYG(IGR1)))
@@ -1172,13 +1169,12 @@
           MCMVAR = MCMVAR + 2                                               40.00
           JFRC2  = MCMVAR - 1                                               40.00
           JFRC3  = MCMVAR                                                   40.00
-          IF (.NOT.ALLOCATED(M_GENARR_MOD(ng)%FRIC_G))                  &
-     &           ALLOCATE (M_GENARR_MOD(ng)%FRIC_G(MXG(IGR1),MYG(IGR1)))  40.31
+          ALLOCATE (M_GENARR_MOD(ng)%FRIC_G(MXG(IGR1),MYG(IGR1)))           40.31
           FRIC=>M_GENARR_MOD(ng)%FRIC_G
 #endif
         ELSE IF (KEYWIS ('WI')) THEN
           IGRD = 5
-          IGR2 = 6                                                        10.26
+          IGR2 = 6                                                          10.26
           PSNAME = 'WXGRID  '
 #if defined AIR_OCEAN
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
@@ -1192,13 +1188,13 @@
             JWX2   = MCMVAR - 1
             JWY2   = MCMVAR
           ENDIF
-          IF (.NOT.ALLOCATED(TARR)) THEN                                    40.41
-             ALLOCATE( TARR(MXG(IGR2)*MYG(IGR2)) )                          40.41
-             TARR = 0.                                                      40.41
-          END IF                                                            40.41
+          IF (.NOT.ALLOCATED(TARR)) THEN                                   40.41
+             ALLOCATE( TARR(MXG(IGR2)*MYG(IGR2)) )                         40.41
+             TARR = 0.                                                     40.41
+          END IF                                                           40.41
           IF (.NOT.ALLOCATED(WXI)) ALLOCATE(WXI(MXG(IGR1),MYG(IGR1)))      40.31
           CALL SWCOPR( TARR, WXI, MXG(IGR1)*MYG(IGR1) )                    40.31
-          IF (.NOT.ALLOCATED(WYI)) ALLOCATE(WYI(MXG(IGR2),MYG(IGR2)))    40.31
+          IF (.NOT.ALLOCATED(WYI)) ALLOCATE(WYI(MXG(IGR2),MYG(IGR2)))      40.31
           CALL SWCOPR( TARR, WYI, MXG(IGR2)*MYG(IGR2) )                    40.31
           DEALLOCATE(TARR)
 #endif
@@ -1214,7 +1210,7 @@
 #ifdef MODEL_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
-        ELSE IF (KEYWIS ('WLEV')) THEN                                    20.38
+        ELSE IF (KEYWIS ('WLEV')) THEN                                      20.38
           IGRD = 7
           PSNAME = 'WLEVGRID'
 #ifdef MODEL_COUPLING
@@ -1226,8 +1222,7 @@
             JWLV2  = MCMVAR - 1
             JWLV3  = MCMVAR
           ENDIF
-          IF (.NOT.ALLOCATED(M_GENARR_MOD(ng)%WLEVL_G))                 &
-     &          ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(MXG(IGR1),MYG(IGR1)))  40.31
+          ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(MXG(IGR1),MYG(IGR1)))        40.31
           WLEVL=>M_GENARR_MOD(ng)%WLEVL_G
 #endif
 !       note: 8 and 9 are for coordinates                                 40.03
@@ -1488,11 +1483,9 @@
         ENDIF
 !
 #ifdef MODEL_COUPLING
-        IF(.NOT.ALLOCATED(M_GENARR_MOD(ng)%SPCSIG_G))                   &
-     &          ALLOCATE (M_GENARR_MOD(ng)%SPCSIG_G(MSC))
+        ALLOCATE (M_GENARR_MOD(ng)%SPCSIG_G(MSC))
         SPCSIG=>M_GENARR_MOD(ng)%SPCSIG_G
-        IF(.NOT.ALLOCATED(M_GENARR_MOD(ng)%SPCDIR_G))                   &
-     &          ALLOCATE (M_GENARR_MOD(ng)%SPCDIR_G(MDC,6))
+        ALLOCATE (M_GENARR_MOD(ng)%SPCDIR_G(MDC,6))
         SPCDIR=>M_GENARR_MOD(ng)%SPCDIR_G
 #else
         IF(.NOT.ALLOCATED(SPCSIG)) ALLOCATE(SPCSIG(MSC))                  40.31
@@ -1514,11 +1507,9 @@
         ENDIF
 !
 #ifdef MODEL_COUPLING
-        IF(.NOT.ALLOCATED(M_GENARR_MOD(ng)%XCGRID_G))                   &
-     &          ALLOCATE (M_GENARR_MOD(ng)%XCGRID_G(MXC,MYC))
+        ALLOCATE (M_GENARR_MOD(ng)%XCGRID_G(MXC,MYC))
         XCGRID=>M_GENARR_MOD(ng)%XCGRID_G
-        IF(.NOT.ALLOCATED(M_GENARR_MOD(ng)%YCGRID_G))                   &
-     &          ALLOCATE (M_GENARR_MOD(ng)%YCGRID_G(MXC,MYC))
+        ALLOCATE (M_GENARR_MOD(ng)%YCGRID_G(MXC,MYC))
         YCGRID=>M_GENARR_MOD(ng)%YCGRID_G
 #else
         IF(.NOT.ALLOCATED(XCGRID)) ALLOCATE(XCGRID(MXC,MYC))              40.31
@@ -3274,35 +3265,29 @@
       IF (STPNOW()) RETURN                                                34.01
 #ifdef MODEL_COUPLING
       IF (IGR1.EQ.1) THEN                                                 40.31
-         IF (.NOT.ALLOCATED(M_GENARR_MOD(ng)%DEPTH_G))                  &
-     &          ALLOCATE (M_GENARR_MOD(ng)%DEPTH_G(MXG(IGR1),MYG(IGR1)))  40.31
+         ALLOCATE (M_GENARR_MOD(ng)%DEPTH_G(MXG(IGR1),MYG(IGR1)))         40.31
          DEPTH=>M_GENARR_MOD(ng)%DEPTH_G
          CALL SWCOPR( TARR, DEPTH, MXG(IGR1)*MYG(IGR1) )                  40.31
       ELSE IF (IGR1.EQ.2) THEN                                            40.31
-         IF (.NOT.ALLOCATED(M_GENARR_MOD(ng)%UXB_G))                    &
-     &            ALLOCATE (M_GENARR_MOD(ng)%UXB_G(MXG(IGR1),MYG(IGR1)))  40.31
+         ALLOCATE (M_GENARR_MOD(ng)%UXB_G(MXG(IGR1),MYG(IGR1)))           40.31
          UXB=>M_GENARR_MOD(ng)%UXB_G
          CALL SWCOPR( TARR, UXB, MXG(IGR1)*MYG(IGR1) )                    40.31
       ELSE IF (IGR1.EQ.4) THEN                                            40.31
-         IF (.NOT.ALLOCATED(M_GENARR_MOD(ng)%FRIC_G))                   &
-     &           ALLOCATE (M_GENARR_MOD(ng)%FRIC_G(MXG(IGR1),MYG(IGR1)))  40.31
+         ALLOCATE (M_GENARR_MOD(ng)%FRIC_G(MXG(IGR1),MYG(IGR1)))          40.31
          FRIC=>M_GENARR_MOD(ng)%FRIC_G
          CALL SWCOPR( TARR, FRIC, MXG(IGR1)*MYG(IGR1) )                   40.31
       ELSE IF (IGR1.EQ.5) THEN                                            40.31
-         IF (.NOT.ALLOCATED(M_GENARR_MOD(ng)%WXI_G))                    &
-     &            ALLOCATE (M_GENARR_MOD(ng)%WXI_G(MXG(IGR1),MYG(IGR1)))  40.31
+         ALLOCATE (M_GENARR_MOD(ng)%WXI_G(MXG(IGR1),MYG(IGR1)))           40.31
          WXI=>M_GENARR_MOD(ng)%WXI_G
          CALL SWCOPR( TARR, WXI, MXG(IGR1)*MYG(IGR1) )                    40.31
       ELSE IF (IGR1.EQ.7) THEN                                            40.31
-         IF (.NOT.ALLOCATED(M_GENARR_MOD(ng)%WLEVL_G))                  &
-     &          ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(MXG(IGR1),MYG(IGR1)))  40.31
+         ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(MXG(IGR1),MYG(IGR1)))         40.31
          WLEVL=>M_GENARR_MOD(ng)%WLEVL_G
          CALL SWCOPR( TARR, WLEVL, MXG(IGR1)*MYG(IGR1) )                  40.31
       ELSE IF (IGR1.EQ.8) THEN                                            40.31
          CALL SWCOPR( TARR, XCGRID, MXG(IGR1)*MYG(IGR1) )                 40.31
       ELSE IF (IGR1.EQ.10) THEN                                           40.31
-         IF (.NOT.ALLOCATED(M_GENARR_MOD(ng)%ASTDF_G))                  &
-     &          ALLOCATE (M_GENARR_MOD(ng)%ASTDF_G(MXG(IGR1),MYG(IGR1)))  40.31
+         ALLOCATE (M_GENARR_MOD(ng)%ASTDF_G(MXG(IGR1),MYG(IGR1)))         40.31
          ASTDF=>M_GENARR_MOD(ng)%ASTDF_G
          CALL SWCOPR( TARR, ASTDF, MXG(IGR1)*MYG(IGR1) )                  40.31
       END IF                                                              40.31
@@ -3346,13 +3331,11 @@
 
 #ifdef MODEL_COUPLING
       IF (IGR2.EQ.3) THEN                                                 40.31
-         IF (.NOT.ALLOCATED(M_GENARR_MOD(ng)%UYB_G))                    &
-     &            ALLOCATE (M_GENARR_MOD(ng)%UYB_G(MXG(IGR2),MYG(IGR2)))  40.31
+         ALLOCATE (M_GENARR_MOD(ng)%UYB_G(MXG(IGR2),MYG(IGR2)))           40.31
          UYB=>M_GENARR_MOD(ng)%UYB_G
          CALL SWCOPR( TARR, UYB, MXG(IGR2)*MYG(IGR2) )                    40.31
       ELSE IF (IGR2.EQ.6) THEN                                            40.31
-         IF (.NOT.ALLOCATED(M_GENARR_MOD(ng)%WYI_G))                    &
-     &            ALLOCATE (M_GENARR_MOD(ng)%WYI_G(MXG(IGR2),MYG(IGR2)))  40.31
+         ALLOCATE (M_GENARR_MOD(ng)%WYI_G(MXG(IGR2),MYG(IGR2)))           40.31
          WYI=>M_GENARR_MOD(ng)%WYI_G
          CALL SWCOPR( TARR, WXI, MXG(IGR1)*MYG(IGR1) )                    40.31
       ELSE IF (IGR2.EQ.9) THEN                                            40.31
@@ -3697,8 +3680,7 @@
 !     --- Calculation of computational grid dimension ***
 !
 #ifdef MODEL_COUPLING
-      IF(.NOT.ALLOCATED(PARALL_MOD(ng)%KGRPGL_G))                       &
-     &        ALLOCATE (PARALL_MOD(ng)%KGRPGL_G(MXC,MYC))
+      ALLOCATE (PARALL_MOD(ng)%KGRPGL_G(MXC,MYC))
       KGRPGL=>PARALL_MOD(ng)%KGRPGL_G
 #else
       IF(.NOT.ALLOCATED(KGRPGL)) ALLOCATE(KGRPGL(MXC,MYC))                40.31
@@ -3710,8 +3692,7 @@
 !
       IF (ONED) THEN                                                      30.81
 #ifdef MODEL_COUPLING
-        IF(.NOT.ALLOCATED(PARALL_MOD(ng)%KGRBGL_G))                     &
-     &          ALLOCATE (PARALL_MOD(ng)%KGRBGL_G(4))
+        ALLOCATE (PARALL_MOD(ng)%KGRBGL_G(4))
         KGRBGL=>PARALL_MOD(ng)%KGRBGL_G
 #else
         IF(.NOT.ALLOCATED(KGRBGL)) ALLOCATE(KGRBGL(4))                    40.31
@@ -3722,8 +3703,7 @@
         CALL CGBOUN ( KGRPGL, IARR )                                      40.31 40.04
         IF ( NGRBND.GT.0 ) THEN                                           40.31
 #ifdef MODEL_COUPLING
-           IF(.NOT.ALLOCATED(PARALL_MOD(ng)%KGRBGL_G))                     &
-     &             ALLOCATE (PARALL_MOD(ng)%KGRBGL_G(2*NGRBND))
+           ALLOCATE (PARALL_MOD(ng)%KGRBGL_G(2*NGRBND))
            KGRBGL=>PARALL_MOD(ng)%KGRBGL_G
 #else
            IF(.NOT.ALLOCATED(KGRBGL)) ALLOCATE(KGRBGL(2*NGRBND))          40.31
@@ -3731,8 +3711,7 @@
            CALL SWCOPI(IARR,KGRBGL,2*NGRBND)                              40.31
         ELSE                                                              40.31
 #ifdef MODEL_COUPLING
-           IF(.NOT.ALLOCATED(PARALL_MOD(ng)%KGRBGL_G))                     &
-     &             ALLOCATE (PARALL_MOD(ng)%KGRBGL_G(0))
+           ALLOCATE (PARALL_MOD(ng)%KGRBGL_G(0))
            KGRBGL=>PARALL_MOD(ng)%KGRBGL_G
 #else
            IF(.NOT.ALLOCATED(KGRBGL)) ALLOCATE(KGRBGL(0))                 40.31
@@ -3758,8 +3737,7 @@
 !     --- Create copy of parts of KGRPGL for each subdomain -> KGRPNT     40.31
 
 #ifdef MODEL_COUPLING
-      IF(.NOT.ALLOCATED(M_GENARR_MOD(ng)%KGRPNT_G))                     &
-     &        ALLOCATE (M_GENARR_MOD(ng)%KGRPNT_G(MXC,MYC))
+      ALLOCATE (M_GENARR_MOD(ng)%KGRPNT_G(MXC,MYC))
       KGRPNT=>M_GENARR_MOD(ng)%KGRPNT_G
 #else
       IF(.NOT.ALLOCATED(KGRPNT)) ALLOCATE(KGRPNT(MXC,MYC))                40.31
@@ -3779,11 +3757,9 @@
 !     --- Create copies of parts of XCGRID, YCGRID for each subdomain     40.31
 
 #ifdef MODEL_COUPLING
-      IF(.NOT.ALLOCATED(PARALL_MOD(ng)%XGRDGL_G))                       &
-     &        ALLOCATE (PARALL_MOD(ng)%XGRDGL_G(MXCGL,MYCGL))
+      ALLOCATE (PARALL_MOD(ng)%XGRDGL_G(MXCGL,MYCGL))
       XGRDGL=>PARALL_MOD(ng)%XGRDGL_G
-      IF(.NOT.ALLOCATED(PARALL_MOD(ng)%YGRDGL_G))                       &
-     &        ALLOCATE (PARALL_MOD(ng)%YGRDGL_G(MXCGL,MYCGL))
+      ALLOCATE (PARALL_MOD(ng)%YGRDGL_G(MXCGL,MYCGL))
       YGRDGL=>PARALL_MOD(ng)%YGRDGL_G
 #else
       IF (.NOT.ALLOCATED(XGRDGL)) ALLOCATE(XGRDGL(MXCGL,MYCGL))           40.31
@@ -3795,11 +3771,9 @@
 #ifdef MODEL_COUPLING
       DEALLOCATE(M_GENARR_MOD(ng)%XCGRID_G)
       DEALLOCATE(M_GENARR_MOD(ng)%YCGRID_G)
-      IF(.NOT.ALLOCATED(M_GENARR_MOD(ng)%XCGRID_G))                     &
-     &        ALLOCATE (M_GENARR_MOD(ng)%XCGRID_G(MXC,MYC))
+      ALLOCATE (M_GENARR_MOD(ng)%XCGRID_G(MXC,MYC))
       XCGRID=>M_GENARR_MOD(ng)%XCGRID_G
-      IF(.NOT.ALLOCATED(M_GENARR_MOD(ng)%YCGRID_G))                     &
-     &        ALLOCATE (M_GENARR_MOD(ng)%YCGRID_G(MXC,MYC))
+      ALLOCATE (M_GENARR_MOD(ng)%YCGRID_G(MXC,MYC))
       YCGRID=>M_GENARR_MOD(ng)%YCGRID_G
 #else
       DEALLOCATE(XCGRID,YCGRID)                                           40.31
@@ -3837,8 +3811,7 @@
             IARR = 0                                                      40.31
             CALL CGBOUN ( KGRPNT, IARR )                                  40.31
 #ifdef MODEL_COUPLING
-            IF(.NOT.ALLOCATED(M_GENARR_MOD(ng)%KGRBND_G))               &
-     &              ALLOCATE (M_GENARR_MOD(ng)%KGRBND_G(2*NGRBND))
+            ALLOCATE (M_GENARR_MOD(ng)%KGRBND_G(2*NGRBND))
             KGRBND=>M_GENARR_MOD(ng)%KGRBND_G
 #else
             IF(.NOT.ALLOCATED(KGRBND)) ALLOCATE(KGRBND(2*NGRBND))         40.31
@@ -3846,8 +3819,7 @@
             IF (NGRBND.GT.0) CALL SWCOPI(IARR,KGRBND,2*NGRBND)            40.31
          ELSE                                                             40.31
 #ifdef MODEL_COUPLING
-            IF(.NOT.ALLOCATED(M_GENARR_MOD(ng)%KGRBND_G))               &
-     &              ALLOCATE (M_GENARR_MOD(ng)%KGRBND_G(2*NGRBND))
+            ALLOCATE (M_GENARR_MOD(ng)%KGRBND_G(2*NGRBND))
             KGRBND=>M_GENARR_MOD(ng)%KGRBND_G
 #else
             IF(.NOT.ALLOCATED(KGRBND)) ALLOCATE(KGRBND(2*NGRBND))         40.31
@@ -3856,8 +3828,7 @@
          END IF                                                           40.31
       ELSE                                                                40.31
 #ifdef MODEL_COUPLING
-         IF(.NOT.ALLOCATED(M_GENARR_MOD(ng)%KGRBND_G))                  &
-     &          ALLOCATE (M_GENARR_MOD(ng)%KGRBND_G(0))
+         ALLOCATE (M_GENARR_MOD(ng)%KGRBND_G(0))
          KGRBND=>M_GENARR_MOD(ng)%KGRBND_G
 #else
          IF(.NOT.ALLOCATED(KGRBND)) ALLOCATE(KGRBND(0))                   40.31
@@ -3868,8 +3839,7 @@
       CALL SWTSTO(212)                                                    40.31
 
 #ifdef MODEL_COUPLING
-      IF(.NOT.ALLOCATED(M_GENARR_MOD(ng)%AC2_G))                        &
-     &       ALLOCATE (M_GENARR_MOD(ng)%AC2_G(MDC,MSC,MCGRD),STAT=ISTAT)
+      ALLOCATE (M_GENARR_MOD(ng)%AC2_G(MDC,MSC,MCGRD),STAT=ISTAT)
       AC2=>M_GENARR_MOD(ng)%AC2_G
 #else
       IF(.NOT.ALLOCATED(AC2)) ALLOCATE(AC2(MDC,MSC,MCGRD),STAT=ISTAT)     40.41 40.31

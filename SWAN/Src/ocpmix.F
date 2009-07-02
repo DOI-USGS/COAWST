@@ -1251,7 +1251,9 @@
       USE OCPCOMM3                                                        40.41
       USE OCPCOMM4                                                        40.41
       USE M_PARALL                                                        40.31
+#ifdef MODEL_COUPLING
       USE M_COUPLING
+#endif
 !
       IMPLICIT NONE
 !
@@ -1339,7 +1341,7 @@
 
 #ifdef MODEL_COUPLING
       CHARACTER (LEN=LENFNM), SAVE :: ERRFNM = 'Errfile'
-      WRITE(ERRFNM(8:9),181) ng
+      WRITE(ERRFNM(8:9),181) Gridnum
  181  FORMAT(I2.2)
 #else
       CHARACTER (LEN=LENFNM), SAVE :: ERRFNM = 'Errfile'                  40.31 40.03

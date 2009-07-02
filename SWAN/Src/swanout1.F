@@ -42,7 +42,7 @@
       USE M_MPI
       USE WAVES_COUPLER_MOD, ONLY: WAV2OCN_COUPLING
       USE mod_param
-      USE M_PARALL2
+!      USE M_PARALL2
 #endif
 !
 !

@@ -2108,8 +2108,7 @@
 
 !     --- allocate and initialize array for block administration
 #ifdef MODEL_COUPLING
-      IF (.NOT.ALLOCATED(PARALL_MOD(ng)%IBLKAD_G))                      &
-     &         ALLOCATE (PARALL_MOD(ng)%IBLKAD_G(41+20*MAX(MXC,MYC)))
+      ALLOCATE (PARALL_MOD(ng)%IBLKAD_G(41+20*MAX(MXC,MYC)))
       IBLKAD=>PARALL_MOD(ng)%IBLKAD_G
 #else
       IF (.NOT.ALLOCATED(IBLKAD)) ALLOCATE(IBLKAD(41+20*MAX(MXC,MYC)))

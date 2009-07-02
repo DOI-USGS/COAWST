@@ -58,7 +58,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, inp, ModelId
+      integer :: i, inp, ModelId, ng
       integer :: MyColor, MyKey, MyRank
       INTEGER :: MySize, MyError, MyStatus, MyHandle
       logical, allocatable :: run_grid(:)
@@ -118,10 +118,12 @@
 !
       DO ng=1,Ngrids
         CALL SWAN_RUN (CouplingTime, 0, ng, 0)
+#ifdef REFINED_GRID
         IF (ng.lt.Ngrids) THEN
           CALL MPI_BCAST(PARALL2_MOD(ng)%AC2_parent2_G,                 &
      &      ac2size(ng),SWREAL,0,MyCOMM,MyError)
         END IF
+#endif
       END DO
 !
 !  Set some initial run time parameters here.
@@ -152,10 +154,12 @@
 !
 !  Get AC data from parent.
 !
+#ifdef REFINED_GRID
             IF (ng.lt.Ngrids) THEN
               CALL MPI_BCAST(PARALL2_MOD(ng)%AC2_parent2_G,           &
      &                         ac2size(ng),SWREAL,0,MyCOMM,MyError)
             END IF
+#endif
 !
 !  Run each grid
 !
@@ -215,23 +219,9 @@
 !  Run model for all nested grids, if any.
 !-----------------------------------------------------------------------
 
-      NL_LOOP : DO count1=0, NumSWANsteps
+      NL_LOOP : DO count1=0,1
 
-        IF (ng.eq.1) THEN
-          sc(1)=count1
-          CALL SWAN_RUN (CouplingTime, sc(1))
-        END IF
 
-#if defined REFINED_GRID
-        IF (ng.eq.2) THEN
-          DO count2=1,nrefined(2)
-            CALL mpi_barrier(MyCOMM_wave, MyError)
-            sc(2)=sc(1)*nrefined(1)*nrefined(2)+count2
-            CALL SWAN_RUN (CouplingTime, sc(ng))
-          END DO
-        END IF
-
-#endif
         IF (exit_flag.ne.NoError) THEN
           IF (MyRank.eq.0) THEN
             WRITE (stdout,'(/,a,i3,/)') Rerror(exit_flag), exit_flag

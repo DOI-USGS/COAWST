@@ -807,7 +807,8 @@
 !  Export fields from ocean (ROMS) to wave (SWAN) model.
 !-----------------------------------------------------------------------
 # ifdef REFINED_GRID
-      CALL AttrVect_init (ocn2wav_AV, rList=TRIM(ExportList(Iocean)),   &
+      CALL AttrVect_init (ocn2wav_AV,                                   &
+     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
      &                    lsize=Asize)
       CALL AttrVect_zero (ocn2wav_AV)
 # endif

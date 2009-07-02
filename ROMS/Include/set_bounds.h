@@ -22,7 +22,7 @@
       integer :: Jstr, JstrR, JstrT, JstrV, Jend, JendR, JendT
 #if defined COMPOSED_GRID || defined REFINED_GRID
       integer :: IstrC, IendC, JstrC, JendC
-      integer :: IstrTU, JstrTV
+      integer :: IstrTU, JstrTV, IendTU, JendTV
 #endif
 !
       Istr =BOUNDS(ng)%Istr (tile)
@@ -43,4 +43,6 @@
 #ifdef REFINED_GRID
       IstrTU=BOUNDS(ng)%IstrTU(tile)
       JstrTV=BOUNDS(ng)%JstrTV(tile)
+      IendTU=BOUNDS(ng)%IendTU(tile)
+      JendTV=BOUNDS(ng)%JendTV(tile)
 #endif

@@ -158,6 +158,8 @@
           allocate ( BOUNDS(ng) % JendT(-1:Ntiles) )
           allocate ( BOUNDS(ng) % IstrTU(-1:Ntiles) )
           allocate ( BOUNDS(ng) % JstrTV(-1:Ntiles) )
+          allocate ( BOUNDS(ng) % IendTU(-1:Ntiles) )
+          allocate ( BOUNDS(ng) % JendTV(-1:Ntiles) )
         END DO
       END IF
 !
@@ -183,7 +185,9 @@
      &                   BOUNDS(ng) % JendR(tile),                      &
      &                   BOUNDS(ng) % JendT(tile),                      &
      &                   BOUNDS(ng) % IstrTU(tile),                     &
-     &                   BOUNDS(ng) % JstrTV(tile))
+     &                   BOUNDS(ng) % JstrTV(tile),                     &
+     &                   BOUNDS(ng) % IendTU(tile),                     &
+     &                   BOUNDS(ng) % JendTV(tile))
           CALL get_bounds (ng, tile, 0, Nghost, Itile, Jtile,           &
      &                     BOUNDS(ng) % LBi(tile),                      &
      &                     BOUNDS(ng) % UBi(tile),                      &

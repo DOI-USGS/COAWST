@@ -148,6 +148,8 @@
       USE WAVES_COUPLER_MOD, ONLY: INITIALIZE_WAV2OCN_COUPLING
 #endif
 #ifdef MODEL_COUPLING
+      USE SWPOINT_MOD, ONLY: INIT_POINTERS, ALLOCATE_SWAN_ARRAYS
+      USE M_COUPLING
       USE M_BNDSPEC
 #endif
 !
@@ -363,194 +365,20 @@
 !
 #ifdef MODEL_COUPLING
 
-!     --- initialize MPI
-!
-!  Allocate Type arrays
-!
-      IF (ng.eq.1) THEN
-        ALLOCATE (M_GENARR_MOD(Ngrids))
-        ALLOCATE (PARALL_MOD(Ngrids))
-        ALLOCATE (PARALL2_MOD(Ngrids))
-        ALLOCATE (BGPDATZ_MOD(Ngrids))
-        ALLOCATE (OPSDATZ_MOD(Ngrids))
-        ALLOCATE (ORQDATZ_MOD(Ngrids))
-
-!new here tiontie
-        ALLOCATE(BGPDATZ_MOD(Ngrids))
-      END IF
-
-!new here tiontie
+      Numgrids=Ngrids
+      Gridnum=ng
+      CALL ALLOCATE_SWAN_ARRAYS(ng, Ngrids)
       ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
       ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
-
-      Numgrids=Ngrids
 !
-!  Allocate pointers
-!
-!  M_BNDSPEC
-!
-      IF (.not.allocated(LBGP_G)) ALLOCATE (LBGP_G(Numgrids))
-      LBGP_G(ng)=.FALSE.
-      LBGP=>LBGP_G(ng)
-!
-!  M_PARALL
-!
-      IF (.not.allocated(MCGRDGL_G)) ALLOCATE (MCGRDGL_G(Numgrids))
-      MCGRDGL=>MCGRDGL_G(ng)
-      IF (.not.allocated(NGRBGL_G)) ALLOCATE (NGRBGL_G(Numgrids))
-      NGRBGL=>NGRBGL_G(ng)
-      IF (.not.allocated(MXCGL_G)) ALLOCATE (MXCGL_G(Numgrids))
-      MXCGL=>MXCGL_G(ng)
-      IF (.not.allocated(MYCGL_G)) ALLOCATE (MYCGL_G(Numgrids))
-      MYCGL=>MYCGL_G(ng)
-      IF (.not.allocated(MXF_G)) ALLOCATE (MXF_G(Numgrids))
-      MXF=>MXF_G(ng)
-      IF (.not.allocated(MXL_G)) ALLOCATE (MXL_G(Numgrids))
-      MXL=>MXL_G(ng)
-      IF (.not.allocated(MYF_G)) ALLOCATE (MYF_G(Numgrids))
-      MYF=>MYF_G(ng)
-      IF (.not.allocated(MYL_G)) ALLOCATE (MYL_G(Numgrids))
-      MYL=>MYL_G(ng)
-      IF (.not.allocated(NBGGL_G)) ALLOCATE (NBGGL_G(Numgrids))
-      NBGGL=>NBGGL_G(ng)
-      IF (.not.allocated(XCLMAX_G)) ALLOCATE (XCLMAX_G(Numgrids))
-      XCLMAX=>XCLMAX_G(ng)
-      IF (.not.allocated(YCLMAX_G)) ALLOCATE (YCLMAX_G(Numgrids))
-      YCLMAX=>YCLMAX_G(ng)
-      IF (.not.allocated(XCLMIN_G)) ALLOCATE (XCLMIN_G(Numgrids))
-      XCLMIN=>XCLMIN_G(ng)
-      IF (.not.allocated(YCLMIN_G)) ALLOCATE (YCLMIN_G(Numgrids))
-      YCLMIN=>YCLMIN_G(ng)
-      IF (.not.allocated(LMXF_G)) ALLOCATE (LMXF_G(Numgrids))
-      LMXF=>LMXF_G(ng)
-      IF (.not.allocated(LMXL_G)) ALLOCATE (LMXL_G(Numgrids))
-      LMXL=>LMXL_G(ng)
-      IF (.not.allocated(LMYF_G)) ALLOCATE (LMYF_G(Numgrids))
-      LMYF=>LMYF_G(ng)
-      IF (.not.allocated(LMYL_G)) ALLOCATE (LMYL_G(Numgrids))
-      LMYL=>LMYL_G(ng)
-!
-!  SWANCOMM3
-!
-      IF (.not.allocated(MXC_G)) ALLOCATE (MXC_G(Numgrids))
-      MXC=>MXC_G(ng)
-      IF (.not.allocated(MYC_G)) ALLOCATE (MYC_G(Numgrids))
-      MYC=>MYC_G(ng)
-      IF (.not.allocated(MCGRD_G)) ALLOCATE (MCGRD_G(Numgrids))
-      MCGRD=>MCGRD_G(ng)
-      IF (.not.allocated(NGRBND_G)) ALLOCATE (NGRBND_G(Numgrids))
-      NGRBND=>NGRBND_G(ng)
-      IF (.not.allocated(MSC_G)) ALLOCATE (MSC_G(Numgrids))
-      MSC=>MSC_G(ng)
-      IF (.not.allocated(MDC_G)) ALLOCATE (MDC_G(Numgrids))
-      MDC=>MDC_G(ng)
-      IF (.not.allocated(MTC_G)) ALLOCATE (MTC_G(Numgrids))
-      MTC=>MTC_G(ng)
-!
-!  TIMECOMM
-!
-      IF (.not.allocated(TINIC_G)) ALLOCATE (TINIC_G(Numgrids))
-      TINIC=>TINIC_G(ng)
-      IF (.not.allocated(DT_G)) ALLOCATE (DT_G(Numgrids))
-      DT=>DT_G(ng)
-      IF (.not.allocated(TFINC_G)) ALLOCATE (TFINC_G(Numgrids))
-      TFINC=>TFINC_G(ng)
-      IF (.not.allocated(TIMCO_G)) ALLOCATE (TIMCO_G(Numgrids))
-      TIMCO=>TIMCO_G(ng)
-!
-!  SWCOMM1
-!
-      IF (.not.allocated(CHTIME_G)) ALLOCATE (CHTIME_G(Numgrids))
-      CHTIME=>CHTIME_G(ng)
-!
-! OUTP_DATA
-!
-      IF (.not.allocated(NREOQ_G)) ALLOCATE (NREOQ_G(Numgrids))
       NREOQ_G(ng)=0
-      NREOQ=>NREOQ_G(ng)
-      IF (.not.allocated(LOPS_G)) ALLOCATE (LOPS_G(Numgrids))
       LOPS_G(ng)=.FALSE.
-      LOPS=>LOPS_G(ng)
-      IF (.not.allocated(LORQ_G)) ALLOCATE (LORQ_G(Numgrids))
       LORQ_G(ng)=.FALSE.
-      LORQ=>LORQ_G(ng)
+
+      CALL INIT_POINTERS(ng)
 !
-      ALLOCATE (ORQDATZ_MOD(ng)%FORQ)
+!     --- initialize MPI
 !
-!  SWANCOMM2
-!
-      IF (.not.allocated(CVLEFT_G)) ALLOCATE (CVLEFT_G(Numgrids))
-      CVLEFT=>CVLEFT_G(ng)
-      IF (.not.allocated(LXOFFS_G)) ALLOCATE (LXOFFS_G(Numgrids))
-      LXOFFS=>LXOFFS_G(ng)
-      IF (.not.allocated(VARFR_G)) ALLOCATE (VARFR_G(Numgrids))
-      VARFR=>VARFR_G(ng)
-      IF (.not.allocated(VARWI_G)) ALLOCATE (VARWI_G(Numgrids))
-      VARWI=>VARWI_G(ng)
-      IF (.not.allocated(VARWLV_G)) ALLOCATE (VARWLV_G(Numgrids))
-      VARWLV=>VARWLV_G(ng)
-      IF (.not.allocated(DYNDEP_G)) ALLOCATE (DYNDEP_G(Numgrids))
-      DYNDEP=>DYNDEP_G(ng)
-      IF (.not.allocated(VARAST_G)) ALLOCATE (VARAST_G(Numgrids))
-      VARAST=>VARAST_G(ng)
-      IF (.not.allocated(ICOND_G)) ALLOCATE (ICOND_G(Numgrids))
-      ICOND=>ICOND_G(ng)
-      IF (.not.allocated(NWAMN_G)) ALLOCATE (NWAMN_G(Numgrids))
-      NWAMN=>NWAMN_G(ng)
-      IF (.not.allocated(OPTG_G)) ALLOCATE (OPTG_G(Numgrids))
-      OPTG=>OPTG_G(ng)
-      IF (.not.allocated(NBFILS_G)) ALLOCATE (NBFILS_G(Numgrids))
-      NBFILS=>NBFILS_G(ng)
-      IF (.not.allocated(NBSPEC_G)) ALLOCATE (NBSPEC_G(Numgrids))
-      NBSPEC=>NBSPEC_G(ng)
-      IF (.not.allocated(NBGRPT_G)) ALLOCATE (NBGRPT_G(Numgrids))
-      NBGRPT=>NBGRPT_G(ng)
-
-      IF (.not.allocated(MXG_G)) ALLOCATE (MXG_G(Numgrids,NUMGRD))
-      MXG=>MXG_G(ng,:)
-      IF (.not.allocated(MYG_G)) ALLOCATE (MYG_G(Numgrids,NUMGRD))
-      MYG=>MYG_G(ng,:)
-      IF (.not.allocated(IGTYPE_G)) ALLOCATE (IGTYPE_G(Numgrids,NUMGRD))
-      IGTYPE=>IGTYPE_G(ng,:)
-      IF (.not.allocated(LEDS_G)) ALLOCATE (LEDS_G(Numgrids,NUMGRD))
-      LEDS=>LEDS_G(ng,:)
-
-      IF (.not.allocated(COSVC_G)) ALLOCATE (COSVC_G(Numgrids))
-      COSVC=>COSVC_G(ng)
-      IF (.not.allocated(COSWC_G)) ALLOCATE (COSWC_G(Numgrids))
-      COSWC=>COSWC_G(ng)
-      IF (.not.allocated(RDTIM_G)) ALLOCATE (RDTIM_G(Numgrids))
-      RDTIM=>RDTIM_G(ng)
-      IF (.not.allocated(SINVC_G)) ALLOCATE (SINVC_G(Numgrids))
-      SINVC=>SINVC_G(ng)
-      IF (.not.allocated(SINWC_G)) ALLOCATE (SINWC_G(Numgrids))
-      SINWC=>SINWC_G(ng)
-      IF (.not.allocated(XOFFS_G)) ALLOCATE (XOFFS_G(Numgrids))
-      XOFFS=>XOFFS_G(ng)
-      IF (.not.allocated(YOFFS_G)) ALLOCATE (YOFFS_G(Numgrids))
-      YOFFS=>YOFFS_G(ng)
-
-      IF (.not.allocated(ALPG_G)) ALLOCATE (ALPG_G(Numgrids,NUMGRD))
-      ALPG=>ALPG_G(ng,:)
-      IF (.not.allocated(COSPG_G)) ALLOCATE (COSPG_G(Numgrids,NUMGRD))
-      COSPG=>COSPG_G(ng,:)
-      IF (.not.allocated(DXG_G)) ALLOCATE (DXG_G(Numgrids,NUMGRD))
-      DXG=>DXG_G(ng,:)
-      IF (.not.allocated(DYG_G)) ALLOCATE (DYG_G(Numgrids,NUMGRD))
-      DYG=>DYG_G(ng,:)
-      IF (.not.allocated(EXCFLD_G)) ALLOCATE (EXCFLD_G(Numgrids,NUMGRD))
-      EXCFLD=>EXCFLD_G(ng,:)
-      IF (.not.allocated(SINPG_G)) ALLOCATE (SINPG_G(Numgrids,NUMGRD))
-      SINPG=>SINPG_G(ng,:)
-      IF (.not.allocated(STAGX_G)) ALLOCATE (STAGX_G(Numgrids,NUMGRD))
-      STAGX=>STAGX_G(ng,:)
-      IF (.not.allocated(STAGY_G)) ALLOCATE (STAGY_G(Numgrids,NUMGRD))
-      STAGY=>STAGY_G(ng,:)
-      IF (.not.allocated(XPG_G)) ALLOCATE (XPG_G(Numgrids,NUMGRD))
-      XPG=>XPG_G(ng,:)
-      IF (.not.allocated(YPG_G)) ALLOCATE (YPG_G(Numgrids,NUMGRD))
-      YPG=>YPG_G(ng,:)
-
       CALL SWINITMPI (MyComm)
       INPFIL = WNAME
 #endif
@@ -613,20 +441,16 @@
 !       --- allocate some arrays meant for computation                    40.31
 #ifdef MODEL_COUPLING
         IF (NUMOBS .GT. 0) THEN
-           IF (.NOT.ALLOCATED(PARALL2_MOD(ng)%CROSS_G))                 &
-     &              ALLOCATE (PARALL2_MOD(ng)%CROSS_G(2,MCGRD))
+          ALLOCATE (PARALL2_MOD(ng)%CROSS_G(2,MCGRD))
         ELSE
-           IF (.NOT.ALLOCATED(PARALL2_MOD(ng)%CROSS_G))                 &
-     &              ALLOCATE (PARALL2_MOD(ng)%CROSS_G(0,0))
+          ALLOCATE (PARALL2_MOD(ng)%CROSS_G(0,0))
         ENDIF
         CROSS=>PARALL2_MOD(ng)%CROSS_G
 !
-        IF (.NOT.ALLOCATED(PARALL2_MOD(ng)%BSPECS_G))                   &
-     &           ALLOCATE (PARALL2_MOD(ng)%BSPECS_G(MDC,MSC,NBSPEC,2))
+        ALLOCATE (PARALL2_MOD(ng)%BSPECS_G(MDC,MSC,NBSPEC,2))
         BSPECS=>PARALL2_MOD(ng)%BSPECS_G
 !
-        IF (.NOT.ALLOCATED(PARALL2_MOD(ng)%BGRIDP_G))                   &
-     &           ALLOCATE (PARALL2_MOD(ng)%BGRIDP_G(6*NBGRPT))
+        ALLOCATE (PARALL2_MOD(ng)%BGRIDP_G(6*NBGRPT))
         BGRIDP=>PARALL2_MOD(ng)%BGRIDP_G
 #else
         IF (NUMOBS .GT. 0) THEN
@@ -668,9 +492,7 @@
 !           current, wind and friction
 
 #ifdef MODEL_COUPLING
-        IF(.NOT.ALLOCATED(PARALL2_MOD(ng)%COMPDA_G)) THEN                
-            ALLOCATE (PARALL2_MOD(ng)%COMPDA_G(MCGRD,MCMVAR),STAT=ISTAT)
-        ENDIF
+        ALLOCATE (PARALL2_MOD(ng)%COMPDA_G(MCGRD,MCMVAR),STAT=ISTAT)
         COMPDA=>PARALL2_MOD(ng)%COMPDA_G
 #else
         IF(.NOT.ALLOCATED(COMPDA))
@@ -695,14 +517,13 @@
 
         IF ( NSTATM.EQ.1 .AND. MXITNS.GT.1 .OR. PROPSC.EQ.3 ) THEN        40.31
 #ifdef MODEL_COUPLING
-           IF (.NOT.ALLOCATED(PARALL2_MOD(ng)%AC1_G)) THEN
-              ALLOCATE (PARALL2_MOD(ng)%AC1_G(MDC,MSC,MCGRD),STAT=ISTAT)
-              AC1=>PARALL2_MOD(ng)%AC1_G
+           ALLOCATE (PARALL2_MOD(ng)%AC1_G(MDC,MSC,MCGRD),STAT=ISTAT)
+           AC1=>PARALL2_MOD(ng)%AC1_G
 #else
            IF (.NOT.ALLOCATED(AC1)) THEN                                  40.41 40.31
               ALLOCATE(AC1(MDC,MSC,MCGRD),STAT=ISTAT)                     40.41
 #endif
-           ELSE IF (SIZE(AC1).EQ.0) THEN                                  40.41
+           IF (SIZE(AC1).EQ.0) THEN                                       40.41
 #ifdef MODEL_COUPLING
               DEALLOCATE(PARALL2_MOD(ng)%AC1_G)
               ALLOCATE (PARALL2_MOD(ng)%AC1_G(MDC,MSC,MCGRD),STAT=ISTAT)
@@ -723,7 +544,12 @@
            END IF                                                         40.41
            AC1 = 0.                                                       40.31
         ELSE                                                              40.31
+#ifdef MODEL_COUPLING
+           ALLOCATE (PARALL2_MOD(ng)%AC1_G(0,0,0),STAT=ISTAT)
+           AC1=>PARALL2_MOD(ng)%AC1_G
+#else
            IF(.NOT.ALLOCATED(AC1)) ALLOCATE(AC1(0,0,0))                   40.31
+#endif
         ENDIF
 
         IF (LEVERR.GT.MAXERR) THEN                                        40.00
@@ -774,8 +600,7 @@
 
 #ifdef MODEL_COUPLING
           IT=0
-          IF ( IT.EQ.IT0 .AND.                                          &
-     &                   .NOT.ALLOCATED(PARALL2_MOD(ng)%OURQT_G) ) THEN
+          IF ( IT.EQ.IT0) THEN
              ALLOCATE (PARALL2_MOD(ng)%OURQT_G(MAX_OUTP_REQ))
              OURQT=>PARALL2_MOD(ng)%OURQT_G
              OURQT = -9999.
@@ -812,6 +637,8 @@
       USE M_GENARR
       USE M_PARALL
       USE M_PARALL2
+      USE M_COUPLING
+      USE SWPOINT_MOD, ONLY: INIT_POINTERS
 !
       IMPLICIT NONE
 !
@@ -831,10 +658,13 @@
 !
 !         ---  Time-stepping SWAN.
 
-          numsteps=0
+      Gridnum=ng
+      numsteps=0
 !
 !  Create list of pointers for each ng instance.
 !
+      CALL INIT_POINTERS(ng)
+
 !  Modules M_GENARR
 !
       KGRPNT=>M_GENARR_MOD(ng)%KGRPNT_G
@@ -856,15 +686,6 @@
 !
 !  Module M_PARALL
 !
-      MCGRDGL=>MCGRDGL_G(ng)
-      NGRBGL=>NGRBGL_G(ng)
-      MXCGL=>MXCGL_G(ng)
-      MYCGL=>MYCGL_G(ng)
-      MXF=>MXF_G(ng)
-      MXL=>MXL_G(ng)
-      MYF=>MYF_G(ng)
-      MYL=>MYL_G(ng)
-      NBGGL=>NBGGL_G(ng)
 
       IBLKAD=>PARALL_MOD(ng)%IBLKAD_G
       KGRPGL=>PARALL_MOD(ng)%KGRPGL_G
@@ -873,14 +694,6 @@
       XGRDGL=>PARALL_MOD(ng)%XGRDGL_G
       YGRDGL=>PARALL_MOD(ng)%YGRDGL_G
 
-      XCLMAX=>XCLMAX_G(ng)
-      YCLMAX=>YCLMAX_G(ng)
-      XCLMIN=>XCLMIN_G(ng)
-      YCLMIN=>YCLMIN_G(ng)
-      LMXF=>LMXF_G(ng)
-      LMXL=>LMXL_G(ng)
-      LMYF=>LMYF_G(ng)
-      LMYL=>LMYL_G(ng)
 !
 !  Module PARALL2
 !
@@ -890,78 +703,11 @@
       AC1=>   PARALL2_MOD(ng)%AC1_G
       COMPDA=>PARALL2_MOD(ng)%COMPDA_G
       OURQT=> PARALL2_MOD(ng)%OURQT_G
-#ifdef REFINED_GRID
+# ifdef REFINED_GRID
 ! jcw needs to redo this
       AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
       AC2_parent2=>PARALL2_MOD(ng)%AC2_parent2_G
-#endif
-!
-!  Module SWCOMM3
-!
-        MXC=>MXC_G(ng)
-        MYC=>MYC_G(ng)
-        MCGRD=>MCGRD_G(ng)
-        NGRBND=>NGRBND_G(ng)
-        MSC=>MSC_G(ng)
-        MDC=>MDC_G(ng)
-        MTC=>MTC_G(ng)
-!
-!  Module TIMECOMM
-!
-        TINIC=>TINIC_G(ng)
-        DT=>DT_G(ng)
-        TFINC=>TFINC_G(ng)
-        TIMCO=>TIMCO_G(ng)
-!
-!  Module SWCOMM1
-!
-        CHTIME=>CHTIME_G(ng)
-!
-!  Module OUTP_DATA
-!
-        NREOQ=>NREOQ_G(ng)
-        LOPS=>LOPS_G(ng)
-!       LORQ=>LORQ_G(ng)
-!
-!  Module SWANCOMM2
-!
-      CVLEFT=>CVLEFT_G(ng)
-      LXOFFS=>LXOFFS_G(ng)
-      VARFR=>VARFR_G(ng)
-      VARWI=>VARWI_G(ng)
-      VARWLV=>VARWLV_G(ng)
-      DYNDEP=>DYNDEP_G(ng)
-      VARAST=>VARAST_G(ng)
-      ICOND=>ICOND_G(ng)
-      NWAMN=>NWAMN_G(ng)
-      OPTG=>OPTG_G(ng)
-      NBFILS=>NBFILS_G(ng)
-      NBSPEC=>NBSPEC_G(ng)
-      NBGRPT=>NBGRPT_G(ng)
-
-      MXG=>MXG_G(ng,:)
-      MYG=>MYG_G(ng,:)
-      IGTYPE=>IGTYPE_G(ng,:)
-      LEDS=>LEDS_G(ng,:)
-
-      COSVC=>COSVC_G(ng)
-      COSWC=>COSWC_G(ng)
-      RDTIM=>RDTIM_G(ng)
-      SINVC=>SINVC_G(ng)
-      SINWC=>SINWC_G(ng)
-      XOFFS=>XOFFS_G(ng)
-      YOFFS=>YOFFS_G(ng)
-
-      ALPG=>ALPG_G(ng,:)
-      COSPG=>COSPG_G(ng,:)
-      DXG=>DXG_G(ng,:)
-      DYG=>DYG_G(ng,:)
-      EXCFLD=>EXCFLD_G(ng,:)
-      SINPG=>SINPG_G(ng,:)
-      STAGX=>STAGX_G(ng,:)
-      STAGY=>STAGY_G(ng,:)
-      XPG=>XPG_G(ng,:)
-      YPG=>YPG_G(ng,:)
+# endif
 #endif
 
 !         --- synchronize nodes                                           40.30
@@ -991,7 +737,11 @@
      &           ' the SET command')
  6030         FORMAT(' ** No continuation of computation because ',       30.82
      &               'of error level:',I3)                                30.82
+#ifdef MODEL_COUPLING
+              RETURN
+#else
               EXIT                                                        40.30
+#endif
             ENDIF                                                         30.82
 
 !           --- synchronize nodes
@@ -1051,10 +801,12 @@
 
             ENDIF
 !
+#if !defined MODEL_COUPLING
             IF ( IT.EQ.IT0 .AND. .NOT.ALLOCATED(OURQT) ) THEN             40.51 40.31
                ALLOCATE (OURQT(MAX_OUTP_REQ))                             40.51 40.30
                OURQT = -9999.                                             40.51 40.30
             ENDIF                                                         40.00
+#endif
 !
             SAVITE = ITEST                                                30.21
             IF (IOUTES .GT. ITEST) ITEST = IOUTES
@@ -1182,6 +934,8 @@
 !
 !     --- deallocate all allocated arrays                                 40.31
 
+#ifdef MODEL_COUPLING
+#else
       IF (ALLOCATED(AC1   )) DEALLOCATE(AC1   )                           40.31
       IF (ALLOCATED(BGRIDP)) DEALLOCATE(BGRIDP)                           40.31
       IF (ALLOCATED(BSPECS)) DEALLOCATE(BSPECS)                           40.31
@@ -1189,6 +943,7 @@
       IF (ALLOCATED(CROSS )) DEALLOCATE(CROSS )                           40.31
       IF (ALLOCATED(OURQT )) DEALLOCATE(OURQT )                           40.51 40.30
       IF (ALLOCATED(BLKND )) DEALLOCATE(BLKND )                           40.41
+#endif
       CALL SWCLME                                                         40.31
 !
 #ifdef MODEL_COUPLING
@@ -2964,8 +2719,7 @@
 !
 !     Associate parent forcing to local tiled child grid.
 !
-      IF (.not.ALLOCATED(PARALL_MOD(ng)%BGRIDPL_G))                     &
-     &         ALLOCATE (PARALL_MOD(ng)%BGRIDPL_G(NBGRPT))
+      ALLOCATE (PARALL_MOD(ng)%BGRIDPL_G(NBGRPT))
       BGRIDPL=>PARALL_MOD(ng)%BGRIDPL_G
       NBGRPT = 0                                                          40.31
       DO IX = MXF, MXL                                                    40.31
@@ -4939,7 +4693,7 @@
       USE M_BNDSPEC                                                       40.31
       USE M_PARALL                                                        40.31
 #ifdef MODEL_COUPLING
-      USE M_PARALL2                                                       40.31
+!      USE M_PARALL2                                                       40.31
       USE M_MPI
       USE mod_param
 #endif
@@ -7118,6 +6872,8 @@
 !
 ! 13. Source text
 !
+#ifdef MODEL_COUPLING
+#else
       IF (ALLOCATED(SIGPOW)) DEALLOCATE(SIGPOW)
       IF (ALLOCATED(KGRPNT)) DEALLOCATE(KGRPNT)
       IF (ALLOCATED(KGRBND)) DEALLOCATE(KGRBND)
@@ -7140,6 +6896,7 @@
       IF (ALLOCATED(YGRDGL)) DEALLOCATE(YGRDGL)
       IF (ALLOCATED(KGRPGL)) DEALLOCATE(KGRPGL)
       IF (ALLOCATED(KGRBGL)) DEALLOCATE(KGRBGL)
+#endif
       IF (ALLOCATED(DIFPARAM)) DEALLOCATE(DIFPARAM)
       IF (ALLOCATED(DIFPARDX)) DEALLOCATE(DIFPARDX)
       IF (ALLOCATED(DIFPARDY)) DEALLOCATE(DIFPARDY)

@@ -110,6 +110,8 @@
 
           integer, pointer :: IstrTU(:) ! 
           integer, pointer :: JstrTV(:) ! 
+          integer, pointer :: IendTU(:) ! 
+          integer, pointer :: JendTV(:) ! 
         END TYPE T_BOUNDS
 
         TYPE (T_BOUNDS), allocatable :: BOUNDS(:)

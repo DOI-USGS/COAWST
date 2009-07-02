@@ -568,7 +568,7 @@
       END TYPE BGPDAT_Z
       TYPE (BGPDAT_Z), ALLOCATABLE :: BGPDATZ_MOD(:)
 
-      LOGICAL, POINTER, SAVE :: LBGP     ! = .FALSE.
+!     LOGICAL, POINTER, SAVE :: LBGP     ! = .FALSE.
       LOGICAL, POINTER, SAVE :: LBGP_G(:)
 
 #else
@@ -1135,6 +1135,15 @@
       END MODULE M_PARALL
 
 #ifdef MODEL_COUPLING
+
+
+      MODULE M_COUPLING
+      INTEGER, SAVE :: Gridnum
+
+      END MODULE M_COUPLING
+
+
+
       MODULE M_PARALL2
 !
 !
