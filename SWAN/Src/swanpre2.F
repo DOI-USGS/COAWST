@@ -2487,7 +2487,7 @@
       DATA IENT/0/
       CALL STRACE (IENT,'SWBOUN')
 !
-#if defined REFINED_GRID
+#if defined MODEL_COUPLING
       LBGP=>LBGP_G(ng)
       LBGP = .FALSE.
 #endif

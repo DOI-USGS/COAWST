@@ -65,10 +65,8 @@
 !
 !  M_BNDSPEC
 !
-#ifdef REFINED_GRID
         ALLOCATE (LBGP_G(Numgrids))
 !       LBGP_G(ng)=.FALSE.
-#endif
 !
 !  M_PARALL
 !
