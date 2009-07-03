@@ -552,6 +552,10 @@
       TYPE(BSDAT), SAVE, TARGET :: FBS
 
 #ifdef MODEL_COUPLING
+!     LOGICAL, POINTER, SAVE :: LBGP     ! = .FALSE.
+      LOGICAL, POINTER, SAVE :: LBGP_G(:)
+#endif
+#ifdef REFINED_GRID
 !
 !    This is called a linked list.
 !
@@ -567,10 +571,6 @@
          TYPE(BGPDAT), POINTER :: BGPTMP
       END TYPE BGPDAT_Z
       TYPE (BGPDAT_Z), ALLOCATABLE :: BGPDATZ_MOD(:)
-
-!     LOGICAL, POINTER, SAVE :: LBGP     ! = .FALSE.
-      LOGICAL, POINTER, SAVE :: LBGP_G(:)
-
 #else
       TYPE BGPDAT
          INTEGER                :: BGP(6)
@@ -1034,8 +1034,10 @@
       INTEGER :: Numspecl
       INTEGER :: NBGRPT_last
       INTEGER, SAVE, ALLOCATABLE :: Numspec(:)
+#ifdef REFINED_GRID
       INTEGER, SAVE, ALLOCATABLE :: ac2size(:)
       INTEGER, SAVE, ALLOCATABLE :: BGRIDPG(:,:)
+#endif
 !
       INTEGER, POINTER :: MCGRDGL
       INTEGER, SAVE, TARGET, ALLOCATABLE :: MCGRDGL_G(:)

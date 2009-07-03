@@ -159,7 +159,7 @@
 #if defined SWAN_COUPLING
       IF (MyColor.eq.WAVid) THEN
 !# ifdef REFINED_GRID
-        CALL SWAN_driver (MyCOMM, REAL(TI_WAV_OCN), Wname)
+        CALL SWAN_driver (MyCOMM, REAL(TI_WAV_OCN))
 !       CALL SWAN_driver_run (CouplingTime)
 !        CALL SWAN_driver_finalize
 !# else

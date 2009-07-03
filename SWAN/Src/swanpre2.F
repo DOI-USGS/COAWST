@@ -2410,7 +2410,7 @@
       TYPE(BSDAT), POINTER :: BSTMP                                       40.31
       TYPE(BSDAT), SAVE, POINTER :: CUBS                                  40.31
 
-#if !defined MODEL_COUPLING
+#if !defined REFINED_GRID
       TYPE(BGPDAT), POINTER :: BGPTMP                                     40.31
 #endif
 
@@ -2487,7 +2487,7 @@
       DATA IENT/0/
       CALL STRACE (IENT,'SWBOUN')
 !
-#if defined MODEL_COUPLING
+#if defined REFINED_GRID
       LBGP=>LBGP_G(ng)
       LBGP = .FALSE.
 #endif
@@ -3177,7 +3177,7 @@
             IX = CURR%JX                                                  40.31
             IY = CURR%JY                                                  40.31
             CURR => CURR%NEXTXY                                           40.31
-#ifdef MODEL_COUPLING
+#ifdef REFINED_GRID
 !            ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
 !            ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
             ALLOCATE(BGPDATZ_MOD(ng)%BGPTMP)
@@ -3189,8 +3189,6 @@
             BGPDATZ_MOD(ng)%BGPTMP%BGP(6) = 1
             NULLIFY(BGPDATZ_MOD(ng)%BGPTMP%NEXTBGP)
             IF ( .NOT.LBGP ) THEN                                         40.31
-               write(*,*) 'swanpre2 r we here 1'
-
                BGPDATZ_MOD(ng)%FBGP = BGPDATZ_MOD(ng)%BGPTMP
                BGPDATZ_MOD(ng)%CUBGP => BGPDATZ_MOD(ng)%FBGP
                LBGP = .TRUE.                                              40.31
@@ -3334,7 +3332,7 @@
               XC1 = XC2
               YC1 = YC2
               IF (RDIST.GT.RLEN2) GOTO 340
-#ifdef MODEL_COUPLING
+#ifdef REFINED_GRID
               ALLOCATE(BGPDATZ_MOD(ng)%BGPTMP)
 !              ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
 !              ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
@@ -4138,7 +4136,7 @@
 !     XLON0     longitude of origin of computational grid
 !     XLAT0     latitude of origin of computational grid
 
-#if !defined MODEL_COUPLING
+#if !defined REFINED_GRID
       TYPE(BGPDAT), POINTER :: BGPTMP                                     40.31
 #endif
 !     subroutines used
@@ -4393,7 +4391,7 @@
                           NBGRPT = NBGRPT + 1
                           IIPT1 = IIPT1 + 1                               40.03
                           IIPT2 = IIPT2 + 1                               40.03
-#ifdef MODEL_COUPLING
+#ifdef REFINED_GRID
                           ALLOCATE(BGPDATZ_MOD(ng)%BGPTMP)
 !                          ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
 !                          ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
@@ -5120,7 +5118,7 @@
       REAL, SAVE         :: XP0=0., XP1=0., YP0=0., YP1=0.                40.31
       REAL               :: XP2, YP2, XP, YP, RX, RY, RL2
       REAL               :: DISXY, W2
-#if !defined MODEL_COUPLING
+#if !defined REFINED_GRID
       TYPE(BGPDAT), POINTER :: BGPTMP                                     40.31
 #endif
 !
@@ -5207,7 +5205,7 @@
                     NBGRPT = NBGRPT + 1
                     IIPT1 = IIPT1 + 1
 !
-#ifdef MODEL_COUPLING
+#ifdef REFINED_GRID
                     ALLOCATE(BGPDATZ_MOD(ng)%BGPTMP)
 !                    ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
 !                    ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)

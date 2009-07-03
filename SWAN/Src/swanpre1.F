@@ -1621,7 +1621,7 @@
 #else
         CALL SWBOUN ( XGRDGL, YGRDGL, KGRPGL, XYTST, KGRBGL )             40.31
 #endif
-#ifdef MODEL_COUPLING
+#ifdef REFINED_GRID
 ! Accumulate the total number of spec BCs for this grid
         Numspecl=Numspecl+1
 ! Use array NBGRPT_last as a temp value here to store last number of bndry pts.

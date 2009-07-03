@@ -574,10 +574,10 @@
             END DO
             Iname=TRIM(ADJUSTL(Cval(Nval)))
           ELSE IF (TRIM(KeyWord).eq.'WAV_name') THEN
-            DO i=1,LEN(Wname)
-              Wname(i:i)=blank
+            DO i=1,LEN(Wname(Nval))
+              Wname(Nval)(i:i)=blank
             END DO
-            Wname=TRIM(ADJUSTL(Cval(Nval)))
+            Wname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
           ELSE IF (TRIM(KeyWord).eq.'ATM_name') THEN
             DO i=1,LEN(Aname)
               Aname(i:i)=blank

@@ -137,7 +137,7 @@
         character (len=80), dimension(Ngrids) :: SWAN_infile
 
         character (len=80) :: Iname
-        character (len=80) :: Wname
+        character (len=80), dimension(Ngrids) :: Wname
         character (len=80) :: Aname
         character (len=80) :: MyAppCPP
         character (len=80) :: USRname

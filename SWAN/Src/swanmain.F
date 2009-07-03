@@ -368,8 +368,10 @@
       Numgrids=Ngrids
       Gridnum=ng
       CALL ALLOCATE_SWAN_ARRAYS(ng, Ngrids)
+#ifdef REFINED_GRID
       ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
       ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
+#endif
 !
       NREOQ_G(ng)=0
       LOPS_G(ng)=.FALSE.
@@ -2511,11 +2513,7 @@
       INTEGER, ALLOCATABLE :: CROSSGL(:,:)                                40.31
 !
       TYPE(BSDAT) , POINTER :: CURRBS                                     40.31
-#ifdef MODEL_COUPLING
-!      TYPE(BGPDAT), TARGET, ALLOCATABLE :: CURBGP(:)
-!     TYPE(BGPDAT), ALLOCATABLE :: CURBGP(:)
-!      TYPE(BGPDAT), POINTER :: CURBGP                                     40.31
-#else
+#if !defined REFINED_GRID
       TYPE(BGPDAT), POINTER :: CURBGP                                     40.31
 #endif
       SAVE IENT
@@ -2669,7 +2667,7 @@
       IF (NBGGL.EQ.0) NBGGL  = NBGRPT                                     40.51 40.31
       NBGRPT = 0                                                          40.31
 
-#ifdef MODEL_COUPLING
+#ifdef REFINED_GRID
 !curbgp is now BGPDATZ_MOD(ng)%CURBGP
       ALLOCATE(BGPDATZ_MOD(ng)%CURBGP)
 
@@ -2715,7 +2713,7 @@
          END DO                                                           40.31
       END DO                                                              40.31
 #endif
-#ifdef MODEL_COUPLING
+#ifdef REFINED_GRID
 !
 !     Associate parent forcing to local tiled child grid.
 !

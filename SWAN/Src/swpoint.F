@@ -55,19 +55,20 @@
         ALLOCATE (M_GENARR_MOD(Ngrids))
         ALLOCATE (PARALL_MOD(Ngrids))
         ALLOCATE (PARALL2_MOD(Ngrids))
+#ifdef REFINED_GRID
         ALLOCATE (BGPDATZ_MOD(Ngrids))
+#endif
         ALLOCATE (OPSDATZ_MOD(Ngrids))
         ALLOCATE (ORQDATZ_MOD(Ngrids))
-!
-        ALLOCATE(BGPDATZ_MOD(Ngrids))
-
 !
 !  Allocate pointers
 !
 !  M_BNDSPEC
 !
+#ifdef REFINED_GRID
         ALLOCATE (LBGP_G(Numgrids))
 !       LBGP_G(ng)=.FALSE.
+#endif
 !
 !  M_PARALL
 !

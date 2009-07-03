@@ -28,7 +28,7 @@
 
       CONTAINS
 
-      SUBROUTINE SWAN_driver (MyCOMM, CouplingTime, SWAN_inplist)
+      SUBROUTINE SWAN_driver (MyCOMM, CouplingTime)
 !
 !=======================================================================
 !                                                                      !
@@ -54,7 +54,6 @@
 !
       integer, intent(in) :: MyCOMM
       real(r4), intent(in)  :: CouplingTime             ! single precision
-      character*80, intent(in) :: SWAN_inplist
 !
 !  Local variable declarations.
 !
@@ -67,6 +66,7 @@
 
       MyKey=0
       inp=22
+#ifdef REFINED_GRID
 !
 ! Allocate some arrays
 !
@@ -80,6 +80,7 @@
       Numspec(1)=46
       Numspec(2)=46
       NBGRPT_last=0
+#endif
 !
 !-----------------------------------------------------------------------
 !  Set distribute-memory (MPI) world communicator.
@@ -88,29 +89,16 @@
       CALL mpi_comm_rank (MyCOMM, MyRank, MyError)
       CALL mpi_comm_size (MyCOMM, MySize, MyError)
 !
-!     IF (MyRank.eq.MyMaster) THEN
-      OPEN (inp, FILE=TRIM(SWAN_inplist), FORM='formatted',             &
-     &      STATUS='old', ERR=20)
-      DO ng=1,Ngrids
-        READ(inp,'(a80)') SWAN_infile(ng)
-      END DO
-      CLOSE(inp)
-      GO TO 40
- 20   WRITE (stdout,30)
-      STOP
- 30   FORMAT (/,' swan_inp - Unable to open SWAN file list')
- 40   CONTINUE
-
-!     END IF
-!
 !  Initialize the grids.
 !
       DO ng=1,Ngrids
-        CALL SWAN_INITIALIZE (ng, Ngrids, MyCOMM, SWAN_infile(ng))
+        CALL SWAN_INITIALIZE (ng, Ngrids, MyCOMM, Wname(ng))
 !
 !  Compute number of boundary arrays to be passed.
 !
+#ifdef REFINED_GRID
         ac2size(ng)=MSC*MDC*Numspec(ng)
+#endif
       END DO
 !
 !  The call to run here does not do a time step, it fills the bc arrays,
