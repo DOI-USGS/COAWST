@@ -44,7 +44,7 @@
 
  TI_ATM_WAV =     0.0d0              ! atmosphere-wave coupling interval
  TI_ATM_OCN =     0.0d0              ! atmosphere-ocean coupling interval
- TI_WAV_OCN =   600.0d0              ! wave-ocean coupling interval
+ TI_WAV_OCN =    60.0d0              ! wave-ocean coupling interval
 
 ! Coupled model standard input file name.
 
