@@ -64,19 +64,16 @@ ROMS_APPLICATION ?= INLET_TEST
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
 
-#MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inlet_test
-#MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
-MY_HEADER_DIR ?= /raid1/jcwarner/Projects/help_cases/coawst2_test/Projects/Inlet_test/Coupled
+MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
+#MY_HEADER_DIR ?= /raid1/jcwarner/Projects/help_cases/coawst2_test/Projects/Inlet_test/Coupled
 
 #  If your application requires analytical expressions and they are not
 #  located in "ROMS/Functionals", provide an alternate directory.
 #  Notice that a set analytical expressions templates can be found in
 #  "User/Functionals".
 
-#MY_ANALYTICAL_DIR ?= /raid1/jcwarner/Models/COAWST/Projects/JOE_TC
-#MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inlet_test
-#MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
-MY_ANALYTICAL_DIR ?= /raid1/jcwarner/Projects/help_cases/coawst2_test/Projects/Inlet_test/Coupled
+MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
+#MY_ANALYTICAL_DIR ?= /raid1/jcwarner/Projects/help_cases/coawst2_test/Projects/Inlet_test/Coupled
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying
