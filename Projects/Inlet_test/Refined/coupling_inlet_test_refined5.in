@@ -37,7 +37,7 @@
 ! Their sum must be equal to the total number of processors.
 
   NnodesATM =  0                     ! atmospheric model
-  NnodesWAV =  2                     ! wave model
+  NnodesWAV =  1                     ! wave model
   NnodesOCN =  1                     ! ocean model
 
 ! Time interval (seconds) between coupling of models.
@@ -51,10 +51,9 @@
 ! multiple input files, one for each grid.
 
    ATM_name = atmos.in
-!   WAV_name = Projects/Inlet_test/swan_it.in \
-!              Projects/Inlet_test/swan_it_ref5.in
-   WAV_name = swan_inp_files.in
-   OCN_name = Projects/Inlet_test/ocean_inlet_test_ref5.in
+   WAV_name = Projects/Inlet_test/Refined/swan_it.in \
+              Projects/Inlet_test/Refined/swan_it_ref5.in
+   OCN_name = Projects/Inlet_test/Refined/ocean_inlet_test_ref5.in
 
 !
 !  GLOSSARY:

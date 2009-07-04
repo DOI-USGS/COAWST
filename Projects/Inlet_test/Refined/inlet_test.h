@@ -47,8 +47,8 @@
 # define MCT_LIB
 # undef  MCT_INTERP_OC2WV
 #endif
-#undef REFINED_GRID
-#undef REFINED_GRID_BC
+#define REFINED_GRID
+#define REFINED_GRID_BC
 
 /* define only one of the following 5 */
 #undef  UV_LOGDRAG
