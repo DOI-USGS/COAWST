@@ -49,9 +49,7 @@
 ! Coupled model standard input file name.
 
    ATM_name = atmos.in                                    ! atmospheric model, not used yet
-!  WAV_name = Projects/Inlet_test/swan_inlet_test.in      ! wave model
-!  For the larger swan grid, use inlet_test2.
-   WAV_name = Projects/Inlet_test/swan_inlet_test2.in
+   WAV_name = Projects/Inlet_test/swan_inlet_test2.in     ! wave model
    OCN_name = Projects/Inlet_test/ocean_inlet_test.in     ! ocean model
 
 !

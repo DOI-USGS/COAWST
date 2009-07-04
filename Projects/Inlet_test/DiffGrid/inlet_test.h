@@ -45,7 +45,7 @@
 
 #ifdef SWAN_COUPLING
 # define MCT_LIB
-# undef  MCT_INTERP_OC2WV
+# define MCT_INTERP_OC2WV
 #endif
 #undef REFINED_GRID
 #undef REFINED_GRID_BC
