@@ -1094,7 +1094,11 @@
         IF (MXC.LE.0) THEN
           CALL MSGERR (2, 'command CGRID must precede this command')
         ELSE
+#ifdef MODEL_COUPLING
+          CALL BACKUP( AC2, SPCSIG, SPCDIR, KGRPNT, XCGRID, YCGRID, ng )  40.31 30.90
+#else
           CALL BACKUP( AC2, SPCSIG, SPCDIR, KGRPNT, XCGRID, YCGRID )      40.31 30.90
+#endif
           IF (STPNOW()) RETURN                                            34.01
         ENDIF
         GO TO 100
@@ -5295,8 +5299,13 @@
       END
 !*******************************************************************
 !                                                                  *
+#ifdef MODEL_COUPLING
+      SUBROUTINE BACKUP (AC2, SPCSIG, SPCDIR, KGRPNT,
+     &                   XCGRID, YCGRID, ng)
+#else
       SUBROUTINE BACKUP (AC2, SPCSIG, SPCDIR, KGRPNT,
      &                   XCGRID, YCGRID)
+#endif
 !                                                                  *
 !*******************************************************************
 !
@@ -5382,6 +5391,9 @@
       REAL    SPCDIR(MDC,6)                                               30.82
       REAL    SPCSIG(MSC)                                                 30.82
       REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.82
+#ifdef MODEL_COUPLING
+      INTEGER, INTENT(IN) :: ng
+#endif
 !
 !  8. Subroutines used
 !
@@ -5405,6 +5417,11 @@
 !
 #ifdef MODEL_COUPLING
        FILENM='swan_restart.dat'
+       ILPOS = INDEX ( FILENM, ' ' )-1
+       IF (ILPOS.GT.0) THEN
+          WRITE(FILENM(ILPOS+1:ILPOS+2),180) ng
+       END IF
+ 180   FORMAT(I2.2)
 #else
        CALL INCSTR ('FNAME', FILENM, 'REQ', ' ')
 #endif

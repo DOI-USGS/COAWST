@@ -644,7 +644,7 @@
 !  Create a restart file.
 !-----------------------------------------------------------------------
 !
-        CALL BACKUP (AC2, SPCSIG, SPCDIR, KGRPNT, XCGRID, YCGRID)
+        CALL BACKUP (AC2, SPCSIG, SPCDIR, KGRPNT, XCGRID, YCGRID, ng)
 !
 !-----------------------------------------------------------------------
 !  Send wave fields bundle to ocean model, ROMS.

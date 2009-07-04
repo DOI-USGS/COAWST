@@ -529,6 +529,7 @@
       integer :: Istr, Iend, Jstr, Jend
       integer :: IstrT, IendT, JstrT, JendT
       integer :: IstrR, IendR, JstrR, JendR, IstrU, JstrV
+      integer :: IstrTU, IendTU, JstrTV, JendTV
       integer :: Asize, Iimport, Iexport, MyError
       integer :: gtype, i, id, ifield, ij, j, k, status
 
@@ -570,6 +571,12 @@
       IendT=BOUNDS(ng)%IendT(tile)
       JstrT=BOUNDS(ng)%JstrT(tile)
       JendT=BOUNDS(ng)%JendT(tile)
+#ifdef REFINED_GRID
+      IstrTU=BOUNDS(ng)%IstrTU(tile)
+      IendTU=BOUNDS(ng)%IendTU(tile)
+      JstrTV=BOUNDS(ng)%JstrTV(tile)
+      JendTV=BOUNDS(ng)%JendTV(tile)
+#endif
 !
       IF (WESTERN_EDGE) THEN
         IstrR=BOUNDS(ng)%Istr(tile)-1

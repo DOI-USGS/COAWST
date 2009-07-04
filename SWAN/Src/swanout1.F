@@ -24,7 +24,8 @@
      &                   YCGRID          ,KGRBND  ,                       40.30
 #ifdef MODEL_COUPLING
      &                   OURQT           ,
-     &                   numsteps        ,CouplingTime, ng, first)
+     &                   numsteps        ,CouplingTime, ng, first,
+     &                   AC2_parent      ,AC2_parent2)
 #else
      &                   OURQT                    )                       40.51 40.30
 #endif
@@ -148,6 +149,8 @@
       INTEGER numsteps, ngp, ngc, offset, spcount, XC, YC
       INTEGER MyRank, MySize, MyError, MyTag, MyStatus, MyHandle
       REAL    CouplingTime
+      REAL AC2_parent(MSC*MDC*Numspec(ng))
+      REAL AC2_parent2(MSC*MDC*Numspec(ng))
 #endif
 !
 !     AC2     real arr input  action density in all computational points

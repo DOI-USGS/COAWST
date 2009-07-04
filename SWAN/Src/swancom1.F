@@ -63,6 +63,9 @@
       USE m_constants                                                     40.41
       USE m_xnldata                                                       40.41
       USE m_fileio                                                        40.41
+#ifdef REFINED_GRID
+      USE M_COUPLING
+#endif
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -1676,12 +1679,15 @@
               IF (NSTATC.EQ.1) THEN                                       40.00
 #ifdef MODEL_COUPLING
                 IF (INODE.EQ.MASTER) WRITE(PRINTF,313) CHTIME, IT,
+     &                                    ITER, SWPDIR, GRIDNUM
+ 313            FORMAT ('+time ', A18, ', step ',I4, '; iteration '
+     &                  ,I4, '; sweep ',I1,' grid  ',I2)                  40.23 40.00
 #else
                 IF (INODE.EQ.MASTER) WRITE(SCREEN,313) CHTIME, IT,        40.30
-#endif
      &                                                 ITER, SWPDIR       40.30
  313            FORMAT ('+time ', A18, ', step ',I4, '; iteration '
      &                  ,I4, '; sweep ',I1)                               40.23 40.00
+#endif
               ELSE
                 WRITE(PRINTF,314) ITER, SWPDIR
                 IF (INODE.EQ.MASTER) THEN                                 40.30

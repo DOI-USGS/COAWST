@@ -225,7 +225,9 @@
 !
 	integer :: ng, my_iic, MyError
 #if defined REFINED_GRID
-	integer :: count1, count2, count3, count4
+      logical, allocatable :: run_grid(:)
+      integer, allocatable :: count(:)
+      real :: rtime, rtime_start, rtime_end, cff
 #endif
 !
 !-----------------------------------------------------------------------
@@ -233,97 +235,57 @@
 !-----------------------------------------------------------------------
 !
 
-#if defined REFINED_GRID_old
+#if defined REFINED_GRID
 
-      NL_LOOP : DO my_iic=Tstr(1),Tend(1)
-
-        NEST_LOOP : DO ng=1,Ngrids
-
-          DO count=1,nrefined(ng)
-            CALL mpi_barrier(OCN_COMM_WORLD, MyError)
-            iic(ng)=(my_iic-Tstr(1))*nrefined(ng)+count
+      IF (.not.ALLOCATED(run_grid)) ALLOCATE (run_grid(Ngrids))
+      IF (.not.ALLOCATED(count)) ALLOCATE (count(Ngrids))
+      DO ng=1,Ngrids
+        run_grid(ng)=.TRUE.
+        count(ng)=my_iic-Tstr(1)
+      END DO
+      rtime_start=0.
+      rtime_end=9999999.00
+      rtime=rtime_start
+!
+!  Main job control loop here.
+!
+      DO WHILE (rtime.lt.rtime_end)
+!
+!  Advance grids in time that have run_grid flag == True.
+!  For the first entry, all grids step individual dts.
+!
+        DO ng=1,Ngrids
+          IF (run_grid(ng).eq..TRUE.) THEN
+            count(ng)=count(ng)+1
 # ifdef SOLVE3D
             CALL main3d (ng)
 # else
             CALL main2d (ng)
 # endif
-          END DO
-
-          IF (exit_flag.ne.NoError) THEN
-            IF (Master) THEN
-              WRITE (stdout,'(/,a,i3,/)') Rerror(exit_flag), exit_flag
-            END IF
-            RETURN
           END IF
-
-        END DO NEST_LOOP
-
-      END DO NL_LOOP
-#elif defined REFINED_GRID
-
-      NL_LOOP : DO my_iic=Tstr(1),Tend(1)
-
-          CALL mpi_barrier(OCN_COMM_WORLD, MyError)
-          DO count1=1,nrefined(1)
-            ng=1
-            iic(ng)=(my_iic-Tstr(1))*nrefined(1)+count1
-# ifdef SOLVE3D
-            CALL main3d (ng)
-# else
-            CALL main2d (ng)
-# endif
-
-            CALL mpi_barrier(OCN_COMM_WORLD, MyError)
-            DO count2=1,nrefined(2)
-              ng=2
-              iic(ng)=(my_iic-Tstr(1))*nrefined(1)*nrefined(2)+         &
-     &                count2
-# ifdef SOLVE3D
-              CALL main3d (ng)
-# else
-              CALL main2d (ng)
-# endif
-
-              CALL mpi_barrier(OCN_COMM_WORLD, MyError)
-              IF (Ngrids.ge.3) THEN
-                DO count3=1,nrefined(3)
-                  ng=3
-                  iic(ng)=(my_iic-Tstr(1))*nrefined(1)*nrefined(2)*     &
-     &                    nrefined(ng)+(count2-1)*nrefined(ng)+count3
-# ifdef SOLVE3D
-                  CALL main3d (ng)
-# else
-                  CALL main2d (ng)
-# endif
-
-                  CALL mpi_barrier(OCN_COMM_WORLD, MyError)
-                  IF (Ngrids.ge.4) THEN
-                    DO count4=1,nrefined(4)
-                      ng=4
-                      iic(ng)=(my_iic-Tstr(1))*nrefined(1)*nrefined(2)* &
-     &                        nrefined(ng-1)*nrefined(ng)+                  &
-     &                        (count2-1)*nrefined(2)*nrefined(ng-1)+       &
-     &                        (count3-1)*nrefined(ng-1)+count4
-# ifdef SOLVE3D
-                      CALL main3d (ng)
-# else
-                      CALL main2d (ng)
-# endif
-                    END DO
-                  END IF
-                END DO
-              END IF
-            END DO
-          END DO
-
-          IF (exit_flag.ne.NoError) THEN
-            IF (Master) THEN
-              WRITE (stdout,'(/,a,i3,/)') Rerror(exit_flag), exit_flag
-            END IF
-            RETURN
+          run_grid(ng)=.FALSE.
+        END DO
+!
+!  Advance the time counter by the smallest dt.
+!
+        rtime=rtime+dt(Ngrids)
+!
+!  Determine what grids can be time stepped. This is determined
+!  by comparing dt(each grid) to global time rtime.
+!
+        DO ng=1,Ngrids
+          cff=rtime-rtime_start
+          IF (MOD(cff,dt(ng)).eq.0) THEN
+            run_grid(ng)=.TRUE.
           END IF
-
-      END DO NL_LOOP
+        END DO
+      END DO
+      IF (exit_flag.ne.NoError) THEN
+        IF (Master) THEN
+          WRITE (stdout,'(/,a,i3,/)') Rerror(exit_flag), exit_flag
+        END IF
+        RETURN
+      END IF
 
 #elif defined COMPOSED_GRID
 

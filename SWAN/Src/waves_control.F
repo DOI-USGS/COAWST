@@ -131,7 +131,7 @@
       DO WHILE (rtime.lt.rtime_end)
 !
 !  Advance grids in time that have run_grid flag == True.
-!  For the first entry, all grids step individual dt's.
+!  For the first entry, all grids step individual dts.
 !
         DO ng=1,Ngrids
 !         ngp=myparent(ng)

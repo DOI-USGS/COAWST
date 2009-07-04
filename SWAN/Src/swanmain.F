@@ -464,10 +464,8 @@
         IF (.NOT.ALLOCATED(BGRIDP)) ALLOCATE(BGRIDP(6*NBGRPT))            40.31
 #endif
 #ifdef REFINED_GRID
-        IF (.NOT.ALLOCATED(PARALL2_MOD(ng)%AC2_parent_G))               &
-     &      ALLOCATE (PARALL2_MOD(ng)%AC2_parent_G(MSC*MDC*Numspec(ng)))
-        IF (.NOT.ALLOCATED(PARALL2_MOD(ng)%AC2_parent2_G))              &
-     &     ALLOCATE (PARALL2_MOD(ng)%AC2_parent2_G(MSC*MDC*Numspec(ng)))
+        ALLOCATE (PARALL2_MOD(ng)%AC2_parent_G(MSC*MDC*Numspec(ng)))
+        ALLOCATE (PARALL2_MOD(ng)%AC2_parent2_G(MSC*MDC*Numspec(ng)))
         AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
         AC2_parent2=>PARALL2_MOD(ng)%AC2_parent2_G
         AC2_parent2=0.
@@ -758,7 +756,8 @@
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
-     &                    UYB   , WXI   , WYI   , ng, first, IT_in)
+     &                    UYB   , WXI   , WYI   , ng, first, IT_in,
+     &                    AC2_parent2)
 #else
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
@@ -829,7 +828,8 @@
               numsteps = numsteps + 1
               CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
      &                      KGRPNT, XCGRID, YCGRID, KGRBND, OURQT ,
-     &                      IT, CouplingTime, ng,first)
+     &                      IT, CouplingTime, ng,first,
+     &                      AC2_parent, AC2_parent2)
 #else
             CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,         40.31
      &                    KGRPNT, XCGRID, YCGRID, KGRBND, OURQT )         40.51 40.31
@@ -1162,7 +1162,7 @@
       CALL BUGFIX ('B')
 !
 #ifdef MODEL_COUPLING
-      CALL OCPINI (ng, 'swaninit', .TRUE.,INERR)
+      CALL OCPINI (ng, .TRUE.,INERR)
 #else
       CALL OCPINI ('swaninit', .TRUE.,INERR)                              34.01
 #endif
@@ -4672,7 +4672,8 @@
       SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
      &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
-     &                   UYB   , WXI   , WYI, ng, first, ITjcw )
+     &                   UYB   , WXI   , WYI, ng, first, ITjcw ,
+     &                   AC2_parent2 )
 #else
       SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
@@ -4783,6 +4784,7 @@
 #ifdef MODEL_COUPLING
       INTEGER, intent(in) :: ng, first, ITjcw
       INTEGER ngp, ngc
+      REAL AC2_parent2(MSC*MDC*Numspec(ng))
 #endif
       INTEGER  BGRIDP(*), XYTST(*), KGRPNT(MXC,MYC)
 !
@@ -4960,8 +4962,9 @@
                     endif
 
 !                  AC2(ID,IS,INDXGR)=AC2_parent2(offset)
-                   AC2(ID,IS,INDXGR)=                                   &
-     &              PARALL2_MOD(ngp)%AC2_parent2_G(offset)
+!                   AC2(ID,IS,INDXGR)=                                   &
+!     &              PARALL2_MOD(ngp)%AC2_parent2_G(offset)
+                   AC2(ID,IS,INDXGR)=AC2_parent2(offset)
 
                  END DO
                END DO

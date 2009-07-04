@@ -6,7 +6,7 @@
 !*****************************************************************
 !                                                                *
 #ifdef MODEL_COUPLING
-      SUBROUTINE OCPINI (ng,INIFIL, LREAD, INERR)
+      SUBROUTINE OCPINI (ng, LREAD, INERR)
 #else
       SUBROUTINE OCPINI (INIFIL, LREAD, INERR)
 #endif
@@ -96,7 +96,8 @@
       LOGICAL    LREAD, FILEXI
 #ifdef MODEL_COUPLING
       INTEGER, intent(in) :: ng
-      CHARACTER  OUTFIL *40, INIFIL *(*), TSTFIL *40,
+      CHARACTER INIFIL*40
+      CHARACTER OUTFIL *40, TSTFIL *40,
 #else
       CHARACTER  INPFIL *40, OUTFIL *40, INIFIL *(*), TSTFIL *40,
 #endif
@@ -118,6 +119,14 @@
          IF (.NOT.ALLOCATED(IWEIG)) ALLOCATE(IWEIG(NPROC))
          IWEIG = 100
       END IF
+#ifdef MODEL_COUPLING
+      INIFIL='swaninit'
+      ILPOS = INDEX ( INIFIL, ' ' )-1
+      IF (ILPOS.GT.0) THEN
+        WRITE(INIFIL(ILPOS+1:ILPOS+2),183) ng
+      END IF
+ 183  FORMAT(I2.2)
+#endif
 !
 !     see whether initialisation file exists
 !
@@ -196,12 +205,13 @@
 #ifndef MODEL_COUPLING
         INPFIL = 'INPUT'
 #endif
-        PRINTF = 4
 #ifdef MODEL_COUPLING
         OUTFIL = 'PRINT'
         WRITE(OUTFIL(6:7),181) ng
  181    FORMAT(I2.2)
+        PRINTF = 100+ng
 #else
+        PRINTF = 4
         OUTFIL = 'PRINT'
 #endif
 !       unit ref. numbers for output to screen and to separate

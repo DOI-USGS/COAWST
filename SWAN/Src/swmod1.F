@@ -491,11 +491,18 @@
 ! SCREEN [  6] unit number for the screen
 !              (is for batch-oriented systems equal to PRINTF)
 !
+#ifdef MODEL_COUPLING
+      CHARACTER*80 INPFIL
+
+      INTEGER EXPORT, FUNHI , FUNLO , HIOPEN
+      INTEGER IMPORT, INPUTF, ITMOPT, IUNMAX
+      INTEGER IUNMIN, PRTEST, SCREEN
+      INTEGER, POINTER :: PRINTF
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: PRINTF_G(:)
+#else
       INTEGER EXPORT, FUNHI , FUNLO , HIOPEN
       INTEGER IMPORT, INPUTF, ITMOPT, IUNMAX
       INTEGER IUNMIN, PRINTF, PRTEST, SCREEN
-#ifdef MODEL_COUPLING
-      CHARACTER*80 INPFIL
 #endif
 !     *** test parameters ***
 !

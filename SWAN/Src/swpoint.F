@@ -88,6 +88,10 @@
       IF (.not.allocated(LMYF_G)) ALLOCATE (LMYF_G(Numgrids))
       IF (.not.allocated(LMYL_G)) ALLOCATE (LMYL_G(Numgrids))
 !
+!  OCPCOMM4
+!
+      IF (.not.allocated(PRINTF_G)) ALLOCATE (PRINTF_G(Numgrids))
+!
 !  SWANCOMM3
 !
       IF (.not.allocated(MXC_G)) ALLOCATE (MXC_G(Numgrids))
@@ -199,6 +203,10 @@
       LMXL=>LMXL_G(ng)
       LMYF=>LMYF_G(ng)
       LMYL=>LMYL_G(ng)
+!
+!  OCPCOMM4
+!
+      PRINTF=>PRINTF_G(ng)
 !
 !  SWANCOMM3
 !
