@@ -48,9 +48,18 @@
 
 ! Coupled model standard input file name.
 
-   ATM_name = atmos.in                                    ! atmospheric model, not used yet
-   WAV_name = Projects/Inlet_test/swan_inlet_test_diff.in ! wave model
-   OCN_name = Projects/Inlet_test/ocean_inlet_test.in     ! ocean model
+   ATM_name = atmos.in                                             ! atmospheric model, not used yet
+   WAV_name = Projects/Inlet_test/DiffGrid/swan_inlet_test_diff.in ! wave model
+   OCN_name = Projects/Inlet_test/DiffGrid/ocean_inlet_test.in     ! ocean model
+
+! Sparse matrix interpolation weights files.
+
+   W2ONAME == Projects/Inlet_test/DiffGrid/swan2roms_weights.nc
+   W2ANAME == wav2atm_weights.nc
+   A2ONAME == atm2ocn_weights.nc
+   A2WNAME == atm2wav_weights.nc
+   O2ANAME == ocn2atm_weights.nc
+   O2WNAME == Projects/Inlet_test/DiffGrid/roms2swan_weights.nc
 
 !
 !  GLOSSARY:

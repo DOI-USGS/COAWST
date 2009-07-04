@@ -410,7 +410,7 @@ Hout(idBott) == T T T T T T T T T T F F F F F F F F
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == Projects/Inlet_test/inlet_test_grid.nc 
+     GRDNAME == Projects/Inlet_test/DiffGrid/inlet_test_grid.nc 
      ININAME == ocean_ini.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
@@ -455,7 +455,7 @@ Hout(idBott) == T T T T T T T T T T F F F F F F F F
      SPOSNAM =  ROMS/External/stations.in
      FPOSNAM =  ROMS/External/floats.in
      BPARNAM =  ROMS/External/bioFasham.in
-     SPARNAM =  Projects/Inlet_test/sediment_inlet_test.in 
+     SPARNAM =  Projects/Inlet_test/DiffGrid/sediment_inlet_test.in 
      USRNAME =  ROMS/External/MyFile.dat
 !
 !  GLOSSARY:
