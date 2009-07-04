@@ -411,8 +411,8 @@ Hout(idBott) == T T T T T T T T T T F F F F F F F F\
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == Projects/Inlet_test/inlet_test_grid.nc \
-                Projects/Inlet_test/inlet_test_grid_ref5.nc
+     GRDNAME == Projects/Inlet_test/Refined/inlet_test_grid.nc \
+                Projects/Inlet_test/Refined/inlet_test_grid_ref5.nc
      ININAME == ocean_ini.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
@@ -421,8 +421,6 @@ Hout(idBott) == T T T T T T T T T T F F F F F F F F\
      BRYNAME == ocean_bry.nc
      FWDNAME == ocean_fwd.nc
      ADSNAME == ocean_ads.nc
-     SP1NAME == Projects/Inlet_test/swan2roms_weights.nc
-     SP2NAME == Projects/Inlet_test/roms2swan_weights.nc
 
 ! Input forcing NetCDF file name(s).  The USER has the option to enter
 ! several file names for each nested grid.  For example, the USER may
@@ -459,8 +457,7 @@ Hout(idBott) == T T T T T T T T T T F F F F F F F F\
      SPOSNAM =  ROMS/External/stations.in
      FPOSNAM =  ROMS/External/floats.in
      BPARNAM =  ROMS/External/bioFasham.in
-     SPARNAM =  Projects/Inlet_test/sediment_inlet_test.in
-!                ROMS/External/sediment_inlet_test_ref5.in
+     SPARNAM =  Projects/Inlet_test/Refined/sediment_inlet_test_ref5.in
      USRNAME =  ROMS/External/MyFile.dat
 !
 !  GLOSSARY:
