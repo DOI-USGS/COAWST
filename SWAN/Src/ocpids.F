@@ -209,7 +209,7 @@
         OUTFIL = 'PRINT'
         WRITE(OUTFIL(6:7),181) ng
  181    FORMAT(I2.2)
-        PRINTF = 100+ng
+        PRINTF = 500+ng
 #else
         PRINTF = 4
         OUTFIL = 'PRINT'

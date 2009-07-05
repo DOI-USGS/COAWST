@@ -149,8 +149,8 @@
 #endif
 #ifdef MODEL_COUPLING
       USE SWPOINT_MOD, ONLY: INIT_POINTERS, ALLOCATE_SWAN_ARRAYS
-      USE M_COUPLING
       USE M_BNDSPEC
+      USE M_COUPLING
 #endif
 !
       IMPLICIT NONE
@@ -368,18 +368,28 @@
       Numgrids=Ngrids
       Gridnum=ng
       CALL ALLOCATE_SWAN_ARRAYS(ng, Ngrids)
-#ifdef REFINED_GRID
-      ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
-      ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
-#endif
+!
+!  Allocate pointers
+!
+!  M_BNDSPEC
+!
+!      ALLOCATE (LBGP_G(Numgrids))
+      LBGP_G(ng)=.FALSE.
+!      LBGP=>LBGP_G(ng)
+!
 !
       NREOQ_G(ng)=0
       LOPS_G(ng)=.FALSE.
       LORQ_G(ng)=.FALSE.
+      LORQ=>LORQ_G(ng)
+!
+      ALLOCATE (ORQDATZ_MOD(ng)%FORQ)
 
       CALL INIT_POINTERS(ng)
-!
-!     --- initialize MPI
+
+
+      ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
+      ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
 !
       CALL SWINITMPI (MyComm)
       INPFIL = WNAME
@@ -519,11 +529,12 @@
 #ifdef MODEL_COUPLING
            ALLOCATE (PARALL2_MOD(ng)%AC1_G(MDC,MSC,MCGRD),STAT=ISTAT)
            AC1=>PARALL2_MOD(ng)%AC1_G
+           IF (SIZE(AC1).EQ.0) THEN                                       40.41
 #else
            IF (.NOT.ALLOCATED(AC1)) THEN                                  40.41 40.31
               ALLOCATE(AC1(MDC,MSC,MCGRD),STAT=ISTAT)                     40.41
+           ELSE IF (SIZE(AC1).EQ.0) THEN                                  40.41
 #endif
-           IF (SIZE(AC1).EQ.0) THEN                                       40.41
 #ifdef MODEL_COUPLING
               DEALLOCATE(PARALL2_MOD(ng)%AC1_G)
               ALLOCATE (PARALL2_MOD(ng)%AC1_G(MDC,MSC,MCGRD),STAT=ISTAT)
@@ -545,8 +556,7 @@
            AC1 = 0.                                                       40.31
         ELSE                                                              40.31
 #ifdef MODEL_COUPLING
-           ALLOCATE (PARALL2_MOD(ng)%AC1_G(0,0,0),STAT=ISTAT)
-           AC1=>PARALL2_MOD(ng)%AC1_G
+           ALLOCATE(AC1(0,0,0))
 #else
            IF(.NOT.ALLOCATED(AC1)) ALLOCATE(AC1(0,0,0))                   40.31
 #endif
@@ -613,6 +623,11 @@
 !
 !         --- exchange initial conditions with ocean model.
 !
+!# ifndef REFINED_GRID
+!            CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
+!     &                    KGRPNT, XCGRID, YCGRID, KGRBND, OURQT ,
+!     &                    0, 0, ng, 0)
+!# endif
             CALL SWTSTO(1)
 # endif
  900  CONTINUE
@@ -658,13 +673,13 @@
 !
 !         ---  Time-stepping SWAN.
 
-      Gridnum=ng
       numsteps=0
+      Gridnum=ng
 !
 !  Create list of pointers for each ng instance.
 !
       CALL INIT_POINTERS(ng)
-
+!
 !  Modules M_GENARR
 !
       KGRPNT=>M_GENARR_MOD(ng)%KGRPNT_G
@@ -686,7 +701,6 @@
 !
 !  Module M_PARALL
 !
-
       IBLKAD=>PARALL_MOD(ng)%IBLKAD_G
       KGRPGL=>PARALL_MOD(ng)%KGRPGL_G
       KGRBGL=>PARALL_MOD(ng)%KGRBGL_G
@@ -703,11 +717,12 @@
       AC1=>   PARALL2_MOD(ng)%AC1_G
       COMPDA=>PARALL2_MOD(ng)%COMPDA_G
       OURQT=> PARALL2_MOD(ng)%OURQT_G
-# ifdef REFINED_GRID
+#ifdef REFINED_GRID
 ! jcw needs to redo this
       AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
       AC2_parent2=>PARALL2_MOD(ng)%AC2_parent2_G
-# endif
+#endif
+!       LORQ=>LORQ_G(ng)
 #endif
 
 !         --- synchronize nodes                                           40.30
@@ -802,7 +817,12 @@
 
             ENDIF
 !
-#if !defined MODEL_COUPLING
+#ifdef MODEL_COUPLING
+            IF ( IT.EQ.IT0)  THEN                                         40.51 40.31
+               ALLOCATE (OURQT(MAX_OUTP_REQ))                             40.51 40.30
+               OURQT = -9999.                                             40.51 40.30
+            ENDIF                                                         40.00
+#else
             IF ( IT.EQ.IT0 .AND. .NOT.ALLOCATED(OURQT) ) THEN             40.51 40.31
                ALLOCATE (OURQT(MAX_OUTP_REQ))                             40.51 40.30
                OURQT = -9999.                                             40.51 40.30
@@ -828,7 +848,7 @@
               numsteps = numsteps + 1
               CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
      &                      KGRPNT, XCGRID, YCGRID, KGRBND, OURQT ,
-     &                      IT, CouplingTime, ng,first,
+     &                      IT, CouplingTime, ng,first, 
      &                      AC2_parent, AC2_parent2)
 #else
             CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,         40.31
@@ -4672,13 +4692,13 @@
       SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
      &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
-     &                   UYB   , WXI   , WYI, ng, first, ITjcw ,
-     &                   AC2_parent2 )
+     &                   UYB   , WXI   , WYI, ng, first, ITjcw,
+     &                   AC2_parent2)
 #else
       SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
      &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
-     &                   UYB   , WXI   , WYI   )                          40.31
+     &                   UYB   , WXI   , WYI)
 #endif
 !                                                                    *
 !*********************************************************************
@@ -4692,7 +4712,7 @@
       USE M_BNDSPEC                                                       40.31
       USE M_PARALL                                                        40.31
 #ifdef MODEL_COUPLING
-!      USE M_PARALL2                                                       40.31
+!     USE M_PARALL2                                                       40.31
       USE M_MPI
       USE mod_param
 #endif
@@ -4784,7 +4804,7 @@
 #ifdef MODEL_COUPLING
       INTEGER, intent(in) :: ng, first, ITjcw
       INTEGER ngp, ngc
-      REAL AC2_parent2(MSC*MDC*Numspec(ng))
+      REAL, INTENT(IN) :: AC2_parent2(MSC*MDC*Numspec(ng))
 #endif
       INTEGER  BGRIDP(*), XYTST(*), KGRPNT(MXC,MYC)
 !
@@ -4957,13 +4977,7 @@
                  DO ID = 1, MDC
                    offset=offset+1
 
-                   if (ibgrid.eq.1) then
-!                   write(*,*) 'ac2parnet = ',AC2_parent2(offset)
-                    endif
 
-!                  AC2(ID,IS,INDXGR)=AC2_parent2(offset)
-!                   AC2(ID,IS,INDXGR)=                                   &
-!     &              PARALL2_MOD(ngp)%AC2_parent2_G(offset)
                    AC2(ID,IS,INDXGR)=AC2_parent2(offset)
 
                  END DO
@@ -6897,10 +6911,9 @@
       IF (ALLOCATED(YGRDGL)) DEALLOCATE(YGRDGL)
       IF (ALLOCATED(KGRPGL)) DEALLOCATE(KGRPGL)
       IF (ALLOCATED(KGRBGL)) DEALLOCATE(KGRBGL)
-#endif
       IF (ALLOCATED(DIFPARAM)) DEALLOCATE(DIFPARAM)
       IF (ALLOCATED(DIFPARDX)) DEALLOCATE(DIFPARDX)
       IF (ALLOCATED(DIFPARDY)) DEALLOCATE(DIFPARDY)
-
+#endif
       RETURN
       END

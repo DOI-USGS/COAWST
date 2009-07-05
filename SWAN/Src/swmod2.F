@@ -216,10 +216,16 @@
       INTEGER :: DEC_BLOCK =  4       ! number of decimals for fixed-point block
       INTEGER :: DEC_SPEC  =  4       ! number of decimals for spectral output
 
+#ifdef MODEL_COUPLING
+!     longer filenames for output requests
+      CHARACTER (LEN=LENFNM), POINTER :: OUTP_FILES(:)
+      CHARACTER (LEN=LENFNM), POINTER :: OUTP_FILES_G(:,:)
+      ! filenames for output; index is output request sequence number
+#else
 !     longer filenames for output requests
       CHARACTER (LEN=LENFNM) :: OUTP_FILES(1:MAX_OUTP_REQ)
       ! filenames for output; index is output request sequence number
-
+#endif
 
 #ifdef MODEL_COUPLING
 

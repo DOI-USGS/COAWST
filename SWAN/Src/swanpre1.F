@@ -1142,9 +1142,9 @@
             JVY2   = MCMVAR
           ENDIF
 # ifdef MODEL_COUPLING
-          ALLOCATE (M_GENARR_MOD(ng)%UXB_G(MXG(IGR1),MYG(IGR1)))            40.31
+          ALLOCATE (M_GENARR_MOD(ng)%UXB_G(MXG(IGR1),MYG(IGR1)))
           UXB=>M_GENARR_MOD(ng)%UXB_G
-          ALLOCATE (M_GENARR_MOD(ng)%UYB_G(MXG(IGR2),MYG(IGR2)))            40.31
+          ALLOCATE (M_GENARR_MOD(ng)%UYB_G(MXG(IGR2),MYG(IGR2)))
           UYB=>M_GENARR_MOD(ng)%UYB_G
 # else
           IF (.NOT.ALLOCATED(UXB)) ALLOCATE(UXB(MXG(IGR1),MYG(IGR1)))
@@ -1214,7 +1214,7 @@
 #ifdef MODEL_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
-        ELSE IF (KEYWIS ('WLEV')) THEN                                      20.38
+        ELSE IF (KEYWIS ('WLEV')) THEN                                    20.38
           IGRD = 7
           PSNAME = 'WLEVGRID'
 #ifdef MODEL_COUPLING
@@ -3269,29 +3269,29 @@
       IF (STPNOW()) RETURN                                                34.01
 #ifdef MODEL_COUPLING
       IF (IGR1.EQ.1) THEN                                                 40.31
-         ALLOCATE (M_GENARR_MOD(ng)%DEPTH_G(MXG(IGR1),MYG(IGR1)))         40.31
+         ALLOCATE (M_GENARR_MOD(ng)%DEPTH_G(MXG(IGR1),MYG(IGR1)))
          DEPTH=>M_GENARR_MOD(ng)%DEPTH_G
          CALL SWCOPR( TARR, DEPTH, MXG(IGR1)*MYG(IGR1) )                  40.31
       ELSE IF (IGR1.EQ.2) THEN                                            40.31
-         ALLOCATE (M_GENARR_MOD(ng)%UXB_G(MXG(IGR1),MYG(IGR1)))           40.31
+         ALLOCATE (M_GENARR_MOD(ng)%UXB_G(MXG(IGR1),MYG(IGR1)))
          UXB=>M_GENARR_MOD(ng)%UXB_G
          CALL SWCOPR( TARR, UXB, MXG(IGR1)*MYG(IGR1) )                    40.31
       ELSE IF (IGR1.EQ.4) THEN                                            40.31
-         ALLOCATE (M_GENARR_MOD(ng)%FRIC_G(MXG(IGR1),MYG(IGR1)))          40.31
+         ALLOCATE (M_GENARR_MOD(ng)%FRIC_G(MXG(IGR1),MYG(IGR1)))
          FRIC=>M_GENARR_MOD(ng)%FRIC_G
          CALL SWCOPR( TARR, FRIC, MXG(IGR1)*MYG(IGR1) )                   40.31
       ELSE IF (IGR1.EQ.5) THEN                                            40.31
-         ALLOCATE (M_GENARR_MOD(ng)%WXI_G(MXG(IGR1),MYG(IGR1)))           40.31
+         ALLOCATE (M_GENARR_MOD(ng)%WXI_G(MXG(IGR1),MYG(IGR1)))
          WXI=>M_GENARR_MOD(ng)%WXI_G
          CALL SWCOPR( TARR, WXI, MXG(IGR1)*MYG(IGR1) )                    40.31
       ELSE IF (IGR1.EQ.7) THEN                                            40.31
-         ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(MXG(IGR1),MYG(IGR1)))         40.31
+         ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(MXG(IGR1),MYG(IGR1)))
          WLEVL=>M_GENARR_MOD(ng)%WLEVL_G
          CALL SWCOPR( TARR, WLEVL, MXG(IGR1)*MYG(IGR1) )                  40.31
       ELSE IF (IGR1.EQ.8) THEN                                            40.31
          CALL SWCOPR( TARR, XCGRID, MXG(IGR1)*MYG(IGR1) )                 40.31
       ELSE IF (IGR1.EQ.10) THEN                                           40.31
-         ALLOCATE (M_GENARR_MOD(ng)%ASTDF_G(MXG(IGR1),MYG(IGR1)))         40.31
+         ALLOCATE (M_GENARR_MOD(ng)%ASTDF_G(MXG(IGR1),MYG(IGR1)))
          ASTDF=>M_GENARR_MOD(ng)%ASTDF_G
          CALL SWCOPR( TARR, ASTDF, MXG(IGR1)*MYG(IGR1) )                  40.31
       END IF                                                              40.31
@@ -3335,11 +3335,11 @@
 
 #ifdef MODEL_COUPLING
       IF (IGR2.EQ.3) THEN                                                 40.31
-         ALLOCATE (M_GENARR_MOD(ng)%UYB_G(MXG(IGR2),MYG(IGR2)))           40.31
+         ALLOCATE (M_GENARR_MOD(ng)%UYB_G(MXG(IGR2),MYG(IGR2)))
          UYB=>M_GENARR_MOD(ng)%UYB_G
          CALL SWCOPR( TARR, UYB, MXG(IGR2)*MYG(IGR2) )                    40.31
       ELSE IF (IGR2.EQ.6) THEN                                            40.31
-         ALLOCATE (M_GENARR_MOD(ng)%WYI_G(MXG(IGR2),MYG(IGR2)))           40.31
+         ALLOCATE (M_GENARR_MOD(ng)%WYI_G(MXG(IGR2),MYG(IGR2)))
          WYI=>M_GENARR_MOD(ng)%WYI_G
          CALL SWCOPR( TARR, WXI, MXG(IGR1)*MYG(IGR1) )                    40.31
       ELSE IF (IGR2.EQ.9) THEN                                            40.31

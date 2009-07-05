@@ -2489,7 +2489,7 @@
 !
 #if defined MODEL_COUPLING
       LBGP=>LBGP_G(ng)
-      LBGP = .FALSE.
+!      LBGP = .FALSE.
 #endif
       CALL INKEYW ('REQ',' ')
       IF (KEYWIS ('SHAP')) THEN

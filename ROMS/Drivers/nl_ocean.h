@@ -241,7 +241,8 @@
       IF (.not.ALLOCATED(count)) ALLOCATE (count(Ngrids))
       DO ng=1,Ngrids
         run_grid(ng)=.TRUE.
-        count(ng)=my_iic-Tstr(1)
+!       count(ng)=my_iic-Tstr(1)
+        count(ng)=0
       END DO
       rtime_start=0.
       rtime_end=9999999.00
@@ -257,6 +258,7 @@
         DO ng=1,Ngrids
           IF (run_grid(ng).eq..TRUE.) THEN
             count(ng)=count(ng)+1
+            iic(ng)=count(ng)
 # ifdef SOLVE3D
             CALL main3d (ng)
 # else

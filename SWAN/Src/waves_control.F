@@ -48,7 +48,7 @@
       USE SWCOMM3
       USE TIMECOMM
       USE M_MPI
-      USE M_COUPLING
+!     USE M_COUPLING
 !
 !  Imported variable declarations.
 !
@@ -63,7 +63,9 @@
       logical, allocatable :: run_grid(:)
       integer, allocatable :: count(:)
       real :: rtime, rtime_start, rtime_end, cff
-
+#ifdef REFINED_GRID
+      integer :: ngp, ngc
+#endif
       MyKey=0
       inp=22
 #ifdef REFINED_GRID
@@ -134,8 +136,6 @@
 !  For the first entry, all grids step individual dts.
 !
         DO ng=1,Ngrids
-!         ngp=myparent(ng)
-!         ngc=mychild(ng)
           IF (run_grid(ng).eq..TRUE.) THEN
             CALL SWAN_RUN (CouplingTime, count(ng), ng, 1)
             count(ng)=count(ng)+1
@@ -144,13 +144,18 @@
 !
 #ifdef REFINED_GRID
             IF (ng.lt.Ngrids) THEN
-              CALL MPI_BCAST(PARALL2_MOD(ng)%AC2_parent2_G,           &
+              CALL MPI_BCAST(PARALL2_MOD(ng)%AC2_parent2_G,             &
      &                         ac2size(ng),SWREAL,0,MyCOMM,MyError)
             END IF
+            IF (ng.gt.1) THEN
+              ngp=myparent(ng)
+              ngc=mychild(ng)
+              DO i=1,ac2size(ng)
+                PARALL2_MOD(ng)%AC2_parent2_G(i)=                          &
+     &          PARALL2_MOD(ngp)%AC2_parent2_G(i)
+              END DO
+            END IF
 #endif
-!
-!  Run each grid
-!
           END IF
           run_grid(ng)=.FALSE.
         END DO

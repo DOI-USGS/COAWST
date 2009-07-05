@@ -149,8 +149,8 @@
       INTEGER numsteps, ngp, ngc, offset, spcount, XC, YC
       INTEGER MyRank, MySize, MyError, MyTag, MyStatus, MyHandle
       REAL    CouplingTime
-      REAL AC2_parent(MSC*MDC*Numspec(ng))
-      REAL AC2_parent2(MSC*MDC*Numspec(ng))
+      REAL, INTENT(INOUT) :: AC2_parent(MSC*MDC*Numspec(ng))
+      REAL, INTENT(INOUT) :: AC2_parent2(MSC*MDC*Numspec(ng))
 #endif
 !
 !     AC2     real arr input  action density in all computational points
@@ -468,7 +468,7 @@
 !
 !          Exchange 2d spectra in array AC2 from parent to child grid.
 !
-!           CALL mpi_comm_rank (WAV_COMM_WORLD, MyRank, MyError)
+!          CALL mpi_comm_rank (WAV_COMM_WORLD, MyRank, MyError)
            CALL mpi_comm_size (WAV_COMM_WORLD, MySize, MyError)
            spcount=spcount+1
            ngp=myparent(ng)
@@ -485,7 +485,7 @@
                  AC2_parent(offset)=AC2(ID,IS,INDXY)
 
 !                  if (ac2_parent(offset).gt.0.) then
-!                    write(*,*) ac2_parent(offset), inode
+!                    write(*,*) ac2_parent(offset), xc,yc
 !                   end if
 
                END DO
