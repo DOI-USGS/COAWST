@@ -549,6 +549,7 @@
           IF (STPNOW()) RETURN                                            34.01
           NPTSTA = MAX(1,NPTST)                                           40.00
 #ifdef MODEL_COUPLING
+          DEALLOCATE (M_GENARR_MOD(ng)%XYTST_G)
           ALLOCATE (M_GENARR_MOD(ng)%XYTST_G(2*NPTSTA))
           XYTST=>M_GENARR_MOD(ng)%XYTST_G
 #else
@@ -3281,6 +3282,7 @@
          FRIC=>M_GENARR_MOD(ng)%FRIC_G
          CALL SWCOPR( TARR, FRIC, MXG(IGR1)*MYG(IGR1) )                   40.31
       ELSE IF (IGR1.EQ.5) THEN                                            40.31
+         DEALLOCATE(M_GENARR_MOD(ng)%WXI_G)
          ALLOCATE (M_GENARR_MOD(ng)%WXI_G(MXG(IGR1),MYG(IGR1)))
          WXI=>M_GENARR_MOD(ng)%WXI_G
          CALL SWCOPR( TARR, WXI, MXG(IGR1)*MYG(IGR1) )                    40.31
@@ -3339,6 +3341,7 @@
          UYB=>M_GENARR_MOD(ng)%UYB_G
          CALL SWCOPR( TARR, UYB, MXG(IGR2)*MYG(IGR2) )                    40.31
       ELSE IF (IGR2.EQ.6) THEN                                            40.31
+         DEALLOCATE(M_GENARR_MOD(ng)%WYI_G)
          ALLOCATE (M_GENARR_MOD(ng)%WYI_G(MXG(IGR2),MYG(IGR2)))
          WYI=>M_GENARR_MOD(ng)%WYI_G
          CALL SWCOPR( TARR, WXI, MXG(IGR1)*MYG(IGR1) )                    40.31

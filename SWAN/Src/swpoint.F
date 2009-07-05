@@ -146,7 +146,8 @@
 
         IF (.not.allocated(MXG_G)) ALLOCATE (MXG_G(Numgrids,NUMGRD))
         IF (.not.allocated(MYG_G)) ALLOCATE (MYG_G(Numgrids,NUMGRD))
-        IF (.not.allocated(IGTYPE_G)) ALLOCATE (IGTYPE_G(Numgrids,NUMGRD))
+        IF (.not.allocated(IGTYPE_G))                                   &
+     &           ALLOCATE (IGTYPE_G(Numgrids,NUMGRD))
         IF (.not.allocated(LEDS_G)) ALLOCATE (LEDS_G(Numgrids,NUMGRD))
 
         IF (.not.allocated(COSVC_G)) ALLOCATE (COSVC_G(Numgrids))
@@ -161,7 +162,8 @@
         IF (.not.allocated(COSPG_G)) ALLOCATE (COSPG_G(Numgrids,NUMGRD))
         IF (.not.allocated(DXG_G)) ALLOCATE (DXG_G(Numgrids,NUMGRD))
         IF (.not.allocated(DYG_G)) ALLOCATE (DYG_G(Numgrids,NUMGRD))
-        IF (.not.allocated(EXCFLD_G)) ALLOCATE (EXCFLD_G(Numgrids,NUMGRD))
+        IF (.not.allocated(EXCFLD_G))                                   &
+     &           ALLOCATE (EXCFLD_G(Numgrids,NUMGRD))
         IF (.not.allocated(SINPG_G)) ALLOCATE (SINPG_G(Numgrids,NUMGRD))
         IF (.not.allocated(STAGX_G)) ALLOCATE (STAGX_G(Numgrids,NUMGRD))
         IF (.not.allocated(STAGY_G)) ALLOCATE (STAGY_G(Numgrids,NUMGRD))

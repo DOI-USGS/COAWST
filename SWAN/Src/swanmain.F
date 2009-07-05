@@ -369,13 +369,22 @@
       Gridnum=ng
       CALL ALLOCATE_SWAN_ARRAYS(ng, Ngrids)
 !
+!  Allocate here a few arrays that are grid specific, needed, and reallocated later.
+!
+      ALLOCATE (M_GENARR_MOD(ng)%XYTST_G(1))
+!
+! Allocte wxi and wyi here, just in case they are not allocated later.
+!
+      ALLOCATE (M_GENARR_MOD(ng)%WXI_G(1,1))
+      ALLOCATE (M_GENARR_MOD(ng)%WYI_G(1,1))
+!
 !  Allocate pointers
 !
 !  M_BNDSPEC
 !
-!      ALLOCATE (LBGP_G(Numgrids))
+!     ALLOCATE (LBGP_G(Numgrids))
       LBGP_G(ng)=.FALSE.
-!      LBGP=>LBGP_G(ng)
+!     LBGP=>LBGP_G(ng)
 !
 !
       NREOQ_G(ng)=0
@@ -556,7 +565,9 @@
            AC1 = 0.                                                       40.31
         ELSE                                                              40.31
 #ifdef MODEL_COUPLING
-           ALLOCATE(AC1(0,0,0))
+           ALLOCATE (PARALL2_MOD(ng)%AC1_G(MDC,MSC,MCGRD),STAT=ISTAT)
+           AC1=>PARALL2_MOD(ng)%AC1_G
+!          ALLOCATE(AC1(0,0,0))
 #else
            IF(.NOT.ALLOCATED(AC1)) ALLOCATE(AC1(0,0,0))                   40.31
 #endif
