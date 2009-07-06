@@ -468,7 +468,6 @@
 !
 !          Exchange 2d spectra in array AC2 from parent to child grid.
 !
-!          CALL mpi_comm_rank (WAV_COMM_WORLD, MyRank, MyError)
            CALL mpi_comm_size (WAV_COMM_WORLD, MySize, MyError)
            spcount=spcount+1
            ngp=myparent(ng)
@@ -483,15 +482,11 @@
                DO ID = 1, MDC
                  offset=offset+1
                  AC2_parent(offset)=AC2(ID,IS,INDXY)
-
-!                  if (ac2_parent(offset).gt.0.) then
-!                    write(*,*) ac2_parent(offset), xc,yc
-!                   end if
-
                END DO
              END DO
  700         CONTINUE
-             IF ((first.ge.0).and.(IRQ.eq.NREOQ)) THEN
+!            IF ((first.ge.0).and.(IRQ.eq.NREOQ)) THEN
+             IF (IRQ.eq.NREOQ) THEN
 !              IF (MyRank.eq.0) THEN
                IF (INODE.EQ.MASTER) THEN
                  DO ID=1,ac2size(ng)
@@ -504,18 +499,10 @@
                  DO IS=1,MySize-1
                    MyTag=IS+1
                    ID=IS
-!                      write(*,*) 'swout recv', ng, inode, mytag,IS
-
                    CALL MPI_RECV(AC2_parent,ac2size(ng),MPI_REAL,ID,    &
      &                           MyTag,WAV_COMM_WORLD,MyStatus,MyError)
                    DO ID=1,ac2size(ng)
                      AC2_parent2(ID)=AC2_parent2(ID)+AC2_parent(ID)
-
-!                  if (ac2_parent(id).gt.0.) then
-!                    write(*,*) ac2_parent(id), inode
-!                   end if
-
-
                    END DO
                  END DO
                ELSE
@@ -542,8 +529,8 @@
 #ifdef MODEL_COUPLING
 
 !     Couple to ocean model
-!        IF (cplout) THEN
-        IF ((cplout).and.(first.ge.0)) THEN
+        IF (cplout) THEN
+!       IF ((cplout).and.(first.ge.0)) THEN
           CALL WAV2OCN_COUPLING (MIP, NVOQP, VOQR, VOQ(1), IRQ,
      &                           IVTYPE, COMPDA, numsteps, ng)
           IF (STPNOW()) RETURN

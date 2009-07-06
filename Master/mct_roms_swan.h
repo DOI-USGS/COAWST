@@ -652,7 +652,8 @@
         RETURN
       ELSE
         IF (Master) THEN
-          WRITE (stdout,'(a)') 'ROMS recv Wave fields'
+	WRITE (stdout,36) ' ** ROMS grid ',ng,' recv data from SWAN'
+ 36     FORMAT (a14,i2,a20)
         END IF
       END IF
 !
@@ -1043,7 +1044,8 @@
         RETURN
       ELSE
         IF (Master) THEN
-          WRITE (stdout,'(a)') 'ROMS sent data to SWAN'
+	WRITE (stdout,35) ' ** ROMS grid ',ng,' sent data to SWAN'
+ 35     FORMAT (a14,i2,a18)
         END IF
       END IF
 !

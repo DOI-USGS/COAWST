@@ -532,6 +532,7 @@
       USE M_GENARR
       USE M_MPI
       USE SWCOMM1
+      USE OCPCOMM4
       USE mod_coupler
 !
       implicit none
@@ -653,7 +654,8 @@
         CALL MCT_Send (AttrVect_G(ng)%wav2ocn_AV,                       &
      &                 Router_G(ng)%SWANtoROMS, MyError)
         IF (MYRANK.EQ.0) THEN
-          WRITE (*,*) '== SWAN sent wave fields to ROMS'
+          WRITE (SCREEN,36) '== SWAN grid ',ng,' sent wave data to ROMS'
+ 36       FORMAT (a14,i2,a23)
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling send fail swancplr, MyStatus= ', MyError
@@ -669,7 +671,8 @@
         CALL MCT_Recv (AttrVect_G(ng)%ocn2wav_AV,                       &
      &                 Router_G(ng)%SWANtoROMS, MyError)
         IF (MYRANK.EQ.0) THEN
-          WRITE (*,*) '== SWAN recvd ocean fields'
+          WRITE (SCREEN,35) '== SWAN grid ',ng,' recvd data from ROMS'
+ 35       FORMAT (a14,i2,a21)
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError

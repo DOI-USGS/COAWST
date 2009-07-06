@@ -856,11 +856,11 @@
 
 !           --- couple models during output computations
 
-              numsteps = numsteps + 1
-              CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
-     &                      KGRPNT, XCGRID, YCGRID, KGRBND, OURQT ,
-     &                      IT, CouplingTime, ng,first, 
-     &                      AC2_parent, AC2_parent2)
+            numsteps = numsteps + 1
+            CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
+     &                    KGRPNT, XCGRID, YCGRID, KGRBND, OURQT ,
+     &                    IT, CouplingTime, ng,first, 
+     &                    AC2_parent, AC2_parent2)
 #else
             CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,         40.31
      &                    KGRPNT, XCGRID, YCGRID, KGRBND, OURQT )         40.51 40.31
@@ -4987,10 +4987,7 @@
                DO IS = 1, MSC
                  DO ID = 1, MDC
                    offset=offset+1
-
-
                    AC2(ID,IS,INDXGR)=AC2_parent2(offset)
-
                  END DO
                END DO
                W1 = 0.001 * REAL(BGRIDP(6*IBGRID-3))
