@@ -106,15 +106,28 @@
 !  The call to run here does not do a time step, it fills the bc arrays,
 !  fill AC2 array of bound spec data for child grids, and enters into MCT.
 !
-!      DO ng=1,Ngrids
-!        CALL SWAN_RUN (CouplingTime, 0, ng, 0)
-!#ifdef REFINED_GRID
-!        IF (ng.lt.Ngrids) THEN
-!          CALL MPI_BCAST(PARALL2_MOD(ng)%AC2_parent2_G,                 &
-!     &      ac2size(ng),SWREAL,0,MyCOMM,MyError)
-!        END IF
-!#endif
-!      END DO
+      DO ng=1,Ngrids
+
+#ifdef REFINED_GRID
+            IF (ng.gt.1) THEN
+              ngp=myparent(ng)
+              ngc=mychild(ng)
+              DO i=1,ac2size(ng)
+                PARALL2_MOD(ng)%AC2_parent2_G(i)=                       &
+     &          PARALL2_MOD(ngp)%AC2_parent2_G(i)
+              END DO
+            END IF
+#endif
+
+        CALL SWAN_RUN (CouplingTime, 0, ng, 0)
+
+#ifdef REFINED_GRID
+        IF (ng.lt.Ngrids) THEN
+          CALL MPI_BCAST(PARALL2_MOD(ng)%AC2_parent2_G,                 &
+     &      ac2size(ng),SWREAL,0,MyCOMM,MyError)
+        END IF
+#endif
+      END DO
 !
 !  Set some initial run time parameters here.
 !
@@ -148,9 +161,8 @@
               END DO
             END IF
 #endif
-
-            CALL SWAN_RUN (CouplingTime, count(ng), ng, count(ng))
             count(ng)=count(ng)+1
+            CALL SWAN_RUN (CouplingTime, count(ng), ng, count(ng))
 !
 !  Get AC data from parent.
 !
