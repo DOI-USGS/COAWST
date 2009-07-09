@@ -1172,8 +1172,14 @@
       END
 !***********************************************************************
 !                                                                      *
+#ifdef REFINED_GRID
+      SUBROUTINE SWSPEC (RTYPE, OQI, MIP, VOQR, VOQ, AC2, ACLOC,          40.31 20.28
+     &                   SPCSIG, SPCDIR, DEP2, KGRPNT, IONOD, 
+     &                   spcount, AC2_parent, ng)
+#else
       SUBROUTINE SWSPEC (RTYPE, OQI, MIP, VOQR, VOQ, AC2, ACLOC,          40.31 20.28
      &                   SPCSIG, SPCDIR, DEP2, KGRPNT, IONOD)             40.31 30.72
+#endif
 !                                                                      *
 !***********************************************************************
 !
@@ -1269,6 +1275,10 @@
 !
       REAL    SPCDIR(MDC,6)                                               30.82
       REAL    SPCSIG(MSC)                                                 30.72
+#ifdef REFINED_GRID
+      INTEGER, INTENT(IN) :: spcount, ng
+      REAL, INTENT(INOUT) :: AC2_parent(MSC*MDC*Numspec(ng))
+#endif
 !
 !     RTYPE   ch*4   input    type of output request: 'SPEC' for 2-D spectral
 !                             output, 'SPE1' for 1-D freq. spectrum
@@ -1474,11 +1484,27 @@
           UY = 0.
         ENDIF
 !
+#ifdef REFINED_GRID
+
+          if (spcount.eq.40) then
+                write(*,*) 'swspec indxy xc yc =', indxy,xc,yc
+                write(*,*) 'swspec voq size =', size(voq)
+          endif
+
+
+        CALL SWCMSP (OTYPE       ,XC         ,YC          ,               40.00
+     &               AC2         ,ACLOC      ,SPCSIG      ,
+     &               DEP         ,DEP2       ,UX          ,               40.00
+     &               UY          ,SPCDIR(1,2) ,SPCDIR(1,3),
+     &               OFAC        ,KGRPNT     ,IERR        ,
+     &               spcount     ,AC2_parent ,ng)
+#else
         CALL SWCMSP (OTYPE       ,XC         ,YC          ,               40.00
      &               AC2         ,ACLOC      ,SPCSIG      ,
      &               DEP         ,DEP2       ,UX          ,               40.00
      &               UY          ,SPCDIR(1,2) ,SPCDIR(1,3),
      &               OFAC        ,KGRPNT     ,IERR        )               40.00
+#endif
 !
         IF (IERR.GT.0) THEN
           WRITE (NREF, 220) 'NODATA'
@@ -1505,11 +1531,20 @@
       END
 !***********************************************************************
 !                                                                      *
+#ifdef REFINED_GRID
+      SUBROUTINE SWCMSP (OTYPE     ,XC        ,YC        ,                40.00
+     &                   AC2       ,ACLOC     ,SPCSIG    ,
+     &                   DEP       ,DEP2      ,UX        ,                40.00
+     &                   UY        ,ECOS      ,ESIN      ,
+     &                   OFAC      ,KGRPNT    ,IERR      ,
+     &                   spcount   ,AC2_parent, ng)
+#else
       SUBROUTINE SWCMSP (OTYPE     ,XC        ,YC        ,                40.00
      &                   AC2       ,ACLOC     ,SPCSIG    ,
      &                   DEP       ,DEP2      ,UX        ,                40.00
      &                   UY        ,ECOS      ,ESIN      ,
      &                   OFAC      ,KGRPNT    ,IERR      )                30.21
+#endif
 !                                                                      *
 !***********************************************************************
 !
@@ -1517,6 +1552,9 @@
       USE SWCOMM1                                                         40.41
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
+#ifdef MODEL_COUPLING
+      USE M_PARALL                                                        40.31
+#endif
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -1599,6 +1637,10 @@
 !                    sigma-space                                          30.72
 !
       REAL    SPCSIG(MSC)                                                 30.72
+#ifdef REFINED_GRID
+      INTEGER, INTENT(IN) :: spcount, ng
+      REAL, INTENT(INOUT) :: AC2_parent(MSC*MDC*Numspec(ng))
+#endif
 !
 !       OTYPE   int    input    type of spectrum wanted: 2 or -2 for 2-D
 !                               spectrum, 1 or -1 for 1-D freq. spectrum
@@ -1640,6 +1682,9 @@
       REAL      XC, YC, UX, UY, DEP, DEP2(MCGRD), AC2(MDC,MSC,MCGRD),     40.00
      &          ACLOC(*)        ,ECOS(MDC)         ,ESIN(MDC)             40.00
       REAL      CG(1), K1(1), K2(1), N(1), ND(1), SIG1(1), SIG2(1)        30.82
+#ifdef MODEL_COUPLING
+      INTEGER offset
+#endif
 !
       SAVE IENT
       DATA IENT/0/
@@ -1814,6 +1859,37 @@
           IF (RF22.GT.1.E-10) THEN
             ACLL = ACLL + RF22 * AC2(ID,ISIGM,IND22)
           ENDIF
+#ifdef REFINED_GRID
+!            offset=MSC*MDC*(spcount-1)
+!            DO IS = 1, MSC       1
+!              DO ID = 1, MDC     2 
+!                offset=offset+1  2
+!                AC2_parent(offset)=AC2(ID,IS,INDXY)
+!              END DO
+!            END DO
+
+!          offset=MSC*MDC*(spcount-1)+(ISIGM-1)*MSC+ID
+!          AC2_parent(offset)=ACLL
+
+            INDXY = KGRPNT(XC,YC)
+          offset=MSC*MDC*(spcount-1)+(ISIGM-1)*MSC+ID
+!          AC2_parent(offset)=AC2(ID,Isigm,indxy)
+
+          if (spcount.eq.40) then
+
+              if ((isigm.eq.msc).and.(id.eq.msc)) then
+                write(*,*) 'swcmsp indxy xc yc =', indxy,xc,yc
+              endif
+
+            DO IS2 = 1, MSC       
+              DO ID2 = 1, MDC      
+!                write(*,*) 'ac2 of 40 is ', jx1,jy1,jx2,jy2,            &
+!     &                    AC2(:,:,ind11)
+              end do
+              end do
+           end if
+
+#endif
 !         energy density interpolated in space:
           ECLL = OFAC * ACLL * SPCSIG(ISIGM)                              40.00
 !

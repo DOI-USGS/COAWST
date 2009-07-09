@@ -461,57 +461,73 @@
           ELSE
              ALLOCATE(AUX1(3*MSC))                                        40.31
           ENDIF
-          CALL SWSPEC ( RTYPE, CORQ%OQI, MIP, VOQR, VOQ(1), AC2, AUX1,    40.31
-     &                  SPCSIG, SPCDIR, COMPDA(1,JDP2), KGRPNT,           40.31
-     &                  IONOD )                                           40.31
 #ifdef REFINED_GRID
+          IF (ng.lt.Ngrids) THEN
+            spcount=spcount+1
+            CALL SWSPEC ( RTYPE, CORQ%OQI, MIP, VOQR, VOQ(1), AC2, AUX1,  40.31
+     &                  SPCSIG, SPCDIR, COMPDA(1,JDP2), KGRPNT,           40.31
+     &                  IONOD, spcount, AC2_parent, ng)
 !
-!          Exchange 2d spectra in array AC2 from parent to child grid.
+!         Exchange 2d spectra in array AC2 from parent to child grid.
 !
-           CALL mpi_comm_size (WAV_COMM_WORLD, MySize, MyError)
-           spcount=spcount+1
-           ngp=myparent(ng)
-           ngc=mychild(ng)
-           IF (ng.lt.Ngrids) THEN
-             IF (IONOD(1).NE.INODE) GOTO 700
-             offset=MSC*MDC*(spcount-1)
-             XC  = VOQ(VOQR(24))
-             YC  = VOQ(VOQR(25))
-             INDXY = KGRPNT(XC,YC)
-             DO IS = 1, MSC
-               DO ID = 1, MDC
-                 offset=offset+1
-                 AC2_parent(offset)=AC2(ID,IS,INDXY)
-               END DO
-             END DO
- 700         CONTINUE
-!            IF ((first.ge.0).and.(IRQ.eq.NREOQ)) THEN
-             IF (IRQ.eq.NREOQ) THEN
-!              IF (MyRank.eq.0) THEN
-               IF (INODE.EQ.MASTER) THEN
-                 DO ID=1,ac2size(ng)
-                   AC2_parent2(ID)=AC2_parent2(ID)+AC2_parent(ID)
-                 END DO
+          CALL mpi_comm_size (WAV_COMM_WORLD, MySize, MyError)
+          ngp=myparent(ng)
+          ngc=mychild(ng)
+            IF (IONOD(1).NE.INODE) GOTO 700
+            offset=MSC*MDC*(spcount-1)
+            XC  = VOQ(VOQR(24))
+            YC  = VOQ(VOQR(25))
+            INDXY = KGRPNT(XC,YC)
+            DO IS = 1, MSC
+              DO ID = 1, MDC
+                offset=offset+1
+                AC2_parent(offset)=AC2(ID,IS,INDXY)
+
+
+              if ((is.eq.msc).and.(id.eq.msc)) then
+                write(*,*) 'swanout1 indxy xc yc =', indxy,xc,yc
+                write(*,*) 'swanout voq size =', size(voq)
+              endif
+
+
+             if (spcount.eq.40) then
+!               write(*,*) 'swanout top thinks: ', xc,yc,ac2(:,:,indxy)
+             endif
+
+              END DO
+            END DO
+ 700        CONTINUE
+!!           IF ((first.ge.0).and.(IRQ.eq.NREOQ)) THEN
+            IF (IRQ.eq.NREOQ) THEN
+!!             IF (MyRank.eq.0) THEN
+              IF (INODE.EQ.MASTER) THEN
+                DO ID=1,ac2size(ng)
+                  AC2_parent2(ID)=AC2_parent2(ID)+AC2_parent(ID)
+                END DO
 !
 ! Gather all the ac2_parent arrays from all processors and add them up. 
 ! If a processor did not contribute, then its value is zero.
 !
-                 DO IS=1,MySize-1
-                   MyTag=IS+1
-                   ID=IS
-                   CALL MPI_RECV(AC2_parent,ac2size(ng),MPI_REAL,ID,    &
-     &                           MyTag,WAV_COMM_WORLD,MyStatus,MyError)
-                   DO ID=1,ac2size(ng)
-                     AC2_parent2(ID)=AC2_parent2(ID)+AC2_parent(ID)
-                   END DO
-                 END DO
-               ELSE
-                 MyTag=INODE
-                 CALL MPI_SEND(AC2_parent,ac2size(ng),MPI_REAL,0,MyTag, &
-     &                         WAV_COMM_WORLD,MyError)
-               END IF
-             END IF
-           END IF
+                DO IS=1,MySize-1
+                  MyTag=IS+1
+                  ID=IS
+                  CALL MPI_RECV(AC2_parent,ac2size(ng),MPI_REAL,ID,     &
+     &                          MyTag,WAV_COMM_WORLD,MyStatus,MyError)
+                  DO ID=1,ac2size(ng)
+                    AC2_parent2(ID)=AC2_parent2(ID)+AC2_parent(ID)
+                  END DO
+                END DO
+              ELSE
+                MyTag=INODE
+                CALL MPI_SEND(AC2_parent,ac2size(ng),MPI_REAL,0,MyTag,  &
+     &                        WAV_COMM_WORLD,MyError)
+              END IF
+            END IF
+          END IF
+#else
+          CALL SWSPEC ( RTYPE, CORQ%OQI, MIP, VOQR, VOQ(1), AC2, AUX1,    40.31
+     &                  SPCSIG, SPCDIR, COMPDA(1,JDP2), KGRPNT,           40.31
+     &                  IONOD )                                           40.31
 #endif
           IF (STPNOW()) RETURN                                            34.01
           DEALLOCATE(AUX1)                                                40.31
