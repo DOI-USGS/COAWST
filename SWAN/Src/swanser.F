@@ -1038,6 +1038,11 @@
       USE SWCOMM2                                                         40.41
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
+#ifdef REFINED_GRID
+      USE M_CVMESH
+      USE M_COUPLING
+      USE M_PARALL
+#endif
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -1135,7 +1140,9 @@
 !     IBND     counter of boundary grid points
 !
       INTEGER       :: IX, IY, K1, IXMIN, IYMIN, IBND
+#if !defined REFINED_GRID
       INTEGER, SAVE :: MXITNR = 0
+#endif
       INTEGER, SAVE :: IENT = 0
 !
 !     INMESH   if True, point (XP,YP) is inside the computational grid
@@ -1154,7 +1161,13 @@
 !
       REAL       :: DISMIN                                                40.41
       REAL       :: XPC1, YPC1, XC0, YC0
+#ifdef REFINED_GRID
+      XCSAVE=>XCSAVE_G(Gridnum)
+      YCSAVE=>YCSAVE_G(Gridnum)
+      MXITNR=>MXITNR_G(Gridnum)
+#else
       REAL, SAVE :: XCSAVE=0., YCSAVE=0.                                  40.31
+#endif
 !
 !  5. SUBROUTINES CALLING
 !

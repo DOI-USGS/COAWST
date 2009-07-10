@@ -23,6 +23,7 @@
       USE M_PARALL2
       USE M_COUPLING
       USE M_BNDSPEC
+      USE M_CVMESH
 
       implicit none
 !
@@ -169,6 +170,12 @@
         IF (.not.allocated(STAGY_G)) ALLOCATE (STAGY_G(Numgrids,NUMGRD))
         IF (.not.allocated(XPG_G)) ALLOCATE (XPG_G(Numgrids,NUMGRD))
         IF (.not.allocated(YPG_G)) ALLOCATE (YPG_G(Numgrids,NUMGRD))
+!
+!     MODULE M_CVMESH
+!
+        ALLOCATE (XCSAVE_G(Numgrids))
+        ALLOCATE (YCSAVE_G(Numgrids))
+        ALLOCATE (MXITNR_G(Numgrids))
       END IF
 
 

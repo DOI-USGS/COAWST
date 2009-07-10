@@ -1485,13 +1485,6 @@
         ENDIF
 !
 #ifdef REFINED_GRID
-
-          if (spcount.eq.40) then
-                write(*,*) 'swspec indxy xc yc =', indxy,xc,yc
-                write(*,*) 'swspec voq size =', size(voq)
-          endif
-
-
         CALL SWCMSP (OTYPE       ,XC         ,YC          ,               40.00
      &               AC2         ,ACLOC      ,SPCSIG      ,
      &               DEP         ,DEP2       ,UX          ,               40.00
@@ -1860,35 +1853,11 @@
             ACLL = ACLL + RF22 * AC2(ID,ISIGM,IND22)
           ENDIF
 #ifdef REFINED_GRID
-!            offset=MSC*MDC*(spcount-1)
-!            DO IS = 1, MSC       1
-!              DO ID = 1, MDC     2 
-!                offset=offset+1  2
-!                AC2_parent(offset)=AC2(ID,IS,INDXY)
-!              END DO
-!            END DO
-
-!          offset=MSC*MDC*(spcount-1)+(ISIGM-1)*MSC+ID
-!          AC2_parent(offset)=ACLL
-
-            INDXY = KGRPNT(XC,YC)
-          offset=MSC*MDC*(spcount-1)+(ISIGM-1)*MSC+ID
-!          AC2_parent(offset)=AC2(ID,Isigm,indxy)
-
-          if (spcount.eq.40) then
-
-              if ((isigm.eq.msc).and.(id.eq.msc)) then
-                write(*,*) 'swcmsp indxy xc yc =', indxy,xc,yc
-              endif
-
-            DO IS2 = 1, MSC       
-              DO ID2 = 1, MDC      
-!                write(*,*) 'ac2 of 40 is ', jx1,jy1,jx2,jy2,            &
-!     &                    AC2(:,:,ind11)
-              end do
-              end do
-           end if
-
+!
+!  Store AC2 spectra into parent array for transfer to child.
+!
+          offset=MSC*MDC*(spcount-1)+(ISIGM-1)*MDC+ID
+          AC2_parent(offset)=ACLL
 #endif
 !         energy density interpolated in space:
           ECLL = OFAC * ACLL * SPCSIG(ISIGM)                              40.00

@@ -152,6 +152,9 @@
       USE M_BNDSPEC
       USE M_COUPLING
 #endif
+#ifdef REFINED_GRID
+      USE M_CVMESH
+#endif
 !
       IMPLICIT NONE
 !
@@ -396,9 +399,12 @@
 
       CALL INIT_POINTERS(ng)
 
-
       ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
       ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
+
+      XCSAVE_G(ng)=0.0
+      YCSAVE_G(ng)=0.0
+      MXITNR_G(ng)=0
 !
       CALL SWINITMPI (MyComm)
       INPFIL = WNAME
@@ -4814,7 +4820,6 @@
 #endif
 #ifdef MODEL_COUPLING
       INTEGER, intent(in) :: ng, first, ITjcw
-      INTEGER ngp, ngc
       REAL, INTENT(IN) :: AC2_parent2(MSC*MDC*Numspec(ng))
 #endif
       INTEGER  BGRIDP(*), XYTST(*), KGRPNT(MXC,MYC)
@@ -4972,21 +4977,16 @@
 !
 !       IF ((ITjcw.gt.0).and.(ng.gt.Ngrids).and.(NBGRPT.GT.0)) THEN
         IF ((ng.gt.1).and.(NBGRPT.GT.0)) THEN
-!         ac2size=MSC*MDC*Numspec(ng)
-          ngp=myparent(ng)
-          ngc=mychild(ng)
           DO IBGRID = 1, NBGRPT
              INDXGR = BGRIDP(6*IBGRID-5)
              IF (BGRIDP(6*IBGRID-4).EQ.1) THEN
 !
 ! Array BGRIDPL has the offset index for each bndry point to the 
 ! AC2 spec data in array AC2_parent2.
-
-!              offset=MSC*MDC*(IBGRID-1)
-               offset=MSC*MDC*(BGRIDPL(IBGRID)-1)
+!
                DO IS = 1, MSC
                  DO ID = 1, MDC
-                   offset=offset+1
+                   offset=MSC*MDC*(BGRIDPL(IBGRID)-1)+(IS-1)*MDC+ID
                    AC2(ID,IS,INDXGR)=AC2_parent2(offset)
                  END DO
                END DO

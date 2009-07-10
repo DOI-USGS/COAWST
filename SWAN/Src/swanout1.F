@@ -146,7 +146,7 @@
 #ifdef MODEL_COUPLING
       INTEGER, intent(in) :: ng, first
       LOGICAL cplout, userout
-      INTEGER numsteps, ngp, ngc, offset, spcount, XC, YC
+      INTEGER numsteps, offset, spcount
       INTEGER MyRank, MySize, MyError, MyTag, MyStatus, MyHandle
       REAL    CouplingTime
       REAL, INTENT(INOUT) :: AC2_parent(MSC*MDC*Numspec(ng))
@@ -468,38 +468,9 @@
      &                  SPCSIG, SPCDIR, COMPDA(1,JDP2), KGRPNT,           40.31
      &                  IONOD, spcount, AC2_parent, ng)
 !
-!         Exchange 2d spectra in array AC2 from parent to child grid.
+!           Exchange 2d spectra in array AC2 from parent to child grid.
 !
-          CALL mpi_comm_size (WAV_COMM_WORLD, MySize, MyError)
-          ngp=myparent(ng)
-          ngc=mychild(ng)
-            IF (IONOD(1).NE.INODE) GOTO 700
-            offset=MSC*MDC*(spcount-1)
-            XC  = VOQ(VOQR(24))
-            YC  = VOQ(VOQR(25))
-            INDXY = KGRPNT(XC,YC)
-            DO IS = 1, MSC
-              DO ID = 1, MDC
-                offset=offset+1
-                AC2_parent(offset)=AC2(ID,IS,INDXY)
-
-
-              if ((is.eq.msc).and.(id.eq.msc)) then
-                write(*,*) 'swanout1 indxy xc yc =', indxy,xc,yc
-                write(*,*) 'swanout voq size =', size(voq)
-              endif
-
-
-             if (spcount.eq.40) then
-!               write(*,*) 'swanout top thinks: ', xc,yc,ac2(:,:,indxy)
-             endif
-
-              END DO
-            END DO
- 700        CONTINUE
-!!           IF ((first.ge.0).and.(IRQ.eq.NREOQ)) THEN
             IF (IRQ.eq.NREOQ) THEN
-!!             IF (MyRank.eq.0) THEN
               IF (INODE.EQ.MASTER) THEN
                 DO ID=1,ac2size(ng)
                   AC2_parent2(ID)=AC2_parent2(ID)+AC2_parent(ID)
@@ -508,6 +479,7 @@
 ! Gather all the ac2_parent arrays from all processors and add them up. 
 ! If a processor did not contribute, then its value is zero.
 !
+                CALL mpi_comm_size (WAV_COMM_WORLD, MySize, MyError)
                 DO IS=1,MySize-1
                   MyTag=IS+1
                   ID=IS

@@ -150,7 +150,6 @@
 !
         DO ng=1,Ngrids
           IF (run_grid(ng).eq..TRUE.) THEN
-
 #ifdef REFINED_GRID
             IF (ng.gt.1) THEN
               ngp=myparent(ng)
@@ -172,9 +171,6 @@
      &                         ac2size(ng),SWREAL,0,MyCOMM,MyError)
             END IF
 #endif
-
-
-
           END IF
           run_grid(ng)=.FALSE.
         END DO
