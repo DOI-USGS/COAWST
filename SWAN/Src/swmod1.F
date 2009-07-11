@@ -1816,6 +1816,15 @@
       INTEGER, POINTER :: MTC
       INTEGER, SAVE, TARGET, ALLOCATABLE :: MTC_G(:)
 
+      REAL, POINTER :: XCGMIN
+      REAL, SAVE, TARGET, ALLOCATABLE :: XCGMIN_G(:)
+      REAL, POINTER :: XCGMAX
+      REAL, SAVE, TARGET, ALLOCATABLE :: XCGMAX_G(:)
+      REAL, POINTER :: YCGMIN
+      REAL, SAVE, TARGET, ALLOCATABLE :: YCGMIN_G(:)
+      REAL, POINTER :: YCGMAX
+      REAL, SAVE, TARGET, ALLOCATABLE :: YCGMAX_G(:)
+
       INTEGER             IXCGRD(MICMAX), IYCGRD(MICMAX), KCGRD(MICMAX)
       INTEGER             MDC4MA,      MDC4MI,      MMCGR
       INTEGER             MSC4MA,      MSC4MI
@@ -1826,7 +1835,6 @@
       REAL                SLOW,        SPDIR1,      SPDIR2,      XCLEN
       REAL                XCP,         XPC,         YCLEN,       YCP
       REAL                YPC
-      REAL                XCGMIN,      XCGMAX,      YCGMIN,      YCGMAX
       LOGICAL             FULCIR
 #else
       INTEGER             IXCGRD(MICMAX), IYCGRD(MICMAX), KCGRD(MICMAX)

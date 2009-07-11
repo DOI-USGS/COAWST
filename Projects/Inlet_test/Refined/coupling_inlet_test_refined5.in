@@ -37,7 +37,7 @@
 ! Their sum must be equal to the total number of processors.
 
   NnodesATM =  0                     ! atmospheric model
-  NnodesWAV =  2                     ! wave model
+  NnodesWAV =  3                     ! wave model
   NnodesOCN =  1                     ! ocean model
 
 ! Time interval (seconds) between coupling of models.

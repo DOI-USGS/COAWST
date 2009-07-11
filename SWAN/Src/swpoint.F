@@ -105,6 +105,10 @@
         IF (.not.allocated(MSC_G)) ALLOCATE (MSC_G(Numgrids))
         IF (.not.allocated(MDC_G)) ALLOCATE (MDC_G(Numgrids))
         IF (.not.allocated(MTC_G)) ALLOCATE (MTC_G(Numgrids))
+        IF (.not.allocated(XCGMIN_G)) ALLOCATE (XCGMIN_G(Numgrids))
+        IF (.not.allocated(XCGMAX_G)) ALLOCATE (XCGMAX_G(Numgrids))
+        IF (.not.allocated(YCGMIN_G)) ALLOCATE (YCGMIN_G(Numgrids))
+        IF (.not.allocated(YCGMAX_G)) ALLOCATE (YCGMAX_G(Numgrids))
 !
 !  TIMECOMM
 !
@@ -230,6 +234,10 @@
       MSC=>MSC_G(ng)
       MDC=>MDC_G(ng)
       MTC=>MTC_G(ng)
+      XCGMIN=>XCGMIN_G(ng)
+      XCGMAX=>XCGMAX_G(ng)
+      YCGMIN=>YCGMIN_G(ng)
+      YCGMAX=>YCGMAX_G(ng)
 !
 !  TIMECOMM
 !
