@@ -46,11 +46,22 @@
  TI_ATM_OCN =     0.0d0              ! atmosphere-ocean coupling interval
  TI_WAV_OCN =   600.0d0              ! wave-ocean coupling interval
 
-! Coupled model standard input file name.
+! Enter names of Atm, Wav, and Ocn input files.
+! The Wav program needs multiple input files, one for each grid.
 
    ATM_name = atmos.in                                            ! atmospheric model, not used yet
    WAV_name = Projects/Inlet_test/Coupled/swan_inlet_test.in      ! wave model
    OCN_name = Projects/Inlet_test/Coupled/ocean_inlet_test.in     ! ocean model
+
+! Sparse matrix interpolation weights files.
+
+   W2ONAME == Projects/Inlet_test/DiffGrid/swan2roms_weights.nc
+   W2ANAME == wav2atm_weights.nc
+   A2ONAME == atm2ocn_weights.nc
+   A2WNAME == atm2wav_weights.nc
+   O2ANAME == ocn2atm_weights.nc
+   O2WNAME == Projects/Inlet_test/DiffGrid/roms2swan_weights.nc
+
 
 !
 !  GLOSSARY:

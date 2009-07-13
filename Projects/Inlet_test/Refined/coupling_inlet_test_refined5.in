@@ -37,23 +37,31 @@
 ! Their sum must be equal to the total number of processors.
 
   NnodesATM =  0                     ! atmospheric model
-  NnodesWAV =  3                     ! wave model
+  NnodesWAV =  1                     ! wave model
   NnodesOCN =  1                     ! ocean model
 
 ! Time interval (seconds) between coupling of models.
 
  TI_ATM_WAV =     0.0d0              ! atmosphere-wave coupling interval
  TI_ATM_OCN =     0.0d0              ! atmosphere-ocean coupling interval
- TI_WAV_OCN =    60.0d0              ! wave-ocean coupling interval
+ TI_WAV_OCN =   600.0d0              ! wave-ocean coupling interval
 
-! Coupled model standard input file name.
-! Enter names of Atm, Wav, and Ocn inpute files. The Wav program needs
-! multiple input files, one for each grid.
+! Enter names of Atm, Wav, and Ocn input files.
+! The Wav program needs multiple input files, one for each grid.
 
    ATM_name = atmos.in
    WAV_name = Projects/Inlet_test/Refined/swan_it.in \
               Projects/Inlet_test/Refined/swan_it_ref5.in
    OCN_name = Projects/Inlet_test/Refined/ocean_inlet_test_ref5.in
+
+! Sparse matrix interpolation weights files.
+
+   W2ONAME == Projects/Inlet_test/DiffGrid/swan2roms_weights.nc
+   W2ANAME == wav2atm_weights.nc
+   A2ONAME == atm2ocn_weights.nc
+   A2WNAME == atm2wav_weights.nc
+   O2ANAME == ocn2atm_weights.nc
+   O2WNAME == Projects/Inlet_test/DiffGrid/roms2swan_weights.nc
 
 !
 !  GLOSSARY:
