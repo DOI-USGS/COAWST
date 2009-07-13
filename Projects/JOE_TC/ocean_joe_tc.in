@@ -188,8 +188,8 @@
 
 ! Height (m) of atmospheric measurements for Bulk fluxes parameterization.
 
-      BLK_ZQ == 10.0d0                     ! air humidity
-      BLK_ZT == 10.0d0                     ! air temperature
+      BLK_ZQ ==  2.0d0                     ! air humidity
+      BLK_ZT ==  2.0d0                     ! air temperature
       BLK_ZW == 10.0d0                     ! winds
 
 ! Minimum depth for wetting and drying.
