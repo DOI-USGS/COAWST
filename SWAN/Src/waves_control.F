@@ -22,13 +22,13 @@
       implicit none
 
       PRIVATE
-      PUBLIC  :: SWAN_driver
+      PUBLIC  :: SWAN_driver_init
       PUBLIC  :: SWAN_driver_run
       PUBLIC  :: SWAN_driver_finalize
 
       CONTAINS
 
-      SUBROUTINE SWAN_driver (MyCOMM, CouplingTime)
+      SUBROUTINE SWAN_driver_init (MyCOMM, CouplingTime)
 !
 !=======================================================================
 !                                                                      !
@@ -38,17 +38,13 @@
 !=======================================================================
 !
       USE mod_param
-!     USE mod_parallel
       USE mod_iounits
       USE mod_scalars
-      USE mod_coupler
-      USE M_GENARR
       USE M_PARALL
       USE M_PARALL2
       USE SWCOMM3
       USE TIMECOMM
       USE M_MPI
-!     USE M_COUPLING
 !
 !  Imported variable declarations.
 !
@@ -57,17 +53,10 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, inp, ModelId, ng
-      integer :: MyColor, MyKey, MyRank
-      INTEGER :: MySize, MyError, MyStatus, MyHandle
-      logical, allocatable :: run_grid(:)
-      integer, allocatable :: count(:)
-      real :: rtime, rtime_start, rtime_end, cff
+      integer :: i, ng, MyError
 #ifdef REFINED_GRID
       integer :: ngp, ngc
 #endif
-      MyKey=0
-      inp=22
 #ifdef MODEL_COUPLING
 !
 ! Allocate some arrays
@@ -85,9 +74,6 @@
 !-----------------------------------------------------------------------
 !  Set distribute-memory (MPI) world communicator.
 !-----------------------------------------------------------------------
-!
-      CALL mpi_comm_rank (MyCOMM, MyRank, MyError)
-      CALL mpi_comm_size (MyCOMM, MySize, MyError)
 !
 !  Initialize the grids.
 !
@@ -124,6 +110,41 @@
         END IF
 #endif
       END DO
+
+      RETURN
+      END SUBROUTINE SWAN_driver_init
+
+      SUBROUTINE SWAN_driver_run (CouplingTime)
+!
+!=======================================================================
+!                                                                      !
+!  This routine allocates and initializes ROMS/TOMS state variables    !
+!  and internal and external parameters.                               !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_iounits
+      USE mod_scalars
+      USE M_PARALL
+      USE M_PARALL2
+      USE SWCOMM3
+      USE TIMECOMM
+      USE M_MPI
+!
+!  Imported variable declarations.
+!
+      real(r4), intent(in)  :: CouplingTime             ! single precision
+!
+!  Local variable declarations.
+!
+      integer :: i, ng, MyError
+      logical, allocatable :: run_grid(:)
+      integer, allocatable :: count(:)
+      real :: rtime, rtime_start, rtime_end, cff
+#ifdef REFINED_GRID
+      integer :: ngp, ngc
+#endif
 !
 !  Set some initial run time parameters here.
 !
@@ -139,7 +160,8 @@
 !
 !  Main job control loop here.
 !
-      DO WHILE (rtime.lt.rtime_end)
+!     DO WHILE (rtime.lt.rtime_end)
+      DO WHILE (count(Ngrids).lt.MTC_G(Ngrids))
 !
 !  Advance grids in time that have run_grid flag == True.
 !  For the first entry, all grids step individual dts.
@@ -163,8 +185,8 @@
 !
 #ifdef REFINED_GRID
             IF (ng.lt.Ngrids) THEN
-              CALL MPI_BCAST(PARALL2_MOD(ng)%AC2_parent2_G,             &
-     &                         ac2size(ng),SWREAL,0,MyCOMM,MyError)
+              CALL MPI_BCAST(PARALL2_MOD(ng)%AC2_parent2_G,ac2size(ng), &
+     &                       SWREAL,0,WAV_COMM_WORLD,MyError)
             END IF
 #endif
           END IF
@@ -185,53 +207,6 @@
           END IF
         END DO
       END DO
-
-      RETURN
-      END SUBROUTINE SWAN_driver
-
-      SUBROUTINE SWAN_driver_run (CouplingTime)
-!
-!=======================================================================
-!                                                                      !
-!  This routine runs SWAN.                                             !
-!                                                                      !
-!=======================================================================
-!
-      USE mod_param
-      USE mod_parallel
-#ifdef VERIFICATION
-      USE mod_fourdvar
-#endif
-      USE mod_iounits
-      USE mod_scalars
-      USE mod_coupler
-      USE M_PARALL
-!
-!  Imported variable declarations.
-!
-      real(r4), intent(in)  :: CouplingTime             ! single precision
-!
-!  Local variable declarations.
-!
-      integer :: ng, my_iic, MyError
-      integer :: count1, MyCOMM_wave
-!
-!-----------------------------------------------------------------------
-!  Run model for all nested grids, if any.
-!-----------------------------------------------------------------------
-
-      NL_LOOP : DO count1=0,1
-
-
-        IF (exit_flag.ne.NoError) THEN
-          IF (MyRank.eq.0) THEN
-            WRITE (stdout,'(/,a,i3,/)') Rerror(exit_flag), exit_flag
-          END IF
-          RETURN
-        END IF
-
-      END DO NL_LOOP
-
 
       RETURN
       END SUBROUTINE SWAN_driver_run

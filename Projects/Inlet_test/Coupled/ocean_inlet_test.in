@@ -72,7 +72,7 @@
 
 ! Time-Stepping parameters.
 
-      NTIMES == 34560
+      NTIMES == 60 !2880
           DT == 60.0d0
      NDTFAST == 20
 
@@ -103,7 +103,7 @@
 ! Output history, average, diagnostic files parameters.
 
      LDEFOUT == T
-        NHIS == 10
+        NHIS == 60
      NDEFHIS == 0
       NTSAVG == 1
         NAVG == 3600

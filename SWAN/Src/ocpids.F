@@ -126,6 +126,12 @@
         WRITE(INIFIL(ILPOS+1:ILPOS+2),183) ng
       END IF
  183  FORMAT(I2.2)
+!
+      IF (PARLL) THEN                                                   40.30
+        ILPOS = INDEX ( INIFIL, ' ' )-1                                 40.30
+        WRITE(INIFIL(ILPOS+1:ILPOS+4),13) INODE                         40.30
+  13    FORMAT('-',I3.3)                                                40.30
+      END IF                                                            40.30
 #endif
 !
 !     see whether initialisation file exists

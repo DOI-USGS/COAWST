@@ -363,7 +363,7 @@
 !  Initialize a router to the wave model component.
 !
       CALL Router_init (WAVid, GlobalSegMap_G(ng)%GSMapSWAN,            &
-     &                  OCN_COMM_WORLD, ROMStoSWAN)
+     &                  OCN_COMM_WORLD, Router_G(ng)%ROMStoSWAN)
 #else
 !
 !  Initialize attribute vector holding the export data code strings of
@@ -372,23 +372,23 @@
 !
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
      &                         OCN_COMM_WORLD)
-      CALL AttrVect_init(wav2ocn_AV,                                    &
+      CALL AttrVect_init(AttrVect_G(ng)%wav2ocn_AV,                     &
      &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",          &
      &  lsize=Asize)
-      CALL AttrVect_zero (wav2ocn_AV)
+      CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
-      CALL AttrVect_init (ocn2wav_AV,                                   &
+      CALL AttrVect_init (AttrVect_G(ng)%ocn2wav_AV,                    &
      &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
      &                    lsize=Asize)
-      CALL AttrVect_zero (ocn2wav_AV)
+      CALL AttrVect_zero (AttrVect_G(ng)%ocn2wav_AV)
 !
 !  Initialize a router to the wave model component.
 !
       CALL Router_init (WAVid, GlobalSegMap_G(ng)%GSMapROMS,  &
-     &                  OCN_COMM_WORLD, ROMStoSWAN)
+     &                  OCN_COMM_WORLD, Router_G(ng)%ROMStoSWAN)
 #endif
 #ifdef REFINED_GRID
       deallocate ( wavids )
@@ -578,24 +578,11 @@
 !
       CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
 #ifdef MCT_INTERP_OC2WV
-      CALL MCT_Recv (wav2ocn_AV2, ROMStoSWAN, MyError)
+      CALL MCT_Recv (wav2ocn_AV2, Router_G(ng)%ROMStoSWAN, MyError)
       CALL MCT_MatVecMul(wav2ocn_AV2, W2OMatPlus, wav2ocn_AV)
 #else
-# ifdef REFINED_GRID
-      CALL AttrVect_init(wav2ocn_AV,                                     &
-     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",           &
-     &  lsize=Asize)
-      CALL AttrVect_zero (wav2ocn_AV)
-      IF (ng.eq.1) THEN
-        CALL MCT_Recv (wav2ocn_AV1, ROMStoSWAN1, MyError)
-        CALL AttrVect_copy(wav2ocn_AV1,wav2ocn_AV)
-      ELSE IF (ng.eq.2) THEN
-        CALL MCT_Recv (wav2ocn_AV2, ROMStoSWAN2, MyError)
-        CALL AttrVect_copy(wav2ocn_AV2,wav2ocn_AV)
-      END IF
-# else
-      CALL MCT_Recv (wav2ocn_AV, ROMStoSWAN, MyError)
-# endif
+      CALL MCT_Recv (AttrVect_G(ng)%wav2ocn_AV, Router_G(ng)%ROMStoSWAN,&
+     &               MyError)
 #endif
       IF (MyError.ne.0) THEN
         IF (Master) THEN
@@ -619,7 +606,8 @@
 !
 !  Wave dissipation.
 !
-      CALL AttrVect_exportRAttr (wav2ocn_AV, "DISSIP", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISSIP",   &
+     &                           A, Asize)
       ij=0
       cff=1.0_r8/rho0
       DO j=JstrT,JendT
@@ -631,7 +619,8 @@
 !
 !  Wave height.
 !
-      CALL AttrVect_exportRAttr (wav2ocn_AV, "HSIGN", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "HSIGN",    &
+     &                           A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
@@ -642,7 +631,8 @@
 !
 !  Surface peak wave period.
 !
-      CALL AttrVect_exportRAttr(wav2ocn_AV, "RTP", A, Asize)
+      CALL AttrVect_exportRAttr(AttrVect_G(ng)%wav2ocn_AV, "RTP",       &
+     &                          A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
@@ -653,7 +643,8 @@
 !
 !  Bottom mean wave period.
 !
-      CALL AttrVect_exportRAttr (wav2ocn_AV, "TMBOT", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "TMBOT",    &
+     &                           A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
@@ -664,7 +655,8 @@
 !
 !  Bottom orbital velocity (m/s).
 !
-      CALL AttrVect_exportRAttr(wav2ocn_AV, "UBOT", A, Asize)
+      CALL AttrVect_exportRAttr(AttrVect_G(ng)%wav2ocn_AV, "UBOT",      &
+     &                          A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
@@ -675,7 +667,8 @@
 !
 !  Wave direction (radians).
 !
-      CALL AttrVect_exportRAttr (wav2ocn_AV, "DIR", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DIR",      &
+     &                           A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
@@ -686,7 +679,8 @@
 !
 !  Wave length (m).
 !
-      CALL AttrVect_exportRAttr (wav2ocn_AV, "WLEN", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WLEN",     &
+     &                           A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
@@ -698,7 +692,8 @@
 !
 !  Percent wave breaking.
 !  
-      CALL AttrVect_exportRAttr (wav2ocn_AV, "QB", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "QB",       &
+     &                           A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
@@ -768,10 +763,10 @@
 !  Export fields from ocean (ROMS) to wave (SWAN) model.
 !-----------------------------------------------------------------------
 # ifdef REFINED_GRID
-      CALL AttrVect_init (ocn2wav_AV,                                   &
+      CALL AttrVect_init (AttrVect_G(ng)%ocn2wav_AV,                    &
      &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
      &                    lsize=Asize)
-      CALL AttrVect_zero (ocn2wav_AV)
+      CALL AttrVect_zero (AttrVect_G(ng)%ocn2wav_AV)
 # endif
 !
 !  Schedule sending fields to the wave model.
@@ -786,7 +781,8 @@
           A(ij)=GRID(ng)%h(i,j)
         END DO
       END DO
-      CALL AttrVect_importRAttr (ocn2wav_AV, "DEPTH", A, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "DEPTH",    &
+     &                           A, Asize)
 !
 !  Water level (free-surface).
 !
@@ -797,7 +793,8 @@
           A(ij)=OCEAN(ng)%zeta(i,j,knew(ng))
         END DO
       END DO
-      CALL AttrVect_importRAttr (ocn2wav_AV, "WLEV", A, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "WLEV",     &
+     &                           A, Asize)
 !
 !  Vertically-integrated U-velocity at RHO-points.
 !
@@ -873,7 +870,8 @@
 #endif
         END DO
       END DO
-      CALL AttrVect_importRAttr (ocn2wav_AV, "VELX", A, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VELX",     &
+     &                           A, Asize)
 !
 !  Vertically-integrated V-velocity at RHO-points.
 !
@@ -950,7 +948,8 @@
 #endif
         END DO
       END DO
-      CALL AttrVect_importRAttr (ocn2wav_AV, "VELY", A, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VELY",     &
+     &                           A, Asize)
 !
 !  bottom roughness.
 !
@@ -966,28 +965,17 @@
 #endif
         END DO
       END DO
-      CALL AttrVect_importRAttr (ocn2wav_AV, "ZO", A, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "ZO",       &
+     &                           A, Asize)
 !
 !  Send ocean fields to wave model.
 !
 #ifdef MCT_INTERP_OC2WV
-        call MCT_MatVecMul(ocn2wav_AV,O2WMatPlus,ocn2wav_AV2)
-        CALL MCT_Send (ocn2wav_AV2, ROMStoSWAN, MyError)
+      CALL MCT_MatVecMul(ocn2wav_AV,O2WMatPlus,ocn2wav_AV2)
+      CALL MCT_Send (ocn2wav_AV2, Router_G(ng)%ROMStoSWAN, MyError)
 #else
-# ifdef REFINED_GRID
-      IF (ng.eq.1) THEN
-        CALL AttrVect_copy(ocn2wav_AV,ocn2wav_AV1)
-        CALL MCT_Send (ocn2wav_AV1, ROMStoSWAN1, MyError)
-      ELSE IF (ng.eq.2) THEN
-        CALL AttrVect_copy(ocn2wav_AV,ocn2wav_AV2)
-        CALL MCT_Send (ocn2wav_AV2, ROMStoSWAN2, MyError)
-      END IF
-!
-      CALL AttrVect_clean (ocn2wav_AV, MyError)
-      CALL AttrVect_clean (wav2ocn_AV, MyError)
-# else
-      CALL MCT_Send (ocn2wav_AV, ROMStoSWAN, MyError)
-# endif
+      CALL MCT_Send (AttrVect_G(ng)%ocn2wav_AV, Router_G(ng)%ROMStoSWAN,&
+     &               MyError)
 #endif
       IF (MyError.ne.0) THEN
         IF (Master) THEN
@@ -1013,25 +1001,29 @@
       RETURN
       END SUBROUTINE ocn2wav_coupling_tile
 
-      SUBROUTINE finalize_ocn2wav_coupling
+	SUBROUTINE finalize_ocn2wav_coupling
 !
 !========================================================================
 !                                                                       !
 !  This routine finalizes ocean and wave models coupling data streams.  !
 !                                                                       !
 !========================================================================
+      USE mod_scalars
 !
 !  Local variable declarations.
 !
-      integer :: MyError
+      integer :: ng, MyError
 !
 !-----------------------------------------------------------------------
 !  Deallocate MCT environment.
 !-----------------------------------------------------------------------
 !
-      CALL Router_clean (ROMStoSWAN, MyError)
-      CALL AttrVect_clean (ocn2wav_AV, MyError)
-      CALL GlobalSegMap_clean (GlobalSegMap_G(ng)%GSMapROMS, MyError)
+      DO ng=1,Ngrids
+        CALL Router_clean (Router_G(ng)%ROMStoSWAN, MyError)
+        CALL AttrVect_clean (AttrVect_G(ng)%ocn2wav_AV, MyError)
+        CALL GlobalSegMap_clean (GlobalSegMap_G(ng)%GSMapROMS,          &
+     &                           MyError)
+      END DO
       RETURN
 
       END SUBROUTINE finalize_ocn2wav_coupling
