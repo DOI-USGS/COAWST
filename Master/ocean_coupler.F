@@ -98,17 +98,25 @@
 !
 !  Declarations.
 !
+      TYPE T_GlobalSegMap_G
+        TYPE(GlobalSegMap) :: GSMapROMS       ! GloabalSegMap variables
+# ifdef MCT_INTERP_OC2WV
+        TYPE(GlobalSegMap) :: GSMapSWAN       ! GloabalSegMap variables
+#endif
+      END TYPE T_GlobalSegMap_G
+      TYPE (T_GlobalSegMap_G), ALLOCATABLE :: GlobalSegMap_G(:)
+
 # ifdef SWAN_COUPLING
       TYPE(AttrVect) :: wav2ocn_AV            ! AttrVect variables
       TYPE(AttrVect) :: ocn2wav_AV 
-      TYPE(Router)   :: ROMStoSWAN             ! Router variables
+      TYPE(Router)   :: ROMStoSWAN            ! Router variables
 #  ifdef REFINED_GRID
-      TYPE(AttrVect) :: wav2ocn_AV1            ! AttrVect variables
+      TYPE(AttrVect) :: wav2ocn_AV1           ! AttrVect variables
       TYPE(AttrVect) :: ocn2wav_AV1 
-      TYPE(Router)   :: ROMStoSWAN1            ! Router variables
-      TYPE(AttrVect) :: wav2ocn_AV2            ! AttrVect variables
+      TYPE(Router)   :: ROMStoSWAN1           ! Router variables
+      TYPE(AttrVect) :: wav2ocn_AV2           ! AttrVect variables
       TYPE(AttrVect) :: ocn2wav_AV2 
-      TYPE(Router)   :: ROMStoSWAN2            ! Router variables
+      TYPE(Router)   :: ROMStoSWAN2           ! Router variables
 #  endif
 # endif
 # ifdef WRF_COUPLING
@@ -116,11 +124,7 @@
       TYPE(AttrVect) :: ocn2atm_AV 
       TYPE(Router)   :: ROMStoWRF             ! Router variables
 # endif
-      TYPE(GlobalSegMap) :: GSMapROMS          ! GloabalSegMap variables
-      TYPE(GlobalSegMap) :: GSMapROMS1         ! GloabalSegMap variables
-      TYPE(GlobalSegMap) :: GSMapROMS2         ! GloabalSegMap variables
 # ifdef MCT_INTERP_OC2WV
-      TYPE(GlobalSegMap) :: GSMapSWAN         ! GloabalSegMap variables
       TYPE(AttrVect) :: wav2ocn_AV2           ! AttrVect variables
       TYPE(AttrVect) :: ocn2wav_AV2 
 

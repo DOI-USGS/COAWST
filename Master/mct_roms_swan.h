@@ -99,6 +99,12 @@
       CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
       CALL mpi_comm_size (OCN_COMM_WORLD, nprocs, MyError)
 !
+      IF (ng.eq.1) THEN
+        ALLOCATE(GlobalSegMap_G(Ngrids))
+        ALLOCATE(AttrVect_G(Ngrids))
+        ALLOCATE(Router_G(Ngrids))
+      END IF
+!
 !  Initialize MCT coupled model registry.
 !
 #ifdef REFINED_GRID
@@ -228,18 +234,8 @@
         start (jc)=(j+joff)*(Lm(ng)+2+ioff)+(IstrT+ieff)+1
         length(jc)=(IendT-IstrT+1)
       END DO
-#ifdef REFINED_GRID
-      IF (ng.eq.1) THEN
-        CALL GlobalSegMap_init (GSMapROMS1, start, length, 0,           &
-     &                        OCN_COMM_WORLD, OCNid)
-      ELSE IF (ng.eq.2) THEN
-        CALL GlobalSegMap_init (GSMapROMS2, start, length, 0,           &
-     &                        OCN_COMM_WORLD, OCNid)
-      END IF
-#else
-      CALL GlobalSegMap_init (GSMapROMS, start, length, 0,              &
-     &                        OCN_COMM_WORLD, OCNid)
-#endif
+      CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapROMS,             &
+     &                        start, length, 0, OCN_COMM_WORLD, OCNid)
 !
 !  Deallocate working arrays.
 !
@@ -267,8 +263,8 @@
         start (jc)=j*(Lm(ng)+2)+IstrR+1
         length(jc)=(IendR-IstrR+1)
       END DO
-      CALL GlobalSegMap_init (GSMapROMS, start, length, 0,              &
-     &                        OCN_COMM_WORLD, OCNid)
+      CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapROMS,             &
+     &                        start, length, 0, OCN_COMM_WORLD, OCNid)
 !
 !  Deallocate working arrays.
 !
@@ -296,8 +292,8 @@
         length(jc)=dst_grid_dims(2)
       END DO
 
-      CALL GlobalSegMap_init (GSMapSWAN, start, length, 0,              &
-     &                        OCN_COMM_WORLD, OCNid)
+      CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapSWAN,             &
+     &                        start, length, 0, OCN_COMM_WORLD, OCNid)
 !
 !  Deallocate working arrays.
 !
@@ -312,16 +308,18 @@
 ! Specify matrix decomposition to be by row.
 !
         call SparseMatrixPlus_init(W2OMatPlus, sMatW,                   &
-     &                             GSMapSWAN, GSMapROMS, Xonly,         &
-     &                             MyMaster, OCN_COMM_WORLD, OCNid)
+     &                             GlobalSegMap_G(ng)%GSMapSWAN,        &
+     &                             GlobalSegMap_G(ng)%GSMapROMS,        &
+     &                             Xonly,MyMaster,OCN_COMM_WORLD,OCNid)
         call SparseMatrix_clean(sMatW)
 !
 ! Create Ocean sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
 !
          call SparseMatrixPlus_init(O2WMatPlus, sMatO,                  &
-     &                              GSMapROMS, GSMapSWAN, Xonly,        &
-     &                              MyMaster, OCN_COMM_WORLD, OCNid)
+     &                              GlobalSegMap_G(ng)%GSMapROMS,       &
+     &                              GlobalSegMap_G(ng)%GSMapSWAN,  
+     &                              Xonly,MyMaster,OCN_COMM_WORLD,OCNid)
         call SparseMatrix_clean(sMatO)
 #endif
 #ifdef MCT_INTERP_OC2WV
@@ -331,13 +329,15 @@
 !  processor.
 !
 !     call GlobalSegMap_Ordpnts(xPrimeGSMap,MyRank,points)
-      Asize=GlobalSegMap_lsize(GSMapSWAN, OCN_COMM_WORLD)
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapSWAN,            &
+     &      OCN_COMM_WORLD)
       CALL AttrVect_init(wav2ocn_AV2,                                   &
      &     rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",       &
      &     lsize=Asize)
       CALL AttrVect_zero (wav2ocn_AV2)
 !
-      Asize=GlobalSegMap_lsize(GSMapROMS, OCN_COMM_WORLD)
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
+     &      OCN_COMM_WORLD)
       CALL AttrVect_init(wav2ocn_AV,                                    &
      &     rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",       &
      &     lsize=Asize)
@@ -346,13 +346,15 @@
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
-      Asize=GlobalSegMap_lsize(GSmapSWAN, OCN_COMM_WORLD)
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapSWAN,            &
+     &      OCN_COMM_WORLD)
       CALL AttrVect_init (ocn2wav_AV2,                                  &
      &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
      &                    lsize=Asize)
       CALL AttrVect_zero (ocn2wav_AV2)
 !
-      Asize=GlobalSegMap_lsize(GSmapROMS, OCN_COMM_WORLD)
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
+     &      OCN_COMM_WORLD)
       CALL AttrVect_init (ocn2wav_AV,                                   &
      &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
      &                    lsize=Asize)
@@ -360,75 +362,33 @@
 !
 !  Initialize a router to the wave model component.
 !
-      CALL Router_init (WAVid, GSMapSWAN, OCN_COMM_WORLD, ROMStoSWAN)
+      CALL Router_init (WAVid, GlobalSegMap_G(ng)%GSMapSWAN,            &
+     &                  OCN_COMM_WORLD, ROMStoSWAN)
 #else
-# ifdef REFINED_GRID
 !
 !  Initialize attribute vector holding the export data code strings of
 !  the wave model. The Asize is the number of grid point on this
 !  processor.
 !
-      IF (ng.eq.1) THEN
-        Asize=GlobalSegMap_lsize(GSMapROMS1, OCN_COMM_WORLD)
-        CALL AttrVect_init(wav2ocn_AV1,                                   &
-     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",            &
-     &  lsize=Asize)
-        CALL AttrVect_zero (wav2ocn_AV1)
-!
-!  Initialize attribute vector holding the export data code string of
-!  the ocean model.
-!
-        CALL AttrVect_init (ocn2wav_AV1,                                  &
-     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",                &
-     &                    lsize=Asize)
-        CALL AttrVect_zero (ocn2wav_AV1)
-!
-!  Initialize a router to the wave model component.
-!
-        CALL Router_init (WAVid, GSMapROMS1, OCN_COMM_WORLD, ROMStoSWAN1)
-      ELSE IF (ng.eq.2) THEN
-        Asize=GlobalSegMap_lsize(GSMapROMS2, OCN_COMM_WORLD)
-        CALL AttrVect_init(wav2ocn_AV2,                                   &
-     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",            &
-     &  lsize=Asize)
-        CALL AttrVect_zero (wav2ocn_AV2)
-!
-!  Initialize attribute vector holding the export data code string of
-!  the ocean model.
-!
-        CALL AttrVect_init (ocn2wav_AV2,                                  &
-     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",                &
-     &                    lsize=Asize)
-        CALL AttrVect_zero (ocn2wav_AV2)
-!
-!  Initialize a router to the wave model component.
-!
-        CALL Router_init (WAVid, GSMapROMS2, OCN_COMM_WORLD, ROMStoSWAN2)
-      END IF
-# else
-!
-!  Initialize attribute vector holding the export data code strings of
-!  the wave model. The Asize is the number of grid point on this
-!  processor.
-!
-      Asize=GlobalSegMap_lsize(GSMapROMS, OCN_COMM_WORLD)
-      CALL AttrVect_init(wav2ocn_AV,                                     &
-     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",           &
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
+     &                         OCN_COMM_WORLD)
+      CALL AttrVect_init(wav2ocn_AV,                                    &
+     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",          &
      &  lsize=Asize)
       CALL AttrVect_zero (wav2ocn_AV)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
-      CALL AttrVect_init (ocn2wav_AV,                                    &
-     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",               &
+      CALL AttrVect_init (ocn2wav_AV,                                   &
+     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
      &                    lsize=Asize)
       CALL AttrVect_zero (ocn2wav_AV)
 !
 !  Initialize a router to the wave model component.
 !
-      CALL Router_init (WAVid, GSMapROMS, OCN_COMM_WORLD, ROMStoSWAN)
-# endif
+      CALL Router_init (WAVid, GlobalSegMap_G(ng)%GSMapROMS,  &
+     &                  OCN_COMM_WORLD, ROMStoSWAN)
 #endif
 #ifdef REFINED_GRID
       deallocate ( wavids )
@@ -603,15 +563,8 @@
 !  Allocate communications array.
 !-----------------------------------------------------------------------
 !
-#ifdef REFINED_GRID
-      IF (ng.eq.1) THEN
-        Asize=GlobalSegMap_lsize (GSMapROMS1, OCN_COMM_WORLD)
-      ELSE IF (ng.eq.2) THEN
-        Asize=GlobalSegMap_lsize (GSMapROMS2, OCN_COMM_WORLD)
-      END IF
-#else
-      Asize=GlobalSegMap_lsize (GSMapROMS, OCN_COMM_WORLD)
-#endif
+      Asize=GlobalSegMap_lsize (GlobalSegMap_G(ng)%GSMapROMS,           &
+     &      OCN_COMM_WORLD)
       allocate ( A(Asize) )
       A=0.0_r8
 !
@@ -1076,21 +1029,9 @@
 !  Deallocate MCT environment.
 !-----------------------------------------------------------------------
 !
-#ifdef REFINED_GRID
-!      IF (ng.eq.1) THEN
-        CALL Router_clean (ROMStoSWAN1, MyError)
-        CALL AttrVect_clean (ocn2wav_AV1, MyError)
-        CALL GlobalSegMap_clean (GSMapROMS1, MyError)
-!      ELSE IF (ng.eq.2) THEN
-        CALL Router_clean (ROMStoSWAN2, MyError)
-        CALL AttrVect_clean (ocn2wav_AV2, MyError)
-        CALL GlobalSegMap_clean (GSMapROMS2, MyError)
-!      END IF
-#else
       CALL Router_clean (ROMStoSWAN, MyError)
       CALL AttrVect_clean (ocn2wav_AV, MyError)
-      CALL GlobalSegMap_clean (GSMapROMS, MyError)
-#endif
+      CALL GlobalSegMap_clean (GlobalSegMap_G(ng)%GSMapROMS, MyError)
       RETURN
 
       END SUBROUTINE finalize_ocn2wav_coupling

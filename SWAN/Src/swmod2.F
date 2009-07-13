@@ -561,7 +561,7 @@
 !     LOGICAL, POINTER, SAVE :: LBGP     ! = .FALSE.
       LOGICAL, POINTER, SAVE :: LBGP_G(:)
 #endif
-#ifdef REFINED_GRID
+#ifdef MODEL_COUPLING
 !
 !    This is called a linked list.
 !
@@ -1040,10 +1040,8 @@
       INTEGER :: Numspecl
       INTEGER :: NBGRPT_last
       INTEGER, SAVE, ALLOCATABLE :: Numspec(:)
-#ifdef REFINED_GRID
       INTEGER, SAVE, ALLOCATABLE :: ac2size(:)
       INTEGER, SAVE, ALLOCATABLE :: BGRIDPG(:,:)
-#endif
 !
       INTEGER, POINTER :: MCGRDGL
       INTEGER, SAVE, TARGET, ALLOCATABLE :: MCGRDGL_G(:)
@@ -1228,10 +1226,8 @@
         REAL, POINTER :: AC1_G(:,:,:)
         REAL, POINTER :: COMPDA_G(:,:)
         REAL, POINTER :: OURQT_G(:)
-# ifdef REFINED_GRID
         REAL, POINTER :: AC2_parent_G(:)
         REAL, POINTER :: AC2_parent2_G(:)
-# endif
       END TYPE T_PARALL2_MOD
       TYPE (T_PARALL2_MOD), ALLOCATABLE :: PARALL2_MOD(:)
 
@@ -1241,10 +1237,8 @@
       REAL, POINTER :: AC1(:,:,:)
       REAL, POINTER :: COMPDA(:,:)
       REAL, POINTER :: OURQT(:)
-# ifdef REFINED_GRID
       REAL, POINTER :: AC2_parent(:)
       REAL, POINTER :: AC2_parent2(:)
-# endif
 #else
       REAL, SAVE,    ALLOCATABLE :: BSPECS(:,:,:,:)
       INTEGER, SAVE, ALLOCATABLE :: CROSS(:,:)

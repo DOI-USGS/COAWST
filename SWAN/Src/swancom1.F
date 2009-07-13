@@ -63,7 +63,7 @@
       USE m_constants                                                     40.41
       USE m_xnldata                                                       40.41
       USE m_fileio                                                        40.41
-#ifdef REFINED_GRID
+#ifdef MODEL_COUPLING
       USE M_COUPLING
 #endif
 !

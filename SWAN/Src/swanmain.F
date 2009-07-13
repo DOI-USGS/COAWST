@@ -152,7 +152,7 @@
       USE M_BNDSPEC
       USE M_COUPLING
 #endif
-#ifdef REFINED_GRID
+#ifdef MODEL_COUPLING
       USE M_CVMESH
 #endif
 !
@@ -488,7 +488,7 @@
         IF (.NOT.ALLOCATED(BSPECS)) ALLOCATE(BSPECS(MDC,MSC,NBSPEC,2))    40.31
         IF (.NOT.ALLOCATED(BGRIDP)) ALLOCATE(BGRIDP(6*NBGRPT))            40.31
 #endif
-#ifdef REFINED_GRID
+#ifdef MODEL_COUPLING
         ALLOCATE (PARALL2_MOD(ng)%AC2_parent_G(MSC*MDC*Numspec(ng)))
         ALLOCATE (PARALL2_MOD(ng)%AC2_parent2_G(MSC*MDC*Numspec(ng)))
         AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
@@ -734,8 +734,7 @@
       AC1=>   PARALL2_MOD(ng)%AC1_G
       COMPDA=>PARALL2_MOD(ng)%COMPDA_G
       OURQT=> PARALL2_MOD(ng)%OURQT_G
-#ifdef REFINED_GRID
-! jcw needs to redo this
+#ifdef MODEL_COUPLING
       AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
       AC2_parent2=>PARALL2_MOD(ng)%AC2_parent2_G
 #endif
@@ -2704,7 +2703,7 @@
       IF (NBGGL.EQ.0) NBGGL  = NBGRPT                                     40.51 40.31
       NBGRPT = 0                                                          40.31
 
-#ifdef REFINED_GRID
+#ifdef MODEL_COUPLING
 !curbgp is now BGPDATZ_MOD(ng)%CURBGP
       ALLOCATE(BGPDATZ_MOD(ng)%CURBGP)
 
@@ -4815,8 +4814,8 @@
 ! i   KGRPNT: computational grid point addresses
 ! i   XYTST : test points
 !
-#if defined MODEL_COUPLING && defined REFINED_GRID
-      INTEGER offset, offset2
+#if defined REFINED_GRID
+      INTEGER offset
 #endif
 #ifdef MODEL_COUPLING
       INTEGER, intent(in) :: ng, first, ITjcw
@@ -4916,7 +4915,7 @@
 
 !     --- update boundary conditions
 
-#if defined MODEL_COUPLING && defined REFINED_GRID
+#if defined MODEL_COUPLING
       IF (ng.eq.1) THEN
         IF (INODE.EQ.MASTER) THEN                                           40.30
          IF (ITEST.GE.80) WRITE (PRTEST,*) ' number of boundary files ',

@@ -1038,7 +1038,7 @@
       USE SWCOMM2                                                         40.41
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
-#ifdef REFINED_GRID
+#ifdef MODEL_COUPLING
       USE M_CVMESH
       USE M_COUPLING
       USE M_PARALL
@@ -1140,7 +1140,7 @@
 !     IBND     counter of boundary grid points
 !
       INTEGER       :: IX, IY, K1, IXMIN, IYMIN, IBND
-#if !defined REFINED_GRID
+#if !defined MODEL_COUPLING
       INTEGER, SAVE :: MXITNR = 0
 #endif
       INTEGER, SAVE :: IENT = 0
@@ -1161,7 +1161,7 @@
 !
       REAL       :: DISMIN                                                40.41
       REAL       :: XPC1, YPC1, XC0, YC0
-#ifdef REFINED_GRID
+#ifdef MODEL_COUPLING
       XCSAVE=>XCSAVE_G(Gridnum)
       YCSAVE=>YCSAVE_G(Gridnum)
       MXITNR=>MXITNR_G(Gridnum)

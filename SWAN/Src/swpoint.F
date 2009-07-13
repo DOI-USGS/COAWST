@@ -59,9 +59,7 @@
         ALLOCATE (M_GENARR_MOD(Ngrids))
         ALLOCATE (PARALL_MOD(Ngrids))
         ALLOCATE (PARALL2_MOD(Ngrids))
-#ifdef REFINED_GRID
         ALLOCATE (BGPDATZ_MOD(Ngrids))
-#endif
         ALLOCATE (OPSDATZ_MOD(Ngrids))
         ALLOCATE (ORQDATZ_MOD(Ngrids))
 !

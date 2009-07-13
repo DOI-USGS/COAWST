@@ -68,19 +68,17 @@
 #endif
       MyKey=0
       inp=22
-#ifdef REFINED_GRID
+#ifdef MODEL_COUPLING
 !
 ! Allocate some arrays
 !
       IF (.not.allocated(Numspec)) allocate (Numspec(Ngrids))
       IF (.not.allocated(ac2size)) allocate (ac2size(Ngrids))
-!     IF (.not.allocated(BGRIDPL)) allocate (BGRIDPL(Ngrids,100000))
       IF (.not.allocated(BGRIDPG)) allocate (BGRIDPG(Ngrids,100000))
       DO ng=1,Ngrids
         BGRIDPG(ng,:)=9999
+        Numspec(1)=46
       END DO
-      Numspec(1)=46
-      Numspec(2)=46
       NBGRPT_last=0
 #endif
 !
@@ -98,9 +96,7 @@
 !
 !  Compute number of boundary arrays to be passed.
 !
-#ifdef REFINED_GRID
         ac2size(ng)=MSC*MDC*Numspec(ng)
-#endif
       END DO
 !
 !  The call to run here does not do a time step, it fills the bc arrays,
@@ -219,9 +215,6 @@
 !
       integer :: ng, my_iic, MyError
       integer :: count1, MyCOMM_wave
-#if defined REFINED_GRID
-      integer :: count2
-#endif
 !
 !-----------------------------------------------------------------------
 !  Run model for all nested grids, if any.
