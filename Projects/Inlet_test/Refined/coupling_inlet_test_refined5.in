@@ -37,14 +37,14 @@
 ! Their sum must be equal to the total number of processors.
 
   NnodesATM =  0                     ! atmospheric model
-  NnodesWAV =  2                     ! wave model
+  NnodesWAV =  1                     ! wave model
   NnodesOCN =  1                     ! ocean model
 
 ! Time interval (seconds) between coupling of models.
 
  TI_ATM_WAV =     0.0d0              ! atmosphere-wave coupling interval
  TI_ATM_OCN =     0.0d0              ! atmosphere-ocean coupling interval
- TI_WAV_OCN =    60.0d0              ! wave-ocean coupling interval
+ TI_WAV_OCN =   600.0d0              ! wave-ocean coupling interval
 
 ! Enter names of Atm, Wav, and Ocn input files.
 ! The Wav program needs multiple input files, one for each grid.

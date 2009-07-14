@@ -103,7 +103,7 @@
 ! Output history, average, diagnostic files parameters.
 
      LDEFOUT == T       T
-        NHIS == 1       5   !60      300
+        NHIS == 60      300
      NDEFHIS == 0       0
       NTSAVG == 1       1
         NAVG == 3600 3600
