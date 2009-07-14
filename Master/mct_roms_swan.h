@@ -318,7 +318,7 @@
 !
          call SparseMatrixPlus_init(O2WMatPlus, sMatO,                  &
      &                              GlobalSegMap_G(ng)%GSMapROMS,       &
-     &                              GlobalSegMap_G(ng)%GSMapSWAN,  
+     &                              GlobalSegMap_G(ng)%GSMapSWAN,       &
      &                              Xonly,MyMaster,OCN_COMM_WORLD,OCNid)
         call SparseMatrix_clean(sMatO)
 #endif
@@ -338,10 +338,10 @@
 !
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
      &      OCN_COMM_WORLD)
-      CALL AttrVect_init(wav2ocn_AV,                                    &
+      CALL AttrVect_init(AttrVect_G(ng)%wav2ocn_AV,                     &
      &     rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",       &
      &     lsize=Asize)
-      CALL AttrVect_zero (wav2ocn_AV)
+      CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
@@ -355,10 +355,10 @@
 !
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
      &      OCN_COMM_WORLD)
-      CALL AttrVect_init (ocn2wav_AV,                                   &
+      CALL AttrVect_init (AttrVect_G(ng)%ocn2wav_AV,                    &
      &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
      &                    lsize=Asize)
-      CALL AttrVect_zero (ocn2wav_AV)
+      CALL AttrVect_zero (AttrVect_G(ng)%ocn2wav_AV)
 !
 !  Initialize a router to the wave model component.
 !
@@ -579,7 +579,8 @@
       CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
 #ifdef MCT_INTERP_OC2WV
       CALL MCT_Recv (wav2ocn_AV2, Router_G(ng)%ROMStoSWAN, MyError)
-      CALL MCT_MatVecMul(wav2ocn_AV2, W2OMatPlus, wav2ocn_AV)
+      CALL MCT_MatVecMul(wav2ocn_AV2, W2OMatPlus,                       &
+     &                   AttrVect_G(ng)%wav2ocn_AV)
 #else
       CALL MCT_Recv (AttrVect_G(ng)%wav2ocn_AV, Router_G(ng)%ROMStoSWAN,&
      &               MyError)
@@ -971,7 +972,8 @@
 !  Send ocean fields to wave model.
 !
 #ifdef MCT_INTERP_OC2WV
-      CALL MCT_MatVecMul(ocn2wav_AV,O2WMatPlus,ocn2wav_AV2)
+      CALL MCT_MatVecMul(AttrVect_G(ng)%ocn2wav_AV,O2WMatPlus,          &
+     &                   ocn2wav_AV2)
       CALL MCT_Send (ocn2wav_AV2, Router_G(ng)%ROMStoSWAN, MyError)
 #else
       CALL MCT_Send (AttrVect_G(ng)%ocn2wav_AV, Router_G(ng)%ROMStoSWAN,&

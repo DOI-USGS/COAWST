@@ -66,7 +66,7 @@ ROMS_APPLICATION ?= INLET_TEST
 
 #MY_HEADER_DIR ?= /raid1/jcwarner/Models/COAWST/Projects/Inlet_test/Refined
 #MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Refined
-MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
+MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/DiffGrid
 
 #  If your application requires analytical expressions and they are not
 #  located in "ROMS/Functionals", provide an alternate directory.
@@ -75,7 +75,7 @@ MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
 
 #MY_ANALYTICAL_DIR ?= /raid1/jcwarner/Models/COAWST/Projects/Inlet_test/Refined
 #MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Refined
-MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
+MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/DiffGrid
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying
