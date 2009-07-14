@@ -819,8 +819,8 @@
         t2=2
       ELSE
 # ifdef SOLVE3D
-        t1=nstp(ng)
-        t2=nnew(ng)
+        t1=nstp(ngp)
+        t2=nnew(ngp)
 # else
         IF (MOD(iic(1)*3,2).eq.0) THEN
           t1=2
