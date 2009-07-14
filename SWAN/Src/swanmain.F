@@ -126,7 +126,7 @@
 !***********************************************************************
 !                                                                      *
 #ifdef MODEL_COUPLING
-      SUBROUTINE SWAN_INITIALIZE (ng, Ngrids, MyComm, WNAME)
+      SUBROUTINE SWAN_INITIALIZE (ng, Numgrids, MyComm, WNAME)
 #else
       SUBROUTINE SWMAIN                                                   40.31 34.01
 #endif
@@ -276,7 +276,7 @@
 !
 #ifdef MODEL_COUPLING
       CHARACTER*80, intent(in) :: WNAME
-      INTEGER, INTENT(in) :: ng, Ngrids, MyCOMM
+      INTEGER, INTENT(in) :: ng, Numgrids, MyCOMM
 #endif
       INTEGER   IUNIT                                                     34.01
       INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN                             40.30
@@ -367,10 +367,8 @@
 ! 13. Source text
 !
 #ifdef MODEL_COUPLING
-
-      Numgrids=Ngrids
       Gridnum=ng
-      CALL ALLOCATE_SWAN_ARRAYS(ng, Ngrids)
+      CALL ALLOCATE_SWAN_ARRAYS(ng, Numgrids)
 !
 !  Allocate here a few arrays that are grid specific, needed, and reallocated later.
 !
@@ -441,7 +439,7 @@
 
         CALL SWTSTA(3)                                                    40.23
 #ifdef MODEL_COUPLING
-        CALL SWREAD (COMPUT, ng, Ngrids)
+        CALL SWREAD (COMPUT, ng, Numgrids)
 #else
         CALL SWREAD (COMPUT)                                              40.31 30.90
 #endif
@@ -895,7 +893,7 @@
 
 !***********************************************************************
 !                                                                      *
-      SUBROUTINE SWAN_FINALIZE (ng)
+      SUBROUTINE SWAN_FINALIZE (ng, Numgrids)
 !                                                                      *
 !***********************************************************************
 !
@@ -910,6 +908,7 @@
       USE M_GENARR
       USE M_PARALL
       USE M_PARALL2
+      USE SWPOINT_MOD, ONLY: INIT_POINTERS, DEALLOCATE_SWAN_ARRAYS
 !
       USE WAVES_COUPLER_MOD, ONLY : finalize_wav2ocn_coupling
 !# if defined WRF_COUPLING
@@ -921,7 +920,7 @@
 !     BLKND :     array giving node number per subdomain
 !     BLKNDC:     auxiliary array for collecting the array BLKND
 !
-      INTEGER, INTENT(IN) :: ng
+      INTEGER, INTENT(IN) :: ng, Numgrids
       LOGICAL STPNOW
       LOGICAL LOPEN
       INTEGER MyStatus
@@ -973,6 +972,7 @@
 !     --- deallocate all allocated arrays                                 40.31
 
 #ifdef MODEL_COUPLING
+      CALL DEALLOCATE_SWAN_ARRAYS (ng, Numgrids)
 #else
       IF (ALLOCATED(AC1   )) DEALLOCATE(AC1   )                           40.31
       IF (ALLOCATED(BGRIDP)) DEALLOCATE(BGRIDP)                           40.31

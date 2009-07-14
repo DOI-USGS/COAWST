@@ -1217,7 +1217,7 @@
 !
 !
 #ifdef MODEL_COUPLING
-      INTEGER, SAVE :: Numgrids
+!     INTEGER, SAVE :: Numgrids
 
       TYPE T_PARALL2_MOD
         REAL, POINTER :: BSPECS_G(:,:,:,:)

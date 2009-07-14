@@ -230,7 +230,7 @@
       integer :: ng
 
       DO ng=1,Ngrids
-        CALL SWAN_FINALIZE
+        CALL SWAN_FINALIZE (ng, Ngrids)
       END DO
 
       RETURN

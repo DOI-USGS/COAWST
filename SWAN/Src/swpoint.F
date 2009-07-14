@@ -21,7 +21,6 @@
       USE M_GENARR
       USE M_PARALL
       USE M_PARALL2
-      USE M_COUPLING
       USE M_BNDSPEC
       USE M_CVMESH
 
@@ -29,20 +28,17 @@
 !
       PRIVATE
 
-      PUBLIC :: INIT_POINTERS
       PUBLIC :: ALLOCATE_SWAN_ARRAYS
+      PUBLIC :: INIT_POINTERS
+      PUBLIC :: DEALLOCATE_SWAN_ARRAYS
 
       include 'mpif.h'
 !
 !  Declarations.
 !
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!Gridnum
-
       CONTAINS
 
-      SUBROUTINE ALLOCATE_SWAN_ARRAYS (ng, Ngrids)
+      SUBROUTINE ALLOCATE_SWAN_ARRAYS (ng, Numgrids)
 !
 !=======================================================================
 !                                                                      !
@@ -50,18 +46,18 @@
 !                                                                      !
 !=======================================================================
 !
-      INTEGER, INTENT(IN) :: ng, Ngrids
+      INTEGER, INTENT(IN) :: ng, Numgrids
 !
 !
 !  Allocate Type arrays
 !
       IF (ng.eq.1) THEN
-        ALLOCATE (M_GENARR_MOD(Ngrids))
-        ALLOCATE (PARALL_MOD(Ngrids))
-        ALLOCATE (PARALL2_MOD(Ngrids))
-        ALLOCATE (BGPDATZ_MOD(Ngrids))
-        ALLOCATE (OPSDATZ_MOD(Ngrids))
-        ALLOCATE (ORQDATZ_MOD(Ngrids))
+        ALLOCATE (M_GENARR_MOD(Numgrids))
+        ALLOCATE (PARALL_MOD(Numgrids))
+        ALLOCATE (PARALL2_MOD(Numgrids))
+        ALLOCATE (BGPDATZ_MOD(Numgrids))
+        ALLOCATE (OPSDATZ_MOD(Numgrids))
+        ALLOCATE (ORQDATZ_MOD(Numgrids))
 !
 !  Allocate pointers
 !
@@ -180,7 +176,6 @@
         ALLOCATE (MXITNR_G(Numgrids))
       END IF
 
-
       END SUBROUTINE ALLOCATE_SWAN_ARRAYS
 
       SUBROUTINE INIT_POINTERS (ng)
@@ -296,5 +291,144 @@
       YPG=>YPG_G(ng,:)
 
       END SUBROUTINE INIT_POINTERS
+
+      SUBROUTINE DEALLOCATE_SWAN_ARRAYS (ng, Numgrids)
+!
+!=======================================================================
+!                                                                      !
+!  Initialize global arrays.                                           !
+!                                                                      !
+!=======================================================================
+!
+      INTEGER, INTENT(IN) :: ng, Numgrids
+!
+!
+!  DEAllocate Type arrays
+!
+      IF (ng.eq.Numgrids) THEN
+        DEALLOCATE (M_GENARR_MOD)
+        DEALLOCATE (PARALL_MOD)
+        DEALLOCATE (PARALL2_MOD)
+        DEALLOCATE (BGPDATZ_MOD)
+        DEALLOCATE (OPSDATZ_MOD)
+        DEALLOCATE (ORQDATZ_MOD)
+!
+!  DEAllocate pointers
+!
+!  M_BNDSPEC
+!
+        DEALLOCATE (LBGP_G)
+!       LBGP_G(ng)=.FALSE.
+!
+!  M_PARALL
+!
+        DEALLOCATE (MCGRDGL_G)
+        DEALLOCATE (NGRBGL_G)
+        DEALLOCATE (MXCGL_G)
+        DEALLOCATE (MYCGL_G)
+        DEALLOCATE (MXF_G)
+        DEALLOCATE (MXL_G)
+        DEALLOCATE (MYF_G)
+        DEALLOCATE (MYL_G)
+        DEALLOCATE (NBGGL_G)
+        DEALLOCATE (XCLMAX_G)
+        DEALLOCATE (YCLMAX_G)
+        DEALLOCATE (XCLMIN_G)
+        DEALLOCATE (YCLMIN_G)
+        DEALLOCATE (LMXF_G)
+        DEALLOCATE (LMXL_G)
+        DEALLOCATE (LMYF_G)
+        DEALLOCATE (LMYL_G)
+!
+!  OCPCOMM4
+!
+        DEALLOCATE (PRINTF_G)
+!
+!  SWANCOMM3
+!
+        DEALLOCATE (MXC_G)
+        DEALLOCATE (MYC_G)
+        DEALLOCATE (MCGRD_G)
+        DEALLOCATE (NGRBND_G)
+        DEALLOCATE (MSC_G)
+        DEALLOCATE (MDC_G)
+        DEALLOCATE (MTC_G)
+        DEALLOCATE (XCGMIN_G)
+        DEALLOCATE (XCGMAX_G)
+        DEALLOCATE (YCGMIN_G)
+        DEALLOCATE (YCGMAX_G)
+!
+!  TIMECOMM
+!
+        DEALLOCATE (TINIC_G)
+        DEALLOCATE (DT_G)
+        DEALLOCATE (TFINC_G)
+        DEALLOCATE (TIMCO_G)
+!
+!  SWCOMM1
+!
+        DEALLOCATE (CHTIME_G)
+!
+! OUTP_DATA
+!
+        DEALLOCATE (NREOQ_G)
+!       NREOQ_G(ng)=0
+        DEALLOCATE (LOPS_G)
+!       LOPS_G(ng)=.FALSE.
+        DEALLOCATE (LORQ_G)
+!       LORQ_G(ng)=.FALSE.
+        DEALLOCATE (OUTP_FILES_G)
+!
+!       ALLOCATE (ORQDATZ_MOD(ng)%FORQ)
+!
+!  SWANCOMM2
+!
+        DEALLOCATE (CVLEFT_G)
+        DEALLOCATE (LXOFFS_G)
+        DEALLOCATE (VARFR_G)
+        DEALLOCATE (VARWI_G)
+        DEALLOCATE (VARWLV_G)
+        DEALLOCATE (DYNDEP_G)
+        DEALLOCATE (VARAST_G)
+        DEALLOCATE (ICOND_G)
+        DEALLOCATE (NWAMN_G)
+        DEALLOCATE (OPTG_G)
+        DEALLOCATE (NBFILS_G)
+        DEALLOCATE (NBSPEC_G)
+        DEALLOCATE (NBGRPT_G)
+
+        DEALLOCATE (MXG_G)
+        DEALLOCATE (MYG_G)
+        DEALLOCATE (IGTYPE_G)
+        DEALLOCATE (LEDS_G)
+
+        DEALLOCATE (COSVC_G)
+        DEALLOCATE (COSWC_G)
+        DEALLOCATE (RDTIM_G)
+        DEALLOCATE (SINVC_G)
+        DEALLOCATE (SINWC_G)
+        DEALLOCATE (XOFFS_G)
+        DEALLOCATE (YOFFS_G)
+
+        DEALLOCATE (ALPG_G)
+        DEALLOCATE (COSPG_G)
+        DEALLOCATE (DXG_G)
+        DEALLOCATE (DYG_G)
+        DEALLOCATE (EXCFLD_G)
+        DEALLOCATE (SINPG_G)
+        DEALLOCATE (STAGX_G)
+        DEALLOCATE (STAGY_G)
+        DEALLOCATE (XPG_G)
+        DEALLOCATE (YPG_G)
+!
+!     MODULE M_CVMESH
+!
+        DEALLOCATE (XCSAVE_G)
+        DEALLOCATE (YCSAVE_G)
+        DEALLOCATE (MXITNR_G)
+      END IF
+
+      END SUBROUTINE DEALLOCATE_SWAN_ARRAYS
+
 #endif
       END MODULE SWPOINT_MOD

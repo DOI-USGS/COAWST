@@ -18,7 +18,7 @@
 !***********************************************************************
 !                                                                      *
 #ifdef MODEL_COUPLING
-      SUBROUTINE SWREAD (COMPUT, ng, Ngrids)
+      SUBROUTINE SWREAD (COMPUT, ng, Numgrids)
 #else
       SUBROUTINE SWREAD (COMPUT)                                          40.31 30.90
 #endif
@@ -250,7 +250,7 @@
 !  5. Parameter variables
 !
 #ifdef MODEL_COUPLING
-      INTEGER, INTENT(in) :: ng, Ngrids
+      INTEGER, INTENT(in) :: ng, Numgrids
 #endif
       INTEGER, PARAMETER :: MXINCL = 10                                   40.03
 !
@@ -395,7 +395,7 @@
 #ifdef MODEL_COUPLING
       Numspecl=0
       IF ((ng.eq.1).and.(.not.ALLOCATED(LOGCOM_G)))                     &
-     &                        ALLOCATE (LOGCOM_G(Ngrids,6))
+     &                        ALLOCATE (LOGCOM_G(Numgrids,6))
       LOGCOM=>LOGCOM_G(ng,:)
       LOGCOM(1:6) = .FALSE.
 #endif

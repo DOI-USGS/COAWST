@@ -72,7 +72,7 @@
 
 ! Time-Stepping parameters.
 
-      NTIMES == 60 !2880
+      NTIMES == 720
           DT == 60.0d0
      NDTFAST == 20
 
