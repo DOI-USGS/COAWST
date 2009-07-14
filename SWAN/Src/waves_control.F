@@ -66,7 +66,7 @@
       IF (.not.allocated(BGRIDPG)) allocate (BGRIDPG(Ngrids,100000))
       DO ng=1,Ngrids
         BGRIDPG(ng,:)=9999
-        Numspec(1)=46
+        Numspec(ng)=46
       END DO
       NBGRPT_last=0
 #endif

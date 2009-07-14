@@ -327,7 +327,11 @@
       DO ng=1,Ngrids
 #  endif
       IF ((iic(ng).ne.ntstart(ng)).and.                                 &
+#ifdef REFINED_GRID
+     &    MOD(iic(ng)-1,nOCN_WAV(ng)).eq.0) THEN
+#else
      &    MOD(iic(ng),nOCN_WAV(ng)).eq.0) THEN
+#endif
 !$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
           DO thread=0,numthreads-1
             subs=NtileX(ng)*NtileE(ng)/numthreads
