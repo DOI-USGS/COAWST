@@ -12,6 +12,8 @@
 ### PBS queue
 #PBS -q standard
 
+umask 0002
+
 echo "this job is running on:"
 cat $PBS_NODEFILE
 
