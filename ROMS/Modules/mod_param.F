@@ -569,38 +569,11 @@
       nrefined(1)=1
       myparent(1)=0
       mychild(1)=2
-# if defined DOGBONE
-      nrefined(2)=3
-      myparent(2)=1
-# elif defined ISABEL
-      nrefined(2)=5
-      nrefined(3)=5
-!      nrefined(4)=5
-      myparent(2)=1
-      myparent(3)=2
-!      myparent(4)=3
-      mychild(2)=3
-!      mychild(3)=4
-!      mychild(4)=5
-# elif defined HATTERAS
-      nrefined(2)=5
-!      nrefined(3)=5
-!      nrefined(4)=5
-      myparent(2)=1
-!      myparent(3)=2
-!      myparent(4)=3
-      mychild(2)=3
-!      mychild(3)=4
-!      mychild(4)=5
-# elif defined SOLITON_REFINED
-      nrefined(2)=5
-      myparent(2)=1
-      mychild(2)=3
-# elif defined INLET_TEST
-      nrefined(2)=5
-      myparent(2)=1
-      mychild(2)=3
-# endif
+      DO ng=2,Ngrids
+        nrefined(ng)=5
+        myparent(ng)=ng-1
+        mychild(ng)=ng+1
+      END DO
 #endif
 
         RETURN

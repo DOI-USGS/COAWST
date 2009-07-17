@@ -1181,8 +1181,8 @@
           IGRD = 5
           IGR2 = 6                                                          10.26
           PSNAME = 'WXGRID  '
-#if defined AIR_OCEAN
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+#if defined AIR_OCEAN
           LWINDR = 2                                                        30.10
           IWIND  = LWINDM                                                   30.10
           IGR1   = 5
@@ -3185,7 +3185,7 @@
       ELSE IF (KEYWIS ('FR')) THEN
         IGR1   = 4
         VARFR  = .TRUE.
-# if !defined MODEL_COUPLING
+# if defined MODEL_COUPLING
         MCMVAR = MCMVAR + 2                                               40.00
         JFRC2  = MCMVAR - 1                                               40.00
         JFRC3  = MCMVAR                                                   40.00
@@ -3344,7 +3344,7 @@
          DEALLOCATE(M_GENARR_MOD(ng)%WYI_G)
          ALLOCATE (M_GENARR_MOD(ng)%WYI_G(MXG(IGR2),MYG(IGR2)))
          WYI=>M_GENARR_MOD(ng)%WYI_G
-         CALL SWCOPR( TARR, WXI, MXG(IGR1)*MYG(IGR1) )                    40.31
+         CALL SWCOPR( TARR, WYI, MXG(IGR2)*MYG(IGR2) )                    40.31
       ELSE IF (IGR2.EQ.9) THEN                                            40.31
            CALL SWCOPR( TARR, YCGRID, MXG(IGR2)*MYG(IGR2) )               40.31
       END IF                                                              40.31
