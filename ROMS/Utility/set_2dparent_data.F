@@ -148,9 +148,8 @@
       fac=1.0_r8/(fac1+fac2)
       fac1=fac*fac1
       fac2=fac*fac2
-
-!      fac1=0.0_r8
-!      fac2=1.0_r8
+!     fac1=0.0_r8
+!     fac2=1.0_r8
       IF (iic(1).eq.ntstart(1)) THEN
         t1=1
         t2=2
@@ -215,7 +214,7 @@
         DO j=JstrT,JendT
           DO i=Iend+1,IendT
 !         DO i=Iend+2,IendT
-            ic=i-Iend                                                   !+1
+            ic=i-Iend+1
             my_val=fac1*BOUNDARY(ng)%zetaR_east(ic,j,t1)+               &
      &             fac2*BOUNDARY(ng)%zetaR_east(ic,j,t2)
 # ifdef MASKING
@@ -263,7 +262,7 @@
         DO j=Jend+1,JendT
 !       DO j=Jend+2,JendT
           DO i=IstrT,IendT
-            jc=j-Jend                                                 !+1
+            jc=j-Jend+1
             my_val=fac1*BOUNDARY(ng)%zetaR_north(i,jc,t1)+               &
      &             fac2*BOUNDARY(ng)%zetaR_north(i,jc,t2)
 # ifdef MASKING
@@ -296,20 +295,20 @@
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
-            my_valh1=fac1*BOUNDARY(ng)%hR_west(ic,j,t1)+                &
-     &               fac2*BOUNDARY(ng)%hR_west(ic,j,t2)+                &
-     &               fac1*BOUNDARY(ng)%zetaR_west(ic,j,t1)+             &
-     &               fac2*BOUNDARY(ng)%zetaR_west(ic,j,t2)
-            my_valh2=fac1*BOUNDARY(ng)%hR_west(ic+1,j,t1)+              &
-     &               fac2*BOUNDARY(ng)%hR_west(ic+1,j,t2)+              &
-     &               fac1*BOUNDARY(ng)%zetaR_west(ic+1,j,t1)+           &
-     &               fac2*BOUNDARY(ng)%zetaR_west(ic+1,j,t2)
-            cff1=0.5_r8*(GRID(ng)%h(i-1,j)+OCEAN(ng)%zeta(i-1,j,1)+     &
-     &                   GRID(ng)%h(i  ,j)+OCEAN(ng)%zeta(i  ,j,1))
-            my_val=my_valu*0.5_r8*(my_valh1+my_valh2)/cff1
-            OCEAN(ng)%ubar(i,j,1)=my_val
-            OCEAN(ng)%ubar(i,j,2)=my_val
-            OCEAN(ng)%ubar(i,j,3)=my_val
+!            my_valh1=fac1*BOUNDARY(ng)%hR_west(ic,j,t1)+                &
+!     &               fac2*BOUNDARY(ng)%hR_west(ic,j,t2)+                &
+!     &               fac1*BOUNDARY(ng)%zetaR_west(ic,j,t1)+             &
+!     &               fac2*BOUNDARY(ng)%zetaR_west(ic,j,t2)
+!            my_valh2=fac1*BOUNDARY(ng)%hR_west(ic+1,j,t1)+              &
+!     &               fac2*BOUNDARY(ng)%hR_west(ic+1,j,t2)+              &
+!     &               fac1*BOUNDARY(ng)%zetaR_west(ic+1,j,t1)+           &
+!     &               fac2*BOUNDARY(ng)%zetaR_west(ic+1,j,t2)
+!            cff1=0.5_r8*(GRID(ng)%h(i-1,j)+OCEAN(ng)%zeta(i-1,j,1)+     &
+!     &                   GRID(ng)%h(i  ,j)+OCEAN(ng)%zeta(i  ,j,1))
+!            my_val=my_valu*0.5_r8*(my_valh1+my_valh2)/cff1
+            OCEAN(ng)%ubar(i,j,1)=my_valu
+            OCEAN(ng)%ubar(i,j,2)=my_valu
+            OCEAN(ng)%ubar(i,j,3)=my_valu
 # ifdef SOLVE3D
 !            COUPLING(ng)%DU_avg1(i,j)=my_val
 !            COUPLING(ng)%DU_avg2(i,j)=my_val
@@ -327,20 +326,20 @@
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
-            my_valh1=fac1*BOUNDARY(ng)%hR_east(ic,j,t1)+                &
-     &               fac2*BOUNDARY(ng)%hR_east(ic,j,t2)+                &
-     &               fac1*BOUNDARY(ng)%zetaR_east(ic,j,t1)+             &
-     &               fac2*BOUNDARY(ng)%zetaR_east(ic,j,t2)
-            my_valh2=fac1*BOUNDARY(ng)%hR_east(ic+1,j,t1)+              &
-     &               fac2*BOUNDARY(ng)%hR_east(ic+1,j,t2)+              &
-     &               fac1*BOUNDARY(ng)%zetaR_east(ic+1,j,t1)+           &
-     &               fac2*BOUNDARY(ng)%zetaR_east(ic+1,j,t2)
-            cff1=0.5_r8*(GRID(ng)%h(i-1,j)+OCEAN(ng)%zeta(i-1,j,1)+     &
-     &                   GRID(ng)%h(i  ,j)+OCEAN(ng)%zeta(i  ,j,1))
-            my_val=my_valu*0.5_r8*(my_valh1+my_valh2)/cff1
-            OCEAN(ng)%ubar(i,j,1)=my_val
-            OCEAN(ng)%ubar(i,j,2)=my_val
-            OCEAN(ng)%ubar(i,j,3)=my_val
+!            my_valh1=fac1*BOUNDARY(ng)%hR_east(ic,j,t1)+                &
+!     &               fac2*BOUNDARY(ng)%hR_east(ic,j,t2)+                &
+!     &               fac1*BOUNDARY(ng)%zetaR_east(ic,j,t1)+             &
+!     &               fac2*BOUNDARY(ng)%zetaR_east(ic,j,t2)
+!            my_valh2=fac1*BOUNDARY(ng)%hR_east(ic+1,j,t1)+              &
+!     &               fac2*BOUNDARY(ng)%hR_east(ic+1,j,t2)+              &
+!     &               fac1*BOUNDARY(ng)%zetaR_east(ic+1,j,t1)+           &
+!     &               fac2*BOUNDARY(ng)%zetaR_east(ic+1,j,t2)
+!            cff1=0.5_r8*(GRID(ng)%h(i-1,j)+OCEAN(ng)%zeta(i-1,j,1)+     &
+!     &                   GRID(ng)%h(i  ,j)+OCEAN(ng)%zeta(i  ,j,1))
+!            my_val=my_valu*0.5_r8*(my_valh1+my_valh2)/cff1
+            OCEAN(ng)%ubar(i,j,1)=my_valu
+            OCEAN(ng)%ubar(i,j,2)=my_valu
+            OCEAN(ng)%ubar(i,j,3)=my_valu
 # ifdef SOLVE3D
 !            COUPLING(ng)%DU_avg1(i,j)=my_val
 !            COUPLING(ng)%DU_avg2(i,j)=my_val
@@ -358,20 +357,20 @@
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
-            my_valh1=fac1*BOUNDARY(ng)%hR_south(i,jc,t1)+               &
-     &               fac2*BOUNDARY(ng)%hR_south(i,jc,t2)+               &
-     &               fac1*BOUNDARY(ng)%zetaR_south(i,jc,t1)+            &
-     &               fac2*BOUNDARY(ng)%zetaR_south(i,jc,t2)
-            my_valh2=fac1*BOUNDARY(ng)%hR_south(i-1,jc,t1)+             &
-     &               fac2*BOUNDARY(ng)%hR_south(i-1,jc,t2)+             &
-     &               fac1*BOUNDARY(ng)%zetaR_south(i-1,jc,t1)+          &
-     &               fac2*BOUNDARY(ng)%zetaR_south(i-1,jc,t2)
-            cff1=0.5_r8*(GRID(ng)%h(i-1,j)+OCEAN(ng)%zeta(i-1,j,1)+     &
-     &                   GRID(ng)%h(i  ,j)+OCEAN(ng)%zeta(i  ,j,1))
-            my_val=my_valu*0.5_r8*(my_valh1+my_valh2)/cff1
-            OCEAN(ng)%ubar(i,j,1)=my_val
-            OCEAN(ng)%ubar(i,j,2)=my_val
-            OCEAN(ng)%ubar(i,j,3)=my_val
+!            my_valh1=fac1*BOUNDARY(ng)%hR_south(i,jc,t1)+               &
+!     &               fac2*BOUNDARY(ng)%hR_south(i,jc,t2)+               &
+!     &               fac1*BOUNDARY(ng)%zetaR_south(i,jc,t1)+            &
+!     &               fac2*BOUNDARY(ng)%zetaR_south(i,jc,t2)
+!            my_valh2=fac1*BOUNDARY(ng)%hR_south(i-1,jc,t1)+             &
+!     &               fac2*BOUNDARY(ng)%hR_south(i-1,jc,t2)+             &
+!     &               fac1*BOUNDARY(ng)%zetaR_south(i-1,jc,t1)+          &
+!     &               fac2*BOUNDARY(ng)%zetaR_south(i-1,jc,t2)
+!            cff1=0.5_r8*(GRID(ng)%h(i-1,j)+OCEAN(ng)%zeta(i-1,j,1)+     &
+!     &                   GRID(ng)%h(i  ,j)+OCEAN(ng)%zeta(i  ,j,1))
+!            my_val=my_valu*0.5_r8*(my_valh1+my_valh2)/cff1
+            OCEAN(ng)%ubar(i,j,1)=my_valu
+            OCEAN(ng)%ubar(i,j,2)=my_valu
+            OCEAN(ng)%ubar(i,j,3)=my_valu
 # ifdef SOLVE3D
 !            COUPLING(ng)%DU_avg1(i,j)=my_val
 !            COUPLING(ng)%DU_avg2(i,j)=my_val
@@ -389,20 +388,20 @@
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
-            my_valh1=fac1*BOUNDARY(ng)%hR_north(i,jc+1,t1)+             &
-     &               fac2*BOUNDARY(ng)%hR_north(i,jc+1,t2)+             &
-     &               fac1*BOUNDARY(ng)%zetaR_north(i,jc+1,t1)+          &
-     &               fac2*BOUNDARY(ng)%zetaR_north(i,jc+1,t2)
-            my_valh2=fac1*BOUNDARY(ng)%hR_north(i-1,jc+1,t1)+           &
-     &               fac2*BOUNDARY(ng)%hR_north(i-1,jc+1,t2)+           &
-     &               fac1*BOUNDARY(ng)%zetaR_north(i-1,jc+1,t1)+        &
-     &               fac2*BOUNDARY(ng)%zetaR_north(i-1,jc+1,t2)
-            cff1=0.5_r8*(GRID(ng)%h(i-1,j)+OCEAN(ng)%zeta(i-1,j,1)+     &
-     &                   GRID(ng)%h(i  ,j)+OCEAN(ng)%zeta(i  ,j,1))
-            my_val=my_valu*0.5_r8*(my_valh1+my_valh2)/cff1
-            OCEAN(ng)%ubar(i,j,1)=my_val
-            OCEAN(ng)%ubar(i,j,2)=my_val
-            OCEAN(ng)%ubar(i,j,3)=my_val
+!            my_valh1=fac1*BOUNDARY(ng)%hR_north(i,jc+1,t1)+             &
+!     &               fac2*BOUNDARY(ng)%hR_north(i,jc+1,t2)+             &
+!     &               fac1*BOUNDARY(ng)%zetaR_north(i,jc+1,t1)+          &
+!     &               fac2*BOUNDARY(ng)%zetaR_north(i,jc+1,t2)
+!            my_valh2=fac1*BOUNDARY(ng)%hR_north(i-1,jc+1,t1)+           &
+!     &               fac2*BOUNDARY(ng)%hR_north(i-1,jc+1,t2)+           &
+!     &               fac1*BOUNDARY(ng)%zetaR_north(i-1,jc+1,t1)+        &
+!     &               fac2*BOUNDARY(ng)%zetaR_north(i-1,jc+1,t2)
+!            cff1=0.5_r8*(GRID(ng)%h(i-1,j)+OCEAN(ng)%zeta(i-1,j,1)+     &
+!     &                   GRID(ng)%h(i  ,j)+OCEAN(ng)%zeta(i  ,j,1))
+!            my_val=my_valu*0.5_r8*(my_valh1+my_valh2)/cff1
+            OCEAN(ng)%ubar(i,j,1)=my_valu
+            OCEAN(ng)%ubar(i,j,2)=my_valu
+            OCEAN(ng)%ubar(i,j,3)=my_valu
 # ifdef SOLVE3D
 !            COUPLING(ng)%DU_avg1(i,j)=my_val
 !            COUPLING(ng)%DU_avg2(i,j)=my_val
@@ -485,20 +484,20 @@
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
-            my_valh1=fac1*BOUNDARY(ng)%hR_west(ic,j,t1)+                &
-     &               fac2*BOUNDARY(ng)%hR_west(ic,j,t2)+                &
-     &               fac1*BOUNDARY(ng)%zetaR_west(ic,j,t1)+             &
-     &               fac2*BOUNDARY(ng)%zetaR_west(ic,j,t2)
-            my_valh2=fac1*BOUNDARY(ng)%hR_west(ic,j-1,t1)+              &
-     &               fac2*BOUNDARY(ng)%hR_west(ic,j-1,t2)+              &
-     &               fac1*BOUNDARY(ng)%zetaR_west(ic,j-1,t1)+           &
-     &               fac2*BOUNDARY(ng)%zetaR_west(ic,j-1,t2)
-            cff1=0.5_r8*(GRID(ng)%h(i,j  )+OCEAN(ng)%zeta(i,j  ,1)+     &
-     &                   GRID(ng)%h(i,j-1)+OCEAN(ng)%zeta(i,j  ,1))
-            my_val=my_valv*0.5_r8*(my_valh1+my_valh2)/cff1
-            OCEAN(ng)%vbar(i,j,1)=my_val
-            OCEAN(ng)%vbar(i,j,2)=my_val
-            OCEAN(ng)%vbar(i,j,3)=my_val
+!            my_valh1=fac1*BOUNDARY(ng)%hR_west(ic,j,t1)+                &
+!     &               fac2*BOUNDARY(ng)%hR_west(ic,j,t2)+                &
+!     &               fac1*BOUNDARY(ng)%zetaR_west(ic,j,t1)+             &
+!     &               fac2*BOUNDARY(ng)%zetaR_west(ic,j,t2)
+!            my_valh2=fac1*BOUNDARY(ng)%hR_west(ic,j-1,t1)+              &
+!     &               fac2*BOUNDARY(ng)%hR_west(ic,j-1,t2)+              &
+!     &               fac1*BOUNDARY(ng)%zetaR_west(ic,j-1,t1)+           &
+!     &               fac2*BOUNDARY(ng)%zetaR_west(ic,j-1,t2)
+!            cff1=0.5_r8*(GRID(ng)%h(i,j  )+OCEAN(ng)%zeta(i,j  ,1)+     &
+!     &                   GRID(ng)%h(i,j-1)+OCEAN(ng)%zeta(i,j  ,1))
+!            my_val=my_valv*0.5_r8*(my_valh1+my_valh2)/cff1
+            OCEAN(ng)%vbar(i,j,1)=my_valv
+            OCEAN(ng)%vbar(i,j,2)=my_valv
+            OCEAN(ng)%vbar(i,j,3)=my_valv
 # ifdef SOLVE3D
 !            COUPLING(ng)%DV_avg1(i,j)=my_val
 !            COUPLING(ng)%DV_avg2(i,j)=my_val
@@ -516,20 +515,20 @@
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
-            my_valh1=fac1*BOUNDARY(ng)%hR_east(ic+1,j,t1)+              &
-     &               fac2*BOUNDARY(ng)%hR_east(ic+1,j,t2)+              &
-     &               fac1*BOUNDARY(ng)%zetaR_east(ic+1,j,t1)+           &
-     &               fac2*BOUNDARY(ng)%zetaR_east(ic+1,j,t2)
-            my_valh2=fac1*BOUNDARY(ng)%hR_east(ic+1,j-1,t1)+            &
-     &               fac2*BOUNDARY(ng)%hR_east(ic+1,j-1,t2)+            &
-     &               fac1*BOUNDARY(ng)%zetaR_east(ic+1,j-1,t1)+         &
-     &               fac2*BOUNDARY(ng)%zetaR_east(ic+1,j-1,t2)
-            cff1=0.5_r8*(GRID(ng)%h(i,j  )+OCEAN(ng)%zeta(i,j  ,1)+     &
-     &                   GRID(ng)%h(i,j-1)+OCEAN(ng)%zeta(i,j  ,1))
-            my_val=my_valv*0.5_r8*(my_valh1+my_valh2)/cff1
-            OCEAN(ng)%vbar(i,j,1)=my_val
-            OCEAN(ng)%vbar(i,j,2)=my_val
-            OCEAN(ng)%vbar(i,j,3)=my_val
+!            my_valh1=fac1*BOUNDARY(ng)%hR_east(ic+1,j,t1)+              &
+!     &               fac2*BOUNDARY(ng)%hR_east(ic+1,j,t2)+              &
+!     &               fac1*BOUNDARY(ng)%zetaR_east(ic+1,j,t1)+           &
+!     &               fac2*BOUNDARY(ng)%zetaR_east(ic+1,j,t2)
+!            my_valh2=fac1*BOUNDARY(ng)%hR_east(ic+1,j-1,t1)+            &
+!     &               fac2*BOUNDARY(ng)%hR_east(ic+1,j-1,t2)+            &
+!     &               fac1*BOUNDARY(ng)%zetaR_east(ic+1,j-1,t1)+         &
+!     &               fac2*BOUNDARY(ng)%zetaR_east(ic+1,j-1,t2)
+!            cff1=0.5_r8*(GRID(ng)%h(i,j  )+OCEAN(ng)%zeta(i,j  ,1)+     &
+!     &                   GRID(ng)%h(i,j-1)+OCEAN(ng)%zeta(i,j  ,1))
+!            my_val=my_valv*0.5_r8*(my_valh1+my_valh2)/cff1
+            OCEAN(ng)%vbar(i,j,1)=my_valv
+            OCEAN(ng)%vbar(i,j,2)=my_valv
+            OCEAN(ng)%vbar(i,j,3)=my_valv
 # ifdef SOLVE3D
 !            COUPLING(ng)%DV_avg1(i,j)=my_val
 !            COUPLING(ng)%DV_avg2(i,j)=my_val
@@ -547,20 +546,20 @@
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
-            my_valh1=fac1*BOUNDARY(ng)%hR_south(i,jc,t1)+                &
-     &               fac2*BOUNDARY(ng)%hR_south(i,jc,t2)+                &
-     &               fac1*BOUNDARY(ng)%zetaR_south(i,jc,t1)+             &
-     &               fac2*BOUNDARY(ng)%zetaR_south(i,jc,t2)
-            my_valh2=fac1*BOUNDARY(ng)%hR_south(i,jc+1,t1)+              &
-     &               fac2*BOUNDARY(ng)%hR_south(i,jc+1,t2)+              &
-     &               fac1*BOUNDARY(ng)%zetaR_south(i,jc+1,t1)+           &
-     &               fac2*BOUNDARY(ng)%zetaR_south(i,jc+1,t2)
-            cff1=0.5_r8*(GRID(ng)%h(i,j-1)+OCEAN(ng)%zeta(i,j-1,1)+      &
-     &                   GRID(ng)%h(i,j  )+OCEAN(ng)%zeta(i,j  ,1))
-            my_val=my_valv*0.5_r8*(my_valh1+my_valh2)/cff1
-            OCEAN(ng)%vbar(i,j,1)=my_val
-            OCEAN(ng)%vbar(i,j,2)=my_val
-            OCEAN(ng)%vbar(i,j,3)=my_val
+!            my_valh1=fac1*BOUNDARY(ng)%hR_south(i,jc,t1)+                &
+!     &               fac2*BOUNDARY(ng)%hR_south(i,jc,t2)+                &
+!     &               fac1*BOUNDARY(ng)%zetaR_south(i,jc,t1)+             &
+!     &               fac2*BOUNDARY(ng)%zetaR_south(i,jc,t2)
+!            my_valh2=fac1*BOUNDARY(ng)%hR_south(i,jc+1,t1)+              &
+!     &               fac2*BOUNDARY(ng)%hR_south(i,jc+1,t2)+              &
+!     &               fac1*BOUNDARY(ng)%zetaR_south(i,jc+1,t1)+           &
+!     &               fac2*BOUNDARY(ng)%zetaR_south(i,jc+1,t2)
+!            cff1=0.5_r8*(GRID(ng)%h(i,j-1)+OCEAN(ng)%zeta(i,j-1,1)+      &
+!     &                   GRID(ng)%h(i,j  )+OCEAN(ng)%zeta(i,j  ,1))
+!            my_val=my_valv*0.5_r8*(my_valh1+my_valh2)/cff1
+            OCEAN(ng)%vbar(i,j,1)=my_valv
+            OCEAN(ng)%vbar(i,j,2)=my_valv
+            OCEAN(ng)%vbar(i,j,3)=my_valv
 # ifdef SOLVE3D
 !            COUPLING(ng)%DV_avg1(i,j)=my_val
 !            COUPLING(ng)%DV_avg2(i,j)=my_val
@@ -578,20 +577,20 @@
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
-            my_valh1=fac1*BOUNDARY(ng)%hR_north(i,jc,t1)+               &
-     &               fac2*BOUNDARY(ng)%hR_north(i,jc,t2)+               &
-     &               fac1*BOUNDARY(ng)%zetaR_north(i,jc,t1)+            &
-     &               fac2*BOUNDARY(ng)%zetaR_north(i,jc,t2)
-            my_valh2=fac1*BOUNDARY(ng)%hR_north(i,jc+1,t1)+             &
-     &               fac2*BOUNDARY(ng)%hR_north(i,jc+1,t2)+             &
-     &               fac1*BOUNDARY(ng)%zetaR_north(i,jc+1,t1)+          &
-     &               fac2*BOUNDARY(ng)%zetaR_north(i,jc+1,t2)
-            cff1=0.5_r8*(GRID(ng)%h(i,j-1)+OCEAN(ng)%zeta(i,j-1,1)+     &
-     &                   GRID(ng)%h(i,j  )+OCEAN(ng)%zeta(i,j  ,1))
-            my_val=my_valv*0.5_r8*(my_valh1+my_valh2)/cff1
-            OCEAN(ng)%vbar(i,j,1)=my_val
-            OCEAN(ng)%vbar(i,j,2)=my_val
-            OCEAN(ng)%vbar(i,j,3)=my_val
+!            my_valh1=fac1*BOUNDARY(ng)%hR_north(i,jc,t1)+               &
+!     &               fac2*BOUNDARY(ng)%hR_north(i,jc,t2)+               &
+!     &               fac1*BOUNDARY(ng)%zetaR_north(i,jc,t1)+            &
+!     &               fac2*BOUNDARY(ng)%zetaR_north(i,jc,t2)
+!            my_valh2=fac1*BOUNDARY(ng)%hR_north(i,jc+1,t1)+             &
+!     &               fac2*BOUNDARY(ng)%hR_north(i,jc+1,t2)+             &
+!     &               fac1*BOUNDARY(ng)%zetaR_north(i,jc+1,t1)+          &
+!     &               fac2*BOUNDARY(ng)%zetaR_north(i,jc+1,t2)
+!            cff1=0.5_r8*(GRID(ng)%h(i,j-1)+OCEAN(ng)%zeta(i,j-1,1)+     &
+!     &                   GRID(ng)%h(i,j  )+OCEAN(ng)%zeta(i,j  ,1))
+!            my_val=my_valv*0.5_r8*(my_valh1+my_valh2)/cff1
+            OCEAN(ng)%vbar(i,j,1)=my_valv
+            OCEAN(ng)%vbar(i,j,2)=my_valv
+            OCEAN(ng)%vbar(i,j,3)=my_valv
 # ifdef SOLVE3D
 !            COUPLING(ng)%DV_avg1(i,j)=my_val
 !            COUPLING(ng)%DV_avg2(i,j)=my_val

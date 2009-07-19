@@ -142,7 +142,7 @@
 # endif
       END IF
 
-!       write(*,*) 'get2dp ',t1
+!       write(*,*) 'get2dp ',t1, kstp(ngp)
 
 !  Loop thru 3 times. 
 !  ii=1: rho var, ii=2:u var, ii=3:v var
