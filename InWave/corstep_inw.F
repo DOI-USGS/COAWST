@@ -135,9 +135,6 @@
       logical :: NSperiodic=.FALSE.
 #  endif
 # endif
-# ifdef TS_MPDATA
-      integer :: ILB, IUB, JLB, JUB
-# endif
 
       integer :: i, is, itrc, j, k, ltrc
 
@@ -153,10 +150,10 @@
 !  Compute horizontal AC advection fluxes.
 !
       D_LOOP: DO d=1,ND(ng)
-#  if defined EW_PERIODIC || defined COMPOSED_GRID
-#   define I_RANGE Istr-1,Iend+2
-#  elif defined REFINED_GRID
-#   define I_RANGE IstrC,IendC
+# if defined EW_PERIODIC || defined COMPOSED_GRID
+#  define I_RANGE Istr-1,Iend+2
+# elif defined REFINED_GRID
+#  define I_RANGE IstrC,IendC
         IF (ng.eq.1) THEN
           IstrC=MAX(1,Istr-1)
           IendC=MIN(Iend+2,Lm(ng)+1)
@@ -164,20 +161,20 @@
           IstrC=Istr-1
           IendC=Iend+2
         END IF
-#  else
+# else
 #   define I_RANGE MAX(Istr-1,1),MIN(Iend+2,Lm(ng)+1)
-#  endif
+# endif
           DO j=Jstr,Jend
             DO i=I_RANGE
               FX(i,j)=AC(i  ,j,d,3)-                                    &
      &                AC(i-1,j,d,3)
-#  ifdef MASKING
+# ifdef MASKING
               FX(i,j)=FX(i,j)*umask(i,j)
-#  endif
+# endif
             END DO
           END DO
-#  undef I_RANGE
-#  if !defined EW_PERIODIC && !defined COMPOSED_GRID
+# undef I_RANGE
+# if !defined EW_PERIODIC && !defined COMPOSED_GRID
           IF (WESTERN_EDGE_REF) THEN
             DO j=Jstr,Jend
               FX(Istr-1,j)=FX(Istr,j)
@@ -188,7 +185,7 @@
               FX(Iend+2,j)=FX(Iend+1,j)
             END DO
           END IF
-#  endif
+# endif
 !
           DO j=Jstr,Jend
             DO i=Istr-1,Iend+1
@@ -209,10 +206,10 @@
             END DO
           END DO
 !
-#  if defined NS_PERIODIC || defined COMPOSED_GRID
-#   define J_RANGE Jstr-1,Jend+2
-#  elif defined REFINED_GRID
-#   define J_RANGE JstrC,JendC
+# if defined NS_PERIODIC || defined COMPOSED_GRID
+#  define J_RANGE Jstr-1,Jend+2
+# elif defined REFINED_GRID
+#  define J_RANGE JstrC,JendC
         IF (ng.eq.1) THEN
           JstrC=MAX(1,Jstr-1)
           JendC=MIN(Jend+2,Mm(ng)+1)
@@ -220,20 +217,20 @@
           JstrC=Jstr-1
           JendC=Jend+2
         END IF
-#  else
-#   define J_RANGE MAX(Jstr-1,1),MIN(Jend+2,Mm(ng)+1)
-#  endif
+# else
+#  define J_RANGE MAX(Jstr-1,1),MIN(Jend+2,Mm(ng)+1)
+# endif
           DO j=J_RANGE
             DO i=Istr,Iend
               FE(i,j)=AC(i,j  ,d,3)-                                    &
      &                AC(i,j-1,d,3)
-#  ifdef MASKING
+# ifdef MASKING
               FE(i,j)=FE(i,j)*vmask(i,j)
-#  endif
+# endif
             END DO
           END DO
-#  undef J_RANGE
-#  if !defined NS_PERIODIC && !defined COMPOSED_GRID
+# undef J_RANGE
+# if !defined NS_PERIODIC && !defined COMPOSED_GRID
           IF (SOUTHERN_EDGE_REF) THEN
             DO i=Istr,Iend
               FE(i,Jstr-1)=FE(i,Jstr)
@@ -244,7 +241,7 @@
               FE(i,Jend+2)=FE(i,Jend+1)
             END DO
           END IF
-#  endif
+# endif
 !
           DO j=Jstr-1,Jend+1
             DO i=Istr,Iend
@@ -264,12 +261,11 @@
      &                      curv(i,j  )*MIN(cff,0.0_r8))
             END DO
           END DO
-# endif
 !
 !  Time-step horizontal advection term.
 !
-#   define I_RANGE Istr,Iend
-#   define J_RANGE Jstr,Jend
+# define I_RANGE Istr,Iend
+# define J_RANGE Jstr,Jend
         DO j=J_RANGE
           DO i=I_RANGE
             cff=dt(ng)*pm(i,j)*pn(i,j)
@@ -278,8 +274,8 @@
             AC(i,j,d,nnew)=AC(i,j,d,nstp)-cff1
           END DO
         END DO
-#   undef J_RANGE
-#   undef I_RANGE
+# undef J_RANGE
+# undef I_RANGE
       END DO D_LOOP
 !
 !-----------------------------------------------------------------------

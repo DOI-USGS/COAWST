@@ -1,5 +1,5 @@
 #include "cppdefs.h"
-      MODULE mod_inwave
+      MODULE mod_inwave_vars
 !
 !svn $Id: mod_inwave.F 790 2008-10-14 19:32:07Z jcwarner $
 !================================================== John C. Warner =====
@@ -11,24 +11,22 @@
 !                                                                      !
 !=======================================================================
 !
-        USE mod_kinds
-
         implicit none
 
-        TYPE T_INWAVE
+        TYPE T_INWAVEP
 
           real(r8), pointer :: AC(:,:,:,:)
           real(r8), pointer :: cx(:,:,:)
           real(r8), pointer :: cy(:,:,:)
           real(r8), pointer :: ct(:,:,:)
 
-        END TYPE T_INWAVE
+        END TYPE T_INWAVEP
 
-        TYPE (T_INWAVE), allocatable :: INWAVE(:)
+        TYPE (T_INWAVEP), allocatable :: WAVEP(:)
 
       CONTAINS
 
-      SUBROUTINE allocate_inwave (ng, LBi, UBi, LBj, UBj)
+      SUBROUTINE allocate_inwave_vars (ng, LBi, UBi, LBj, UBj)
 !
 !=======================================================================
 !                                                                      !
@@ -37,7 +35,7 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_param
+      USE mod_inwave_params
 !
 !  Local variable declarations.
 !
@@ -47,21 +45,21 @@
 !  Allocate and initialize module variables.
 !-----------------------------------------------------------------------
 !
-      IF (ng.eq.1) allocate ( INWAVE(Ngrids) )
+      IF (ng.eq.1) allocate ( WAVEP(Ngrids) )
 !
 !  Nonlinear model state.
 !
-      allocate ( GRID(ng) % AC(LBi:UBi,LBj:UBj,ND(ng),3) )
-      allocate ( GRID(ng) % cx(LBi:UBi,LBj:UBj,ND(ng)) )
-      allocate ( GRID(ng) % cy(LBi:UBi,LBj:UBj,ND(ng)) )
-      allocate ( GRID(ng) % ct(LBi:UBi,LBj:UBj,ND(ng)) )
+      allocate ( WAVEP(ng) % AC(LBi:UBi,LBj:UBj,ND(ng),3) )
+      allocate ( WAVEP(ng) % cx(LBi:UBi,LBj:UBj,ND(ng)) )
+      allocate ( WAVEP(ng) % cy(LBi:UBi,LBj:UBj,ND(ng)) )
+      allocate ( WAVEP(ng) % ct(LBi:UBi,LBj:UBj,ND(ng)) )
 
       END IF
 
       RETURN
-      END SUBROUTINE allocate_inwave
+      END SUBROUTINE allocate_inwave_vars
 
-      SUBROUTINE initialize_inwave (ng, tile, model)
+      SUBROUTINE initialize_inwave_vars (ng, tile, model)
 !
 !=======================================================================
 !                                                                      !
@@ -73,7 +71,9 @@
 !                                                                      !
 !=======================================================================
 !
+      USE mod_kinds
       USE mod_param
+      USE mod_inwave_params
 !
 !  Imported variable declarations.
 !
@@ -127,17 +127,17 @@
       DO j=Jmin,Jmax
         DO i=Imin,Imax
           DO d=1,ND(ng)
-            INWAVE(ng) % AC(i,j,d,1) = IniVal
-            INWAVE(ng) % AC(i,j,d,2) = IniVal
-            INWAVE(ng) % AC(i,j,d,3) = IniVal
-            INWAVE(ng) % cx(i,j,d) = IniVal
-            INWAVE(ng) % cy(i,j,d) = IniVal
-            INWAVE(ng) % ct(i,j,d) = IniVal
+            WAVEP(ng) % AC(i,j,d,1) = IniVal
+            WAVEP(ng) % AC(i,j,d,2) = IniVal
+            WAVEP(ng) % AC(i,j,d,3) = IniVal
+            WAVEP(ng) % cx(i,j,d) = IniVal
+            WAVEP(ng) % cy(i,j,d) = IniVal
+            WAVEP(ng) % ct(i,j,d) = IniVal
           END DO
         END DO
       END DO
 
       RETURN
-      END SUBROUTINE initialize_inwave
+      END SUBROUTINE initialize_inwave_vars
 
-      END MODULE mod_inwave
+      END MODULE mod_inwave_vars

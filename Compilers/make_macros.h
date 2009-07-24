@@ -86,6 +86,16 @@
 #endif
 
 /*
+** Process InWave wave model.
+*/
+
+#ifdef INWAVE_COUPLING
+  USE_INWAVE := on
+#else
+  USE_INWAVE :=
+#endif
+
+/*
 ** Determine if the ARPACK library is needed.
 */
 

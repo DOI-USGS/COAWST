@@ -19,6 +19,8 @@
 # elif defined ESMF_LIB
 #  include "esmf_coupler.h"
 # endif
+#elif defined INWAVE
+# include "inwave.h"
 #else
 # include "ocean.h"
 #endif

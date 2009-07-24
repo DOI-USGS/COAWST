@@ -51,6 +51,9 @@
 #ifdef WAVES_OCEAN
       USE ocean_coupler_mod, ONLY : initialize_ocn2wav_coupling
 #endif
+#ifdef INWAVE
+      USE driver_inwave_mod, ONLY : inwave_init
+#endif
 !
 !  Imported variable declarations.
 !
@@ -151,6 +154,11 @@
         CALL mpi_barrier(OCN_COMM_WORLD, MyError)
 #endif
       END DO
+#ifdef INWAVE
+      DO ng=1,Ngrids
+        CALL inwave_initial (ng)
+      END DO
+#endif
 !
 !  Initialize run or ensemble counter.
 !

@@ -526,9 +526,6 @@
 #  elif defined GLS_MIXING
             CALL gls_prestep (ng, TILE)
 #  endif
-#  ifdef INWAVE
-            CALL inwave_prestep (ng, TILE)
-#  endif
           END DO
         END DO
 # if !defined REFINED_GRID
@@ -740,9 +737,6 @@
           subs=NtileX(ng)*NtileE(ng)/numthreads
           DO tile=subs*thread,subs*(thread+1)-1,+1
             CALL omega (ng, TILE)
-#  ifdef INWAVE
-            CALL inwave_corstep (ng, TILE)
-#  endif
 # ifdef MY25_MIXING
             CALL my25_corstep (ng, TILE)
 # elif defined GLS_MIXING
