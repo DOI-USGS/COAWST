@@ -85,8 +85,6 @@ else
 endif
 
 ifdef USE_MPI
-       MCT_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\mct
-      MPEU_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\mpeu
        MPI_INCDIR ?= c:\\work\\models\\MPICH2\\include
        MPI_LIBDIR ?= c:\\work\\models\\MPICH2\\lib
        LIBS_WIN32 += "$(MPI_LIBDIR)\fmpich2.lib "
@@ -95,10 +93,12 @@ ifdef USE_MPI
 endif
 
 ifdef USE_MCT
+       MCT_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\lib
+       MCT_INCDIR ?= c:\\work\\models\\MCT_v2.2\\include
          CPPFLAGS += -traditional-cpp
-           FFLAGS += -I$(MCT_LIBDIR) -I$(MPEU_LIBDIR) 
+           FFLAGS += -I$(MCT_INCDIR)
            FFLAGS += /noextend_source -assume:byterecl
-       LIBS_WIN32 += "$(MCT_LIBDIR)\libmct.a" "$(MPEU_LIBDIR)\libmpeu.a"
+       LIBS_WIN32 += "$(MCT_LIBDIR)\libmct.a" "$(MCT_LIBDIR)\libmpeu.a"
 endif
 
 ifdef USE_ESMF
