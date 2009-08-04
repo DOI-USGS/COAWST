@@ -1314,6 +1314,9 @@
 !
 !  Nudge towards tracer climatology.
 !
+#ifdef REFINED_GRID
+        IF (ng.eq.1) THEN
+#endif
         DO k=1,N(ng)
           DO j=JstrR,JendR
             DO i=IstrR,IendR
@@ -1323,6 +1326,9 @@
             END DO
           END DO
         END DO
+#ifdef REFINED_GRID
+        END IF
+#endif
 # endif
 # if defined NUDGING_SST || defined NUDGING_T
 !

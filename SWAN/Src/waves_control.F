@@ -53,21 +53,28 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, ng, MyError
+      integer :: i, ng, MyRank, MyError
 #ifdef REFINED_GRID
-      integer :: ngp, ngc
+      integer :: ngp, ngc, ID
+      REAL, ALLOCATABLE :: AC_EXCH(:)
 #endif
 #ifdef MODEL_COUPLING
 !
 ! Allocate some arrays
 !
-      IF (.not.allocated(Numspec)) allocate (Numspec(Ngrids))
+      IF (.not.allocated(Numspec)) allocate (Numspec(0:Ngrids))
       IF (.not.allocated(ac2size)) allocate (ac2size(Ngrids))
       IF (.not.allocated(BGRIDPG)) allocate (BGRIDPG(Ngrids,100000))
+      Numspec(0)=1
       DO ng=1,Ngrids
         BGRIDPG(ng,:)=9999
-        Numspec(ng)=46
+        Numspec(ng)=112
       END DO
+      Numspec(1)=112
+      Numspec(2)=270
+      Numspec(3)=1  !294
+!     Numspec(4)=1
+
       NBGRPT_last=0
 #endif
 !
@@ -77,36 +84,51 @@
 !
 !  Initialize the grids.
 !
+      CALL mpi_comm_rank (MyCOMM, MyRank, MyError)
       DO ng=1,Ngrids
-        CALL SWAN_INITIALIZE (ng, Ngrids, MyCOMM, Wname(ng))
+        ngp=myparent(ng)
+        ngc=mychild(ng)
+        CALL SWAN_INITIALIZE (ng, ngp, Ngrids, MyCOMM, Wname(ng))
 !
 !  Compute number of boundary arrays to be passed.
 !
         ac2size(ng)=MSC*MDC*Numspec(ng)
+        CALL SWSYNC
       END DO
 !
 !  The call to run here does not do a time step, it fills the bc arrays,
 !  fill AC2 array of bound spec data for child grids, and enters into MCT.
 !
+!  AC2_child_G(ng) needs to be the same size as AC2_parent2_G(ngp).
+!
       DO ng=1,Ngrids
-
+        CALL SWSYNC
+        ngp=myparent(ng)
+        ngc=mychild(ng)
 #ifdef REFINED_GRID
-            IF (ng.gt.1) THEN
-              ngp=myparent(ng)
-              ngc=mychild(ng)
-              DO i=1,ac2size(ng)
-                PARALL2_MOD(ng)%AC2_parent2_G(i)=                       &
-     &          PARALL2_MOD(ngp)%AC2_parent2_G(i)
-              END DO
-            END IF
+        IF (ng.gt.1) THEN
+          DO i=1,ac2size(ngp)
+            PARALL2_MOD(ng)%AC2_child_G(i)=                         &
+     &      PARALL2_MOD(ngp)%AC2_parent2_G(i)
+           END DO
+        END IF
 #endif
 
-        CALL SWAN_RUN (CouplingTime, 0, ng, 0)
+        CALL SWAN_RUN (CouplingTime, 0, ng, ngp, 0)
 
 #ifdef REFINED_GRID
         IF (ng.lt.Ngrids) THEN
-          CALL MPI_BCAST(PARALL2_MOD(ng)%AC2_parent2_G,                 &
-     &      ac2size(ng),SWREAL,0,MyCOMM,MyError)
+          ALLOCATE ( AC_EXCH(MSC*MDC*Numspec(ng)))
+          IF (MyRank.eq.0) THEN
+            DO ID=1,ac2size(ng)
+              AC_EXCH(ID)=PARALL2_MOD(ng)%AC2_parent2_G(ID)
+            END DO
+          ENDIF
+          CALL MPI_BCAST(AC_EXCH,ac2size(ng),SWREAL,0,MyCOMM,MyError)
+          DO ID=1,ac2size(ng)
+            PARALL2_MOD(ng)%AC2_parent2_G(ID)=AC_EXCH(ID)
+          END DO
+          DEALLOCATE (AC_EXCH)
         END IF
 #endif
       END DO
@@ -138,13 +160,15 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, ng, MyError
+      integer :: i, ng, MyRank, MyError
       logical, allocatable :: run_grid(:)
       integer, allocatable :: count(:)
       real :: rtime, rtime_start, rtime_end, cff
 #ifdef REFINED_GRID
-      integer :: ngp, ngc
+      integer :: ngp, ngc, ID
+      REAL, ALLOCATABLE :: AC_EXCH(:)
 #endif
+      CALL mpi_comm_rank (WAV_COMM_WORLD, MyRank, MyError)
 !
 !  Set some initial run time parameters here.
 !
@@ -168,25 +192,35 @@
 !
         DO ng=1,Ngrids
           IF (run_grid(ng).eq..TRUE.) THEN
+            ngp=myparent(ng)
+            ngc=mychild(ng)
 #ifdef REFINED_GRID
             IF (ng.gt.1) THEN
-              ngp=myparent(ng)
-              ngc=mychild(ng)
-              DO i=1,ac2size(ng)
-                PARALL2_MOD(ng)%AC2_parent2_G(i)=                          &
+              DO i=1,ac2size(ngp)
+                PARALL2_MOD(ng)%AC2_child_G(i)=                         &
      &          PARALL2_MOD(ngp)%AC2_parent2_G(i)
               END DO
             END IF
 #endif
             count(ng)=count(ng)+1
-            CALL SWAN_RUN (CouplingTime, count(ng), ng, count(ng))
+            CALL SWAN_RUN (CouplingTime, count(ng), ng, ngp, count(ng))
+#ifdef REFINED_GRID
 !
 !  Get AC data from parent.
 !
-#ifdef REFINED_GRID
             IF (ng.lt.Ngrids) THEN
-              CALL MPI_BCAST(PARALL2_MOD(ng)%AC2_parent2_G,ac2size(ng), &
-     &                       SWREAL,0,WAV_COMM_WORLD,MyError)
+              ALLOCATE ( AC_EXCH(MSC*MDC*Numspec(ng)))
+              IF (MyRank.eq.0) THEN
+                DO ID=1,ac2size(ng)
+                  AC_EXCH(ID)=PARALL2_MOD(ng)%AC2_parent2_G(ID)
+                END DO
+              ENDIF
+              CALL MPI_BCAST(AC_EXCH,ac2size(ng),SWREAL,0,              &
+     &                       WAV_COMM_WORLD,MyError)
+              DO ID=1,ac2size(ng)
+                PARALL2_MOD(ng)%AC2_parent2_G(ID)=AC_EXCH(ID)
+              END DO
+              DEALLOCATE (AC_EXCH)
             END IF
 #endif
           END IF

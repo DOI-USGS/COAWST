@@ -157,17 +157,43 @@
         IF (.not.allocated(XOFFS_G)) ALLOCATE (XOFFS_G(Numgrids))
         IF (.not.allocated(YOFFS_G)) ALLOCATE (YOFFS_G(Numgrids))
 
-        IF (.not.allocated(ALPG_G)) ALLOCATE (ALPG_G(Numgrids,NUMGRD))
+        IF (.not.allocated(ALPG_G))  ALLOCATE (ALPG_G(Numgrids,NUMGRD))
         IF (.not.allocated(COSPG_G)) ALLOCATE (COSPG_G(Numgrids,NUMGRD))
-        IF (.not.allocated(DXG_G)) ALLOCATE (DXG_G(Numgrids,NUMGRD))
-        IF (.not.allocated(DYG_G)) ALLOCATE (DYG_G(Numgrids,NUMGRD))
+        IF (.not.allocated(DXG_G))   ALLOCATE (DXG_G(Numgrids,NUMGRD))
+        IF (.not.allocated(DYG_G))   ALLOCATE (DYG_G(Numgrids,NUMGRD))
         IF (.not.allocated(EXCFLD_G))                                   &
      &           ALLOCATE (EXCFLD_G(Numgrids,NUMGRD))
         IF (.not.allocated(SINPG_G)) ALLOCATE (SINPG_G(Numgrids,NUMGRD))
         IF (.not.allocated(STAGX_G)) ALLOCATE (STAGX_G(Numgrids,NUMGRD))
         IF (.not.allocated(STAGY_G)) ALLOCATE (STAGY_G(Numgrids,NUMGRD))
-        IF (.not.allocated(XPG_G)) ALLOCATE (XPG_G(Numgrids,NUMGRD))
-        IF (.not.allocated(YPG_G)) ALLOCATE (YPG_G(Numgrids,NUMGRD))
+        IF (.not.allocated(XPG_G))   ALLOCATE (XPG_G(Numgrids,NUMGRD))
+        IF (.not.allocated(YPG_G))   ALLOCATE (YPG_G(Numgrids,NUMGRD))
+
+        IF (.not.allocated(IFLDYN_G))                                   &
+     &           ALLOCATE (IFLDYN_G(Numgrids,NUMGRD))
+        IF (.not.allocated(IFLIDL_G))                                   &
+     &           ALLOCATE (IFLIDL_G(Numgrids,NUMGRD))
+        IF (.not.allocated(IFLIFM_G))                                   &
+     &           ALLOCATE (IFLIFM_G(Numgrids,NUMGRD))
+        IF (.not.allocated(IFLNHF_G))                                   &
+     &           ALLOCATE (IFLNHF_G(Numgrids,NUMGRD))
+        IF (.not.allocated(IFLNHD_G))                                   &
+     &           ALLOCATE (IFLNHD_G(Numgrids,NUMGRD))
+        IF (.not.allocated(IFLNDS_G))                                   &
+     &           ALLOCATE (IFLNDS_G(Numgrids,NUMGRD))
+        IF (.not.allocated(IFLNDF_G))                                   &
+     &           ALLOCATE (IFLNDF_G(Numgrids,NUMGRD))
+
+        IF (.not.allocated(IFLBEG_G))                                   &
+     &           ALLOCATE (IFLBEG_G(Numgrids,NUMGRD))
+        IF (.not.allocated(IFLINT_G))                                   &
+     &           ALLOCATE (IFLINT_G(Numgrids,NUMGRD))
+        IF (.not.allocated(IFLEND_G))                                   &
+     &           ALLOCATE (IFLEND_G(Numgrids,NUMGRD))
+        IF (.not.allocated(IFLTIM_G))                                   &
+     &           ALLOCATE (IFLTIM_G(Numgrids,NUMGRD))
+        IF (.not.allocated(IFLFAC_G))                                   &
+     &           ALLOCATE (IFLFAC_G(Numgrids,NUMGRD))
 !
 !     MODULE M_CVMESH
 !
@@ -289,6 +315,20 @@
       STAGY=>STAGY_G(ng,:)
       XPG=>XPG_G(ng,:)
       YPG=>YPG_G(ng,:)
+
+      IFLDYN=>IFLDYN_G(ng,:)
+      IFLIDL=>IFLIDL_G(ng,:)
+      IFLIFM=>IFLIFM_G(ng,:)
+      IFLNHF=>IFLNHF_G(ng,:)
+      IFLNHD=>IFLNHD_G(ng,:)
+      IFLNDS=>IFLNDS_G(ng,:)
+      IFLNDF=>IFLNDF_G(ng,:)
+
+      IFLBEG=>IFLBEG_G(ng,:)
+      IFLINT=>IFLINT_G(ng,:)
+      IFLEND=>IFLEND_G(ng,:)
+      IFLTIM=>IFLTIM_G(ng,:)
+      IFLFAC=>IFLFAC_G(ng,:)
 
       END SUBROUTINE INIT_POINTERS
 

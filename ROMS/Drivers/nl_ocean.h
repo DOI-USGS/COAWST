@@ -235,7 +235,7 @@
 #if defined REFINED_GRID
       logical, allocatable :: run_grid(:)
       integer, allocatable :: count(:)
-      real :: rtime, rtime_start, rtime_end, cff
+      real(r8) :: rtime, rtime_start, rtime_end, cff
 #endif
 !
 !-----------------------------------------------------------------------

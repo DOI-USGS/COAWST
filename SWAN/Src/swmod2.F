@@ -200,7 +200,11 @@
 !
 !  7. Local variables
 
+#ifdef MODEL_COUPLING
+      INTEGER, PARAMETER :: MAX_OUTP_REQ = 25000 ! max. number of output requests
+#else
       INTEGER, PARAMETER :: MAX_OUTP_REQ = 250 ! max. number of output requests
+#endif
 
       CHARACTER (LEN=1)  :: OUT_COMMENT = '%' ! comment sign for heading lines
 
@@ -1228,6 +1232,7 @@
         REAL, POINTER :: OURQT_G(:)
         REAL, POINTER :: AC2_parent_G(:)
         REAL, POINTER :: AC2_parent2_G(:)
+        REAL, POINTER :: AC2_child_G(:)
       END TYPE T_PARALL2_MOD
       TYPE (T_PARALL2_MOD), ALLOCATABLE :: PARALL2_MOD(:)
 
@@ -1239,6 +1244,7 @@
       REAL, POINTER :: OURQT(:)
       REAL, POINTER :: AC2_parent(:)
       REAL, POINTER :: AC2_parent2(:)
+      REAL, POINTER :: AC2_child(:)
 #else
       REAL, SAVE,    ALLOCATABLE :: BSPECS(:,:,:,:)
       INTEGER, SAVE, ALLOCATABLE :: CROSS(:,:)

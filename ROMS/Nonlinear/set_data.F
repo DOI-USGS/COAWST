@@ -731,36 +731,48 @@
 !-----------------------------------------------------------------------
       IF (SOUTH_WEST_TEST) THEN
 #   ifdef WEST_FSOBC
-        DO j=JLB,JUB
-          cff=Dcrit(ng)-GRID(ng)%h(0,j)
-          IF (BOUNDARY(ng)%zeta_west(j).le.cff) THEN
-            BOUNDARY(ng)%zeta_west(j)=cff
-          END IF
-        END DO
+        IF (WESTERN_EDGE) THEN
+!         DO j=JLB,JUB
+          DO j=LBj,UBj
+            cff=Dcrit(ng)-GRID(ng)%h(0,j)
+            IF (BOUNDARY(ng)%zeta_west(j).le.cff) THEN
+              BOUNDARY(ng)%zeta_west(j)=cff
+            END IF
+          END DO
+        END IF
 #   endif
 #   ifdef EAST_FSOBC
-        DO j=JLB,JUB
-          cff=Dcrit(ng)-GRID(ng)%h(Lm(ng)+1,j)
-          IF (BOUNDARY(ng)%zeta_east(j).le.cff) THEN
-            BOUNDARY(ng)%zeta_east(j)=cff
-          END IF
-        END DO
+        IF (EASTERN_EDGE) THEN
+!         DO j=JLB,JUB
+          DO j=LBj,UBj
+            cff=Dcrit(ng)-GRID(ng)%h(Lm(ng)+1,j)
+            IF (BOUNDARY(ng)%zeta_east(j).le.cff) THEN
+              BOUNDARY(ng)%zeta_east(j)=cff
+            END IF
+          END DO
+        END IF
 #   endif
 #   ifdef SOUTH_FSOBC
-        DO i=ILB,IUB
-          cff=Dcrit(ng)-GRID(ng)%h(i,0)
-          IF (BOUNDARY(ng)%zeta_south(i).le.cff) THEN
-            BOUNDARY(ng)%zeta_south(i)=cff
-          END IF
-        END DO
+        IF (SOUTHERN_EDGE) THEN
+!         DO i=ILB,IUB
+          DO i=LBi,UBi
+            cff=Dcrit(ng)-GRID(ng)%h(i,0)
+            IF (BOUNDARY(ng)%zeta_south(i).le.cff) THEN
+              BOUNDARY(ng)%zeta_south(i)=cff
+            END IF
+          END DO
+        END IF
 #   endif
 #   ifdef NORTH_FSOBC
-        DO i=ILB,IUB
-          cff=Dcrit(ng)-GRID(ng)%h(i,Mm(ng)+1)
-          IF (BOUNDARY(ng)%zeta_north(i).le.cff) THEN
-            BOUNDARY(ng)%zeta_north(i)=cff
-          END IF
-        END DO
+        IF (NORTHERN_EDGE) THEN
+!         DO i=ILB,IUB
+          DO i=LBi,UBi
+            cff=Dcrit(ng)-GRID(ng)%h(i,Mm(ng)+1)
+            IF (BOUNDARY(ng)%zeta_north(i).le.cff) THEN
+              BOUNDARY(ng)%zeta_north(i)=cff
+            END IF
+          END DO
+        END IF
 #   endif
       END IF
 #  endif

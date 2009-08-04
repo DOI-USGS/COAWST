@@ -126,7 +126,7 @@
 !***********************************************************************
 !                                                                      *
 #ifdef MODEL_COUPLING
-      SUBROUTINE SWAN_INITIALIZE (ng, Numgrids, MyComm, WNAME)
+      SUBROUTINE SWAN_INITIALIZE (ng, ngp, Numgrids, MyComm, WNAME)
 #else
       SUBROUTINE SWMAIN                                                   40.31 34.01
 #endif
@@ -276,7 +276,7 @@
 !
 #ifdef MODEL_COUPLING
       CHARACTER*80, intent(in) :: WNAME
-      INTEGER, INTENT(in) :: ng, Numgrids, MyCOMM
+      INTEGER, INTENT(in) :: ng, ngp, Numgrids, MyCOMM
 #endif
       INTEGER   IUNIT                                                     34.01
       INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN                             40.30
@@ -491,7 +491,11 @@
         ALLOCATE (PARALL2_MOD(ng)%AC2_parent2_G(MSC*MDC*Numspec(ng)))
         AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
         AC2_parent2=>PARALL2_MOD(ng)%AC2_parent2_G
+        AC2_parent=0.
         AC2_parent2=0.
+        ALLOCATE (PARALL2_MOD(ng)%AC2_child_G(MSC*MDC*Numspec(ngp)))
+        AC2_child =>PARALL2_MOD(ng)%AC2_child_G
+        AC2_child=0.
 #endif
 !       --- do some preparations before computation                       40.31
 
@@ -652,7 +656,7 @@
 !
 !***********************************************************************
 !                                                                      *
-      SUBROUTINE SWAN_RUN (CouplingTime, IT_in, ng, first)
+      SUBROUTINE SWAN_RUN (CouplingTime, IT_in, ng, ngp, first)
 !                                                                      *
 !***********************************************************************
 !
@@ -673,7 +677,7 @@
       IMPLICIT NONE
 !
       REAL,  intent(in) :: CouplingTime
-      INTEGER,  intent(in) :: IT_in, ng, first
+      INTEGER,  intent(in) :: IT_in, ng, ngp, first
       INTEGER   IUNIT
       INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN
       INTEGER   INERR
@@ -735,6 +739,7 @@
 #ifdef MODEL_COUPLING
       AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
       AC2_parent2=>PARALL2_MOD(ng)%AC2_parent2_G
+      AC2_child=>PARALL2_MOD(ng)%AC2_child_G
 #endif
 !       LORQ=>LORQ_G(ng)
 #endif
@@ -785,8 +790,8 @@
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
-     &                    UYB   , WXI   , WYI   , ng, first, IT_in,
-     &                    AC2_parent2)
+     &                    UYB   , WXI   , WYI   , ng, ngp, first, IT_in,
+     &                    AC2_child)
 #else
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
@@ -4708,8 +4713,8 @@
       SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
      &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
-     &                   UYB   , WXI   , WYI, ng, first, ITjcw,
-     &                   AC2_parent2)
+     &                   UYB   , WXI   , WYI, ng, ngp, first, ITjcw,
+     &                   AC2_child)
 #else
       SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
@@ -4818,8 +4823,8 @@
       INTEGER offset
 #endif
 #ifdef MODEL_COUPLING
-      INTEGER, intent(in) :: ng, first, ITjcw
-      REAL, INTENT(IN) :: AC2_parent2(MSC*MDC*Numspec(ng))
+      INTEGER, intent(in) :: ng, ngp, first, ITjcw
+      REAL, INTENT(IN) :: AC2_child(MSC*MDC*Numspec(ngp))
 #endif
       INTEGER  BGRIDP(*), XYTST(*), KGRPNT(MXC,MYC)
 !
@@ -4986,7 +4991,7 @@
                DO IS = 1, MSC
                  DO ID = 1, MDC
                    offset=MSC*MDC*(BGRIDPL(IBGRID)-1)+(IS-1)*MDC+ID
-                   AC2(ID,IS,INDXGR)=AC2_parent2(offset)
+                   AC2(ID,IS,INDXGR)=AC2_child(offset)
                  END DO
                END DO
                W1 = 0.001 * REAL(BGRIDP(6*IBGRID-3))

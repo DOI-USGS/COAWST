@@ -151,6 +151,9 @@
       REAL    CouplingTime
       REAL, INTENT(INOUT) :: AC2_parent(MSC*MDC*Numspec(ng))
       REAL, INTENT(INOUT) :: AC2_parent2(MSC*MDC*Numspec(ng))
+# ifdef REFINED_GRID
+      REAL, ALLOCATABLE :: AC_EXCH(:)
+# endif
 #endif
 !
 !     AC2     real arr input  action density in all computational points
@@ -264,9 +267,13 @@
 #ifdef MODEL_COUPLING
       spcount=0
       AC2_parent=0.
-      IF (ng.eq.1) THEN
+      IF (ng.lt.Ngrids) THEN
+!     IF (ng.eq.1) THEN
         AC2_parent2=0.
       END IF
+# ifdef REFINED_GRID
+      ALLOCATE ( AC_EXCH(MSC*MDC*Numspec(ng)))
+# endif
 #endif
 !
 !     processing of output requests
@@ -483,15 +490,18 @@
                 DO IS=1,MySize-1
                   MyTag=IS+1
                   ID=IS
-                  CALL MPI_RECV(AC2_parent,ac2size(ng),MPI_REAL,ID,     &
+                  CALL MPI_RECV(AC_EXCH,ac2size(ng),MPI_REAL,ID,        &
      &                          MyTag,WAV_COMM_WORLD,MyStatus,MyError)
                   DO ID=1,ac2size(ng)
-                    AC2_parent2(ID)=AC2_parent2(ID)+AC2_parent(ID)
+                    AC2_parent2(ID)=AC2_parent2(ID)+AC_EXCH(ID)
                   END DO
                 END DO
               ELSE
                 MyTag=INODE
-                CALL MPI_SEND(AC2_parent,ac2size(ng),MPI_REAL,0,MyTag,  &
+                DO ID=1,ac2size(ng)
+                  AC_EXCH(ID)=AC2_parent(ID)
+                END DO
+                CALL MPI_SEND(AC_EXCH,ac2size(ng),MPI_REAL,0,MyTag,     &
      &                        WAV_COMM_WORLD,MyError)
               END IF
             END IF
@@ -530,6 +540,9 @@
 !
 !     Termination of output
 !
+#ifdef REFINED_GRID
+          DEALLOCATE (AC_EXCH)
+#endif
   200 RETURN
       END SUBROUTINE SWOUTP
 
