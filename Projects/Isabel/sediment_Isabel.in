@@ -52,11 +52,11 @@
 ! Depositional bed layer thickness criteria to create a new layer (m). If
 ! deposition exceeds this value, then a new layer is created, [1:Ngrids].
 
-    NEWLAYER_THICK == 0.01d0
+    NEWLAYER_THICK == 0.01d0 0.01d0 0.01d0 0.01d0
 
 ! Bed load transport rate coefficient. [1:Ngrids].
 
-    BEDLOAD_COEFF == 1.0d0
+    BEDLOAD_COEFF == 1.0d0 1.0d0 1.0d0 1.0d0
 
 !------------------------------------------------------------------------------
 ! Suspended Cohesive Sediment Parameters, [1:NCS,1:Ngrids] values expected.
@@ -108,7 +108,7 @@
 ! Morphological time scale factor (greater than or equal to 1.0). A 
 ! value of 1.0 has no scale effect.
 
-   MUD_MORPH_FAC == 10.0d0 1.0d0 1.0d0              ! nondimensional
+   MUD_MORPH_FAC == 1.0d0 1.0d0 1.0d0              ! nondimensional
 
 ! Logical switch (TRUE/FALSE) to activate writing of cohesive sediment
 ! into HISTORY output file.
@@ -125,69 +125,69 @@ Hout(iMVbld) == T                               ! bed load at V-points
 
 ! Median sediment grain diameter (mm).
 
-   SAND_SD50 == 0.20d0
+   SAND_SD50 == 0.17d0 0.17d0 0.17d0 0.17d0
 
 ! Sediment concentration (kg/m3).
 
-   SAND_CSED == 0.0d0
+   SAND_CSED == 0.0d0 0.0d0 0.0d0 0.0d0
 
 ! Sediment grain density (kg/m3).
 
-   SAND_SRHO == 2650.0d0
+   SAND_SRHO == 2650.0d0 2650.0d0 2650.0d0 2650.0d0
 
 ! Particle settling velocity (mm/s).
 
-   SAND_WSED == 27.0d0
+   SAND_WSED == 20.0d0 20.0d0 20.0d0 20.0d0
 
 ! Surface erosion rate (kg/m2/s).
 
-  SAND_ERATE == 5.0d-4
+  SAND_ERATE == 1.0d-4 1.0d-4 1.0d-4 1.0d-4
 
 ! Critical shear for erosion and deposition (N/m2).
 
- SAND_TAU_CE == 0.19d0
- SAND_TAU_CD == 0.02d0
+ SAND_TAU_CE == 0.15d0 0.15d0 0.15d0 0.15d0
+ SAND_TAU_CD == 0.02d0 0.02d0 0.02d0 0.02d0
 
 ! Porosity (nondimensional: 0.0-1.0):  Vwater/(Vwater+Vsed).
 
-  SAND_POROS == 0.5d0
+  SAND_POROS == 0.5d0 0.5d0 0.5d0 0.5d0
 
 ! Lateral, harmonic and biharmonic, constant, diffusion coefficient.
 
-   SAND_TNU2 == 0.0d0                           ! m2/s
-   SAND_TNU4 == 0.0d0                           ! m4/s
+   SAND_TNU2 == 0.0d0 0.0d0                          ! m2/s
+   SAND_TNU4 == 0.0d0 0.0d0                          ! m4/s
 
 ! Vertical diffusion coefficients.
 
-SAND_AKT_BAK == 5.0d-6                          ! m2/s
+SAND_AKT_BAK == 5.0d-6 5.0d-6                         ! m2/s
 
 ! Nudging/relaxation time scales, inverse scales will be computed
 ! internally.
 
-  SAND_TNUDG == 0.0d0                           ! days
+  SAND_TNUDG == 20.0d0  20.0d0                       ! days
 
 ! Morphological time scale factor (greater than or equal to 1.0). A
 ! value of 1.0 has no scale effect.
 
-SAND_MORPH_FAC == 1.0d0 1.0d0 1.0d0             ! nondimensional
+SAND_MORPH_FAC == 1.0d0 1.0d0 1.0d0 1.0d0             ! nondimensional
 
 ! Logical switches (TRUE/FALSE) to activate writing of non-cohesive
 ! sediment into HISTORY output file.
 
-Hout(idsand) == T                               ! suspended concentration
-Hout(iSfrac) == T                               ! bed layer fraction
-Hout(iSmass) == T                               ! bed layer mass
-Hout(iSUbld) == T                               ! bed load at U-points
-Hout(iSVbld) == T                               ! bed load at V-points
+Hout(idsand) == T T T T                             ! suspended concentration
+Hout(iSfrac) == F F F F                             ! bed layer fraction
+Hout(iSmass) == F F T T                             ! bed layer mass
+Hout(iSUbld) == T T T T                             ! bed load at U-points
+Hout(iSVbld) == T T T T                             ! bed load at V-points
 
 !------------------------------------------------------------------------------
 ! Bed layer and bottom sediment parameters, [1:Ngrids] values expected.
 !------------------------------------------------------------------------------
 
- Hout(ithck) == T                               ! sediment layer thickness
- Hout(iaged) == T                               ! sediment layer age
- Hout(iporo) == T                               ! sediment layer porosity
- Hout(idiff) == F                               ! biodiffusivity
+ Hout(ithck) == T T                              ! sediment layer thickness
+ Hout(iaged) == T T                              ! sediment layer age
+ Hout(iporo) == F F                              ! sediment layer porosity
+ Hout(idiff) == F F                              ! biodiffusivity
 
 !
 !  GLOSSARY:

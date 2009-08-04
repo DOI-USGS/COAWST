@@ -38,7 +38,7 @@
 !
 ! Application title.
 
-       TITLE = Isabel ref14
+       TITLE = Isabel run122
 
 ! C-preprocessing Flag, default configuration.
 
@@ -59,22 +59,24 @@
         Nbed =  1   1  1  1      ! Number of sediment bed layers
 
          NAT =  2   2  2 2       ! Number of active tracers (usually, 2)
-         NPT =  0   0  0 0      ! Number of inactive passive tracers
-         NCS =  0   0  0 0      ! Number of cohesive (mud) sediment tracers
-         NNS =  1   1  1 1      ! Number of non-cohesive (sand) sediment tracers
+         NPT =  0   0  0 0       ! Number of inactive passive tracers
+         NCS =  0   0  0 0       ! Number of cohesive (mud) sediment tracers
+         NNS =  1   1  1 1       ! Number of non-cohesive (sand) sediment tracers
 
 ! Domain decomposition parameters for serial, distributed-memory or
 ! shared-memory configurations used to determine tile horizontal range
 ! indices (Istr,Iend) and (Jstr,Jend), [1:Ngrids].
 
-      NtileI ==  6  6 12 12                              ! I-direction partition
-      NtileJ ==  6  6  4  4                              ! J-direction partition
+      NtileI ==  4  4  4  4                              ! I-direction partition
+      NtileJ ==  8  8  8  8                              ! J-direction partition
 
 ! Time-Stepping parameters.
 
-      NTIMES == 3240     16200
-          DT == 120.0d0  24.0d0  !240.0d0  48.0d0
-     NDTFAST == 30       30
+!      NTIMES == 5760     28800  144000 720000
+!          DT == 120.0d0  24.0d0 4.8d0  0.96d0
+      NTIMES == 5760     28800  115200 720000
+          DT == 120.0d0  24.0d0 6.0d0  0.96d0
+     NDTFAST == 30       30     30     30
 
 ! Model iteration loops parameters.
 
@@ -95,7 +97,7 @@
 
        NRREC == 0   0   0    0
    LcycleRST == T   T   T    T
-        NRST == 180 900 9000 45000
+        NRST == 180 900 4500 22500
         NSTA == 1   1   1    1
         NFLT == 1   1   1    1
        NINFO == 1   1   1    1
@@ -103,8 +105,8 @@
 ! Output history, average, diagnostic files parameters.
 
      LDEFOUT == T    T     T      T
-        NHIS == 1   1  !15   75 
-     NDEFHIS == 90   450 
+        NHIS == 30   150   750    3750
+     NDEFHIS == 360  1800  9000   45000
       NTSAVG == 1    1     1      1
         NAVG == 72   72    72     72
      NDEFAVG == 0    0     0      0
@@ -174,23 +176,23 @@
 
 ! Constants used in surface turbulent kinetic energy flux computation.
 
-  CHARNOK_ALPHA == 1400.0d0         ! Charnok surface roughness
- ZOS_HSIG_ALPHA == 0.5d0            ! roughness from wave amplitude
-       SZ_ALPHA == 0.25d0           ! roughness from wave dissipation
-      CRGBAN_CW == 100.0d0          ! Craig and Banner wave breaking
+  CHARNOK_ALPHA == 1400.0d0 1400.0d0         ! Charnok surface roughness
+ ZOS_HSIG_ALPHA == 0.5d0    0.5d0            ! roughness from wave amplitude
+       SZ_ALPHA == 0.25d0   0.25d0           ! roughness from wave dissipation
+      CRGBAN_CW == 100.0d0  100.0d0          ! Craig and Banner wave breaking
 
 ! Constants used in momentum stress computation.
 
         RDRG == 3.0d-04 3.0d-04 3.0d-04 3.0d-04                    ! m/s
        RDRG2 == 3.0d-03 3.0d-03 3.0d-03 3.0d-03                    ! nondimensional
-         Zob == 0.0020  0.0020   0.0010   0.0010                      ! m
+         Zob == 0.0020  0.0020  0.0020  0.0020                     ! m
          Zos == 0.02d0  0.02d0  0.02d0  0.02d0                     ! m
 
 ! Height (m) of atmospheric measurements for Bulk fluxes parameterization.
 
-      BLK_ZQ == 10.0d0                     ! air humidity
-      BLK_ZT == 10.0d0                     ! air temperature
-      BLK_ZW == 10.0d0                     ! winds
+      BLK_ZQ ==  2.0d0  2.0d0                    ! air humidity
+      BLK_ZT ==  2.0d0  2.0d0                    ! air temperature
+      BLK_ZW == 10.0d0 10.0d0                    ! winds
 
 ! Minimum depth for wetting and drying.
 
@@ -225,17 +227,17 @@
 !     DSTART =  47906.0d0                  ! days  1990/01/15
 !     DSTART =  52866.0d0                  ! days  2003/08/15
 !     DSTART =  52887.0d0   52887.0d0   52887.0d0   52887.0d0      ! days  2003/09/05
-      DSTART =  52894.0d0   52894.0d0   52894.0d0   52894.0d0      ! days  2003/09/12
+      DSTART =  52895.0d0   52895.0d0   52895.0d0   52895.0d0      ! days  2003/09/13
   TIDE_START =  52866.0d0   52866.0d0   52866.0d0   52866.0d0      ! days  2003/08/15
     TIME_REF =  18581117.0  18581117.0  18581117.0  18581117.0     ! yyyymmdd.dd
 
 ! Nudging/relaxation time scales, inverse scales will be computed
 ! internally, [1:Ngrids].
 
-       TNUDG == 2*20.0d0 2*20.0d0 2*20.0d0 2*20.0d0                   ! days
+       TNUDG == 2*20.0d0 2*2.0d0 2*20.0d0 2*20.0d0                    ! days
        ZNUDG == 0.0d0    0.0d0    0.0d0    0.0d0                      ! days
       M2NUDG == 0.0d0    0.0d0    0.0d0    0.0d0                      ! days
-      M3NUDG == 20.0d0  20.0d0   20.0d0    20.0d0                      ! days
+      M3NUDG == 20.0d0   2.0d0   20.0d0    20.0d0                     ! days
 
 ! Factor between passive (outflow) and active (inflow) open boundary
 ! conditions, [1:Ngrids]. If OBCFAC > 1, nudging on inflow is stronger
@@ -408,7 +410,10 @@ Hout(idMtls) == F F F F                       ! turbulent length scale
 !                                 1 1 1 1 1 1 1
 !               1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
 
-Hout(idBott) == T T T T T T T T T F F F F F F F
+Hout(idBott) == T T T T T T T T T F F F F F F F \
+                T T T T T T T T T F F F F F F F \
+                T T T T T T T T T F F F F F F F \
+!                T T T T T T T T T F F F F F F F
 
 ! Generic User parameters, [1:NUSER].
 
@@ -417,24 +422,29 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == /raid1/share/forcings/Isabel/USeast_grd15.nc \
-                /raid1/jcwarner/Projects/Isabel/forcings/outerbanks_grd8_min5.nc
-!                /raid1/jcwarner/Projects/Isabel/forcings/KH_CH_grd4_min5.nc
+     GRDNAME == /raid1/share/forcings/Isabel/USeast_grd16.nc \
+                /raid1/jcwarner/Projects/Isabel/forcings/outerbanks_grd8_min5.nc \
+                /raid1/jcwarner/Projects/Isabel/forcings/KH_CH_grd4_min5.nc 
+!                /raid1/jcwarner/Projects/Isabel/forcings/CH_shoals_grd5.nc
 
-     ININAME == /raid1/jcwarner/Projects/Isabel/forcings/ic_20030912_USeast_grd3.nc \
-                /raid1/jcwarner/Projects/Isabel/forcings/ic_20030912_outerbanks_grd8.nc
-!                /raid1/jcwarner/Projects/Isabel/forcings/ic_20030905_KH_CH_grd.nc
+     ININAME == /raid1/jcwarner/Projects/Isabel/forcings/ic_20030915_USeast_grd3.nc \
+                /raid1/jcwarner/Projects/Isabel/forcings/ic_20030915_outerbanks_grd8.nc \
+                /raid1/jcwarner/Projects/Isabel/forcings/ic_20030915_KH_CH_grd4.nc 
+!                /raid1/jcwarner/Projects/Isabel/forcings/ic_20030915_CH_shoals_grd2.nc
+
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
 
      CLMNAME == /raid1/jcwarner/Projects/Isabel/forcings/nest20030815_20030930.nc \
-                /raid1/jcwarner/Projects/Isabel/forcings/nest20030815_20030930.nc
+                /raid1/jcwarner/Projects/Isabel/forcings/nest20030815_20030930.nc \
+                /raid1/jcwarner/Projects/Isabel/forcings/nest20030815_20030930.nc 
 !                /raid1/jcwarner/Projects/Isabel/forcings/nest20030815_20030930.nc
 
      BRYNAME == /raid1/jcwarner/Projects/Isabel/forcings/Isabel_saltemp_bc.nc \
-               /raid1/jcwarner/Projects/Isabel/forcings/Isabel_saltemp_bc2.nc
-!                /raid1/jcwarner/Projects/Isabel/forcings/Isabel_saltemp_bc3.nc
+                /raid1/jcwarner/Projects/Isabel/forcings/Isabel_saltemp_bc.nc \
+                /raid1/jcwarner/Projects/Isabel/forcings/Isabel_saltemp_bc.nc 
+!                /raid1/jcwarner/Projects/Isabel/forcings/Isabel_saltemp_bc.nc
 
      FWDNAME == ocean_fwd.nc
      ADSNAME == ocean_ads.nc
@@ -449,7 +459,12 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 ! and so on.  Use a single line per entry with a continuation (\) symbol
 ! at the each entry, except the last one.
 
-     NFFILES == 10                          ! number of forcing files
+
+!                /raid1/jcwarner/Projects/Isabel/forcings/Uwind_2003_08_2003_09.nc \
+!                /raid1/jcwarner/Projects/Isabel/forcings/Vwind_2003_08_2003_09.nc \
+!                /raid1/share/forcings/Isabel/Big_grd2_wind.nc \
+
+     NFFILES == 9                          ! number of forcing files
      FRCNAME == /raid1/jcwarner/Projects/Isabel/forcings/cloud_2003_08_2003_09.nc \
                 /raid1/jcwarner/Projects/Isabel/forcings/Pair_2003_08_2003_09.nc  \
                 /raid1/jcwarner/Projects/Isabel/forcings/Qair_2003_08_2003_09.nc  \
@@ -457,8 +472,7 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
                 /raid1/jcwarner/Projects/Isabel/forcings/swrad_2003_08_2003_09.nc \
                 /raid1/jcwarner/Projects/Isabel/forcings/Tair_2003_08_2003_09.nc  \
                 /raid1/jcwarner/Projects/Isabel/forcings/lwrad_2003_08_2003_09.nc \
-                /raid1/jcwarner/Projects/Isabel/forcings/Uwind_2003_08_2003_09.nc \
-                /raid1/jcwarner/Projects/Isabel/forcings/Vwind_2003_08_2003_09.nc \
+                /raid1/share/forcings/Isabel/Big_grd3_wind.nc \
                 /raid1/jcwarner/Projects/Isabel/forcings/tide_forc_USeast_grd2.nc \
                 /raid1/jcwarner/Projects/Isabel/forcings/cloud_2003_08_2003_09.nc \
                 /raid1/jcwarner/Projects/Isabel/forcings/Pair_2003_08_2003_09.nc  \
@@ -467,9 +481,17 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
                 /raid1/jcwarner/Projects/Isabel/forcings/swrad_2003_08_2003_09.nc \
                 /raid1/jcwarner/Projects/Isabel/forcings/Tair_2003_08_2003_09.nc  \
                 /raid1/jcwarner/Projects/Isabel/forcings/lwrad_2003_08_2003_09.nc \
-                /raid1/jcwarner/Projects/Isabel/forcings/Uwind_2003_08_2003_09.nc \
-                /raid1/jcwarner/Projects/Isabel/forcings/Vwind_2003_08_2003_09.nc \
-                /raid1/jcwarner/Projects/Isabel/forcings/tide_forc_USeast_grd2.nc
+                /raid1/share/forcings/Isabel/Big_grd3_wind.nc \
+                /raid1/jcwarner/Projects/Isabel/forcings/tide_forc_USeast_grd2.nc \
+                /raid1/jcwarner/Projects/Isabel/forcings/cloud_2003_08_2003_09.nc \
+                /raid1/jcwarner/Projects/Isabel/forcings/Pair_2003_08_2003_09.nc  \
+                /raid1/jcwarner/Projects/Isabel/forcings/Qair_2003_08_2003_09.nc  \
+                /raid1/jcwarner/Projects/Isabel/forcings/rain_2003_08_2003_09.nc  \
+                /raid1/jcwarner/Projects/Isabel/forcings/swrad_2003_08_2003_09.nc \
+                /raid1/jcwarner/Projects/Isabel/forcings/Tair_2003_08_2003_09.nc  \
+                /raid1/jcwarner/Projects/Isabel/forcings/lwrad_2003_08_2003_09.nc \
+                /raid1/share/forcings/Isabel/Big_grd3_wind.nc \
+                /raid1/jcwarner/Projects/Isabel/forcings/tide_forc_USeast_grd2.nc 
 
 !                /raid1/jcwarner/Projects/Isabel/forcings/cloud_2003_08_2003_09.nc \
 !                /raid1/jcwarner/Projects/Isabel/forcings/Pair_2003_08_2003_09.nc  \
@@ -478,31 +500,19 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 !                /raid1/jcwarner/Projects/Isabel/forcings/swrad_2003_08_2003_09.nc \
 !                /raid1/jcwarner/Projects/Isabel/forcings/Tair_2003_08_2003_09.nc  \
 !                /raid1/jcwarner/Projects/Isabel/forcings/lwrad_2003_08_2003_09.nc \
-!                /raid1/jcwarner/Projects/Isabel/forcings/Uwind_2003_08_2003_09.nc \
-!                /raid1/jcwarner/Projects/Isabel/forcings/Vwind_2003_08_2003_09.nc \
-!                /raid1/jcwarner/Projects/Isabel/forcings/tide_forc_USeast_grd2.nc
-
-!                /raid1/jcwarner/Projects/Isabel/forcings/cloud_2003_08_2003_09.nc \
-!                /raid1/jcwarner/Projects/Isabel/forcings/Pair_2003_08_2003_09.nc  \
-!                /raid1/jcwarner/Projects/Isabel/forcings/Qair_2003_08_2003_09.nc  \
-!                /raid1/jcwarner/Projects/Isabel/forcings/rain_2003_08_2003_09.nc  \
-!                /raid1/jcwarner/Projects/Isabel/forcings/swrad_2003_08_2003_09.nc \
-!                /raid1/jcwarner/Projects/Isabel/forcings/Tair_2003_08_2003_09.nc  \
-!                /raid1/jcwarner/Projects/Isabel/forcings/lwrad_2003_08_2003_09.nc \
-!                /raid1/jcwarner/Projects/Isabel/forcings/Uwind_2003_08_2003_09.nc \
-!                /raid1/jcwarner/Projects/Isabel/forcings/Vwind_2003_08_2003_09.nc \
-!                /raid1/jcwarner/Projects/Isabel/forcings/tide_forc_USeast_grd2.nc
+!                /raid1/share/forcings/Isabel/Big_grd3_wind.nc \
+!                /raid1/jcwarner/Projects/Isabel/forcings/tide_forc_USeast_grd2.nc 
 
 ! Output NetCDF file names, [1:Ngrids].
 
      GSTNAME == ocean_gst.nc
      RSTNAME == ./Output/ocean_useast_rst.nc \
-                ./Output/ocean_outbnks_rst.nc
-!                ./Output/ocean_KHCH_rst.nc
+                ./Output/ocean_outbnks_rst.nc \
+                ./Output/ocean_KHCH_rst.nc 
 !                ./Output/ocean_CH_shoals_rst.nc
      HISNAME == ./Output/isabel_useast_his.nc \
-                ./Output/isabel_outbnks_his.nc
-!                ./Output/isabel_KHCH_his.nc
+                ./Output/isabel_outbnks_his.nc \
+                ./Output/isabel_KHCH_his.nc 
 !                ./Output/isabel_CH_shoals_his.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
@@ -518,7 +528,7 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
      SPOSNAM =  User/External/stations.in
      FPOSNAM =  User/External/floats.in
      BPARNAM =  User/External/bioFasham.in
-     SPARNAM =  Projects/Isabel/sediment_Isabel.in
+     SPARNAM =  Projects/Isabel/sediment_isabel.in
      USRNAME =  User/External/MyFile.dat
 
 !

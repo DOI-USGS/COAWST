@@ -18,10 +18,11 @@
 
 
 #define SWAN_COUPLING
-#define MCT_INTERP_WV2AT
-#define MCT_INTERP_OC2AT
-#undef MCT_INTERP_OC2WV
-#define WRF_COUPLING
+#undef  UV_CONST
+#undef  MCT_INTERP_WV2AT
+#undef  MCT_INTERP_OC2AT
+#undef  MCT_INTERP_OC2WV
+#undef  WRF_COUPLING
 #if defined SWAN_COUPLING || defined WRF_COUPLING
 # define MCT_LIB
 #endif
@@ -57,7 +58,7 @@
 #ifdef BULK_FLUXES
 #undef LONGWAVE_OUT
 !# define LONGWAVE
-#  define ANA_SSFLUX
+!#  define ANA_SSFLUX
 #  define COARE_TAYLOR_YELLAND
 #  define EMINUSP
 #  define SOLAR_SOURCE
@@ -85,15 +86,16 @@
 # undef  TKE_WAVEDISS
 #endif
 
-/*define boundary conditon */
-#define NORTHERN_WALL
-#define WESTERN_WALL
-
 #define SSH_TIDES
 #define ADD_FSOBC
 #define UV_TIDES
 #define ADD_M2OBC
 #define RAMP_TIDES
+
+
+/*define boundary conditon */
+#define NORTHERN_WALL
+#define WESTERN_WALL
 
 #define RADIATION_2D
 
@@ -118,8 +120,17 @@
 #define ANA_FSOBC
 #define ANA_M2OBC
 
+/*define boundary conditons for nest */
+#define REFINED_GRID
+#define REFINED_GRID_BC
+#define WEST_TNUDGING
+#define WEST_M3NUDGING
+#define NORTH_TNUDGING
+#define NORTH_M3NUDGING
+
 #define SEDIMENT
 #ifdef SEDIMENT
+# define NOSED_OBC
 # define SUSPLOAD
 # define BEDLOAD_SOULSBY
 # undef  ANA_SEDIMENT
