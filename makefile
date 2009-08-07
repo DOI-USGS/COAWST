@@ -59,22 +59,19 @@ $(if $(filter $(MAKE_VERSION),$(NEED_VERSION)),,        \
 #  the .h extension. For example, the upwelling application includes the
 #  "upwelling.h" header file.  
 
-#ROMS_APPLICATION ?= INWAVE_TEST
-ROMS_APPLICATION ?= INLET_TEST
+ROMS_APPLICATION ?= INWAVE_TEST
 
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
 
-MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inlet_test/Coupled
-#MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inwave_test
+MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inwave_test
 
 #  If your application requires analytical expressions and they are not
 #  located in "ROMS/Functionals", provide an alternate directory.
 #  Notice that a set analytical expressions templates can be found in
 #  "User/Functionals".
 
-MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inlet_test/Coupled
-#MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inwave_test
+MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inwave_test
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying
@@ -95,7 +92,7 @@ MY_CPP_FLAGS ?=
 
 #  Activate debugging compiler options:
 
-   USE_DEBUG ?=
+   USE_DEBUG ?= on
 
 #  If parallel applications, use at most one of these definitions
 #  (leave both definitions blank in serial applications):
