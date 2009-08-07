@@ -1511,6 +1511,36 @@
               STOP
             END IF
             Npts=load_l(Nval, Cval, Ngrids, Hout(idWdir,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWptp)') THEN
+            IF (idWptp.eq.0) THEN
+              WRITE (out,280) 'idWptp'
+              STOP
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWptp,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWpbt)') THEN
+            IF (idWpbt.eq.0) THEN
+              WRITE (out,280) 'idWpbt'
+              STOP
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWpbt,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWorb)') THEN
+            IF (idWorb.eq.0) THEN
+              WRITE (out,280) 'idWorb'
+              STOP
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWorb,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWdis)') THEN
+            IF (idWdis.eq.0) THEN
+              WRITE (out,280) 'idWdis'
+              STOP
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWdis,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWbrk)') THEN
+            IF (idWbrk.eq.0) THEN
+              WRITE (out,280) 'idWbrk'
+              STOP
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWbrk,1:Ngrids))
           ELSE IF (TRIM(KeyWord).eq.'Hout(idTsur)') THEN
             IF (idTsur(itemp).eq.0) THEN
               WRITE (out,280) 'idTsur'

@@ -1951,7 +1951,7 @@
      &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
         END IF
 #endif
-#ifdef SWAN_COUPLING
+#ifdef WAVES_TOP_PERIOD
 !
 !  Define Pwave_top.
 !
@@ -1969,6 +1969,8 @@
           status=def_var(ncHISid(ng),hisVid(idWptp,ng),NF_FOUT,         &
      &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
         END IF
+#endif
+#ifdef WAVES_BOT_PERIOD
 !
 !  Define Pwave_bot.
 !
@@ -1986,6 +1988,8 @@
           status=def_var(ncHISid(ng),hisVid(idWpbt,ng),NF_FOUT,         &
      &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
         END IF
+#endif
+#if defined BBL_MODEL || defined WAVES_OCEAN
 !
 !  Define Ub_swan.
 !
@@ -2003,6 +2007,8 @@
           status=def_var(ncHISid(ng),hisVid(idWorb,ng),NF_FOUT,         &
      &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
         END IF
+#endif
+#if defined TKE_WAVEDISS || defined WAVES_OCEAN
 !
 !  Define Wave_dissip.
 !
@@ -2020,6 +2026,8 @@
           status=def_var(ncHISid(ng),hisVid(idWdis,ng),NF_FOUT,         &
      &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
         END IF
+#endif
+#if defined SVENDSEN_ROLLER
 !
 !  Define Wave_break.
 !

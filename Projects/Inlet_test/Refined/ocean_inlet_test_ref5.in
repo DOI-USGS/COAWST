@@ -55,6 +55,7 @@
           Lm == 75 145        ! Number of I-direction INTERIOR RHO-points
           Mm == 70  75        ! Number of J-direction INTERIOR RHO-points
            N == 8    8        ! Number of vertical levels
+          ND == 11            ! Number of wave directional bins
 
         Nbed =  1    1        ! Number of sediment bed layers
 
@@ -350,6 +351,11 @@ Hout(idV3Sd) == F F                        ! 3D V-Stokes velocity
 Hout(idWamp) == T T                        ! wave height
 Hout(idWlen) == T T                        ! wave length
 Hout(idWdir) == T T                        ! wave direction
+Hout(idWptp) == T T                        ! wave peak surface period
+Hout(idWpbt) == T T                        ! wave mean bottom period
+Hout(idWorb) == T T                        ! wave bottom orbital velocity
+Hout(idWdis) == T T                        ! wave energy dissipation
+Hout(idWbrk) == T T                        ! wave breaking (percent)
 
 Hout(idTsur) == F F F F                    ! surface net heat and salt flux
 Hout(idLhea) == F F                        ! latent heat flux

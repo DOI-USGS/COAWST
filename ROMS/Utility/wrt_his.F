@@ -2052,7 +2052,7 @@
         END IF
       END IF
 #endif
-#ifdef SWAN_COUPLING
+#ifdef WAVES_TOP_PERIOD
 !
 !  Write out wind-induced wave surface period.
 !
@@ -2075,6 +2075,8 @@
           RETURN
         END IF
       END IF
+#endif
+#ifdef WAVES_BOT_PERIOD
 !
 !  Write out wind-induced wave bottom period.
 !
@@ -2097,6 +2099,8 @@
           RETURN
         END IF
       END IF
+#endif
+#if defined BBL_MODEL || defined WAVES_OCEAN
 !
 !  Write out wind-induced bottom orbital velocity.
 !
@@ -2119,6 +2123,8 @@
           RETURN
         END IF
       END IF
+#endif
+#if defined TKE_WAVEDISS || defined WAVES_OCEAN
 !
 !  Write out wind-induced wave dissipation.
 !
@@ -2141,6 +2147,8 @@
           RETURN
         END IF
       END IF
+#endif
+#if defined SVENDSEN_ROLLER
 !
 !  Write out wind-induced wave breaking.
 !
