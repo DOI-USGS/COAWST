@@ -1,1 +1,0 @@
-mpif90 -c -g  -w -byteswapio -Mfree  -I../dyn_em -I../dyn_nmm  -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 -I../external -I../frame -I../share -I../phys -I../inc -I../chem -I/usr/local/mct/include -r4 -i4  solve_em.f90
