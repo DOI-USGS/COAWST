@@ -2523,6 +2523,84 @@
   'r2dvar'
   1.0d0
 
+!---------------------------------------------------------------------
+!  Define names of variables associated with InWave
+!---------------------------------------------------------------------
+!
+
+'AC'                                               ! Input
+  'wave energy envelope'
+  'Joules'                                         ! [m/s]
+  'AC, scalar, series'
+  'energy_time'
+  'idACen'
+  'r3dvar'
+  1.0d0
+
+'cx'                                               ! Input
+  'wave celerity xi-direction'
+  'm s-1'                                          ! [m/s]
+  'cx, scalar, series'
+  'energy_time'
+  'idACcx'
+  'u3dvar'
+  1.0d0
+
+'cy'                                               ! Input
+  'wave celerity eta-direction'
+  'm s-1'                                          ! [m/s]
+  'cy, scalar, series'
+  'energy_time'
+  'idACcy'
+  'v3dvar'
+  1.0d0
+
+'ct'                                               ! Input
+  'wave celerity theta-direction'
+  'deg s-1'                                        ! [deg/s]
+  'cx, scalar, series'
+  'energy_time'
+  'idACct'
+  'r3dvar'
+  1.0d0
+
+'AC_west'                                          ! Input
+  'western boundary wave energy envelope'
+  'Joules'                                         ! [m/s]
+  'AC_west, scalar, series'
+  'energy_time'
+  'idACbc(iwest)'
+  'nulvar'
+  1.0d0
+
+'AC_east'                                          ! Input
+  'eastern boundary wave energy envelope'
+  'Joules'                                         ! [m/s]
+  'AC_east, scalar, series'
+  'energy_time'
+  'idACbc(ieast)'
+  'nulvar'
+  1.0d0
+
+'AC_south'                                          ! Input
+  'southern boundary wave energy envelope'
+  'Joules'                                          ! [m/s]
+  'AC_south, scalar, series'
+  'energy_time'
+  'idACbc(isouth)'
+  'nulvar'
+  1.0d0
+
+'AC_nonrth'                                          ! Input
+  'northern boundary wave energy envelope'
+  'Joules'                                           ! [m/s]
+  'AC_north, scalar, series'
+  'energy_time'
+  'idACbc(inorth)'
+  'nulvar'
+  1.0d0
+
+
 !
 !---------------------------------------------------------------------
 !  Define names of variables associated with Fasham, NEMURO or NPZD
