@@ -54,8 +54,9 @@
 !  Local variable declarations.
 !
       integer :: i, ng, MyRank, MyError
+      integer :: ngp, ngc
 #ifdef REFINED_GRID
-      integer :: ngp, ngc, ID
+      integer :: ID
       REAL, ALLOCATABLE :: AC_EXCH(:)
 #endif
 #ifdef MODEL_COUPLING
@@ -70,13 +71,15 @@
         BGRIDPG(ng,:)=9999
         Numspec(ng)=112
       END DO
-      Numspec(1)=112
-      Numspec(2)=270
-      Numspec(3)=1  !294
+!     Numspec(1)=112
+!     Numspec(2)=270
+!     Numspec(3)=1  !294
 !     Numspec(4)=1
 
       NBGRPT_last=0
 #endif
+      ngp=1
+      ngc=1
 !
 !-----------------------------------------------------------------------
 !  Set distribute-memory (MPI) world communicator.
@@ -86,8 +89,10 @@
 !
       CALL mpi_comm_rank (MyCOMM, MyRank, MyError)
       DO ng=1,Ngrids
+#ifdef REFINED_GRID
         ngp=myparent(ng)
         ngc=mychild(ng)
+#endif
         CALL SWAN_INITIALIZE (ng, ngp, Ngrids, MyCOMM, Wname(ng))
 !
 !  Compute number of boundary arrays to be passed.
@@ -103,9 +108,9 @@
 !
       DO ng=1,Ngrids
         CALL SWSYNC
+#ifdef REFINED_GRID
         ngp=myparent(ng)
         ngc=mychild(ng)
-#ifdef REFINED_GRID
         IF (ng.gt.1) THEN
           DO i=1,ac2size(ngp)
             PARALL2_MOD(ng)%AC2_child_G(i)=                         &
@@ -164,10 +169,13 @@
       logical, allocatable :: run_grid(:)
       integer, allocatable :: count(:)
       real :: rtime, rtime_start, rtime_end, cff
+      integer :: ngp, ngc
 #ifdef REFINED_GRID
-      integer :: ngp, ngc, ID
+      integer :: ID
       REAL, ALLOCATABLE :: AC_EXCH(:)
 #endif
+      ngp=1
+      ngc=1
       CALL mpi_comm_rank (WAV_COMM_WORLD, MyRank, MyError)
 !
 !  Set some initial run time parameters here.
@@ -192,9 +200,9 @@
 !
         DO ng=1,Ngrids
           IF (run_grid(ng).eq..TRUE.) THEN
+#ifdef REFINED_GRID
             ngp=myparent(ng)
             ngc=mychild(ng)
-#ifdef REFINED_GRID
             IF (ng.gt.1) THEN
               DO i=1,ac2size(ngp)
                 PARALL2_MOD(ng)%AC2_child_G(i)=                         &

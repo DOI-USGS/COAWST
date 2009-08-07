@@ -797,7 +797,7 @@
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "WLEV",     &
      &                           A, Asize)
 !
-!  Vertically-integrated U-velocity at RHO-points.
+!  U-velocity at RHO-points.
 !
 #  ifdef REFINED_GRID
         DO j=JstrT,JendT
@@ -824,13 +824,13 @@
 #  else
         DO j=JstrR,JendR
           DO i=Istr,Iend
-#   ifdef SOLVE3D
-            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%u(i,  j,N(ng),NOUT)+        &
-     &                            OCEAN(ng)%u(i+1,j,N(ng),NOUT))
-#   else
+!#   ifdef SOLVE3D
+!            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%u(i,  j,N(ng),NOUT)+        &
+!     &                            OCEAN(ng)%u(i+1,j,N(ng),NOUT))
+!#   else
             ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%ubar(i,  j,KOUT)+           &
      &                            OCEAN(ng)%ubar(i+1,j,KOUT))
-#   endif
+!#   endif
           END DO
         END DO
         IF (WESTERN_EDGE) THEN
@@ -874,7 +874,7 @@
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VELX",     &
      &                           A, Asize)
 !
-!  Vertically-integrated V-velocity at RHO-points.
+!  V-velocity at RHO-points.
 !
 #  ifdef REFINED_GRID
         DO j=JstrTV+1,JendTV
@@ -901,13 +901,13 @@
 #  else
         DO j=Jstr,Jend
           DO i=IstrR,IendR
-#   ifdef SOLVE3D
-            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,N(ng),NOUT)+        &
-     &                            OCEAN(ng)%v(i,j+1,N(ng),NOUT))
-#   else
-            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,KOUT)+              &
-     &                            OCEAN(ng)%v(i,j+1,KOUT))
-#   endif
+!#   ifdef SOLVE3D
+!            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,N(ng),NOUT)+        &
+!     &                            OCEAN(ng)%v(i,j+1,N(ng),NOUT))
+!#   else
+            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%vbar(i,j  ,KOUT)+            &
+     &                            OCEAN(ng)%vbar(i,j+1,KOUT))
+!#   endif
           END DO
         END DO
         IF (NORTHERN_EDGE) THEN
