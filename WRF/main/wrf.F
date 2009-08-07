@@ -1,7 +1,12 @@
 !WRF:DRIVER_LAYER:MAIN
 !
+#include "cppdefs.wrf"
 
+#ifdef WRF_COUPLING
+SUBROUTINE wrf
+#else
 PROGRAM wrf
+#endif
 
    USE module_wrf_top, only : wrf_init, wrf_dfi, wrf_run, wrf_finalize
 
@@ -17,6 +22,9 @@ PROGRAM wrf
 
    IMPLICIT NONE
 
+#ifdef WRF_COUPLING
+END subroutine wrf
+#else
    ! Set up WRF model.  
    CALL wrf_init
 
@@ -28,7 +36,7 @@ PROGRAM wrf
 
    ! WRF model clean-up.  This calls MPI_FINALIZE() for DM parallel runs.  
    CALL wrf_finalize
-
 END PROGRAM wrf
+#endif
 
 

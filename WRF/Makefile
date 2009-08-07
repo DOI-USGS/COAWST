@@ -29,11 +29,17 @@ DA_CONVERTOR_MODULES = $(DA_CONVERTOR_MOD_DIR) $(INCLUDE_MODULES)
 NMM_MODULE_DIR = -I../dyn_nmm
 NMM_MODULES =  $(NMM_MODULE_DIR)
 
+#jcw
+MCT_INCDIR ?= /usr/local/mct/include
+MCT_MODULES = -I$(MCT_INCDIR)
+
 ALL_MODULES =                           \
                $(EM_MODULE_DIR)         \
                $(NMM_MODULES)           \
                $(EXP_MODULES)           \
-               $(INCLUDE_MODULES)
+               $(INCLUDE_MODULES)       \
+               $(MCT_MODULES)
+#jcw
 
 configcheck:
 	@if [ "$(A2DCASE)" -a "$(DMPARALLEL)" ] ; then \

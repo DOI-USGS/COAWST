@@ -1,0 +1,4 @@
+#define WRF_COUPLING   /* keep this one on always */
+#define SWAN_COUPLING  /* this gives winds to swan */
+
+

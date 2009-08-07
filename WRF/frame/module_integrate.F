@@ -1,12 +1,16 @@
 !WRF:DRIVER_LAYER:INTEGRATION
 !
+#include "cppdefs.wrf"
 
 MODULE module_integrate
 
 CONTAINS
 
+#ifdef WRF_COUPLING
+RECURSIVE SUBROUTINE integrate ( grid, TI_ATM_OCN, last_step )
+#else
 RECURSIVE SUBROUTINE integrate ( grid )
-
+#endif
 
 
    USE module_domain
@@ -15,12 +19,19 @@ RECURSIVE SUBROUTINE integrate ( grid )
    USE module_configure
    USE module_timing
    USE module_utility
+#ifdef WRF_COUPLING
+   USE atm_coupler_mod, ONLY: atm2ocn_coupling
+#endif
 
    IMPLICIT NONE
 
    !  Input data.
 
    TYPE(domain) , POINTER :: grid
+#ifdef WRF_COUPLING
+   REAL, intent(in) :: TI_ATM_OCN
+   INTEGER, intent(inout) :: last_step
+#endif
 
 ! module_integrate:integrate
 ! <DESCRIPTION> 
@@ -154,6 +165,10 @@ RECURSIVE SUBROUTINE integrate ( grid )
    TYPE (grid_config_rec_type)            :: config_flags
    LOGICAL , EXTERNAL                     :: wrf_dm_on_monitor
    INTEGER                                :: idum1 , idum2 , ierr , open_status
+#ifdef WRF_COUPLING
+   INTEGER                                :: nATM_steps, num_steps
+   REAL                                   :: minutesSinceSimulationStart
+#endif
    LOGICAL                                :: should_do_last_io
 
    ! interface
@@ -313,6 +328,15 @@ RECURSIVE SUBROUTINE integrate ( grid )
                ! switch this on with namelist variable self_test_domain
                CALL domain_time_test( grid_ptr, 'domain_clockadvance' )
                grid_ptr => grid_ptr%sibling
+#ifdef WRF_COUPLING
+              CALL domain_clock_get( grid, minutesSinceSimulationStart=minutesSinceSimulationStart )
+              num_steps=minutesSinceSimulationStart*60.0/grid%dt
+              nATM_steps=MAX(1,INT(TI_ATM_OCN/grid%dt))
+              IF ((num_steps.gt.last_step).and.(MOD(num_steps, nATM_steps).eq.0)) THEN
+                CALL atm2ocn_coupling (grid)
+                last_step=num_steps
+              ENDIF
+#endif
             END DO
             CALL set_current_grid_ptr( grid )
             CALL med_calc_model_time ( grid , config_flags )

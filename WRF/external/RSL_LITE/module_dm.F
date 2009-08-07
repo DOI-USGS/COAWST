@@ -1,5 +1,7 @@
 !WRF:PACKAGE:RSL 
 !
+#include "cppdefs.wrf"
+
 MODULE module_dm
 
    USE module_machine
@@ -1335,11 +1337,20 @@ CONTAINS
 
    SUBROUTINE init_module_dm
 #ifndef STUBMPI
+# ifdef WRF_COUPLING
+       USE module_parallel
+# endif
       IMPLICIT NONE
       INTEGER mpi_comm_local, ierr, mytask, nproc
       INCLUDE 'mpif.h'
       LOGICAL mpi_inited
       CALL mpi_initialized( mpi_inited, ierr )
+# ifdef WRF_COUPLING
+      mpi_comm_local=MyComm
+      ATM_COMM_WORLD=MyComm
+      CALL wrf_set_dm_communicator ( ATM_COMM_WORLD )
+      CALL wrf_get_dm_communicator( mpi_comm_local )
+# else
       IF ( .NOT. mpi_inited ) THEN
 	! If MPI has not been initialized then initialize it and 
 	! make comm_world the communicator
@@ -1351,6 +1362,7 @@ CONTAINS
 	CALL wrf_set_dm_communicator ( MPI_COMM_WORLD )
       ENDIF
       CALL wrf_get_dm_communicator( mpi_comm_local )
+# endif
 #endif
    END SUBROUTINE init_module_dm
 

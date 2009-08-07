@@ -2,6 +2,7 @@
 !
 
 !TBH:  $$$  move this to ../frame?  
+#include "cppdefs.wrf"
 
 MODULE module_wrf_top
 !<DESCRIPTION>
@@ -75,11 +76,22 @@ MODULE module_wrf_top
 
 CONTAINS
 
-
+#ifdef WRF_COUPLING
+   SUBROUTINE wrf_init( MyComm_r, no_init1)
+!<DESCRIPTION>
+!     WRF initialization routine.
+!</DESCRIPTION>
+!jcw
+   USE module_parallel
+   USE ATM_COUPLER_MOD, ONLY: initialize_ocean_coupling
+   USE ATM_COUPLER_MOD, ONLY: atm2ocn_coupling
+   integer, intent(in) :: MyComm_r
+#else
    SUBROUTINE wrf_init( no_init1 )
 !<DESCRIPTION>
 !     WRF initialization routine.
 !</DESCRIPTION>
+#endif
      LOGICAL, OPTIONAL, INTENT(IN) :: no_init1
      INTEGER i, myproc, nproc, hostid, loccomm, ierr, buddcounter, mydevice
      INTEGER, ALLOCATABLE :: hostids(:), budds(:)
@@ -105,6 +117,16 @@ CONTAINS
 
    program_name = "WRF " // TRIM(release_version) // " MODEL"
 
+#ifdef WRF_COUPLING
+   MyComm=MyComm_r
+   ! Initialize WRF modules:  
+   ! Phase 1 returns after MPI_INIT() (if it is called)
+   CALL init_modules(1)
+!  IF ( .NOT. PRESENT( no_init1 ) ) THEN
+     ! Initialize utilities (time manager, etc.)
+     CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN )
+!  ENDIF
+#else
    ! Initialize WRF modules:  
    ! Phase 1 returns after MPI_INIT() (if it is called)
    CALL init_modules(1)
@@ -112,6 +134,7 @@ CONTAINS
      ! Initialize utilities (time manager, etc.)
      CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN )
    ENDIF
+#endif
    ! Phase 2 resumes after MPI_INIT() (if it is called)
    CALL init_modules(2)
 
@@ -291,12 +314,18 @@ CONTAINS
    ! set default values for subtimes
    head_grid%start_subtime = domain_get_start_time ( head_grid )
    head_grid%stop_subtime = domain_get_stop_time ( head_grid )
-
+#ifdef WRF_COUPLING
+   CALL initialize_ocean_coupling (head_grid)
+   CALL atm2ocn_coupling(head_grid)
+#endif
    END SUBROUTINE wrf_init
 
 
-
+#ifdef WRF_COUPLING
+   SUBROUTINE wrf_run( TI_ATM_OCN )
+#else
    SUBROUTINE wrf_run( )
+#endif
 !<DESCRIPTION>
 !     WRF run routine.
 !</DESCRIPTION>
@@ -314,9 +343,18 @@ CONTAINS
    !  The forecast integration for the most coarse grid is now started.  The
    !  integration is from the first step (1) to the last step of the simulation.
 
+#ifdef WRF_COUPLING
+   REAL, intent(in) :: TI_ATM_OCN
+   INTEGER :: last_step
+   last_step=0
    CALL       wrf_debug ( 100 , 'wrf: calling integrate' )
    CALL integrate ( head_grid )
    CALL       wrf_debug ( 100 , 'wrf: back from integrate' )
+#else
+   CALL       wrf_debug ( 100 , 'wrf: calling integrate' )
+   CALL integrate ( head_grid, TI_ATM_OCN, last_step )
+   CALL       wrf_debug ( 100 , 'wrf: back from integrate' )
+#endif
 
    END SUBROUTINE wrf_run
 
@@ -338,6 +376,9 @@ CONTAINS
 ! layers would call MPI_FINALIZE at this point if they're using MPI).
 ! 
 !</DESCRIPTION>
+#ifdef WRF_COUPLING
+   USE ATM_COUPLER_MOD, ONLY: finalize_ocean_coupling
+#endif
      LOGICAL, OPTIONAL, INTENT(IN) :: no_shutdown
 
    ! shut down I/O
@@ -354,6 +395,9 @@ CONTAINS
      CALL wrf_shutdown
    ENDIF
 
+#ifdef WRF_COUPLING
+   CALL finalize_ocean_coupling
+#endif
    END SUBROUTINE wrf_finalize
 
 
