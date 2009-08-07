@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       MODULE prestep_inw_mod
-#if defined INWAVE && defined SOLVE3D
+#if defined INWAVE_COUPLING
 !
 !svn $Id: prestep_inw_mod 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
@@ -25,7 +25,7 @@
       USE mod_grid
       USE mod_stepping
       USE mod_ocean
-      USE mod_inwave
+      USE mod_inwave_vars
 !
 !  Imported variable declarations.
 !
@@ -48,12 +48,15 @@
 # endif
      &                      GRID(ng) % pm,                              &
      &                      GRID(ng) % pn,                              &
+     &                      GRID(ng) % on_u,                            &
+     &                      GRID(ng) % om_v,                            &
      &                      OCEAN(ng) % u,                              &
      &                      OCEAN(ng) % v,                              &
-     &                      INWAVE(ng) % AC,                            &
-     &                      INWAVE(ng) % cx,                            &
-     &                      INWAVE(ng) % cy,                            &
-     &                      INWAVE(ng) % ct)
+     &                      WAVEP(ng) % AC,                             &
+     &                      WAVEP(ng) % cx,                             &
+     &                      WAVEP(ng) % cy,                             &
+     &                      WAVEP(ng) % ct,                             &
+     &                      WAVEG(ng) % pd)
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 22)
 # endif
@@ -61,27 +64,28 @@
       END SUBROUTINE prestep_inw
 !
 !***********************************************************************
-      SUBROUTINE prestep3_inw_tile (ng, tile,                           &
+      SUBROUTINE prestep_inw_tile (ng, tile,                            &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            nrhs, nstp, nnew,                     &
 # ifdef MASKING
      &                            rmask, umask, vmask,                  &
 # endif
-     &                            pm, pn,                               &
+     &                            pm, pn, on_u, om_v,                   &
      &                            u, v,                                 &
-     &                            AC, cx, cy, ct)
+     &                            AC, cx, cy, ct, pd)
 !***********************************************************************
 !
       USE mod_param
       USE mod_scalars
+      USE mod_inwave_params
 !
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_3d_mod, ONLY : exchange_r3d_tile
 # endif
 # ifdef DISTRIBUTE
-      USE mp_exchange_mod, ONLY : mp_exchange4d
+      USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
-      USE t3dbc_mod, ONLY : t3dbc_tile
+      USE ACbc_mod, ONLY : ACbc_tile
 !
 !  Imported variable declarations.
 !
@@ -97,12 +101,15 @@
 #  endif
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
+      real(r8), intent(in) :: on_u(LBi:,LBj:)
+      real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: AC(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: cx(LBi:,LBj:,:)
       real(r8), intent(inout) :: cy(LBi:,LBj:,:)
       real(r8), intent(inout) :: ct(LBi:,LBj:,:)
+      real(r8), intent(in) :: pd(:)
 
 # else
 
@@ -113,12 +120,15 @@
 #  endif
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND(ng),3)
       real(r8), intent(inout) :: cx(LBi:UBi,LBj:UBj,ND(ng))
       real(r8), intent(inout) :: cy(LBi:UBi,LBj:UBj,ND(ng))
       real(r8), intent(inout) :: ct(LBi:UBi,LBj:UBj,ND(ng))
+      real(r8), intent(in) :: pd(ND(ng))
 # endif
 !
 !  Local variable declarations.
@@ -145,6 +155,7 @@
       real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: CF
       real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: DC
       real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FC
+      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:ND(ng)+2) :: FD
 
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FE
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FX
@@ -288,10 +299,10 @@
         DO j=Jstr,Jend
           DO i=Istr,Iend
             AC(i,j,d,3)=(cff1*AC(i,j,d,nstp)+                           &
-     &                  cff2*AC(i,j,d,nnew))-                           &
-     &                  cff*pm(i,j)*pn(i,j)*                            &
+     &                   cff2*AC(i,j,d,nnew))-                          &
+     &                   cff*pm(i,j)*pn(i,j)*                           &
      &                  (FX(i+1,j)-FX(i,j)+                             &
-     &                  FE(i,j+1)-FE(i,j))
+     &                   FE(i,j+1)-FE(i,j))
           END DO
         END DO
       END DO D_LOOP
@@ -325,11 +336,28 @@
         cff1=1.0_r8/6.0_r8
         cff2=1.0_r8/3.0_r8
         DO i=Istr,Iend
-          DO d=1,ND(ng)+1
-            cff=ct(i,j,d)/(0.5_r8*(pd(d)-pd(d-1)))
+          DO d=1,1
+            cff=ct(i,j,d)/(0.5_r8*(pd(d)+pd(ND(ng))))
+            FD(i,d)=cff*0.5_r8*                                         &
+     &              (AC(i,j,ND(ng),nstp)+                               &
+     &               AC(i,j,d  ,nstp))-                                 &
+     &               cff1*(curv(i,d-1)*MAX(cff,0.0_r8)+                 &
+     &                     curv(i,d  )*MIN(cff,0.0_r8))
+          END DO
+          DO d=2,ND(ng)
+            cff=ct(i,j,d)/(0.5_r8*(pd(d)+pd(d-1)))
             FD(i,d)=cff*0.5_r8*                                         &
      &              (AC(i,j,d-1,nstp)+                                  &
      &               AC(i,j,d  ,nstp))-                                 &
+     &               cff1*(curv(i,d-1)*MAX(cff,0.0_r8)+                 &
+     &                     curv(i,d  )*MIN(cff,0.0_r8))
+          END DO
+! is this just that same as FD(1,i) ?
+          DO d=ND(ng)+1,ND(ng)+1
+            cff=ct(i,j,1)/(0.5_r8*(pd(1)+pd(ND(ng))))
+            FD(i,d)=cff*0.5_r8*                                         &
+     &              (AC(i,j,ND(ng),nstp)+                               &
+     &               AC(i,j,1  ,nstp))-                                 &
      &               cff1*(curv(i,d-1)*MAX(cff,0.0_r8)+                 &
      &                     curv(i,d  )*MIN(cff,0.0_r8))
           END DO
@@ -360,21 +388,21 @@
 !  Apply lateral boundary conditions.
 !=======================================================================
 !
-        CALL ACbc_tile (ng, tile, itrc,                                 &
+        CALL ACbc_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, ND(ng),                     &
      &                  3, AC)
 # if defined EW_PERIODIC || defined NS_PERIODIC
         CALL exchange_r3d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          LBi, UBi, LBj, UBj, 1, ND(ng),          &
      &                          AC(:,:,:,3))
 # endif
 # ifdef DISTRIBUTE
-      CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
+      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    AC(:,:,:,3))
 # endif
 #endif
       RETURN
-      END SUBROUTINE prestep3_inw_tile
+      END SUBROUTINE prestep_inw_tile
       END MODULE prestep_inw_mod

@@ -12,7 +12,7 @@
 #define UV_VIS2
 #define MIX_S_UV
 #define WET_DRY
-#define NEARSHORE_MELLOR
+#undef  NEARSHORE_MELLOR
 #define UV_ADV
 #define TS_MPDATA
 #define DJ_GRADPS

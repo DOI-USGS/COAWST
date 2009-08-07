@@ -25,6 +25,9 @@
 #if defined SEDIMENT || defined BBL_MODEL
       USE mod_sediment
 #endif
+#ifdef INWAVE_COUPLING
+      USE mod_inwave_params
+#endif
 #ifdef DISTRIBUTE
 !
       USE distribute_mod, ONLY : mp_bcasti
@@ -49,11 +52,22 @@
 #if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
       integer :: frecdim
 #endif
-      integer :: DimIDs(29), t2dgrd(3), u2dgrd(3), v2dgrd(3)
+#ifdef INWAVE_COUPLING
+      integer :: DimIDs(30)
+#else
+      integer :: DimIDs(29)
+#endif
+      integer :: t2dgrd(3), u2dgrd(3), v2dgrd(3)
       integer :: Vsize(4)
 
       integer :: def_info, def_var, wrt_info
 
+#ifdef INWAVE_COUPLING
+      integer :: r3degrd(4)
+      integer :: u3degrd(4)
+      integer :: v3degrd(4)
+      integer :: t3degrd(4)
+#endif
 #ifdef SOLVE3D
 # ifdef SEDIMENT
       integer :: b3dgrd(4)
@@ -145,6 +159,10 @@
      &                      DimIDs(18))
         status=nf90_def_dim(ncHISid(ng),'xy_v'    ,Nxyv(ng),            &
      &                      DimIDs(19))
+#endif
+#ifdef INWAVE_COUPLING
+        status=nf90_def_dim(ncHISid(ng),'ND'    ,ND(ng),                &
+     &                      DimIDs(30))
 #endif
 #ifdef SOLVE3D
 # if defined WRITE_WATER && defined MASKING
@@ -284,6 +302,30 @@
         v3dfrc(2)=DimIDs( 7)
         v3dfrc(3)=frecdim
 # endif
+#endif
+#ifdef INWAVE_COUPLING
+!
+!  Define dimension vector for energy wave layer type variables.
+!
+        r3degrd(1)=DimIDs( 1)
+        r3degrd(2)=DimIDs( 5)
+        r3degrd(3)=DimIDs(30)
+        r3degrd(4)=DimIDs(12)
+
+        u3degrd(1)=DimIDs( 2)
+        u3degrd(2)=DimIDs( 6)
+        u3degrd(3)=DimIDs(30)
+        u3degrd(4)=DimIDs(12)
+
+        v3degrd(1)=DimIDs( 3)
+        v3degrd(2)=DimIDs( 7)
+        v3degrd(3)=DimIDs(30)
+        v3degrd(4)=DimIDs(12)
+
+        t3degrd(1)=DimIDs( 1)
+        t3degrd(2)=DimIDs( 5)
+        t3degrd(3)=DimIDs(30)
+        t3degrd(4)=DimIDs(12)
 #endif
 #ifdef SOLVE3D
 !
@@ -1191,6 +1233,77 @@
           status=def_var(ncHISid(ng),hisVid(idVbms,ng),NF_FOUT,         &
      &                   nvd3,v2dgrd,Aval,Vinfo,ncname)
         END IF
+#ifdef INWAVE_COUPLING
+
+!
+!  Define 3D Action density wave energy.
+!
+!        IF (Hout(idACen,ng)) THEN
+          Vinfo( 1)=Vname(1,idACen)
+          Vinfo( 2)=Vname(2,idACen)
+          Vinfo( 3)=Vname(3,idACen)
+          Vinfo(14)=Vname(4,idACen)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(r3dvar,r8)
+          status=def_var(ncHISid(ng),hisVid(idACen,ng),NF_FOUT,         &
+     &                   nvd4,r3degrd,Aval,Vinfo,ncname)
+!        END IF
+!
+!  Define 3D wave celerity xi-direction.
+!
+!        IF (Hout(idACen,ng)) THEN
+          Vinfo( 1)=Vname(1,idACcx)
+          Vinfo( 2)=Vname(2,idACcx)
+          Vinfo( 3)=Vname(3,idACcx)
+          Vinfo(14)=Vname(4,idACcx)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_u'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(u3dvar,r8)
+          status=def_var(ncHISid(ng),hisVid(idACcx,ng),NF_FOUT,         &
+     &                   nvd4,u3degrd,Aval,Vinfo,ncname)
+!        END IF
+!
+!  Define 3D wave celerity eta-direction.
+!
+!        IF (Hout(idACen,ng)) THEN
+          Vinfo( 1)=Vname(1,idACcy)
+          Vinfo( 2)=Vname(2,idACcy)
+          Vinfo( 3)=Vname(3,idACcy)
+          Vinfo(14)=Vname(4,idACcy)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_v'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(v3dvar,r8)
+          status=def_var(ncHISid(ng),hisVid(idACcy,ng),NF_FOUT,         &
+     &                   nvd4,v3degrd,Aval,Vinfo,ncname)
+!        END IF
+!
+!  Define 3D wave celerity theta-direction.
+!
+!        IF (Hout(idACct,ng)) THEN
+          Vinfo( 1)=Vname(1,idACct)
+          Vinfo( 2)=Vname(2,idACct)
+          Vinfo( 3)=Vname(3,idACct)
+          Vinfo(14)=Vname(4,idACct)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(r3dvar,r8)
+          status=def_var(ncHISid(ng),hisVid(idACct,ng),NF_FOUT,         &
+     &                   nvd4,t3degrd,Aval,Vinfo,ncname)
+!        END IF
+#endif
 #ifdef SOLVE3D
 # ifdef BBL_MODEL
 !
@@ -1835,6 +1948,93 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idWdir,ng),r8)
           status=def_var(ncHISid(ng),hisVid(idWdir,ng),NF_FOUT,         &
+     &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
+        END IF
+#endif
+#ifdef SWAN_COUPLING
+!
+!  Define Pwave_top.
+!
+        IF (Hout(idWptp,ng)) THEN
+          Vinfo( 1)=Vname(1,idWptp)
+          Vinfo( 2)=Vname(2,idWptp)
+          Vinfo( 3)=Vname(3,idWptp)
+          Vinfo(14)=Vname(4,idWptp)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWptp,ng),r8)
+          status=def_var(ncHISid(ng),hisVid(idWptp,ng),NF_FOUT,         &
+     &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
+        END IF
+!
+!  Define Pwave_bot.
+!
+        IF (Hout(idWpbt,ng)) THEN
+          Vinfo( 1)=Vname(1,idWpbt)
+          Vinfo( 2)=Vname(2,idWpbt)
+          Vinfo( 3)=Vname(3,idWpbt)
+          Vinfo(14)=Vname(4,idWpbt)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWpbt,ng),r8)
+          status=def_var(ncHISid(ng),hisVid(idWpbt,ng),NF_FOUT,         &
+     &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
+        END IF
+!
+!  Define Ub_swan.
+!
+        IF (Hout(idWorb,ng)) THEN
+          Vinfo( 1)=Vname(1,idWorb)
+          Vinfo( 2)=Vname(2,idWorb)
+          Vinfo( 3)=Vname(3,idWorb)
+          Vinfo(14)=Vname(4,idWorb)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWorb,ng),r8)
+          status=def_var(ncHISid(ng),hisVid(idWorb,ng),NF_FOUT,         &
+     &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
+        END IF
+!
+!  Define Wave_dissip.
+!
+        IF (Hout(idWptp,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdis)
+          Vinfo( 2)=Vname(2,idWdis)
+          Vinfo( 3)=Vname(3,idWdis)
+          Vinfo(14)=Vname(4,idWdis)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWdis,ng),r8)
+          status=def_var(ncHISid(ng),hisVid(idWdis,ng),NF_FOUT,         &
+     &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
+        END IF
+!
+!  Define Wave_break.
+!
+        IF (Hout(idWbrk,ng)) THEN
+          Vinfo( 1)=Vname(1,idWbrk)
+          Vinfo( 2)=Vname(2,idWbrk)
+          Vinfo( 3)=Vname(3,idWbrk)
+          Vinfo(14)=Vname(4,idWbrk)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWbrk,ng),r8)
+          status=def_var(ncHISid(ng),hisVid(idWbrk,ng),NF_FOUT,         &
      &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
         END IF
 #endif

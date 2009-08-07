@@ -67,12 +67,10 @@
       allocate ( WAVEB(ng) % ACG_north(LBi:UBi,ND(ng),2) )
       allocate ( WAVEB(ng) % ACG_south(LBi:UBi,ND(ng),2) )
 
-      END IF
-
       RETURN
       END SUBROUTINE allocate_inwave_bound
 
-      SUBROUTINE initialize_inwave_bound (ng, tile, model)
+      SUBROUTINE initialize_inwave_bound (ng, tile)
 !
 !=======================================================================
 !                                                                      !
@@ -88,7 +86,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile, model
+      integer, intent(in) :: ng, tile
 !
 !  Local variable declarations.
 !
@@ -137,22 +135,22 @@
 !
       DO i=Imin,Imax
         DO d=1,ND(ng)
-          WAVEB(ng) % AC_north(i,d) = IniVal
+          WAVEB(ng) % AC_north(i,d)    = IniVal
           WAVEB(ng) % ACG_north(i,d,1) = IniVal
           WAVEB(ng) % ACG_north(i,d,2) = IniVal
-          WAVEB(ng) % AC_south(i,d) = IniVal
+          WAVEB(ng) % AC_south(i,d)    = IniVal
           WAVEB(ng) % ACG_south(i,d,1) = IniVal
           WAVEB(ng) % ACG_south(i,d,2) = IniVal
         END DO
       END DO
       DO j=Jmin,Jmax
         DO d=1,ND(ng)
-          WAVEB(ng) % AC_east(j,d) = IniVal
+          WAVEB(ng) % AC_east(j,d)    = IniVal
           WAVEB(ng) % ACG_east(j,d,1) = IniVal
           WAVEB(ng) % ACG_east(j,d,2) = IniVal
-          WAVEB(ng) % AC_west(j,d) = IniVal
+          WAVEB(ng) % AC_west(j,d)    = IniVal
           WAVEB(ng) % ACG_west(j,d,1) = IniVal
-          WAVEB(ng) % ACG_west(j,d,2) = IniVa
+          WAVEB(ng) % ACG_west(j,d,2) = IniVal
         END DO
       END DO
 

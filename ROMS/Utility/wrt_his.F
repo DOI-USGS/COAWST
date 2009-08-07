@@ -37,6 +37,10 @@
 #ifdef SOLVE3D
       USE omega_mod, ONLY : scale_omega
 #endif
+#ifdef INWAVE_COUPLING
+      USE mod_inwave_params
+      USE mod_inwave_vars
+#endif
 !
       implicit none
 !
@@ -1504,6 +1508,100 @@
       END DO
 # endif
 #endif
+#ifdef INWAVE_COUPLING
+
+!
+!  Write out AC wave energy density.
+!
+!      IF (Hout(idW3xx,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r3dvar
+        status=nf_fwrite3d(ng, iNLM, ncHISid(ng), hisVid(idACen,ng),    &
+     &                     tHISindx(ng), gtype,                         &
+     &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
+# ifdef MASKING
+     &                     GRID(ng) % rmask(LBi,LBj),                   &
+# endif
+     &                     WAVEP(ng) % AC(LBi,LBj,1,NOUT))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idACen)), tHISindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+!      END IF
+!
+!  Write out energy celerity xi-direction.
+!
+!      IF (Hout(idW3xx,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*u3dvar
+        status=nf_fwrite3d(ng, iNLM, ncHISid(ng), hisVid(idACcx,ng),    &
+     &                     tHISindx(ng), gtype,                         &
+     &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
+# ifdef MASKING
+     &                     GRID(ng) % umask(LBi,LBj),                   &
+# endif
+     &                     WAVEP(ng) % cx(LBi,LBj,1))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idACcx)), tHISindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+!      END IF
+
+!
+!  Write out energy celerity eta-direction.
+!
+!      IF (Hout(idW3xx,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*v3dvar
+        status=nf_fwrite3d(ng, iNLM, ncHISid(ng), hisVid(idACcy,ng),    &
+     &                     tHISindx(ng), gtype,                         &
+     &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
+# ifdef MASKING
+     &                     GRID(ng) % vmask(LBi,LBj),                   &
+# endif
+     &                     WAVEP(ng) % cy(LBi,LBj,1))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idACcy)), tHISindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+!      END IF
+
+!
+!  Write out energy celerity xi-direction.
+!
+!      IF (Hout(idW3xx,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r3dvar
+        status=nf_fwrite3d(ng, iNLM, ncHISid(ng), hisVid(idACct,ng),    &
+     &                     tHISindx(ng), gtype,                         &
+     &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
+# ifdef MASKING
+     &                     GRID(ng) % rmask(LBi,LBj),                   &
+# endif
+     &                     WAVEP(ng) % ct(LBi,LBj,1))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idACct)), tHISindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+!      END IF
+
+#endif
 #ifdef WET_DRY
 !
 !  Write out wet mask at RHO-points.
@@ -1947,6 +2045,118 @@
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWdir)), tHISindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+#endif
+#ifdef SWAN_COUPLING
+!
+!  Write out wind-induced wave surface period.
+!
+      IF (Hout(idWptp,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, ncHISid(ng), hisVid(idWptp,ng),    &
+     &                     tHISindx(ng), gtype,                         &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask(LBi,LBj),                   &
+# endif
+     &                     FORCES(ng) % Pwave_top(LBi,LBj))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idWptp)), tHISindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out wind-induced wave bottom period.
+!
+      IF (Hout(idWpbt,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, ncHISid(ng), hisVid(idWpbt,ng),    &
+     &                     tHISindx(ng), gtype,                         &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask(LBi,LBj),                   &
+# endif
+     &                     FORCES(ng) % Pwave_bot(LBi,LBj))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idWpbt)), tHISindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out wind-induced bottom orbital velocity.
+!
+      IF (Hout(idWorb,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, ncHISid(ng), hisVid(idWorb,ng),    &
+     &                     tHISindx(ng), gtype,                         &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask(LBi,LBj),                   &
+# endif
+     &                     FORCES(ng) % Ub_swan(LBi,LBj))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idWorb)), tHISindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out wind-induced wave dissipation.
+!
+      IF (Hout(idWdis,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, ncHISid(ng), hisVid(idWdis,ng),    &
+     &                     tHISindx(ng), gtype,                         &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask(LBi,LBj),                   &
+# endif
+     &                     FORCES(ng) % Wave_dissip(LBi,LBj))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idWdis)), tHISindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out wind-induced wave breaking.
+!
+      IF (Hout(idWbrk,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, ncHISid(ng), hisVid(idWbrk,ng),    &
+     &                     tHISindx(ng), gtype,                         &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask(LBi,LBj),                   &
+# endif
+     &                     FORCES(ng) % Wave_break(LBi,LBj))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idWbrk)), tHISindx(ng)
           END IF
           exit_flag=3
           ioerror=status

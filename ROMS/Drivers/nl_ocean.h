@@ -51,7 +51,7 @@
 #ifdef WAVES_OCEAN
       USE ocean_coupler_mod, ONLY : initialize_ocn2wav_coupling
 #endif
-#ifdef INWAVE
+#ifdef INWAVE_COUPLING
       USE driver_inwave_mod, ONLY : inwave_init
 #endif
 !
@@ -121,7 +121,7 @@
 !  Allocate and initialize modules variables.
 !
         CALL mod_arrays (allocate_vars)
-
+!
 #if defined MCT_LIB && (defined AIR_OCEAN || defined WAVES_OCEAN)
 !
 !  Initialize coupling streams between model(s).
@@ -154,10 +154,10 @@
         CALL mpi_barrier(OCN_COMM_WORLD, MyError)
 #endif
       END DO
-#ifdef INWAVE
-      DO ng=1,Ngrids
-        CALL inwave_initial (ng)
-      END DO
+#ifdef INWAVE_COUPLING
+        DO ng=1,Ngrids
+	CALL inwave_init (ng, TILE)
+        END DO
 #endif
 !
 !  Initialize run or ensemble counter.
@@ -223,6 +223,9 @@
 #endif
       USE mod_iounits
       USE mod_scalars
+#ifdef INWAVE_COUPLING
+      USE driver_inwave_mod, ONLY : inwave_run
+#endif
 !
 !  Imported variable declarations.
 !
@@ -335,6 +338,9 @@
 !         CALL main2d (ng)
           CALL main2d
 # endif
+#ifdef INWAVE_COUPLING
+          CALL inwave_run (ng)
+#endif
           IF (exit_flag.ne.NoError) THEN
             IF (Master) THEN
               WRITE (stdout,'(/,a,i3,/)') Rerror(exit_flag), exit_flag

@@ -10,7 +10,7 @@
 !    Woods Hole, MA, USA                                               !
 !    (jcwarner@usgs.gov)                                               !
 !
-!   Maitane .......
+!   Maitane Olabarrieta
 !                                                                      !
 !                                                                      !
 !=======================================================================
@@ -92,6 +92,7 @@
 !  Terminate ocean model execution: flush and close all IO files.
 !-----------------------------------------------------------------------
 !
+      CALL inwave_finalize
       CALL ROMS_finalize
 #if defined DISTRIBUTE && defined MPI
       CALL mpi_finalize (MyError)

@@ -649,6 +649,9 @@
       USE mod_storage
 #endif
       USE mod_strings
+#ifdef INWAVE_COUPLING
+      USE mod_inwave_params
+#endif
 !
       implicit none
 !
@@ -744,6 +747,17 @@
                 STOP
               END IF
             END DO
+#ifdef INWAVE_COUPLING
+          ELSE IF (TRIM(KeyWord).eq.'ND') THEN
+            Npts=load_i(Nval, Rval, Ngrids, ND)
+            DO ng=1,Ngrids
+              IF (ND(ng).lt.0) THEN
+                WRITE (out,300) 'ND', ng,                               &
+     &                          'must be greater than zero.'
+                STOP
+              END IF
+            END DO
+#endif
 #if defined SEDIMENT && defined SOLVE3D
           ELSE IF (TRIM(KeyWord).eq.'Nbed') THEN
             Npts=load_i(Nval, Rval, 1, Nbed)
@@ -1748,6 +1762,13 @@
               BRYname(Nval)(i:i)=blank
             END DO
             BRYname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
+#ifdef INWAVE_COUPLING
+          ELSE IF (TRIM(KeyWord).eq.'ENGNAME') THEN
+            DO i=1,LEN(ENGname(Nval))
+              ENGname(Nval)(i:i)=blank
+            END DO
+            ENGname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
+#endif
           ELSE IF (TRIM(KeyWord).eq.'FWDNAME') THEN
             DO i=1,LEN(FWDname(Nval))
               FWDname(Nval)(i:i)=blank

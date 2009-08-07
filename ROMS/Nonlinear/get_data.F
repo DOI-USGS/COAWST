@@ -511,7 +511,6 @@
 #  endif
 # endif
 #endif
-
 #ifdef OBC_DATA
 # ifdef REFINED_GRID
       IF (ng.eq.1) THEN

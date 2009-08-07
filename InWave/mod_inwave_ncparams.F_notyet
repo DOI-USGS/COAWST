@@ -1,0 +1,145 @@
+#include "cppdefs.h"
+      MODULE mod_inwave_ncparams
+!
+!svn $Id: mod_ncparam.F 746 2008-09-10 04:09:44Z jcwarner $
+!================================================== Hernan G. Arango ===
+!                                                                      !
+!  This MODULE contains all the variables associated with input and    !
+!  output  NetCDF  files.  The IO model is very generic and easy to    !
+!  change or expand.  The NetCDF files can be in any language.  All    !
+!  the IO information is managed using the following variables:        !
+!                                                                      !
+!  Vname      Input/output variables names and attributes:             !
+!               Vname(1,*)  => field variable name.                    !
+!               Vname(2,*)  => long-name attribute.                    !
+!               Vname(3,*)  => units attribute.                        !
+!               Vname(4,*)  => field type attribute.                   !
+!               Vname(5,*)  => associated time variable name.          !
+!  Tname      Input/output associated time variables names.            !
+!                                                                      !
+!  Cinfo      Input/output file names associated with each field       !
+!                                                                      !
+!  Linfo      Input/output fields logical information:                 !
+!               Linfo(1,*)  => switch indicating grided data.          !
+!               Linfo(2,*)  => switch indicating time cycling.         !
+!               Linfo(3,*)  => switch indicating only one-time         !
+!                              record available.                       !
+!               Linfo(4,*)  => switch indication special record        !
+!                              processing (like tides)                 !
+!                                                                      !
+!  Iinfo      Input/output fields integer information:                 !
+!               Iinfo(1,*)  => variable grid type.                     !
+!               Iinfo(2,*)  => field variable NetCDF ID.               !
+!               Iinfo(3,*)  => associated time variable NetCDF ID.     !
+!               Iinfo(4,*)  => number of time records.                 !
+!               Iinfo(5,*)  => size of first  spatial dimension.       !
+!               Iinfo(6,*)  => size of second spatial dimension.       !
+!               Iinfo(7,*)  => size of third  spatial dimension.       !
+!               Iinfo(8,*)  => rolling two-time levels index.          !
+!               Iinfo(9,*)  => latest processed time record .          !
+!                                                                      !
+!  Finfo      Input/output field floating-point information:           !
+!               Finfo(1,*)  => Starting time (days) of data.           !
+!               Finfo(2,*)  => Ending time (days) of data.             !
+!               Finfo(3,*)  => Data time lower bound (days) enclosing  !
+!                                model starting time.                  !
+!               Finfo(4,*)  => Data time upper bound (days) enclosing  !
+!                                model starting time.                  !
+!               Finfo(5,*)  => length (days) of time cycling.          !
+!               Finfo(6,*)  => Scale to convert time to day units.     !
+!               Finfo(7,*)  => latest monotonic time (sec).            !
+!               Finfo(8,*)  => minimum value for current data.         !
+!               Finfo(9,*)  => maximum value for current data.         !
+!  Fscale     Scale to convert input data to model units.              !
+!  Fpoint     Latest two-time records of input point data.             !
+!  Tintrp     Time (sec) of latest field snapshots used for            !
+!               interpolation.                                         !
+!  Vtime      Latest two-time values of processed input data.          !
+!                                                                      !
+!=======================================================================
+!
+!       USE mod_param        
+
+        implicit none
+!
+        integer  :: idACbc(4)      ! 3D U-velocity boundary conditions
+
+      CONTAINS
+
+      SUBROUTINE initialize_inwave_ncparams
+!
+!=======================================================================
+!                                                                      !
+!  This routine allocates and initializes all variables in module      !
+!  "mod_ncparam" for all nested grids.                                 !
+!                                                                      !
+!=======================================================================
+!
+!       USE mod_parallel
+
+!
+!-----------------------------------------------------------------------
+!  Define names of variables for Input/Output NetCDF files.
+!-----------------------------------------------------------------------
+!
+!  Open input variable information file.
+!
+        OPEN (inp, FILE=TRIM(varname), FORM='formatted', STATUS='old',  &
+     &        ERR=10)
+        GOTO 20
+  10    IF (Master) WRITE(stdout,50) TRIM(varname)
+        STOP
+  20    CONTINUE
+!
+!  Read in variable information.  Ignore blank and comment [char(33)=!]
+!  input lines.
+!
+        varid=0
+        DO WHILE (.TRUE.)
+          READ (inp,*,ERR=30,END=40) Vinfo(1)
+          Lvar=LEN_TRIM(Vinfo(1))
+!
+!  Assign identification indices.
+!
+            load=.TRUE.
+            varid=varid+1
+            SELECT CASE (TRIM(ADJUSTL(Vinfo(6))))
+
+              CASE ('idACbc(iwest)')
+                idACbc(iwest)=varid
+              CASE ('idACbc(ieast)')
+                idACbc(ieast)=varid
+              CASE ('idACbc(isouth)')
+                idACbc(isouth)=varid
+              CASE ('idAcbc(inorth)')
+                idACbc(inorth)=varid
+            END SELECT
+!
+!  Load variable data into information arrays.
+!
+            IF (load) THEN
+              load=.FALSE.
+              IF (varid.gt.MV) THEN
+                WRITE (stdout,60) MV, varid
+                STOP
+              END IF
+              DO i=1,5
+                Vname(i,varid)=TRIM(ADJUSTL(Vinfo(i)))
+              END DO            
+              DO ng=1,Ngrids
+                Iinfo(1,varid,ng)=gtype
+                Fscale(varid,ng)=scale
+              END DO
+          ELSE
+              varid=varid-1
+          END IF
+        END DO
+        GOTO 40
+  30    WRITE (stdout,80) TRIM(ADJUSTL(Vinfo(1)))
+        STOP
+  40    CLOSE (inp)
+
+        RETURN
+        END SUBROUTINE initialize_inwave_ncparams
+
+      END MODULE mod_inwave_ncparams

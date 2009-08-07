@@ -15,9 +15,9 @@
 clear all
 close all
 
-cd 'F:\MAITANE\PROJECTS\INWAVE\matlab'
+%cd 'F:\MAITANE\PROJECTS\INWAVE\matlab'
 
-ncname='energy.nc';
+ncname='energy3.nc';
 
 
 % S E N W
@@ -48,18 +48,22 @@ result = redef(nc);
 %  Read first energy file
 %
 
-file=strcat('F:\MAITANE\PROJECTS\INWAVE\InWave_Boundary\dir1.dat');
-energy=load(file);
-time=[0:1:length(energy)-1]';
+if(0)
+  file=strcat('F:\MAITANE\PROJECTS\INWAVE\InWave_Boundary\dir1.dat');
+  energy=load(file);
+  time=[0:1:length(energy)-1]';
 
-file=strcat('F:\MAITANE\PROJECTS\INWAVE\InWave_Boundary\Directions.dat');
-dir1=load(file);
-dir1=dir1-90;
-dum=find(dir1<=0);
-dir1(dum)=360+dir1(dum);
-dir=dir1(64:74)
+  file=strcat('F:\MAITANE\PROJECTS\INWAVE\InWave_Boundary\Directions.dat');
+  dir1=load(file);
+  dir1=dir1-90; 
+  dum=find(dir1<=0);
+  dir1(dum)=360+dir1(dum);
+  dir=dir1(64:74)
+end
 
-    
+ncload energy.nc
+dir=energy_angle;
+time=ocean_time;
 %
 %  Create dimensions
 %
@@ -68,18 +72,18 @@ nc('xi_u') = L;
 nc('xi_rho') = Lp;
 nc('eta_v') = M;
 nc('eta_rho') = Mp;
-nc('ocean_time') = length(time);
+nc('energy_time') = length(time);
 nc('energy_angle') = Nangle;
 
 %
 %  Create variables and attributes
 %
 
-nc{'ocean_time'} = ncdouble('ocean_time') ;
-nc{'ocean_time'}.long_name = ncchar('time for energy envelope');
-nc{'ocean_time'}.long_name = 'time for energy envelope';
-nc{'ocean_time'}.units = ncchar('seconds');
-nc{'ocean_time'}.units = 'seconds';
+nc{'energy_time'} = ncdouble('energy_time') ;
+nc{'energy_time'}.long_name = ncchar('time for energy envelope');
+nc{'energy_time'}.long_name = 'time for energy envelope';
+nc{'energy_time'}.units = ncchar('seconds');
+nc{'energy_time'}.units = 'seconds';
 
 nc{'energy_angle'} = ncdouble('energy_angle') ;
 nc{'energy_angle'}.long_name = ncchar('direction respect to the north of the bin');
@@ -129,11 +133,11 @@ if obc(4)==1
 %
 %   Western boundary
 %
-  nc{'energy_west'} = ncdouble('energy_angle','ocean_time','eta_rho') ;
-  nc{'energy_west'}.long_name = ncchar('western boundary wave energy envelope');
-  nc{'energy_west'}.long_name = 'western boundary wave energy envelope';
-  nc{'energy_west'}.units = ncchar('Joules');
-  nc{'energy_west'}.units = 'Joules';
+  nc{'AC_west'} = ncdouble('energy_time','energy_angle','eta_rho') ;
+  nc{'AC_west'}.long_name = ncchar('western boundary wave energy envelope');
+  nc{'AC_west'}.long_name = 'western boundary wave energy envelope';
+  nc{'AC_west'}.units = ncchar('Joules');
+  nc{'AC_west'}.units = 'Joules';
 
 end
 %
@@ -158,11 +162,11 @@ result = endef(nc);
 % Write variables
 %
 
-nc{'ocean_time'}(:) =  time; 
+nc{'energy_time'}(:) =  time; 
 nc{'energy_angle'}(:) =  dir; 
     
 %for j=1:Nangle
-    
+if(0)    
 for j=64:74
     
     j1=j-63;
@@ -203,9 +207,16 @@ for j=64:74
     end
     
 end
+end
+
+
+    if obc(4)==1
+      for i=1:length(dir)
+        nc{'AC_west'}(:,i,:) =  energy_west(i,:,:); 
+      end
+    end
 
 close(nc)
 
 return
-
 

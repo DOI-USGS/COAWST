@@ -45,6 +45,7 @@
 !                DimIDs(27) => Number of EcoSim DOM groups.            !
 !                DimIDs(28) => Number of EcoSim fecal groups.          !
 !                DimIDs(29) => Number of state variables.              !
+!                DimIDs(30) => Number of wave directions.              !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
@@ -65,7 +66,12 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, ncid
+#ifdef INWAVE_COUPLING
+!  PLEASE MAKE THIS A VARIABLE
+      integer, intent(in) :: DimIDs(30)
+#else
       integer, intent(in) :: DimIDs(29)
+#endif
       character (*), intent(in) :: ncname
 !
 !  Local variable declarations.

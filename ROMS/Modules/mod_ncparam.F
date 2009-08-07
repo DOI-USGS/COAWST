@@ -311,7 +311,6 @@
         integer  :: idWvel        ! true vertical velocity
         integer  :: idZads        ! Free-surface adjoint sensitivity
         integer  :: idZavg        ! avg of free-surface
-
         integer, allocatable :: idRtrc(:)    ! river runoff for tracers
         integer, allocatable :: idTads(:)    ! tracers adjoint sentivity
         integer, allocatable :: idTbot(:)    ! bottom flux for tracers
@@ -326,6 +325,13 @@
         integer  :: idV2bc(4)      ! 2D V-velocity boundary conditions
         integer  :: idV3bc(4)      ! 3D V-velocity boundary conditions
         integer  :: idZbry(4)      ! free-surface boundary conditions
+#ifdef INWAVE_COUPLING
+        integer  :: idACbc(4)      ! wave energy boundary condition
+        integer  :: idACen         ! wave energy
+        integer  :: idACcx         ! wave energy
+        integer  :: idACcy         ! wave energy
+        integer  :: idACct         ! wave energy
+#endif
 !
 !  Time-averaged quadratic terms IDs.
 !
@@ -1210,6 +1216,24 @@
                 idRtrc(itemp)=varid
               CASE ('idRtrc(isalt)')
                 idRtrc(isalt)=varid
+#ifdef INWAVE_COUPLING
+              CASE ('idACen')
+                idACen=varid
+              CASE ('idACcx')
+                idACcx=varid
+              CASE ('idACcy')
+                idACcy=varid
+              CASE ('idACct')
+                idACct=varid
+              CASE ('idACbc(iwest)')
+                idACbc(iwest)=varid
+              CASE ('idACbc(ieast)')
+                idACbc(ieast)=varid
+              CASE ('idACbc(isouth)')
+                idACbc(isouth)=varid
+              CASE ('idAcbc(inorth)')
+                idACbc(inorth)=varid
+#endif
 #if defined NPZD_FRANKS || defined NPZD_POWELL
               CASE ('idRtrc(iNO3_)')
                 idRtrc(iNO3_)=varid

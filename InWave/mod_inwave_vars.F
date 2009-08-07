@@ -8,9 +8,12 @@
 !  cx        wave celerity xi direction                                !
 !  cy        wave celerity eta direction                               !
 !  ct        wave celerity direction direction                         !
+!  pd        wave direction bins, per degrees                          !
+!  WD        wave directions                                           !
 !                                                                      !
 !=======================================================================
 !
+        USE mod_kinds
         implicit none
 
         TYPE T_INWAVEP
@@ -23,6 +26,15 @@
         END TYPE T_INWAVEP
 
         TYPE (T_INWAVEP), allocatable :: WAVEP(:)
+!
+        TYPE T_INWAVEG
+
+          real(r8), pointer :: WD(:)
+          real(r8), pointer :: pd(:)
+
+        END TYPE T_INWAVEG
+
+        TYPE (T_INWAVEG), allocatable :: WAVEG(:)
 
       CONTAINS
 
@@ -46,6 +58,7 @@
 !-----------------------------------------------------------------------
 !
       IF (ng.eq.1) allocate ( WAVEP(Ngrids) )
+      IF (ng.eq.1) allocate ( WAVEG(Ngrids) )
 !
 !  Nonlinear model state.
 !
@@ -53,13 +66,14 @@
       allocate ( WAVEP(ng) % cx(LBi:UBi,LBj:UBj,ND(ng)) )
       allocate ( WAVEP(ng) % cy(LBi:UBi,LBj:UBj,ND(ng)) )
       allocate ( WAVEP(ng) % ct(LBi:UBi,LBj:UBj,ND(ng)) )
-
-      END IF
+!
+      allocate ( WAVEG(ng) % WD(ND(ng)) )
+      allocate ( WAVEG(ng) % pd(ND(ng)) )
 
       RETURN
       END SUBROUTINE allocate_inwave_vars
 
-      SUBROUTINE initialize_inwave_vars (ng, tile, model)
+      SUBROUTINE initialize_inwave_vars (ng, tile)
 !
 !=======================================================================
 !                                                                      !
@@ -77,7 +91,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile, model
+      integer, intent(in) :: ng, tile
 !
 !  Local variable declarations.
 !
@@ -135,6 +149,11 @@
             WAVEP(ng) % ct(i,j,d) = IniVal
           END DO
         END DO
+      END DO
+!
+      DO d=1,ND(ng)
+        WAVEG(ng) % pd(d) = IniVal
+        WAVEG(ng) % WD(d) = IniVal
       END DO
 
       RETURN
