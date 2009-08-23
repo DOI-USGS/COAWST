@@ -348,11 +348,11 @@ CONTAINS
    INTEGER :: last_step
    last_step=0
    CALL       wrf_debug ( 100 , 'wrf: calling integrate' )
-   CALL integrate ( head_grid )
+   CALL integrate ( head_grid, TI_ATM_OCN, last_step )
    CALL       wrf_debug ( 100 , 'wrf: back from integrate' )
 #else
    CALL       wrf_debug ( 100 , 'wrf: calling integrate' )
-   CALL integrate ( head_grid, TI_ATM_OCN, last_step )
+   CALL integrate ( head_grid )
    CALL       wrf_debug ( 100 , 'wrf: back from integrate' )
 #endif
 
@@ -401,12 +401,20 @@ CONTAINS
    END SUBROUTINE wrf_finalize
 
 
+#ifdef WRF_COUPLING
+   SUBROUTINE wrf_dfi( TI_ATM_OCN )
+!<DESCRIPTION>
+! Runs a digital filter initialization procedure.
+!</DESCRIPTION>
+      IMPLICIT NONE
+      REAL, INTENT(in) :: TI_ATM_OCN
+#else
    SUBROUTINE wrf_dfi()
 !<DESCRIPTION>
 ! Runs a digital filter initialization procedure.
 !</DESCRIPTION>
       IMPLICIT NONE
-
+#endif
 #if (EM_CORE == 1)
       ! Initialization procedure
       IF ( config_flags%dfi_opt .NE. DFI_NODFI ) THEN
@@ -421,7 +429,11 @@ CONTAINS
                CALL wrf_message(TRIM(wrf_err_message))
    
                CALL wrf_dfi_fwd_init()
+#ifdef WRF_COUPLING
+               CALL wrf_run( TI_ATM_OCN )
+#else
                CALL wrf_run()
+#endif
    
                CALL wrf_dfi_array_reset()
    
@@ -439,13 +451,21 @@ CONTAINS
                CALL wrf_message(TRIM(wrf_err_message))
    
                CALL wrf_dfi_bck_init()
+#ifdef WRF_COUPLING
+               CALL wrf_run( TI_ATM_OCN )
+#else
                CALL wrf_run()
+#endif
    
                wrf_err_message = '   Filtering forward in time'
                CALL wrf_message(TRIM(wrf_err_message))
    
                CALL wrf_dfi_fwd_init()
+#ifdef WRF_COUPLING
+               CALL wrf_run( TI_ATM_OCN )
+#else
                CALL wrf_run()
+#endif
    
                CALL wrf_dfi_array_reset()
    
@@ -463,7 +483,11 @@ CONTAINS
                CALL wrf_message(TRIM(wrf_err_message))
    
                CALL wrf_dfi_bck_init()
+#ifdef WRF_COUPLING
+               CALL wrf_run( TI_ATM_OCN )
+#else
                CALL wrf_run()
+#endif
    
                CALL wrf_dfi_array_reset()
    
@@ -471,7 +495,11 @@ CONTAINS
                CALL wrf_message(TRIM(wrf_err_message))
    
                CALL wrf_dfi_fwd_init()
+#ifdef WRF_COUPLING
+               CALL wrf_run( TI_ATM_OCN )
+#else
                CALL wrf_run()
+#endif
    
                CALL wrf_dfi_array_reset()
    

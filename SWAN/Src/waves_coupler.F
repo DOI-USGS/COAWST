@@ -284,7 +284,7 @@
 !          deallocate ( dst_grid_imask )
 !        END IF
       END IF
-      CALL mpi_bcast(dst_grid_dims, 2, MPI_INTEGER, MyMasterswan,       &
+      CALL mpi_bcast(dst_grid_dims, 2, MPI_INTEGER, 0,                  &
      &               WAV_COMM_WORLD, MyError)
 !      END IF
 #endif
@@ -408,7 +408,7 @@
         call SparseMatrixPlus_init(A2WMatPlus, sMatA,                   &
      &                             GSMapWRF,                            &
      &                             GlobalSegMap_G(ng)%GSMapSWAN, Xonly, &
-     &                             MASTER, WAV_COMM_WORLD, WAVid)
+     &                             0, WAV_COMM_WORLD, WAVid)
         call SparseMatrix_clean(sMatA)
 !
 ! Create Wave sparse matrix plus for interpolation.
@@ -417,7 +417,7 @@
          call SparseMatrixPlus_init(W2AMatPlus, sMatW,                  &
      &                              GlobalSegMap_G(ng)%GSMapSWAN,       &
      &                              GSMapWRF, Xonly,                    &
-     &                              MASTER, WAV_COMM_WORLD, WAVid)
+     &                              0, WAV_COMM_WORLD, WAVid)
         call SparseMatrix_clean(sMatW)
 #endif
 !

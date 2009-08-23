@@ -213,8 +213,8 @@
         start (jc)=j*(Lm(ng)+2)+IstrR+1
         length(jc)=(IendR-IstrR+1)
       END DO
-      CALL GlobalSegMap_init (GSMapROMS, start, length, 0,              &
-     &                        OCN_COMM_WORLD, OCNid)
+      CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapROMS,             &
+     &                        start, length, 0, OCN_COMM_WORLD, OCNid)
 !
 !  Deallocate working arrays.
 !
@@ -243,8 +243,8 @@
         start (jc)=j*(Lm(ng)+2)+IstrR+1
         length(jc)=(IendR-IstrR+1)
       END DO
-      CALL GlobalSegMap_init (GSMapROMS, start, length, 0,              &
-     &                        OCN_COMM_WORLD, OCNid)
+      CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapROMS,             &
+     &                        start, length, 0, OCN_COMM_WORLD, OCNid)
 !
 !  Deallocate working arrays.
 !
@@ -288,7 +288,8 @@
 ! Specify matrix decomposition to be by row.
 !
         call SparseMatrixPlus_init(A2OMatPlus, sMatA,                  &
-     &                             GSMapWRF, GSMapROMS, Xonly,         &
+     &                             GSMapWRF,                           &
+     &                             GlobalSegMap_G(ng)%GSMapROMS, Xonly,&
      &                             MyMaster, OCN_COMM_WORLD, OCNid)
         call SparseMatrix_clean(sMatA)
 !
@@ -296,7 +297,8 @@
 ! Specify matrix decomposition to be by row.
 !
          call SparseMatrixPlus_init(O2AMatPlus, sMatO,                 &
-     &                              GSMapROMS, GSMapWRF, Xonly,        &
+     &                              GlobalSegMap_G(ng)%GSMapROMS,      &
+     &                              GSMapWRF, Xonly,                   &
      &                              MyMaster, OCN_COMM_WORLD, OCNid)
         call SparseMatrix_clean(sMatO)
 #endif
@@ -329,9 +331,11 @@
       CALL AttrVect_init (atm2ocn_AV2, rList=TRIM(avstring),lsize=Asize)
       CALL AttrVect_zero (atm2ocn_AV2)
 !
-      Asize=GlobalSegMap_lsize(GSMapROMS, OCN_COMM_WORLD)
-      CALL AttrVect_init (atm2ocn_AV, rList=TRIM(avstring),lsize=Asize)
-      CALL AttrVect_zero (atm2ocn_AV)
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
+     &                         OCN_COMM_WORLD)
+      CALL AttrVect_init (AttrVect_G(ng)%atm2ocn_AV,                    &
+     &                    rList=TRIM(avstring),lsize=Asize)
+      CALL AttrVect_zero (AttrVect_G(ng)%atm2ocn_AV)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
@@ -340,31 +344,38 @@
       CALL AttrVect_init (ocn2atm_AV2,rList="SST",lsize=Asize)
       CALL AttrVect_zero (ocn2atm_AV2)
 !
-      Asize=GlobalSegMap_lsize(GSmapROMS, OCN_COMM_WORLD)
-      CALL AttrVect_init (ocn2atm_AV,rList="SST",lsize=Asize)
-      CALL AttrVect_zero (ocn2atm_AV)
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSmapROMS,            &
+     &                         OCN_COMM_WORLD)
+      CALL AttrVect_init (AttrVect_G(ng)%ocn2atm_AV,rList="SST",        &
+     &                    lsize=Asize)
+      CALL AttrVect_zero (AttrVect_G(ng)%ocn2atm_AV)
 !
 !  Initialize a router to the wave model component.
 !
-      CALL Router_init (ATMid, GSMapWRF, OCN_COMM_WORLD, ROMStoWRF)
+      CALL Router_init (ATMid, GSMapWRF, OCN_COMM_WORLD,                &
+     &                  Router_G(ng)%ROMStoWRF)
 #else
 !
 !  Initialize attribute vector holding the export data code strings of
 !  the atmosphere model. The Asize is the number of grid point on this
 !  processor.
 !
-      Asize=GlobalSegMap_lsize(GSMapROMS, OCN_COMM_WORLD)
-      CALL AttrVect_init (atm2ocn_AV, rList=TRIM(avstring),lsize=Asize)
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
+     &                         OCN_COMM_WORLD)
+      CALL AttrVect_init (AttrVect_G(ng)%atm2ocn_AV,                    &
+     &                    rList=TRIM(avstring),lsize=Asize)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
-      CALL AttrVect_init (ocn2atm_AV, rList="SST",lsize=Asize)
-      CALL AttrVect_zero (ocn2atm_AV)
+      CALL AttrVect_init (AttrVect_G(ng)%ocn2atm_AV, rList="SST",       &
+     &                    lsize=Asize)
+      CALL AttrVect_zero (AttrVect_G(ng)%ocn2atm_AV)
 !
 !  Initialize a router to the atmosphere model component.
 !
-      CALL Router_init (ATMid, GSMapROMS, OCN_COMM_WORLD, ROMStoWRF)
+      CALL Router_init (ATMid, GlobalSegMap_G(ng)%GSMapROMS,            &
+     &                  OCN_COMM_WORLD, Router_G(ng)%ROMStoWRF)
 #endif
 
       RETURN
@@ -530,7 +541,8 @@
 !  Allocate communications array.
 !-----------------------------------------------------------------------
 !
-      Asize=GlobalSegMap_lsize (GSMapROMS, OCN_COMM_WORLD)
+      Asize=GlobalSegMap_lsize (GlobalSegMap_G(ng)%GSMapROMS,         &
+     &                          OCN_COMM_WORLD)
       allocate ( A(Asize) )
       A=0.0_r8
 !
@@ -544,10 +556,12 @@
 !
       CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
 #ifdef MCT_INTERP_OC2AT
-      CALL MCT_Recv (atm2ocn_AV2, ROMStoWRF, MyError)
-      CALL MCT_MatVecMul(atm2ocn_AV2, A2OMatPlus, atm2ocn_AV)
+      CALL MCT_Recv (atm2ocn_AV2, Router_G(ng)%ROMStoWRF, MyError)
+      CALL MCT_MatVecMul(atm2ocn_AV2, A2OMatPlus,                       &
+     &                   AttrVect_G(ng)%atm2ocn_AV)
 #else
-      CALL MCT_Recv (atm2ocn_AV, ROMStoWRF, MyError)
+      CALL MCT_Recv (AttrVect_G(ng)%atm2ocn_AV, Router_G(ng)%ROMStoWRF, &
+     &               MyError)
 #endif
       IF (MyError.ne.0) THEN
         IF (Master) THEN
@@ -572,7 +586,8 @@
 !  Surface atmospheric pressure  (mb).
 !  Need to scale PSFC in Pa to mb.
 !
-      CALL AttrVect_exportRAttr (atm2ocn_AV, "PSFC", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "PSFC",     &
+     &                           A, Asize)
       ij=0
       cff=0.01_r8
       DO j=JstrT,JendT
@@ -588,7 +603,8 @@
 !  Surface air relative humidity (-)
 !  Convert RELH from percent to fraction.
 !
-      CALL AttrVect_exportRAttr (atm2ocn_AV, "RELH", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "RELH",     &
+     &                           A, Asize)
       ij=0
       cff=0.01_r8
       DO j=JstrT,JendT
@@ -600,7 +616,8 @@
 !
 !  Surface 2m air temperature    (degC)
 !
-      CALL AttrVect_exportRAttr (atm2ocn_AV, "T2", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "T2",       &
+     &                           A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
@@ -613,7 +630,8 @@
 !
 !  U-Wind speed at 10 m          (m/s)
 !
-      CALL AttrVect_exportRAttr (atm2ocn_AV, "U10", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "U10",      &
+     &                           A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
@@ -624,7 +642,8 @@
 !
 !  V-Wind speed at 10 m          (m/s)
 !
-      CALL AttrVect_exportRAttr (atm2ocn_AV, "V10", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "V10",      &
+     &                           A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
@@ -653,7 +672,8 @@
 !
 !  Cloud fraction                (percent/100, so 0-1)
 !
-      CALL AttrVect_exportRAttr (atm2ocn_AV, "CLDFRA", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "CLDFRA",   &
+     &                           A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
@@ -666,7 +686,8 @@
 !
 !  Precipitation                 (kg/m2/s)
 !
-      CALL AttrVect_exportRAttr (atm2ocn_AV, "RAIN", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "RAIN",     &
+     &                           A, Asize)
       cff=rho0
       ij=0
       DO j=JstrT,JendT
@@ -678,7 +699,8 @@
 !
 !  Short wave radiation          (Celsius m/s)
 !
-      CALL AttrVect_exportRAttr (atm2ocn_AV, "GSW", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "GSW",      &
+     &                           A, Asize)
       cff=1.0_r8/(rho0*Cp)
       ij=0
       DO j=JstrT,JendT
@@ -690,7 +712,8 @@
 !
 !  Long wave radiation          (Celsius m/s)
 !
-      CALL AttrVect_exportRAttr (atm2ocn_AV, "GLW", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "GLW",      &
+     &                           A, Asize)
       cff=1.0_r8/(rho0*Cp)
       ij=0
       DO j=JstrT,JendT
@@ -707,7 +730,8 @@
 !
 !  Latent heat flux            (W/m^2)
 !
-      CALL AttrVect_exportRAttr (atm2ocn_AV, "LH", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "LH",       &
+     &                           A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
@@ -718,7 +742,8 @@
 !
 !  Sensible heat flux            (W/m^2)
 !
-      CALL AttrVect_exportRAttr (atm2ocn_AV, "HFX", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "HFX",      &
+     &                           A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
@@ -732,7 +757,8 @@
 !
 !  Short wave radiation          (Celsius m/s)
 !
-      CALL AttrVect_exportRAttr (atm2ocn_AV, "SWDOWN", A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "SWDOWN",   &
+     &                           A, Asize)
       cff=1.0_r8/(rho0*Cp)
       ij=0
       DO j=JstrT,JendT
@@ -907,15 +933,18 @@
 #endif
         END DO
       END DO
-      CALL AttrVect_importRAttr (ocn2atm_AV, "SST", A, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2atm_AV, "SST", A, &
+     &                             Asize)
 !
 !  Send ocean fields to atmosphere model.
 !
 #ifdef MCT_INTERP_OC2AT
-      call MCT_MatVecMul(ocn2atm_AV,O2AMatPlus,ocn2atm_AV2)
-      CALL MCT_Send (ocn2atm_AV2, ROMStoWRF, MyError)
+      CALL MCT_MatVecMul(AttrVect_G(ng)%ocn2atm_AV,O2AMatPlus,        &
+     &                     ocn2atm_AV2)
+      CALL MCT_Send (ocn2atm_AV2, Router_G(ng)%ROMStoWRF, MyError)
 #else
-      CALL MCT_Send (ocn2atm_AV, ROMStoWRF, MyError)
+      CALL MCT_Send (AttrVect_G(ng)%ocn2atm_AV, Router_G(ng)%ROMStoWRF, &
+     &               MyError)
 #endif
       IF (MyError.ne.0) THEN
         IF (Master) THEN
@@ -948,19 +977,21 @@
 !  streams.                                                             !
 !                                                                       !
 !========================================================================
+      USE mod_scalars
 !
 !  Local variable declarations.
 !
-      integer :: MyError
+      integer :: ng, MyError
 !
 !-----------------------------------------------------------------------
 !  Deallocate MCT environment.
 !-----------------------------------------------------------------------
 !
-      CALL Router_clean (ROMStoWRF, MyError)
-      CALL AttrVect_clean (ocn2atm_AV, MyError)
-      CALL GlobalSegMap_clean (GSMapROMS, MyError)
-
+      DO ng=1,Ngrids
+        CALL Router_clean (Router_G(ng)%ROMStoWRF, MyError)
+        CALL AttrVect_clean (AttrVect_G(ng)%ocn2atm_AV, MyError)
+        CALL GlobalSegMap_clean (GlobalSegMap_G(ng)%GSMapROMS, MyError)
+      END DO
       RETURN
 
       END SUBROUTINE finalize_ocn2atm_coupling

@@ -1267,13 +1267,16 @@ CONTAINS
 
    SUBROUTINE split_communicator
 #ifndef STUBMPI
+# ifdef WRF_COUPLING
+      USE module_parallel
+# endif
       IMPLICIT NONE
       INCLUDE 'mpif.h'
       LOGICAL mpi_inited
       INTEGER mpi_comm_here, mpi_comm_local, comdup,  mytask, ntasks, ierr, io_status
-#  if defined(_OPENMP) && defined(MPI2_THREAD_SUPPORT)
+# if defined(_OPENMP) && defined(MPI2_THREAD_SUPPORT)
       INTEGER thread_support_provided, thread_support_requested
-#endif
+# endif
       INTEGER i, j
       INTEGER, ALLOCATABLE :: icolor(:)
       INTEGER tasks_per_split
@@ -1293,6 +1296,11 @@ CONTAINS
         CALL wrf_set_dm_communicator( MPI_COMM_WORLD )
         CALL wrf_termio_dup
       ENDIF
+# ifdef WRF_COUPLING
+      mpi_comm_here=MyComm
+      ATM_COMM_WORLD=MyComm
+      CALL wrf_set_dm_communicator ( ATM_COMM_WORLD )
+# endif
 #if (DA_CORE == 1)
       CALL mpi_comm_split( MPI_COMM_WORLD , 4 , 1 , mpi_comm_local, ierr )
       CALL wrf_set_dm_communicator( mpi_comm_local )
@@ -1337,20 +1345,11 @@ CONTAINS
 
    SUBROUTINE init_module_dm
 #ifndef STUBMPI
-# ifdef WRF_COUPLING
-       USE module_parallel
-# endif
       IMPLICIT NONE
       INTEGER mpi_comm_local, ierr, mytask, nproc
       INCLUDE 'mpif.h'
       LOGICAL mpi_inited
       CALL mpi_initialized( mpi_inited, ierr )
-# ifdef WRF_COUPLING
-      mpi_comm_local=MyComm
-      ATM_COMM_WORLD=MyComm
-      CALL wrf_set_dm_communicator ( ATM_COMM_WORLD )
-      CALL wrf_get_dm_communicator( mpi_comm_local )
-# else
       IF ( .NOT. mpi_inited ) THEN
 	! If MPI has not been initialized then initialize it and 
 	! make comm_world the communicator
@@ -1362,7 +1361,6 @@ CONTAINS
 	CALL wrf_set_dm_communicator ( MPI_COMM_WORLD )
       ENDIF
       CALL wrf_get_dm_communicator( mpi_comm_local )
-# endif
 #endif
    END SUBROUTINE init_module_dm
 

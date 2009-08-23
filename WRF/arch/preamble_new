@@ -78,6 +78,7 @@ ESMF_TARGET         = ESMFTARGET
 
 LIBWRFLIB = libwrflib.a
 
+MCT_LIBDIR ?= /usr/local/mct/lib
 
 #### Architecture specific settings ####
 

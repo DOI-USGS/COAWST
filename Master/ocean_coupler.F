@@ -137,7 +137,6 @@
       TYPE(SparseMatrixPlus) :: O2WMatPlus    ! Sparse matrix plus elements
 # endif
 # ifdef MCT_INTERP_OC2AT
-      TYPE(GlobalSegMap) :: GSMapROMS2        ! GloabalSegMap variables
       TYPE(GlobalSegMap) :: GSMapWRF          ! GloabalSegMap variables
       TYPE(AttrVect) :: atm2ocn_AV2           ! AttrVect variables
       TYPE(AttrVect) :: ocn2atm_AV2

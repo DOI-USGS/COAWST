@@ -19,10 +19,10 @@
 
 #define SWAN_COUPLING
 #undef  UV_CONST
-#undef  MCT_INTERP_WV2AT
-#undef  MCT_INTERP_OC2AT
+#define MCT_INTERP_WV2AT
+#define MCT_INTERP_OC2AT
 #undef  MCT_INTERP_OC2WV
-#undef  WRF_COUPLING
+#define WRF_COUPLING
 #if defined SWAN_COUPLING || defined WRF_COUPLING
 # define MCT_LIB
 #endif
@@ -58,7 +58,7 @@
 #ifdef BULK_FLUXES
 #undef LONGWAVE_OUT
 !# define LONGWAVE
-!#  define ANA_SSFLUX
+#  define ANA_SSFLUX
 #  define COARE_TAYLOR_YELLAND
 #  define EMINUSP
 #  define SOLAR_SOURCE

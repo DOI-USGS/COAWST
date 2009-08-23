@@ -425,11 +425,12 @@
       ij=0
       DO j=js,je
         DO i=is,ie
-          cff1=1.0/(grid%em_alt(i,1,j)+eps)
-          cff2=1.0/((grid%em_u_2(i,1,j)**2+grid%em_v_2(i,1,j)**2)**0.5+ &
-     &               eps)
-          ij=ij+1
-          AA(ij)=cff1*cff2*(grid%UST(i,j)**2)*(grid%em_u_2(i,1,j))
+!          cff1=1.0/(grid%em_alt(i,1,j)+eps)
+!          cff2=1.0/((grid%em_u_2(i,1,j)**2+grid%em_v_2(i,1,j)**2)**0.5+ &
+!     &               eps)
+!          ij=ij+1
+!          AA(ij)=cff1*cff2*(grid%UST(i,j)**2)*(grid%em_u_2(i,1,j))
+          AA(ij)=0.
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "USTRESS", AA, Asize)
@@ -439,11 +440,12 @@
       ij=0
       DO j=js,je
         DO i=is,ie
-          cff1=1.0/(grid%em_alt(i,1,j)+eps)
-          cff2=1.0/((grid%em_u_2(i,1,j)**2+grid%em_v_2(i,1,j)**2)**0.5+ &
-     &               eps)
-          ij=ij+1
-          AA(ij)=cff1*cff2*(grid%UST(i,j)**2)*(grid%em_v_2(i,1,j))
+!          cff1=1.0/(grid%em_alt(i,1,j)+eps)
+!          cff2=1.0/((grid%em_u_2(i,1,j)**2+grid%em_v_2(i,1,j)**2)**0.5+ &
+!     &               eps)
+!          ij=ij+1
+!          AA(ij)=cff1*cff2*(grid%UST(i,j)**2)*(grid%em_v_2(i,1,j))
+          AA(ij)=0.
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "VSTRESS", AA, Asize)

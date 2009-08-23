@@ -354,7 +354,11 @@ RECURSIVE SUBROUTINE integrate ( grid )
                      domain_get_current_time(grid) - domain_get_time_step(grid)
                    grid_ptr%nests(kid)%ptr%stop_subtime = &
                      domain_get_current_time(grid)
+#ifdef WRF_COUPLING
+                   CALL integrate ( grid_ptr%nests(kid)%ptr, TI_ATM_OCN, last_step )
+#else
                    CALL integrate ( grid_ptr%nests(kid)%ptr ) 
+#endif
                    CALL wrf_debug( 100 , 'module_integrate: back from recursive call to integrate ' )
                    CALL wrf_debug( 100 , 'module_integrate: calling med_nest_feedback ' )
                    CALL med_nest_feedback ( grid_ptr , grid_ptr%nests(kid)%ptr , config_flags )

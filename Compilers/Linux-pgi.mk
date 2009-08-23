@@ -129,16 +129,17 @@ ifdef USE_WRF
            FFLAGS += -I$(MCT_INCDIR)
              LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
              LIBS += WRF/main/libwrflib.a
-             LIBS += WRF/external/io_netcdf/libwrfio_nf.a
-#            LIBS += WRF/external/RSL/RSL/librsl.a
              LIBS += WRF/external/RSL_LITE/librsl_lite.a
              LIBS += WRF/external/io_grib1/libio_grib1.a
              LIBS += WRF/external/io_grib_share/libio_grib_share.a
              LIBS += WRF/external/io_int/libwrfio_int.a
              LIBS += WRF/external/esmf_time_f90/libesmf_time.a
-             LIBS += WRF/main/libWRF.a
              LIBS += WRF/frame/module_internal_header_util.o
              LIBS += WRF/frame/pack_utils.o
+             LIBS += WRF/main/module_wrf_top.o
+             LIBS += WRF/external/io_netcdf/wrf_io.o
+             LIBS += WRF/external/io_netcdf/libwrfio_nf.a
+             LIBS += WRF/external/fftpack/fftpack5/libfftpack.a
 endif
 
        clean_list += ifc* work.pc*
