@@ -69,7 +69,7 @@
       Numspec(0)=1
       DO ng=1,Ngrids
         BGRIDPG(ng,:)=9999
-        Numspec(ng)=112
+        Numspec(ng)=46
       END DO
 !     Numspec(1)=112
 !     Numspec(2)=270

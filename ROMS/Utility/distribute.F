@@ -1217,7 +1217,11 @@
 !
       integer, intent(in) :: ng, model, gtype
       integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk
+# ifdef REFINED_GRID
+      integer, intent(inout) :: Npts
+# else
       integer, intent(out) :: Npts
+# endif
 
       real(r8), intent(in) :: Ascl
 

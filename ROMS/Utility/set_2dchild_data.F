@@ -247,12 +247,12 @@
           CALL mp_gather (ngc, model, LBic, UBic, LBjc, UBjc, 1, 1,     &
      &                    gtype, 1.0_r8,                                &
 # ifdef MASKING
-     &                    GRID(ngc) % rmask(LBic,LBjc),                 &
+     &                    GRID(ngc) % rmask(LBic:UBic,LBjc:UBjc),       &
 # endif
 # ifdef SOLVE3D
-     &                    COUPLING(ngc) % Zt_avg1(LBic,LBjc),           &
+     &                    COUPLING(ngc) % Zt_avg1(LBic:UBic,LBjc:UBjc), &
 # else
-     &                    OCEAN(ngc) % zeta(LBic,LBjc,KOUTC),           &
+     &              OCEAN(ngc) % zeta(LBic:UBic,LBjc:UBjc,KOUTC),       &
 # endif
      &                    Npts, Aout)
 !
@@ -348,9 +348,9 @@
           CALL mp_gather (ngc, model, LBic, UBic, LBjc, UBjc, 1, 1,     &
      &                    gtype, 1.0_r8,                                &
 # ifdef MASKING
-     &                    GRID(ngc) % umask(LBic,LBjc),                 &
+     &                    GRID(ngc) % umask(LBic:UBic,LBjc:UBjc),       &
 # endif
-     &                    OCEAN(ngc) % ubar(LBic,LBjc,KOUTC),           &
+     &              OCEAN(ngc) % ubar(LBic:UBic,LBjc:UBjc,KOUTC),       &
      &                    Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes for ng=2
@@ -439,9 +439,9 @@
           CALL mp_gather (ngc, model, LBic, UBic, LBjc, UBjc, 1, 1,     &
      &                    gtype, 1.0_r8,                                &
 # ifdef MASKING
-     &                    GRID(ngc) % vmask(LBic,LBjc),                 &
+     &                    GRID(ngc) % vmask(LBic:UBic,LBjc:UBjc),       &
 # endif
-     &                    OCEAN(ngc) % vbar(LBic,LBjc,KOUTC),           &
+     &          OCEAN(ngc) % vbar(LBic:UBic,LBjc:UBjc,KOUTC),           &
      &                    Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes for ng=2

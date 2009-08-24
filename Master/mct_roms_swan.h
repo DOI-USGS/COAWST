@@ -115,9 +115,11 @@
         wavids(i)=Ngrids+i
       END DO
       WAVid=wavids(ng)
-      OCNid=ocnids(ng) 
+      OCNid=ocnids(ng)
+!      CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                &
+!     &                    OCN_COMM_WORLD, OCNid, ocnids)
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                &
-     &                    OCN_COMM_WORLD, OCNid, ocnids)
+     &                    OCN_COMM_WORLD,OCNid, myids=ocnids)
 #else
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, OCN_COMM_WORLD,  &
      &                    OCNid)
@@ -802,13 +804,13 @@
 #  ifdef REFINED_GRID
         DO j=JstrT,JendT
           DO i=IstrTU+1,IendTU
-#   ifdef SOLVE3D
-            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%u(i,  j,N(ng),NOUT)+        &
-     &                            OCEAN(ng)%u(i+1,j,N(ng),NOUT))
-#   else
+!#   ifdef SOLVE3D
+!            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%u(i,  j,N(ng),NOUT)+        &
+!     &                            OCEAN(ng)%u(i+1,j,N(ng),NOUT))
+!#   else
             ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%ubar(i,  j,KOUT)+           &
      &                            OCEAN(ng)%ubar(i+1,j,KOUT))
-#   endif
+!#   endif
           END DO
         END DO
         IF (WESTERN_EDGE) THEN
@@ -879,13 +881,13 @@
 #  ifdef REFINED_GRID
         DO j=JstrTV+1,JendTV
           DO i=IstrT,IendT
-#   ifdef SOLVE3D
-            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,N(ng),NOUT)+        &
-     &                            OCEAN(ng)%v(i,j+1,N(ng),NOUT))
-#   else
-            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,KOUT)+              &
-     &                            OCEAN(ng)%v(i,j+1,KOUT))
-#   endif
+!#   ifdef SOLVE3D
+!            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,N(ng),NOUT)+        &
+!     &                            OCEAN(ng)%v(i,j+1,N(ng),NOUT))
+!#   else
+            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%vbar(i,j  ,KOUT)+           &
+     &                            OCEAN(ng)%vbar(i,j+1,KOUT))
+!#   endif
           END DO
         END DO
         IF (NORTHERN_EDGE) THEN
