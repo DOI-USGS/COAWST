@@ -9,6 +9,7 @@
 !     INFRAM
 !     DISTR
 !     KSCIP1
+!     KSCIP11
 !     AC2TST
 !     CVCHEK                                                              30.60
 !     CVMESH                                                              30.60
@@ -731,6 +732,232 @@
       RETURN
 !     end of subroutine KSCIP1 *
       END
+!
+!***********************************************************************
+# ifdef BLOCK_JONSSON
+                                                                       *
+      SUBROUTINE KSCIP11 (MMT, SIG, D, K, CG, UB, N, ND)
+!                                                                      *
+!***********************************************************************
+!
+      USE OCPCOMM4                                                        40.41
+      USE SWCOMM3                                                         40.41
+!
+      IMPLICIT NONE
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering                              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 2007  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+!
+!     30.81: Annette Kieftenburg
+!     40.22: John Cazes and Tim Campbell
+!     40.41: Marcel Zijlema
+!
+!  1. Updates
+!
+!     Aug. 94, ver. 10.10: arguments N and ND added
+!     Dec. 98, ND corrected, argument list adjusted and IMPLICIT NONE added
+!     40.41, Aug. 04: tables replaced by Pade and other formulas
+!     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!
+!  2. Purpose
+!
+!     Calculation of the wave number, group velocity, group number N
+!     and the derivative of N w.r.t. depth (=ND)
+!
+!  3. Method
+!
+!     --
+!
+!  4. Argument variables
+!
+!     MMT     input    number of frequency points
+!
+      INTEGER   MMT
+!
+!     CG      output   group velocity
+!     D       input    local depth
+!     K       output   wave number
+!     N       output   ratio of group and phase velocity
+!     ND      output   derivative of N with respect to D
+!     SIG     input    rel. frequency for which wave parameters
+!                      must be determined
+!     UB      output   minimum current to create blocking
+!
+      REAL      CG(MMT), D,
+     &          K(MMT), N(MMT), ND(MMT), SIG(MMT), UB(MMT)
+     
+      REAL      X0,X1,L0,ERROR,F,F1,LMIN,TA
+      REAL      AA,BB,CC,XX1,XX2,XX
+!
+!  6. Local variables
+!
+!     C         phase velocity
+!     FAC1      auxiliary factor
+!     FAC2      auxiliary factor
+!     FAC3      auxiliary factor
+!     IENT      number of entries
+!     IS        counter in frequency (sigma-space)
+!     KND       dimensionless wave number
+!     ROOTDG    square root of D/GRAV
+!     WGD       square root of GRAV*D
+!     SND       dimensionless frequency
+!     SND2      = SND*SND
+!
+      INTEGER   IENT, IS
+      REAL      KND, ROOTDG, SND, WGD, SND2, C, FAC1, FAC2, FAC3
+!
+!  8. Subroutines used
+!
+!     --
+!
+!  9. Subroutines calling
+!
+!     SWOEXA, SWOEXF (Swan/Output)
+!
+! 10. Error messages
+!
+!     --
+!
+! 11. Remarks
+!
+!     --
+!
+! 12. Structure
+!
+!     -----------------------------------------------------------------
+!      Compute non-dimensional frequency SND
+!      IF SND >= 2.5, then
+!        Compute wave number K, group velocity CGO, ratio of group
+!        and phase velocity N and its derivative ND according to
+!        deep water theory
+!      ELSE IF SND =< 1.e-6
+!        Compute wave number K, group velocity CGO, ratio of group
+!        and phase velocity N and its derivative ND
+!        according to extremely shallow water
+!      ELSE
+!        Compute wave number K, group velocity CGO and the ratio of
+!        group and phase velocity N by Pade and other simple formulas.
+!        Compute the derivative of N w.r.t. D = ND.
+!     -----------------------------------------------------------------
+!
+! 13. Source text
+!
+      SAVE IENT
+      DATA IENT /0/
+      IF (LTRACE) CALL STRACE (IENT, 'KSCIP1')
+!
+      ROOTDG = SQRT(D/GRAV)                                               30.81
+      WGD    = ROOTDG*GRAV                                                30.81
+      DO 200 IS = 1, MMT
+        SND = SIG(IS) * ROOTDG
+        IF (SND .GE. 2.5) THEN
+!       ******* deep water *******
+          K(IS)  = SIG(IS) * SIG(IS) / GRAV                               30.81
+          CG(IS) = 0.5 * GRAV / SIG(IS)                                   30.81
+          N(IS)  = 0.5
+          ND(IS) = 0.
+        ELSE IF (SND.LT.1.E-6) THEN
+!       *** very shallow water ***                                        30.81
+          K(IS)  = SND/D                                                  30.81
+          CG(IS) = WGD
+          N(IS)  = 1.
+          ND(IS) = 0.
+        ELSE
+          SND2  = SND*SND                                                 40.41
+          C     = SQRT(GRAV*D/(SND2+1./(1.+0.666*SND2+0.445*SND2**2       40.41
+     &                                  -0.105*SND2**3+0.272*SND2**4)))   40.41
+          K(IS) = SIG(IS)/C                                               40.41
+          KND   = K(IS)*D                                                 40.41
+          FAC1  = 2.*KND/SINH(2.*KND)                                     40.41
+          N(IS) = 0.5*(1.+FAC1)                                           40.41
+          CG(IS)= N(IS)*C                                                 40.41
+          FAC2  = SND2/KND                                                40.41
+          FAC3  = 2.*FAC2/(1.+FAC2*FAC2)                                  40.41
+          ND(IS)= FAC1*(0.5/D - K(IS)/FAC3)                               40.41
+        ENDIF
+!
+!  COMPUTE THE MINIMUM WAVE LENGHT UNDER BLOCKING CONDITIONS BASED ON
+!  JONSSON, SKOUGAARD AND WAND 1971. THE MAXIMUM WAVE NUMBER IS COMPUTED
+!  USING THE NEWTON RAPHSON METHOD.
+!
+        ERROR=100.
+        X0=K(IS)
+        FAC1=1.0/(SIG(IS)**2.)
+        TA=2.*3.1415*FAC1
+        L0=9.81*2.*3.14159*FAC1
+!
+        DO WHILE (ERROR.GT.0.1)
+          F=SQRT(D*X0/(2.*3.14159)*TANH(X0*D))-                         &
+     &      2./(1.-(2.*X0*D)/SINH(2.*X0*D))*SQRT(D/L0)
+          F1=0.5*(X0*D/(2.*3.14159)*TANH(D*X0))**(-0.5)*                &
+     &       (D/(2.*3.14159)*TANH(X0*D)+                                &
+     &       D**2.*X0/(2.*3.14159)*(1./COSH(X0*D))**2.)+                &
+     &       (2.*SQRT(D/L0)*                                            &
+     &       (-(2*D*SINH(2.*X0*D)-4.*X0*D**2.*COSH(2.*X0*D))/           &
+     &       (SINH(2.*X0*D))**2.)/                                      &
+     &       (1-2.*X0*D/SINH(2.*X0*D))**2.)
+          X1=X0-F/F1
+          ERROR=100.*ABS(X1-X0)/X0
+          X0=X1
+        END DO
+!
+        LMIN=2.*3.14159/X0
+        IF(LMIN.NE.LMIN)LMIN=10.
+!        
+!  COMPUTE THE MINIMUM CURRENT VELOCITY NECCESARY TO CREATE BLOCKING 
+!  CONDITIONS.
+!        
+        AA=1.
+        BB=-2.
+        CC=1-L0/LMIN*TANH(2.*3.14159*D/LMIN)
+!
+        XX1=(-BB+SQRT(BB**2.-4.*AA*CC))/(2.*AA)
+        XX2=(-BB-SQRT(BB**2.-4.*AA*CC))/(2.*AA)
+!
+        IF (XX1*XX2.GT.0.) THEN
+!  Take minimum negative root.
+          XX=MAX(XX1,XX2)
+        ELSE
+!  Take the negative root, not the positive one.
+          XX=MIN(XX1,XX2)
+        END IF
+!  UB will always be negative.
+        UB(IS)=XX*LMIN/TA
+  200 CONTINUE
+!
+      RETURN
+!     end of subroutine KSCIP11 *
+      END
+
+# endif
 !
 !***********************************************************************
 !                                                                      *
