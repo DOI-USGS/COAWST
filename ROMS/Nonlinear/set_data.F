@@ -634,10 +634,10 @@
 !  Set point Sources/Sinks (river runoff).
 !-----------------------------------------------------------------------
 !
-      IF (SOUTH_WEST_TEST) THEN
 #  ifdef ANA_PSOURCE
-        CALL ana_psource (ng, tile, iNLM)
+      CALL ana_psource (ng, tile, iNLM)
 #  else
+      IF (SOUTH_WEST_TEST) THEN
 #   if defined UV_PSOURCE || defined Q_PSOURCE
         CALL set_ngfld (ng, iNLM, idRtra, 1, Nsrc(ng), 1,               &
      &                  1, Nsrc(ng), 1,                                 &
@@ -670,8 +670,8 @@
           END IF
         END DO
 #   endif
-#  endif
       END IF
+#  endif
 # endif
 
 # ifdef OBC
