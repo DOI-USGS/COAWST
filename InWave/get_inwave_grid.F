@@ -70,6 +70,7 @@
       start(1)=1
       total(1)=ndims
       status=nf90_get_var(ncid, varid, WD, start, total)
+do not need this
 !
 ! Close GRID NetCDF file.
 !

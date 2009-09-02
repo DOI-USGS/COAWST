@@ -86,12 +86,17 @@
       DO d=1,ND(ng)
         WAVEG(ng)%WD(d)=ndirs(d)
       END DO
-      DO d=1,1
-        WAVEG(ng)%pd(d)=WAVEG(ng)%WD(d)-WAVEG(ng)%WD(ND(ng))
+
+
+      DO d=1,ND(ng)
+        cff=WAVEG(ng)%WD(d)-WAVEG(ng)%WD(d-1)
+        IF (cff.lt.0.0_r8) THEN
+          cff=cff+360.0_r8
+        END IF
+        WAVEG(ng)%WD(d)=WAVEG(ng)%WD(d)*pi/180.
+        WAVEG(ng)%pd(d)=180.0_r8/(pi*cff)
       END DO
-      DO d=2,ND(ng)
-        WAVEG(ng)%pd(d)=WAVEG(ng)%WD(d)-WAVEG(ng)%WD(d-1)
-      END DO
+
 
 ! need to distribute pd and WD
 
