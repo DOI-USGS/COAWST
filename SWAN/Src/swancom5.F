@@ -905,6 +905,9 @@
      &                   CAY        ,CGO        ,ECOS       ,
      &                   ESIN       ,UX2        ,UY2        ,
      &                   SWPDIR
+# ifdef BLOCK_JONSSON
+     &                   ,UDIR
+# endif
      &                                                      )
 !
 !****************************************************************
@@ -1096,11 +1099,19 @@
 !
       REAL     CAX(MDC,MSC,ICMAX)          ,
      &         CAY(MDC,MSC,ICMAX)          ,
+# ifdef BLOCK_JONSSON
+     &         UDIR(MDC,ICMAX)             ,
+# endif
      &         CGO(MSC,ICMAX)              ,
      &         ECOS(MDC)                   ,
      &         ESIN(MDC)                   ,
      &         UX2(MCGRD)                ,
      &         UY2(MCGRD)
+
+# ifdef BLOCK_JONSSON     
+      REAL ALFA_WAVE,THETA_CUR,DIF
+# endif
+     
 !
       SAVE IENT
       DATA IENT/0/
@@ -1146,6 +1157,16 @@
                    CAY(ID,IS,IC) = CAY(ID,IS,IC) + UY2(KCGRD(IC))
 100             CONTINUE
 110          CONTINUE
+# ifdef BLOCK_JONSSON
+             DO ID = 1, MDC
+                   ALFA_WAVE=ATAN2(ESIN(ID),ECOS(ID))
+                   THETA_CUR=ATAN2(UY2(KCGRD(IC)),UX2(KCGRD(IC)))
+                   DIF=THETA_CUR-ALFA_WAVE
+                   UDIR(ID,IC) = SQRT(UY2(KCGRD(IC))**2.+
+     &             UX2(KCGRD(IC))**2.)*COS(DIF)
+             ENDDO
+
+# endif
           END IF
 !
         ENDIF
@@ -3489,7 +3510,11 @@
       SUBROUTINE STRSSB (IDDLOW  ,IDDTOP  ,
      &                   IDCMIN  ,IDCMAX  ,ISSTOP  ,CAX     ,CAY     ,
      &                   CAS     ,AC2     ,SPCSIG  ,IMATRA  ,
-     &                   ANYBLK  ,RDX     ,RDY                       )    40.41 30.21
+     &                   ANYBLK  ,RDX     ,RDY                             40.41 30.21
+# ifdef BLOCK_JONSSON
+     &                   ,UDIR    ,UBLOCK
+# endif
+     &                                   )
 !
 !****************************************************************
 !
@@ -3710,6 +3735,11 @@
      &         IMATRA(MDC,MSC)          ,
      &         RDX(10)                  ,                                 40.08
      &         RDY(10)                                                    40.08
+
+# ifdef BLOCK_JONSSON     
+      REAL     UDIR(MDC,ICMAX)                                            07.09
+      REAL     UBLOCK(MSC,ICMAX)                                          07.09
+# endif
 !
       INTEGER  IDCMIN(MSC)              ,
      &         IDCMAX(MSC)
@@ -3739,6 +3769,13 @@
         END IF
         DO IDDUM = IDCMIN(IS), IDCMAX(IS)
           ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
+
+# ifdef BLOCK_JONSSON
+
+          IF ( UDIR(ID,1).LT.0.AND.UDIR(ID,1).LT.UBLOCK(IS,1) ) THEN
+
+# else
+
           CAXCEN = ABS ( CAX(ID,IS,1) )
           CAYCEN = ABS ( CAY(ID,IS,1) )
           CASCEN = ABS ( CAS(ID,IS,1) )
@@ -3754,6 +3791,8 @@
 !         *** check if a bin can be propagated or if it is blocked ***
 !
           IF ( CFLCEN .GT. CFLMAX ) THEN
+
+# endif
 !
 !           *** de-activate bin in solver by ANYBLK ***
 !
@@ -4375,7 +4414,11 @@
 !
 !****************************************************************
 !
+# ifdef BLOCK_JONSSON
+      SUBROUTINE SWAPAR ( DEP2, KWAVE, CGO, SPCSIG, UBLOCK )
+# else
       SUBROUTINE SWAPAR ( DEP2, KWAVE, CGO, SPCSIG )
+# endif
 !
 !****************************************************************
 !
@@ -4534,6 +4577,10 @@
       REAL         DEP2(MCGRD)        ,
      &             KWAVE(MSC,ICMAX)   ,
      &             CGO(MSC,ICMAX)
+# ifdef BLOCK_JONSSON  
+      REAL         UBLOCK(MSC,ICMAX)
+      REAL         UB(MSC)
+# endif
 !
 !
       INTEGER, SAVE :: IENT=0
@@ -4547,11 +4594,26 @@
           DO 50 IS = 1, MSC
              KWAVE(IS,IC) = -1.                                           40.41
              CGO(IS,IC)   = 0.                                            40.41
+# ifdef BLOCK_JONSSON  
+             UBLOCK(IS,IC)= -100.                                         40.41
+# endif
  50       CONTINUE
         ELSE
 !       *** call KSCIP1 to compute KWAVE and CGO ***
+# ifdef BLOCK_JONSSON  
+          CALL KSCIP11 (MSC, SPCSIG, DEPLOC, KWAVE(1,IC) ,                 40.41
+     &                 CGO(1,IC),UB, N, ND)                                40.41
+# else
           CALL KSCIP1 (MSC, SPCSIG, DEPLOC, KWAVE(1,IC) ,                 40.41
-     &                 CGO(1,IC), N, ND)                                  40.41
+     &                 CGO(1,IC), N, ND) 
+# endif
+
+# ifdef BLOCK_JONSSON         
+       DO 51 IS = 1, MSC  
+             UBLOCK(IS,IC)= UB(IS)                                        40.41
+ 51    CONTINUE    
+# endif
+        
         ENDIF
 !
         IF ( TESTFL .AND. IC .EQ. 1 .AND. ITEST.GE. 100 ) THEN
@@ -5145,6 +5207,9 @@
       REAL              :: DXLOC, DYLOC
       REAL              :: KLOC(1:MSC), CGLOC(1:MSC), N(1:MSC),
      &                     ND(1:MSC)
+# ifdef BLOCK_JONSSON  
+      REAL              :: ULOC(1:MSC)
+# endif
       REAL, ALLOCATABLE :: EN(:), LAPE(:), DENOM(:), K(:), CG(:)
       REAL, ALLOCATABLE :: ENTMP(:,:)
       LOGICAL           :: NOOBST
@@ -5210,7 +5275,13 @@
       DO IND = 2, MCGRD
          IF (DEP2(IND).GE.DEPMIN) THEN
 !           --- compute Cg and wave number for all spectral frequencies
+
+# ifdef BLOCK_JONSSON  
+            CALL KSCIP11( MSC, SPCSIG, DEP2(IND), KLOC, CGLOC, ULOC,
+     &       N, ND )
+# else
             CALL KSCIP1( MSC, SPCSIG, DEP2(IND), KLOC, CGLOC, N, ND )
+# endif
             ETOT   = 0.
             EKTOTL = 0.
             ECGTOT = 0.

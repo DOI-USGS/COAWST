@@ -802,7 +802,10 @@
      &                                       CAS,CAD                      40.22
 
       REAL, DIMENSION(:,:), ALLOCATABLE :: CGO,KWAVE                      40.22
-
+# ifdef BLOCK_JONSSON
+      REAL, DIMENSION(:,:), ALLOCATABLE :: UDIR                           07.09
+      REAL, DIMENSION(:,:), ALLOCATABLE :: UBLOCK                         07.09
+# endif
       REAL, DIMENSION(:,:), ALLOCATABLE :: ALIMW                          40.22
 
       REAL, DIMENSION(:,:), ALLOCATABLE :: UE,SA1,SA2,SFNL                40.22
@@ -1253,6 +1256,10 @@
 
       ALLOCATE(CAX(MDC,MSC,MICMAX))                                       40.22
       ALLOCATE(CAY(MDC,MSC,MICMAX))                                       40.22
+# ifdef BLOCK_JONSSON
+      ALLOCATE(UDIR(MDC,MICMAX))                                          07.09
+      ALLOCATE(UBLOCK(MSC,MICMAX))                                        07.09
+# endif
       ALLOCATE(CAX1(MDC,MSC,MICMAX))                                      40.22
       ALLOCATE(CAY1(MDC,MSC,MICMAX))                                      40.22
       ALLOCATE(CAS(MDC,MSC,MICMAX))                                       40.22
@@ -1337,6 +1344,9 @@
       CAD    = 0.                                                         40.31
       CGO    = 0.                                                         40.31
       KWAVE  = 0.                                                         40.31
+# ifdef BLOCK_JONSSON
+      UDIR  = 0.                                                          07.09
+# endif
       SWMATR = 0.                                                         40.31
       ALIMW  = 0.                                                         40.31
       IF ( IQUAD.GE.1 ) THEN                                              40.31
@@ -1875,6 +1885,10 @@
      &            OBREDF           ,REFLSO           ,                    40.41 40.22
      &            ISLMIN           ,NFLIM            ,NRSCAL           ,  40.23
      &            CAX1             ,CAY1                                  40.22
+# ifdef BLOCK_JONSSON
+     &            ,
+     &            UDIR            ,UBLOCK
+# endif
      &                                                                 )
                 CALL SWTSTO(104)                                          40.23
 !               This step is disallowed within a parallel region in       40.22
@@ -2262,7 +2276,11 @@
      &                   KGRPNT   ,CROSS    ,                             16/MAY
      &                   OBREDF   ,REFLSO   ,                             40.41 040697
      &                   ISLMIN   ,NFLIM    ,NRSCAL   ,                   40.23
-     &                   CAX1,CAY1                                        33.08
+     &                   CAX1     ,CAY1                                   33.08
+# ifdef BLOCK_JONSSON
+     &                   ,
+     &                   UDIR     ,UBLOCK
+# endif
      &                                                 )
 !
 !************************************************************************
@@ -2652,6 +2670,10 @@
      &         CAY1(MDC,MSC,MICMAX)     ,                                 33.08 40.22
      &         CAS(MDC,MSC,MICMAX)      ,                                 40.22
      &         CAD(MDC,MSC,MICMAX)                                        40.22
+# ifdef BLOCK_JONSSON
+      REAL  :: UDIR(MDC,MICMAX)                                           07.09
+      REAL  :: UBLOCK(MSC,MICMAX)                                         07.09
+# endif
       REAL  :: ALIMW(MDC,MSC)
 !              Since the logical piece of SWMATR was removed, the         40.22
 !              dimensions of SWMATR are now MSWMATR not MSWMAT            40.22
@@ -2951,17 +2973,26 @@
 !         then CAX1, CAY1 are not needed.                                 33.08
 !
           CALL SWTSTA(110)                                                40.23
-          CALL SWAPAR ( COMPDA(1,JDP1), KWAVE, CGO, SPCSIG )              40.41
+ 
+#ifdef BLOCK_JONSSON
+          CALL SWAPAR ( COMPDA(1,JDP1), KWAVE, CGO, SPCSIG, UBLOCK )      40.41
+#else 
+          CALL SWAPAR ( COMPDA(1,JDP1), KWAVE, CGO, SPCSIG )
+#endif
+
           CALL SWTSTO(110)                                                40.23
 !
 !         *** compute the propagation velocities CAX1 and CAY1       ***
 !         *** for all directions for the gridpoints IC = 1 to ICMAX  ***
 
           CALL SWTSTA(111)                                                40.23
-          CALL SPROXY (CAX1            ,
+          CALL SPROXY (CAX1           ,
      &                 CAY1           ,CGO            ,SPCDIR(1,2)    ,   33.08
      &                 SPCDIR(1,3)    ,COMPDA(1,JVX1) ,COMPDA(1,JVY1) ,   33.08
-     &                 SWPDIR
+     &                 SWPDIR         
+#ifdef BLOCK_JONSSON
+     &                 ,UDIR
+#endif
      &                                                              )     33.08
           CALL SWTSTO(111)                                                40.23
 !
@@ -2972,8 +3003,12 @@
 !     *** Compute wavenumber KWAVE and group velocity CGO   ***
 !     *** in the gridpoints of the stencil                  ***
 
-      CALL SWTSTA(110)                                                    40.23
-      CALL SWAPAR ( COMPDA(1,JDP2), KWAVE, CGO, SPCSIG )                  40.41
+      CALL SWTSTA(110) 
+# ifdef BLOCK_JONSSON                                                   40.23
+      CALL SWAPAR ( COMPDA(1,JDP2), KWAVE, CGO, SPCSIG, UBLOCK )          40.41
+# else
+      CALL SWAPAR ( COMPDA(1,JDP2), KWAVE, CGO, SPCSIG )      
+# endif
       CALL SWTSTO(110)                                                    40.23
 !
 !     *** compute the propagation velocities CAX and CAY        ***
@@ -2983,7 +3018,10 @@
       CALL SPROXY (CAX            ,
      &             CAY            ,CGO            ,SPCDIR(1,2)    ,
      &             SPCDIR(1,3)    ,COMPDA(1,JVX2) ,COMPDA(1,JVY2) ,
-     &             SWPDIR
+     &             SWPDIR         
+# ifdef BLOCK_JONSSON  
+     &             ,UDIR
+# endif
      &                                                            )
       CALL SWTSTO(111)                                                    40.23
 !
@@ -4068,6 +4106,10 @@
      &                   ITER       ,KGRPNT     ,OBREDF     ,             40.41
      &                   CAX1       ,CAY1       ,SPCDIR     ,             33.08
      &                   CGO                                              33.08
+# ifdef BLOCK_JONSSON
+     &                   ,
+     &                   UDIR       ,UBLOCK    
+# endif  
      &                                                      )
 !
 !****************************************************************
@@ -4281,6 +4323,10 @@
 !
       REAL  :: AC2(MDC,MSC,MCGRD)  ,AC1(MDC,MSC,MCGRD)
       REAL  :: CAX(MDC,MSC,MICMAX)  ,CAY(MDC,MSC,MICMAX)                  40.22
+# ifdef BLOCK_JONSSON  
+      REAL  :: UDIR(MDC,MICMAX)                                           07.09
+      REAL  :: UBLOCK(MSC,MICMAX) 
+# endif
       REAL  :: CAX1(MDC,MSC,MICMAX) ,CAY1(MDC,MSC,MICMAX)                 33.08 40.22
       REAL  :: CGO(MSC,MICMAX)                                            33.08 40.22
       REAL  :: CAS(MDC,MSC,MICMAX) ,CAD(MDC,MSC,MICMAX)                   40.22
@@ -4386,7 +4432,11 @@
           CALL STRSSB (IDDLOW  ,IDDTOP  ,
      &                 IDCMIN  ,IDCMAX  ,ISSTOP  ,CAX     ,CAY     ,
      &                 CAS     ,AC2     ,SPCSIG  ,IMATRA  ,
-     &                 ANYBLK  ,RDX     ,RDY                       )      40.41 30.21
+     &                 ANYBLK  ,RDX     ,RDY                              40.41 30.21
+# ifdef BLOCK_JONSSON  
+     &                 ,UDIR    ,UBLOCK                             
+# endif
+     &                 )
 !
         END IF
       END IF

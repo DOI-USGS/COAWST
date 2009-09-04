@@ -6,10 +6,10 @@
 !
 !     READXY
 !     REFIXY
+!     KSCIP11
 !     INFRAM
 !     DISTR
 !     KSCIP1
-!     KSCIP11
 !     AC2TST
 !     CVCHEK                                                              30.60
 !     CVMESH                                                              30.60
