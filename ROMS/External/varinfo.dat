@@ -2528,7 +2528,7 @@
 !---------------------------------------------------------------------
 !
 
-'AC'                                               ! Input
+'AC'                                               ! Input/Output
   'wave energy envelope'
   'Joules'                                         ! [m/s]
   'AC, scalar, series'
@@ -2537,7 +2537,7 @@
   'r3dvar'
   1.0d0
 
-'cx'                                               ! Input
+'cx'                                               ! Input/Output
   'wave celerity xi-direction'
   'm s-1'                                          ! [m/s]
   'cx, scalar, series'
@@ -2546,7 +2546,7 @@
   'u3dvar'
   1.0d0
 
-'cy'                                               ! Input
+'cy'                                               ! Input/Output
   'wave celerity eta-direction'
   'm s-1'                                          ! [m/s]
   'cy, scalar, series'
@@ -2555,7 +2555,7 @@
   'v3dvar'
   1.0d0
 
-'ct'                                               ! Input
+'ct'                                               ! Input/Output
   'wave celerity theta-direction'
   'deg s-1'                                        ! [deg/s]
   'cx, scalar, series'
@@ -2564,42 +2564,50 @@
   'r3dvar'
   1.0d0
 
-'AC_west'                                          ! Input
+'AC_west'                                          ! Input/Ouput
   'western boundary wave energy envelope'
-  'Joules'                                         ! [m/s]
+  'Joules'                                         ! [kg m2/s2]
   'AC_west, scalar, series'
   'energy_time'
   'idACbc(iwest)'
   'nulvar'
   1.0d0
 
-'AC_east'                                          ! Input
+'AC_east'                                          ! Input/Output
   'eastern boundary wave energy envelope'
-  'Joules'                                         ! [m/s]
+  'Joules'                                         ! [kg m2/s2]
   'AC_east, scalar, series'
   'energy_time'
   'idACbc(ieast)'
   'nulvar'
   1.0d0
 
-'AC_south'                                          ! Input
+'AC_south'                                         ! Input/Output
   'southern boundary wave energy envelope'
-  'Joules'                                          ! [m/s]
+  'Joules'                                         ! [kg m2/s2]
   'AC_south, scalar, series'
   'energy_time'
   'idACbc(isouth)'
   'nulvar'
   1.0d0
 
-'AC_nonrth'                                          ! Input
+'AC_nonrth'                                         ! Input/Output
   'northern boundary wave energy envelope'
-  'Joules'                                           ! [m/s]
+  'Joules'                                          ! [kg m2/s2]
   'AC_north, scalar, series'
   'energy_time'
   'idACbc(inorth)'
   'nulvar'
   1.0d0
 
+'TARP_west'                                          ! Input
+  'representative absolute peak period'
+  'seconds'                                          ! [s]
+  'TA, scalar'
+  'TA_dim'
+  'idTarp'
+  'nulvar'
+  1.0d0
 
 !
 !---------------------------------------------------------------------

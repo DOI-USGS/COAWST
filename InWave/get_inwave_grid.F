@@ -1,6 +1,6 @@
 #include "cppdefs.h"
 #ifdef INWAVE_COUPLING
-      SUBROUTINE get_inwave_grid(ng, nc_name, WD)
+      SUBROUTINE get_inwave_grid(ng, nc_name, WD, PD)
 !
 !svn $Id: get_inwave_grid.F 1336 2008-01-24 02:45:56Z jcwarner $
 !=======================================================================
@@ -23,6 +23,7 @@
 
       character (len=80), intent(in) :: nc_name
       real(r8), intent(inout) :: WD(ND(ng))
+      real(r8), intent(inout) :: PD(ND(ng))
 !
 !  Local variable declarations
 !
@@ -49,7 +50,7 @@
       END IF
       ncid=ncSPSid(ng)
 !
-! Determine number of weights.
+! Determine number of directions.
 !
       status=nf90_inq_varid(ncSPSid(ng),'energy_angle', varid)
       status=nf90_inquire_variable(ncSPSid(ng),varid,dimids = dimIDs)
@@ -70,7 +71,29 @@
       start(1)=1
       total(1)=ndims
       status=nf90_get_var(ncid, varid, WD, start, total)
-do not need this
+
+!      
+! Determine number of directions.
+!
+      status=nf90_inq_varid(ncSPSid(ng),'increment_angle', varid)
+      status=nf90_inquire_variable(ncSPSid(ng),varid,dimids = dimIDs)
+      IF (status.ne.nf90_noerr) THEN
+        WRITE (stdout,30) TRIM('num increments for each energy bin')
+        exit_flag=4
+        ioerror=status
+      END IF
+      status=nf90_inquire_dimension(ncid, dimIDs(1), len=ndims)
+      IF (ndims.ne.ND(ng)) THEN
+        WRITE (stdout,30) TRIM('num energy bins not same as in input file')
+        exit_flag=4
+        ioerror=status
+      END IF
+!
+! Get the angles.
+!
+      start(1)=1
+      total(1)=ndims
+      status=nf90_get_var(ncid, varid, PD, start, total)
 !
 ! Close GRID NetCDF file.
 !

@@ -327,10 +327,11 @@
         integer  :: idZbry(4)      ! free-surface boundary conditions
 #ifdef INWAVE_COUPLING
         integer  :: idACbc(4)      ! wave energy boundary condition
+        integer  :: idTarp         ! absolute peak period
         integer  :: idACen         ! wave energy
-        integer  :: idACcx         ! wave energy
-        integer  :: idACcy         ! wave energy
-        integer  :: idACct         ! wave energy
+        integer  :: idACcx         ! wave energy celerity in xi dir
+        integer  :: idACcy         ! wave energy celerity in etai dir
+        integer  :: idACct         ! wave energy celerity in theta dir
 #endif
 !
 !  Time-averaged quadratic terms IDs.
@@ -1231,8 +1232,10 @@
                 idACbc(ieast)=varid
               CASE ('idACbc(isouth)')
                 idACbc(isouth)=varid
-              CASE ('idAcbc(inorth)')
+              CASE ('idACbc(inorth)')
                 idACbc(inorth)=varid
+              CASE ('idTarp')
+                idTarp=varid
 #endif
 #if defined NPZD_FRANKS || defined NPZD_POWELL
               CASE ('idRtrc(iNO3_)')

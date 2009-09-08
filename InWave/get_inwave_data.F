@@ -78,15 +78,34 @@
 !=======================================================================
 !
 # endif
-
-!# ifdef WEST_EOBC
+!      CALL get_ngfld (ng, iNLM, idTARPbc(iwest), ncBRYid(ng), 1,        &
+!     &                ENGname(ng),update(1),                            &
+!     &                1, 1, 1, 1, 1, 1, 0,                              &
+!     &                WAVEB(ng)%TA)
+# ifdef WEST_EOBC
       CALL get_ngfld (ng, iNLM, idACbc(iwest), ncBRYid(ng), 1,          &
      &                ENGname(ng), update(1),                           &
      &                JLB, JUB, ND(ng), 2, 0, Mm(ng)+1, ND(ng),         &
      &                WAVEB(ng) % ACG_west(JLB,1,1))
-!# endif
-
- 
+# endif
+# ifdef EAST_EOBC
+      CALL get_ngfld (ng, iNLM, idACbc(ieast), ncBRYid(ng), 1,          &
+     &                ENGname(ng), update(1),                           &
+     &                JLB, JUB, ND(ng), 2, 0, Mm(ng)+1, ND(ng),         &
+     &                WAVEB(ng) % ACG_east(JLB,1,1))
+# endif
+# ifdef NORTH_EOBC
+      CALL get_ngfld (ng, iNLM, idACbc(inorth), ncBRYid(ng), 1,         &
+     &                ENGname(ng), update(1),                           &
+     &                ILB, IUB, ND(ng), 2, 0, Lm(ng)+1, ND(ng),         &
+     &                WAVEB(ng) % ACG_north(ILB,1,1))
+# endif
+# ifdef SOUTH_EOBC
+      CALL get_ngfld (ng, iNLM, idACbc(isouth), ncBRYid(ng), 1,         &
+     &                ENGname(ng), update(1),                           &
+     &                ILB, IUB, ND(ng), 2, 0, Lm(ng)+1, ND(ng),         &
+     &                WAVEB(ng) % ACG_south(ILB,1,1))
+# endif
 # ifdef PROFILE
 !
 !-----------------------------------------------------------------------

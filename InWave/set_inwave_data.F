@@ -41,13 +41,13 @@
 !***********************************************************************
 !
       USE mod_param
-      USE mod_boundary
-      USE mod_forces
-      USE mod_grid
-      USE mod_mixing
+!      USE mod_boundary
+!      USE mod_forces
+!      USE mod_grid
+!      USE mod_mixing
       USE mod_ncparam
-      USE mod_ocean
-      USE mod_stepping
+!      USE mod_ocean
+!      USE mod_stepping
       USE mod_scalars
       USE mod_inwave_params
       USE mod_inwave_bound
@@ -74,7 +74,7 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj
 # ifdef OBC
       integer :: ILB, IUB, JLB, JUB
-#endif
+# endif
 !
 !  Local variable declarations.
 !
@@ -104,19 +104,34 @@
       JUB=UPPER_BOUND_J
 # endif
 
-!      IF (SOUTH_WEST_TEST) THEN
-!#    ifdef WEST_M3OBC
-
-
+# if defined WEST_EOBC
         CALL set_ngfld (ng, iNLM, idACbc(iwest), JLB, JUB, ND(ng),      &
      &                  0, Mm(ng)+1, ND(ng),                            &
      &                  WAVEB(ng) % ACG_west(JLB,1,1),                  &
      &                  WAVEB(ng) % AC_west(JLB,1),                     &
      &                  update)
-
-        write(*,*) WAVEB(ng) % AC_west(1,1)
-
-
+# endif
+# if defined EAST_EOBC
+        CALL set_ngfld (ng, iNLM, idACbc(ieast), JLB, JUB, ND(ng),      &
+     &                  0, Mm(ng)+1, ND(ng),                            &
+     &                  WAVEB(ng) % ACG_east(JLB,1,1),                  &
+     &                  WAVEB(ng) % AC_east(JLB,1),                     &
+     &                  update)
+# endif
+# if defined NORTH_EOBC
+        CALL set_ngfld (ng, iNLM, idACbc(inorth), ILB, IUB, ND(ng),     &
+     &                  0, Lm(ng)+1, ND(ng),                            &
+     &                  WAVEB(ng) % ACG_north(ILB,1,1),                 &
+     &                  WAVEB(ng) % AC_north(ILB,1),                    &
+     &                  update)
+# endif
+# if defined SOUTH_EOBC
+        CALL set_ngfld (ng, iNLM, idACbc(isouth), ILB, IUB, ND(ng),     &
+     &                  0, Lm(ng)+1, ND(ng),                            &
+     &                  WAVEB(ng) % ACG_south(ILB,1,1),                 &
+     &                  WAVEB(ng) % AC_south(ILB,1),                    &
+     &                  update)
+# endif
       RETURN
       END SUBROUTINE set_inwave_data_tile
 #else

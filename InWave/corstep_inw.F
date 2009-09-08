@@ -86,6 +86,7 @@
       USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
       USE ACbc_mod, ONLY : ACbc_tile
+      USE AC3dbc_mod, ONLY : AC3dbc_tile
 !
 !  Imported variable declarations.
 !
@@ -158,20 +159,6 @@
 
 # include "set_bounds.h"
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-!  Compute cx, cy, and ct velocities.
-!
-
-      DO d=1,ND(ng)
-        DO j=Jstr,Jend
-          DO i=Istr,Iend+1
-! This vale needs to be changed, this is only a test.
-            cx(i,j,d)=0.1_r8
-          END DO
-        END DO
-      END DO
-!
 !  Compute horizontal AC advection fluxes.
 !
       D_LOOP: DO d=1,ND(ng)
@@ -400,6 +387,12 @@
      &                          LBi, UBi, LBj, UBj, 1, ND(ng),          &
      &                          AC(:,:,:,nnew))
 # endif
+
+      CALL       AC3dbc_tile (ng, tile,                                 &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       nnew,                                      &
+     &                       AC)
+     
 # ifdef DISTRIBUTE
 !
 !  Exchange boundary data.

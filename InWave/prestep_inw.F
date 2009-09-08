@@ -86,6 +86,7 @@
       USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
       USE ACbc_mod, ONLY : ACbc_tile
+      USE AC3dbc_mod, ONLY : AC3dbc_tile
 !
 !  Imported variable declarations.
 !
@@ -396,6 +397,12 @@
      &                          LBi, UBi, LBj, UBj, 1, ND(ng),          &
      &                          AC(:,:,:,3))
 # endif
+
+        CALL AC3dbc_tile (ng, tile,                                     &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       3,                                         &
+     &                       AC)
+     
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &

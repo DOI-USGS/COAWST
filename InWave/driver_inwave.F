@@ -23,6 +23,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_scalars
       USE mod_grid
       USE mod_stepping
       USE mod_ocean
@@ -46,6 +47,7 @@
       real(r8) :: cff, cff1, cff2, cff3, cff4
       character (len=80) :: nc_name
       real(r8), allocatable :: ndirs(:)
+      real(r8), allocatable :: pdirs(:)
 
 # ifdef DISTRIBUTE
 #  ifdef EW_PERIODIC
@@ -79,9 +81,11 @@
 ! Compute degree bins. This may need to be moved.
 !
       IF (.not.allocated(ndirs)) allocate (ndirs(ND(ng)))
+      IF (.not.allocated(pdirs)) allocate (pdirs(ND(ng)))
+      
 !      IF (Master) THEN
         nc_name=ENGname(ng)
-        call get_inwave_grid(ng, nc_name, ndirs)
+        call get_inwave_grid(ng, nc_name, ndirs, pdirs)
 !      END IF
       DO d=1,ND(ng)
         WAVEG(ng)%WD(d)=ndirs(d)
@@ -119,6 +123,7 @@
       USE mod_parallel
       USE prestep_inw_mod, ONLY : prestep_inw
       USE corstep_inw_mod, ONLY : corstep_inw
+      USE celer_inw_mod, ONLY : celer_inw
 !
 !  Imported variable declarations.
 !
@@ -181,6 +186,18 @@
             CALL set_inwave_data (ng, TILE)
           END DO
         END DO
+!$OMP END PARALLEL DO
+        
+        
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*(thread+1)-1,subs*thread,-1
+            CALL celer_inw (ng, TILE)
+          END DO
+        END DO  
+!$OMP END PARALLEL DO
+        
 
 !$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
         DO thread=0,numthreads-1
