@@ -320,16 +320,15 @@
       DO d=1,ND(ng)
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
-
-! should theta_cur have a - sign?
-
             alfa_wave=(1.5_r8*pi-WD(d))-angler(i,j)
 #  ifdef DOPPLER
-            theta_cur=atan2(v_rho(i,j),u_rho(i,j))  
+            IF (u_rho(i,j).eq.0.0_r8) THEN
+              theta_cur=0.5_r8*pi*SIGN(1.0_r8,Vcur(i,j))
+            ELSE
+              theta_cur=ATAN2(v_rho(i,j),u_rho(i,j))
+            ENDIF
             u_dir(i,j)= sqrt(u_rho(i,j)**2.+                            &
-     &                       v_rho(i,j)**2.)*cos(theta_cur-alfa_wave)
-#  endif
-#  ifdef DOPPLER
+     &                       v_rho(i,j)**2.)*cos(alfa_wave-theta_cur)
             IF((h_tot(i,j).le.Dcrit(ng))                                &
      &         .or.((u_dir(i,j).lt.0).and.(u_dir(i,j).le.u_block(i,j))))&
      &        THEN 
