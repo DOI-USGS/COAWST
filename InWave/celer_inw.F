@@ -204,6 +204,8 @@
 
 ! Should this be u/vbar, or should it be: u(z)*cosh(z+h) type???
 
+! save k2 from last time step and use it here to compute u(z)*cosh.
+
 # ifdef DOPPLER
       DO j=Jstr,Jend
         DO i=Istr,Iend
@@ -319,10 +321,9 @@
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
 
-! why add 270
-! do we still need the *pi/.180
+! should theta_cur have a - sign?
 
-            alfa_wave=(-WD(d)+270.)*pi/180.-angler(i,j)
+            alfa_wave=(1.5_r8*pi-WD(d))-angler(i,j)
 #  ifdef DOPPLER
             theta_cur=atan2(v_rho(i,j),u_rho(i,j))  
             u_dir(i,j)= sqrt(u_rho(i,j)**2.+                            &
@@ -466,6 +467,8 @@
 #  endif
 
 !! JOHN: NOT SURE WHAT HAPPENS WITH THESE ANGLES IN A CURVILINEAR SYSTEM
+!  Note: change in angle convention to solve balh blah blah.
+!
 
               IF(d.ne.1)then
                 dir_edge=((-WD(d)+90.)*pi/180.+(-WD(d-1)+90.)*pi/180.)/2.
@@ -489,9 +492,7 @@
      &             0.5_r8*pm(i,j)*                                      &
      &             (vbar(i+1,j,nstp)-vbar(i-1,j,nstp)))
               dvdy=pn(i,j)*(vbar(i,j+1,nstp)-vbar(i,j,nstp))
-
-! should dh/dx be d h_tot or just dh (not add zeta)?
-
+!
               dhdx=0.5_r8*pm(i,j)*(h_tot(i+1,j)-h_tot(i-1,j))
               dhdy=0.5_r8*pn(i,j)*(h_tot(i,j+1)-h_tot(i,j-1))
 
