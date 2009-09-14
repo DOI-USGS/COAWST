@@ -116,8 +116,6 @@
       END DO
       WAVid=wavids(ng)
       OCNid=ocnids(ng)
-!      CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                &
-!     &                    OCN_COMM_WORLD, OCNid, ocnids)
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                &
      &                    OCN_COMM_WORLD,OCNid, myids=ocnids)
 #else
@@ -500,6 +498,7 @@
 
       real(r8) :: add_offset, scale
       real(r8) :: cff, ramp
+      real(r8) :: cff1, cff2, cff3, cff4, kwn, prof, u_cff, v_cff
 
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: ubar_rho
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: vbar_rho
@@ -595,7 +594,7 @@
         RETURN
       ELSE
         IF (Master) THEN
-	WRITE (stdout,36) ' ** ROMS grid ',ng,' recv data from SWAN'
+        WRITE (stdout,36) ' ** ROMS grid ',ng,' recv data from SWAN'
  36     FORMAT (a14,i2,a20)
         END IF
       END IF
@@ -765,12 +764,12 @@
 !-----------------------------------------------------------------------
 !  Export fields from ocean (ROMS) to wave (SWAN) model.
 !-----------------------------------------------------------------------
-# ifdef REFINED_GRID
+#ifdef REFINED_GRID
       CALL AttrVect_init (AttrVect_G(ng)%ocn2wav_AV,                    &
      &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
      &                    lsize=Asize)
       CALL AttrVect_zero (AttrVect_G(ng)%ocn2wav_AV)
-# endif
+#endif
 !
 !  Schedule sending fields to the wave model.
 !
@@ -793,75 +792,68 @@
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
+#ifdef ZETA_CONST
+          A(ij)=0.0_r8
+#else
           A(ij)=OCEAN(ng)%zeta(i,j,knew(ng))
+#endif
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "WLEV",     &
      &                           A, Asize)
 !
 !  U-velocity at RHO-points.
+!            
+      DO j=JstrT,JendT
+        DO i=IstrTU+1,IendTU
+#ifdef SOLVE3D
+# ifdef UV_KIRBY
 !
-#  ifdef REFINED_GRID
+! Compute the coupling current according to Kirby and Chen (1989).
+!
+          kwn=2.0_r8*pi/FORCES(ng)%Lwave(i,j)
+          prof=GRID(ng)%h(i,j)+OCEAN(ng)%zeta(i,j,NOUT)
+          cff1=0.0_r8
+          cff2=2.0_r8*kwn
+          cff3=0.0_r8
+          DO k=1,N(ng)
+            u_cff=0.5_r8*(OCEAN(ng)%u(i,  j,k,NOUT)+                    &
+     &                    OCEAN(ng)%u(i+1,j,k,NOUT))
+            cff4=cosh(cff2*(prof+GRID(ng)%z_r(i,j,k)))*                 &
+     &           GRID(ng)%Hz(i,j,k)
+            cff1=cff1+cff4*u_cff
+            cff3=cff3+cff4
+          END DO
+          ubar_rho(i,j)=cff1/cff3
+# else
+          ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%u(i,  j,N(ng),NOUT)+          &
+     &                          OCEAN(ng)%u(i+1,j,N(ng),NOUT))
+# endif
+#else
+          ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%ubar(i,  j,KOUT)+             &
+     &                          OCEAN(ng)%ubar(i+1,j,KOUT))
+#endif
+        END DO
+      END DO
+      IF (WESTERN_EDGE) THEN
         DO j=JstrT,JendT
-          DO i=IstrTU+1,IendTU
-!#   ifdef SOLVE3D
-!            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%u(i,  j,N(ng),NOUT)+        &
-!     &                            OCEAN(ng)%u(i+1,j,N(ng),NOUT))
-!#   else
-            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%ubar(i,  j,KOUT)+           &
-     &                            OCEAN(ng)%ubar(i+1,j,KOUT))
-!#   endif
-          END DO
+          ubar_rho(IstrT,j)=ubar_rho(IstrT+1,j)
         END DO
-        IF (WESTERN_EDGE) THEN
-          DO j=JstrT,JendT
-            ubar_rho(IstrT,j)=ubar_rho(IstrT+1,j)
-          END DO
-        END IF
-        IF (EASTERN_EDGE) THEN
-          DO j=JstrT,JendT
-            ubar_rho(IendT,j)=ubar_rho(IendT-1,j)
-          END DO
-        END IF
-#  else
-        DO j=JstrR,JendR
-          DO i=Istr,Iend
-!#   ifdef SOLVE3D
-!            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%u(i,  j,N(ng),NOUT)+        &
-!     &                            OCEAN(ng)%u(i+1,j,N(ng),NOUT))
-!#   else
-            ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%ubar(i,  j,KOUT)+           &
-     &                            OCEAN(ng)%ubar(i+1,j,KOUT))
-!#   endif
-          END DO
+      END IF
+      IF (EASTERN_EDGE) THEN
+        DO j=JstrT,JendT
+          ubar_rho(IendT,j)=ubar_rho(IendT-1,j)
         END DO
-        IF (WESTERN_EDGE) THEN
-          DO j=Jstr,Jend
-            ubar_rho(Istr-1,j)=ubar_rho(Istr,j)
-          END DO
-        END IF
-        IF (EASTERN_EDGE) THEN
-          DO j=Jstr,Jend
-            ubar_rho(Iend+1,j)=ubar_rho(Iend,j)
-          END DO
-        END IF
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          ubar_rho(Istr-1,Jstr-1)=0.5_r8*(ubar_rho(Istr  ,Jstr-1)+      &
-     &                                 ubar_rho(Istr-1,Jstr  ))
-        END IF
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          ubar_rho(Iend+1,Jstr-1)=0.5_r8*(ubar_rho(Iend  ,Jstr-1)+      &
-     &                                 ubar_rho(Iend+1,Jstr  ))
-        END IF
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          ubar_rho(Istr-1,Jend+1)=0.5_r8*(ubar_rho(Istr-1,Jend  )+      &
-     &                                 ubar_rho(Istr  ,Jend+1))
-        END IF
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          ubar_rho(Iend+1,Jend+1)=0.5_r8*(ubar_rho(Iend+1,Jend  )+      &
-     &                                 ubar_rho(Iend  ,Jend+1))
-        END IF
-#  endif
+      END IF
+#ifdef SOLVE3D
+# ifdef UV_KIRBY
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
+             OCEAN(ng)%uwave(i,j)=ubar_rho(i,j)
+          ENDDO
+        ENDDO
+# endif  
+#endif 
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
@@ -878,67 +870,56 @@
 !
 !  V-velocity at RHO-points.
 !
-#  ifdef REFINED_GRID
-        DO j=JstrTV+1,JendTV
-          DO i=IstrT,IendT
-!#   ifdef SOLVE3D
-!            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,N(ng),NOUT)+        &
-!     &                            OCEAN(ng)%v(i,j+1,N(ng),NOUT))
-!#   else
-            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%vbar(i,j  ,KOUT)+           &
-     &                            OCEAN(ng)%vbar(i,j+1,KOUT))
-!#   endif
+      DO j=JstrTV+1,JendTV
+        DO i=IstrT,IendT
+#ifdef SOLVE3D
+# ifdef UV_KIRBY
+!
+! Compute the coupling current according to Kirby and Chen (1989).
+!
+          kwn=2.0_r8*pi/FORCES(ng)%Lwave(i,j)
+          prof=GRID(ng)%h(i,j)+OCEAN(ng)%zeta(i,j,NOUT)
+          cff1=0.0_r8
+          cff2=2.0_r8*kwn
+          cff3=0.0_r8
+          DO k=1,N(ng)
+             v_cff=0.5_r8*(OCEAN(ng)%v(i,  j,k,NOUT)+                   &
+     &                     OCEAN(ng)%v(i,j+1,k,NOUT))
+             cff4=cosh(cff2*(prof+GRID(ng)%z_r(i,j,k)))*                &
+     &            GRID(ng)%Hz(i,j,k)
+             cff1=cff1+cff4*v_cff
+             cff3=cff3+cff4
           END DO
+          vbar_rho(i,j)=cff1/cff3
+# else
+          vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,N(ng),NOUT)+          &
+     &                          OCEAN(ng)%v(i,j+1,N(ng),NOUT))
+# endif
+#else
+          vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,KOUT)+                &
+     &                          OCEAN(ng)%v(i,j+1,KOUT))
+#endif
         END DO
-        IF (NORTHERN_EDGE) THEN
-          DO i=IstrT,IendT
-            vbar_rho(i,JendT)=vbar_rho(i,JendT-1)
-          END DO
-        END IF
-        IF (SOUTHERN_EDGE) THEN
-          DO i=IstrT,IendT
-            vbar_rho(i,JstrT)=vbar_rho(i,JstrT+1)
-          END DO
-        END IF
-#  else
-        DO j=Jstr,Jend
-          DO i=IstrR,IendR
-!#   ifdef SOLVE3D
-!            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,N(ng),NOUT)+        &
-!     &                            OCEAN(ng)%v(i,j+1,N(ng),NOUT))
-!#   else
-            vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%vbar(i,j  ,KOUT)+            &
-     &                            OCEAN(ng)%vbar(i,j+1,KOUT))
-!#   endif
-          END DO
+      END DO
+      IF (NORTHERN_EDGE) THEN
+        DO i=IstrT,IendT
+          vbar_rho(i,JendT)=vbar_rho(i,JendT-1)
         END DO
-        IF (NORTHERN_EDGE) THEN
-          DO i=Istr,Iend
-            vbar_rho(i,Jend+1)=vbar_rho(i,Jend)
-          END DO
-        END IF
-        IF (SOUTHERN_EDGE) THEN
-          DO i=Istr,Iend
-            vbar_rho(i,Jstr-1)=vbar_rho(i,Jstr)
-          END DO
-        END IF
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          vbar_rho(Istr-1,Jstr-1)=0.5_r8*(vbar_rho(Istr  ,Jstr-1)+      &
-     &                                 vbar_rho(Istr-1,Jstr  ))
-        END IF
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          vbar_rho(Iend+1,Jstr-1)=0.5_r8*(vbar_rho(Iend  ,Jstr-1)+      &
-     &                                 vbar_rho(Iend+1,Jstr  ))
-        END IF
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          vbar_rho(Istr-1,Jend+1)=0.5_r8*(vbar_rho(Istr-1,Jend  )+      &
-     &                                 vbar_rho(Istr  ,Jend+1))
-        END IF
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          vbar_rho(Iend+1,Jend+1)=0.5_r8*(vbar_rho(Iend+1,Jend  )+      &
-     &                                 vbar_rho(Iend  ,Jend+1))
-        END IF
-#  endif
+      END IF
+      IF (SOUTHERN_EDGE) THEN
+        DO i=IstrT,IendT
+          vbar_rho(i,JstrT)=vbar_rho(i,JstrT+1)
+        END DO
+      END IF
+#ifdef SOLVE3D
+# ifdef UV_KIRBY
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          OCEAN(ng)%vwave(i,j)=vbar_rho(i,j)
+        ENDDO
+      ENDDO
+# endif
+#endif
 !
       ij=0
       DO j=JstrT,JendT
@@ -989,7 +970,7 @@
         RETURN
       ELSE
         IF (Master) THEN
-	WRITE (stdout,35) ' ** ROMS grid ',ng,' sent data to SWAN'
+        WRITE (stdout,35) ' ** ROMS grid ',ng,' sent data to SWAN'
  35     FORMAT (a14,i2,a18)
         END IF
       END IF
@@ -1005,7 +986,7 @@
       RETURN
       END SUBROUTINE ocn2wav_coupling_tile
 
-	SUBROUTINE finalize_ocn2wav_coupling
+      SUBROUTINE finalize_ocn2wav_coupling
 !
 !========================================================================
 !                                                                       !

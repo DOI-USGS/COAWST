@@ -1541,6 +1541,20 @@
               STOP
             END IF
             Npts=load_l(Nval, Cval, Ngrids, Hout(idWbrk,1:Ngrids))
+#if defined UV_KIRBY
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idUwav)') THEN
+            IF (idUwav.eq.0) THEN
+              WRITE (out,280) 'idUwav'
+              STOP
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idUwav,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idVwav)') THEN
+            IF (idVwav.eq.0) THEN
+              WRITE (out,280) 'idVwav'
+              STOP
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idVwav,1:Ngrids))
+#endif 
           ELSE IF (TRIM(KeyWord).eq.'Hout(idTsur)') THEN
             IF (idTsur(itemp).eq.0) THEN
               WRITE (out,280) 'idTsur'

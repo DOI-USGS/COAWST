@@ -115,6 +115,24 @@
   'v2dvar'
   1.0d0
 
+'uWave'                                            ! Input/Ouput
+  'coupling vertically integrated u-momentum component'
+  'meter second-1'                                 ! [m/s]
+  'uWave-velocity, scalar, series'
+  'ocean_time'
+  'idUwav'
+  't2dvar'
+  1.0d0
+
+'vWave'                                            ! Input/Output
+  'coupling vertically integrated v-momentum component'
+  'meter second-1'                                 ! [m/s]
+  'vWave-velocity, scalar, series'
+  'ocean_time'
+  'idVwav'
+  't2dvar'
+  1.0d0
+
 'u'                                                ! Input/Output
   'u-momentum component'
   'meter second-1'                                 ! [m/s]
@@ -2591,7 +2609,7 @@
   'nulvar'
   1.0d0
 
-'AC_nonrth'                                         ! Input/Output
+'AC_north'                                          ! Input/Output
   'northern boundary wave energy envelope'
   'Joules'                                          ! [kg m2/s2]
   'AC_north, scalar, series'

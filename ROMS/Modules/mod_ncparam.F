@@ -236,6 +236,7 @@
         integer  :: idUads        ! 3D U-velocity adjoint sensitivity
         integer  :: idUair        ! surface U-wind
         integer  :: idUbar        ! 2D U-velocity
+        integer  :: idUwav        ! 2D U-velocity Kirby and Chen
         integer  :: idUbas        ! 2D U-velocity adjoint sensitivity
         integer  :: idUbcl        ! 2D U-velocity climatology
         integer  :: idUbcs        ! bottom max U-momentum-wave stress
@@ -266,6 +267,7 @@
         integer  :: idVads        ! 3D V-velocity adjoint sensitivity
         integer  :: idVair        ! surface V-wind
         integer  :: idVbar        ! 2D V-velocity
+        integer  :: idVwav        ! 2D V-velocity Kirby and Chen
         integer  :: idVbas        ! 2D V-velocity adjoint sensitivity
         integer  :: idVbcl        ! 2D V-velocity climatology
         integer  :: idVbcs        ! bottom max V-current-wave stress
@@ -981,10 +983,14 @@
                 idZavg=varid
               CASE ('idUbar')
                 idUbar=varid
+              CASE ('idUwav')
+                idUwav=varid
               CASE ('idRu2d')
                 idRu2d=varid
               CASE ('idVbar')
                 idVbar=varid
+              CASE ('idVwav')
+                idVwav=varid
               CASE ('idRv2d')
                 idRv2d=varid
               CASE ('idUvel')

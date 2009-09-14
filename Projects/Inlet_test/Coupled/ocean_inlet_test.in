@@ -356,6 +356,8 @@ Hout(idWpbt) == T                          ! wave mean bottom period
 Hout(idWorb) == T                          ! wave bottom orbital velocity
 Hout(idWdis) == T                          ! wave energy dissipation
 Hout(idWbrk) == T                          ! wave breaking (percent)
+Hout(idUwav) == T                          ! U component of the current affecting waves
+Hout(idVwav) == T                          ! V component of the current affecting waves
 
 Hout(idTsur) == F F                        ! surface net heat and salt flux
 Hout(idLhea) == F                          ! latent heat flux

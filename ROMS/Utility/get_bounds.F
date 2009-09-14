@@ -516,6 +516,7 @@
 #else
         IendR=Iend+1
         IendT=IendR
+        IendTU=Iend
 #endif
       ELSE                        ! Interior Tile
         IendR=Iend
@@ -572,6 +573,7 @@
 #else
         JendR=Jend+1
         JendT=JendR
+        JendTV=Jend
 #endif
       ELSE                        ! Interior Tile
         JendR=Jend

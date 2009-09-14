@@ -66,7 +66,7 @@ ROMS_APPLICATION ?= INLET_TEST
 #  provide an alternate directory FULL PATH.
 
 #MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inwave_test
-MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inlet_test/Coupled
+MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
 
 #  If your application requires analytical expressions and they are not
 #  located in "ROMS/Functionals", provide an alternate directory.
@@ -74,7 +74,7 @@ MY_HEADER_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inlet_test/Coupled
 #  "User/Functionals".
 
 #MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inwave_test
-MY_ANALYTICAL_DIR ?= /cygdrive/c/work/models/COAWST/Projects/Inlet_test/Coupled
+MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying
