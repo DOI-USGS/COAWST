@@ -356,6 +356,8 @@ Hout(idWpbt) == T T                        ! wave mean bottom period
 Hout(idWorb) == T T                        ! wave bottom orbital velocity
 Hout(idWdis) == T T                        ! wave energy dissipation
 Hout(idWbrk) == T T                        ! wave breaking (percent)
+Hout(idUwav) == T T                        ! U component of the current affecting waves
+Hout(idVwav) == T T                        ! V component of the current affecting waves
 
 Hout(idTsur) == F F F F                    ! surface net heat and salt flux
 Hout(idLhea) == F F                        ! latent heat flux
@@ -447,8 +449,8 @@ Hout(idBott) == T T T T T T T T T T F F F F F F F F\
      GSTNAME == ocean_gst.nc
      RSTNAME == ocean_rst.nc \
                 ocean_rst_ref5.nc
-     HISNAME == ocean_his_2way.nc \
-                ocean_his_2way_ref5.nc
+     HISNAME == ocean_his_ref1.nc \
+                ocean_his_ref5.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc

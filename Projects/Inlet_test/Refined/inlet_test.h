@@ -38,6 +38,7 @@
 #define SPLINES
 #define SWAN_COUPLING
 #define NEARSHORE_MELLOR
+#define UV_KIRBY
 #define ANA_INITIAL
 #define ANA_SMFLUX
 #define ANA_FSOBC

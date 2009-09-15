@@ -547,6 +547,7 @@
         JstrR=Jstr-1
         JstrT=JstrR
         JstrV=Jstr+1
+        JstrTV=JstrT
 #endif
       ELSE                        ! Interior Tile
         JstrR=Jstr

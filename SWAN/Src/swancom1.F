@@ -3004,7 +3004,7 @@
 !     *** in the gridpoints of the stencil                  ***
 
       CALL SWTSTA(110) 
-# ifdef BLOCK_JONSSON                                                   40.23
+# ifdef BLOCK_JONSSON
       CALL SWAPAR ( COMPDA(1,JDP2), KWAVE, CGO, SPCSIG, UBLOCK )          40.41
 # else
       CALL SWAPAR ( COMPDA(1,JDP2), KWAVE, CGO, SPCSIG )      

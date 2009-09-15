@@ -104,7 +104,7 @@
 ! Output history, average, diagnostic files parameters.
 
      LDEFOUT == T
-        NHIS == 60
+        NHIS == 5 !60
      NDEFHIS == 0
       NTSAVG == 1
         NAVG == 3600
@@ -448,7 +448,7 @@ Hout(idBott) == T T T T T T T T T T F F F F F F F F
 
      GSTNAME == ocean_gst.nc
      RSTNAME == ocean_rst.nc 
-     HISNAME == ocean_his_2way.nc 
+     HISNAME == ocean_his_coupled.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc

@@ -120,6 +120,10 @@
           real(r8), pointer :: u_stokes(:,:,:)
           real(r8), pointer :: v_stokes(:,:,:)
 # endif
+# ifdef UV_KIRBY
+          real(r8), pointer :: uwave(:,:)
+          real(r8), pointer :: vwave(:,:)
+# endif
 # if defined BIO_FASHAM && defined CARBON
           real(r8), pointer :: pH(:,:)
 # endif
@@ -395,6 +399,10 @@
       allocate ( OCEAN(ng) % rvlag3d(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % u_stokes(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % v_stokes(LBi:UBi,LBj:UBj,N(ng)) )
+# endif
+# ifdef UV_KIRBY
+      allocate ( OCEAN(ng) % uwave(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % vwave(LBi:UBi,LBj:UBj) )
 # endif
 
 # if defined BIO_FASHAM && defined CARBON
@@ -758,6 +766,12 @@
 # endif
           END DO
 #ifdef SOLVE3D
+# ifdef UV_KIRBY
+          DO i=Imin,Imax
+            OCEAN(ng) % uwave(i,j) = IniVal
+            OCEAN(ng) % vwave(i,j) = IniVal
+          END DO
+# endif
           DO k=1,N(ng)
             DO i=Imin,Imax
               OCEAN(ng) % pden(i,j,k) = IniVal

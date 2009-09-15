@@ -532,12 +532,10 @@
       IendT=BOUNDS(ng)%IendT(tile)
       JstrT=BOUNDS(ng)%JstrT(tile)
       JendT=BOUNDS(ng)%JendT(tile)
-#ifdef REFINED_GRID
       IstrTU=BOUNDS(ng)%IstrTU(tile)
       IendTU=BOUNDS(ng)%IendTU(tile)
       JstrTV=BOUNDS(ng)%JstrTV(tile)
       JendTV=BOUNDS(ng)%JendTV(tile)
-#endif
 !
       IF (WESTERN_EDGE) THEN
         IstrR=BOUNDS(ng)%Istr(tile)-1
@@ -764,12 +762,6 @@
 !-----------------------------------------------------------------------
 !  Export fields from ocean (ROMS) to wave (SWAN) model.
 !-----------------------------------------------------------------------
-#ifdef REFINED_GRID
-      CALL AttrVect_init (AttrVect_G(ng)%ocn2wav_AV,                    &
-     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
-     &                    lsize=Asize)
-      CALL AttrVect_zero (AttrVect_G(ng)%ocn2wav_AV)
-#endif
 !
 !  Schedule sending fields to the wave model.
 !
