@@ -60,7 +60,7 @@ $(if $(filter $(MAKE_VERSION),$(NEED_VERSION)),,        \
 #  "upwelling.h" header file.  
 
 #ROMS_APPLICATION ?= INWAVE_TEST
-ROMS_APPLICATION ?= INLET_TEST
+ROMS_APPLICATION ?= INLET_TEST 
 
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
