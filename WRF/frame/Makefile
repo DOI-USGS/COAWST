@@ -75,7 +75,7 @@ md_calls.inc : md_calls.m4
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 
-module_parallel.o:
+module_parallel.o: module_domain.o
 
 module_configure.o: \
 		module_state_description.o \

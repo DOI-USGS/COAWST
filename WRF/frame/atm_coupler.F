@@ -51,9 +51,9 @@
 !
       PRIVATE
 
-      PUBLIC :: initialize_ocean_coupling
+      PUBLIC :: initialize_atm_coupling
       PUBLIC :: atm2ocn_coupling
-      PUBLIC :: finalize_ocean_coupling
+      PUBLIC :: finalize_atm_coupling
 
       include 'mpif.h'
 !
@@ -61,11 +61,12 @@
 !
       TYPE(GlobalSegMap) :: GSMapWRF          ! GloabalSegMap variables
  
-      TYPE(AttrVect) :: atm2ocn_AV             ! AttrVect variables
+      TYPE(AttrVect) :: atm2ocn_AV            ! AttrVect variables
       TYPE(AttrVect) :: ocn2atm_AV 
       type(Router) :: RoutWRFtoROMS           ! Router variables
 # if defined SWAN_COUPLING
-      TYPE(AttrVect) :: atm2wav_AV             ! AttrVect variables
+      TYPE(AttrVect) :: atm2wav_AV            ! AttrVect variables
+      TYPE(AttrVect) :: wav2atm_AV            ! AttrVect variables
       type(Router) :: RoutWRFtoSWAN           ! Router variables
 # endif
 
@@ -81,7 +82,7 @@
 
       CONTAINS
 
-      SUBROUTINE initialize_ocean_coupling(grid)
+      SUBROUTINE initialize_atm_coupling(grid)
 !
 !=======================================================================
 !                                                                      !
@@ -193,6 +194,11 @@
       CALL AttrVect_init (atm2wav_AV, rlist="U10:V10",lsize=gsmsize)
       CALL AttrVect_zero (atm2wav_AV)
 !
+!  Initialize attribute vector for data from SWAN.
+!
+      CALL AttrVect_init (wav2atm_AV, rList="HSIGN:WLEN", lsize=gsmsize)
+      CALL AttrVect_zero (wav2atm_AV)
+!
 ! Initialize a router to the SWAN component.
 !
       CALL Router_init (WavId,GSMapWRF,ATM_COMM_WORLD,RoutWRFtoSWAN)
@@ -202,7 +208,7 @@
       deallocate (length)
 
       RETURN
-      END SUBROUTINE initialize_ocean_coupling
+      END SUBROUTINE initialize_atm_coupling
 
       SUBROUTINE atm2ocn_coupling (grid)
 !
@@ -230,6 +236,8 @@
 !     * LH         Latent heat flux     (Watts/m2)                     !
 !     * HFX        Sensible heat flux   (Watts/m2)                     !
 !     *            Net surface heat flux (Watts/m2)                    !
+!     * HISGN      Significant wave heigth (m)                         !
+!     * WLEN       Wave length (m)                                     !
 !                                                                      !
 !  Fields acquired from the OCEAN Model:                               !
 !                                                                      !
@@ -480,7 +488,7 @@
       ENDIF
       IF (MyError.ne.0) THEN
         WRITE (*,*) 'coupling send fail atm_coupler, error= ', MyError
-        CALL finalize_ocean_coupling
+        CALL finalize_atm_coupling
       END IF
 !
 !  Schedule receiving fields from ocean model.
@@ -491,7 +499,7 @@
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling fail wrfcplr, MyStatus= ', MyError
-          CALL finalize_ocean_coupling
+          CALL finalize_atm_coupling
         END IF
 !
 !  SST (Convert to K).
@@ -508,17 +516,53 @@
         END DO
       END DO
 !-----------------------------------------------------------------------
-!  Send atm fields to SWAN.
+!  Exchange fields with SWAN.
 !-----------------------------------------------------------------------
 !
 # if defined SWAN_COUPLING
+!
+!  Receive fields from wave model.
+!
+        CALL MCT_Recv (wav2atm_AV,RoutWRFtoSWAN,MyError)
+        IF (MYRANK.EQ.0) THEN
+          WRITE (*,*) '== WRF recvd wave fields'
+        END IF
+        IF (MyError.ne.0) THEN
+          WRITE (*,*) 'coupl fail wrfcplr, MyStatus= ', MyError
+          CALL finalize_atm_coupling
+        END IF
+!
+!  Hwave.
+!
+      CALL AttrVect_exportRAttr (wav2atm_AV, "HSIGN", AA, Asize)
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+          hwave(i,j)=AA(ij)*(1-grid%landmask(i,j))
+        END DO
+      END DO
+!
+!  Lwave.
+!
+      CALL AttrVect_exportRAttr (wav2atm_AV, "WLEN", AA, Asize)
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+          lwave(i,j)=AA(ij)*(1-grid%landmask(i,j))
+        END DO
+      END DO
+!
+!  Send U10 and V10 to SWAN. This AV was filled above.
+!
       CALL MCT_SEND (atm2wav_AV,RoutWRFtoSWAN,MyError)
       IF (MYRANK.EQ.0) THEN
         WRITE (*,*) '== WRF sent atm fields to SWAN'
       ENDIF
       IF (MyError.ne.0) THEN
         WRITE (*,*) 'coupling send fail atm_coupler, error= ', MyError
-        CALL finalize_ocean_coupling
+        CALL finalize_atm_coupling
       END IF
 # endif
 !
@@ -528,7 +572,7 @@
       RETURN
       END SUBROUTINE atm2ocn_coupling
 
-      SUBROUTINE finalize_ocean_coupling
+      SUBROUTINE finalize_atm_coupling
 !
 !=======================================================================
 !                                                                    ===
@@ -552,6 +596,6 @@
       CALL GlobalSegMap_clean (GSMapWRF)
       CALL MCTWorld_clean ()
 
-      END SUBROUTINE finalize_ocean_coupling
+      END SUBROUTINE finalize_atm_coupling
 #endif
       END MODULE atm_coupler_mod

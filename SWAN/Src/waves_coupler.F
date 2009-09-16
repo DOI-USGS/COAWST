@@ -112,12 +112,13 @@
 
 # if defined WRF_COUPLING
       TYPE(AttrVect) :: atm2wav_AV            ! AttrVec variables
-      type(Router)   :: WRFtoSWAN             ! Router variables
+      TYPE(AttrVect) :: wav2atm_AV            ! AttrVec variables
+      type(Router)   :: SWANtoWRF             ! Router variables
 # endif
 #ifdef MCT_INTERP_WV2AT
       TYPE(GlobalSegMap) :: GSMapWRF          ! GloabalSegMap variables
       TYPE(AttrVect) :: atm2wav_AV2           ! AttrVect variables
-!     TYPE(AttrVect) :: wav2atm_AV2 
+      TYPE(AttrVect) :: wav2atm_AV2 
 
       TYPE(SparseMatrix) :: sMatW             ! Sparse matrix elements
       TYPE(SparseMatrix) :: sMatA             ! Sparse matrix elements
@@ -157,14 +158,11 @@
 
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       integer, pointer :: start(:), length(:)
-!     integer :: SMlsize, SMgnumel
-!     integer :: SMlsize1, SMlsize2
       integer :: MyMasterswan
 #ifdef REFINED_GRID
       integer, dimension(:), pointer :: ocnids
       integer, dimension(:), pointer :: wavids
 #endif
-
 !
 !-----------------------------------------------------------------------
 !  Begin initialization phase.
@@ -288,52 +286,6 @@
      &               WAV_COMM_WORLD, MyError)
 !      END IF
 #endif
-#if !defined MCT_INTERP_WV2AT
-!
-!  Initialize a Global Segment Map for non-haloed transfer of data out
-!  of SWAN. Determine non-haloed start and length arrays for this
-!  processor.
-!
-      IF (nprocs.eq.1) THEN
-        Isize=MXCGL
-        Jsize=MYCGL
-      ELSE
-        IF (MXCGL.gt.MYCGL) THEN
-          Isize=MXC-IHALOX*IBLKAD(1)
-          Jsize=MYC
-        ELSE
-          Isize=MXC
-          Jsize=MYC-IHALOY*IBLKAD(1)
-        END IF
-      END IF
-!
-      allocate ( start(Jsize) )
-      allocate ( length(Jsize) )
-!
-      DO j=1,Jsize
-        length(j)=Isize
-        IF (MXCGL.gt.MYCGL) THEN
-          IF (MyRank.eq.0) THEN
-            start(j)=MXF+(j-1)*MXCGL
-          ELSE
-            start(j)=MXF+(j-1)*MXCGL+IHALOX
-          END IF
-        ELSE
-          IF (MyRank.eq.0) THEN
-            start(j)=MYF+(j-1)*MXCGL
-          ELSE
-            start(j)=(MYF+IHALOY-1)*MXCGL+1+(j-1)*MXCGL
-          END IF
-        END IF
-      END DO
-      gsmsize=Isize*Jsize
-!
-      CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapSWAN, start,      &
-     &                        length, 0, WAV_COMM_WORLD, WAVid)
-      deallocate (start)
-      deallocate (length)
-#endif
-#ifdef MCT_INTERP_WV2AT
 !
 !  Initialize a Global Segment Map for non-haloed transfer of data for
 !  SWAN. Determine non-haloed start and length arrays for this
@@ -377,6 +329,7 @@
      &                        length, 0, WAV_COMM_WORLD, WAVid)
       deallocate (start)
       deallocate (length)
+#if defined WRF_COUPLING
 !
 !  Initialize a Global Segment Map for non-haloed transfer of data
 !  for the atmosphere model.
@@ -398,9 +351,9 @@
      &                        WAV_COMM_WORLD, WAVid)
       deallocate (start)
       deallocate (length)
-
+#endif
       call mpi_barrier(WAV_COMM_WORLD)
-
+#ifdef MCT_INTERP_WV2AT
 !
 ! Create ATM sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
@@ -442,18 +395,26 @@
       CALL Router_init (OCNid, GlobalSegMap_G(ng)%GSMapSWAN,            &
      &                  WAV_COMM_WORLD, Router_G(ng)%SWANtoROMS)
 !
-#if defined WRF_COUPLING && !defined MCT_INTERP_OC2AT
+#if defined WRF_COUPLING
 !
 !  Initialize attribute vector holding the export data code string of
 !  the atmosphere model.
 !
-      CALL AttrVect_init (atm2wav_AV, rlist="U10:V10",lsize=gsmsize)
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapSWAN,            &
+     &                         WAV_COMM_WORLD)
+      CALL AttrVect_init (atm2wav_AV, rlist="U10:V10",                  &
+     &                    lsize=Asize)
       CALL AttrVect_zero (atm2wav_AV)
+
+!
+! Initialize atribute vector holding wave data.
+!
+      CALL AttrVect_init(wav2atm_AV, rList="HSIGN:WLEN", lsize=Asize)
+      CALL AttrVect_zero(wav2atm_AV)
 !
 ! Initialize a router to the WRF component.
 !
-      CALL Router_init (ATMid, GlobalSegMap_G(ng)%GSMapSWAN,            &
-     &                  WAV_COMM_WORLD, WRFtoSWAN)
+      CALL Router_init (ATMid, GSMapWRF, WAV_COMM_WORLD, SWANtoWRF)
 !
 #endif
 #ifdef MCT_INTERP_WV2AT
@@ -467,26 +428,12 @@
      &                    lsize=Asize)
       CALL AttrVect_zero (atm2wav_AV2)
 !
-      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapSWAN,            &
-     &                         WAV_COMM_WORLD)
-      CALL AttrVect_init (atm2wav_AV, rlist="U10:V10",                  &
-     &                    lsize=Asize)
-      CALL AttrVect_zero (atm2wav_AV)
-!
 !  Initialize attribute vector holding the export data code string of
 !  the wave model.
 !
-!      Asize=GlobalSegMap_lsize(GSmapWRF, WAV_COMM_WORLD)
-!      CALL AttrVect_init(wav2atm_AV2, rList="HSIGN", lsize=Asize)
-!      CALL AttrVect_zero (wav2atm_AV2)
-!
-!      Asize=GlobalSegMap_lsize(GSmapSWAN, WAV_COMM_WORLD)
-!      CALL AttrVect_init(wav2atm_AV, rList="HSIGN", lsize=Asize)
-!      CALL AttrVect_zero (wav2atm_AV)
-!
-!  Initialize a router to the wave model component.
-!
-      CALL Router_init (ATMid, GSMapWRF, WAV_COMM_WORLD, WRFtoSWAN)
+      Asize=GlobalSegMap_lsize(GSmapWRF, WAV_COMM_WORLD)
+      CALL AttrVect_init(wav2atm_AV2, rList="HSIGN:WLEN", lsize=Asize)
+      CALL AttrVect_zero(wav2atm_AV2)
 #endif
 #ifdef REFINED_GRID
       deallocate ( wavids )
@@ -616,6 +563,9 @@
       ELSE IF (IVTYPE.eq.10) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "HSIGN",avdata)
+#ifdef AIR_OCEAN
+        CALL AttrVect_importRAttr (wav2atm_AV,"HSIGN",avdata)
+#endif
       ELSE IF (IVTYPE.eq.12) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "RTP",avdata)
@@ -634,6 +584,9 @@
       ELSE IF (IVTYPE.eq.17) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "WLEN",avdata)
+#ifdef AIR_OCEAN
+        CALL AttrVect_importRAttr (wav2atm_AV,"WLEN",avdata)
+#endif
       ELSE IF (IVTYPE.eq.8) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "QB",avdata)
@@ -680,14 +633,30 @@
         END IF
 # ifdef AIR_OCEAN
 !
+!  Send fields to atmosphere model.
+!
+#  ifdef MCT_INTERP_WV2AT
+        CALL MCT_MatVecMul(wav2atm_AV, W2AMatPlus, wav2atm_AV2)
+        CALL MCT_Send (wav2atm_AV2, SWANtoWRF, MyError)
+#  else
+        CALL MCT_Send (wav2atm_AV, SWANtoWRF, MyError)
+#  endif
+        IF (MYRANK.EQ.0) THEN
+          WRITE (*,*) '== SWAN sent fields to atm model'
+        END IF
+        IF (MyError.ne.0) THEN
+          WRITE (*,*) 'coupl fail swancplr, MyStatus= ', MyError
+          CALL FINALIZE_WAV2OCN_COUPLING(ng)
+        END IF
+!
 !  Receive fields from atmosphere model.
 !
         NUMTRANSFER=7
 #  ifdef MCT_INTERP_WV2AT
-        CALL MCT_Recv (atm2wav_AV2, WRFtoSWAN, MyError)
+        CALL MCT_Recv (atm2wav_AV2, SWANtoWRF, MyError)
         CALL MCT_MatVecMul(atm2wav_AV2, A2WMatPlus, atm2wav_AV)
 #  else
-        CALL MCT_Recv (atm2wav_AV, WRFtoSWAN, MyError)
+        CALL MCT_Recv (atm2wav_AV, SWANtoWRF, MyError)
 #  endif
         IF (MYRANK.EQ.0) THEN
           WRITE (*,*) '== SWAN recvd atm fields'
@@ -1091,7 +1060,7 @@
       CALL Router_clean (Router_G(ng)%SWANtoROMS, MyError)
       CALL AttrVect_clean (AttrVect_G(ng)%wav2ocn_AV, MyError)
 # ifdef WRF_COUPLING
-      CALL Router_clean (WRFtoSWAN, MyError)
+      CALL Router_clean (SWANtoWRF, MyError)
       CALL AttrVect_clean (atm2wav_AV, MyError)
 # endif
       CALL GlobalSegMap_clean (GlobalSegMap_G(ng)%GSMapSWAN, MyError)

@@ -83,7 +83,7 @@ CONTAINS
 !</DESCRIPTION>
 !jcw
    USE module_parallel
-   USE ATM_COUPLER_MOD, ONLY: initialize_ocean_coupling
+   USE ATM_COUPLER_MOD, ONLY: initialize_atm_coupling
    USE ATM_COUPLER_MOD, ONLY: atm2ocn_coupling
    integer, intent(in) :: MyComm_r
 #else
@@ -252,7 +252,9 @@ CONTAINS
                                      grid       = head_grid ,          &
                                      parent     = null_domain ,        &
                                      kid        = -1                   )
-
+#ifdef SWAN_COUPLING
+   CALL allocate_mctvars (grid       = head_grid)
+#endif
    CALL       wrf_debug ( 100 , 'wrf: calling model_to_grid_config_rec ' )
    CALL model_to_grid_config_rec ( head_grid%id , model_config_rec , config_flags )
    CALL       wrf_debug ( 100 , 'wrf: calling set_scalar_indices_from_config ' )
@@ -315,7 +317,7 @@ CONTAINS
    head_grid%start_subtime = domain_get_start_time ( head_grid )
    head_grid%stop_subtime = domain_get_stop_time ( head_grid )
 #ifdef WRF_COUPLING
-   CALL initialize_ocean_coupling (head_grid)
+   CALL initialize_atm_coupling (head_grid)
    CALL atm2ocn_coupling(head_grid)
 #endif
    END SUBROUTINE wrf_init
@@ -377,7 +379,7 @@ CONTAINS
 ! 
 !</DESCRIPTION>
 #ifdef WRF_COUPLING
-   USE ATM_COUPLER_MOD, ONLY: finalize_ocean_coupling
+   USE ATM_COUPLER_MOD, ONLY: finalize_atm_coupling
 #endif
      LOGICAL, OPTIONAL, INTENT(IN) :: no_shutdown
 
@@ -396,7 +398,7 @@ CONTAINS
    ENDIF
 
 #ifdef WRF_COUPLING
-   CALL finalize_ocean_coupling
+   CALL finalize_atm_coupling
 #endif
    END SUBROUTINE wrf_finalize
 

@@ -1,3 +1,4 @@
+# include "cppdefs.wrf"
 !----------------------------------------------------------------------
 !
       MODULE MODULE_SF_MYJSFC
@@ -81,6 +82,9 @@ CONTAINS
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE)
 !----------------------------------------------------------------------
 !
+#ifdef SWAN_COUPLING
+      USE module_parallel
+#endif
       IMPLICIT NONE
 !
 !----------------------------------------------------------------------
@@ -142,6 +146,9 @@ CONTAINS
       REAL,DIMENSION(ITS:ITE,JTS:JTE) :: THSK
 !
       REAL,DIMENSION(ITS:ITE,KTS:KTE+1,JTS:JTE) :: ZINT
+#ifdef SWAN_COUPLING
+      REAL :: hwavep, lwavep
+#endif
 !
 !----------------------------------------------------------------------
 !**********************************************************************
@@ -302,6 +309,10 @@ CONTAINS
           TZ0=THZ0(I,J)*APESFC
        endif
 !
+#ifdef SWAN_COUPLING
+          hwavep=hwave(i,j)
+          lwavep=lwave(i,j)
+#endif
           CALL SFCDIF(NTSD,SEAMASK,THSK(I,J),QSFC(I,J),PSFC            &
      &               ,UZ0(I,J),VZ0(I,J),TZ0,TSK(I,J),THZ0(I,J),QZ0(I,J)         &
      &               ,USTAR(I,J),ZNT(I,J),Z0BASE(I,J),CT(I,J),RMOL(I,J) &
@@ -315,7 +326,12 @@ CONTAINS
      &               ,QSHLTR(I,J),Q10(I,J),PSHLTR(I,J)                 &
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
+#ifdef SWAN_COUPLING
+     &               ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZHK(LMH+1)           &
+     &               ,hwavep, lwavep)
+#else
      &               ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZHK(LMH+1))
+#endif
 !
 !***  REMOVE SUPERATURATION AT 2M AND 10M
 !
@@ -363,7 +379,12 @@ CONTAINS
      &                 ,U10,V10,TH02,TH10,Q02,Q10,PSHLTR               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
+#ifdef SWAN_COUPLING
+     &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZSFC, hwavep       &
+     &                 ,lwavep)
+#else
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZSFC)
+#endif
 !     ****************************************************************
 !     *                                                              *
 !     *                       SURFACE LAYER                          *
@@ -383,6 +404,10 @@ CONTAINS
       REAL,INTENT(IN) :: CWMLOW,PBLH,PLOW,QLOW,PSFC,SEAMASK,ZSFC       &
      &                  ,THELOW,THLOW,THS,TSK,TLOW,TZ0,ULOW,VLOW,WETM,ZSL  &
      &                  ,Z0BASE
+#ifdef SWAN_COUPLING
+      REAL, INTENT(IN) :: hwavep
+      REAL, INTENT(IN) :: lwavep
+#endif
 !
       REAL,INTENT(OUT) :: CHS,CHS2,CPM,CQS2,CT,FLHC,FLQC,FLX_LH,HFX    &
      &                   ,PSHLTR,Q02,Q10,QFX,QGH,RIB,RLMO              &
@@ -437,7 +462,14 @@ CONTAINS
 !----------------------------------------------------------------------
         DO ITR=1,ITRMX
 !----------------------------------------------------------------------
+
+#if defined SWAN_COUPLING
+          Z0=MAX(1200.0*hwavep*                                         &
+     &                (hwavep/lwavep)**4.5+                             &
+     &                0.11*VISC/(USTAR+0.001),1.59E-5)
+#else
           Z0=MAX(USTFC*USTAR*USTAR,1.59E-5)
+#endif
 !
 !***  VISCOUS SUBLAYER, JANJIC MWR 1994
 !
