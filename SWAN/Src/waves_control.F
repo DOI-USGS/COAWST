@@ -113,7 +113,7 @@
         ngc=mychild(ng)
         IF (ng.gt.1) THEN
           DO i=1,ac2size(ngp)
-            PARALL2_MOD(ng)%AC2_child_G(i)=                         &
+            PARALL2_MOD(ng)%AC2_child_G(i)=                             &
      &      PARALL2_MOD(ngp)%AC2_parent2_G(i)
            END DO
         END IF
