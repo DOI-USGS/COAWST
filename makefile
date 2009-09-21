@@ -91,7 +91,7 @@ MY_CPP_FLAGS ?=
 #  one grid is supported.  This option will be available in the near
 #  future.
 
- NestedGrids ?= 2
+ NestedGrids ?= 1
 
 #  Activate debugging compiler options:
 
