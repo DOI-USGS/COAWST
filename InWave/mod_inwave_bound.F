@@ -18,15 +18,29 @@
 
         TYPE T_INWAVE_BOUND
 
+#ifdef EAST_EOBC
           real(r8), pointer :: AC_east(:,:)
-          real(r8), pointer :: AC_west(:,:)
-          real(r8), pointer :: AC_north(:,:)
-          real(r8), pointer :: AC_south(:,:)
-
           real(r8), pointer :: ACG_east(:,:,:)
+#endif
+
+#ifdef WEST_EOBC
+          real(r8), pointer :: AC_west(:,:)
           real(r8), pointer :: ACG_west(:,:,:)
+#endif
+
+#ifdef NORTH_EOBC
+          real(r8), pointer :: AC_north(:,:)
           real(r8), pointer :: ACG_north(:,:,:)
+#endif
+
+#ifdef SOUTH_EOBC
+          real(r8), pointer :: AC_south(:,:)
           real(r8), pointer :: ACG_south(:,:,:)
+#endif
+
+          real(r8), allocatable :: WD_BND(:)
+
+          integer :: ND_BND, ND_ini, ND_end
 
         END TYPE T_INWAVE_BOUND
 
@@ -35,6 +49,7 @@
       CONTAINS
 
       SUBROUTINE allocate_inwave_bound (ng, LBi, UBi, LBj, UBj)
+
 !
 !=======================================================================
 !                                                                      !
@@ -44,28 +59,53 @@
 !=======================================================================
 !
       USE mod_param
+      USE mod_iounits
 !
 !  Local variable declarations.
 !
+      integer :: ND_BND
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
-!
+      character (len=80) :: ncbnd_name
+
 !-----------------------------------------------------------------------
 !  Allocate and initialize module variables.
 !-----------------------------------------------------------------------
 !
       IF (ng.eq.1) allocate ( WAVEB(Ngrids) )
+
+
+!-----------------------------------------------------------------------
+!  Read the boundary grid
+!-----------------------------------------------------------------------
+
+      ncbnd_name=IWBNDname(ng)
+
+      call get_inwave_bnd_grid(ng, ncbnd_name)
+
+      ND_BND=WAVEB(ng) % ND_BND
+
 !
 !  Nonlinear model state.
-!
-      allocate ( WAVEB(ng) % AC_east(LBj:UBj,ND(ng)) )
-      allocate ( WAVEB(ng) % AC_west(LBj:UBj,ND(ng)) )
-      allocate ( WAVEB(ng) % AC_north(LBi:UBi,ND(ng)) )
-      allocate ( WAVEB(ng) % AC_south(LBi:UBi,ND(ng)) )
 
+#ifdef EAST_EOBC
+      allocate ( WAVEB(ng) % AC_east(LBj:UBj,ND(ng)) )
       allocate ( WAVEB(ng) % ACG_east(LBj:UBj,ND(ng),2) )
+#endif
+
+#ifdef WEST_EOBC
+      allocate ( WAVEB(ng) % AC_west(LBj:UBj,ND(ng)) )
       allocate ( WAVEB(ng) % ACG_west(LBj:UBj,ND(ng),2) )
+#endif
+
+#ifdef NORTH_EOBC
+      allocate ( WAVEB(ng) % AC_north(LBi:UBi,ND(ng)) )
       allocate ( WAVEB(ng) % ACG_north(LBi:UBi,ND(ng),2) )
+#endif
+
+#ifdef SOUTH_EOBC
+      allocate ( WAVEB(ng) % AC_south(LBi:UBi,ND(ng)) )
       allocate ( WAVEB(ng) % ACG_south(LBi:UBi,ND(ng),2) )
+#endif
 
       RETURN
       END SUBROUTINE allocate_inwave_bound
@@ -83,6 +123,7 @@
 !=======================================================================
 !
       USE mod_param
+
 !
 !  Imported variable declarations.
 !
@@ -94,6 +135,7 @@
       integer :: i, j, d
 
       real(r8), parameter :: IniVal = 0.0_r8
+
 !
 #include "tile.h"
 !
@@ -126,6 +168,8 @@
       Jmin=LBj
       Jmax=UBj
 #endif
+
+
 !
 !-----------------------------------------------------------------------
 !  Initialize module variables.
@@ -135,22 +179,31 @@
 !
       DO i=Imin,Imax
         DO d=1,ND(ng)
+#ifdef NORTH_EOBC
           WAVEB(ng) % AC_north(i,d)    = IniVal
           WAVEB(ng) % ACG_north(i,d,1) = IniVal
           WAVEB(ng) % ACG_north(i,d,2) = IniVal
+#endif
+#ifdef SOUTH_EOBC
           WAVEB(ng) % AC_south(i,d)    = IniVal
           WAVEB(ng) % ACG_south(i,d,1) = IniVal
           WAVEB(ng) % ACG_south(i,d,2) = IniVal
+#endif
         END DO
       END DO
+
       DO j=Jmin,Jmax
         DO d=1,ND(ng)
+#ifdef EAST_EOBC
           WAVEB(ng) % AC_east(j,d)    = IniVal
           WAVEB(ng) % ACG_east(j,d,1) = IniVal
           WAVEB(ng) % ACG_east(j,d,2) = IniVal
+#endif
+#ifdef WEST_EOBC
           WAVEB(ng) % AC_west(j,d)    = IniVal
           WAVEB(ng) % ACG_west(j,d,1) = IniVal
           WAVEB(ng) % ACG_west(j,d,2) = IniVal
+#endif
         END DO
       END DO
 

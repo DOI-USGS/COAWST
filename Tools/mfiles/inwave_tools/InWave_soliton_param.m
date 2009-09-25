@@ -28,7 +28,7 @@ TA= 10;                % representative absolute wave period (sec)
 
 if (make_InWave_grd)
     
-  grd_file='..\..\..\Projects\Inwave_tests\step\InWave_grd.nc';  % name of the grid file
+  grd_file='..\..\..\Projects\Inwave_tests\soliton\InWave_grd.nc';  % name of the grid file
     
   % Grid characteristics
 
@@ -74,7 +74,7 @@ end
 
 if (make_InWave_ini)  
     
-  ini_file='..\..\..\Projects\Inwave_tests\step\InWave_ini.nc';  % name of the initial file
+  ini_file='..\..\..\Projects\Inwave_tests\soliton\InWave_ini.nc';  % name of the initial file
 
   Ac=ones(Nbins,Mm,Lm).*0;
   Cx=ones(Nbins,Mm,Lm-1).*0;
@@ -90,7 +90,7 @@ end
 
 if (make_InWave_bnd)
 
-  bnd_file='..\..\..\Projects\Inwave_tests\step\InWave_bnd.nc';  % name of the boundary file
+  bnd_file='..\..\..\Projects\Inwave_tests\soliton\InWave_bnd.nc';  % name of the boundary file
 
   % Duration of the simulation and time increment for the boundaries
   
@@ -129,6 +129,10 @@ if (make_InWave_bnd)
   if obc(4)==1
     Ac_west=zeros(length(time),Nbins_bnd,Mm);
     Ac_west(6:6*10,2,:)=100;
+    
+    for i=1:Mm
+    Ac_west(:,2,i)=100.*(sech(2*3.14159/6000*(-9.65*(time(:)-500)))).^2;
+    end
     
   end
 

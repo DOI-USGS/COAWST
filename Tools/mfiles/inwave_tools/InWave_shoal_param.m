@@ -18,8 +18,8 @@ make_InWave_bnd=1;
 %%%%%        GENERAL PARAMETERS: THESE NEED TO BE DEFINED ALWAYS       %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Lm= 61;                % number of total rho points in the xi direction
-Mm= 20;                % number of total rho points in the eta direction
+Lm= 101;                % number of total rho points in the xi direction
+Mm= 101;                % number of total rho points in the eta direction
 TA= 10;                % representative absolute wave period (sec)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -28,12 +28,12 @@ TA= 10;                % representative absolute wave period (sec)
 
 if (make_InWave_grd)
     
-  grd_file='..\..\..\Projects\Inwave_tests\step\InWave_grd.nc';  % name of the grid file
+  grd_file='..\..\..\Projects\Inwave_tests\shoal\InWave_grd.nc';  % name of the grid file
     
   % Grid characteristics
 
-  dx=100;                % grid cell size in xi direction
-  dy=100;                % grid cell size in eta direction 
+  dx=50;                % grid cell size in xi direction
+  dy=50;                % grid cell size in eta direction 
 
   % enter x and y coordinates of rho points
 
@@ -44,17 +44,34 @@ if (make_InWave_grd)
   y=repmat(y',1,length(x));
 
   % Bathymetry characteristics
-  depth0= 15;            % water depth in the study domain (m)
+  depth0= 20.;            % water depth in the study domain (m)
 
   % set depth 
   depth=zeros(size(x))+depth0;
+  
+  r1=10.0;
+  r2=30.0;
+
+  for j=1:Mm
+   for i=1:Lm
+	    rad=((i-51)^2.+(j-51)^2.)^0.5;
+		if(rad<r1)
+          	depth(i,j)=5.0;
+        end
+		if(rad>=r1 & rad<=r2)
+          	depth(i,j)=5.0+(rad-r1)*(20.0-5.0)/(r2-r1);
+        end
+   end
+  end
 
   % set grid angle
   roms_angle=zeros(size(depth));
 
   % set masking
   mask_rho=ones(size(depth));
-
+  dum=find(depth<0.1);
+  mask_rho(dum)=0;
+  
   % set coriolis f
   f=zeros(size(depth))+4.988e-5; %20N
 
@@ -74,12 +91,14 @@ end
 
 if (make_InWave_ini)  
     
-  ini_file='..\..\..\Projects\Inwave_tests\step\InWave_ini.nc';  % name of the initial file
+  ini_file='..\..\..\Projects\Inwave_tests\shoal\InWave_ini.nc';  % name of the initial file
 
   Ac=ones(Nbins,Mm,Lm).*0;
   Cx=ones(Nbins,Mm,Lm-1).*0;
   Cy=ones(Nbins,Mm-1,Lm).*0;
   Ct=ones(Nbins,Mm,Lm).*0;
+  
+  Ac(16,:,:)=100;
 
 end
 
@@ -90,7 +109,7 @@ end
 
 if (make_InWave_bnd)
 
-  bnd_file='..\..\..\Projects\Inwave_tests\step\InWave_bnd.nc';  % name of the boundary file
+  bnd_file='..\..\..\Projects\Inwave_tests\shoal\InWave_bnd.nc';  % name of the boundary file
 
   % Duration of the simulation and time increment for the boundaries
   
@@ -128,7 +147,10 @@ if (make_InWave_bnd)
   end
   if obc(4)==1
     Ac_west=zeros(length(time),Nbins_bnd,Mm);
-    Ac_west(6:6*10,2,:)=100;
+    
+    for i=1:Mm
+    Ac_west(:,2,i)=100;
+    end
     
   end
 

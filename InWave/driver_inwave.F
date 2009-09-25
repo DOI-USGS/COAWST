@@ -33,7 +33,7 @@
 !      USE mod_inwave_vars, ONLY : initialize_inwave_vars
       USE mod_inwave_bound, ONLY : allocate_inwave_bound
       USE mod_inwave_bound, ONLY : initialize_inwave_bound
-      USE mod_iounits
+
 !
 !  Imported variable declarations.
 !
@@ -45,9 +45,6 @@
       integer :: i, indx, is, itrc, j, d
       real(r8), parameter :: eps = 1.0E-16_r8
       real(r8) :: cff, cff1, cff2, cff3, cff4
-      character (len=80) :: nc_name
-      real(r8), allocatable :: ndirs(:)
-      real(r8), allocatable :: pdirs(:)
 
 # ifdef DISTRIBUTE
 #  ifdef EW_PERIODIC
@@ -67,44 +64,14 @@
 !-----------------------------------------------------------------------
 
       CALL allocate_inwave_vars (ng, LBi, UBi, LBj, UBj)
-!
-      CALL initialize_inwave_vars (ng, tile)
-!
+
+      CALL initialize_inwave_vars (ng, LBi, UBi, LBj, UBj, tile)
 
       CALL allocate_inwave_bound (ng, LBi, UBi, LBj, UBj)
 
       CALL initialize_inwave_bound (ng, tile)
 
       CALL get_inwave_data (ng)
-
-!
-! Compute degree bins. This may need to be moved.
-!
-      IF (.not.allocated(ndirs)) allocate (ndirs(ND(ng)))
-      IF (.not.allocated(pdirs)) allocate (pdirs(ND(ng)))
-      
-!      IF (Master) THEN
-        nc_name=ENGname(ng)
-        call get_inwave_grid(ng, nc_name, ndirs, pdirs)
-!      END IF
-      DO d=1,ND(ng)
-        WAVEG(ng)%WD(d)=ndirs(d)
-      END DO
-
-
-      DO d=1,ND(ng)
-        cff=WAVEG(ng)%WD(d)-WAVEG(ng)%WD(d-1)
-        IF (cff.lt.0.0_r8) THEN
-          cff=cff+360.0_r8
-        END IF
-        WAVEG(ng)%WD(d)=WAVEG(ng)%WD(d)*pi/180.
-        WAVEG(ng)%pd(d)=180.0_r8/(pi*cff)
-      END DO
-
-
-! need to distribute pd and WD
-
-      if (allocated(ndirs)) deallocate(ndirs)
 
       RETURN
       END SUBROUTINE inwave_init
@@ -186,6 +153,7 @@
             CALL set_inwave_data (ng, TILE)
           END DO
         END DO
+
 !$OMP END PARALLEL DO
         
         

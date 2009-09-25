@@ -136,7 +136,8 @@
         character (len=80), dimension(Ngrids) :: STDname
         character (len=80), dimension(Ngrids) :: SWAN_infile
 #ifdef INWAVE_COUPLING
-        character (len=80), dimension(Ngrids) :: ENGname
+        character (len=80), dimension(Ngrids) :: IWINIname
+        character (len=80), dimension(Ngrids) :: IWBNDname
 #endif
         character (len=80) :: Iname
         character (len=80), dimension(Ngrids) :: Wname

@@ -59,6 +59,7 @@
      &                    WAVEP(ng) % cx,                               &
      &                    WAVEP(ng) % cy,                               &
      &                    WAVEP(ng) % ct,                               &
+     &                    WAVEP(ng) % Ta,                               &
      &                    WAVEG(ng) % WD)
 !# ifdef PROFILE
 !      CALL wclock_off (ng, iNLM, 35)
@@ -75,7 +76,7 @@
 # endif
      &                          h,angler, pm, pn,                      &
      &                          zeta,ubar, vbar,                       &
-     &                          cx, cy, ct, WD)
+     &                          cx, cy, ct, Ta, WD)
 !***********************************************************************
 !
       USE mod_param
@@ -112,6 +113,7 @@
       real(r8), intent(inout) :: cx(LBi:,LBj:,:)
       real(r8), intent(inout) :: cy(LBi:,LBj:,:)
       real(r8), intent(inout) :: ct(LBi:,LBj:,:)
+      real(r8), intent(in) :: Ta
       real(r8), intent(in) :: WD(:)
 # else
 #  ifdef MASKING
@@ -129,6 +131,7 @@
       real(r8), intent(inout) :: cx(LBi:UBi,LBj:UBj,ND(ng))
       real(r8), intent(inout) :: cy(LBi:UBi,LBj:UBj,ND(ng))
       real(r8), intent(inout) :: ct(LBi:UBi,LBj:UBj,ND(ng))
+      real(r8), intent(in) :: Ta
       real(r8), intent(in) :: WD(ND(ng))
 # endif
 !
@@ -156,9 +159,9 @@
       real(r8) :: FDER, FDER1, FDER2, FDER3 , FDER4
       real(r8) :: aa, bb, cc, xx1, xx2, xx
       real(r8) :: alfa_wave, theta_cur, ang_loc, dir_edge
-      real(r8) :: G1, cr, cgr, cgrx, cgry, trrp
+      real(r8) :: G1, cr, cgr, cgrx, cgry, Tr
       real(r8) :: dudx, dudy, dvdx, dvdy, dhdx, dhdy
-      
+      real(r8) :: cff, tanhkh, sinhtkh, o2aa, Vcur, cosde, sinde
       real(r8), parameter :: maxErr = 0.1_r8
 
 # ifdef DOPPLER
@@ -183,7 +186,8 @@
 !=======================================================================
 !  Compute the short wave lenght in deep water
 !=======================================================================
-      L0=(g*tarp**2.*otwopi)
+
+      L0=(g*Ta**2.*otwopi)
 !=======================================================================
 !  Compute the total water depth at rho points
 !=======================================================================
@@ -266,9 +270,9 @@
               FDER2=(h_tot(i,j)*otwopi*tanhkh+                          &
      &               h_tot(i,j)**2.0_r8*k0*otwopi*(1./COSH(kh))**2.)
               FDER3=(2.0_r8*cff*(-(2.0_r8*h_tot(i,j)*                   &
-     &               sinhtkh-4.0_r8*k0*h_tot(i,j)**                   &
-     &               2.0_r8*COSH(tkh))/                                    &
-     &               sinhtkh**2.0_r8)/                                 &
+     &               sinhtkh-4.0_r8*k0*h_tot(i,j)**                     &
+     &               2.0_r8*COSH(tkh))/                                 &
+     &               sinhtkh**2.0_r8)/                                  &
      &               (1.0_r8-tkh/sinhtkh)**2.0_r8)
               FDER=FDER1*FDER2+FDER3
 !
@@ -307,7 +311,7 @@
           ELSE
             xx=max(xx1,xx2)
           ENDIF
-          u_block(i,j)=xx*Lmin/tarp
+          u_block(i,j)=xx*Lmin/Ta
         END DO
       END DO
 # endif
@@ -323,7 +327,7 @@
             alfa_wave=(1.5_r8*pi-WD(d))-angler(i,j)
 #  ifdef DOPPLER
             IF (u_rho(i,j).eq.0.0_r8) THEN
-              theta_cur=0.5_r8*pi*SIGN(1.0_r8,Vcur(i,j))
+              theta_cur=0.5_r8*pi*SIGN(1.0_r8,v_rho(i,j))
             ELSE
               theta_cur=ATAN2(v_rho(i,j),u_rho(i,j))
             ENDIF
@@ -347,7 +351,7 @@
 !
               k0=twopi/L0    
               error=100.0_r8
-              cff=twopi/tarp
+              cff=twopi/Ta
               DO WHILE(error.gt.maxErr)
                 kh=k0*h_tot(i,j)
                 tanhkh=TANH(kh)
@@ -460,9 +464,9 @@
               ct(i,j,d)=0.0_r8 
             ELSE          
 #  ifdef DOPPLER             
-              trrp=tarp-u_dir(i,j)*k1
+              Tr=Ta-u_dir(i,j)*k1
 #  else
-              trrp=tarp
+              Tr=Ta
 #  endif
 
 !! JOHN: NOT SURE WHAT HAPPENS WITH THESE ANGLES IN A CURVILINEAR SYSTEM
@@ -470,10 +474,10 @@
 !
 
               IF(d.ne.1)then
-                dir_edge=((-WD(d)+90.)*pi/180.+(-WD(d-1)+90.)*pi/180.)/2.
+                dir_edge=((-WD(d)+otwopi)+(-WD(d-1)+otwopi))/2.
               ELSE
-                dir_edge=((-WD(ND(ng))+90.)*pi/180.+                     &
-     &                   (-WD(ND(ng)-1)+90.)*pi/180.)/2.
+                dir_edge=((-WD(ND(ng))+otwopi)+                         &
+     &                   (-WD(ND(ng)-1)+otwopi))/2.
               ENDIF
 
 !! JOHN: NOT SURE THAT THE GRADIENTS ARE CORRECTLY COMPUTED SPECIALLY IN THOSE CASE IN
@@ -497,9 +501,9 @@
 
 !     should this k2 be a function of d ??
 
-              ct(i,j,d)=trrp/sinh(2.0_r8*k2(i,j)*h_tot(i,j))*           &
+              ct(i,j,d)=Tr/sinh(2.0_r8*k2(i,j)*h_tot(i,j))*             &
      &                  (sin(dir_edge)*dhdx-                            &
-     &                   cos(dir_edge)*dhdy
+     &                   cos(dir_edge)*dhdy)
 #ifdef DOPPLER
               cosde=cos(dir_edge)
               sinde=sin(dir_edge)

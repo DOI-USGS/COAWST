@@ -329,7 +329,7 @@
         integer  :: idZbry(4)      ! free-surface boundary conditions
 #ifdef INWAVE_COUPLING
         integer  :: idACbc(4)      ! wave energy boundary condition
-        integer  :: idTarp         ! absolute peak period
+        integer  :: idTa           ! absolute peak period
         integer  :: idACen         ! wave energy
         integer  :: idACcx         ! wave energy celerity in xi dir
         integer  :: idACcy         ! wave energy celerity in etai dir
@@ -400,6 +400,10 @@
         integer  :: ncADSid(Ngrids)     ! input adjoint sensitivity
         integer  :: ncAVGid(Ngrids)     ! output averages
         integer  :: ncBRYid(Ngrids)     ! input boundary conditions
+#ifdef INWAVE_COUPLING
+        integer  :: ncIWBRYid(Ngrids)     ! input boundary conditions for Ac
+        integer  :: ncIWINIid(Ngrids)     ! input initial conditions for Ac,cx,cy,ct
+#endif
         integer  :: ncCLMid(Ngrids)     ! input climatology
         integer  :: ncDIAid(Ngrids)     ! output diagnostics
         integer  :: ncFLTid(Ngrids)     ! output floats
@@ -768,7 +772,10 @@
           ncTOBSid(ng)=-1
           ncVOBSid(ng)=-1
           ncVSURid(ng)=-1
-
+#ifdef INWAVE_COUPLING
+          ncIWBRYid(ng)=-1
+          ncIWINIid(ng)=-1
+#endif
           tADJindx(ng)=0
           tAVGindx(ng)=0
           tDIAindx(ng)=0
@@ -1240,8 +1247,8 @@
                 idACbc(isouth)=varid
               CASE ('idACbc(inorth)')
                 idACbc(inorth)=varid
-              CASE ('idTarp')
-                idTarp=varid
+              CASE ('idTa')
+                idTa=varid
 #endif
 #if defined NPZD_FRANKS || defined NPZD_POWELL
               CASE ('idRtrc(iNO3_)')

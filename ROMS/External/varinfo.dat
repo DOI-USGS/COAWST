@@ -2545,7 +2545,6 @@
 !  Define names of variables associated with InWave
 !---------------------------------------------------------------------
 !
-
 'AC'                                               ! Input/Output
   'wave energy envelope'
   'Joules'                                         ! [m/s]
@@ -2618,12 +2617,12 @@
   'nulvar'
   1.0d0
 
-'TARP_west'                                          ! Input
+'Ta'                                                ! Input
   'representative absolute peak period'
   'seconds'                                          ! [s]
   'TA, scalar'
   'TA_dim'
-  'idTarp'
+  'idTa'
   'nulvar'
   1.0d0
 

@@ -1807,11 +1807,16 @@
             END DO
             BRYname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
 #ifdef INWAVE_COUPLING
-          ELSE IF (TRIM(KeyWord).eq.'ENGNAME') THEN
-            DO i=1,LEN(ENGname(Nval))
-              ENGname(Nval)(i:i)=blank
+          ELSE IF (TRIM(KeyWord).eq.'IWININAME') THEN
+            DO i=1,LEN(IWINIname(Nval))
+              IWINIname(Nval)(i:i)=blank
             END DO
-            ENGname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
+            IWINIname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
+          ELSE IF (TRIM(KeyWord).eq.'IWBNDNAME') THEN
+            DO i=1,LEN(IWBNDname(Nval))
+              IWBNDname(Nval)(i:i)=blank
+            END DO
+            IWBNDname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
 #endif
           ELSE IF (TRIM(KeyWord).eq.'FWDNAME') THEN
             DO i=1,LEN(FWDname(Nval))

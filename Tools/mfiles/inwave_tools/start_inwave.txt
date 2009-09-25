@@ -1,0 +1,4 @@
+cd 'C:\Program Files\MATLAB\R2007b\toolbox\matlab_roms_1'
+startup
+
+cd 'L:\COAWST\Tools\mfiles\InWave'

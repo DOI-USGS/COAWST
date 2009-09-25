@@ -9,7 +9,7 @@
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
-!  This routine reads in forcing, climatology and assimilation data    !
+!  This routine reads in forcing data   .............................. !
 !  from input NetCDF files.  If there is more than one time-record,    !
 !  data  is loaded  into global two-time record arrays.  The actual    !
 !  interpolation is carried elsewhere.                                 !
@@ -27,6 +27,8 @@
       USE mod_scalars
       USE mod_stepping
       USE mod_inwave_bound
+      USE mod_inwave_params
+      USE mod_inwave_vars
 !
       implicit none
 !
@@ -38,12 +40,16 @@
 !
       logical, dimension(3) :: update =                                 &
      &         (/ .FALSE., .FALSE., .FALSE. /)
+     
+      real(r8), pointer :: ACG_bnd(:,:,:)
 
 # ifdef OBC
       integer :: ILB, IUB, JLB, JUB
 # endif
       integer :: LBi, UBi, LBj, UBj
-      integer :: i
+      integer :: Imin, Imax, Jmin, Jmax
+      integer :: i, j, d, d_bnd
+      integer :: ND_BND
 
 # ifdef OBC
 !
@@ -62,6 +68,52 @@
       LBj=LBOUND(GRID(ng)%h,DIM=2)
       UBj=UBOUND(GRID(ng)%h,DIM=2)
 
+
+#ifdef _OPENMP
+      IF (WESTERN_EDGE) THEN
+        Imin=LBi
+      ELSE
+        Imin=Istr
+      END IF
+      IF (EASTERN_EDGE) THEN
+        Imax=UBi
+      ELSE
+        Imax=Iend
+      END IF
+      IF (SOUTHERN_EDGE) THEN
+        Jmin=LBj
+      ELSE
+        Jmin=Jstr
+      END IF
+      IF (NORTHERN_EDGE) THEN
+        Jmax=UBj
+      ELSE
+        Jmax=Jend
+      END IF
+#else
+      Imin=LBi
+      Imax=UBi
+      Jmin=LBj
+      Jmax=UBj
+#endif
+!
+!  Get the number of wave directional bins for the boundary.
+!
+      ND_BND=WAVEB(ng)%ND_BND
+!
+# ifdef WEST_EOBC
+      allocate(ACG_bnd(LBj:UBj,ND_BND,2))
+# endif
+# ifdef EAST_EOBC
+      allocate(ACG_bnd(LBj:UBj,ND_BND,2))
+# endif
+# ifdef NORTH_EOBC
+      allocate(ACG_bnd(LBi:UBi,ND_BND,2))
+# endif
+# ifdef SOUTH_EOBC
+      allocate(ACG_bnd(LBi:UBi,ND_BND,2))
+# endif
+
 # ifdef PROFILE
 !
 !-----------------------------------------------------------------------
@@ -78,33 +130,82 @@
 !=======================================================================
 !
 # endif
-!      CALL get_ngfld (ng, iNLM, idTARPbc(iwest), ncBRYid(ng), 1,        &
-!     &                ENGname(ng),update(1),                            &
-!     &                1, 1, 1, 1, 1, 1, 0,                              &
-!     &                WAVEB(ng)%TA)
+
 # ifdef WEST_EOBC
-      CALL get_ngfld (ng, iNLM, idACbc(iwest), ncBRYid(ng), 1,          &
-     &                ENGname(ng), update(1),                           &
-     &                JLB, JUB, ND(ng), 2, 0, Mm(ng)+1, ND(ng),         &
-     &                WAVEB(ng) % ACG_west(JLB,1,1))
+      CALL get_ngfld (ng, iNLM, idACbc(iwest), ncIWBRYid(ng), 1,        &
+     &                IWBNDname(ng), update(1),                         &
+     &                JLB, JUB, ND_BND, 2, 0, Mm(ng)+1, ND_BND,         &
+     &                ACG_bnd(JLB,1,1))
+      DO d_bnd=1,WAVEB(ng)%ND_BND
+        DO d=1,ND(ng)
+          IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%WD(d))then
+            DO j=Jmin,Jmax
+             WAVEB(ng)%ACG_west(j,d,1)=ACG_bnd(j,d_bnd,1)
+             WAVEB(ng)%ACG_west(j,d,2)=ACG_bnd(j,d_bnd,2)
+            END DO
+          ENDIF
+        END DO
+      END DO
 # endif
 # ifdef EAST_EOBC
-      CALL get_ngfld (ng, iNLM, idACbc(ieast), ncBRYid(ng), 1,          &
-     &                ENGname(ng), update(1),                           &
-     &                JLB, JUB, ND(ng), 2, 0, Mm(ng)+1, ND(ng),         &
-     &                WAVEB(ng) % ACG_east(JLB,1,1))
+      CALL get_ngfld (ng, iNLM, idACbc(ieast), ncIWBRYid(ng), 1,        &
+     &                IWBNDname(ng), update(1),                         &
+     &                JLB, JUB, ND_BND, 2, 0, Mm(ng)+1, ND_BND,         &
+     &                ACG_bnd(JLB,1,1))
+      DO d_bnd=1,WAVEB(ng)%ND_BND
+        DO d=1,ND(ng)
+          IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%WD(d))then
+            DO j=Jmin,Jmax
+             WAVEB(ng)%ACG_east(j,d,1)=ACG_bnd(j,d_bnd,1)
+             WAVEB(ng)%ACG_east(j,d,2)=ACG_bnd(j,d_bnd,2)
+            END DO
+          ENDIF
+        END DO
+      END DO
 # endif
 # ifdef NORTH_EOBC
-      CALL get_ngfld (ng, iNLM, idACbc(inorth), ncBRYid(ng), 1,         &
-     &                ENGname(ng), update(1),                           &
-     &                ILB, IUB, ND(ng), 2, 0, Lm(ng)+1, ND(ng),         &
-     &                WAVEB(ng) % ACG_north(ILB,1,1))
+      CALL get_ngfld (ng, iNLM, idACbc(inorth), ncIWBRYid(ng), 1,       &
+     &                IWBNDname(ng), update(1),                         &
+     &                ILB, IUB, ND_BND, 2, 0, Lm(ng)+1, ND_BND,         &
+     &                ACG_bnd(ILB,1,1))
+      DO d_bnd=1,WAVEB(ng)%ND_BND
+        DO d=1,ND(ng)
+          IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%WD(d))then
+            DO i=Imin,Imax
+             WAVEB(ng)%ACG_north(i,d,1)=ACG_bnd(i,d_bnd,1)
+             WAVEB(ng)%ACG_north(i,d,2)=ACG_bnd(i,d_bnd,2)
+            END DO
+          ENDIF
+        END DO
+      END DO
 # endif
 # ifdef SOUTH_EOBC
-      CALL get_ngfld (ng, iNLM, idACbc(isouth), ncBRYid(ng), 1,         &
-     &                ENGname(ng), update(1),                           &
-     &                ILB, IUB, ND(ng), 2, 0, Lm(ng)+1, ND(ng),         &
-     &                WAVEB(ng) % ACG_south(ILB,1,1))
+      CALL get_ngfld (ng, iNLM, idACbc(isouth), ncIWBRYid(ng), 1,       &
+     &                IWBNDname(ng), update(1),                         &
+     &                ILB, IUB, ND_BND, 2, 0, Lm(ng)+1, ND_BND,         &
+     &                ACG_bnd(ILB,1,1))
+      DO d_bnd=1,WAVEB(ng)%ND_BND
+        DO d=1,ND(ng)
+          IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%WD(d))then
+            DO i=Imin,Imax
+             WAVEB(ng)%ACG_south(i,d,1)=ACG_bnd(i,d_bnd,1)
+             WAVEB(ng)%ACG_south(i,d,2)=ACG_bnd(i,d_bnd,2)
+            END DO
+          ENDIF
+        END DO
+      END DO
+# endif
+# ifdef WEST_EOBC
+      deallocate(ACG_bnd)
+# endif
+# ifdef EAST_EOBC
+      deallocate(ACG_bnd)
+# endif
+# ifdef NORTH_EOBC
+      deallocate(ACG_bnd)
+# endif
+# ifdef SOUTH_EOBC
+      deallocate(ACG_bnd)
 # endif
 # ifdef PROFILE
 !
