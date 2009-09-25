@@ -1098,3 +1098,7 @@
 #if !defined VISC_3DCOEF && defined UV_SMAGORINSKY
 # define VISC_3DCOEF
 #endif
+
+#ifdef INWAVE_COUPLING
+# include 'inwave.h'
+#endif

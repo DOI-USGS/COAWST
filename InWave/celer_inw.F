@@ -325,7 +325,7 @@
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
             alfa_wave=(1.5_r8*pi-WD(d))-angler(i,j)
-#  ifdef DOPPLER
+# ifdef DOPPLER
             IF (u_rho(i,j).eq.0.0_r8) THEN
               theta_cur=0.5_r8*pi*SIGN(1.0_r8,v_rho(i,j))
             ELSE
@@ -336,9 +336,9 @@
             IF((h_tot(i,j).le.Dcrit(ng))                                &
      &         .or.((u_dir(i,j).lt.0).and.(u_dir(i,j).le.u_block(i,j))))&
      &        THEN 
-#  else
+# else
             IF(h_tot(i,j).le.Dcrit(ng)) THEN 
-#  endif
+# endif
 !
 !  Set the celerities to zero.
 !
@@ -355,7 +355,7 @@
               DO WHILE(error.gt.maxErr)
                 kh=k0*h_tot(i,j)
                 tanhkh=TANH(kh)
-#  ifdef DOPPLER
+# ifdef DOPPLER
                 F1=cff**2.0_r8
                 F2=-2.0_r8*k0*u_dir(i,j)*cff
                 F3=k0**2.0_r8*u_dir(i,j)**2.0_r8
@@ -367,7 +367,7 @@
                 FDER3=-g*tanhkh
                 FDER4=-g*kh/cosh(kh)**2.0_r8
                 FDER=FDER1+FDER2+FDER3+FDER4
-#  else
+# else
                 F1=cff**2.0_r8
                 F2=-g*k0*tanhkh
                 F=F1+F2
@@ -375,7 +375,7 @@
                 FDER1=-g*tanhkh
                 FDER2=-g*kh/cosh(kh)**2.0_r8
                 FDER=FDER1+FDER2
-#  endif
+# endif
                 k1=k0-F/FDER
                 error=100.0_r8*ABS((k1-k0)/k0)
                 k0=k1
@@ -401,13 +401,13 @@
 !  Compute the absolute group velocities is space direction (Xi and ETAi)
 !========================================================================
 !
-#  ifdef DOPPLER             
+# ifdef DOPPLER             
               cx_rho(i,j,d)=cgrx+u_rho(i,j)       
               cy_rho(i,j,d)=cgry+v_rho(i,j)
-#  else
+# else
               cx_rho(i,j,d)=cgrx     
               cy_rho(i,j,d)=cgry
-#  endif
+# endif
             ENDIF    
           ENDDO
         ENDDO
@@ -417,32 +417,37 @@
 !  Interpolate cx and cy celerities to cell faces.
 !=======================================================================
 !
+# ifdef ACX_ADVECTION
       DO d=1,ND(ng)
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
             cx(i,j,d)=0.5_r8*                                           &
      &                (cx_rho(i-1,j,d)+                                 &
      &                 cx_rho(i,j,d))
-# ifdef MASKING
+#  ifdef MASKING
 !  Apply Land/Sea mask.
            cx(i,j,d)=cx(i,j,d)*umask(i,j)
-# endif
+#  endif
           END DO                  
         END DO
       ENDDO      
+# endif
+# ifdef ACY_ADVECTION
       DO d=1,ND(ng)
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
             cy(i,j,d)=0.5_r8*                                           &
      &                (cy_rho(i,j-1,d)+                                 &
      &                 cy_rho(i,j,d))
-# ifdef MASKING
+#  ifdef MASKING
 !  Apply Land/Sea mask.           
             cy(i,j,d)=cy(i,j,d)*vmask(i,j)                    
-# endif            
+#  endif            
           END DO                  
         END DO
       ENDDO
+# endif
+# ifdef ACT_ADVECTION
 !
 !========================================================================
 !  Compute the group velocities in the theta direction
@@ -504,7 +509,7 @@
               ct(i,j,d)=Tr/sinh(2.0_r8*k2(i,j)*h_tot(i,j))*             &
      &                  (sin(dir_edge)*dhdx-                            &
      &                   cos(dir_edge)*dhdy)
-#ifdef DOPPLER
+#  ifdef DOPPLER
               cosde=cos(dir_edge)
               sinde=sin(dir_edge)
               cff=cosde*                                                &
@@ -514,7 +519,7 @@
      &            (sinde*pm(i,j)*dvdx-                                  &
      &             cosde*pn(i,j)*dvdy)
               ct(i,j,d)=ct(i,j,d)+cff
-#endif
+#  endif
             END IF
           END DO
         END DO
@@ -526,7 +531,7 @@
           ct(Istr-1,j,d)=ct(Istr,j,d)
         ENDDO
       ENDDO
-# ifdef MASKING
+#  ifdef MASKING
 !
 !  Apply Land/Sea mask.
 !
@@ -537,49 +542,57 @@
           END DO
         END DO
       END DO
-# endif
+#  endif
 
 !1) jcw ADD wet_dry_masking
 !2) need if defs for ifdef INWAVE_COMPUTE_CX, _CY, _CT
 !3) need BC calls
-
+# endif
 
 # if defined C_EW_PERIODIC || defined C_NS_PERIODIC
 !
 !  Apply periodic boundary conditions.
 !
+#  ifdef ACX_ADVECTION
         CALL exchange_u3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 1, ND(ng),          &
      &                          cx(:,:,:))
-     
+#  endif
+#  ifdef ACY_ADVECTION
         CALL exchange_v3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 1, ND(ng),          &
      &                          cy(:,:,:))   
-     
+#  endif
+#  ifdef ACT_ADVECTION
        CALL exchange_r3d_tile (ng, tile,                                &
      &                          LBi, UBi, LBj, UBj, 1, ND(ng),          &
      &                          ct(:,:,:))
-     
+#  endif
 # endif
 
 # ifdef DISTRIBUTE
 !
 !  Exchange boundary data.
 !
+#  ifdef ACX_ADVECTION
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    cx(:,:,:))
+#  endif
+#  ifdef ACY_ADVECTION
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    cy(:,:,:))
+#  endif
+#  ifdef ACT_ADVECTION
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    ct(:,:,:))
+#  endif
 # endif
-
 
       RETURN
       END SUBROUTINE celer_inw_tile

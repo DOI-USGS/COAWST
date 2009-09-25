@@ -439,8 +439,8 @@ ifdef USE_REFDIF
 endif
 
 ifdef USE_INWAVE
- modules  +=	INWAVE
- includes +=	INWAVE
+ modules  +=	InWave
+ includes +=	InWave
 endif
 
  modules  +=	Master
