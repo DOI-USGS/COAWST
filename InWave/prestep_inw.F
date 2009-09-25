@@ -85,7 +85,6 @@
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
-      USE ACbc_mod, ONLY : ACbc_tile
       USE AC3dbc_mod, ONLY : AC3dbc_tile
 !
 !  Imported variable declarations.
@@ -389,9 +388,6 @@
 !  Apply lateral boundary conditions.
 !=======================================================================
 !
-        CALL ACbc_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, ND(ng),                     &
-     &                  3, AC)
 # if defined EW_PERIODIC || defined NS_PERIODIC
         CALL exchange_r3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 1, ND(ng),          &

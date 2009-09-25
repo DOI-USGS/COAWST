@@ -47,7 +47,7 @@
 ! Input variable information file name.  This file needs to be processed
 ! first so all information arrays can be initialized properly.
 
-     VARNAME = varinfo.dat
+     VARNAME = ROMS/External/varinfo.dat
 
 ! Grid dimension parameters. See notes below in the Glossary for how to set
 ! these parameters correctly.
@@ -416,14 +416,14 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == InWave_grd.nc
+     GRDNAME == Projects/Inwave_tests/shoal/InWave_grd.nc
      ININAME == ocean_ini.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
      CLMNAME == ocean_clm.nc
-     IWININAME == InWave_ini.nc
-     IWBNDNAME == InWave_bnd.nc
+     IWININAME == Projects/Inwave_tests/shoal/InWave_ini.nc
+     IWBNDNAME == Projects/Inwave_tests/shoal/InWave_bnd.nc
      BRYNAME == ocean_bry.nc
      FWDNAME == ocean_fwd.nc
      ADSNAME == ocean_ads.nc
