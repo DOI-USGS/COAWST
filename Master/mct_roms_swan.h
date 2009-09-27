@@ -806,7 +806,11 @@
           kwn=2.0_r8*pi/FORCES(ng)%Lwave(i,j)
           prof=GRID(ng)%h(i,j)+OCEAN(ng)%zeta(i,j,NOUT)
           cff1=0.0_r8
-          cff2=2.0_r8*kwn
+          if(cff2.lt.700.0_r8)then
+            cff2=2.0_r8*kwn
+          else
+            cff2=700.0_r8/prof
+          endif
           cff3=0.0_r8
           DO k=1,N(ng)
             u_cff=0.5_r8*(OCEAN(ng)%u(i,  j,k,NOUT)+                    &
@@ -872,7 +876,11 @@
           kwn=2.0_r8*pi/FORCES(ng)%Lwave(i,j)
           prof=GRID(ng)%h(i,j)+OCEAN(ng)%zeta(i,j,NOUT)
           cff1=0.0_r8
-          cff2=2.0_r8*kwn
+          if(cff2.lt.700.0_r8)then
+            cff2=2.0_r8*kwn
+          else
+            cff2=700.0_r8/prof
+          endif
           cff3=0.0_r8
           DO k=1,N(ng)
              v_cff=0.5_r8*(OCEAN(ng)%v(i,  j,k,NOUT)+                   &

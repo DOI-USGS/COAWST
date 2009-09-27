@@ -1100,5 +1100,5 @@
 #endif
 
 #ifdef INWAVE_COUPLING
-# include 'inwave.h'
+# include "inwave.h"
 #endif

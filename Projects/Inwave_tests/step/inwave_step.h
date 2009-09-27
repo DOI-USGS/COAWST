@@ -8,11 +8,11 @@
 
 #define INWAVE_COUPLING
 #ifdef INWAVE_COUPLING
-#define WEST_EOBC
-#define DOPPLER
-#define C_EW_PERIODIC
-#define C_NS_PERIODIC
-#define EAST_ACGRADIENT
+# define WEST_EOBC
+# define DOPPLER
+# define C_EW_PERIODIC
+# define C_NS_PERIODIC
+# define EAST_ACGRADIENT
 #endif
 
 #define UV_VIS2

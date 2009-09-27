@@ -28,7 +28,7 @@ TA= 10;                % representative absolute wave period (sec)
 
 if (make_InWave_grd)
     
-  grd_file='..\..\..\Projects\Inwave_tests\step\InWave_grd.nc';  % name of the grid file
+  grd_file='InWave_grd.nc';  % name of the grid file
     
   % Grid characteristics
 
@@ -74,7 +74,7 @@ end
 
 if (make_InWave_ini)  
     
-  ini_file='..\..\..\Projects\Inwave_tests\step\InWave_ini.nc';  % name of the initial file
+  ini_file='InWave_ini.nc';  % name of the initial file
 
   Ac=ones(Nbins,Mm,Lm).*0;
   Cx=ones(Nbins,Mm,Lm-1).*0;
@@ -90,7 +90,7 @@ end
 
 if (make_InWave_bnd)
 
-  bnd_file='..\..\..\Projects\Inwave_tests\step\InWave_bnd.nc';  % name of the boundary file
+  bnd_file='InWave_bnd.nc';  % name of the boundary file
 
   % Duration of the simulation and time increment for the boundaries
   
