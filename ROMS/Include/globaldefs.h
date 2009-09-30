@@ -1099,7 +1099,3 @@
 # define VISC_3DCOEF
 #endif
 
-/*#ifdef INWAVE_COUPLING
- # include "inwave.h"
- #endif
-*/
