@@ -9,12 +9,10 @@ Global params file for InWave
 *# define ACY_ADVECTION
 *# define ACT_ADVECTION
 
-*# undef WEST_CX_WALL
 *# undef WEST_CX_GRADIENT
-*# undef WEST_CY_WALL
 *# undef WEST_CY_GRADIENT
-*# undef WEST_CT_WALL
 *# undef WEST_CT_GRADIENT
+
 *# undef EW_C_PERIODIC
 *# undef NS_C_PERIODIC
 
@@ -55,5 +53,10 @@ Global params file for InWave
 #if defined SOUTH_AC_CLAMPED
 # define SOUTH_AC_OBC
 #endif
+#if defined NORTH_AC_WALL
+# define NORTH_CY_WALL
+#endif
 
+*# undef WEST_CT_WALL
+*# undef WEST_CY_WALL
 

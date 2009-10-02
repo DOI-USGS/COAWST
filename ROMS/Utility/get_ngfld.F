@@ -378,7 +378,7 @@
           IF (Vid.ge.0) THEN
             Fmin=0.0_r8
             Fmax=0.0_r8
-            IF (Jrec.gt.1) THEN
+            IF ((Jrec.gt.1).or.((Jrec.eq.1).and.(Vsize(3).gt.0))) THEN
               start(1)=1
               total(1)=(Iend-Istr)+1
               start(2)=1
