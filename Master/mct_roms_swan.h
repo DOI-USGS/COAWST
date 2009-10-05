@@ -467,6 +467,9 @@
       USE mod_stepping
       USE mod_iounits
       USE mod_sediment
+#ifdef UV_KIRBY
+      USE mod_coupling
+#endif
 !
 #if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
@@ -804,7 +807,7 @@
 ! Compute the coupling current according to Kirby and Chen (1989).
 !
           kwn=2.0_r8*pi/FORCES(ng)%Lwave(i,j)
-          prof=GRID(ng)%h(i,j)
+          prof=GRID(ng)%h(i,j)+COUPLING(ng)%Zt_avg1(i,j)
           cff1=0.0_r8
           cff2=2.0_r8*kwn*prof
           IF (cff2.lt.700.0_r8) THEN
@@ -816,7 +819,7 @@
           DO k=1,N(ng)
             u_cff=0.5_r8*(OCEAN(ng)%u(i,  j,k,NOUT)+                    &
      &                    OCEAN(ng)%u(i+1,j,k,NOUT))
-            cff4=cosh(cff2*(prof+GRID(ng)%z_r(i,j,k)))*                 &
+            cff4=cosh(cff2*(GRID(ng)%h(i,j)+GRID(ng)%z_r(i,j,k)))*      &
      &           GRID(ng)%Hz(i,j,k)
             cff1=cff1+cff4*u_cff
             cff3=cff3+cff4
@@ -875,7 +878,7 @@
 ! Compute the coupling current according to Kirby and Chen (1989).
 !
           kwn=2.0_r8*pi/FORCES(ng)%Lwave(i,j)
-          prof=GRID(ng)%h(i,j)
+          prof=GRID(ng)%h(i,j)+COUPLING(ng)%Zt_avg1(i,j)
           cff1=0.0_r8
           cff2=2.0_r8*kwn*prof
           IF (cff2.lt.700.0_r8) THEN
@@ -887,7 +890,7 @@
           DO k=1,N(ng)
              v_cff=0.5_r8*(OCEAN(ng)%v(i,  j,k,NOUT)+                   &
      &                     OCEAN(ng)%v(i,j+1,k,NOUT))
-             cff4=cosh(cff2*(prof+GRID(ng)%z_r(i,j,k)))*                &
+             cff4=cosh(cff2*(GRID(ng)%h(i,j)+GRID(ng)%z_r(i,j,k)))*     &
      &            GRID(ng)%Hz(i,j,k)
              cff1=cff1+cff4*v_cff
              cff3=cff3+cff4
