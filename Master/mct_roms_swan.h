@@ -804,13 +804,14 @@
 ! Compute the coupling current according to Kirby and Chen (1989).
 !
           kwn=2.0_r8*pi/FORCES(ng)%Lwave(i,j)
-          prof=GRID(ng)%h(i,j)+OCEAN(ng)%zeta(i,j,NOUT)
+          prof=GRID(ng)%h(i,j)
           cff1=0.0_r8
-          if(cff2.lt.700.0_r8)then
+          cff2=2.0_r8*kwn*prof
+          IF (cff2.lt.700.0_r8) THEN
             cff2=2.0_r8*kwn
-          else
+          ELSE
             cff2=700.0_r8/prof
-          endif
+          ENDIF
           cff3=0.0_r8
           DO k=1,N(ng)
             u_cff=0.5_r8*(OCEAN(ng)%u(i,  j,k,NOUT)+                    &
@@ -874,13 +875,14 @@
 ! Compute the coupling current according to Kirby and Chen (1989).
 !
           kwn=2.0_r8*pi/FORCES(ng)%Lwave(i,j)
-          prof=GRID(ng)%h(i,j)+OCEAN(ng)%zeta(i,j,NOUT)
+          prof=GRID(ng)%h(i,j)
           cff1=0.0_r8
-          if(cff2.lt.700.0_r8)then
+          cff2=2.0_r8*kwn*prof
+          IF (cff2.lt.700.0_r8) THEN
             cff2=2.0_r8*kwn
-          else
+          ELS
             cff2=700.0_r8/prof
-          endif
+          ENDIF
           cff3=0.0_r8
           DO k=1,N(ng)
              v_cff=0.5_r8*(OCEAN(ng)%v(i,  j,k,NOUT)+                   &
