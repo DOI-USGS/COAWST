@@ -883,7 +883,7 @@
           cff2=2.0_r8*kwn*prof
           IF (cff2.lt.700.0_r8) THEN
             cff2=2.0_r8*kwn
-          ELS
+          ELSE
             cff2=700.0_r8/prof
           ENDIF
           cff3=0.0_r8
