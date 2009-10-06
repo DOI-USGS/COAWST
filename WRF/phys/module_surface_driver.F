@@ -1,5 +1,6 @@
 !WRF:MEDIATION_LAYER:PHYSICS
 !
+#include "cppdefs.wrf"
 MODULE module_surface_driver
 CONTAINS
 
@@ -8,6 +9,9 @@ CONTAINS
      &          ,acsnom,acsnow,akhs,akms,albedo,br,canwat             &
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
+#ifdef SWAN_COUPLING
+     &          ,hwave, lwave                                         &
+#endif
      &          ,fractional_seaice                                    &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,psih          &
@@ -258,6 +262,8 @@ CONTAINS
 !-- DX            horizontal space interval (m)
 !-- DT            time step (second)
 !-- PSFC          pressure at the surface (Pa)
+!-- HWAVE         significant wave height (m)
+!-- LWAVE         mean wave length (m)
 !-- SST           sea-surface temperature (K)
 !-- SSTSK         skin sea-surface temperature (K)
 !-- DTW           warm layer temp diff (K)
@@ -354,6 +360,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   GSW,SWDOWN
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   HT
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   RAINCV
+#ifdef SWAN_COUPLING
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   HWAVE
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   LWAVE
+#endif
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   SST
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   SSTSK
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   DTW
@@ -1019,6 +1029,9 @@ CONTAINS
                 chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
                 u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
                 p1000mb,                                             &
+#ifdef SWAN_COUPLING
+                hwave, lwave,                                        &
+#endif
                 ids,ide, jds,jde, kds,kde,                           &
                 ims,ime, jms,jme, kms,kme,                           &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
@@ -1036,6 +1049,9 @@ CONTAINS
               chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
               u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
               p1000mb,                                             &
+#ifdef SWAN_COUPLING
+              hwave, lwave,                                        &
+#endif
               ids,ide, jds,jde, kds,kde,                           &
               ims,ime, jms,jme, kms,kme,                           &
               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
@@ -1128,6 +1144,9 @@ CONTAINS
                u10,v10,th2,t2,q2,                                  &
                gz1oz0,wspd,br,isfflx,dx,                           &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
+#ifdef SWAN_COUPLING
+               HWAVE, LWAVE,                                       &
+#endif
                &itimestep,ch,th_phy,pi_phy,qc_curr,&
                &tsq,qsq,cov,qcg,&
                ids,ide, jds,jde, kds,kde,                          &
@@ -1737,6 +1756,9 @@ CONTAINS
         &     QGH,CPM,CT,                                 &
         &     U10,V10,T02,TH02,TSHLTR,TH10,Q02,QSHLTR,Q10,PSHLTR,          &
         &     P1000,                                        &
+#ifdef SWAN_COUPLING
+        &     HWAVE, LWAVE,                               &
+#endif
         &     IDS,IDE,JDS,JDE,KDS,KDE,                        &
         &     IMS,IME,JMS,JME,KMS,KME,                        &
         &     ITS,ITE,JTS,JTE,KTS,KTE )
@@ -1814,6 +1836,10 @@ CONTAINS
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: QSHLTR
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: Q10
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: PSHLTR
+#ifdef SWAN_COUPLING
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)   :: HWAVE
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)   :: LWAVE
+#endif
      REAL,                                   INTENT(IN)    :: P1000
      REAL,                                   INTENT(IN)    :: XICE_THRESHOLD
      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE,       &
@@ -2001,6 +2027,9 @@ CONTAINS
           &        TH02, TSHLTR, TH10, Q02,                        &  ! 0,0,0,0,
           &        QSHLTR, Q10, PSHLTR,                            &  ! 0,0,0,
           &        P1000,                                        &  ! I
+#ifdef SWAN_COUPLING
+          &        HWAVE, LWAVE,                                   &
+#endif
           &        ids,ide, jds,jde, kds,kde,                      &
           &        ims,ime, jms,jme, kms,kme,                      &
           &        its,ite, jts,jte, kts,kte    )
@@ -2055,6 +2084,9 @@ CONTAINS
           &        FLQC_SEA, QGH_SEA, CPM_SEA, CT_SEA, U10_SEA, V10_SEA, T02_SEA, TH02_SEA,    & ! 0,0,0,0,0,0,0,0,
           &        TSHLTR_SEA, TH10_SEA, Q02_SEA, QSHLTR_SEA, Q10_SEA, PSHLTR_SEA,             & ! 0,0,0,0,0,0,
           &        p1000,                                                                    & ! I
+#ifdef SWAN_COUPLING
+          &        HWAVE, LWAVE,                                                               &
+#endif
           &        ids,ide, jds,jde, kds,kde,                                                  &
           &        ims,ime, jms,jme, kms,kme,                                                  &
           &        its,ite, jts,jte, kts,kte    )

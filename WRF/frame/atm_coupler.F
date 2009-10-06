@@ -539,7 +539,7 @@
       DO j=js,je
         DO i=is,ie
           ij=ij+1
-          hwave(i,j)=AA(ij)*(1-grid%landmask(i,j))
+          grid%hwave(i,j)=AA(ij)*(1-grid%landmask(i,j))
         END DO
       END DO
 !
@@ -550,7 +550,7 @@
       DO j=js,je
         DO i=is,ie
           ij=ij+1
-          lwave(i,j)=AA(ij)*(1-grid%landmask(i,j))
+          grid%lwave(i,j)=AA(ij)*(1-grid%landmask(i,j))
         END DO
       END DO
 !

@@ -77,14 +77,17 @@ CONTAINS
      &                 ,QGH,CPM,CT                                     &
      &                 ,U10,V10,T02,TH02,TSHLTR,TH10,Q02,QSHLTR,Q10,PSHLTR          &
      &                 ,P1000mb                                        &
+#ifdef SWAN_COUPLING
+     &                 ,HWAVE, LWAVE                                   &
+#endif
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE)
 !----------------------------------------------------------------------
 !
-#ifdef SWAN_COUPLING
-      USE module_parallel
-#endif
+!#ifdef SWAN_COUPLING
+!      USE module_parallel
+!#endif
       IMPLICIT NONE
 !
 !----------------------------------------------------------------------
@@ -123,6 +126,11 @@ CONTAINS
      &                                              ,QGH
 !
       REAL,INTENT(IN) :: P1000mb
+
+#ifdef SWAN_COUPLING
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: HWAVE, LWAVE
+#endif
+
 !----------------------------------------------------------------------
 !***
 !***  LOCAL VARIABLES
@@ -147,7 +155,7 @@ CONTAINS
 !
       REAL,DIMENSION(ITS:ITE,KTS:KTE+1,JTS:JTE) :: ZINT
 #ifdef SWAN_COUPLING
-      REAL :: hwavep, lwavep
+      REAL :: HWAVEP, LWAVEP
 #endif
 !
 !----------------------------------------------------------------------
@@ -310,8 +318,8 @@ CONTAINS
        endif
 !
 #ifdef SWAN_COUPLING
-          hwavep=hwave(i,j)
-          lwavep=lwave(i,j)
+          HWAVEP=HWAVE(i,j)
+          LWAVEP=LWAVE(i,j)
 #endif
           CALL SFCDIF(NTSD,SEAMASK,THSK(I,J),QSFC(I,J),PSFC            &
      &               ,UZ0(I,J),VZ0(I,J),TZ0,TSK(I,J),THZ0(I,J),QZ0(I,J)         &
@@ -328,7 +336,7 @@ CONTAINS
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
 #ifdef SWAN_COUPLING
      &               ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZHK(LMH+1)           &
-     &               ,hwavep, lwavep)
+     &               ,HWAVEP, LWAVEP)
 #else
      &               ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZHK(LMH+1))
 #endif
@@ -380,8 +388,8 @@ CONTAINS
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
 #ifdef SWAN_COUPLING
-     &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZSFC, hwavep       &
-     &                 ,lwavep)
+     &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZSFC, HWAVEP       &
+     &                 ,LWAVEP)
 #else
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZSFC)
 #endif
@@ -405,8 +413,8 @@ CONTAINS
      &                  ,THELOW,THLOW,THS,TSK,TLOW,TZ0,ULOW,VLOW,WETM,ZSL  &
      &                  ,Z0BASE
 #ifdef SWAN_COUPLING
-      REAL, INTENT(IN) :: hwavep
-      REAL, INTENT(IN) :: lwavep
+      REAL, INTENT(IN) :: HWAVEP
+      REAL, INTENT(IN) :: LWAVEP
 #endif
 !
       REAL,INTENT(OUT) :: CHS,CHS2,CPM,CQS2,CT,FLHC,FLQC,FLX_LH,HFX    &
@@ -463,9 +471,9 @@ CONTAINS
         DO ITR=1,ITRMX
 !----------------------------------------------------------------------
 
-#if defined SWAN_COUPLING
-          Z0=MAX(1200.0*hwavep*                                         &
-     &                (hwavep/lwavep)**4.5+                             &
+#if defined SWAN_COUPLING && defined COARE_TAYLOR_YELLAND
+          Z0=MAX(1200.0*HWAVEP*                                         &
+     &                (HWAVEP/LWAVEP)**4.5+                             &
      &                0.11*VISC/(USTAR+0.001),1.59E-5)
 #else
           Z0=MAX(USTFC*USTAR*USTAR,1.59E-5)

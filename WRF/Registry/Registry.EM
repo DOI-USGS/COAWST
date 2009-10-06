@@ -539,6 +539,8 @@ state    real   SNOWH            ij     misc        1         -     i012rhd=(int
 state    real   RHOSN            ij     misc        1         -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "RHOSN"            " SNOW DENSITY"      "kg m-3" 
 state    real   CANWAT           ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "CANWAT"           "CANOPY WATER"             "kg m-2"
 state    real   SST              ij     misc        1         -     i0124rhd=(interp_mask_water_field:lu_index)   "SST"              "SEA SURFACE TEMPERATURE" "K"
+state    real   HWAVE            ij     misc        1         -     i0124rhd=(interp_mask_water_field:lu_index)   "HWAVE"            "SEA SURFACE WAVE HEIGHTS" "m"
+state    real   LWAVE            ij     misc        1         -     i0124rhd=(interp_mask_water_field:lu_index)   "LWAVE"            "SEA SURFACE WAVE LENGTHS" "m"
 state  integer  IFNDSNOWH        -      misc        1         -     i         "FNDSNOWH" "SNOWH_LOGICAL"
 state  integer  IFNDSOILW        -      misc        1         -     i         "FNDSOILW" "SOILW_LOGICAL"
 # SKIN SST

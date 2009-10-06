@@ -1,3 +1,4 @@
+# include "cppdefs.wrf"
 MODULE module_sf_mynn
 
   USE module_model_constants, only: &
@@ -14,6 +15,9 @@ MODULE module_sf_mynn
   REAL, PARAMETER :: zm2h=7.4    ! = z_0m/z_0h
 
   REAL, PARAMETER :: charnock=0.016, bvisc=0.165e-5, z0hsea=5.e-5
+#ifdef SWAN_COUPLING
+  REAL, PARAMETER :: VISC=1.5E-5
+#endif
 
   REAL, PARAMETER :: VCONVC=1.
   REAL, PARAMETER :: czo=charnock
@@ -49,6 +53,9 @@ CONTAINS
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
+#ifdef SWAN_COUPLING
+                     HWAVE, LWAVE,                                 &
+#endif
                      &itimestep,ch,th3d,pi3d,qc3d,&
                      &tsq,qsq,cov,qcg,&
                      ids,ide, jds,jde, kds,kde,                    &
@@ -107,6 +114,10 @@ CONTAINS
 !-- KARMAN      Von Karman constant
 !-- EOMEG       angular velocity of earth's rotation (rad/s)
 !-- STBOLT      Stefan-Boltzmann constant (W/m^2/K^4)
+#ifdef SWAN_COUPLING
+!-- HWAVE       Significant wave height (m)
+!-- LWAVE       Wave lengh (m)
+#endif
 !-- ids         start index for i in domain
 !-- ide         end index for i in domain
 !-- jds         start index for j in domain
@@ -206,6 +217,9 @@ CONTAINS
                                     
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
 
+#ifdef SWAN_COUPLING
+       REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: HWAVE, LWAVE
+#endif
 
 ! LOCAL VARS
 
@@ -281,7 +295,10 @@ CONTAINS
                 QSFC(ims,j),LH(ims,j),                             &
                 GZ1OZ0(ims,j),WSPD(ims,j),BR(ims,j),ISFFLX,DX,     &
                 SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,EOMEG,STBOLT,  &
-                ch(ims,j),vt1,vq1,qc1d,qcg(ims,j),&
+                ch(ims,j),vt1,vq1,qc1d,qcg(ims,j),                 &
+#ifdef SWAN_COUPLING
+                HWAVE(ims,j), LWAVE(ims,j),                        &
+#endif
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
                 its,ite, jts,jte, kts,kte                          )
@@ -300,7 +317,10 @@ CONTAINS
                      QSFC,LH,GZ1OZ0,WSPD,BR,ISFFLX,DX,             &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
-                     ch,vt1,vq1,qc1d,qcg,&
+                     ch,vt1,vq1,qc1d,qcg,                          &
+#ifdef SWAN_COUPLING
+                     HWAVE, LWAVE,                                 &
+#endif
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
@@ -385,6 +405,9 @@ CONTAINS
 
        REAL, DIMENSION( its:ite ), INTENT(IN) :: vt1,vq1
 
+#ifdef SWAN_COUPLING
+       REAL, DIMENSION( its:ite ), INTENT(IN) :: HWAVE, LWAVE
+#endif
 
 ! LOCAL VARS
 
@@ -813,16 +836,20 @@ CONTAINS
 !-----OVER WATER, ALTER ROUGHNESS LENGTH (ZNT) ACCORDING TO WIND (UST).          
                                                                                  
       DO 360 I=its,ite
-
-        IF((XLAND(I)-1.5).GE.0)THEN                                            
-           ZNT(I)=CZO*UST(I)*UST(I)/G+bvisc/ust(i)                                   
-!           restar=ust(i)*znt(i)/bvisc
-!           z_t(i)=znt(i)*EXP(-2.48*restar**.25 -2.)
-!           z_q(i)=znt(i)*EXP(-2.28*restar**.25 -2.)
-!           z_q(i)=z_t(i)
-           z_t(i)=z0hsea
-           z_q(i)=z_t(i)
-
+        IF((XLAND(I)-1.5).GE.0)THEN
+#if defined SWAN_COUPLING && defined COARE_TAYLOR_YELLAND
+          ZNT(I)=MAX(1200.0*HWAVE(I)*                                   &
+     &           (HWAVE(I)/LWAVE(I))**4.5+                              &
+     &            0.11*VISC/(UST(I)+0.001),1.59E-5)
+#else
+          ZNT(I)=CZO*UST(I)*UST(I)/G+bvisc/ust(i)                                   
+#endif
+!         restar=ust(i)*znt(i)/bvisc
+!         z_t(i)=znt(i)*EXP(-2.48*restar**.25 -2.)
+!         z_q(i)=znt(i)*EXP(-2.28*restar**.25 -2.)
+!         z_q(i)=z_t(i)
+          z_t(i)=z0hsea
+          z_q(i)=z_t(i)
         ENDIF    
 
 

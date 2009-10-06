@@ -89,8 +89,13 @@
 !
       CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
       CALL mpi_comm_size (OCN_COMM_WORLD, nprocs, MyError)
-
+!
 #if !defined WAVES_OCEAN
+      IF (ng.eq.1) THEN
+        ALLOCATE(GlobalSegMap_G(Ngrids))
+        ALLOCATE(AttrVect_G(Ngrids))
+        ALLOCATE(Router_G(Ngrids))
+      END IF
 !
 !  Initialize MCT coupled model registry.
 !
@@ -200,7 +205,7 @@
 !
 !  Determine start and lengths for domain decomposition.
 !
-      Jsize=JendR-JstrR+1
+      Jsize=JendT-JstrT+1
       IF (.not.allocated(start)) THEN
         allocate ( start(Jsize) )
       END IF
@@ -208,10 +213,20 @@
         allocate ( length(Jsize) )
       END IF
       jc=0
-      DO j=JstrR,JendR
+      ioff=0
+      joff=0
+      ieff=0
+#ifdef REFINED_GRID
+      IF (ng.gt.1) THEN
+        ioff=5
+        joff=3
+        ieff=3
+      END IF
+#endif
+      DO j=JstrT,JendT
         jc=jc+1
-        start (jc)=j*(Lm(ng)+2)+IstrR+1
-        length(jc)=(IendR-IstrR+1)
+        start (jc)=(j+joff)*(Lm(ng)+2+ioff)+(IstrT+ieff)+1
+        length(jc)=(IendT-IstrT+1)
       END DO
       CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapROMS,             &
      &                        start, length, 0, OCN_COMM_WORLD, OCNid)

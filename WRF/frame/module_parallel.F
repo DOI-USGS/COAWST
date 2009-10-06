@@ -18,8 +18,8 @@
       integer :: MyComm
       integer :: ATM_COMM_WORLD
 
-      real, pointer :: hwave(:,:)
-      real, pointer :: lwave(:,:)
+!     real, pointer :: hwave(:,:)
+!     real, pointer :: lwave(:,:)
 
       CONTAINS
 
@@ -35,18 +35,18 @@
       js = grid%sm33
       je = grid%em33
 
-      ALLOCATE(hwave(is:ie,js:je),STAT=ierr)
-      ALLOCATE(lwave(is:ie,js:je),STAT=ierr)
+!     ALLOCATE(hwave(is:ie,js:je),STAT=ierr)
+!     ALLOCATE(lwave(is:ie,js:je),STAT=ierr)
 
-      if (ierr.ne.0) then
-        CALL wrf_error_fatal (                                          &
-    &               'frame/module_parallel.F: Failed to allocate HWAVE')
-      endif
+!      if (ierr.ne.0) then
+!        CALL wrf_error_fatal (                                          &
+!    &               'frame/module_parallel.F: Failed to allocate HWAVE')
+!      endif
 
       DO j=js,je
         DO i=is,ie
-          hwave(i,j)=0.001
-          lwave(i,j)=0.001
+!         hwave(i,j)=0.001
+!         lwave(i,j)=0.001
         END DO
       END DO
 

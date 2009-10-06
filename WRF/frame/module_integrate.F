@@ -329,12 +329,14 @@ RECURSIVE SUBROUTINE integrate ( grid )
                CALL domain_time_test( grid_ptr, 'domain_clockadvance' )
                grid_ptr => grid_ptr%sibling
 #ifdef WRF_COUPLING
-              CALL domain_clock_get( grid, minutesSinceSimulationStart=minutesSinceSimulationStart )
-              num_steps=minutesSinceSimulationStart*60.0/grid%dt
-              nATM_steps=MAX(1,INT(TI_ATM_OCN/grid%dt))
-              IF ((num_steps.gt.last_step).and.(MOD(num_steps, nATM_steps).eq.0)) THEN
-                CALL atm2ocn_coupling (grid)
-                last_step=num_steps
+              IF ( grid%id .EQ. 1 ) THEN               ! head_grid
+                CALL domain_clock_get( grid, minutesSinceSimulationStart=minutesSinceSimulationStart )
+                num_steps=minutesSinceSimulationStart*60.0/grid%dt
+                nATM_steps=MAX(1,INT(TI_ATM_OCN/grid%dt))
+                IF ((num_steps.gt.last_step).and.(MOD(num_steps, nATM_steps).eq.0)) THEN
+                  CALL atm2ocn_coupling (grid)
+                  last_step=num_steps
+                ENDIF
               ENDIF
 #endif
             END DO
