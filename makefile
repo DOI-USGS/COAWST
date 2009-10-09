@@ -59,22 +59,19 @@ $(if $(filter $(MAKE_VERSION),$(NEED_VERSION)),,        \
 #  the .h extension. For example, the upwelling application includes the
 #  "upwelling.h" header file.  
 
-ROMS_APPLICATION ?= INWAVE_STEP
-#ROMS_APPLICATION ?= INLET_TEST 
+ROMS_APPLICATION ?= INLET_TEST 
 
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
 
-MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inwave_tests/step
-#MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
+MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
 
 #  If your application requires analytical expressions and they are not
 #  located in "ROMS/Functionals", provide an alternate directory.
 #  Notice that a set analytical expressions templates can be found in
 #  "User/Functionals".
 
-MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inwave_tests/step
-#MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
+MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying
@@ -95,7 +92,7 @@ MY_CPP_FLAGS ?=
 
 #  Activate debugging compiler options:
 
-   USE_DEBUG ?= on
+   USE_DEBUG ?=
 
 #  If parallel applications, use at most one of these definitions
 #  (leave both definitions blank in serial applications):
@@ -145,8 +142,8 @@ MY_CPP_FLAGS ?=
 #  NetCDF and so on.
 #--------------------------------------------------------------------------
 
-        FORT ?= ifort
-#       FORT ?= pgi
+#       FORT ?= ifort
+        FORT ?= pgi
 
 #--------------------------------------------------------------------------
 #  Set directory for executable.
@@ -534,7 +531,7 @@ endif
 
 tarfile:
 #		tar --exclude=".svn" --exclude Output -cvf coawst_v1.1.tar *
-		tar --exclude=".svn" -cvf coawst_v1.0.tar run_* *.TBL *.tbl RRTM* makefile ROMS/ SWAN/ WRF/ Master/ Tools/ Compilers/ Projects/JOE_TC Projects/Rip_current Projects/wetdry Projects/Visser Projects/Hole7 Projects/Griz_Bay Projects/Dogbone Projects/Inlet_test
+		tar --exclude=".svn" -cvf coawst_v1.0.tar run_* *.TBL RRTM* makefile ROMS/ SWAN/ WRF/ Master/ Tools/ Compilers/ Projects/JOE_TC Projects/Rip_current Projects/wetdry Projects/Visser Projects/Hole7 Projects/Griz_Bay Projects/Dogbone Projects/Inlet_test
 
 .PHONY: zipfile
 
