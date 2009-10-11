@@ -33,7 +33,7 @@
 !
 #include "tile.h"
 
-      CALL ana_hmixcoef_tile (ng, model, Istr, Iend, Jstr, Jend,        &
+      CALL ana_hmixcoef_tile (ng, model, tile, Istr, Iend, Jstr, Jend,  &
      &                        LBi, UBi, LBj, UBj,                       &
 #ifdef SOLVE3D
 # ifdef TS_DIF2
@@ -68,7 +68,8 @@
       END SUBROUTINE ana_hmixcoef
 !
 !***********************************************************************
-      SUBROUTINE ana_hmixcoef_tile (ng, model, Istr, Iend, Jstr, Jend,  &
+      SUBROUTINE ana_hmixcoef_tile (ng, model, tile,                    &
+     &                              Istr, Iend, Jstr, Jend,             &
      &                              LBi, UBi, LBj, UBj,                 &
 #ifdef SOLVE3D
 # ifdef TS_DIF2
@@ -107,7 +108,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, model, Iend, Istr, Jend, Jstr
+      integer, intent(in) :: ng, model, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
 
 #ifdef ASSUMED_SHAPE
@@ -172,7 +173,6 @@
       logical :: NSperiodic=.FALSE.
 #  endif
 # endif
-      integer :: IstrR, IendR, JstrR, JendR, IstrU, JstrV
       integer :: Iwrk, i, j, itrc
       real(r8) :: cff, cff1, cff2, fac
 
@@ -389,32 +389,32 @@
 !!            
 # if defined EW_PERIODIC || defined NS_PERIODIC
 #  ifdef UV_VIS2
-      CALL exchange_r2d_tile (ng, Istr, Iend, Jstr, Jend,               &
+      CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        visc2_r)
-      CALL exchange_p2d_tile (ng, Istr, Iend, Jstr, Jend,               &
+      CALL exchange_p2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        visc2_p)
 #  endif
 #  ifdef UV_VIS4
-      CALL exchange_r2d_tile (ng, Istr, Iend, Jstr, Jend,               &
+      CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        visc4_r)
-      CALL exchange_p2d_tile (ng, Istr, Iend, Jstr, Jend,               &
+      CALL exchange_p2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        visc4_p)
 #  endif
 #  ifdef SOLVE3D
 #   ifdef TS_DIF2
       DO itrc=1,NT(ng)
-        CALL exchange_r2d_tile (ng, Istr, Iend, Jstr, Jend,             &
+        CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          diff2(:,:,itrc))
       END DO
 #   endif
 #   ifdef TS_DIF4
       DO itrc=1,NT(ng)
-        CALL exchange_r2d_tile (ng, Istr, Iend, Jstr, Jend,             &
+        CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          diff4(:,:,itrc))
       END DO
@@ -423,26 +423,26 @@
 # endif
 # ifdef DISTRIBUTE
 #  ifdef UV_VIS2
-      CALL mp_exchange2d (ng, model, 2, Istr, Iend, Jstr, Jend,         &
+      CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    visc2_r, visc2_p)
 #  endif
 #  ifdef UV_VIS4
-      CALL mp_exchange2d (ng, model, 2, Istr, Iend, Jstr, Jend,         &
+      CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    visc4_r, visc4_p)
 #  endif
 #  ifdef SOLVE3D
 #   ifdef TS_DIF2
-      CALL mp_exchange3d (ng, model, 1, Istr, Iend, Jstr, Jend,         &
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 1, NT(ng),                &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    diff2)
 #   endif
 #   ifdef TS_DIF4
-      CALL mp_exchange3d (ng, model, 1, Istr, Iend, Jstr, Jend,         &
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 1, NT(ng),                &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    diff4)
