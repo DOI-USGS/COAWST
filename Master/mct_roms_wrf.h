@@ -768,21 +768,21 @@
       END DO
 # endif
 #endif
-#ifdef SHORTWAVE
+!#ifdef SHORTWAVE
 !
 !  Short wave radiation          (Celsius m/s)
 !
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "SWDOWN",   &
-     &                           A, Asize)
-      cff=1.0_r8/(rho0*Cp)
-      ij=0
-      DO j=JstrT,JendT
-        DO i=IstrT,IendT
-          ij=ij+1
-          FORCES(ng)%srflx(i,j)=A(ij)*cff
-        END DO
-      END DO
-#endif
+!      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "SWDOWN",   &
+!     &                           A, Asize)
+!      cff=1.0_r8/(rho0*Cp)
+!      ij=0
+!      DO j=JstrT,JendT
+!        DO i=IstrT,IendT
+!          ij=ij+1
+!          FORCES(ng)%srflx(i,j)=A(ij)*cff
+!        END DO
+!      END DO
+!#endif
 !
 !  Surface u-stress              (m2/s2)
 !
