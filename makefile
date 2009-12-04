@@ -59,19 +59,22 @@ $(if $(filter $(MAKE_VERSION),$(NEED_VERSION)),,        \
 #  the .h extension. For example, the upwelling application includes the
 #  "upwelling.h" header file.  
 
-ROMS_APPLICATION ?= INLET_TEST 
+#ROMS_APPLICATION ?= INLET_TEST
+ROMS_APPLICATION ?= DUCKNC
 
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
 
-MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
+#MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
+MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Ducknc
 
 #  If your application requires analytical expressions and they are not
 #  located in "ROMS/Functionals", provide an alternate directory.
 #  Notice that a set analytical expressions templates can be found in
 #  "User/Functionals".
 
-MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
+#MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Coupled
+MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Ducknc
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying
@@ -142,8 +145,8 @@ MY_CPP_FLAGS ?=
 #  NetCDF and so on.
 #--------------------------------------------------------------------------
 
-#       FORT ?= ifort
-        FORT ?= pgi
+        FORT ?= ifort
+#       FORT ?= pgi
 
 #--------------------------------------------------------------------------
 #  Set directory for executable.
@@ -244,7 +247,7 @@ clean_list += $(MAKE_MACROS)
 source-dir-to-binary-dir = $(addprefix $(SCRATCH_DIR)/, $(notdir $1))
 
 # $(call source-to-object, source-file-list)
-source-to-object = $(call source-dir-to-bindary-dir,   \
+source-to-object = $(call source-dir-to-binary-dir,   \
                    $(subst .F,.o,$1))
 
 # $(call make-library, library-name, source-file-list)
@@ -272,7 +275,7 @@ endef
 # $(call one-compile-rule, binary-file, f90-file, source-files)
 define one-compile-rule
   $1: $2 $3
-	cd $$(SCRATCH_DIR); $$(FC) -c $$(FFLAGS) $(notdir $2)
+	cd $$(SCRATCH_DIR); $$(FC) -c $$(FFLAGS) $(notdir $2) /object:$(notdir $1)
 
   $2: $3
 	$$(CPP) $$(CPPFLAGS) $$(MY_CPP_FLAGS) $$< > $$@

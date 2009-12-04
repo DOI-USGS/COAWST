@@ -392,11 +392,6 @@
 !  Define dimension vector for sediment, radiation stress variables.
 !
 # if defined WRITE_WATER && defined MASKING
-        su2dgrd(1)=DimIDs(18)
-        su2dgrd(2)=DimIDs(12)
-        sv2dgrd(1)=DimIDs(19)
-        sv2dgrd(2)=DimIDs(12)
-
         sr3dgrd(1)=DimIDs(24)
         sr3dgrd(2)=DimIDs(12)
         su3dgrd(1)=DimIDs(21)
@@ -404,13 +399,6 @@
         sv3dgrd(1)=DimIDs(22)
         sv3dgrd(2)=DimIDs(12)
 # else
-        su2dgrd(1)=DimIDs( 2)
-        su2dgrd(2)=DimIDs( 6)
-        su2dgrd(3)=DimIDs(12)
-        sv2dgrd(1)=DimIDs( 3)
-        sv2dgrd(2)=DimIDs( 7)
-        sv2dgrd(3)=DimIDs(12)
-
         sr3dgrd(1)=DimIDs( 1)
         sr3dgrd(2)=DimIDs( 5)
         sr3dgrd(3)=DimIDs(16)
@@ -424,6 +412,19 @@
         sv3dgrd(3)=DimIDs( 9)
         sv3dgrd(4)=DimIDs(12)
 # endif
+#endif
+#if defined WRITE_WATER && defined MASKING
+        su2dgrd(1)=DimIDs(18)
+        su2dgrd(2)=DimIDs(12)
+        sv2dgrd(1)=DimIDs(19)
+        sv2dgrd(2)=DimIDs(12)
+#else
+        su2dgrd(1)=DimIDs( 2)
+        su2dgrd(2)=DimIDs( 6)
+        su2dgrd(3)=DimIDs(12)
+        sv2dgrd(1)=DimIDs( 3)
+        sv2dgrd(2)=DimIDs( 7)
+        sv2dgrd(3)=DimIDs(12)
 #endif
 !
 !  Initialize unlimited time record dimension.

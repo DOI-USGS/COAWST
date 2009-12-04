@@ -352,7 +352,7 @@
       deallocate (start)
       deallocate (length)
 #endif
-      call mpi_barrier(WAV_COMM_WORLD)
+!     call mpi_barrier(WAV_COMM_WORLD)
 #ifdef MCT_INTERP_WV2AT
 !
 ! Create ATM sparse matrix plus for interpolation.
