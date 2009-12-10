@@ -217,7 +217,8 @@ endif
 #  header file ROMS/Include/cppdefs.h to determine macro definitions.
 #--------------------------------------------------------------------------
 
-MAKE_MACROS := Compilers/make_macros.mk
+MAKE_MACROS := $(shell echo ${HOME} | sed 's| |\\ |g')/make_macros.mk
+
 
 ifneq "$(MAKECMDGOALS)" "clean"
  MACROS := $(shell cpp -P $(ROMS_CPPFLAGS) Compilers/make_macros.h > \
@@ -240,7 +241,7 @@ clean_list += $(MAKE_MACROS)
 
 #--------------------------------------------------------------------------
 #  Make functions for putting the temporary files in $(SCRATCH_DIR)
-#  DO NOT modify this section; spaces and blank lineas are needed.
+#  DO NOT modify this section; spaces and blank lines are needed.
 #--------------------------------------------------------------------------
 
 # $(call source-dir-to-binary-dir, directory-list)
@@ -513,7 +514,7 @@ $(SCRATCH_DIR)/MakeDepend: makefile \
                            $(SCRATCH_DIR)/$(TYPESIZES_MODFILE) \
                            | $(SCRATCH_DIR)
 	$(SFMAKEDEPEND) $(MDEPFLAGS) $(sources) > $(SCRATCH_DIR)/MakeDepend
-	cp -p $(CURDIR)/$(MAKE_MACROS) $(SCRATCH_DIR)
+	cp -p $(MAKE_MACROS) $(SCRATCH_DIR)
 
 .PHONY: depend
 
@@ -558,7 +559,7 @@ clean:
 .PHONY: rm_macros
 
 rm_macros:
-	$(RM) -r $(CURDIR)/$(MAKE_MACROS)
+	$(RM) -r $(MAKE_MACROS)
 
 #--------------------------------------------------------------------------
 #  A handy debugging target. This will allow to print the value of any
