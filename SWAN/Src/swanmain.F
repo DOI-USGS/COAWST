@@ -151,8 +151,6 @@
       USE SWPOINT_MOD, ONLY: INIT_POINTERS, ALLOCATE_SWAN_ARRAYS
       USE M_BNDSPEC
       USE M_COUPLING
-#endif
-#ifdef MODEL_COUPLING
       USE M_CVMESH
 #endif
 !
@@ -373,11 +371,14 @@
 !  Allocate here a few arrays that are grid specific, needed, and reallocated later.
 !
       ALLOCATE (M_GENARR_MOD(ng)%XYTST_G(1))
-!
-! Allocte wxi and wyi here, just in case they are not allocated later.
-!
+      ALLOCATE (M_GENARR_MOD(ng)%DEPTH_G(1,1))
+      ALLOCATE (M_GENARR_MOD(ng)%UXB_G(1,1))
+      ALLOCATE (M_GENARR_MOD(ng)%UYB_G(1,1))
+      ALLOCATE (M_GENARR_MOD(ng)%FRIC_G(1,1))
       ALLOCATE (M_GENARR_MOD(ng)%WXI_G(1,1))
       ALLOCATE (M_GENARR_MOD(ng)%WYI_G(1,1))
+      ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(1,1))
+      ALLOCATE (M_GENARR_MOD(ng)%ASTDF_G(1,1))
 !
 !  Allocate pointers
 !
@@ -726,7 +727,6 @@
       BGRIDPL=>PARALL_MOD(ng)%BGRIDPL_G
       XGRDGL=>PARALL_MOD(ng)%XGRDGL_G
       YGRDGL=>PARALL_MOD(ng)%YGRDGL_G
-
 !
 !  Module PARALL2
 !
@@ -913,6 +913,7 @@
       USE M_GENARR
       USE M_PARALL
       USE M_PARALL2
+      USE M_COUPLING
       USE SWPOINT_MOD, ONLY: INIT_POINTERS, DEALLOCATE_SWAN_ARRAYS
 !
       USE WAVES_COUPLER_MOD, ONLY : finalize_wav2ocn_coupling
@@ -928,8 +929,55 @@
       INTEGER, INTENT(IN) :: ng, Numgrids
       LOGICAL STPNOW
       LOGICAL LOPEN
-      INTEGER MyStatus
+      INTEGER MyStatus, IUNIT
       REAL, ALLOCATABLE    :: BLKND(:), BLKNDC(:)
+!
+!  Create list of pointers for each ng instance.
+!
+      Gridnum=ng
+      CALL INIT_POINTERS(ng)
+!
+!  Modules M_GENARR
+!
+      KGRPNT=>M_GENARR_MOD(ng)%KGRPNT_G
+      KGRBND=>M_GENARR_MOD(ng)%KGRBND_G
+      XYTST=> M_GENARR_MOD(ng)%XYTST_G
+      AC2=>   M_GENARR_MOD(ng)%AC2_G
+      XCGRID=>M_GENARR_MOD(ng)%XCGRID_G
+      YCGRID=>M_GENARR_MOD(ng)%YCGRID_G
+      SPCSIG=>M_GENARR_MOD(ng)%SPCSIG_G
+      SPCDIR=>M_GENARR_MOD(ng)%SPCDIR_G
+      DEPTH=> M_GENARR_MOD(ng)%DEPTH_G
+      FRIC=>  M_GENARR_MOD(ng)%FRIC_G
+      UXB=>   M_GENARR_MOD(ng)%UXB_G
+      UYB=>   M_GENARR_MOD(ng)%UYB_G
+      WXI=>   M_GENARR_MOD(ng)%WXI_G
+      WYI=>   M_GENARR_MOD(ng)%WYI_G
+      WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
+      ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
+!
+!  Module M_PARALL
+!
+      IBLKAD=>PARALL_MOD(ng)%IBLKAD_G
+      KGRPGL=>PARALL_MOD(ng)%KGRPGL_G
+      KGRBGL=>PARALL_MOD(ng)%KGRBGL_G
+      BGRIDPL=>PARALL_MOD(ng)%BGRIDPL_G
+      XGRDGL=>PARALL_MOD(ng)%XGRDGL_G
+      YGRDGL=>PARALL_MOD(ng)%YGRDGL_G
+!
+!  Module PARALL2
+!
+      BSPECS=>PARALL2_MOD(ng)%BSPECS_G
+      CROSS=> PARALL2_MOD(ng)%CROSS_G
+      BGRIDP=>PARALL2_MOD(ng)%BGRIDP_G
+      AC1=>   PARALL2_MOD(ng)%AC1_G
+      COMPDA=>PARALL2_MOD(ng)%COMPDA_G
+      OURQT=> PARALL2_MOD(ng)%OURQT_G
+      AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
+      AC2_parent2=>PARALL2_MOD(ng)%AC2_parent2_G
+      AC2_child=>PARALL2_MOD(ng)%AC2_child_G
+
+!
 #else
           IF (LEVERR.GT.MAXERR) GOTO 900                                  40.30
 

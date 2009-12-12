@@ -223,9 +223,9 @@
             CALL mp_gather (ngp, model, LBip, UBip, LBjp, UBjp,         &
      &                      1, N(ngp), gtype, 1.0_r8,                   &
 #  ifdef MASKING
-     &                      GRID(ngp) % rmask(LBip,LBjp),               &
+     &                      GRID(ngp) % rmask(LBip:UBip,LBjp:UBjp),     &
 #  endif
-     &                      OCEAN(ngp) % t(LBip,LBjp,1,NOUTP,itrc),     &
+     &    OCEAN(ngp) % t(LBip:UBip,LBjp:UBjp,1:N(ngp),NOUTP,itrc),      &
      &                      Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes for ng=2
@@ -331,9 +331,9 @@
           CALL mp_gather (ngp, model, LBip, UBip, LBjp, UBjp, 1, N(ngp),&
      &                    gtype, 1.0_r8,                                &
 #  ifdef MASKING
-     &                    GRID(ngp) % umask(LBip,LBjp),                 &
+     &                    GRID(ngp) % umask(LBip:UBip,LBjp:UBjp),       &
 #  endif
-     &                    OCEAN(ngp) % u(LBip,LBjp,1,NOUTP),            &
+     &        OCEAN(ngp) % u(LBip:UBip,LBjp:UBjp,1:N(ngp),NOUTP),       &
      &                    Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes for ng=2
@@ -436,9 +436,9 @@
           CALL mp_gather (ngp, model, LBip, UBip, LBjp, UBjp, 1, N(ngp),&
      &                    gtype, 1.0_r8,                                &
 #  ifdef MASKING
-     &                    GRID(ngp) % vmask(LBip,LBjp),                 &
+     &                    GRID(ngp) % vmask(LBip:UBip,LBjp:UBjp),       &
 #  endif
-     &                    OCEAN(ngp) % v(LBip,LBjp,1,NOUTP),            &
+     &   OCEAN(ngp) % v(LBip:UBip,LBjp:UBjp,1:N(ngp),NOUTP),            &
      &                    Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes for ng=2

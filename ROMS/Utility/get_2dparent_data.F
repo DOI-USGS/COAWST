@@ -229,12 +229,12 @@
           CALL mp_gather (ngp, model, LBip, UBip, LBjp, UBjp, 1, 1,     &
      &                    gtype, 1.0_r8,                                &
 # ifdef MASKING
-     &                    GRID(ngp) % rmask(LBip,LBjp),                 &
+     &                    GRID(ngp) % rmask(LBip:UBip,LBjp:UBjp),       &
 # endif
 # ifdef SOLVE3D
-     &                    COUPLING(ngp) % Zt_avg1(LBip,LBjp),           &
+     &                    COUPLING(ngp) % Zt_avg1(LBip:UBip,LBjp:UBjp), &
 # else
-     &                    OCEAN(ngp) % zeta(LBip,LBjp,KOUTP),           &
+     &                    OCEAN(ngp) % zeta(LBip:UBip,LBjp:UBjp,KOUTP), &
 # endif
      &                    Npts, Aout)
 !
@@ -312,9 +312,9 @@
           CALL mp_gather (ngp, model, LBip, UBip, LBjp, UBjp, 1, 1,     &
      &                    gtype, 1.0_r8,                                &
 # ifdef MASKING
-     &                    GRID(ngp) % rmask(LBip,LBjp),                 &
+     &                    GRID(ngp) % rmask(LBip:UBip,LBjp:UBjp),       &
 # endif
-     &                    GRID(ngp) % h(LBip,LBjp),                     &
+     &                    GRID(ngp) % h(LBip:UBip,LBjp:UBjp),           &
      &                    Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes.
@@ -409,9 +409,9 @@
           CALL mp_gather (ngp, model, LBip, UBip, LBjp, UBjp, 1, 1,     &
      &                    gtype, 1.0_r8,                                &
 # ifdef MASKING
-     &                    GRID(ngp) % umask(LBip,LBjp),                 &
+     &                    GRID(ngp) % umask(LBip:UBip,LBjp:UBjp),       &
 # endif
-     &                    OCEAN(ngp) % ubar(LBip,LBjp,KOUTP),           &
+     &                OCEAN(ngp) % ubar(LBip:UBip,LBjp:UBjp,KOUTP),     &
      &                    Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes for ng=2
@@ -589,9 +589,9 @@
           CALL mp_gather (ngp, model, LBip, UBip, LBjp, UBjp, 1, 1,     &
      &                    gtype, 1.0_r8,                                &
 # ifdef MASKING
-     &                    GRID(ngp) % vmask(LBip,LBjp),                 &
+     &                    GRID(ngp) % vmask(LBip:UBip,LBjp:UBjp),       &
 # endif
-     &                    OCEAN(ngp) % vbar(LBip,LBjp,KOUTP),           &
+     &                OCEAN(ngp) % vbar(LBip:UBip,LBjp:UBjp,KOUTP),     &
      &                    Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes for ng=2

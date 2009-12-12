@@ -261,7 +261,7 @@
 !
 !  Main job control loop here.
 !
-      DO WHILE (rtime.lt.rtime_end)
+        DO WHILE (count(Ngrids).lt.Tend(Ngrids))
 !
 !  Advance grids in time that have run_grid flag == True.
 !  For the first entry, all grids step individual dts.

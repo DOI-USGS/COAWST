@@ -88,6 +88,9 @@
 !
 !  OCPCOMM4
 !
+        IF (.not.allocated(FUNHI_G)) ALLOCATE (FUNHI_G(Numgrids))
+        IF (.not.allocated(FUNLO_G)) ALLOCATE (FUNLO_G(Numgrids))
+        IF (.not.allocated(HIOPEN_G)) ALLOCATE (HIOPEN_G(Numgrids))
         IF (.not.allocated(PRINTF_G)) ALLOCATE (PRINTF_G(Numgrids))
 !
 !  SWANCOMM3
@@ -242,6 +245,9 @@
 !
 !  OCPCOMM4
 !
+      FUNHI=>FUNHI_G(ng)
+      FUNLO=>FUNLO_G(ng)
+      HIOPEN=>HIOPEN_G(ng)
       PRINTF=>PRINTF_G(ng)
 !
 !  SWANCOMM3
@@ -382,6 +388,9 @@
 !
 !  OCPCOMM4
 !
+        DEALLOCATE (FUNHI_G)
+        DEALLOCATE (FUNLO_G)
+        DEALLOCATE (HIOPEN_G)
         DEALLOCATE (PRINTF_G)
 !
 !  SWANCOMM3
