@@ -2,7 +2,7 @@
 ### Job name
 #PBS -N joe_tc
 ### Number of nodes
-#PBS -l nodes=6:ppn=8,walltime=120:00:00
+#PBS -l nodes=1:ppn=8,walltime=120:00:00
 ### Mail to user
 #PBS -m ae
 #PBS -M jcwarner@usgs.gov
@@ -19,6 +19,6 @@ cat $PBS_NODEFILE
 
 NPROCS=`wc -l < $PBS_NODEFILE`
 
-cd /raid2/jcwarner/Projects/JOE_TC/tests
+cd /raid1/jcwarner/Models/COAWST_regress/20091202/
 
-/usr/local/mpi/bin/mpirun -np 44 -machinefile $PBS_NODEFILE ./coawstM Projects/JOE_TC/coupling_joe_tc.in > joe_tc.out
+/usr/local/mpi/bin/mpirun -np 3 -machinefile $PBS_NODEFILE ./coawstM Projects/JOE_TCd/coupling_joe_tc.in > joe_tc.out

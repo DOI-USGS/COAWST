@@ -37,10 +37,12 @@
 !  Local variable declarations.  
 !
       integer :: Istr, Iend, Jstr, Jend
+      integer :: IstrT, IendT, JstrT, JendT
       integer :: IstrR, IendR, JstrR, JendR, IstrU, JstrV
       integer :: Asize, Isize, Jsize, MyError
       integer :: i, ic, j, jc, nprocs
       integer :: nRows, nCols, num_sparse_elems
+      integer :: ioff, joff, ieff
 
       integer, allocatable  :: length(:)
       integer, allocatable  :: start(:)
@@ -59,6 +61,10 @@
       Iend=BOUNDS(ng)%Iend(tile)
       Jstr=BOUNDS(ng)%Jstr(tile)
       Jend=BOUNDS(ng)%Jend(tile)
+      IstrT=BOUNDS(ng)%IstrT(tile)
+      IendT=BOUNDS(ng)%IendT(tile)
+      JstrT=BOUNDS(ng)%JstrT(tile)
+      JendT=BOUNDS(ng)%JendT(tile)
 !
       IF (WESTERN_EDGE) THEN
         IstrR=BOUNDS(ng)%Istr(tile)-1
@@ -101,6 +107,45 @@
 !
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, OCN_COMM_WORLD,  &
      &                    OCNid)
+#endif
+#if !defined MCT_INTERP_OC2AT && !defined WAVES_OCEAN
+!
+!  Determine start and lengths for domain decomposition.
+!
+      Jsize=JendT-JstrT+1
+      IF (.not.allocated(start)) THEN
+        allocate ( start(Jsize) )
+      END IF
+      IF (.not.allocated(length)) THEN
+        allocate ( length(Jsize) )
+      END IF
+      jc=0
+      ioff=0
+      joff=0
+      ieff=0
+# ifdef REFINED_GRID
+      IF (ng.gt.1) THEN
+        ioff=5
+        joff=3
+        ieff=3
+      END IF
+# endif
+      DO j=JstrT,JendT
+        jc=jc+1
+        start (jc)=(j+joff)*(Lm(ng)+2+ioff)+(IstrT+ieff)+1
+        length(jc)=(IendT-IstrT+1)
+      END DO
+      CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapROMS,             &
+     &                        start, length, 0, OCN_COMM_WORLD, OCNid)
+!
+!  Deallocate working arrays.
+!
+      IF (allocated(start)) THEN
+        deallocate (start)
+      END IF
+      IF (allocated(length)) THEN
+        deallocate (length)
+      END IF
 #endif
 #ifdef MCT_INTERP_OC2AT
 !
@@ -200,47 +245,6 @@
       CALL mpi_bcast(dst_grid_dims, 2, MPI_INTEGER, MyMaster,           &
      &               OCN_COMM_WORLD, MyError)
 
-#endif
-#if !defined WAVES_OCEAN && !defined MCT_INTERP_OC2AT
-!
-!  Determine start and lengths for domain decomposition.
-!
-      Jsize=JendT-JstrT+1
-      IF (.not.allocated(start)) THEN
-        allocate ( start(Jsize) )
-      END IF
-      IF (.not.allocated(length)) THEN
-        allocate ( length(Jsize) )
-      END IF
-      jc=0
-      ioff=0
-      joff=0
-      ieff=0
-#ifdef REFINED_GRID
-      IF (ng.gt.1) THEN
-        ioff=5
-        joff=3
-        ieff=3
-      END IF
-#endif
-      DO j=JstrT,JendT
-        jc=jc+1
-        start (jc)=(j+joff)*(Lm(ng)+2+ioff)+(IstrT+ieff)+1
-        length(jc)=(IendT-IstrT+1)
-      END DO
-      CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapROMS,             &
-     &                        start, length, 0, OCN_COMM_WORLD, OCNid)
-!
-!  Deallocate working arrays.
-!
-      IF (allocated(start)) THEN
-        deallocate (start)
-      END IF
-      IF (allocated(length)) THEN
-        deallocate (length)
-      END IF
-#endif
-#ifdef MCT_INTERP_OC2AT
 # if !defined WAVES_OCEAN 
 !
 !  Determine start and lengths for roms domain decomposition.

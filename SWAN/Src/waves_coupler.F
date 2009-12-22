@@ -110,13 +110,13 @@
       END TYPE T_Router_G
       TYPE (T_Router_G), ALLOCATABLE :: Router_G(:)
 
-# if defined WRF_COUPLING
+# ifdef WRF_COUPLING
+      TYPE(GlobalSegMap) :: GSMapWRF          ! GloabalSegMap variables
       TYPE(AttrVect) :: atm2wav_AV            ! AttrVec variables
       TYPE(AttrVect) :: wav2atm_AV            ! AttrVec variables
       type(Router)   :: SWANtoWRF             ! Router variables
 # endif
-#ifdef MCT_INTERP_WV2AT
-      TYPE(GlobalSegMap) :: GSMapWRF          ! GloabalSegMap variables
+# ifdef MCT_INTERP_WV2AT
       TYPE(AttrVect) :: atm2wav_AV2           ! AttrVect variables
       TYPE(AttrVect) :: wav2atm_AV2 
 
@@ -124,7 +124,7 @@
       TYPE(SparseMatrix) :: sMatA             ! Sparse matrix elements
       TYPE(SparseMatrixPlus) :: A2WMatPlus    ! Sparse matrix plus elements
       TYPE(SparseMatrixPlus) :: W2AMatPlus    ! Sparse matrix plus elements
-#endif
+# endif
 
       CONTAINS
 
@@ -159,10 +159,10 @@
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       integer, pointer :: start(:), length(:)
       integer :: MyMasterswan
-#ifdef REFINED_GRID
+# ifdef REFINED_GRID
       integer, dimension(:), pointer :: ocnids
       integer, dimension(:), pointer :: wavids
-#endif
+# endif
 !
 !-----------------------------------------------------------------------
 !  Begin initialization phase.
@@ -181,7 +181,7 @@
         ALLOCATE(Router_G(Ngrids))
       END IF
 !
-#ifdef REFINED_GRID
+# ifdef REFINED_GRID
       CALL initialize_param
 
       allocate ( wavids(Ngrids) )
@@ -194,11 +194,11 @@
       OCNid=ocnids(ng)
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, WAV_COMM_WORLD,  &
      &                    WAVid, wavids)
-#else
+# else
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, WAV_COMM_WORLD,  &
      &                    WAVid)
-#endif
-#ifdef MCT_INTERP_WV2AT
+# endif
+# ifdef MCT_INTERP_WV2AT
 !
 !  If wave grid and atm grids are different sizes, then
 !  develop sparse matrices for interpolation.
@@ -285,7 +285,7 @@
       CALL mpi_bcast(dst_grid_dims, 2, MPI_INTEGER, 0,                  &
      &               WAV_COMM_WORLD, MyError)
 !      END IF
-#endif
+# endif
 !
 !  Initialize a Global Segment Map for non-haloed transfer of data for
 !  SWAN. Determine non-haloed start and length arrays for this
@@ -329,7 +329,7 @@
      &                        length, 0, WAV_COMM_WORLD, WAVid)
       deallocate (start)
       deallocate (length)
-#if defined WRF_COUPLING
+# if defined WRF_COUPLING && defined MCT_INTERP_WV2AT
 !
 !  Initialize a Global Segment Map for non-haloed transfer of data
 !  for the atmosphere model.
@@ -351,9 +351,9 @@
      &                        WAV_COMM_WORLD, WAVid)
       deallocate (start)
       deallocate (length)
-#endif
-!      call mpi_barrier(WAV_COMM_WORLD)
-#ifdef MCT_INTERP_WV2AT
+!# endif
+      call mpi_barrier(WAV_COMM_WORLD)
+!# ifdef MCT_INTERP_WV2AT
 !
 ! Create ATM sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
@@ -372,7 +372,7 @@
      &                              GSMapWRF, Xonly,                    &
      &                              0, WAV_COMM_WORLD, WAVid)
         call SparseMatrix_clean(sMatW)
-#endif
+# endif
 !
 !  Initialize attribute vector holding the export data code strings of
 !  the wave model.
@@ -395,7 +395,7 @@
       CALL Router_init (OCNid, GlobalSegMap_G(ng)%GSMapSWAN,            &
      &                  WAV_COMM_WORLD, Router_G(ng)%SWANtoROMS)
 !
-#if defined WRF_COUPLING
+# if defined WRF_COUPLING
 !
 !  Initialize attribute vector holding the export data code string of
 !  the atmosphere model.
@@ -414,10 +414,12 @@
 !
 ! Initialize a router to the WRF component.
 !
+#  if !defined MCT_INTERP_WV2AT
+      CALL Router_init (ATMid, GlobalSegMap_G(ng)%GSMapSWAN,            &
+     &                  WAV_COMM_WORLD, SWANtoWRF)
+#  else
       CALL Router_init (ATMid, GSMapWRF, WAV_COMM_WORLD, SWANtoWRF)
 !
-#endif
-#ifdef MCT_INTERP_WV2AT
 !
 !  Initialize attribute vector holding the export data code strings of
 !  the atm model. The Asize is the number of grid point on this
@@ -434,11 +436,12 @@
       Asize=GlobalSegMap_lsize(GSmapWRF, WAV_COMM_WORLD)
       CALL AttrVect_init(wav2atm_AV2, rList="HSIGN:WLEN", lsize=Asize)
       CALL AttrVect_zero(wav2atm_AV2)
-#endif
-#ifdef REFINED_GRID
+#  endif
+# endif
+# ifdef REFINED_GRID
       deallocate ( wavids )
       deallocate ( ocnids )
-#endif
+# endif
 
       RETURN
       END SUBROUTINE INITIALIZE_WAV2OCN_COUPLING
@@ -563,9 +566,9 @@
       ELSE IF (IVTYPE.eq.10) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "HSIGN",avdata)
-#ifdef AIR_OCEAN
+# ifdef AIR_OCEAN
         CALL AttrVect_importRAttr (wav2atm_AV,"HSIGN",avdata)
-#endif
+# endif
       ELSE IF (IVTYPE.eq.12) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "RTP",avdata)
@@ -584,9 +587,9 @@
       ELSE IF (IVTYPE.eq.17) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "WLEN",avdata)
-#ifdef AIR_OCEAN
+# ifdef AIR_OCEAN
         CALL AttrVect_importRAttr (wav2atm_AV,"WLEN",avdata)
-#endif
+# endif
       ELSE IF (IVTYPE.eq.8) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "QB",avdata)
