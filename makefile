@@ -64,14 +64,14 @@ ROMS_APPLICATION ?= JOE_TC
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
 
-MY_HEADER_DIR ?= /raid1/jcwarner/Models/COAWST_regress/20091202/Projects/JOE_TCd
+MY_HEADER_DIR ?= /raid1/jcwarner/Models/COAWST_regress/20091202/Projects/JOE_TCs
 
 #  If your application requires analytical expressions and they are not
 #  located in "ROMS/Functionals", provide an alternate directory.
 #  Notice that a set analytical expressions templates can be found in
 #  "User/Functionals".
 
-MY_ANALYTICAL_DIR ?= /raid1/jcwarner/Models/COAWST_regress/20091202/Projects/JOE_TCd
+MY_ANALYTICAL_DIR ?= /raid1/jcwarner/Models/COAWST_regress/20091202/Projects/JOE_TCs
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying
