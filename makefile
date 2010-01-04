@@ -59,19 +59,19 @@ $(if $(filter $(MAKE_VERSION),$(NEED_VERSION)),,        \
 #  the .h extension. For example, the upwelling application includes the
 #  "upwelling.h" header file.  
 
-ROMS_APPLICATION ?= JOE_TC
+ROMS_APPLICATION ?= SHOREFACE
 
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
 
-MY_HEADER_DIR ?= /raid1/jcwarner/Models/COAWST_regress/20091202/Projects/JOE_TCs
+MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/ROMS/Include
 
 #  If your application requires analytical expressions and they are not
 #  located in "ROMS/Functionals", provide an alternate directory.
 #  Notice that a set analytical expressions templates can be found in
 #  "User/Functionals".
 
-MY_ANALYTICAL_DIR ?= /raid1/jcwarner/Models/COAWST_regress/20091202/Projects/JOE_TCs
+MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/ROMS/Functionals
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying
@@ -97,7 +97,7 @@ MY_CPP_FLAGS ?=
 #  If parallel applications, use at most one of these definitions
 #  (leave both definitions blank in serial applications):
 
-     USE_MPI ?= on
+     USE_MPI ?=
   USE_OpenMP ?=
 
 #  If distributed-memory, turn on compilation via the script "mpif90".
@@ -108,7 +108,7 @@ MY_CPP_FLAGS ?=
 #  In this, case the user need to select the desired compiler below and
 #  turn on both USE_MPI and USE_MPIF90 macros.
 
-  USE_MPIF90 ?= on
+  USE_MPIF90 ?=
 
 #  If applicable, activate 64-bit compilation:
 
@@ -142,8 +142,8 @@ MY_CPP_FLAGS ?=
 #  NetCDF and so on.
 #--------------------------------------------------------------------------
 
-#       FORT ?= ifort
-        FORT ?= pgi
+        FORT ?= ifort
+#       FORT ?= pgi
 
 #--------------------------------------------------------------------------
 #  Set directory for executable.

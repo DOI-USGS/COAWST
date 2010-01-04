@@ -432,7 +432,7 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 
      NFFILES == 1                          ! number of forcing files
 
-     FRCNAME == Data/ROMS/Forcing/swan_shoreface_angle_forc.nc
+     FRCNAME == ROMS/Data/Forcing/swan_shoreface_angle_forc.nc
 
 ! Output NetCDF file names, [1:Ngrids].
 

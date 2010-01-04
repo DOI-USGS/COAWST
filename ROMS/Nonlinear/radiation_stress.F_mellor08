@@ -51,7 +51,7 @@
 # ifdef PROFILE
       CALL wclock_on (ng, iNLM, 21)
 # endif
-      CALL radiation_stress_tile (ng, Istr, Iend, Jstr, Jend,           &
+      CALL radiation_stress_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj, N(ng),            &
 # ifdef SOLVE3D
      &                            nrhs(ng),                             &
@@ -122,7 +122,7 @@
       END SUBROUTINE radiation_stress
 !
 !***********************************************************************
-      SUBROUTINE radiation_stress_tile (ng, Istr, Iend, Jstr, Jend,     &
+      SUBROUTINE radiation_stress_tile (ng, tile,                       &
      &                                  LBi, UBi, LBj, UBj, UBk,        &
 # ifdef SOLVE3D
      &                                  nrhs,                           &
@@ -177,7 +177,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, Istr, Iend, Jstr, Jend
+      integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj, UBk
 # ifdef SOLVE3D
       integer, intent(in) :: nrhs
@@ -322,7 +322,6 @@
 #  endif
 # endif
 
-      integer :: IstrR, IendR, JstrR, JendR, IstrU, JstrV
       integer :: ILB, IUB, JLB, JUB
       integer :: i, j, k
 
@@ -339,6 +338,7 @@
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: waveny
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: waveE
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: waveEr
+      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: gamr
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: gamw
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: UFe
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Sxxl
@@ -355,9 +355,12 @@
       real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FCS
       real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FSS
       real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FSC
+      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: CF1
+      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: CF2
       real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: waveEk
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: rollA
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: oroller
+      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: orad
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: ocosh
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: osinh
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: o2sinh
@@ -395,7 +398,7 @@
           wavenx(i,j)=waven(i,j)*COS(cff)
           waveny(i,j)=waven(i,j)*SIN(cff)
           waveE(i,j)=0.0625_r8*g*Hwave(i,j)*Hwave(i,j)
-!
+! 
 !  Compute wave celerity and group velocity.
 !
           kD(i,j)=MIN(waven(i,j)*Dstp(i,j)+eps,kDmax)
@@ -406,11 +409,21 @@
           ocosh(i,j)=1.0_r8/COSH(kD(i,j))
           osinh(i,j)=1.0_r8/SINH(kD(i,j))
           o2sinh(i,j)=1.0_r8/SINH(2.0_r8*kD(i,j))
-
+!
+!  Compute metrics for vertical radiation stress distribution.
+!
+          orad(i,j)=0.0_r8
+          gamr(i,j)=MIN(Dstp(i,j)/(Hwave(i,j)+eps),5.0_r8)
+          DO k=1,N(ng)
+            cff2=(1.0_r8+SCALARS(ng)%Cs_r(k))*gamr(i,j)
+            orad(i,j)=orad(i,j)+Hz(i,j,k)*                              &
+     &                COSH(2.0_r8*pi*cff2)
+          END DO
+          orad(i,j)=1.0_r8/(orad(i,j)+eps)
+!
+!  Compute metrics for vertical roller stress distribution.
+!
 #  ifdef SVENDSEN_ROLLER
-!
-!  Compute metrics for roller contribution.
-!
           oroller(i,j)=0.0_r8
           gamw(i,j)=MIN(Dstp(i,j)/(Hwave(i,j)+eps),5.0_r8)
           DO k=1,N(ng)
@@ -422,7 +435,6 @@
 !           oroller(i,j)=oroller(i,j)+Hz(i,j,k)*(1.0_r8-cff2**4)
           END DO
           oroller(i,j)=1.0_r8/(oroller(i,j)+eps)
-
 #   ifdef MONO_ROLLER
 !
 !  Here Wave_break is really wave_area.
@@ -471,11 +483,20 @@
 !
 !  Compute local copy of radiation stresses at RHO-points.
 !
-            ED=0.0_r8
-            IF (k.eq.N(ng)) THEN
-              ED=0.5_r8*waveE(i,j)/Hz(i,j,k)
-            END IF
-            cff4=-cff1*FSCr*FSSr+ED
+!  Vertical distribution of ED
+!
+            cff2=(1.0_r8+SCALARS(ng)%Cs_r(k))*gamr(i,j)
+            cff3=COSH(2.0_r8*pi*cff2)
+            ED=0.5_r8*waveE(i,j)
+            cff4=-cff1*FSCr*FSSr+ED*cff3*orad(i,j)
+!
+!  Vertical placement of ED at surface
+!           ED=0.0_r8
+!           IF (k.eq.N(ng)) THEN
+!             ED=0.5_r8*waveE(i,j)/Hz(i,j,k)
+!           END IF
+!           cff4=-cff1*FSCr*FSSr+ED
+!
             cff5=owaven(i,j)*owaven(i,j)
             Sxxl(i,j)=cff4+                                             &
      &                waveEr(i,j)*wavenx(i,j)*wavenx(i,j)*cff5
@@ -728,39 +749,26 @@
 !
 !  Compute local copy of radiation stresses at RHO-points.
 !
-            ED=0.0_r8
-            IF (k.eq.N(ng)) THEN
-!              ED=0.5_r8*(waveE(i,j)+waveE(i-1,j))/(Hz(i,j,k)+Hz(i-1,j,k))
-            END IF
-            cff4=-cff1*FSC(i,k)*FSS(i,k)+ED
-            Szx(i,j,k)=cff4+                                              &
-     &                 waveEk(i,k)*wavenx(i,j)*wavenx(i,j)*cff5
-!           Szy(i,j,k)=cff4+                                              &
-!    &                 waveEr(i,j)*waveny(i,j)*waveny(i,j)*cff5
-            Szy(i,j,k)=waveEk(i,k)*wavenx(i,j)*waveny(i,j)*cff5
+            cff2=0.5_r8*(1.0_r8+SCALARS(ng)%Cs_w(k))*                   &
+     &           (gamr(i-1,j)+gamr(i,j))
+            cff3=COSH(2.0_r8*pi*cff2)
+            ED=0.25_r8*(waveE(i-1,j)+waveE(i,j))
+            cff4=-cff1*FSC(i,k)*FSS(i,k)+0.5_r8*ED*cff3*                &
+     &           (orad(i-1,j)+orad(i,j))
+            CF1(i,k)=cff4+                                              &
+     &               waveEk(i,k)*wavenx(i,j)*wavenx(i,j)*cff5
+            CF2(i,k)=waveEk(i,k)*wavenx(i,j)*waveny(i,j)*cff5
           END DO
         END DO
-!         DO k=0,N(ng)
-!            cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
-!            CF(i,k)=0.25_r8*(pm(i,j)+pm(i-1,j))*                        &
-!     &              (FSS(i,k)*cff1+                                     &
-!     &               (waveE(i,j)+waveE(i-1,j))*                         &
-!     &               cff3*(FCS(i,k)*cff2-FSS(i,k)*cff4))
-!          END DO
-!        DO k=0,N(ng)
-!          DO i=IstrU,Iend
-!            FC(i,k)=(FSS(i,k)-FCC(i,k))*CF(i,k)
-!          END DO
-!        END DO
         DO k=1,N(ng)
           DO i=IstrU,Iend
-            cff=SCALARS(ng)%Cs_w(k)
+            cff=SCALARS(ng)%Cs_r(k)
             cff1=0.5_r8*(pm(i,j)+pm(i-1,j))
             cff2=0.5_r8*(pn(i,j)+pn(i-1,j))
-            cff3=cff*cff1*(Hz(i,j,k)-Hz(i-1,j,k))*                       &
-     &          (Szx(i,j,k)-Szx(i,j,k-1))+                              &
+            cff3=cff*cff1*(Hz(i,j,k)-Hz(i-1,j,k))*                      &
+     &          (CF1(i,k)-CF1(i,k-1))+                                  &
      &          cff*cff2*(Hz(i,j,k)-Hz(i,j-1,k))*                       &
-     &          (Szy(i,j,k)-Szy(i,j,k-1))
+     &          (CF2(i,k)-CF2(i,k-1))
             rustr3d(i,j,k)=rustr3d(i,j,k)+                              &
      &                     cff3*om_u(i,j)*on_u(i,j)
 !
@@ -788,28 +796,38 @@
               FCC(i,k)=COSH(waveEr(i,j)*cff2)*ocosh(i,j)
               FCS(i,k)=COSH(waveEr(i,j)*cff2)*osinh(i,j)
               FSS(i,k)=SINH(waveEr(i,j)*cff2)*osinh(i,j)
+              FSC(i,k)=SINH(waveEr(i,j)*cff2)*osinh(i,j)
             END DO
-            cff1=waveE(i,j)-waveE(i,j-1)
-            cff3=kD(i,j)-kD(i,j-1)
-            cff4=1.0_r8/TANH(waveEr(i,j))
+            cff1=0.25_r8*((waven(i,j)+waven(i,j-1))*                    &
+     &                    (waveE(i,j)+waveE(i,j-1)))
+            cff5=0.5_r8*(owaven(i,j)+owaven(i,j-1))
             DO k=0,N(ng)
-              cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
-              CF(i,k)=0.25_r8*(pn(i,j)+pn(i,j-1))*                      &
-     &                (FSS(i,k)*cff1+                                   &
-     &                 (waveE(i,j)+waveE(i,j-1))*                       &
-     &                 cff3*(FCS(i,k)*cff2-FSS(i,k)*cff4))
-            END DO
-          END DO
-          DO k=0,N(ng)
-            DO i=Istr,Iend
-              FC(i,k)=(FSS(i,k)-FCC(i,k))*CF(i,k)
+              waveEk(i,k)=cff1*FCS(i,k)*FCC(i,k)
+!
+!  Compute local copy of radiation stresses at RHO-points.
+!
+              cff2=0.5_r8*(1.0_r8+SCALARS(ng)%Cs_w(k))*                 &
+     &             (gamr(i,j-1)+gamr(i,j))
+              cff3=COSH(2.0_r8*pi*cff2)
+              ED=0.25_r8*(waveE(i,j-1)+waveE(i,j))
+              cff4=-cff1*FSC(i,k)*FSS(i,k)+0.5_r8*ED*cff3*              &
+     &             (orad(i,j-1)+orad(i,j))
+              CF1(i,k)=waveEk(i,k)*wavenx(i,j)*waveny(i,j)*cff5
+              CF2(i,k)=cff4+                                            &
+     &                   waveEk(i,k)*wavenx(i,j)*wavenx(i,j)*cff5
             END DO
           END DO
           DO k=1,N(ng)
             DO i=Istr,Iend
-              cff=(FC(i,k)-FC(i,k-1))
-!              Szy(i,j,k)=cff
-!              rvstr3d(i,j,k)=rvstr3d(i,j,k)+cff*om_v(i,j)*on_v(i,j)
+              cff=SCALARS(ng)%Cs_r(k)
+              cff1=0.5_r8*(pm(i,j)+pm(i-1,j))
+              cff2=0.5_r8*(pn(i,j)+pn(i-1,j))
+              cff3=cff*cff1*(Hz(i,j,k)-Hz(i-1,j,k))*                    &
+     &            (CF1(i,k)-CF1(i,k-1))+                                &
+     &            cff*cff2*(Hz(i,j,k)-Hz(i,j-1,k))*                     &
+     &           (CF2(i,k)-CF2(i,k-1))
+              rvstr3d(i,j,k)=rvstr3d(i,j,k)+                            &
+     &                       cff3*om_v(i,j)*on_v(i,j)
 !
 !  Convert units to m2/s2 for output purposes.
 !
@@ -1063,71 +1081,71 @@
 !
 !  Apply boundary conditions.
 !
-      CALL bc_r2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Sxx_bar)
-      CALL bc_r2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Sxy_bar)
-      CALL bc_r2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Syy_bar)
-      CALL bc_u2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  ubar_stokes)
-      CALL bc_v2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  vbar_stokes)
-      CALL bc_u2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  rustr2d)
-      CALL bc_v2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  rvstr2d)
 # ifdef SOLVE3D
-      CALL bc_r3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  Sxx)
-      CALL bc_r3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  Sxy)
-      CALL bc_r3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  Syy)
-      CALL bc_r3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  Szx)
-      CALL bc_r3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  Szy)
-      CALL bc_u3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_u3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  u_stokes)
-      CALL bc_v3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_v3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  v_stokes)
-      CALL bc_u3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_u3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  rustr3d)
-      CALL bc_v3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_v3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  rvstr3d)
 # endif
 # ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, iNLM, 4, Istr, Iend, Jstr, Jend,          &
+      CALL mp_exchange2d (ng, iNLM, 4, tile,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rustr2d, rvstr2d, rulag2d, rvlag2d)
-      CALL mp_exchange2d (ng, iNLM, 2, Istr, Iend, Jstr, Jend,          &
+      CALL mp_exchange2d (ng, iNLM, 2, tile,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    ubar_stokes, vbar_stokes)
 #  ifdef SOLVE3D
-      CALL mp_exchange3d (ng, iNLM, 4, Istr, Iend, Jstr, Jend,          &
+      CALL mp_exchange3d (ng, iNLM, 4, tile,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rustr3d,  rvstr3d, rulag3d,  rvlag3d)
-      CALL mp_exchange3d (ng, iNLM, 2, Istr, Iend, Jstr, Jend,          &
+      CALL mp_exchange3d (ng, iNLM, 2, tile,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    u_stokes, v_stokes)

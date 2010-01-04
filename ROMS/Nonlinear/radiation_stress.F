@@ -1,9 +1,8 @@
 #include "cppdefs.h"
-#undef GEO_ROTATION
       MODULE radiation_stress_mod
 #ifdef NEARSHORE_MELLOR
 !
-!svn $Id: radiation_stress.F 732 2008-09-07 01:55:51Z jcwarner $
+!svn $Id: radiation_stress.F 1428 2008-03-12 13:07:21Z jcwarner $
 !=======================================================================
 !  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -327,7 +326,7 @@
       integer :: i, j, k
 
       real(r8) :: cff, cff1, cff2, cff3, cff4, cff5, cff6
-      real(r8) :: fac1, fac2, FCCr, FCSr, FSSr
+      real(r8) :: fac1, fac2, FCCr, FCSr, FSSr, FSCr, ED
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Dstp
       real(r8), parameter :: eps = 1.0E-14_r8
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: kD
@@ -339,6 +338,7 @@
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: waveny
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: waveE
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: waveEr
+      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: gamr
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: gamw
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: UFe
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Sxxl
@@ -354,8 +354,13 @@
       real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FCC
       real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FCS
       real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FSS
+      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FSC
+      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: CF1
+      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: CF2
+      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: waveEk
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: rollA
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: oroller
+      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: orad
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: ocosh
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: osinh
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: o2sinh
@@ -393,7 +398,7 @@
           wavenx(i,j)=waven(i,j)*COS(cff)
           waveny(i,j)=waven(i,j)*SIN(cff)
           waveE(i,j)=0.0625_r8*g*Hwave(i,j)*Hwave(i,j)
-!
+! 
 !  Compute wave celerity and group velocity.
 !
           kD(i,j)=MIN(waven(i,j)*Dstp(i,j)+eps,kDmax)
@@ -404,25 +409,32 @@
           ocosh(i,j)=1.0_r8/COSH(kD(i,j))
           osinh(i,j)=1.0_r8/SINH(kD(i,j))
           o2sinh(i,j)=1.0_r8/SINH(2.0_r8*kD(i,j))
-
+!
+!  Compute metrics for vertical radiation stress distribution.
+!
+          orad(i,j)=0.0_r8
+          gamr(i,j)=MIN(Dstp(i,j)/(Hwave(i,j)+eps),5.0_r8)
+          DO k=1,N(ng)
+            cff2=(1.0_r8+SCALARS(ng)%Cs_r(k))*gamr(i,j)
+            orad(i,j)=orad(i,j)+Hz(i,j,k)*                              &
+     &                COSH(2.0_r8*pi*cff2)
+          END DO
+          orad(i,j)=1.0_r8/(orad(i,j)+eps)
+!
+!  Compute metrics for vertical roller stress distribution.
+!
 #  ifdef SVENDSEN_ROLLER
-!
-!  Compute metrics for roller contribution.
-!
           oroller(i,j)=0.0_r8
           gamw(i,j)=MIN(Dstp(i,j)/(Hwave(i,j)+eps),5.0_r8)
           DO k=1,N(ng)
             cff2=SCALARS(ng)%Cs_r(k)
 !! tanh s^4 functional
-            oroller(i,j)=oroller(i,j)+                                  &
-     &                   Hz(i,j,k)*                                     &
+            oroller(i,j)=oroller(i,j)+Hz(i,j,k)*                        &
      &                   (1.0_r8-TANH((2.0_r8*cff2*gamw(i,j))**4))
 !! s^4 functional
-!!             oroller(i,j)=oroller(i,j)+                               &
-!!   &                      Hz(i,j,k)*(1.0_r8-cff2**4)
+!           oroller(i,j)=oroller(i,j)+Hz(i,j,k)*(1.0_r8-cff2**4)
           END DO
           oroller(i,j)=1.0_r8/(oroller(i,j)+eps)
-
 #   ifdef MONO_ROLLER
 !
 !  Here Wave_break is really wave_area.
@@ -458,20 +470,33 @@
             cff1=waven(i,j)*waveE(i,j)
             FCCr=COSH(kD(i,j)*fac2)*ocosh(i,j)
             FCSr=COSH(kD(i,j)*fac2)*osinh(i,j)
+            FSCr=SINH(kD(i,j)*fac2)*ocosh(i,j)
             FSSr=SINH(kD(i,j)*fac2)*osinh(i,j)
             waveEr(i,j)=cff1*FCSr*FCCr
 #  ifdef SVENDSEN_ROLLER
 !! tanh s^4 functional
             cff3=(1.0_r8-TANH((2.0_r8*(fac2-1.0_r8)*gamw(i,j))**4))
 !! s^4 functional
-!!          cff3=(1.0_r8-(fac2-1.0_r8)**4)
-            waveEr(i,j)=waveEr(i,j)+                                    &
-     &                 cff3*rollA(i,j)*oroller(i,j)
+!           cff3=(1.0_r8-(fac2-1.0_r8)**4)
+            waveEr(i,j)=waveEr(i,j)+cff3*rollA(i,j)*oroller(i,j)
 #  endif
 !
 !  Compute local copy of radiation stresses at RHO-points.
 !
-            cff4=waveE(i,j)*waven(i,j)*FCSr*(FCCr-FSSr)
+!  Vertical distribution of ED
+!
+            cff2=(1.0_r8+SCALARS(ng)%Cs_r(k))*gamr(i,j)
+            cff3=COSH(2.0_r8*pi*cff2)
+            ED=0.5_r8*waveE(i,j)
+            cff4=-cff1*FSCr*FSSr+ED*cff3*orad(i,j)
+!
+!  Vertical placement of ED at surface
+!           ED=0.0_r8
+!           IF (k.eq.N(ng)) THEN
+!             ED=0.5_r8*waveE(i,j)/Hz(i,j,k)
+!           END IF
+!           cff4=-cff1*FSCr*FSSr+ED
+!
             cff5=owaven(i,j)*owaven(i,j)
             Sxxl(i,j)=cff4+                                             &
      &                waveEr(i,j)*wavenx(i,j)*wavenx(i,j)*cff5
@@ -554,8 +579,8 @@
      &           g*cff4*(Dstp(i-1,j)+Dstp(i,j))*                        &
      &           (Wave_break(i-1,j)+Wave_break(i,j))
 #   else
-            cff2=cff2+                                                  &
-     &           0.25_r8*0.0424_r8*g*(Hwave(i-1,j)+Hwave(i,j))*         &
+            cff2=cff2+0.25_r8*                                          &
+     &           0.0424_r8*g*(Hwave(i-1,j)+Hwave(i,j))*                 &
      &           (Wave_break(i-1,j)+Wave_break(i,j))*                   &
      &           (Dstp(i-1,j)+Dstp(i,j))
 #   endif
@@ -627,8 +652,8 @@
      &           g*cff4*(Dstp(i,j-1)+Dstp(i,j))*                        &
      &           (Wave_break(i,j-1)+Wave_break(i,j))
 #   else
-            cff2=cff2+                                                  &
-     &           0.25_r8*0.0424_r8*g*(Hwave(i,j-1)+Hwave(i,j))*         &
+            cff2=cff2+0.25_r8*                                          &
+     &           0.0424_r8*g*(Hwave(i,j-1)+Hwave(i,j))*                 &
      &           (Wave_break(i,j-1)+Wave_break(i,j))*                   &
      &           (Dstp(i,j-1)+Dstp(i,j))
 #   endif
@@ -640,8 +665,8 @@
              v_stokes(i,j,k)=cff2*                                      &
      &                       (waveny(i,j-1)+waveny(i,j))/               &
      &                       (wavec (i,j-1)+wavec (i,j))*               &
-     &                       COSH(cff3*fac2)*                           &
-     &                       0.5_r8*(o2sinh(i,j-1)+o2sinh(i,j))
+     &                       COSH(cff3*fac2)*0.5_r8*                    &
+     &                       (o2sinh(i,j-1)+o2sinh(i,j))
 #  ifdef MASKING
               v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
 #  endif
@@ -694,115 +719,6 @@
         END DO
 #  endif
       END DO K_LOOP
-#  if defined GEO_ROTATION
-!
-!-----------------------------------------------------------------------
-!  Add in vertical rotation along geopotential terms.
-!-----------------------------------------------------------------------
-!
-      DO j=Jstr,Jend+1
-        DO i=Istr,Iend+1
-          z_psi(i,j)=0.25_r8*(z_r(i  ,j-1,k)+z_r(i  ,j,k)+              &
-     &                        z_r(i-1,j-1,k)+z_r(i-1,j,k))
-        END DO
-      END DO
-      DO j=Jstr,Jend
-        DO i=IstrU,Iend
-          UFe(i,j)=0.5_r8*(kD(i,j)+kD(i-1,j))
-          ocosh(i,j)=1.0_r8/COSH(UFe(i,j))
-          osinh(i,j)=1.0_r8/SINH(UFe(i,j))
-        END DO
-        DO i=IstrU,Iend
-          DO k=0,N(ng)
-            cff1=0.5_r8*(waven(i  ,j)*waveE(i  ,j)+                     &
-     &                   waven(i-1,j)*waveE(i-1,j))
-            cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
-            FCCr=COSH(UFe(i,j)*cff2)*ocosh(i,j)
-            FCSr=COSH(UFe(i,j)*cff2)*osinh(i,j)
-            FSSr=SINH(UFe(i,j)*cff2)*osinh(i,j)
-            waveEr(i,j)=cff1*FCSr*FCCr
-#   ifdef SVENDSEN_ROLLER
-            cff3=SCALARS(ng)%Cs_w(k)
-            waveEr(i,j)=waveEr(i,j)+1.25_r8*(rollA(i,j)+rollA(i-1,j))* &
-     &                  (1.0_r8-cff3**4)/(Dstp(i,j)+Dstp(i-1,j))
-#   endif
-!
-!  Compute radiation stresses at U-points.
-!
-            cff4=0.25_r8*FCSr*(FCCr-FSSr)*                              &
-     &           (waveE(i,j)+waveE(i-1,j))*                             &
-     &           (waven(i,j)+waven(i-1,j))
-            cff5=0.5_r8*(owaven(i  ,j)*owaven(i  ,j)+                   &
-     &                   owaven(i-1,j)*owaven(i-1,j))
-            FCC(i,k)=cff4+0.5_r8*                                       &
-     &               waveEr(i,j)*(wavenx(i,j)*wavenx(i,j)+              &
-     &                            wavenx(i-1,j)*wavenx(i-1,j))*cff5
-            FCS(i,k)=waveEr(i,j)*cff5*0.5_r8*(wavenx(i,j)*waveny(i,j)+  &
-     &                                    wavenx(i-1,j)*waveny(i-1,j))
-          END DO
-        END DO
-        DO i=IstrU,Iend
-          DO k=1,N(ng)
-            cff5=(z_r(i,j,k)-z_r(i-1,j,k))*                             &
-     &           on_u(i,j)*(FCC(i,k)-FCC(i,k-1))+                       &
-     &           (z_psi(i,j+1)-z_psi(i,j))*                             &
-     &           om_u(i,j)*(FCS(i,k)-FCS(i,k-1))
-            rustr3d(i,j,k)=rustr3d(i,j,k)-cff5
-#   ifdef DIAGNOSTICS_UV
-            DiaRU(i,j,k,nrhs,M3hrad)=DiaRU(i,j,k,nrhs,M3hrad)+cff5
-#   endif
-          END DO
-        END DO
-        IF (j.ge.JstrV) THEN
-          DO i=Istr,Iend
-            UFe(i,j)=0.5_r8*(kD(i,j)+kD(i,j-1))
-            ocosh(i,j)=1.0_r8/COSH(UFe(i,j))
-            osinh(i,j)=1.0_r8/SINH(UFe(i,j))
-          END DO
-          DO i=Istr,Iend
-            DO k=0,N(ng)
-              cff1=0.5_r8*(waven(i,j  )*waveE(i,j  )+                     &
-     &                     waven(i,j-1)*waveE(i,j-1))
-              cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
-              FCCr=COSH(UFe(i,j)*cff2)*ocosh(i,j)
-              FCSr=COSH(UFe(i,j)*cff2)*osinh(i,j)
-              FSSr=SINH(UFe(i,j)*cff2)*osinh(i,j)
-              waveEr(i,j)=cff1*FCSr*FCCr
-#   ifdef SVENDSEN_ROLLER
-              cff3=SCALARS(ng)%Cs_w(k)
-              waveEr(i,j)=waveEr(i,j)+1.25_r8*(rollA(i,j)+rollA(i,j-1))* &
-     &                    (1.0_r8-cff3**4)/(Dstp(i,j)+Dstp(i,j-1))
-#   endif
-!
-!  Compute radiation stresses at V-points.
-!
-              cff4=0.25_r8*FCSr*(FCCr-FSSr)*                              &
-     &             (waveE(i,j)+waveE(i,j-1))*                             &
-     &             (waven(i,j)+waven(i,j-1))
-              cff5=0.5_r8*(owaven(i,j  )*owaven(i,j  )+                   &
-     &                     owaven(i,j-1)*owaven(i,j-1))
-              FCC(i,k)=cff4+0.5_r8*                                       &
-     &                 waveEr(i,j)*(waveny(i,j)*waveny(i,j)+              &
-     &                              waveny(i,j-1)*waveny(i,j-1))*cff5
-              FCS(i,k)=waveEr(i,j)*cff5*0.5_r8*(wavenx(i,j)*waveny(i,j)+  &
-     &                                      wavenx(i-1,j)*waveny(i-1,j))
-            END DO
-          END DO
-          DO i=Istr,Iend
-            DO k=1,N(ng)
-              cff5=(z_r(i,j,k)-z_r(i-1,j,k))*                             &
-     &             on_u(i,j)*(FCS(i,k)-FCS(i,k-1))+                       &
-     &             (z_psi(i,j+1)-z_psi(i,j))*                             &
-     &             om_u(i,j)*(FCC(i,k)-FCC(i,k-1))
-              rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff5
-#   ifdef DIAGNOSTICS_UV
-              DiaRV(i,j,k,nrhs,M3hrad)=DiaRV(i,j,k,nrhs,M3hrad)+cff5
-#   endif
-            END DO
-          END DO
-        END IF
-      END DO
-#  endif
 !
 !-----------------------------------------------------------------------
 !  Determination of vertical stress terms.
@@ -823,29 +739,38 @@
               FCC(i,k)=COSH(waveEr(i,j)*cff2)*ocosh(i,j)
               FCS(i,k)=COSH(waveEr(i,j)*cff2)*osinh(i,j)
               FSS(i,k)=SINH(waveEr(i,j)*cff2)*osinh(i,j)
+              FSC(i,k)=SINH(waveEr(i,j)*cff2)*ocosh(i,j)
           END DO
-          cff1=waveE(i,j)-waveE(i-1,j)
-          cff3=kD(i,j)-kD(i-1,j)
-          cff4=1.0_r8/TANH(waveEr(i,j))
+          cff1=0.25_r8*((waven(i,j)+waven(i-1,j))*                      &
+     &                  (waveE(i,j)+waveE(i-1,j)))
+          cff5=0.5_r8*(owaven(i,j)+owaven(i-1,j))
           DO k=0,N(ng)
-            cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
-            CF(i,k)=0.25_r8*(pm(i,j)+pm(i-1,j))*                        &
-     &              (FSS(i,k)*cff1+                                     &
-     &               (waveE(i,j)+waveE(i-1,j))*                         &
-     &               cff3*(FCS(i,k)*cff2-FSS(i,k)*cff4))
-          END DO
-        END DO
-        DO k=0,N(ng)
-          DO i=IstrU,Iend
-            FC(i,k)=(FSS(i,k)-FCC(i,k))*CF(i,k)
+            waveEk(i,k)=cff1*FCS(i,k)*FCC(i,k)
+!
+!  Compute local copy of radiation stresses at RHO-points.
+!
+            cff2=0.5_r8*(1.0_r8+SCALARS(ng)%Cs_w(k))*                   &
+     &           (gamr(i-1,j)+gamr(i,j))
+            cff3=COSH(2.0_r8*pi*cff2)
+            ED=0.25_r8*(waveE(i-1,j)+waveE(i,j))
+            cff4=-cff1*FSC(i,k)*FSS(i,k)+0.5_r8*ED*cff3*                &
+     &           (orad(i-1,j)+orad(i,j))
+            CF1(i,k)=cff4+                                              &
+     &               waveEk(i,k)*wavenx(i,j)*wavenx(i,j)*cff5
+            CF2(i,k)=waveEk(i,k)*wavenx(i,j)*waveny(i,j)*cff5
           END DO
         END DO
         DO k=1,N(ng)
           DO i=IstrU,Iend
-            cff=(FC(i,k)-FC(i,k-1))
-            Szx(i,j,k)=cff
+            cff=SCALARS(ng)%Cs_r(k)
+            cff1=0.5_r8*(pm(i,j)+pm(i-1,j))
+            cff2=0.5_r8*(pn(i,j)+pn(i-1,j))
+            cff3=cff*cff1*(Hz(i,j,k)-Hz(i-1,j,k))*                      &
+     &          (CF1(i,k)-CF1(i,k-1))+                                  &
+     &          cff*cff2*(Hz(i,j,k)-Hz(i,j-1,k))*                       &
+     &          (CF2(i,k)-CF2(i,k-1))
             rustr3d(i,j,k)=rustr3d(i,j,k)+                              &
-     &                     cff*om_u(i,j)*on_u(i,j)
+     &                     cff3*om_u(i,j)*on_u(i,j)
 !
 !  Convert units to m2/s2 for output purposes.
 !
@@ -871,28 +796,38 @@
               FCC(i,k)=COSH(waveEr(i,j)*cff2)*ocosh(i,j)
               FCS(i,k)=COSH(waveEr(i,j)*cff2)*osinh(i,j)
               FSS(i,k)=SINH(waveEr(i,j)*cff2)*osinh(i,j)
+              FSC(i,k)=SINH(waveEr(i,j)*cff2)*osinh(i,j)
             END DO
-            cff1=waveE(i,j)-waveE(i,j-1)
-            cff3=kD(i,j)-kD(i,j-1)
-            cff4=1.0_r8/TANH(waveEr(i,j))
+            cff1=0.25_r8*((waven(i,j)+waven(i,j-1))*                    &
+     &                    (waveE(i,j)+waveE(i,j-1)))
+            cff5=0.5_r8*(owaven(i,j)+owaven(i,j-1))
             DO k=0,N(ng)
-              cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
-              CF(i,k)=0.25_r8*(pn(i,j)+pn(i,j-1))*                      &
-     &                (FSS(i,k)*cff1+                                   &
-     &                 (waveE(i,j)+waveE(i,j-1))*                       &
-     &                 cff3*(FCS(i,k)*cff2-FSS(i,k)*cff4))
-            END DO
-          END DO
-          DO k=0,N(ng)
-            DO i=Istr,Iend
-              FC(i,k)=(FSS(i,k)-FCC(i,k))*CF(i,k)
+              waveEk(i,k)=cff1*FCS(i,k)*FCC(i,k)
+!
+!  Compute local copy of radiation stresses at RHO-points.
+!
+              cff2=0.5_r8*(1.0_r8+SCALARS(ng)%Cs_w(k))*                 &
+     &             (gamr(i,j-1)+gamr(i,j))
+              cff3=COSH(2.0_r8*pi*cff2)
+              ED=0.25_r8*(waveE(i,j-1)+waveE(i,j))
+              cff4=-cff1*FSC(i,k)*FSS(i,k)+0.5_r8*ED*cff3*              &
+     &             (orad(i,j-1)+orad(i,j))
+              CF1(i,k)=waveEk(i,k)*wavenx(i,j)*waveny(i,j)*cff5
+              CF2(i,k)=cff4+                                            &
+     &                   waveEk(i,k)*wavenx(i,j)*wavenx(i,j)*cff5
             END DO
           END DO
           DO k=1,N(ng)
             DO i=Istr,Iend
-              cff=(FC(i,k)-FC(i,k-1))
-              Szy(i,j,k)=cff
-              rvstr3d(i,j,k)=rvstr3d(i,j,k)+cff*om_v(i,j)*on_v(i,j)
+              cff=SCALARS(ng)%Cs_r(k)
+              cff1=0.5_r8*(pm(i,j)+pm(i-1,j))
+              cff2=0.5_r8*(pn(i,j)+pn(i-1,j))
+              cff3=cff*cff1*(Hz(i,j,k)-Hz(i-1,j,k))*                    &
+     &            (CF1(i,k)-CF1(i,k-1))+                                &
+     &            cff*cff2*(Hz(i,j,k)-Hz(i,j-1,k))*                     &
+     &           (CF2(i,k)-CF2(i,k-1))
+              rvstr3d(i,j,k)=rvstr3d(i,j,k)+                            &
+     &                       cff3*om_v(i,j)*on_v(i,j)
 !
 !  Convert units to m2/s2 for output purposes.
 !
@@ -1197,20 +1132,20 @@
      &                  rvstr3d)
 # endif
 # ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
+      CALL mp_exchange2d (ng, iNLM, 4, tile,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rustr2d, rvstr2d, rulag2d, rvlag2d)
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+      CALL mp_exchange2d (ng, iNLM, 2, tile,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    ubar_stokes, vbar_stokes)
 #  ifdef SOLVE3D
-      CALL mp_exchange3d (ng, tile, iNLM, 4,                            &
+      CALL mp_exchange3d (ng, iNLM, 4, tile,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rustr3d,  rvstr3d, rulag3d,  rvlag3d)
-      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
+      CALL mp_exchange3d (ng, iNLM, 2, tile,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    u_stokes, v_stokes)
