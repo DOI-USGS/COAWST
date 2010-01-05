@@ -269,9 +269,9 @@
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
 #  ifdef SOLVE3D
-      real(r8), intent(out) :: Hz(LBi:UBi,LBj:UBj,UBk)
-      real(r8), intent(out) :: z_r(LBi:UBi,LBj:UBj,UBk)
-      real(r8), intent(out) :: z_w(LBi:UBi,LBj:UBj,0:UBk)
+      real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,UBk)
+      real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,UBk)
+      real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:UBk)
 #  endif
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
@@ -592,8 +592,7 @@
             u_stokes(i,j,k)=cff2*                                       &
      &                      (wavenx(i-1,j)+wavenx(i,j))/                &
      &                      (wavec (i-1,j)+wavec (i,j))*                &
-     &                      COSH(cff3*fac2)*0.5_r8*                     &
-     &                      (o2sinh(i-1,j)+o2sinh(i,j))
+     &                      COSH(cff3*fac2)/SINH(cff3)
 #  ifdef MASKING
             u_stokes(i,j,k)=u_stokes(i,j,k)*umask(i,j)
 #  endif
@@ -665,8 +664,7 @@
              v_stokes(i,j,k)=cff2*                                      &
      &                       (waveny(i,j-1)+waveny(i,j))/               &
      &                       (wavec (i,j-1)+wavec (i,j))*               &
-     &                       COSH(cff3*fac2)*0.5_r8*                    &
-     &                       (o2sinh(i,j-1)+o2sinh(i,j))
+     &                       COSH(cff3*fac2)/SINH(cff3)
 #  ifdef MASKING
               v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
 #  endif
