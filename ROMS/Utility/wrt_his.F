@@ -1314,14 +1314,14 @@
         scale=rho0
         gtype=gfactor*r2dvar
         wrk2=sqrt(BBL(ng)%bustrcwmax*BBL(ng)%bustrcwmax+                &
-     &            BBL(ng)%bvstrcwmax*BBL(ng)%bvstrcwmax)
-        status=nf_fwrite2d(ng, iNLM, ncHISid(ng), hisVid(idVbcs,ng),    &
+     &            BBL(ng)%bvstrcwmax*BBL(ng)%bvstrcwmax+1.0E-10_r8)
+        status=nf_fwrite2d(ng, iNLM, ncHISid(ng), hisVid(idUVwc,ng),    &
      &                     tHISindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
      &                     GRID(ng) % rmask(LBi,LBj),                   &
 #  endif
-     &                     wrk2(LBi,LBj))
+     &                     wrk2(LBi:UBi,LBj))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUVwc)), tHISindx(ng)

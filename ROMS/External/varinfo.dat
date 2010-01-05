@@ -1254,24 +1254,6 @@
   'r2dvar'
   1.0d0                                            ! 1/rhow (0.001 m3/kg) if m/s
 
-'Uwind'                                            ! Input
-  'surface u-wind component'
-  'meter second-1'                                 ! [m/s]
-  'u-wind, scalar, series'
-  'wind_time'
-  'idUair'
-  'r2dvar'
-  1.0d0
-
-'Vwind'                                            ! Input
-  'surface v-wind component'
-  'meter second-1'                                 ! [m/s]
-  'v-wind, scalar, series'
-  'wind_time'
-  'idVair'
-  'r2dvar'
-  1.0d0
-
 'Windx'                                            ! Input
   'surface u-wind component'
   'meter second-1'                                 ! [m/s]
@@ -1282,6 +1264,24 @@
   1.0d0
 
 'Windy'                                            ! Input
+  'surface v-wind component'
+  'meter second-1'                                 ! [m/s]
+  'v-wind, scalar, series'
+  'wind_time'
+  'idVair'
+  'r2dvar'
+  1.0d0
+
+'Uwind'                                            ! Input
+  'surface u-wind component'
+  'meter second-1'                                 ! [m/s]
+  'u-wind, scalar, series'
+  'wind_time'
+  'idUair'
+  'r2dvar'
+  1.0d0
+
+'Vwind'                                            ! Input
   'surface v-wind component'
   'meter second-1'                                 ! [m/s]
   'v-wind, scalar, series'
