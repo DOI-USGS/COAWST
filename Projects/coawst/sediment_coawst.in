@@ -1,0 +1,352 @@
+!
+!  ROMS/TOMS Cohesive and Non-cohesive Sediment Model Parameters.
+!
+!svn $Id: sediment_inlet_test.in 576 2008-03-13 21:16:46Z arango $
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2008 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  Comments will be ignored  during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+!------------------------------------------------------------------------------
+!  Sediment model control switch.
+!------------------------------------------------------------------------------
+
+! Switch is used to control sediment model computation within nested and/or
+! multiple connected grids, [1:Ngrids].
+
+   Lsediment == T
+
+!------------------------------------------------------------------------------
+!  General sediment bed model controls.
+!------------------------------------------------------------------------------
+
+! Depositional bed layer thickness criteria to create a new layer (m). If
+! deposition exceeds this value, then a new layer is created, [1:Ngrids].
+
+    NEWLAYER_THICK == 0.01d0
+
+! Bed load transport rate coefficient. [1:Ngrids].
+
+    BEDLOAD_COEFF == 1.0d0
+
+!------------------------------------------------------------------------------
+! Suspended Cohesive Sediment Parameters, [1:NCS,1:Ngrids] values expected.
+!------------------------------------------------------------------------------
+
+! Median sediment grain diameter (mm).
+
+    MUD_SD50 == 0.1d0  0.06d0  0.10d0
+
+! Sediment concentration (kg/m3).
+
+    MUD_CSED == 0.0d0  0.0d0  0.0d0
+
+! Sediment grain density (kg/m3).
+
+    MUD_SRHO == 2650.0d0  2650.0d0  2650.0d0
+
+! Particle settling velocity (mm/s).
+
+    MUD_WSED == 10.0d0  1.0d0  2.0d0
+
+! Surface erosion rate (kg/m2/s).
+
+   MUD_ERATE == 5.0d-3  5.0d-5  5.0d-5
+
+! Critical shear for erosion and deposition (N/m2).
+
+  MUD_TAU_CE == 0.1d0  0.05d0  0.05d0
+  MUD_TAU_CD == 0.01d0 0.01d0  0.01d0
+
+! Porosity (nondimensional: 0.0-1.0):  Vwater/(Vwater+Vsed).
+
+   MUD_POROS == 0.0d0  0.0d0  0.0d0
+
+! Lateral, harmonic and biharmonic, constant, diffusion coefficient.
+
+    MUD_TNU2 == 0.0d0  0.0d0  0.0d0             ! m2/s
+    MUD_TNU4 == 0.0d0  0.0d0  0.0d0             ! m4/s
+
+! Vertical diffusion coefficients.
+
+ MUD_AKT_BAK == 5.0d-6  5.0d-6  5.0d-6          ! m2/s
+
+! Nudging/relaxation time scales, inverse scales will be computed
+! internally.
+
+   MUD_TNUDG == 0.0d0 0.0d0 0.0d0               ! days
+
+! Morphological time scale factor (greater than or equal to 1.0). A 
+! value of 1.0 has no scale effect.
+
+   MUD_MORPH_FAC == 10.0d0 1.0d0 1.0d0              ! nondimensional
+
+! Logical switch (TRUE/FALSE) to activate writing of cohesive sediment
+! into HISTORY output file.
+
+Hout(idmud)  == T                               ! suspended concentration
+Hout(iMfrac) == T                               ! bed layer fraction
+Hout(iMmass) == T                               ! bed layer mass
+Hout(iMUbld) == T                               ! bed load at U-points
+Hout(iMVbld) == T                               ! bed load at V-points
+
+!------------------------------------------------------------------------------
+! Non-cohesive Sediment Parameters, [1:NNS,1:Ngrids] values expected.
+!------------------------------------------------------------------------------
+
+! Median sediment grain diameter (mm).
+
+   SAND_SD50 == 1.0d0 0.50d0 0.250d0 0.1250d0 0.06250d0 0.031250d0 
+
+! Sediment concentration (kg/m3).
+
+   SAND_CSED == 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0
+
+! Sediment grain density (kg/m3).
+
+   SAND_SRHO == 2650.0d0 2650.0d0 2650.00d0 2650.0d0 2650.0d0 2650.0d0
+
+! Particle settling velocity (mm/s).
+
+   SAND_WSED == 140.0d0 57.0d0 27.0d0 8.70d0 2.40d0 0.620d0
+
+! Surface erosion rate (kg/m2/s).
+
+  SAND_ERATE == 1.0d-4 1.0d-4 1.0d-4 1.0d-4 1.0d-4 1.0d-4
+
+! Critical shear for erosion and deposition (N/m2).
+
+ SAND_TAU_CE == 0.19d0 0.19d0 0.19d0 0.19d0 0.19d0 0.19d0
+ SAND_TAU_CD == 0.02d0 0.02d0 0.02d0 0.02d0 0.02d0 0.02d0
+
+! Porosity (nondimensional: 0.0-1.0):  Vwater/(Vwater+Vsed).
+
+  SAND_POROS == 0.7d0 0.7d0 0.7d0 0.7d0 0.7d0 0.7d0
+
+! Lateral, harmonic and biharmonic, constant, diffusion coefficient.
+
+   SAND_TNU2 == 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0              ! m2/s
+   SAND_TNU4 == 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0              ! m4/s
+
+! Vertical diffusion coefficients.
+
+SAND_AKT_BAK == 5.0d-6 5.0d-6 5.0d-6 5.0d-6 5.0d-6 5.0d-6        ! m2/s
+
+! Nudging/relaxation time scales, inverse scales will be computed
+! internally.
+
+  SAND_TNUDG == 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0              ! days
+
+! Morphological time scale factor (greater than or equal to 1.0). A
+! value of 1.0 has no scale effect.
+
+SAND_MORPH_FAC == 1.0d0 1.0d0 1.0d0 1.0d0 1.0d0 1.0d0          ! nondimensional
+
+! Logical switches (TRUE/FALSE) to activate writing of non-cohesive
+! sediment into HISTORY output file.
+
+Hout(idsand) == T                               ! suspended concentration
+Hout(iSfrac) == T                               ! bed layer fraction
+Hout(iSmass) == T                               ! bed layer mass
+Hout(iSUbld) == T                               ! bed load at U-points
+Hout(iSVbld) == T                               ! bed load at V-points
+
+!------------------------------------------------------------------------------
+! Bed layer and bottom sediment parameters, [1:Ngrids] values expected.
+!------------------------------------------------------------------------------
+
+ Hout(ithck) == T                               ! sediment layer thickness
+ Hout(iaged) == T                               ! sediment layer age
+ Hout(iporo) == T                               ! sediment layer porosity
+ Hout(idiff) == F                               ! biodiffusivity
+
+!
+!  GLOSSARY:
+!  =========
+!
+!------------------------------------------------------------------------------
+!  Sediment model control switch, [1:Ngrids].
+!------------------------------------------------------------------------------
+!
+!  Lsediment       Switch to control sediment model computation within nested
+!                    and/or multiple connected grids. By default this switch
+!                    is set to TRUE in "mod_scalars" for all grids. The USER
+!                    has the option, for example, to compute sediment in just
+!                    one of the nested grids. If so, this switch needs to be
+!                    consistent with the dimension parameter NST in input
+!                    script (ocean.in).  In order to make the model more
+!                    efficient in  memory usage, NST(:) should be zero in
+!                    such grids.
+!
+!------------------------------------------------------------------------------
+!  General sediment bed model controls, [1:Ngrids] values are expected.
+!------------------------------------------------------------------------------
+! 
+!  NEWLAYER_THICK  Depositional bed layer thickness criteria to create a new
+!                    layer (m). If deposition exceeds this value, then a new
+!                    layer is created.
+!
+!  BEDLOAD_COEFF   Bed load transport rate coefficient.
+!
+!------------------------------------------------------------------------------
+! Suspended Cohesive Sediment KEYWORDS, [1:NCS,1:Ngrids] values expected.
+!------------------------------------------------------------------------------
+!
+!  MUD_SD50        Median sediment grain diameter (mm).
+!
+!  MUD_CSED        Sediment concentration (kg/m3). It may be used to initialize
+!                    sediment fields using analytical expressions.
+!
+!  MUD_SRHO        Sediment grain density (kg/m3).
+!
+!  MUD_WSED        Particle settling velocity (mm/s).
+!
+!  MUD_ERATE       Surface erosion rate (kg/m2/s).
+!
+!  MUD_TAU_CE      Critical shear for erosion (N/m2).
+!
+!  MUD_TAU_CD      Critical shear for deposition (N/m2).
+!
+!  MUD_POROS       Porosity (nondimensional: 0.0-1.0):  Vwater/(Vwater+Vsed).
+!
+!  MUD_TNU2        Lateral, harmonic, constant, mixing coefficient (m2/s),
+!                    TNU2(idsed(i)) with i=1:NCS.  If variable horizontal
+!                    diffusion is activated, TNU2 is the mixing coefficient
+!                    for the largest grid-cell in the domain.
+!
+!  MUD_TNU4        Lateral, biharmonic, constant, mixing coefficient (m4/s),
+!                    TNU2(idsed(i)) with i=1:NCS.  If variable horizontal
+!                    diffusion is activated, TNU4 is the mixing coefficient
+!                    for the largest grid-cell in the domain.
+!
+!  MUD_AKT_BAK     Background vertical mixing coefficient (m2/s),
+!                    AKT_BAK(idsed(i)) with i=1:NCS.
+!
+!  MUD_TNUDG       Nudging time scale (days), TNUDG(idsed(i)) with i=1:NCS.
+!                    Inverse scale will be computed internally.
+!
+!  MUD_MORPH_FAC   Morphological time scale factor (nondimensional; greater
+!                    than or equal to 1.0). A value of 1.0 has no scale
+!                    effect.
+!
+!  Hout(idmud)     Logical switches to activate writing of cohesive sediment
+!                    concentration into HISTORY NetCDF file,
+!                    HOUT(idTvar(idsed(i))) with i=1:NCS.
+!
+!  Hout(iMfrac)    Logical switches to activate writing of cohesive sediment
+!                    class fraction composition of each bed layer into HISTORY
+!                    NetCDF file, HOUT(idfrac(i)) with i=1,NCS.
+!
+!  Hout(iMmass)    Logical switches to activate writing of cohesive sediment
+!                    mass of each bed layer into HISTORY NetCDF file,
+!                    HOUT(idsed(i)) with i=1,NCS.
+!
+!  Hout(iMUbld)    Logical switches to activate writing of cohesive sediment
+!                    bed load at U-points into HISTORY NetCDF file,
+!                    HOUT(idsed(i)) with i=1,NCS.
+!
+!  Hout(iMVbld)    Logical switches to activate writing of cohesive sediment
+!                    bed load at V-points into HISTORY NetCDF file,
+!                    HOUT(idsed(i)) with i=1,NCS.
+!
+!------------------------------------------------------------------------------
+! Suspended Non-cohesive Sediment KEYWORDS, [1:NNS,1:Ngrids] values expected.
+!------------------------------------------------------------------------------
+!
+!  SAND_SD50       Median sediment grain diameter (mm).
+!
+!  SAND_CSED       Sediment concentration (kg/m3). It may be used to initialize
+!                    sediment fields using analytical expressions.
+!
+!  SAND_SRHO       Sediment grain density (kg/m3).
+!
+!  SAND_WSED       Particle settling velocity (mm/s).
+!
+!  SAND_Erate      Surface erosion rate (kg/m2/s).
+!
+!  SAND_TAU_CE     Critical shear for erosion (N/m2).
+!
+!  SAND_TAU_CD     Critical shear for deposition (N/m2).
+!
+!  SAND_POROS      Porosity (nondimensional: 0.0-1.0):  Vwater/(Vwater+Vsed).
+!
+!  SAND_TNU2       Lateral, harmonic, constant, mixing coefficient (m2/s),
+!                    TNU2(idsed(i)) with i=NCS+1:NST.  If variable horizontal
+!                    diffusion is activated, TNU2 is the mixing coefficient
+!                    for the largest grid-cell in the domain.
+!
+!  SAND_TNU4       Lateral, biharmonic, constant, mixing coefficient (m4/s),
+!                    TNU4(idsed(i)) with i=NCS+1:NST.  If variable horizontal
+!                    diffusion is activated, TNU4 is the mixing coefficient
+!                    for the largest grid-cell in the domain.
+!
+!  SAND_AKT_BAK    Background vertical mixing coefficient (m2/s),
+!                    AKT_BAK(idsed(i)) with i=NCS+1:NST.
+!
+!  SAND_TNUDG      Nudging time scale (days), TNUDG(idsed(i)) with i=NCS+1:NST.
+!                    Inverse scale will be computed internally,
+!
+!  SAND_MORPH_FAC  Morphological time scale factor (nondimensional; greater
+!                    than or equal to 1.0). A value of 1.0 has no scale effect.
+!
+!  Hout(idsand)    Logical switches to activate writing of non-cohesive
+!                     sediment concentration into HISTORY NetCDF file,
+!                     HOUT(idTvar(idsed(i))) with i=1:NCS+1,NST.
+!
+!  Hout(iSfrac)    Logical switches to activate writing of non-cohesive
+!                     sediment class fraction composition of each bed layer
+!                     into HISTORY NetCDF file, HOUT(idfrac(i)) with
+!                     i=NCS+1,NST.
+!
+!  Hout(iSmass)    Logical switches to activate writing of non-cohesive
+!                    sediment mass of each bed layer into HISTORY NetCDF file,
+!                    HOUT(idsed(i)) with i=NCS+1,NST.
+!
+!  Hout(iSUbld)    Logical switches to activate writing of non-cohesive
+!                    sediment bed load at U-points into HISTORY NetCDF file,
+!                    HOUT(idsed(i)) with i=NCS+1,NST.
+!
+!  Hout(iSVbld)    Logical switches to activate writing of non-cohesive
+!                     sediment bed load at V-points into HISTORY NetCDF file,
+!                     HOUT(idsed(i)) with i=NCS+1,NST.
+!
+!------------------------------------------------------------------------------
+! Bed layer and bottom sediment KEYWORDS, [1:Ngrids] values expected.
+!------------------------------------------------------------------------------
+!
+!  Hout(ithck)     Sediment layer thickness.
+!
+!  Hout(iaged)     Sediment layer age.
+!
+!  Hout(iporo)     Sediment layer porosity.
+!
+!  Hout(idiff)     Biodiffusivity at the bottom of each layer.

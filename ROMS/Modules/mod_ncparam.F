@@ -240,6 +240,7 @@
         integer  :: idUbas        ! 2D U-velocity adjoint sensitivity
         integer  :: idUbcl        ! 2D U-velocity climatology
         integer  :: idUbcs        ! bottom max U-momentum-wave stress
+        integer  :: idUVwc        ! bottom max wave-current stress magnitude
         integer  :: idUbed        ! bed load U-direction
         integer  :: idUbms        ! bottom U-momentum stress
         integer  :: idUbot        ! bed wave orbital U-velocity
@@ -1034,6 +1035,8 @@
                 idVbws=varid
               CASE ('idVbcs')
                 idVbcs=varid
+              CASE ('idUVwc')
+                idUVwc=varid
               CASE ('idTsur(itemp)')
                 idTsur(itemp)=varid
               CASE ('iddQdT')

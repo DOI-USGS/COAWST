@@ -1481,6 +1481,23 @@
      &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
         END IF
 !
+!  Define maximum wave and current bottom stress magnitude.
+!
+        IF (Hout(idUVwc,ng)) THEN
+          Vinfo( 1)=Vname(1,idUVwc)
+          Vinfo( 2)=Vname(2,idUVwc)
+          Vinfo( 3)=Vname(3,idUVwc)
+          Vinfo(14)=Vname(4,idUVwc)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_r'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idUVwc,ng),r8)
+          status=def_var(ncHISid(ng),hisVid(idUVwc,ng),NF_FOUT,         &
+     &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
+        END IF
+!
 !  Define wind-induced, bed wave orbital U-velocity.
 !
         IF (Hout(idUbot,ng)) THEN

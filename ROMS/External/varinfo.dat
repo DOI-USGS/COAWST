@@ -421,7 +421,7 @@
   'bustrcwmax, scalar, series'                     ! Output: [N/m2]
   'ocean_time'
   'idUbcs'
-  'u2dvar'
+  'r2dvar'
   1.0d0
 
 'bvstrcwmax'                                       ! Output
@@ -430,7 +430,16 @@
   'bustrcwmax, scalar, series'                     ! Output: [N/m2]
   'ocean_time'
   'idVbcs'
-  'v2dvar'
+  'r2dvar'
+  1.0d0
+
+'bstrcwmax'                                        ! Output
+  'max wave and current bottom stress magnitude'
+  'newton meter-2'                                 ! [m2/s2]
+  'bstrcwmax, scalar, series'                      ! Output: [N/m2]
+  'ocean_time'
+  'idUVwc'
+  'r2dvar'
   1.0d0
 
 'Ubot'                                             ! Output

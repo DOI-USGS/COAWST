@@ -1385,6 +1385,12 @@
               STOP
             END IF
             Npts=load_l(Nval, Cval, Ngrids, Hout(idVbcs,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idUVwc)') THEN
+            IF (idUVwc.eq.0) THEN
+              WRITE (out,280) 'idUVwc'
+              STOP
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idUVwc,1:Ngrids))
           ELSE IF (TRIM(KeyWord).eq.'Hout(idUbot)') THEN
             IF (idUbot.eq.0) THEN
               WRITE (out,280) 'idUbot'
