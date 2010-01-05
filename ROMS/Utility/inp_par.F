@@ -1313,6 +1313,18 @@
                 Hout(i,ng)=Ltracer(itrc,ng)
               END DO
             END DO
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idUair)') THEN
+            IF (idUair.eq.0) THEN
+              WRITE (out,280) 'idUair'
+              STOP
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idUair,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idVair)') THEN
+            IF (idVair.eq.0) THEN
+              WRITE (out,280) 'idVair'
+              STOP
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idVair,1:Ngrids))
           ELSE IF (TRIM(KeyWord).eq.'Hout(idUsms)') THEN
             IF (idUsms.eq.0) THEN
               WRITE (out,280) 'idUsms'

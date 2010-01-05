@@ -413,7 +413,7 @@
 !  Compute metrics for vertical radiation stress distribution.
 !
           orad(i,j)=0.0_r8
-          gamr(i,j)=MIN(Dstp(i,j)/(Hwave(i,j)+eps),5.0_r8)
+          gamr(i,j)=MIN(0.707_r8*Dstp(i,j)/(Hwave(i,j)+eps),5.0_r8)
           DO k=1,N(ng)
             cff2=(1.0_r8+SCALARS(ng)%Cs_r(k))*gamr(i,j)
             orad(i,j)=orad(i,j)+Hz(i,j,k)*                              &

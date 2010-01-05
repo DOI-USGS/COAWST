@@ -1027,6 +1027,40 @@
 # endif
 # ifdef BULK_FLUXES
 !
+!  Define surface u-wind component.
+!
+        IF (Hout(idUair,ng)) THEN
+          Vinfo( 1)=Vname(1,idUair)
+          Vinfo( 2)=Vname(2,idUair)
+          Vinfo( 3)=Vname(3,idUair)
+          Vinfo(14)=Vname(4,idUair)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idUair,ng),r8)
+          status=def_var(ncHISid(ng),hisVid(idUair,ng),NF_FOUT,         &
+     &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
+        END IF
+!
+!  Define surface v-wind component.
+!
+        IF (Hout(idVair,ng)) THEN
+          Vinfo( 1)=Vname(1,idVair)
+          Vinfo( 2)=Vname(2,idVair)
+          Vinfo( 3)=Vname(3,idVair)
+          Vinfo(14)=Vname(4,idVair)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idVair,ng),r8)
+          status=def_var(ncHISid(ng),hisVid(idVair,ng),NF_FOUT,         &
+     &                   nvd3,t2dgrd,Aval,Vinfo,ncname)
+        END IF
+!
 !  Define latent heat flux.
 !
         IF (Hout(idLhea,ng)) THEN
