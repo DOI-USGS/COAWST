@@ -1321,7 +1321,7 @@
 #  ifdef MASKING
      &                     GRID(ng) % rmask(LBi,LBj),                   &
 #  endif
-     &                     wrk2(LBi:UBi,LBj))
+     &                     wrk2(LBi:UBi,LBj:UBj))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUVwc)), tHISindx(ng)
