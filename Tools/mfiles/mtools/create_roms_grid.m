@@ -18,8 +18,8 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %1) set your case here to = 1.
-JOE_TC=1;
-JOE_TC_coarse=0;
+JOE_TC=0;
+JOE_TC_coarse=1;
 MY_APP=0;
 
 if (JOE_TC)
@@ -66,10 +66,10 @@ elseif (JOE_TC_coarse)
     roms_angle=zeros(size(depth));
   %5) set masking
     mask_rho=ones(size(depth));
-    mask_rho(:,1:98)=0;
-    mask_rho(:,end-6:end)=0;
-    mask_rho(1:30,:)=0;
-    mask_rho(end-6:end,:)=0;
+    mask_rho(:,1:25)=0;
+    mask_rho(:,end-2:end)=0;
+    mask_rho(1:8,:)=0;
+    mask_rho(end-2:end,:)=0;
   %6) set coriolis f
     f=zeros(size(depth))+4.988e-5; %20N
   %7) enter output file name
