@@ -532,7 +532,7 @@ endif
 
 tarfile:
 #		tar --exclude=".svn" --exclude Output -cvf coawst_v1.1.tar *
-		tar --exclude=".svn" -cvf coawst_v1.0.tar run_* *.TBL RRTM* makefile ROMS/ SWAN/ WRF/ Master/ Tools/ Compilers/ Projects/JOE_TC Projects/Rip_current Projects/wetdry Projects/Visser Projects/Hole7 Projects/Griz_Bay Projects/Dogbone Projects/Inlet_test
+		tar --exclude=".svn" -cvf coawst_v1.0.tar run_* *.TBL RRTM* makefile ROMS/ SWAN/ WRF/ Master/ Tools/ Compilers/ Projects/JOE_TCs Projects/JOE_TCd Projects/Rip_current Projects/wetdry Projects/Visser Projects/Hole7 Projects/Griz_Bay Projects/Dogbone Projects/Inlet_test Projects/coawst
 
 .PHONY: zipfile
 
