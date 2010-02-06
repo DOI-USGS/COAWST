@@ -406,7 +406,7 @@ CONTAINS
        REAL, DIMENSION( its:ite ), INTENT(IN) :: vt1,vq1
 
 #ifdef SWAN_COUPLING
-       REAL, DIMENSION( its:ite ), INTENT(IN) :: HWAVE, LWAVE
+       REAL, DIMENSION( ims:ime ), INTENT(IN) :: HWAVE, LWAVE
 #endif
 
 ! LOCAL VARS
