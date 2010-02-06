@@ -1,4 +1,5 @@
 #include "cppdefs.h"
+#define GEO_ROTATION
       MODULE radiation_stress_mod
 #ifdef NEARSHORE_MELLOR
 !
@@ -364,7 +365,7 @@
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: ocosh
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: osinh
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: o2sinh
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: z_psi
+      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,N(ng)) :: z_psi
 #  ifdef CURVGRID
       real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: UFx
 #  endif
@@ -413,7 +414,7 @@
 !  Compute metrics for vertical radiation stress distribution.
 !
           orad(i,j)=0.0_r8
-          gamr(i,j)=MIN(0.707_r8*Dstp(i,j)/(Hwave(i,j)+eps),5.0_r8)
+          gamr(i,j)=MIN(0.707_r8*Dstp(i,j)/(Hwave(i,j)+eps),1.0_r8)
           DO k=1,N(ng)
             cff2=(1.0_r8+SCALARS(ng)%Cs_r(k))*gamr(i,j)
             orad(i,j)=orad(i,j)+Hz(i,j,k)*                              &
@@ -717,7 +718,125 @@
         END DO
 #  endif
       END DO K_LOOP
+#  if defined GEO_ROTATION
 !
+!-----------------------------------------------------------------------
+!  Add in vertical rotation along geopotential terms.
+!-----------------------------------------------------------------------
+!
+      DO k=1,N(ng)
+        DO j=Jstr,Jend+1
+          DO i=Istr,Iend+1
+            z_psi(i,j,k)=0.25_r8*(z_r(i  ,j-1,k)+z_r(i  ,j,k)+          &
+     &                            z_r(i-1,j-1,k)+z_r(i-1,j,k))
+          END DO
+        END DO
+      END DO
+      DO j=Jstr,Jend
+        DO i=IstrU,Iend
+          UFe(i,j)=0.5_r8*(kD(i,j)+kD(i-1,j))
+          ocosh(i,j)=1.0_r8/COSH(UFe(i,j))
+          osinh(i,j)=1.0_r8/SINH(UFe(i,j))
+        END DO
+        DO i=IstrU,Iend
+          DO k=0,N(ng)
+            cff1=0.5_r8*(waven(i  ,j)*waveE(i  ,j)+                     &
+     &                   waven(i-1,j)*waveE(i-1,j))
+            cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
+            FCCr=COSH(UFe(i,j)*cff2)*ocosh(i,j)
+            FCSr=COSH(UFe(i,j)*cff2)*osinh(i,j)
+            FSCr=SINH(UFe(i,j)*cff2)*ocosh(i,j)
+            FSSr=SINH(UFe(i,j)*cff2)*osinh(i,j)
+            waveEr(i,j)=cff1*FCSr*FCCr
+#   ifdef SVENDSEN_ROLLER
+            cff3=SCALARS(ng)%Cs_w(k)
+            waveEr(i,j)=waveEr(i,j)+1.25_r8*(rollA(i,j)+rollA(i-1,j))* &
+     &                  (1.0_r8-cff3**4)/(Dstp(i,j)+Dstp(i-1,j)+eps)
+#   endif
+!
+!  Compute radiation stresses at U-points.
+!
+            cff3=COSH(pi*cff2*(gamr(i-1,j)+gamr(i,j)))
+            ED=0.25_r8*(waveE(i-1,j)+waveE(i,j))
+            cff4=-cff1*FSCr*FSSr+0.5_r8*ED*cff3*(orad(i-1,j)+orad(i,j))
+            cff5=(0.5_r8*(owaven(i  ,j)+owaven(i  ,j)))*                &
+     &           (0.5_r8*(owaven(i-1,j)+owaven(i-1,j)))
+            FCC(i,k)=cff4+                                              &
+     &               0.5_r8*waveEr(i,j)*                                &
+     &               (wavenx(i  ,j)*wavenx(i  ,j)+                      &
+     &                wavenx(i-1,j)*wavenx(i-1,j))*cff5
+            FCS(i,k)=0.5_r8*waveEr(i,j)*                                &
+     &               (wavenx(i  ,j)*waveny(i  ,j)+                      &
+     &                wavenx(i-1,j)*waveny(i-1,j))*cff5
+          END DO
+        END DO
+        DO i=IstrU,Iend
+          DO k=1,N(ng)
+!            cff3=0.5_r8*(FCC(i,k)+FCC(i,k-1))/0.5_r8*(FCC(i,k)+FCC(i,k-1))
+            cff5=(z_r(i,j,k)-z_r(i-1,j,k))*                             &
+     &           on_u(i,j)*(FCC(i,k)-FCC(i,k-1))+                       &
+     &           (z_psi(i,j+1,k)-z_psi(i,j,k))*                         &
+     &           om_u(i,j)*(FCS(i,k)-FCS(i,k-1))
+            rustr3d(i,j,k)=rustr3d(i,j,k)-cff5
+#   ifdef DIAGNOSTICS_UV
+            DiaRU(i,j,k,nrhs,M3hrad)=DiaRU(i,j,k,nrhs,M3hrad)+cff5
+#   endif
+          END DO
+        END DO
+        IF (j.ge.JstrV) THEN
+          DO i=Istr,Iend
+            UFe(i,j)=0.5_r8*(kD(i,j)+kD(i,j-1))
+            ocosh(i,j)=1.0_r8/COSH(UFe(i,j))
+            osinh(i,j)=1.0_r8/SINH(UFe(i,j))
+          END DO
+          DO i=Istr,Iend
+            DO k=0,N(ng)
+              cff1=0.5_r8*(waven(i,j  )*waveE(i,j  )+                   &
+     &                     waven(i,j-1)*waveE(i,j-1))
+              cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
+              FCCr=COSH(UFe(i,j)*cff2)*ocosh(i,j)
+              FCSr=COSH(UFe(i,j)*cff2)*osinh(i,j)
+              FSCr=SINH(UFe(i,j)*cff2)*ocosh(i,j)
+              FSSr=SINH(UFe(i,j)*cff2)*osinh(i,j)
+              waveEr(i,j)=cff1*FCSr*FCCr
+#   ifdef SVENDSEN_ROLLER
+              cff3=SCALARS(ng)%Cs_w(k)
+              waveEr(i,j)=waveEr(i,j)+1.25_r8*(rollA(i,j)+rollA(i,j-1))*&
+     &                    (1.0_r8-cff3**4)/(Dstp(i,j)+Dstp(i,j-1)+eps)
+#   endif
+!
+!  Compute radiation stresses at V-points.
+!
+              cff3=COSH(pi*cff2*(gamr(i,j-1)+gamr(i,j)))
+              ED=0.25_r8*(waveE(i,j-1)+waveE(i,j))
+              cff4=-cff1*FSCr*FSSr+0.5_r8*ED*cff3*                      &
+     &             (orad(i,j-1)+orad(i,j))
+              cff5=0.5_r8*(owaven(i,j  )*owaven(i,j  )+                 &
+     &                     owaven(i,j-1)*owaven(i,j-1))
+              FCC(i,k)=cff4+                                            &
+     &                 0.5_r8*waveEr(i,j)*                              &
+     &                 (waveny(i,j  )*waveny(i,j  )+                    &
+     &                  waveny(i,j-1)*waveny(i,j-1))*cff5
+              FCS(i,k)=0.5_r8*waveEr(i,j)*                              &
+     &                 (wavenx(i,j  )*waveny(i,j  )+                    &
+     &                  wavenx(i,j-1)*waveny(i,j-1))*cff5
+            END DO
+          END DO
+          DO i=Istr,Iend
+            DO k=1,N(ng)
+              cff5=(z_r(i,j,k)-z_r(i,j-1,k))*                           &
+     &             om_v(i,j)*(FCC(i,k)-FCC(i,k-1))+                     &
+     &             (z_psi(i+1,j,k)-z_psi(i,j,k))*                       &
+     &             on_v(i,j)*(FCS(i,k)-FCS(i,k-1))
+              rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff5
+#   ifdef DIAGNOSTICS_UV
+              DiaRV(i,j,k,nrhs,M3hrad)=DiaRV(i,j,k,nrhs,M3hrad)+cff5
+#   endif
+            END DO
+          END DO
+        END IF
+      END DO
+#  endif
 !-----------------------------------------------------------------------
 !  Determination of vertical stress terms.
 !  Notice reuse variable waveEr.
