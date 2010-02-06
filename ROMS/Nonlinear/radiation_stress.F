@@ -1249,20 +1249,20 @@
      &                  rvstr3d)
 # endif
 # ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, iNLM, 4, tile,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rustr2d, rvstr2d, rulag2d, rvlag2d)
-      CALL mp_exchange2d (ng, iNLM, 2, tile,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    ubar_stokes, vbar_stokes)
 #  ifdef SOLVE3D
-      CALL mp_exchange3d (ng, iNLM, 4, tile,                            &
+      CALL mp_exchange3d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rustr3d,  rvstr3d, rulag3d,  rvlag3d)
-      CALL mp_exchange3d (ng, iNLM, 2, tile,                            &
+      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    u_stokes, v_stokes)
