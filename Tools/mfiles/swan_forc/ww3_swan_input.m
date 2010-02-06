@@ -28,11 +28,11 @@
 % generically (numbered). Any existing TPAR files will be overwritten !!!!
 %
 working_drive='g:';
-working_dir='data2\Carolinas\modeling\bc_ic\ww3_grib\';
+working_dir='data2\Carolinas\modeling\bc_ic\ww3_200312\';
 eval(['cd ',working_drive,'\',working_dir,';']);
 
 %2) Enter dates of data requested.
-yearww3='2005';    %input year of data yyyy 
+yearww3='2003';    %input year of data yyyy 
 mmww3='12';        %input month of data mm
 
 % For recent data, i.e. the last 7 days, input ddww3='dd'

@@ -1197,10 +1197,17 @@
              ALLOCATE( TARR(MXG(IGR2)*MYG(IGR2)) )                         40.41
              TARR = 0.                                                     40.41
           END IF                                                           40.41
-          IF (.NOT.ALLOCATED(WXI)) ALLOCATE(WXI(MXG(IGR1),MYG(IGR1)))      40.31
-          CALL SWCOPR( TARR, WXI, MXG(IGR1)*MYG(IGR1) )                    40.31
-          IF (.NOT.ALLOCATED(WYI)) ALLOCATE(WYI(MXG(IGR2),MYG(IGR2)))      40.31
-          CALL SWCOPR( TARR, WYI, MXG(IGR2)*MYG(IGR2) )                    40.31
+!
+          DEALLOCATE(M_GENARR_MOD(ng)%WXI_G)
+          ALLOCATE (M_GENARR_MOD(ng)%WXI_G(MXG(IGR1),MYG(IGR1)))
+          WXI=>M_GENARR_MOD(ng)%WXI_G
+          CALL SWCOPR( TARR, WXI, MXG(IGR1)*MYG(IGR1) )
+!
+          DEALLOCATE(M_GENARR_MOD(ng)%WYI_G)
+          ALLOCATE (M_GENARR_MOD(ng)%WYI_G(MXG(IGR2),MYG(IGR2)))
+          WYI=>M_GENARR_MOD(ng)%WYI_G
+          CALL SWCOPR( TARR, WYI, MXG(IGR2)*MYG(IGR2) )
+!
           DEALLOCATE(TARR)
 #endif
         ELSE IF (KEYWIS ('WX')) THEN

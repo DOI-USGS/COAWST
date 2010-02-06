@@ -589,7 +589,7 @@
         CALL finalize_ocn2atm_coupling
       ELSE
         IF (Master) THEN
-          WRITE (stdout,'a') 'ROMS recv Atm fields'
+          WRITE (stdout,'(a)') 'ROMS recv Atm fields'
         END IF
       END IF
 !
@@ -973,7 +973,7 @@
         RETURN
       ELSE
         IF (Master) THEN
-          WRITE (stdout,'a') 'ROMS sent data to WRF '
+          WRITE (stdout,'(a)') 'ROMS sent data to WRF '
         END IF
       END IF
 !
