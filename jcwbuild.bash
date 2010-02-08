@@ -80,17 +80,17 @@ done
 # determine the name of the ".h" header file with the application 
 # CPP definitions.
 
-export   ROMS_APPLICATION=UPWELLING
+export   ROMS_APPLICATION=INLET_TEST
 
 # Set number of nested/composed/mosaic grids.  Currently, only one grid
 # is supported.
 
-export        NestedGrids=1
+export     NestedGrids=2
 
 # Set a local environmental variable to define the path to the directories
 # where all this project's files are kept.
 
-export        MY_ROOT_DIR=/cygdrive/d/data/models/roms/roms_sed_rutgers_cygwin/trunks/src
+export     MY_ROOT_DIR=/cygdrive/c/work/models/COAWST
 export     MY_PROJECT_DIR=${MY_ROOT_DIR}
 
 # The path to the user's local current ROMS source code. 
@@ -130,7 +130,7 @@ export        MY_ROMS_SRC=${MY_ROOT_DIR}/
 # out. Any string value (including off) will evaluate to TRUE in
 # conditional if-stamentents.
 
- export           USE_MPI=
+ export           USE_MPI=on
  export        USE_MPIF90=
  export              FORT=ifort
 
@@ -359,20 +359,22 @@ fi
 # customized biology model header file (like fennel.h, nemuro.h, ecosim.h,
 # etc).
 
- export     MY_HEADER_DIR=${MY_PROJECT_DIR}/ROMS/Include
+# export     MY_HEADER_DIR=${MY_PROJECT_DIR}/ROMS/Include
+  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Refined
 
- export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/ROMS/Include
+# export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/ROMS/Include
+  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Refined
 
 # Put the binary to execute in the following directory.
 
 # export            BINDIR=${MY_PROJECT_DIR}
- export            BINDIR=./
+  export            BINDIR=./
 
 # Put the f90 files in a project specific Build directory to avoid conflict
 # with other projects. 
 
 # export       SCRATCH_DIR=${MY_PROJECT_DIR}/Build
- export       SCRATCH_DIR=./Build
+  export       SCRATCH_DIR=./Build
 
 # Go to the users source directory to compile. The options set above will
 # pick up the application-specific code from the appropriate place.
