@@ -28,7 +28,7 @@
 % generically (numbered). Any existing TPAR files will be overwritten !!!!
 %
 working_drive='g:';
-working_dir='data2\Carolinas\modeling\bc_ic\ww3_200312\';
+working_dir='data2\Carolinas\modeling\bc_ic\ww3_200312_sc56\';
 eval(['cd ',working_drive,'\',working_dir,';']);
 
 %2) Enter dates of data requested.
@@ -45,7 +45,8 @@ ww3_area='wna';    %western north atlantic
 
 %4) Enter path\name of SWAN netcdf grid. This is typically the same
 % as the roms grid.
-modelgrid='G:\data2\Carolinas\modeling\Grids\USeast_grd15.nc';
+%modelgrid='G:\data2\Carolinas\modeling\Grids\USeast_grd15.nc';
+modelgrid='G:\data2\Carolinas\modeling\Grids\sc_grid_56.nc';
 
 %5) Enter the spacings of TPAR file locations around the perimeter
 % of the grid. One TPAR file every 'specres' point.
