@@ -103,6 +103,7 @@
         ALLOCATE(GlobalSegMap_G(Ngrids))
         ALLOCATE(AttrVect_G(Ngrids))
         ALLOCATE(Router_G(Ngrids))
+        ALLOCATE(SMPlus_G(Ngrids))
       END IF
 !
 !  Initialize MCT coupled model registry.
@@ -207,7 +208,6 @@
 !        END IF
       END IF
 #endif
-#if !defined MCT_INTERP_OC2WV
 !
 !  Determine start and lengths for roms domain decomposition.
 !
@@ -245,35 +245,7 @@
       IF (allocated(length)) THEN
         deallocate (length)
       END IF
-#endif
 #ifdef MCT_INTERP_OC2WV
-!
-!  Determine start and lengths for roms domain decomposition.
-!
-      Jsize=JendR-JstrR+1
-      IF (.not.allocated(start)) THEN
-        allocate ( start(Jsize) )
-      END IF
-      IF (.not.allocated(length)) THEN
-        allocate ( length(Jsize) )
-      END IF
-      jc=0
-      DO j=JstrR,JendR
-        jc=jc+1
-        start (jc)=j*(Lm(ng)+2)+IstrR+1
-        length(jc)=(IendR-IstrR+1)
-      END DO
-      CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapROMS,             &
-     &                        start, length, 0, OCN_COMM_WORLD, OCNid)
-!
-!  Deallocate working arrays.
-!
-      IF (allocated(start)) THEN
-        deallocate (start)
-      END IF
-      IF (allocated(length)) THEN
-        deallocate (length)
-      END IF
 !
 !  Determine start and lengths for domain decomposition
 !  of the wave model.

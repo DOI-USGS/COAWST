@@ -288,7 +288,7 @@
 !
         DO ng=1,Ngrids
           cff=rtime-rtime_start
-          IF (MOD(cff,dt(ng)).eq.0) THEN
+          IF (MOD(cff,dt(ng)).eq.0.0_r8) THEN
             run_grid(ng)=.TRUE.
           END IF
         END DO

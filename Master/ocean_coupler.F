@@ -103,6 +103,9 @@
 # ifdef MCT_INTERP_OC2WV
         TYPE(GlobalSegMap) :: GSMapSWAN       ! GloabalSegMap variables
 # endif
+# ifdef MCT_INTERP_OC2AT
+        TYPE(GlobalSegMap) :: GSMapWRF        ! GloabalSegMap variables
+# endif
       END TYPE T_GlobalSegMap_G
       TYPE (T_GlobalSegMap_G), ALLOCATABLE :: GlobalSegMap_G(:)
 
@@ -120,10 +123,10 @@
 
       TYPE T_Router_G
 # ifdef SWAN_COUPLING
-      TYPE(Router)   :: ROMStoSWAN            ! Router variables
+        TYPE(Router)   :: ROMStoSWAN            ! Router variables
 # endif
 # ifdef WRF_COUPLING
-      TYPE(Router)   :: ROMStoWRF             ! Router variables
+        TYPE(Router)   :: ROMStoWRF             ! Router variables
 # endif
       END TYPE T_Router_G
       TYPE (T_Router_G), ALLOCATABLE :: Router_G(:)
@@ -137,15 +140,17 @@
       TYPE(SparseMatrixPlus) :: O2WMatPlus    ! Sparse matrix plus elements
 # endif
 # ifdef MCT_INTERP_OC2AT
-      TYPE(GlobalSegMap) :: GSMapWRF          ! GloabalSegMap variables
       TYPE(AttrVect) :: atm2ocn_AV2           ! AttrVect variables
       TYPE(AttrVect) :: ocn2atm_AV2
 #  if !defined MCT_INTERP_OC2WV
       TYPE(SparseMatrix) :: sMatO             ! Sparse matrix elements
 #  endif
       TYPE(SparseMatrix) :: sMatA             ! Sparse matrix elements
-      TYPE(SparseMatrixPlus) :: A2OMatPlus    ! Sparse matrix plus elements
-      TYPE(SparseMatrixPlus) :: O2AMatPlus    ! Sparse matrix plus elements
+      TYPE T_SMPlus_G
+        TYPE(SparseMatrixPlus) :: A2OMatPlus    ! Sparse matrix plus elements
+        TYPE(SparseMatrixPlus) :: O2AMatPlus    ! Sparse matrix plus elements
+      END TYPE T_SMPlus_G
+      TYPE (T_SMPlus_G), ALLOCATABLE :: SMPlus_G(:)
 # endif
 
       CONTAINS

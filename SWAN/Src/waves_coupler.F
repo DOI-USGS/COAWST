@@ -102,6 +102,10 @@
       TYPE T_AttrVect_G
         TYPE(AttrVect) :: wav2ocn_AV            ! AttrVect variables
         TYPE(AttrVect) :: ocn2wav_AV
+# ifdef WRF_COUPLING
+       TYPE(AttrVect) :: atm2wav_AV            ! AttrVec variables
+       TYPE(AttrVect) :: wav2atm_AV            ! AttrVec variables
+# endif
       END TYPE T_AttrVect_G
       TYPE (T_AttrVect_G), ALLOCATABLE :: AttrVect_G(:)
 
@@ -112,18 +116,18 @@
 
 # ifdef WRF_COUPLING
       TYPE(GlobalSegMap) :: GSMapWRF          ! GloabalSegMap variables
-      TYPE(AttrVect) :: atm2wav_AV            ! AttrVec variables
-      TYPE(AttrVect) :: wav2atm_AV            ! AttrVec variables
       type(Router)   :: SWANtoWRF             ! Router variables
 # endif
 # ifdef MCT_INTERP_WV2AT
       TYPE(AttrVect) :: atm2wav_AV2           ! AttrVect variables
       TYPE(AttrVect) :: wav2atm_AV2 
-
       TYPE(SparseMatrix) :: sMatW             ! Sparse matrix elements
       TYPE(SparseMatrix) :: sMatA             ! Sparse matrix elements
-      TYPE(SparseMatrixPlus) :: A2WMatPlus    ! Sparse matrix plus elements
-      TYPE(SparseMatrixPlus) :: W2AMatPlus    ! Sparse matrix plus elements
+      TYPE T_SMPlus_G
+        TYPE(SparseMatrixPlus) :: A2WMatPlus    ! Sparse matrix plus elements
+        TYPE(SparseMatrixPlus) :: W2AMatPlus    ! Sparse matrix plus elements
+      END TYPE T_SMPlus_G
+      TYPE (T_SMPlus_G), ALLOCATABLE :: SMPlus_G(:)
 # endif
 
       CONTAINS
@@ -152,7 +156,7 @@
 !
       integer :: MyError, MyRank
       integer :: npoints, gsmsize, nprocs, localsize
-      integer :: j, Isize, Jsize, jc, Asize
+      integer :: i, j, Isize, Jsize, jc, Asize, ic
       character (len=70)    :: nc_name
       integer :: nRows, nCols, num_sparse_elems
 
@@ -179,6 +183,7 @@
         ALLOCATE(GlobalSegMap_G(Ngrids))
         ALLOCATE(AttrVect_G(Ngrids))
         ALLOCATE(Router_G(Ngrids))
+        ALLOCATE(SMPlus_G(Ngrids))
       END IF
 !
 # ifdef REFINED_GRID
@@ -239,7 +244,7 @@
           deallocate ( sparse_weights )
 !        END IF
 !        IF (allocated(sparse_weights)) THEN
-!          deallocate ( dst_grid_imask )
+          deallocate ( dst_grid_imask )
 !        END IF
       END IF
 
@@ -256,6 +261,22 @@
 !
         nRows=dst_grid_dims(1)*dst_grid_dims(2)
         nCols=src_grid_dims(1)*src_grid_dims(2)
+# ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+# endif
+!
+! Zero out the destination cells with masking.
+!
+        ic=1
+        DO i=1,nRows
+          DO ic=i*4-3,i*4
+            sparse_weights(ic)=sparse_weights(ic)*                      &
+     &                         REAL(dst_grid_imask(i),r8)
+          END DO
+        END DO
+# ifdef REFINED_GRID
+      END IF
+# endif
 !
 ! Create sparse matrix.
 !
@@ -279,7 +300,7 @@
           deallocate ( sparse_weights )
 !        END IF
 !        IF (allocated(sparse_weights)) THEN
-!          deallocate ( dst_grid_imask )
+          deallocate ( dst_grid_imask )
 !        END IF
       END IF
       CALL mpi_bcast(dst_grid_dims, 2, MPI_INTEGER, 0,                  &
@@ -358,7 +379,7 @@
 ! Create ATM sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
 !
-        call SparseMatrixPlus_init(A2WMatPlus, sMatA,                   &
+        call SparseMatrixPlus_init(SMPlus_G(ng)%A2WMatPlus, sMatA,      &
      &                             GSMapWRF,                            &
      &                             GlobalSegMap_G(ng)%GSMapSWAN, Xonly, &
      &                             0, WAV_COMM_WORLD, WAVid)
@@ -367,7 +388,7 @@
 ! Create Wave sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
 !
-         call SparseMatrixPlus_init(W2AMatPlus, sMatW,                  &
+         call SparseMatrixPlus_init(SMPlus_G(ng)%W2AMatPlus, sMatW,     &
      &                              GlobalSegMap_G(ng)%GSMapSWAN,       &
      &                              GSMapWRF, Xonly,                    &
      &                              0, WAV_COMM_WORLD, WAVid)
@@ -402,15 +423,16 @@
 !
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapSWAN,            &
      &                         WAV_COMM_WORLD)
-      CALL AttrVect_init (atm2wav_AV, rlist="U10:V10",                  &
+      CALL AttrVect_init (AttrVect_G(ng)%atm2wav_AV, rlist="U10:V10",   &
      &                    lsize=Asize)
-      CALL AttrVect_zero (atm2wav_AV)
+      CALL AttrVect_zero (AttrVect_G(ng)%atm2wav_AV)
 
 !
 ! Initialize atribute vector holding wave data.
 !
-      CALL AttrVect_init(wav2atm_AV, rList="HSIGN:WLEN", lsize=Asize)
-      CALL AttrVect_zero(wav2atm_AV)
+      CALL AttrVect_init(AttrVect_G(ng)%wav2atm_AV, rList="HSIGN:WLEN", &
+     &                   lsize=Asize)
+      CALL AttrVect_zero(AttrVect_G(ng)%wav2atm_AV)
 !
 ! Initialize a router to the WRF component.
 !
@@ -418,8 +440,13 @@
       CALL Router_init (ATMid, GlobalSegMap_G(ng)%GSMapSWAN,            &
      &                  WAV_COMM_WORLD, SWANtoWRF)
 #  else
+#   ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+#   endif
       CALL Router_init (ATMid, GSMapWRF, WAV_COMM_WORLD, SWANtoWRF)
-!
+#   ifdef REFINED_GRID
+      END IF
+#   endif
 !
 !  Initialize attribute vector holding the export data code strings of
 !  the atm model. The Asize is the number of grid point on this
@@ -540,9 +567,9 @@
 !  Allocate attribute vector array used to export/import data.
 !
       allocate ( avdata(gsmsize),stat=ierr )
-      allocate ( points(gsmsize),stat=ierr )
       avdata=0.0_r8
-      points=0
+!     allocate ( points(gsmsize),stat=ierr )
+!     points=0
 !
 !  Ask for points in this tile.
 !
@@ -567,7 +594,8 @@
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "HSIGN",avdata)
 # ifdef AIR_OCEAN
-        CALL AttrVect_importRAttr (wav2atm_AV,"HSIGN",avdata)
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2atm_AV,           &
+     &                             "HSIGN",avdata)
 # endif
       ELSE IF (IVTYPE.eq.12) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
@@ -588,7 +616,8 @@
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "WLEN",avdata)
 # ifdef AIR_OCEAN
-        CALL AttrVect_importRAttr (wav2atm_AV,"WLEN",avdata)
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2atm_AV,           &
+     &                             "WLEN",avdata)
 # endif
       ELSE IF (IVTYPE.eq.8) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
@@ -638,11 +667,20 @@
 !
 !  Send fields to atmosphere model.
 !
+      MyError=0
 #  ifdef MCT_INTERP_WV2AT
-        CALL MCT_MatVecMul(wav2atm_AV, W2AMatPlus, wav2atm_AV2)
+#   ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+#   endif
+        CALL MCT_MatVecMul(AttrVect_G(ng)%wav2atm_AV,                   &
+     &                     SMPlus_G(ng)%W2AMatPlus,                     &
+     &                     wav2atm_AV2)
         CALL MCT_Send (wav2atm_AV2, SWANtoWRF, MyError)
+#   ifdef REFINED_GRID
+      END IF
+#   endif
 #  else
-        CALL MCT_Send (wav2atm_AV, SWANtoWRF, MyError)
+        CALL MCT_Send (AttrVect_G(ng)%wav2atm_AV, SWANtoWRF, MyError)
 #  endif
         IF (MYRANK.EQ.0) THEN
           WRITE (*,*) '== SWAN sent fields to atm model'
@@ -656,10 +694,17 @@
 !
         NUMTRANSFER=7
 #  ifdef MCT_INTERP_WV2AT
+#   ifdef REFINED_GRID
+        IF (ng.eq.1) THEN
+          CALL MCT_Recv (atm2wav_AV2, SWANtoWRF, MyError)
+        END IF
+#   else
         CALL MCT_Recv (atm2wav_AV2, SWANtoWRF, MyError)
-        CALL MCT_MatVecMul(atm2wav_AV2, A2WMatPlus, atm2wav_AV)
+#   endif
+        CALL MCT_MatVecMul(atm2wav_AV2, SMPlus_G(ng)%A2WMatPlus,        &
+     &                     AttrVect_G(ng)%atm2wav_AV)
 #  else
-        CALL MCT_Recv (atm2wav_AV, SWANtoWRF, MyError)
+        CALL MCT_Recv (AttrVect_G(ng)%atm2wav_AV, SWANtoWRF, MyError)
 #  endif
         IF (MYRANK.EQ.0) THEN
           WRITE (*,*) '== SWAN recvd atm fields'
@@ -778,7 +823,8 @@
 !
 !  U-wind.
 !
-        CALL AttrVect_exportRAttr(atm2wav_AV,"U10",avdata,gsmsize)
+        CALL AttrVect_exportRAttr(AttrVect_G(ng)%atm2wav_AV,"U10",      &
+     &                            avdata,gsmsize)
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
@@ -790,7 +836,8 @@
 !
 !  V-wind.
 !
-        CALL AttrVect_exportRAttr(atm2wav_AV,"V10",avdata,gsmsize)
+        CALL AttrVect_exportRAttr(AttrVect_G(ng)%atm2wav_AV,"V10",      &
+     &                            avdata,gsmsize)
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
@@ -1064,7 +1111,7 @@
       CALL AttrVect_clean (AttrVect_G(ng)%wav2ocn_AV, MyError)
 # ifdef WRF_COUPLING
       CALL Router_clean (SWANtoWRF, MyError)
-      CALL AttrVect_clean (atm2wav_AV, MyError)
+      CALL AttrVect_clean (AttrVect_G(ng)%atm2wav_AV, MyError)
 # endif
       CALL GlobalSegMap_clean (GlobalSegMap_G(ng)%GSMapSWAN, MyError)
 

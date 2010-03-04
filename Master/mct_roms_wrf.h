@@ -46,6 +46,10 @@
 
       integer, allocatable  :: length(:)
       integer, allocatable  :: start(:)
+#if defined REFINED_GRID && !defined WAVES_OCEAN
+      integer, dimension(:), pointer :: ocnids
+      integer, dimension(:), pointer :: wavids
+#endif
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       character (len=70)    :: nc_name
       character (len=70)   :: avstring
@@ -101,12 +105,24 @@
         ALLOCATE(GlobalSegMap_G(Ngrids))
         ALLOCATE(AttrVect_G(Ngrids))
         ALLOCATE(Router_G(Ngrids))
+        ALLOCATE(SMPlus_G(Ngrids))
       END IF
 !
 !  Initialize MCT coupled model registry.
 !
+# ifdef REFINED_GRID
+      allocate ( ocnids(Ngrids) )
+      allocate ( wavids(Ngrids) )
+      DO i=1,Ngrids
+        ocnids(i)=i
+      END DO
+      OCNid=ocnids(ng)
+      CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                &
+     &                    OCN_COMM_WORLD,OCNid, myids=ocnids)
+# else
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, OCN_COMM_WORLD,  &
      &                    OCNid)
+# endif
 #endif
 #if !defined MCT_INTERP_OC2AT && !defined WAVES_OCEAN
 !
@@ -205,6 +221,9 @@
 !
         nRows=dst_grid_dims(1)*dst_grid_dims(2)
         nCols=src_grid_dims(1)*src_grid_dims(2)
+# ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+# endif
 !
 ! Zero out the destination cells with masking.
 !
@@ -215,6 +234,9 @@
      &                         REAL(dst_grid_imask(i),r8)
           END DO
         END DO
+# ifdef REFINED_GRID
+      END IF
+# endif
 !
 ! Create sparse matrix.
 !
@@ -249,7 +271,7 @@
 !
 !  Determine start and lengths for roms domain decomposition.
 !
-      Jsize=JendR-JstrR+1
+      Jsize=JendT-JstrT+1
       IF (.not.allocated(start)) THEN
         allocate ( start(Jsize) )
       END IF
@@ -257,10 +279,20 @@
         allocate ( length(Jsize) )
       END IF
       jc=0
-      DO j=JstrR,JendR
+      ioff=0
+      joff=0
+      ieff=0
+#ifdef REFINED_GRID
+      IF (ng.gt.1) THEN
+        ioff=5
+        joff=3
+        ieff=3
+      END IF
+#endif
+      DO j=JstrT,JendT
         jc=jc+1
-        start (jc)=j*(Lm(ng)+2)+IstrR+1
-        length(jc)=(IendR-IstrR+1)
+        start (jc)=(j+joff)*(Lm(ng)+2+ioff)+(IstrT+ieff)+1
+        length(jc)=(IendT-IstrT+1)
       END DO
       CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapROMS,             &
      &                        start, length, 0, OCN_COMM_WORLD, OCNid)
@@ -291,7 +323,8 @@
       start=(MyRank*INT(dst_grid_dims(1)/nprocs))*dst_grid_dims(2)+1
       length=Isize*dst_grid_dims(2)
 !
-      CALL GlobalSegMap_init (GSMapWRF, start, length, 0,              &
+      CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapWRF,              &
+     &                        start, length, 0,                         &
      &                        OCN_COMM_WORLD, OCNid)
 !
 !  Deallocate working arrays.
@@ -306,8 +339,8 @@
 ! Create ATM sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
 !
-        call SparseMatrixPlus_init(A2OMatPlus, sMatA,                  &
-     &                             GSMapWRF,                           &
+        call SparseMatrixPlus_init(SMPlus_G(ng)%A2OMatPlus, sMatA,     &
+     &                             GlobalSegMap_G(ng)%GSMapWRF,        &
      &                             GlobalSegMap_G(ng)%GSMapROMS, Xonly,&
      &                             MyMaster, OCN_COMM_WORLD, OCNid)
         call SparseMatrix_clean(sMatA)
@@ -315,9 +348,9 @@
 ! Create Ocean sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
 !
-         call SparseMatrixPlus_init(O2AMatPlus, sMatO,                 &
+	call SparseMatrixPlus_init(SMPlus_G(ng)%O2AMatPlus, sMatO,     &
      &                              GlobalSegMap_G(ng)%GSMapROMS,      &
-     &                              GSMapWRF, Xonly,                   &
+     &                              GlobalSegMap_G(ng)%GSMapWRF, Xonly,&
      &                              MyMaster, OCN_COMM_WORLD, OCNid)
         call SparseMatrix_clean(sMatO)
 #endif
@@ -341,38 +374,46 @@
       avstring(67:70)=':GSW'
 !
 #ifdef MCT_INTERP_OC2AT
+# ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+# endif
 !
-!  Initialize attribute vector holding the export data code strings of
+!  Initialize attribute vector holding the export data of
 !  the atm model. The Asize is the number of grid point on this
 !  processor.
 !
-      Asize=GlobalSegMap_lsize(GSMapWRF, OCN_COMM_WORLD)
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapWRF,             &
+     &                         OCN_COMM_WORLD)
       CALL AttrVect_init (atm2ocn_AV2, rList=TRIM(avstring),lsize=Asize)
       CALL AttrVect_zero (atm2ocn_AV2)
 !
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSmapWRF,             &
+     &                         OCN_COMM_WORLD)
+      CALL AttrVect_init (ocn2atm_AV2,rList="SST",lsize=Asize)
+      CALL AttrVect_zero (ocn2atm_AV2)
+!
+!  Initialize a router to the wave model component.
+!
+      CALL Router_init (ATMid, GlobalSegMap_G(ng)%GSMapWRF,             &
+     &                  OCN_COMM_WORLD,                                 &
+     &                  Router_G(ng)%ROMStoWRF)
+# ifdef REFINED_GRID
+      END IF
+# endif
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
      &                         OCN_COMM_WORLD)
       CALL AttrVect_init (AttrVect_G(ng)%atm2ocn_AV,                    &
      &                    rList=TRIM(avstring),lsize=Asize)
       CALL AttrVect_zero (AttrVect_G(ng)%atm2ocn_AV)
 !
-!  Initialize attribute vector holding the export data code string of
+!  Initialize attribute vector holding the export data of
 !  the ocean model.
-!
-      Asize=GlobalSegMap_lsize(GSmapWRF, OCN_COMM_WORLD)
-      CALL AttrVect_init (ocn2atm_AV2,rList="SST",lsize=Asize)
-      CALL AttrVect_zero (ocn2atm_AV2)
 !
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSmapROMS,            &
      &                         OCN_COMM_WORLD)
       CALL AttrVect_init (AttrVect_G(ng)%ocn2atm_AV,rList="SST",        &
      &                    lsize=Asize)
       CALL AttrVect_zero (AttrVect_G(ng)%ocn2atm_AV)
-!
-!  Initialize a router to the wave model component.
-!
-      CALL Router_init (ATMid, GSMapWRF, OCN_COMM_WORLD,                &
-     &                  Router_G(ng)%ROMStoWRF)
 #else
 !
 !  Initialize attribute vector holding the export data code strings of
@@ -395,6 +436,10 @@
 !
       CALL Router_init (ATMid, GlobalSegMap_G(ng)%GSMapROMS,            &
      &                  OCN_COMM_WORLD, Router_G(ng)%ROMStoWRF)
+#endif
+#if defined REFINED_GRID && !defined WAVES_OCEAN
+      deallocate ( wavids )
+      deallocate ( ocnids )
 #endif
 
       RETURN
@@ -575,8 +620,14 @@
 !
       CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
 #ifdef MCT_INTERP_OC2AT
+# ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+        CALL MCT_Recv (atm2ocn_AV2, Router_G(ng)%ROMStoWRF, MyError)
+      END IF
+# else
       CALL MCT_Recv (atm2ocn_AV2, Router_G(ng)%ROMStoWRF, MyError)
-      CALL MCT_MatVecMul(atm2ocn_AV2, A2OMatPlus,                       &
+# endif
+      CALL MCT_MatVecMul(atm2ocn_AV2, SMPlus_G(ng)%A2OMatPlus,          &
      &                   AttrVect_G(ng)%atm2ocn_AV)
 #else
       CALL MCT_Recv (AttrVect_G(ng)%atm2ocn_AV, Router_G(ng)%ROMStoWRF, &
@@ -952,15 +1003,23 @@
 #endif
         END DO
       END DO
-      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2atm_AV, "SST", A, &
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2atm_AV, "SST", A,   &
      &                             Asize)
 !
 !  Send ocean fields to atmosphere model.
 !
+      MyError=0
 #ifdef MCT_INTERP_OC2AT
-      CALL MCT_MatVecMul(AttrVect_G(ng)%ocn2atm_AV,O2AMatPlus,        &
-     &                     ocn2atm_AV2)
+# ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+# endif
+      CALL MCT_MatVecMul(AttrVect_G(ng)%ocn2atm_AV,                     &
+     &                   SMPlus_G(ng)%O2AMatPlus,                       &
+     &                   ocn2atm_AV2)
       CALL MCT_Send (ocn2atm_AV2, Router_G(ng)%ROMStoWRF, MyError)
+# ifdef REFINED_GRID
+      END IF
+# endif
 #else
       CALL MCT_Send (AttrVect_G(ng)%ocn2atm_AV, Router_G(ng)%ROMStoWRF, &
      &               MyError)

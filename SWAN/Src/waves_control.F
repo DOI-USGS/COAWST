@@ -249,6 +249,8 @@
           END IF
         END DO
       END DO
+      IF (ALLOCATED(run_grid)) DEALLOCATE (run_grid)
+      IF (ALLOCATED(count)) DEALLOCATE (count)
 
       RETURN
       END SUBROUTINE SWAN_driver_run

@@ -539,7 +539,7 @@
       DO j=js,je
         DO i=is,ie
           ij=ij+1
-          grid%hwave(i,j)=AA(ij)*(1-grid%landmask(i,j))
+          grid%hwave(i,j)=MAX(0.0,AA(ij))*(1-grid%landmask(i,j))
         END DO
       END DO
 !

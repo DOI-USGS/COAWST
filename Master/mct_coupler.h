@@ -87,9 +87,9 @@
 !  Allocate several coupling variables.
 !
 #ifdef REFINED_GRID
-# ifndef AIR_OCEAN
-      N_mctmodels=Ncouple*Ngrids
-# else
+# if defined AIR_OCEAN && !defined WAVES_OCEAN
+      N_mctmodels=Ngrids+1
+# elif defined AIR_OCEAN && defined WAVES_OCEAN
       N_mctmodels=Ncouple*Ngrids+1
 # endif
 #else
