@@ -1,0 +1,34 @@
+Instructions:
+=============
+The most current serial ARPACK distribution is contained in the file
+
+    arpack96.tar.gz
+
+Once you have retrieved this file then issue the following command
+
+        zcat arpack96.tar.gz | tar -xvf -
+
+This will create a directory named ARPACK.  You should also
+download the patch file patch.tar.gz and unbundle it using the
+same command
+
+        zcat patch.tar.gz | tar -xvf -
+
+To add the parallel codes to the ARPACK package, retrieve
+
+   parpack96.tar.gz  and ppatch.tar.gz
+
+Once you have retrieved this file then issue the following command
+
+        zcat parpack96.tar.gz | tar -xvf -
+        zcat ppatch.tar.gz | tar -xvf -
+
+This will add an additional subdirectory (PARPACK) to the ARPACK directory.
+(ARPACK/PARPACK). Some additional files will be added to the ARMAKES directory as well as
+updating the Makefile and README files in the top level ARPACK directory. 
+
+IMPORTANT: Make sure that the tar files for the serial distribution and the 
+parallel distribution are unbundled in the same top level directory.
+Usually $(HOME).
+
+Change to the ARPACK directory and read the file README for further instructions.

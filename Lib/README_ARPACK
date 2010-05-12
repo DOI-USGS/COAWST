@@ -1,0 +1,158 @@
+ARPACK/PARPACK Checkpointing Capabilities
+-----------------------------------------
+
+Hernan G. Arango
+Institute of Marine and Coastal Sciences
+Rutgers University
+August 30, 2005
+
+Checkpointing is a necessary capability for applications that use the
+ARPACK library to solve very large (and usually expensive) eigenploblems.
+There is not such capability in the released ARPACK (Version 2.4) library.
+Although, in the contribution area there are a couple of routines modified
+to do such task. The strategy was to add extra arguments to reverse
+communications driver DSAUPD.  The restart is then triggered by setting the
+IDO flag to -2.
+
+This is not an optimal way to restart the ARPACK library because it is
+not supported by all the drivers and does not ensure the same results.
+I have not been able to get my applications to produce the exact results
+in the same number of iterations when compared with an interrupted
+computation.  The reason for this is that ARPACK has a lot of internal
+parameters that are saved during the computations with the Fortran 
+"save" command. This suggests that when an application is restarted from
+a checkpointing file we are not solving exactly the same subspace problem.
+
+An alternative checkpointing strategy is proposed that maintain the
+integrity of the current ARPACK library.  There are not extra arguments
+to IRAM. The uninterrupted capabilities of ARPACK is intact and the user
+gets identical results. The new strategy is as follows:
+
+1)  Move all variables declared with the "save" statement to common
+    blocks in several include files:
+
+    i_aupd.h   private variables used by _AUPD routines
+    idaup2.h   private variables used by _AUP2 double precision routines
+    isaup2.h   private variables used by _AUP2 single precision routines
+    idaitr.h   private variables used by _AITR double precision routines
+    isaitr.h   private variables used by _AITR single precision routines
+
+    The declaration of these variables were removed from the ARPACK
+    version 2.4 symmetric and non-symmetric routines and put in the above
+    include files.  I am only interested in the symmetric and non-symmetric
+    routines but similar strategy can be used in the other routines.
+
+    A single include file is not possible because the same variable names
+    are repeated with different meanings and passed as arguments to other
+    routines. The renaming and changing argument names is not desired 
+    because require a lot of testing and can break the current capability.
+
+    For example, idaup2.h becomes
+
+c
+c     %---------------------------------------------------%
+c     | Private variables used by  _AITR single precision |
+c     | routines are saved in common blocks to facilitate |
+c     | checkpointing.  All  these  variables  need to be |
+c     | saved and recovered during checkpointing restart. |
+c     %---------------------------------------------------%
+c
+      logical
+     &           orth1, orth2, rstart, step3, step4
+      common /lsaitr/
+     &           orth1, orth2, rstart, step3, step4
+
+      integer
+     &           ierr, ipj, irj, ivj, iter, itry, j, msglvl
+      common /isaitr/
+     &           ierr, ipj, irj, ivj, iter, itry, j, msglvl
+
+      double precision
+     &           betaj, ovfl, rnorm1, safmin, smlnum, ulp, unfl, wnorm
+      common /rsaitr/
+     &           betaj, ovfl, rnorm1, safmin, smlnum, ulp, unfl, wnorm
+
+
+    Notice that logical, integer and floating point variables are in
+    separated in different common blocks.  This is very important in
+    various computer architectures.
+
+2) As in previous checkpointing attempts, the IDO flag with a value of
+   -2 is used to trigger restart from a checkpointing file.
+
+3) The only executable change done to the ARPACK routines it to add
+   an extra condition to the initialization of several routines from
+
+      if (ido .eq. 0) then
+
+   to
+
+      if ((ido .eq. 0) .or. (ido .eq. -2)) then
+
+
+   Also, in the same IF block an extra conditional is added for the
+   initialization of several variables during cold start and NOT
+   restart. If restart, all these value are recovered from the
+   checkpointing file.
+
+4) The user now have access to all the internal parameters of ARPACK
+   and fine tune its values to a wide variety of restart applications.
+
+   Since there are repeated variable names in the above common blocks,
+   the user need to address the common block in a compact way.  For
+   example, in my ARPACK application module I added the following
+   statements:
+
+      integer  :: iaitr(8), iaup2(8), iaupd(20)
+      logical  :: laitr(5), laup2(5)
+      real(r8) :: raitr(8), raup2(2)
+!
+      common /i_aupd/ iaupd
+#ifdef DOUBLE_PRECISION
+      common /idaitr/ iaitr
+      common /ldaitr/ laitr
+      common /rdaitr/ raitr
+      common /idaup2/ iaup2
+      common /ldaup2/ laup2
+      common /rdaup2/ raup2
+#else
+      common /isaitr/ iaitr
+      common /lsaitr/ laitr
+      common /rsaitr/ raitr
+      common /isaup2/ iaup2
+      common /lsaup2/ laup2
+      common /rsaup2/ raup2
+#endif
+
+    This compact form facilitates the writing of the checkpointing file. 
+    My checkpointing file is written in a NetCDF file for both serial and
+    parallel applications.  The user also need to save all the scalars
+    and arrays passed as argument to any of the _AUPD routines.
+
+5)  The following routines were modified for checkpointing:
+
+    symmetric:
+
+    ARPACK/SRC/dsaupd.f            ARPACK/PARPACK/SRC/MPI/pdsaupd.f
+    ARPACK/SRC/ssaupd.f            ARPACK/PARPACK/SRC/MPI/pssaupd.f
+
+    ARPACK/SRC/dsaup2.f            ARPACK/PARPACK/SRC/MPI/pdsaup2.f
+    ARPACK/SRC/ssaup2.f            ARPACK/PARPACK/SRC/MPI/pssaup2.f
+
+    ARPACK/SRC/dsaitr.f            ARPACK/PARPACK/SRC/MPI/pdsaitr.f
+    ARPACK/SRC/ssaitr.f            ARPACK/PARPACK/SRC/MPI/pssaitr.f
+
+    non-symmetric:
+
+    ARPACK/SRC/dnaupd.f            ARPACK/PARPACK/SRC/MPI/pdnaupd.f
+    ARPACK/SRC/snaupd.f            ARPACK/PARPACK/SRC/MPI/psnaupd.f
+
+    ARPACK/SRC/dnaup2.f            ARPACK/PARPACK/SRC/MPI/pdnaup2.f
+    ARPACK/SRC/snaup2.f            ARPACK/PARPACK/SRC/MPI/psnaup2.f
+
+    ARPACK/SRC/dnaitr.f            ARPACK/PARPACK/SRC/MPI/pdnaitr.f
+    ARPACK/SRC/snaitr.f            ARPACK/PARPACK/SRC/MPI/psnaitr.f
+
+    The modified files are included in the following tar file:
+
+        restart.tar.gz
