@@ -1,0 +1,7 @@
+# This file lists the names of the node that together form the
+# parallel computer to be used.
+# Put one node per line in the file. You can specify a number
+# after the node name to indicate how many processes to launch
+# on the node.
+# The run procedure will cycle through this list until all the
+# requested processes are launched.

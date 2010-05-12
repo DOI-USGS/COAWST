@@ -1,0 +1,13 @@
+#!/bin/sh
+for cmpl in ifort ifc efc pgf90 xlf90 lf95 gfortran g95; do
+    IFS="${IFS= 	}"; ifssav="$IFS"; IFS="${IFS}:"
+    for dir in $PATH; do
+        test -z "$dir" && dir=.
+        if test -f $dir/$cmpl; then
+           touch $cmpl
+           break
+        fi
+    done
+    IFS="$ifssav"
+    test -f "$cmpl" && break
+done

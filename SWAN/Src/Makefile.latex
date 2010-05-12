@@ -1,0 +1,60 @@
+#
+# Makefile for LaTeX
+#
+LATEX = latex
+DVIPS = dvips
+PSPDF = ps2pdf
+L2H = latex2html
+MAKEINDEX = makeindex
+ifneq ($(RM),rm -f)
+RM := rm -f
+endif
+
+.SUFFIXES: .tex .dvi .ps .pdf
+
+doc: pdf cleantex cleandvi cleanps
+
+pdf: $(TARGET).pdf
+
+ps: $(TARGET).ps
+
+dvi: $(TARGET).dvi
+
+html: $(TARGET).dvi
+	@perl -p -e 's/\\chapter//;' -p -e 's/^\\chap/\\chapter/;' -p -e 's/^\\achap/\\chapter/' $(TARGET).tex > tempfile
+	@perl -w adjlfh.pl tempfile > $(TARGET).tx2
+	$(L2H) -no_math -html_version 3.2,math -info 0 -address "The SWAN team `date --iso`" $(TARGET).tx2
+	$(RM) tempfile $(TARGET).tx2 $(TARGET)/WARNINGS
+
+.tex.dvi:
+	$(LATEX) $<   # do this twice to generate toc-file
+	$(LATEX) $<
+
+.dvi.ps:
+	$(DVIPS) $< -P pdf -G0 -o $@
+
+.ps.pdf:
+	$(PSPDF) $< $@
+		
+cleantex:
+	$(RM) $(TARGET).log $(TARGET).aux $(TARGET).toc $(TARGET).out $(TARGET).idx
+
+cleandvi:
+	$(RM) $(TARGET).dvi
+
+cleanps:
+	$(RM) $(TARGET).ps
+
+cleanpdf:
+	$(RM) $(TARGET).pdf
+
+cleanhtml:
+	rm -rf $(TARGET)
+
+cleandoc:
+	$(RM) $(TARGET).pdf
+	rm -rf $(TARGET)
+
+clobber: cleantex cleandvi cleanps cleanpdf cleanhtml
+
+allclean: cleantex cleandvi cleanps cleanpdf cleanhtml

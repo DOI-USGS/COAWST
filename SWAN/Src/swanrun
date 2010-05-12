@@ -1,0 +1,147 @@
+#!/bin/sh
+#
+#-----------------------------------------------------------------------
+# initialize procedure parameters
+#-----------------------------------------------------------------------
+#
+input=
+npmpi=1
+npomp=1
+export OMP_NUM_THREADS=1
+#
+#-----------------------------------------------------------------------
+# read procedure parameters from run call
+#-----------------------------------------------------------------------
+#
+while [ $# -ge 2 ]
+do
+   case $1 in
+      -input) input=`basename $2 .swn`;;
+      -omp)   npomp=$2;;
+      -mpi)   npmpi=$2;;
+      *)      echo unknown parameter: $1
+              echo ' Usage: swanrun -input file [-omp n | -mpi n]'
+              echo
+              exit ;;
+   esac
+   shift 2
+done
+#
+#-----------------------------------------------------------------------
+# if input file is not given, produce error
+#-----------------------------------------------------------------------
+#
+if [ -z "$input" ]; then
+   echo
+   echo '***ERROR: no name SWAN input file given!'
+   echo
+   echo ' Usage: swanrun -input file [-omp n | -mpi n]'
+   echo
+   exit 1
+fi
+#
+#-----------------------------------------------------------------------
+# check whether MPI is available in case of parallel MPI run
+#-----------------------------------------------------------------------
+#
+IFS="${IFS= 	}"; IFS="${IFS}:"
+for dir in $PATH; do
+    test -z "$dir" && dir=.
+    if test -f $dir/mpirun; then
+       mpi=1
+       break
+    fi
+done
+if [ $npmpi -gt 1 -a -z "$mpi" ]; then
+   echo
+   echo "***ERROR: MPI is not available!"
+   echo
+   exit 1
+fi
+#
+#-----------------------------------------------------------------------
+# check whether machinefile is available (if necessary)
+#-----------------------------------------------------------------------
+#
+# Note: no machinefile is needed on SGI platform!
+#
+os=`uname -s`
+os=`echo $os | tr "[a-z]" "[A-Z]" | awk '{print substr($0,1,4)}'`
+if [ "$os" = IRIX ]; then
+   sgi=1
+fi
+if [ $npmpi -gt 1 -a ! -z "$mpi" -a -z "$sgi" ]; then
+   if [ ! -f machinefile -a ! -h machinefile ]; then
+      echo
+      echo "***ERROR: no machinefile is present in current directory!"
+      echo
+      exit 1
+   fi
+fi
+#
+#-----------------------------------------------------------------------
+# run SWAN
+#-----------------------------------------------------------------------
+#
+#  adapt PATH to ensure a locally present executable is executed
+PATH=.:$PATH
+
+type swan.exe
+if [ -r $input.swn ]; then
+   orig=n
+   cp $input.swn INPUT
+   if [ $npomp -gt 1 ]; then
+      export OMP_NUM_THREADS=$npomp
+      swan.exe
+   elif [ $npmpi -gt 1 -o ! -z "$mpi" ]; then
+      if [ ! -f swan.exe ]; then
+         ln -s `which swan.exe` swan.exe
+         orig=y
+      fi
+      if [ -z "$sgi" ]; then
+         if [ $npmpi -gt 1 ]; then
+            mpirun -np $npmpi -machinefile machinefile swan.exe
+         else
+            swan.exe
+         fi
+      else
+         mpirun -np $npmpi swan.exe
+      fi
+   else
+      swan.exe
+   fi
+   if [ $npmpi -gt 1 ]; then
+      inode=0
+      while [ $inode -lt $npmpi ]; do
+         inode=`expr $inode + 1`
+         inode=`echo $inode | awk '{ printf "%03.0f", $0 }'`
+         if [ -f PRINT-$inode ]; then
+            mv PRINT-$inode $input.prt-$inode
+         fi
+         if [ -r Errfile-$inode ]; then
+            mv Errfile-$inode $input.erf-$inode
+         fi
+      done
+   else
+      if [ -f PRINT ]; then
+         mv PRINT $input.prt
+      fi
+      if [ -r Errfile ]; then
+         mv Errfile $input.erf
+      fi
+   fi
+   if [ -r ERRPTS ]; then
+      mv ERRPTS $input.erp
+   fi
+   if [ -f norm_end ]; then
+     cat norm_end
+   fi
+   if [ -h swan.exe -a "$orig" = y ]; then
+      rm -f swan.exe
+   fi
+   rm -f INPUT
+else
+   echo "file $input.swn does not exist"
+   exit 1
+fi
+#
