@@ -5,7 +5,7 @@
 !
 !svn $Id: radiation_stress.F 1428 2008-03-12 13:07:21Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !================================================== John C. Warner ====!
@@ -54,6 +54,7 @@
 # endif
       CALL radiation_stress_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj, N(ng),            &
+     &                            IminS, ImaxS, JminS, JmaxS,           &
 # ifdef SOLVE3D
      &                            nrhs(ng),                             &
 # endif
@@ -64,7 +65,8 @@
      &                            GRID(ng) % vmask,                     &
 # endif
 # ifdef WET_DRY
-     &                            GRID(ng) % rmask_wet,                 &
+     &                            GRID(ng) % umask_wet,                 &
+     &                            GRID(ng) % vmask_wet,                 &
 # endif
      &                            GRID(ng) % om_u,                      &
      &                            GRID(ng) % om_v,                      &
@@ -125,6 +127,7 @@
 !***********************************************************************
       SUBROUTINE radiation_stress_tile (ng, tile,                       &
      &                                  LBi, UBi, LBj, UBj, UBk,        &
+     &                                  IminS, ImaxS, JminS, JmaxS,     &
 # ifdef SOLVE3D
      &                                  nrhs,                           &
 # endif
@@ -132,7 +135,7 @@
      &                                  pmask, rmask, umask, vmask,     &
 # endif
 # ifdef WET_DRY
-     &                                  rmask_wet,                      &
+     &                                  umask_wet, vmask_wet,           &
 # endif
      &                                  om_u, om_v, on_u, on_v,         &
      &                                  pm, pn,                         &
@@ -180,6 +183,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj, UBk
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 # ifdef SOLVE3D
       integer, intent(in) :: nrhs
 # endif
@@ -192,7 +196,8 @@
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
 #  ifdef WET_DRY
-      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
 #  endif
       real(r8), intent(in) :: om_u(LBi:,LBj:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
@@ -234,6 +239,7 @@
       real(r8), intent(inout) :: rvlag3d(LBi:,LBj:,:)
       real(r8), intent(inout) :: u_stokes(LBi:,LBj:,:)
       real(r8), intent(inout) :: v_stokes(LBi:,LBj:,:)
+!      real(r8), intent(inout) :: w_stokes(LBi:,LBj:,:)
 #  endif
       real(r8), intent(inout) :: Sxx_bar(LBi:,LBj:)
       real(r8), intent(inout) :: Sxy_bar(LBi:,LBj:)
@@ -254,7 +260,8 @@
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 #  endif
 #  ifdef WET_DRY
-      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
@@ -296,6 +303,7 @@
       real(r8), intent(inout) :: rvlag3d(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: u_stokes(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: v_stokes(LBi:UBi,LBj:UBj,N(ng))
+!      real(r8), intent(inout) :: w_stokes(LBi:UBi,LBj:UBj,N(ng))
 #  endif
       real(r8), intent(inout) :: Sxx_bar(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Sxy_bar(LBi:UBi,LBj:UBj)
@@ -323,51 +331,56 @@
 #  endif
 # endif
 
-      integer :: ILB, IUB, JLB, JUB
       integer :: i, j, k
 
       real(r8) :: cff, cff1, cff2, cff3, cff4, cff5, cff6
       real(r8) :: fac1, fac2, FCCr, FCSr, FSSr, FSCr, ED
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Dstp
+
       real(r8), parameter :: eps = 1.0E-14_r8
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: kD
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: wavec
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: wavecgoc
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: waven
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: owaven
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: wavenx
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: waveny
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: waveE
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: waveEr
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: gamr
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: gamw
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: UFe
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Sxxl
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Sxyl
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Syyl
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Sxyl_psi
       real(r8), parameter :: kDmax = 5.0_r8
       real(r8), parameter :: Lwave_min = 1.0_r8
 
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dstp
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: kD
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wavec
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wavecgoc
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: waven
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: owaven
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wavenx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: waveny
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: waveE
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: waveEr
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: gamr
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: gamw
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFe
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Sxxl
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Sxyl
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Syyl
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Sxyl_psi
+
 # ifdef SOLVE3D
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: CF
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FCC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FCS
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FSS
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FSC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: CF1
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: CF2
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: waveEk
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: rollA
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: oroller
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: orad
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: ocosh
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: osinh
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: o2sinh
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,N(ng)) :: z_psi
+      real(r8), dimension(IminS:ImaxS) :: wrk
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FCC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FCS
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FSS
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FSC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF1
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF2
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: waveEk
+
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: rollA
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: oroller
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: orad
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ocosh
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: osinh
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: o2sinh
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Huons
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Hvoms
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: z_psi
 #  ifdef CURVGRID
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: UFx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFx
 #  endif
 
 # endif
@@ -399,7 +412,7 @@
           wavenx(i,j)=waven(i,j)*COS(cff)
           waveny(i,j)=waven(i,j)*SIN(cff)
           waveE(i,j)=0.0625_r8*g*Hwave(i,j)*Hwave(i,j)
-! 
+!
 !  Compute wave celerity and group velocity.
 !
           kD(i,j)=MIN(waven(i,j)*Dstp(i,j)+eps,kDmax)
@@ -436,6 +449,7 @@
 !           oroller(i,j)=oroller(i,j)+Hz(i,j,k)*(1.0_r8-cff2**4)
           END DO
           oroller(i,j)=1.0_r8/(oroller(i,j)+eps)
+
 #   ifdef MONO_ROLLER
 !
 !  Here Wave_break is really wave_area.
@@ -598,8 +612,7 @@
             u_stokes(i,j,k)=u_stokes(i,j,k)*umask(i,j)
 #  endif
 #  ifdef WET_DRY
-            u_stokes(i,j,k)=u_stokes(i,j,k)*                            &
-     &                      rmask_wet(i-1,j)*rmask_wet(i,j)
+            u_stokes(i,j,k)=u_stokes(i,j,k)*umask_wet(i,j)
 #  endif
 !
 !  Finalize computation of stokes tendency term.
@@ -670,8 +683,7 @@
               v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
 #  endif
 #  ifdef WET_DRY
-              v_stokes(i,j,k)=v_stokes(i,j,k)*                          &
-     &                        rmask_wet(i,j-1)*rmask_wet(i,j)
+              v_stokes(i,j,k)=v_stokes(i,j,k)*vmask_wet(i,j)
 #  endif
 !
 !  Finalize computation of stokes tendency term.
@@ -837,6 +849,59 @@
         END IF
       END DO
 #  endif
+!
+!  Calculate vertical stokes velocity terms.
+!
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+!          w_stokes(i,j,0)=0.0_r8
+        END DO
+      END DO
+      DO k=1,N(ng)
+        DO j=Jstr,Jend
+          DO i=Istr,Iend+1
+!            Huons(i,j)=0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))*                   &
+!     &                 u_stokes(i,j,k)*on_u(i,j)
+          END DO
+        END DO
+        DO j=Jstr,Jend+1
+          DO i=Istr,Iend
+!            Hvoms(i,j)=0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))*                   &
+!     &                 v_stokes(i,j,k)*om_v(i,j)
+          END DO
+        END DO
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+!            w_stokes(i,j,k)=w_stokes(i,j,k-1)-                          &
+!     &                      (Huons(i+1,j)-Huons(i,j)+                   &
+!     &                       Hvoms(i,j+1)-Hvoms(i,j))*                  &
+!     &                       pm(i,j)*pn(i,j)
+          END DO
+        END DO
+      END DO
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+!          wrk(i)=w_stokes(i,j,N(ng))/(z_w(i,j,N(ng))-z_w(i,j,0))
+        END DO
+!
+!  In order to insure zero vertical velocity at the free-surface,
+!  subtract the vertical velocities of the moving S-coordinates
+!  isosurfaces. These isosurfaces are proportional to d(zeta)/d(t).
+!  The proportionally coefficients are a linear function of the
+!  S-coordinate with zero value at the bottom (k=0) and unity at
+!  the free-surface (k=N).
+!
+        DO k=N(ng)-1,1,-1
+          DO i=Istr,Iend
+!            w_stokes(i,j,k)=w_stokes(i,j,k)-                            &
+!     &                      wrk(i)*(z_w(i,j,k)-z_w(i,j,0))
+          END DO
+        END DO
+        DO i=Istr,Iend
+!          w_stokes(i,j,N(ng))=0.0_r8
+        END DO
+      END DO
+!
 !-----------------------------------------------------------------------
 !  Determination of vertical stress terms.
 !  Notice reuse variable waveEr.
@@ -971,7 +1036,7 @@
             cff5=0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
             ubar_stokes(i,j)=ubar_stokes(i,j)+cff5*u_stokes(i,j,k)
             rustr2d(i,j)=rustr2d(i,j)+cff5*rustr3d(i,j,k)
-            rulag2d(i,j)=rulag2d(i,j)+cff5*rulag3d(i,j,k) 
+            rulag2d(i,j)=rulag2d(i,j)+cff5*rulag3d(i,j,k)
           END DO
           cff3=0.25_r8*(pm(i,j)+pm(i-1,j))*(pn(i,j)+pn(i-1,j))
           cff4=2.0_r8/(Dstp(i-1,j)+Dstp(i,j))
@@ -990,7 +1055,7 @@
             cff5=0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))
             vbar_stokes(i,j)=vbar_stokes(i,j)+cff5*v_stokes(i,j,k)
             rvstr2d(i,j)=rvstr2d(i,j)+cff5*rvstr3d(i,j,k)
-            rvlag2d(i,j)=rvlag2d(i,j)+cff5*rvlag3d(i,j,k) 
+            rvlag2d(i,j)=rvlag2d(i,j)+cff5*rvlag3d(i,j,k)
           END DO
           cff3=0.25_r8*(pm(i,j-1)+pm(i,j))*(pn(i,j-1)+pn(i,j))
           cff4=2.0_r8/(Dstp(i,j-1)+Dstp(i,j))
@@ -1001,11 +1066,11 @@
       END DO
 # else
 !
-!   Compute the 2D fields of [Sxx_bar,Syy_bar] and 
-!   off-diagonal [Sxy_bar,Syx_bar] components of 
+!   Compute the 2D fields of [Sxx_bar,Syy_bar] and
+!   off-diagonal [Sxy_bar,Syx_bar] components of
 !   radiation stresses, and 2D stokes veolicities. These terms
 !   are only computed from the forcings for non-3D applications.
-!   For a 3D application, these 2D fileds are computed as the 
+!   For a 3D application, these 2D fileds are computed as the
 !   vertical integrals of the 3D fields (see above).
 !
       DO j=Jstr-1,Jend+1
@@ -1075,7 +1140,7 @@
         END DO
       END DO
 !
-!  Compute Radiation Stress contribution to ubar. These stresses 
+!  Compute Radiation Stress contribution to ubar. These stresses
 !  have dimensions of m4/s2.
 !
       DO j=Jstr,Jend
@@ -1130,7 +1195,7 @@
         END DO
       END DO
 !
-!  Compute Radiation Stress contribution to vbar. These stresses 
+!  Compute Radiation Stress contribution to vbar. These stresses
 !  have dimensions of m4/s2.
 !
       DO j=JstrV,Jend
@@ -1241,6 +1306,9 @@
       CALL bc_v3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  v_stokes)
+!      CALL bc_w3d_tile (ng, tile,                                       &
+!     &                  LBi, UBi, LBj, UBj, 0, N(ng),                   &
+!     &                  w_stokes)
       CALL bc_u3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  rustr3d)
@@ -1266,6 +1334,10 @@
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    u_stokes, v_stokes)
+!      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+!     &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
+!     &                    NghostPoints, EWperiodic, NSperiodic,         &
+!     &                    w_stokes)
 #  endif
 # endif
       RETURN

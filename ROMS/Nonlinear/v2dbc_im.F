@@ -4,7 +4,7 @@
 !
 !svn $Id: v2dbc_im.F 779 2008-10-04 23:15:47Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -39,6 +39,7 @@
 !
       CALL v2dbc_tile (ng, tile,                                        &
      &                 LBi, UBi, LBj, UBj,                              &
+     &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 krhs(ng), kstp(ng), kout,                        &
      &                 OCEAN(ng) % ubar,                                &
      &                 OCEAN(ng) % vbar,                                &
@@ -49,6 +50,7 @@
 !***********************************************************************
       SUBROUTINE v2dbc_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       krhs, kstp, kout,                          &
      &                       ubar, vbar, zeta)
 !***********************************************************************
@@ -62,7 +64,7 @@
       USE mod_grid
 # endif
 # ifdef REFINED_GRID
-      USE mod_ocean
+      USE mod_refined
       USE mod_stepping
 # endif
 !
@@ -70,6 +72,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: krhs, kstp, kout
 
 #ifdef ASSUMED_SHAPE
@@ -94,7 +97,7 @@
       real(r8) :: bry_pgr, bry_cor, bry_str, bry_val
       real(r8):: cff, cff1, cff2, dt2d, dVde, dVdt, dVdx, tau
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: grad
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
 
 #ifdef REFINED_GRID
       integer :: t1, t2, ngp
@@ -804,8 +807,6 @@
       END IF
 #endif
 
-
-
 #ifdef REFINED_GRID_BC
       IF (ng.ge.2) THEN
       ngp=myparent(ng)
@@ -837,8 +838,8 @@
 !  Southern edge, Flather boundary condition.
 !
         DO i=Istr,Iend
-          bry_val=fac1*BOUNDARY(ng)%vbarR_south(i,4,t1)+                &
-     &            fac2*BOUNDARY(ng)%vbarR_south(i,4,t2)
+          bry_val=fac1*REFINED(ng)%vbarR_south(i,4,t1)+                 &
+     &            fac2*REFINED(ng)%vbarR_south(i,4,t2)
 # ifdef MASKING
           bry_val=bry_val*GRID(ng)%vmask(i,Jstr)
 # endif
@@ -848,8 +849,8 @@
      &                        GRID(ng)%h(i,Jstr  )+                     &
      &                        zeta(i,Jstr  ,know)))
           Ce=SQRT(g*cff)
-          my_val=fac1*BOUNDARY(ng)%zetaR_south(i,4,t1)+                 &
-     &           fac2*BOUNDARY(ng)%zetaR_south(i,4,t2)
+          my_val=fac1*REFINED(ng)%zetaR_south(i,4,t1)+                  &
+     &           fac2*REFINED(ng)%zetaR_south(i,4,t2)
 # ifdef MASKING
           my_val=my_val*GRID(ng)%rmask(i,Jstr-1)
 # endif
@@ -869,8 +870,8 @@
 !  Northern edge, Flather boundary condition.
 !
         DO i=Istr,Iend
-          bry_val=fac1*BOUNDARY(ng)%vbarR_north(i,1,t1)+                &
-     &            fac2*BOUNDARY(ng)%vbarR_north(i,1,t2)
+          bry_val=fac1*REFINED(ng)%vbarR_north(i,1,t1)+                 &
+     &            fac2*REFINED(ng)%vbarR_north(i,1,t2)
 # ifdef MASKING
           bry_val=bry_val*GRID(ng)%vmask(i,Jend+1)
 # endif
@@ -880,8 +881,8 @@
      &                        GRID(ng)%h(i,Jend+1)+                     &
      &                        zeta(i,Jend+1,know)))
           Ce=SQRT(g*cff)
-          my_val=fac1*BOUNDARY(ng)%zetaR_north(i,1,t1)+                 &
-     &           fac2*BOUNDARY(ng)%zetaR_north(i,1,t2)
+          my_val=fac1*REFINED(ng)%zetaR_north(i,1,t1)+                  &
+     &           fac2*REFINED(ng)%zetaR_north(i,1,t2)
 # ifdef MASKING
           my_val=my_val*GRID(ng)%rmask(i,Jend+1)
 # endif
@@ -971,71 +972,79 @@
 # ifndef EW_PERIODIC
       IF (WESTERN_EDGE) THEN
         DO j=JstrV,Jend
-          cff5=GRID(ng)%vmask_wet(Istr-1,j)
-          vbar(Istr,j,kout)=vbar(Istr,j,kout)*                          &
-     &                 (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+              &
-     &                 (0.5_r8+cff5*DSIGN(0.5_r8,vbar(Istr-1,j,kout)))* &
-     &                 (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+          cff1=ABS(ABS(GRID(ng)%vmask_wet(Istr-1,j))-1.0_r8)
+          cff2=0.5_r8+DSIGN(0.5_r8,vbar(Istr-1,j,kout))*                &
+     &                GRID(ng)%vmask_wet(Istr-1,j)
+          cff=0.5_r8*GRID(ng)%vmask_wet(Istr-1,j)*cff1+                 &
+     &        cff2*(1.0_r8-cff1)
+          vbar(Istr,j,kout)=vbar(Istr,j,kout)*cff
         END DO
       END IF
       IF (EASTERN_EDGE) THEN
         DO j=JstrV,Jend
-          cff5=GRID(ng)%vmask_wet(Iend+1,j)
-          vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*                      &
-     &                 (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+              &
-     &                 (0.5_r8+cff5*DSIGN(0.5_r8,vbar(Iend+1,j,kout)))* &
-     &                 (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+          cff1=ABS(ABS(GRID(ng)%vmask_wet(Iend+1,j))-1.0_r8)
+          cff2=0.5_r8+DSIGN(0.5_r8,vbar(Iend+1,j,kout))*                &
+     &                GRID(ng)%vmask_wet(Iend+1,j)
+          cff=0.5_r8*GRID(ng)%vmask_wet(Iend+1,j)*cff1+                 &
+     &        cff2*(1.0_r8-cff1)
+          vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*cff
         END DO
       END IF
 # endif
 # ifndef NS_PERIODIC
       IF (SOUTHERN_EDGE) THEN
         DO i=Istr,Iend
-          cff5=GRID(ng)%vmask_wet(i,Jstr)
-          vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*                          &
-     &                 (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+              &
-     &                 (0.5_r8+cff5*DSIGN(0.5_r8,vbar(i,Jstr,kout)))*   &
-     &                 (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+          cff1=ABS(ABS(GRID(ng)%vmask_wet(i,Jstr))-1.0_r8)
+          cff2=0.5_r8+DSIGN(0.5_r8,vbar(i,Jstr,kout))*                  &
+     &                GRID(ng)%vmask_wet(i,Jstr)
+          cff=0.5_r8*GRID(ng)%vmask_wet(i,Jstr)*cff1+                   &
+     &        cff2*(1.0_r8-cff1)
+          vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*cff
         END DO
       END IF
       IF (NORTHERN_EDGE) THEN
         DO i=Istr,Iend
-          cff5=GRID(ng)%vmask_wet(i,Jend+1)
-          vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*                      &
-     &                 (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+              &
-     &                 (0.5_r8+cff5*DSIGN(0.5_r8,vbar(i,Jend+1,kout)))* &
-     &                 (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+          cff1=ABS(ABS(GRID(ng)%vmask_wet(i,Jend+1))-1.0_r8)
+          cff2=0.5_r8+DSIGN(0.5_r8,vbar(i,Jend+1,kout))*                &
+     &                GRID(ng)%vmask_wet(i,Jend+1)
+          cff=0.5_r8*GRID(ng)%vmask_wet(i,Jend+1)*cff1+                 &
+     &        cff2*(1.0_r8-cff1)
+          vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*cff
         END DO
       END IF
 # endif
 # if !defined EW_PERIODIC && !defined NS_PERIODIC
       IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          cff5=GRID(ng)%vmask_wet(Istr-1,Jstr)
-          vbar(Istr-1,Jstr,kout)=vbar(Istr-1,Jstr,kout)*                &
-     &                   (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+            &
-     &              (0.5_r8+cff5*DSIGN(0.5_r8,vbar(Istr-1,Jstr,kout)))* &
-     &                   (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+        cff1=ABS(ABS(GRID(ng)%vmask_wet(Istr-1,Jstr))-1.0_r8)
+        cff2=0.5_r8+DSIGN(0.5_r8,vbar(Istr-1,Jstr,kout))*               &
+     &              GRID(ng)%vmask_wet(Istr-1,Jstr)
+        cff=0.5_r8*GRID(ng)%vmask_wet(Istr-1,Jstr)*cff1+                &
+     &      cff2*(1.0_r8-cff1)
+        vbar(Istr-1,Jstr,kout)=vbar(Istr-1,Jstr,kout)*cff
       END IF
       IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          cff5=GRID(ng)%vmask_wet(Iend+1,Jstr)
-          vbar(Iend+1,Jstr,kout)=vbar(Iend+1,Jstr,kout)*                &
-     &                   (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+            &
-     &            (0.5_r8+cff5*DSIGN(0.5_r8,vbar(Iend+1,Jstr,kout)))*   &
-     &                   (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+        cff1=ABS(ABS(GRID(ng)%vmask_wet(Iend+1,Jstr))-1.0_r8)
+        cff2=0.5_r8+DSIGN(0.5_r8,vbar(Iend+1,Jstr,kout))*               &
+     &              GRID(ng)%vmask_wet(Iend+1,Jstr)
+        cff=0.5_r8*GRID(ng)%vmask_wet(Iend+1,Jstr)*cff1+                &
+     &      cff2*(1.0_r8-cff1)
+        vbar(Iend+1,Jstr,kout)=vbar(Iend+1,Jstr,kout)*cff
       END IF
       IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          cff5=GRID(ng)%vmask_wet(Istr-1,Jend+1)
-          vbar(Istr-1,Jend+1,kout)=vbar(Istr-1,Jend+1,kout)*            &
-     &                   (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+            &
-     &            (0.5_r8+cff5*DSIGN(0.5_r8,vbar(Istr-1,Jend+1,kout)))* &
-     &                   (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+        cff1=ABS(ABS(GRID(ng)%vmask_wet(Istr-1,Jend+1))-1.0_r8)
+        cff2=0.5_r8+DSIGN(0.5_r8,vbar(Istr-1,Jend+1,kout))*             &
+     &              GRID(ng)%vmask_wet(Istr-1,Jend+1)
+        cff=0.5_r8*GRID(ng)%vmask_wet(Istr-1,Jend+1)*cff1+              &
+     &      cff2*(1.0_r8-cff1)
+        vbar(Istr-1,Jend+1,kout)=vbar(Istr-1,Jend+1,kout)*cff
       END IF
       IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          cff5=GRID(ng)%vmask_wet(Iend+1,Jend+1)
-          vbar(Iend+1,Jend+1,kout)=vbar(Iend+1,Jend+1,kout)*            &
-     &                   (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+            &
-     &            (0.5_r8+cff5*DSIGN(0.5_r8,vbar(Iend+1,Jend+1,kout)))* &
-     &                   (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+        cff1=ABS(ABS(GRID(ng)%vmask_wet(Iend+1,Jend+1))-1.0_r8)
+        cff2=0.5_r8+DSIGN(0.5_r8,vbar(Iend+1,Jend+1,kout))*             &
+     &              GRID(ng)%vmask_wet(Iend+1,Jend+1)
+        cff=0.5_r8*GRID(ng)%vmask_wet(Iend+1,Jend+1)*cff1+              &
+     &      cff2*(1.0_r8-cff1)
+        vbar(Iend+1,Jend+1,kout)=vbar(Iend+1,Jend+1,kout)*cff
       END IF
 # endif
 #endif

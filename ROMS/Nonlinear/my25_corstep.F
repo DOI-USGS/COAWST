@@ -4,7 +4,7 @@
 !
 !svn $Id: my25_corstep.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -55,6 +55,7 @@
 # endif
       CALL my25_corstep_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nstp(ng), nnew(ng),                       &
 # ifdef MASKING
      &                        GRID(ng) % umask,                         &
@@ -90,6 +91,7 @@
 !***********************************************************************
       SUBROUTINE my25_corstep_tile (ng, tile,                           &
      &                              LBi, UBi, LBj, UBj,                 &
+     &                              IminS, ImaxS, JminS, JmaxS,         &
      &                              nstp, nnew,                         &
 # ifdef MASKING
      &                              umask, vmask,                       &
@@ -116,6 +118,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nstp, nnew
 !
 # ifdef ASSUMED_SHAPE
@@ -196,25 +199,25 @@
       real(r8) :: Gh, Ls_unlmt, Ls_lmt, Qprod, Qdiss, Sh, Sm, Wscale
       real(r8) :: cff, cff1, cff2, cff3, ql, strat2
 
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: BCK
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: BCP
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: CF
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FCK
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FCP
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: dU
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: dV
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: BCK
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: BCP
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FCK
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FCP
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: dU
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: dV
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,0:N(ng)) :: shear2
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,0:N(ng)) :: buoy2
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: shear2
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: buoy2
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FEK
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FEP
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FXK
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FXP
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: curvK
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: curvP
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: gradK
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: gradP
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FEK
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FEP
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FXK
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FXP
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curvK
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curvP
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: gradK
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: gradP
 
 # include "set_bounds.h"
 !
@@ -816,6 +819,7 @@
 !
       CALL tkebc_tile (ng, tile,                                        &
      &                 LBi, UBi, LBj, UBj, N(ng),                       &
+     &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 nnew, nstp,                                      &
      &                 gls, tke)
 # if defined EW_PERIODIC || defined NS_PERIODIC

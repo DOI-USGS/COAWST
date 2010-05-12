@@ -4,7 +4,7 @@
 !
 !svn $Id: t3dbc_im.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -39,6 +39,7 @@
 !
       CALL t3dbc_tile (ng, tile, itrc,                                  &
      &                 LBi, UBi, LBj, UBj, N(ng), NT(ng),               &
+     &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 nstp(ng), nout,                                  &
      &                 OCEAN(ng)% t)
       RETURN
@@ -48,6 +49,7 @@
 !***********************************************************************
       SUBROUTINE t3dbc_tile (ng, tile, itrc,                            &
      &                       LBi, UBi, LBj, UBj, UBk, UBt,              &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       nstp, nout,                                &
      &                       t)
 !***********************************************************************
@@ -57,6 +59,7 @@
       USE mod_grid
       USE mod_scalars
 # ifdef REFINED_GRID
+      USE mod_refined
       USE mod_stepping
 # endif
 !
@@ -64,6 +67,7 @@
 !
       integer, intent(in) :: ng, tile, itrc
       integer, intent(in) :: LBi, UBi, LBj, UBj, UBk, UBt
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nstp, nout
 !
 # ifdef ASSUMED_SHAPE
@@ -80,7 +84,8 @@
 
       real(r8) :: Ce, Cx, cff, dTde, dTdt, dTdx, tau
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: grad
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
+
 #ifdef REFINED_GRID
       integer :: t1, t2, ngp
       real(r8) :: fac, fac1, fac2, my_val
@@ -660,8 +665,8 @@
      &                                  grad(Istr-1,j+1))/              &
      &                              (cff+Cx)
 !#   ifdef WEST_TNUDGING
-            my_val=fac1*BOUNDARY(ng)%tR_west(4,j,k,t1,itrc)+            &
-     &             fac2*BOUNDARY(ng)%tR_west(4,j,k,t2,itrc)
+            my_val=fac1*REFINED(ng)%tR_west(4,j,k,t1,itrc)+             &
+     &             fac2*REFINED(ng)%tR_west(4,j,k,t2,itrc)
             t(Istr-1,j,k,nout,itrc)=t(Istr-1,j,k,nout,itrc)+            &
      &                              tau*(my_val-t(Istr-1,j,k,nstp,itrc))
 !#   endif
@@ -721,8 +726,8 @@
      &                                  grad(Iend+1,j+1))/              &
      &                              (cff+Cx)
 !#   ifdef EAST_TNUDGING
-            my_val=fac1*BOUNDARY(ng)%tR_east(1,j,k,t1,itrc)+            &
-     &             fac2*BOUNDARY(ng)%tR_east(1,j,k,t2,itrc)
+            my_val=fac1*REFINED(ng)%tR_east(1,j,k,t1,itrc)+             &
+     &             fac2*REFINED(ng)%tR_east(1,j,k,t2,itrc)
             t(Iend+1,j,k,nout,itrc)=t(Iend+1,j,k,nout,itrc)+            &
      &                              tau*(my_val-                        &
      &                                   t(Iend+1,j,k,nstp,itrc))
@@ -784,8 +789,8 @@
      &                                  grad(i+1,Jstr-1))/              &
      &                              (cff+Ce)
 !#   ifdef SOUTH_TNUDGING
-            my_val=fac1*BOUNDARY(ng)%tR_south(i,4,k,t1,itrc)+           &
-     &             fac2*BOUNDARY(ng)%tR_south(i,4,k,t2,itrc)
+            my_val=fac1*REFINED(ng)%tR_south(i,4,k,t1,itrc)+            &
+     &             fac2*REFINED(ng)%tR_south(i,4,k,t2,itrc)
             t(i,Jstr-1,k,nout,itrc)=t(i,Jstr-1,k,nout,itrc)+            &
      &                              tau*(my_val-                        &
      &                                   t(i,Jstr-1,k,nstp,itrc))
@@ -846,8 +851,8 @@
      &                                  grad(i+1,Jend+1))/              &
      &                              (cff+Ce)
 !#   ifdef NORTH_TNUDGING
-            my_val=fac1*BOUNDARY(ng)%tR_north(i,1,k,t1,itrc)+           &
-     &             fac2*BOUNDARY(ng)%tR_north(i,1,k,t2,itrc)
+            my_val=fac1*REFINED(ng)%tR_north(i,1,k,t1,itrc)+            &
+     &             fac2*REFINED(ng)%tR_north(i,1,k,t2,itrc)
             t(i,Jend+1,k,nout,itrc)=t(i,Jend+1,k,nout,itrc)+            &
      &                              tau*(my_val-                        &
      &                                   t(i,Jend+1,k,nstp,itrc))

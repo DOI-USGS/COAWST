@@ -6,7 +6,7 @@
 !
 !svn $Id: ssw_bbl.h 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group        Chris Sherwood   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group        Chris Sherwood   !
 !    Licensed under a MIT/X style license               Rich Signell   !
 !    See License_ROMS.txt                             John C. Warner   !
 !=======================================================================
@@ -29,6 +29,7 @@
       USE mod_forces
       USE mod_grid
       USE mod_ocean
+      USE mod_sedbed
       USE mod_stepping
 !
 !  Imported variable declarations.
@@ -44,6 +45,7 @@
 #endif
       CALL bblm_tile (ng, tile,                                         &
      &                LBi, UBi, LBj, UBj,                               &
+     &                IminS, ImaxS, JminS, JmaxS,                       &
      &                nrhs(ng),                                         &
      &                GRID(ng) % h,                                     &
      &                GRID(ng) % z_r,                                   &
@@ -57,10 +59,10 @@
      &                FORCES(ng) % Dwave,                               &
      &                FORCES(ng) % Pwave_bot,                           &
 #ifdef BEDLOAD
-     &                OCEAN(ng) % bedldu,                               &
-     &                OCEAN(ng) % bedldv,                               &
+     &                SEDBED(ng) % bedldu,                              &
+     &                SEDBED(ng) % bedldv,                              &
 #endif
-     &                OCEAN(ng) % bottom,                               &
+     &                SEDBED(ng) % bottom,                              &
      &                OCEAN(ng) % rho,                                  &
      &                OCEAN(ng) % u,                                    &
      &                OCEAN(ng) % v,                                    &
@@ -86,6 +88,7 @@
 !***********************************************************************
       SUBROUTINE bblm_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
+     &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      nrhs,                                       &
      &                      h, z_r, z_w, angler,                        &
 #if defined SSW_CALC_UB
@@ -121,6 +124,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
 
 #ifdef ASSUMED_SHAPE
@@ -163,7 +167,7 @@
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
-      real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj)   
+      real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj)
 # if defined SSW_CALC_UB
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
 # else
@@ -234,7 +238,8 @@
       real(r8) :: zoMIN, zoMAX
       real(r8) :: coef_fd
 
-      real(r8), parameter :: absolute_zoMIN = 5.0d-8
+      real(r8), parameter :: absolute_zoMIN = 5.0d-5  ! in Harris-Wiberg
+!!    real(r8), parameter :: absolute_zoMIN = 5.0d-8  ! in Harris-Wiberg
       real(r8), parameter ::  Cd_fd = 0.5_r8
 
       real(r8), parameter :: K1 = 0.6666666666_r8     ! Coefficients for
@@ -258,30 +263,30 @@
       No ripple roughness coeff. chosen
 #endif
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Ab
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Fwave_bot
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Tauc
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Tauw
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Taucwmax
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Ur_sg
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Vr_sg
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Ub
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Ucur
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Umag
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Vcur
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Zr
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: phic
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: phicw
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: rheight
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: rlength
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: u100
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: znot
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: znotc
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: zoN
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: zoST
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: zoBF
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: zoDEF
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: zoBIO
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Ab
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Fwave_bot
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Tauc
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Tauw
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Taucwmax
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Ur_sg
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Vr_sg
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Ub
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Ucur
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Umag
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Vcur
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Zr
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: phic
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: phicw
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: rheight
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: rlength
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: u100
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: znot
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: znotc
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zoN
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zoST
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zoBF
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zoDEF
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zoBIO
 
 #include "set_bounds.h"
 !
@@ -330,7 +335,7 @@
 !  from wave models (SWAN) or use Dean and Dalrymple (1991) 6th-degree
 !  polynomial to approximate wave number on shoaling water.
 
-          Fwave_bot(i,j)=twopi/MAX(Pwave_bot(i,j),2.0_r8)
+          Fwave_bot(i,j)=twopi/MAX(Pwave_bot(i,j),0.05_r8)
 #ifdef SSW_CALC_UB
           Kdh=h(i,j)*Fwave_bot(i,j)**2/g
           Kbh2=Kdh*Kdh+                                                 &
@@ -340,7 +345,7 @@
           Ab(i,j)=0.5_r8*Hwave(i,j)/SINH(Kbh)+eps
           Ub(i,j)=Fwave_bot(i,j)*Ab(i,j)+eps
 #else
-          Ub(i,j)=MAX(Ub_swan(i,j),0.01_r8)+eps
+          Ub(i,j)=MAX(Ub_swan(i,j),0.0_r8)+eps
           Ab(i,j)=Ub(i,j)/Fwave_bot(i,j)+eps
 #endif
 !
@@ -360,7 +365,7 @@
           phicw(i,j)=1.5_r8*pi-Dwave(i,j)-phic(i,j)-angler(i,j)
         END DO
       END DO
-! 
+!
 !  Loop over RHO points.
 !
       DO j=JstrV-1,Jend
@@ -380,7 +385,7 @@
           rheight(i,j)=bottom(i,j,irhgt)
           rlength(i,j)=bottom(i,j,irlen)
           zoMAX=0.9_r8*Zr(i,j)
-          zoMIN=MAX(absolute_zoMIN,2.5_r8*d50/30.0_r8) 
+          zoMIN=MAX(absolute_zoMIN,2.5_r8*d50/30.0_r8)
 !
 !  Initialize arrays.
 !
@@ -406,7 +411,7 @@
 !  Threshold of motion exceeded - calculate new zoST and zoBF
 !  Calculate saltation roughness according to Wiberg & Rubin (1989)
 !  (Eqn. 11 in Harris & Wiberg, 2001)
-!  (d50 is in m, but this formula needs cm)  
+!  (d50 is in m, but this formula needs cm)
 !
              coef_st=0.0204_r8*LOG(100.0_r8*d50)**2+                    &
      &               0.0220_r8*LOG(100.0_r8*d50)+0.0709_r8
@@ -429,7 +434,7 @@
              IF ((d0/d50).gt.13000.0_r8) THEN              ! sheet flow
                rheight(i,j)=0.0_r8
                rlength(i,j)=535.0_r8*d50        ! does not matter since
-             ELSE                               ! rheight=0 
+             ELSE                               ! rheight=0
                dolam1=d0/(535.0_r8*d50)
                doeta1=EXP(coef_b2-SQRT(coef_b3-coef_b1*LOG(dolam1)))
                lamorb=0.62_r8*d0
@@ -1300,7 +1305,7 @@
       phicwc=phiwc
 
       zo = kN/30.0_r8
-  
+
       IF (ubr.le.0.01_r8) THEN
         IF (ucr.le. 0.01_r8) THEN          ! no waves or currents
           ustrc=0.0_r8

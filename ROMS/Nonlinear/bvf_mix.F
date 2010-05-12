@@ -4,7 +4,7 @@
 !
 !svn $Id: bvf_mix.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -40,6 +40,7 @@
 !
       CALL bvf_mix_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
+     &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   MIXING(ng) % bvf,                              &
      &                   MIXING(ng) % AKt,                              &
      &                   MIXING(ng) % AKv)
@@ -49,6 +50,7 @@
 !***********************************************************************
       SUBROUTINE bvf_mix_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         bvf, Akt, Akv)
 !***********************************************************************
 !
@@ -66,6 +68,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 # ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: bvf(LBi:,LBj:,0:)

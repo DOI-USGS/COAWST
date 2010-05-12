@@ -4,7 +4,7 @@
 !
 !svn $Id: lmd_vmix.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -59,6 +59,7 @@
 # endif
       CALL lmd_vmix_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    nstp(ng),                                     &
      &                    GRID(ng) % Hz,                                &
 # ifndef SPLINES
@@ -90,6 +91,7 @@
 !***********************************************************************
       SUBROUTINE lmd_vmix_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nstp,                                   &
      &                          Hz,                                     &
 # ifndef SPLINES
@@ -109,6 +111,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       Integer, intent(in) :: nstp
 !
 # ifdef ASSUMED_SHAPE
@@ -156,12 +159,12 @@
       real(r8) :: Rrho, ddDS, ddDT, nu_dds, nu_ddt
 # endif
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,0:N(ng)) :: Rig
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: Rig
 
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: dR
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: dU
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: dV
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: dR
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: dU
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: dV
 
 # include "set_bounds.h"
 

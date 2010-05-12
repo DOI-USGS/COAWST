@@ -3,7 +3,7 @@
 !
 !svn $Id: prsgrd42.h 732 2008-09-07 01:55:51Z jcwarner $
 !***********************************************************************
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !****************************************** Alexander F. Shchepetkin ***
@@ -32,9 +32,9 @@
 # ifdef DIAGNOSTICS
       USE mod_diags
 # endif
-#ifdef ATM_PRESS
+# ifdef ATM_PRESS
       USE mod_forces
-#endif
+# endif
       USE mod_grid
       USE mod_ocean
       USE mod_stepping
@@ -52,10 +52,8 @@
 # endif
       CALL prsgrd_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  nrhs(ng),                                       &
-#ifdef ATM_PRESS
-     &                  FORCES(ng) % Pair,                              &
-#endif
 # ifdef MASKING
      &                  GRID(ng) % umask,                               &
      &                  GRID(ng) % vmask,                               &
@@ -65,6 +63,9 @@
      &                  GRID(ng) % on_u,                                &
      &                  GRID(ng) % z_w,                                 &
      &                  OCEAN(ng) % rho,                                &
+# ifdef ATM_PRESS
+     &                  FORCES(ng) % Pair,                              &
+# endif
 # ifdef DIAGNOSTICS_UV
      &                  DIAGS(ng) % DiaRU,                              &
      &                  DIAGS(ng) % DiaRV,                              &
@@ -80,15 +81,16 @@
 !***********************************************************************
       SUBROUTINE prsgrd_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nrhs,                                     &
-#ifdef ATM_PRESS
-     &                        Pair,                                     &
-#endif
 # ifdef MASKING
      &                        umask, vmask,                             &
 # endif
      &                        Hz, om_v, on_u, z_w,                      &
      &                        rho,                                      &
+# ifdef ATM_PRESS
+     &                        Pair,                                     &
+# endif
 # ifdef DIAGNOSTICS_UV
      &                        DiaRU, DiaRV,                             &
 # endif
@@ -102,12 +104,10 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
 !
 # ifdef ASSUMED_SHAPE
-#  ifdef ATM_PRESS
-      real(r8), intent(in) :: Pair(LBi:,LBj:)
-#  endif
 #  ifdef MASKING
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
@@ -117,7 +117,9 @@
       real(r8), intent(in) :: on_u(LBi:,LBj:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
-
+#  ifdef ATM_PRESS
+      real(r8), intent(in) :: Pair(LBi:,LBj:)
+#  endif
 #  ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: DiaRV(LBi:,LBj:,:,:,:)
@@ -125,9 +127,6 @@
       real(r8), intent(inout) :: ru(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: rv(LBi:,LBj:,0:,:)
 # else
-#  ifdef ATM_PRESS
-      real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
-#  endif
 #  ifdef MASKING
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
@@ -137,7 +136,9 @@
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
-
+#  ifdef ATM_PRESS
+      real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
+#  endif
 #  ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
       real(r8), intent(inout) :: DiaRV(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
@@ -155,18 +156,17 @@
       real(r8) :: cff, cff1, cff2, cffL, cffR
       real(r8) :: deltaL, deltaR, dh, dP, rr
 #ifdef ATM_PRESS
-      real(r8) :: fac1
+      real(r8) :: OneAtm, fac
 #endif
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: FX
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: P
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: r
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,0:N(ng)) :: FX
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,0:N(ng)) :: P
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,0:N(ng)) :: r
-
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: aL
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: aR
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: dL
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: dR
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: aL
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: aR
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: dL
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: dR
 
 # include "set_bounds.h"
 !
@@ -174,10 +174,11 @@
 !  Finite-volume pressure gradient force algorithm.
 !---------------------------------------------------------------------
 !
+# ifdef ATM_PRESS
+      OneAtm=1013.25_r8                  ! 1 atm = 1013.25 mb
+      fac=100.0_r8/g
+# endif
       cff2=1.0_r8/6.0_r8
-#ifdef ATM_PRESS
-      fac1=0.0_r8 !100.0_r8/g
-#endif
       DO j=JstrV-2,Jend+1
         DO k=N(ng)-1,1,-1
           DO i=IstrU-2,Iend+1
@@ -247,14 +248,14 @@
         END DO
 !
 !  Compute pressure (P) and lateral pressure force (FX). Initialize
-!  pressure at the free-surface as zero or Pair.
+!  pressure at the free-surface as zero
 !
         DO i=IstrU-2,Iend+1
-# ifdef ATM_PRESS
-          P(i,j,N(ng))=fac1*Pair(i,j)
-# else
+#ifdef ATM_PRESS
+          P(i,j,N(ng))=fac*(Pair(i,j)-OneAtm)
+#else
           P(i,j,N(ng))=0.0_r8
-# endif
+#endif
         END DO
         DO k=N(ng),1,-1
           DO i=IstrU-2,Iend+1

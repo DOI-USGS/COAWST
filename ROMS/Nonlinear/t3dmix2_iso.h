@@ -2,7 +2,7 @@
 !
 !svn $Id: t3dmix2_iso.h 732 2008-09-07 01:55:51Z jcwarner $
 !***********************************************************************
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !****************************************** Alexander F. Shchepetkin ***
@@ -13,6 +13,9 @@
 !***********************************************************************
 !
       USE mod_param
+#ifdef CLIMA_TS_MIX
+      USE mod_clima
+#endif
 #ifdef DIAGNOSTICS_TS
       USE mod_diags
 #endif
@@ -34,6 +37,7 @@
 #endif
       CALL t3dmix2_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
+     &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   nrhs(ng), nnew(ng),                            &
 #ifdef MASKING
      &                   GRID(ng) % umask,                              &
@@ -51,6 +55,9 @@
      &                   MIXING(ng) % diff2,                            &
 #endif
      &                   OCEAN(ng) % rho,                               &
+#ifdef CLIMA_TS_MIX
+     &                   CLIMA(ng) % tclm,                              &
+#endif
 #ifdef DIAGNOSTICS_TS
      &                   DIAGS(ng) % DiaTwrk,                           &
 #endif
@@ -64,6 +71,7 @@
 !***********************************************************************
       SUBROUTINE t3dmix2_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         nrhs, nnew,                              &
 #ifdef MASKING
      &                         umask, vmask,                            &
@@ -76,6 +84,9 @@
      &                         diff2,                                   &
 #endif
      &                         rho,                                     &
+#ifdef CLIMA_TS_MIX
+     &                         tclm,                                    &
+#endif
 #ifdef DIAGNOSTICS_TS
      &                         DiaTwrk,                                 &
 #endif
@@ -89,6 +100,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs, nnew
 
 #ifdef ASSUMED_SHAPE
@@ -108,6 +120,9 @@
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
+# ifdef CLIMA_TS_MIX
+      real(r8), intent(in) :: tclm(LBi:,LBj:,:,:)
+# endif
 # ifdef DIAGNOSTICS_TS
       real(r8), intent(inout) :: DiaTwrk(LBi:,LBj:,:,:,:)
 # endif
@@ -129,6 +144,9 @@
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
+# ifdef CLIMA_TS_MIX
+      real(r8), intent(in) :: tclm(LBi:UBi,LBj:UBj,N(ng),NT(ng))
+# endif
 # ifdef DIAGNOSTICS_TS
       real(r8), intent(inout) :: DiaTwrk(LBi:UBi,LBj:UBj,N(ng),NT(ng),  &
      &                                   NDT)
@@ -145,17 +163,17 @@
       real(r8), parameter :: slope_max = 0.0001_r8
       real(r8), parameter :: strat_min = 0.1_r8
 
-      real(r8) :: cff, cff1, cff2, cff3, cff4
+      real(r8) :: cff, cff1, cff2, cff3, cff4, cff5
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FE
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FX
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: FS
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dRde
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dRdx
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dTde
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dTdr
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dTdx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: FS
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dRde
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dRdx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dTde
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dTdr
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dTdx
 
 #include "set_bounds.h"
 !
@@ -185,8 +203,15 @@
 #endif
                 dRdx(i,j,k2)=cff*(rho(i  ,j,k+1)-                       &
      &                            rho(i-1,j,k+1))
+#ifdef CLIMA_TS_MIX
+                dTdx(i,j,k2)=cff*((t(i  ,j,k+1,nrhs,itrc)-              &
+     &                             tclm(i  ,j,k+1,itrc))-               &
+     &                            (t(i-1,j,k+1,nrhs,itrc)-              &
+     &                             tclm(i-1,j,k+1,itrc)))
+#else
                 dTdx(i,j,k2)=cff*(t(i  ,j,k+1,nrhs,itrc)-               &
      &                            t(i-1,j,k+1,nrhs,itrc))
+#endif
               END DO
             END DO
             DO j=Jstr,Jend+1
@@ -197,8 +222,15 @@
 #endif
                 dRde(i,j,k2)=cff*(rho(i,j  ,k+1)-                       &
      &                            rho(i,j-1,k+1))
+#ifdef CLIMA_TS_MIX
+                dTde(i,j,k2)=cff*((t(i,j  ,k+1,nrhs,itrc)-              &
+     &                             tclm(i,j  ,k+1,itrc))-               &
+     &                            (t(i,j-1,k+1,nrhs,itrc)-              &
+     &                             tclm(i,j-1,k+1,itrc)))
+#else
                 dTde(i,j,k2)=cff*(t(i,j  ,k+1,nrhs,itrc)-               &
      &                            t(i,j-1,k+1,nrhs,itrc))
+#endif
               END DO
             END DO
           END IF
@@ -230,8 +262,15 @@
                 cff1=MAX(rho(i,j,k)-rho(i,j,k+1),eps)
                 cff=-1.0_r8/cff1
 #endif
+#ifdef CLIMA_TS_MIX
+                dTdr(i,j,k2)=cff*((t(i,j,k+1,nrhs,itrc)-                &
+     &                             tclm(i,j,k+1,itrc))-                 &
+     &                            (t(i,j,k  ,nrhs,itrc)-                &
+     &                             tclm(i,j,k  ,itrc)))
+#else
                 dTdr(i,j,k2)=cff*(t(i,j,k+1,nrhs,itrc)-                 &
      &                            t(i,j,k  ,nrhs,itrc))
+#endif
                 FS(i,j,k2)=cff*(z_r(i,j,k+1)-z_r(i,j,k))
               END DO
             END DO
@@ -314,17 +353,21 @@
 !
             DO j=Jstr,Jend
               DO i=Istr,Iend
-                cff=dt(ng)*pm(i,j)*pn(i,j)*                             &
-     &                     (FX(i+1,j)-FX(i,j)+                          &
-     &                      FE(i,j+1)-FE(i,j))+                         &
-     &              dt(ng)*(FS(i,j,k2)-FS(i,j,k1))
-                t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)+cff
+                cff=dt(ng)*pm(i,j)*pn(i,j)
+                cff1=cff*(FX(i+1,j  )-FX(i,j))
+                cff2=cff*(FE(i  ,j+1)-FE(i,j))
+                cff3=dt(ng)*(FS(i,j,k2)-FS(i,j,k1))
+                cff4=cff1+cff2+cff3
+                t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)+cff4
 #ifdef TS_MPDATA
-                cff1=1.0_r8/Hz(i,j,k)
-                t(i,j,k,3,itrc)=cff1*t(i,j,k,nnew,itrc)
+                cff5=1.0_r8/Hz(i,j,k)
+                t(i,j,k,3,itrc)=cff5*t(i,j,k,nnew,itrc)
 #endif
 #ifdef DIAGNOSTICS_TS
-                DiaTwrk(i,j,k,itrc,iThdif)=cff
+                DiaTwrk(i,j,k,itrc,iTxdif)=cff1
+                DiaTwrk(i,j,k,itrc,iTydif)=cff2
+                DiaTwrk(i,j,k,itrc,iTsdif)=cff3
+                DiaTwrk(i,j,k,itrc,iThdif)=cff4
 #endif
               END DO
             END DO

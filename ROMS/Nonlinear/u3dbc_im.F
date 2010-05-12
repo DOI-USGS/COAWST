@@ -4,7 +4,7 @@
 !
 !svn $Id: u3dbc_im.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -39,6 +39,7 @@
 !
       CALL u3dbc_tile (ng, tile,                                        &
      &                 LBi, UBi, LBj, UBj, N(ng),                       &
+     &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 nstp(ng), nout,                                  &
      &                 OCEAN(ng) % u)
       RETURN
@@ -47,6 +48,7 @@
 !***********************************************************************
       SUBROUTINE u3dbc_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj, UBk,                   &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       nstp, nout,                                &
      &                       u)
 !***********************************************************************
@@ -56,6 +58,7 @@
       USE mod_grid
       USE mod_scalars
 # ifdef REFINED_GRID
+      USE mod_refined
       USE mod_stepping
 # endif
 !
@@ -63,6 +66,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj, UBk
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nstp, nout
 !
 # ifdef ASSUMED_SHAPE
@@ -154,6 +158,10 @@
             u(Istr,j,k,nout)=u(Istr,j,k,nout)*                          &
      &                       GRID(ng)%umask(Istr,j)
 #   endif
+#   ifdef WET_DRY
+            u(Istr,j,k,nout)=u(Istr,j,k,nout)*                          &
+     &                       GRID(ng)%umask_wet(Istr,j)
+#   endif
           END DO
         END DO
 
@@ -168,6 +176,10 @@
             u(Istr,j,k,nout)=u(Istr,j,k,nout)*                          &
      &                       GRID(ng)%umask(Istr,j)
 #   endif
+#   ifdef WET_DRY
+            u(Istr,j,k,nout)=u(Istr,j,k,nout)*                          &
+     &                       GRID(ng)%umask_wet(Istr,j)
+#   endif
           END DO
         END DO
 
@@ -181,6 +193,10 @@
 #   ifdef MASKING
             u(Istr,j,k,nout)=u(Istr,j,k,nout)*                                &
      &                       GRID(ng)%umask(Istr,j)
+#   endif
+#   ifdef WET_DRY
+            u(Istr,j,k,nout)=u(Istr,j,k,nout)*                                &
+     &                       GRID(ng)%umask_wet(Istr,j)
 #   endif
           END DO
         END DO
@@ -257,6 +273,10 @@
             u(Iend+1,j,k,nout)=u(Iend+1,j,k,nout)*                      &
      &                         GRID(ng)%umask(Iend+1,j)
 #   endif
+#   ifdef WET_DRY
+            u(Iend+1,j,k,nout)=u(Iend+1,j,k,nout)*                      &
+     &                         GRID(ng)%umask_wet(Iend+1,j)
+#   endif
           END DO
         END DO
 
@@ -271,6 +291,10 @@
             u(Iend+1,j,k,nout)=u(Iend+1,j,k,nout)*                      &
      &                         GRID(ng)%umask(Iend+1,j)
 #   endif
+#   ifdef WET_DRY
+            u(Iend+1,j,k,nout)=u(Iend+1,j,k,nout)*                      &
+     &                         GRID(ng)%umask_wet(Iend+1,j)
+#   endif
           END DO
         END DO
 
@@ -284,6 +308,10 @@
 #   ifdef MASKING
           u(Iend+1,j,k,nout)=u(Iend+1,j,k,nout)*                        &
      &                       GRID(ng)%umask(Iend+1,j)
+#   endif
+#   ifdef WET_DRY
+          u(Iend+1,j,k,nout)=u(Iend+1,j,k,nout)*                        &
+     &                       GRID(ng)%umask_wet(Iend+1,j)
 #   endif
         END DO
       END DO
@@ -363,6 +391,10 @@
             u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)*                      &
      &                         GRID(ng)%umask(i,Jstr-1)
 #   endif
+#   ifdef WET_DRY
+            u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)*                      &
+     &                         GRID(ng)%umask_wet(i,Jstr-1)
+#   endif
           END DO
         END DO
 
@@ -377,6 +409,10 @@
             u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)*                      &
      &                         GRID(ng)%umask(i,Jstr-1)
 #   endif
+#   ifdef WET_DRY
+            u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)*                      &
+     &                         GRID(ng)%umask_wet(i,Jstr-1)
+#   endif
           END DO
         END DO
 
@@ -390,6 +426,10 @@
 #   ifdef MASKING
             u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)*                      &
      &                         GRID(ng)%umask(i,Jstr-1)
+#   endif
+#   ifdef WET_MASK
+            u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)*                      &
+     &                         GRID(ng)%umask_wet(i,Jstr-1)
 #   endif
           END DO
         END DO
@@ -410,6 +450,10 @@
 #   ifdef MASKING
             u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)*                      &
      &                         GRID(ng)%umask(i,Jstr-1)
+#   endif
+#   ifdef WET_DRY
+            u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)*                      &
+     &                         GRID(ng)%umask_wet(i,Jstr-1)
 #   endif
           END DO
         END DO
@@ -477,6 +521,10 @@
             u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)*                      &
      &                         GRID(ng)%umask(i,Jend+1)
 #   endif
+#   ifdef WET_DRY
+            u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)*                      &
+     &                         GRID(ng)%umask_wet(i,Jend+1)
+#   endif
           END DO
         END DO
 
@@ -491,6 +539,10 @@
             u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)*                      &
      &                         GRID(ng)%umask(i,Jend+1)
 #   endif
+#   ifdef WET_DRY
+            u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)*                      &
+     &                         GRID(ng)%umask_wet(i,Jend+1)
+#   endif
           END DO
         END DO
 
@@ -504,6 +556,10 @@
 #   ifdef MASKING
             u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)*                      &
      &                         GRID(ng)%umask(i,Jend+1)
+#   endif
+#   ifdef WET_DRY
+            u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)*                      &
+     &                         GRID(ng)%umask_wet(i,Jend+1)
 #   endif
           END DO
         END DO
@@ -524,6 +580,10 @@
 #   ifdef MASKING
             u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)*                      &
      &                         GRID(ng)%umask(i,Jend+1)
+#   endif
+#   ifdef WET_DRY
+            u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)*                      &
+     &                         GRID(ng)%umask_wet(i,Jend+1)
 #   endif
           END DO
         END DO
@@ -626,8 +686,8 @@
      &                        MIN(Ce,0.0_r8)*grad(Istr,j+1))/           &
      &                       (cff+Cx)
 !#   ifdef WEST_M3NUDGING
-            my_val=fac1*BOUNDARY(ng)%uR_west(4,j,k,t1)+                 &
-     &             fac2*BOUNDARY(ng)%uR_west(4,j,k,t2)
+            my_val=fac1*REFINED(ng)%uR_west(4,j,k,t1)+                  &
+     &             fac2*REFINED(ng)%uR_west(4,j,k,t2)
             u(Istr,j,k,nout)=u(Istr,j,k,nout)+                          &
      &                       tau*(my_val-u(Istr,j,k,nstp))
 !#   endif
@@ -679,8 +739,8 @@
      &                          MIN(Ce,0.0_r8)*grad(Iend+1,j+1))/       &
      &                         (cff+Cx)
 !#   ifdef EAST_M3NUDGING
-            my_val=fac1*BOUNDARY(ng)%uR_east(1,j,k,t1)+                 &
-     &             fac2*BOUNDARY(ng)%uR_east(1,j,k,t2)
+            my_val=fac1*REFINED(ng)%uR_east(1,j,k,t1)+                  &
+     &             fac2*REFINED(ng)%uR_east(1,j,k,t2)
             u(Iend+1,j,k,nout)=u(Iend+1,j,k,nout)+                      &
      &                         tau*(my_val-u(Iend+1,j,k,nstp))
 !#   endif
@@ -732,8 +792,8 @@
      &                          MIN(Cx,0.0_r8)*grad(i  ,Jstr-1))/       &
      &                         (cff+Ce)
 !#   ifdef SOUTH_M3NUDGING
-            my_val=fac1*BOUNDARY(ng)%uR_south(i,4,k,t1)+                &
-     &             fac2*BOUNDARY(ng)%uR_south(i,4,k,t2)
+            my_val=fac1*REFINED(ng)%uR_south(i,4,k,t1)+                 &
+     &             fac2*REFINED(ng)%uR_south(i,4,k,t2)
             u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)+                      &
      &                         tau*(my_val-u(i,Jstr-1,k,nstp))
 !#   endif
@@ -785,8 +845,8 @@
      &                          MIN(Cx,0.0_r8)*grad(i  ,Jend+1))/       &
      &                         (cff+Ce)
 !#   ifdef NORTH_M3NUDGING
-            my_val=fac1*BOUNDARY(ng)%uR_north(i,1,k,t1)+                &
-     &             fac2*BOUNDARY(ng)%uR_north(i,1,k,t2)
+            my_val=fac1*REFINED(ng)%uR_north(i,1,k,t1)+                 &
+     &             fac2*REFINED(ng)%uR_north(i,1,k,t2)
             u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)+                      &
      &                         tau*(my_val-u(i,Jend+1,k,nstp))
 !#    endif

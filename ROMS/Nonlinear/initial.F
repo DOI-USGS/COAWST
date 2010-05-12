@@ -3,7 +3,7 @@
 !
 !svn $Id: initial.F 790 2008-10-14 19:32:07Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -36,6 +36,7 @@
 #ifdef TLM_CHECK
       USE ini_adjust_mod, ONLY : ini_perturb
 #endif
+      USE ini_hmixcoef_mod, ONLY : ini_hmixcoef
       USE metrics_mod, ONLY : metrics
 #ifdef SOLVE3D
       USE set_depth_mod, ONLY : set_depth
@@ -76,7 +77,8 @@
 
       integer :: LBi, UBi, LBj, UBj
       integer :: IniRec, Tindex, subs, tile, thread
-#if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+#if defined ADJUST_BOUNDARY || \
+    defined ADJUST_STFLUX   || defined ADJUST_WSTRESS
       integer :: irec
 #endif
       integer :: my_numthreads
@@ -89,15 +91,12 @@
 #if defined PERTURBATION
         WRITE (stdout,10) Nrun
  10     FORMAT (/,' <<<< Ensemble/Perturbation Run: ',i5.5,' >>>>',/)
-#elif defined IS4DVAR || defined IS4DVAR_OLD || defined W4DPSAS || \
-      defined W4DVAR
+#elif defined IS4DVAR    || defined SENSITIVITY_4DVAR || \
+      defined TL_W4DPSAS || defined TL_W4DVAR         || \
+      defined W4DPSAS    || defined W4DVAR
         WRITE (stdout,10) outer, inner
  10     FORMAT (/,' <<<< 4D Variational Data Assimilation, ',           &
      &          'Outer = ',i3.3, ', Inner = ',i3.3,' >>>>',/)
-#elif defined S4DVAR
-        WRITE (stdout,10) Nrun, Ipass
- 10     FORMAT (/,' <<<< 4D Variational Data Assimilation, ',           &
-     &          'Iteration = ',i5.5, ', Ipass = ',i1,' >>>>',/)
 #endif
         WRITE (stdout,20) 'INITIAL: Configuring and initializing ',     &
      &                    'forward nonlinear model ...'
@@ -172,10 +171,10 @@
 # ifdef ANA_INITIAL
         LdefINI(ng)=.TRUE.
 # endif
-        LdefHIS(ng)=.TRUE.    
+        LdefHIS(ng)=.TRUE.
         CALL def_ini (ng)
 # ifdef DISTRIBUTE
-        CALL mp_bcasti (ng, iNLM, exit_flag, 1)
+        CALL mp_bcasti (ng, iNLM, exit_flag)
 # endif
         IF (exit_flag.ne.NoError) RETURN
         IniRec=nrrec(ng)
@@ -184,6 +183,12 @@
         IniRec=tINIindx(ng)
       END IF
 
+# ifdef ADJUST_BOUNDARY
+!
+!  Initialize open boundary counter for storage arrays.
+!
+      OBCcount(ng)=0
+# endif
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
 !
 !  Initialize surface forcing counter for storage arrays.
@@ -198,22 +203,7 @@
       tHISindx(ng)=0
       NrecHIS(ng)=0
 
-# if defined S4DVAR
-!  
-!  Avoid writing data into average, history, and restart files in
-!  the second iteration pass (Ipass=2).
-!
-      IF (Ipass.eq.1) THEN
-        LwrtAVG(ng)=.TRUE.
-        LwrtHIS(ng)=.TRUE.
-        LwrtRST(ng)=.TRUE.
-      ELSEif (Ipass.eq.2) THEN
-        LwrtAVG(ng)=.FALSE.
-        LwrtHIS(ng)=.FALSE.
-        LwrtRST(ng)=.FALSE.
-      END IF
-
-# elif defined IS4DVAR || defined IS4DVAR_OLD
+# ifdef IS4DVAR
 !
 !  Activate switches to writting data into average, history and
 !  restart files.
@@ -223,8 +213,7 @@
       LwrtRST(ng)=.TRUE.
 # endif
 #endif
-#if defined FOUR_DVAR || defined VERIFICATION
-# ifndef CONVOLUTION
+#ifdef OBSERVATIONS
 !
 !-----------------------------------------------------------------------
 !  Open observations NetCDF file and initialize various variables
@@ -233,11 +222,7 @@
 !-----------------------------------------------------------------------
 !
       CALL obs_initial (ng, iNLM, .FALSE.)
-#  ifdef DISTRIBUTE
-      CALL mp_bcasti (ng, iNLM, exit_flag, 1)
-#  endif
       IF (exit_flag.ne.NoError) RETURN
-# endif
 #endif
 !
 !=======================================================================
@@ -267,7 +252,7 @@
 #else
         CALL get_grid (ng, iNLM)
 # ifdef DISTRIBUTE
-        CALL mp_bcasti (ng, iNLM, exit_flag, 1)
+        CALL mp_bcasti (ng, iNLM, exit_flag)
 # endif
         if (exit_flag.ne.NoError) RETURN
 #endif
@@ -307,24 +292,6 @@
         END DO
 !$OMP END PARALLEL DO
 
-#if defined VISC_GRID || defined DIFF_GRID || defined SPONGE
-!
-!-----------------------------------------------------------------------
-!  Set horizontal mixing coefficients. Rescale according to the local
-!  grid size. If applicable, increases horizontal mixing in sponge
-!  areas.
-!-----------------------------------------------------------------------
-!
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1
-            CALL ana_hmixcoef (ng, TILE, iNLM)
-          END DO
-        END DO
-!$OMP END PARALLEL DO
-#endif
-
 #ifdef NUDGING_COFF
 !
 !-----------------------------------------------------------------------
@@ -341,6 +308,37 @@
 !$OMP END PARALLEL DO
 #endif
       END IF
+!
+!-----------------------------------------------------------------------
+!  Initialize horizontal mixing coefficients.
+!-----------------------------------------------------------------------
+!
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+      DO thread=0,numthreads-1
+        subs=NtileX(ng)*NtileE(ng)/numthreads
+        DO tile=subs*thread,subs*(thread+1)-1
+          CALL ini_hmixcoef (ng, TILE, iNLM)
+        END DO
+      END DO
+!$OMP END PARALLEL DO
+
+#if defined VISC_GRID || defined DIFF_GRID || defined SPONGE
+!
+!-----------------------------------------------------------------------
+!  Rescale horizontal mixing coefficients according to the local
+!  grid size. If applicable, increases horizontal mixing in sponge
+!  areas.
+!-----------------------------------------------------------------------
+!
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1
+            CALL ana_hmixcoef (ng, TILE, iNLM)
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+#endif
 !
 !=======================================================================
 !  Initialize model state variables and forcing.  This part is
@@ -453,7 +451,7 @@
 !
       CALL get_state (ng, iNLM, 1, INIname(ng), IniRec, Tindex)
 # ifdef DISTRIBUTE
-      CALL mp_bcasti (ng, iNLM, exit_flag, 1)
+      CALL mp_bcasti (ng, iNLM, exit_flag)
 # endif
       IF (exit_flag.ne.NoError) RETURN
 #else
@@ -463,7 +461,26 @@
       IF (nrrec(ng).ne.0) THEN
         CALL get_state (ng, 0, 1, INIname(ng), IniRec, Tindex)
 # ifdef DISTRIBUTE
-        CALL mp_bcasti (ng, iNLM, exit_flag, 1)
+        CALL mp_bcasti (ng, iNLM, exit_flag)
+# endif
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+#endif
+
+#if (defined W4DPSAS || defined TL_W4DPSAS || \
+     defined W4DPSAS_SENSITIVITY)          && \
+    (defined ADJUST_BOUNDARY || defined ADJUST_WSTRESS ||\
+     defined ADJUST_STFLUX)
+!
+!-----------------------------------------------------------------------
+!  Read in the surface forcing and/or obc increments for PSAS from
+!  record 1 of the TLM initial NetCDF file.
+!-----------------------------------------------------------------------
+!
+      IF (Nrun.gt.1) THEN
+        CALL get_state (ng, 12, 1, ITLname(ng), 1, Tindex)
+# ifdef DISTRIBUTE
+        CALL mp_bcasti (ng, iNLM, exit_flag)
 # endif
         IF (exit_flag.ne.NoError) RETURN
       END IF
@@ -545,6 +562,18 @@
 !  the time-interpolation between snapshots.
 !-----------------------------------------------------------------------
 
+# ifdef ADJUST_BOUNDARY
+!
+!  If first pass of iteration loop, set time of open boundary
+!  adjustment.
+!
+      IF (Nrun.eq.ERstr) THEN
+        OBC_time(1,ng)=time(ng)
+        DO irec=2,Nbrec(ng)
+          OBC_time(irec,ng)=OBC_time(irec-1,ng)+nOBC(ng)*dt(ng)
+        END DO
+      END IF
+# endif
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
 !
 !  If first pass of iteration loop, set time of surface forcing
@@ -572,12 +601,13 @@
 # endif
       CALL get_data (ng)
 # ifdef DISTRIBUTE
-      CALL mp_bcasti (ng, iNLM, exit_flag, 1)
+      CALL mp_bcasti (ng, iNLM, exit_flag)
 # endif
       IF (exit_flag.ne.NoError) RETURN
 #endif
 
-#if defined W4DPSAS || defined NLM_OUTER
+#if defined NLM_OUTER || defined TL_W4DPSAS          || \
+    defined W4DPSAS   || defined W4DPSAS_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  Read in convolved adjoint impulse forcing (first record) and its
@@ -588,7 +618,7 @@
         FrcRec(ng)=1
         CALL get_state (ng, 7, 7, TLFname(ng), FrcRec(ng), 1)
 # ifdef DISTRIBUTE
-        CALL mp_bcasti (ng, iTLM, exit_flag, 1)
+        CALL mp_bcasti (ng, iTLM, exit_flag)
 # endif
         IF (exit_flag.ne.NoError) RETURN
       END IF

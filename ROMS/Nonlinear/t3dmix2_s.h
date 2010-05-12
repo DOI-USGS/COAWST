@@ -4,7 +4,7 @@
 !
 !svn $Id: t3dmix2_s.h 732 2008-09-07 01:55:51Z jcwarner $
 !***********************************************************************
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !****************************************** Alexander F. Shchepetkin ***
@@ -15,6 +15,9 @@
 !***********************************************************************
 !
       USE mod_param
+#ifdef CLIMA_TS_MIX
+      USE mod_clima
+#endif
 #ifdef DIAGNOSTICS_TS
       USE mod_diags
 #endif
@@ -36,6 +39,7 @@
 #endif
       CALL t3dmix2_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
+     &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   nrhs(ng), nstp(ng), nnew(ng),                  &
 #ifdef MASKING
      &                   GRID(ng) % umask,                              &
@@ -51,6 +55,9 @@
 #else
      &                   MIXING(ng) % diff2,                            &
 #endif
+#ifdef CLIMA_TS_MIX
+     &                   CLIMA(ng) % tclm,                              &
+#endif
 #ifdef DIAGNOSTICS_TS
      &                   DIAGS(ng) % DiaTwrk,                           &
 #endif
@@ -64,6 +71,7 @@
 !***********************************************************************
       SUBROUTINE t3dmix2_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         nrhs, nstp, nnew,                        &
 #ifdef MASKING
      &                         umask, vmask,                            &
@@ -73,6 +81,9 @@
      &                         diff3d_r,                                &
 #else
      &                         diff2,                                   &
+#endif
+#ifdef CLIMA_TS_MIX
+     &                         tclm,                                    &
 #endif
 #ifdef DIAGNOSTICS_TS
      &                         DiaTwrk,                                 &
@@ -87,6 +98,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs, nstp, nnew
 
 #ifdef ASSUMED_SHAPE
@@ -104,6 +116,9 @@
       real(r8), intent(in) :: pnom_v(LBi:,LBj:)
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
+# ifdef CLIMA_TS_MIX
+      real(r8), intent(in) :: tclm(LBi:,LBj:,:,:)
+# endif
 # ifdef DIAGNOSTICS_TS
       real(r8), intent(inout) :: DiaTwrk(LBi:,LBj:,:,:,:)
 # endif
@@ -123,6 +138,9 @@
       real(r8), intent(in) :: pnom_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
+# ifdef CLIMA_TS_MIX
+      real(r8), intent(in) :: tclm(LBi:UBi,LBj:UBj,N(ng),NT(ng))
+# endif
 # ifdef DIAGNOSTICS_TS
       real(r8), intent(inout) :: DiaTwrk(LBi:UBi,LBj:UBj,N(ng),NT(ng),  &
      &                                   NDT)
@@ -134,10 +152,10 @@
 !
       integer :: i, itrc, j, k
 
-      real(r8) :: cff, cff1
+      real(r8) :: cff, cff1, cff2, cff3, cff4
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FE
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FX
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
 
 #include "set_bounds.h"
 !
@@ -170,6 +188,9 @@
      &                          t(i-1,j,k,nrhs,itrc))+                  &
      &                 0.25_r8*(t(i  ,j,k,nstp,itrc)-                   &
      &                          t(i-1,j,k,nstp,itrc)))
+#elif defined CLIMA_TS_MIX
+     &                ((t(i  ,j,k,nrhs,itrc)-tclm(i  ,j,k,itrc))-       &
+     &                 (t(i-1,j,k,nrhs,itrc)-tclm(i-1,j,k,itrc)))
 #else
      &                (t(i,j,k,nrhs,itrc)-t(i-1,j,k,nrhs,itrc))
 #endif
@@ -189,11 +210,14 @@
 #endif
               FE(i,j)=cff*                                              &
      &                (Hz(i,j,k)+Hz(i,j-1,k))*                          &
-#ifdef MIX_STABILITY
+#if defined MIX_STABILITY
      &                (0.75_r8*(t(i,j  ,k,nrhs,itrc)-                   &
      &                          t(i,j-1,k,nrhs,itrc))+                  &
      &                 0.25_r8*(t(i,j  ,k,nstp,itrc)-                   &
      &                          t(i,j-1,k,nstp,itrc)))
+#elif defined CLIMA_TS_MIX
+     &                ((t(i,j  ,k,nrhs,itrc)-tclm(i,j  ,k,itrc))-       &
+     &                 (t(i,j-1,k,nrhs,itrc)-tclm(i,j-1,k,itrc)))
 #else
      &                (t(i,j,k,nrhs,itrc)-t(i,j-1,k,nrhs,itrc))
 #endif
@@ -207,16 +231,19 @@
 !
           DO j=Jstr,Jend
             DO i=Istr,Iend
-              cff=dt(ng)*pm(i,j)*pn(i,j)*                               &
-     &                   (FX(i+1,j)-FX(i,j)+                            &
-     &                    FE(i,j+1)-FE(i,j))
-              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)+cff
+              cff=dt(ng)*pm(i,j)*pn(i,j)
+              cff1=cff*(FX(i+1,j  )-FX(i,j))
+              cff2=cff*(FE(i  ,j+1)-FE(i,j))
+              cff3=cff1+cff2
+              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)+cff3
 #ifdef TS_MPDATA
-              cff1=1.0_r8/Hz(i,j,k)
-              t(i,j,k,3,itrc)=cff1*t(i,j,k,nnew,itrc)
+              cff4=1.0_r8/Hz(i,j,k)
+              t(i,j,k,3,itrc)=cff4*t(i,j,k,nnew,itrc)
 #endif
 #ifdef DIAGNOSTICS_TS
-              DiaTwrk(i,j,k,itrc,iThdif)=cff
+              DiaTwrk(i,j,k,itrc,iTxdif)=cff1
+              DiaTwrk(i,j,k,itrc,iTydif)=cff2
+              DiaTwrk(i,j,k,itrc,iThdif)=cff3
 #endif
             END DO
           END DO

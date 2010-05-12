@@ -2,7 +2,7 @@
 !
 !svn $Id: prsgrd40.h 732 2008-09-07 01:55:51Z jcwarner $
 !***********************************************************************
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !****************************************** Alexander F. Shchepetkin ***
@@ -46,15 +46,16 @@
 #endif
       CALL prsgrd_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  nrhs(ng),                                       &
-#ifdef ATM_PRESS
-     &                  FORCES(ng) % Pair,                              &
-#endif
      &                  GRID(ng) % om_v,                                &
      &                  GRID(ng) % on_u,                                &
      &                  GRID(ng) % Hz,                                  &
      &                  GRID(ng) % z_w,                                 &
      &                  OCEAN(ng) % rho,                                &
+#ifdef ATM_PRESS
+     &                  FORCES(ng) % Pair,                              &
+#endif
 #ifdef DIAGNOSTICS_UV
      &                  DIAGS(ng) % DiaRU,                              &
      &                  DIAGS(ng) % DiaRV,                              &
@@ -70,13 +71,14 @@
 !***********************************************************************
       SUBROUTINE prsgrd_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nrhs,                                     &
-#ifdef ATM_PRESS
-     &                        Pair,                                     &
-#endif
      &                        om_v, on_u,                               &
      &                        Hz, z_w,                                  &
      &                        rho,                                      &
+#ifdef ATM_PRESS
+     &                        Pair,                                     &
+#endif
 #ifdef DIAGNOSTICS_UV
      &                        DiaRU, DiaRV,                             &
 #endif
@@ -90,18 +92,18 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
 
 #ifdef ASSUMED_SHAPE
-# ifdef ATM_PRESS
-      real(r8), intent(in) :: Pair(LBi:,LBj:)
-# endif
       real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
-
+# ifdef ATM_PRESS
+      real(r8), intent(in) :: Pair(LBi:,LBj:)
+# endif
 # ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: DiaRV(LBi:,LBj:,:,:,:)
@@ -109,15 +111,14 @@
       real(r8), intent(inout) :: ru(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: rv(LBi:,LBj:,0:,:)
 #else
-# ifdef ATM_PRESS
-      real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
-# endif
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
-
+# ifdef ATM_PRESS
+      real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
+# endif
 # ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
       real(r8), intent(inout) :: DiaRV(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
@@ -132,14 +133,13 @@
 
       real(r8) :: cff, cff1, dh
 #ifdef ATM_PRESS
-      real(r8) :: fac1
+      real(r8) :: OneAtm, fac
 #endif
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
 
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FC
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: FX
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,N(ng)) :: FX
-
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,0:N(ng)) :: P
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: P
 
 #include "set_bounds.h"
 !
@@ -147,15 +147,17 @@
 !  Finite Volume pressure gradient algorithm (Lin, 1997).
 !-----------------------------------------------------------------------
 !
-!  Compute pressure and its vertical integral.
+!  Compute pressure and its vertical integral.  Initialize pressure at
+!  the free-surface as zero.
 !
 #ifdef ATM_PRESS
-      fac1=0.0_r8 !100.0_r8/g
+      OneAtm=1013.25_r8                  ! 1 atm = 1013.25 mb
+      fac=100.0_r8/g
 #endif
       J_LOOP : DO j=JstrV-1,Jend
         DO i=IstrU-1,Iend
 #ifdef ATM_PRESS
-          P(i,j,N(ng))=fac1*Pair(i,j)
+          P(i,j,N(ng))=fac*(Pair(i,j)-OneAtm)
 #else
           P(i,j,N(ng))=0.0_r8
 #endif

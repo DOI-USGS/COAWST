@@ -5,7 +5,7 @@
 !
 !svn $Id: pre_step3d.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -65,10 +65,10 @@
 # endif
       CALL pre_step3d_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
+     &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      nrhs(ng), nstp(ng), nnew(ng),               &
 # ifdef TS_PSOURCE
-     &                      Nsrc(ng),                                   &
-     &                      SOURCES(ng) % Lsrc,                         &
+     &                      Msrc(ng), Nsrc(ng),                         &
      &                      SOURCES(ng) % Isrc,                         &
      &                      SOURCES(ng) % Jsrc,                         &
      &                      SOURCES(ng) % Dsrc,                         &
@@ -124,9 +124,11 @@
 !***********************************************************************
       SUBROUTINE pre_step3d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
+     &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            nrhs, nstp, nnew,                     &
 # ifdef TS_PSOURCE
-     &                            Nsrc, Lsrc, Isrc, Jsrc, Dsrc,         &
+     &                            Msrc, Nsrc,                           &
+     &                            Isrc, Jsrc, Dsrc,                     &
      &                            Tsrc,                                 &
 # endif
 # ifdef MASKING
@@ -171,14 +173,17 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs, nstp, nnew
+# ifdef TS_PSOURCE
+      integer, intent(in) :: Msrc, Nsrc
+# endif
 !
 # ifdef ASSUMED_SHAPE
 #  ifdef TS_PSOURCE
-      integer, intent(in) :: Nsrc
-      logical, intent(in) :: Lsrc(:,:)
       integer, intent(in) :: Isrc(:)
       integer, intent(in) :: Jsrc(:)
+
       real(r8), intent(in) :: Dsrc(:)
       real(r8), intent(in) :: Tsrc(:,:,:)
 #  endif
@@ -235,12 +240,11 @@
 # else
 
 #  ifdef TS_PSOURCE
-      integer, intent(in) :: Nsrc
-      logical, intent(in) :: Lsrc(Nsrc,NT(ng))
-      integer, intent(in) :: Isrc(Nsrc)
-      integer, intent(in) :: Jsrc(Nsrc)
-      real(r8), intent(in) :: Dsrc(Nsrc)
-      real(r8), intent(in) :: Tsrc(Nsrc,N(ng),NT(ng))
+      integer, intent(in) :: Isrc(Msrc)
+      integer, intent(in) :: Jsrc(Msrc)
+
+      real(r8), intent(in) :: Dsrc(Msrc)
+      real(r8), intent(in) :: Tsrc(Msrc,N(ng),NT(ng))
 #  endif
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
@@ -301,23 +305,25 @@
 #  endif
 # endif
       integer :: i, indx, is, itrc, j, k, ltrc
-
+# if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
+      integer :: idiag
+# endif
       real(r8), parameter :: Gamma = 1.0_r8/6.0_r8
       real(r8), parameter :: eps = 1.0E-16_r8
 
       real(r8) :: cff, cff1, cff2, cff3, cff4
 
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: CF
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: DC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
 
 # ifdef SOLAR_SOURCE
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,0:N(ng)) :: swdk
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: swdk
 # endif
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FE
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FX
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: curv
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: grad
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curv
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
 
 # include "set_bounds.h"
 
@@ -338,7 +344,9 @@
             FX(i,j)=z_w(i,j,N(ng))-z_w(i,j,k)
           END DO
         END DO
-        CALL lmd_swfrac_tile (ng, tile, LBi, UBi, LBj, UBj,             &
+        CALL lmd_swfrac_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        -1.0_r8, FX, FE)
         DO j=Jstr,Jend
           DO i=Istr,Iend
@@ -543,7 +551,7 @@
           DO is=1,Nsrc
             i=Isrc(is)
             j=Jsrc(is)
-            IF (Lsrc(is,itrc).and.                                      &
+            IF (LtracerSrc(itrc,ng).and.                                &
      &          ((Istr.le.i).and.(i.le.Iend+1)).and.                    &
      &          ((Jstr.le.j).and.(j.le.Jend+1))) THEN
               IF (INT(Dsrc(is)).eq.0) THEN
@@ -877,20 +885,11 @@
               cff2=FC(i,k)-FC(i,k-1)
               u(i,j,k,nnew)=cff1+cff2
 # ifdef DIAGNOSTICS_UV
-              DiaU3wrk(i,j,k,M3rate)=cff1
+              DO idiag=1,M3pgrd
+                DiaU3wrk(i,j,k,idiag)=0.0_r8
+              END DO
               DiaU3wrk(i,j,k,M3vvis)=cff2
-              DiaU3wrk(i,j,k,M3pgrd)=0.0_r8
-#  ifdef UV_ADV
-              DiaU3wrk(i,j,k,M3hadv)=0.0_r8
-              DiaU3wrk(i,j,k,M3vadv)=0.0_r8
-#  endif
-#  ifdef NEARSHORE_MELLOR
-              DiaU3wrk(i,j,k,M3hrad)=0.0_r8
-              DiaU3wrk(i,j,k,M3vrad)=0.0_r8
-#  endif
-#  ifdef UV_COR
-              DiaU3wrk(i,j,k,M3fcor)=0.0_r8
-#  endif
+              DiaU3wrk(i,j,k,M3rate)=cff1
 # endif
             END DO
           END DO
@@ -899,35 +898,20 @@
             DO i=IstrU,Iend
               cff1=u(i,j,k,nstp)*0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))
               cff2=FC(i,k)-FC(i,k-1)
+              cff3=0.5_r8*DC(i,0)
               u(i,j,k,nnew)=cff1-                                       &
-     &                      0.5_r8*DC(i,0)*ru(i,j,k,indx)+              &
+     &                      cff3*ru(i,j,k,indx)+                        &
      &                      cff2
 # ifdef DIAGNOSTICS_UV
-              DiaU3wrk(i,j,k,M3rate)=cff1
+              DO idiag=1,M3pgrd
+                DiaU3wrk(i,j,k,idiag)=-cff3*DiaRU(i,j,k,indx,idiag)
+              END DO
               DiaU3wrk(i,j,k,M3vvis)=cff2
-              DiaU3wrk(i,j,k,M3pgrd)=-0.5_r8*DC(i,0)*                   &
-     &                               DiaRU(i,j,k,indx,M3pgrd)
-#  ifdef UV_ADV
-              DiaU3wrk(i,j,k,M3hadv)=-0.5_r8*DC(i,0)*                   &
-     &                               DiaRU(i,j,k,indx,M3hadv)
-              DiaU3wrk(i,j,k,M3vadv)=-0.5_r8*DC(i,0)*                   &
-     &                               DiaRU(i,j,k,indx,M3vadv)
-#  endif
-#  ifdef NEARSHORE_MELLOR
-              DiaU3wrk(i,j,k,M3hrad)=-0.5_r8*DC(i,0)*                   &
-     &                               DiaRU(i,j,k,indx,M3hrad)
-              DiaU3wrk(i,j,k,M3vrad)=-0.5_r8*DC(i,0)*                   &
-     &                               DiaRU(i,j,k,indx,M3vrad)
-#  endif
-#  ifdef UV_COR
-              DiaU3wrk(i,j,k,M3fcor)=-0.5_r8*DC(i,0)*                   &
-     &                               DiaRU(i,j,k,indx,M3fcor)
-#  endif
 #  ifdef BODYFORCE
               DiaU3wrk(i,j,k,M3vvis)=DiaU3wrk(i,j,k,M3vvis)-            &
-     &                               0.5_r8*DC(i,0)*                    &
-     &                               DiaRU(i,j,k,indx,M3vvis)
+     &                               cff3*DiaRU(i,j,k,indx,M3vvis)
 #  endif
+              DiaU3wrk(i,j,k,M3rate)=cff1
 # endif
             END DO
           END DO
@@ -943,38 +927,19 @@
      &                               cff2*ru(i,j,k,indx))+              &
      &                      cff4
 # ifdef DIAGNOSTICS_UV
-              DiaU3wrk(i,j,k,M3rate)=cff3
+              DO idiag=1,M3pgrd
+                DiaU3wrk(i,j,k,idiag)=DC(i,0)*                          &
+     &                                (cff1*DiaRU(i,j,k,nrhs,idiag)-    &
+     &                                 cff2*DiaRU(i,j,k,indx,idiag))
+              END DO
               DiaU3wrk(i,j,k,M3vvis)=cff4
-              DiaU3wrk(i,j,k,M3pgrd)=DC(i,0)*                           &
-     &                               (cff1*DiaRU(i,j,k,nrhs,M3pgrd)-    &
-     &                                cff2*DiaRU(i,j,k,indx,M3pgrd))
-#  ifdef UV_ADV
-              DiaU3wrk(i,j,k,M3hadv)=DC(i,0)*                           &
-     &                               (cff1*DiaRU(i,j,k,nrhs,M3hadv)-    &
-     &                                cff2*DiaRU(i,j,k,indx,M3hadv))
-              DiaU3wrk(i,j,k,M3vadv)=DC(i,0)*                           &
-     &                               (cff1*DiaRU(i,j,k,nrhs,M3vadv)-    &
-     &                                cff2*DiaRU(i,j,k,indx,M3vadv))
-#  endif
-#  ifdef NEARSHORE_MELLOR
-              DiaU3wrk(i,j,k,M3hrad)=DC(i,0)*                           &
-     &                               (cff1*DiaRU(i,j,k,nrhs,M3hrad)-    &
-     &                                cff2*DiaRU(i,j,k,indx,M3hrad))
-              DiaU3wrk(i,j,k,M3vrad)=DC(i,0)*                           &
-     &                               (cff1*DiaRU(i,j,k,nrhs,M3vrad)-    &
-     &                                cff2*DiaRU(i,j,k,indx,M3vrad))
-#  endif
-#  ifdef UV_COR
-              DiaU3wrk(i,j,k,M3fcor)=DC(i,0)*                           &
-     &                               (cff1*DiaRU(i,j,k,nrhs,M3fcor)-    &
-     &                                cff2*DiaRU(i,j,k,indx,M3fcor))
-#  endif
 #  ifdef BODYFORCE
               DiaU3wrk(i,j,k,M3vvis)=DiaU3wrk(i,j,k,M3vvis)+            &
      &                               DC(i,0)*                           &
      &                               (cff1*DiaRU(i,j,k,nrhs,M3vvis)-    &
      &                                cff2*DiaRU(i,j,k,indx,M3vvis))
 #  endif
+              DiaU3wrk(i,j,k,M3rate)=cff3
 # endif
             END DO
           END DO
@@ -1024,20 +989,11 @@
                 cff2=FC(i,k)-FC(i,k-1)
                 v(i,j,k,nnew)=cff1+cff2
 # ifdef DIAGNOSTICS_UV
-                DiaV3wrk(i,j,k,M3rate)=cff1
+                DO idiag=1,M3pgrd
+                  DiaV3wrk(i,j,k,idiag)=0.0_r8
+                END DO
                 DiaV3wrk(i,j,k,M3vvis)=cff2
-                DiaV3wrk(i,j,k,M3pgrd)=0.0_r8
-#  ifdef UV_ADV
-                DiaV3wrk(i,j,k,M3hadv)=0.0_r8
-                DiaV3wrk(i,j,k,M3vadv)=0.0_r8
-#  endif
-#  ifdef NEARSHORE_MELLOR
-                DiaV3wrk(i,j,k,M3hrad)=0.0_r8
-                DiaV3wrk(i,j,k,M3vrad)=0.0_r8
-#  endif
-#  ifdef UV_COR
-                DiaV3wrk(i,j,k,M3fcor)=0.0_r8
-#  endif
+                DiaV3wrk(i,j,k,M3rate)=cff1
 # endif
               END DO
             END DO
@@ -1046,35 +1002,20 @@
               DO i=Istr,Iend
                 cff1=v(i,j,k,nstp)*0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))
                 cff2=FC(i,k)-FC(i,k-1)
+                cff3=0.5_r8*DC(i,0)
                 v(i,j,k,nnew)=cff1-                                     &
-     &                        0.5_r8*DC(i,0)*rv(i,j,k,indx)+            &
+     &                        cff3*rv(i,j,k,indx)+                      &
      &                        cff2
 # ifdef DIAGNOSTICS_UV
-                DiaV3wrk(i,j,k,M3rate)=cff1
+                DO idiag=1,M3pgrd
+                  DiaV3wrk(i,j,k,idiag)=-cff3*DiaRV(i,j,k,indx,idiag)
+                END DO
                 DiaV3wrk(i,j,k,M3vvis)=cff2
-                DiaV3wrk(i,j,k,M3pgrd)=-0.5_r8*DC(i,0)*                 &
-     &                                  DiaRV(i,j,k,indx,M3pgrd)
-#  ifdef UV_ADV
-                DiaV3wrk(i,j,k,M3hadv)=-0.5_r8*DC(i,0)*                 &
-     &                                  DiaRV(i,j,k,indx,M3hadv)
-                DiaV3wrk(i,j,k,M3vadv)=-0.5_r8*DC(i,0)*                 &
-     &                                  DiaRV(i,j,k,indx,M3vadv)
-#  endif
-#  ifdef NEARSHORE_MELLOR
-                DiaV3wrk(i,j,k,M3hrad)=-0.5_r8*DC(i,0)*                 &
-     &                                  DiaRV(i,j,k,indx,M3hrad)
-                DiaV3wrk(i,j,k,M3vrad)=-0.5_r8*DC(i,0)*                 &
-     &                                  DiaRV(i,j,k,indx,M3vrad)
-#  endif
-#  ifdef UV_COR
-                DiaV3wrk(i,j,k,M3fcor)=-0.5_r8*DC(i,0)*                 &
-     &                                  DiaRV(i,j,k,indx,M3fcor)
-#  endif
 #  ifdef BODYFORCE
                 DiaV3wrk(i,j,k,M3vvis)=DiaV3wrk(i,j,k,M3vvis)-          &
-     &                                 0.5_r8*DC(i,0)*                  &
-     &                                 DiaRV(i,j,k,indx,M3vvis)
+     &                                 cff3*DiaRV(i,j,k,indx,M3vvis)
 #  endif
+                DiaV3wrk(i,j,k,M3rate)=cff1
 # endif
               END DO
             END DO
@@ -1090,38 +1031,19 @@
      &                                 cff2*rv(i,j,k,indx))+            &
      &                        cff4
 # ifdef DIAGNOSTICS_UV
-                DiaV3wrk(i,j,k,M3rate)=cff3
+                DO idiag=1,M3pgrd
+                  DiaV3wrk(i,j,k,idiag)=DC(i,0)*                        &
+     &                                  (cff1*DiaRV(i,j,k,nrhs,idiag)-  &
+     &                                   cff2*DiaRV(i,j,k,indx,idiag))
+                END DO
                 DiaV3wrk(i,j,k,M3vvis)=cff4
-                DiaV3wrk(i,j,k,M3pgrd)=DC(i,0)*                         &
-     &                                 (cff1*DiaRV(i,j,k,nrhs,M3pgrd)-  &
-     &                                  cff2*DiaRV(i,j,k,indx,M3pgrd))
-#  ifdef UV_ADV
-                DiaV3wrk(i,j,k,M3hadv)=DC(i,0)*                         &
-     &                                 (cff1*DiaRV(i,j,k,nrhs,M3hadv)-  &
-     &                                  cff2*DiaRV(i,j,k,indx,M3hadv))
-                DiaV3wrk(i,j,k,M3vadv)=DC(i,0)*                         &
-     &                                 (cff1*DiaRV(i,j,k,nrhs,M3vadv)-  &
-     &                                  cff2*DiaRV(i,j,k,indx,M3vadv))
-#  endif
-#  ifdef NEARSHORE_MELLOR
-                DiaV3wrk(i,j,k,M3hrad)=DC(i,0)*                         &
-     &                                 (cff1*DiaRV(i,j,k,nrhs,M3hrad)-  &
-     &                                  cff2*DiaRV(i,j,k,indx,M3hrad))
-                DiaV3wrk(i,j,k,M3vrad)=DC(i,0)*                         &
-     &                                 (cff1*DiaRV(i,j,k,nrhs,M3vrad)-  &
-     &                                  cff2*DiaRV(i,j,k,indx,M3vrad))
-#  endif
-#  ifdef UV_COR
-                DiaV3wrk(i,j,k,M3fcor)=DC(i,0)*                         &
-     &                                 (cff1*DiaRV(i,j,k,nrhs,M3fcor)-  &
-     &                                  cff2*DiaRV(i,j,k,indx,M3fcor))
-#  endif
 #  ifdef BODYFORCE
                 DiaV3wrk(i,j,k,M3vvis)=DiaV3wrk(i,j,k,M3vvis)+          &
      &                                 DC(i,0)*                         &
      &                                 (cff1*DiaRV(i,j,k,nrhs,M3vvis)-  &
      &                                  cff2*DiaRV(i,j,k,indx,M3vvis))
 #  endif
+                DiaV3wrk(i,j,k,M3rate)=cff3
 # endif
               END DO
             END DO
@@ -1138,6 +1060,7 @@
       DO itrc=1,NT(ng)
         CALL t3dbc_tile (ng, tile, itrc,                                &
      &                   LBi, UBi, LBj, UBj, N(ng), NT(ng),             &
+     &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   nstp, 3,                                       &
      &                   t)
 #  if defined EW_PERIODIC || defined NS_PERIODIC

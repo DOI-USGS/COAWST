@@ -1,11 +1,12 @@
 #include "cppdefs.h"
       MODULE forcing_mod
 
-#if defined W4DPSAS || defined NLM_OUTER
+#if defined NLM_OUTER  || defined SENSITIVITY_4DVAR || \
+    defined TL_W4DPSAS || defined W4DPSAS
 !
 !svn $Id: forcing.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -42,6 +43,7 @@
 !
       CALL forcing_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
+     &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   Kfrc, Nfrc,                                    &
 # ifdef SOLVE3D
      &                   OCEAN(ng) % f_t,                               &
@@ -61,10 +63,9 @@
      &                   OCEAN(ng) % vbar,                              &
 # endif
 # ifdef SOLVE3D
-     &                   COUPLING(ng) % Zt_avg1)
-# else
-     &                   OCEAN(ng) % zeta)
+     &                   COUPLING(ng) % Zt_avg1,                        &
 # endif
+     &                   OCEAN(ng) % zeta)
 
       RETURN
       END SUBROUTINE forcing
@@ -72,6 +73,7 @@
 !***********************************************************************
       SUBROUTINE forcing_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         Kfrc, Nfrc,                              &
 # ifdef SOLVE3D
      &                         f_t, f_u, f_v,                           &
@@ -85,10 +87,9 @@
      &                         ubar, vbar,                              &
 # endif
 # ifdef SOLVE3D
-     &                         Zt_avg1)
-# else
-     &                         zeta)
+     &                         Zt_avg1,                                 &
 # endif
+     &                         zeta)
 !***********************************************************************
 !
       USE mod_param
@@ -100,6 +101,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: Kfrc
       integer, intent(in) :: Nfrc
 !
@@ -123,9 +125,8 @@
 #  endif
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: Zt_avg1(LBi:,LBj:)
-#  else
-      real(r8), intent(inout) :: zeta(LBi:,LBj:,:)
 #  endif
+      real(r8), intent(inout) :: zeta(LBi:,LBj:,:)
 # else
 #  ifdef SOLVE3D
       real(r8), intent(in) :: f_t(LBi:UBi,LBj:UBj,N(ng),NT(ng))
@@ -146,9 +147,8 @@
 #  endif
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: Zt_avg1(LBi:UBi,LBj:UBj)
-#  else
-      real(r8), intent(inout) :: zeta(LBi:UBi,LBj:UBj,3)
 #  endif
+      real(r8), intent(inout) :: zeta(LBi:UBi,LBj:UBj,3)
 # endif
 !
 !  Local variable declarations.
@@ -173,11 +173,19 @@
 !  Free-surface.
 !
 # ifdef SOLVE3D
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          Zt_avg1(i,j)=Zt_avg1(i,j)+f_zeta(i,j)
+      IF (iic(ng).eq.ntstart(ng)) THEN
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            zeta(i,j,Kfrc)=zeta(i,j,Kfrc)+f_zeta(i,j)
+          END DO
         END DO
-      END DO
+      ELSE
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            Zt_avg1(i,j)=Zt_avg1(i,j)+f_zeta(i,j)
+          END DO
+        END DO
+      END IF
 # else
       DO j=JstrR,JendR
         DO i=IstrR,IendR

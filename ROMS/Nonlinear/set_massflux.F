@@ -26,7 +26,7 @@
 !
 !svn $Id: set_massflux.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -68,6 +68,7 @@
 # endif
       CALL set_massflux_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nrhs(ng),                                 &
      &                        OCEAN(ng) % u,                            &
      &                        OCEAN(ng) % v,                            &
@@ -89,6 +90,7 @@
 !***********************************************************************
       SUBROUTINE set_massflux_tile (ng, tile,                           &
      &                              LBi, UBi, LBj, UBj,                 &
+     &                              IminS, ImaxS, JminS, JmaxS,         &
      &                              nrhs,                               &
      &                              u, v,                               &
 # ifdef NEARSHORE_MELLOR
@@ -113,6 +115,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
 !
 # ifdef ASSUMED_SHAPE
@@ -240,6 +243,7 @@
 #  endif
       CALL reset_massflux_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nnew(ng),                               &
      &                          COUPLING(ng) % DU_avg2,                 &
      &                          COUPLING(ng) % DV_avg2,                 &
@@ -263,6 +267,7 @@
 !***********************************************************************
       SUBROUTINE reset_massflux_tile (ng, tile,                         &
      &                                LBi, UBi, LBj, UBj,               &
+     &                                IminS, ImaxS, JminS, JmaxS,       &
      &                                nnew,                             &
      &                                DU_avg2, DV_avg2,                 &
      &                                u, v,                             &
@@ -287,6 +292,8 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
+
       integer, intent(in) :: nnew
 !
 #  ifdef ASSUMED_SHAPE
@@ -337,8 +344,8 @@
 #  endif
       integer :: i, j, k
 
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: DC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
 
 #  include "set_bounds.h"
 !

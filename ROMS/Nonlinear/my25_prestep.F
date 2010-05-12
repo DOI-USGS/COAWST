@@ -4,7 +4,7 @@
 !
 !svn $Id: my25_prestep.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -48,6 +48,7 @@
 # endif
       CALL my25_prestep_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nstp(ng), nnew(ng),                       &
 # ifdef MASKING
      &                        GRID(ng) % umask,                         &
@@ -70,6 +71,7 @@
 !***********************************************************************
       SUBROUTINE my25_prestep_tile (ng, tile,                           &
      &                              LBi, UBi, LBj, UBj,                 &
+     &                              IminS, ImaxS, JminS, JmaxS,         &
      &                              nstp, nnew,                         &
 # ifdef MASKING
      &                              umask, vmask,                       &
@@ -93,6 +95,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nstp, nnew
 !
 # ifdef ASSUMED_SHAPE
@@ -145,20 +148,20 @@
 
       real(r8) :: cff, cff1, cff2, cff3, cff4
 
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,N(ng)) :: CF
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,N(ng)) :: FC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,N(ng)) :: FCL
+      real(r8), dimension(IminS:ImaxS,N(ng)) :: CF
+      real(r8), dimension(IminS:ImaxS,N(ng)) :: FC
+      real(r8), dimension(IminS:ImaxS,N(ng)) :: FCL
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,N(ng)) :: Hz_half
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: Hz_half
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: EF
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FE
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FEL
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FX
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FXL
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: XF
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: grad
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: gradL
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: EF
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FEL
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FXL
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: XF
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: gradL
 
 # include "set_bounds.h"
 !
@@ -428,6 +431,7 @@
 !
       CALL tkebc_tile (ng, tile,                                        &
      &                 LBi, UBi, LBj, UBj, N(ng),                       &
+     &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 3, nstp,                                         &
      &                 gls, tke)
 # if defined EW_PERIODIC || defined NS_PERIODIC

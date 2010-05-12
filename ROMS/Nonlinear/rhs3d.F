@@ -4,7 +4,7 @@
 !
 !svn $Id: rhs3d.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -30,12 +30,12 @@
       USE mod_clima
 # endif
       USE mod_coupling
-# if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
+# ifdef DIAGNOSTICS_UV
       USE mod_diags
 # endif
       USE mod_forces
       USE mod_grid
-# ifdef NEARSHORE_MELLOR
+# ifdef NEARSHORE
       USE mod_mixing
 # endif
 # if defined ASSIMILATION || defined NUDGING
@@ -109,6 +109,7 @@
 # endif
       CALL rhs3d_tile (ng, tile,                                        &
      &                 LBi, UBi, LBj, UBj,                              &
+     &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 nrhs(ng),                                        &
      &                 GRID(ng) % Hz,                                   &
      &                 GRID(ng) % Huon,                                 &
@@ -141,10 +142,7 @@
      &                 OCEAN(ng) % u,                                   &
      &                 OCEAN(ng) % v,                                   &
      &                 OCEAN(ng) % W,                                   &
-# ifndef SET_ZETA
-     &                 COUPLING(ng) % Zt_avg1,                          &
-# endif
-# ifdef NEARSHORE_MELLOR
+# ifdef NEARSHORE
      &                 OCEAN(ng) % u_stokes,                            &
      &                 OCEAN(ng) % v_stokes,                            &
      &                 OCEAN(ng) % rulag3d,                             &
@@ -161,12 +159,7 @@
      &                 DIAGS(ng) % DiaRV,                               &
 # endif
      &                 OCEAN(ng) % ru,                                  &
-# ifdef SET_ZETA
      &                 OCEAN(ng) % rv)
-# else
-     &                 OCEAN(ng) % rv,                                  &
-     &                 OCEAN(ng) % zeta)
-# endif
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 21)
 # endif
@@ -192,6 +185,7 @@
 !***********************************************************************
       SUBROUTINE rhs3d_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       nrhs,                                      &
      &                       Hz, Huon, Hvom,                            &
 # if defined CURVGRID && defined UV_ADV
@@ -208,10 +202,7 @@
      &                       EobsUV, Uobs, Vobs,                        &
 # endif
      &                       u, v, W,                                   &
-# ifndef SET_ZETA
-     &                       Zt_avg1,                                   &
-# endif
-# ifdef NEARSHORE_MELLOR
+# ifdef NEARSHORE
      &                       u_stokes, v_stokes,                        &
      &                       rulag3d, rvlag3d,                          &
      &                       rustr3d, rvstr3d,                          &
@@ -221,31 +212,17 @@
      &                       DiaRUfrc, DiaRVfrc,                        &
      &                       DiaRU, DiaRV,                              &
 # endif
-# ifdef SET_ZETA
      &                       ru, rv)
-# else
-     &                       ru, rv,                                    &
-     &                       zeta)
-# endif
 !***********************************************************************
 !
       USE mod_param
       USE mod_scalars
-
-# ifndef SET_ZETA
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-!
-      USE exchange_2d_mod, ONLY : exchange_r2d_tile
-#  endif
-#  ifdef DISTRIBUTE
-      USE mp_exchange_mod, ONLY : mp_exchange2d
-#  endif
-# endif
 !
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
 !
 # ifdef ASSUMED_SHAPE
@@ -280,10 +257,7 @@
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
-#  ifndef SET_ZETA
-      real(r8), intent(in) :: Zt_avg1(LBi:,LBj:)
-#  endif
-#  ifdef NEARSHORE_MELLOR
+#  ifdef NEARSHORE
       real(r8), intent(in) :: u_stokes(LBi:,LBj:,:)
       real(r8), intent(in) :: v_stokes(LBi:,LBj:,:)
       real(r8), intent(in) :: rulag3d(LBi:,LBj:,:)
@@ -302,9 +276,6 @@
 
       real(r8), intent(out) :: rufrc(LBi:,LBj:)
       real(r8), intent(out) :: rvfrc(LBi:,LBj:)
-#  ifndef SET_ZETA
-      real(r8), intent(out) :: zeta(LBi:,LBj:,:)
-#  endif
 # else
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: Huon(LBi:UBi,LBj:UBj,N(ng))
@@ -337,10 +308,7 @@
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
-#  ifndef SET_ZETA
-      real(r8), intent(in) :: Zt_avg1(LBi:UBi,LBj:UBj)
-#  endif
-#  ifdef NEARSHORE_MELLOR
+#  ifdef NEARSHORE
       real(r8), intent(in) :: u_stokes(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: v_stokes(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: rulag3d(LBi:UBi,LBj:UBj,N(ng))
@@ -359,9 +327,6 @@
 
       real(r8), intent(out) :: rufrc(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: rvfrc(LBi:UBi,LBj:UBj)
-#  ifndef SET_ZETA
-      real(r8), intent(out) :: zeta(LBi:UBi,LBj:UBj,3)
-#  endif
 # endif
 !
 !  Local variable declarations.
@@ -385,25 +350,25 @@
       real(r8) :: cff, cff1, cff2, cff3, cff4
       real(r8) :: fac, fac1, fac2
 
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: CF
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: DC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Huee
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Huxx
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Hvee
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Hvxx
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: UFx
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: UFe
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Uwrk
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: VFx
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: VFe
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Vwrk
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: uee
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: uxx
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: vee
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: vxx
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: wrk
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Huee
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Huxx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Hvee
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Hvxx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFe
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Uwrk
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: VFx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: VFe
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Vwrk
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: uee
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: uxx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: vee
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: vxx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wrk
 
 # include "set_bounds.h"
 
@@ -418,8 +383,8 @@
       DO k=1,N(ng)
         DO j=Jstr,Jend
           DO i=Istr,Iend
-            DiaRU(i,j,k,M3vvis)=0.0_r8
-            DiaRV(i,j,k,M3vvis)=0.0_r8
+            DiaRU(i,j,k,nrhs,M3vvis)=0.0_r8
+            DiaRV(i,j,k,nrhs,M3vvis)=0.0_r8
           END DO
         END DO
       END DO
@@ -548,33 +513,15 @@
 !
       K_LOOP : DO k=1,N(ng)
 
-# if defined UV_COR || (defined CURVGRID && defined UV_ADV)
+# ifdef UV_COR
 !
 !-----------------------------------------------------------------------
-!  Add in Coriolis and curvilinear transformation terms, if any.
+!  Add in Coriolis terms.
 !-----------------------------------------------------------------------
 !
         DO j=JstrV-1,Jend
           DO i=IstrU-1,Iend
-            cff=0.5_r8*Hz(i,j,k)*(                                      &
-#  ifdef UV_COR
-     &          fomn(i,j)                                               &
-#  endif
-#  if (defined CURVGRID && defined UV_ADV)
-     &         +0.5_r8*((v(i,j  ,k,nrhs)+                               &
-#   ifdef NEARSHORE_MELLOR
-     &                   v_stokes(i,j  ,k)+                             &
-     &                   v_stokes(i,j+1,k)+                             &
-#   endif
-     &                   v(i,j+1,k,nrhs))*dndx(i,j)-                    &
-     &                  (u(i  ,j,k,nrhs)+                               &
-#   ifdef NEARSHORE_MELLOR
-     &                   u_stokes(i  ,j,k)+                             &
-     &                   u_stokes(i+1,j,k)+                             &
-#   endif
-     &                   u(i+1,j,k,nrhs))*dmde(i,j))                    &
-#  endif
-     &          )
+            cff=0.5_r8*Hz(i,j,k)*fomn(i,j)
             UFx(i,j)=cff*(v(i,j  ,k,nrhs)+                              &
 #  ifdef NEARSHORE_MELLOR
      &                    v_stokes(i,j  ,k)+                            &
@@ -587,26 +534,56 @@
      &                    u_stokes(i+1,j,k)+                            &
 #  endif
      &                    u(i+1,j,k,nrhs))
+          END DO
+        END DO
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff1=0.5_r8*(UFx(i,j)+UFx(i-1,j))
+            ru(i,j,k,nrhs)=ru(i,j,k,nrhs)+cff1
 #  ifdef DIAGNOSTICS_UV
-#   ifdef UV_COR
-            Uwrk(i,j)=0.5_r8*Hz(i,j,k)*fomn(i,j)*                       &
-     &                (v(i,j  ,k,nrhs)+                                 &
-#   ifdef NEARSHORE_MELLOR
-     &                 v_stokes(i,j  ,k)+                               &
-     &                 v_stokes(i,j+1,k)+                               &
-#   endif
-     &                 v(i,j+1,k,nrhs))
-            Vwrk(i,j)=0.5_r8*Hz(i,j,k)*fomn(i,j)*                       &
-     &                (u(i  ,j,k,nrhs)+                                 &
-#   ifdef NEARSHORE_MELLOR
-     &                 u_stokes(i  ,j,k)+                               &
-     &                 u_stokes(i+1,j,k)+                               &
-#   endif
-     &                 u(i+1,j,k,nrhs))
-#   else
-            Uwrk(i,j)=0.0_r8
-            Vwrk(i,j)=0.0_r8
-#   endif
+            DiaRU(i,j,k,nrhs,M3fcor)=cff1
+#  endif
+          END DO
+        END DO
+        DO j=JstrV,Jend
+          DO i=Istr,Iend
+            cff1=0.5_r8*(VFe(i,j)+VFe(i,j-1))
+            rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff1
+#  ifdef DIAGNOSTICS_UV
+            DiaRV(i,j,k,nrhs,M3fcor)=-cff1
+#  endif
+          END DO
+        END DO
+# endif
+# if defined CURVGRID && defined UV_ADV
+!
+!-----------------------------------------------------------------------
+!  Add in curvilinear transformation terms.
+!-----------------------------------------------------------------------
+!
+        DO j=JstrV-1,Jend
+          DO i=IstrU-1,Iend
+            cff1=0.5_r8*(v(i,j  ,k,nrhs)+                               &
+#  ifdef NEARSHORE_MELLOR
+     &                   v_stokes(i,j  ,k)+                             &
+     &                   v_stokes(i,j+1,k)+                             &
+#  endif
+     &                   v(i,j+1,k,nrhs))
+            cff2=0.5_r8*(u(i  ,j,k,nrhs)+                               &
+#  ifdef NEARSHORE_MELLOR
+     &                   u_stokes(i  ,j,k)+                             &
+     &                   u_stokes(i+1,j,k)+                             &
+#  endif
+     &                   u(i+1,j,k,nrhs))
+            cff3=cff1*dndx(i,j)
+            cff4=cff2*dmde(i,j)
+            cff=Hz(i,j,k)*(cff3-cff4)
+            UFx(i,j)=cff*cff1
+            VFe(i,j)=cff*cff2
+#  if defined DIAGNOSTICS_UV
+            cff=Hz(i,j,k)*cff4
+            Uwrk(i,j)=-cff*cff1                ! u equation, ETA-term
+            Vwrk(i,j)=-cff*cff2                ! v equation, ETA-term
 #  endif
           END DO
         END DO
@@ -616,12 +593,9 @@
             ru(i,j,k,nrhs)=ru(i,j,k,nrhs)+cff1
 #  ifdef DIAGNOSTICS_UV
             cff2=0.5_r8*(Uwrk(i,j)+Uwrk(i-1,j))
-#   ifdef UV_COR
-            DiaRU(i,j,k,nrhs,M3fcor)=cff2
-#   endif
-#   if defined UV_ADV && defined CURVGRID
-            DiaRU(i,j,k,nrhs,M3hadv)=cff1-cff2
-#   endif
+            DiaRU(i,j,k,nrhs,M3xadv)=cff1-cff2
+            DiaRU(i,j,k,nrhs,M3yadv)=cff2
+            DiaRU(i,j,k,nrhs,M3hadv)=cff1
 #  endif
           END DO
         END DO
@@ -631,12 +605,9 @@
             rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff1
 #  ifdef DIAGNOSTICS_UV
             cff2=0.5_r8*(Vwrk(i,j)+Vwrk(i,j-1))
-#   ifdef UV_COR
-            DiaRV(i,j,k,nrhs,M3fcor)=-cff2
-#   endif
-#   if defined UV_ADV && defined CURVGRID
-            DiaRV(i,j,k,nrhs,M3hadv)=-cff1+cff2
-#   endif
+            DiaRV(i,j,k,nrhs,M3xadv)=-cff1+cff2
+            DiaRV(i,j,k,nrhs,M3yadv)=-cff2
+            DiaRV(i,j,k,nrhs,M3hadv)=-cff1
 #  endif
           END DO
         END DO
@@ -1104,13 +1075,18 @@
 !
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-            cff=UFx(i,j)-UFx(i-1,j)+                                    &
-     &          UFe(i,j+1)-UFe(i,j)
+            cff1=UFx(i,j)-UFx(i-1,j)
+            cff2=UFe(i,j+1)-UFe(i,j)
+            cff=cff1+cff2
             ru(i,j,k,nrhs)=ru(i,j,k,nrhs)-cff
 #  ifdef DIAGNOSTICS_UV
 #   ifdef CURVGRID
+            DiaRU(i,j,k,nrhs,M3xadv)=DiaRU(i,j,k,nrhs,M3xadv)-cff1
+            DiaRU(i,j,k,nrhs,M3yadv)=DiaRU(i,j,k,nrhs,M3yadv)-cff2
             DiaRU(i,j,k,nrhs,M3hadv)=DiaRU(i,j,k,nrhs,M3hadv)-cff
 #   else
+            DiaRU(i,j,k,nrhs,M3xadv)=-cff1
+            DiaRU(i,j,k,nrhs,M3yadv)=-cff2
             DiaRU(i,j,k,nrhs,M3hadv)=-cff
 #   endif
 #  endif
@@ -1118,23 +1094,29 @@
         END DO
         DO j=JstrV,Jend
           DO i=Istr,Iend
-            cff=VFx(i+1,j)-VFx(i,j)+                                    &
-     &          VFe(i,j)-VFe(i,j-1)
+            cff1=VFx(i+1,j)-VFx(i,j)
+            cff2=VFe(i,j)-VFe(i,j-1)
+            cff=cff1+cff2
             rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff
 #  ifdef DIAGNOSTICS_UV
 #   ifdef CURVGRID
+            DiaRV(i,j,k,nrhs,M3xadv)=DiaRV(i,j,k,nrhs,M3xadv)-cff1
+            DiaRV(i,j,k,nrhs,M3yadv)=DiaRV(i,j,k,nrhs,M3yadv)-cff2
             DiaRV(i,j,k,nrhs,M3hadv)=DiaRV(i,j,k,nrhs,M3hadv)-cff
 #   else
+            DiaRV(i,j,k,nrhs,M3xadv)=-cff1
+            DiaRV(i,j,k,nrhs,M3yadv)=-cff2
             DiaRV(i,j,k,nrhs,M3hadv)=-cff
 #   endif
 #  endif
           END DO
         END DO
 # endif
-# ifdef NEARSHORE_MELLOR
+# ifdef NEARSHORE
 !
 !-----------------------------------------------------------------------
-!  Add in radiation stress terms. Convert stresses to m4/s2.
+!  Add in radiation stress or Vertical Vortex Force terms.
+!  Convert stresses to m4/s2.
 !-----------------------------------------------------------------------
 !
         DO j=Jstr,Jend
@@ -1688,12 +1670,16 @@
           DiaRUfrc(i,j,3,M2fcor)=DiaRU(i,j,1,nrhs,M3fcor)
 #  endif
 #  ifdef UV_ADV
+          DiaRUfrc(i,j,3,M2xadv)=DiaRU(i,j,1,nrhs,M3xadv)
+          DiaRUfrc(i,j,3,M2yadv)=DiaRU(i,j,1,nrhs,M3yadv)
           DiaRUfrc(i,j,3,M2hadv)=DiaRU(i,j,1,nrhs,M3hadv)
 #  endif
 #  ifdef NEARSHORE_MELLOR
           DiaRUfrc(i,j,3,M2hrad)=DiaRU(i,j,1,nrhs,M3hrad)
 #  endif
 #  if defined UV_VIS2 || defined UV_VIS4
+          DiaRUfrc(i,j,3,M2xvis)=0.0_r8
+          DiaRUfrc(i,j,3,M2yvis)=0.0_r8
           DiaRUfrc(i,j,3,M2hvis)=0.0_r8
 #  endif
 #  ifdef BODYFORCE
@@ -1712,6 +1698,10 @@
      &                             DiaRU(i,j,k,nrhs,M3fcor)
 #  endif
 #  ifdef UV_ADV
+            DiaRUfrc(i,j,3,M2xadv)=DiaRUfrc(i,j,3,M2xadv)+              &
+     &                             DiaRU(i,j,k,nrhs,M3xadv)
+            DiaRUfrc(i,j,3,M2yadv)=DiaRUfrc(i,j,3,M2yadv)+              &
+     &                             DiaRU(i,j,k,nrhs,M3yadv)
             DiaRUfrc(i,j,3,M2hadv)=DiaRUfrc(i,j,3,M2hadv)+              &
      &                             DiaRU(i,j,k,nrhs,M3hadv)
 #  endif
@@ -1747,6 +1737,8 @@
             DiaRVfrc(i,j,3,M2fcor)=DiaRV(i,j,1,nrhs,M3fcor)
 #  endif
 #  ifdef UV_ADV
+            DiaRVfrc(i,j,3,M2xadv)=DiaRV(i,j,1,nrhs,M3xadv)
+            DiaRVfrc(i,j,3,M2yadv)=DiaRV(i,j,1,nrhs,M3yadv)
             DiaRVfrc(i,j,3,M2hadv)=DiaRV(i,j,1,nrhs,M3hadv)
 #  endif
 #  ifdef NEARSHORE_MELLOR
@@ -1754,6 +1746,8 @@
 #  endif
 #  if defined UV_VIS2 || defined UV_VIS4
             DiaRVfrc(i,j,3,M2hvis)=0.0_r8
+            DiaRVfrc(i,j,3,M2xvis)=0.0_r8
+            DiaRVfrc(i,j,3,M2yvis)=0.0_r8
 #  endif
 #  ifdef BODYFORCE
 !           DiaRVfrc(i,j,3,M2strs)=DiaRV(i,j,1,nrhs,M3vvis)
@@ -1771,6 +1765,10 @@
      &                               DiaRV(i,j,k,nrhs,M3fcor)
 #  endif
 #  ifdef UV_ADV
+              DiaRVfrc(i,j,3,M2xadv)=DiaRVfrc(i,j,3,M2xadv)+            &
+     &                               DiaRV(i,j,k,nrhs,M3xadv)
+              DiaRVfrc(i,j,3,M2yadv)=DiaRVfrc(i,j,3,M2yadv)+            &
+     &                               DiaRV(i,j,k,nrhs,M3yadv)
               DiaRVfrc(i,j,3,M2hadv)=DiaRVfrc(i,j,3,M2hadv)+            &
      &                               DiaRV(i,j,k,nrhs,M3hadv)
 #  endif
@@ -1799,34 +1797,7 @@
 # endif
         END IF
       END DO J_LOOP
-# ifndef SET_ZETA
-!
-!  Prepare to time-step 2D equations:  set initial free-surface
-!  to its fast-time averaged values (which corresponds to the time
-!  step "n").
-!
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          zeta(i,j,1)=Zt_avg1(i,j)
-          zeta(i,j,2)=Zt_avg1(i,j)
-        END DO
-      END DO
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        zeta(:,:,1))
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        zeta(:,:,2))
-#  endif
-#  ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    zeta(:,:,1),                                  &
-     &                    zeta(:,:,2))
-#  endif
-# endif
+
       RETURN
       END SUBROUTINE rhs3d_tile
 #endif

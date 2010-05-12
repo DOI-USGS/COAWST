@@ -3,7 +3,7 @@
 !
 !svn $Id: get_data.F 800 2008-10-21 00:17:29Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -30,7 +30,8 @@
 #if defined ASSIMILATION || defined NUDGING
       USE mod_obs
 #endif
-#if defined TLM_CHECK || defined W4DPSAS || defined NLM_OUTER
+#if defined NLM_OUTER || defined TLM_CHECK || defined TL_W4DPSAS || \
+    defined W4DPSAS   || defined W4DPSAS_SENSITIVITY
       USE mod_ocean
 #endif
       USE mod_scalars
@@ -109,7 +110,7 @@
 !  Tracer Sources/Sinks.
 !
       DO i=1,NT(ng)
-        IF (SOURCES(ng)%Ltracer(i)) THEN
+        IF (LtracerSrc(i,ng)) THEN
           CALL get_ngfld (ng, iNLM, idRtrc(i), ncFRCid(idRtrc(i),ng),   &
      &                    nFfiles(ng), FRCname(1,ng), update(1),        &
      &                    1, Nsrc(ng), N(ng), 2, 1, Nsrc(ng), N(ng),    &
@@ -163,8 +164,32 @@
 #  endif
      &                FORCES(ng) % svstrG(LBi,LBj,1))
 # endif
-#endif
 
+# if defined FOUR_DVAR && defined BULK_FLUXES && defined NL_BULK_FLUXES
+!
+!-----------------------------------------------------------------------
+!  If not first NLM run, get surface wind stress components from initial
+!  NLM run.
+!-----------------------------------------------------------------------
+!
+      IF (Nrun.gt.1) THEN
+        CALL get_2dfld (ng, iNLM, idUsms, ncBLKid(ng), 1,               &
+     &                  BLKname(ng), update(1),                         &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
+#  ifdef MASKING
+     &                  GRID(ng) % umask(LBi,LBj),                      &
+#  endif
+     &                  FORCES(ng) % sustrG(LBi,LBj,1))
+        CALL get_2dfld (ng, iNLM, idVsms, ncBLKid(ng), 1,               &
+     &                  BLKname(ng), update(1),                         &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
+#  ifdef MASKING
+     &                  GRID(ng) % vmask(LBi,LBj),                      &
+#  endif
+     &                  FORCES(ng) % svstrG(LBi,LBj,1))
+      END IF
+# endif
+#endif
 #if !defined ANA_WWAVE && defined WAVE_DATA
 !
 !-----------------------------------------------------------------------
@@ -388,6 +413,24 @@
      &                FORCES(ng) % stflxG(LBi,LBj,1,itemp))
 # endif
 
+# if !defined ANA_STFLUX  && defined FOUR_DVAR      && \
+      defined BULK_FLUXES && defined NL_BULK_FLUXES
+!
+!-----------------------------------------------------------------------
+!  If not first NLM run, get surface net heat flux from initial NLM run.
+!-----------------------------------------------------------------------
+!
+      IF (Nrun.gt.1) THEN
+        CALL get_2dfld (ng, iNLM, idTsur(itemp), ncBLKid(ng), 1,        &
+     &                  BLKname(ng), update(1),                         &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
+#  ifdef MASKING
+     &                  GRID(ng) % rmask(LBi,LBj),                      &
+#  endif
+     &                  FORCES(ng) % stflxG(LBi,LBj,1,itemp))
+      END IF
+# endif
+
 # if !defined ANA_SST && defined QCORRECTION
 !
 !-----------------------------------------------------------------------
@@ -428,7 +471,21 @@
 # endif
 
 # ifdef SALINITY
-#  if !(defined ANA_SSFLUX || defined EMINUSP || defined SRELAXATION)
+#  if defined NL_BULK_FLUXES && !defined BULK_FLUXES
+!
+!-----------------------------------------------------------------------
+!  Surface net freshwater flux (E-P) from NLM bulk flux computation.
+!-----------------------------------------------------------------------
+!
+      CALL get_2dfld (ng, iRPM, idEmPf, ncFRCid(idEmPf,ng),             &
+     &                nFfiles(ng), FRCname(1,ng), update(1),            &
+     &                LBi, UBi, LBj, UBj, 2, 1,                         &
+#   ifdef MASKING
+     &                GRID(ng) % rmask(LBi,LBj),                        &
+#   endif
+     &                FORCES(ng) % stflxG(LBi,LBj,1,isalt))
+
+#  elif !(defined ANA_SSFLUX || defined EMINUSP || defined SRELAXATION)
 !
 !-----------------------------------------------------------------------
 !  Surface net freshwater flux: E-P.
@@ -441,6 +498,25 @@
      &                GRID(ng) % rmask(LBi,LBj),                        &
 #   endif
      &                FORCES(ng) % stflxG(LBi,LBj,1,isalt))
+#  endif
+
+#  if !defined ANA_STFLUX  && defined FOUR_DVAR      && \
+       defined BULK_FLUXES && defined NL_BULK_FLUXES && \
+       defined EMINUSP
+!
+!-----------------------------------------------------------------------
+!  If not first NLM run, get freshwater flux (E-P) from initial NLM run.
+!-----------------------------------------------------------------------
+!
+      IF (Nrun.gt.1) THEN
+        CALL get_2dfld (ng, iNLM, idEmPf, ncBLKid(ng), 1,               &
+     &                  BLKname(ng), update(1),                         &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
+#   ifdef MASKING
+     &                  GRID(ng) % rmask(LBi,LBj),                      &
+#   endif
+     &                  FORCES(ng) % stflxG(LBi,LBj,1,isalt))
+      END IF
 #  endif
 
 #  if !defined ANA_SSS && (defined SCORRECTION || defined SRELAXATION)
@@ -511,6 +587,7 @@
 #  endif
 # endif
 #endif
+
 #ifdef OBC_DATA
 # ifdef REFINED_GRID
       IF (ng.eq.1) THEN
@@ -762,43 +839,26 @@
 !  Read in assimilation data from ASSIMILATION NetCDF files.
 !=======================================================================
 !
-# if defined NUDGING_SSH || defined ASSIMILATION_SSH
+# ifdef ASSIMILATION_SSH
 !
 !-----------------------------------------------------------------------
 !  Read in sea surface height observations and error variance.
 !-----------------------------------------------------------------------
 !
       IF (assi_SSH(ng)) THEN
-#  ifdef NUDGING_SSH
-        CALL get_2dfld (ng, iNLM, idSSHo, ncSSHid(ng), 1,               &
-     &                  SSHname(ng), update(1),                         &
-     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
-#   ifdef MASKING
-     &                  GRID(ng) % rmask(LBi,LBj),                      &
-#   endif
-     &                  OBS(ng) % SSHdat(LBi,LBj,1))
-        CALL get_2dfld (ng, iNLM, idSSHe, ncSSHid(ng), 1,               &
-     &                  SSHname(ng), update(2),                         &
-     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
-#   ifdef MASKING
-     &                  GRID(ng) % rmask(LBi,LBj),                      &
-#   endif
-     &                  OBS(ng) % EdatSSH(LBi,LBj,1))
-        IF (update(1).and.update(2)) update_SSH(ng)=.TRUE.
-#  else
         CALL get_2dfld (ng, iNLM, idSSHo, ncSSHid(ng), 1,               &
      &                  SSHname(ng), update(1),                         &
      &                  LBi, UBi, LBj, UBj, 1, 1,                       &
-#   ifdef MASKING
+#  ifdef MASKING
      &                  GRID(ng) % rmask(LBi,LBj),                      &
-#   endif
+#  endif
      &                  OBS(ng) % SSHobs(LBi,LBj))
         CALL get_2dfld (ng, iNLM, idSSHe, ncSSHid(ng), 1,               &
      &                  SSHname(ng), update(2),                         &
      &                  LBi, UBi, LBj, UBj, 1, 1,                       &
-#   ifdef MASKING
+#  ifdef MASKING
      &                  GRID(ng) % rmask(LBi,LBj),                      &
-#   endif
+#  endif
      &                  OBS(ng) % EobsSSH(LBi,LBj))
         IF (update(1).and.update(2)) THEN
           update_SSH(ng)=.TRUE.
@@ -809,7 +869,6 @@
           EobsSSHmin(ng)=Finfo(8,idSSHe,ng)
           EobsSSHmax(ng)=Finfo(9,idSSHe,ng)
         END IF
-#  endif
       END IF
 # endif
 
@@ -1103,7 +1162,8 @@
       END IF
 #endif
 
-#if defined W4DPSAS || defined NLM_OUTER
+#if defined NLM_OUTER || defined TL_W4DPSAS           || \
+    defined W4DPSAS   || defined W4DPSAS_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  Read weak contraint forcing snapshots. Notice that the forward
@@ -1121,23 +1181,25 @@
      &                  GRID(ng) % rmask(LBi,LBj),                      &
 # endif
      &                  OCEAN(ng) % zetaG(LBi,LBj,1))
+# ifndef SOLVE3D
 !
 !  Read 2D momentum.
 !
         CALL get_2dfld (ng, iNLM, idUbar, ncTLFid(ng), 1,               &
      &                  TLFname(ng), update(1),                         &
      &                  LBi, UBi, LBj, UBj, 2, 1,                       &
-# ifdef MASKING
+#  ifdef MASKING
      &                  GRID(ng) % umask(LBi,LBj),                      &
-# endif
+#  endif
      &                  OCEAN(ng) % ubarG(LBi,LBj,1))
         CALL get_2dfld (ng, iNLM, idVbar, ncTLFid(ng), 1,               &
      &                  TLFname(ng), update(1),                         &
      &                  LBi, UBi, LBj, UBj, 2, 1,                       &
-# ifdef MASKING
+#  ifdef MASKING
      &                  GRID(ng) % vmask(LBi,LBj),                      &
-# endif
+#  endif
      &                  OCEAN(ng) % vbarG(LBi,LBj,1))
+# endif
 # ifdef SOLVE3D
 !
 !  Read in 3D momentum.

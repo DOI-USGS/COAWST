@@ -2,7 +2,7 @@
 !
 !svn $Id: uv3dmix2_s.h 732 2008-09-07 01:55:51Z jcwarner $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -54,6 +54,7 @@
 #endif
       CALL uv3dmix2_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    nrhs(ng), nnew(ng),                           &
 #ifdef MASKING
      &                    GRID(ng) % pmask,                             &
@@ -94,6 +95,7 @@
 !***********************************************************************
       SUBROUTINE uv3dmix2_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nrhs, nnew,                             &
 #ifdef MASKING
      &                          pmask,                                  &
@@ -121,6 +123,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs, nnew
 
 #ifdef ASSUMED_SHAPE
@@ -191,14 +194,14 @@
 !
       integer :: i, j, k
 
-      real(r8) :: cff, cff1, cff2
+      real(r8) :: cff, cff1, cff2, cff3
 #ifdef VISC_3DCOEF
       real(r8) :: visc_p
 #endif
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: UFe
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: VFe
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: UFx
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: VFx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFe
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: VFe
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: VFx
 
 #include "set_bounds.h"
 !
@@ -260,33 +263,37 @@
 !
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-            cff=0.25_r8*(pm(i-1,j)+pm(i,j))*(pn(i-1,j)+pn(i,j))
-            cff1=0.5_r8*((pn(i-1,j)+pn(i,j))*                           &
-     &                   (UFx(i,j  )-UFx(i-1,j))+                       &
-     &                   (pm(i-1,j)+pm(i,j))*                           &
-     &                   (UFe(i,j+1)-UFe(i  ,j)))
-            cff2=dt(ng)*cff*cff1
-            rufrc(i,j)=rufrc(i,j)+cff1
-            u(i,j,k,nnew)=u(i,j,k,nnew)+cff2
+            cff=dt(ng)*0.25_r8*(pm(i-1,j)+pm(i,j))*(pn(i-1,j)+pn(i,j))
+            cff1=0.5_r8*(pn(i-1,j)+pn(i,j))*(UFx(i,j  )-UFx(i-1,j))
+            cff2=0.5_r8*(pm(i-1,j)+pm(i,j))*(UFe(i,j+1)-UFe(i  ,j))
+            cff3=cff*(cff1+cff2)
+            rufrc(i,j)=rufrc(i,j)+cff1+cff2
+            u(i,j,k,nnew)=u(i,j,k,nnew)+cff3
 #ifdef DIAGNOSTICS_UV
-            DiaRUfrc(i,j,3,M2hvis)=DiaRUfrc(i,j,3,M2hvis)+cff1
-            DiaU3wrk(i,j,k,M3hvis)=cff2
+            DiaRUfrc(i,j,3,M2hvis)=DiaRUfrc(i,j,3,M2hvis)+cff1+cff2
+            DiaRUfrc(i,j,3,M2xvis)=DiaRUfrc(i,j,3,M2xvis)+cff1
+            DiaRUfrc(i,j,3,M2yvis)=DiaRUfrc(i,j,3,M2yvis)+cff2
+            DiaU3wrk(i,j,k,M3hvis)=cff3
+            DiaU3wrk(i,j,k,M3xvis)=cff*cff1
+            DiaU3wrk(i,j,k,M3yvis)=cff*cff2
 #endif
           END DO
         END DO
         DO j=JstrV,Jend
           DO i=Istr,Iend
-            cff=0.25_r8*(pm(i,j)+pm(i,j-1))*(pn(i,j)+pn(i,j-1))
-            cff1=0.5_r8*((pn(i,j-1)+pn(i,j))*                           &
-     &                   (VFx(i+1,j)-VFx(i,j  ))-                       &
-     &                   (pm(i,j-1)+pm(i,j))*                           &
-     &                   (VFe(i  ,j)-VFe(i,j-1)))
-            cff2=dt(ng)*cff*cff1
-            rvfrc(i,j)=rvfrc(i,j)+cff1
-            v(i,j,k,nnew)=v(i,j,k,nnew)+cff2
+            cff=dt(ng)*0.25_r8*(pm(i,j)+pm(i,j-1))*(pn(i,j)+pn(i,j-1))
+            cff1=0.5_r8*(pn(i,j-1)+pn(i,j))*(VFx(i+1,j)-VFx(i,j  ))
+            cff2=0.5_r8*(pm(i,j-1)+pm(i,j))*(VFe(i  ,j)-VFe(i,j-1))
+            cff3=cff*(cff1-cff2)
+            rvfrc(i,j)=rvfrc(i,j)+cff1-cff2
+            v(i,j,k,nnew)=v(i,j,k,nnew)+cff3
 #ifdef DIAGNOSTICS_UV
-            DiaRVfrc(i,j,3,M2hvis)=DiaRVfrc(i,j,3,M2hvis)+cff1
-            DiaV3wrk(i,j,k,M3hvis)=cff2
+            DiaRVfrc(i,j,3,M2hvis)=DiaRVfrc(i,j,3,M2hvis)+cff1-cff2
+            DiaRVfrc(i,j,3,M2xvis)=DiaRVfrc(i,j,3,M2xvis)+cff1
+            DiaRVfrc(i,j,3,M2yvis)=DiaRVfrc(i,j,3,M2yvis)-cff2
+            DiaV3wrk(i,j,k,M3hvis)=cff3
+            DiaV3wrk(i,j,k,M3xvis)= cff*cff1
+            DiaV3wrk(i,j,k,M3yvis)=-cff*cff2
 #endif
           END DO
         END DO

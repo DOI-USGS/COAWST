@@ -8,7 +8,7 @@
 !
 !svn $Id: main2d.F 838 2008-11-17 04:22:18Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -33,13 +33,17 @@
 # ifdef TLM_CHECK
       USE dotproduct_mod, ONLY : nl_dotproduct
 # endif
-# if defined W4DPSAS || defined NLM_OUTER
+# if defined W4DPSAS || defined NLM_OUTER || \
+     defined W4DPSAS_SENSITIVITY
       USE forcing_mod, ONLY : forcing
 # endif
 # ifdef ADJUST_WSTRESS
-      USE frc_adjust_mod, ONLY : load_NLforcing
+      USE frc_adjust_mod, ONLY : frc_adjust
 # endif
-      USE ini_fields_mod, ONLY : ini_fields
+      USE ini_fields_mod, ONLY : ini_fields, ini_zeta
+# if defined ADJUST_BOUNDARY
+      USE obc_adjust_mod, ONLY : obc_adjust, load_obc
+# endif
 # ifdef AIR_OCEAN
       USE ocean_coupler_mod, ONLY : ocn2atm_coupling
 # endif
@@ -108,7 +112,8 @@
       END DO
 # endif
 
-# if defined W4DPSAS || defined NLM_OUTER
+# if defined W4DPSAS || defined NLM_OUTER || \
+     defined W4DPSAS_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  If appropriate, add convolved adjoint solution impulse forcing to
@@ -198,6 +203,20 @@
       DO ng=1,Ngrids
 # endif
         IF (iic(ng).eq.ntstart(ng)) THEN
+!
+!  Initialize free-surface.
+!
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL ini_zeta (ng, TILE, iNLM)
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+!
+!  Initialize other state variables.
+!
 !$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
           DO thread=0,numthreads-1
             subs=NtileX(ng)*NtileE(ng)/numthreads
@@ -228,7 +247,7 @@
 # if defined AVERAGES && !defined ADJOINT
             CALL set_avg (ng, TILE)
 # endif
-# ifdef DIAGNOSTICS_UV
+# ifdef DIAGNOSTICS
             CALL set_diags (ng, TILE)
 # endif
             CALL diag (ng, TILE)
@@ -267,6 +286,45 @@
 #  if !defined REFINED_GRID
       END DO
 #  endif
+# endif
+# ifdef ADJUST_BOUNDARY
+!
+!-----------------------------------------------------------------------
+!  Interpolate open boundary increments and adjust open boundary.
+!  Load open boundary into storage arrays. Skip the last output
+!  timestep.
+!-----------------------------------------------------------------------
+!
+      IF (iic(ng).lt.(ntend(ng)+1)) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL obc_adjust (ng, TILE, Lbinp(ng))
+            CALL load_obc (ng, TILE, Lbout(ng))
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+      END IF
+# endif
+
+# ifdef ADJUST_WSTRESS
+!
+!-----------------------------------------------------------------------
+!  Interpolate surface forcing increments and adjust surface forcing.
+!  Load surface forcing to storage arrays.
+!-----------------------------------------------------------------------
+!
+      IF (iic(ng).lt.(ntend(ng)+1)) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,Lfout,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL frc_adjust (ng, TILE, Lfinp(ng), Lfout(ng))
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+      END DO
 # endif
 
 # ifdef WAVES_OCEAN
@@ -340,21 +398,6 @@
 !$OMP END PARALLEL DO
 # ifdef COMPOSED_GRID
       CALL nesting (100)
-# endif
-# ifdef ADJUST_WSTRESS
-!
-!-----------------------------------------------------------------------
-!  Load surface forcing to storage arrays.
-!-----------------------------------------------------------------------
-!
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,Lfout,numthreads)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1,+1
-          CALL load_NLforcing (ng, TILE, Lfout(ng))
-        END DO
-      END DO
-!$OMP END PARALLEL DO
 # endif
 !
 !-----------------------------------------------------------------------
@@ -484,6 +527,7 @@
 !  Compute Lagrangian drifters trajectories.
 !-----------------------------------------------------------------------
 !
+      IF (Lfloats(Ng)) THEN
 !$OMP PARALLEL DO PRIVATE(thread,chunk_size,Lstr,Lend)                  &
 !$OMP&            SHARED(ng,numthreads,Nfloats)
 # if !defined REFINED_GRID
@@ -494,6 +538,7 @@
           Lstr=1+thread*chunk_size
           Lend=MIN(Nfloats(ng),Lstr+chunk_size-1)
           CALL step_floats (ng, Lstr, Lend)
+        END DO
 # if !defined REFINED_GRID
       END DO
 # endif
@@ -506,7 +551,7 @@
         nfm1(ng)=MOD(nfm1(ng)+1,NFT+1)
         nfm2(ng)=MOD(nfm2(ng)+1,NFT+1)
         nfm3(ng)=MOD(nfm3(ng)+1,NFT+1)
-      END DO
+      END IF
 # endif
 
 #else

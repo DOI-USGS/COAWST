@@ -4,7 +4,7 @@
 !
 !svn $Id: tkebc_im.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -40,6 +40,7 @@
 !
       CALL tkebc_tile (ng, tile,                                        &
      &                 LBi, UBi, LBj, UBj, N(ng),                       &
+     &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 nout, nstp(ng),                                  &
      &                 MIXING(ng)% gls,                                 &
      &                 MIXING(ng)% tke)
@@ -49,6 +50,7 @@
 !***********************************************************************
       SUBROUTINE tkebc_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj, UBk,                   &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       nout, nstp,                                &
      &                       gls, tke)
 !***********************************************************************
@@ -61,6 +63,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj, UBk
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nout, nstp
 !
 # ifdef ASSUMED_SHAPE
@@ -79,8 +82,8 @@
 
       real(r8) :: Ce, Cx, cff, dKde, dKdt, dKdx
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: grad
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: gradL
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: gradL
 
 # include "set_bounds.h"
 

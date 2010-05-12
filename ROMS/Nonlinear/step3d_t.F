@@ -4,7 +4,7 @@
 !
 !svn $Id: step3d_t.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -29,7 +29,7 @@
 # ifdef CLIMATOLOGY
       USE mod_clima
 # endif
-# ifdef DIAGNOSTICS
+# ifdef DIAGNOSTICS_TS
       USE mod_diags
 # endif
       USE mod_grid
@@ -56,15 +56,15 @@
 # endif
       CALL step3d_t_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    nrhs(ng), nstp(ng), nnew(ng),                 &
 # if defined TS_PSOURCE || defined Q_PSOURCE
-     &                    Nsrc(ng),                                     &
+     &                    Msrc(ng), Nsrc(ng),                           &
      &                    SOURCES(ng) % Isrc,                           &
      &                    SOURCES(ng) % Jsrc,                           &
      &                    SOURCES(ng) % Tsrc,                           &
 # endif
 # ifdef TS_PSOURCE
-     &                    SOURCES(ng) % Lsrc,                           &
      &                    SOURCES(ng) % Dsrc,                           &
 # endif
 # ifdef Q_PSOURCE
@@ -78,6 +78,8 @@
 # ifdef TS_MPDATA
 #  ifdef WET_DRY
      &                    GRID(ng) % rmask_wet,                         &
+     &                    GRID(ng) % umask_wet,                         &
+     &                    GRID(ng) % vmask_wet,                         &
 #  endif
      &                    GRID(ng) % omn,                               &
      &                    GRID(ng) % om_u,                              &
@@ -121,12 +123,14 @@
 !***********************************************************************
       SUBROUTINE step3d_t_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nrhs, nstp, nnew,                       &
 # if defined TS_PSOURCE || defined Q_PSOURCE
-     &                          Nsrc, Isrc, Jsrc, Tsrc,                 &
+     &                          Msrc, Nsrc,                             &
+     &                          Isrc, Jsrc, Tsrc,                       &
 # endif
 # ifdef TS_PSOURCE
-     &                          Lsrc, Dsrc,                             &
+     &                          Dsrc,                                   &
 # endif
 # ifdef Q_PSOURCE
      &                          Qsrc,                                   &
@@ -136,7 +140,7 @@
 # endif
 # ifdef TS_MPDATA
 #  ifdef WET_DRY
-     &                          rmask_wet,                              &
+     &                          rmask_wet, umask_wet, vmask_wet,        &
 #  endif
      &                          omn, om_u, om_v, on_u, on_v,            &
 # endif
@@ -171,6 +175,9 @@
       USE exchange_3d_mod, ONLY : exchange_r3d_tile
 # endif
 # ifdef DISTRIBUTE
+#  if defined FLOATS && defined FLOAT_VWALK
+      USE mp_exchange_mod, ONLY : mp_exchange3d
+#  endif
       USE mp_exchange_mod, ONLY : mp_exchange4d
 # endif
 # ifdef TS_MPDATA
@@ -182,14 +189,14 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs, nstp, nnew
+# if defined TS_PSOURCE || defined Q_PSOURCE
+      integer, intent(in) :: Msrc, Nsrc
+# endif
 !
 # ifdef ASSUMED_SHAPE
-#  ifdef TS_PSOURCE
-      logical, intent(in) :: Lsrc(:,:)
-#  endif
 #  if defined TS_PSOURCE || defined Q_PSOURCE
-      integer, intent(in) :: Nsrc
       integer, intent(in) :: Isrc(:)
       integer, intent(in) :: Jsrc(:)
 
@@ -209,6 +216,8 @@
 #  ifdef TS_MPDATA
 #   ifdef WET_DRY
       real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
 #   endif
       real(r8), intent(in) :: omn(LBi:,LBj:)
       real(r8), intent(in) :: om_u(LBi:,LBj:)
@@ -254,21 +263,17 @@
 
 # else
 
-#  ifdef TS_PSOURCE
-      logical, intent(in) :: Lsrc(Nsrc,NT(ng))
-#  endif
 #  if defined TS_PSOURCE || defined Q_PSOURCE
-      integer, intent(in) :: Nsrc
-      integer, intent(in) :: Isrc(Nsrc)
-      integer, intent(in) :: Jsrc(Nsrc)
+      integer, intent(in) :: Isrc(Msrc)
+      integer, intent(in) :: Jsrc(Msrc)
 
-      real(r8), intent(in) :: Tsrc(Nsrc,N(ng),NT(ng))
+      real(r8), intent(in) :: Tsrc(Msrc,N(ng),NT(ng))
 #  endif
 #  ifdef TS_PSOURCE
-      real(r8), intent(in) :: Dsrc(Nsrc)
+      real(r8), intent(in) :: Dsrc(Msrc)
 #  endif
 #  ifdef Q_PSOURCE
-      real(r8), intent(in) :: Qsrc(Nsrc,N(ng))
+      real(r8), intent(in) :: Qsrc(Msrc,N(ng))
 #  endif
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
@@ -278,6 +283,8 @@
 #  ifdef TS_MPDATA
 #   ifdef WET_DRY
       real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 #   endif
       real(r8), intent(in) :: omn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
@@ -331,44 +338,33 @@
       logical :: NSperiodic=.FALSE.
 #  endif
 # endif
-# ifdef TS_MPDATA
-      integer :: ILB, IUB, JLB, JUB
-# endif
       integer :: i, is, itrc, j, k, ltrc
+# ifdef DIAGNOSTICS_TS
       integer :: idiag
-
+# endif
       real(r8), parameter :: eps = 1.0E-16_r8
 
-      real(r8) :: cff, cff1, cff2, cff3
+      real(r8) :: cff, cff1, cff2, cff3, cff4
 
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: CF
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: BC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: DC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: BC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FE
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FX
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: curv
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: grad
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curv
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,N(ng)) :: oHz
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: oHz
 # ifdef TS_MPDATA
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,                     &
-     &                    N(ng),NT(ng)) :: Ta
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,N(ng)) :: Ua
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,N(ng)) :: Va
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,0:N(ng)) :: Wa
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng),NT(ng)) :: Ta
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: Ua
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: Va
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: Wa
 # endif
 
 # include "set_bounds.h"
-
-# ifdef TS_MPDATA
-!
-      ILB=LBOUND(Ua,DIM=1)
-      IUB=UBOUND(Ua,DIM=1)
-      JLB=LBOUND(Ua,DIM=2)
-      JUB=UBOUND(Ua,DIM=2)
-# endif
 !
 !-----------------------------------------------------------------------
 !  Time-step horizontal advection term.
@@ -719,7 +715,7 @@
               IF (((Istr.le.i).and.(i.le.Iend+1)).and.                  &
      &            ((Jstr.le.j).and.(j.le.Jend))) THEN
 #  endif
-                IF (Lsrc(is,itrc)) THEN
+                IF (LtracerSrc(itrc,ng)) THEN
                   FX(i,j)=Huon(i,j,k)*Tsrc(is,k,itrc)
 #  ifdef MASKING
                 ELSE
@@ -741,7 +737,7 @@
               IF (((Istr.le.i).and.(i.le.Iend)).and.                    &
      &            ((Jstr.le.j).and.(j.le.Jend+1))) THEN
 #  endif
-                IF (Lsrc(is,itrc)) THEN
+                IF (LtracerSrc(itrc,ng)) THEN
                   FE(i,j)=Hvom(i,j,k)*Tsrc(is,k,itrc)
 #  ifdef MASKING
                 ELSE
@@ -797,19 +793,22 @@
           DO j=J_RANGE
             DO i=I_RANGE
               cff=dt(ng)*pm(i,j)*pn(i,j)
-              cff1=cff*(FX(i+1,j)-FX(i,j)+                              &
-     &                  FE(i,j+1)-FE(i,j))
+              cff1=cff*(FX(i+1,j)-FX(i,j))
+              cff2=cff*(FE(i,j+1)-FE(i,j))
+              cff3=cff1+cff2
 #  ifdef TS_MPDATA
-              cff2=Hz(i,j,k)+                                           &
+              cff4=Hz(i,j,k)+                                           &
      &             cff*(Huon(i+1,j,k)-Huon(i,j,k)+                      &
      &                  Hvom(i,j+1,k)-Hvom(i,j,k)+                      &
      &                  (W(i,j,k)-W(i,j,k-1)))                 ! Hz_old
-              Ta(i,j,k,itrc)=t(i,j,k,3,itrc)*cff2-cff1
+              Ta(i,j,k,itrc)=t(i,j,k,3,itrc)*cff4-cff3
 #  else
-              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1
+              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff3
 #  endif
 #  ifdef DIAGNOSTICS_TS
-              DiaTwrk(i,j,k,itrc,iThadv)=-cff1
+              DiaTwrk(i,j,k,itrc,iTxadv)=-cff1
+              DiaTwrk(i,j,k,itrc,iTyadv)=-cff2
+              DiaTwrk(i,j,k,itrc,iThadv)=-cff3
 #  endif
             END DO
           END DO
@@ -1023,18 +1022,10 @@
 #  endif
 #  ifdef DIAGNOSTICS_TS
               DiaTwrk(i,j,k,itrc,iTvadv)=-cff1
-              DiaTwrk(i,j,k,itrc,iThadv)=DiaTwrk(i,j,k,itrc,iThadv)*    &
-     &                                   oHz(i,j,k)
-              DiaTwrk(i,j,k,itrc,iTvadv)=DiaTwrk(i,j,k,itrc,iTvadv)*    &
-     &                                   oHz(i,j,k)
-#   if defined TS_DIF2 || defined TS_DIF4
-              DiaTwrk(i,j,k,itrc,iThdif)=DiaTwrk(i,j,k,itrc,iThdif)*    &
-     &                                   oHz(i,j,k)
-#   endif
-              DiaTwrk(i,j,k,itrc,iTvdif)=DiaTwrk(i,j,k,itrc,iTvdif)*    &
-     &                                   oHz(i,j,k)
-              DiaTwrk(i,j,k,itrc,iTrate)=DiaTwrk(i,j,k,itrc,iTrate)*    &
-     &                                   oHz(i,j,k)
+              DO idiag=1,NDT
+                DiaTwrk(i,j,k,itrc,idiag)=DiaTwrk(i,j,k,itrc,idiag)*    &
+     &                                    oHz(i,j,k)
+              END DO
 #  endif
 # endif
             END DO
@@ -1051,13 +1042,13 @@
       DO itrc=1,NT(ng)
         CALL mpdata_adiff_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
-     &                          ILB, IUB, JLB, JUB,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nrhs,                                   &
 #  ifdef MASKING
      &                          rmask, umask, vmask,                    &
 #  endif
 #  ifdef WET_DRY
-     &                          rmask_wet,                              &
+     &                          rmask_wet, umask_wet, vmask_wet,        &
 #  endif
      &                          pm, pn, omn, om_u, on_v,                &
      &                          z_r, oHz,                               &
@@ -1091,13 +1082,18 @@
 !
           DO j=Jstr,Jend
             DO i=Istr,Iend
-              cff1=dt(ng)*pm(i,j)*pn(i,j)*                              &
-     &             (FX(i+1,j)-FX(i,j)+                                  &
-     &              FE(i,j+1)-FE(i,j))
-              t(i,j,k,nnew,itrc)=Ta(i,j,k,itrc)*Hz(i,j,k)-cff1
+              cff=dt(ng)*pm(i,j)*pn(i,j)
+              cff1=cff*(FX(i+1,j)-FX(i,j))
+              cff2=cff*(FE(i,j+1)-FE(i,j))
+              cff3=cff1+cff2
+              t(i,j,k,nnew,itrc)=Ta(i,j,k,itrc)*Hz(i,j,k)-cff3
 #  ifdef DIAGNOSTICS_TS
-              DiaTwrk(i,j,k,itrc,iThadv)=DiaTwrk(i,j,k,itrc,iThadv)-    &
+              DiaTwrk(i,j,k,itrc,iTxadv)=DiaTwrk(i,j,k,itrc,iTxadv)-    &
      &                                   cff1
+              DiaTwrk(i,j,k,itrc,iTyadv)=DiaTwrk(i,j,k,itrc,iTyadv)-    &
+     &                                   cff2
+              DiaTwrk(i,j,k,itrc,iThadv)=DiaTwrk(i,j,k,itrc,iThadv)-    &
+     &                                   cff3
 #  endif
             END DO
           END DO
@@ -1134,18 +1130,10 @@
 #  ifdef DIAGNOSTICS_TS
               DiaTwrk(i,j,k,itrc,iTvadv)=DiaTwrk(i,j,k,itrc,iTvadv)-    &
      &                                   cff1
-              DiaTwrk(i,j,k,itrc,iThadv)=DiaTwrk(i,j,k,itrc,iThadv)*    &
-     &                                   oHz(i,j,k)
-              DiaTwrk(i,j,k,itrc,iTvadv)=DiaTwrk(i,j,k,itrc,iTvadv)*    &
-     &                                   oHz(i,j,k)
-#   if defined TS_DIF2 || defined TS_DIF4
-              DiaTwrk(i,j,k,itrc,iThdif)=DiaTwrk(i,j,k,itrc,iThdif)*    &
-     &                                   oHz(i,j,k)
-#   endif
-              DiaTwrk(i,j,k,itrc,iTvdif)=DiaTwrk(i,j,k,itrc,iTvdif)*    &
-     &                                   oHz(i,j,k)
-              DiaTwrk(i,j,k,itrc,iTrate)=DiaTwrk(i,j,k,itrc,iTrate)*    &
-     &                                   oHz(i,j,k)
+              DO idiag=1,NDT
+                DiaTwrk(i,j,k,itrc,idiag)=DiaTwrk(i,j,k,itrc,idiag)*    &
+     &                                    oHz(i,j,k)
+              END DO
 #  endif
             END DO
           END DO
@@ -1307,6 +1295,7 @@
 !
         CALL t3dbc_tile (ng, tile, itrc,                                &
      &                   LBi, UBi, LBj, UBj, N(ng), NT(ng),             &
+     &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   nstp, nnew,                                    &
      &                   t)
 
@@ -1400,13 +1389,27 @@
 !  floats random walk.
 !-----------------------------------------------------------------------
 !
-      DO j=Jstr,Jend
-        DO i=Istr,Iend
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
           DO k=1,N(ng)
             dAktdz(i,j,k)=(Akt(i,j,k,1)-Akt(i,j,k-1,1))/Hz(i,j,k)
           END DO
         END DO
       END DO
+#  if defined EW_PERIODIC || defined NS_PERIODIC
+!
+!  Apply periodic boundary conditions.
+!
+      CALL exchange_r3d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        dAktdz)
+#  endif
+#  ifdef DISTRIBUTE
+      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    dAktdz)
+#  endif
 # endif
       RETURN
       END SUBROUTINE step3d_t_tile

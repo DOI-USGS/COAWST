@@ -4,7 +4,7 @@
 !
 !svn $Id: bulk_flux.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -83,6 +83,7 @@
 # endif
       CALL bulk_flux_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
+     &                     IminS, ImaxS, JminS, JmaxS,                  &
      &                     nrhs(ng),                                    &
 # ifdef MASKING
      &                     GRID(ng) % rmask,                            &
@@ -101,14 +102,16 @@
 # ifdef CLOUDS
      &                     FORCES(ng) % cloud,                          &
 # endif
-# ifdef COARE_TAYLOR_YELLAND
+# if defined COARE_TAYLOR_YELLAND || defined DRENNAN
      &                     FORCES(ng) % Hwave,                          &
 # endif
-# if defined COARE_TAYLOR_YELLAND || defined COARE_OOST
+# if defined COARE_TAYLOR_YELLAND || defined COARE_OOST || \
+     defined DRENNAN
      &                     FORCES(ng) % Pwave_top,                      &
 # endif
 # if !defined DEEPWATER_WAVES      && \
-     (defined COARE_TAYLOR_YELLAND || defined COARE_OOST)
+     (defined COARE_TAYLOR_YELLAND || defined COARE_OOST || \
+      defined DRENNAN)
      &                     FORCES(ng) % Lwave,                          &
 # endif
      &                     FORCES(ng) % rain,                           &
@@ -118,6 +121,7 @@
      &                     FORCES(ng) % srflx,                          &
      &                     FORCES(ng) % stflx,                          &
 # ifdef EMINUSP
+     &                     FORCES(ng) % EminusP,                        &
      &                     FORCES(ng) % evap,                           &
 # endif
      &                     FORCES(ng) % sustr,                          &
@@ -131,6 +135,7 @@
 !***********************************************************************
       SUBROUTINE bulk_flux_tile (ng, tile,                              &
      &                           LBi, UBi, LBj, UBj,                    &
+     &                           IminS, ImaxS, JminS, JmaxS,            &
      &                           nrhs,                                  &
 # ifdef MASKING
      &                           rmask, umask, vmask,                   &
@@ -153,7 +158,7 @@
      &                           rain, lhflx, lrflx, shflx,             &
      &                           srflx, stflx,                          &
 # ifdef EMINUSP
-     &                           evap,                                  &
+     &                           EminusP, evap,                         &
 # endif
      &                           sustr, svstr)
 !***********************************************************************
@@ -172,6 +177,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
 !
 # ifdef ASSUMED_SHAPE
@@ -211,6 +217,7 @@
       real(r8), intent(inout) :: stflx(LBi:,LBj:,:)
 
 #  ifdef EMINUSP
+      real(r8), intent(out) :: EminusP(LBi:,LBj:)
       real(r8), intent(out) :: evap(LBi:,LBj:)
 #  endif
       real(r8), intent(out) :: sustr(LBi:,LBj:)
@@ -252,6 +259,7 @@
       real(r8), intent(inout) :: stflx(LBi:UBi,LBj:UBj,NT(ng))
 
 #  ifdef EMINUSP
+      real(r8), intent(out) :: EminusP(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: evap(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(out) :: sustr(LBi:UBi,LBj:UBj)
@@ -291,62 +299,62 @@
       real(r8) :: Clam, Fc, Hcool, Hsb, Hlb, Qbouy, Qcool, lambd
 # endif
 
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: CC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Cd10
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Ch10
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Ct10
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: charn
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Ct
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Cwave
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Cwet
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: delQ
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: delQc
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: delT
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: delTc
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: delW
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: L
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: L10
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Q
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Qair
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Qpsi
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Qsea
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Qstar
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: rhoAir
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: rhoSea
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Ri
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Ribcu
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Rr
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Scff
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: TairC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: TairK
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Tcff
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Tpsi
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: TseaC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: TseaK
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Tstar
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: u10
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: VisAir
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: WaveLength
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Wgus
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Wmag
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Wpsi
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Wstar
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Zetu
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: Zo10
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: ZoT10
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: ZoL
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: ZoQ
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: ZoT
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: ZoW
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: ZWoL
+      real(r8), dimension(IminS:ImaxS) :: CC
+      real(r8), dimension(IminS:ImaxS) :: Cd10
+      real(r8), dimension(IminS:ImaxS) :: Ch10
+      real(r8), dimension(IminS:ImaxS) :: Ct10
+      real(r8), dimension(IminS:ImaxS) :: charn
+      real(r8), dimension(IminS:ImaxS) :: Ct
+      real(r8), dimension(IminS:ImaxS) :: Cwave
+      real(r8), dimension(IminS:ImaxS) :: Cwet
+      real(r8), dimension(IminS:ImaxS) :: delQ
+      real(r8), dimension(IminS:ImaxS) :: delQc
+      real(r8), dimension(IminS:ImaxS) :: delT
+      real(r8), dimension(IminS:ImaxS) :: delTc
+      real(r8), dimension(IminS:ImaxS) :: delW
+      real(r8), dimension(IminS:ImaxS) :: L
+      real(r8), dimension(IminS:ImaxS) :: L10
+      real(r8), dimension(IminS:ImaxS) :: Q
+      real(r8), dimension(IminS:ImaxS) :: Qair
+      real(r8), dimension(IminS:ImaxS) :: Qpsi
+      real(r8), dimension(IminS:ImaxS) :: Qsea
+      real(r8), dimension(IminS:ImaxS) :: Qstar
+      real(r8), dimension(IminS:ImaxS) :: rhoAir
+      real(r8), dimension(IminS:ImaxS) :: rhoSea
+      real(r8), dimension(IminS:ImaxS) :: Ri
+      real(r8), dimension(IminS:ImaxS) :: Ribcu
+      real(r8), dimension(IminS:ImaxS) :: Rr
+      real(r8), dimension(IminS:ImaxS) :: Scff
+      real(r8), dimension(IminS:ImaxS) :: TairC
+      real(r8), dimension(IminS:ImaxS) :: TairK
+      real(r8), dimension(IminS:ImaxS) :: Tcff
+      real(r8), dimension(IminS:ImaxS) :: Tpsi
+      real(r8), dimension(IminS:ImaxS) :: TseaC
+      real(r8), dimension(IminS:ImaxS) :: TseaK
+      real(r8), dimension(IminS:ImaxS) :: Tstar
+      real(r8), dimension(IminS:ImaxS) :: u10
+      real(r8), dimension(IminS:ImaxS) :: VisAir
+      real(r8), dimension(IminS:ImaxS) :: WaveLength
+      real(r8), dimension(IminS:ImaxS) :: Wgus
+      real(r8), dimension(IminS:ImaxS) :: Wmag
+      real(r8), dimension(IminS:ImaxS) :: Wpsi
+      real(r8), dimension(IminS:ImaxS) :: Wstar
+      real(r8), dimension(IminS:ImaxS) :: Zetu
+      real(r8), dimension(IminS:ImaxS) :: Zo10
+      real(r8), dimension(IminS:ImaxS) :: ZoT10
+      real(r8), dimension(IminS:ImaxS) :: ZoL
+      real(r8), dimension(IminS:ImaxS) :: ZoQ
+      real(r8), dimension(IminS:ImaxS) :: ZoT
+      real(r8), dimension(IminS:ImaxS) :: ZoW
+      real(r8), dimension(IminS:ImaxS) :: ZWoL
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Hlv
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: LHeat
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: LRad
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: SHeat
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: SRad
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Taux
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Tauy
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Hlv
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: LHeat
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: LRad
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: SHeat
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: SRad
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Taux
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Tauy
 
 # include "set_bounds.h"
 !
@@ -398,7 +406,7 @@
           cff=(0.7859_r8+0.03477_r8*TairC(i))/                          &
      &        (1.0_r8+0.00412_r8*TairC(i))
           e_sat=10.0_r8**cff   ! saturation vapor pressure (hPa or mbar)
-          vap_p=e_sat*RH       ! water vapor pressure (hPa or mbar) 
+          vap_p=e_sat*RH       ! water vapor pressure (hPa or mbar)
           cff2=TairK(i)*TairK(i)*TairK(i)
           cff1=cff2*TairK(i)
           LRad(i,j)=-emmiss*StefBo*                                     &
@@ -413,7 +421,7 @@
 !
           LRad(i,j)=lrflx(i,j)*Hscale-                                  &
      &              emmiss*StefBo*TseaK(i)*TseaK(i)*TseaK(i)*TseaK(i)
- 
+
 # else
           LRad(i,j)=lrflx(i,j)*Hscale
 # endif
@@ -428,7 +436,7 @@
 !                 Q(i) is the actual specific humidity
 !              Qsea(i) is the saturation specific humidity at Tsea
 !
-!          Saturation vapor pressure in mb is first computed and then 
+!          Saturation vapor pressure in mb is first computed and then
 !          converted to specific humidity in kg/kg
 !
 !          The saturation vapor pressure is computed from Teten formula
@@ -448,7 +456,7 @@
 !          Q = 0.622 E/(P + (0.622-1)e)
 !
 !          Q(kg/kg) = 0.62197_r8*(E(mb)/(PairM(mb)-0.378_r8*E(mb)))
-!          
+!
 !-----------------------------------------------------------------------
 !
 !  Compute air saturation vapor pressure (mb), using Teten formula.
@@ -548,7 +556,7 @@
      &                             bulk_psiu(blk_ZW(ng)/L10(i),pi))
           Tstar(i)=-(delT(i)-delTc(i))*vonKar/                          &
      &             (LOG(blk_ZT(ng)/ZoT10(i))-                           &
-     &              bulk_psit(blk_ZT(ng)/L10(i),pi)) 
+     &              bulk_psit(blk_ZT(ng)/L10(i),pi))
           Qstar(i)=-(delQ(i)-delQc(i))*vonKar/                          &
      &             (LOG(blk_ZQ(ng)/ZoT10(i))-                           &
      &              bulk_psit(blk_ZQ(ng)/L10(i),pi))
@@ -564,7 +572,8 @@
           ELSE
             charn(i)=0.011_r8
           END IF
-# if defined COARE_OOST || defined COARE_TAYLOR_YELLAND
+# if defined COARE_OOST || defined COARE_TAYLOR_YELLAND ||   \
+     defined DRENNAN
 #  if defined DEEPWATER_WAVES
           Cwave(i)=g*MAX(Pwave_top(i,j),eps)*twopi_inv
           WaveLength(i)=Cwave(i)*MAX(Pwave_top(i,j),eps)
@@ -589,6 +598,10 @@
 # elif defined COARE_TAYLOR_YELLAND
             ZoW(i)=1200.0_r8*Hwave(i,j)*                                &
      &             (Hwave(i,j)/WaveLength(i))**4.5_r8+                  &
+     &             0.11_r8*VisAir(i)/(Wstar(i)+eps)
+# elif defined DRENNAN
+            ZoW(i)=(3.35_r8)*Hwave(i,j)*                                &
+     &             (Wstar(i)/Cwave(i))**3.4_r8+                         &
      &             0.11_r8*VisAir(i)/(Wstar(i)+eps)
 # else
             ZoW(i)=charn(i)*Wstar(i)*Wstar(i)/g+                        &
@@ -758,8 +771,8 @@
 !  ocean.
 !
 !  For EMINUSP option,  EVAP = LHeat (W/m2) / Hlv (J/kg) = kg/m2/s
-!                       PREC = rain = kg/m2/s            
-!       
+!                       PREC = rain = kg/m2/s
+!
 !  To convert these rates to m/s divide by freshwater density, rhow.
 !
 !  Note that when the air is undersaturated in water vapor (Q < Qsea)
@@ -773,7 +786,8 @@
 !
 !  Note that fresh water flux is positive out of the ocean and the
 !  salt flux (stflx(isalt)) is positive into the ocean. It is converted
-!  to (psu m/s) for stflx(isalt) in "set_vbc.F".
+!  to (psu m/s) for stflx(isalt) in "set_vbc.F". The E-P value is
+!  saved in variable EminusP for I/O purposes.
 !
       Hscale=1.0_r8/(rho0*Cp)
       cff=1.0_r8/rhow
@@ -794,6 +808,9 @@
           evap(i,j)=evap(i,j)*rmask(i,j)
           stflx(i,j,isalt)=stflx(i,j,isalt)*rmask(i,j)
 #   endif
+# endif
+# ifdef EMINUSP
+          EminusP(i,j)=stflx(i,j,isalt)
 # endif
         END DO
       END DO
@@ -842,6 +859,9 @@
      &                        evap)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        EminusP)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        stflx(:,:,isalt))
 #   endif
       CALL exchange_u2d_tile (ng, tile,                                 &
@@ -858,10 +878,10 @@
      &                    lrflx, lhflx, shflx,                          &
      &                    stflx(:,:,itemp))
 #   ifdef EMINUSP
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    evap,                                         &
+     &                    evap, EminusP,                                &
      &                    stflx(:,:,isalt))
 #   endif
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &

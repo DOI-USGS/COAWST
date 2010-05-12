@@ -3,7 +3,7 @@
 !
 !svn $Id: u2dbc_im.F 779 2008-10-04 23:15:47Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -38,6 +38,7 @@
 !
       CALL u2dbc_tile (ng, tile,                                        &
      &                 LBi, UBi, LBj, UBj,                              &
+     &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 krhs(ng), kstp(ng), kout,                        &
      &                 OCEAN(ng) % ubar,                                &
      &                 OCEAN(ng) % vbar,                                &
@@ -48,6 +49,7 @@
 !***********************************************************************
       SUBROUTINE u2dbc_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       krhs, kstp, kout,                          &
      &                       ubar, vbar, zeta)
 !***********************************************************************
@@ -61,7 +63,7 @@
       USE mod_grid
 # endif
 # ifdef REFINED_GRID
-      USE mod_ocean
+      USE mod_refined
       USE mod_stepping
 # endif
 !
@@ -69,6 +71,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: krhs, kstp, kout
 
 #ifdef ASSUMED_SHAPE
@@ -97,8 +100,7 @@
       integer :: t1, t2, ngp
       real(r8) :: fac, fac1, fac2, my_val
 #endif
-
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: grad
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
 
 #include "set_bounds.h"
 !
@@ -835,8 +837,8 @@
 !  Western edge, Flather boundary condition.
 !
         DO j=Jstr,Jend
-          bry_val=fac1*BOUNDARY(ng)%ubarR_west(4,j,t1)+               &
-     &            fac2*BOUNDARY(ng)%ubarR_west(4,j,t2)
+          bry_val=fac1*REFINED(ng)%ubarR_west(4,j,t1)+                  &
+     &            fac2*REFINED(ng)%ubarR_west(4,j,t2)
 # ifdef MASKING
           bry_val=bry_val*GRID(ng)%umask(Istr,j)
 # endif
@@ -846,8 +848,8 @@
      &                        GRID(ng)%h(Istr  ,j)+                     &
      &                        zeta(Istr  ,j,know)))
           Cx=SQRT(g*cff)
-          my_val=fac1*BOUNDARY(ng)%zetaR_west(4,j,t1)+                  &
-     &           fac2*BOUNDARY(ng)%zetaR_west(4,j,t2)
+          my_val=fac1*REFINED(ng)%zetaR_west(4,j,t1)+                   &
+     &           fac2*REFINED(ng)%zetaR_west(4,j,t2)
 # ifdef MASKING
           my_val=my_val*GRID(ng)%rmask(Istr-1,j)
 # endif
@@ -867,8 +869,8 @@
 !  Eastern edge, Flather boundary condition.
 !
         DO j=Jstr,Jend
-          bry_val=fac1*BOUNDARY(ng)%ubarR_east(1,j,t1)+               &
-     &            fac2*BOUNDARY(ng)%ubarR_east(1,j,t2)
+          bry_val=fac1*REFINED(ng)%ubarR_east(1,j,t1)+                  &
+     &            fac2*REFINED(ng)%ubarR_east(1,j,t2)
 # ifdef MASKING
           bry_val=bry_val*GRID(ng)%umask(Iend+1,j)
 # endif
@@ -878,8 +880,8 @@
      &                        GRID(ng)%h(Iend+1,j)+                     &
      &                        zeta(Iend+1,j,know)))
           Cx=SQRT(g*cff)
-          my_val=fac1*BOUNDARY(ng)%zetaR_east(1,j,t1)+                  &
-     &           fac2*BOUNDARY(ng)%zetaR_east(1,j,t2)
+          my_val=fac1*REFINED(ng)%zetaR_east(1,j,t1)+                   &
+     &           fac2*REFINED(ng)%zetaR_east(1,j,t2)
 # ifdef MASKING
           my_val=my_val*GRID(ng)%rmask(Iend+1,j)
 # endif
@@ -968,71 +970,79 @@
 # ifndef EW_PERIODIC
       IF (WESTERN_EDGE) THEN
         DO j=Jstr,Jend
-          cff5=GRID(ng)%umask_wet(Istr,j)
-          ubar(Istr,j,kout)=ubar(Istr,j,kout)*                          &
-     &                   (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+            &
-     &                   (0.5_r8+cff5*DSIGN(0.5_r8,ubar(Istr,j,kout)))* &
-     &                   (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+          cff1=ABS(ABS(GRID(ng)%umask_wet(Istr,j))-1.0_r8)
+          cff2=0.5_r8+DSIGN(0.5_r8,ubar(Istr,j,kout))*                  &
+     &                GRID(ng)%umask_wet(Istr,j)
+          cff=0.5_r8*GRID(ng)%umask_wet(Istr,j)*cff1+                   &
+     &        cff2*(1.0_r8-cff1)
+          ubar(Istr,j,kout)=ubar(Istr,j,kout)*cff
         END DO
       END IF
       IF (EASTERN_EDGE) THEN
         DO j=Jstr,Jend
-          cff5=GRID(ng)%umask_wet(Iend+1,j)
-          ubar(Iend+1,j,kout)=ubar(Iend+1,j,kout)*                      &
-     &                 (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+              &
-     &                 (0.5_r8+cff5*DSIGN(0.5_r8,ubar(Iend+1,j,kout)))* &
-     &                 (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+          cff1=ABS(ABS(GRID(ng)%umask_wet(Iend+1,j))-1.0_r8)
+          cff2=0.5_r8+DSIGN(0.5_r8,ubar(Iend+1,j,kout))*                &
+     &                GRID(ng)%umask_wet(Iend+1,j)
+          cff=0.5_r8*GRID(ng)%umask_wet(Iend+1,j)*cff1+                 &
+     &        cff2*(1.0_r8-cff1)
+          ubar(Iend+1,j,kout)=ubar(Iend+1,j,kout)*cff
         END DO
       END IF
 # endif
 # ifndef NS_PERIODIC
       IF (SOUTHERN_EDGE) THEN
         DO i=IstrU,Iend
-          cff5=GRID(ng)%umask_wet(i,Jstr-1)
-          ubar(i,Jstr-1,kout)=ubar(i,Jstr-1,kout)*                      &
-     &                 (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+              &
-     &                 (0.5_r8+cff5*DSIGN(0.5_r8,ubar(i,Jstr-1,kout)))* &
-     &                 (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+          cff1=ABS(ABS(GRID(ng)%umask_wet(i,Jstr-1))-1.0_r8)
+          cff2=0.5_r8+DSIGN(0.5_r8,ubar(i,Jstr-1,kout))*                &
+     &                GRID(ng)%umask_wet(i,Jstr-1)
+          cff=0.5_r8*GRID(ng)%umask_wet(i,Jstr-1)*cff1+                 &
+     &        cff2*(1.0_r8-cff1)
+          ubar(i,Jstr-1,kout)=ubar(i,Jstr-1,kout)*cff
         END DO
       END IF
       IF (NORTHERN_EDGE) THEN
         DO i=Istr,Iend
-          cff5=GRID(ng)%umask_wet(i,Jend+1)
-          ubar(i,Jend+1,kout)=ubar(i,Jend+1,kout)*                      &
-     &                 (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+              &
-     &                 (0.5_r8+cff5*DSIGN(0.5_r8,ubar(i,Jend+1,kout)))* &
-     &                 (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+          cff1=ABS(ABS(GRID(ng)%umask_wet(i,Jend+1))-1.0_r8)
+          cff2=0.5_r8+DSIGN(0.5_r8,ubar(i,Jend+1,kout))*                &
+     &                GRID(ng)%umask_wet(i,Jend+1)
+          cff=0.5_r8*GRID(ng)%umask_wet(i,Jend+1)*cff1+                 &
+     &        cff2*(1.0_r8-cff1)
+          ubar(i,Jend+1,kout)=ubar(i,Jend+1,kout)*cff
         END DO
       END IF
 # endif
 # if !defined EW_PERIODIC && !defined NS_PERIODIC
       IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          cff5=GRID(ng)%umask_wet(Istr,Jstr-1)
-          ubar(Istr,Jstr-1,kout)=ubar(Istr,Jstr-1,kout)*                &
-     &                   (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+            &
-     &              (0.5_r8+cff5*DSIGN(0.5_r8,ubar(Istr,Jstr-1,kout)))* &
-     &                   (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+        cff1=ABS(ABS(GRID(ng)%umask_wet(Istr,Jstr-1))-1.0_r8)
+        cff2=0.5_r8+DSIGN(0.5_r8,ubar(Istr,Jstr-1,kout))*               &
+     &              GRID(ng)%umask_wet(Istr,Jstr-1)
+        cff=0.5_r8*GRID(ng)%umask_wet(Istr,Jstr-1)*cff1+                &
+     &      cff2*(1.0_r8-cff1)
+        ubar(Istr,Jstr-1,kout)=ubar(Istr,Jstr-1,kout)*cff
       END IF
       IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          cff5=GRID(ng)%umask_wet(Iend+1,Jstr-1)
-          ubar(Iend+1,Jstr-1,kout)=ubar(Iend+1,Jstr-1,kout)*            &
-     &                   (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+            &
-     &            (0.5_r8+cff5*DSIGN(0.5_r8,ubar(Iend+1,Jstr-1,kout)))* &
-     &                   (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+        cff1=ABS(ABS(GRID(ng)%umask_wet(Iend+1,Jstr-1))-1.0_r8)
+        cff2=0.5_r8+DSIGN(0.5_r8,ubar(Iend+1,Jstr-1,kout))*             &
+     &              GRID(ng)%umask_wet(Iend+1,Jstr-1)
+        cff=0.5_r8*GRID(ng)%umask_wet(Iend+1,Jstr-1)*cff1+              &
+     &      cff2*(1.0_r8-cff1)
+        ubar(Iend+1,Jstr-1,kout)=ubar(Iend+1,Jstr-1,kout)*cff
       END IF
       IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          cff5=GRID(ng)%umask_wet(Istr,Jend+1)
-          ubar(Istr,Jend+1,kout)=ubar(Istr,Jend+1,kout)*                &
-     &                   (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+            &
-     &            (0.5_r8+cff5*DSIGN(0.5_r8,ubar(Istr,Jend+1,kout)))*   &
-     &                   (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+        cff1=ABS(ABS(GRID(ng)%umask_wet(Istr,Jend+1))-1.0_r8)
+        cff2=0.5_r8+DSIGN(0.5_r8,ubar(Istr,Jend+1,kout))*               &
+     &              GRID(ng)%umask_wet(Istr,Jend+1)
+        cff=0.5_r8*GRID(ng)%umask_wet(Istr,Jend+1)*cff1+                &
+     &      cff2*(1.0_r8-cff1)
+        ubar(Istr,Jend+1,kout)=ubar(Istr,Jend+1,kout)*cff
       END IF
       IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          cff5=GRID(ng)%umask_wet(Iend+1,Jend+1)
-          ubar(Iend+1,Jend+1,kout)=ubar(Iend+1,Jend+1,kout)*            &
-     &                   (0.5_r8*cff5*ABS(ABS(cff5)-1.0_r8)+            &
-     &            (0.5_r8+cff5*DSIGN(0.5_r8,ubar(Iend+1,Jend+1,kout)))* &
-     &                   (1.0_r8-ABS(ABS(cff5)-1.0_r8)))
+        cff1=ABS(ABS(GRID(ng)%umask_wet(Iend+1,Jend+1))-1.0_r8)
+        cff2=0.5_r8+DSIGN(0.5_r8,ubar(Iend+1,Jend+1,kout))*             &
+     &              GRID(ng)%umask_wet(Iend+1,Jend+1)
+        cff=0.5_r8*GRID(ng)%umask_wet(Iend+1,Jend+1)+cff1+              &
+     &      cff2*(1.0_r8-cff1)
+        ubar(Iend+1,Jend+1,kout)=ubar(Iend+1,Jend+1,kout)*cff
       END IF
 # endif
 #endif

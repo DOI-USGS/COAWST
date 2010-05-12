@@ -3,7 +3,7 @@
 !
 !svn $Id: diag.F 790 2008-10-14 19:32:07Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -45,6 +45,7 @@
 #endif
       CALL diag_tile (ng, tile,                                         &
      &                LBi, UBi, LBj, UBj,                               &
+     &                IminS, ImaxS, JminS, JmaxS,                       &
      &                nstp(ng), krhs(ng),                               &
      &                GRID(ng) % h,                                     &
      &                GRID(ng) % omn,                                   &
@@ -71,6 +72,7 @@
 !***********************************************************************
       SUBROUTINE diag_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
+     &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      nstp, krhs,                                 &
      &                      h, omn,                                     &
 #ifdef SOLVE3D
@@ -96,6 +98,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nstp, krhs
 
 #ifdef ASSUMED_SHAPE
@@ -140,7 +143,7 @@
       real(r8), dimension(Nreduce) :: buffer
       character (len=3), dimension(Nreduce) :: op_handle
 #else
-      integer :: my_threadnum      
+      integer :: my_threadnum
 #endif
 
       real(r8) :: cff, my_avgke, my_avgpe, my_volume
@@ -148,8 +151,8 @@
 #ifdef SOLVE3D
       real(r8) :: my_maxrho
 #endif
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: ke2d
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: pe2d
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ke2d
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: pe2d
 
       character (len=8) :: kechar, pechar
 

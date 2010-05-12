@@ -2,7 +2,7 @@
 !
 !svn $Id: mb_bbl.h 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group          Meinte Blaas   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group          Meinte Blaas   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -19,7 +19,7 @@
 !  where                                                               !
 !                                                                      !
 !  tauCW      Combined wave-averaged stress (in current direction).    !
-!  tauC       Stress due to currents, if waves would be absent.        ! 
+!  tauC       Stress due to currents, if waves would be absent.        !
 !  tauW       Amplitude of stress due to waves without currents.       !
 !  tauCWmax   Maximum combined wave-averaged stress.                   !
 !  phiCW      Angle between current and waves.                         !
@@ -48,6 +48,7 @@
       USE mod_forces
       USE mod_grid
       USE mod_ocean
+      USE mod_sedbed
       USE mod_stepping
 !
 !  Imported variable declarations.
@@ -63,6 +64,7 @@
 # endif
       CALL bblm_tile (ng, tile,                                         &
      &                LBi, UBi, LBj, UBj,                               &
+     &                IminS, ImaxS, JminS, JmaxS,                       &
      &                nrhs(ng),                                         &
      &                GRID(ng) % h,                                     &
      &                GRID(ng) % z_r,                                   &
@@ -78,7 +80,7 @@
      &                OCEAN(ng) % rho,                                  &
      &                OCEAN(ng) % u,                                    &
      &                OCEAN(ng) % v,                                    &
-     &                OCEAN(ng) % bottom,                               &
+     &                SEDBED(ng) % bottom,                              &
      &                BBL(ng) % Ubot,                                   &
      &                BBL(ng) % Vbot,                                   &
      &                BBL(ng) % Ur,                                     &
@@ -100,6 +102,7 @@
 !***********************************************************************
       SUBROUTINE bblm_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
+     &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      nrhs,                                       &
      &                      h, z_r, z_w, angler,                        &
 # ifdef MB_CALC_UB
@@ -129,6 +132,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
 !
 # ifdef ASSUMED_SHAPE
@@ -165,7 +169,7 @@
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
-      real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj)   
+      real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj)
 #  ifdef MB_CALC_UB
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
 #  else
@@ -240,18 +244,18 @@
       real(r8) :: tau_bf, tau_ex,  tau_en, tau_up, tau_w, tau_wb
       real(r8) :: tau_c, tau_cb, tau_cs, tau_cw, tau_cwb, tau_cws
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Ub
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Ucur
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Vcur
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Zr
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Ur_mb
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Vr_mb
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Umag
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: tauC
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: tauW
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: tauCW
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: tauCWmax
-    
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Ub
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Ucur
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Vcur
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Zr
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Ur_mb
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Vr_mb
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Umag
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tauC
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tauW
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tauCW
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tauCWmax
+
 #include "set_bounds.h"
 !
 !-----------------------------------------------------------------------
@@ -336,7 +340,7 @@
 !  Establish local median grain size for all calculations here and
 !  determine local values of critical stresses.
 !  Since most parameterizations have been derived ignoring multiple
-!  grain sizes, we apply this single d50 also in the case of mixed beds. 
+!  grain sizes, we apply this single d50 also in the case of mixed beds.
 !-----------------------------------------------------------------------
 !
           d50=bottom(i,j,isd50)              ! (m)
@@ -357,7 +361,7 @@
 !  Set Znot for currents as maximun of user value or grain roughness.
 !
            ZnotC=d50/12.0_r8
-           Znot=MAX(Zob(ng),ZnotC) 
+           Znot=MAX(Zob(ng),ZnotC)
 !
 !-----------------------------------------------------------------------
 !  Set tauC (m2/s2) acc. to current-only case (skin friction) [m/s]
@@ -376,19 +380,19 @@
 !  purposes.
 !-----------------------------------------------------------------------
 !
-          IF (Ub(i,j).gt.0.01_r8) THEN  
-!            
+          IF (Ub(i,j).gt.0.01_r8) THEN
+!
 !  Determine skin stresses (m2/s2) for pure waves and combined flow
 !  using Soulsby (1995) approximation of the wave friction factor,
 !  fw=2*scf1*(Znot/Ab)**scf2 so tauW=0.5fw*Ub**2.
 !
             tau_w=scf1*((ZnotC*Fwave_bot)**scf2)*(Ub(i,j)**scf3)
-!      
+!
 !  Wave-averaged, combined wave-current stress.(Eqn. 69, Soulsby, 1997).
 !
             tau_cw=tau_cs*                                              &
      &             (1.0_r8+scf4*((tau_w/(tau_w+tau_cs))**scf5))
-!      
+!
 !  Maximum of combined wave-current skin stress (m2/s2) component for
 !  sediment.(Eqn. 70, Soulsby, 1997).
 !
@@ -403,7 +407,7 @@
             tau_w=scf1*((Znot*Fwave_bot)**scf2)*(Ub(i,j)**scf3)
             tau_cw=tauC(i,j)*                                           &
      &             (1.0_r8+scf4*((tau_w/(tau_w+tauC(i,j)))**scf5))
-                           
+
 # ifdef MB_Z0BL
 !
 !-----------------------------------------------------------------------
@@ -419,7 +423,7 @@
             Znot_bl=17.4_r8*d50*(cff*tau_ex)**0.75_r8
             ZnotC=ZnotC+Znot_bl
 #  endif
-!     
+!
 !-----------------------------------------------------------------------
 !  Compute stresses (m2/s2)for sediment purposes, using grain and
 !  bedload roughness.
@@ -429,7 +433,7 @@
             tau_c=cff1*cff1*Umag(i,j)*Umag(i,j)
             tau_wb=scf1*((ZnotC*Fwave_bot)**scf2)*(Ub(i,j)**scf3)
             tau_cw=tau_c*(1.0_r8+scf4*((tau_wb/(tau_wb+tau_c))**scf5))
-!            
+!
 !  Maximum of combined wave-current stress (m2/s2) component for
 !  sediment purposes.
 !
@@ -449,29 +453,29 @@
 !  Check median grain diameter
 !
             IF (d50.ge.0.000063_r8) THEN
-!      
+!
 !  Enhanced skin stress if pre-exisiting ripples (Nielsen, 1986).
 !
               RHmax=0.8_r8*rlen/pi
               rhgt=MAX(MIN(RHmax,rhgt),RHmin)
-              tau_en=MAX(tau_cws,tau_cws*(rlen/(rlen-pi*rhgt))**2) 
+              tau_en=MAX(tau_cws,tau_cws*(rlen/(rlen-pi*rhgt))**2)
 !
-              IF ((tau_cws.lt.tau_cb).and.(tau_en.ge.tau_cb)) THEN 
+              IF ((tau_cws.lt.tau_cb).and.(tau_en.ge.tau_cb)) THEN
                  rhgt=(19.6_r8*(SQRT(tau_cws/tau_cb))+20.9_r8)*d50
                  rlen=rhgt/0.12_r8        ! local transport
-              ELSE 
-                IF ((tau_cws.ge.tau_cb).and.(tau_cwb.lt.tau_bf)) THEN 
+              ELSE
+                IF ((tau_cws.ge.tau_cb).and.(tau_cwb.lt.tau_bf)) THEN
                   rhgt=(22.15_r8*(SQRT(tau_cwb/tau_cb))+6.38_r8)*d50
                   rlen=rhgt/0.12_r8       ! bed load in eq. range
-                ELSE 
-                  IF ((tau_cwb.ge.tau_bf).and.(tau_cwb.lt.tau_up)) THEN 
+                ELSE
+                  IF ((tau_cwb.ge.tau_bf).and.(tau_cwb.lt.tau_up)) THEN
                     rlen=535.0_r8*d50     ! break off regime
                     rhgt=0.15_r8*rlen*(SQRT(tau_up)-SQRT(tau_cwb))/     &
-     &                                (SQRT(tau_up)-SQRT(tau_bf )) 
-                  ELSE IF (tau_cwb.ge.tau_up) THEN 
+     &                                (SQRT(tau_up)-SQRT(tau_bf ))
+                  ELSE IF (tau_cwb.ge.tau_up) THEN
                     rlen=0.0_r8           ! sheet flow, plane bed
                     rhgt=0.0_r8
-                  ELSE 
+                  ELSE
                     rlen=bottom(i,j,irlen)
                     rhgt=bottom(i,j,irhgt)
                   END IF
@@ -532,18 +536,18 @@
 !!          tauC(i,j)=tau_cw
             tauCW(i,j)=tau_cw
             tauW(i,j)=tau_w
-          ELSE IF (Ub(i,j).le.0.01_r8) THEN   
+          ELSE IF (Ub(i,j).le.0.01_r8) THEN
 !
 !  If current-only, tauCWmax=tauC(skin) for use in sediment model; tauC
 !  is determined using roughness due to current ripples.
 !  In this limit, tauCWmax=tauCW=tauC
-!            
+!
             tauCWmax(i,j)=tauC(i,j)
             tauW(i,j)=0.0_r8
 !!          tauW(i,j)=tau_cs
 !!          tauCW(i,j)=tau_cs
 
-# ifdef MB_Z0RIP    
+# ifdef MB_Z0RIP
 !!          IF (tauC(i,j).gt.tau_up) THEN
             IF (tau_cs(i,j).gt.tau_up) THEN
               rhgt=0.0_r8
@@ -561,12 +565,12 @@
 #  ifdef MB_CALC_ZNOT
             ZnotC=ZnotC+0.92_r8*rhgt*rhgt/(MAX(rlen,RLmin))
 #  endif
-# endif 
+# endif
             cff1=vonKar/LOG(Zr(i,j)/ZnotC)
             cff2=MIN(Cdb_max,MAX(Cdb_min,cff1*cff1))
 !!          tauc(i,j)=cff2*Umag(i,j)*Umag(i,j)
             tauCW(i,j)=cff2*Umag(i,j)*Umag(i,j)
-          END IF 
+          END IF
 !
 !-----------------------------------------------------------------------
 !  Load variables for output purposes.
@@ -616,7 +620,7 @@
           Vr(i,j)=Vcur(i,j)
         END DO
       END DO
-! 
+!
 ! Apply periodic or gradient boundary conditions for output purposes.
 !
       CALL bc_u2d_tile (ng, tile,                                       &
@@ -654,7 +658,7 @@
      &                  Ur)
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
-     &                  Vr)      
+     &                  Vr)
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  bottom(:,:,ibwav))

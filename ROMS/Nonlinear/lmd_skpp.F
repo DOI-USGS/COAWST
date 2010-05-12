@@ -7,7 +7,7 @@
 !
 !svn $Id: lmd_skpp.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -61,6 +61,7 @@
 !
       CALL lmd_skpp_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    nstp(ng),                                     &
 # ifdef MASKING
      &                    GRID(ng) % rmask,                             &
@@ -96,6 +97,7 @@
 !***********************************************************************
       SUBROUTINE lmd_skpp_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nstp,                                   &
 # ifdef MASKING
      &                          rmask,                                  &
@@ -130,6 +132,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nstp
 !
 # ifdef ASSUMED_SHAPE
@@ -221,32 +224,33 @@
       real(r8) :: slope_up, a_co, b_co, c_co, z_up, sqrt_arg
 # endif
 
-      real(r8), dimension (PRIVATE_1D_SCRATCH_ARRAY) :: Rref
-      real(r8), dimension (PRIVATE_1D_SCRATCH_ARRAY) :: Uref
-      real(r8), dimension (PRIVATE_1D_SCRATCH_ARRAY) :: Vref
+      real(r8), dimension (IminS:ImaxS) :: Rref
+      real(r8), dimension (IminS:ImaxS) :: Uref
+      real(r8), dimension (IminS:ImaxS) :: Vref
 
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY,0:N(ng)) :: Bflux
-      real(r8), dimension (PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FC
-      real(r8), dimension (PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: dR
-      real(r8), dimension (PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: dU
-      real(r8), dimension (PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: dV
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: Bflux
 
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: Bo
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: Bosol
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: Bfsfc
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: Gm1
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: Gt1
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: Gs1
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: Ustar
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: dGm1dS
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: dGt1dS
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: dGs1dS
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: f1
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: sl_dpth
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: swdk
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: wm
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: ws
-      real(r8), dimension (PRIVATE_2D_SCRATCH_ARRAY) :: zgrid
+      real(r8), dimension (IminS:ImaxS,0:N(ng)) :: FC
+      real(r8), dimension (IminS:ImaxS,0:N(ng)) :: dR
+      real(r8), dimension (IminS:ImaxS,0:N(ng)) :: dU
+      real(r8), dimension (IminS:ImaxS,0:N(ng)) :: dV
+
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: Bo
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: Bosol
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: Bfsfc
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: Gm1
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: Gt1
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: Gs1
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: Ustar
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: dGm1dS
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: dGt1dS
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: dGs1dS
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: f1
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: sl_dpth
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: swdk
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: wm
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: ws
+      real(r8), dimension (IminS:ImaxS,JminS:JmaxS) :: zgrid
 
 # include "set_bounds.h"
 !
@@ -314,7 +318,9 @@
             zgrid(i,j)=z_w(i,j,N(ng))-z_w(i,j,k)
           END DO
         END DO
-        CALL lmd_swfrac_tile (ng, tile, LBi, UBi, LBj, UBj,             &
+        CALL lmd_swfrac_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        -1.0_r8, zgrid, swdk)
         DO j=Jstr,Jend
           DO i=Istr,Iend
@@ -570,7 +576,9 @@
 # endif
         END DO
       END DO
-      CALL lmd_swfrac_tile (ng, tile, LBi, UBi, LBj, UBj,               &
+      CALL lmd_swfrac_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      -1.0_r8, zgrid, swdk)
       DO j=Jstr,Jend
         DO i=Istr,Iend
@@ -619,6 +627,7 @@
 !
       CALL shapiro2d_tile (ng, tile, iNLM,                              &
      &                     LBi, UBi, LBj, UBj,                          &
+     &                     IminS, ImaxS, JminS, JmaxS,                  &
 #  ifdef MASKING
      &                     rmask,                                       &
 #  endif
@@ -662,7 +671,9 @@
 # endif
         END DO
       END DO
-      CALL lmd_swfrac_tile (ng, tile, LBi, UBi, LBj, UBj,               &
+      CALL lmd_swfrac_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      -1.0_r8, zgrid, swdk)
       DO j=Jstr,Jend
         DO i=Istr,Iend

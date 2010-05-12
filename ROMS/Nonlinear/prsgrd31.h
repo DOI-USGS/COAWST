@@ -2,7 +2,7 @@
 !
 !svn $Id: prsgrd31.h 732 2008-09-07 01:55:51Z jcwarner $
 !***********************************************************************
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !****************************************** Alexander F. Shchepetkin ***
@@ -28,12 +28,12 @@
 #ifdef DIAGNOSTICS
       USE mod_diags
 #endif
-      USE mod_grid
-      USE mod_ocean
-      USE mod_stepping
 #ifdef ATM_PRESS
       USE mod_forces
 #endif
+      USE mod_grid
+      USE mod_ocean
+      USE mod_stepping
 !
 !  Imported variable declarations.
 !
@@ -48,16 +48,17 @@
 #endif
       CALL prsgrd_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  nrhs(ng),                                       &
-#ifdef ATM_PRESS
-     &                  FORCES(ng) % Pair,                              &
-#endif
      &                  GRID(ng) % Hz,                                  &
      &                  GRID(ng) % om_v,                                &
      &                  GRID(ng) % on_u,                                &
      &                  GRID(ng) % z_r,                                 &
      &                  GRID(ng) % z_w,                                 &
      &                  OCEAN(ng) % rho,                                &
+#ifdef ATM_PRESS
+     &                  FORCES(ng) % Pair,                              &
+#endif
 #ifdef DIAGNOSTICS_UV
      &                  DIAGS(ng) % DiaRU,                              &
      &                  DIAGS(ng) % DiaRV,                              &
@@ -73,12 +74,13 @@
 !***********************************************************************
       SUBROUTINE prsgrd_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nrhs,                                     &
+     &                        Hz, om_v, on_u, z_r, z_w,                 &
+     &                        rho,                                      &
 #ifdef ATM_PRESS
      &                        Pair,                                     &
 #endif
-     &                        Hz, om_v, on_u, z_r, z_w,                 &
-     &                        rho,                                      &
 #ifdef DIAGNOSTICS_UV
      &                        DiaRU, DiaRV,                             &
 #endif
@@ -92,19 +94,19 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
 
 #ifdef ASSUMED_SHAPE
-# ifdef ATM_PRESS
-      real(r8), intent(in) :: Pair(LBi:,LBj:)
-# endif
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
-
+# ifdef ATM_PRESS
+      real(r8), intent(in) :: Pair(LBi:,LBj:)
+# endif
 # ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: DiaRV(LBi:,LBj:,:,:,:)
@@ -112,16 +114,15 @@
       real(r8), intent(inout) :: ru(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: rv(LBi:,LBj:,0:,:)
 #else
-# ifdef ATM_PRESS
-      real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
-# endif
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
-
+# ifdef ATM_PRESS
+      real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
+# endif
 # ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
       real(r8), intent(inout) :: DiaRV(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
@@ -133,17 +134,14 @@
 !  Local variable declarations.
 !
       integer :: i, j, k
-      real(r8) :: fac1, fac2, fac3
+      real(r8) :: fac, fac1, fac2, fac3
       real(r8) :: cff1, cff2, cff3, cff4
-#ifdef ATM_PRESS
-      real(r8) :: fac4
-#endif
 #ifdef WJ_GRADP
       real(r8) :: gamma
 #endif
 
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: phie
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: phix
+      real(r8), dimension(IminS:ImaxS) :: phie
+      real(r8), dimension(IminS:ImaxS) :: phix
 
 #include "set_bounds.h"
 !
@@ -153,19 +151,20 @@
 !
 !  Compute surface baroclinic pressure gradient.
 !
+#ifdef ATM_PRESS
+      fac=100.0_r8/rho0
+#endif
       fac1=0.5_r8*g/rho0
       fac2=1000.0_r8*g/rho0
       fac3=0.25_r8*g/rho0
-#ifdef ATM_PRESS
-      fac4=0.0_r8 !100.0_r8/g
-#endif
+
       DO j=Jstr,Jend
         DO i=IstrU,Iend
           cff1=z_w(i  ,j,N(ng))-z_r(i  ,j,N(ng))+                       &
      &         z_w(i-1,j,N(ng))-z_r(i-1,j,N(ng))
           phix(i)=fac1*(rho(i,j,N(ng))-rho(i-1,j,N(ng)))*cff1
 #ifdef ATM_PRESS
-          phix(i)=phix(i)+fac4*(Pair(i,j)-Pair(i-1,j))
+          phix(i)=phix(i)+fac*(Pair(i,j)-Pair(i-1,j))
 #endif
 #ifdef RHO_SURF
           phix(i)=phix(i)+                                              &
@@ -235,7 +234,7 @@
      &           z_w(i,j-1,N(ng))-z_r(i,j-1,N(ng))
             phie(i)=fac1*(rho(i,j,N(ng))-rho(i,j-1,N(ng)))*cff1
 #ifdef ATM_PRESS
-          phie(i)=phie(i)+fac4*(Pair(i,j)-Pair(i-1,j))
+            phie(i)=phie(i)+fac*(Pair(i,j)-Pair(i,j-1))
 #endif
 #ifdef RHO_SURF
             phie(i)=phie(i)+                                            &

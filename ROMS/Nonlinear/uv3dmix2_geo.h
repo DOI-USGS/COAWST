@@ -17,7 +17,7 @@
 !
 !svn $Id: uv3dmix2_geo.h 732 2008-09-07 01:55:51Z jcwarner $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -69,6 +69,7 @@
 #endif
       CALL uv3dmix2_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    nrhs(ng), nnew(ng),                           &
 #ifdef MASKING
      &                    GRID(ng) % pmask,                             &
@@ -113,6 +114,7 @@
 !***********************************************************************
       SUBROUTINE uv3dmix2_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nrhs, nnew,                             &
 #ifdef MASKING
      &                          pmask, rmask, umask, vmask,             &
@@ -140,6 +142,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs, nnew
 
 #ifdef ASSUMED_SHAPE
@@ -225,23 +228,23 @@
 #ifdef VISC_3DCOEF
       real(r8) :: visc_p
 #endif
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: UFe
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: VFe
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: UFx
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: VFx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFe
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: VFe
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: VFx
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: UFs
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: VFs
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dmUde
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dmVde
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dnUdx
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dnVdx
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dUdz
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dVdz
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dZde_p
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dZde_r
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dZdx_p
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: dZdx_r
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: UFse, UFsx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: VFse, VFsx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dmUde
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dmVde
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dnUdx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dnVdx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dUdz
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dVdz
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dZde_p
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dZde_r
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dZdx_p
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dZdx_r
 
 #include "set_bounds.h"
 !
@@ -256,10 +259,10 @@
 !    dZdx_r, dZde_r, dnUdx, dmVde(:,:,k2) k+1    rho-points
 !    dZdx_p, dZde_p, dnVdx, dmUde(:,:,k1) k      psi-points
 !    dZdx_p, dZde_p, dnVdx, dmUde(:,:,k2) k+1    psi-points
-!                       UFs, dUdz(:,:,k1) k-1/2  WU-points
-!                       UFs, dUdz(:,:,k2) k+1/2  WU-points
-!                       VFs, dVdz(:,:,k1) k-1/2  WV-points
-!                       VFs, dVdz(:,:,k2) k+1/2  WV-points
+!                UFse, UFsx, dUdz(:,:,k1) k-1/2  WU-points
+!                UFse, UFsx, dUdz(:,:,k2) k+1/2  WU-points
+!                VFse, VFsx, dVdz(:,:,k1) k-1/2  WV-points
+!                VFse, VFsx, dVdz(:,:,k2) k+1/2  WV-points
 !
       k2=1
       K_LOOP : DO k=0,N(ng)
@@ -355,13 +358,15 @@
           DO j=JU_RANGE
             DO i=-1+IU_RANGE+1
               dUdz(i,j,k2)=0.0_r8
-              UFs(i,j,k2)=0.0_r8
+              UFse(i,j,k2)=0.0_r8
+              UFsx(i,j,k2)=0.0_r8
             END DO
           END DO
           DO j=-1+JV_RANGE+1
             DO i=IV_RANGE
               dVdz(i,j,k2)=0.0_r8
-              VFs(i,j,k2)=0.0_r8
+              VFse(i,j,k2)=0.0_r8
+              VFsx(i,j,k2)=0.0_r8
             END DO
           END DO
         ELSE
@@ -488,21 +493,20 @@
                 cff2=MIN(dZdx_r(i  ,j,k2),0.0_r8)
                 cff3=MAX(dZdx_r(i-1,j,k2),0.0_r8)
                 cff4=MAX(dZdx_r(i  ,j,k1),0.0_r8)
-                UFs(i,j,k2)=fac1*                                       &
-     &                      (cff1*(cff1*dnUdz-dnUdx(i-1,j,k1))+         &
-     &                       cff2*(cff2*dnUdz-dnUdx(i  ,j,k2))+         &
-     &                       cff3*(cff3*dnUdz-dnUdx(i-1,j,k2))+         &
-     &                       cff4*(cff4*dnUdz-dnUdx(i  ,j,k1)))
+                UFsx(i,j,k2)=fac1*                                      &
+     &                       (cff1*(cff1*dnUdz-dnUdx(i-1,j,k1))+        &
+     &                        cff2*(cff2*dnUdz-dnUdx(i  ,j,k2))+        &
+     &                        cff3*(cff3*dnUdz-dnUdx(i-1,j,k2))+        &
+     &                        cff4*(cff4*dnUdz-dnUdx(i  ,j,k1)))
                 cff1=MIN(dZde_p(i,j  ,k1),0.0_r8)
                 cff2=MIN(dZde_p(i,j+1,k2),0.0_r8)
                 cff3=MAX(dZde_p(i,j  ,k2),0.0_r8)
                 cff4=MAX(dZde_p(i,j+1,k1),0.0_r8)
-                UFs(i,j,k2)=UFs(i,j,k2)+                                &
-     &                      fac2*                                       &
-     &                      (cff1*(cff1*dmUdz-dmUde(i,j  ,k1))+         &
-     &                       cff2*(cff2*dmUdz-dmUde(i,j+1,k2))+         &
-     &                       cff3*(cff3*dmUdz-dmUde(i,j  ,k2))+         &
-     &                       cff4*(cff4*dmUdz-dmUde(i,j+1,k1)))
+                UFse(i,j,k2)=fac2*                                      &
+     &                       (cff1*(cff1*dmUdz-dmUde(i,j  ,k1))+        &
+     &                        cff2*(cff2*dmUdz-dmUde(i,j+1,k2))+        &
+     &                        cff3*(cff3*dmUdz-dmUde(i,j  ,k2))+        &
+     &                        cff4*(cff4*dmUdz-dmUde(i,j+1,k1)))
                 cff1=MIN(dZde_p(i,j  ,k1),0.0_r8)
                 cff2=MIN(dZde_p(i,j+1,k2),0.0_r8)
                 cff3=MAX(dZde_p(i,j  ,k2),0.0_r8)
@@ -511,12 +515,12 @@
                 cff6=MIN(dZdx_p(i,j+1,k2),0.0_r8)
                 cff7=MAX(dZdx_p(i,j  ,k2),0.0_r8)
                 cff8=MAX(dZdx_p(i,j+1,k1),0.0_r8)
-                UFs(i,j,k2)=UFs(i,j,k2)+                                &
-     &                      fac1*                                       &
-     &                      (cff1*(cff5*dnVdz-dnVdx(i,j  ,k1))+         &
-     &                       cff2*(cff6*dnVdz-dnVdx(i,j+1,k2))+         &
-     &                       cff3*(cff7*dnVdz-dnVdx(i,j  ,k2))+         &
-     &                       cff4*(cff8*dnVdz-dnVdx(i,j+1,k1)))
+                UFsx(i,j,k2)=UFsx(i,j,k2)+                              &
+     &                       fac1*                                      &
+     &                       (cff1*(cff5*dnVdz-dnVdx(i,j  ,k1))+        &
+     &                        cff2*(cff6*dnVdz-dnVdx(i,j+1,k2))+        &
+     &                        cff3*(cff7*dnVdz-dnVdx(i,j  ,k2))+        &
+     &                        cff4*(cff8*dnVdz-dnVdx(i,j+1,k1)))
                 cff1=MIN(dZdx_r(i-1,j,k1),0.0_r8)
                 cff2=MIN(dZdx_r(i  ,j,k2),0.0_r8)
                 cff3=MAX(dZdx_r(i-1,j,k2),0.0_r8)
@@ -525,12 +529,12 @@
                 cff6=MIN(dZde_r(i  ,j,k2),0.0_r8)
                 cff7=MAX(dZde_r(i-1,j,k2),0.0_r8)
                 cff8=MAX(dZde_r(i  ,j,k1),0.0_r8)
-                UFs(i,j,k2)=UFs(i,j,k2)-                                &
-     &                      fac2*                                       &
-     &                      (cff1*(cff5*dmVdz-dmVde(i-1,j,k1))+         &
-     &                       cff2*(cff6*dmVdz-dmVde(i  ,j,k2))+         &
-     &                       cff3*(cff7*dmVdz-dmVde(i-1,j,k2))+         &
-     &                       cff4*(cff8*dmVdz-dmVde(i  ,j,k1)))
+                UFse(i,j,k2)=UFse(i,j,k2)-                              &
+     &                       fac2*                                      &
+     &                       (cff1*(cff5*dmVdz-dmVde(i-1,j,k1))+        &
+     &                        cff2*(cff6*dmVdz-dmVde(i  ,j,k2))+        &
+     &                        cff3*(cff7*dmVdz-dmVde(i-1,j,k2))+        &
+     &                        cff4*(cff8*dmVdz-dmVde(i  ,j,k1)))
               END DO
             END DO
 !
@@ -560,21 +564,20 @@
                 cff2=MIN(dZdx_p(i+1,j,k2),0.0_r8)
                 cff3=MAX(dZdx_p(i  ,j,k2),0.0_r8)
                 cff4=MAX(dZdx_p(i+1,j,k1),0.0_r8)
-                VFs(i,j,k2)=fac1*                                       &
-     &                      (cff1*(cff1*dnVdz-dnVdx(i  ,j,k1))+         &
-     &                       cff2*(cff2*dnVdz-dnVdx(i+1,j,k2))+         &
-     &                       cff3*(cff3*dnVdz-dnVdx(i  ,j,k2))+         &
-     &                       cff4*(cff4*dnVdz-dnVdx(i+1,j,k1)))
+                VFsx(i,j,k2)=fac1*                                      &
+     &                       (cff1*(cff1*dnVdz-dnVdx(i  ,j,k1))+        &
+     &                        cff2*(cff2*dnVdz-dnVdx(i+1,j,k2))+        &
+     &                        cff3*(cff3*dnVdz-dnVdx(i  ,j,k2))+        &
+     &                        cff4*(cff4*dnVdz-dnVdx(i+1,j,k1)))
                 cff1=MIN(dZde_r(i,j-1,k1),0.0_r8)
                 cff2=MIN(dZde_r(i,j  ,k2),0.0_r8)
                 cff3=MAX(dZde_r(i,j-1,k2),0.0_r8)
                 cff4=MAX(dZde_r(i,j  ,k1),0.0_r8)
-                VFs(i,j,k2)=VFs(i,j,k2)+                                &
-     &                      fac2*                                       &
-     &                      (cff1*(cff1*dmVdz-dmVde(i,j-1,k1))+         &
-     &                       cff2*(cff2*dmVdz-dmVde(i,j  ,k2))+         &
-     &                       cff3*(cff3*dmVdz-dmVde(i,j-1,k2))+         &
-     &                       cff4*(cff4*dmVdz-dmVde(i,j  ,k1)))
+                VFse(i,j,k2)=fac2*                                      &
+     &                       (cff1*(cff1*dmVdz-dmVde(i,j-1,k1))+        &
+     &                        cff2*(cff2*dmVdz-dmVde(i,j  ,k2))+        &
+     &                        cff3*(cff3*dmVdz-dmVde(i,j-1,k2))+        &
+     &                        cff4*(cff4*dmVdz-dmVde(i,j  ,k1)))
                 cff1=MIN(dZde_r(i,j-1,k1),0.0_r8)
                 cff2=MIN(dZde_r(i,j  ,k2),0.0_r8)
                 cff3=MAX(dZde_r(i,j-1,k2),0.0_r8)
@@ -583,12 +586,12 @@
                 cff6=MIN(dZdx_r(i,j  ,k2),0.0_r8)
                 cff7=MAX(dZdx_r(i,j-1,k2),0.0_r8)
                 cff8=MAX(dZdx_r(i,j  ,k1),0.0_r8)
-                VFs(i,j,k2)=VFs(i,j,k2)-                                &
-     &                      fac1*                                       &
-     &                      (cff1*(cff5*dnUdz-dnUdx(i,j-1,k1))+         &
-     &                       cff2*(cff6*dnUdz-dnUdx(i,j  ,k2))+         &
-     &                       cff3*(cff7*dnUdz-dnUdx(i,j-1,k2))+         &
-     &                       cff4*(cff8*dnUdz-dnUdx(i,j  ,k1)))
+                VFsx(i,j,k2)=VFsx(i,j,k2)-                              &
+     &                       fac1*                                      &
+     &                       (cff1*(cff5*dnUdz-dnUdx(i,j-1,k1))+        &
+     &                        cff2*(cff6*dnUdz-dnUdx(i,j  ,k2))+        &
+     &                        cff3*(cff7*dnUdz-dnUdx(i,j-1,k2))+        &
+     &                        cff4*(cff8*dnUdz-dnUdx(i,j  ,k1)))
                 cff1=MIN(dZdx_p(i  ,j,k1),0.0_r8)
                 cff2=MIN(dZdx_p(i+1,j,k2),0.0_r8)
                 cff3=MAX(dZdx_p(i  ,j,k2),0.0_r8)
@@ -597,51 +600,65 @@
                 cff6=MIN(dZde_p(i+1,j,k2),0.0_r8)
                 cff7=MAX(dZde_p(i  ,j,k2),0.0_r8)
                 cff8=MAX(dZde_p(i+1,j,k1),0.0_r8)
-                VFs(i,j,k2)=VFs(i,j,k2)+                                &
-     &                      fac2*                                       &
-     &                      (cff1*(cff5*dmUdz-dmUde(i  ,j,k1))+         &
-     &                       cff2*(cff6*dmUdz-dmUde(i+1,j,k2))+         &
-     &                       cff3*(cff7*dmUdz-dmUde(i  ,j,k2))+         &
-     &                       cff4*(cff8*dmUdz-dmUde(i+1,j,k1)))
+                VFse(i,j,k2)=VFse(i,j,k2)+                              &
+     &                       fac2*                                      &
+     &                       (cff1*(cff5*dmUdz-dmUde(i  ,j,k1))+        &
+     &                        cff2*(cff6*dmUdz-dmUde(i+1,j,k2))+        &
+     &                        cff3*(cff7*dmUdz-dmUde(i  ,j,k2))+        &
+     &                        cff4*(cff8*dmUdz-dmUde(i+1,j,k1)))
               END DO
             END DO
           END IF
 !
-! Time-step harmonic, geopotential viscosity term.  Notice that
-! momentum at this stage is HzU and HzV and has m2/s units.  Add
-! contribution for barotropic forcing terms.
+!  Time-step harmonic, geopotential viscosity term.  Notice that
+!  momentum at this stage is HzU and HzV and has m2/s units.  Add
+!  contribution for barotropic forcing terms.
+#ifdef DIAGNOSTICS_UV
+!  The rotated vertical term cannot be split from the horizontal
+!  terms because of the 2D/3D momentum coupling.
+#endif
 !
           DO j=Jstr,Jend
             DO i=IstrU,Iend
-              cff=0.25_r8*(pm(i-1,j)+pm(i,j))*(pn(i-1,j)+pn(i,j))
-              cff1=0.5_r8*((pn(i-1,j)+pn(i,j))*                         &
-     &                     (UFx(i,j  )-UFx(i-1,j))+                     &
-     &                     (pm(i-1,j)+pm(i,j))*                         &
-     &                     (UFe(i,j+1)-UFe(i  ,j)))
-              cff2=UFs(i,j,k2)-UFs(i,j,k1)
-              cff3=dt(ng)*(cff*cff1+cff2)
-              rufrc(i,j)=rufrc(i,j)+cff1+cff2
-              u(i,j,k,nnew)=u(i,j,k,nnew)+cff3
+              cff=dt(ng)*0.25_r8*(pm(i-1,j)+pm(i,j))*(pn(i-1,j)+pn(i,j))
+              cff1=0.5_r8*(pn(i-1,j)+pn(i,j))*(UFx(i,j  )-UFx(i-1,j))
+              cff2=0.5_r8*(pm(i-1,j)+pm(i,j))*(UFe(i,j+1)-UFe(i  ,j))
+              cff3=UFsx(i,j,k2)-UFsx(i,j,k1)
+              cff4=UFse(i,j,k2)-UFse(i,j,k1)
+              cff5=cff*(cff1+cff2)
+              cff6=dt(ng)*(cff3+cff4)
+              rufrc(i,j)=rufrc(i,j)+cff1+cff2+cff3+cff4
+              u(i,j,k,nnew)=u(i,j,k,nnew)+cff5+cff6
 #ifdef DIAGNOSTICS_UV
-              DiaRUfrc(i,j,3,M2hvis)=DiaRUfrc(i,j,3,M2hvis)+cff1+cff2
-              DiaU3wrk(i,j,k,M3hvis)=cff3
+              DiaRUfrc(i,j,3,M2hvis)=DiaRUfrc(i,j,3,M2hvis)+cff1+cff2+  &
+     &                                                      cff3+cff4
+              DiaRUfrc(i,j,3,M2xvis)=DiaRUfrc(i,j,3,M2xvis)+cff1+cff3
+              DiaRUfrc(i,j,3,M2yvis)=DiaRUfrc(i,j,3,M2yvis)+cff2+cff4
+              DiaU3wrk(i,j,k,M3hvis)=cff5+cff6
+              DiaU3wrk(i,j,k,M3xvis)=cff*cff1+dt(ng)*cff3
+              DiaU3wrk(i,j,k,M3yvis)=cff*cff2+dt(ng)*cff4
 #endif
             END DO
           END DO
           DO j=JstrV,Jend
             DO i=Istr,Iend
-              cff=0.25_r8*(pm(i,j)+pm(i,j-1))*(pn(i,j)+pn(i,j-1))
-              cff1=0.5_r8*((pn(i,j-1)+pn(i,j))*                         &
-     &                     (VFx(i+1,j)-VFx(i,j  ))-                     &
-     &                     (pm(i,j-1)+pm(i,j))*                         &
-     &                     (VFe(i  ,j)-VFe(i,j-1)))
-              cff2=VFs(i,j,k2)-VFs(i,j,k1)
-              cff3=dt(ng)*(cff*cff1+cff2)
-              rvfrc(i,j)=rvfrc(i,j)+cff1+cff2
-              v(i,j,k,nnew)=v(i,j,k,nnew)+cff3
+              cff=dt(ng)*0.25_r8*(pm(i,j)+pm(i,j-1))*(pn(i,j)+pn(i,j-1))
+              cff1=0.5_r8*(pn(i,j-1)+pn(i,j))*(VFx(i+1,j)-VFx(i,j  ))
+              cff2=0.5_r8*(pm(i,j-1)+pm(i,j))*(VFe(i  ,j)-VFe(i,j-1))
+              cff3=VFsx(i,j,k2)-VFsx(i,j,k1)
+              cff4=VFse(i,j,k2)-VFse(i,j,k1)
+              cff5=cff*(cff1-cff2)
+              cff6=dt(ng)*(cff3+cff4)
+              rvfrc(i,j)=rvfrc(i,j)+cff1-cff2+cff3+cff4
+              v(i,j,k,nnew)=v(i,j,k,nnew)+cff5+cff6
 #ifdef DIAGNOSTICS_UV
-              DiaRVfrc(i,j,3,M2hvis)=DiaRVfrc(i,j,3,M2hvis)+cff1+cff2
-              DiaV3wrk(i,j,k,M3hvis)=cff3
+              DiaRVfrc(i,j,3,M2hvis)=DiaRVfrc(i,j,3,M2hvis)+cff1-cff2+  &
+     &                                                      cff3+cff4
+              DiaRVfrc(i,j,3,M2xvis)=DiaRVfrc(i,j,3,M2xvis)+cff1+cff3
+              DiaRVfrc(i,j,3,M2yvis)=DiaRVfrc(i,j,3,M2yvis)-cff2+cff4
+              DiaV3wrk(i,j,k,M3hvis)=cff5+cff6
+              DiaV3wrk(i,j,k,M3xvis)= cff*cff1+dt(ng)*cff3
+              DiaV3wrk(i,j,k,M3yvis)=-cff*cff2+dt(ng)*cff4
 #endif
             END DO
           END DO

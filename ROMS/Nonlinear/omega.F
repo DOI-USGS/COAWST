@@ -11,7 +11,7 @@
 !
 !svn $Id: omega.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -41,6 +41,9 @@
 # ifdef Q_PSOURCE
       USE mod_sources
 # endif
+# if defined SEDIMENT && defined SED_MORPH
+      USE mod_sedbed
+# endif
 # if defined Q_PSOURCE || (defined SEDIMENT && defined SED_MORPH)
       USE mod_stepping
 # endif
@@ -58,11 +61,12 @@
 # endif
       CALL omega_tile (ng, tile,                                        &
      &                 LBi, UBi, LBj, UBj,                              &
+     &                 IminS, ImaxS, JminS, JmaxS,                      &
 # if defined SEDIMENT && defined SED_MORPH
      &                 nstp(ng), nnew(ng),                              &
 # endif
 # ifdef Q_PSOURCE
-     &                 Nsrc(ng),                                        &
+     &                 Msrc(ng), Nsrc(ng),                              &
      &                 SOURCES(ng) % Isrc,                              &
      &                 SOURCES(ng) % Jsrc,                              &
      &                 SOURCES(ng) % Dsrc,                              &
@@ -70,7 +74,7 @@
 # endif
 # if defined SEDIMENT && defined SED_MORPH
      &                 GRID(ng) % omn,                                  &
-     &                 GRID(ng) % bed_thick,                            &
+     &                 SEDBED(ng) % bed_thick,                          &
 # endif
      &                 GRID(ng) % Huon,                                 &
      &                 GRID(ng) % Hvom,                                 &
@@ -85,11 +89,13 @@
 !***********************************************************************
       SUBROUTINE omega_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
 # if defined SEDIMENT && defined SED_MORPH
      &                       nstp, nnew,                                &
 # endif
 # ifdef Q_PSOURCE
-     &                       Nsrc, Isrc, Jsrc, Dsrc, Qsrc,              &
+     &                       Msrc, Nsrc,                                &
+     &                       Isrc, Jsrc, Dsrc, Qsrc,                    &
 # endif
 # if defined SEDIMENT && defined SED_MORPH
      &                       omn, bed_thick,                            &
@@ -111,17 +117,19 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 # if defined SEDIMENT && defined SED_MORPH
       integer, intent(in) :: nstp, nnew
 # endif
 # ifdef Q_PSOURCE
-      integer, intent(in) :: Nsrc
+      integer, intent(in) :: Msrc, Nsrc
 # endif
 !
 # ifdef ASSUMED_SHAPE
 #  ifdef Q_PSOURCE
       integer, intent(in) :: Isrc(:)
       integer, intent(in) :: Jsrc(:)
+
       real(r8), intent(in) :: Dsrc(:)
       real(r8), intent(in) :: Qsrc(:,:)
 #  endif
@@ -133,12 +141,15 @@
       real(r8), intent(in) :: Hvom(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(out) :: W(LBi:,LBj:,0:)
+
 # else
+
 #  ifdef Q_PSOURCE
-      integer, intent(in) :: Isrc(Nsrc)
-      integer, intent(in) :: Jsrc(Nsrc)
-      real(r8), intent(in) :: Dsrc(Nsrc)
-      real(r8), intent(in) :: Qsrc(Nsrc,N(ng))
+      integer, intent(in) :: Isrc(Msrc)
+      integer, intent(in) :: Jsrc(Msrc)
+
+      real(r8), intent(in) :: Dsrc(Msrc)
+      real(r8), intent(in) :: Qsrc(Msrc,N(ng))
 #  endif
 #  if defined SEDIMENT && defined SED_MORPH
       real(r8), intent(in) :: omn(LBi:UBi,LBj:UBj)
@@ -171,7 +182,7 @@
 # if defined SEDIMENT && defined SED_MORPH
       real(r8) :: cff1
 # endif
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY) :: wrk
+      real(r8), dimension(IminS:ImaxS) :: wrk
 
 # include "set_bounds.h"
 !
@@ -285,9 +296,6 @@
 !
 !  Local variable declarations.
 !
-!      integer :: IstrR, IendR, JstrR, JendR
-!      integer :: IstrT, IendT, JstrT, JendT
-!      integer :: Istr, Iend, Jstr, Jend, IstrU, JstrV
       integer :: i, j, k
 
 # include "set_bounds.h"

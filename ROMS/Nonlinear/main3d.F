@@ -8,7 +8,7 @@
 !
 !svn $Id: main3d.F 838 2008-11-17 04:22:18Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -47,11 +47,12 @@
 # ifdef TLM_CHECK
       USE dotproduct_mod, ONLY : nl_dotproduct
 # endif
-# if defined W4DPSAS || defined NLM_OUTER
+# if defined W4DPSAS || defined NLM_OUTER || \
+     defined W4DPSAS_SENSITIVITY
       USE forcing_mod, ONLY : forcing
 # endif
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
-      USE frc_adjust_mod, ONLY : load_NLforcing
+      USE frc_adjust_mod, ONLY : frc_adjust
 # endif
 # ifdef GLS_MIXING
       USE gls_corstep_mod, ONLY : gls_corstep
@@ -60,13 +61,16 @@
 # if defined DIFF_3DCOEF || defined VISC_3DCOEF
       USE hmixing_mod, ONLY : hmixing
 # endif
-      USE ini_fields_mod, ONLY : ini_fields
+      USE ini_fields_mod, ONLY : ini_fields, ini_zeta
 # ifdef LMD_MIXING
       USE lmd_vmix_mod, ONLY : lmd_vmix
 # endif
 # ifdef MY25_MIXING
       USE my25_corstep_mod, ONLY : my25_corstep
       USE my25_prestep_mod, ONLY : my25_prestep
+# endif
+# if defined ADJUST_BOUNDARY
+      USE obc_adjust_mod, ONLY : obc_adjust, load_obc
 # endif
 # ifdef AIR_OCEAN
       USE ocean_coupler_mod, ONLY : ocn2atm_coupling
@@ -81,6 +85,9 @@
 # ifdef NEARSHORE_MELLOR
       USE radiation_stress_mod, ONLY : radiation_stress
 # endif
+# ifdef NEARSHORE_WEC
+      USE wec_mod, ONLY : wec
+# endif
 # ifndef TS_FIXED
       USE rho_eos_mod, ONLY : rho_eos
 # endif
@@ -91,15 +98,15 @@
 # if defined AVERAGES && !defined ADJOINT
       USE set_avg_mod, ONLY : set_avg
 # endif
+# ifdef MOVE_SET_DEPTH
       USE set_depth_mod, ONLY : set_depth
+# endif
       USE set_massflux_mod, ONLY : set_massflux
 # if defined SSH_TIDES || defined UV_TIDES
       USE set_tides_mod, ONLY : set_tides
 # endif
       USE set_vbc_mod, ONLY : set_vbc
-# ifdef SET_ZETA
       USE set_zeta_mod, ONLY : set_zeta
-# endif
       USE step2d_mod, ONLY : step2d
 # ifndef TS_FIXED
       USE step3d_t_mod, ONLY : step3d_t
@@ -210,7 +217,8 @@
         END IF
 # endif
 !
-# if defined W4DPSAS || defined NLM_OUTER
+# if defined W4DPSAS || defined NLM_OUTER || \
+     defined W4DPSAS_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  If appropriate, add convolved adjoint solution impulse forcing to
@@ -241,6 +249,28 @@
 !-----------------------------------------------------------------------
 !  Initialize all time levels and compute other initial fields.
 !-----------------------------------------------------------------------
+!
+!
+!  Initialize free-surface.
+!
+# if !defined REFINED_GRID
+      DO ng=1,Ngrids
+# endif
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        IF (iic(ng).eq.ntstart(ng)) THEN
+          DO thread=0,numthreads-1
+            subs=NtileX(ng)*NtileE(ng)/numthreads
+            DO tile=subs*thread,subs*(thread+1)-1,+1
+              CALL ini_zeta (ng, TILE, iNLM)
+            END DO
+          END DO
+!$OMP END PARALLEL DO
+        END IF
+# if !defined REFINED_GRID
+      END DO
+# endif
+!
+!  Initialize other state variables.
 !
 # if !defined REFINED_GRID
       DO ng=1,Ngrids
@@ -346,7 +376,7 @@
 #  endif
 # endif
 
-# ifdef NEARSHORE_MELLOR
+# ifdef NEARSHORE
 !
 !-----------------------------------------------------------------------
 !  Compute radiation stress terms.
@@ -359,7 +389,11 @@
         DO thread=0,numthreads-1
           subs=NtileX(ng)*NtileE(ng)/numthreads
           DO tile=subs*(thread+1)-1,subs*thread,-1
+#  ifdef NEARSHORE_MELLOR
             CALL radiation_stress (ng, TILE)
+#  elif defined NEARSHORE_WEC
+            CALL wec (ng, TILE)
+#  endif
           END DO
         END DO
 #  if !defined REFINED_GRID
@@ -384,7 +418,12 @@
           subs=NtileX(ng)*NtileE(ng)/numthreads
           DO tile=subs*thread,subs*(thread+1)-1,+1
 # ifdef BULK_FLUXES
+#  if defined FOUR_DVAR && defined NL_BULK_FLUXES
+            IF (Nrun.eq.1) CALL bulk_flux (ng, TILE)
+#  else
             CALL bulk_flux (ng, TILE)
+#  endif
+
 # endif
 # ifdef BBL_MODEL
             CALL bblm (ng, TILE)
@@ -402,6 +441,46 @@
 #  ifdef COMPOSED_GRID
       CALL nesting (9)
 #  endif
+# ifdef ADJUST_BOUNDARY
+!
+!-----------------------------------------------------------------------
+!  Interpolate open boundary increments and adjust open boundary.
+!  Load open boundary into storage arrays. Skip the last output
+!  timestep.
+!-----------------------------------------------------------------------
+!
+      IF (iic(ng).lt.(ntend(ng)+1)) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL obc_adjust (ng, TILE, Lbinp(ng))
+            CALL load_obc (ng, TILE, Lbout(ng))
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+      END IF
+# endif
+
+# if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+!
+!-----------------------------------------------------------------------
+!  Interpolate surface forcing increments and adjust surface forcing.
+!  Load surface forcing into storage arrays. Skip the last output
+!  timestep.
+!-----------------------------------------------------------------------
+!
+      IF (iic(ng).lt.(ntend(ng)+1)) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL frc_adjust (ng, TILE, Lfinp(ng))
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+      END IF
+# endif
 !
 !-----------------------------------------------------------------------
 !  Compute time-dependent vertical/horizontal mixing coefficients for
@@ -438,23 +517,7 @@
 #  ifdef COMPOSED_GRID
       CALL nesting (10)
 #  endif
-# if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
-!
-!-----------------------------------------------------------------------
-!  Load surface forcing to storage arrays.
-!-----------------------------------------------------------------------
-!
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,Lfout,numthreads)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1,+1
-          CALL load_NLforcing (ng, TILE, Lfout(ng))
-        END DO
-      END DO
-!$OMP END PARALLEL DO
-# endif
 
-# ifdef SET_ZETA
 !
 !-----------------------------------------------------------------------
 !  Set free-surface to it time-averaged value.  If applicable,
@@ -470,7 +533,7 @@
           subs=NtileX(ng)*NtileE(ng)/numthreads
           DO tile=subs*thread,subs*(thread+1)-1,+1
             CALL set_zeta (ng, TILE)
-#  if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
+#  ifdef DIAGNOSTICS
             CALL set_diags (ng, TILE)
 #  endif
 #  if defined AVERAGES && !defined ADJOINT
@@ -535,73 +598,22 @@
 #  ifdef COMPOSED_GRID
       CALL nesting (12)
 #  endif
-
-# else
-!
-!-----------------------------------------------------------------------
-!  Compute right-hand-side terms for 3D equations.  If applicable,
-!  accumulate time-averaged output data.
-!-----------------------------------------------------------------------
-!
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-# if !defined REFINED_GRID
-      DO ng=1,Ngrids
-# endif
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
-#  if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
-            CALL set_diags (ng, TILE)
-#  endif
-            CALL rhs3d (ng, TILE)
-#  ifdef MY25_MIXING
-            CALL my25_prestep (ng, TILE)
-#  elif defined GLS_MIXING
-            CALL gls_prestep (ng, TILE)
-#  endif
-#  if defined AVERAGES && !defined ADJOINT
-            CALL set_avg (ng, TILE)
-#  endif
-          END DO
-        END DO
-# if !defined REFINED_GRID
-      END DO
-# endif
-!$OMP END PARALLEL DO
-#  ifdef COMPOSED_GRID
-      CALL nesting (12)
-#  endif
-!
-!-----------------------------------------------------------------------
-!  If appropriate, write out fields into output NetCDF files.  Notice
-!  that IO data is written in delayed and serial mode.  Exit if last
-!  time step.
-!-----------------------------------------------------------------------
-!
-#  if !defined REFINED_GRID
-      DO ng=1,Ngrids
-#  endif
-        CALL output (ng)
-        IF ((exit_flag.ne.NoError).or.                                  &
-     &      ((iic(ng).eq.(ntend(ng)+1)).and.(ng.eq.Ngrids))) RETURN
-#  if !defined REFINED_GRID
-      END DO
-#  endif
-# endif
 !
 !-----------------------------------------------------------------------
 !  Solve the vertically integrated primitive equations for the
 !  free-surface and barotropic momentum components.
 !-----------------------------------------------------------------------
 !
-      LOOP_2D : DO my_iif=1,MAXVAL(nfast)+1
+# if !defined REFINED_GRID
+      DO my_iif=1,MAXVAL(nfast)+1
+        DO ng=1,Ngrids
+# else
+      DO my_iif=1,nfast(ng)+1
+# endif
 !
 !  Set time indices for predictor step. The PREDICTOR_2D_STEP switch
 !  it is assumed to be false before the first time-step.
 !
-# if !defined REFINED_GRID
-        DO ng=1,Ngrids
-# endif
           next_indx1=3-indx1(ng)
           IF (.not.PREDICTOR_2D_STEP(ng).and.                           &
      &        my_iif.le.(nfast(ng)+1)) THEN
@@ -631,7 +643,7 @@
               END DO
             END DO
 !$OMP END PARALLEL DO
-          END IF
+        END IF
 # if !defined REFINED_GRID
         END DO
 # endif
@@ -673,14 +685,14 @@
 # ifdef COMPOSED_GRID
         CALL nesting (15)
 # endif
-      END DO LOOP_2D
+      END DO
 # ifdef COMPOSED_GRID
       CALL nesting (21)
 # endif
 !
 !-----------------------------------------------------------------------
 !  Recompute depths and thicknesses using the new time filtered
-!  free-surface.
+!  free-surface.  This call was moved from "step2d" to here.
 !-----------------------------------------------------------------------
 !
 !$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
@@ -811,29 +823,31 @@
 !  Compute Lagrangian drifters trajectories.
 !-----------------------------------------------------------------------
 !
-!$OMP PARALLEL DO PRIVATE(thread,chunk_size,Lstr,Lend)                  &
-!$OMP&            SHARED(ng,numthreads,Nfloats)
 #  if !defined REFINED_GRID
       DO ng=1,Ngrids
 #  endif
-        DO thread=0,numthreads-1
-          chunk_size=(Nfloats(ng)+numthreads-1)/numthreads
-          Lstr=1+thread*chunk_size
-          Lend=MIN(Nfloats(ng),Lstr+chunk_size-1)
-          CALL step_floats (ng, Lstr, Lend)
-        END DO
+        IF (Lfloats(Ng)) THEN
+!$OMP PARALLEL DO PRIVATE(thread,chunk_size,Lstr,Lend)                  &
+!$OMP&            SHARED(ng,numthreads,Nfloats)
+          DO thread=0,numthreads-1
+            chunk_size=(Nfloats(ng)+numthreads-1)/numthreads
+            Lstr=1+thread*chunk_size
+            Lend=MIN(Nfloats(ng),Lstr+chunk_size-1)
+            CALL step_floats (ng, Lstr, Lend)
+          END DO
+!$OMP END PARALLEL DO
 !
 !  Shift floats time indices.
 !
-        nfp1(ng)=MOD(nfp1(ng)+1,NFT+1)
-        nf(ng)  =MOD(nf(ng)  +1,NFT+1)
-        nfm1(ng)=MOD(nfm1(ng)+1,NFT+1)
-        nfm2(ng)=MOD(nfm2(ng)+1,NFT+1)
-        nfm3(ng)=MOD(nfm3(ng)+1,NFT+1)
+          nfp1(ng)=MOD(nfp1(ng)+1,NFT+1)
+          nf(ng)  =MOD(nf(ng)  +1,NFT+1)
+          nfm1(ng)=MOD(nfm1(ng)+1,NFT+1)
+          nfm2(ng)=MOD(nfm2(ng)+1,NFT+1)
+          nfm3(ng)=MOD(nfm3(ng)+1,NFT+1)
+        END IF
 #  if !defined REFINED_GRID
       END DO
 #  endif
-!$OMP END PARALLEL DO
 # endif
       RETURN
       END SUBROUTINE main3d

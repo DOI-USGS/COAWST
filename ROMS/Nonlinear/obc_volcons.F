@@ -4,7 +4,7 @@
 !
 !svn $Id: obc_volcons.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -40,6 +40,7 @@
 !
       CALL obc_flux_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    kinp,                                         &
 # ifdef MASKING
      &                    GRID(ng) % umask,                             &
@@ -57,6 +58,7 @@
 !***********************************************************************
       SUBROUTINE obc_flux_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          kinp,                                   &
 # ifdef MASKING
      &                          umask, vmask,                           &
@@ -78,6 +80,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: kinp
 !
 # ifdef ASSUMED_SHAPE
@@ -218,7 +221,7 @@
 !***********************************************************************
       SUBROUTINE set_DUV_bc_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
-     &                            ILB, IUB, JLB, JUB,                   &
+     &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            kinp,                                 &
 # ifdef MASKING
      &                            umask, vmask,                         &
@@ -238,7 +241,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
-      integer, intent(in) :: ILB, IUB, JLB, JUB
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: kinp
 !
 # ifdef ASSUMED_SHAPE
@@ -250,10 +253,10 @@
       real(r8), intent(in) :: on_u(LBi:,LBj:)
       real(r8), intent(in) :: ubar(LBi:,LBj:,:)
       real(r8), intent(in) :: vbar(LBi:,LBj:,:)
-      real(r8), intent(in) :: Drhs(ILB:,JLB:)
+      real(r8), intent(in) :: Drhs(IminS:,JminS:)
 
-      real(r8), intent(inout) :: Duon(ILB:,JLB:)
-      real(r8), intent(inout) :: Dvom(ILB:,JLB:)
+      real(r8), intent(inout) :: Duon(IminS:,JminS:)
+      real(r8), intent(inout) :: Dvom(IminS:,JminS:)
 # else
 #  ifdef MASKING
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
@@ -263,10 +266,10 @@
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
-      real(r8), intent(in) :: Drhs(ILB:IUB,JLB:JUB)
+      real(r8), intent(in) :: Drhs(IminS:ImaxS,JminS:JmaxS)
 
-      real(r8), intent(inout) :: Duon(ILB:IUB,JLB:JUB)
-      real(r8), intent(inout) :: Dvom(ILB:IUB,JLB:JUB)
+      real(r8), intent(inout) :: Duon(IminS:ImaxS,JminS:JmaxS)
+      real(r8), intent(inout) :: Dvom(IminS:ImaxS,JminS:JmaxS)
 # endif
 !
 !  Local variable declarations.
@@ -357,13 +360,13 @@
 !
 #  if defined WEST_VOLCONS || defined EAST_VOLCONS
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
-     &                    ILB, IUB, JLB, JUB,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    Duon)
 #  endif
 #  if defined SOUTH_VOLCONS || defined NORTH_VOLCONS
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
-     &                    ILB, IUB, JLB, JUB,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    Dvom)
 #  endif
@@ -377,6 +380,7 @@
 !***********************************************************************
       SUBROUTINE conserve_mass_tile (ng, tile,                          &
      &                               LBi, UBi, LBj, UBj,                &
+     &                               IminS, ImaxS, JminS, JmaxS,        &
      &                               kinp,                              &
 # ifdef MASKING
      &                               umask, vmask,                      &
@@ -391,6 +395,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: kinp
 !
 # ifdef ASSUMED_SHAPE

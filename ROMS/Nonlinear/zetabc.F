@@ -3,7 +3,7 @@
 !
 !svn $Id: zetabc.F 771 2008-09-30 02:30:00Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -37,6 +37,7 @@
 !
       CALL zetabc_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  krhs(ng), kstp(ng), kout,                       &
      &                  OCEAN(ng) % zeta)
       RETURN
@@ -45,6 +46,7 @@
 !***********************************************************************
       SUBROUTINE zetabc_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        krhs, kstp, kout,                         &
      &                        zeta)
 !***********************************************************************
@@ -58,6 +60,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: krhs, kstp, kout
 
 #ifdef ASSUMED_SHAPE
@@ -75,7 +78,7 @@
       real(r8) :: Ce, Cx
       real(r8) :: cff, cff1, cff2, dt2d, dZde, dZdt, dZdx, tau
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: grad
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
 
 #include "set_bounds.h"
 !

@@ -5,7 +5,7 @@
 !
 !svn $Id: set_zeta.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -43,6 +43,7 @@
 # endif
       CALL set_zeta_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    COUPLING(ng) % Zt_avg1,                       &
      &                    OCEAN(ng) % zeta)
 # ifdef PROFILE
@@ -54,6 +55,7 @@
 !***********************************************************************
       SUBROUTINE set_zeta_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          Zt_avg1, zeta)
 !***********************************************************************
 !
@@ -72,6 +74,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 # ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: Zt_avg1(LBi:,LBj:)

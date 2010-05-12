@@ -4,7 +4,7 @@
 !
 !svn $Id: output.F 1597 2008-07-25 02:31:35Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -28,6 +28,11 @@
       USE mod_ncparam
       USE mod_netcdf
       USE mod_scalars
+
+# ifdef DISTRIBUTE
+!
+      USE distribute_mod, ONLY : mp_bcasts
+# endif
 !
       implicit none
 !
@@ -40,6 +45,8 @@
       logical :: Ldefine, NewFile
 
       integer :: ifile, lstr, status, tile
+!
+      SourceFile='output.F'
 
 # ifdef PROFILE
 !
@@ -98,7 +105,12 @@
               WRITE (HISname(ng),10) HISbase(ng)(1:lstr-3),ifile
   10          FORMAT (a,'_',i4.4,'.nc')
             END IF
-            IF (ncHISid(ng).ne.-1) status=nf90_close(ncHISid(ng))
+# ifdef DISTRIBUTE
+            CALL mp_bcasts (ng, iNLM, HISname(ng))
+# endif
+            IF (ncHISid(ng).ne.-1) THEN
+              CALL netcdf_close (ng, iNLM, ncHISid(ng))
+            END IF
             CALL def_his (ng, NewFile)
             IF (exit_flag.ne.NoError) RETURN
           END IF
@@ -187,7 +199,12 @@
               WRITE (AVGname(ng),20) AVGbase(ng)(1:lstr-3),ifile
   20          FORMAT (a,'_',i4.4,'.nc')
             END IF
-            IF (ncAVGid(ng).ne.-1) status=nf90_close(ncAVGid(ng))
+# ifdef DISTRIBUTE
+            CALL mp_bcasts (ng, iNLM, AVGname(ng))
+# endif
+            IF (ncAVGid(ng).ne.-1) THEN
+              CALL netcdf_close (ng, iNLM, ncAVGid(ng))
+            END IF
             CALL def_avg (ng, Newfile)
             IF (exit_flag.ne.NoError) RETURN
             LwrtAVG(ng)=.TRUE.
@@ -266,7 +283,12 @@
               WRITE (DIAname(ng),30) DIAbase(ng)(1:lstr-3),ifile
   30          FORMAT (a,'_',i4.4,'.nc')
             END IF
-            IF (ncDIAid(ng).ne.-1) status=nf90_close(ncDIAid(ng))
+# ifdef DISTRIBUTE
+            CALL mp_bcasts (ng, iNLM, DIAname(ng))
+# endif
+            IF (ncDIAid(ng).ne.-1) THEN
+              CALL netcdf_close (ng, iNLM, ncDIAid(ng))
+            END IF
             CALL def_diags (ng, Newfile)
             IF (exit_flag.ne.NoError) RETURN
             LwrtDIA(ng)=.TRUE.
@@ -297,7 +319,8 @@
 !  If appropriate, process stations NetCDF file.
 !-----------------------------------------------------------------------
 !
-      IF ((Nstation(ng).gt.0).and.(nSTA(ng).gt.0)) THEN
+      IF (Lstations(ng).and.                                            &
+     &    (Nstation(ng).gt.0).and.(nSTA(ng).gt.0)) THEN
 !
 !  Create output station NetCDF file or prepare existing file to
 !  append new data to it.
@@ -322,7 +345,8 @@
 !  If appropriate, process floats NetCDF file.
 !-----------------------------------------------------------------------
 !
-      IF ((Nfloats(ng).gt.0).and.(nFLT(ng).gt.0)) THEN
+      IF (Lfloats(ng).and.                                              &
+     &    (Nfloats(ng).gt.0).and.(nFLT(ng).gt.0)) THEN
 !
 !  Create output floats NetCDF file or prepare existing file to
 !  append new data to it.
@@ -372,7 +396,7 @@
         END IF
       END IF
 # if (defined FOUR_DVAR || defined VERIFICATION) && \
-     !defined OBS_SENSITIVITY
+     !defined IS4DVAR_SENSITIVITY
 #  ifdef OBSERVATIONS
 !
 !-----------------------------------------------------------------------
@@ -390,7 +414,7 @@
 #   endif
         CALL obs_read (ng, iNLM, .FALSE.)
         CALL obs_write (ng, tile, iNLM)
-#   ifdef S4DVAR
+#   ifndef W4DVAR
         CALL obs_cost (ng, iNLM)
 #   endif
       ELSE
