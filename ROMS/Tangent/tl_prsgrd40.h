@@ -1,8 +1,8 @@
        SUBROUTINE tl_prsgrd (ng, tile)
 !
-!svn $Id: tl_prsgrd40.h 694 2008-08-08 18:33:05Z arango $
+!svn $Id: tl_prsgrd40.h 429 2009-12-20 17:30:26Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -25,6 +25,9 @@
       USE mod_param
 #ifdef DIAGNOSTICS
 !!    USE mod_diags
+#endif
+#ifdef ATM_PRESS
+      USE mod_forces
 #endif
       USE mod_grid
       USE mod_ocean
@@ -53,6 +56,9 @@
      &                     GRID(ng) % tl_z_w,                           &
      &                     OCEAN(ng) % rho,                             &
      &                     OCEAN(ng) % tl_rho,                          &
+#ifdef ATM_PRESS
+     &                     FORCES(ng) % Pair,                           &
+#endif
 #ifdef DIAGNOSTICS_UV
 !!   &                     DIAGS(ng) % DiaRU,                           &
 !!   &                     DIAGS(ng) % DiaRV,                           &
@@ -74,6 +80,9 @@
      &                           Hz, tl_Hz,                             &
      &                           z_w, tl_z_w,                           &
      &                           rho, tl_rho,                           &
+#ifdef ATM_PRESS
+     &                           Pair,                                  &
+#endif
 #ifdef DIAGNOSTICS_UV
 !!   &                           DiaRU, DiaRV,                          &
 #endif
@@ -100,6 +109,9 @@
       real(r8), intent(in) :: tl_Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: tl_z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: tl_rho(LBi:,LBj:,:)
+# ifdef ATM_PRESS
+      real(r8), intent(in) :: Pair(LBi:,LBj:)
+# endif
 # ifdef DIAGNOSTICS_UV
 !!    real(r8), intent(inout) :: DiaRU(LBi:,LBj:,:,:,:)
 !!    real(r8), intent(inout) :: DiaRV(LBi:,LBj:,:,:,:)
@@ -116,6 +128,9 @@
       real(r8), intent(in) :: tl_Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: tl_z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: tl_rho(LBi:UBi,LBj:UBj,N(ng))
+# ifdef ATM_PRESS
+      real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
+# endif
 # ifdef DIAGNOSTICS_UV
 !!    real(r8), intent(inout) :: DiaRU(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
 !!    real(r8), intent(inout) :: DiaRV(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
@@ -130,7 +145,9 @@
 
       real(r8) :: cff, cff1, dh
       real(r8) :: tl_dh
-
+#ifdef ATM_PRESS
+      real(r8) :: OneAtm, fac
+#endif
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: tl_FC
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: tl_FX
@@ -147,9 +164,17 @@
 !  Compute pressure and its vertical integral.  Initialize pressure at
 !  the free-surface as zero.
 !
+#ifdef ATM_PRESS
+      OneAtm=1013.25_r8                  ! 1 atm = 1013.25 mb
+      fac=100.0_r8/g
+#endif
       J_LOOP : DO j=JstrV-1,Jend
         DO i=IstrU-1,Iend
+#ifdef ATM_PRESS
+          P(i,j,N(ng))=fac*(Pair(i,j)-OneAtm)
+#else
           P(i,j,N(ng))=0.0_r8
+#endif
           tl_P(i,j,N(ng))=0.0_r8
         END DO
         DO k=N(ng),1,-1

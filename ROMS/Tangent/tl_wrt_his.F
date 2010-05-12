@@ -2,12 +2,12 @@
 #if defined TANGENT || defined TL_IOMS
       SUBROUTINE tl_wrt_his (ng)
 !
-!svn $Id: tl_wrt_his.F 677 2008-08-05 20:17:30Z arango $
+!svn $Id: tl_wrt_his.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!======================================================================= 
+!=======================================================================
 !                                                                      !
 !  This routine writes requested tangent linear model fields into      !
 !  into tangent history NetCDF file.                                   !
@@ -16,6 +16,9 @@
 !
       USE mod_param
       USE mod_parallel
+# ifdef ADJUST_BOUNDARY
+      USE mod_boundary
+# endif
 # ifdef SOLVE3D
       USE mod_coupling
 # endif
@@ -35,10 +38,16 @@
       USE mod_sediment
 # endif
       USE mod_stepping
-
-# ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_bcasti
+      USE nf_fwrite2d_mod, ONLY : nf_fwrite2d
+# ifdef ADJUST_BOUNDARY
+      USE nf_fwrite2d_bry_mod, ONLY : nf_fwrite2d_bry
+# endif
+# ifdef SOLVE3D
+      USE nf_fwrite3d_mod, ONLY : nf_fwrite3d
+#  ifdef ADJUST_BOUNDARY
+      USE nf_fwrite3d_bry_mod, ONLY : nf_fwrite3d_bry
+#  endif
 # endif
 !
       implicit none
@@ -50,13 +59,12 @@
 !  Local variable declarations.
 !
       integer :: LBi, UBi, LBj, UBj
+# ifdef ADJUST_BOUNDARY
+      integer :: LBij, UBij
+# endif
       integer :: gfactor, gtype, status
 # ifdef SOLVE3D
       integer :: i, itrc, j, k, tile
-# endif
-      integer :: nf_fwrite2d
-# ifdef SOLVE3D
-      integer :: nf_fwrite3d
 # endif
       real(r8) :: scale
       real(r8) :: Tval(1)
@@ -65,6 +73,12 @@
       UBi=UBOUND(GRID(ng)%h,DIM=1)
       LBj=LBOUND(GRID(ng)%h,DIM=2)
       UBj=UBOUND(GRID(ng)%h,DIM=2)
+# ifdef ADJUST_BOUNDARY
+      LBij=BOUNDS(ng)%LBij
+      UBij=BOUNDS(ng)%UBij
+# endif
+!
+      SourceFile='tl_wrt_his.F'
 !
 !-----------------------------------------------------------------------
 !  Write out tangent linear fields.
@@ -113,15 +127,15 @@
 !  own fixed time-dimension (of size Nfrec) to allow 4DVAR adjustments
 !  at other times in addition to initialization time.
 !
-      scale=rho0                            ! m2/s2 to N/m2 (Pa)
+      scale=1.0                             ! m2/s2
       gtype=gfactor*u3dvar
       status=nf_fwrite3d(ng, iTLM, ncTLMid(ng), tlmVid(idUsms,ng),      &
      &                   tTLMindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,       &
 #  ifdef MASKING
-     &                   GRID(ng) % umask(LBi,LBj),                     &
+     &                   GRID(ng) % umask,                              &
 #  endif
-     &                   FORCES(ng) % tl_ustr(LBi,LBj,1,Lfout(ng)))
+     &                   FORCES(ng) % tl_ustr(:,:,:,Lfout(ng)))
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUsms)), Lfout(ng)
@@ -133,15 +147,15 @@
 !
 !  Write out surface V-momentum stress.
 !
-      scale=rho0                            ! m2/s2 to N/m2 (Pa)
+      scale=1.0                             ! m2/s2
       gtype=gfactor*v3dvar
       status=nf_fwrite3d(ng, iTLM, ncTLMid(ng), tlmVid(idVsms,ng),      &
      &                   tTLMindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,       &
 #  ifdef MASKING
-     &                   GRID(ng) % vmask(LBi,LBj),                     &
+     &                   GRID(ng) % vmask,                              &
 #  endif
-     &                   FORCES(ng) % tl_vstr(LBi,LBj,1,Lfout(ng)))
+     &                   FORCES(ng) % tl_vstr(:,:,:,Lfout(ng)))
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVsms)), Lfout(ng)
@@ -158,28 +172,25 @@
 !  at other times in addition to initialization time.
 !
       DO itrc=1,NT(ng)
-        IF (itrc.eq.itemp) THEN
-          scale=rho0*Cp                     ! Celsius m/s to W/m2
-        ELSE
-          scale=1.0_r8
-        END IF
-        gtype=gfactor*r3dvar
-        status=nf_fwrite3d(ng, iTLM, ncTLMid(ng),                       &
-     &                     tlmVid(idTsur(itrc),ng),                     &
-     &                     tTLMindx(ng), gtype,                         &
-     &                     LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,     &
+        IF (Lstflux(itrc,ng)) THEN
+          scale=1.0_r8                      ! kinematic flux units
+          gtype=gfactor*r3dvar
+          status=nf_fwrite3d(ng, iTLM, ncTLMid(ng),                     &
+     &                       tlmVid(idTsur(itrc),ng),                   &
+     &                       tTLMindx(ng), gtype,                       &
+     &                       LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,   &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                       GRID(ng) % rmask,                          &
 #  endif
-     &                     FORCES(ng) % tl_tflux(LBi,LBj,1,             &
-     &                                           Lfout(ng),itrc))
-        IF (status.ne.nf90_noerr) THEN
-          IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idTsur(itrc))), Lfout(ng)
+     &                       FORCES(ng)% tl_tflux(:,:,:,Lfout(ng),itrc))
+          IF (status.ne.nf90_noerr) THEN
+            IF (Master) THEN
+              WRITE (stdout,10) TRIM(Vname(1,idTsur(itrc))), Lfout(ng)
+            END IF
+            exit_flag=3
+            ioerror=status
+            RETURN
           END IF
-          exit_flag=3
-          ioerror=status
-          RETURN
         END IF
       END DO
 # endif
@@ -193,9 +204,14 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 # endif
-     &                     OCEAN(ng) % tl_zeta(LBi,LBj,KOUT))
+# ifdef WET_DRY
+     &                     OCEAN(ng) % tl_zeta(:,:,KOUT),               &
+     &                     SetFillVal = .FALSE.)
+# else
+     &                     OCEAN(ng) % tl_zeta(:,:,KOUT))
+# endif
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idFsur)), tTLMindx(ng)
@@ -209,9 +225,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #  endif
-     &                     OCEAN(ng) % tl_rzeta(LBi,LBj,KOUT))
+     &                     OCEAN(ng) % tl_rzeta(:,:,KOUT))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRzet)), tTLMindx(ng)
@@ -222,8 +238,33 @@
         END IF
 # endif
       END IF
+
+# ifdef ADJUST_BOUNDARY
 !
-!  Write out 2D momentum component (m/s) in the XI-direction.
+!  Write out free-surface open boundaries.
+!
+      IF (ANY(Lobc(:,isFsur,ng))) THEN
+        scale=1.0_r8
+        status=nf_fwrite2d_bry (ng, iTLM, TLMname(ng), ncTLMid(ng),     &
+     &                          Vname(1,idSbry(isFsur)),                &
+     &                          tlmVid(idSbry(isFsur),ng),              &
+     &                          tTLMindx(ng), r2dvar,                   &
+     &                          LBij, UBij, Nbrec(ng), scale,           &
+     &                          BOUNDARY(ng) % tl_zeta_obc(LBij:,:,:,   &
+     &                                                     Lbout(ng)))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idSbry(isFsur))),            &
+     &                        tTLMindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+# endif
+!
+!  Write out 2D U-momentum component (m/s).
 !
       IF (Hout(idUbar,ng)) THEN
         scale=1.0_r8
@@ -232,9 +273,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 # endif
-     &                     OCEAN(ng) % tl_ubar(LBi,LBj,KOUT))
+     &                     OCEAN(ng) % tl_ubar(:,:,KOUT))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUbar)), tTLMindx(ng)
@@ -249,9 +290,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #   ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #   endif
-     &                     OCEAN(ng) % tl_rubar(LBi,LBj,KOUT))
+     &                     OCEAN(ng) % tl_rubar(:,:,KOUT))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRu2d)), tTLMindx(ng)
@@ -260,16 +301,16 @@
           ioerror=status
           RETURN
         END IF
-#  endif 
+#  endif
 #  ifdef SOLVE3D
 #   ifdef FORWARD_RHS
         status=nf_fwrite2d(ng, iTLM, ncTLMid(ng), tlmVid(idRuct,ng),    &
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #    ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #    endif
-     &                     COUPLING(ng) % tl_rufrc(LBi,LBj))
+     &                     COUPLING(ng) % tl_rufrc)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRuct)), tTLMindx(ng)
@@ -283,9 +324,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #   ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #   endif
-     &                     COUPLING(ng) % tl_DU_avg1(LBi,LBj))
+     &                     COUPLING(ng) % tl_DU_avg1)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUfx1)), tTLMindx(ng)
@@ -298,9 +339,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #   ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #   endif
-     &                     COUPLING(ng) % tl_DU_avg2(LBi,LBj))
+     &                     COUPLING(ng) % tl_DU_avg2)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUfx2)), tTLMindx(ng)
@@ -312,8 +353,33 @@
 #  endif
 # endif
       END IF
+
+# ifdef ADJUST_BOUNDARY
 !
-!  Write out 2D momentum component (m/s) in the ETA-direction.
+!  Write out 2D U-momentum component open boundaries.
+!
+      IF (ANY(Lobc(:,isUbar,ng))) THEN
+        scale=1.0_r8
+        status=nf_fwrite2d_bry (ng, iTLM, TLMname(ng), ncTLMid(ng),     &
+     &                          Vname(1,idSbry(isUbar)),                &
+     &                          tlmVid(idSbry(isUbar),ng),              &
+     &                          tTLMindx(ng), u2dvar,                   &
+     &                          LBij, UBij, Nbrec(ng), scale,           &
+     &                          BOUNDARY(ng) % tl_ubar_obc(LBij:,:,:,   &
+     &                                                     Lbout(ng)))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idSbry(isUbar))),            &
+     &                        tTLMindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+# endif
+!
+!  Write out 2D V-momentum component (m/s).
 !
       IF (Hout(idVbar,ng)) THEN
         scale=1.0_r8
@@ -322,9 +388,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 # endif
-     &                     OCEAN(ng) % tl_vbar(LBi,LBj,KOUT))
+     &                     OCEAN(ng) % tl_vbar(:,:,KOUT))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVbar)), tTLMindx(ng)
@@ -339,9 +405,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #   ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #   endif
-     &                     OCEAN(ng) % tl_rvbar(LBi,LBj,KOUT))
+     &                     OCEAN(ng) % tl_rvbar(:,:,KOUT))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRv2d)), tTLMindx(ng)
@@ -357,9 +423,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #    ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #    endif
-     &                     COUPLING(ng) % tl_rvfrc(LBi,LBj))
+     &                     COUPLING(ng) % tl_rvfrc)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRvct)), tTLMindx(ng)
@@ -373,9 +439,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #   ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #   endif
-     &                     COUPLING(ng) % tl_DV_avg1(LBi,LBj))
+     &                     COUPLING(ng) % tl_DV_avg1)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVfx1)), tTLMindx(ng)
@@ -388,9 +454,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #   ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #   endif
-     &                     COUPLING(ng) % tl_DV_avg2(LBi,LBj))
+     &                     COUPLING(ng) % tl_DV_avg2)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVfx2)), tTLMindx(ng)
@@ -402,9 +468,34 @@
 #  endif
 # endif
       END IF
+
+# ifdef ADJUST_BOUNDARY
+!
+!  Write out 2D V-momentum component open boundaries.
+!
+      IF (ANY(Lobc(:,isVbar,ng))) THEN
+        scale=1.0_r8
+        status=nf_fwrite2d_bry (ng, iTLM, TLMname(ng), ncTLMid(ng),     &
+     &                          Vname(1,idSbry(isVbar)),                &
+     &                          tlmVid(idSbry(isVbar),ng),              &
+     &                          tTLMindx(ng), v2dvar,                   &
+     &                          LBij, UBij, Nbrec(ng), scale,           &
+     &                          BOUNDARY(ng) % tl_vbar_obc(LBij:,:,:,   &
+     &                                                     Lbout(ng)))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idSbry(isVbar))),            &
+     &                        tTLMindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+# endif
 # ifdef SOLVE3D
 !
-!  Write out 3D momentum component (m/s) in the XI-direction.
+!  Write out 3D U-momentum component (m/s).
 !
       IF (Hout(idUvel,ng)) THEN
         scale=1.0_r8
@@ -413,9 +504,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #  endif
-     &                     OCEAN(ng) % tl_u(LBi,LBj,1,NOUT))
+     &                     OCEAN(ng) % tl_u(:,:,:,NOUT))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUvel)), tTLMindx(ng)
@@ -429,9 +520,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #   endif
-     &                     OCEAN(ng) % tl_ru(LBi,LBj,1,NOUT))
+     &                     OCEAN(ng) % tl_ru(:,:,:,NOUT))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRu3d)), tTLMindx(ng)
@@ -442,8 +533,33 @@
         END IF
 #  endif
       END IF
+
+#  ifdef ADJUST_BOUNDARY
 !
-!  Write out 3D momentum component (m/s) in the ETA-direction.
+!  Write out 3D U-momentum component open boundaries.
+!
+      IF (ANY(Lobc(:,isUvel,ng))) THEN
+        scale=1.0_r8
+        status=nf_fwrite3d_bry (ng, iTLM, TLMname(ng), ncTLMid(ng),     &
+     &                          Vname(1,idSbry(isUvel)),                &
+     &                          tlmVid(idSbry(isUvel),ng),              &
+     &                          tTLMindx(ng), u3dvar,                   &
+     &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
+     &                          BOUNDARY(ng) % tl_u_obc(LBij:,:,:,:,    &
+     &                                                  Lbout(ng)))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idSbry(isUvel))),            &
+     &                        tTLMindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+#  endif
+!
+!  Write out 3D V-momentum component (m/s).
 !
       IF (Hout(idVvel,ng)) THEN
         scale=1.0_r8
@@ -452,9 +568,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #  endif
-     &                     OCEAN(ng) % tl_v(LBi,LBj,1,NOUT))
+     &                     OCEAN(ng) % tl_v(:,:,:,NOUT))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVvel)), tTLMindx(ng)
@@ -468,9 +584,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #   endif
-     &                     OCEAN(ng) % tl_rv(LBi,LBj,1,NOUT))
+     &                     OCEAN(ng) % tl_rv(:,:,:,NOUT))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRv3d)), tTLMindx(ng)
@@ -481,6 +597,31 @@
         END IF
 #  endif
       END IF
+
+#  ifdef ADJUST_BOUNDARY
+!
+!  Write out 3D V-momentum component open boundaries.
+!
+      IF (ANY(Lobc(:,isVvel,ng))) THEN
+        scale=1.0_r8
+        status=nf_fwrite3d_bry (ng, iTLM, TLMname(ng), ncTLMid(ng),     &
+     &                          Vname(1,idSbry(isVvel)),                &
+     &                          tlmVid(idSbry(isVvel),ng),              &
+     &                          tTLMindx(ng), v3dvar,                   &
+     &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
+     &                          BOUNDARY(ng) % tl_v_obc(LBij:,:,:,:,    &
+     &                                                  Lbout(ng)))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idSbry(isVvel))),            &
+     &                        tTLMindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+#  endif
 !
 !  Write out tracer type variables.
 !
@@ -492,9 +633,9 @@
      &                       tTLMindx(ng), gtype,                       &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask(LBi,LBj),                 &
+     &                       GRID(ng) % rmask,                          &
 #  endif
-     &                       OCEAN(ng) % tl_t(LBi,LBj,1,NOUT,itrc))
+     &                       OCEAN(ng) % tl_t(:,:,:,NOUT,itrc))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))),            &
@@ -506,6 +647,34 @@
           END IF
         END IF
       END DO
+
+#  ifdef ADJUST_BOUNDARY
+!
+!  Write out tracers open boundaries.
+!
+      DO itrc=1,NT(ng)
+        IF (ANY(Lobc(:,isTvar(itrc),ng))) THEN
+          scale=1.0_r8
+          status=nf_fwrite3d_bry (ng, iTLM, TLMname(ng), ncTLMid(ng),   &
+     &                            Vname(1,idSbry(isTvar(itrc))),        &
+     &                            tlmVid(idSbry(isTvar(itrc)),ng),      &
+     &                            tTLMindx(ng), r3dvar,                 &
+     &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
+     &                            scale,                                &
+     &                            BOUNDARY(ng) % tl_t_obc(LBij:,:,:,:,  &
+     &                                                Lbout(ng),itrc))
+          IF (status.ne.nf90_noerr) THEN
+            IF (Master) THEN
+              WRITE (stdout,10) TRIM(Vname(1,idSbry(isTvar(itrc)))),    &
+     &                          tTLMindx(ng)
+            END IF
+            exit_flag=3
+            ioerror=status
+            RETURN
+          END IF
+        END IF
+      END DO
+#  endif
 !
 !  Write out density anomaly.
 !
@@ -516,9 +685,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #  endif
-     &                     OCEAN(ng) % tl_rho(LBi,LBj,1))
+     &                     OCEAN(ng) % tl_rho)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idDano)), tTLMindx(ng)
@@ -542,9 +711,13 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #   endif
-     &                     MIXING(ng) % Akv(LBi,LBj,0))
+#   ifdef WEAK_CONSTRAINT
+     &                     MIXING(ng) % Akv)
+#   else
+     &                     MIXING(ng) % tl_Akv)
+#   endif
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVvis)), tTLMindx(ng)
@@ -564,9 +737,13 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #   endif
-     &                     MIXING(ng) % Akt(LBi,LBj,0,itemp))
+#   ifdef WEAK_CONSTRAINT
+     &                     MIXING(ng) % Akt(:,:,:,itemp))
+#   else
+     &                     MIXING(ng) % tl_Akt(:,:,:,itemp))
+#   endif
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTdif)), tTLMindx(ng)
@@ -587,9 +764,13 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #    ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #    endif
-     &                     MIXING(ng) % Akt(LBi,LBj,0,isalt))
+#    ifdef WEAK_CONSTRAINT
+     &                     MIXING(ng) % Akt(:,:,:,isalt))
+#    else
+     &                     MIXING(ng) % tl_Akt(:,:,:,isalt))
+#    endif
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSdif)), tTLMindx(ng)
@@ -611,9 +792,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #    ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #    endif
-     &                     MIXING(ng) % tl_tke(LBi,LBj,0,NOUT))
+     &                     MIXING(ng) % tl_tke(:,:,:,NOUT))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idMtke)), tTLMindx(ng)
@@ -629,9 +810,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #    ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #    endif
-     &                     MIXING(ng) % tl_Akk(LBi,LBj,0))
+     &                     MIXING(ng) % tl_Akk)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVmKK)), tTLMindx(ng)
@@ -651,9 +832,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #    ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #    endif
-     &                     MIXING(ng) % tl_gls(LBi,LBj,0,NOUT))
+     &                     MIXING(ng) % tl_gls(:,:,:,NOUT))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idMtls)), tTLMindx(ng)
@@ -669,9 +850,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #    ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #    endif
-     &                     MIXING(ng) % tl_Lscale(LBi,LBj,0))
+     &                     MIXING(ng) % tl_Lscale)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVmLS)), tTLMindx(ng)
@@ -687,9 +868,9 @@
      &                     tTLMindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #     ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #     endif
-     &                     MIXING(ng) % tl_Akp(LBi,LBj,0))
+     &                     MIXING(ng) % tl_Akp)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVmKP)), tTLMindx(ng)
@@ -709,38 +890,28 @@
 !  to access data immediately after it is written.
 !-----------------------------------------------------------------------
 !
-      IF (OutThread) THEN
-        status=nf90_sync(ncTLMid(ng))
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,20) TRIM(TLMname(ng))
-          exit_flag=3
-          ioerror=status
-        END IF
-      END IF
-# ifdef DISTRIBUTE
-      CALL mp_bcasti (ng, iTLM, exit_flag, 1)
-# endif
+      CALL netcdf_sync (ng, iTLM, TLMname(ng), ncTLMid(ng))
+      IF (exit_flag.ne.NoError) RETURN
+
 # ifdef SOLVE3D
-      IF (Master) WRITE (stdout,30) KOUT, NOUT, tTLMindx(ng)
+      IF (Master) WRITE (stdout,20) KOUT, NOUT, tTLMindx(ng)
 # else
-      IF (Master)  WRITE (stdout,30) KOUT, tTLMindx(ng)
+      IF (Master)  WRITE (stdout,20) KOUT, tTLMindx(ng)
 # endif
 !
   10  FORMAT (/,' TL_WRT_HIS - error while writing variable: ',a,/,14x, &
      &        'into tangent NetCDF file for time record: ',i4)
-  20  FORMAT (/,' TL_WRT_HIS - unable to synchronize to disk tangent ', &
-     &        'linear file:',/,14x,a)
+
 # ifdef SOLVE3D
-  30  FORMAT (3x,'TL_WRT_HIS   - wrote tangent  fields (Index=', i1,    &
+  20  FORMAT (3x,'TL_WRT_HIS   - wrote tangent  fields (Index=', i1,    &
      &        ',',i1,') into time record = ',i7.7)
 # else
-  30  FORMAT (3x,'TL_WRT_HIS   - wrote tangent  fields (Index=', i1,    &
+  20  FORMAT (3x,'TL_WRT_HIS   - wrote tangent  fields (Index=', i1,    &
      &        ') into time record = ',i7.7)
 # endif
-      RETURN
-      END SUBROUTINE tl_wrt_his
+
 #else
       SUBROUTINE tl_wrt_his
+#endif
       RETURN
       END SUBROUTINE tl_wrt_his
-#endif

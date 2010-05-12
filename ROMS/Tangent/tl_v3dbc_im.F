@@ -2,12 +2,12 @@
       MODULE tl_v3dbc_mod
 #if defined TANGENT && defined SOLVE3D
 !
-!svn $Id: tl_v3dbc_im.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: tl_v3dbc_im.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!======================================================================= 
+!=======================================================================
 !                                                                      !
 !  This subroutine sets tangent linear lateral boundary conditions for !
 !  total 3D V-velocity. It updates the specified "nout" time index.    !
@@ -59,6 +59,7 @@
       USE mod_param
       USE mod_boundary
       USE mod_grid
+      USE mod_ncparam
       USE mod_scalars
 !
 !  Imported variable declarations.
@@ -92,7 +93,7 @@
 !
       IF (SOUTHERN_EDGE) THEN
 
-#  if defined SOUTH_M3RADIATION
+#  if defined SOUTH_M3RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -160,12 +161,23 @@
         DO k=1,N(ng)
           DO i=Istr,Iend
 !>          v(i,Jstr,k,nout)=BOUNDARY(ng)%v_south(i,k)
+!>
+#   ifdef ADJUST_BOUNDARY
+            IF (Lobc(isouth,isVvel,ng)) THEN
+              tl_v(i,Jstr,k,nout)=BOUNDARY(ng)%tl_v_south(i,k)
+            ELSE
+              tl_v(i,Jstr,k,nout)=0.0_r8
+            END IF
+#   else
+            tl_v(i,Jstr,k,nout)=0.0_r8
+#   endif
 #   ifdef MASKING
 !>          v(i,Jstr,k,nout)=v(i,Jstr,k,nout)*                          &
 !>   &                       GRID(ng)%vmask(i,Jstr)
-#   endif
 !>
-            tl_v(i,Jstr,k,nout)=0.0_r8
+            tl_v(i,Jstr,k,nout)=tl_v(i,Jstr,k,nout)*                    &
+     &                          GRID(ng)%vmask(i,Jstr)
+#   endif
           END DO
         END DO
 
@@ -208,7 +220,7 @@
 !
        IF (NORTHERN_EDGE) THEN
 
-#  if defined NORTH_M3RADIATION
+#  if defined NORTH_M3RADIATION_NOT_YET
 
          IF (iic(ng).ne.0) THEN
 !
@@ -249,7 +261,7 @@
      &                                  tl_grad(i  ,Jend+1)-            &
      &                               MIN(Cx,0.0_r8)*                    &
      &                                  tl_grad(i+1,Jend+1))/           &
-     &                              (cff+Ce) 
+     &                              (cff+Ce)
 #   ifdef NORTH_M3NUDGING
 !>            v(i,Jend+1,k,nout)=v(i,Jend+1,k,nout)+                    &
 !>   &                           tau*(BOUNDARY(ng)%v_north(i,k)-        &
@@ -276,12 +288,23 @@
         DO k=1,N(ng)
           DO i=Istr,Iend
 !>          v(i,Jend+1,k,nout)=BOUNDARY(ng)%v_north(i,k)
+!>
+#   ifdef ADJUST_BOUNDARY
+            IF (Lobc(inorth,isVvel,ng)) THEN
+              tl_v(i,Jend+1,k,nout)=BOUNDARY(ng)%tl_v_north(i,k)
+            ELSE
+              tl_v(i,Jend+1,k,nout)=0.0_r8
+            END IF
+#   else
+            tl_v(i,Jend+1,k,nout)=0.0_r8
+#   endif
 #   ifdef MASKING
 !>          v(i,Jend+1,k,nout)=v(i,Jend+1,k,nout)*                      &
 !>   &                         GRID(ng)%vmask(i,Jend+1)
-#   endif
 !>
-            tl_v(i,Jend+1,k,nout)=0.0_r8
+            tl_v(i,Jend+1,k,nout)=tl_v(i,Jend+1,k,nout)*                &
+     &                            GRID(ng)%vmask(i,Jend+1)
+#   endif
           END DO
         END DO
 
@@ -326,7 +349,7 @@
 !
       IF (WESTERN_EDGE) THEN
 
-#  if defined WEST_M3RADIATION
+#  if defined WEST_M3RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -367,7 +390,7 @@
      &                                  tl_grad(Istr-1,j-1)-            &
      &                               MIN(Ce,0.0_r8)*                    &
      &                                  tl_grad(Istr-1,j  ))/           &
-     &                              (cff+Cx) 
+     &                              (cff+Cx)
 #   ifdef WEST_M3NUDGING
 !>            v(Istr-1,j,k,nout)=v(Istr-1,j,k,nout)+                    &
 !>   &                           tau*(BOUNDARY(ng)%v_west(j,k)-         &
@@ -394,12 +417,23 @@
         DO k=1,N(ng)
           DO j=JstrV,Jend
 !>          v(Istr-1,j,k,nout)=BOUNDARY(ng)%v_west(j,k)
+!>
+#   ifdef ADJUST_BOUNDARY
+            IF (Lobc(iwest,isVvel,ng)) THEN
+              tl_v(Istr-1,j,k,nout)=BOUNDARY(ng)%tl_v_west(j,k)
+            ELSE
+              tl_v(Istr-1,j,k,nout)=0.0_r8
+            END IF
+#   else
+            tl_v(Istr-1,j,k,nout)=0.0_r8
+#   endif
 #   ifdef MASKING
 !>          v(Istr-1,j,k,nout)=v(Istr-1,j,k,nout)*                      &
 !>   &                         GRID(ng)%vmask(Istr-1,j)
-#   endif
 !>
-            tl_v(Istr-1,j,k,nout)=0.0_r8
+            tl_v(Istr-1,j,k,nout)=tl_v(Istr-1,j,k,nout)*                &
+     &                            GRID(ng)%vmask(Istr-1,j)
+#   endif
           END DO
         END DO
 
@@ -456,7 +490,7 @@
 !
       IF (EASTERN_EDGE) THEN
 
-#  if defined EAST_M3RADIATION
+#  if defined EAST_M3RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -497,7 +531,7 @@
      &                                  tl_grad(Iend+1,j-1)-            &
      &                               MIN(Ce,0.0_r8)*                    &
      &                                  tl_grad(Iend+1,j  ))/           &
-     &                              (cff+Cx) 
+     &                              (cff+Cx)
 #   ifdef EAST_M3NUDGING
 !>            v(Iend+1,j,k,nout)=v(Iend+1,j,k,nout)+                    &
 !>   &                           tau*(BOUNDARY(ng)%v_east(j,k)-         &
@@ -524,12 +558,23 @@
         DO k=1,N(ng)
           DO j=JstrV,Jend
 !>          v(Iend+1,j,k,nout)=BOUNDARY(ng)%v_east(j,k)
+!>
+#   ifdef ADJUST_BOUNDARY
+            IF (Lobc(ieast,isVvel,ng)) THEN
+              tl_v(Iend+1,j,k,nout)=BOUNDARY(ng)%tl_v_east(j,k)
+            ELSE
+              tl_v(Iend+1,j,k,nout)=0.0_r8
+            END IF
+#   else
+            tl_v(Iend+1,j,k,nout)=0.0_r8
+#   endif
 #   ifdef MASKING
 !>          v(Iend+1,j,k,nout)=v(Iend+1,j,k,nout)*                      &
 !>   &                         GRID(ng)%vmask(Iend+1,j)
-#   endif
 !>
-            tl_v(Iend+1,j,k,nout)=0.0_r8
+            tl_v(Iend+1,j,k,nout)=tl_v(Iend+1,j,k,nout)*                &
+     &                            GRID(ng)%vmask(Iend+1,j)
+#   endif
           END DO
         END DO
 

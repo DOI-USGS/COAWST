@@ -1,14 +1,14 @@
 #include "cppdefs.h"
       MODULE tl_forcing_mod
 
-#if defined TANGENT && (defined WEAK_CONSTRAINT || defined IOM)
+#if defined TANGENT && defined WEAK_CONSTRAINT
 !
-!svn $Id: tl_forcing.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: tl_forcing.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group   Emanuele Di Lorenzo   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group   Emanuele Di Lorenzo   !
 !    Licensed under a MIT/X style license            Andrew M. Moore   !
 !    See License_ROMS.txt                                              !
-!======================================================================= 
+!=======================================================================
 !                                                                      !
 !  This routine is used to force the tangent linear state equations.   !
 !                                                                      !
@@ -163,9 +163,19 @@
 !-----------------------------------------------------------------------
 !
       IF (SOUTH_WEST_CORNER) THEN
-        IF (Master) WRITE (stdout,10) time_code(ng)
- 10     FORMAT (3x,'TL_FORCING   - added convolved adjoint impulse,',   &
-     &          t62,'t = ', a,/)
+        IF (Master) THEN
+          IF (FrequentImpulse) THEN
+            IF (iic(ng).eq.ntstart(ng)) THEN
+              WRITE (stdout,10)
+ 10           FORMAT (3x,'TL_FORCING   - adding weak-constraint ',      &
+     &                'forcing at each time-step.')
+            END IF
+          ELSE
+            WRITE (stdout,20) time_code(ng)
+ 20         FORMAT (3x,'TL_FORCING   - added weak-constraint forcing,', &
+     &              t62,'t = ', a)
+          END IF
+        END IF
       END IF
 !
 !  Tangent linear free-surface. The two different cases in the

@@ -2,12 +2,12 @@
 #ifdef TANGENT
       SUBROUTINE tl_initial (ng)
 !
-!svn $Id: tl_initial.F 652 2008-07-24 23:20:53Z arango $
+!svn $Id: tl_initial.F 431 2009-12-26 20:36:20Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!======================================================================= 
+!=======================================================================
 !                                                                      !
 !  This routine initializes all tangent linear model variables.        !
 !                                                                      !
@@ -37,14 +37,23 @@
 # ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 # endif
-# if defined GRADIENT_CHECK || defined TLM_CHECK
+# ifdef TLM_CHECK
       USE ini_adjust_mod, ONLY : tl_ini_perturb
 # endif
-# ifdef OBS_SENSITIVITY
+      USE ini_hmixcoef_mod, ONLY : ini_hmixcoef
+# ifdef IS4DVAR_SENSITIVITY
       USE ini_lanczos_mod, ONLY : ini_lanczos
 # endif
       USE metrics_mod, ONLY : metrics
-# if defined W4DPSAS || defined W4DVAR
+# ifdef ADJUST_BOUNDARY
+      USE mod_boundary, ONLY : initialize_boundary
+# endif
+# if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+      USE mod_forces, ONLY : initialize_forces
+# endif
+# if defined SENSITIVITY_4DVAR || \
+     defined TL_W4DPSAS        || defined TL_W4DVAR  || \
+     defined W4DPSAS           || defined W4DVAR
       USE tl_set_depth_mod, ONLY : tl_bath
 # endif
 # ifdef SOLVE3D
@@ -88,15 +97,12 @@
 # if defined PERTURBATION
         WRITE (stdout,10) Nrun
  10     FORMAT (/,' <<<< Ensemble/Perturbation Run: ',i5.5,' >>>>',/)
-# elif defined IS4DVAR || defined IS4DVAR_OLD || defined W4DPSAS || \
-       defined W4DVAR
+# elif defined IS4DVAR    || defined SENSITIVITY_4DVAR || \
+       defined TL_W4DPSAS || defined TL_W4DVAR         || \
+       defined W4DPSAS    || defined W4DVAR
         WRITE (stdout,10) outer, inner
  10     FORMAT (/,' <<<< 4D Variational Data Assimilation, ',           &
      &          'Outer = ',i3.3, ', Inner = ',i3.3,' >>>>',/)
-# elif defined S4DVAR
-        WRITE (stdout,10) Nrun, Ipass
- 10     FORMAT (/,' <<<< 4D Variational Data Assimilation, ',           &
-     &          'Iteration = ',i5.5, ', Ipass = ',i1,' >>>>',/)
 # endif
         WRITE (stdout,20) 'TL_INITIAL: Configuring and ',               &
      &                    'initializing tangent linear model ...'
@@ -126,6 +132,9 @@
       nfm1(ng)=4
       nfm2(ng)=3
       nfm3(ng)=2
+# endif
+# ifdef OBC_VOLCONS
+      tl_ubar_xs=0.0_r8
 # endif
       tdays(ng)=dstart
       time(ng)=tdays(ng)*day2sec
@@ -165,32 +174,23 @@
 !
        IniRec=1
 
-# elif defined FOUR_DVAR || defined GRADIENT_CHECK || defined TLM_CHECK
+# elif defined FOUR_DVAR || defined TLM_CHECK
 !
 !-----------------------------------------------------------------------
 !  If variational data assimilation, reset several IO switches and
 !  variables.
 !-----------------------------------------------------------------------
-#  ifndef OBS_SENSITIVITY
+
+#  ifndef IS4DVAR_SENSITIVITY
+#   ifdef IS4DVAR
 !
-!  Set switches to create (TRUE) tangent linear initial conditions and
-!  history NetCDF files or append (FALSE) to existing NetCDF files.
+!  Set switch to create (TRUE) tangent linear initial conditions and
+!  history NetCDF files or append (FALSE) to existing files. Then,
+!  create tangent linear model initialization file and write zero
+!  initial conditions for records 1 and 2.
 !
-#   if defined WEAK_CONSTRAINT
-      IF (Nrun.eq.ERstr) THEN
-#   elif defined IS4DVAR
       IF ((Nrun.eq.ERstr).and.(inner.eq.0)) THEN
-#   else    
-      IF ((Nrun.eq.ERstr).and.((inner.eq.1).and.(Ipass.le.1))) THEN
-#   endif
         LdefITL(ng)=.TRUE.
-#   ifndef WEAK_CONSTRAINT
-        LdefTLM(ng)=.TRUE.
-#   endif
-!
-!  It first pass, create tangent linear model initialization file and
-!  write zero initial conditions for records 1 and 2.
-!
         CALL tl_def_ini (ng)
         IF (exit_flag.ne.NoError) RETURN
         CALL tl_wrt_ini (ng, Tindex, 1)
@@ -198,18 +198,33 @@
         CALL tl_wrt_ini (ng, Tindex, 2)
         IF (exit_flag.ne.NoError) RETURN
       END IF
+#   endif
+#   ifndef WEAK_CONSTRAINT
+!
+!  Set switch to create tangent linear history file.
+!
+      IF (Nrun.eq.ERstr) THEN
+        LdefTLM(ng)=.TRUE.
+      END IF
+#   endif
 !
 !  Set record to read from initial tangent linear NetCDF file.
 !
       IniRec=tITLindx(ng)
 
+#   ifdef ADJUST_BOUNDARY
+!
+!  Initialize open boundary counter for storage arrays.
+!
+      OBCcount(ng)=0
+#   endif
 #   if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
 !
 !  Initialize surface forcing counter for storage arrays.
 !
       SFcount(ng)=0
 #   endif
-#   ifndef WEAK_CONSTRAINT
+#   if !defined WEAK_CONSTRAINT
 !
 !  Reset tangent linear model history time record counters. These
 !  counters are reset in every iteration pass. This file is created
@@ -217,20 +232,7 @@
 !
       tTLMindx(ng)=0
       NrecTLM(ng)=0
-
-#    ifdef IS4DVAR_OLD
-!  
-!  Avoid writing tangent linear history file on the second pass
-!  (Ipass=2).
-!
-      IF (Ipass.eq.1) THEN
-        LwrtTLM(ng)=.TRUE.
-      ELSEif (Ipass.eq.2) THEN
-        LwrtTLM(ng)=.FALSE.
-      END IF
-#    else
       LwrtTLM(ng)=.TRUE.
-#    endif
 !
 !  Insure that forward and history file names are the same. In 4DVar,
 !  the forward solution is computed by the nonlinear model and stored
@@ -243,25 +245,17 @@
       FWDname(ng)=HISname(ng)
       ncFWDid(ng)=ncHISid(ng)
 #    endif
-#   else
-!
-!  If weak constraint 4DVAR, activate writting of history NetCDF
-!  file.
-!
-!!    LdefTLM(ng)=.TRUE.
-!!    LwrtTLM(ng)=.TRUE.
 #   endif
 #  endif
+#  ifdef OBSERVATIONS
 !
 !  Open observations NetCDF file and initialize various variables
 !  needed for processing the nonlinear state solution at observation
 !  locations.
 !
       CALL obs_initial (ng, iTLM, .FALSE.)
-#  ifdef DISTRIBUTE
-      CALL mp_bcasti (ng, iTLM, exit_flag, 1)
-#  endif
       IF (exit_flag.ne.NoError) RETURN
+#  endif
 # endif
 !
 !=======================================================================
@@ -290,7 +284,7 @@
 # else
         CALL get_grid (ng, iTLM)
 #  ifdef DISTRIBUTE
-        CALL mp_bcasti (ng, iTLM, exit_flag, 1)
+        CALL mp_bcasti (ng, iTLM, exit_flag)
 #  endif
         IF (exit_flag.ne.NoError) RETURN
 # endif
@@ -330,24 +324,6 @@
         END DO
 !$OMP END PARALLEL DO
 
-# if defined VISC_GRID || defined DIFF_GRID || defined SPONGE
-!
-!-----------------------------------------------------------------------
-!  Set horizontal mixing coefficients. Rescale according to the local
-!  grid size. If applicable, increases horizontal mixing in sponge
-!  areas.
-!-----------------------------------------------------------------------
-!
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1
-            CALL ana_hmixcoef (ng, TILE, iTLM)
-          END DO
-        END DO
-!$OMP END PARALLEL DO
-# endif
-
 # ifdef NUDGING_COFF
 !
 !-----------------------------------------------------------------------
@@ -365,14 +341,45 @@
 # endif
       END IF
 !
+!-----------------------------------------------------------------------
+!  Initialize horizontal mixing coefficients.
+!-----------------------------------------------------------------------
+!
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+      DO thread=0,numthreads-1
+        subs=NtileX(ng)*NtileE(ng)/numthreads
+        DO tile=subs*thread,subs*(thread+1)-1
+          CALL ini_hmixcoef (ng, TILE, iTLM)
+        END DO
+      END DO
+!$OMP END PARALLEL DO
+
+# if defined VISC_GRID || defined DIFF_GRID || defined SPONGE
+!
+!-----------------------------------------------------------------------
+!  Set horizontal mixing coefficients. Rescale according to the local
+!  grid size. If applicable, increases horizontal mixing in sponge
+!  areas.
+!-----------------------------------------------------------------------
+!
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+      DO thread=0,numthreads-1
+        subs=NtileX(ng)*NtileE(ng)/numthreads
+        DO tile=subs*thread,subs*(thread+1)-1
+          CALL ana_hmixcoef (ng, TILE, iTLM)
+        END DO
+      END DO
+!$OMP END PARALLEL DO
+# endif
+!
 !=======================================================================
 !  Initialize model state variables and forcing.  This part is
 !  executed for each ensemble/perturbation/iteration pass.
 !=======================================================================
 
-# if defined FOUR_DVAR && !defined OBS_SENSITIVITY
-#  if defined GRADIENT_CHECK || defined OPT_OBSERVATIONS || \
-      defined TLM_CHECK      || defined WEAK_CONSTRAINT
+# if defined FOUR_DVAR && !defined IS4DVAR_SENSITIVITY
+#  if defined OPT_OBSERVATIONS || defined TLM_CHECK || \
+      defined WEAK_CONSTRAINT
 !
 !  Clear tangent linear state variables.
 !
@@ -398,15 +405,17 @@
 !  outer loop iteration.
 !-----------------------------------------------------------------------
 !
-#    ifdef IS4DVAR_OLD
-      IF ((inner.eq.1).and.(Ipass.le.1)) THEN
-#    else
       IF (inner.eq.0) THEN
-#    endif
 !$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
         DO thread=0,numthreads-1
           subs=NtileX(ng)*NtileE(ng)/numthreads
           DO tile=subs*thread,subs*(thread+1)-1
+#    ifdef ADJUST_BOUNDARY
+            CALL initialize_boundary (ng, TILE, iTLM)
+#    endif
+#    if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+            CALL initialize_forces (ng, TILE, iTLM)
+#    endif
             CALL initialize_ocean (ng, TILE, iTLM)
           END DO
         END DO
@@ -444,7 +453,9 @@
 !$OMP END PARALLEL DO
 # endif
 
-# if defined W4DPSAS || defined W4DVAR
+# if defined SENSITIVITY_4DVAR || \
+     defined TL_W4DPSAS        || defined TL_W4DVAR || \
+     defined W4DPSAS           || defined W4DVAR
 !
 !-----------------------------------------------------------------------
 !  Initialize tangent linear bathymetry to zero.
@@ -529,7 +540,7 @@
       END IF
 # endif
 
-# ifdef OBS_SENSITIVITY
+# ifdef IS4DVAR_SENSITIVITY
 !
 !  Initialize with the weighted sum of all Lanczos vectors computed
 !  from the first outer loop of the IS4DVAR Lanczos algorithm.
@@ -576,7 +587,7 @@
 !$OMP END PARALLEL DO
 # endif
 
-# if defined GRADIENT_CHECK || defined TLM_CHECK
+# ifdef TLM_CHECK
 !
 !-----------------------------------------------------------------------
 !  Perturb tangent linear state variable according to the outer loop
@@ -653,11 +664,11 @@
 # endif
       CALL tl_get_data (ng)
 # ifdef DISTRIBUTE
-      CALL mp_bcasti (ng, iTLM, exit_flag, 1)
+      CALL mp_bcasti (ng, iTLM, exit_flag)
 # endif
       IF (exit_flag.ne.NoError) RETURN
 
-# if defined WEAK_CONSTRAINT || defined IOM
+# ifdef WEAK_CONSTRAINT
 !
 !-----------------------------------------------------------------------
 !  If available, read in first TLM impulse forcing and its application
@@ -669,8 +680,8 @@
 !-----------------------------------------------------------------------
 !
       IF (nADJ(ng).lt.ntimes(ng)) THEN
-        FrcRec(ng)=1
-        CALL get_state (ng, 7, 7, TLFname(ng), FrcRec(ng), 1)
+        IniRec=1
+        CALL get_state (ng, 7, 7, TLFname(ng), IniRec, 1)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 # endif

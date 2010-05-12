@@ -2,12 +2,12 @@
       MODULE tl_zetabc_mod
 #ifdef TANGENT
 !
-!svn $Id: tl_zetabc.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: tl_zetabc.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!======================================================================= 
+!=======================================================================
 !                                                                      !
 !  This subroutine sets tangent linear lateral boundary conditions for !
 !  free-surface. It updates the specified "kout" time index.           !
@@ -59,6 +59,7 @@
       USE mod_param
       USE mod_boundary
       USE mod_grid
+      USE mod_ncparam
       USE mod_scalars
 !
 !  Imported variable declarations.
@@ -115,14 +116,14 @@
 !
       IF (WESTERN_EDGE) THEN
 
-#  if defined WEST_FSRADIATION
+#  if defined WEST_FSRADIATION_NOT_YET
 !
 !  Western edge, implicit upstream radiation condition.
 !
         IF (iic(ng).ne.0) THEN
           DO j=Jstr,Jend+1
-!>          grad(Istr-1,j)=zeta(Istr-1,j  ,kstp)-                       &
-!>   &                     zeta(Istr-1,j-1,kstp)
+!>          grad(Istr-1,j)=zeta(Istr-1,j  ,know)-                       &
+!>   &                     zeta(Istr-1,j-1,know)
 !>
             tl_grad(Istr-1,j)=0.0_r8
           END DO
@@ -208,12 +209,23 @@
 !
         DO j=Jstr,Jend
 !>        zeta(Istr-1,j,kout)=BOUNDARY(ng)%zeta_west(j)
+!>
+#   ifdef ADJUST_BOUNDARY
+          IF (Lobc(iwest,isFsur,ng)) THEN
+            tl_zeta(Istr-1,j,kout)=BOUNDARY(ng)%tl_zeta_west(j)
+          ELSE
+            tl_zeta(Istr-1,j,kout)=0.0_r8
+          END IF
+#   else
+          tl_zeta(Istr-1,j,kout)=0.0_r8
+#   endif
 #   ifdef MASKING
 !>        zeta(Istr-1,j,kout)=zeta(Istr-1,j,kout)*                      &
 !>   &                        GRID(ng)%rmask(Istr-1,j)
-#   endif
 !>
-          tl_zeta(Istr-1,j,kout)=0.0_r8
+          tl_zeta(Istr-1,j,kout)=tl_zeta(Istr-1,j,kout)*                &
+     &                           GRID(ng)%rmask(Istr-1,j)
+#   endif
         END DO
 
 #  elif defined WEST_FSGRADIENT
@@ -258,7 +270,7 @@
 !
       IF (EASTERN_EDGE) THEN
 
-#  if defined EAST_FSRADIATION
+#  if defined EAST_FSRADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -352,12 +364,23 @@
 !
         DO j=Jstr,Jend
 !>        zeta(Iend+1,j,kout)=BOUNDARY(ng)%zeta_east(j)
+!>
+#   ifdef ADJUST_BOUNDARY
+          IF (Lobc(ieast,isFsur,ng)) THEN
+            tl_zeta(Iend+1,j,kout)=BOUNDARY(ng)%tl_zeta_east(j)
+          ELSE
+            tl_zeta(Iend+1,j,kout)=0.0_r8
+          END IF
+#   else
+          tl_zeta(Iend+1,j,kout)=0.0_r8
+#   endif
 #   ifdef MASKING
 !>        zeta(Iend+1,j,kout)=zeta(Iend+1,j,kout)*                      &
 !>   &                        GRID(ng)%rmask(Iend+1,j)
-#   endif
 !>
-          tl_zeta(Iend+1,j,kout)=0.0_r8
+          tl_zeta(Iend+1,j,kout)=tl_zeta(Iend+1,j,kout)*                &
+     &                           GRID(ng)%rmask(Iend+1,j)
+#   endif
         END DO
 
 #  elif defined EAST_FSGRADIENT
@@ -405,7 +428,7 @@
 !
       IF (SOUTHERN_EDGE) THEN
 
-#  if defined SOUTH_FSRADIATION
+#  if defined SOUTH_FSRADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -499,12 +522,23 @@
 !
         DO i=Istr,Iend
 !>        zeta(i,Jstr-1,kout)=BOUNDARY(ng)%zeta_south(i)
+!>
+#   ifdef ADJUST_BOUNDARY
+          IF (Lobc(isouth,isFsur,ng)) THEN
+            tl_zeta(i,Jstr-1,kout)=BOUNDARY(ng)%tl_zeta_south(i)
+          ELSE
+            tl_zeta(i,Jstr-1,kout)=0.0_r8
+          END IF
+#   else
+          tl_zeta(i,Jstr-1,kout)=0.0_r8
+#   endif
 #   ifdef MASKING
 !>        zeta(i,Jstr-1,kout)=zeta(i,Jstr-1,kout)*                      &
 !>   &                        GRID(ng)%rmask(i,Jstr-1)
-#   endif
 !>
-          tl_zeta(i,Jstr-1,kout)=0.0_r8
+          tl_zeta(i,Jstr-1,kout)=tl_zeta(i,Jstr-1,kout)*                &
+     &                           GRID(ng)%rmask(i,Jstr-1)
+#   endif
         END DO
 
 #  elif defined SOUTH_FSGRADIENT
@@ -548,7 +582,7 @@
 !
       IF (NORTHERN_EDGE) THEN
 
-#  if defined NORTH_FSRADIATION
+#  if defined NORTH_FSRADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -642,12 +676,23 @@
 !
         DO i=Istr,Iend
 !>        zeta(i,Jend+1,kout)=BOUNDARY(ng)%zeta_north(i)
+!>
+#   ifdef ADJUST_BOUNDARY
+          IF (Lobc(inorth,isFsur,ng)) THEN
+            tl_zeta(i,Jend+1,kout)=BOUNDARY(ng)%tl_zeta_north(i)
+          ELSE
+            tl_zeta(i,Jend+1,kout)=0.0_r8
+          END IF
+#   else
+          tl_zeta(i,Jend+1,kout)=0.0_r8
+#   endif
 #   ifdef MASKING
 !>        zeta(i,Jend+1,kout)=zeta(i,Jend+1,kout)*                      &
 !>   &                        GRID(ng)%rmask(i,Jend+1)
-#   endif
 !>
-          tl_zeta(i,Jend+1,kout)=0.0_r8
+          tl_zeta(i,Jend+1,kout)=tl_zeta(i,Jend+1,kout)*                &
+     &                           GRID(ng)%rmask(i,Jend+1)
+#   endif
         END DO
 
 #  elif defined NORTH_FSGRADIENT

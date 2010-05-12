@@ -2,12 +2,12 @@
       MODULE tl_rho_eos_mod
 #if defined TANGENT && defined SOLVE3D
 !
-!svn $Id: tl_rho_eos.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: tl_rho_eos.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!======================================================================= 
+!=======================================================================
 !                                                                      !
 !  This routine computes  "in situ" density and other associated       !
 !  quantitites as a function of potential temperature,  salinity,      !
@@ -335,7 +335,7 @@
 !
 !  Check temperature and salinity lower values. Assign depth to the
 !  pressure.
-!  
+!
             Tt=MAX(-2.0_r8,t(i,j,k,nrhs,itemp))
             tl_Tt=(0.5_r8-SIGN(0.5_r8,-2.0_r8-                          &
      &                         t(i,j,k,nrhs,itemp)))*                   &
@@ -375,7 +375,7 @@
      &                      Tt*5.0_r8*Q05)))
             dCdT(1)=U01+Tt*(2.0_r8*U02+Tt*(3.0_r8*U03+Tt*4.0_r8*U04))
             dCdT(2)=V01+Tt*2.0_r8*V02
-#  endif  
+#  endif
             tl_C(0)=tl_Tt*dCdT(0)
             tl_C(1)=tl_Tt*dCdT(1)
             tl_C(2)=tl_Tt*dCdT(2)
@@ -794,7 +794,7 @@
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        tl_beta)
-#    endif    
+#    endif
 #    ifdef VAR_RHO_2D
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -861,7 +861,7 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    tl_alpha, tl_beta)
-#    endif    
+#    endif
 #    ifdef VAR_RHO_2D
       CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -1263,7 +1263,7 @@
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        tl_beta)
-#    endif    
+#    endif
 #    ifdef VAR_RHO_2D
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -1330,7 +1330,7 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    tl_alpha, tl_beta)
-#    endif    
+#    endif
 #    ifdef VAR_RHO_2D
       CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &

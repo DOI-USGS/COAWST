@@ -2,9 +2,9 @@
 #ifdef TANGENT
       SUBROUTINE tl_output (ng)
 !
-!svn $Id: tl_output.F 584 2008-03-18 20:01:12Z arango $
+!svn $Id: tl_output.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -25,6 +25,11 @@
       USE mod_ncparam
       USE mod_netcdf
       USE mod_scalars
+
+# ifdef DISTRIBUTE
+!
+      USE distribute_mod, ONLY : mp_bcasts
+# endif
 !
       implicit none
 !
@@ -95,7 +100,12 @@
               WRITE (TLMname(ng),10) TLMbase(ng)(1:lstr-3),ifile
   10          FORMAT (a,'_',i4.4,'.nc')
             END IF
-            IF (ncTLMid(ng).ne.-1) status=nf90_close(ncTLMid(ng))
+# ifdef DISTRIBUTE
+            CALL mp_bcasts (ng, iTLM, TLMname(ng))
+# endif
+            IF (ncTLMid(ng).ne.-1) THEN
+              CALL netcdf_close (ng, iTLM, ncTLMid(ng))
+            END IF
             CALL tl_def_his (ng, NewFile)
             IF (exit_flag.ne.NoError) RETURN
           END IF
@@ -150,7 +160,9 @@
 #   endif
         CALL obs_read (ng, iTLM, .FALSE.)
         CALL obs_write (ng, tile, iTLM)
+#   ifndef WEAK_CONSTRAINT
         CALL obs_cost (ng, iTLM)
+#   endif
       ELSE
         ProcessObs(ng)=.FALSE.
       END IF

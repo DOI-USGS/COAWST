@@ -2,9 +2,9 @@
 #ifdef TANGENT
       SUBROUTINE tl_set_data (ng, tile)
 !
-!svn $Id: tl_set_data.F 704 2008-08-13 06:20:10Z arango $
+!svn $Id: tl_set_data.F 451 2010-03-04 21:43:03Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -78,6 +78,9 @@
 #  endif
 # endif
 # ifdef DISTRIBUTE
+#  if defined WET_DRY
+      USE distribute_mod, ONLY : mp_boundary
+#  endif
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #  ifdef SOLVE3D
       USE mp_exchange_mod, ONLY : mp_exchange3d
@@ -111,6 +114,9 @@
 #  endif
 # endif
       logical :: update = .FALSE.
+# if defined WET_DRY
+      logical :: bry_update
+# endif
 
 # ifdef OBC
       integer :: ILB, IUB, JLB, JUB
@@ -119,8 +125,8 @@
 
       real(r8) :: Zr, cff, cff1, cff2
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) ::  work1
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) ::  work2
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) ::  work1
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) ::  work2
 
 # include "set_bounds.h"
 
@@ -145,8 +151,9 @@
 #   endif
 #  endif
 
-#  if defined BULK_FLUXES || defined ECOSIM || \
-    (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO)
+#  if (defined BULK_FLUXES && !defined NL_BULK_FLUXES) || \
+      defined ECOSIM || \
+      (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO)
 !
 !-----------------------------------------------------------------------
 !  Set surface air temperature (degC).
@@ -163,8 +170,9 @@
 #   endif
 #  endif
 
-#  if defined BULK_FLUXES || defined ECOSIM || \
-     (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO)
+#  if (defined BULK_FLUXES && !defined NL_BULK_FLUXES) || \
+      defined ECOSIM || \
+      (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO)
 !
 !-----------------------------------------------------------------------
 !  Set surface air relative or specific humidity.
@@ -205,7 +213,8 @@
 #   endif
 #  endif
 
-#  if defined BULK_FLUXES && !defined LONGWAVE && !defined LONGWAVE_OUT
+#  if (defined BULK_FLUXES && !defined NL_BULK_FLUXES) && \
+      !defined LONGWAVE    && !defined LONGWAVE_OUT
 !
 !-----------------------------------------------------------------------
 !  Surface net longwave radiation (degC m/s).
@@ -218,7 +227,8 @@
      &                     update)
 #  endif
 
-#  if defined LONGWAVE_OUT && defined BULK_FLUXES
+#  if defined LONGWAVE_OUT && \
+      (defined BULK_FLUXES && !defined NL_BULK_FLUXES)
 !
 !-----------------------------------------------------------------------
 !  Surface downwelling longwave radiation (degC m/s).
@@ -231,23 +241,8 @@
      &                     update)
 #  endif
 
-#  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
-!
-!-----------------------------------------------------------------------
-!  Set surface air pressure (mb).
-!-----------------------------------------------------------------------
-!
-#   ifdef ANA_PAIR
-      CALL ana_pair (ng, tile, iTLM)
-#   else
-      CALL set_2dfld_tile (ng, tile, iTLM, idPair,                      &
-     &                     LBi, UBi, LBj, UBj,                          &
-     &                     FORCES(ng)%PairG,                            &
-     &                     FORCES(ng)%Pair,                             &
-     &                     update)
-#   endif
-#  endif
-#  if defined BULK_FLUXES || defined ECOSIM
+#  if (defined BULK_FLUXES && !defined NL_BULK_FLUXES) || \
+      defined ECOSIM
 !
 !-----------------------------------------------------------------------
 !  Set surface winds (m/s).
@@ -304,7 +299,7 @@
 #   endif
 #  endif
 
-#  ifdef BULK_FLUXES
+#  if defined BULK_FLUXES && !defined NL_BULK_FLUXES
 !
 !-----------------------------------------------------------------------
 !  Set rain fall rate (kg/m2/s).
@@ -321,7 +316,7 @@
 #   endif
 #  endif
 
-#  ifndef BULK_FLUXES
+#  if !defined BULK_FLUXES || defined NL_BULK_FLUXES
 !
 !-----------------------------------------------------------------------
 !  Set kinematic surface net heat flux (degC m/s).
@@ -391,6 +386,13 @@
      &                     FORCES(ng)%stflx (:,:,isalt),                &
      &                     update)
 #    endif
+#    if defined EMINUSP && defined NL_BULK_FLUXES
+      CALL set_2dfld_tile (ng, tile, iTLM, idEmPf,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%stflxG(:,:,:,isalt),              &
+     &                     FORCES(ng)%stflx (:,:,isalt),                &
+     &                     update)
+#    endif
 #   endif
 
 #   if defined SCORRECTION || defined SRELAXATION
@@ -455,7 +457,7 @@
 # endif
 
 # ifndef AIR_OCEAN
-#  ifndef BULK_FLUXES
+#  if !defined BULK_FLUXES || defined NL_BULK_FLUXES
 !
 !-----------------------------------------------------------------------
 !  Set kinematic surface momentum flux (m2/s2).
@@ -510,6 +512,24 @@
       END IF
 #    endif
 #   endif
+#  endif
+# endif
+
+# if (defined BULK_FLUXES && !defined NL_BULK_FLUXES) || \
+     defined ECOSIM       || defined ATM_PRESS
+!
+!-----------------------------------------------------------------------
+!  Set surface air pressure (mb).
+!-----------------------------------------------------------------------
+!
+#  ifdef ANA_PAIR
+      CALL ana_pair (ng, tile, iTLM)
+#  else
+      CALL set_2dfld_tile (ng, tile, iTLM, idPair,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%PairG,                            &
+     &                     FORCES(ng)%Pair,                             &
+     &                     update)
 #  endif
 # endif
 
@@ -615,7 +635,7 @@
 !-----------------------------------------------------------------------
 !
       CALL ana_specir (ng, tile, iTLM)
-# endif     
+# endif
 
 # ifdef ANA_SPINNING
 !
@@ -633,10 +653,10 @@
 !  Set point Sources/Sinks (river runoff).
 !-----------------------------------------------------------------------
 !
-      IF (SOUTH_WEST_TEST) THEN
 #  ifdef ANA_PSOURCE
         CALL ana_psource (ng, tile iTLM)
 #  else
+      IF (SOUTH_WEST_TEST) THEN
 #   if defined UV_PSOURCE || defined Q_PSOURCE
         CALL set_ngfld (ng, iTLM, idRtra, 1, Nsrc(ng), 1,               &
      &                  1, Nsrc(ng), 1,                                 &
@@ -654,23 +674,17 @@
 #   endif
 #   if defined TS_PSOURCE && defined SOLVE3D
         DO itrc=1,NT(ng)
-          IF (SOURCES(ng)%Ltracer(itrc)) THEN
+          IF (LtracerSrc(itrc,ng)) THEN
             CALL set_ngfld (ng, iTLM, idRtrc(itrc), 1, Nsrc(ng), N(ng), &
      &                      1, Nsrc(ng), N(ng),                         &
      &                      SOURCES(ng) % TsrcG(1,1,1,itrc),            &
      &                      SOURCES(ng) % Tsrc(1,1,itrc),               &
      &                      update)
-            IF (.not.update) THEN
-              DO i=1,Nsrc(ng)
-                SOURCES(ng) % Lsrc(i,itrc)=.FALSE.
-              END DO
-              exit_flag=0
-            END IF
           END IF
         END DO
 #   endif
-#  endif
       END IF
+#  endif
 # endif
 
 # ifdef OBC
@@ -720,6 +734,84 @@
 #   endif
       END IF
 #  endif
+
+#  if defined WET_DRY
+!
+! Ensure that water level on boundary cells is above bed elevation.
+!
+#   ifdef WEST_FSOBC
+      bry_update=.FALSE.
+      IF (WESTERN_EDGE) THEN
+        DO j=JstrR,JendR
+          cff=Dcrit(ng)-GRID(ng)%h(0,j)
+          IF (BOUNDARY(ng)%zeta_west(j).le.cff) THEN
+            BOUNDARY(ng)%zeta_west(j)=cff
+          END IF
+        END DO
+        bry_update=.TRUE.
+      END IF
+#    ifdef DISTRIBUTE
+      CALL mp_boundary (ng, iTLM, JstrR, JendR, JLB, JUB, 1, 1,         &
+     &                  bry_update,                                     &
+     &                  BOUNDARY(ng)%zeta_west)
+#    endif
+#   endif
+
+#   ifdef EAST_FSOBC
+      bry_update=.FALSE.
+      IF (EASTERN_EDGE) THEN
+        DO j=JstrR,JendR
+          cff=Dcrit(ng)-GRID(ng)%h(Lm(ng)+1,j)
+          IF (BOUNDARY(ng)%zeta_east(j).le.cff) THEN
+            BOUNDARY(ng)%zeta_east(j)=cff
+          END IF
+        END DO
+        bry_update=.TRUE.
+      END IF
+#    ifdef DISTRIBUTE
+      CALL mp_boundary (ng, iTLM, JstrR, JendR, JLB, JUB, 1, 1,         &
+     &                  bry_update,                                     &
+     &                  BOUNDARY(ng)%zeta_east)
+#    endif
+#   endif
+
+#   ifdef SOUTH_FSOBC
+      bry_update=.FALSE.
+      IF (SOUTHERN_EDGE) THEN
+        DO i=IstrR,IendR
+          cff=Dcrit(ng)-GRID(ng)%h(i,0)
+          IF (BOUNDARY(ng)%zeta_south(i).le.cff) THEN
+            BOUNDARY(ng)%zeta_south(i)=cff
+          END IF
+        END DO
+        bry_update=.TRUE.
+      END IF
+#    ifdef DISTRIBUTE
+      CALL mp_boundary (ng, iTLM, IstrR, IendR, ILB, IUB, 1, 1,         &
+     &                  bry_update,                                     &
+     &                  BOUNDARY(ng)%zeta_south)
+#    endif
+#   endif
+
+#   ifdef NORTH_FSOBC
+      bry_update=.FALSE.
+      IF (NORTHERN_EDGE) THEN
+        DO i=IstrR,IendR
+          cff=Dcrit(ng)-GRID(ng)%h(i,Mm(ng)+1)
+          IF (BOUNDARY(ng)%zeta_north(i).le.cff) THEN
+            BOUNDARY(ng)%zeta_north(i)=cff
+          END IF
+        END DO
+        bry_update=.TRUE.
+      END IF
+#    ifdef DISTRIBUTE
+      CALL mp_boundary (ng, iTLM, IstrR, IendR, ILB, IUB, 1, 1,         &
+     &                  bry_update,                                     &
+     &                  BOUNDARY(ng)%zeta_north)
+#    endif
+#   endif
+#  endif
+
 #  ifdef ANA_M2OBC
       CALL ana_m2obc (ng, tile, iTLM)
 #  else
@@ -948,30 +1040,6 @@
 #  endif
 # endif
 
-# if defined NUDGING_SSH
-!
-!-----------------------------------------------------------------------
-!  Set sea surface height observations and error variance.
-!-----------------------------------------------------------------------
-!
-      IF (assi_SSH(ng)) THEN
-        CALL set_2dfld_tile (ng, tile, iTLM, idSSHo,                    &
-     &                       LBi, UBi, LBj, UBj,                        &
-     &                       OBS(ng)%SSHdat,                            &
-     &                       OBS(ng)%SSHobs,                            &
-     &                       update)
-        CALL set_2dfld_tile (ng, tile, iTLM, idSSHe,                    &
-     &                       LBi, UBi, LBj, UBj,                        &
-     &                       OBS(ng)%EdatSSH,                           &
-     &                       OBS(ng)%EobsSSH,                           &
-     &                       update)
-        IF (.not.update.and.SOUTH_WEST_TEST) THEN
-          update_SSH(ng)=.FALSE.
-          exit_flag=0
-        END IF
-      END IF
-# endif
-
 # ifdef SOLVE3D
 #  if defined NUDGING_SST || defined ASSIMILATION_SST
 !
@@ -1022,7 +1090,7 @@
                 cff1=pcoef_SST(npSST(ng),ng)
                 DO order=npSST(ng)-1,0,-1
                   cff=Zr*cff+perr_SST(order,ng)
-                  cff1=Zr*cff+pcoef_SST(order,ng)
+                  cff1=Zr*cff1+pcoef_SST(order,ng)
                 END DO
                 OBS(ng)%EobsT(i,j,k,itemp)=MIN(1.0_r8,cff*              &
      &                                         OBS(ng)%EobsSST(i,j))
@@ -1435,6 +1503,66 @@
      &                       update)
       END DO
 #   endif
+#  endif
+
+#  ifdef WEAK_CONSTRAINT
+!
+!-----------------------------------------------------------------------
+!  Set weak contraint frequent impulse forcing.
+!-----------------------------------------------------------------------
+!
+      IF (FrequentImpulse) THEN
+!
+!  Set free-surface forcing.
+!
+        CALL set_2dfld_tile (ng, tile, iTLM, idZtlf,                    &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       OCEAN(ng)%f_zetaG,                         &
+     &                       OCEAN(ng)%f_zeta,                          &
+     &                       update)
+
+#   ifndef SOLVE3D
+!
+!  Set 2D momentum forcing.
+!
+        CALL set_2dfld_tile (ng, tile, iTLM, idUbtf,                    &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       OCEAN(ng)%f_ubarG,                         &
+     &                       OCEAN(ng)%f_ubar,                          &
+     &                       update)
+        CALL set_2dfld_tile (ng, tile, iTLM, idVbtf,                    &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       OCEAN(ng)%f_vbarG,                         &
+     &                       OCEAN(ng)%f_vbar,                          &
+     &                       update)
+#   endif
+
+#   ifdef SOLVE3D
+!
+!  Set 3D momentum forcing.
+!
+        CALL set_3dfld_tile (ng, tile, iTLM, idUtlf,                    &
+     &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
+     &                       OCEAN(ng)%f_uG,                            &
+     &                       OCEAN(ng)%f_u,                             &
+     &                       update)
+        CALL set_3dfld_tile (ng, tile, iTLM, idVtlf,                    &
+     &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
+     &                       OCEAN(ng)%f_vG,                            &
+     &                       OCEAN(ng)%f_v,                             &
+     &                       update)
+!
+!  Set 3D tracers forcing.
+!
+        DO itrc=1,NT(ng)
+          CALL set_3dfld_tile (ng, tile, iTLM, idTtlf(itrc),            &
+     &                         LBi, UBi, LBj, UBj, 1, N(ng),            &
+     &                         OCEAN(ng)%f_tG(:,:,:,:,itrc),            &
+     &                         OCEAN(ng)%f_t(:,:,:,itrc),               &
+     &                         update)
+        END DO
+#   endif
+      END IF
 #  endif
 # endif
 

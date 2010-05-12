@@ -2,12 +2,12 @@
 #if defined TANGENT && !defined SOLVE3D
       SUBROUTINE tl_main2d (ng)
 !
-!svn $Id: tl_main2d.F 704 2008-08-13 06:20:10Z arango $
+!svn $Id: tl_main2d.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!======================================================================= 
+!=======================================================================
 !                                                                      !
 !  This routine is the main driver for tangent linear  ROMS/TOMS when  !
 !  configurated as shallow water  (barotropic ) ocean model only.  It  !
@@ -28,9 +28,6 @@
 # ifdef TLM_CHECK
       USE dotproduct_mod, ONLY : tl_dotproduct
 # endif
-# ifdef ADJUST_WSTRESS
-      USE frc_adjust_mod, ONLY : frc_TLadjust, load_TLforcing
-# endif
 # ifdef AIR_OCEAN_NOT_YET
       USE ocean_coupler_mod, ONLY : atmos_coupling
 # endif
@@ -41,10 +38,16 @@
 !!    USE oi_update_mod, ONLY : oi_update
 # endif
       USE tl_diag_mod, ONLY : tl_diag
-# if defined WEAK_CONSTRAINT || defined IOM
+# ifdef WEAK_CONSTRAINT
       USE tl_forcing_mod, ONLY : tl_forcing
 # endif
+# ifdef ADJUST_WSTRESS
+      USE tl_frc_adjust_mod, ONLY : tl_frc_adjust
+# endif
       USE tl_ini_fields_mod, ONLY : tl_ini_fields, tl_ini_zeta
+# ifdef ADJUST_BOUNDARY
+      USE tl_obc_adjust_mod, ONLY : tl_obc_adjust
+# endif
 # ifdef NEARSHORE_MELLOR_NOT_YET
 !!    USE tl_radiation_stress_mod, ONLY : tl_radiation_stress
 # endif
@@ -72,7 +75,7 @@
 # ifdef FLOATS_NOT_YET
       integer :: Lend, Lstr, chunk_size
 # endif
-# if defined WEAK_CONSTRAINT || defined IOM
+# ifdef WEAK_CONSTRAINT
       real(r8) :: HalfDT
 # endif
 !
@@ -86,7 +89,7 @@
       tdays(ng)=time(ng)*sec2day
       CALL time_string (time(ng), time_code(ng))
 
-#if defined WEAK_CONSTRAINT || defined IOM
+#ifdef WEAK_CONSTRAINT
 !
 !-----------------------------------------------------------------------
 !  If appropriate, add convolved adjoint solution as impulse forcing to
@@ -183,7 +186,7 @@
 # ifdef AVERAGES
 !!        CALL tl_set_avg (ng, TILE)
 # endif
-# ifdef DIAGNOSTICS_UV
+# ifdef DIAGNOSTICS
 !!        CALL set_diags (ng, TILE)
 # endif
           CALL tl_diag (ng, TILE)
@@ -214,22 +217,42 @@
       END IF
 # endif
 
+# ifdef ADJUST_BOUNDARY
+!
+!-----------------------------------------------------------------------
+!  Interpolate open boundary increments and adjust open boundaries.
+!  Skip the last output timestep.
+!-----------------------------------------------------------------------
+!
+      IF (iic(ng).lt.(ntend(ng)+1)) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL tl_obc_adjust (ng, TILE, Lbinp(ng))
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+      END IF
+# endif
+
 # ifdef ADJUST_WSTRESS
 !
 !-----------------------------------------------------------------------
 !  Interpolate surface forcing increments and adjust surface forcing.
-!  Load surface forcing to storage arrays.
+!  Skip the last output timestep.
 !-----------------------------------------------------------------------
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,Lfout,numthreads)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1,+1
-          CALL frc_TLadjust (ng, TILE, Lfinp(ng))
-          CALL load_TLforcing (ng, TILE, Lfout(ng))
+      IF (iic(ng).lt.(ntend(ng)+1)) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL tl_frc_adjust (ng, TILE, Lfinp(ng))
+          END DO
         END DO
-      END DO
 !$OMP END PARALLEL DO
+      END IF
 # endif
 
 # ifdef WAVES_OCEAN_NOT_YET
@@ -358,23 +381,25 @@
 !  Compute Lagrangian drifters trajectories.
 !-----------------------------------------------------------------------
 !
+      IF (Lfloats(Ng)) THEN
 !$OMP PARALLEL DO PRIVATE(thread,chunk_size,Lstr,Lend)                  &
 !$OMP&            SHARED(ng,numthreads,Nfloats)
-      DO thread=0,numthreads-1
-        chunk_size=(Nfloats(ng)+numthreads-1)/numthreads
-        Lstr=1+thread*chunk_size
-        Lend=MIN(Nfloats(ng),Lstr+chunk_size-1)
-        CALL tl_step_floats (ng, Lstr, Lend)
-      END DO
+        DO thread=0,numthreads-1
+          chunk_size=(Nfloats(ng)+numthreads-1)/numthreads
+          Lstr=1+thread*chunk_size
+          Lend=MIN(Nfloats(ng),Lstr+chunk_size-1)
+          CALL tl_step_floats (ng, Lstr, Lend)
+        END DO
 !$OMP END PARALLEL DO
 !
 !  Shift floats time indices.
 !
-      nfp1(ng)=MOD(nfp1(ng)+1,NFT+1)
-      nf(ng)  =MOD(nf(ng)  +1,NFT+1)
-      nfm1(ng)=MOD(nfm1(ng)+1,NFT+1)
-      nfm2(ng)=MOD(nfm2(ng)+1,NFT+1)
-      nfm3(ng)=MOD(nfm3(ng)+1,NFT+1)
+        nfp1(ng)=MOD(nfp1(ng)+1,NFT+1)
+        nf(ng)  =MOD(nf(ng)  +1,NFT+1)
+        nfm1(ng)=MOD(nfm1(ng)+1,NFT+1)
+        nfm2(ng)=MOD(nfm2(ng)+1,NFT+1)
+        nfm3(ng)=MOD(nfm3(ng)+1,NFT+1)
+      END IF
 # endif
 
       RETURN

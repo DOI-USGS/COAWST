@@ -2,12 +2,12 @@
       MODULE tl_diag_mod
 #ifdef TANGENT
 !
-!svn $Id: tl_diag.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: tl_diag.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!======================================================================= 
+!=======================================================================
 !                                                                      !
 !  This routine computes various tangent linear diagnostic fields.     !
 !                                                                      !
@@ -133,7 +133,7 @@
       real(r8), dimension(3) :: buffer
       character (len=3), dimension(3) :: op_handle
 # else
-      integer :: my_threadnum      
+      integer :: my_threadnum
 # endif
 
       real(r8) :: cff, my_avgke, my_avgpe, my_volume
@@ -148,7 +148,7 @@
 !-----------------------------------------------------------------------
 !  Compute and report out volume averaged kinetic, potential total
 !  energy, and volume of tangent linear fields. Notice that the
-!  proper adjoint of these quantities are not coded. 
+!  proper adjoint of these quantities are not coded.
 !-----------------------------------------------------------------------
 !
       IF (MOD(iic(ng)-1,ninfo(ng)).eq.0) THEN

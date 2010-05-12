@@ -2,15 +2,19 @@
       MODULE tl_set_depth_mod
 #ifdef TANGENT
 !
-!svn $Id: tl_set_depth.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: tl_set_depth.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!======================================================================= 
+!=======================================================================
 !                                                                      !
 !  This routine computes the time evolving depths of the model grid    !
 !  and its associated vertical transformation metric (thickness).      !
+!                                                                      !
+!  Currently, two vertical coordinate transformations are available    !
+!  with various possible vertical stretching, C(s), functions, (see    !
+!  routine "set_scoord.F" for details).                                !
 !                                                                      !
 !  BASIC STATE variables needed: NONE                                  !
 !  Independent Variables: tl_Hz, tl_z_r, tl_z_w                        !
@@ -22,6 +26,9 @@
       PRIVATE
 # ifdef SOLVE3D
       PUBLIC  :: tl_set_depth, tl_set_depth_tile
+#  ifdef ADJUST_BOUNDARY
+      PUBLIC  :: tl_set_depth_bry
+#  endif
 # endif
       PUBLIC  :: tl_bath, tl_bath_tile
 
@@ -37,6 +44,9 @@
       USE mod_coupling
       USE mod_grid
       USE mod_ocean
+#  if defined SEDIMENT && defined SED_MORPH
+      USE mod_sedbed
+#  endif
       USE mod_stepping
 !
 !  Imported variable declarations.
@@ -57,7 +67,7 @@
      &                        GRID(ng) % zice,                          &
 #  endif
 #  if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
-     &                        GRID(ng) % tl_bed_thick,                  &
+     &                        SEDBED(ng) % tl_bed_thick,                &
 #  endif
      &                        COUPLING(ng) % Zt_avg1,                   &
      &                        COUPLING(ng) % tl_Zt_avg1,                &
@@ -149,8 +159,9 @@
 #  endif
       integer :: i, j, k
 
-      real(r8) :: cff, cff_r, cff1_r, cff_w, cff1_w
+      real(r8) :: cff, cff_r, cff1_r, cff2_r, cff_w, cff1_w, cff2_w
       real(r8) :: hinv, hwater, z_r0, z_w0
+      real(r8) :: tl_cff2_r, tl_cff2_w
       real(r8) :: tl_hinv, tl_hwater, tl_z_r0, tl_z_w0
 
 #  ifdef WET_DRY
@@ -159,73 +170,159 @@
 
 #  include "set_bounds.h"
 !
+!
 !-----------------------------------------------------------------------
-!  Compute time evolving depths and vertical thicknesses.
+!  Original formulation: Compute vertical depths (meters, negative) at
+!                        RHO- and W-points, and vertical grid
+!  thicknesses. Various stretching functions are possible.
+!
+!         z_w(x,y,s,t) = Zo_w + zeta(x,y,t) * [1.0 + Zo_w / h(x,y)]
+!
+!                 Zo_w = hc * [s(k) - C(k)] + C(k) * h(x,y)
+!
 !-----------------------------------------------------------------------
 !
-!  Compute vertical depths (meters, negative) at RHO- and W-points,
-!  and vertical grid thicknesses.
-!
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-# if defined SEDIMENT && defined SED_MORPH
-!>        h(i,j)=h(i,j)-bed_thick(i,j,nstp)+bed_thick(i,j,nnew)
-!>
-          tl_h(i,j)=tl_h(i,j)-                                          &
-     &              tl_bed_thick(i,j,nstp)+tl_bed_thick(i,j,nnew)
-# endif
-# if defined WET_DRY
-          IF (h(i,j).eq.0.0_r8) THEN
-!>          h(i,j)=eps
-!>
-            tl_h(i,j)=0.0_r8           
-          END IF
-# endif
-!>        z_w(i,j,0)=-h(i,j)
-!>
-          tl_z_w(i,j,0)=-tl_h(i,j)
-        END DO
-        DO k=1,N(ng)
-          cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
-          cff1_w=SCALARS(ng)%Cs_w(k)
-          cff_r=hc(ng)*(SCALARS(ng)%sc_r(k)-SCALARS(ng)%Cs_r(k))
-          cff1_r=SCALARS(ng)%Cs_r(k)
+      IF (Vtransform(ng).eq.1) THEN
+        DO j=JstrR,JendR
           DO i=IstrR,IendR
-            hwater=h(i,j)
-#  ifdef ICESHELF
-            hwater=hwater-ABS(zice(i,j))
+#  if defined SEDIMENT && defined SED_MORPH
+!>          h(i,j)=h(i,j)-bed_thick(i,j,nstp)+bed_thick(i,j,nnew)
+!>
+            tl_h(i,j)=tl_h(i,j)-                                        &
+     &                tl_bed_thick(i,j,nstp)+tl_bed_thick(i,j,nnew)
 #  endif
-            tl_hwater=tl_h(i,j)
-            hinv=1.0_r8/hwater
-            tl_hinv=-hinv*hinv*tl_hwater
-
-            z_w0=cff_w+cff1_w*hwater
-            tl_z_w0=cff1_w*tl_hwater
-
-!>          z_w(i,j,k)=z_w0+Zt_avg1(i,j)*(1.0_r8+z_w0*hinv)
+#  if defined WET_DRY
+            IF (h(i,j).eq.0.0_r8) THEN
+!>            h(i,j)=eps
 !>
-            tl_z_w(i,j,k)=tl_z_w0+                                      &
-     &                    tl_Zt_avg1(i,j)*(1.0_r8+z_w0*hinv)+           &
-     &                    Zt_avg1(i,j)*(tl_z_w0*hinv+z_w0*tl_hinv)
-
-            z_r0=cff_r+cff1_r*hwater
-            tl_z_r0=cff1_r*tl_hwater
-
-!>          z_r(i,j,k)=z_r0+Zt_avg1(i,j)*(1.0_r8+z_r0*hinv)
-!>
-            tl_z_r(i,j,k)=tl_z_r0+                                      &
-     &                    tl_Zt_avg1(i,j)*(1.0_r8+z_r0*hinv)+           &
-     &                    Zt_avg1(i,j)*(tl_z_r0*hinv+z_r0*tl_hinv)
-#  ifdef ICESHELF
-!>          z_w(i,j,k)=z_w(i,j,k)-ABS(zice(i,j))
-!>          z_r(i,j,k)=z_r(i,j,k)-ABS(zice(i,j))
+              tl_h(i,j)=0.0_r8
+            END IF
 #  endif
-!>          Hz(i,j,k)=z_w(i,j,k)-z_w(i,j,k-1)
+!>          z_w(i,j,0)=-h(i,j)
 !>
-            tl_Hz(i,j,k)=tl_z_w(i,j,k)-tl_z_w(i,j,k-1)
+            tl_z_w(i,j,0)=-tl_h(i,j)
+          END DO
+          DO k=1,N(ng)
+            cff_r=hc(ng)*(SCALARS(ng)%sc_r(k)-SCALARS(ng)%Cs_r(k))
+            cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
+            cff1_r=SCALARS(ng)%Cs_r(k)
+            cff1_w=SCALARS(ng)%Cs_w(k)
+            DO i=IstrR,IendR
+              hwater=h(i,j)
+#  ifdef ICESHELF
+              hwater=hwater-ABS(zice(i,j))
+#  endif
+              tl_hwater=tl_h(i,j)
+              hinv=1.0_r8/hwater
+              tl_hinv=-hinv*hinv*tl_hwater
+
+              z_w0=cff_w+cff1_w*hwater
+              tl_z_w0=cff1_w*tl_hwater
+
+!>            z_w(i,j,k)=z_w0+Zt_avg1(i,j)*(1.0_r8+z_w0*hinv)
+!>
+              tl_z_w(i,j,k)=tl_z_w0+                                    &
+     &                      tl_Zt_avg1(i,j)*(1.0_r8+z_w0*hinv)+         &
+     &                      Zt_avg1(i,j)*(tl_z_w0*hinv+z_w0*tl_hinv)
+
+              z_r0=cff_r+cff1_r*hwater
+              tl_z_r0=cff1_r*tl_hwater
+
+!>            z_r(i,j,k)=z_r0+Zt_avg1(i,j)*(1.0_r8+z_r0*hinv)
+!>
+              tl_z_r(i,j,k)=tl_z_r0+                                    &
+     &                      tl_Zt_avg1(i,j)*(1.0_r8+z_r0*hinv)+         &
+     &                      Zt_avg1(i,j)*(tl_z_r0*hinv+z_r0*tl_hinv)
+#  ifdef ICESHELF
+!>            z_w(i,j,k)=z_w(i,j,k)-ABS(zice(i,j))
+!>            z_r(i,j,k)=z_r(i,j,k)-ABS(zice(i,j))
+#  endif
+!>            Hz(i,j,k)=z_w(i,j,k)-z_w(i,j,k-1)
+!>
+              tl_Hz(i,j,k)=tl_z_w(i,j,k)-tl_z_w(i,j,k-1)
+            END DO
           END DO
         END DO
-      END DO
+!
+!-----------------------------------------------------------------------
+!  New formulation: Compute vertical depths (meters, negative) at
+!                   RHO- and W-points, and vertical grid thicknesses.
+!  Various stretching functions are possible.
+!
+!         z_w(x,y,s,t) = zeta(x,y,t) + [zeta(x,y,t)+ h(x,y)] * Zo_w
+!
+!                 Zo_w = [hc * s(k) + C(k) * h(x,y)] / [hc + h(x,y)]
+!
+!-----------------------------------------------------------------------
+!
+      ELSE IF (Vtransform(ng).eq.2) THEN
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+#  if defined SEDIMENT && defined SED_MORPH
+!>          h(i,j)=h(i,j)-bed_thick(i,j,nstp)+bed_thick(i,j,nnew)
+!>
+            tl_h(i,j)=tl_h(i,j)-                                        &
+     &                tl_bed_thick(i,j,nstp)+tl_bed_thick(i,j,nnew)
+#  endif
+#  if defined WET_DRY
+            IF (h(i,j).eq.0.0_r8) THEN
+!>            h(i,j)=eps
+!>
+              tl_h(i,j)=0.0_r8
+            END IF
+#  endif
+!>          z_w(i,j,0)=-h(i,j)
+!>
+            tl_z_w(i,j,0)=-tl_h(i,j)
+          END DO
+          DO k=1,N(ng)
+            cff_r=hc(ng)*(SCALARS(ng)%sc_r(k)-SCALARS(ng)%Cs_r(k))
+            cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
+            cff1_r=SCALARS(ng)%Cs_r(k)
+            cff1_w=SCALARS(ng)%Cs_w(k)
+            DO i=IstrR,IendR
+              hwater=h(i,j)
+#  ifdef ICESHELF
+              hwater=hwater-ABS(zice(i,j))
+#  endif
+              tl_hwater=tl_h(i,j)
+              hinv=1.0_r8/(hc(ng)+hwater)
+              tl_hinv=-hinv*hinv*tl_hwater
+
+              cff2_w=(cff_w+cff1_w*hwater)*hinv
+              tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
+     &                  (cff_w+cff1_w*hwater)*tl_hinv
+
+!>            z_w(i,j,k)=Zt_avg1(i,j)+                                  &
+!>   &                   (Zt_avg1(i,j)+hwater)*cff2_w
+!>
+              tl_z_w(i,j,k)=tl_Zt_avg1(i,j)+                            &
+     &                      (tl_Zt_avg1(i,j)+tl_hwater)*cff2_w+         &
+     &                      (Zt_avg1(i,j)+hwater)*tl_cff2_w
+
+              cff2_r=(cff_r+cff1_r*hwater)*hinv
+              tl_cff2_r=cff1_r*tl_hwater*hinv+                          &
+     &                  (cff_r+cff1_r*hwater)*tl_hinv
+
+!>            z_r(i,j,k)=Zt_avg1(i,j)+                                  &
+!>   &                   (Zt_avg1(i,j)+hwater)*cff2_r
+!>
+              tl_z_r(i,j,k)=tl_Zt_avg1(i,j)+                            &
+     &                      (tl_Zt_avg1(i,j)+tl_hwater)*cff2_r+         &
+     &                      (Zt_avg1(i,j)+hwater)*tl_cff2_r
+
+#  ifdef ICESHELF
+!>            z_w(i,j,k)=z_w(i,j,k)-ABS(zice(i,j))
+!>            z_r(i,j,k)=z_r(i,j,k)-ABS(zice(i,j))
+#  endif
+!>            Hz(i,j,k)=z_w(i,j,k)-z_w(i,j,k-1)
+!>
+              tl_Hz(i,j,k)=tl_z_w(i,j,k)-tl_z_w(i,j,k-1)
+            END DO
+          END DO
+        END DO
+      END IF
+
 #  if defined EW_PERIODIC || defined NS_PERIODIC || defined DISTRIBUTE
 !
 !-----------------------------------------------------------------------
@@ -292,8 +389,498 @@
      &                    tl_z_r, tl_Hz)
 #   endif
 #  endif
+
       RETURN
       END SUBROUTINE tl_set_depth_tile
+
+#  ifdef ADJUST_BOUNDARY
+!
+!***********************************************************************
+      SUBROUTINE tl_set_depth_bry (ng, tile)
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_boundary
+      USE mod_grid
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile
+!
+!  Local variable declarations.
+!
+#   include "tile.h"
+!
+      CALL tl_set_depth_bry_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj, LBij, UBij,       &
+     &                            IminS, ImaxS, JminS, JmaxS,           &
+     &                            GRID(ng) % h,                         &
+     &                            GRID(ng) % tl_h,                      &
+#   ifdef ICESHELF
+     &                            GRID(ng) % zice,                      &
+#   endif
+#   ifdef WEST_FSOBC
+     &                            BOUNDARY(ng) % zeta_west,             &
+     &                            BOUNDARY(ng) % tl_zeta_west,          &
+#   endif
+#   ifdef EAST_FSOBC
+     &                            BOUNDARY(ng) % zeta_east,             &
+     &                            BOUNDARY(ng) % tl_zeta_east,          &
+#   endif
+#   ifdef SOUTH_FSOBC
+     &                            BOUNDARY(ng) % zeta_south,            &
+     &                            BOUNDARY(ng) % tl_zeta_south,         &
+#   endif
+#   ifdef NORTH_FSOBC
+     &                            BOUNDARY(ng) % zeta_north,            &
+     &                            BOUNDARY(ng) % tl_zeta_north,         &
+#   endif
+     &                            GRID(ng) % tl_Hz_bry)
+      RETURN
+      END SUBROUTINE tl_set_depth_bry
+!
+!***********************************************************************
+      SUBROUTINE tl_set_depth_bry_tile (ng, tile,                       &
+     &                                  LBi, UBi, LBj, UBj, LBij, UBij, &
+     &                                  IminS, ImaxS, JminS, JmaxS,     &
+     &                                  h, tl_h,                        &
+#   ifdef ICESHELF
+     &                                  zice,                           &
+#   endif
+#   ifdef WEST_FSOBC
+     &                                  zeta_west, tl_zeta_west,        &
+#   endif
+#   ifdef EAST_FSOBC
+     &                                  zeta_east, tl_zeta_east,        &
+#   endif
+#   ifdef SOUTH_FSOBC
+     &                                  zeta_south, tl_zeta_south,      &
+#   endif
+#   ifdef NORTH_FSOBC
+     &                                  zeta_north, tl_zeta_north,      &
+#   endif
+     &                                  tl_Hz_bry)
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_ncparam
+      USE mod_scalars
+!
+#   ifdef DISTRIBUTE
+      USE mp_exchange_mod, ONLY : mp_exchange3d_bry
+#   endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile
+      integer, intent(in) :: LBi, UBi, LBj, UBj, LBij, UBij
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
+!
+#   ifdef ASSUMED_SHAPE
+      real(r8), intent(in) :: h(LBi:,LBj:)
+      real(r8), intent(in) :: tl_h(LBi:,LBj:)
+#    ifdef ICESHELF
+      real(r8), intent(in) :: zice(LBi:,LBj:)
+#    endif
+#    ifdef WEST_FSOBC
+      real(r8), intent(in) :: zeta_west(0:)
+      real(r8), intent(in) :: tl_zeta_west(0:)
+#    endif
+#    ifdef EAST_FSOBC
+      real(r8), intent(in) :: zeta_east(0:)
+      real(r8), intent(in) :: tl_zeta_east(0:)
+#    endif
+#    ifdef SOUTH_FSOBC
+      real(r8), intent(in) :: zeta_south(0:)
+      real(r8), intent(in) :: tl_zeta_south(0:)
+#    endif
+#    ifdef NORTH_FSOBC
+      real(r8), intent(in) :: zeta_north(0:)
+      real(r8), intent(in) :: tl_zeta_north(0:)
+#    endif
+      real(r8), intent(out) :: tl_Hz_bry(LBij:,:,:)
+#   else
+      real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: tl_h(LBi:UBi,LBj:UBj)
+#    ifdef ICESHELF
+      real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
+#    endif
+#    ifdef WEST_FSOBC
+      real(r8), intent(in) :: zeta_west(0:Jm(ng)+1)
+      real(r8), intent(in) :: tl_zeta_west(0:Jm(ng)+1)
+#    endif
+#    ifdef EAST_FSOBC
+      real(r8), intent(in) :: zeta_east(0:Jm(ng)+1)
+      real(r8), intent(in) :: tl_zeta_east(0:Jm(ng)+1)
+#    endif
+#    ifdef SOUTH_FSOBC
+      real(r8), intent(in) :: zeta_south(0:Im(ng)+1)
+      real(r8), intent(in) :: tl_zeta_south(0:Im(ng)+1)
+#    endif
+#    ifdef NORTH_FSOBC
+      real(r8), intent(in) :: zeta_north(0:Im(ng)+1)
+      real(r8), intent(in) :: tl_zeta_north(0:Im(ng)+1)
+#    endif
+      real(r8), intent(out) :: tl_Hz_bry(LBij:UBij,N(ng),4)
+#   endif
+!
+!  Local variable declarations.
+!
+#   ifdef DISTRIBUTE
+#    ifdef EW_PERIODIC
+      logical :: EWperiodic=.TRUE.
+#    else
+      logical :: EWperiodic=.FALSE.
+#    endif
+#    ifdef NS_PERIODIC
+      logical :: NSperiodic=.TRUE.
+#    else
+      logical :: NSperiodic=.FALSE.
+#    endif
+#   endif
+      integer :: i, ibry, j, k
+
+      real(r8) :: cff_w, cff1_w, cff2_w
+      real(r8) :: hinv, hwater, z_w0
+      real(r8) :: tl_cff2_w, tl_hinv, tl_hwater, tl_z_w0
+
+      real(r8), dimension(0:N(ng)) :: tl_Zw
+
+#   include "set_bounds.h"
+!
+!-----------------------------------------------------------------------
+!  Original formulation: Compute vertical depths (meters, negative) at
+!                        RHO- and W-points, and vertical grid
+!  thicknesses. Various stretching functions are possible.
+!
+!         z_w(x,y,s,t) = Zo_w + zeta(x,y,t) * [1.0 + Zo_w / h(x,y)]
+!
+!                 Zo_w = hc * [s(k) - C(k)] + C(k) * h(x,y)
+!
+!-----------------------------------------------------------------------
+!
+      IF (Vtransform(ng).eq.1) THEN
+
+#   ifdef WEST_FSOBC
+        IF (WESTERN_EDGE) THEN
+          i=BOUNDS(ng)%edge(iwest,r2dvar)
+          DO j=JstrR,JendR
+            hwater=h(i,j)
+#    ifdef ICESHELF
+            hwater=hwater-ABS(zice(i,j))
+#    endif
+            tl_hwater=tl_h(i,j)
+            hinv=1.0_r8/hwater
+            tl_hinv=-hinv*hinv*tl_hwater
+!>          Zw(0)=-h(i,j)
+!>
+            tl_Zw(0)=-tl_h(i,j)
+            DO k=1,N(ng)
+              cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
+              cff1_w=SCALARS(ng)%Cs_w(k)
+              z_w0=cff_w+cff1_w*hwater
+              tl_z_w0=cff1_w*tl_hwater
+!>            Zw(k)=z_w0+zeta_west(j)*(1.0_r8+z_w0*hinv)
+!>
+              tl_Zw(k)=tl_z_w0+                                         &
+     &                 tl_zeta_west(j)*(1.0_r8+z_w0*hinv)+              &
+     &                 zeta_west(j)*(tl_z_w0*hinv+z_w0*tl_hinv)
+#    ifdef ICESHELF
+!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+#    endif
+!>            Hz_bry(j,k,iwest)=Zw(k)-Zw(k-1)
+!>
+              tl_Hz_bry(j,k,iwest)=tl_Zw(k)-tl_Zw(k-1)
+            END DO
+          END DO
+        END IF
+#   endif
+
+#   ifdef EAST_FSOBC
+        IF (EASTERN_EDGE) THEN
+          i=BOUNDS(ng)%edge(ieast,r2dvar)
+          DO j=JstrR,JendR
+            hwater=h(i,j)
+#    ifdef ICESHELF
+            hwater=hwater-ABS(zice(i,j))
+#    endif
+            tl_hwater=tl_h(i,j)
+            hinv=1.0_r8/hwater
+            tl_hinv=-hinv*hinv*tl_hwater
+!>          Zw(0)=-h(i,j)
+!>
+            tl_Zw(0)=-tl_h(i,j)
+            DO k=1,N(ng)
+              cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
+              cff1_w=SCALARS(ng)%Cs_w(k)
+              z_w0=cff_w+cff1_w*hwater
+              tl_z_w0=cff1_w*tl_hwater
+!>            Zw(k)=z_w0+zeta_east(j)*(1.0_r8+z_w0*hinv)
+!>
+              tl_Zw(k)=tl_z_w0+                                         &
+     &                 tl_zeta_east(j)*(1.0_r8+z_w0*hinv)+              &
+     &                 zeta_east(j)*(tl_z_w0*hinv+z_w0*tl_hinv)
+#    ifdef ICESHELF
+!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+#    endif
+!>            Hz_bry(j,k,ieast)=Zw(k)-Zw(k-1)
+!>
+              tl_Hz_bry(j,k,ieast)=tl_Zw(k)-tl_Zw(k-1)
+            END DO
+          END DO
+        END IF
+#   endif
+
+#   ifdef SOUTH_FSOBC
+        IF (SOUTHERN_EDGE) THEN
+          j=BOUNDS(ng)%edge(isouth,r2dvar)
+          DO i=IstrR,IendR
+            hwater=h(i,j)
+#    ifdef ICESHELF
+            hwater=hwater-ABS(zice(i,j))
+#    endif
+            tl_hwater=tl_h(i,j)
+            hinv=1.0_r8/hwater
+            tl_hinv=-hinv*hinv*tl_hwater
+!>          Zw(0)=-h(i,j)
+!>
+            tl_Zw(0)=-tl_h(i,j)
+            DO k=1,N(ng)
+              cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
+              cff1_w=SCALARS(ng)%Cs_w(k)
+              z_w0=cff_w+cff1_w*hwater
+              tl_z_w0=cff1_w*tl_hwater
+!>            Zw(k)=z_w0+zeta_south(i)*(1.0_r8+z_w0*hinv)
+!>
+              tl_Zw(k)=tl_z_w0+                                         &
+     &                 tl_zeta_south(i)*(1.0_r8+z_w0*hinv)+             &
+     &                 zeta_south(i)*(tl_z_w0*hinv+z_w0*tl_hinv)
+#    ifdef ICESHELF
+!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+#    endif
+!>            Hz_bry(i,k,isouth)=Zw(k)-Zw(k-1)
+!>
+              tl_Hz_bry(i,k,isouth)=tl_Zw(k)-tl_Zw(k-1)
+            END DO
+          END DO
+        END IF
+#   endif
+
+#   ifdef NORTH_FSOBC
+        IF (NORTHERN_EDGE) THEN
+          j=BOUNDS(ng)%edge(inorth,r2dvar)
+          DO i=IstrR,IendR
+            hwater=h(i,j)
+#    ifdef ICESHELF
+            hwater=hwater-ABS(zice(i,j))
+#    endif
+            tl_hwater=tl_h(i,j)
+            hinv=1.0_r8/hwater
+            tl_hinv=-hinv*hinv*tl_hwater
+!>          Zw(0)=-h(i,j)
+!>
+            tl_Zw(0)=-tl_h(i,j)
+            DO k=1,N(ng)
+              cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
+              cff1_w=SCALARS(ng)%Cs_w(k)
+              z_w0=cff_w+cff1_w*hwater
+              tl_z_w0=cff1_w*tl_hwater
+!>            Zw(k)=z_w0+zeta_north(i)*(1.0_r8+z_w0*hinv)
+!>
+              tl_Zw(k)=tl_z_w0+                                         &
+     &                 tl_zeta_north(i)*(1.0_r8+z_w0*hinv)+             &
+     &                 zeta_north(i)*(tl_z_w0*hinv+z_w0*tl_hinv)
+#    ifdef ICESHELF
+!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+#    endif
+!>            Hz_bry(i,k,inorth)=Zw(k)-Zw(k-1)
+!>
+              tl_Hz_bry(i,k,inorth)=tl_Zw(k)-tl_Zw(k-1)
+            END DO
+          END DO
+        END IF
+#   endif
+!
+!-----------------------------------------------------------------------
+!  New formulation: Compute vertical depths (meters, negative) at
+!                   RHO- and W-points, and vertical grid thicknesses.
+!  Various stretching functions are possible.
+!
+!         z_w(x,y,s,t) = zeta(x,y,t) + [zeta(x,y,t)+ h(x,y)] * Zo_w
+!
+!                 Zo_w = [hc * s(k) + C(k) * h(x,y)] / [hc + h(x,y)]
+!
+!-----------------------------------------------------------------------
+!
+      ELSE IF (Vtransform(ng).eq.2) THEN
+
+#   ifdef WEST_FSOBC
+        IF (WESTERN_EDGE) THEN
+          i=BOUNDS(ng)%edge(iwest,r2dvar)
+          DO j=JstrR,JendR
+            hwater=h(i,j)
+#    ifdef ICESHELF
+            hwater=hwater-ABS(zice(i,j))
+#    endif
+            tl_hwater=tl_h(i,j)
+            hinv=1.0_r8/(hc(ng)+hwater)
+            tl_hinv=-hinv*hinv*tl_hwater
+!>          Zw(0)=-h(i,j)
+!>
+            tl_Zw(0)=-tl_h(i,j)
+            DO k=1,N(ng)
+              cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
+              cff1_w=SCALARS(ng)%Cs_w(k)
+              cff2_w=(cff_w+cff1_w*hwater)*hinv
+              tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
+     &                  (cff_w+cff1_w*hwater)*tl_hinv
+!>            Zw(k)=zeta_west(j)+(zeta_west(j)+hwater)*cff2_w
+!>
+              tl_Zw(k)=tl_zeta_west(j)+                                 &
+     &                 (tl_zeta_west(j)+tl_hwater)*cff2_w+              &
+     &                 (zeta_west(j)+hwater)*tl_cff2_w
+#    ifdef ICESHELF
+!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+#    endif
+!>            Hz_bry(j,k,iwest)=Zw(k)-Zw(k-1)
+!>
+              tl_Hz_bry(j,k,iwest)=tl_Zw(k)-tl_Zw(k-1)
+            END DO
+          END DO
+        END IF
+#   endif
+
+#   ifdef EAST_FSOBC
+        IF (EASTERN_EDGE) THEN
+          i=BOUNDS(ng)%edge(ieast,r2dvar)
+          DO j=JstrR,JendR
+            hwater=h(i,j)
+#    ifdef ICESHELF
+            hwater=hwater-ABS(zice(i,j))
+#    endif
+            tl_hwater=tl_h(i,j)
+            hinv=1.0_r8/(hc(ng)+hwater)
+            tl_hinv=-hinv*hinv*tl_hwater
+!>          Zw(0)=-h(i,j)
+!>
+            tl_Zw(0)=-tl_h(i,j)
+            DO k=1,N(ng)
+              cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
+              cff1_w=SCALARS(ng)%Cs_w(k)
+              cff2_w=(cff_w+cff1_w*hwater)*hinv
+              tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
+     &                  (cff_w+cff1_w*hwater)*tl_hinv
+!>            Zw(k)=zeta_east(j)+(zeta_east(j)+hwater)*cff2_w
+!>
+              tl_Zw(k)=tl_zeta_east(j)+                                 &
+     &                 (tl_zeta_east(j)+tl_hwater)*cff2_w+              &
+     &                 (zeta_east(j)+hwater)*tl_cff2_w
+#    ifdef ICESHELF
+!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+#    endif
+!>            Hz_bry(j,k,ieast)=Zw(k)-Zw(k-1)
+!>
+              tl_Hz_bry(j,k,ieast)=tl_Zw(k)-tl_Zw(k-1)
+            END DO
+          END DO
+        END IF
+#   endif
+
+#   ifdef SOUTH_FSOBC
+        IF (SOUTHERN_EDGE) THEN
+          j=BOUNDS(ng)%edge(isouth,r2dvar)
+          DO i=IstrR,IendR
+            hwater=h(i,j)
+#    ifdef ICESHELF
+            hwater=hwater-ABS(zice(i,j))
+#    endif
+            tl_hwater=tl_h(i,j)
+            hinv=1.0_r8/(hc(ng)+hwater)
+            tl_hinv=-hinv*hinv*tl_hwater
+!>          Zw(0)=-h(i,j)
+!>
+            tl_Zw(0)=-tl_h(i,j)
+            DO k=1,N(ng)
+              cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
+              cff1_w=SCALARS(ng)%Cs_w(k)
+              cff2_w=(cff_w+cff1_w*hwater)*hinv
+              tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
+     &                  (cff_w+cff1_w*hwater)*tl_hinv
+!>            Zw(k)=zeta_south(i)+(zeta_south(i)+hwater)*cff2_w
+!>
+              tl_Zw(k)=tl_zeta_south(i)+                                &
+     &                 (tl_zeta_south(i)+tl_hwater)*cff2_w+             &
+     &                 (zeta_south(i)+hwater)*tl_cff2_w
+#    ifdef ICESHELF
+!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+#    endif
+!>            Hz_bry(i,k,isouth)=Zw(k)-Zw(k-1)
+!>
+              tl_Hz_bry(i,k,isouth)=tl_Zw(k)-tl_Zw(k-1)
+            END DO
+          END DO
+        END IF
+#   endif
+
+#   ifdef NORTH_FSOBC
+        IF (NORTHERN_EDGE) THEN
+          j=BOUNDS(ng)%edge(inorth,r2dvar)
+          DO i=IstrR,IendR
+            hwater=h(i,j)
+#    ifdef ICESHELF
+            hwater=hwater-ABS(zice(i,j))
+#    endif
+            tl_hwater=tl_h(i,j)
+            hinv=1.0_r8/(hc(ng)+hwater)
+            tl_hinv=-hinv*hinv*tl_hwater
+!>          Zw(0)=-h(i,j)
+!>
+            tl_Zw(0)=-tl_h(i,j)
+            DO k=1,N(ng)
+              cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
+              cff1_w=SCALARS(ng)%Cs_w(k)
+              cff2_w=(cff_w+cff1_w*hwater)*hinv
+              tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
+     &                  (cff_w+cff1_w*hwater)*tl_hinv
+!>            Zw(k)=zeta_north(i)+(zeta_north(i)+hwater)*cff2_w
+!>
+              tl_Zw(k)=tl_zeta_north(i)+                                &
+     &                 (tl_zeta_north(i)+tl_hwater)*cff2_w+             &
+     &                 (zeta_north(i)+hwater)*tl_cff2_w
+#    ifdef ICESHELF
+!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+#    endif
+!>            Hz_bry(i,k,inorth)=Zw(k)-Zw(k-1)
+!>
+              tl_Hz_bry(i,k,inorth)=tl_Zw(k)-tl_Zw(k-1)
+            END DO
+          END DO
+        END IF
+#   endif
+      END IF
+
+#   ifdef DISTRIBUTE
+!
+!-----------------------------------------------------------------------
+!  Exchange boundary information.
+!-----------------------------------------------------------------------
+!
+      DO ibry=1,4
+!>      CALL mp_exchange3d_bry (ng, tile, iNLM, 1, ibry,                &
+!>   &                          LBij, UBij, 1, N(ng),                   &
+!>   &                          NghostPoints, EWperiodic, NSperiodic,   &
+!>   &                          Hz_bry(:,:,ibry))
+!>
+        CALL mp_exchange3d_bry (ng, tile, iTLM, 1, ibry,                &
+     &                          LBij, UBij, 1, N(ng),                   &
+     &                          NghostPoints, EWperiodic, NSperiodic,   &
+     &                          tl_Hz_bry(:,:,ibry))
+      END DO
+#   endif
+
+      RETURN
+      END SUBROUTINE tl_set_depth_bry_tile
+#  endif
 # endif
 !
 !***********************************************************************

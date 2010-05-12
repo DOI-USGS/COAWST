@@ -4,12 +4,12 @@
 #if defined TANGENT && defined SOLVE3D && \
    (defined UV_VIS2 || defined UV_VIS4)
 !
-!svn $Id: tl_uv3dmix.F 503 2008-01-10 00:11:51Z arango $
+!svn $Id: tl_uv3dmix.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!======================================================================= 
+!=======================================================================
 !                                                                      !
 !  This routine computes tangent linear horizontal viscosity of        !
 !  momentum.                                                           !

@@ -11,9 +11,9 @@
 
       SUBROUTINE tl_t3dmix4 (ng, tile)
 !
-!svn $Id: tl_t3dmix4_geo.h 694 2008-08-08 18:33:05Z arango $
+!svn $Id: tl_t3dmix4_geo.h 429 2009-12-20 17:30:26Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -26,6 +26,9 @@
 !***********************************************************************
 !
       USE mod_param
+#ifdef CLIMA_TS_MIX
+      USE mod_clima
+#endif
 #ifdef DIAGNOSTICS_TS
 !!    USE mod_diags
 #endif
@@ -62,6 +65,9 @@
      &                      GRID(ng) % z_r,                             &
      &                      GRID(ng) % tl_z_r,                          &
      &                      MIXING(ng) % diff4,                         &
+#ifdef CLIMA_TS_MIX
+     &                      CLIMA(ng) % tclm,                           &
+#endif
 #ifdef DIAGNOSTICS_TS
 !!   &                      DIAGS(ng) % DiaTwrk,                        &
 #endif
@@ -85,6 +91,9 @@
      &                            Hz, tl_Hz,                            &
      &                            z_r, tl_z_r,                          &
      &                            diff4,                                &
+#ifdef CLIMA_TS_MIX
+     &                            tclm,                                 &
+#endif
 #ifdef DIAGNOSTICS_TS
 !!   &                            DiaTwrk,                              &
 #endif
@@ -114,7 +123,9 @@
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: t(LBi:,LBj:,:,:,:)
-
+# ifdef CLIMA_TS_MIX
+      real(r8), intent(in) :: tclm(LBi:,LBj:,:,:)
+# endif
       real(r8), intent(in) :: tl_Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: tl_z_r(LBi:,LBj:,:)
 # ifdef DIAGNOSTICS_TS
@@ -134,7 +145,9 @@
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
-
+# ifdef CLIMA_TS_MIX
+      real(r8), intent(in) :: tclm(LBi:UBi,LBj:UBj,N(ng),NT(ng))
+# endif
       real(r8), intent(in) :: tl_Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: tl_z_r(LBi:UBi,LBj:UBj,N(ng))
 # ifdef DIAGNOSTICS_TS
@@ -208,8 +221,15 @@
      &                            z_r(i-1,j,k+1))
                 tl_dZdx(i,j,k2)=cff*(tl_z_r(i  ,j,k+1)-                 &
      &                               tl_z_r(i-1,j,k+1))
+#if defined CLIMA_TS_MIX
+                dTdx(i,j,k2)=cff*((t(i  ,j,k+1,nrhs,itrc)-              &
+     &                             tclm(i  ,j,k+1,itrc))-               &
+     &                            (t(i-1,j,k+1,nrhs,itrc)-              &
+     &                             tclm(i-1,j,k+1,itrc)))
+#else
                 dTdx(i,j,k2)=cff*(t(i  ,j,k+1,nrhs,itrc)-               &
      &                            t(i-1,j,k+1,nrhs,itrc))
+#endif
                 tl_dTdx(i,j,k2)=cff*(tl_t(i  ,j,k+1,nrhs,itrc)-         &
      &                               tl_t(i-1,j,k+1,nrhs,itrc))
               END DO
@@ -224,8 +244,15 @@
      &                            z_r(i,j-1,k+1))
                 tl_dZde(i,j,k2)=cff*(tl_z_r(i,j  ,k+1)-                 &
      &                               tl_z_r(i,j-1,k+1))
+#if defined CLIMA_TS_MIX
+                dTde(i,j,k2)=cff*((t(i,j  ,k+1,nrhs,itrc)-              &
+     &                             tclm(i,j  ,k+1,itrc))-               &
+     &                            (t(i,j-1,k+1,nrhs,itrc)-              &
+     &                             tclm(i,j-1,k+1,itrc)))
+#else
                 dTde(i,j,k2)=cff*(t(i,j  ,k+1,nrhs,itrc)-               &
      &                            t(i,j-1,k+1,nrhs,itrc))
+#endif
                 tl_dTde(i,j,k2)=cff*(tl_t(i,j  ,k+1,nrhs,itrc)-         &
      &                               tl_t(i,j-1,k+1,nrhs,itrc))
               END DO
@@ -247,12 +274,28 @@
      &                      z_r(i,j,k  ))
                 tl_cff=-cff*cff*(tl_z_r(i,j,k+1)-                       &
      &                           tl_z_r(i,j,k  ))
+#if defined CLIMA_TS_MIX
+                dTdz(i,j,k2)=cff*((t(i,j,k+1,nrhs,itrc)-                &
+     &                             tclm(i,j,k+1,itrc))-                 &
+     &                            (t(i,j,k  ,nrhs,itrc)-                &
+     &                             tclm(i,j,k  ,itrc)))
+#else
                 dTdz(i,j,k2)=cff*(t(i,j,k+1,nrhs,itrc)-                 &
      &                            t(i,j,k  ,nrhs,itrc))
+#endif
+#if defined CLIMA_TS_MIX
+                tl_dTdz(i,j,k2)=tl_cff*((t(i,j,k+1,nrhs,itrc)-          &
+     &                                   tclm(i,j,k+1,itrc))-           &
+     &                                  (t(i,j,k  ,nrhs,itrc)-          &
+     &                                   tclm(i,j,k  ,itrc)))+          &
+     &                          cff*(tl_t(i,j,k+1,nrhs,itrc)-           &
+     &                               tl_t(i,j,k  ,nrhs,itrc))
+#else
                 tl_dTdz(i,j,k2)=tl_cff*(t(i,j,k+1,nrhs,itrc)-           &
      &                                  t(i,j,k  ,nrhs,itrc))+          &
      &                          cff*(tl_t(i,j,k+1,nrhs,itrc)-           &
      &                               tl_t(i,j,k  ,nrhs,itrc))
+#endif
               END DO
             END DO
           END IF

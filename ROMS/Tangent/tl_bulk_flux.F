@@ -1,13 +1,13 @@
 #include "cppdefs.h"
       MODULE tl_bulk_flux_mod
-#if (defined TANGENT || defined TL_IOMS) && defined BULK_FLUXES_NOT_YET
+#if (defined TANGENT || defined TL_IOMS) && defined BULK_FLUXES
 !
-!svn $Id: tl_bulk_flux.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: tl_bulk_flux.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!======================================================================= 
+!=======================================================================
 !                                                                      !
 !  This routine computes the bulk parameterization of surface wind     !
 !  stress and surface net heat fluxes.                                 !
@@ -74,7 +74,7 @@
 # endif
       CALL tl_bulk_flux_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        IminS, ImaxS  JminS, JmaxS,               &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nrhs(ng),                                 &
 # ifdef MASKING
      &                        GRID(ng) % rmask,                         &
@@ -128,7 +128,7 @@
 !***********************************************************************
       SUBROUTINE tl_bulk_flux_tile (ng, tile,                           &
      &                              LBi, UBi, LBj, UBj,                 &
-     &                              IminS, ImaxS, JminS, JmaxS          &
+     &                              IminS, ImaxS, JminS, JmaxS,         &
      &                              nrhs,                               &
 # ifdef MASKING
      &                              rmask, umask, vmask,                &
@@ -409,7 +409,7 @@
       real(r8), dimension(IminS:ImaxS) :: tl_ZoT
       real(r8), dimension(IminS:ImaxS) :: tl_ZoW
       real(r8), dimension(IminS:ImaxS) :: tl_ZWoL
-      
+
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tl_Hlv
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tl_LHeat
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tl_LRad
@@ -513,7 +513,7 @@
 !                 Q(i) is the actual specific humidity
 !              Qsea(i) is the saturation specific humidity at Tsea
 !
-!          Saturation vapor pressure in mb is first computed and then 
+!          Saturation vapor pressure in mb is first computed and then
 !          converted to specific humidity in kg/kg
 !
 !          The saturation vapor pressure is computed from Teten formula
@@ -533,7 +533,7 @@
 !          Q = 0.622 E/(P + (0.622-1)e)
 !
 !          Q(kg/kg) = 0.62197_r8*(E(mb)/(PairM(mb)-0.378_r8*E(mb)))
-!          
+!
 !-----------------------------------------------------------------------
 !
 !  Compute air saturation vapor pressure (mb), using Teten formula.
@@ -600,7 +600,7 @@
 !  gustiness.
 !
           Wgus(i)=0.5_r8
-!           
+!
 !  Note: tl_ZoW is zero at this point
 !
           tl_Wgus(i)=0.0_r8
@@ -677,11 +677,11 @@
             Zetu(i)=CC(i)*Ri(i)/(1.0_r8+Ri(i)/Ribcu(i))       ! Unstable
             tl_Zetu(i)=(tl_CC(i)*Ri(i)+CC(i)*tl_Ri(i))/                 &
      &                                 (1.0_r8+Ri(i)/Ribcu(i))-         &
-     &              (tl_Ri(i)/Ribcu(i))*Zetu(i)/(1.0_r8+Ri(i)/Ribcu(i))     
+     &              (tl_Ri(i)/Ribcu(i))*Zetu(i)/(1.0_r8+Ri(i)/Ribcu(i))
           ELSE
-	    fac=3.0_r8*Ri(i)/CC(i)
+            fac=3.0_r8*Ri(i)/CC(i)
             tl_fac=3.0_r8*tl_Ri(i)/CC(i)-tl_CC(i)*fac/CC(i)
-!>            Zetu(i)=CC(i)*Ri(i)/(1.0_r8+fac)                    ! Stable
+!>          Zetu(i)=CC(i)*Ri(i)/(1.0_r8+fac)                  ! Stable
             Zetu(i)=CC(i)*Ri(i)/(1.0_r8+3.0_r8*Ri(i)/CC(i))   ! Stable
             tl_Zetu(i)=(tl_CC(i)*Ri(i)+CC(i)*tl_Ri(i))/(1.0_r8+fac)     &
      &                -tl_fac*Zetu(i)/(1.0_r8+fac)
@@ -691,7 +691,7 @@
 !
 !  First guesses for Monon-Obukhov similarity scales.
 !
-	  fac1=blk_ZW(ng)/L10(i)
+          fac1=blk_ZW(ng)/L10(i)
           tl_fac1=-tl_L10(i)*fac1/L10(i)
           fac2=LOG(blk_ZW(ng)/Zo10(i))
           tl_fac2=-tl_Zo10(i)/Zo10(i)
@@ -805,7 +805,7 @@
      &             2.0_r8*TairK(i)*tl_Wstar(i)*Wstar(i)*                &
      &             (1.0_r8+0.61_r8*Q(i))*ZoL(i)/                        &
      &             (TairK(i)*Wstar(i)*Wstar(i)*                         &
-     &             (1.0_r8+0.61_r8*Q(i))+eps) 
+     &             (1.0_r8+0.61_r8*Q(i))+eps)
 
             L(i)=blk_ZW(ng)/(ZoL(i)+eps)
             tl_L(i)=-tl_ZoL(i)*L(i)/(ZoL(i)+eps)
@@ -848,7 +848,7 @@
 !>            Wstar(i)=MAX(eps,fac3)
             Wstar(i)=MAX(eps,delW(i)*vonKar/                            &
      &               (LOG(blk_ZW(ng)/ZoW(i))-Wpsi(i)))
-            
+
             tl_Wstar(i)=(0.5_r8-SIGN(0.5_r8,eps-fac3))*tl_fac3
             fac1=blk_ZT(ng)/ZoT(i)
             tl_fac1=-tl_ZoT(i)*fac1/ZoT(i)
@@ -868,7 +868,7 @@
      &               (LOG(blk_ZQ(ng)/ZoQ(i))-Qpsi(i))
             tl_Qstar(i)=-(tl_delQ(i)-tl_delQc(i))*vonKar/(fac2-Qpsi(i))-&
      &                    (tl_fac2-tl_Qpsi(i))*Qstar(i)/(fac2-Qpsi(i))
-    
+
 !
 !  Compute gustiness in wind speed.
 !
@@ -945,7 +945,7 @@
               fac3=(fac2/fac1)**0.75_r8
               tl_fac3=0.75_r8*(fac2/fac1)**(0.75_r8-1.0_r8)*            &
      &              (tl_fac2/fac1-tl_fac1*fac2/(fac1*fac1))
-!>              lambd=6.0_r8/(1.0_r8+fac3)**r3               
+!>              lambd=6.0_r8/(1.0_r8+fac3)**r3
             lambd=6.0_r8/                                               &
      &              (1.0_r8+(Clam*Qbouy/(Wstar(i)+eps)**4)**0.75_r8)**r3
               tl_lambd=-r3*6.0_r8*tl_fac3/(1.0_r8+fac3)**(r3+1.0_r8)
@@ -1085,8 +1085,8 @@
 !  ocean.
 !
 !  For EMINUSP option,  EVAP = LHeat (W/m2) / Hlv (J/kg) = kg/m2/s
-!                       PREC = rain = kg/m2/s            
-!       
+!                       PREC = rain = kg/m2/s
+!
 !  To convert these rates to m/s divide by freshwater density, rhow.
 !
 !  Note that when the air is undersaturated in water vapor (Q < Qsea)
@@ -1304,7 +1304,7 @@
         cff=SQRT(3.0_r8)
         y=(1.0_r8-10.15_r8*ZoL)**r3
         tl_y=-r3*10.15_r8*tl_ZoL*(1.0_r8-10.15_r8*ZoL)**(r3-1.0_r8)
-	fac=(1.0_r8+2.0_r8*y)/cff
+        fac=(1.0_r8+2.0_r8*y)/cff
         tl_fac=2.0_r8*tl_y/cff
         psic=1.5_r8*LOG(r3*(1.0_r8+y+y*y))-                             &
      &       cff*ATAN(fac)+pi/cff
