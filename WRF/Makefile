@@ -44,6 +44,8 @@ ALL_MODULES =                           \
                $(EXP_MODULES)           \
                $(INCLUDE_MODULES)       \
                $(MCT_MODULES)
+#CPPFLAGS += -D'PROJECT_HEADER="$(MY_HEADER_DIR)/$(HEADER)"'
+#CPPFLAGS += -D'ROMS_GLOBAL_DEFS="$(MY_SRC_DIR)/ROMS/Include/globaldefs.h"'
 #jcw
 
 configcheck:
