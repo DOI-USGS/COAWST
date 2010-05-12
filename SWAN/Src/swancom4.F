@@ -71,7 +71,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -513,7 +513,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -686,7 +686,7 @@
      &                   FACHFR  ,ISSTOP  ,DAL1    ,DAL2    ,DAL3    ,
      &                   SFNL    ,DSNL    ,DEP2    ,AC2     ,IMATDA  ,
      &                   IMATRA  ,PLNL4S  ,PLNL4D  ,                      34.00
-     &                   IDDLOW  ,IDDTOP  )                               34.00
+     &                   IDDLOW  ,IDDTOP  ,REDC0   ,REDC1   )             40.85 34.00
 !
 !********************************************************************
 !
@@ -706,7 +706,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -731,6 +731,7 @@
 !     40.17: IJsbrand Haagsma
 !     40.23: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     40.85: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -738,6 +739,7 @@
 !     40.17, Dec. 01: Implentation of Multiple DIA
 !     40.23, Aug. 02: some corrections
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.85, Aug. 08: store quadruplets for output purposes
 !
 !  2. Purpose
 !
@@ -896,6 +898,8 @@
      &          PLNL4D(MDC,MSC,NPTST)                 ,
      &          WWAWG(*)                              ,
      &          WWSWG(*)
+      REAL :: REDC0 (MDC,MSC,MREDS)                                       40.85
+      REAL :: REDC1 (MDC,MSC,MREDS)                                       40.85
 !
       INTEGER   IDCMIN(MSC)        ,
      &          IDCMAX(MSC)        ,
@@ -1124,8 +1128,10 @@
 !
           IF(TESTFL) THEN
             PLNL4S(ID,I,IPTST) = SFNL(I,ID) / SIGPI                       40.00
-            PLNL4D(ID,I,IPTST) = -1. * DSNL(I,ID) / PI3                   40.00
+            PLNL4D(ID,I,IPTST) = DSNL(I,ID) / PI3                         40.85 40.00
           END IF
+          REDC0(ID,I,1) = REDC0(ID,I,1) + SFNL(I,ID) / SIGPI              40.85
+          REDC1(ID,I,1) = REDC1(ID,I,1) + DSNL(I,ID) / PI3                40.85
 !
           IMATRA(ID,I) = IMATRA(ID,I) + SFNL(I,ID) / SIGPI
           IMATDA(ID,I) = IMATDA(ID,I) - DSNL(I,ID) / PI3
@@ -1177,8 +1183,8 @@
      &                   WWAWG   ,UE      ,SA1     ,ISSTOP  ,             40.17
      &                   SA2     ,SPCSIG  ,SNLC1   ,DAL1    ,DAL2    ,    30.72
      &                   DAL3    ,SFNL    ,DEP2    ,AC2     ,KMESPC  ,
-     &                                              IMATDA  ,IMATRA  ,    40.23 34.00
-     &                   FACHFR  ,PLNL4S           ,IDCMIN  ,IDCMAX  )    34.00
+     &                            REDC0   ,REDC1   ,IMATDA  ,IMATRA  ,    40.85 40.23 34.00
+     &                   FACHFR  ,PLNL4S  ,         IDCMIN  ,IDCMAX  )    34.00
 !
 !*******************************************************************
 !
@@ -1198,7 +1204,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1223,6 +1229,7 @@
 !     40.17: IJsbrand Haagsma
 !     40.23: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     40.85: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -1230,6 +1237,7 @@
 !     40.17, Dec. 01: Implemented Multiple DIA
 !     40.23, Aug. 02: rhs and main diagonal adjusted according to Patankar-rules
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.85, Aug. 08: store quadruplets for output purposes
 !
 !  2. Purpose
 !
@@ -1343,6 +1351,8 @@
      &          IMATDA(MDC,MSC)                       ,                   40.23
      &          PLNL4S(MDC,MSC,NPTST)                 ,                   40.00
      &          WWAWG(*)
+      REAL :: REDC0 (MDC,MSC,MREDS)                                       40.85
+      REAL :: REDC1 (MDC,MSC,MREDS)                                       40.85
 !
       INTEGER   WWINT(*)         ,
      &          IDCMIN(MSC)      ,
@@ -1528,9 +1538,12 @@
           IF(TESTFL) PLNL4S(ID,I,IPTST) =  SFNL(I,ID) / SIGPI             40.00
           IF (SFNL(I,ID).GT.0.) THEN                                      40.23
              IMATRA(ID,I) = IMATRA(ID,I) + SFNL(I,ID) / SIGPI
+             REDC0(ID,I,1)= REDC0(ID,I,1)+ SFNL(I,ID) / SIGPI             40.85
           ELSE
              IMATDA(ID,I) = IMATDA(ID,I) - SFNL(I,ID) /
      &                      MAX(1.E-18,AC2(ID,I,KCGRD(1))*SIGPI)
+             REDC1(ID,I,1)= REDC1(ID,I,1)+ SFNL(I,ID) /                   40.85
+     &                      MAX(1.E-18,AC2(ID,I,KCGRD(1))*SIGPI)          40.85
           END IF
 !
         ENDDO
@@ -1593,7 +1606,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1987,7 +2000,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2393,7 +2406,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2661,7 +2674,7 @@
 !*******************************************************************
 !
       SUBROUTINE FILNL3 (IDCMIN  ,IDCMAX  ,IMATRA  ,IMATDA  ,AC2     ,    40.23
-     &                   MEMNL4  ,PLNL4S  ,ISSTOP                    )    40.41
+     &                   MEMNL4  ,PLNL4S  ,ISSTOP  ,REDC0   ,REDC1   )    40.85 40.41
 !
 !*******************************************************************
 !
@@ -2681,7 +2694,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2703,11 +2716,13 @@
 !
 !     40.23: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     40.85: Marcel Zijlema
 !
 !  1. Updates
 !
 !     40.23, Aug. 02: rhs and main diagonal adjusted according to Patankar-rules
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.85, Aug. 08: store quadruplets for output purposes
 !
 !  2. Purpose
 !
@@ -2753,6 +2768,8 @@
 !
       INTEGER   IDCMIN(MSC)         ,
      &          IDCMAX(MSC)
+      REAL ::   REDC0 (MDC,MSC,MREDS)                                     40.85
+      REAL ::   REDC1 (MDC,MSC,MREDS)                                     40.85
 !
       SAVE IENT
       DATA IENT/0/
@@ -2764,9 +2781,12 @@
           IF(TESTFL) PLNL4S(ID,IS,IPTST) = MEMNL4(ID,IS,KCGRD(1))         40.00
           IF (MEMNL4(ID,IS,KCGRD(1)).GT.0.) THEN                          40.23
              IMATRA(ID,IS) = IMATRA(ID,IS) + MEMNL4(ID,IS,KCGRD(1))
+             REDC0(ID,IS,1)= REDC0(ID,IS,1)+ MEMNL4(ID,IS,KCGRD(1))       40.85
           ELSE
              IMATDA(ID,IS) = IMATDA(ID,IS) - MEMNL4(ID,IS,KCGRD(1)) /
      &                       MAX(1.E-18,AC2(ID,IS,KCGRD(1)))
+             REDC1(ID,IS,1)= REDC1(ID,IS,1)+ MEMNL4(ID,IS,KCGRD(1)) /     40.85
+     &                       MAX(1.E-18,AC2(ID,IS,KCGRD(1)))              40.85
           END IF
   980   CONTINUE
   990 CONTINUE
@@ -2801,7 +2821,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3536,7 +3556,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3720,7 +3740,7 @@
 !****************************************************************
 !
       SUBROUTINE SWLTA ( AC2   , DEP2  , CGO   , SPCSIG,
-     &                   KWAVE , IMATRA, IMATDA,
+     &                   KWAVE , IMATRA, IMATDA, REDC0 , REDC1 ,
      &                   IDDLOW, IDDTOP, ISSTOP, IDCMIN, IDCMAX,
      &                   HS    , SMEBRK, PLTRI , URSELL )
 !
@@ -3745,7 +3765,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3766,10 +3786,12 @@
 !  0. Authors
 !
 !     40.55: Marcel Zijlema
+!     40.85: Marcel Zijlema
 !
 !  1. Updates
 !
 !     40.55, Feb. 06: New subroutine
+!     40.85, Aug. 08: store triads for output purposes
 !
 !  2. Purpose
 !
@@ -3868,12 +3890,14 @@
       REAL :: KWAVE(MSC,MICMAX)
       REAL :: PLTRI(MDC,MSC,NPTST)
       REAL :: URSELL(MCGRD)
+      REAL :: REDC0 (MDC,MSC,MREDS)                                       40.85
+      REAL :: REDC1 (MDC,MSC,MREDS)                                       40.85
 !
 !  6. Local variables
 !
 !     AUX1  :     auxiliary real
 !     AUX2  :     auxiliary real
-!     BIPH  :     parameterized bi-phase of the spectrum
+!     BIPH  :     parameterized biphase of the spectrum
 !     C0    :     phase velocity at central bin
 !     CM    :     phase velocity at interacting bin
 !     DEP   :     water depth
@@ -4044,9 +4068,12 @@
               IF(TESTFL) PLTRI(ID,IS,IPTST) = STRI / SIGPI
               IF (STRI.GT.0.) THEN
                  IMATRA(ID,IS) = IMATRA(ID,IS) + STRI / SIGPI
+                 REDC0(ID,IS,2)= REDC0(ID,IS,2)+ STRI / SIGPI             40.85
               ELSE
                  IMATDA(ID,IS) = IMATDA(ID,IS) - STRI /
      &                           MAX(1.E-18,AC2(ID,IS,KCGRD(1))*SIGPI)
+                 REDC1(ID,IS,2)= REDC1(ID,IS,2)+ STRI /                   40.85
+     &                           MAX(1.E-18,AC2(ID,IS,KCGRD(1))*SIGPI)    40.85
               END IF
            END DO
         END DO

@@ -6,7 +6,6 @@
 !
 !     READXY
 !     REFIXY
-!     KSCIP11
 !     INFRAM
 !     DISTR
 !     KSCIP1
@@ -16,6 +15,7 @@
 !     NEWTON                                                              30.60
 !     EVALF                                                               30.60
 !     SWOBST                                                              30.60
+!     SWOBSTO                                                             40.86
 !     TCROSS                                                              40.04
 !     SWTRCF
 !     SSHAPE                                                              40.00
@@ -32,8 +32,6 @@
 !     NUMSTR                                                              40.23
 !     SWCOPI                                                              40.23
 !     SWCOPR                                                              40.23
-!     SWI2B                                                               40.30
-!     SWR2B                                                               40.30
 !
 !  functions:
 !  ----------
@@ -69,7 +67,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -203,7 +201,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -330,7 +328,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -429,7 +427,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -583,7 +581,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -734,232 +732,6 @@
       END
 !
 !***********************************************************************
-# ifdef BLOCK_JONSSON
-!                                                                      *
-      SUBROUTINE KSCIP11 (MMT, SIG, D, K, CG, UB, N, ND)
-!                                                                      *
-!***********************************************************************
-!
-      USE OCPCOMM4                                                        40.41
-      USE SWCOMM3                                                         40.41
-!
-      IMPLICIT NONE
-!
-!   --|-----------------------------------------------------------|--
-!     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
-!     | Environmental Fluid Mechanics Section                     |
-!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
-!     |                                                           |
-!     | Programmers: The SWAN team                                |
-!   --|-----------------------------------------------------------|--
-!
-!
-!     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
-!
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
-!
-!     This program is distributed in the hope that it will be useful,
-!     but WITHOUT ANY WARRANTY; without even the implied warranty of
-!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-!     GNU General Public License for more details.
-!
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-!
-!
-!  0. Authors
-!
-!     30.81: Annette Kieftenburg
-!     40.22: John Cazes and Tim Campbell
-!     40.41: Marcel Zijlema
-!
-!  1. Updates
-!
-!     Aug. 94, ver. 10.10: arguments N and ND added
-!     Dec. 98, ND corrected, argument list adjusted and IMPLICIT NONE added
-!     40.41, Aug. 04: tables replaced by Pade and other formulas
-!     40.41, Oct. 04: common blocks replaced by modules, include files removed
-!
-!  2. Purpose
-!
-!     Calculation of the wave number, group velocity, group number N
-!     and the derivative of N w.r.t. depth (=ND)
-!
-!  3. Method
-!
-!     --
-!
-!  4. Argument variables
-!
-!     MMT     input    number of frequency points
-!
-      INTEGER   MMT
-!
-!     CG      output   group velocity
-!     D       input    local depth
-!     K       output   wave number
-!     N       output   ratio of group and phase velocity
-!     ND      output   derivative of N with respect to D
-!     SIG     input    rel. frequency for which wave parameters
-!                      must be determined
-!     UB      output   minimum current to create blocking
-!
-      REAL      CG(MMT), D,
-     &          K(MMT), N(MMT), ND(MMT), SIG(MMT), UB(MMT)
-     
-      REAL      X0,X1,L0,ERROR,F,F1,LMIN,TA
-      REAL      AA,BB,CC,XX1,XX2,XX
-!
-!  6. Local variables
-!
-!     C         phase velocity
-!     FAC1      auxiliary factor
-!     FAC2      auxiliary factor
-!     FAC3      auxiliary factor
-!     IENT      number of entries
-!     IS        counter in frequency (sigma-space)
-!     KND       dimensionless wave number
-!     ROOTDG    square root of D/GRAV
-!     WGD       square root of GRAV*D
-!     SND       dimensionless frequency
-!     SND2      = SND*SND
-!
-      INTEGER   IENT, IS
-      REAL      KND, ROOTDG, SND, WGD, SND2, C, FAC1, FAC2, FAC3
-!
-!  8. Subroutines used
-!
-!     --
-!
-!  9. Subroutines calling
-!
-!     SWOEXA, SWOEXF (Swan/Output)
-!
-! 10. Error messages
-!
-!     --
-!
-! 11. Remarks
-!
-!     --
-!
-! 12. Structure
-!
-!     -----------------------------------------------------------------
-!      Compute non-dimensional frequency SND
-!      IF SND >= 2.5, then
-!        Compute wave number K, group velocity CGO, ratio of group
-!        and phase velocity N and its derivative ND according to
-!        deep water theory
-!      ELSE IF SND =< 1.e-6
-!        Compute wave number K, group velocity CGO, ratio of group
-!        and phase velocity N and its derivative ND
-!        according to extremely shallow water
-!      ELSE
-!        Compute wave number K, group velocity CGO and the ratio of
-!        group and phase velocity N by Pade and other simple formulas.
-!        Compute the derivative of N w.r.t. D = ND.
-!     -----------------------------------------------------------------
-!
-! 13. Source text
-!
-      SAVE IENT
-      DATA IENT /0/
-      IF (LTRACE) CALL STRACE (IENT, 'KSCIP1')
-!
-      ROOTDG = SQRT(D/GRAV)                                               30.81
-      WGD    = ROOTDG*GRAV                                                30.81
-      DO 200 IS = 1, MMT
-        SND = SIG(IS) * ROOTDG
-        IF (SND .GE. 2.5) THEN
-!       ******* deep water *******
-          K(IS)  = SIG(IS) * SIG(IS) / GRAV                               30.81
-          CG(IS) = 0.5 * GRAV / SIG(IS)                                   30.81
-          N(IS)  = 0.5
-          ND(IS) = 0.
-        ELSE IF (SND.LT.1.E-6) THEN
-!       *** very shallow water ***                                        30.81
-          K(IS)  = SND/D                                                  30.81
-          CG(IS) = WGD
-          N(IS)  = 1.
-          ND(IS) = 0.
-        ELSE
-          SND2  = SND*SND                                                 40.41
-          C     = SQRT(GRAV*D/(SND2+1./(1.+0.666*SND2+0.445*SND2**2       40.41
-     &                                  -0.105*SND2**3+0.272*SND2**4)))   40.41
-          K(IS) = SIG(IS)/C                                               40.41
-          KND   = K(IS)*D                                                 40.41
-          FAC1  = 2.*KND/SINH(2.*KND)                                     40.41
-          N(IS) = 0.5*(1.+FAC1)                                           40.41
-          CG(IS)= N(IS)*C                                                 40.41
-          FAC2  = SND2/KND                                                40.41
-          FAC3  = 2.*FAC2/(1.+FAC2*FAC2)                                  40.41
-          ND(IS)= FAC1*(0.5/D - K(IS)/FAC3)                               40.41
-        ENDIF
-!
-!  COMPUTE THE MINIMUM WAVE LENGHT UNDER BLOCKING CONDITIONS BASED ON
-!  JONSSON, SKOUGAARD AND WAND 1971. THE MAXIMUM WAVE NUMBER IS COMPUTED
-!  USING THE NEWTON RAPHSON METHOD.
-!
-        ERROR=100.
-        X0=K(IS)
-        FAC1=1.0/(SIG(IS)**2.)
-        TA=2.*3.1415*FAC1
-        L0=9.81*2.*3.14159*FAC1
-!
-        DO WHILE (ERROR.GT.0.1)
-          F=SQRT(D*X0/(2.*3.14159)*TANH(X0*D))-                         &
-     &      2./(1.-(2.*X0*D)/SINH(2.*X0*D))*SQRT(D/L0)
-          F1=0.5*(X0*D/(2.*3.14159)*TANH(D*X0))**(-0.5)*                &
-     &       (D/(2.*3.14159)*TANH(X0*D)+                                &
-     &       D**2.*X0/(2.*3.14159)*(1./COSH(X0*D))**2.)+                &
-     &       (2.*SQRT(D/L0)*                                            &
-     &       (-(2*D*SINH(2.*X0*D)-4.*X0*D**2.*COSH(2.*X0*D))/           &
-     &       (SINH(2.*X0*D))**2.)/                                      &
-     &       (1-2.*X0*D/SINH(2.*X0*D))**2.)
-          X1=X0-F/F1
-          ERROR=100.*ABS(X1-X0)/X0
-          X0=X1
-        END DO
-!
-        LMIN=2.*3.14159/X0
-        IF(LMIN.NE.LMIN)LMIN=10.
-!        
-!  COMPUTE THE MINIMUM CURRENT VELOCITY NECCESARY TO CREATE BLOCKING 
-!  CONDITIONS.
-!        
-        AA=1.
-        BB=-2.
-        CC=1-L0/LMIN*TANH(2.*3.14159*D/LMIN)
-!
-        XX1=(-BB+SQRT(BB**2.-4.*AA*CC))/(2.*AA)
-        XX2=(-BB-SQRT(BB**2.-4.*AA*CC))/(2.*AA)
-!
-        IF (XX1*XX2.GT.0.) THEN
-!  Take minimum negative root.
-          XX=MAX(XX1,XX2)
-        ELSE
-!  Take the negative root, not the positive one.
-          XX=MIN(XX1,XX2)
-        END IF
-!  UB will always be negative.
-        UB(IS)=XX*LMIN/TA
-  200 CONTINUE
-!
-      RETURN
-!     end of subroutine KSCIP11 *
-      END
-
-# endif
-!
-!***********************************************************************
 !                                                                      *
       SUBROUTINE AC2TST (XYTST, AC2,KGRPNT)
 !                                                                      *
@@ -982,7 +754,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1011,17 +783,23 @@
 !.................................................................
       IF ( ITEST .GE. 100 .AND. TESTFL) THEN
         DO II = 1, NPTST
-          IX = XYTST(2*II-1)
-          IY = XYTST(2*II)
-          INDEX = KGRPNT(IX,IY)
-          WRITE (PRINTF, 618) IX+MXF-2, IY+MYF-2, KGRPNT(IX,IY)           40.30
- 618      FORMAT(/,'Spectrum for test point(index):', 2I5,2X,'(',I5,')')
+          IF (OPTG.NE.5) THEN                                             40.80
+             IX = XYTST(2*II-1)
+             IY = XYTST(2*II)
+             INDEX = KGRPNT(IX,IY)
+             WRITE (PRINTF, 618) IX+MXF-2, IY+MYF-2, KGRPNT(IX,IY)        40.30
+          ELSE                                                            40.80
+             INDEX = XYTST(II)                                            40.80
+             WRITE (PRINTF, 619) INDEX                                    40.80
+          ENDIF                                                           40.80
           DO ID = 1, MDC
-            WRITE (PRINTF, 619) (AC2(ID,IS,INDEX), IS=1,MIN(10,MSC))      30.21
- 619        FORMAT (10(1X,E12.4))
+            WRITE (PRINTF, 620) (AC2(ID,IS,INDEX), IS=1,MIN(10,MSC))      30.21
           ENDDO
         ENDDO
       ENDIF
+ 618  FORMAT(/,'Spectrum for test point(index):', 2I5,2X,'(',I5,')')
+ 619  FORMAT(/,'Spectrum for test point: (',I5,')')                       40.80
+ 620  FORMAT (10(1X,E12.4))
       RETURN
       END
 !****************************************************************
@@ -1047,7 +825,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1121,7 +899,6 @@
 !     FIRST = True
 !     For ix=1 to MXC-1 do
 !         For iy=1 to MYC-1 do
-!             Inmesh = True
 !             For iside=1 to 4 do
 !                 Case iside=
 !                 1: K1 = KGRPNT(ix,iy), K2 = KGRPNT(ix+1,iy),
@@ -1265,7 +1042,7 @@
       USE SWCOMM2                                                         40.41
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       USE M_CVMESH
       USE M_COUPLING
       USE M_PARALL
@@ -1283,7 +1060,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1367,7 +1144,7 @@
 !     IBND     counter of boundary grid points
 !
       INTEGER       :: IX, IY, K1, IXMIN, IYMIN, IBND
-#if !defined MODEL_COUPLING
+#if !defined SWAN_MODEL
       INTEGER, SAVE :: MXITNR = 0
 #endif
       INTEGER, SAVE :: IENT = 0
@@ -1388,7 +1165,7 @@
 !
       REAL       :: DISMIN                                                40.41
       REAL       :: XPC1, YPC1, XC0, YC0
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       XCSAVE=>XCSAVE_G(Gridnum)
       YCSAVE=>YCSAVE_G(Gridnum)
       MXITNR=>MXITNR_G(Gridnum)
@@ -1476,7 +1253,7 @@
 !         --- First attempt, to find XC,YC with Newton-Raphson method
           MXITNR = 5
           CALL NEWTON  (XP, YP, XCGRID, YCGRID, KGRPNT,                   40.00
-     &                  MXITNR ,ITER, XC ,YC ,FINDXY, KGRBND)             40.41 40.02
+     &                  MXITNR ,ITER, XC ,YC ,FINDXY)                     40.41 40.02
           IF ((ITEST .GE. 150 .OR. INTES .GE. 20) .AND. FINDXY) THEN      40.02
             WRITE(PRINTF,25) XP+XOFFS ,YP+YOFFS ,XC ,YC                   40.03
           ENDIF
@@ -1527,7 +1304,7 @@
               YC = YC0 - 0.2
             ENDIF
             CALL NEWTON  (XP, YP, XCGRID, YCGRID, KGRPNT,                 40.00
-     &                    MXITNR ,ITER, XC ,YC ,FINDXY, KGRBND)           40.41 40.02
+     &                    MXITNR ,ITER, XC ,YC ,FINDXY)                   40.41 40.02
             IF (FINDXY) THEN
               IF (ITEST .GE. 150 .OR. INTES .GE. 20) THEN
                 WRITE(PRINTF,25) XP+XOFFS ,YP+YOFFS ,XC ,YC               40.00
@@ -1638,7 +1415,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1806,7 +1583,7 @@
 !***********************************************************************
 !                                                                      *
       SUBROUTINE NEWTON (XP, YP, XCGRID, YCGRID, KGRPNT,                  40.00
-     &                   MXITNR, ITER, XC, YC, FIND, KGRBND)              40.41 40.02
+     &                   MXITNR, ITER, XC, YC, FIND)                      40.41 40.02
 !                                                                      *
 !***********************************************************************
 !
@@ -1826,7 +1603,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1883,11 +1660,10 @@
 !
 !  4. Argument variables
 !
-! i   KGRBND: Grid adresses of the boundary points                        40.02
 ! i   KGRPNT: Grid adresses                                               40.00
 ! i   MXITNR: Maximum number of iterations                                30.82
 !
-      INTEGER KGRBND(*), KGRPNT(MXC,MYC), MXITNR, ITER                    40.41 40.02
+      INTEGER KGRPNT(MXC,MYC), MXITNR, ITER                               40.41 40.02
 !
 !   o XC    : X-coordinate in computational coordinates                   30.82
 ! i   XCGRID: Coordinates of computational grid in x-direction            30.72
@@ -2046,7 +1822,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2199,7 +1975,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2215,6 +1991,7 @@
 !     http://www.gnu.org/copyleft/gpl.html#SEC3
 !     or by writing to the Free Software Foundation, Inc.,
 !     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
 !
 !  0. Authors
 !
@@ -2309,7 +2086,6 @@
       IMPLICIT NONE                                                       40.04
 !
 !
-!
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
 !     | Faculty of Civil Engineering                              |
@@ -2321,7 +2097,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2460,9 +2236,9 @@
           Y3 = COBST%YCRP(1)                                              40.31
           IF (ITEST.GE. 120)  WRITE(PRINTF,30) 1,X3,Y3
           DO 110 JP = 2, NUMCOR
-             X4 = COBST%XCRP(JP)                                          40.31
-             Y4 = COBST%YCRP(JP)                                          40.31
-           IF (ITEST.GE. 120) WRITE(PRINTF,30) JP,X4,Y4
+            X4 = COBST%XCRP(JP)                                           40.31
+            Y4 = COBST%YCRP(JP)                                           40.31
+            IF (ITEST.GE. 120) WRITE(PRINTF,30) JP,X4,Y4
   30        FORMAT(' Corner number:', I4,'    XP: ',E10.4,' YP: ',E11.4)
             DO 100 IX = 1, MXC
               DO 90 IY = 1, MYC
@@ -2510,6 +2286,210 @@
       RETURN
 ! * end of subroutine SWOBST *
       END
+!
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWOBSTO (XCGRID, YCGRID, XP, YP, XC, YC, KGRPNT, CROSS,
+     &                    MIP)
+!                                                                      *
+!***********************************************************************
+
+      USE OCPCOMM4
+      USE SWCOMM3
+      USE SWCOMM4
+      USE M_OBSTA
+
+      IMPLICIT NONE
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering and Geosciences              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmer: Nico Booij                                    |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 2009  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+!
+!     40.86: Nico Booij
+!
+!  1. Updates
+!
+!     40.86, Feb. 08: new subroutine, based on SWOBST
+!
+!  2. Purpose
+!
+!     Find out whether a line segment defined in user coordinates
+!     crosses one or more obstacles
+!     use subroutine TCROSS to find crossings
+!
+!  3. Method
+!
+!  4. Argument variables
+!
+!     CROSS   output false if no obstacle crossing
+!                    true if an obstacle is crossing between the
+!                    output point and neighbouring grid point
+!     KGRPNT  input  Indirect addressing for computational grid points
+!     MIP     input  number of output points
+!     XC, YC  input  array containing indices of output points
+!     XP, YP  input  user coordinates of output point
+!     XCGRID  input  Coordinates of computational grid in x-direction
+!     YCGRID  input  Coordinates of computational grid in y-direction
+!
+      INTEGER MIP
+      INTEGER KGRPNT(MXC,MYC)
+      LOGICAL CROSS(4,MIP)
+      REAL    XC(MIP), YC(MIP), XP(MIP), YP(MIP)
+      REAL    XCGRID(MXC,MYC), YCGRID(MXC,MYC)
+!
+!  5. Parameter variables
+!
+!  6. Local variables
+!
+      INTEGER :: IP   ! counter for number of output points
+      INTEGER :: JJ   ! counter for number of obstacles
+      INTEGER :: JP   ! counter for number of corner points of obstacles
+      INTEGER :: NUMCOR  ! number of corner points of obstacle
+      REAL :: X1, Y1  ! user coordinates of one end of line segment
+      REAL :: X2, Y2  ! user coordinates of other end of line segment
+      REAL :: X3, Y3  ! user coordinates of one end of obstacle side
+      REAL :: X4, Y4  ! user coordinates of other end of obstacle side
+      INTEGER :: JX(1:4), JY(1:4) ! grid counters for the 4 corners
+      INTEGER :: JC            ! corner counter
+      INTEGER :: JX1, JY1, JX2, JY2
+      LOGICAL :: OUTSID
+!
+      TYPE(OBSTDAT), POINTER :: COBST
+!
+!  8. Subroutines used
+!
+!     STRACE
+!
+      LOGICAL :: TCROSS   ! determines whether two line segments cross
+!
+!  9. Subroutines calling
+!
+!     SWOUTP
+!
+! 10. Error messages
+!
+! 11. Remarks
+!
+! 12. Structure
+!
+! 13. Source text
+! ======================================================================
+
+      LOGICAL :: XONOBST        ! not used
+      INTEGER, SAVE :: IENT=0   ! number of entries of this subroutine
+      IF (LTRACE) CALL STRACE (IENT,'SWOBSTO')
+!
+      CROSS = .FALSE.
+!
+      IF (NUMOBS .GT. 0) THEN
+!       NUMOBS is the number of obstacles ***
+        COBST => FOBSTAC
+        DO JJ = 1, NUMOBS
+!         number of corner points of the obstacle
+          NUMCOR = COBST%NCRPTS
+          IF (ITEST.GE. 120) THEN
+            WRITE(PRINTF,50) JJ, NUMCOR
+ 50         FORMAT( ' Obstacle number : ', I4,'  has ',I4,' corners')
+          ENDIF
+!         *** X1 X2 X3 ETC. are the coordinates of point according ***
+!         *** with the scheme in the subroutine TCROSS header      ***
+          X3 = COBST%XCRP(1)
+          Y3 = COBST%YCRP(1)
+          IF (ITEST.GE. 120)  WRITE(PRINTF,30) 1,X3,Y3
+          DO JP = 2, NUMCOR
+             X4 = COBST%XCRP(JP)
+             Y4 = COBST%YCRP(JP)
+             IF (ITEST.GE. 120) WRITE(PRINTF,30) JP,X4,Y4
+  30         FORMAT(' Corner number:', I4,'    XP: ',E10.4,
+     &                                       ' YP: ',E11.4)
+             DO IP = 1, MIP
+                X1 = XP(IP)
+                Y1 = YP(IP)
+!
+                IF (XC(IP) .LE. -0.5 .OR. YC(IP) .LE. -0.5) CYCLE
+                OUTSID = .FALSE.
+                JX1 = INT(XC(IP)+3.) - 2
+                JX2 = JX1 + 1
+                IF (JX1.LT.0) OUTSID = .TRUE.
+                IF (KREPTX .EQ. 0) THEN
+                   IF (JX1.GT.MXC) OUTSID = .TRUE.
+                   IF (JX1.EQ.MXC) JX2 = MXC
+                   IF (JX1.EQ.0)   JX1 = 1
+                ELSE
+                   JX1 = 1 + MODULO (JX1-1,MXC)
+                   JX2 = 1 + MODULO (JX2-1,MXC)
+                ENDIF
+                IF (ONED) THEN
+                   JY1 = 1
+                   JY2 = 1
+                ELSE
+                   JY1 = INT(YC(IP)+3.) - 2
+                   JY2 = JY1 + 1
+                   IF (JY1.LT.0)   OUTSID = .TRUE.
+                   IF (JY1.GT.MYC) OUTSID = .TRUE.
+                   IF (JY1.EQ.MYC) JY2 = MYC
+                   IF (JY1.EQ.0)   JY1 = 1
+                ENDIF
+                IF (.NOT.OUTSID) THEN
+                   JX(1) = JX1
+                   JY(1) = JY1
+                   JX(2) = JX2
+                   JY(2) = JY1
+                   JX(3) = JX1
+                   JY(3) = JY2
+                   JX(4) = JX2
+                   JY(4) = JY2
+!
+                   DO JC = 1, 4
+                      IF (KGRPNT(JX(JC),JY(JC)).GT.1) THEN
+                         X2 = XCGRID(JX(JC),JY(JC))
+                         Y2 = YCGRID(JX(JC),JY(JC))
+                         IF (TCROSS(X1, X2, X3, X4, Y1, Y2, Y3, Y4,
+     &                              XONOBST)) CROSS(JC,IP) = .TRUE.
+                      ENDIF
+                   ENDDO
+                ENDIF
+             ENDDO
+!
+             X3 = X4
+             Y3 = Y4
+          ENDDO
+          IF (.NOT.ASSOCIATED(COBST%NEXTOBST)) EXIT
+          COBST => COBST%NEXTOBST
+        ENDDO
+      ENDIF
+!
+      RETURN
+!     end of subroutine SWOBSTO
+      END
 !***********************************************************************
 !                                                                      *
       LOGICAL FUNCTION TCROSS (X1, X2, X3, X4, Y1, Y2, Y3, Y4, X1ONOBST)
@@ -2532,7 +2512,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2731,6 +2711,7 @@
 !***********************************************************************
 !
       USE OCPCOMM4                                                        40.41
+      USE SWCOMM2                                                         40.81
       USE SWCOMM3                                                         40.41
       USE M_OBSTA                                                         40.31
 
@@ -2748,7 +2729,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2962,9 +2943,13 @@
                         COBST%XCRP(JP  ) = X4 + XYEPS*DYO/DXYO            40.31
                         COBST%YCRP(JP  ) = Y4 - XYEPS*DXO/DXYO            40.31
                         CALL MSGERR (1, 'Obstacle points moved')
-                        WRITE(PRINTF, 17) X3, Y3, X4, Y4,
-     &                        X3+XYEPS*DYO/DXYO, Y3-XYEPS*DXO/DXYO,
-     &                        X4+XYEPS*DYO/DXYO, Y4-XYEPS*DXO/DXYO,X1,Y1
+                        WRITE(PRINTF, 17) X3+XOFFS, Y3+YOFFS,             40.81
+     &                        X4+XOFFS, Y4+YOFFS,                         40.81
+     &                        X3+XYEPS*DYO/DXYO+XOFFS,                    40.81
+     &                        Y3-XYEPS*DXO/DXYO+YOFFS,                    40.81
+     &                        X4+XYEPS*DYO/DXYO+XOFFS,                    40.81
+     &                        Y4-XYEPS*DXO/DXYO+YOFFS,                    40.81
+     &                        X1+XOFFS,Y1+YOFFS                           40.81
   17                    FORMAT ('OBSTACLE POINTS (', F11.2, ',',  F11.2,
      &                         '), and (', F11.2,',',  F11.2,'),',
      &                         'moved to: (',  F11.2,',',
@@ -3012,6 +2997,8 @@
       USE SWCOMM4                                                         40.41
       USE M_OBSTA                                                         40.31
       USE M_PARALL                                                        40.31
+      USE SwanGriddata                                                    40.80
+      USE SwanCompdata                                                    40.80
 
       IMPLICIT NONE                                                       40.09
 !
@@ -3028,7 +3015,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3060,6 +3047,7 @@
 !     40.31  Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.66: Marcel Zijlema
+!     40.80: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -3085,6 +3073,7 @@
 !     40.31, Oct. 03: changes w.r.t. obstacles
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.66, Mar. 07: extension with d'Angremond and Van der Meer transmission
+!     40.80, Mar. 08: extension to unstructured grids
 !
 !  2. Purpose
 !
@@ -3198,9 +3187,13 @@
 !     X4, Y4   user coordinates of other end of obstacle side
 !     XCGRID   Coordinates of computational grid in x-direction
 !     XI0P     breaker parameter                                          40.66
+!     XOBS     x-coordinate of obstacle point                             40.80
 !     XONOBST  Indicates whether computational point (X1,Y1) is on        40.14
 !              obstacle                                                   40.14
+!     XV       x-coordinate of vertex of face                             40.80
 !     YCGRID   Coordinates of computational grid in y-direction
+!     YOBS     y-coordinate of obstacle point                             40.80
+!     YV       y-coordinate of vertex of face                             40.80
 !     WATHIG   freeboard of the dam (= HGT-waterlevel)
 !
       INTEGER    ID, IENT, ILINK, ITRAS, IS, JP, ICGRD, LREFL,
@@ -3216,6 +3209,8 @@
       LOGICAL :: REFLTST                                                  40.13
       REAL       XCGRID(MXC,MYC), YCGRID(MXC,MYC)
       INTEGER    ICC, JJ
+      REAL    :: XOBS(2), XV(2), YOBS(2), YV(2)                           40.80
+      LOGICAL :: SwanCrossObstacle                                        40.80
       TYPE(OBSTDAT), POINTER :: COBST                                     40.31
 !
 !  8. Subroutines used
@@ -3352,9 +3347,14 @@
              IF (OBHKT.GT.0.93-0.006*BVH) OBHKT = 0.93-0.006*BVH
              IF (OBHKT.LT.0.05          ) OBHKT = 0.05
           END IF
-          WRITE (PRINTF, 23)
-     &       XCGRID(IXCGRD(1),IYCGRD(1))+XOFFS,
-     &       YCGRID(IXCGRD(1),IYCGRD(1))+YOFFS,
+          IF(OPTG.NE.5) THEN
+            X1 = XCGRID(IXCGRD(1),IYCGRD(1))+XOFFS
+            Y1 = YCGRID(IXCGRD(1),IYCGRD(1))+YOFFS
+          ELSE
+            X1 = xcugrd(vs(1))+XOFFS
+            Y1 = ycugrd(vs(1))+YOFFS
+          ENDIF
+          WRITE (PRINTF, 23) X1, Y1,
      &       ILINK, HGT, WATHIG, HSIN, SQRT(L0P/1.5613), XI0P, OBHKT      40.66
   23      FORMAT (' Transmission: ', 2X, 2F12.4, I5, ' dam level=',F6.2,
      &            ' board=', F6.2, ' Hs=', F6.2, ' Tp=', F6.2,
@@ -3389,30 +3389,58 @@
           FD4      = COBST%RFCOEF(6)                                      40.31
           LRFRD    = COBST%RFTYP3                                         40.31
 !
-!         determine (X1,Y1) and (X2,Y2)
-          ICC   = KCGRD(1)                                                40.09
-          ICGRD = 0                                                       40.09
-          IF ( ICC.GT.1 ) THEN                                            40.09
-            X1 = XCGRID(IXCGRD(1),IYCGRD(1))                              40.09
-            Y1 = YCGRID(IXCGRD(1),IYCGRD(1))                              40.09
-            IF (KGRPNT(IXCGRD(ILINK+1),IYCGRD(ILINK+1)).GT.1) THEN        40.09
-              X2    = XCGRID(IXCGRD(ILINK+1),IYCGRD(ILINK+1))             40.09
-              Y2    = YCGRID(IXCGRD(ILINK+1),IYCGRD(ILINK+1))             40.09
-              ICGRD = KCGRD(ILINK+1)                                      40.09
-            ENDIF
-          ENDIF
-          IF (ICGRD.EQ.0) GOTO 90                                         40.13
-!         select obstacle side crossing the grid link
-          X3 = COBST%XCRP(1)                                              40.31
-          Y3 = COBST%YCRP(1)                                              40.31
-          NUMCOR = COBST%NCRPTS                                           40.31
-          DO JP = 2, NUMCOR                                               40.09
-            X4 = COBST%XCRP(JP)                                           40.31
-            Y4 = COBST%YCRP(JP)                                           40.31
-            IF (TCROSS(X1,X2,X3,X4,Y1,Y2,Y3,Y4,XONOBST)) GOTO 70          40.14
-            X3 = X4                                                       40.09
-            Y3 = Y4                                                       40.09
-          ENDDO
+          IF (OPTG.NE.5) THEN                                             40.80
+!            determine (X1,Y1) and (X2,Y2)
+             ICC   = KCGRD(1)                                             40.09
+             ICGRD = 0                                                    40.09
+             IF ( ICC.GT.1 ) THEN                                         40.09
+               X1 = XCGRID(IXCGRD(1),IYCGRD(1))                           40.09
+               Y1 = YCGRID(IXCGRD(1),IYCGRD(1))                           40.09
+               IF (KGRPNT(IXCGRD(ILINK+1),IYCGRD(ILINK+1)).GT.1) THEN     40.09
+                 X2    = XCGRID(IXCGRD(ILINK+1),IYCGRD(ILINK+1))          40.09
+                 Y2    = YCGRID(IXCGRD(ILINK+1),IYCGRD(ILINK+1))          40.09
+                 ICGRD = KCGRD(ILINK+1)                                   40.09
+               ENDIF
+             ENDIF
+             IF (ICGRD.EQ.0) GOTO 90                                      40.13
+!            select obstacle side crossing the grid link
+             X3 = COBST%XCRP(1)                                           40.31
+             Y3 = COBST%YCRP(1)                                           40.31
+             NUMCOR = COBST%NCRPTS                                        40.31
+             DO JP = 2, NUMCOR                                            40.09
+               X4 = COBST%XCRP(JP)                                        40.31
+               Y4 = COBST%YCRP(JP)                                        40.31
+               IF (TCROSS(X1,X2,X3,X4,Y1,Y2,Y3,Y4,XONOBST)) GOTO 70       40.14
+               X3 = X4                                                    40.09
+               Y3 = Y4                                                    40.09
+             ENDDO
+          ELSE                                                            40.80
+!           determine begin and end points of link                        40.80
+            X1 = xcugrd(vs(1))                                            40.80
+            Y1 = ycugrd(vs(1))                                            40.80
+            X2 = xcugrd(vs(ILINK+1))                                      40.80
+            Y2 = ycugrd(vs(ILINK+1))                                      40.80
+            XV(1) = X1                                                    40.80
+            YV(1) = Y1                                                    40.80
+            XV(2) = X2                                                    40.80
+            YV(2) = Y2                                                    40.80
+!           select obstacle side crossing the grid link                   40.80
+            X3 = COBST%XCRP(1)                                            40.80
+            Y3 = COBST%YCRP(1)                                            40.80
+            XOBS(1) = X3                                                  40.80
+            YOBS(1) = Y3                                                  40.80
+            DO JP = 2, COBST%NCRPTS                                       40.80
+               X4 = COBST%XCRP(JP)                                        40.80
+               Y4 = COBST%YCRP(JP)                                        40.80
+               XOBS(2) = X4                                               40.80
+               YOBS(2) = Y4                                               40.80
+               IF ( SwanCrossObstacle( XV, YV, XOBS, YOBS ) ) GOTO 70     40.80
+               X3 = X4                                                    40.80
+               Y3 = Y4                                                    40.80
+               XOBS(1) = X3                                               40.80
+               YOBS(1) = Y3                                               40.80
+            ENDDO                                                         40.80
+          ENDIF                                                           40.80
 !         no crossing found, skip procedure
           GOTO 90
 
@@ -3469,7 +3497,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3607,8 +3635,6 @@
 !                                                                         40.18
 !  8. Subroutines used                                                    40.09
 !                                                                         40.09
-      LOGICAL :: STPNOW                                                   40.09
-!
 !  9. Subroutines calling                                                 40.09
 !                                                                         40.09
 !     SWTRCF                                                              40.09
@@ -3794,7 +3820,6 @@
       END DO                                                              40.09
 !                                                                         40.18
       IF (LREFDIFF .GT. 0) DEALLOCATE (PRDIF)
-      IF (STPNOW()) RETURN                                                40.09
       RETURN                                                              40.09
 !     End of subroutine REFLECT                                           40.09
       END                                                                 40.09
@@ -3820,7 +3845,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4197,9 +4222,10 @@
         DO IS = 1, MSC
           ESOM = ESOM + FRINTF * SPCSIG(IS)**2 * ACLOC(MDC,IS)
         ENDDO
+        GAM1 = GAMMA(0.5*MS+1.)                                                40.84
+        GAM2 = GAMMA(MS+1.)                                                    40.84
         WRITE (PRTEST, *) ' SSHAPE dir ', 4.*SQRT(ABS(ESOM)),
-     &        SPPARM(1), CTOT, MS, GAMMA(0.5*MS+1.), GAMMA(MS+1.),
-     &        CTOT                                                        40.02
+     &        SPPARM(1), CTOT, MS, GAM1, GAM2, CTOT                            40.84 40.02
       ENDIF
       DVERIF = .FALSE.
       CTOTT = 0.
@@ -4251,7 +4277,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4653,7 +4679,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4778,7 +4804,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4876,7 +4902,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4965,7 +4991,6 @@
       USE M_PARALL                                                        40.31
 !
 !
-!
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
 !     | Faculty of Civil Engineering                              |
@@ -4977,7 +5002,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5165,7 +5190,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5315,7 +5340,9 @@
             GOTO 70
           ENDIF
           IF (X1A.GT.X2HI) GOTO 300
+          IF (X1B.LT.X2LO) GOTO 300
           IF (X1A.LT.X2LO .AND. X1A+PERIOD.LT.X2HI) TWICE = .TRUE.
+          IF (X1B.GT.X2HI .AND. X1B-PERIOD.GT.X2LO) TWICE = .TRUE.
         ENDIF
 !
 !       loop over cells in X2
@@ -5359,8 +5386,14 @@
 !
 !       Cell in X1 covers both ends of sector boundary
         IF (TWICE) THEN
-          X1A = X1A + PERIOD
-          X1B = X1B + PERIOD
+          IF (X1A.LT.X2LO) THEN
+             X1A = X1A + PERIOD
+             X1B = X1B + PERIOD
+          ENDIF
+          IF (X1B.GT.X2HI) THEN
+             X1A = X1A - PERIOD
+             X1B = X1B - PERIOD
+          ENDIF
           TWICE = .FALSE.
           GOTO 100
         ENDIF
@@ -5450,7 +5483,6 @@
       USE OUTP_DATA                                                       40.13
 
       IMPLICIT NONE                                                       40.13
-
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -5464,7 +5496,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5579,6 +5611,122 @@
       END
 !****************************************************************
 !
+      SUBROUTINE SWACC(AC2, AC2OLD, ACNRMS, ISSTOP, IDCMIN, IDCMAX)
+!
+!****************************************************************
+!
+      USE SWCOMM3                                                         40.41
+      USE OCPCOMM4                                                        40.41
+!
+      IMPLICIT NONE
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering and Geosciences              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmer: Marcel Zijlema                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 2009  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+!
+!     40.23: Marcel Zijlema
+!     40.41: Marcel Zijlema
+!
+!  1. Updates
+!
+!     40.23, Sep. 02: New subroutine
+!     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!
+!  2. Purpose
+!
+!     Determine some infinity norms meant for stop criterion
+!
+!  4. Argument variables
+!
+!     AC2         action density
+!     AC2OLD      action density at previous iteration
+!     ACNRMS      array containing infinity norms
+!     IDCMIN      integer array containing minimum counter of directions
+!     IDCMAX      integer array containing maximum counter of directions
+!     ISSTOP      maximum frequency counter in this sweep
+!
+      INTEGER IDCMIN(MSC), IDCMAX(MSC), ISSTOP
+      REAL    AC2(MDC,MSC,MCGRD), AC2OLD(MDC,MSC), ACNRMS(2)
+!
+!  6. Local variables
+!
+!     DIFFAC:     difference between AC2 and AC2OLD
+!     ID    :     counter of direction
+!     IDDUM :     uncorrected counter of direction
+!     IENT  :     number of entries
+!     IS    :     counter of frequency
+!
+      INTEGER ID, IDDUM, IS, IENT
+      REAL    DIFFAC
+!
+!  7. Common blocks used
+!
+!
+!  8. Subroutines used
+!
+!     STRACE           Tracing routine for debugging
+!
+!  9. Subroutines calling
+!
+!     SWOMPU (in SWANCOM1)
+!
+! 12. Structure
+!
+!     determine infinity norms |ac2 - ac2old| and |ac2|
+!     in selected sweep
+!
+! 13. Source text
+!
+      SAVE IENT
+      DATA IENT/0/
+      IF (LTRACE) CALL STRACE (IENT,'SWACC')
+
+      DO IS = 1, ISSTOP
+         DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+            ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
+!
+!           *** determine infinity norms |ac2 - ac2old| and |ac2|
+!
+            DIFFAC = ABS(AC2(ID,IS,KCGRD(1)) - AC2OLD(ID,IS))
+            IF (DIFFAC.GT.ACNRMS(1)) ACNRMS(1) = DIFFAC
+            IF (ABS(AC2(ID,IS,KCGRD(1))).GT.ACNRMS(2))
+     &                              ACNRMS(2) = ABS(AC2(ID,IS,KCGRD(1)))
+
+         END DO
+      END DO
+
+      RETURN
+      END
+!****************************************************************
+!
       SUBROUTINE SWTSTA (ITIMER)
 !
 !****************************************************************
@@ -5595,12 +5743,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5681,6 +5829,9 @@
 !
 !     --- check whether a valid timer number is given
 !
+#ifdef SWAN_MODEL
+      RETURN
+#endif
       IF (ITIMER.LE.0 .OR. ITIMER.GT.NSECTM) THEN
          WRITE(PRINTF,*) 'SWTSTA: ITIMER out of range: ',
      &                   ITIMER, 1, NSECTM
@@ -5764,12 +5915,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5849,6 +6000,9 @@
 !
 !     --- check whether a valid timer number is given
 !
+#ifdef SWAN_MODEL
+      RETURN
+#endif
       IF (ITIMER.LE.0 .OR. ITIMER.GT.NSECTM) THEN
          WRITE(PRINTF,*) 'SWTSTO: ITIMER out of range: ',
      &                   ITIMER, 1, NSECTM
@@ -5926,12 +6080,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6259,12 +6413,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6361,12 +6515,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6453,12 +6607,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6535,12 +6689,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6650,12 +6804,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6745,403 +6899,6 @@
       DO 10 I = 1, LENGTH
          ARR2(I) = ARR1(I)
   10  CONTINUE
-
-      RETURN
-      END
-!****************************************************************
-!
-      SUBROUTINE SWI2B ( IVAL, BVAL )
-!
-!****************************************************************
-!
-      USE OCPCOMM4                                                        40.41
-!
-      IMPLICIT NONE
-!
-!
-!   --|-----------------------------------------------------------|--
-!     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering and Geosciences              |
-!     | Environmental Fluid Mechanics Section                     |
-!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
-!     |                                                           |
-!     | Programmer: M. Zijlema                                    |
-!   --|-----------------------------------------------------------|--
-!
-!
-!     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
-!
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
-!
-!     This program is distributed in the hope that it will be useful,
-!     but WITHOUT ANY WARRANTY; without even the implied warranty of
-!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-!     GNU General Public License for more details.
-!
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-!
-!
-!  0. Authors
-!
-!     40.30: Marcel Zijlema
-!     40.41: Marcel Zijlema
-!
-!  1. Updates
-!
-!     40.30, May 03: New subroutine
-!     40.41, Oct. 04: common blocks replaced by modules, include files removed
-!
-!  2. Purpose
-!
-!     Calculates 32-bit representation of an integer number
-!
-!  3. Method
-!
-!     The representation of an integer number is divided into 4 parts
-!     of 8 bits each, resulting in 32-bit word in memory. Generally,
-!     storage words are represented with bits counted from the right,
-!     making bit 0 the lower-order bit and bit 31 the high-order bit,
-!     which is also the sign bit.
-!
-!     The integer number is always an exact representation of an
-!     integer of value positive, negative, or zero. Each bit, except
-!     the leftmost bit, corresponds to the actual exponent as power
-!     of two.
-!
-!     For representing negative numbers, the method called
-!     "excess 2**(m - 1)" is used, which represents an m-bit number by
-!     storing it as the sum of itself and 2**(m - 1). For a 32-bit
-!     machine, m = 32. This results in a positive number, so the
-!     leftmost bit need to be reversed. This method is identical to the
-!     two's complement method.
-!
-!     An example:
-!
-!        the 32-bit representation of 5693 is
-!
-!        decimal    :     0        0       22       61
-!        hexidecimal:     0        0       16       3D
-!        binary     : 00000000 00000000 00010110 00111101
-!
-!        since,
-!
-!        5693 = 2^12 + 2^10 + 2^9 + 2^5 + 2^4 + 2^3 + 2^2 + 2^0
-!
-!  4. Argument variables
-!
-!     BVAL        a byte value as a part of the representation of
-!                 integer number
-!     IVAL        integer number
-!
-      INTEGER BVAL(4), IVAL
-!
-!  6. Local variables
-!
-!     I     :     loop counter
-!     IENT  :     number of entries
-!     IQUOT :     auxiliary integer with quotient
-!     M     :     maximal exponent number possible (for 32-bit machine, m=32)
-!
-      INTEGER I, IENT, IQUOT, M
-!
-! 12. Structure
-!
-!     initialise 4 parts of the representation
-!     if integer < 0, increased it by 2**(m-1)
-!     compute the actual part of the representation
-!     determine the sign bit
-!
-! 13. Source text
-!
-      SAVE IENT
-      DATA IENT/0/, M/32/
-      IF (LTRACE) CALL STRACE (IENT,'SWI2B')
-
-!     --- initialise 4 parts of the representation
-
-      DO 10 I = 1, 4
-         BVAL(I) = 0
- 10   CONTINUE
-
-      IQUOT = IVAL
-
-!     --- if integer < 0, increased it by 2*(m-1)
-
-      IF ( IVAL.LT.0 ) IQUOT = IQUOT + 2**(M-1)
-
-!     --- compute the actual part of the representation
-
-      DO 20 I = 4, 1, -1
-         BVAL(I) = MOD(IQUOT,256)
-         IQUOT = INT(IQUOT/256)
- 20   CONTINUE
-
-!     --- determine the sign bit
-
-      IF ( IVAL.LT.0 ) BVAL(1) = BVAL(1) + 128
-
-      RETURN
-      END
-!****************************************************************
-!
-      SUBROUTINE SWR2B ( RVAL, BVAL )
-!
-!****************************************************************
-!
-      USE OCPCOMM4                                                        40.41
-!
-      IMPLICIT NONE
-!
-!
-!   --|-----------------------------------------------------------|--
-!     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering and Geosciences              |
-!     | Environmental Fluid Mechanics Section                     |
-!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
-!     |                                                           |
-!     | Programmer: M. Zijlema                                    |
-!   --|-----------------------------------------------------------|--
-!
-!
-!     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
-!
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
-!
-!     This program is distributed in the hope that it will be useful,
-!     but WITHOUT ANY WARRANTY; without even the implied warranty of
-!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-!     GNU General Public License for more details.
-!
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-!
-!
-!  0. Authors
-!
-!     40.30: Marcel Zijlema
-!     40.41: Marcel Zijlema
-!
-!  1. Updates
-!
-!     40.30, May 03: New subroutine
-!     40.41, Oct. 04: common blocks replaced by modules, include files removed
-!
-!  2. Purpose
-!
-!     Calculates 32-bit representation of a floating-point number
-!
-!  3. Method
-!
-!     The representation of a floating-point number is divided into 4
-!     parts of 8 bits each, resulting in 32-bit word in memory.
-!     Generally, storage words are represented with bits counted from
-!     the right, making bit 0 the lower-order bit and bit 31 the
-!     high-order bit, which is also the sign bit.
-!
-!     The floating-point number is a processor approximation. Its format
-!     has an 8-bit biased exponent and a 23-bit fraction or mantissa. The
-!     leftmost bit is the sign bit which is zero for plus and 1 for
-!     minus. The biased exponent equals the bias and the actual exponent
-!     (power of two) of the number. For a 32-bit machine, bias=127.
-!
-!     Furthermore, the floating-point number is usually stored in the
-!     normalized form, i.e. it has a binary point to the left of the
-!     mantissa and an implied leading 1 to the left of the binary point.
-!     Thus, if X is a floating-point number, then it is calculated as
-!     follows:
-!
-!         X = (-1)**sign bit 1.fraction * 2**(biased exponent-bias)
-!
-!     There are several exceptions. Let a fraction, biased exponent
-!     and sign bit be denoted as F, E and S, respectively. The following
-!     formats adhere to IEEE standard:
-!
-!     S = 0, E = 00000000 and F  = 00 ... 0 : X = 0
-!     S = 0, E = 00000000 and F <> 00 ... 0 : X = +0.fraction * 2**(1-bias)
-!     S = 1, E = 00000000 and F <> 00 ... 0 : X = -0.fraction * 2**(1-bias)
-!     S = 0, E = 11111111 and F  = 00 ... 0 : X = +Inf
-!     S = 1, E = 11111111 and F  = 00 ... 0 : X = -Inf
-!     S = 0, E = 11111111 and F <> 00 ... 0 : X = NaN
-!
-!     A NaN (Not a Number) is a value reserved for signalling an
-!     attempted invalid operation, like 0/0. Its representation
-!     equals the representation of +Inf plus 1, i.e. 2**31 - 2**23 + 1
-!
-!     An example:
-!
-!        the 32-bit representation of 23.1 is
-!
-!        decimal    :    65      184      204      205
-!        hexidecimal:    41       B8       CC       CD
-!        binary     : 01000001 10111000 11001100 11001101
-!
-!        since,
-!
-!        23.1 = 2^4 + 2^2 + 2^1 + 2^0 + 2^-4 + 2^-5 + 2^-8 + 2^-9 +
-!               2^-12 + 2^-13 + 2^-16 + 2^-17 + 2^-19
-!
-!        so that the biased exponent = 4 + 127 = 131 = 10000011 = E
-!        and the sign bit = 0 = S. The remaining of the 32-bit word is
-!        the fraction, which is
-!
-!    3 2 1 0 -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15 -16 -17 -18 -19
-!
-! F= 0 1 1 1  0  0  0  1  1  0  0  1  1   0   0   1   1   0   0   1   1   0   1
-!
-!  4. Argument variables
-!
-!     BVAL        a byte value as a part of the representation of
-!                 floating-point number
-!     RVAL        floating-point number
-!
-      INTEGER BVAL(4)
-      REAL    RVAL
-!
-!  6. Local variables
-!
-!     ACTEXP:     actual exponent in the representation
-!     BEXPO :     biased exponent
-!     BIAS  :     bias (for 32-bit machine, bias=127)
-!     EXPO  :     calculated exponent of floating-point number
-!     FRAC  :     fraction of floating-point number
-!     I     :     loop counter
-!     IENT  :     number of entries
-!     IPART :     i-the part of the representation
-!     IQUOT :     auxiliary integer with quotient
-!     LEADNR:     leading number of floating-point number
-!     LFRAC :     length of fraction in representation
-!           :     (for 32-bit machine, lfrac=23)
-!     RFRAC :     auxiliary real with fraction
-!
-      INTEGER ACTEXP, EXPO, I, IENT, IPART, LFRAC, BIAS, BEXPO,
-     &        LEADNR, IQUOT
-      REAL FRAC, RFRAC
-!
-! 12. Structure
-!
-!     initialise 4 parts of the representation and biased exponent
-!     determine leading number and fraction
-!     do while leading number >= 1
-!        calculate positive exponent as power of two
-!     or while fraction > 0
-!        calculate negative exponent as power of two
-!     end do
-!     compute the actual part of the representation
-!
-! 13. Source text
-!
-      SAVE IENT
-      DATA IENT/0/, LFRAC/23/, BIAS/127/
-      IF (LTRACE) CALL STRACE (IENT,'SWR2B')
-
-!     --- initialise 4 parts of the representation and biased exponent
-
-      DO 10 I = 1, 4
-         BVAL(I) = 0
- 10   CONTINUE
-      BEXPO  = -1
-
-!     --- determine leading number and fraction
-
-      IF ( ABS(RVAL).LT.1.E-7 ) THEN
-         LEADNR = 0
-         FRAC   = 0.
-      ELSE
-         LEADNR = INT(ABS(RVAL))
-         FRAC   = ABS(RVAL) - REAL(LEADNR)
-      END IF
-
- 20   IF ( LEADNR.GE.1 ) THEN
-
-!        --- calculate positive exponent as power of two
-
-         EXPO  = 0
-         IQUOT = LEADNR
- 30      IF ( IQUOT.GE.2 ) THEN
-
-              IQUOT = INT(IQUOT/2)
-              EXPO  = EXPO + 1
-
-         GOTO 30
-         END IF
-
-      ELSE IF ( FRAC.GT.0. ) THEN
-
-!        --- calculate negative exponent as power of two
-
-         EXPO = 0
-         RFRAC = FRAC
- 40      IF ( RFRAC.LT.1. ) THEN
-
-              RFRAC = RFRAC * 2.
-              EXPO  = EXPO - 1
-
-         GOTO 40
-         END IF
-
-      ELSE
-
-         GOTO 50
-
-      END IF
-
-!     --- compute the actual part of the representation
-
-      IF ( BEXPO.EQ.-1 ) THEN
-
-!        --- determine biased exponent
-
-         BEXPO = EXPO + BIAS
-
-!        --- the first seven bits of biased exponent belong
-!            to first part of the representation
-
-         BVAL(1) = INT(BEXPO/2)
-
-!        --- determine the sign bit
-
-         IF ( RVAL.LT.0. ) BVAL(1) = BVAL(1) + 128
-
-!        --- the eighth bit of biased component is the leftmost
-!            bit of second part of the representation
-
-         BVAL(2) = MOD(BEXPO,2)*2**7
-         IPART = 2
-
-      ELSE
-
-!        --- compute the actual exponent of bit 1 in i-th part of
-!            the representation
-
-         ACTEXP = (IPART-2)*8 + 7 - BEXPO + BIAS + EXPO
-         IF ( ACTEXP.LT.0 ) THEN
-            ACTEXP = ACTEXP + 8
-            IPART = IPART + 1
-            IF ( IPART.GT.4 ) GOTO 50
-         END IF
-         BVAL(IPART) = BVAL(IPART) + 2**ACTEXP
-
-      END IF
-
-      IF ( EXPO.LT.(BEXPO-BIAS-LFRAC) ) GOTO 50
-      LEADNR = LEADNR - 2.**EXPO
-      IF ( EXPO.LT.0 ) FRAC = FRAC - 2.**EXPO
-
-      GOTO 20
- 50   CONTINUE
 
       RETURN
       END

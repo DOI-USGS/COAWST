@@ -1,4 +1,4 @@
-#include "cppdefs.h"
+#include "swancpp.h"
       MODULE WAVES_COUPLER_MOD
 
 #if defined MODEL_COUPLING && defined MCT_LIB
@@ -401,7 +401,7 @@
 !  the wave model.
 !
       CALL AttrVect_init (AttrVect_G(ng)%wav2ocn_AV,                    &
-     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",          &
+     &  rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:QB",                &
      &  lsize=gsmsize)
       CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
 !
@@ -476,7 +476,7 @@
       END SUBROUTINE INITIALIZE_WAV2OCN_COUPLING
 
       SUBROUTINE WAV2OCN_COUPLING (MIP, NVOQP, VOQR, VOQ, IRQ,          &
-     &                             IVTYPE, COMPDA, numsteps, ng)
+     &                             IVTYPE, COMPDA, Numcouple, ng)
 !
 !=======================================================================
 !                                                                      !
@@ -518,7 +518,7 @@
 !
 !  Imported variable declarations.
 !
-      integer :: MIP, IRQ, nvoqp, numsteps, ng
+      integer :: MIP, IRQ, nvoqp, Numcouple, ng
       integer :: VOQR(NMOVAR), IVTYPE, IP, IX, IY
 
       real :: COMPDA(MCGRD,MCMVAR)
@@ -526,25 +526,17 @@
 !
 !  Local variable declarations.
 !
-      integer :: MyStatus, i, id, ifield, j, gsmsize, ierr, MyRank
+      integer :: MyStatus, i, id, j, gsmsize, ierr, MyRank
       integer :: MyError, MySize, indx, Istr, Iend, Jstr, Jend
       integer :: Isize, Jsize, INDXG, NPROCS, OFFSET
       integer :: NUMTRANSFER, NNEIGH, HALOSIZE, NUMSENT, INB
       integer :: WHICHWAY, GDEST, GSRC, TAGT, TAGB, TAGR, TAGL
       integer :: TREQUEST,BREQUEST,RREQUEST,LREQUEST,MSIZE
-      integer :: handle(2)
-
-      integer, save :: Iexport = 0
-      integer, save :: Iimport = 0
 
       integer, dimension(MPI_STATUS_SIZE,4) :: status
       integer, pointer :: points(:)
 
-      real :: cff
-      real(r8) :: RecvTime, SendTime, wtime(2)
-      real(r8) :: inpbuffer(2), outbuffer(2)
-
-      real(r8) :: my_wtime
+      real :: cff, COSWC, SINWC
 
       real(r8), pointer :: avdata(:)
 
@@ -570,8 +562,6 @@
 !
       allocate ( avdata(gsmsize),stat=ierr )
       avdata=0.0_r8
-!     allocate ( points(gsmsize),stat=ierr )
-!     points=0
 !
 !  Ask for points in this tile.
 !
@@ -583,28 +573,23 @@
 !  according to the IVTYPE flag.  The data is exported using ROMS
 !  definition for real kind r8.
 !
-      IF (IVTYPE.le.50) THEN
-        DO IP=1,gsmsize
-          avdata(IP)=REAL( VOQ(points(IP),VOQR(IVTYPE)),r8 )
-        END DO
-      END IF
+      DO IP=1,gsmsize
+        avdata(IP)=REAL( VOQ(points(IP),VOQR(IVTYPE)),r8 )
+      END DO
 !
-      IF (IVTYPE.eq.7) THEN
+      IF (IVTYPE.eq.55) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DISSIP",avdata)
       ELSE IF (IVTYPE.eq.10) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "HSIGN",avdata)
-# ifdef AIR_OCEAN
+# ifdef AIR_WAVES
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2atm_AV,           &
      &                             "HSIGN",avdata)
 # endif
       ELSE IF (IVTYPE.eq.12) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "RTP",avdata)
-      ELSE IF (IVTYPE.eq.39) THEN
-        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
-     &                             "SETUP",avdata)
       ELSE IF (IVTYPE.eq.50) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "TMBOT",avdata)
@@ -617,7 +602,7 @@
       ELSE IF (IVTYPE.eq.17) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "WLEN",avdata)
-# ifdef AIR_OCEAN
+# ifdef AIR_WAVES
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2atm_AV,           &
      &                             "WLEN",avdata)
 # endif
@@ -626,7 +611,7 @@
      &                             "QB",avdata)
       END IF
 !
-      IF (IRQ.eq.NREOQ) THEN
+      IF (IRQ.eq.Numcouple) THEN
 !
 !-----------------------------------------------------------------------
 !  Create a restart file.
@@ -665,7 +650,7 @@
           WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
           CALL FINALIZE_WAV2OCN_COUPLING(ng)
         END IF
-# ifdef AIR_OCEAN
+# ifdef AIR_WAVES
 !
 !  Send fields to atmosphere model.
 !
@@ -821,7 +806,7 @@
           END DO
         END DO
 
-# ifdef AIR_OCEAN
+# ifdef AIR_WAVES
 !
 !  U-wind.
 !
@@ -1035,17 +1020,14 @@
 ! array for DEPTH and computational array COMPDA. Only insert
 ! active (wet points) using array KGRPNT.
 !
-!
-!  Insert depth into SWAN array.
+! Insert depth into SWAN array.
 !
         IP=0
-        DO IY = MYF,MYL
-          DO IX = MXF,MXL
+        DO IY=1,MYC
+          DO IX=1,MXC
             IP=IP+1
-            INDX=KGRPNT(IX-MXF+1,IY-MYF+1)
-            IF (INDX.GT.1) THEN
-              DEPTH(IX,IY)=TEMPMCT(IP,1)
-            END IF
+            OFFSET=(MXF-1)+IX+(IY-1)*MXCGL
+            DEPTH(OFFSET)=TEMPMCT(IP,1)
           END DO
         END DO
 !
@@ -1055,12 +1037,12 @@
 ! MYC = # cells y-dir in this tile including haloy.
 ! COMPDA has only active wet points + 1.
 !
-        DO INDX = 2, MCGRD
+        DO INDX = 1, MCGRD
           COMPDA(INDX,JWLV1)=COMPDA(INDX,JWLV2)
           COMPDA(INDX,JVX1) =COMPDA(INDX,JVX2)
           COMPDA(INDX,JVY1) =COMPDA(INDX,JVY2)
-          COMPDA(INDX,JFRC3) =COMPDA(INDX,JFRC2)
-# ifdef AIR_OCEAN
+          COMPDA(INDX,JFRC3)=COMPDA(INDX,JFRC2)
+# ifdef AIR_WAVES
           COMPDA(INDX,JWX3) =COMPDA(INDX,JWX2)
           COMPDA(INDX,JWY3) =COMPDA(INDX,JWY2)
 # endif
@@ -1075,13 +1057,24 @@
             INDX = KGRPNT(IX,IY)
             IF (INDX.GT.1) THEN
               COMPDA(INDX,JWLV2)=TEMPMCT(IP,2)
+
+# ifdef WRF_COUPLING
+!!  old -->
+              COMPDA(INDX,JWX2)=TEMPMCT(IP,6)
+              COMPDA(INDX,JWY2)=TEMPMCT(IP,7)
+!!  new -->
+!!  Need to read in the grid angle.
+!!
+!              COSWC = COS(GRID_ANGLE(I,J))
+!              SINWC = SIN(GRID_ANGLE(I,J))
+!              COMPDA(INDX,JWX2) =  TEMPMCT(IP,6)*COSWC +                &
+!     &                             TEMPMCT(IP,7)*SINWC
+!              COMPDA(INDX,JWY2) = -TEMPMCT(IP,6)*SINWC +                &
+!     &                             TEMPMCT(IP,7)*COSWC
+# endif
               COMPDA(INDX,JVX2)=TEMPMCT(IP,3)
               COMPDA(INDX,JVY2)=TEMPMCT(IP,4)
               COMPDA(INDX,JFRC2)=REAL(TEMPMCT(IP,5))
-# ifdef AIR_OCEAN
-              COMPDA(INDX,JWX2)=TEMPMCT(IP,6)
-              COMPDA(INDX,JWY2)=TEMPMCT(IP,7)
-# endif
             END IF
           END DO
         END DO

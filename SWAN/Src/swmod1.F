@@ -27,7 +27,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -185,7 +185,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -307,7 +307,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -410,7 +410,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -491,7 +491,7 @@
 ! SCREEN [  6] unit number for the screen
 !              (is for batch-oriented systems equal to PRINTF)
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       CHARACTER*80 INPFIL
       INTEGER EXPORT
       INTEGER IMPORT, INPUTF, ITMOPT, IUNMAX
@@ -567,7 +567,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -606,6 +606,8 @@
 !     40.61, Sep. 06: NMOVAR increased by 3 (quantities DISBOT,
 !                     DISSRF and DISWCP added)
 !     40.64, Apr. 07: NMOVAR increased by 2 (quantities QP and BFI added)
+!     40.85, Aug. 08: NMOVAR increased by 10 (quantities GENE, GENW, REDI, REDQ, REDT,
+!                                             PROPA, PROPX, PROPT, PROPS and RADS added)
 !
 !  2. Purpose
 !
@@ -627,11 +629,11 @@
 !
 !  6. Parameter variables
 !
-!     NMOVAR [  59]  maximum number of output variables                   40.64 40.61 40.51 40.21 40.41
-!     MOUTPA [   5]  number of output parameters
+!     NMOVAR [  69]  maximum number of output variables                   40.85 40.64 40.61 40.51 40.21 40.41
+!     MOUTPA [  50]  number of output parameters                          40.87
 !
       INTEGER NMOVAR, MOUTPA
-      PARAMETER (NMOVAR = 59, MOUTPA=5)                                   40.64 40.61 40.51 40.21 40.41
+      PARAMETER (NMOVAR = 69, MOUTPA=50)                                  40.85 40.87 40.64 40.61 40.51 40.21 40.41
 !
 !  7. Local variables
 !
@@ -693,6 +695,16 @@
 !  (56) [  'DISW']
 !  (58) [    'QP']
 !  (59) [   'BFI']
+!  (60) [  'GENE']
+!  (61) [  'GENW']
+!  (62) [  'REDI']
+!  (63) [  'REDQ']
+!  (64) [  'REDT']
+!  (65) [ 'PROPA']
+!  (66) [ 'PROPX']
+!  (67) [ 'PROPT']
+!  (68) [ 'PROPS']
+!  (69) [  'RADS']
 ! OVSNAM(NMOVAR)   short name of output quantity
 !  ( 1) [    'Xp']
 !  ( 2) [    'Yp']
@@ -742,11 +754,21 @@
 !  (51) ['Watlev']
 !  (52) ['Botlev']
 !  (53) ['TPsmoo']
-!  (54) ['Disbot']
-!  (55) ['Dissrf']
-!  (56) ['Diswcp']
+!  (54) [ 'Sfric']
+!  (55) [ 'Ssurf']
+!  (56) [ 'Swcap']
 !  (58) [    'Qp']
 !  (59) [   'BFI']
+!  (60) ['Genera']
+!  (61) [ 'Swind']
+!  (62) ['Redist']
+!  (63) [  'Snl4']
+!  (64) [  'Snl3']
+!  (65) ['Propag']
+!  (66) ['Propxy']
+!  (67) ['Propth']
+!  (68) ['Propsi']
+!  (69) ['Radstr']
 ! OVLNAM(NMOVAR)   long name of output quantity
 !  ( 1) [                        'X user coordinate']
 !  ( 2) [                        'Y user coordinate']
@@ -797,10 +819,20 @@
 !  (52) [                             'Bottom level']
 !  (53) [            'Relative peak period (smooth)']
 !  (54) [              'Bottom friction dissipation']
-!  (55) [                'Wave breaking dissipation']
+!  (55) [                'Surf breaking dissipation']
 !  (56) [                 'Whitecapping dissipation']
 !  (58) [                               'Peakedness']
 !  (59) [                      'Benjamin-Feir index']
+!  (60) [                        'Energy generation']
+!  (61) [                         'Wind source term']
+!  (62) [                    'Energy redistribution']
+!  (63) [        'Total absolute 4-wave interaction']
+!  (64) [        'Total absolute 3-wave interaction']
+!  (65) [                       'Energy propagation']
+!  (66) [                           'xy-propagation']
+!  (67) [                        'theta-propagation']
+!  (68) [                        'sigma-propagation']
+!  (69) [                         'Radiation stress']
 ! OVUNIT(NMOVAR)   unit of of output quantity
 !  ( 1) [CALCULAT] =UL
 !  ( 2) [CALCULAT] =UL
@@ -855,6 +887,16 @@
 !  (56) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (58) [     ' ']
 !  (59) [     ' ']
+!  (60) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (61) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (62) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (63) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (64) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (65) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (66) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (67) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (68) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (69) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 ! SNAME [        ] name of output point set
 ! UAP   [  'W/m2'] unit of dissipation
 ! UD    [        ] not used
@@ -869,7 +911,7 @@
 ! UT    [   'sec'] unit of time (change to s ???)
 ! UV    [   'm/s'] unit of velocity
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       CHARACTER*20, POINTER :: CHTIME
       CHARACTER*20, SAVE, TARGET, ALLOCATABLE :: CHTIME_G(:)
 
@@ -891,6 +933,7 @@
       CHARACTER*6  UAP,           UD,          UDI,         UDL
       CHARACTER*6  UET,           UF,          UH,          UL
       CHARACTER*6  UP,            UST,         UT,          UV
+
 !     *** information for output ***
 !
 ! AKPOWR [       ] power in expression for computation of average wave number
@@ -960,11 +1003,21 @@
 !  (51)  [  1]   Watlev
 !  (52)  [  1]   Botlev
 !  (53)  [  1]   TPSmoo
-!  (54)  [  1]   Disbot
-!  (55)  [  1]   Dissrf
-!  (56)  [  1]   Diswcp
+!  (54)  [  1]   Sfric
+!  (55)  [  1]   Ssurf
+!  (56)  [  1]   Swcap
 !  (58)  [  1]   Qp
 !  (59)  [  1]   BFI
+!  (60)  [  1]   Genera
+!  (61)  [  1]   Swind
+!  (62)  [  1]   Redist
+!  (63)  [  1]   Snl4
+!  (64)  [  1]   Snl3
+!  (65)  [  1]   Propag
+!  (66)  [  1]   Propxy
+!  (67)  [  1]   Propth
+!  (68)  [  1]   Propsi
+!  (69)  [  1]   Radstr
 ! OVEXCV(NMOVAR)   exception value for output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -1012,11 +1065,21 @@
 !  (51)  [   -99.] Watlev
 !  (52)  [   -99.] Botlev
 !  (53)  [   -10.] TPSmoo
-!  (54)  [   -10.] Disbot
-!  (55)  [   -10.] Dissrf
-!  (56)  [   -10.] Diswcp
+!  (54)  [    -9.] Sfric
+!  (55)  [    -9.] Ssurf
+!  (56)  [    -9.] Swcap
 !  (58)  [    -9.] Qp
 !  (59)  [    -9.] BFI
+!  (60)  [    -9.] Genera
+!  (61)  [    -9.] Swind
+!  (62)  [    -9.] Redist
+!  (63)  [    -9.] Snl4
+!  (64)  [    -9.] Snl3
+!  (65)  [    -9.] Propag
+!  (66)  [    -9.] Propxy
+!  (67)  [    -9.] Propth
+!  (68)  [    -9.] Propsi
+!  (69)  [    -9.] Radstr
 ! OVLEXP(NMOVAR)   lower expected limit of output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -1064,11 +1127,21 @@
 !  (51)  [  -100.] Watlev
 !  (52)  [  -100.] Botlev
 !  (53)  [     0.] TPSmoo
-!  (54)  [     0.] Disbot
-!  (55)  [     0.] Dissrf
-!  (56)  [     0.] Diswcp
+!  (54)  [     0.] Sfric
+!  (55)  [     0.] Ssurf
+!  (56)  [     0.] Swcap
 !  (58)  [     0.] Qp
 !  (59)  [     0.] BFI
+!  (60)  [     0.] Genera
+!  (61)  [     0.] Swind
+!  (62)  [     0.] Redist
+!  (63)  [     0.] Snl4
+!  (64)  [     0.] Snl3
+!  (65)  [     0.] Propag
+!  (66)  [     0.] Propxy
+!  (67)  [     0.] Propth
+!  (68)  [     0.] Propsi
+!  (69)  [     0.] Radstr
 ! OVLLIM(NMOVAR)   lower limit of validity of output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -1116,11 +1189,21 @@
 !  (51)  [  -1.E4] Watlev
 !  (52)  [  -1.E4] Botlev
 !  (53)  [     0.] TPSmoo
-!  (54)  [     0.] Disbot
-!  (55)  [     0.] Dissrf
-!  (56)  [     0.] Diswcp
+!  (54)  [     0.] Sfric
+!  (55)  [     0.] Ssurf
+!  (56)  [     0.] Swcap
 !  (58)  [     0.] Qp
 !  (59)  [     0.] BFI
+!  (60)  [     0.] Genera
+!  (61)  [     0.] Swind
+!  (62)  [     0.] Redist
+!  (63)  [     0.] Snl4
+!  (64)  [     0.] Snl3
+!  (65)  [     0.] Propag
+!  (66)  [     0.] Propxy
+!  (67)  [     0.] Propth
+!  (68)  [     0.] Propsi
+!  (69)  [     0.] Radstr
 ! OVHEXP(NMOVAR)   upper expected limit of output quantity
 !  ( 1)  [  1.E10] Xp
 !  ( 2)  [  1.E10] Yp
@@ -1168,11 +1251,21 @@
 !  (51)  [   100.] Watlev
 !  (52)  [   100.] Botlev
 !  (53)  [   100.] TPSmoo
-!  (54)  [   100.] Disbot
-!  (55)  [   100.] Dissrf
-!  (56)  [   100.] Diswcp
+!  (54)  [    0.1] Sfric
+!  (55)  [    0.1] Ssurf
+!  (56)  [    0.1] Swcap
 !  (58)  [     1.] Qp
 !  (59)  [  1000.] BFI
+!  (60)  [    0.1] Genera
+!  (61)  [    0.1] Swind
+!  (62)  [    0.1] Redist
+!  (63)  [    0.1] Snl4
+!  (64)  [    0.1] Snl3
+!  (65)  [    0.1] Propag
+!  (66)  [    0.1] Propxy
+!  (67)  [    0.1] Propth
+!  (68)  [    0.1] Propsi
+!  (69)  [    0.1] Radstr
 ! OVULIM(NMOVAR)   upper limit of validity
 !  ( 1)  [  1.E10] Xp
 !  ( 2)  [  1.E10] Yp
@@ -1220,11 +1313,21 @@
 !  (51)  [   1.E4] Watlev
 !  (52)  [   1.E4] Botlev
 !  (53)  [  1000.] TPSmoo
-!  (54)  [  1000.] Disbot
-!  (55)  [  1000.] Dissrf
-!  (56)  [  1000.] Diswcp
+!  (54)  [  1000.] Sfric
+!  (55)  [  1000.] Ssurf
+!  (56)  [  1000.] Swcap
 !  (58)  [     1.] Qp
 !  (59)  [  1000.] BFI
+!  (60)  [  1000.] Genera
+!  (61)  [  1000.] Swind
+!  (62)  [  1000.] Redist
+!  (63)  [  1000.] Snl4
+!  (64)  [  1000.] Snl3
+!  (65)  [  1000.] Propag
+!  (66)  [  1000.] Propxy
+!  (67)  [  1000.] Propth
+!  (68)  [  1000.] Propsi
+!  (69)  [  1000.] Radstr
 ! SINCQ  [       ] sin of ALCQ
 ! SINPQ  [       ] sin of ALPQ
 ! SPCPOW [      1] power in expression for computation of average frequency
@@ -1283,7 +1386,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1379,6 +1482,7 @@
 !                        =1 when regular
 !                        =2 when irregular, but rectangular (not used)
 !                        =3 when curvilinear
+!                        =5 when unstructured grid
 ! NBFILS        [     0] number of boundary condition files
 ! NBSPEC        [     0] number of boundary spectra
 ! NBGRPT        [     0] number of comp. grid points for which boundary
@@ -1403,7 +1507,7 @@
 ! YOFFS         [    0.] offset value in y
 !                        (from user coord. system to internal coord. system)
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       LOGICAL, POINTER :: CVLEFT
       LOGICAL, SAVE, TARGET, ALLOCATABLE :: CVLEFT_G(:)
       LOGICAL, POINTER :: LXOFFS
@@ -1510,7 +1614,7 @@
 !     IFLNHF     number of heading lines per file
 !     IFLTIM     time of last reading
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INTEGER, POINTER :: IFLDYN(:)
       INTEGER, SAVE, TARGET, ALLOCATABLE :: IFLDYN_G(:,:)
       INTEGER, POINTER :: IFLIDL(:)
@@ -1586,7 +1690,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1635,13 +1739,16 @@
 !     MBOT   [  10] dimension of array PBOT
 !     MDIFFR [  10] dimension of array PDIFFR                             40.21
 !     MDISP  [   3] dimension for dissipation arrays                      40.67
+!     MGENR  [   1] dimension for generation arrays                       40.85
 !     MICMAX [  10] max. number of points in comput. stencil
-!     MNUMS  [  30] dimension of array PNUMS
+!     MNUMS  [  35] dimension of array PNUMS
 !     MQUAD  [  10] dimension of array PQUAD
+!     MREDS  [   2] dimension for redistribution arrays                   40.85
 !     MSETUP [   2] dimension of array PSETUP
 !     MSHAPE [   5] dimension of array PSHAPE
 !     MSPPAR [   5] dimension of array SPPARM
-!     MSURF  [  10] dimension of array PSURF
+!     MSURF  [  15] dimension of array PSURF                              41.06
+!     MTRNP  [   3] dimension for propagation arrays                      40.85
 !     MTRIAD [  10] dimension of array PTRIAD
 !     MWCAP  [  15] dimension of array PWCAP
 !     MWIND  [  40] dimension of array PWIND
@@ -1652,17 +1759,21 @@
       INTEGER             MICMAX
       INTEGER             MDIFFR                                          40.21
       INTEGER             MDISP                                           40.67
+      INTEGER             MGENR, MREDS, MTRNP                             40.85
 !
       PARAMETER           (MBOT   = 10)
       PARAMETER           (MDIFFR = 10)                                   40.21
       PARAMETER           (MDISP  =  3)                                   40.67
+      PARAMETER           (MGENR  =  1)                                   40.85
+      PARAMETER           (MREDS  =  2)                                   40.85
+      PARAMETER           (MTRNP  =  3)                                   40.85
       PARAMETER           (MICMAX = 10)
-      PARAMETER           (MNUMS  = 30)
+      PARAMETER           (MNUMS  = 35)
       PARAMETER           (MQUAD  = 10)
       PARAMETER           (MSETUP =  2)
       PARAMETER           (MSHAPE =  5)
       PARAMETER           (MSPPAR =  5)
-      PARAMETER           (MSURF  = 10)
+      PARAMETER           (MSURF  = 15)                                   41.06
       PARAMETER           (MTRIAD = 10)
       PARAMETER           (MWCAP  = 15)
       PARAMETER           (MWIND  = 40)
@@ -1684,7 +1795,7 @@
 !              (difference in Hs between last two iterations)
 ! JDIS0  [  7] within array SWMATR
 ! JDIS1  [  7+MDISP] within array SWMATR
-! JDISS  [  2] dissipation within array COMPDA
+! JDISS  [  2] total dissipation within array COMPDA
 ! JDPSAV [  1] saved depth (for setup) within array COMPDA
 ! JDP1   [  7] old depth within array COMPDA
 ! JDP2   [  8] new depth within array COMPDA
@@ -1701,6 +1812,12 @@
 !              set by command READ FR ...
 ! JFRC3  [  1] friction coefficient within array COMPDA
 !              set by command READ FR ...
+! JGEN0  [   ] within array SWMATR
+! JGEN1  [   ] within array SWMATR
+! JGENR  [  1] total generation within array COMPDA
+!              set by command TABLE/BLOCK
+! JGSXW  [  1] wind input within array COMPDA
+!              set by command TABLE/BLOCK
 ! JHS    [  1] significant wave height Hs within array COMPDA
 ! JHSIBC [ 25] significant wave height from boundary condition in array COMPDA
 ! JLEAK  [ 21] "leak" within array COMPDA
@@ -1723,10 +1840,30 @@
 ! JPWNDA [  1] within array SWTSDA, wind source term part A
 ! JPWNDB [  2] within array SWTSDA, wind source term part B
 ! JQB    [  4] fraction of breaking waves within array COMPDA
+! JRADS  [  1] radiation stress within array COMPDA
+!              set by command TABLE/BLOCK
+! JRED0  [   ] within array SWMATR
+! JRED1  [   ] within array SWMATR
+! JREDS  [  1] total redistribution within array COMPDA
+!              set by command TABLE/BLOCK
+! JRSXQ  [  1] quadruplets within array COMPDA
+!              set by command TABLE/BLOCK
+! JRSXT  [  1] triads within array COMPDA
+!              set by command TABLE/BLOCK
 ! JSETUP [  1] setup values within array COMPDA
 ! JSTP   [  5] steepness within array COMPDA
 ! JTAUW  [  1] TauW within array COMPDA,
 !              set by command WCAP JANS ...
+! JTRA0  [   ] within array SWMATR
+! JTRA1  [   ] within array SWMATR
+! JTRAN  [  1] total propagation within array COMPDA
+!              set by command TABLE/BLOCK
+! JTSXG  [  1] xy-propagation within array COMPDA
+!              set by command TABLE/BLOCK
+! JTSXT  [  1] theta-propagation within array COMPDA
+!              set by command TABLE/BLOCK
+! JTSXS  [  1] sigma-propagation within array COMPDA
+!              set by command TABLE/BLOCK
 ! JUBOT  [  3] bottom orbital velocity within array COMPDA
 ! JURSEL [ 27] Ursell number as used in Triad computation
 ! JUSTAR [  1] friction velocity within array COMPDA,
@@ -1755,6 +1892,16 @@
 !              =MCMVAR+1, for command TABLE/BLOCK DISB (add JDSXB)
 !              =MCMVAR+1, for command TABLE/BLOCK DISSU (add JDSXS)
 !              =MCMVAR+1, for command TABLE/BLOCK DISW (add JDSXW)
+!              =MCMVAR+1, for command TABLE/BLOCK GENE (add JGENR)
+!              =MCMVAR+1, for command TABLE/BLOCK GENW (add JGSXW)
+!              =MCMVAR+1, for command TABLE/BLOCK REDI (add JREDS)
+!              =MCMVAR+1, for command TABLE/BLOCK REDQ (add JRSXQ)
+!              =MCMVAR+1, for command TABLE/BLOCK REDT (add JRSXT)
+!              =MCMVAR+1, for command TABLE/BLOCK PROPA (add JTRAN)
+!              =MCMVAR+1, for command TABLE/BLOCK PROPX (add JTSXG)
+!              =MCMVAR+1, for command TABLE/BLOCK PROPT (add JTSXT)
+!              =MCMVAR+1, for command TABLE/BLOCK PROPS (add JTSXS)
+!              =MCMVAR+1, for command TABLE/BLOCK RADST (add JRADS)
 ! MLSWMAT [  2] within array LSWMAT
 ! MSWMATR [ 13] within array SWMATR
 ! MTSVAR [  8] within array TESTDA
@@ -1765,9 +1912,14 @@
       INTEGER             JDIS1,       JDISS,       JDPSAV,      JDP1
       INTEGER             JDP2
       INTEGER             JDP3,        JDTM,        JFRC2,       JFRC3
+      INTEGER             JGEN0,       JGEN1,       JRED0,       JRED1
+      INTEGER             JTRA0,       JTRA1
       INTEGER             JDSXB
       INTEGER             JDSXS
       INTEGER             JDSXW
+      INTEGER             JGSXW,       JGENR
+      INTEGER             JRSXQ,       JRSXT,       JREDS,       JRADS
+      INTEGER             JTSXG,       JTSXT,       JTSXS,       JTRAN
       INTEGER             JHS,         JHSIBC,      JLEAK
       INTEGER             JLEK1,       JMAT5,       JMAT6,       JMATD
       INTEGER             JMATL,       JMATR,       JMATU
@@ -1786,6 +1938,7 @@
 !
 ! ALCP   [CALCUL] =-ALPC;
 !                  direction of user coordinates w.r.t. computational coordinates
+! ALOCMP [ FALSE]  if True, array COMPDA must be re-allocated
 ! ALPC   [    0.]  direction of x-axis of computational grid w.r.t. user coordinates
 ! COSPC  [CALCUL] =COS(ALPC)
 ! DX     [CALCUL] =XCLEN/MXS; mesh size in x-direction of computational grid
@@ -1835,7 +1988,7 @@
 !                  origin of user coordinates w.r.t. computational coordinates
 ! YPC    [    0.]  y coordinate of origin of computational grid
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INTEGER             ICOMP
       INTEGER, POINTER :: MXC
       INTEGER, SAVE, TARGET, ALLOCATABLE :: MXC_G(:)
@@ -1888,6 +2041,7 @@
       REAL                XCGMIN,      XCGMAX,      YCGMIN,      YCGMAX
       LOGICAL             FULCIR
 #endif
+      LOGICAL ::          ALOCMP = .FALSE.                                40.97
 !$OMP THREADPRIVATE(IXCGRD,IYCGRD,KCGRD)
 !
 !     *** physical parameters ***
@@ -1965,6 +2119,9 @@
 ! IDIFFR [     0] diffraction method                                      40.21
 !                 0= no diffraction                                       40.21
 !                 1= diffraction                                          40.21
+! IFRSRF [     0] indicates frequency dependent surf breaking             41.06
+!                 0=no frequency dependency                               41.06
+!                 1=frequency dependency                                  41.06
 ! IGEN   [     3] indicates the generation mode
 !                 =1; for command GEN1 ...,
 !                 =2; for command GEN2 ...,
@@ -1995,6 +2152,9 @@
 !                 =0; for command OFF BRE, surf breaking is inactive
 !                 =1; for command BRE CON ..., surf breaking with constant parameter
 !                 =2; for command BRE VAR ..., surf breaking according to Nelson
+!                 =3; for command BRE RUE ..., surf breaking according to Ruessink
+!                 =4; for command BRE TG ... , surf breaking according to Thornton and Guza
+!                 =5; for command BRE WESTH ..., surf breaking according to biphase scaling
 ! ITERMX [      ] maximum number of iterations:
 !                 is set equal to MXITST in case of stationary computations
 !                 is set equal to MXITNS in case of nonstationary computations
@@ -2042,11 +2202,12 @@
 !                 =5; for command GEN3 YAN ..., if wind is made active,
 !                 =5; for command GROWTH G3 YAN ..., not documented in manual,
 !                 not documented in manual
+! LADDS  [.fals.] indicates whether extra output is requested or not
 ! LSETUP [     0] =0; setup is not calculated
 !                 =1; setup is calculated
 !                 =2; setup is calculated with the boundary conditions from
 !                     a nest file
-! MXITST [    15] max. number of iterations in stationary computations
+! MXITST [    50] max. number of iterations in stationary computations
 ! MXITNS [     1] max. number of iterations in nonstationary computations
 ! NCOR   [     1] not used
 ! NSTATC [     1] indicates stationarity of computation:
@@ -2055,6 +2216,8 @@
 ! NSTATM  [   -1] 0: stationary mode, 1: nonstationary mode, -1: unknown
 ! NUMOBS [      ] number of obstacles
 ! NCOMPT [      ] number of COMPUTE commands
+! OFFSRC [.fals.] indicates whether source terms are included in
+!                 action balance equation or not
 ! ONED   [.FALS.] Indicates whether the calculation should be performed in 1D-mode
 ! PDIFFR(MDIFFR)  coefficients for diffraction                            40.21
 !  ( 1)           smoothing parameter                                     40.21
@@ -2334,6 +2497,7 @@
       INTEGER             MXITST,      MXITNS,                   NCOR
       INTEGER             NSTATC,      NSTATM,      NUMOBS,      NCOMPT   40.41
       INTEGER             IDIFFR                                          40.21
+      INTEGER             IFRSRF                                          41.06
       REAL                DEPMIN,      PBOT(MBOT),  PNUMS(MNUMS)
       REAL                PSETUP(MSETUP),           PSHAPE(MSHAPE)
       REAL                PSURF(MSURF),             PTRIAD(MTRIAD)
@@ -2346,6 +2510,8 @@
       REAL                PDIFFR(MDIFFR)                                  40.21
       LOGICAL             ACUPDA
       LOGICAL             BNDCHK,      BNAUT,       ONED,        BRESCL
+      LOGICAL             OFFSRC                                          40.80
+      LOGICAL             LADDS                                           40.85
       LOGICAL             CSETUP
 !$OMP THREADPRIVATE(ICMAX,CSETUP)
 !
@@ -2387,7 +2553,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2494,7 +2660,7 @@
 !                 1=first order (BSBT), 3=3rd order (S&L)
 ! PROPSL [CALCUL] indicates which numerical scheme is used locally
 ! REARTH [   6E6] radius of the earth
-! WAVAGE [    0.] indicates "wave age" parameter (used in countering Garden Sprinkler Effect
+! WAVAGE [    0.] indicates "wave age" parameter (used in counteracting garden-sprinkler effect
 !                 in subroutine SANDL)
 !
       INTEGER PROPSC,    KSPHER,    KREPTX
@@ -2543,7 +2709,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2613,7 +2779,7 @@
 ! TIMCO     [    ] Time and date of the computation during the simulation (in
 !                  seconds since the reference day (REFDAY))
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       REAL, POINTER :: TINIC
       REAL, SAVE, TARGET, ALLOCATABLE :: TINIC_G(:)
       REAL, POINTER :: DT
@@ -2657,8 +2823,24 @@
 ! TIMERS    [ 600] start-time of active timers; columns 1,2: cpu-time,
 !                  wall-clock time
 !
+#ifdef SWAN_MODEL_nouse
+      INTEGER, POINTER :: NCUMTM(:)
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: NCUMTM_G(:,:)
+      INTEGER, POINTER :: LISTTM(:)
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: LISTTM_G(:,:)
+      INTEGER, POINTER :: LASTTM
+      INTEGER, SAVE, TARGET, ALLOCATABLE :: LASTTM_G(:)
+
+      DOUBLE PRECISION, POINTER :: DCUMTM(:,:)
+      DOUBLE PRECISION, SAVE, TARGET, ALLOCATABLE :: DCUMTM_G(:,:,:)
+
+      DOUBLE PRECISION, POINTER :: TIMERS(:,:)
+      DOUBLE PRECISION, SAVE, TARGET, ALLOCATABLE :: TIMERS_G(:,:,:)
+
+#else
       INTEGER, SAVE          :: NCUMTM(NSECTM), LISTTM(MXTIMR), LASTTM
       DOUBLE PRECISION, SAVE :: DCUMTM(NSECTM,2), TIMERS(MXTIMR,2)
+#endif
 !$OMP THREADPRIVATE(DCUMTM,TIMERS,NCUMTM,LISTTM,LASTTM)
 !
 !  8. Subroutines and functions used

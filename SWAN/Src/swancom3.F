@@ -29,7 +29,7 @@
 !****************************************************************
 !
       SUBROUTINE WNDPAR (ISSTOP,IDWMIN,IDWMAX,IDCMIN,IDCMAX,              32.06
-     &                   DEP2  ,WIND10,                                   32.06
+     &                   DEP2  ,WIND10,GENC0 ,GENC1 ,                     40.85 32.06
      &                   THETAW,AC2   ,KWAVE ,IMATRA,IMATDA,              32.06
      &                   SPCSIG,CGO   ,ALIMW ,GROWW ,ETOTW ,              32.06
      &                   PLWNDA,PLWNDB,SPCDIR,ITER            )           32.06
@@ -54,7 +54,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -81,6 +81,7 @@
 !     32.06: Roeland Ris
 !     40.00: Nico Booij (Nonstationary boundary conditions)
 !     40.41: Marcel Zijlema
+!     40.85: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -95,6 +96,7 @@
 !     30.82, June 99: Implicit none added; all variables declared
 !     40.41, Aug. 04: COS(THETA-THETAW) replaced by sumrule to make it cheaper
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.85, Aug. 08: store wind input for output purposes
 !
 !  2. Purpose
 !
@@ -329,6 +331,8 @@
       REAL  :: KWAVE(MSC,MICMAX)                                          40.22
       REAL  :: PLWNDA(MDC,MSC,NPTST)                                      40.00
       REAL  :: PLWNDB(MDC,MSC,NPTST)
+      REAL  :: GENC0(MDC,MSC,MGENR)                                       40.85
+      REAL  :: GENC1(MDC,MSC,MGENR)                                       40.85
       REAL  :: DEP2(MCGRD)
 !     Changed ICMAX to MICMAX, since MICMAX doesn't vary over gridpoint   40.22
       REAL  :: CGO(MSC,MICMAX)                                            40.22
@@ -496,12 +500,13 @@
           IMATDA(ID,IS) = IMATDA(ID,IS) - SWIND_IMP
           IF (TESTFL) PLWNDA(ID,IS,IPTST) = SWIND_EXP                     40.13
           IF (TESTFL) PLWNDB(ID,IS,IPTST) = SWIND_IMP                     40.13
-!
+          GENC0(ID,IS,1) = GENC0(ID,IS,1) + SWIND_EXP                     40.85
+          GENC1(ID,IS,1) = GENC1(ID,IS,1) + SWIND_IMP                     40.85
 !
 !         *** test output ***
 !
 !         Value of ITEST changed from 10 to 110 to reduce test output     40.13
-          IF ( TESTFL .AND. ITEST .GE. 110 ) THEN                        40.13
+          IF ( TESTFL .AND. ITEST .GE. 110 ) THEN                         40.13
             WRITE(PRINTF,2004) IS, ID, GROWW(ID,IS), ADUM, BDUM           40.13
  2004       FORMAT(' WNDPAR: IS ID GROWW ADUM BDUM     :',                40.13
      &             2I3,2X,L1,2X,2E12.4)
@@ -558,7 +563,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -923,7 +928,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1156,7 +1161,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1313,7 +1318,7 @@
       SUBROUTINE SWIND0 (IDCMIN  ,IDCMAX  ,ISSTOP  ,
      &                   SPCSIG  ,THETAW  ,ANYWND  ,
      &                   UFRIC   ,FPM     ,PLWNDA  ,
-     &                   IMATRA  ,SPCDIR           )
+     &                   IMATRA  ,SPCDIR  ,GENC0   )
 !
 !****************************************************************
 !
@@ -1333,7 +1338,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1356,6 +1361,7 @@
 !     30.72: IJsbrand Haagsma
 !     30.82: IJsbrand Haagsma
 !     40.41: Marcel Zijlema
+!     40.85: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -1363,6 +1369,7 @@
 !     30.82, Oct. 98: Updated description of several variables
 !     40.41, Aug. 04: COS(THETA-THETAW) replaced by sumrule to make it cheaper
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.85, Aug. 08: store wind input for output purposes
 !
 !  2. PURPOSE
 !
@@ -1419,7 +1426,7 @@
 !        ---------
 !        FPM         Pierson Moskowitz frequecy (WAM)
 !        GRAV        Gravitatiuonal acceleration
-!        SWINEO      Coefficient stored in IMATDA
+!        SWINEO      Coefficient stored in IMATRA
 !        THETA       Spectral direction
 !        THETAW      Mean direction of the relative wind vector
 !        UFRIC       Wind friction velocity
@@ -1474,6 +1481,7 @@
 !
       REAL    IMATRA(MDC,MSC)      ,
      &        PLWNDA(MDC,MSC,NPTST)                                       40.00
+      REAL    GENC0(MDC,MSC,MGENR)                                        40.85
 !
       INTEGER IDCMIN(MSC)          ,
      &        IDCMAX(MSC)
@@ -1508,7 +1516,8 @@
             TEMP3  = ( UFRIC *  MAX( 0. , COSDIF))**4                     40.41
             SWINEA = MAX( 0. , TEMP2 * TEMP3 * FILTER )
             IMATRA(ID,IS) = IMATRA(ID,IS) + SWINEA
-            IF(TESTFL) PLWNDA(ID,IS,IPTST) = SWINEA                       40.00
+            IF(TESTFL) PLWNDA(ID,IS,IPTST) = SWINEA/SIGMA                 40.85 40.00
+            GENC0(ID,IS,1) = GENC0(ID,IS,1) + SWINEA/SIGMA                40.85
 !
 !           *** test output ***
 !
@@ -1545,10 +1554,10 @@
 !
 !****************************************************************
 !
-      SUBROUTINE SWIND3 (SPCSIG  ,THETAW  ,IMATDA  ,
-     &                   KWAVE   ,IMATRA  ,
+      SUBROUTINE SWIND3 (SPCSIG  ,THETAW  ,
+     &                   KWAVE   ,IMATRA  ,GENC0   ,
      &                   IDCMIN  ,IDCMAX  ,AC2     ,UFRIC   ,
-     &                   FPM     ,PLWNDB  ,ISSTOP  ,SPCDIR  ,ANYWND)
+     &                   FPM     ,PLWNDA  ,ISSTOP  ,SPCDIR  ,ANYWND)
 !
 !****************************************************************
 !
@@ -1568,7 +1577,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1591,6 +1600,7 @@
 !     30.72: IJsbrand Haagsma
 !     30.82: IJsbrand Haagsma
 !     40.41: Marcel Zijlema
+!     40.85: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -1598,6 +1608,7 @@
 !     30.82, Oct. 98: Updated description of several variables
 !     40.41, Aug. 04: COS(THETA-THETAW) replaced by sumrule to make it cheaper
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.85, Aug. 08: store wind input for output purposes
 !
 !  2. PURPOSE
 !
@@ -1667,7 +1678,6 @@
 !        KWAVE     2D    Wavenumber
 !        LOGSIG    1D    Logaritmic distribution of frequency
 !        IMATRA    2D    Coefficients of right hand side of matrix
-!        IMATDA    2D    Coefficients of diagonal of matrix
 !        PWIND     1D    Wind coefficients
 !        IDCMIN    1D    Frequency dependent counter
 !        IDCMAX    1D    Frequency dependent counter
@@ -1712,10 +1722,10 @@
      &         TEMP2 ,TEMP3 ,CINV
 !
       REAL    AC2(MDC,MSC,MCGRD)   ,
-     &        IMATDA(MDC,MSC)      ,
      &        IMATRA(MDC,MSC)      ,
      &        KWAVE(MSC,ICMAX)     ,
-     &        PLWNDB(MDC,MSC,NPTST)                                       40.00
+     &        PLWNDA(MDC,MSC,NPTST)                                       40.00
+      REAL  :: GENC0(MDC,MSC,MGENR)                                       40.85
 !
       INTEGER IDCMIN(MSC)          ,
      &        IDCMAX(MSC)
@@ -1745,7 +1755,8 @@
             SWINEB = MAX ( 0. , SWINEB * SIGMA )
 !
             IMATRA(ID,IS) = IMATRA(ID,IS) + SWINEB * AC2(ID,IS,KCGRD(1))
-            IF (TESTFL) PLWNDB(ID,IS,IPTST) = SWINEB                      40.00
+            IF (TESTFL) PLWNDA(ID,IS,IPTST) = SWINEB*AC2(ID,IS,KCGRD(1))  40.85 40.00
+            GENC0(ID,IS,1) = GENC0(ID,IS,1) + SWINEB*AC2(ID,IS,KCGRD(1))  40.85
 !
           END IF
         ENDDO
@@ -1761,7 +1772,7 @@
      &         '  IS ID1 ID2       Wind source term')
         DO IS = 1, MSC
           WRITE(PRTEST,6200) IS, IDCMIN(IS), IDCMAX(IS),
-     &    (PLWNDB(ID,IS,IPTST), ID=IDCMIN(IS), IDCMAX(IS))
+     &    (PLWNDA(ID,IS,IPTST), ID=IDCMIN(IS), IDCMAX(IS))
  6200     FORMAT(3I4, 600e12.4)
         ENDDO
         WRITE(PRTEST,*)
@@ -1775,9 +1786,9 @@
 !
       SUBROUTINE SWIND4 (IDWMIN  ,IDWMAX  ,
      &                   SPCSIG  ,WIND10  ,THETAW  ,XIS     ,
-     &                   DD      ,KWAVE   ,IMATRA  ,
+     &                   DD      ,KWAVE   ,IMATRA  ,GENC0   ,
      &                   IDCMIN  ,IDCMAX  ,AC2     ,UFRIC   ,
-     &                   PLWNDB  ,ISSTOP  ,ITER    ,USTAR   ,ZELEN   ,
+     &                   PLWNDA  ,ISSTOP  ,ITER    ,USTAR   ,ZELEN   ,
      &                   SPCDIR  ,ANYWND  ,IT               )
 !
 !******************************************************************
@@ -1799,7 +1810,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1825,6 +1836,7 @@
 !     40.31: Tim Campbell and John Cazes
 !     40.41: Marcel Zijlema
 !     40.61: Roop Lalbeharry
+!     40.85: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -1835,6 +1847,7 @@
 !     40.41, Aug. 04: COS(THETA-THETAW) replaced by sumrule to make it cheaper
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.61, Nov. 06: improvements to WAM4 based on WAM4.5
+!     40.85, Aug. 08: store wind input for output purposes
 !
 !  2. Purpose
 !
@@ -1887,7 +1900,7 @@
 !        ---------
 !        DD          Directional band width
 !        GRAV        Gravitational acceleration
-!        SWINEO      Coefficient stored in IMATDA
+!        SWINEO      Coefficient stored in IMATRA
 !        THETA       Spectral direction
 !        THETAW      Mean direction of the relative wind vector
 !        WIND10      Velocity of the relative wind vector
@@ -1898,7 +1911,6 @@
 !        ---------------------------------
 !        KWAVE     2D    Wavenumber
 !        IMATRA    2D    Coefficients of right hand side of matrix
-!        IMATDA    2D    Coefficients of diagonal of matrix
 !        PWIND     1D    Wind coefficients
 !        IDCMIN    1D    Frequency dependent counter
 !        IDCMAX    1D    Frequency dependent counter
@@ -1960,9 +1972,10 @@
       REAL    AC2(MDC,MSC,MCGRD)   ,                                      30.21
      &        IMATRA(MDC,MSC)      ,
      &        KWAVE(MSC,ICMAX)     ,
-     &        PLWNDB(MDC,MSC,NPTST),
+     &        PLWNDA(MDC,MSC,NPTST),
      &        USTAR(MCGRD)         ,
      &        ZELEN(MCGRD)
+      REAL    GENC0(MDC,MSC,MGENR)                                        40.85
 !
       INTEGER IDCMIN(MSC)          ,
      &        IDCMAX(MSC)
@@ -2278,7 +2291,8 @@
 !
             SWINEB = RHOAW * BETA * XFAC2 * COS2 * SIGMA
             IMATRA(ID,IS) = IMATRA(ID,IS) + SWINEB * AC2(ID,IS,KCGRD(1))  30.21
-            IF (TESTFL) PLWNDB(ID,IS,IPTST) = SWINEB                      40.00
+            IF (TESTFL) PLWNDA(ID,IS,IPTST) = SWINEB*AC2(ID,IS,KCGRD(1))  40.85 40.00
+            GENC0(ID,IS,1) = GENC0(ID,IS,1) + SWINEB*AC2(ID,IS,KCGRD(1))  40.85
 !
 !           *** test output ***
 !
@@ -2320,8 +2334,8 @@
 !
       SUBROUTINE SWIND5 (SPCSIG  ,THETAW  ,ISSTOP  ,
      &                   UFRIC   ,KWAVE   ,IMATRA  ,IDCMIN  ,
-     &                   IDCMAX  ,AC2     ,ANYWND  ,PLWNDB  ,
-     &                   SPCDIR                             )
+     &                   IDCMAX  ,AC2     ,ANYWND  ,PLWNDA  ,
+     &                   SPCDIR  ,GENC0                     )
 !
 !****************************************************************
 !
@@ -2341,7 +2355,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2365,6 +2379,7 @@
 !     30.82: IJsbrand Haagsma
 !     40.41: Marcel Zijlema
 !     40.53: Andre van der Westhuysen
+!     40.85: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -2374,6 +2389,7 @@
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.53, Aug. 04: changes parameters of Yan formulae in case of Alves and
 !                     Banner whitecapping method
+!     40.85, Aug. 08: store wind input for output purposes
 !
 ! 2. Purpose
 !
@@ -2427,7 +2443,6 @@
 !        ---------------------------------
 !        KWAVE     2D    Wavenumber
 !        IMATRA    2D    Coefficients of right hand side of matrix
-!        IMATDA    2D    Coefficients of diagonal of matrix
 !        IDCMIN    1D    Frequency dependent counter
 !        IDCMAX    1D    Frequency dependent counter
 !        ANYWND    1D    Wind input for bin considered
@@ -2473,7 +2488,8 @@
       REAL    AC2(MDC,MSC,MCGRD)   ,
      &        IMATRA(MDC,MSC)      ,
      &        KWAVE(MSC,ICMAX)     ,
-     &        PLWNDB(MDC,MSC,NPTST)
+     &        PLWNDA(MDC,MSC,NPTST)
+      REAL    GENC0(MDC,MSC,MGENR)                                        40.85
 !
       INTEGER IDCMIN(MSC)          ,
      &        IDCMAX(MSC)
@@ -2515,7 +2531,8 @@
             SWINEB = TEMP3 * COSDIF - COF4                                40.41
             SWINEB = MAX ( 0. , SWINEB * SIGMA )
             IMATRA(ID,IS) = IMATRA(ID,IS) + SWINEB * AC2(ID,IS,KCGRD(1))
-            IF (TESTFL) PLWNDB(ID,IS,IPTST) = SWINEB                      40.00
+            IF (TESTFL) PLWNDA(ID,IS,IPTST) = SWINEB*AC2(ID,IS,KCGRD(1))  40.85 40.00
+            GENC0(ID,IS,1) = GENC0(ID,IS,1) + SWINEB*AC2(ID,IS,KCGRD(1))  40.85
           END IF
         ENDDO
       ENDDO

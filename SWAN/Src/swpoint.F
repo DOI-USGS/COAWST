@@ -1,14 +1,13 @@
-#include "cppdefs.h"
+#include "swancpp.h"
       MODULE SWPOINT_MOD
 
-#if defined MODEL_COUPLING
+#if defined SWAN_MODEL
 !
 !svn $Id: swpoint_mod.F 756 2008-09-14 20:18:28Z jcwarner $
 !==================================================== John C. Warner ===
 !                                                                      !
 !                                                                      !
 !=======================================================================
-!
 !
       USE TIMECOMM
       USE OCPCOMM2
@@ -23,6 +22,9 @@
       USE M_PARALL2
       USE M_BNDSPEC
       USE M_CVMESH
+# ifdef REFINED_GRID
+      USE M_SREFINED
+# endif
 
       implicit none
 !
@@ -47,6 +49,8 @@
 !=======================================================================
 !
       INTEGER, INTENT(IN) :: ng, Numgrids
+!     INTEGER NSECTM, MXTIMR
+!     PARAMETER (NSECTM=300, MXTIMR=10)
 !
 !
 !  Allocate Type arrays
@@ -58,6 +62,10 @@
         ALLOCATE (BGPDATZ_MOD(Numgrids))
         ALLOCATE (OPSDATZ_MOD(Numgrids))
         ALLOCATE (ORQDATZ_MOD(Numgrids))
+
+# ifdef REFINED_GRID
+        ALLOCATE (REFINED_MOD(Numgrids))
+# endif
 !
 !  Allocate pointers
 !
@@ -113,6 +121,15 @@
         IF (.not.allocated(DT_G)) ALLOCATE (DT_G(Numgrids))
         IF (.not.allocated(TFINC_G)) ALLOCATE (TFINC_G(Numgrids))
         IF (.not.allocated(TIMCO_G)) ALLOCATE (TIMCO_G(Numgrids))
+!       IF (.not.allocated(NCUMTM_G))                                   &
+!    &     ALLOCATE (NCUMTM_G(Numgrids,NSECTM))
+!       IF (.not.allocated(LISTTM_G))                                   &
+!    &     ALLOCATE (LISTTM_G(Numgrids,MXTIMR))
+!       IF (.not.allocated(LASTTM_G)) ALLOCATE (LASTTM_G(Numgrids))
+!       IF (.not.allocated(DCUMTM_G))                                   &
+!    &      ALLOCATE (DCUMTM_G(Numgrids,NSECTM,2))
+!       IF (.not.allocated(TIMERS_G))                                   &
+!    &     ALLOCATE (TIMERS_G(Numgrids,MXTIMR,2))
 !
 !  SWCOMM1
 !
@@ -270,6 +287,11 @@
       DT=>DT_G(ng)
       TFINC=>TFINC_G(ng)
       TIMCO=>TIMCO_G(ng)
+!      NCUMTM=>NCUMTM_G(ng,:)
+!      LISTTM=>LISTTM_G(ng,:)
+!      LASTTM=>LASTTM_G(ng)
+!      DCUMTM=>DCUMTM_G(ng,:,:)
+!      TIMERS=>TIMERS_G(ng,:,:)
 !
 !  SWCOMM1
 !
@@ -358,6 +380,9 @@
         DEALLOCATE (BGPDATZ_MOD)
         DEALLOCATE (OPSDATZ_MOD)
         DEALLOCATE (ORQDATZ_MOD)
+# ifdef REFINED_GRID
+        DEALLOCATE (REFINED_MOD)
+# endif
 !
 !  DEAllocate pointers
 !
@@ -413,6 +438,11 @@
         DEALLOCATE (DT_G)
         DEALLOCATE (TFINC_G)
         DEALLOCATE (TIMCO_G)
+!        DEALLOCATE (NCUMTM_G)
+!        DEALLOCATE (LISTTM_G)
+!        DEALLOCATE (LASTTM_G)
+!        DEALLOCATE (DCUMTM_G)
+!        DEALLOCATE (TIMERS_G)
 !
 !  SWCOMM1
 !

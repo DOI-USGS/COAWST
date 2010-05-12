@@ -5,7 +5,7 @@
 !
 !*****************************************************************
 !                                                                *
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       SUBROUTINE OCPINI (ng, LREAD, INERR)
 #else
       SUBROUTINE OCPINI (INIFIL, LREAD, INERR)
@@ -32,7 +32,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -94,7 +94,7 @@
 !                        and command reading must be initialised
 !
       LOGICAL    LREAD, FILEXI
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INTEGER, intent(in) :: ng
       CHARACTER INIFIL*40
       CHARACTER OUTFIL *40, TSTFIL *40,
@@ -119,7 +119,7 @@
          IF (.NOT.ALLOCATED(IWEIG)) ALLOCATE(IWEIG(NPROC))
          IWEIG = 100
       END IF
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INIFIL='swaninit'
       ILPOS = INDEX ( INIFIL, ' ' )-1
       IF (ILPOS.GT.0) THEN
@@ -148,7 +148,7 @@
         IF (INIVEF.GT.INIVER .OR. INIVEF.LE.0) GOTO 935                   40.00
         READ (11, 120, ERR=930, END=930) INST
         READ (11, *,   ERR=930, END=930) INPUTF
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
         READ (11, 120, ERR=930, END=930)
 #else
         READ (11, 120, ERR=930, END=930) INPFIL
@@ -208,10 +208,10 @@
 !       REFERENCE NUMBERS AND NAMES OF STANDARD FILES
 !
         INPUTF = 3
-#ifndef MODEL_COUPLING
+#ifndef SWAN_MODEL
         INPFIL = 'INPUT'
 #endif
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
         OUTFIL = 'PRINT'
         WRITE(OUTFIL(6:7),181) ng
  181    FORMAT(I2.2)
@@ -225,14 +225,14 @@
         PRTEST = PRINTF
         TSTFIL = '    '
         SCREEN = 6
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
         IUNMAX = 99999999
 #else
         IUNMAX = 99
 #endif
 !/SGI        IUNMAX = 199
 !       TABC is the Tab character (interpreted as blank in command reading)
-        TABC = CHAR(9)                                                    40.67
+        TABC = CHAR(9)                                                    40.69
 !       COMID is the comment identifier (usually $)
         COMID  = '$'
 !       DIRCH1 is directory separation character as appears in input file
@@ -283,7 +283,7 @@
         WRITE (12, 210) PRTEST, 'test file ref. number'
         WRITE (12, 220) TSTFO,  'test file name'                          40.30
         WRITE (12, 210) SCREEN, 'screen ref. number'
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
         WRITE (12, 211) IUNMAX, 'highest file ref. number'
 #else
         WRITE (12, 210) IUNMAX, 'highest file ref. number'
@@ -300,7 +300,7 @@
         END IF
         CLOSE (12)
   210   FORMAT (I5, T41, A)
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
   211   FORMAT (I8, T41, A)
 #endif
   220   FORMAT (A40, A)
@@ -388,7 +388,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -487,7 +487,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -508,6 +508,8 @@
 !     Updates
 !
 !       ver 30.70, Sep 1997 by N.Booij: adaptation in view year 2000
+!       40.89, Nico Booij: integer Jumpyear introduced to prevent porblems
+!                          with 2-digit year code
 !
 !     Function:
 !
@@ -533,8 +535,13 @@
 !
 !     Source:
 !
+      INTEGER :: JUMPYEAR = 30     ! Used in interpretation of 2-digit year code
       INTEGER    IOPT, DTTIME(6)
+#ifdef SWAN_MODEL
+      CHARACTER  TIMSTR *15, MONC(12) *3, MONCI *3
+#else
       CHARACTER  TIMSTR *24, MONC(12) *3, MONCI *3
+#endif
       DATA MONC /'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL',
      &           'AUG', 'SEP', 'OCT', 'NOV', 'DEC'/
 !
@@ -543,7 +550,7 @@
       ELSE IF (IOPT.EQ.2) THEN
         READ (TIMSTR, '(I2,1X,A3,1X,I2,3(1X,I2))', ERR=98)
      &  DTTIME(3), MONCI, DTTIME(1), (DTTIME(II), II=4,6)
-        IF (DTTIME(1).LT.10) THEN                                         30.70
+        IF (DTTIME(1).LT.JUMPYEAR) THEN                                   40.89 30.70
           DTTIME(1) = 2000 + DTTIME(1)                                    30.70
         ELSE
           DTTIME(1) = 1900 + DTTIME(1)
@@ -559,7 +566,7 @@
       ELSE IF (IOPT.EQ.3) THEN
         READ (TIMSTR, '(I2,5(1X,I2))', ERR=98)
      &  DTTIME(2), DTTIME(3), DTTIME(1), (DTTIME(II), II=4,6)
-        IF (DTTIME(1).LT.10) THEN                                         30.70
+        IF (DTTIME(1).LT.JUMPYEAR) THEN                                   40.89 30.70
           DTTIME(1) = 2000 + DTTIME(1)                                    30.70
         ELSE
           DTTIME(1) = 1900 + DTTIME(1)
@@ -571,7 +578,7 @@
   40    CONTINUE
       ELSE IF (IOPT.EQ.5) THEN                                            30.11
         READ (TIMSTR, '(I2,5(1X,I2))', ERR=98) (DTTIME(II), II=1,6)       30.11
-        IF (DTTIME(1).LT.10) THEN                                         30.70
+        IF (DTTIME(1).LT.JUMPYEAR) THEN                                   40.89 30.70
           DTTIME(1) = 2000 + DTTIME(1)                                    30.70
         ELSE
           DTTIME(1) = 1900 + DTTIME(1)
@@ -579,7 +586,7 @@
       ELSE IF (IOPT.EQ.6) THEN                                            30.11
         READ (TIMSTR, '(5I2)', ERR=98) (DTTIME(II), II=1,5)
         DTTIME(6) = 0.
-        IF (DTTIME(1).LT.10) THEN                                         30.70
+        IF (DTTIME(1).LT.JUMPYEAR) THEN                                   40.89 30.70
           DTTIME(1) = 2000 + DTTIME(1)                                    30.70
         ELSE
           DTTIME(1) = 1900 + DTTIME(1)
@@ -608,7 +615,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

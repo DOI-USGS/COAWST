@@ -42,7 +42,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -182,7 +182,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -365,7 +365,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -456,7 +456,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -553,7 +553,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -784,7 +784,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1009,32 +1009,32 @@
 !       unformatted read
         SELECT CASE(IDLA)
         CASE(1)
-          DO IY=MYA, 1, -1                                               40.02
-            READ (NDSD, END=910, ERR=920, IOSTAT=IERR)                   40.02
-     &      (ARR(IX,IY), IX=1,MXA)                                       40.02
-          ENDDO                                                          40.02
-        CASE(2)                                                          40.02
-          READ (NDSD, END=910, ERR=920, IOSTAT=IERR)                     40.02
-     &    ((ARR(IX,IY), IX=1,MXA), IY=MYA,1,-1)                          40.02
-        CASE(3)                                                          40.02
-          DO IY=1, MYA                                                   40.02
-            READ (NDSD, END=910, ERR=920, IOSTAT=IERR)                   40.02
-     &      (ARR(IX,IY), IX=1,MXA)                                       40.02
-          ENDDO                                                          40.02
-        CASE(4)                                                          40.02
-          READ (NDSD, END=910, ERR=920, IOSTAT=IERR)                     40.02
-     &    ((ARR(IX,IY), IX=1,MXA), IY=1,MYA)                             40.02
-        CASE(5)                                                          40.02
-          DO IX=1, MXA                                                   40.02
-            READ (NDSD, END=910, ERR=920, IOSTAT=IERR)                   40.02
-     &      (ARR(IX,IY), IY=1,MYA)                                       40.02
-          ENDDO                                                          40.02
-        CASE(6)                                                          40.02
-          READ (NDSD, END=910, ERR=920, IOSTAT=IERR)                     40.02
-     &    ((ARR(IX,IY), IY=1,MYA), IX=1,MXA)                             40.02
-        END SELECT                                                       40.02
+          DO IY=MYA, 1, -1                                                40.02
+            READ (NDSD, END=910, ERR=920, IOSTAT=IERR)                    40.02
+     &      (ARR(IX,IY), IX=1,MXA)                                        40.02
+          ENDDO                                                           40.02
+        CASE(2)                                                           40.02
+          READ (NDSD, END=910, ERR=920, IOSTAT=IERR)                      40.02
+     &    ((ARR(IX,IY), IX=1,MXA), IY=MYA,1,-1)                           40.02
+        CASE(3)                                                           40.02
+          DO IY=1, MYA                                                    40.02
+            READ (NDSD, END=910, ERR=920, IOSTAT=IERR)                    40.02
+     &      (ARR(IX,IY), IX=1,MXA)                                        40.02
+          ENDDO                                                           40.02
+        CASE(4)                                                           40.02
+          READ (NDSD, END=910, ERR=920, IOSTAT=IERR)                      40.02
+     &    ((ARR(IX,IY), IX=1,MXA), IY=1,MYA)                              40.02
+        CASE(5)                                                           40.02
+          DO IX=1, MXA                                                    40.02
+            READ (NDSD, END=910, ERR=920, IOSTAT=IERR)                    40.02
+     &      (ARR(IX,IY), IY=1,MYA)                                        40.02
+          ENDDO                                                           40.02
+        CASE(6)                                                           40.02
+          READ (NDSD, END=910, ERR=920, IOSTAT=IERR)                      40.02
+     &    ((ARR(IX,IY), IY=1,MYA), IX=1,MXA)                              40.02
+        END SELECT                                                        40.02
       ENDIF
-      GOTO 900                                                           40.02
+      GOTO 900                                                            40.02
 !
 !     *** End of data file, in case SERIES next file is opened
 !     *** unit = NDSD is closed before the next one is opened
@@ -1154,7 +1154,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1251,7 +1251,7 @@
       USE OCPCOMM3                                                        40.41
       USE OCPCOMM4                                                        40.41
       USE M_PARALL                                                        40.31
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       USE M_COUPLING
 #endif
 !
@@ -1269,7 +1269,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1339,7 +1339,7 @@
 !     ERRFNM : name of error message file
 !
 
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       CHARACTER (LEN=LENFNM), SAVE :: ERRFNM = 'Errfile'
       WRITE(ERRFNM(8:9),181) Gridnum
  181  FORMAT(I2.2)
@@ -1390,8 +1390,8 @@
   13         FORMAT('-',I3.3)                                             40.30
           END IF                                                          40.30
 !
-          IERRF = 17                                                          40.13
-          OPEN (UNIT=IERRF, FILE=ERRFNM, FORM='FORMATTED')                    40.13
+          IERRF = 17                                                      40.13
+          OPEN (UNIT=IERRF, FILE=ERRFNM, FORM='FORMATTED')                40.13
         ENDIF
         WRITE (IERRF,14) ERRM, STRING
   14    FORMAT (A, ': ',A)
@@ -1403,7 +1403,7 @@
 !
 !*****************************************************************
 !                                                                *
-      LOGICAL FUNCTION STPNOW()                                             30.82
+      LOGICAL FUNCTION STPNOW()                                           30.82
 !                                                                *
 !*****************************************************************
 !
@@ -1423,7 +1423,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1473,6 +1473,8 @@
 !
 !  8. SUBROUTINE USED
 !
+!$    LOGICAL,EXTERNAL :: OMP_IN_PARALLEL
+!
 !  9. SUBROUTINES CALLING
 !
 ! 10. ERROR MESSAGES
@@ -1493,6 +1495,7 @@
         STPNOW = .FALSE.
       END IF
       IF (MAXERR.EQ.-1) STPNOW = .FALSE.
+!$    IF (OMP_IN_PARALLEL()) STPNOW = .FALSE.
 !
       RETURN
       END
@@ -1521,7 +1524,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1620,7 +1623,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1846,6 +1849,7 @@
                CALL MSGERR (4,
      &         'File cannot be opened/does not exist: '//DDNAME_L)        40.03
                IOSTAT = IEEXST
+               RETURN
             END IF
             IF (OPENED) THEN
                IF (IOSTAT.GT.-1)
@@ -1961,7 +1965,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2001,8 +2005,8 @@
 !
 !  3. Method (updated...)
 !
-!     Checks whether ABS(REAL1-REAL2) .LE. TINY(REAL1) or whether this        40.04
-!     difference is .LE. then EPS (= EPSILON(REAL1)*ABS(REAL1-REAL2) )        40.04
+!     Checks whether ABS(REAL1-REAL2) .LE. TINY(REAL1) or whether this    40.04
+!     difference is .LE. then EPS (= EPSILON(REAL1)*ABS(REAL1-REAL2) )    40.04
 !
 !  4. Argument variables
 !
@@ -2053,13 +2057,13 @@
       CALL STRACE(IENT,'EQREAL')
       EQREAL = .FALSE.
 !
-      EPS = EPSILON(REAL1)*ABS(REAL1-REAL2)                                  40.04
-      IF (EPS ==0) EPS = TINY(REAL1)                                         40.04
-      IF (ABS(REAL1-REAL2) .GT. TINY(REAL1)) THEN                            40.04
-        IF (ABS(REAL1-REAL2) .LT. EPS) EQREAL = .TRUE.                       40.04
-      ELSE                                                                   40.04
-        EQREAL = .TRUE.                                                      40.04
-      ENDIF                                                                  40.04
+      EPS = EPSILON(REAL1)*ABS(REAL1-REAL2)                               40.04
+      IF (EPS ==0) EPS = TINY(REAL1)                                      40.04
+      IF (ABS(REAL1-REAL2) .GT. TINY(REAL1)) THEN                         40.04
+        IF (ABS(REAL1-REAL2) .LT. EPS) EQREAL = .TRUE.                    40.04
+      ELSE                                                                40.04
+        EQREAL = .TRUE.                                                   40.04
+      ENDIF                                                               40.04
       RETURN
 !     end of subroutine EQREAL
       END
@@ -2088,7 +2092,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2129,13 +2133,13 @@
 !
 !     NUMITM : input    max number of data items in array
 !
-      INTEGER, INTENT(IN) :: NUMITM                                        40.03
+      INTEGER, INTENT(IN) :: NUMITM                                       40.03
 !
 !     DATITM : output   array of data items
 !     RELINE : input    string (read from an input file)
 !
-      CHARACTER (LEN=*), INTENT(OUT) :: DATITM(NUMITM)                     40.03
-      CHARACTER (LEN=*), INTENT(IN) ::  RELINE                             40.03
+      CHARACTER (LEN=*), INTENT(OUT) :: DATITM(NUMITM)                    40.03
+      CHARACTER (LEN=*), INTENT(IN) ::  RELINE                            40.03
 !
 !  5. PARAMETER VARIABLES
 !
@@ -2280,7 +2284,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2376,7 +2380,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2425,14 +2429,14 @@
 !
 !     IARRAY : output   an integer array
 !     LENARR : input    length of array IARRAY
-!     IERR   : output   error status: 0=no error, 9=end-of-file            30.81
+!     IERR   : output   error status: 0=no error, 9=end-of-file           30.81
 !
-      INTEGER   IARRAY(*), LENARR, IENT,                                30.72
-     &          IERR                                                    30.81
+      INTEGER   IARRAY(*), LENARR, IENT,                                  30.72
+     &          IERR                                                      30.81
 !
 !     STRING : i/o      a character string
-!     MOVE   : input    if MOVE=TO_, STRING is copied to IARRAY   30.81
-!                               if MOVE=FROM_, STRING is copied from IARRAY   30.81
+!     MOVE   : input    if MOVE=TO_, STRING is copied to IARRAY           30.81
+!                       if MOVE=FROM_, STRING is copied from IARRAY       30.81
 !
       CHARACTER MOVE *1, STRING *(*)
 !

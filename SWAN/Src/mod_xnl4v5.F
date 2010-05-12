@@ -469,7 +469,7 @@ subroutine xnl_init(sigma,dird,nsigma,ndir,pftail,x_grav,depth,ndepth, &
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -853,7 +853,7 @@ subroutine xnl_main(aspec,sigma,angle,nsig,ndir,depth,iquad,xnl,diag, &
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -979,8 +979,7 @@ i_qmain = i_qmain + 1
 !
 if(iq_prt>=1) then
   write(luq_prt,*)
-  write(luq_prt,'(a,i4,f16.3,i4)') &
-&  'XNL_MAIN: Input arguments: iquad depth iproc:',&
+  write(luq_prt,'(a,i4,f16.3,i4)') 'XNL_MAIN: Input arguments: iquad depth iproc:',&
 &  iquad,depth,iproc
 end if
 !
@@ -1076,7 +1075,7 @@ subroutine q_addtail(xnl,diag,nsig,na,pf_tail)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1205,7 +1204,7 @@ subroutine q_allocate
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1462,7 +1461,7 @@ subroutine q_chkconfig
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1677,7 +1676,7 @@ subroutine q_chkcons(xnl,nk,ndir,sum_e,sum_a,sum_mx,sum_my)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1805,7 +1804,7 @@ subroutine q_chkres(k1x,k1y,k2x,k2y,k3x,k3y,k4x,k4y,dep,sum_kx,sum_ky,sum_w)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1912,7 +1911,7 @@ subroutine q_cmplocus(ka,kb,km,kw,loclen)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2194,14 +2193,11 @@ end do
 !
 if(itest >= 2) then
   do iloc = 1,nlocus1
-    write(luq_tst,'(a,i4,4f10.5,2e12.5)') &
-&    'Q_CMPLOCUS: k2x k2y ds s jac cp:', &
-&    iloc,x2_loc(iloc),y2_loc(iloc),ds_loc(iloc),s_loc(iloc), &
-&    jac_loc(iloc),cple_loc(iloc)
+    write(luq_tst,'(a,i4,4f10.5,2e12.5)') 'Q_CMPLOCUS: k2x k2y ds s jac cp:', &
+&    iloc,x2_loc(iloc),y2_loc(iloc),ds_loc(iloc),s_loc(iloc),jac_loc(iloc),cple_loc(iloc)
   end do
 end if
-if(itest >= 1) write(luq_tst,'(a,2f10.5)') &
- &  'Q_CMPLOCUS: length of locus:',sum, &
+if(itest >= 1) write(luq_tst,'(a,2f10.5)') 'Q_CMPLOCUS: length of locus:',sum,&
  &  s_loc(nlocus1)+dsp !0.5*(ds_loc(1)+ds_loc(nlocus1))
 !
 9999 continue
@@ -2223,7 +2219,7 @@ subroutine q_ctrgrid(itask,igrid)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2709,7 +2705,7 @@ subroutine q_dscale(n,sigma,angle,nsig,nang,depth,grav,q_dfac)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2862,7 +2858,7 @@ subroutine q_error(err_type,err_name,err_msg)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3063,7 +3059,7 @@ subroutine q_getlocus(ik1,ia1,ik3,ia3,ifnd)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3460,9 +3456,8 @@ if(iq_trf>=1.and.(ik1>=mk_a .and. ik1<=mk_b) .and. (ik3>=mk_a .and. ik3<=mk_b)) 
   write(luq_trf,'(a)') '! k2x k2y k4x k4y ds cple jac sym zz (TRF3)'
 !
   write(luq_trf,'(a1,2i3.3,a1,2i3.3,a1)') '(',ik1,ia1,'-',ik3,ia3,')'
-  write(luq_trf,'(4f10.4)') &
-&  q_k(ik1)*cos(q_a(ia1)),q_k(ik1)*sin(q_a(ia1)),&
-&  q_k(ik3)*cos(q_a(ia3)),q_k(ik3)*sin(q_a(ia3))
+  write(luq_trf,'(4f10.4)') q_k(ik1)*cos(q_a(ia1)),q_k(ik1)*sin(q_a(ia1)),&
+&                           q_k(ik3)*cos(q_a(ia3)),q_k(ik3)*sin(q_a(ia3))
   write(luq_trf,'(9i5)') itrans,kmem,amem,kdif,iaref,ibeta,imirror,it1,it3
   write(luq_trf,'(2f10.3)') lambda,q_depth
 !
@@ -3492,10 +3487,8 @@ end where
       va = q_a(ja2r) + wa*q_delta
       xr2(iloc) = vk*cos(va)
       yr2(iloc) = vk*sin(va)
-      write(luq_trf,'(3i6,4f10.4,e13.5,2f10.4)') &
-&      iloc,r_ik2(iloc),r_ia2(iloc),&
-&      r_w1k2(iloc),r_w2k2(iloc),r_w3k2(iloc),r_w4k2(iloc), &
-&      r_zz(iloc),xr2(iloc),yr2(iloc)
+      write(luq_trf,'(3i6,4f10.4,e13.5,2f10.4)') iloc,r_ik2(iloc),r_ia2(iloc),&
+&     r_w1k2(iloc),r_w2k2(iloc),r_w3k2(iloc),r_w4k2(iloc),r_zz(iloc),xr2(iloc),yr2(iloc)
     end do
 !
     write(luq_trf,'(a)') '#TRF2#'
@@ -3523,8 +3516,7 @@ end where
       va = q_a(t_ia4(iloc)) + wa*q_delta
       xt4(iloc) = vk*cos(va)
       yt4(iloc) = vk*sin(va)
-      write(luq_trf,'(5f10.4,5e13.5)') &
-&      xt2(iloc),yt2(iloc),xt4(iloc),yt4(iloc),&
+      write(luq_trf,'(5f10.4,5e13.5)') xt2(iloc),yt2(iloc),xt4(iloc),yt4(iloc),&
 &     t_ws(iloc),t_cple(iloc),t_jac(iloc),t_sym(iloc),t_zz(iloc)
     end do
   end if
@@ -3550,7 +3542,7 @@ subroutine q_init
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3863,7 +3855,7 @@ subroutine q_locpos(ka,kb,km,kw,loclen)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4177,8 +4169,7 @@ kk2y  = kmidy + beta2*px
 zz1   = x_flocus(kk1x,kk1y)
 zz2   = x_flocus(kk2x,kk2y)
 !
-if(itest >= 1) write(luq_tst,'(a,4f10.5,2e12.5)') &
-&  'Q_LOCPOS: k1 k2 z1/2:',&
+if(itest >= 1) write(luq_tst,'(a,4f10.5,2e12.5)') 'Q_LOCPOS: k1 k2 z1/2:',&
 &  kk1x,kk1y,kk2x,kk2y,zz1,zz2
 !
 iter = 0
@@ -4189,8 +4180,7 @@ do while (zz1*zz2 > 0 .and. iter < maxiter)
   zz1  = x_flocus(kk1x,kk1y)
   zz2  = x_flocus(kk2x,kk2y)
   if(itest >= 1) write(luq_tst,'(a,i4,4f12.5,2e12.5)') &
-&    'Q_LOCPOS: iter beta1/2 kk2x/y zz1/2:',&
-&    iter,beta1,beta2,kk2x,kk2y,zz1,zz2
+&    'Q_LOCPOS: iter beta1/2 kk2x/y zz1/2:',iter,beta1,beta2,kk2x,kk2y,zz1,zz2
   beta2 = beta2*2
 end do
 !
@@ -4264,7 +4254,7 @@ subroutine q_makegrid
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4685,7 +4675,7 @@ subroutine q_modify
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5155,7 +5145,7 @@ subroutine q_nearest(ik,ia,w1,w2,w3,w4)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5312,7 +5302,7 @@ subroutine q_polar2(kmin,kmax,kx_beg,ky_beg,kx_end,ky_end,loclen,ierr)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5589,7 +5579,7 @@ subroutine q_setconfig(iquad)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5892,7 +5882,7 @@ subroutine q_searchgrid(depth,igrid)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6023,8 +6013,7 @@ id_upper = min(id_facmax*idepth,id_upper)
 d_lower = -1.
 d_upper = -1.
 !
-if(iq_prt>=2) write(luq_prt,'(a,3i6)') &
-&   'Q_SEARCHGRID: idepth,id_lower/upper:',&
+if(iq_prt>=2) write(luq_prt,'(a,3i6)') 'Q_SEARCHGRID: idepth,id_lower/upper:',&
 &   idepth,id_lower,id_upper
 !------------------------------------------------------------------------------
 ! search downwards until a valid grid is found
@@ -6169,7 +6158,7 @@ subroutine q_stack(mod_name)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6300,7 +6289,7 @@ subroutine q_summary
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6537,7 +6526,7 @@ subroutine q_symmetry(k1x,k1y,k3x,k3y,k4x,k4y,symfac,nloc)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6638,7 +6627,7 @@ subroutine q_t13v4(ik1,ia1,ik3,ia3,t13,diagk1,diagk3)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6814,9 +6803,8 @@ if(ia1>=ma_a .and. ia1<=ma_b .and. ia3>=ma_a .and. ia3<=ma_b .and.iq_integ==2) j
 if(jq_int ==1) then
   write(luq_int,'(a1,2i3.3,a1,2i3.3,a1)') '(',ik1,ia1,'-',ik3,ia3,')'
   write(luq_int,'(4f10.4)') q_k(ik1),q_ad(ia1),q_k(ik3),q_ad(ia3)
-  write(luq_int,'(4f10.4)') &
-&  q_k(ik1)*cos(q_a(ia1)),q_k(ik1)*sin(q_a(ia1)),&
-&  q_k(ik3)*cos(q_a(ia3)),q_k(ik3)*sin(q_a(ia3))
+  write(luq_int,'(4f10.4)') q_k(ik1)*cos(q_a(ia1)),q_k(ik1)*sin(q_a(ia1)),&
+                            q_k(ik3)*cos(q_a(ia3)),q_k(ik3)*sin(q_a(ia3))
   write(luq_int,'(2i4)') nlocusx,19
 end if
 !
@@ -6849,10 +6837,10 @@ if(iq_interp==2) then
 !
       if(jq_int == 1 .and. iq_interp==2) then
         write(luq_int,'(1x,i4,5f8.3,11e11.3,2f11.6)') iloc,&
-&         q_k(jk2),q_a(ja2)*rade,q_k(jk4),q_a(ja4)*rade,&
+          q_k(jk2),q_a(ja2)*rade,q_k(jk4),q_a(ja4)*rade,&
 &         t_ws(iloc),qn1,qn2,qn3,qn4,nprod,&
-&         t_cple(iloc),t_jac(iloc),t_sym(iloc),t_zz(iloc),dt13(iloc),&
-&         t13,t2,t4
+&         t_cple(iloc),t_jac(iloc),t_sym(iloc),t_zz(iloc),dt13(iloc),t13,&
+&         t2,t4
       end if
 !  end if
 !
@@ -7004,7 +6992,7 @@ subroutine q_weight
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7206,8 +7194,7 @@ do iloc=1,nlocus
 !
   end if
 !
-  if(itest >= 1) write(luq_tst,'(a,i3,10f12.4)') &
-&    'Q_WEIGHT: i k2m k2a wk2 wa2 wt2(+4):',&
+  if(itest >= 1) write(luq_tst,'(a,i3,10f12.4)') 'Q_WEIGHT: i k2m k2a wk2 wa2 wt2(+4):',&
 &    iloc,k2m,k2a,wk_k2(iloc),wa_k2(iloc),wt_k2(iloc), &
 &         k4m,k4a,wk_k4(iloc),wa_k4(iloc),wt_k4(iloc)
 !
@@ -7232,7 +7219,7 @@ subroutine q_loc_w1w3(k1x,k1y,k3x,k3y,npts,k2x,k2y,k4x,k4y,s)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7382,7 +7369,7 @@ subroutine q_xnl4v4(aspec,sigma,angle,nsig,nang,depth,xnl,diag,ierror)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7819,7 +7806,7 @@ real function x_cosk(k)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7921,7 +7908,7 @@ real function x_cple(k1x,k1y,k2x,k2y,k3x,k3y,k4x,k4y,iq_cple,depth,grav)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8038,7 +8025,7 @@ real function x_flocus(kxx,kyy)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8150,7 +8137,7 @@ real function x_jacobian(x2,y2,x4,y4)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8269,7 +8256,7 @@ real function x_disper(k,d)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8373,7 +8360,7 @@ real function x_locus1(k2)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8478,7 +8465,7 @@ real function x_locus2(lambda)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8917,7 +8904,7 @@ real function xc_webb(k1x,k1y,k2x,k2y,k3x,k3y,k4x,k4y,grav)
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

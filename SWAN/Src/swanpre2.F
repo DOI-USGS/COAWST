@@ -18,7 +18,7 @@
 !
 !***********************************************************************
 !                                                                      *
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       SUBROUTINE SPROUT (FOUND, BOTLEV, WATLEV, ng)
 #else
       SUBROUTINE SPROUT (FOUND, BOTLEV, WATLEV)                           40.31
@@ -41,7 +41,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -106,7 +106,7 @@
 ! i   BOTLEV: Bottom levels                                               30.70
 ! i   WATLEV: Water levels                                                30.70
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INTEGER, INTENT(IN) :: ng
 #endif
       REAL    BOTLEV(*)                                                   30.70
@@ -155,7 +155,7 @@
 !
 !     definition of output point sets
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       CALL SWREPS ( FOUND, BOTLEV, WATLEV, ng)
 #else
       CALL SWREPS ( FOUND, BOTLEV, WATLEV )                               40.31
@@ -165,7 +165,7 @@
 !
 !     output requests
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       CALL SWREOQ ( FOUND, ng)
 #else
       CALL SWREOQ ( FOUND )                                         40.31
@@ -192,7 +192,7 @@
       END
 !***********************************************************************
 !                                                                      *
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       SUBROUTINE SWREPS ( FOUND, BOTLEV, WATLEV, ng)
 #else
       SUBROUTINE SWREPS ( FOUND, BOTLEV, WATLEV )                         40.31
@@ -208,6 +208,7 @@
       USE SWCOMM4                                                         40.41
       USE OUTP_DATA                                                       40.31
       USE M_PARALL                                                        40.31
+      USE SwanGriddata                                                    40.80
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -221,7 +222,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -250,6 +251,7 @@
 !     40.30: Marcel Zijlema
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     40.80: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -274,6 +276,7 @@
 !     40.30, May  03: introduction distributed-memory approach using MPI
 !     40.31, Dec. 03: removing POOL-mechanism
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.80, Mar. 08: extension to unstructured grids
 !
 !  2. PURPOSE
 !
@@ -284,7 +287,7 @@
 !     BOTLEV: input  bottom levels                                        30.70
 !     WATLEV: input  water levels                                         30.70
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INTEGER, INTENT(IN) :: ng
 #endif
       REAL      BOTLEV(*), WATLEV(*)                                      30.70
@@ -299,7 +302,7 @@
 
       REAL :: XPFR, YPFR, XLENFR, YLENFR                                  40.31
 
-#if defined MODEL_COUPLING
+#if defined SWAN_MODEL
       TYPE(OPSDAT), POINTER :: ROPS
 #else
       TYPE(OPSDAT), POINTER :: OPSTMP, ROPS                               40.31
@@ -312,6 +315,10 @@
 
       TYPE(XYPT), TARGET  :: FRST                                         40.31
       TYPE(XYPT), POINTER :: CURR, TMP                                    40.31
+
+      INTEGER, ALLOCATABLE :: VM(:)                                       40.80
+      REAL, ALLOCATABLE :: XG(:), YG(:)                                   40.80
+      CHARACTER (LEN=80) :: BASENM                                        40.80
 
 !  8. Subroutines used
 !
@@ -343,7 +350,7 @@
 !   FRAME   'sname'  [xpfr] [ypfr] [alpfr] [xlenfr] [ylenfr]          &
 !           [mxfr] [myfr]
 !   --------------------------------------------------------------------
-
+!
       IF (KEYWIS ('FRA')) THEN
 !
         IF (ONED) THEN                                                    32.02
@@ -352,7 +359,7 @@
           GOTO 800                                                        32.02
         ELSE                                                              32.02
 !         ver 30.20: names of input variables changed, order of data changed
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                40.31
 !          ALLOCATE(OPSDATZ_MOD(ng)%COPS)
 !          ALLOCATE(OPSDATZ_MOD(ng)%FOPS)
@@ -431,16 +438,21 @@
 !   ------------------------------------------------------------------
 !   GROUP   'sname'  SUBGRID [ix1] [ix2] [iy1] [iy2]
 !   ------------------------------------------------------------------
+!
       IF (KEYWIS('GROUP') .OR. KEYWIS ('SUBG')) THEN                      970221
 !
         IF (ONED) THEN                                                    32.02
           CALL MSGERR (2,' Illegal keyword (GROUP) in combination'//      32.02
      &                   ' with 1D-computation')                          32.02
           GOTO 800                                                        32.02
+        ELSEIF (OPTG.EQ.5) THEN                                           40.80
+          CALL MSGERR(2,
+     &              ' Keyword GROUP not supported in unstructured grid')  40.80
+          GOTO 800                                                        40.80
         ELSE                                                              32.02
 !         mod 970221: GROUP is introduced as a new command instead of
 !         an option SUBG within the Frame command
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                40.31
           CALL INCSTR ('SNAME',PSNAME,'REQ',' ')
           IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
@@ -471,7 +483,7 @@
 !             *** FLOAT(IX1) ,FLOAT(IY1) , 0 ,MXK+1 ,MYK+1           ***
 !              *** Here frame type H is introduce, means that regular***
 !              *** frame is required from a curvilinear compt. grid  ***
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
             OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'H'                                           40.31
             MXK = IX2-IX1
             MYK = IY2-IY1
@@ -572,10 +584,10 @@
 !   ------------------------------------------------------------------
 !   CURVE   'sname'  [xp1] [yp1]   < [int]  [xp]  [yp] >
 !   ------------------------------------------------------------------
-!   command CURVE, MIP is number of point on a curve
+!
 
       IF (KEYWIS ('CURV')) THEN
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
         ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                  40.31
         CALL INCSTR('SNAME',PSNAME,'REQ',' ')
         IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
@@ -626,7 +638,7 @@
    36     CONTINUE
           GOTO 33
         ENDIF
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
         ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(MIP))                          40.31
         ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(MIP))                          40.31
 !        ALLOCATE(OPSDATZ_MOD(ng)%COPS)
@@ -685,11 +697,11 @@
       ENDIF
 !
 !   ------------------------------------------------------------------
-!   POINTS  'sname'  < [xp]  [yp]  >     /    FILE 'fname'
+!   POINTS  'sname'  < [xp]  [yp]  >     |    FILE 'fname'
 !   ------------------------------------------------------------------
-!   POINTS     set of individual output points
+!
       IF (KEYWIS ('POIN')) THEN
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
         ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                                  40.31
         CALL INCSTR('SNAME',PSNAME,'REQ',' ')
         IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
@@ -742,7 +754,7 @@
           CURR%NEXTXY => TMP                                              40.31
           CURR => TMP                                                     40.31
         ENDDO
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
   47    ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(MIP))                          40.31
         ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(MIP))                          40.31
 !        ALLOCATE(OPSDATZ_MOD(ng)%COPS)
@@ -796,7 +808,7 @@
 !   RAY     'rname'  [xp1] [yp1] [xq1] [yq1]                       &
 !          <  [int]  [xp]  [yp]  [xq]  [yq]  >
 !   -------------------------------------------------------------------
-!   RAY   set of rays
+!
       IF (KEYWIS ('RAY'))  THEN
 !
         IF (ONED) THEN                                                    32.02
@@ -804,7 +816,7 @@
      &                   ' with 1D-computation')                          32.02
           GOTO 800                                                        32.02
         ELSE                                                              32.02
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                40.31
           CALL INCSTR('RNAME',PSNAME,'REQ',' ')
           IF (LENCST.GT.8) CALL MSGERR (2, 'RNAME is too long')
@@ -858,7 +870,7 @@
   115       CONTINUE
             GOTO 110
           ENDIF
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(MIP))                        40.31
           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(MIP))                        40.31
           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XQ(MIP))                        40.31
@@ -922,7 +934,7 @@
 !   -------------------------------------------------------------------
 !   ISOline 'sname'  'rname'  DEPTH / BOTTOM [dep]
 !   -------------------------------------------------------------------
-!   ISO     depth or bottom level contour line
+!
       IF (KEYWIS ('ISO')) THEN
 !
         IF (ONED) THEN                                                    32.02
@@ -930,14 +942,14 @@
      &                   ' with 1D-computation')                          32.02
           GOTO 800                                                        32.02
         ELSE                                                              32.02
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                40.31
 #else
           ALLOCATE(OPSTMP)                                                40.31
 #endif
           CALL INCSTR ('SNAME',PSNAME,'REQ',' ')
           IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
           OPSDATZ_MOD(ng)%OPSTMP%PSNAME = PSNAME                          40.31
 #else
           OPSTMP%PSNAME = PSNAME                                          40.31
@@ -953,7 +965,7 @@
             IF (DYNDEP) CALL MSGERR (2,'depths will vary with time')      40.00
           ENDIF
           CALL INREAL ('DEP',DP,'REP',-1.E10)
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
           ROPS => OPSDATZ_MOD(ng)%FOPS
 #else
           ROPS => FOPS                                                    40.31
@@ -973,7 +985,7 @@
              GOTO 800                                                     40.31
           END IF                                                          40.31
           MIPR  = ROPS%MIP                                                40.31
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
           OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'C'                             40.31
           MIP  = 0
           OPSDATZ_MOD(ng)%OPSTMP%MIP = MIP                                40.31
@@ -1008,7 +1020,7 @@
                 CURR => TMP                                               40.31
              ENDIF
   125     CONTINUE
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(MIP))                        40.31
           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(MIP))                        40.31
 !          ALLOCATE(OPSDATZ_MOD(ng)%COPS)
@@ -1062,16 +1074,13 @@
       ENDIF
 !
 !   -------------------------------------------------------------------
-!   NGRID   'sname'  [xpn] [ypn] [alpn] [xlenn] [ylenn] [mxn] [myn]
+!                    | [xpn] [ypn] [alpn] [xlenn] [ylenn] [mxn] [myn]
+!   NGRID  'sname'  <
+!                    | UNSTRUCtured / -> TRIAngle \
+!                                   \    EASYmesh / 'fname'
 !   -------------------------------------------------------------------
-!   NGRID   computational grid for nesting                                20.63
+!
       IF (KEYWIS ('NGR')) THEN
-!
-!      ===============================================================
-!
-!       NGRid  'sname'  [xpn] [ypn] [alpn] [xlenn] [ylenn] [mxn] [myn]    40.00
-!
-!      ================================================================
 !
         IF (ONED) THEN                                                    32.02
           CALL MSGERR (2,' Illegal keyword (NGR) in combination'//        32.02
@@ -1079,7 +1088,7 @@
           GOTO 800                                                        32.02
         ELSE                                                              32.02
 !         ver 30.20: names changed, order changed
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                40.31
           CALL INCSTR('SNAME',PSNAME,'REQ',' ')
           IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
@@ -1092,94 +1101,213 @@
           OPSTMP%PSNAME = PSNAME                                          40.31
           OPSTMP%PSTYPE = 'N'                                             40.31
 #endif
-          CALL READXY ('XPN', 'YPN', XPCN, YPCN , 'REQ', 0., 0.)          30.20
-          CALL INREAL('ALPN',ALPCN,'REQ',0.)                              30.20
-          CALL INREAL('XLENN',XNLEN,'REQ',0.)                             30.20
-          CALL INREAL('YLENN',YNLEN,'REQ',0.)                             30.20
-          ALTNP = ALPCN / 360.
-          ANG = PI2 * (ALTNP - NINT(ALTNP))
-!         estimate step size for output                                   40.00
-          IF (OPTG.EQ.1) THEN                                             40.13
-            COSA2 = (COS(ANG-ALPC))**2                                    40.00
-            SINA2 = (SIN(ANG-ALPC))**2                                    40.00
-            DXN = DX*COSA2 + DY*SINA2                                     40.00
-            DYN = DX*SINA2 + DY*COSA2                                     40.00
-          ELSE                                                            40.13
-!           curvilinear grid, DXN and DYN are average step size           40.13
-            DXN = (XCLEN+YCLEN)/REAL(MXCGL+MYCGL)                         40.31 40.13
-            DYN = DXN                                                     40.13
-          ENDIF                                                           40.13
-          CALL ININTG ('MXN',MXN,'STA',MAX(1,NINT(XNLEN/DXN)))            40.00
-          CALL ININTG ('MYN',MYN,'STA',MAX(1,NINT(YNLEN/DYN)))            40.00
-          MIP = 0
-#ifdef MODEL_COUPLING
-          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(2*(MXN+MYN)))                40.31
-          ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(2*(MXN+MYN)))                40.31
-!          ALLOCATE(OPSDATZ_MOD(ng)%COPS)
-!          ALLOCATE(OPSDATZ_MOD(ng)%FOPS)
+          CALL INKEYW ('STA', ' ')
+          IF (KEYWIS('UNSTRUC')) THEN                                     40.80
+             PP = .TRUE.
+             CALL INKEYW('STA','TRIA')
+             IF (KEYWIS('EASY')) THEN
+                IOSTAT = 0
+                NDS    = 0
+                CALL INCSTR ('FNAME', BASENM, 'REQ', ' ')
+                FILENM = TRIM(BASENM)//'.n'
+                CALL FOR (NDS, FILENM, 'OF', IOSTAT)
+                IF (STPNOW()) RETURN
+!
+!               --- read first line to determine number of vertices
+!
+                READ(NDS, *, END=950, ERR=910) NVTX
+                IF(.NOT.ALLOCATED(XG)) ALLOCATE(XG(NVTX), STAT = ISTAT)
+                IF ( ISTAT == 0 ) THEN
+                   IF(.NOT.ALLOCATED(YG)) ALLOCATE(YG(NVTX), STAT=ISTAT)
+                ENDIF
+                IF ( ISTAT == 0 ) THEN
+                   IF(.NOT.ALLOCATED(VM)) ALLOCATE(VM(NVTX), STAT=ISTAT)
+                ENDIF
+                IF ( ISTAT /= 0 ) THEN
+                   CALL MSGERR ( 4,
+     &             'Allocation problem in SWREPS: array XG, YG or VM ' )
+                   RETURN
+                ENDIF
+!
+!               --- read coordinates of vertices and boundary marker
+!
+                DO KK = 1, NVTX
+                   READ(NDS, 100, END=950, ERR=910) XG(I),YG(I),VM(I)
+                ENDDO
+!
+!               --- close file <name>.n
+!
+                CLOSE(NDS)
+!
+             ELSE
+                CALL IGNORE('TRIA')
+                IOSTAT = 0
+                NDS    = 0
+                CALL INCSTR ('FNAME', BASENM, 'REQ', ' ')
+                FILENM = TRIM(BASENM)//'.node'
+                CALL FOR (NDS, FILENM, 'OF', IOSTAT)
+                IF (STPNOW()) RETURN
+!
+!               --- read first line to determine number of vertices
+!
+                READ(NDS, *, END=950, ERR=910) NVTX, NDIM, NATTR, NBMARK
+                IF(.NOT.ALLOCATED(XG)) ALLOCATE(XG(NVTX), STAT = ISTAT)
+                IF ( ISTAT == 0 ) THEN
+                   IF(.NOT.ALLOCATED(YG)) ALLOCATE(YG(NVTX), STAT=ISTAT)
+                ENDIF
+                IF ( ISTAT == 0 ) THEN
+                   IF(.NOT.ALLOCATED(VM)) ALLOCATE(VM(NVTX), STAT=ISTAT)
+                ENDIF
+                IF ( ISTAT /= 0 ) THEN
+                   CALL MSGERR ( 4,
+     &             'Allocation problem in SWREPS: array XG, YG or VM ' )
+                   RETURN
+                ENDIF
+!
+!               --- check if boundary marker has been specified
+!
+                IF ( NBMARK == 0 ) THEN
+                   CALL MSGERR ( 4,
+     &         'boundary marker for vertices/faces must be specified ' )
+                   RETURN
+                ENDIF
+!
+!               --- read coordinates of vertices and boundary marker
+!
+                IF ( NATTR == 0 ) THEN
+                   DO KK = 1, NVTX
+                      READ(NDS, *, END=950, ERR=910) I,XG(I),YG(I),VM(I)
+                   ENDDO
+                ELSE
+                   DO KK = 1, NVTX
+                      READ(NDS, *, END=950, ERR=910) I,XG(I),YG(I),RDUM,
+     &                                               VM(I)
+                   ENDDO
+                ENDIF
+!
+!               --- close file <name>.node
+!
+                CLOSE(NDS)
+!
+             ENDIF
+          ELSE
+             PP = .FALSE.
+          ENDIF
+          IF (.NOT.PP) THEN                                               40.80
+!         structured grid
+             CALL READXY ('XPN', 'YPN', XPCN, YPCN , 'REQ', 0., 0.)       30.20
+             CALL INREAL('ALPN',ALPCN,'REQ',0.)                           30.20
+             CALL INREAL('XLENN',XNLEN,'REQ',0.)                          30.20
+             CALL INREAL('YLENN',YNLEN,'REQ',0.)                          30.20
+             ALTNP = ALPCN / 360.
+             ANG = PI2 * (ALTNP - NINT(ALTNP))
+!            estimate step size for output                                40.00
+             IF (OPTG.EQ.1) THEN                                          40.13
+               COSA2 = (COS(ANG-ALPC))**2                                 40.00
+               SINA2 = (SIN(ANG-ALPC))**2                                 40.00
+               DXN = DX*COSA2 + DY*SINA2                                  40.00
+               DYN = DX*SINA2 + DY*COSA2                                  40.00
+             ELSEIF (OPTG.EQ.3) THEN                                      40.80 40.13
+!              curvilinear grid, DXN and DYN are average step size        40.13
+               DXN = (XCLEN+YCLEN)/REAL(MXCGL+MYCGL)                      40.31 40.13
+               DYN = DXN                                                  40.13
+             ELSEIF (OPTG.EQ.5) THEN                                      40.80
+!              unstructured grid, DXN and DYN are average grid size       40.80
+               DXN = 0.5*(mingsiz+maxgsiz)                                40.80
+               DYN = DXN                                                  40.80
+             ENDIF                                                        40.13
+             CALL ININTG ('MXN',MXN,'STA',MAX(1,NINT(XNLEN/DXN)))         40.00
+             CALL ININTG ('MYN',MYN,'STA',MAX(1,NINT(YNLEN/DYN)))         40.00
+             MIP = 0
+#ifdef SWAN_MODEL
+             ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(2*(MXN+MYN)))                40.31
+             ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(2*(MXN+MYN)))                40.31
 #else
-          ALLOCATE(OPSTMP%XP(2*(MXN+MYN)))                                40.31
-          ALLOCATE(OPSTMP%YP(2*(MXN+MYN)))                                40.31
+             ALLOCATE(OPSTMP%XP(2*(MXN+MYN)))                                40.31
+             ALLOCATE(OPSTMP%YP(2*(MXN+MYN)))                                40.31
 #endif
-          XF=XPCN
-          YF=YPCN
-!         *****   start to calculate the positions       ********
-!         *****  of the boundary point in the four sides ********
-          DO 50 I=1,4
-            INTE=MXN
-            ALON=XNLEN
-            ANGLE=ANG+PI2*(90.*REAL(I-1))/360.
-            IF (I .EQ. 2 .OR. I .EQ. 4) THEN
-              INTE=MYN
-              ALON=YNLEN
-            ENDIF
-            XI=XF
-            YI=YF
-            XF=XI+ALON*COS(ANGLE)
-            YF=YI+ALON*SIN(ANGLE)
-            DO 55 KK=1,INTE
-              MIP=MIP+1
-#ifdef MODEL_COUPLING
-              OPSDATZ_MOD(ng)%OPSTMP%XP(MIP)=XI+REAL(KK)*(XF-XI)/       &
+             XF=XPCN
+             YF=YPCN
+!            *****   start to calculate the positions       ********
+!            *****  of the boundary point in the four sides ********
+             DO 50 I=1,4
+               INTE=MXN
+               ALON=XNLEN
+               ANGLE=ANG+PI2*(90.*REAL(I-1))/360.
+               IF (I .EQ. 2 .OR. I .EQ. 4) THEN
+                 INTE=MYN
+                 ALON=YNLEN
+               ENDIF
+               XI=XF
+               YI=YF
+               XF=XI+ALON*COS(ANGLE)
+               YF=YI+ALON*SIN(ANGLE)
+               DO 55 KK=1,INTE
+                 MIP=MIP+1
+#ifdef SWAN_MODEL
+                 OPSDATZ_MOD(ng)%OPSTMP%XP(MIP)=XI+REAL(KK)*(XF-XI)/    &
      &                                       REAL(INTE)
-              OPSDATZ_MOD(ng)%OPSTMP%YP(MIP)=YI+REAL(KK)*(YF-YI)/       &
+                 OPSDATZ_MOD(ng)%OPSTMP%YP(MIP)=YI+REAL(KK)*(YF-YI)/    &
      &                                       REAL(INTE)
-   55       CONTINUE
-   50     CONTINUE
+   55          CONTINUE
+   50        CONTINUE
 !             ***** store number of points of the curve *****
-          OPSDATZ_MOD(ng)%OPSTMP%MIP = MIP                                40.31
-          OPSDATZ_MOD(ng)%OPSTMP%OPR(1) = XNLEN                           40.31
-          OPSDATZ_MOD(ng)%OPSTMP%OPR(2) = YNLEN                           40.31
-          OPSDATZ_MOD(ng)%OPSTMP%OPR(3) = XPCN                            40.31
-          OPSDATZ_MOD(ng)%OPSTMP%OPR(4) = YPCN                            40.31
-          OPSDATZ_MOD(ng)%OPSTMP%OPR(5) = PI2 *                         &
+             OPSDATZ_MOD(ng)%OPSTMP%MIP = MIP                             40.31
+             OPSDATZ_MOD(ng)%OPSTMP%OPR(1) = XNLEN                        40.31
+             OPSDATZ_MOD(ng)%OPSTMP%OPR(2) = YNLEN                        40.31
+             OPSDATZ_MOD(ng)%OPSTMP%OPR(3) = XPCN                         40.31
+             OPSDATZ_MOD(ng)%OPSTMP%OPR(4) = YPCN                         40.31
+             OPSDATZ_MOD(ng)%OPSTMP%OPR(5) = PI2 *                      &
      &                          (ALPCN/360.-NINT(ALPCN/360.))             40.31
-          OPSDATZ_MOD(ng)%OPSTMP%OPI(1) = MXN                             40.31
-          OPSDATZ_MOD(ng)%OPSTMP%OPI(2) = MYN                             40.31
-          IF (MIP .EQ. 0) CALL MSGERR(1,'No output points found')
-          NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                         40.31
-          IF ( .NOT.LOPS ) THEN                                           40.31
-             OPSDATZ_MOD(ng)%FOPS = OPSDATZ_MOD(ng)%OPSTMP                40.31
-             OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS                 40.31
-             LOPS = .TRUE.                                                40.31
-          ELSE                                                            40.31
-             OPSDATZ_MOD(ng)%COPS%NEXTOPS => OPSDATZ_MOD(ng)%OPSTMP       40.31
-             OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%OPSTMP               40.31
-          END IF                                                          40.31
+             OPSDATZ_MOD(ng)%OPSTMP%OPI(1) = MXN                          40.31
+             OPSDATZ_MOD(ng)%OPSTMP%OPI(2) = MYN                          40.31
+             IF (MIP .EQ. 0) CALL MSGERR(1,'No output points found')
+             NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                      40.31
+             IF ( .NOT.LOPS ) THEN                                        40.31
+               OPSDATZ_MOD(ng)%FOPS = OPSDATZ_MOD(ng)%OPSTMP              40.31
+               OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS               40.31
+               LOPS = .TRUE.                                              40.31
+             ELSE                                                         40.31
+               OPSDATZ_MOD(ng)%COPS%NEXTOPS => OPSDATZ_MOD(ng)%OPSTMP     40.31
+               OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%OPSTMP             40.31
+             END IF                                                       40.31
+          END IF                                                          jcw
 #else
-              OPSTMP%XP(MIP)=XI+REAL(KK)*(XF-XI)/REAL(INTE)
-              OPSTMP%YP(MIP)=YI+REAL(KK)*(YF-YI)/REAL(INTE)
-   55       CONTINUE
-   50     CONTINUE
-!             ***** store number of points of the curve *****
-          OPSTMP%MIP = MIP                                                40.31
-          OPSTMP%OPR(1) = XNLEN                                           40.31
-          OPSTMP%OPR(2) = YNLEN                                           40.31
-          OPSTMP%OPR(3) = XPCN                                            40.31
-          OPSTMP%OPR(4) = YPCN                                            40.31
-          OPSTMP%OPR(5) = PI2 * (ALPCN/360.-NINT(ALPCN/360.))             40.31
-          OPSTMP%OPI(1) = MXN                                             40.31
-          OPSTMP%OPI(2) = MYN                                             40.31
+                 OPSTMP%XP(MIP)=XI+REAL(KK)*(XF-XI)/REAL(INTE)
+                 OPSTMP%YP(MIP)=YI+REAL(KK)*(YF-YI)/REAL(INTE)
+   55          CONTINUE
+   50        CONTINUE
+!                ***** store number of points *****
+             OPSTMP%MIP = MIP                                             40.31
+             OPSTMP%OPR(1) = XNLEN                                        40.31
+             OPSTMP%OPR(2) = YNLEN                                        40.31
+             OPSTMP%OPR(3) = XPCN                                         40.31
+             OPSTMP%OPR(4) = YPCN                                         40.31
+             OPSTMP%OPR(5) = PI2 * (ALPCN/360.-NINT(ALPCN/360.))          40.31
+             OPSTMP%OPI(1) = MXN                                          40.31
+             OPSTMP%OPI(2) = MYN                                          40.31
+          ELSE                                                            40.80
+!         unstructured grid
+!
+             MIP = COUNT(MASK=VM/=0)
+             ALLOCATE(OPSTMP%XP(MIP))
+             ALLOCATE(OPSTMP%YP(MIP))
+             I = 0
+             DO KK = 1, NVTX
+                IF ( VM(KK) /= 0 ) THEN
+                   I = I + 1
+                   OPSTMP%XP(I)= XG(KK)-XOFFS
+                   OPSTMP%YP(I)= YG(KK)-YOFFS
+                ENDIF
+             ENDDO
+             IF (ALLOCATED(XG)) DEALLOCATE(XG)
+             IF (ALLOCATED(YG)) DEALLOCATE(YG)
+             IF (ALLOCATED(VM)) DEALLOCATE(VM)
+             OPSTMP%MIP = MIP
+!            next variable will be used for checking grid in
+!            present computational and/or bottom grid
+             OPSTMP%OPR(1) = -999.
+          ENDIF                                                           40.80
           IF (MIP .EQ. 0) CALL MSGERR(1,'No output points found')
           NULLIFY(OPSTMP%NEXTOPS)                                         40.31
           IF ( .NOT.LOPS ) THEN                                           40.31
@@ -1192,6 +1320,14 @@
           END IF                                                          40.31
 #endif
           GOTO 800
+!
+ 910      INQUIRE (UNIT=NDS, NAME=FILENM)                                 40.80
+          CALL MSGERR (4, 'error reading data from file '//FILENM )       40.80
+          RETURN                                                          40.80
+ 950      INQUIRE (UNIT=NDS, NAME=FILENM)                                 40.80
+          CALL MSGERR (4, 'unexpected end of file in file '//FILENM )     40.80
+          RETURN                                                          40.80
+!
         ENDIF                                                             32.02
       ENDIF
 !     ---------------------------------------------------------
@@ -1199,11 +1335,12 @@
       RETURN
  800  FOUND = .TRUE.
       RETURN
+ 100  FORMAT((6X,2E22.15,I3))                                             40.80
 !*    end of subroutine SWREPS  **
       END
 !***********************************************************************
 !                                                                      *
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       SUBROUTINE SWREOQ ( FOUND, ng)
 #else
       SUBROUTINE SWREOQ ( FOUND )                                         40.31
@@ -1234,7 +1371,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1323,7 +1460,7 @@
 !
 ! 13. Source text
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INTEGER, INTENT(IN) :: ng
 #endif
       INTEGER IERR                                                        40.31
@@ -1331,7 +1468,7 @@
       LOGICAL   KEYWIS                                                    40.31
       TYPE(ORQDAT), POINTER :: ORQTMP                                     40.31
       TYPE(ORQDAT), SAVE, POINTER :: CORQ                                 40.31
-#if !defined MODEL_COUPLING
+#if !defined SWAN_MODEL
       LOGICAL, SAVE :: LORQ = .FALSE.                                     40.31
 #endif
       TYPE AUXT                                                           40.31
@@ -1346,11 +1483,12 @@
       CALL STRACE (IENT,'SWREOQ')
 !
 !   --------------------------------------------------------------------------
-!   BLOCK   'sname'  HEADER / NOHEADER  'fname' (LAY-OUT [idla])            &
-!          <  DSPR/HSIGN/DIR/PDIR/TDIR/TM01/RTM01/RTP/TM02/FSPR/DEPTH/VEL/  &
-!             FRCOEFF/WIND/DISSIP/QB/TRANSP/FORCE/UBOT/URMS/WLEN/STEEPNESS/ &
-!             DHSIGN/DRTM01/LEAK/TSEC/XP/YP/DIST/SETUP/TMM10/RTMM10/        &
-!             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP  >      &
+!   BLOCK   'sname'  HEADER / NOHEADER  'fname' (LAY-OUT [idla])             &
+!          <  DSPR/HSIGN/DIR/PDIR/TDIR/TM01/RTM01/RTP/TM02/FSPR/DEPTH/VEL/   &
+!             FRCOEFF/WIND/DISSIP/QB/TRANSP/FORCE/UBOT/URMS/WLEN/STEEPNESS/  &
+!             DHSIGN/DRTM01/LEAK/TSEC/XP/YP/DIST/SETUP/TMM10/RTMM10/         &
+!             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP/         &
+!             GENE/GENW/REDI/REDQ/REDT/PROPA/PROPX/PROPT/PROPS/RADS >        &
 !             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
 !   BLO   block type output
@@ -1361,14 +1499,14 @@
      &                   ' with 1D-computation')                          32.02
           GOTO 800                                                        32.02
         ELSE                                                              32.02
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
           CALL SWNMPS (PSNAME, STYPE, MIP, IERR, ng)
 #else
           CALL SWNMPS (PSNAME, STYPE, MIP, IERR)                          40.31
 #endif
           IF (IERR.NE.0) GOTO 800
-          IF (STYPE .NE. 'F' .AND. STYPE .NE. 'H') THEN                   30.21
-            CALL MSGERR(2,'Set of output locations is not type frame')
+          IF (STYPE.NE.'F' .AND. STYPE.NE.'H' .AND. STYPE.NE.'U' ) THEN   40.80 30.21
+            CALL MSGERR(2,'Set of output locations is not correct type')
             GOTO 800
           ENDIF
 !
@@ -1459,23 +1597,81 @@
                 IF (IVTYPE.EQ.50 .AND. JPBOT.LE.1) THEN                   40.65
                    MCMVAR = MCMVAR+1                                      40.65
                    JPBOT  = MCMVAR                                        40.65
+                   ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.65
                 IF (IVTYPE.EQ.52 .AND. JBOTLV.LE.1) THEN                  40.65
                    MCMVAR = MCMVAR+1                                      40.65
                    JBOTLV = MCMVAR                                        40.65
+                   ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.65
                 IF (IVTYPE.EQ.54 .AND. JDSXB.LE.1) THEN                   40.65
                    MCMVAR = MCMVAR+1                                      40.65
                    JDSXB  = MCMVAR                                        40.65
+                   ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.65
                 IF (IVTYPE.EQ.55 .AND. JDSXS.LE.1) THEN                   40.65
                    MCMVAR = MCMVAR+1                                      40.65
                    JDSXS  = MCMVAR                                        40.65
+                   ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.65
                 IF (IVTYPE.EQ.56 .AND. JDSXW.LE.1) THEN                   40.65
                    MCMVAR = MCMVAR+1                                      40.65
                    JDSXW  = MCMVAR                                        40.65
+                   ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.65
+                IF (IVTYPE.EQ.60 .AND. JGENR.LE.1) THEN                   40.85
+                   MCMVAR = MCMVAR+1                                      40.85
+                   JGENR  = MCMVAR                                        40.85
+                   ALOCMP = .TRUE.                                        40.97
+                ENDIF                                                     40.85
+                IF (IVTYPE.EQ.61 .AND. JGSXW.LE.1) THEN                   40.85
+                   MCMVAR = MCMVAR+1                                      40.85
+                   JGSXW  = MCMVAR                                        40.85
+                   ALOCMP = .TRUE.                                        40.97
+                ENDIF                                                     40.85
+                IF (IVTYPE.EQ.62 .AND. JREDS.LE.1) THEN                   40.85
+                   MCMVAR = MCMVAR+1                                      40.85
+                   JREDS  = MCMVAR                                        40.85
+                   ALOCMP = .TRUE.                                        40.97
+                ENDIF                                                     40.85
+                IF (IVTYPE.EQ.63 .AND. JRSXQ.LE.1) THEN                   40.85
+                   MCMVAR = MCMVAR+1                                      40.85
+                   JRSXQ  = MCMVAR                                        40.85
+                   ALOCMP = .TRUE.                                        40.97
+                ENDIF                                                     40.85
+                IF (IVTYPE.EQ.64 .AND. JRSXT.LE.1) THEN                   40.85
+                   MCMVAR = MCMVAR+1                                      40.85
+                   JRSXT  = MCMVAR                                        40.85
+                   ALOCMP = .TRUE.                                        40.97
+                ENDIF                                                     40.85
+                IF (IVTYPE.EQ.65 .AND. JTRAN.LE.1) THEN                   40.85
+                   MCMVAR = MCMVAR+1                                      40.85
+                   JTRAN  = MCMVAR                                        40.85
+                   ALOCMP = .TRUE.                                        40.97
+                ENDIF                                                     40.85
+                IF (IVTYPE.EQ.66 .AND. JTSXG.LE.1) THEN                   40.85
+                   MCMVAR = MCMVAR+1                                      40.85
+                   JTSXG  = MCMVAR                                        40.85
+                   ALOCMP = .TRUE.                                        40.97
+                ENDIF                                                     40.85
+                IF (IVTYPE.EQ.67 .AND. JTSXT.LE.1) THEN                   40.85
+                   MCMVAR = MCMVAR+1                                      40.85
+                   JTSXT  = MCMVAR                                        40.85
+                   ALOCMP = .TRUE.                                        40.97
+                ENDIF                                                     40.85
+                IF (IVTYPE.EQ.68 .AND. JTSXS.LE.1) THEN                   40.85
+                   MCMVAR = MCMVAR+1                                      40.85
+                   JTSXS  = MCMVAR                                        40.85
+                   ALOCMP = .TRUE.                                        40.97
+                ENDIF                                                     40.85
+                IF (IVTYPE.EQ.69 .AND. JRADS.LE.1) THEN                   40.85
+                   MCMVAR = MCMVAR+1                                      40.85
+                   JRADS  = MCMVAR                                        40.85
+                   ALOCMP = .TRUE.                                        40.97
+                ENDIF                                                     40.85
+                IF (IVTYPE.EQ.7  .OR. IVTYPE.EQ.9  .OR.                   40.85
+     &              IVTYPE.EQ.54 .OR. IVTYPE.EQ.55 .OR.                   40.85
+     &              IVTYPE.EQ.56 .OR. IVTYPE.GE.60 ) LADDS = .TRUE.       40.85
              ENDIF
              GOTO 70
           ENDIF
@@ -1502,7 +1698,7 @@
           ORQTMP%OQI(3) = NVAR                                            40.31
           NULLIFY(ORQTMP%NEXTORQ)                                         40.31
           IF ( .NOT.LORQ ) THEN                                           40.31
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
              ALLOCATE (ORQDATZ_MOD(ng)%FORQ%IVTYP(NVAR))
              ALLOCATE (ORQDATZ_MOD(ng)%FORQ%FAC(NVAR))
              ORQDATZ_MOD(ng)%FORQ = ORQTMP                                40.31
@@ -1520,17 +1716,18 @@
         ENDIF                                                             32.02
       ENDIF
 !   --------------------------------------------------------------------------
-!   TABLE   'sname'  HEADER / NOHEADER / INDEXED 'fname'                    &
-!          <  DSPR/HSIGN/DIR/PDIR/TDIR/TM01/RTM01/RTP/TM02/FSPR/DEPTH/VEL/  &
-!             FRCOEFF/WIND/DISSIP/QB/TRANSP/FORCE/UBOT/URMS/WLEN/STEEPNESS/ &
-!             DHSIGN/DRTM01/LEAK/TIME/TSEC/XP/YP/DIST/SETUP/TMM10/RTMM10/   &
-!             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP  >      &
+!   TABLE   'sname'  HEADER / NOHEADER / INDEXED 'fname'                     &
+!          <  DSPR/HSIGN/DIR/PDIR/TDIR/TM01/RTM01/RTP/TM02/FSPR/DEPTH/VEL/   &
+!             FRCOEFF/WIND/DISSIP/QB/TRANSP/FORCE/UBOT/URMS/WLEN/STEEPNESS/  &
+!             DHSIGN/DRTM01/LEAK/TIME/TSEC/XP/YP/DIST/SETUP/TMM10/RTMM10/    &
+!             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP/         &
+!             GENE/GENW/REDI/REDQ/REDT/PROPA/PROPX/PROPT/PROPS/RADS >        &
 !             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
 !   TABLE   output in the form of a table
 
       IF (KEYWIS ('TAB')) THEN
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
           CALL SWNMPS (PSNAME, STYPE, MIP, IERR, ng)
 #else
           CALL SWNMPS (PSNAME, STYPE, MIP, IERR)                          40.31
@@ -1603,23 +1800,81 @@
             IF (IVTYPE.EQ.50 .AND. JPBOT.LE.1) THEN                       40.65
                MCMVAR = MCMVAR+1                                          40.65
                JPBOT  = MCMVAR                                            40.65
+               ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.65
             IF (IVTYPE.EQ.52 .AND. JBOTLV.LE.1) THEN                      40.65
                MCMVAR = MCMVAR+1                                          40.65
                JBOTLV = MCMVAR                                            40.65
+               ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.65
             IF (IVTYPE.EQ.54 .AND. JDSXB.LE.1) THEN                       40.65
                MCMVAR = MCMVAR+1                                          40.65
                JDSXB  = MCMVAR                                            40.65
+               ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.65
             IF (IVTYPE.EQ.55 .AND. JDSXS.LE.1) THEN                       40.65
                MCMVAR = MCMVAR+1                                          40.65
                JDSXS  = MCMVAR                                            40.65
+               ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.65
             IF (IVTYPE.EQ.56 .AND. JDSXW.LE.1) THEN                       40.65
                MCMVAR = MCMVAR+1                                          40.65
                JDSXW  = MCMVAR                                            40.65
+               ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.65
+            IF (IVTYPE.EQ.60 .AND. JGENR.LE.1) THEN                       40.85
+               MCMVAR = MCMVAR+1                                          40.85
+               JGENR  = MCMVAR                                            40.85
+               ALOCMP = .TRUE.                                            40.97
+            ENDIF                                                         40.85
+            IF (IVTYPE.EQ.61 .AND. JGSXW.LE.1) THEN                       40.85
+               MCMVAR = MCMVAR+1                                          40.85
+               JGSXW  = MCMVAR                                            40.85
+               ALOCMP = .TRUE.                                            40.97
+            ENDIF                                                         40.85
+            IF (IVTYPE.EQ.62 .AND. JREDS.LE.1) THEN                       40.85
+               MCMVAR = MCMVAR+1                                          40.85
+               JREDS  = MCMVAR                                            40.85
+               ALOCMP = .TRUE.                                            40.97
+            ENDIF                                                         40.85
+            IF (IVTYPE.EQ.63 .AND. JRSXQ.LE.1) THEN                       40.85
+               MCMVAR = MCMVAR+1                                          40.85
+               JRSXQ  = MCMVAR                                            40.85
+               ALOCMP = .TRUE.                                            40.97
+            ENDIF                                                         40.85
+            IF (IVTYPE.EQ.64 .AND. JRSXT.LE.1) THEN                       40.85
+               MCMVAR = MCMVAR+1                                          40.85
+               JRSXT  = MCMVAR                                            40.85
+               ALOCMP = .TRUE.                                            40.97
+            ENDIF                                                         40.85
+            IF (IVTYPE.EQ.65 .AND. JTRAN.LE.1) THEN                       40.85
+               MCMVAR = MCMVAR+1                                          40.85
+               JTRAN  = MCMVAR                                            40.85
+               ALOCMP = .TRUE.                                            40.97
+            ENDIF                                                         40.85
+            IF (IVTYPE.EQ.66 .AND. JTSXG.LE.1) THEN                       40.85
+               MCMVAR = MCMVAR+1                                          40.85
+               JTSXG  = MCMVAR                                            40.85
+               ALOCMP = .TRUE.                                            40.97
+            ENDIF                                                         40.85
+            IF (IVTYPE.EQ.67 .AND. JTSXT.LE.1) THEN                       40.85
+               MCMVAR = MCMVAR+1                                          40.85
+               JTSXT  = MCMVAR                                            40.85
+               ALOCMP = .TRUE.                                            40.97
+            ENDIF                                                         40.85
+            IF (IVTYPE.EQ.68 .AND. JTSXS.LE.1) THEN                       40.85
+               MCMVAR = MCMVAR+1                                          40.85
+               JTSXS  = MCMVAR                                            40.85
+               ALOCMP = .TRUE.                                            40.97
+            ENDIF                                                         40.85
+            IF (IVTYPE.EQ.69 .AND. JRADS.LE.1) THEN                       40.85
+               MCMVAR = MCMVAR+1                                          40.85
+               JRADS  = MCMVAR                                            40.85
+               ALOCMP = .TRUE.                                            40.97
+            ENDIF                                                         40.85
+            IF (IVTYPE.EQ.7  .OR. IVTYPE.EQ.9  .OR.                       40.85
+     &          IVTYPE.EQ.54 .OR. IVTYPE.EQ.55 .OR.                       40.85
+     &          IVTYPE.EQ.56 .OR. IVTYPE.GE.60 ) LADDS = .TRUE.           40.85
             CALL INKEYW ('STA', ' ')                                      40.00
             IF (KEYWIS('UNIT')) THEN
               CALL MSGERR (1, 'UNIT is ignored in this version')          40.00
@@ -1648,7 +1903,7 @@
         ORQTMP%OQI(3) = NVAR                                              40.31
         NULLIFY(ORQTMP%NEXTORQ)                                           40.31
         IF ( .NOT.LORQ ) THEN                                             40.31
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
            ORQDATZ_MOD(ng)%FORQ = ORQTMP                                  40.31
            CORQ => ORQDATZ_MOD(ng)%FORQ                                   40.31
 #else
@@ -1679,7 +1934,7 @@
 !   SPEC   output of spectra
 
       IF (KEYWIS ('SPEC')) THEN
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
           CALL SWNMPS (PSNAME, STYPE, MIP, IERR, ng)
 #else
           CALL SWNMPS (PSNAME, STYPE, MIP, IERR)                          40.31
@@ -1740,7 +1995,7 @@
         ENDIF
         NULLIFY(ORQTMP%NEXTORQ)                                           40.31
         IF ( .NOT.LORQ ) THEN                                             40.31
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
            ORQDATZ_MOD(ng)%FORQ = ORQTMP                                  40.31
            CORQ => ORQDATZ_MOD(ng)%FORQ                                   40.31
 #else
@@ -1779,7 +2034,7 @@
      &                   ' combination with 1D-computation')              32.02
           GOTO 800                                                        32.02
         ELSE                                                              32.02
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
           CALL SWNMPS (PSNAME, STYPE, MIP, IERR, ng)
 #else
           CALL SWNMPS (PSNAME, STYPE, MIP, IERR)                          40.31
@@ -1828,7 +2083,7 @@
 !
           NULLIFY(ORQTMP%NEXTORQ)                                         40.31
           IF ( .NOT.LORQ ) THEN                                           40.31
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
              ORQDATZ_MOD(ng)%FORQ = ORQTMP                                40.31
              CORQ => ORQDATZ_MOD(ng)%FORQ                                 40.31
 #else
@@ -1873,7 +2128,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2022,7 +2277,7 @@
       END
 !************************************************************************
 !                                                                       *
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       SUBROUTINE SWNMPS (PSNAME, PSTYPE, MIP, IERR, ng)
 #else
       SUBROUTINE SWNMPS (PSNAME, PSTYPE, MIP, IERR)                       40.31
@@ -2047,7 +2302,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2108,7 +2363,7 @@
 !
 ! 10. SOURCE TEXT
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INTEGER, INTENT(IN) :: ng
 #endif
       INTEGER   MIP                                                       40.31
@@ -2121,7 +2376,7 @@
       IERR = 0
       CALL INCSTR ('SNAME', PSNAME, 'STA', 'BOTTGRID')
       IF (LENCST.GT.8) CALL MSGERR (2, 'SNAME is too long')
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       CUOPS => OPSDATZ_MOD(ng)%FOPS
 #else
       CUOPS => FOPS                                                       40.31
@@ -2172,7 +2427,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2278,7 +2533,7 @@
       END
 !************************************************************************
 !                                                                       *
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       SUBROUTINE SWBOUN ( XCGRID, YCGRID, KGRPNT, XYTST, KGRBND, ng)
 #else
       SUBROUTINE SWBOUN ( XCGRID, YCGRID, KGRPNT, XYTST, KGRBND )         40.31
@@ -2292,6 +2547,9 @@
       USE SWCOMM2                                                         40.41
       USE SWCOMM3                                                         40.41
       USE M_BNDSPEC                                                       40.31
+      USE SwanGriddata                                                    40.80
+      USE SwanGridobjects                                                 40.80
+      USE SwanCompdata                                                    40.80
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -2305,7 +2563,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2335,6 +2593,8 @@
 !     40.05: Ekaterini E. Kriezi
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     40.80: Marcel Zijlema
+!     40.92: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -2353,6 +2613,8 @@
 !     40.13, Nov. 01: determination of side corrected (iside=3)
 !     40.31, Nov. 03: removing POOL-mechanism, reconsideration of this subroutine
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.80, Jun. 07: extension to unstructured grids
+!     40.92, Jun. 08: changes with respect to boundary polygons
 !
 !  2. Purpose
 !
@@ -2366,7 +2628,7 @@
 ! i   XCGRID: Coordinates of computational grid in x-direction            30.82
 ! i   YCGRID: Coordinates of computational grid in y-direction            30.82
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INTEGER, INTENT(in) :: ng
 #endif
       REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.82
@@ -2386,6 +2648,9 @@
       INTEGER   IENT,KOUNTR,IX1,IY1,IX2,IY2
       INTEGER   MM,IX,IY,ISIDM,ISIDE,KC,KC2,KC1,IX3,IY3,MP
       INTEGER   IP,II,NBSPSS,NFSEQ,IKO,IKO2,IBSPC1,IBSPC2
+      INTEGER   VM                                                        40.80
+
+      INTEGER, DIMENSION(:), ALLOCATABLE :: IARR1, IARR2                  40.92
 
       REAL      CRDP, CRDM, SOMX, SOMY
       REAL      XP,YP,XC,YC,RR,DIRSI,COSDIR,SINDIR,DIRSID,DIRREF
@@ -2394,13 +2659,12 @@
       LOGICAL   KEYWIS, LOCGRI, CCW, BPARF, BOUNPT,DONALL
       LOGICAL   LFRST1, LFRST2, LFRST3                                    40.31
 
-      INTEGER   UPLO, NUMP
+      INTEGER   NUMP
 
       LOGICAL, SAVE :: LBFILS = .FALSE.                                   40.31
       LOGICAL, SAVE :: LBS    = .FALSE.                                   40.31
-#if defined MODEL_COUPLING
+#if defined SWAN_MODEL
       LOGICAL, SAVE, POINTER :: LBGP
-!     LBGP=>LBGP_G(ng)
 #else
       LOGICAL, SAVE :: LBGP   = .FALSE.                                   40.31
 #endif
@@ -2410,7 +2674,7 @@
       TYPE(BSDAT), POINTER :: BSTMP                                       40.31
       TYPE(BSDAT), SAVE, POINTER :: CUBS                                  40.31
 
-#if !defined MODEL_COUPLING
+#if !defined SWAN_MODEL
       TYPE(BGPDAT), POINTER :: BGPTMP                                     40.31
 #endif
 
@@ -2421,6 +2685,11 @@
 
       TYPE(XYPT), TARGET  :: FRST                                         40.31
       TYPE(XYPT), POINTER :: CURR, TMP                                    40.31
+
+      CHARACTER(80) :: MSGSTR                                             40.80
+
+      TYPE(verttype), DIMENSION(:), POINTER :: vert                       40.80
+      TYPE(facetype), DIMENSION(:), POINTER :: face                       40.80
 !
 !  8. Subroutines used
 !
@@ -2486,11 +2755,24 @@
       SAVE IENT
       DATA IENT/0/
       CALL STRACE (IENT,'SWBOUN')
-!
-#if defined MODEL_COUPLING
+
+#if defined SWAN_MODEL
       LBGP=>LBGP_G(ng)
-!      LBGP = .FALSE.
 #endif
+!
+!     point to vertex and face objects
+!
+      vert => gridobject%vert_grid                                        40.80
+      face => gridobject%face_grid                                        40.80
+!
+      IF (OPTG.EQ.5) THEN                                                 40.80
+!
+!        in case of unstructured grid, make list of boundary points
+!        in ascending order
+!
+         CALL SwanBpntlist                                                40.80
+      ENDIF                                                               40.80
+!
       CALL INKEYW ('REQ',' ')
       IF (KEYWIS ('SHAP')) THEN
 !
@@ -2561,21 +2843,26 @@
 !
 !      =======================================================================
 !
-        IF (MXC .LE. 0) THEN
-          CALL MSGERR(3,
-     &          ' Computational grid must be given previously')
+        IF (MXC .LE. 0 .AND. OPTG.NE.5) THEN                              40.80
+          CALL MSGERR(3, ' command CGRID must precede this command')      40.80
           GOTO 900
         ENDIF
-        IF (MCGRD .LE. 1) THEN
+        IF (MCGRD .LE. 1 .AND. nverts .LE. 0) THEN                        40.80
           CALL MSGERR(3,
-     &          ' Read depth before entering boundary values')
+     &    ' command READ BOT or READ UNSTRUC must precede this command')  40.80
           GOTO 900
         ENDIF
+!
+        IF (OPTG.EQ.5) THEN                                               40.80
+           CALL MSGERR(2,
+     &               ' WAM b.c. are not supported in unstructured grid')  40.80
+           GOTO 900                                                       40.80
+        ENDIF                                                             40.80
 !
         NBFILS = NBFILS + 1
         ALLOCATE(BFLTMP)                                                  40.31
         CALL INCSTR ('FNAME',FILENM,'REQ', ' ')
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
         CALL BCWAMN (FILENM, 'NEST', BFLTMP, LBGP,
      &               XCGRID, YCGRID, KGRPNT, XYTST, ng)
 #else
@@ -2603,17 +2890,21 @@
 !                                 |  OPEN   |
 !      =======================================================================
 !
-
-        IF (MXC .LE. 0) THEN
-          CALL MSGERR(3,
-     &          ' Computational grid must be given previously')
+        IF (MXC .LE. 0 .AND. OPTG.NE.5) THEN                              40.80
+          CALL MSGERR(3, ' command CGRID must precede this command')      40.80
           GOTO 900
         ENDIF
-        IF (MCGRD .LE. 1) THEN
+        IF (MCGRD .LE. 1 .AND. nverts .LE. 0) THEN                        40.80
           CALL MSGERR(3,
-     &          ' Read depth before entering boundary values')
+     &    ' command READ BOT or READ UNSTRUC must precede this command')  40.80
           GOTO 900
         ENDIF
+!
+        IF (OPTG.EQ.5) THEN                                               40.80
+           CALL MSGERR(2,
+     &             ' WWIII b.c. are not supported in unstructured grid')  40.80
+           GOTO 900                                                       40.80
+        ENDIF                                                             40.80
 !
         NBFILS = NBFILS + 1
         ALLOCATE(BFLTMP)                                                  40.31
@@ -2633,7 +2924,7 @@
         ELSE                                                              40.05
            CALL WRNKEY                                                    40.05
         ENDIF                                                             40.05
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
         CALL BCWW3N (FILENM, 'NEST', BFLTMP, LBGP,                        40.31 40.05
      &               XCGRID, YCGRID, KGRPNT, XYTST, KGRBND,               40.31 40.05
      &               DONALL, ng)                                          40.31 40.05
@@ -2661,17 +2952,17 @@
 !     BOUNdnest1  NEST 'fname'  <           >
 !                                |  OPEN   |                              40.05
 ! ==========================================
-
-        IF (MXC .LE. 0) THEN
-          CALL MSGERR(3,
-     &          ' Computational grid must be given previously')
+!
+        IF (MXC .LE. 0 .AND. OPTG.NE.5) THEN                              40.80
+          CALL MSGERR(3, ' command CGRID must precede this command')      40.80
           GOTO 900
         ENDIF
-        IF (MCGRD .LE. 1) THEN
+        IF (MCGRD .LE. 1 .AND. nverts .LE. 0) THEN                        40.80
           CALL MSGERR(3,
-     &          ' Read depth before entering boundary values')
+     &    ' command READ BOT or READ UNSTRUC must precede this command')  40.80
           GOTO 900
         ENDIF
+!
         NBFILS = NBFILS + 1
         ALLOCATE(BFLTMP)                                                  40.31
         CALL INCSTR ('FNAME',FILENM,'REQ', ' ')
@@ -2690,7 +2981,7 @@
         ELSE                                                              40.05
            CALL WRNKEY                                                    40.05
         ENDIF                                                             40.05
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
         CALL BCFILE (FILENM, 'NEST', BFLTMP, LBGP,                        40.31
      &               XCGRID, YCGRID, KGRPNT, XYTST,  KGRBND,              40.31
      &               DONALL, ng)                                          40.05
@@ -2719,15 +3010,15 @@
 !                             | North |
 !                             | NW    |
 !                             | West  |
-!                             | SW    |   | -> CCW     |
-!                 | -> SIDE  <  South  > <              >    |
-!                 |           | SE    |   | CLOCKWise  |     |
-!                 |           | East  |                      |
-!                 |           | NE    |                      |
-!       BOUNdary <                                            >    &
-!                 |           | -> XY  <  [x]  [y]  >  |     |
-!                 | SEGment  <                          >    |
-!                             |    IJ  <  [i]  [j]  >  |
+!                             | SW    |          | -> CCW     |
+!                 | -> SIDE  <  South  > | [k]  <              >   |
+!                 |           | SE    |          | CLOCKWise  |    |
+!                 |           | East  |                            |
+!                 |           | NE    |                            |
+!       BOUNdary <                                                  >    &
+!                 |           | -> XY  < [x] [y] >           |     |
+!                 | SEGment  <                                >    |
+!                             |    IJ  < [i] [j] > | < [k] > |
 !
 !
 !                          |  PAR  [hs] [per] [dir] [dd]  |
@@ -2740,14 +3031,13 @@
 !
 !      ======================================================================
 !
-        IF (MXC .LE. 0) THEN
-          CALL MSGERR(3,
-     &          ' Computational grid must be given previously')
+        IF (MXC .LE. 0 .AND. OPTG.NE.5) THEN                              40.80
+          CALL MSGERR(3, ' command CGRID must precede this command')      40.80
           GOTO 900
         ENDIF
-        IF (MCGRD .LE. 1) THEN
+        IF (MCGRD .LE. 1 .AND. nverts .LE. 0) THEN                        40.80
           CALL MSGERR(3,
-     &          ' Read depth before entering boundary values')
+     &    ' command READ BOT or READ UNSTRUC must precede this command')  40.80
           GOTO 900
         ENDIF
 !
@@ -2775,262 +3065,241 @@
           ELSE
             CALL WRNKEY
           ENDIF
-!         loop over points describing the segment
           IX1 = 1
           IY1 = 1
           LFRST1 = .TRUE.                                                 40.31
+!         loop over points describing the segment
           DO
             IF (LOCGRI) THEN
               CALL READXY ('XP','YP',XP,YP, 'REP', -1.E10, -1.E10)
               IF (XP.LT.-.9E10) GOTO 42
-              CALL CVMESH (XP, YP, XC, YC, KGRPNT, XCGRID, YCGRID,
-     &                     KGRBND)                                        40.00
-              IX2 = NINT(XC) + 1
-              IY2 = NINT(YC) + 1                                          40.00
-              IF (.NOT.BOUNPT(IX2,IY2,KGRPNT)) THEN
-                CALL MSGERR (2, 'invalid boundary point')
-                WRITE (PRTEST, 38) XP+XOFFS, YP+YOFFS, XC, YC, IX2, IY2   40.00
-  38            FORMAT (' segment point ', 2F10.2,
-     &                  ' grid ', 2F8.2, 2I4)
-              ENDIF
+              IF (OPTG.NE.5) THEN                                         40.80
+!             --- structured grid
+!
+                 CALL CVMESH (XP, YP, XC, YC, KGRPNT, XCGRID, YCGRID,
+     &                        KGRBND)                                     40.00
+                 IX2 = NINT(XC) + 1
+                 IY2 = NINT(YC) + 1                                       40.00
+                 IF (.NOT.BOUNPT(IX2,IY2,KGRPNT)) THEN
+                   CALL MSGERR (2, 'invalid boundary point')
+                   WRITE (PRTEST, 38) XP+XOFFS, YP+YOFFS, XC, YC,         40.00
+     &                                IX2, IY2                            40.00
+  38               FORMAT (' segment point ', 2F10.2,
+     &                     ' grid ', 2F8.2, 2I4)
+                 ENDIF
+              ELSE                                                        40.80
+!             --- unstructured grid
+!
+                 CALL SwanFindPoint ( XP, YP, IX2 )                       40.80
+                 IF ( IX2.LT.0 ) THEN                                     40.80
+                    WRITE (MSGSTR, '(A,F12.4,A,F12.4,A)')                 40.80
+     &                        ' Boundary point (',XP+XOFFS,',',YP+YOFFS,  40.80
+     &                                ') not part of computational grid'  40.80
+                    CALL MSGERR( 2, TRIM(MSGSTR) )                        40.80
+                 ENDIF                                                    40.80
+                 IF ( vert(IX2)%atti(VMARKER) /= 1 ) THEN                 40.80
+                    WRITE (MSGSTR, '(A,F12.4,A,F12.4,A)')                 40.80
+     &                                ' Vertex (',XP+XOFFS,',',YP+YOFFS,  40.80
+     &                                 ') is not a valid boundary point'  40.80
+                    CALL MSGERR( 2, TRIM(MSGSTR) )                        40.80
+                 ENDIF                                                    40.80
+              ENDIF                                                       40.80
             ELSE
               CALL ININTG ('I' , IX2, 'REP', -1)                          40.03
               IF (IX2 .LT. 0) GOTO 42                                     40.00
-              CALL ININTG ('J' , IY2, 'REQ',  0)                          40.03
-              IX2 = IX2 + 1                                               40.00
-              IY2 = IY2 + 1
+              IF (OPTG.NE.5) THEN                                         40.80
+                 CALL ININTG ('J' , IY2, 'REQ',  0)                       40.03
+                 IX2 = IX2 + 1                                            40.00
+                 IY2 = IY2 + 1
+              ELSE                                                        40.80
+                 IF (IX2.LE.0 .OR. IX2.GT.nverts) THEN                    40.80
+                    WRITE (MSGSTR,'(I4,A)') IX2,                          40.80
+     &                                    ' is not a valid vertex index'  40.80
+                    CALL MSGERR( 2, TRIM(MSGSTR) )                        40.80
+                 ELSEIF ( vert(IX2)%atti(VMARKER) /= 1 ) THEN             40.80
+                    WRITE (MSGSTR,'(A,I4,A)') ' Vertex with index ',IX2,  40.80
+     &                                  ' is not a valid boundary point'  40.80
+                    CALL MSGERR( 2, TRIM(MSGSTR) )                        40.80
+                 ENDIF                                                    40.80
+              ENDIF                                                       40.80
             ENDIF
-            IF (ITEST.GE.80) WRITE (PRTEST, 38) XCGRID(IX2,IY2)+XOFFS,    40.00
+            IF (ITEST.GE.80 .AND. OPTG.NE.5) WRITE (PRTEST, 38)           40.00
+     &                XCGRID(IX2,IY2)+XOFFS,                              40.00
      &                YCGRID(IX2,IY2)+YOFFS, XC, YC, IX2-1, IY2-1         40.00
 !
 !           --- generate intermediate points on the segment
-            IF (IX2 .GT. 0 .AND. IX2 .LE. MXC .AND.
-     &          IY2 .GT. 0 .AND. IY2 .LE. MYC) THEN
-              IF (LFRST1) THEN
-                MM = 1
-                LFRST1 = .FALSE.
-              ELSE
-                MM = MAX (ABS(IX2-IX1), ABS(IY2-IY1))
-              ENDIF
-              DO IP = 1, MM
-                RR = REAL(IP) / REAL(MM)
+            IF ( OPTG.NE.5 ) THEN                                         40.80
+!           --- structured grid                                           40.80
 !
-                IF (.NOT. ONED) THEN                                      30.81
-                  IX = IX1 + NINT(RR*REAL(IX2-IX1))
-                  IY = IY1 + NINT(RR*REAL(IY2-IY1))
-                ELSE                                                      30.81
-                  IX = IX1 + NINT(RR*REAL(IX2-IX1))                       30.81
-                  IY = IY1                                                30.81
-                END IF                                                    30.81
+               IF (IX2 .GT. 0 .AND. IX2 .LE. MXC .AND.
+     &             IY2 .GT. 0 .AND. IY2 .LE. MYC) THEN
+                 IF (LFRST1) THEN
+                   MM = 1
+                   LFRST1 = .FALSE.
+                 ELSE
+                   MM = MAX (ABS(IX2-IX1), ABS(IY2-IY1))
+                 ENDIF
+                 DO IP = 1, MM
+                   RR = REAL(IP) / REAL(MM)
 !
-                IF (ITEST.GE.80) WRITE (PRTEST, *) ' b. point ',
-     &                RR, IX, IY
-                IF (KGRPNT(IX,IY) .GT. 1) THEN
-                  KOUNTR = KOUNTR + 1
-                  ALLOCATE(TMP)                                           40.31
-                  TMP%JX = IX                                             40.31
-                  TMP%JY = IY                                             40.31
-                  NULLIFY(TMP%NEXTXY)                                     40.31
-                  CURR%NEXTXY => TMP                                      40.31
-                  CURR => TMP                                             40.31
-                ENDIF
-              ENDDO
-            ELSE
-              CALL MSGERR (2, 'Boundary point outside comp. grid')
-            ENDIF
+                   IF (.NOT. ONED) THEN                                   30.81
+                     IX = IX1 + NINT(RR*REAL(IX2-IX1))
+                     IY = IY1 + NINT(RR*REAL(IY2-IY1))
+                   ELSE                                                   30.81
+                     IX = IX1 + NINT(RR*REAL(IX2-IX1))                    30.81
+                     IY = IY1                                             30.81
+                   END IF                                                 30.81
+!
+                   IF (ITEST.GE.80) WRITE (PRTEST, *) ' b. point ',
+     &                   RR, IX, IY
+                   IF (KGRPNT(IX,IY) .GT. 1) THEN
+                     KOUNTR = KOUNTR + 1
+                     ALLOCATE(TMP)                                        40.31
+                     TMP%JX = IX                                          40.31
+                     TMP%JY = IY                                          40.31
+                     NULLIFY(TMP%NEXTXY)                                  40.31
+                     CURR%NEXTXY => TMP                                   40.31
+                     CURR => TMP                                          40.31
+                   ENDIF
+                 ENDDO
+               ELSE
+                 CALL MSGERR (2, 'Boundary point outside comp. grid')
+               ENDIF
+               IY1 = IY2
+            ELSE                                                          40.80
+!           --- unstructured grid                                         40.80
+!
+               IF (LFRST1) THEN                                           40.80
+                  IXB1 = vert(IX2)%atti(BINDX)                            40.80
+                  JBG  = vert(IX2)%atti(BPOL)                             40.92
+                  DET  = 1.                                               40.92
+                  LFRST1 = .FALSE.                                        40.80
+               ELSE                                                       40.80
+                  IXB1 = vert(IX1)%atti(BINDX)                            40.80
+                  JBG  = vert(IX1)%atti(BPOL)                             40.92
+!
+!                 1) the wave spectrum along the given segment can be
+!                    imposed in counterclockwise or clockwise direction
+!                 2) content of array blist is ordered in counterclockwise
+!                    manner for sea/mainland boundary (JBG=1) and
+!                    clockwise for island boundary (JBG>1)
+!                 3) therefore, determine orientation by means of the
+!                    determinant of two endpoints of the given segment
+!                    and an arbitrary point inside domain
+!
+!                 first endpoint of segment
+                  X1 = vert(IX1)%attr(VERTX)                              40.80
+                  Y1 = vert(IX1)%attr(VERTY)                              40.80
+!
+!                 second endpoint of segment
+                  X2 = vert(IX2)%attr(VERTX)                              40.80
+                  Y2 = vert(IX2)%attr(VERTY)                              40.80
+!
+!                 an arbitrary internal point                             40.92
+                  DX=0.1*mingsiz
+                  DY=0.1*mingsiz
+                  DO IP=1,4
+                     X3 = X1 - DX
+                     Y3 = Y1 - DY
+                     CALL SwanFindPoint ( X3, Y3, IX )
+                     IF ( JBG>1 .AND. IX.LT.0 ) THEN
+                        X3 = X1 + DX
+                        Y3 = Y1 + DY
+                        EXIT
+                     ELSEIF ( JBG==1 .AND. IX.GT.0 ) THEN
+                        EXIT
+                     ENDIF
+                     IF ( MOD(IP,2).EQ.0 ) THEN
+                        DX = -DX
+                     ELSE
+                        DY = -DY
+                     ENDIF
+                  ENDDO
+!
+                  DET= (Y3-Y1)*(X2-X1)-(Y2-Y1)*(X3-X1)                    40.80
+                  IF (DET.GT.0.) THEN                                     40.80
+!                    take next boundary point in counterclockwise
+!                    direction
+                     IXB1 = MOD(IXB1,nbpt(JBG))+1                         40.92 40.80
+                  ELSE                                                    40.80
+!                    take next boundary point in clockwise direction
+                     IXB1 = nbpt(JBG)-MOD(nbpt(JBG)+1-IXB1,nbpt(JBG))     40.92 40.80
+                  ENDIF                                                   40.80
+               ENDIF                                                      40.80
+               IXB2 = vert(IX2)%atti(BINDX)                               40.80
+!
+!              determine order of counting
+               IF (IXB1.GT.IXB2 ) THEN                                    40.80
+                  IF (DET.LT.0.) THEN                                     40.92
+                     IXI  = -1                                            40.80
+                  ELSE                                                    40.92
+                     IXI  = 1                                             40.92
+                     IXB2 = IXB2+nbpt(JBG)                                40.92
+                  ENDIF                                                   40.92
+               ELSE                                                       40.80
+                  IF (DET.GT.0.) THEN                                     40.92
+                     IXI  = 1                                             40.80
+                  ELSE                                                    40.92
+                     IXI  = -1                                            40.92
+                     IXB1 = IXB1+nbpt(JBG)                                40.92
+                  ENDIF                                                   40.92
+               ENDIF                                                      40.80
+!
+               DO IPP = IXB1, IXB2, IXI                                   40.92 40.80
+                  IP = MOD(IPP,nbpt(JBG))                                 40.92
+                  IF (IP.EQ.0) IP = nbpt(JBG)                             40.92
+                  KOUNTR = KOUNTR + 1                                     40.80
+                  IX = blist(IP,JBG)                                      40.92 40.80
+                  vert(IX)%atti(VBC) = 1                                  40.80
+                  ALLOCATE(TMP)                                           40.80
+                  TMP%JX = IX                                             40.80
+                  NULLIFY(TMP%NEXTXY)                                     40.80
+                  CURR%NEXTXY => TMP                                      40.80
+                  CURR => TMP                                             40.80
+               ENDDO                                                      40.80
+            ENDIF                                                         40.80
             IX1 = IX2
-            IY1 = IY2
           END DO
  42       IF (KOUNTR.EQ.0)
-     &        CALL MSGERR(1,'No points of the boundary found')
+     &                CALL MSGERR(1,'No points on the boundaries found')
+          IF (LFRST1) CALL MSGERR (1,
+     &        'At least two points needed for a segment')                 40.81
         ELSE
 !         boundary condition on one side of the computational grid
-          IF (OPTG.NE.1) THEN                                             40.31
-             CALL MSGERR(3,                                               40.31
-     &          ' keyword SIDE can be used for regular grid only')        40.31
+          IF (OPTG.EQ.3) THEN                                             40.80 40.31
+             CALL MSGERR(2,                                               40.80 40.31
+     &          ' keyword SIDE should not be used for curvilinear grid')  40.80 40.31
           END IF                                                          40.31
           CALL IGNORE ('SIDE')
-          CALL INKEYW ('REQ',' ')
 !         *** specification of side for which boundary   ***
 !         *** condition is given                         ***
-          UPLO = 0
-          IF (KEYWIS ('NW')) THEN
-            DIRSI = 45.
-          ELSE IF (KEYWIS ('SW')) THEN
-            DIRSI = 135.
-          ELSE IF (KEYWIS ('SE')) THEN
-            DIRSI = -135.
-          ELSE IF (KEYWIS ('NE')) THEN
-            DIRSI = -45.
-          ELSE IF (KEYWIS ('N')) THEN
-            DIRSI = 0.
-          ELSE IF (KEYWIS ('W')) THEN
-            DIRSI = 90.
-          ELSE IF (KEYWIS ('S')) THEN
-            DIRSI = 180.
-          ELSE IF (KEYWIS ('E')) THEN
-            DIRSI = -90.
-          ELSE IF (KEYWIS ('LO')) THEN
-            UPLO = -1
-          ELSE IF (KEYWIS ('UP')) THEN
-            UPLO = 1
-          ELSE
-            CALL WRNKEY
-          ENDIF
-          IF (UPLO.NE.0) THEN
-!           older, obsolete option
-            CALL MSGERR (1, 'UPper and LOwer are becoming obsolete')
-            CALL INKEYW ('REQ', ' ')
-            IF (KEYWIS('Y')) THEN
-              IF (UPLO.GT.0) THEN
-                ISIDM = 3
-                CCW = .FALSE.
-              ELSE
-                ISIDM = 1
-                CCW = .TRUE.
-              ENDIF
-            ELSE
-              CALL IGNORE ('X')
-              IF (UPLO.GT.0) THEN
-                ISIDM = 2
-                CCW = .TRUE.
-              ELSE
-                ISIDM = 4
-                CCW = .FALSE.
-              ENDIF
-            ENDIF
-            CALL INKEYW ('STA', ' ')
-            IF (KEYWIS ('JON')) THEN
-              FSHAPE = 2
-              CALL INREAL ('GAMMA', PSHAPE(1), 'STA', 3.3)
-            ELSE IF (KEYWIS ('PM')) THEN
-              FSHAPE = 1
-            ELSE IF (KEYWIS ('GAUS')) THEN
-              FSHAPE = 4
-              CALL INREAL ('SIGFR', SIGMAG, 'STA', 0.01)
-!             convert from Hz to rad/s:
-              PSHAPE(2) = PI2 * SIGMAG
-            ENDIF
-            DSHAPE = 2
-            GOTO 90
-          ENDIF
-!
-!         select side in the chosen direction
-!
-          CRDM   = -1.E10
-          ISIDM  = 0
-          IF (ONED) THEN                                                  40.00
-            COSDIR = COS(PI*(DNORTH+DIRSI)/180.)
-            SINDIR = SIN(PI*(DNORTH+DIRSI)/180.)
-            DO ISIDE = 1, 4
-              SOMX = 0.
-              SOMY = 0.
-              NUMP = 0
-              IF (ISIDE.EQ.2) THEN
-                KC = KGRPNT(MXC,1)
-                IF (KC.GT.1) THEN
-                  SOMX = XCGRID(MXC,1)
-                  SOMY = YCGRID(MXC,1)
-                  NUMP = 1
-                ENDIF
-              ELSE IF (ISIDE.EQ.4) THEN
-                KC = KGRPNT(1,1)
-                IF (KC.GT.1) THEN
-                  SOMX = XCGRID(1,1)
-                  SOMY = YCGRID(1,1)
-                  NUMP = 1
-                ENDIF
-              ENDIF
-              IF (NUMP.GT.0) THEN
-                CRDP = COSDIR*SOMX + SINDIR*SOMY
-!               side with largest CRDP is the one selected
-                IF (CRDP.GT.CRDM) THEN
-                  CRDM = CRDP
-                  ISIDM = ISIDE
-                ENDIF
-              ENDIF
-            ENDDO
-          ELSE                                                            40.00
-            DO ISIDE = 1, 4
-              SOMX = 0.
-              SOMY = 0.
-              NUMP = 0
-              IF (ISIDE.EQ.1) THEN
-                DO IX = 1, MXC
-                  KC2 = KGRPNT(IX,1)
-                  IF (IX.GT.1) THEN
-                    IF (KC1.GT.1 .AND. KC2.GT.1) THEN                     40.00
-!                     if both grid points at ends of a step are valid, then
-!                     take DX and DY into account when determining direction
-                      SOMX = SOMX + XCGRID(IX,1)-XCGRID(IX-1,1)
-                      SOMY = SOMY + YCGRID(IX,1)-YCGRID(IX-1,1)
-                      NUMP = NUMP + 1
-                    ENDIF
-                  ENDIF
-                  KC1 = KC2                                               40.03
-                ENDDO
-              ELSE IF (ISIDE.EQ.2) THEN
-                DO IY = 1, MYC
-                  KC2 = KGRPNT(MXC,IY)
-                  IF (IY.GT.1) THEN
-                    IF (KC1.GT.1 .AND. KC2.GT.1) THEN                     40.00
-                      SOMX = SOMX + XCGRID(MXC,IY)-XCGRID(MXC,IY-1)
-                      SOMY = SOMY + YCGRID(MXC,IY)-YCGRID(MXC,IY-1)
-                      NUMP = NUMP + 1
-                    ENDIF
-                  ENDIF
-                  KC1 = KC2                                               40.03
-                ENDDO
-              ELSE IF (ISIDE.EQ.3) THEN                                   40.00
-                DO IX = 1, MXC
-                  KC2 = KGRPNT(IX,MYC)
-                  IF (IX.GT.1) THEN
-                    IF (KC1.GT.1 .AND. KC2.GT.1) THEN                     40.00
-                      SOMX = SOMX + XCGRID(IX-1,MYC)-XCGRID(IX,MYC)       40.13
-                      SOMY = SOMY + YCGRID(IX-1,MYC)-YCGRID(IX,MYC)       40.13
-                      NUMP = NUMP + 1
-                    ENDIF
-                  ENDIF
-                  KC1 = KC2                                               40.03
-                ENDDO
-              ELSE IF (ISIDE.EQ.4) THEN
-                DO IY = 1, MYC
-                  KC2 = KGRPNT(1,IY)
-                  IF (IY.GT.1) THEN
-                    IF (KC1.GT.1 .AND. KC2.GT.1) THEN                     40.00
-                      SOMX = SOMX + XCGRID(1,IY-1)-XCGRID(1,IY)
-                      SOMY = SOMY + YCGRID(1,IY-1)-YCGRID(1,IY)
-                      NUMP = NUMP + 1
-                    ENDIF
-                  ENDIF
-                  KC1 = KC2                                               40.03
-                ENDDO
-              ENDIF
-              IF (NUMP.GT.0) THEN
-                DIRSID = ATAN2(SOMY,SOMX)
-                DIRREF = PI*(DNORTH+DIRSI)/180.
-                IF (CVLEFT) THEN
-                  CRDP = COS(DIRSID - 0.5*PI - DIRREF)
-                ELSE
-                  CRDP = COS(DIRSID + 0.5*PI - DIRREF)
-                ENDIF
-!               side with largest CRDP is the one selected
-                IF (CRDP.GT.CRDM) THEN
-                  CRDM = CRDP
-                  ISIDM = ISIDE
-                ENDIF
-              ENDIF
-              IF (ITEST.GE.60) WRITE (PRTEST, 151) ISIDE, NUMP,
-     &        SOMX, SOMY, DIRSID*180/PI, DIRREF*180/PI, CRDP, CVLEFT      40.13
- 151          FORMAT (' side ', 2I4, 2(1X,E11.4), 2(1X,F5.0), 2X,
-     &                F6.3, 2X, L1)                                       40.13
-            ENDDO
-          ENDIF                                                           40.00
-          IF (ISIDM.EQ.0) THEN
-            CALL MSGERR (2, 'No open boundary found')
-          ENDIF
+          IF (OPTG.NE.5) THEN                                             40.80
+             CALL INKEYW ('REQ',' ')
+             IF (KEYWIS ('NW')) THEN
+               DIRSI = 45.
+             ELSE IF (KEYWIS ('SW')) THEN
+               DIRSI = 135.
+             ELSE IF (KEYWIS ('SE')) THEN
+               DIRSI = -135.
+             ELSE IF (KEYWIS ('NE')) THEN
+               DIRSI = -45.
+             ELSE IF (KEYWIS ('N')) THEN
+               DIRSI = 0.
+             ELSE IF (KEYWIS ('W')) THEN
+               DIRSI = 90.
+             ELSE IF (KEYWIS ('S')) THEN
+               DIRSI = 180.
+             ELSE IF (KEYWIS ('E')) THEN
+               DIRSI = -90.
+             ELSE
+               CALL WRNKEY
+             ENDIF
+          ELSE                                                            40.80
+             CALL ININTG ('K', VM, 'REQ', 0)                              40.80
+          ENDIF                                                           40.80
 !
 !         --- go along boundary clockwise or counterclockwise (default)
+!
           CALL INKEYW ('STA', 'CCW')
           IF (KEYWIS('CLOCKW')) THEN
             CCW = .FALSE.
@@ -3039,60 +3308,237 @@
             CCW = .TRUE.
           ENDIF
 !
-  90      IF (ISIDM.EQ.1) THEN
-            IX1 = 1
-            IY1 = 1
-            IX2 = MXC
-            IY2 = 1
-          ELSE IF (ISIDM.EQ.2) THEN
-            IX1 = MXC
-            IY1 = 1
-            IX2 = MXC
-            IY2 = MYC
-          ELSE IF (ISIDM.EQ.3) THEN
-            IX1 = MXC
-            IY1 = MYC
-            IX2 = 1
-            IY2 = MYC
-          ELSE IF (ISIDM.EQ.4) THEN
-            IX1 = 1
-            IY1 = MYC
-            IX2 = 1
-            IY2 = 1
-          ENDIF
-          IF (.NOT.CCW .EQV. CVLEFT) THEN
-!           swap end points
-            IX3 = IX1
-            IY3 = IY1
-            IX1 = IX2
-            IY1 = IY2
-            IX2 = IX3
-            IY2 = IY3
-          ENDIF
-          IF (ITEST.GE.50) WRITE (PRINTF, 112) ISIDM,
-     &    IX1-1, IY1-1, XCGRID(IX1,IY1)+XOFFS, YCGRID(IX1,IY1)+YOFFS,     40.00
-     &    IX2-1, IY2-1, XCGRID(IX2,IY2)+XOFFS, YCGRID(IX2,IY2)+YOFFS      40.00
- 112      FORMAT (' Selected side:', I2, ' from ', 2I4, 2F9.0,            40.00
-     &    ' to ', 2I4, 2F9.0)                                             40.00
-          MP = MAX(ABS(IX2-IX1),ABS(IY2-IY1))
-          DO IP = 0, MP
-            IF (MP.EQ.0) THEN                                             40.00
-              RR = 0.
-            ELSE
-              RR = REAL(IP) / REAL(MP)
-            ENDIF
-            IX = IX1 + NINT(RR*REAL(IX2-IX1))
-            IY = IY1 + NINT(RR*REAL(IY2-IY1))
-            IF (KGRPNT(IX,IY) .GT. 1) THEN
-              KOUNTR = KOUNTR + 1
-              ALLOCATE(TMP)                                               40.31
-              TMP%JX = IX                                                 40.31
-              TMP%JY = IY                                                 40.31
-              NULLIFY(TMP%NEXTXY)                                         40.31
-              CURR%NEXTXY => TMP                                          40.31
-              CURR => TMP                                                 40.31
-            ENDIF
-          ENDDO
+!         select side in the chosen direction
+!
+          IF ( OPTG.NE.5 ) THEN                                           40.80
+             CRDM   = -1.E10
+             ISIDM  = 0
+             IF (ONED) THEN                                               40.00
+               COSDIR = COS(PI*(DNORTH+DIRSI)/180.)
+               SINDIR = SIN(PI*(DNORTH+DIRSI)/180.)
+               DO ISIDE = 1, 4
+                 SOMX = 0.
+                 SOMY = 0.
+                 NUMP = 0
+                 IF (ISIDE.EQ.2) THEN
+                   KC = KGRPNT(MXC,1)
+                   IF (KC.GT.1) THEN
+                     SOMX = XCGRID(MXC,1)
+                     SOMY = YCGRID(MXC,1)
+                     NUMP = 1
+                   ENDIF
+                 ELSE IF (ISIDE.EQ.4) THEN
+                   KC = KGRPNT(1,1)
+                   IF (KC.GT.1) THEN
+                     SOMX = XCGRID(1,1)
+                     SOMY = YCGRID(1,1)
+                     NUMP = 1
+                   ENDIF
+                 ENDIF
+                 IF (NUMP.GT.0) THEN
+                   CRDP = COSDIR*SOMX + SINDIR*SOMY
+!                  side with largest CRDP is the one selected
+                   IF (CRDP.GT.CRDM) THEN
+                     CRDM = CRDP
+                     ISIDM = ISIDE
+                   ENDIF
+                 ENDIF
+               ENDDO
+             ELSE                                                         40.00
+               DO ISIDE = 1, 4
+                 SOMX = 0.
+                 SOMY = 0.
+                 NUMP = 0
+                 IF (ISIDE.EQ.1) THEN
+                   DO IX = 1, MXC
+                     KC2 = KGRPNT(IX,1)
+                     IF (IX.GT.1) THEN
+                       IF (KC1.GT.1 .AND. KC2.GT.1) THEN                  40.00
+!                        if both grid points at ends of a step are valid, then
+!                        take DX and DY into account when determining direction
+                         SOMX = SOMX + XCGRID(IX,1)-XCGRID(IX-1,1)
+                         SOMY = SOMY + YCGRID(IX,1)-YCGRID(IX-1,1)
+                         NUMP = NUMP + 1
+                       ENDIF
+                     ENDIF
+                     KC1 = KC2                                            40.03
+                   ENDDO
+                 ELSE IF (ISIDE.EQ.2) THEN
+                   DO IY = 1, MYC
+                     KC2 = KGRPNT(MXC,IY)
+                     IF (IY.GT.1) THEN
+                       IF (KC1.GT.1 .AND. KC2.GT.1) THEN                  40.00
+                         SOMX = SOMX + XCGRID(MXC,IY)-XCGRID(MXC,IY-1)
+                         SOMY = SOMY + YCGRID(MXC,IY)-YCGRID(MXC,IY-1)
+                         NUMP = NUMP + 1
+                       ENDIF
+                     ENDIF
+                     KC1 = KC2                                            40.03
+                   ENDDO
+                 ELSE IF (ISIDE.EQ.3) THEN                                40.00
+                   DO IX = 1, MXC
+                     KC2 = KGRPNT(IX,MYC)
+                     IF (IX.GT.1) THEN
+                       IF (KC1.GT.1 .AND. KC2.GT.1) THEN                  40.00
+                         SOMX = SOMX + XCGRID(IX-1,MYC)-XCGRID(IX,MYC)    40.13
+                         SOMY = SOMY + YCGRID(IX-1,MYC)-YCGRID(IX,MYC)    40.13
+                         NUMP = NUMP + 1
+                       ENDIF
+                     ENDIF
+                     KC1 = KC2                                            40.03
+                   ENDDO
+                 ELSE IF (ISIDE.EQ.4) THEN
+                   DO IY = 1, MYC
+                     KC2 = KGRPNT(1,IY)
+                     IF (IY.GT.1) THEN
+                       IF (KC1.GT.1 .AND. KC2.GT.1) THEN                  40.00
+                         SOMX = SOMX + XCGRID(1,IY-1)-XCGRID(1,IY)
+                         SOMY = SOMY + YCGRID(1,IY-1)-YCGRID(1,IY)
+                         NUMP = NUMP + 1
+                       ENDIF
+                     ENDIF
+                     KC1 = KC2                                            40.03
+                   ENDDO
+                 ENDIF
+                 IF (NUMP.GT.0) THEN
+                   DIRSID = ATAN2(SOMY,SOMX)
+                   DIRREF = PI*(DNORTH+DIRSI)/180.
+                   IF (CVLEFT) THEN
+                     CRDP = COS(DIRSID - 0.5*PI - DIRREF)
+                   ELSE
+                     CRDP = COS(DIRSID + 0.5*PI - DIRREF)
+                   ENDIF
+!                  side with largest CRDP is the one selected
+                   IF (CRDP.GT.CRDM) THEN
+                     CRDM = CRDP
+                     ISIDM = ISIDE
+                   ENDIF
+                 ENDIF
+                 IF (ITEST.GE.60) WRITE (PRTEST, 151) ISIDE, NUMP,
+     &           SOMX, SOMY, DIRSID*180/PI, DIRREF*180/PI, CRDP, CVLEFT   40.13
+ 151             FORMAT (' side ', 2I4, 2(1X,E11.4), 2(1X,F5.0), 2X,
+     &                   F6.3, 2X, L1)                                    40.13
+               ENDDO
+             ENDIF                                                        40.00
+             IF (ISIDM.EQ.0) THEN
+               CALL MSGERR (2, 'No open boundary found')
+             ENDIF
+!
+  90         IF (ISIDM.EQ.1) THEN
+               IX1 = 1
+               IY1 = 1
+               IX2 = MXC
+               IY2 = 1
+             ELSE IF (ISIDM.EQ.2) THEN
+               IX1 = MXC
+               IY1 = 1
+               IX2 = MXC
+               IY2 = MYC
+             ELSE IF (ISIDM.EQ.3) THEN
+               IX1 = MXC
+               IY1 = MYC
+               IX2 = 1
+               IY2 = MYC
+             ELSE IF (ISIDM.EQ.4) THEN
+               IX1 = 1
+               IY1 = MYC
+               IX2 = 1
+               IY2 = 1
+             ENDIF
+             IF (.NOT.CCW .EQV. CVLEFT) THEN
+!              swap end points
+               IX3 = IX1
+               IY3 = IY1
+               IX1 = IX2
+               IY1 = IY2
+               IX2 = IX3
+               IY2 = IY3
+             ENDIF
+             IF (ITEST.GE.50) WRITE (PRINTF, 112) ISIDM,
+     &       IX1-1, IY1-1, XCGRID(IX1,IY1)+XOFFS, YCGRID(IX1,IY1)+YOFFS,  40.00
+     &       IX2-1, IY2-1, XCGRID(IX2,IY2)+XOFFS, YCGRID(IX2,IY2)+YOFFS   40.00
+ 112         FORMAT (' Selected side:', I2, ' from ', 2I4, 2F9.0,         40.00
+     &       ' to ', 2I4, 2F9.0)                                          40.00
+             MP = MAX(ABS(IX2-IX1),ABS(IY2-IY1))
+             DO IP = 0, MP
+               IF (MP.EQ.0) THEN                                          40.00
+                 RR = 0.
+               ELSE
+                 RR = REAL(IP) / REAL(MP)
+               ENDIF
+               IX = IX1 + NINT(RR*REAL(IX2-IX1))
+               IY = IY1 + NINT(RR*REAL(IY2-IY1))
+               IF (KGRPNT(IX,IY) .GT. 1) THEN
+                 KOUNTR = KOUNTR + 1
+                 ALLOCATE(TMP)                                            40.31
+                 TMP%JX = IX                                              40.31
+                 TMP%JY = IY                                              40.31
+                 NULLIFY(TMP%NEXTXY)                                      40.31
+                 CURR%NEXTXY => TMP                                       40.31
+                 CURR => TMP                                              40.31
+               ENDIF
+             ENDDO
+          ELSE                                                            40.80
+            ! unstructured grid
+            !
+            DO JBG = 1, nbpol                                             40.92
+               !
+               ! first boundary polyogon is assumed an outer one
+               ! (sea/mainland boundary) and hence, content of blist
+               ! is ordered in counterclockwise manner
+               !
+               IF ( JBG==1 .EQV. CCW ) THEN                               40.92 40.80
+                  IXB1 = 1                                                40.80
+                  IXB2 = nbpt(JBG)                                        40.92 40.80
+                  IXI  = 1                                                40.80
+               ELSE                                                       40.80
+                  IXB1 = nbpt(JBG)                                        40.92 40.80
+                  IXB2 = 1                                                40.80
+                  IXI  = -1                                               40.80
+               ENDIF                                                      40.80
+               !
+               ALLOCATE(IARR1(SUM(nbpt)))
+               K = 0
+               DO IP = IXB1, IXB2, IXI                                    40.92
+                  IX = blist(IP,JBG)                                      40.92
+                  IF ( vmark(IX) == VM ) THEN                             40.92
+                     K = K+1                                              40.92
+                     IARR1(K) = IP                                        40.92
+                  ENDIF
+               ENDDO
+               !
+               IF ( K/=0 ) THEN                                           40.92
+                  !
+                  ALLOCATE(IARR2(K))                                      40.92
+                  IARR2(1:K) = IARR1(1:K)                                 40.92
+                  ISH = 0                                                 40.92
+                  DO IPP = 2, K                                           40.92
+                     IF ( IARR2(IPP)/=IARR2(IPP-1)+IXI ) THEN             40.92
+                        ISH = IPP-1                                       40.92
+                        EXIT                                              40.92
+                     ENDIF                                                40.92
+                  ENDDO                                                   40.92
+                  IARR2 = CSHIFT(IARR2,ISH)                               40.92
+                  !
+                  DO IPP = 1, K                                           40.92
+                     IP = IARR2(IPP)                                      40.92
+                     IX = blist(IP,JBG)                                   40.92 40.80
+                     KOUNTR = KOUNTR + 1                                  40.80
+                     vert(IX)%atti(VBC) = 1                               40.80
+                     ALLOCATE(TMP)                                        40.80
+                     TMP%JX = IX                                          40.80
+                     NULLIFY(TMP%NEXTXY)                                  40.80
+                     CURR%NEXTXY => TMP                                   40.80
+                     CURR => TMP                                          40.80
+                  ENDDO                                                   40.80
+                  DEALLOCATE(IARR2)                                       40.92
+                  !
+               ENDIF                                                      40.92
+               DEALLOCATE(IARR1)                                          40.92
+               !
+            ENDDO                                                         40.92
+            !
+          ENDIF                                                           40.80
         ENDIF
 !
 !       *** boundary condition from file, 1-d or 2-d spectrum
@@ -3151,7 +3597,7 @@
             NBFILS = NBFILS + 1
             NBSPSS = NBSPEC
             ALLOCATE(BFLTMP)                                              40.31
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
             CALL BCFILE (FILENM, 'PNTS', BFLTMP, LBGP,                    40.31
      &                   XCGRID, YCGRID, KGRPNT, XYTST, KGRBND,           40.31
      &                   DONALL, ng)                                      40.05
@@ -3175,13 +3621,17 @@
           ENDIF
           DO IKO = 1, KOUNTR
             IX = CURR%JX                                                  40.31
-            IY = CURR%JY                                                  40.31
+            IF (OPTG.NE.5) IY = CURR%JY                                   40.80 40.31
             CURR => CURR%NEXTXY                                           40.31
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
 !            ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
 !            ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
             ALLOCATE(BGPDATZ_MOD(ng)%BGPTMP)
-            BGPDATZ_MOD(ng)%BGPTMP%BGP(1) = KGRPNT(IX,IY)
+            IF (OPTG.NE.5) THEN                                           40.80
+               BGPDATZ_MOD(ng)%BGPTMP%BGP(1) = KGRPNT(IX,IY)
+            ELSE                                                          40.80
+               BGPDATZ_MOD(ng)%BGPTMP%BGP(1) = IX
+            ENDIF                                                         40.80
             BGPDATZ_MOD(ng)%BGPTMP%BGP(2) = 1
             BGPDATZ_MOD(ng)%BGPTMP%BGP(3) = 1000
             BGPDATZ_MOD(ng)%BGPTMP%BGP(4) = NBSPSS
@@ -3198,7 +3648,11 @@
             END IF                                                        40.31
 #else
             ALLOCATE(BGPTMP)                                              40.31
-            BGPTMP%BGP(1) = KGRPNT(IX,IY)                                 40.31
+            IF (OPTG.NE.5) THEN                                           40.80
+               BGPTMP%BGP(1) = KGRPNT(IX,IY)                              40.31
+            ELSE                                                          40.80
+               BGPTMP%BGP(1) = IX                                         40.80
+            ENDIF                                                         40.80
             BGPTMP%BGP(2) = 1                                             40.31
             BGPTMP%BGP(3) = 1000                                          40.31
             BGPTMP%BGP(4) = NBSPSS                                        40.31
@@ -3291,7 +3745,7 @@
                   NBFILS = NBFILS + 1
                   NBSPSS = NBSPEC
                   ALLOCATE(BFLTMP)                                        40.31
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
                   CALL BCFILE (FILENM, 'PNTS', BFLTMP, LBGP,              40.31
      &                   XCGRID, YCGRID, KGRPNT, XYTST, KGRBND,           40.31
      &                   DONALL, ng)                                      40.05
@@ -3322,9 +3776,14 @@
             LFRST3 = .TRUE.
             DO
               IX = CURR%JX                                                40.31
-              IY = CURR%JY                                                40.31
-              XC2 = XCGRID(IX,IY)
-              YC2 = YCGRID(IX,IY)
+              IF (OPTG.NE.5) THEN                                         40.80
+                 IY = CURR%JY                                             40.31
+                 XC2 = XCGRID(IX,IY)
+                 YC2 = YCGRID(IX,IY)
+              ELSE                                                        40.80
+                 XC2 = xcugrd(IX)                                         40.80
+                 YC2 = ycugrd(IX)                                         40.80
+              ENDIF                                                       40.80
               IF (.NOT.LFRST3) THEN
                 RDIST = RDIST + SQRT ((XC2-XC1)**2 + (YC2-YC1)**2)
               ENDIF
@@ -3332,10 +3791,15 @@
               XC1 = XC2
               YC1 = YC2
               IF (RDIST.GT.RLEN2) GOTO 340
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
               ALLOCATE(BGPDATZ_MOD(ng)%BGPTMP)
 !              ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
 !              ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
+              IF (OPTG.NE.5) THEN                                         40.80
+                 BGPDATZ_MOD(ng)%BGPTMP%BGP(1) = KGRPNT(IX,IY)
+              ELSE                                                        40.80
+                 BGPDATZ_MOD(ng)%BGPTMP%BGP(1) = IX
+              ENDIF                                                       40.80
               BGPDATZ_MOD(ng)%BGPTMP%BGP(1) = KGRPNT(IX,IY)
               BGPDATZ_MOD(ng)%BGPTMP%BGP(2) = 1
               W1 = (RLEN2-RDIST)/(RLEN2-RLEN1)
@@ -3354,7 +3818,11 @@
               END IF                                                        40.31
 #else
               ALLOCATE(BGPTMP)                                            40.31
-              BGPTMP%BGP(1) = KGRPNT(IX,IY)                               40.31
+              IF (OPTG.NE.5) THEN                                         40.80
+                 BGPTMP%BGP(1) = KGRPNT(IX,IY)                            40.31
+              ELSE                                                        40.80
+                 BGPTMP%BGP(1) = IX                                       40.80
+              ENDIF                                                       40.80
               BGPTMP%BGP(2) = 1                                           40.31
               W1 = (RLEN2-RDIST)/(RLEN2-RLEN1)
               BGPTMP%BGP(3) = NINT(1000.*W1)                              40.31
@@ -3392,7 +3860,7 @@
       END
 !*********************************************************************
 !                                                                    *
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       SUBROUTINE BCFILE (FBCNAM, BCTYPE, BSPFIL, LBGP,                    40.31
      &                   XCGRID, YCGRID, KGRPNT,                          40.31
      &                   XYTST,  KGRBND, DONALL, ng)                      40.31 40.05
@@ -3426,7 +3894,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3481,7 +3949,7 @@
 !
 !  4. Argument variables
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INTEGER, INTENT(in) :: ng
 #endif
       REAL      XCGRID(MXC,MYC), YCGRID(MXC,MYC)
@@ -3681,7 +4149,7 @@
 !                 the SWAN computational grid
 !
               NBGRPT_PREV = NBGRPT                                        40.05
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
               CALL SWBCPT (  LBGP, XCGRID, YCGRID,                        40.41 40.31 40.05
      &                       KGRPNT, XYTST,  KGRBND,XP2,YP2,IBOUNC,       40.05
      &                       NBOUNC,DONALL, ng )                              40.05
@@ -3899,7 +4367,7 @@
       END
 !*********************************************************************
 !                                                                    *
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       SUBROUTINE BCWAMN (FBCNAM, BCTYPE, BSPFIL, LBGP,
      &                   XCGRID, YCGRID, KGRPNT, XYTST, ng)
 #else
@@ -3931,7 +4399,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4002,7 +4470,7 @@
 !
 !       Ocean Pack command reading routines
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INTEGER, INTENT(in) :: ng
 #endif
       LOGICAL :: STPNOW                                                   34.01
@@ -4136,7 +4604,7 @@
 !     XLON0     longitude of origin of computational grid
 !     XLAT0     latitude of origin of computational grid
 
-#if !defined MODEL_COUPLING
+#if !defined SWAN_MODEL
       TYPE(BGPDAT), POINTER :: BGPTMP                                     40.31
 #endif
 !     subroutines used
@@ -4391,7 +4859,7 @@
                           NBGRPT = NBGRPT + 1
                           IIPT1 = IIPT1 + 1                               40.03
                           IIPT2 = IIPT2 + 1                               40.03
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
                           ALLOCATE(BGPDATZ_MOD(ng)%BGPTMP)
 !                          ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
 !                          ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
@@ -4522,7 +4990,7 @@
 
 !*********************************************************************
 !                                                                    *
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       SUBROUTINE BCWW3N (FBCNAM, BCTYPE, BSPFIL, LBGP,                    40.31
      &                   XCGRID, YCGRID, KGRPNT,                          40.31
      &                   XYTST,  KGRBND, DONALL, ng)                      40.31
@@ -4555,7 +5023,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4600,7 +5068,7 @@
 !
 !  4. Argument variables
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INTEGER, INTENT(IN)     ::  ng
 #endif
       INTEGER, INTENT(IN)     ::  KGRPNT(MXC,MYC)
@@ -4650,7 +5118,6 @@
 !     NBOUNC    number of boundary locations
 !     NANG      number of directions on file
 !     NFRE      number of frequencies on file
-!     NBPT      number of WW3 boundary points
 !     DORDER    if <0 order of reading directions is reversed
 !     IOPTT     time reading option
 !     IBOUNC    counter of boundary points
@@ -4916,7 +5383,7 @@
 !           the SWAN computational grid
 !
         NBGRPT_PREV = NBGRPT
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
         CALL SWBCPT (  LBGP, XCGRID, YCGRID,                              40.41 40.31
      &                 KGRPNT, XYTST,  KGRBND,XP2,YP2,IBOUNC,
      &                 NBOUNC, DONALL, ng )
@@ -4997,7 +5464,7 @@
 
 !***********************************************************************
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       SUBROUTINE SWBCPT ( LBGP, XCGRID, YCGRID,                           40.41 40.31
      &                    KGRPNT, XYTST,  KGRBND,XP2,YP2,IBOUNC,
      &                    NBOUNC,DONALL, ng )
@@ -5015,6 +5482,8 @@
       USE SWCOMM4                                                         40.41
       USE M_BNDSPEC
       USE M_PARALL
+      USE SwanGriddata                                                    40.80
+      USE SwanGridobjects                                                 40.80
 !
       IMPLICIT NONE
 !
@@ -5030,7 +5499,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5079,7 +5548,7 @@
 !     IBOUNC:     counter
 !
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INTEGER, INTENT(in) :: ng
 #endif
       INTEGER, INTENT(IN)     ::  KGRPNT(MXC,MYC)  ! indirect addresses of computational grid points
@@ -5118,9 +5587,11 @@
       REAL, SAVE         :: XP0=0., XP1=0., YP0=0., YP1=0.                40.31
       REAL               :: XP2, YP2, XP, YP, RX, RY, RL2
       REAL               :: DISXY, W2
-#if !defined MODEL_COUPLING
+#if !defined SWAN_MODEL
       TYPE(BGPDAT), POINTER :: BGPTMP                                     40.31
 #endif
+!
+      TYPE(verttype), DIMENSION(:), POINTER :: vert                       40.80
 !
 !  7. Common blocks used
 !
@@ -5154,9 +5625,56 @@
 !
       CALL STRACE (IENT, 'SWBCPT')                                        40.41
 !
+!     point to vertices
+!
+      vert => gridobject%vert_grid                                        40.80
+!
       IBSP2 = NBSPEC+IBOUNC
       IIPT1 = 0
 !
+#if !defined SWAN_MODEL
+      IF (OPTG.EQ.5) THEN                                                 40.80
+!
+!        in case of unstructured grid, no interpolation is needed,
+!        since this grid is nested in a coarse structured or
+!        unstructured grid run
+!
+!        Note that the variable DONALL has no effect, since we
+!        searching into the whole grid
+!
+         DO IXP = 1, nverts                                               40.80
+            IF ( vert(IXP)%atti(VMARKER) == 1 .AND.                       40.80
+     &           vert(IXP)%atti(VBC) == 0 ) THEN                          40.80
+               RX = XP2 - vert(IXP)%attr(VERTX)
+               RY = YP2 - vert(IXP)%attr(VERTY)
+               DISXY = SQRT(RX**2 + RY**2)
+               IF (DISXY.LT.0.1) THEN
+                  vert(IXP)%atti(VBC) = 1                                 40.80
+                  NBGRPT = NBGRPT + 1                                     40.80
+                  ALLOCATE(BGPTMP)                                        40.80
+                  BGPTMP%BGP(1) = IXP                                     40.80
+                  BGPTMP%BGP(2) = 1                                       40.80
+                  BGPTMP%BGP(3) = 1000                                    40.80
+                  BGPTMP%BGP(4) = IBSP2                                   40.80
+                  BGPTMP%BGP(5) = 0                                       40.80
+                  BGPTMP%BGP(6) = IBSP2-1                                 40.80
+                  NULLIFY(BGPTMP%NEXTBGP)                                 40.80
+                  IF ( .NOT.LBGP ) THEN                                   40.80
+                     FBGP = BGPTMP                                        40.80
+                     CUBGP => FBGP                                        40.80
+                     LBGP = .TRUE.                                        40.80
+                  ELSE                                                    40.80
+                     CUBGP%NEXTBGP => BGPTMP                              40.80
+                     CUBGP => BGPTMP                                      40.80
+                  ENDIF                                                   40.80
+                  EXIT                                                    40.80
+               ENDIF
+            ENDIF                                                         40.80
+         ENDDO                                                            40.80
+         RETURN                                                           40.80
+      ENDIF                                                               40.80
+#endif
+
 201   IF (IBOUNC.EQ.1) THEN
          XP0   = XP2
          YP0   = YP2
@@ -5205,7 +5723,7 @@
                     NBGRPT = NBGRPT + 1
                     IIPT1 = IIPT1 + 1
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
                     ALLOCATE(BGPDATZ_MOD(ng)%BGPTMP)
 !                    ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
 !                    ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
@@ -5315,7 +5833,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5451,11 +5969,11 @@
       END
 !*********************************************************************
 !                                                                    *
-#ifdef MODEL_COUPLING
-      SUBROUTINE RETSTP (MPTST, XYTST, KGRPNT, KGRBND, XCGRID, YCGRID,
-     &                   SPCSIG, SPCDIR, ng)
+#ifdef SWAN_MODEL
+      SUBROUTINE RETSTP (LXYTST, XYTST, KGRPNT, KGRBND, XCGRID, YCGRID,   40.80
+     &                   SPCSIG, SPCDIR, ng)                              40.31
 #else
-      SUBROUTINE RETSTP (MPTST, XYTST, KGRPNT, KGRBND, XCGRID, YCGRID,
+      SUBROUTINE RETSTP (LXYTST, XYTST, KGRPNT, KGRBND, XCGRID, YCGRID,   40.80
      &                   SPCSIG, SPCDIR)                                  40.31
 #endif
 !                                                                    *
@@ -5468,6 +5986,7 @@
       USE SWCOMM4                                                         40.41
       USE OUTP_DATA                                                       40.31
       USE M_PARALL                                                        40.31
+      USE SwanGriddata                                                    40.80
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -5481,7 +6000,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5508,6 +6027,7 @@
 !     40.30: Marcel Zijlema
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     40.80: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -5523,6 +6043,7 @@
 !     40.30, Mar. 03: introduction distributed-memory approach using MPI
 !     40.31, Dec. 03: removing POOL-mechanism
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.80, Jun. 07: extension to unstructured grids
 !
 !  2. PURPOSE
 !
@@ -5544,18 +6065,20 @@
 ! i   XCGRID: Coordinates of computational grid in x-direction            30.82
 ! i   YCGRID: Coordinates of computational grid in y-direction            30.82
 !
-#if defined MODEL_COUPLING
+#if defined SWAN_MODEL
       INTEGER, INTENT(IN) :: ng
 #endif
       REAL    SPCDIR(MDC,6)                                               30.82
       REAL    SPCSIG(MSC)                                                 30.82
       REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.82
 !
-! i   MPTST : Maximum number of test points                               30.82
+! i   LXYTST: Maximum length of array XYTST                               40.80
 ! i   XYTST : Grid point indices of test points                           30.82
 !
-      INTEGER MPTST                                                       30.82
-      INTEGER XYTST(2*MPTST)                                              30.82
+!     MPTST : Maximum number of test points                               30.82
+!
+      INTEGER LXYTST, MPTST                                               40.80 30.82
+      INTEGER XYTST(LXYTST)                                               40.80 30.82
 !
 !  5. SUBROUTINES CALLING
 !
@@ -5594,15 +6117,20 @@
 !
       INTEGER   KGRPNT(MXC,MYC), KGRBND(*)                                40.31
       LOGICAL   KEYWIS, LOCGRI                                            40.00
-#if !defined MODEL_COUPLING
+#if !defined SWAN_MODEL
       TYPE(OPSDAT), POINTER :: OPSTMP                                     40.31
 #endif
       SAVE      IENT
       DATA      IENT /0/
       CALL STRACE (IENT, 'RETSTP')
 !
+      IF (OPTG.NE.5) THEN                                                 40.80
+         MPTST = LXYTST/2                                                 40.80
+      ELSE                                                                40.80
+         MPTST = LXYTST                                                   40.80
+      ENDIF                                                               40.80
       CALL INKEYW ('STA','IJ')                                            40.00
-      IF (LEDS(1).GE.2) THEN                                              40.04
+      IF (MCGRD.GT.1 .OR. nverts.GT.0) THEN                               40.80 40.04
         IF (KEYWIS('XY')) THEN
           LOCGRI = .TRUE.
         ELSE IF (KEYWIS('IJ')) THEN
@@ -5611,7 +6139,8 @@
           CALL WRNKEY
         ENDIF
       ELSE                                                                40.04
-        CALL MSGERR(3,'Testpoints must be defined after bottom is read')  40.04
+        CALL MSGERR(3,
+     &     'command READ BOT or READ UNSTRUC must precede command TEST')  40.80
       ENDIF                                                               40.04
 !
   10  IF (LOCGRI) THEN
@@ -5620,54 +6149,75 @@
           LXDMP = 0
           GOTO 60
         ELSE
-          CALL CVMESH (XP, YP, XC, YC, KGRPNT, XCGRID, YCGRID, KGRBND)    40.00
-          IF (XC.LT.0.) THEN                                              40.31
-             IF (XP.GE.XCGMIN .AND. XP.LE.XCGMAX .AND.                    40.31
-     &           YP.GE.YCGMIN .AND. YP.LE.YCGMAX ) THEN                   40.31
-                GOTO 50                                                   40.31
-             ELSE                                                         40.31
-                GOTO 40                                                   40.31
-             END IF                                                       40.31
-          END IF                                                          40.31
-          LXDMP = NINT(XC) + MXF -1                                       40.31
-          LYDMP = NINT(YC) + MYF -1                                       40.31
-          IF (ITEST.GE.30) WRITE (PRTEST, 14) XP+XOFFS, YP+YOFFS,         40.03
-     &    LXDMP, LYDMP
-  14      FORMAT (' test point ', 2F12.2, ' to grid point ', 2I4)
+          IF (OPTG.NE.5) THEN                                             40.80
+            CALL CVMESH (XP, YP, XC, YC, KGRPNT, XCGRID, YCGRID, KGRBND)  40.00
+            IF (XC.LT.0.) THEN                                            40.31
+              IF (XP.GE.XCGMIN .AND. XP.LE.XCGMAX .AND.                   40.31
+     &            YP.GE.YCGMIN .AND. YP.LE.YCGMAX ) THEN                  40.31
+                 GOTO 50                                                  40.31
+              ELSE                                                        40.31
+                 GOTO 40                                                  40.31
+              END IF                                                      40.31
+            END IF                                                        40.31
+            LXDMP = NINT(XC) + MXF -1                                     40.31
+            LYDMP = NINT(YC) + MYF -1                                     40.31
+            IF (ITEST.GE.30) WRITE (PRTEST, 14) XP+XOFFS, YP+YOFFS,       40.03
+     &      LXDMP, LYDMP
+  14        FORMAT (' test point ', 2F12.2, ' to grid point ', 2I4)
+          ELSE                                                            40.80
+            CALL SwanFindPoint ( XP, YP, K )                              40.80
+            IF ( K.LT.0 ) THEN                                            40.80
+              IF (XP.GE.XCGMIN .AND. XP.LE.XCGMAX .AND.                   40.80
+     &            YP.GE.YCGMIN .AND. YP.LE.YCGMAX ) THEN                  40.80
+                 GOTO 50                                                  40.80
+              ELSE                                                        40.80
+                 GOTO 40                                                  40.80
+              END IF                                                      40.80
+            END IF                                                        40.80
+            LXDMP = K                                                     40.80
+            IF (ITEST.GE.30) WRITE (PRTEST,15) XP+XOFFS,YP+YOFFS,LXDMP    40.80
+  15        FORMAT (' test point ', 2F12.2, ' to vertex ', I6)            40.80
+          ENDIF                                                           40.80
         ENDIF
       ELSE
         CALL ININTG ('I' , LXDMP, 'REP', -1)                              40.03
         IF (LXDMP .LT. 0) GOTO 60
-        CALL ININTG ('J' , LYDMP, 'REQ',  0)                              40.03
+        IF (OPTG.NE.5) CALL ININTG ('J' , LYDMP, 'REQ',  0)               40.80 40.03
       ENDIF
-      IF (LXDMP.GE.0 .AND. LXDMP.LE.MXCGL-1 .AND.                         40.31
-     &    LYDMP.GE.0 .AND. LYDMP.LE.MYCGL-1) THEN                         40.31
-         LXDMP = LXDMP - MXF + 1                                          40.31
-         LYDMP = LYDMP - MYF + 1                                          40.31
-         IF (LXDMP.GE.0 .AND. LXDMP.LE.MXC-1 .AND.
-     &       LYDMP.GE.0 .AND. LYDMP.LE.MYC-1) THEN
-            IF (KGRPNT(LXDMP+1,LYDMP+1) .GT. 1) THEN
-              NPTST = NPTST + 1
-              XYTST(2*NPTST-1) = LXDMP+1
-              XYTST(2*NPTST)   = LYDMP+1
-              GOTO 50
-            ENDIF
-         ELSE                                                             40.31
-            GOTO 50                                                       40.31
-         ENDIF                                                            40.31
-      ENDIF
-  40  CALL MSGERR (2, 'test point is not active')
-      IF (LOCGRI) THEN
-        WRITE (PRINTF, *) XP+XOFFS, YP+YOFFS                              40.03
-      ELSE
-        WRITE (PRINTF, *) LXDMP, LYDMP
-      ENDIF
+!
+      IF (OPTG.NE.5) THEN                                                 40.80
+         IF (LXDMP.GE.0 .AND. LXDMP.LE.MXCGL-1 .AND.                      40.31
+     &       LYDMP.GE.0 .AND. LYDMP.LE.MYCGL-1) THEN                      40.31
+            LXDMP = LXDMP - MXF + 1                                       40.31
+            LYDMP = LYDMP - MYF + 1                                       40.31
+            IF (LXDMP.GE.0 .AND. LXDMP.LE.MXC-1 .AND.
+     &          LYDMP.GE.0 .AND. LYDMP.LE.MYC-1) THEN
+               IF (KGRPNT(LXDMP+1,LYDMP+1) .GT. 1) THEN
+                  NPTST = NPTST + 1
+                  XYTST(2*NPTST-1) = LXDMP+1
+                  XYTST(2*NPTST)   = LYDMP+1
+                  GOTO 50
+               ENDIF
+            ELSE                                                          40.31
+               GOTO 50                                                    40.31
+            ENDIF                                                         40.31
+         ENDIF
+      ELSE                                                                40.80
+         IF (LXDMP.GE.1 .AND. LXDMP.LE.nverts) THEN                       40.80
+            NPTST = NPTST + 1                                             40.80
+            XYTST(NPTST) = LXDMP                                          40.80
+            GOTO 50                                                       40.80
+         ENDIF                                                            40.80
+      ENDIF                                                               40.80
+!
+  40  CALL MSGERR (1, 'test point is not active')                         40.80
+      WRITE (PRINTF, *) XP+XOFFS, YP+YOFFS                                40.03
   50  IF (NPTST.LE.MPTST) GOTO 10
       CALL MSGERR (2, 'Too many test points')
 !
 !     generate output point set 'TESTPNTS'
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
   60  ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                    40.31
       ALLOCATE(OPSDATZ_MOD(ng)%COPS)
       ALLOCATE(OPSDATZ_MOD(ng)%FOPS)
@@ -5676,12 +6226,20 @@
       OPSDATZ_MOD(ng)%OPSTMP%MIP    = NPTST                               40.31
       ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(NPTST))                          40.31
       ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(NPTST))                          40.31
-      DO 140 IPTST = 1, NPTST
-        LXDMP = XYTST(2*IPTST-1)                                          40.00
-        LYDMP = XYTST(2*IPTST)                                            40.00
-        OPSDATZ_MOD(ng)%OPSTMP%XP(IPTST) = XCGRID(LXDMP,LYDMP)            40.31
-        OPSDATZ_MOD(ng)%OPSTMP%YP(IPTST) = YCGRID(LXDMP,LYDMP)            40.31
- 140  CONTINUE
+      IF (OPTG.NE.5) THEN                                                 40.80
+         DO IPTST = 1, NPTST                                              40.80
+            LXDMP = XYTST(2*IPTST-1)                                      40.00
+            LYDMP = XYTST(2*IPTST)                                        40.00
+            OPSDATZ_MOD(ng)%OPSTMP%XP(IPTST) = XCGRID(LXDMP,LYDMP)            40.31
+            OPSDATZ_MOD(ng)%OPSTMP%YP(IPTST) = YCGRID(LXDMP,LYDMP)            40.31
+         ENDDO                                                            40.80
+      ELSE                                                                40.80
+         DO IPTST = 1, NPTST                                              40.80
+            K = XYTST(IPTST)                                              40.80
+            OPSDATZ_MOD(ng)%OPSTMP%XP(IPTST) = xcugrd(K)                  40.31
+            OPSDATZ_MOD(ng)%OPSTMP%YP(IPTST) = ycugrd(K)                  40.31
+         ENDDO                                                            40.80
+      ENDIF                                                               40.80
       NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                             40.31
       IF ( .NOT.LOPS ) THEN                                               40.31
          OPSDATZ_MOD(ng)%FOPS = OPSDATZ_MOD(ng)%OPSTMP                    40.31
@@ -5699,12 +6257,20 @@
       OPSTMP%MIP    = NPTST                                               40.31
       ALLOCATE(OPSTMP%XP(NPTST))                                          40.31
       ALLOCATE(OPSTMP%YP(NPTST))                                          40.31
-      DO 140 IPTST = 1, NPTST
-        LXDMP = XYTST(2*IPTST-1)                                          40.00
-        LYDMP = XYTST(2*IPTST)                                            40.00
-        OPSTMP%XP(IPTST) = XCGRID(LXDMP,LYDMP)                            40.31
-        OPSTMP%YP(IPTST) = YCGRID(LXDMP,LYDMP)                            40.31
- 140  CONTINUE
+      IF (OPTG.NE.5) THEN                                                 40.80
+         DO IPTST = 1, NPTST                                              40.80
+            LXDMP = XYTST(2*IPTST-1)                                      40.00
+            LYDMP = XYTST(2*IPTST)                                        40.00
+            OPSTMP%XP(IPTST) = XCGRID(LXDMP,LYDMP)                        40.31
+            OPSTMP%YP(IPTST) = YCGRID(LXDMP,LYDMP)                        40.31
+         ENDDO                                                            40.80
+      ELSE                                                                40.80
+         DO IPTST = 1, NPTST                                              40.80
+            K = XYTST(IPTST)                                              40.80
+            OPSTMP%XP(IPTST) = xcugrd(K)                                  40.80
+            OPSTMP%YP(IPTST) = ycugrd(K)                                  40.80
+         ENDDO                                                            40.80
+      ENDIF                                                               40.80
       NULLIFY(OPSTMP%NEXTOPS)                                             40.31
       IF ( .NOT.LOPS ) THEN                                               40.31
          FOPS = OPSTMP                                                    40.31
@@ -5754,13 +6320,20 @@
      &                       'locations in longitude, latitude'
         ENDIF
         WRITE (IFPAR, 103) NPTST, 'number of locations'
-        DO 110 IPTST = 1, NPTST
-          LXDMP = XYTST(2*IPTST-1)                                        40.00
-          LYDMP = XYTST(2*IPTST)                                          40.00
-          WRITE (IFPAR, 106) XCGRID(LXDMP,LYDMP)+XOFFS,
-     &                       YCGRID(LXDMP,LYDMP)+YOFFS                    40.00
- 106      FORMAT (2(1X,F12.2))
- 110    CONTINUE
+        IF (OPTG.NE.5) THEN                                               40.80
+           DO 110 IPTST = 1, NPTST
+              LXDMP = XYTST(2*IPTST-1)                                    40.00
+              LYDMP = XYTST(2*IPTST)                                      40.00
+              WRITE (IFPAR, 106) XCGRID(LXDMP,LYDMP)+XOFFS,
+     &                           YCGRID(LXDMP,LYDMP)+YOFFS                40.00
+ 110       CONTINUE
+        ELSE                                                              40.80
+           DO IPTST = 1, NPTST                                            40.80
+              K = XYTST(IPTST)                                            40.80
+              WRITE (IFPAR, 106) xcugrd(K)+XOFFS, ycugrd(K)+YOFFS         40.80
+           ENDDO                                                          40.80
+        ENDIF                                                             40.80
+ 106    FORMAT (2(1X,F12.2))
         WRITE (IFPAR, 132) 8                                              40.00
  132    FORMAT ('QUANT', /, I6, T41, 'number of quantities in table')     40.00
         WRITE (IFPAR, 102) OVSNAM(10), OVLNAM(10)                         40.00
@@ -5821,12 +6394,19 @@
      &                       'locations in longitude, latitude'
         ENDIF
         WRITE (IFS1D, 103) NPTST, 'number of locations'
-        DO 210 IPTST = 1, NPTST                                           40.00
-          LXDMP = XYTST(2*IPTST-1)                                        40.00
-          LYDMP = XYTST(2*IPTST)                                          40.00
-          WRITE (IFS1D, 106) XCGRID(LXDMP,LYDMP)+XOFFS,                   40.00
-     &                       YCGRID(LXDMP,LYDMP)+YOFFS                    40.00
- 210    CONTINUE                                                          40.00
+        IF (OPTG.NE.5) THEN                                               40.80
+           DO 210 IPTST = 1, NPTST                                        40.00
+              LXDMP = XYTST(2*IPTST-1)                                    40.00
+              LYDMP = XYTST(2*IPTST)                                      40.00
+              WRITE (IFS1D, 106) XCGRID(LXDMP,LYDMP)+XOFFS,               40.00
+     &                           YCGRID(LXDMP,LYDMP)+YOFFS                40.00
+ 210       CONTINUE                                                       40.00
+        ELSE                                                              40.80
+           DO IPTST = 1, NPTST                                            40.80
+              K = XYTST(IPTST)                                            40.80
+              WRITE (IFS1D, 106) xcugrd(K)+XOFFS, ycugrd(K)+YOFFS         40.80
+           ENDDO                                                          40.80
+        ENDIF                                                             40.80
         IF (ICUR.GT.0) THEN
           WRITE (IFS1D, 102) 'RFREQ', 'relative frequencies in Hz'        40.00
         ELSE
@@ -5890,12 +6470,19 @@
      &                       'locations in longitude, latitude'
         ENDIF
         WRITE (IFS2D, 103) NPTST, 'number of locations'
-        DO 310 IPTST = 1, NPTST                                           40.00
-          LXDMP = XYTST(2*IPTST-1)                                        40.00
-          LYDMP = XYTST(2*IPTST)                                          40.00
-          WRITE (IFS2D, 106) XCGRID(LXDMP,LYDMP)+XOFFS,                   40.00
-     &                       YCGRID(LXDMP,LYDMP)+YOFFS                    40.00
- 310    CONTINUE                                                          40.00
+        IF (OPTG.NE.5) THEN                                               40.80
+           DO 310 IPTST = 1, NPTST                                        40.00
+              LXDMP = XYTST(2*IPTST-1)                                    40.00
+              LYDMP = XYTST(2*IPTST)                                      40.00
+              WRITE (IFS2D, 106) XCGRID(LXDMP,LYDMP)+XOFFS,               40.00
+     &                           YCGRID(LXDMP,LYDMP)+YOFFS                40.00
+ 310       CONTINUE                                                       40.00
+        ELSE                                                              40.80
+           DO IPTST = 1, NPTST                                            40.80
+              K = XYTST(IPTST)                                            40.80
+              WRITE (IFS2D, 106) xcugrd(K)+XOFFS, ycugrd(K)+YOFFS         40.80
+           ENDDO                                                          40.80
+        ENDIF                                                             40.80
         IF (ICUR.GT.0) THEN
           WRITE (IFS2D, 102) 'RFREQ', 'relative frequencies in Hz'        40.00
         ELSE

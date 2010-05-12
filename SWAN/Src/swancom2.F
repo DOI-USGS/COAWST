@@ -12,7 +12,7 @@
 !
 !     SBOT    (Bottom friction)
 !     FRABRE  (Fraction of breaking waves)                                30.77
-!     SSURF   (Wave breaking: Battjes and Janssen (1978))
+!     SSURF   (Wave breaking: five formulations)
 !     SWCAP   (White capping: seven formulations)                         40.53
 !     BRKPAR  (wave breaking criterion according to Nelson (1987))
 !     CNTAIL  (contributions to the spectrum of the high frequency tail)
@@ -20,10 +20,10 @@
 !
 !****************************************************************
 !
-      SUBROUTINE SBOT (ABRBOT  ,DEP2    ,ECOS    ,ESIN    ,
+      SUBROUTINE SBOT (ABRBOT  ,DEP2    ,ECOS    ,ESIN    ,AC2     ,      41.04
      &                 IMATDA  ,KWAVE   ,SPCSIG  ,UBOT    ,UX2     ,      30.72
      &                 UY2     ,IDCMIN  ,IDCMAX  ,
-     &                 PLBTFR  ,ISSTOP  ,DISSC1  ,VARFR   , FRCOEF )      40.67
+     &                 PLBTFR  ,ISSTOP  ,DISSC1  ,VARFR   ,FRCOEF  )      40.67
 !
 !****************************************************************
 !
@@ -43,7 +43,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -68,6 +68,7 @@
 !     40.41: Marcel Zijlema
 !     40.61: Marcel Zijlema
 !     40.67: Nico Booij
+!     41.04: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -77,6 +78,7 @@
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.61, Sep. 06: introduce DISBOT variable for output purposes
 !     40.67, Jun. 07: more accurate computation fo dissipation terms
+!     41.04, Mar. 09: frequency-dependent JONSWAP formulation
 !
 !  2. Purpose
 !
@@ -197,8 +199,6 @@
 !     ---------
 !
 !     ABRBOT      Near bottom excursion amplitude
-!     DD          Spectral direction band width
-!     DS          Width of the frequency band
 !     FACB        an auxiliary factor contributing to bottom friction
 !     FW          Friction factor
 !     GRAV        Gravitational acceleration
@@ -211,6 +211,7 @@
 !     one and more dimensional arrays:
 !     ---------------------------------
 !
+!     AC2       2D    Action density
 !     DEP2      2D    Depth
 !     ESIN      1D    Sin per spectral direction (id)
 !     ECOS      1D    Cos per spectral direction (id)
@@ -256,13 +257,16 @@
 !
       INTEGER  ID     ,IS     ,ISSTOP
 !
-      REAL     XDUM   ,KD     ,SBOTEO ,CFBOT  ,FACB
-     &         CFW    ,FW     ,CURR   ,UC     ,ABRBOT ,
+      REAL     XDUM   ,KD     ,SBOTEO ,FACB  ,
+     &         CFW    ,FW     ,CURR   ,UC    ,ABRBOT,
      &         ADUM   ,CDUM   ,DDUM
+      REAL     CFBOT(MSC)
+      REAL     DSP    ,ETOT   ,EEX    ,EEY   ,EAD
 !
       LOGICAL  VARFR
 !
-      REAL     DEP2(MCGRD)               ,
+      REAL     AC2(MDC,MSC,MCGRD)        ,                                41.04
+     &         DEP2(MCGRD)               ,
      &         ECOS(MDC)                 ,
      &         ESIN(MDC)                 ,
      &         IMATDA(MDC,MSC)           ,
@@ -340,19 +344,51 @@
             FW = 0.3
           ENDIF
           CFBOT =  UBOT(KCGRD(1)) * FW / (SQRT(2.) * GRAV)
+        ELSE IF ( IBOT.EQ.4 ) THEN
+!
+!            *** Jonswap model with variable friction coefficient  ***
+!            *** as function of frequency-dependent directional    ***
+!                spreading (varies linearly between 0.038 - 0.067) ***
+!
+          DO IS = 1, MSC
+             ETOT = 0.
+             EEX  = 0.
+             EEY  = 0.
+             DO ID = 1, MDC
+                EAD  = SPCSIG(IS)*AC2(ID,IS,KCGRD(1))
+                ETOT = ETOT + EAD
+                EEX  = EEX  + EAD * ECOS(ID)
+                EEY  = EEY  + EAD * ESIN(ID)
+             ENDDO
+             IF ( ETOT.GT.0. ) THEN
+                XDUM = 1.-MIN(1.,SQRT(EEX*EEX+EEY*EEY)/ETOT)
+                DSP  = SQRT(2.*XDUM) *180./PI
+             ELSE
+                DSP  = 0.
+             ENDIF
+             IF ( DSP.LT.PBOT(8) ) THEN
+                CFBOT(IS) = PBOT(6)
+             ELSEIF ( DSP.GT.PBOT(9) ) THEN
+                CFBOT(IS) = PBOT(7)
+             ELSE
+                CFBOT(IS) = PBOT(6) + (PBOT(7)-PBOT(6))*(DSP-PBOT(8))/
+     &                                (PBOT(9)-PBOT(8))
+             ENDIF
+             CFBOT(IS) = CFBOT(IS) / GRAV**2
+          ENDDO
         ENDIF
 !
 !       *** test output ***
 !
         IF (TESTFL .AND. ITEST.GE.60) THEN
-          WRITE (PRTEST, 910) IBOT, KCGRD(1), DEP2(KCGRD(1)), CFBOT
+          WRITE (PRTEST, 910) IBOT, KCGRD(1), DEP2(KCGRD(1)), CFBOT(1)
  910      FORMAT (' SBOT :IBOT INDX DEP CFBOT:', 2I5, 2E12.4)
         END IF
 !
         DO 700 IS = 1, ISSTOP
-          KD      = KWAVE(IS,1) * DEP2(KCGRD(1))
+          KD = KWAVE(IS,1) * DEP2(KCGRD(1))
           IF ( KD .LT. 10. ) THEN
-            FACB = CFBOT * (SPCSIG(IS) / SINH(KD)) **2                    40.55 30.72
+            FACB = CFBOT(IS) * (SPCSIG(IS) / SINH(KD)) **2                41.04 40.55 30.72
 !
             DO 690 IDDUM = IDCMIN(IS) , IDCMAX(IS)
               ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
@@ -406,7 +442,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -576,8 +612,8 @@
 !
 !****************************************************************
 !
-      SUBROUTINE SSURF (ETOT    ,HM               ,                       30.81
-     &                  QB      ,SMEBRK  ,AC2     ,IMATRA  ,              30.81
+      SUBROUTINE SSURF (ETOT    ,HM      ,QB      ,SMEBRK  ,              30.81
+     &                  KMESPC  ,SPCSIG  ,AC2     ,IMATRA  ,              30.81
      &                  IMATDA  ,IDCMIN  ,IDCMAX  ,PLWBRK  ,              30.81
      &                  ISSTOP  ,DISSC0  ,DISSC1  )                       40.67 40.61 30.81 30.21
 !
@@ -601,7 +637,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -628,6 +664,9 @@
 !     40.41: Marcel Zijlema
 !     40.61: Marcel Zijlema
 !     40.67: Nico Booij
+!     41.03: Andre van der Westhuysen
+!     41.06: Gerbrant van Vledder
+!     41.09: Andre van der Westhuysen
 !
 !  1. Updates
 !
@@ -639,30 +678,38 @@
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.61, Sep. 06: introduce DISSRF variable for output purposes
 !     40.67, Jun. 07: more accurate computation of dissipation terms
+!     41.03, Feb. 09: extension to alternative surf breaking formula's
+!     41.06, Mar. 09: extension to frequency dependent surf breaking
+!     41.09, Oct. 09: extension to biphase breaker model (variable n)
 !
 !  2. Purpose
 !
-!     Computation of the source term due to wave breaking.
-!     White capping is not taken into account
+!     Computation of the source term due to wave breaking with one of the
+!     following formulation:
+!                 1) Battjes and Janssen (1978)
+!                 2) Thornton and Guza (1983)
+!                 3) biphase scaling of Van der Westhuysen (2009)
+!
+!     Note: white capping is not taken into account
 !
 !  3. Method
 !
-!     The source term for surf breaking is implemented following
+!     Basically, the source term for surf breaking is implemented following
 !     the approach of Battjes/Janssen (1978) for the energy dissipation:
 !
 !             Alpha      -     2                  -   SMEBRK
 !     Dtot =  ----  Qb * f * Hm              with f = ------
 !              4                                      2 * Pi
 !
-!     Now the source term is:
+!     Now, the source term is:
 !
 !                      SIGMA * AC2(ID,IS,IX,IY)
-!     Sbr =  - Dtot *  ------------------------  =
+!     Sbr =    Dtot *  ------------------------  =
 !                              Etot
 !
 !
 !              Alpha * SMEBRK * Qb * Hm * Hm    SIGMA * AC2(ID,IS,IX,IY)
-!         =  - ------------------------------ * -------------------------
+!         =    ------------------------------ * -------------------------
 !                       8 * Pi                            Etot
 !
 !
@@ -705,16 +752,16 @@
 !     SbrD =  -----  =  ---- * N + WS
 !             d N       d N
 !
-!     Since BB and SMEBRK * N are proportional, we have
+!     Since BB and N are proportional, we have
 !
 !     d Sbr     d WS                   SMEBRK  (d Qb/ d BB) *BB - Qb
-!     -----  =  ---- * BB + WS = Alpha ------  --------------------- * BB + WS =
+!     -----  =  ---- * BB + WS = Alpha ------  --------------------- * BB + WS
 !     d N       d BB                     Pi           sqr(BB)
 !
 !
-!           SMEBRK d Qb
-!     Alpha ------ ----
-!            Pi    d BB
+!                    SMEBRK d Qb
+!            = Alpha ------ ----
+!                     Pi    d BB
 !
 !     With:
 !
@@ -731,6 +778,57 @@
 !          = ------------                  ;
 !            BB (BB - Qb)
 !
+!     Hence,
+!
+!     d Sbr       1 - Qb
+!     ----- = WS  -------
+!     d N         BB - Qb
+!
+!
+!     Alternatively, the source term for surf breaking is implemented following
+!     the approach of Thornton and Guza (1983) for energy dissipation:
+!
+!               3  -
+!              B * f                3                          -   SMEBRK
+!     Dtot =  ------- * INT(0,inf){H * W(H) * p(H)}dH     with f = ------
+!              4 * d                                               2 * Pi
+!
+!                    3
+!               3 * B * SMEBRK             3
+!          =  ------------------ * W * Hrms
+!              32 * sqrt(Pi) * d
+!
+!                           3                             3
+!          with INT(0,inf){H * p(H)}dH = 3/4*sqrt(Pi)*Hrms
+!
+!
+!          after Thornton and Guza (1983), Eqs. (24),(25)
+!
+!     and
+!
+!     for the weighting function W (or fraction of breaking waves), two choices can be made.
+!     The first one is after Thornton and Guza (1983):
+!
+!           Hrms  n
+!     W = (------)
+!           Hmax
+!
+!     and the second one is based on the biphase scaling of Van der Westhuysen (2009):
+!
+!               Beta    n
+!     W =   (----------)
+!             Beta_ref
+!
+!     where
+!                                                                                      1/2
+!              Pi   Pi         0.2               g                   sqr(Tm01) * 4*Etot
+!     Beta = - -- + -- * tanh (---)   and   Ur = ----------------- * ---------------------
+!               2    2          Ur               8*sqrt(2)*sqr(Pi)         sqr(d)
+!
+!
+!     For implementation details, see the Scientific/Technical documentation.
+!
+!
 !  4. Argument variables
 !
 !     AC2     input :   Action density array
@@ -746,6 +844,7 @@
 !     IMATDA  output:   Coefficient of diagonal matrix (2D)
 !     IMATRA  output:   Coefficient of righthandside of matrix
 !     ISSTOP  input :   Maximum for counter IS
+!     KMESPC  input :   Mean average wavenumber according to the WAM-formulation
 !     PLWBRK  output:   array containing the surf breaking source term
 !                       for test-output
 !     QB      input :   Fraction of breaking waves
@@ -760,14 +859,16 @@
      &         IMATDA(MDC,MSC)      ,
      &         IMATRA(MDC,MSC)      ,
      &         PLWBRK(MDC,MSC,NPTST)                                      40.00
+      REAL     SPCSIG(MSC)
 !
-      REAL     ETOT,  HM,  QB, SMEBRK                                     30.81
+      REAL     ETOT,  HM,  QB, SMEBRK, KMESPC                             30.81
 !
 !  5. Parameter variables
 !
 !  6. Local variables
 !     BB      Rate between the total energy and the energy
 !             according to the maximum wave height HM
+!     BIPH    parameterized biphase of the spectrum
 !     DIS0    Dummy variable
 !     ID      Counter for directional steps
 !     IDDUM   Counter
@@ -776,13 +877,18 @@
 !     SURFA0  Coefficient for old source term in matrix equation
 !             (i.e. SURFA0 * Nold = right hand side of matrix equation)
 !     SURFA1  Coefficient for new source term in matrix equation
+!     WH      fraction of breaking waves
 !     WS      Wavebreaking source term coefficient = DTOT/ETOT
 !     SbrD    Derivative of source term for surf breaking (Sbr) to action density
 !
-      INTEGER ID,      IDDUM,   IENT,   IS
-!
-      DOUBLE PRECISION BB,      DIS0,    SbrD,
-     &                 SURFA0,  SURFA1,  WS
+      INTEGER          ID,       IDDUM,   IENT,   IS
+      REAL             PP,       FAC,     EPTOT,  ETOT0,
+     &                 BIPH,     DEPLOC,  URSLOC, WH, SMEAN,
+     &                 ECS(MDC), FMIN,    FMAX,   FRFAC(MSC)
+      DOUBLE PRECISION BB,       DIS0,    SbrD,
+     &                 SURFA0,   SURFA1,  WS  ,
+     &                 TEMP1 ,   TEMP2
+      REAL             SwanIntgratSpc
 !
 !
 !  7. Common blocks used
@@ -830,30 +936,118 @@
 !
 !     ALFA = PSURF(1)   <default = 1.0>
 !
-      BB = 8. * DBLE(ETOT) / ( DBLE(HM)**2 )                              30.82
-      SURFA0 = 0.
-      SURFA1 = 0.
-      IF (REAL(BB) .GT. 0. .AND.                                          30.82
-     &    REAL(ABS(BB - DBLE(QB))) .GT. 0.) THEN                          30.82
-        IF ( BB .LT. 1. ) THEN
-          WS  = ( DBLE(PSURF(1)) / DBLE(PI)) *                            30.82
-     &            DBLE(QB) * DBLE(SMEBRK) / BB                            30.82
-          SbrD = WS * (1. - DBLE(QB)) / (BB - DBLE(QB))                   30.82 40.00
-        ELSE
-          WS  = ( DBLE(PSURF(1)) / DBLE(PI)) * DBLE(SMEBRK)               30.82
-          SbrD = 0.
-        END IF
-        SURFA0 = SbrD
-        SURFA1 = WS + SbrD
-      ELSE
-        SURFA0 = 0.
-        SURFA1 = 0.
-      END IF
+      BB = 8D0 * DBLE(ETOT) / ( DBLE(HM)**2 )                             41.03 30.82
+      SURFA0 = 0D0
+      SURFA1 = 0D0
+!
+      IF ( ISURF.LE.3 ) THEN                                              41.03
+!
+!        --- Battjes and Janssen (1978)
+!
+         IF (REAL(BB) .GT. 0. .AND.                                       30.82
+     &       REAL(ABS(BB - DBLE(QB))) .GT. 0.) THEN                       30.82
+            IF ( BB .LT. 1D0 ) THEN                                       41.03
+               WS  = ( DBLE(PSURF(1)) / DBLE(PI)) *                       30.82
+     &                 DBLE(QB) * DBLE(SMEBRK) / BB                       30.82
+               SbrD = WS * (1D0 - DBLE(QB)) / (BB - DBLE(QB))             41.03 30.82 40.00
+            ELSE
+               WS  = ( DBLE(PSURF(1)) / DBLE(PI)) * DBLE(SMEBRK)          30.82
+               SbrD = 0D0
+            END IF
+            SURFA0 = SbrD
+            SURFA1 = WS + SbrD
+         ELSE
+            SURFA0 = 0D0
+            SURFA1 = 0D0
+         ENDIF
+!
+      ELSEIF ( ISURF.EQ.4 ) THEN                                          41.03
+!
+!        --- Thornton and Guza (1983)
+!
+         IF ( BB.GT.0D0 ) THEN
+            IF ( BB.LT.1D0 ) THEN
+               WS = 75D-2*DBLE(PSURF(2))*DBLE(PSURF(1))**3*DBLE(SMEBRK)*
+     &              BB**(0.5*(PSURF(4)+1))/DBLE(SQRT(PI))
+               SbrD = 5D-1*DBLE(3.+PSURF(4))*WS
+            ELSE
+               WS = 75D-2*DBLE(PSURF(2))*DBLE(PSURF(1))**3*DBLE(SMEBRK)/
+     &              DBLE(SQRT(PI))
+               SbrD = WS
+            ENDIF
+            SURFA0 = SbrD - WS
+            SURFA1 = SbrD
+         ELSE
+            SURFA0 = 0D0
+            SURFA1 = 0D0
+         ENDIF
+!
+      ELSEIF ( ISURF.EQ.5 ) THEN                                          41.03
+!
+!        --- biphase scaling of Van der Westhuysen (2009)
+!
+         DEPLOC = HM/PSURF(2)
+         URSLOC = (GRAV*2.*SQRT(ETOT))/(SQRT(2.)*SMEBRK**2*DEPLOC**2)
+         BIPH = 0.5*PI*(TANH(PTRIAD(4)/URSLOC)-1.)
+         IF ( BIPH.LT.0. ) THEN
+!
+            IF ( PSURF(6).GT.0. ) THEN                                    41.09
+               SMEAN    = SQRT(8.*ETOT)*KMESPC/(2.*PI)                    41.09
+               PSURF(4) = 4.-(4./PI)*ATAN(PSURF(6)*(SMEAN-0.0375))        41.09
+            ENDIF                                                         41.09
+!
+            WH = (BIPH/PSURF(5))**PSURF(4)
+            WH = MIN(1.,WH)
+!
+            IF ( BB.GT.0D0 ) THEN
+               IF ( BB.LT.1D0 ) THEN
+                  WS = 75D-2*DBLE(WH)*DBLE(PSURF(2))*DBLE(PSURF(1))**3*
+     &                 DBLE(SMEBRK)*SQRT(BB)/DBLE(SQRT(PI))
+                  SbrD = (15D-1-25D-2*DBLE(PSURF(4))*
+     &                                          (1D0+5D0/DBLE(BIPH)))*WS
+               ELSE
+                  WS = 75D-2*DBLE(PSURF(2))*DBLE(PSURF(1))**3*
+     &                 DBLE(SMEBRK)/DBLE(SQRT(PI))
+                  SbrD = WS
+               ENDIF
+               SURFA0 = SbrD - WS
+               SURFA1 = SbrD
+            ELSE
+               SURFA0 = 0D0
+               SURFA1 = 0D0
+            ENDIF
+         ELSE
+            SURFA0 = 0D0
+            SURFA1 = 0D0
+         ENDIF
+!
+      ENDIF
 !
 !     *** store the results for surf wave breaking  ***
 !     *** in the matrices IMATDA and IMATRA         ***
 !
+      FRFAC = 1.                                                          41.06
+      IF (IFRSRF.EQ.1) THEN                                               41.06
+         PP    = PSURF(11)
+         FMIN  = PI2*PSURF(12)
+         FMAX  = PI2*PSURF(13)
+         ECS   = 1.
+         ETOT0 = SwanIntgratSpc(0., FMIN, FMAX, SPCSIG, ECS, SPCSIG,
+     &                          ECS, 0., 0., AC2(1,1,KCGRD(1)), 1 )
+         EPTOT = SwanIntgratSpc(PP, FMIN, FMAX, SPCSIG, ECS, SPCSIG,
+     &                          ECS, 0., 0., AC2(1,1,KCGRD(1)), 1 )
+         FAC   = ETOT0/EPTOT
+         IF ( ETOT0.GT.1.E-8 ) THEN
+            DO IS = 1, ISSTOP
+               FRFAC(IS) = FAC*SPCSIG(IS)**PP
+            END DO
+         END IF
+      END IF
+      TEMP1 = SURFA0
+      TEMP2 = SURFA1
       DO 101 IS = 1, ISSTOP
+        SURFA0 = TEMP1*FRFAC(IS)                                          41.06
+        SURFA1 = TEMP2*FRFAC(IS)                                          41.06
         DO 100 IDDUM = IDCMIN(IS), IDCMAX(IS)
           ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
           IMATDA(ID,IS) = IMATDA(ID,IS) + REAL(SURFA1)                    30.82
@@ -885,6 +1079,7 @@
      &                   IDCMIN  ,IDCMAX  ,ISSTOP  ,                      40.02
      &                   ETOT    ,IMATDA  ,IMATRA  ,PLWCAP  ,             40.02
      &                   CGO     ,UFRIC   ,                               40.53
+     &                   CAS     ,                                        41.11
      &                   DEP2    ,DISSC1  ,DISSC0  )                      40.67 40.61 40.12
 !
 !****************************************************************
@@ -909,7 +1104,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -939,20 +1134,19 @@
 !     40.61: Marcel Zijlema
 !     40.63: Andre van der Westhuysen
 !     40.67: Nico Booij
+!     41.11: Andre van der Westhuysen
 !
 !  1. Updates
 !
 !     40.02, Jan. 00: New, based on the old SWCAP1-5 subroutines
 !     40.12, Nov. 00: Added WCAP to dissipation output (bug fix)
-!     40.30, Mar. 03: cumulative steepness method (taken from Fysica+)
-!     40.31, Feb. 04: some changes/improvements to CSM
-!     40.41, May. 04: Normalisation added to CSM
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.53: Aug. 04: white-capping based Alves and Banner (2003) method
 !     40.61, Sep. 06: introduce DISWCP variable for output purposes
 !     40.63, Apr. 07: a correction to Alves and Banner method
 !     40.67, Jun. 07: more accurate computation of source terms
 !                     DISSIP and DISIMP renamed DISSC1 and DISSC0 (as elsewhere)
+!     41.11, Oct. 09: Enhanced dissipation in counter current
 !
 !
 !  2. Purpose
@@ -970,8 +1164,6 @@
 !     C_wc1 = C_K  sig~ (k/k~): According to Komen (generalised)
 !     C_wc2 = C_BJ sig~ (k/k~): According to Battjes-Janssen (modified)
 !     C_wc3 = C_LH            : According to Longuet Higgins (1969)
-!     C_wc4 = C_CSM           : According to cumulative steepness
-!                               method (Ris et al. (1999) and Donelan (1999))
 !
 !     In these formulations C_K is defined as (Komen; 1994 p. 145):
 !
@@ -1008,42 +1200,6 @@
 !     and C3 can be varied
 !
 !
-!     Cumulative steepness method. Basic idea is that dissipation depends
-!     on the steepness of the wave spectrum at and below a particular
-!     frequency. Details can be found in "SWAN fysica plus" (2002),
-!     report H3937/A832, implemented by Delf Hydraulics and Alkyon by
-!     order of RIKZ/RWS as a part of the project HR-Ontwikkeling.
-!                                                                         40.41
-!     Recent modifications are described in:                              40.41
-!     Hurdle, D.P., and G.Ph. van Vledder, 2004: Improved spectral wave   40.41
-!     modelling of white-capping dissipation in swell sea systems. Proc.  40.41
-!     Offshore Mechanics, Arctic Engineering Conference, June 2004,       40.41
-!     Vancouver, Canada,  paper OMAE2004-51562.                           40.41
-!                                                                         40.41
-!     Default values: C_st = 4                                            40.41
-!                     m    = 2                                            40.41
-!                                                                         40.41
-!     C_CSM = A*C_st S(sig,th)                                            40.41
-!
-!     where
-!
-!     C_st is a tuneable coefficient and
-!
-!     S(sig,th) = integrals from 0 to sig and from 0 to 2pi of
-!
-!                 k^2 |cos(th-th')|^m E(sig,th) dsig dth'
-!
-!     where coefficient m controls the directional dependence in case
-!     of straining mechanism (if dominant then m = 2 else m > 10) and
-!     th is the actual direction where straining mechanism takes
-!     place.
-!                                                                         40.41
-!     A is a normalisation coefficient computed                           40.41
-!                                                                         40.41
-!              1     GAMMA(0.5*m+1.)                                      40.41
-!       A = -------- ----------------                                     40.41
-!           SQRT(PI) GAMMA(0.5*m+0.5)                                     40.41
-!
 !     In these equations the variables have the following meaning:
 !
 !     Hm   : Maximum wave height
@@ -1068,8 +1224,8 @@
 !     ACTOT : Total action density per gridpoint
 !     CGO   : Group velocity (excluding current!)
 !     DEP2  : Array containing water-depth
-!     DISSC0: Array containing implicit part of the dissipation
-!     DISSC1: Array containing dissipation
+!     DISSC0: Dissipation coefficient as explicit part (meant for output)
+!     DISSC1: Dissipation coefficient as implicit part (meant for output)
 !     ETOT  : Total wave energy density
 !     IDCMIN: Counter that indicates the minimum direction that is propagated in the sweep
 !     IDCMAX: Counter that indicates the maximum direction that is propagated in the sweep
@@ -1099,6 +1255,7 @@
       REAL, INTENT(INOUT) :: DISSC0(MDC,MSC,MDISP),DISSC1(MDC,MSC,MDISP)  40.67 40.12
       REAL, INTENT(IN)    :: UFRIC                                        40.53
       REAL, INTENT(IN)    :: CGO(MSC,MICMAX)                              40.53
+      REAL, INTENT(IN)    :: CAS(MDC,MSC,MICMAX)                          41.11
 !
 !  6. Local variables
 !
@@ -1107,13 +1264,6 @@
 !     C_BJ  : Whitecapping coefficient according to Battjes-Janssen
 !     C_K   : Whitecapping coefficient according to Komen
 !     C_LH  : Whitecapping coefficient according to Longuet Higgins
-!     CHARS : array to pass character info to MSGERR
-!     CUMSTP: Cumulative steepness spectrum
-!     DDIF  : Directional difference
-!     DELTA : Directional step (radians)
-!     DSIGMA: Step sizes, ratio with sigma
-!     DSTEEP: Contribution to cumulative steepness
-!     EBIN  : Total energy per bin
 !     EF    : Energy density spectrum in frequency domain
 !             (azimuth-integrated frequency spectrum)
 !     HM    : Maximum waveheight as used in the Battjes-Janssen expression
@@ -1124,8 +1274,6 @@
 !     IDDUM : Counter in directional space within sweep limits
 !     IENT  : Number of entries in this subroutine
 !     IS    : Counter in frequency space
-!     MSGSTR: string to pass message to call MSGERR
-!     MXWCP : maximum number of white-capping methods
 !     N1    : Exponent for the wavenumber term in the Komen expression
 !     N2    : Exponent for the steepness term in the Komen expression
 !     P     : Exponent of the relative saturation (B/Br)
@@ -1134,29 +1282,21 @@
 !     STP_OV: Overall steepness
 !     STP_PM: Overall steepness for a Pierson-Moskowitz spectrum
 !     WCAP  : Whitecapping source-term
+!     WCCUR : Whitecapping source term due to opposing current
 !     WCIMPL: Implicit part of the whitecapping source-term
-!     XFAC  : Factor between sigma & dsigma
 !
       INTEGER, SAVE     :: IENT = 0
-      INTEGER           :: ID, IDDUM, IS, ID1, ID2, IF, IL, MXWCP
+      INTEGER           :: ID, IDDUM, IS, ID1, ID2
 !
       REAL              :: A, C_BJ, HM, HRMS, N1, N2
       REAL              :: QB_WC, SIG0, STP_OV, STP_PM
-      REAL              :: DDIF, DELTA,                                   40.31 40.30
-     &                     DSTEEP, EBIN, XFAC                             40.30
-      REAL              :: CPOW, CTOT, GAMMA                              40.41
-      REAL              :: BINSIZE                                        40.41
 !
       REAL, ALLOCATABLE :: C_K(:), C_LH(:), WCAP(:), WCIMPL(:)
-      REAL, ALLOCATABLE :: CUMSTP(:,:), DSIGMA(:)                         40.30
-      REAL, ALLOCATABLE :: FCOS(:)                                        40.31
 
       REAL              :: B, P, BRKD, FBR                                40.63 40.53
       REAL              :: PWCAP1, PWCAP2, PWCAP9, PWCAP10, PWCAP11       40.63
       REAL              :: EF(MSC)                                        40.53
-!
-      CHARACTER*20 NUMSTR, CHARS                                          40.51
-      CHARACTER*80 MSGSTR                                                 40.51
+      REAL              :: WCCUR(MDC,MSC)                                 41.11
 !
 !     8. REMARKS
 !
@@ -1175,7 +1315,6 @@
 !     If IWCAP = 1, 2, or 5; Calculate C_K
 !     If IWCAP = 4 or 5; Calcualte C_BJ
 !     If IWCAP = 3; Calculate C_LH
-!     If IWCAP = 6; Calculate cumulative steepness spectrum
 !     IF IWCAP = 7; Calculate with Alves and Banner (2003)
 !     ------------------------------------------------------------
 !     For frequency dependent part of the spectrum
@@ -1191,19 +1330,6 @@
 !
       IF (LTRACE) CALL STRACE (IENT,'WCAP')
 !
-      MXWCP = 7
-      IF (IWCAP.GT.MXWCP) THEN                                            40.30
-!
-! Error message
-!
-         CHARS = NUMSTR(MXWCP+1,RNAN,'(I1)')
-         CALL TXPBLA(CHARS,IF,IL)
-         MSGSTR = 'Value for IWCAP should be less than '//
-     &            CHARS(IF:IL)
-         CALL MSGERR ( 4, MSGSTR )
-         RETURN
-      END IF
-!
 ! Initialisation
 !
       IF (ETOT.LE.0.) RETURN
@@ -1213,9 +1339,8 @@
       IF (EDRKTOT.LE.0.) RETURN
 !
       ALLOCATE (C_K(MSC), C_LH(MSC), WCAP(MSC), WCIMPL(MSC))
-      ALLOCATE (CUMSTP(0:MSC,MDC), DSIGMA(1:MSC))                         40.30
-      ALLOCATE (FCOS(1:MDC))                                              40.31
       WCIMPL(1:MSC) = 0.
+      WCCUR(1:MDC,1:MSC) = 0.                                             41.11
 !
 ! Calculate coefficients
 !
@@ -1276,45 +1401,6 @@
         END DO
       END IF
 !
-! In case of cumulative steepness method, calculate its spectrum          40.30
-!
-      IF ( IWCAP.EQ.6 ) THEN                                              40.30
-         XFAC      = (SPCSIG(3)-SPCSIG(1))/(2.*SPCSIG(2))                 40.30
-         DSIGMA(:) = XFAC*SPCSIG(:)                                       40.30
-         DELTA     = SPCDIR(2,1)-SPCDIR(1,1)                              40.30
-!
-!        --- precompute cos dependence                                    40.31
-!                                                                         40.31
-         DO ID1 = 1, MDC                                                  40.31
-           DDIF = REAL(ID1-1)*DELTA                                       40.31
-           FCOS(ID1) = (ABS(COS(DDIF)))**PWCAP(13)                        40.31
-         END DO                                                           40.31
-!
-!        --- compute normalisation coefficient                            40.41
-!
-         CPOW = PWCAP(13)                                                 40.41
-         IF (CPOW > 10) THEN                                              40.41
-           CTOT = SQRT(CPOW/(2.*PI))*(1.+0.25/CPOW)                       40.41
-         ELSE                                                             40.41
-           CTOT = 1./SQRT(PI)*GAMMA(0.5*CPOW+1.)/GAMMA(0.5*CPOW+0.5)      40.41
-         END IF                                                           40.41
-!
-         CUMSTP = 0.                                                      40.30
-         DO IS = 1,ISSTOP                                                 40.30
-            BINSIZE = SPCSIG(IS)*DELTA*DSIGMA(IS)                         40.41
-            DO ID1 = 1,MDC                                                40.30
-               CUMSTP(IS,ID1) = CUMSTP(IS-1,ID1)                          40.31
-               DO ID2 = 1,MDC                                             40.30
-                  EBIN= AC2(ID2,IS,KCGRD(1))*BINSIZE                      40.41 40.30
-                  DSTEEP = KWAVE(IS,1)**2*EBIN*FCOS(ABS(ID1-ID2)+1)       40.31 40.30
-                  CUMSTP(IS,ID1) = CUMSTP(IS,ID1) + DSTEEP                40.31 40.30
-               END DO                                                     40.30
-            END DO                                                        40.30
-         END DO                                                           40.30
-         CUMSTP = PWCAP(12)*CUMSTP                                        40.30
-         CUMSTP = CUMSTP*CTOT                                             40.41
-      END IF                                                              40.30
-!
 ! Calculate dissipation according to Alves & Banner (2003)                40.53
 !
       IF ( IWCAP.EQ.7 ) THEN                                              40.53
@@ -1369,11 +1455,20 @@
      &    (GRAV**(0.5)*KWAVE(IS,1)**(0.5)/SPCSIG(IS))**(PWCAP(10)/2-1) *  40.53
      &    GRAV**(0.5)*KWAVE(IS,1)**(0.5)                                  40.53
      &    + (1.-FBR) * C_K(IS) * SIGM_10 * (KWAVE(IS,1) / KM_WAM)         40.63
+!                                                                         41.11
+!  Calculate current-induced enhanced dissipation WCCUR(ID,IS)            41.11
+!                                                                         41.11
+          IF ( PWCAP(14).NE.0. ) THEN                                     41.11
+             DO ID = 1, MDC                                               41.11
+                WCCUR(ID,IS)=PWCAP(14)*MAX((CAS(ID,IS,1)/SPCSIG(IS)),0.)  41.11
+     &                       *(B/BRKD)**(P/2.)                            41.11
+             ENDDO                                                        41.11
+          ENDIF                                                           41.11
                                                                           40.53
         END DO                                                            40.53
       END IF                                                              40.53
 !
-      IF ( IWCAP.LT.6 ) THEN                                              40.51 40.30
+      IF ( IWCAP.LT.7 ) THEN                                              40.51 40.30
 !
 ! Calculate the whitecapping source term WCAP(IS)
 !
@@ -1406,37 +1501,19 @@
 !
 ! Fill the diagonal of the matrix and the PLWCAP-array
 !
-      IF ( IWCAP.NE.6 ) THEN                                              40.30
-
-        DO IS=1, ISSTOP
+      DO IS=1, ISSTOP
 !
-!         Only fill the values for the current sweep
+!        Only fill the values for the current sweep
 !
-          DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+         DO IDDUM = IDCMIN(IS), IDCMAX(IS)
             ID = MOD(IDDUM - 1 + MDC, MDC) + 1
             IMATDA(ID,IS)   = IMATDA(ID,IS)   + WCAP(IS)
             DISSC1(ID,IS,1) = DISSC1(ID,IS,1) + WCAP(IS)                  40.67 40.12
             IF (TESTFL) PLWCAP(ID,IS,IPTST) = -1.*(WCAP(IS)-WCIMPL(IS))
-          END DO
-        END DO
-
-      ELSE
-
-        DO IS=1, ISSTOP                                                   40.30
-!                                                                         40.30
-!         Only fill the values for the current sweep                      40.30
-!                                                                         40.30
-          DO IDDUM = IDCMIN(IS), IDCMAX(IS)                               40.30
-            ID = MOD(IDDUM - 1 + MDC, MDC) + 1                            40.30
-            IMATDA(ID,IS)   = IMATDA(ID,IS)   + CUMSTP(IS,ID)             40.30
-            DISSC1(ID,IS,1) = DISSC1(ID,IS,1) + CUMSTP(IS,ID)             40.67 40.30
-            IF (TESTFL) PLWCAP(ID,IS,IPTST) = -1.*CUMSTP(IS,ID)           40.30
-          END DO                                                          40.30
-        END DO                                                            40.30
-
-      END IF
+         END DO
+      END DO
 !
-! Add the implicit part to the right-hand side
+! Add the implicit part to the right-hand side, if appropriate
 !
       IF ((IWCAP.EQ.4).OR.
      &    (IWCAP.EQ.5)) THEN
@@ -1454,15 +1531,34 @@
         END DO
       END IF
 !
+! Add extra dissipation on opposing current, if appropriate               41.11
+!
+      IF ( IWCAP.EQ.7 .AND. PWCAP(14).NE.0. ) THEN
+!
+         DO IS=1, ISSTOP
+!
+!           Only fill the values for the current sweep
+!
+            DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+               ID = MOD(IDDUM - 1 + MDC, MDC) + 1
+               IMATDA(ID,IS)   = IMATDA(ID,IS)   + WCCUR(ID,IS)
+               DISSC1(ID,IS,1) = DISSC1(ID,IS,1) + WCCUR(ID,IS)
+               IF (TESTFL) PLWCAP(ID,IS,IPTST) = PLWCAP(ID,IS,IPTST) -
+     &                                           WCCUR(ID,IS)
+            END DO
+         END DO
+!
+      ENDIF
+!
       DEALLOCATE (C_K, C_LH, WCAP, WCIMPL)
-      DEALLOCATE (CUMSTP, DSIGMA, FCOS)                                   40.31 40.30
 !
       RETURN
       END SUBROUTINE SWCAP
 !****************************************************************
 !
       SUBROUTINE BRKPAR (BRCOEF  ,ECOS    ,ESIN    ,AC2     ,             40.22
-     &                   SPCSIG  ,DEP2    ,RDX     ,RDY     )             30.72
+     &                   SPCSIG  ,DEP2    ,RDX     ,RDY     ,             41.03 30.72
+     &                   KWAVE                              )             41.03
 !
 !****************************************************************
 !
@@ -1484,7 +1580,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1508,6 +1604,7 @@
 !     40.02: IJsbrand Haagsma
 !     40.22: Nico Booij
 !     40.41: Marcel Zijlema
+!     41.03: Andre van der Westhuysen
 !
 !  1. Updates
 !
@@ -1518,6 +1615,8 @@
 !     40.08, Mar. 03: Dimensioning of RDX, RDX changed to be consistent
 !                     with other subroutines
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     41.03, Feb. 09: extension with spatially varying breaker parameter
+!                     according to Ruessink et al (2003)
 !
 !  2. Purpose
 !
@@ -1542,8 +1641,17 @@
 !     slope of 0.01) is imposed on the model of Nelson.
 !
 !     For negative bottom slopes (not considered by Nelson) a value
-!     op 0.73 is imposed (which is the average value in Table 2 of
+!     of 0.73 is imposed (which is the average value in Table 2 of
 !     Battjes and Janssen (1978).
+!
+!
+!     Alternatively, the breaker index can be computed according to
+!     Ruessink et al. (2003):
+!
+!     Hm / d = 0.76 kp * d + 0.29
+!
+!     with kp the peak wave number
+!
 !
 !  4. Argument variables
 !
@@ -1557,6 +1665,7 @@
       REAL, INTENT(IN)  :: DEP2(MCGRD)         ! depths at grid points    40.22
 !     RDX, RDY:  coefficients to obtain spatial derivatives               40.22
       REAL, INTENT(IN)  :: RDX(10), RDY(10)                               40.08
+      REAL, INTENT(IN)  :: KWAVE(MSC,MICMAX)                              41.03
 !
 !        INTEGERS :
 !        ----------
@@ -1623,61 +1732,96 @@
 !************************************************************************
 !
       INTEGER :: ID    ,IS      ! counters                                40.22
+      INTEGER :: ISIGM                                                    41.03
 !
 !
       REAL  :: ETOTS ,EEX   ,EEY   ,
      &         EAD   ,SIGMA1,COSDIR,SINDIR,DDDX  ,                        40.22
      &         DDDY  ,DDDS  ,DETOT                                        40.22
+      REAL  :: EMAX, ETD, KP, KPD                                         41.03
 !
       INTEGER, SAVE :: IENT=0
       IF (LTRACE) CALL STRACE (IENT,'BRKPAR')
 !
-!     *** determine the average wave direction ***
+      IF ( ISURF.EQ.2 ) THEN                                              41.03
 !
-      EEX   = 0.
-      EEY   = 0.
-      ETOTS = 0.
-      DO ID = 1, MDC
-        EAD = 0.
+!        *** determine the average wave direction ***
+!
+         EEX   = 0.
+         EEY   = 0.
+         ETOTS = 0.
+         DO ID = 1, MDC
+            EAD = 0.
+            DO IS = 1, MSC
+               SIGMA1 = SPCSIG(IS)                                        30.72
+               DETOT  = SIGMA1**2 * AC2(ID,IS,KCGRD(1))
+               EAD    = EAD + DETOT
+            ENDDO
+            ETOTS = ETOTS + EAD
+            EEX   = EEX + EAD * ECOS(ID)
+            EEY   = EEY + EAD * ESIN(ID)
+         ENDDO
+!
+         IF ( ETOTS .GT. 0.) THEN
+            COSDIR = EEX / ETOTS
+            SINDIR = EEY / ETOTS
+         ELSE
+            COSDIR = 1.
+            SINDIR = 0.
+         ENDIF
+!
+!        *** Determine bottom slope in average wave propagation direction ***
+!
+         DDDX =  RDX(1) * (DEP2(KCGRD(1)) - DEP2(KCGRD(2)))
+     &         + RDX(2) * (DEP2(KCGRD(1)) - DEP2(KCGRD(3)))
+         DDDY =  RDY(1) * (DEP2(KCGRD(1)) - DEP2(KCGRD(2)))
+     &         + RDY(2) * (DEP2(KCGRD(1)) - DEP2(KCGRD(3)))
+!
+         DDDS = -1. * ( DDDX * COSDIR + DDDY * SINDIR )
+!
+!        *** calculate breaking coefficient according to Nelson (1987) ***
+!
+         IF ( DDDS .GE. 0. ) THEN
+            DDDS   = MAX ( 1.E-6 , DDDS)
+            BRCOEF = PSURF(4) + PSURF(7) * EXP ( -PSURF(8) / DDDS )       40.22
+            BRCOEF = MIN ( PSURF(5) , BRCOEF )                            40.22
+         ELSE
+            BRCOEF = PSURF(6)                                             40.22
+         ENDIF
+!
+      ELSE IF ( ISURF.EQ.3 ) THEN                                         41.03
+!
+!       calculate breaker index according to Ruessink et al (2003)
+!
+        EMAX = 0.
+        ISIGM = -1
         DO IS = 1, MSC
-          SIGMA1 = SPCSIG(IS)                                             30.72
-          DETOT  = SIGMA1**2 * AC2(ID,IS,KCGRD(1))
-          EAD    = EAD + DETOT
+           ETD = 0.
+           DO ID = 1, MDC
+              ETD = ETD + SPCSIG(IS)*AC2(ID,IS,KCGRD(1))*DDIR
+           ENDDO
+           IF (ETD.GT.EMAX) THEN
+              EMAX  = ETD
+              ISIGM = IS
+           ENDIF
         ENDDO
-        ETOTS = ETOTS + EAD
-        EEX   = EEX + EAD * ECOS(ID)
-        EEY   = EEY + EAD * ESIN(ID)
-      ENDDO
+        IF (ISIGM.GT.0) THEN
+           KP = KWAVE(ISIGM,1)
+        ELSE
+           KP = 0.
+        ENDIF
 !
-      IF ( ETOTS .GT. 0.) THEN
-        COSDIR = EEX / ETOTS
-        SINDIR = EEY / ETOTS
-      ELSE
-        COSDIR = 1.
-        SINDIR = 0.
+        KPD = KP*DEP2(KCGRD(1))
+!
+        IF ( KPD.LT.0.) THEN
+           BRCOEF = 0.73
+        ELSE
+           BRCOEF = PSURF(4)*KPD + PSURF(5)
+           BRCOEF = MIN( 1.2, BRCOEF)
+           BRCOEF = MAX( 0.3, BRCOEF)
+        ENDIF
+!
       ENDIF
-!
-!     *** Determine bottom slope in average wave propagation direction ***
-!
-      DDDX =  RDX(1) * (DEP2(KCGRD(1)) - DEP2(KCGRD(2)))
-     &      + RDX(2) * (DEP2(KCGRD(1)) - DEP2(KCGRD(3)))
-      DDDY =  RDY(1) * (DEP2(KCGRD(1)) - DEP2(KCGRD(2)))
-     &      + RDY(2) * (DEP2(KCGRD(1)) - DEP2(KCGRD(3)))
-!
-      DDDS = -1. * ( DDDX * COSDIR + DDDY * SINDIR )
-!
-!     *** calculate breaking coefficient according to Nelson (1987) ***
-!
-      IF ( DDDS .GE. 0. ) THEN
-        DDDS   = MAX ( 1.E-6 , DDDS)
-        BRCOEF = PSURF(4) + PSURF(7) * EXP ( -PSURF(8) / DDDS )           40.22
-        BRCOEF = MIN ( PSURF(5) , BRCOEF )                                40.22
-      ELSE
-        BRCOEF = PSURF(6)                                                 40.22
-      ENDIF
-!
-!      PSURF(2) = BRKVAR                              deleted             40.22
-!      PSURF(2) is no longer used to transmit br. coefficient             40.22
 !
 !     *** test output ***
 !
@@ -1721,7 +1865,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1814,7 +1958,7 @@
       REAL        WCAP  ,BTFR  ,WBRK  ,NL4   ,FAC   ,SIGACT,
      &            NL4S  ,NL4D  ,TRIA  ,ENERGY,ENRSIG
 !
-      INTEGER     XYTST(2*NPTST),KGRPNT(MXC,MYC)                          30.21
+      INTEGER     XYTST(*),KGRPNT(MXC,MYC)                                40.80 30.21
 !
 !
       REAL        AC2(MDC,MSC,MCGRD)          ,
@@ -1836,9 +1980,13 @@
 !     *** compute the 1D spectra ***
 !
       DO 300 IPTST = 1, NPTST
-        LXDMP = XYTST(2*IPTST-1)
-        LYDMP = XYTST(2*IPTST)
-        INDX  = KGRPNT(LXDMP,LYDMP)
+        IF (OPTG.NE.5) THEN                                               40.80
+           LXDMP = XYTST(2*IPTST-1)
+           LYDMP = XYTST(2*IPTST)
+           INDX  = KGRPNT(LXDMP,LYDMP)
+        ELSE                                                              40.80
+           INDX = XYTST(IPTST)                                            40.80
+        ENDIF                                                             40.80
         IF (IFPAR.GT.0) THEN
 !
 !         *** for the parameter output we first integrate ***
@@ -1874,14 +2022,13 @@
 !
 !             *** nonlinear interactions ***
 !
-              TRIA = TRIA + ABS(PLTRI (ID,IS,IPTST) * SPCSIG(IS))         40.00
-!
+              TRIA = TRIA + ABS(PLTRI (ID,IS,IPTST)) * SPCSIG(IS)**2      40.85 40.00
 !
               IF ( IQUAD .EQ. 1) THEN
                 NL4  = NL4  + ABS(PLNL4D(ID,IS,IPTST) * SIG2AC +
-     &                            PLNL4S(ID,IS,IPTST) * SPCSIG(IS))       40.00
+     &                            PLNL4S(ID,IS,IPTST) * SPCSIG(IS)**2)    40.85 40.00
               ELSE
-                NL4  = NL4  + ABS(PLNL4S(ID,IS,IPTST) * SPCSIG(IS))       40.00
+                NL4  = NL4  + ABS(PLNL4S(ID,IS,IPTST)) * SPCSIG(IS)**2    40.85 40.00
               END IF
 !
   50        CONTINUE

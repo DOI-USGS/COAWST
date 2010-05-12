@@ -12,6 +12,13 @@
 !     M_PARALL           information for parallelisation with MPI
 !     M_DIFFR            information for diffraction
 !
+!     For COAWST:
+!     M_COUPLING         information for grid numbers
+!     M_CVMESH           information for the cvmesh routine
+!     M_PARALL2          needed to have allocation of main vars.
+!     M_SREFINED         used for refined grids
+!
+
       MODULE M_WCAP
 !
 !
@@ -26,7 +33,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -147,7 +154,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -200,13 +207,15 @@
 !
 !  7. Local variables
 
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INTEGER, PARAMETER :: MAX_OUTP_REQ = 25000 ! max. number of output requests
 #else
       INTEGER, PARAMETER :: MAX_OUTP_REQ = 250 ! max. number of output requests
 #endif
 
       CHARACTER (LEN=1)  :: OUT_COMMENT = '%' ! comment sign for heading lines
+
+      LOGICAL            :: LCOMPGRD
 
       ! formats for output:
       CHARACTER (LEN=40) :: FLT_BLOCK = '(6E12.4)'       ! floating point block
@@ -220,7 +229,7 @@
       INTEGER :: DEC_BLOCK =  4       ! number of decimals for fixed-point block
       INTEGER :: DEC_SPEC  =  4       ! number of decimals for spectral output
 
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
 !     longer filenames for output requests
       CHARACTER (LEN=LENFNM), POINTER :: OUTP_FILES(:)
       CHARACTER (LEN=LENFNM), POINTER :: OUTP_FILES_G(:,:)
@@ -231,7 +240,7 @@
       ! filenames for output; index is output request sequence number
 #endif
 
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
 
       INTEGER, POINTER, SAVE :: NREOQ != 0         ! actual number of requests saved
       INTEGER, POINTER, SAVE :: NREOQ_G(:)
@@ -349,7 +358,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -457,12 +466,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -561,11 +570,11 @@
 
       TYPE(BSDAT), SAVE, TARGET :: FBS
 
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
 !     LOGICAL, POINTER, SAVE :: LBGP     ! = .FALSE.
       LOGICAL, POINTER, SAVE :: LBGP_G(:)
 #endif
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
 !
 !    This is called a linked list.
 !
@@ -623,12 +632,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -735,12 +744,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -823,7 +832,7 @@
 !     XYTST : Grid point indices of test points
 !     YCGRID: Coordinates of computational grid in y-direction
 
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       TYPE T_M_GENARR_MOD
         INTEGER, POINTER :: KGRPNT_G(:,:)
         INTEGER, POINTER :: KGRBND_G(:)
@@ -833,14 +842,14 @@
         REAL, POINTER :: YCGRID_G(:,:)
         REAL, POINTER :: SPCSIG_G(:)
         REAL, POINTER :: SPCDIR_G(:,:)
-        REAL, POINTER :: DEPTH_G(:,:)
-        REAL, POINTER :: FRIC_G(:,:)
-        REAL, POINTER :: UXB_G(:,:)
-        REAL, POINTER :: UYB_G(:,:)
-        REAL, POINTER :: WXI_G(:,:)
-        REAL, POINTER :: WYI_G(:,:)
-        REAL, POINTER :: WLEVL_G(:,:)
-        REAL, POINTER :: ASTDF_G(:,:)
+        REAL, POINTER :: DEPTH_G(:)
+        REAL, POINTER :: FRIC_G(:)
+        REAL, POINTER :: UXB_G(:)
+        REAL, POINTER :: UYB_G(:)
+        REAL, POINTER :: WXI_G(:)
+        REAL, POINTER :: WYI_G(:)
+        REAL, POINTER :: WLEVL_G(:)
+        REAL, POINTER :: ASTDF_G(:)
       END TYPE T_M_GENARR_MOD
       TYPE (T_M_GENARR_MOD), ALLOCATABLE :: M_GENARR_MOD(:)
 
@@ -852,24 +861,24 @@
       REAL   , POINTER :: YCGRID(:,:)
       REAL   , POINTER :: SPCSIG(:)
       REAL   , POINTER :: SPCDIR(:,:)
-      REAL   , POINTER :: DEPTH(:,:)
-      REAL   , POINTER :: FRIC(:,:)
-      REAL   , POINTER :: UXB(:,:)
-      REAL   , POINTER :: UYB(:,:)
-      REAL   , POINTER :: WXI(:,:)
-      REAL   , POINTER :: WYI(:,:)
-      REAL   , POINTER :: WLEVL(:,:)
-      REAL   , POINTER :: ASTDF(:,:)
+      REAL   , POINTER :: DEPTH(:)
+      REAL   , POINTER :: FRIC(:)
+      REAL   , POINTER :: UXB(:)
+      REAL   , POINTER :: UYB(:)
+      REAL   , POINTER :: WXI(:)
+      REAL   , POINTER :: WYI(:)
+      REAL   , POINTER :: WLEVL(:)
+      REAL   , POINTER :: ASTDF(:)
 #else
       INTEGER, SAVE, ALLOCATABLE :: KGRPNT(:,:), KGRBND(:)
       INTEGER, SAVE, ALLOCATABLE :: XYTST(:)
       REAL   , SAVE, ALLOCATABLE :: AC2(:,:,:)
       REAL   , SAVE, ALLOCATABLE :: XCGRID(:,:), YCGRID(:,:)
       REAL   , SAVE, ALLOCATABLE :: SPCSIG(:)  , SPCDIR(:,:)
-      REAL   , SAVE, ALLOCATABLE :: DEPTH(:,:) , FRIC(:,:)
-      REAL   , SAVE, ALLOCATABLE :: UXB(:,:)   , UYB(:,:)
-      REAL   , SAVE, ALLOCATABLE :: WXI(:,:)   , WYI(:,:)
-      REAL   , SAVE, ALLOCATABLE :: WLEVL(:,:) , ASTDF(:,:)
+      REAL   , SAVE, ALLOCATABLE :: DEPTH(:) , FRIC(:)
+      REAL   , SAVE, ALLOCATABLE :: UXB(:)   , UYB(:)
+      REAL   , SAVE, ALLOCATABLE :: WXI(:)   , WYI(:)
+      REAL   , SAVE, ALLOCATABLE :: WLEVL(:) , ASTDF(:)
 #endif
 
 !  8. Subroutines and functions used
@@ -905,12 +914,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1038,7 +1047,7 @@
 !     YGRDGL  : y-coordinate of computational grid in global domain
 !
 
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
 ! Mine
       INTEGER, SAVE :: WAV_COMM_WORLD
       INTEGER :: Numspecl
@@ -1070,7 +1079,6 @@
         INTEGER, POINTER :: IBLKAD_G(:)
         INTEGER, POINTER :: KGRPGL_G(:,:)
         INTEGER, POINTER :: KGRBGL_G(:)
-        INTEGER, POINTER :: BGRIDPL_G(:)
         REAL, POINTER :: XGRDGL_G(:,:)
         REAL, POINTER :: YGRDGL_G(:,:)
       END TYPE T_PARALL_MOD
@@ -1078,7 +1086,6 @@
       INTEGER, POINTER :: IBLKAD(:)
       INTEGER, POINTER :: KGRPGL(:,:)
       INTEGER, POINTER :: KGRBGL(:)
-      INTEGER, POINTER :: BGRIDPL(:)
       REAL, POINTER :: XGRDGL(:,:)
       REAL, POINTER :: YGRDGL(:,:)
 
@@ -1141,15 +1148,34 @@
 !
 ! 13. Source text
 !
-
       END MODULE M_PARALL
 
-#ifdef MODEL_COUPLING
-
+#ifdef SWAN_MODEL
 
       MODULE M_COUPLING
         INTEGER, SAVE :: Gridnum
       END MODULE M_COUPLING
+
+# ifdef REFINED_GRID
+      MODULE M_SREFINED
+      TYPE T_REFINED_MOD
+        REAL, POINTER :: BOUNDHINDX_G(:)
+        REAL, POINTER :: BOUNDHINDY_G(:)
+        INTEGER, POINTER :: BOUNDHINDPF_G(:)
+        INTEGER, POINTER :: BOUNDHINDPR_G(:)
+        INTEGER, POINTER :: BOUNDHINDIX_G(:)
+        INTEGER, POINTER :: BOUNDHINDIY_G(:)
+      END TYPE T_REFINED_MOD
+      TYPE (T_REFINED_MOD), ALLOCATABLE :: REFINED_MOD(:)
+
+      REAL, POINTER :: BOUNDHINDX(:)
+      REAL, POINTER :: BOUNDHINDY(:)
+      INTEGER, POINTER :: BOUNDHINDPF(:)
+      INTEGER, POINTER :: BOUNDHINDPR(:)
+      INTEGER, POINTER :: BOUNDHINDIX(:)
+      INTEGER, POINTER :: BOUNDHINDIY(:)
+      END MODULE M_SREFINED
+# endif
 
       MODULE M_CVMESH
         REAL, SAVE, POINTER :: XCSAVE_G(:)
@@ -1220,12 +1246,12 @@
 !  6. Parameter variables
 !
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
 !     INTEGER, SAVE :: Numgrids
 
       TYPE T_PARALL2_MOD
         REAL, POINTER :: BSPECS_G(:,:,:,:)
-        INTEGER, POINTER :: CROSS_G(:,:)
+        INTEGER, POINTER :: CROSS_G(:)
         INTEGER, POINTER :: BGRIDP_G(:)
         REAL, POINTER :: AC1_G(:,:,:)
         REAL, POINTER :: COMPDA_G(:,:)
@@ -1237,7 +1263,7 @@
       TYPE (T_PARALL2_MOD), ALLOCATABLE :: PARALL2_MOD(:)
 
       REAL, POINTER :: BSPECS(:,:,:,:)
-      INTEGER, POINTER :: CROSS(:,:)
+      INTEGER, POINTER :: CROSS(:)
       INTEGER, POINTER :: BGRIDP(:)
       REAL, POINTER :: AC1(:,:,:)
       REAL, POINTER :: COMPDA(:,:)
@@ -1247,7 +1273,7 @@
       REAL, POINTER :: AC2_child(:)
 #else
       REAL, SAVE,    ALLOCATABLE :: BSPECS(:,:,:,:)
-      INTEGER, SAVE, ALLOCATABLE :: CROSS(:,:)
+      INTEGER, SAVE, ALLOCATABLE :: CROSS(:)
       INTEGER, SAVE, ALLOCATABLE :: BGRIDP(:)
       REAL, SAVE,    ALLOCATABLE :: AC1(:,:,:)
       REAL, SAVE,    ALLOCATABLE :: COMPDA(:,:)
@@ -1272,7 +1298,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1357,5 +1383,5 @@
       END MODULE M_DIFFR
 
       MODULE M_MPI
-        INCLUDE 'mpif.h'
+      INCLUDE 'mpif.h'
       END MODULE M_MPI

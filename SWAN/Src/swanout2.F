@@ -37,7 +37,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -163,19 +163,19 @@
       ENDIF
       IF (ITEST.GE.90) WRITE (PRTEST, 21)  RTYPE,NREF, OQI(3)             40.31 40.03
   21  FORMAT (' Test SWBLOK: RTYPE NREF NVAR ',A4,2(1X,I6))
+      FILENM = OUTP_FILES(OQI(2))                                         40.31 40.13
+      MATLAB = INDEX( FILENM, '.MAT' ).NE.0 .OR.                          40.41 40.30
+     &         INDEX (FILENM, '.mat' ).NE.0                               40.41 40.30
       IF (NREF.EQ.0) THEN
-        FILENM = OUTP_FILES(OQI(2))                                       40.31 40.13
         IOSTAT = -1                                                       20.75
         CALL FOR (NREF, FILENM, 'UF', IOSTAT)
         IF (STPNOW()) RETURN                                              34.01
         OQI(1) = NREF                                                     40.31 30.00
         OUTP_FILES(OQI(2)) = FILENM                                       40.41
-        MATLAB = INDEX( FILENM, '.MAT' ).NE.0 .OR.                        40.41 40.30
-     &           INDEX (FILENM, '.mat' ).NE.0                             40.41 40.30
         IF (MATLAB) THEN                                                  40.30
            CLOSE(NREF)                                                    40.30
            OPEN(UNIT=NREF, FILE=FILENM, FORM='UNFORMATTED',               40.30
-     &          ACCESS='DIRECT', RECL=1)                                  40.30
+     &          ACCESS='DIRECT', RECL=4)                                  41.08 40.30
            IREC(IRQ) = 1                                                  40.51
         END IF
       ENDIF
@@ -231,7 +231,7 @@
         IF (OVSVTY(IVTYPE) .LT. 3) THEN
 !                      scalar quantities
           IF (MATLAB) THEN                                                40.30
-             IF (IL.EQ.1) THEN                                            40.41
+             IF (IL.EQ.1 .OR. IVTYPE.LT.3) THEN                           40.94 40.41
                 NAMVAR = OVSNAM(IVTYPE)                                   40.41
              ELSE                                                         40.41
                 NAMVAR = OVSNAM(IVTYPE)(1:LEN_TRIM(OVSNAM(IVTYPE)))//     40.41
@@ -310,7 +310,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -531,12 +531,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -684,7 +684,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -782,7 +782,7 @@
 !
       INTEGER MXOUTL
 !
-      PARAMETER (MXOUTL=360)
+      PARAMETER (MXOUTL=720)
 !
 !  6. Local variables
 !
@@ -838,8 +838,8 @@
 !               Else if Rtype = 'TABD'
 !                    Then Format = '(E12.4)'
 !                         make lfield = 12
-!                    Else Format = '(F11.X)'
-!                         make lfield = 11
+!                    Else Format = '(F13.X)'
+!                         make lfield = 13
 !                         determine number of decimals and write into
 !                         Format
 !                    ---------------------------------------------------
@@ -892,15 +892,15 @@
               OUTLIN(1:9) = OUT_COMMENT // '        '                     40.13
               LINKAR = 9
             ELSE
-              OUTLIN(1:1) = OUT_COMMENT                                   40.13
-              LINKAR = 2                                                  40.13
+              OUTLIN(1:3) = OUT_COMMENT                                   40.13
+              LINKAR = 4                                                  40.13
             ENDIF
             DO  JVAR = 1, NVAR
               IVTYPE = IVTYP(JVAR)                                        40.31
               IF (IVTYPE.EQ.40) THEN
                 LFIELD = 18
               ELSE
-                LFIELD = 11
+                LFIELD = 13
               ENDIF
               IF (OVSVTY(IVTYPE).LE.2) THEN
                 OUTLIN(LINKAR:LINKAR+LFIELD) =
@@ -921,15 +921,15 @@
               OUTLIN(1:9) = OUT_COMMENT // '        '                     40.13
               LINKAR = 9
             ELSE
-              OUTLIN(1:1) = OUT_COMMENT                                   40.13
-              LINKAR = 2                                                  40.13
+              OUTLIN(1:3) = OUT_COMMENT                                   40.13
+              LINKAR = 4                                                  40.13
             ENDIF
             DO  JVAR = 1, NVAR
               IVTYPE = IVTYP(JVAR)                                        40.31
               IF (IVTYPE.EQ.40) THEN
                 LFIELD = 18
               ELSE
-                LFIELD = 11
+                LFIELD = 13
               ENDIF
               DO ISTR = LEN(OVUNIT(IVTYPE)), 1, -1
                 IF (OVUNIT(IVTYPE)(ISTR:ISTR) .NE. ' ') THEN
@@ -1033,8 +1033,8 @@
               FSTR = FLT_TABLE                                            40.13
               LFIELD = FLD_TABLE                                          40.13
             ELSE
-              FSTR = '(F11.X)'
-              LFIELD = 11
+              FSTR = '(F13.X)'
+              LFIELD = 13
 !             NUMDEC is number of decimals in the table for each output quantity
               NUMDEC = MAX (0, 6-NINT(LOG10(ABS(OVHEXP(IVTYPE)))))        40.03
               IF (NUMDEC.GT.9) NUMDEC = 9                                 40.00
@@ -1077,7 +1077,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1172,20 +1172,15 @@
       END
 !***********************************************************************
 !                                                                      *
-#ifdef REFINED_GRID
       SUBROUTINE SWSPEC (RTYPE, OQI, MIP, VOQR, VOQ, AC2, ACLOC,          40.31 20.28
-     &                   SPCSIG, SPCDIR, DEP2, KGRPNT, IONOD, 
-     &                   spcount, AC2_parent, ng)
-#else
-      SUBROUTINE SWSPEC (RTYPE, OQI, MIP, VOQR, VOQ, AC2, ACLOC,          40.31 20.28
-     &                   SPCSIG, SPCDIR, DEP2, KGRPNT, IONOD)             40.31 30.72
-#endif
+     &                   SPCSIG, SPCDIR, DEP2, KGRPNT, CROSS, IONOD)      40.90 40.31 30.72
 !                                                                      *
 !***********************************************************************
 !
       USE OCPCOMM2                                                        40.41
       USE OCPCOMM4                                                        40.41
       USE SWCOMM1                                                         40.41
+      USE SWCOMM2                                                         40.80
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
       USE OUTP_DATA                                                       40.13
@@ -1203,7 +1198,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1231,6 +1226,7 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.51: Agnieszka Herman
+!     40.90: Nico Booij
 !
 !  1. Updates
 !
@@ -1252,6 +1248,8 @@
 !     40.31, Dec. 03: removing POOL construction
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.51, Feb. 05: further optimization
+!     40.90, June 08: argument CROSS added to enable subroutine SWCMSP to
+!                     take into account obstacles
 !
 !  2. Purpose
 !
@@ -1275,10 +1273,8 @@
 !
       REAL    SPCDIR(MDC,6)                                               30.82
       REAL    SPCSIG(MSC)                                                 30.72
-#ifdef REFINED_GRID
-      INTEGER, INTENT(IN) :: spcount, ng
-      REAL, INTENT(INOUT) :: AC2_parent(MSC*MDC*Numspec(ng))
-#endif
+      LOGICAL, INTENT(IN) :: CROSS(1:4,1:MIP) ! true if obstacle is       40.90
+      ! between output point and computational grid point                 40.90
 !
 !     RTYPE   ch*4   input    type of output request: 'SPEC' for 2-D spectral
 !                             output, 'SPE1' for 1-D freq. spectrum
@@ -1319,7 +1315,7 @@
 !
 ! 13. Source text
 !
-      CHARACTER (LEN=*) :: RTYPE                                              30.81 40.13
+      CHARACTER (LEN=*) :: RTYPE                                          40.13 30.81
       CHARACTER (LEN=8) :: CRFORM = '(2F14.4)'                            40.13
       INTEGER       :: VOQR(*), OQI(4), OTYPE, KGRPNT(MXC,MYC)            40.31 40.13
       INTEGER       :: IONOD(*)                                           40.31
@@ -1466,8 +1462,13 @@
       ENDIF
 !
       DO 290 IP = 1, MIP
-        XC  = VOQ(IP,VOQR(24))
-        YC  = VOQ(IP,VOQR(25))
+        IF (OPTG.NE.5) THEN                                               40.80
+           XC = VOQ(IP,VOQR(24))
+           YC = VOQ(IP,VOQR(25))
+        ELSE                                                              40.80
+           IF (.NOT.EQREAL(VOQ(IP,1),OVEXCV(1))) XC = VOQ(IP,1) - XOFFS   40.80
+           IF (.NOT.EQREAL(VOQ(IP,2),OVEXCV(2))) YC = VOQ(IP,2) - YOFFS   40.80
+        ENDIF                                                             40.80
         DEP = VOQ(IP,VOQR(4))
         IF (DEP.LE.0. .OR. EQREAL(DEP,OVEXCV(4))) THEN
           IF ( .NOT.PARLL .OR. IONOD(IP).EQ.INODE )                       40.51
@@ -1484,20 +1485,11 @@
           UY = 0.
         ENDIF
 !
-#ifdef REFINED_GRID
         CALL SWCMSP (OTYPE       ,XC         ,YC          ,               40.00
      &               AC2         ,ACLOC      ,SPCSIG      ,
      &               DEP         ,DEP2       ,UX          ,               40.00
-     &               UY          ,SPCDIR(1,2) ,SPCDIR(1,3),
-     &               OFAC        ,KGRPNT     ,IERR        ,
-     &               spcount     ,AC2_parent ,ng)
-#else
-        CALL SWCMSP (OTYPE       ,XC         ,YC          ,               40.00
-     &               AC2         ,ACLOC      ,SPCSIG      ,
-     &               DEP         ,DEP2       ,UX          ,               40.00
-     &               UY          ,SPCDIR(1,2) ,SPCDIR(1,3),
-     &               OFAC        ,KGRPNT     ,IERR        )               40.00
-#endif
+     &               UY          ,SPCDIR(1,2),SPCDIR(1,3) ,
+     &               OFAC        ,KGRPNT     ,CROSS(1,IP) ,IERR        )  40.90 40.00
 !
         IF (IERR.GT.0) THEN
           WRITE (NREF, 220) 'NODATA'
@@ -1523,31 +1515,19 @@
 ! * end of subroutine SWSPEC *
       END
 !***********************************************************************
-!                                                                      *
-#ifdef REFINED_GRID
       SUBROUTINE SWCMSP (OTYPE     ,XC        ,YC        ,                40.00
      &                   AC2       ,ACLOC     ,SPCSIG    ,
      &                   DEP       ,DEP2      ,UX        ,                40.00
      &                   UY        ,ECOS      ,ESIN      ,
-     &                   OFAC      ,KGRPNT    ,IERR      ,
-     &                   spcount   ,AC2_parent, ng)
-#else
-      SUBROUTINE SWCMSP (OTYPE     ,XC        ,YC        ,                40.00
-     &                   AC2       ,ACLOC     ,SPCSIG    ,
-     &                   DEP       ,DEP2      ,UX        ,                40.00
-     &                   UY        ,ECOS      ,ESIN      ,
-     &                   OFAC      ,KGRPNT    ,IERR      )                30.21
-#endif
+     &                   OFAC      ,KGRPNT    ,CROSS     ,IERR         )  40.90 30.21
 !                                                                      *
 !***********************************************************************
 !
       USE OCPCOMM4                                                        40.41
       USE SWCOMM1                                                         40.41
+      USE SWCOMM2                                                         40.80
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
-#ifdef MODEL_COUPLING
-      USE M_PARALL                                                        40.31
-#endif
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -1561,7 +1541,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1586,6 +1566,8 @@
 !     30.82: IJsbrand Haagsma
 !     40.00: Nico Booij
 !     40.41: Marcel Zijlema
+!     40.80: Marcel Zijlema
+!     40.90: Nico Booij
 !
 !  1. Updates
 !
@@ -1602,6 +1584,8 @@
 !     30.82, Apr. 99: Conversion from m^2/rad/s to m^2/Hz correctly implemented
 !     30.82, July 99: Corrected argumentlist KSCIP1
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.80, Sep. 07: extension to unstructured grids
+!     40.90, June 08: interpolation near obstacles improved
 !
 !  2. Purpose
 !
@@ -1630,10 +1614,6 @@
 !                    sigma-space                                          30.72
 !
       REAL    SPCSIG(MSC)                                                 30.72
-#ifdef REFINED_GRID
-      INTEGER, INTENT(IN) :: spcount, ng
-      REAL, INTENT(INOUT) :: AC2_parent(MSC*MDC*Numspec(ng))
-#endif
 !
 !       OTYPE   int    input    type of spectrum wanted: 2 or -2 for 2-D
 !                               spectrum, 1 or -1 for 1-D freq. spectrum
@@ -1647,6 +1627,9 @@
 !       ECOS  real   input    cosines of spectral directions
 !       ESIN  real   input    sines of spectral directions
 !       OFAC    real   input    output factor (if INRHOG=1, equal to Rho*Grav)
+!
+      LOGICAL, INTENT(IN) :: CROSS(1:4) ! true if obstacle is between     40.90
+              ! output point and computational grid point                 40.90
 !
 !  5. SUBROUTINES CALLING
 !
@@ -1675,9 +1658,8 @@
       REAL      XC, YC, UX, UY, DEP, DEP2(MCGRD), AC2(MDC,MSC,MCGRD),     40.00
      &          ACLOC(*)        ,ECOS(MDC)         ,ESIN(MDC)             40.00
       REAL      CG(1), K1(1), K2(1), N(1), ND(1), SIG1(1), SIG2(1)        30.82
-#ifdef MODEL_COUPLING
-      INTEGER offset
-#endif
+      LOGICAL EXCPT                                                       40.80
+      REAL, ALLOCATABLE :: ACL(:,:)                                       40.80
 !
       SAVE IENT
       DATA IENT/0/
@@ -1701,134 +1683,22 @@
 !
       IF (DEP.LE.0.) GOTO 800
 !
-!     the action density spectrum is interpolated, determine interpolation coeff
+!     the action density spectrum is interpolated
 !
-      JX1 = NINT(XC-0.5) + 1                                              33.09
-      IF (KREPTX.EQ.0) THEN                                               33.09
-        IF (JX1.LT.0) THEN
-          GOTO 800
-        ELSE IF (JX1.GT.MXC) THEN
-          GOTO 800
-        ELSE IF (JX1.EQ.0) THEN
-          IF (XC.GT.-0.01) THEN
-            JX1 = 1
-            JX2 = 2
-            SX1 = 1.
-            SX2 = 0.
-          ELSE
-            GOTO 800
-          ENDIF
-        ELSE IF (JX1.EQ.MXC) THEN
-          IF (XC.LT.REAL(MXC-1)+0.01) THEN
-            JX1 = MXC-1
-            JX2 = MXC
-            SX1 = 0.
-            SX2 = 1.
-          ELSE
-            GOTO 800
-          ENDIF
-        ELSE
-          JX2 = JX1+1
-          SX2 = XC + 1. - FLOAT(JX1)
-          SX1 = 1. - SX2
-          IF (SX1.LT.0.01) THEN
-            SX1 = 0.
-            SX2 = 1.
-          ENDIF
-          IF (SX2.LT.0.01) THEN
-            SX2 = 0.
-            SX1 = 1.
-          ENDIF
-        ENDIF
-      ELSE
-        JX2 = JX1+1
-        SX2 = XC + 1. - FLOAT(JX1)
-        SX1 = 1. - SX2
-        JX1 = MOD(MXC+JX1-1,MXC) + 1                                      33.09
-        JX2 = MOD(MXC+JX2-1,MXC) + 1                                      33.09
-      ENDIF                                                               33.09
-!
-      IF (.NOT. ONED) THEN                                                30.81
-        JY1 = INT(YC+3.) - 2
-        IF (JY1.LT.0) THEN
-          GOTO 800
-        ELSE IF (JY1.GT.MYC) THEN
-          GOTO 800
-        ELSE IF (JY1.EQ.0) THEN
-          IF (YC.GT.-0.01) THEN
-            JY1 = 1
-            JY2 = 2
-            SY1 = 1.
-            SY2 = 0.
-          ELSE
-            GOTO 800
-          ENDIF
-        ELSE IF (JY1.EQ.MYC) THEN
-          IF (YC.LT.REAL(MYC-1)+0.01) THEN
-            JY1 = MYC-1
-            JY2 = MYC
-            SY1 = 0.
-            SY2 = 1.
-          ELSE
-            GOTO 800
-          ENDIF
-        ELSE
-          JY2 = JY1+1
-          SY2 = YC + 1. - FLOAT(JY1)
-          SY1 = 1. - SY2
-          IF (SY1.LT.0.01) THEN
-            SY1 = 0.
-            SY2 = 1.
-          ENDIF
-          IF (SY2.LT.0.01) THEN
-            SY2 = 0.
-            SY1 = 1.
-          ENDIF
-        ENDIF
-      ELSE                                                                30.81
-        JY1 = 1                                                           30.81
-        JY2 = 1                                                           30.81
-        SY1 = 1.                                                          30.81
-!       SY2 = 1. - SY1  so:                                               30.81
-        SY2 = 0.                                                          30.81
-      END IF                                                              30.81
-
-!
-!     *** Using indirect addressing kgrpnt instead x and y ***
-!         *** KGRPNT(JX1,JY1) instead  (JX1,JY1)
-!         *** KGRPNT(JX1,JY2) instead  (JX1,JY2) ETC.
-      IND11 = KGRPNT(JX1,JY1)
-      IND12 = KGRPNT(JX1,JY2)
-      IND21 = KGRPNT(JX2,JY1)
-      IND22 = KGRPNT(JX2,JY2)
-      IF (IND11.LE.0 .OR. IND11.GT.MCGRD) WRITE (PRINTF, *)
-     &      ' error SWCMSP ', JX1, JY1, IND11, MCGRD
-      IF (IND12.LE.0 .OR. IND12.GT.MCGRD) WRITE (PRINTF, *)
-     &      ' error SWCMSP ', JX1, JY2, IND11, MCGRD
-      IF (IND21.LE.0 .OR. IND21.GT.MCGRD) WRITE (PRINTF, *)
-     &      ' error SWCMSP ', JX2, JY1, IND11, MCGRD
-      IF (IND22.LE.0 .OR. IND22.GT.MCGRD) WRITE (PRINTF, *)
-     &      ' error SWCMSP ', JX2, JY2, IND11, MCGRD
-      RF11 = SX1*SY1
-      RF12 = SX1*SY2
-      RF21 = SX2*SY1
-      RF22 = SX2*SY2
-      IF (DEP2(IND11).LE.DEPMIN .AND. RF11.GT.0.01) GOTO 800              40.00
-      IF (DEP2(IND12).LE.DEPMIN .AND. RF12.GT.0.01) GOTO 800              40.00
-      IF (DEP2(IND21).LE.DEPMIN .AND. RF21.GT.0.01) GOTO 800              40.00
-      IF (DEP2(IND22).LE.DEPMIN .AND. RF22.GT.0.01) GOTO 800              40.00
-!
-      IF (ITEST.GE. 250 .OR. IOUTES .GE. 30) THEN
-        WRITE (PRTEST, 69) JX1, JX2, JY1, JY2,
-     &          SX1, SX2, SY1, SY2, XC ,YC
-        WRITE (PRTEST, 70) IND11, IND12, IND21, IND22,
-     &          RF11 ,RF12 ,RF21 ,RF22
-  69    FORMAT ('   -------------------SWCMSP -------------------',/,
-     &     ' JX1,JX2,JY1,JY2,  SX1,  SX2,  SY1, SY2,     XC,      YC',/,
-     &           4I4,1X, 4(F5.2,1X),2(F8.2,1X))
-  70    FORMAT(12X, 'IND11..22       RF11    RF12    RF21    RF22 ',
-     &         /, 4I6, 2X, 4F8.4)
-      ENDIF
+      ALLOCATE(ACL(MDC,MSC))                                              40.90
+      IF (OPTG.EQ.5) THEN                                                 40.90
+        CALL SwanInterpolateAc ( ACL, XC, YC, AC2, EXCPT )                40.80
+      ELSE                                                                40.90
+        IF (KREPTX.EQ.0) THEN                                             40.90
+!         non-repeating grid                                              40.90
+          IF (XC .LT. -0.01)            GOTO 800                          40.90
+          IF (XC .GT. REAL(MXC-1)+0.01) GOTO 800                          40.90
+        ENDIF                                                             40.90
+        IF (YC .LT. -0.01)            GOTO 800                            40.90
+        IF (YC .GT. REAL(MYC-1)+0.01) GOTO 800                            40.90
+        CALL SWOINA (XC, YC, AC2, ACL, KGRPNT, DEP2, CROSS(1), EXCPT)     40.90
+      ENDIF                                                               40.90
+      IF (EXCPT) GOTO 800                                                 40.90
 !
       DO 110 ID = 1, MDC
         IF (ICUR.GT.0 .AND. OTYPE.LT.0) THEN
@@ -1836,29 +1706,8 @@
         ENDIF
         DO 100 ISIGM = 1, MSC
 !
-!         interpolate local action density
+          ACLL = ACL(ID,ISIGM)                                            40.80
 !
-          ACLL = 0.
-!
-          IF (RF11.GT.1.E-10) THEN
-            ACLL =        RF11 * AC2(ID,ISIGM,IND11)
-          ENDIF
-          IF (RF12.GT.1.E-10) THEN
-            ACLL = ACLL + RF12 * AC2(ID,ISIGM,IND12)
-          ENDIF
-          IF (RF21.GT.1.E-10) THEN
-            ACLL = ACLL + RF21 * AC2(ID,ISIGM,IND21)
-          ENDIF
-          IF (RF22.GT.1.E-10) THEN
-            ACLL = ACLL + RF22 * AC2(ID,ISIGM,IND22)
-          ENDIF
-#ifdef REFINED_GRID
-!
-!  Store AC2 spectra into parent array for transfer to child.
-!
-          offset=MSC*MDC*(spcount-1)+(ISIGM-1)*MDC+ID
-          AC2_parent(offset)=ACLL
-#endif
 !         energy density interpolated in space:
           ECLL = OFAC * ACLL * SPCSIG(ISIGM)                              40.00
 !
@@ -1989,6 +1838,7 @@
  800  IERR = 1
 !
  900  CONTINUE
+      DEALLOCATE(ACL)                                                     40.90 40.80
       RETURN
 ! * end of subroutine SWCMSP *
       END
@@ -1999,6 +1849,7 @@
 !
 !****************************************************************
 !
+      USE OCPCOMM2                                                        41.08
       USE OCPCOMM4                                                        40.41
 !
       IMPLICIT NONE
@@ -2010,12 +1861,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2037,11 +1888,13 @@
 !
 !     40.30: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     41.08: Pieter Smit
 !
 !  1. Updates
 !
-!     40.30, May 03: New subroutine
+!     40.30, May  03: New subroutine
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     41.08, Aug. 09: adapted to write binary file in the Level 5 MAT-file format
 !
 !  2. Purpose
 !
@@ -2054,7 +1907,7 @@
 !        statement:
 !
 !        OPEN(UNIT=IOUTMA, FILE=BINFIL, FORM='UNFORMATTED',
-!             ACCESS='DIRECT', RECL=1)
+!             ACCESS='DIRECT', RECL=4)
 !
 !        Furthermore, initialize record counter to IREC = 1
 !
@@ -2062,7 +1915,7 @@
 !        matrices to be saved
 !
 !     3) The matrix may contain signed infinity and/or Not a Numbers.
-!        According to the IEEE standard, on a 32-bit machine, the real
+!        According to the IEEE 754 standard, on a 32-bit machine, the real
 !        format has an 8-bit biased exponent (=actual exponent increased
 !        by bias=127) and a 23-bit fraction or mantissa. The leftmost
 !        bit is the sign bit. Let a fraction, biased exponent and sign
@@ -2077,14 +1930,11 @@
 !        representation of a NaN equals the representation of +Inf
 !        plus 1.
 !
-!        The Cray machine C916 at SARA Information Centre does not
-!        support the IEEE standard.
-!
 !     4) The NaN's or Inf's are indicated by a dummy value as given
 !        by dumval
 !
-!     For more information consult "Appendix - MAT-File Structure"
-!     of the MATLAB External Data Reference guide (Version 4.2)
+!     For more information on the Level 5 MAT-file format consult
+!     document "MAT-File Format" of MathWorks
 !
 !  4. Argument variables
 !
@@ -2106,67 +1956,63 @@
 !
 !  5. Parameter variables
 !
-!     ---
+!     BlockSize   size of matlab data segment
+!     DataSize    number of bytes written per write statement
+!     HeaderSize  size of the header in bytes
+!     mChar       character data
+!     mInt32      signed   integer*4
+!     mUInt32     unsigned integer*8
+!     mSingle     real
+!
+!     --- standard sizes
+!
+      INTEGER, PARAMETER :: DataSize   = 4
+      INTEGER, PARAMETER :: HeaderSize = 128
+      INTEGER, PARAMETER :: BlockSize  = 8
+!
+!     --- Matlab data types
+!
+      INTEGER, PARAMETER :: mChar      = 4
+      INTEGER, PARAMETER :: mInt32     = 5
+      INTEGER, PARAMETER :: mUInt32    = 6
+      INTEGER, PARAMETER :: mSingle    = 7
 !
 !  6. Local variables
 !
-!     BVAL  :     a byte value
-!     CHARS :     array to pass character info to MSGERR
+!     CTMP  :     a temporary character array
+#ifdef SWAN_MODEL
+!     HEADERS:    header of binary MAT-file
+#else
+!     HEADER:     header of binary MAT-file
+#endif
 !     I     :     loop variable
 !     IENT  :     number of entries
-!     IF    :     first non-character in string
-!     IL    :     last non-character in string
-!     IMAGF :     a 4-byte imaginary flag. Possible values are:
-!                 0: there is only real data
-!                 1: the data has also an imaginary part
 !     IOS   :     auxiliary integer with iostat-number
-!     ITYPE :     the type flag containing a 4-byte integer whose
-!                 decimal digits encode storage information.
-!                 If the integer is represented as ABCD then:
-!                 "A" indicates the format to write the binary
-!                 data to a file on the machine. Possible values are:
-!                   0: Intel based machines (PC 386/486, Pentium)
-!                   1: Motorola 68000 based machines (Macintosh,
-!                      HP 9000, SPARC, Apollo, SGI)
-!                   2: VAX-D format
-!                   3: VAX-G format
-!                   4: Cray
-!                 "B" is always zero
-!                 "C" indicates which format the data is stored.
-!                  Possible values are:
-!                   0: double precision (64 bit) floating point numbers
-!                   1: single precision (32 bit) floating point numbers
-!                   2: 32-bit signed integers
-!                   3: 16-bit signed integers
-!                   4: 16-bit unsigned integers
-!                   5: 8-bit unsigned integers
-!                 "D" indicates the type of data (matrix).
-!                  Possible values:
-!                   0: numeric matrix
-!                   1: textual matrix
-!                   2: sparse  matrix
+!     IRECS :     size of array including tags and flags
 !     J     :     index
 !     M     :     loop variable
 !     MSGSTR:     string to pass message to call MSGERR
 !     N     :     loop variable
 !     NAMLEN:     a 4-byte integer representing the number of
-!                 characters in matrix name plus 1
+!                 characters in matrix name
 !     NANVAL:     an integer representing Not a Number
+!     NTOT  :     size of data array
 !
-      INTEGER I, J, IENT, IF, IL, IOS, M, N
-      INTEGER BVAL(4), IMAGF, ITYPE, NAMLEN, NANVAL
-      CHARACTER*20 INTSTR, CHARS
+      INTEGER I, J, IENT, IOS, M, N, NTOT
+      INTEGER NAMLEN, NANVAL
+      INTEGER, SAVE :: IRECS
       CHARACTER*80 MSGSTR
+#ifdef SWAN_MODEL
+      CHARACTER(LEN=HeaderSize) HEADERS
+#else
+      CHARACTER(LEN=HeaderSize) HEADER
+#endif
+      CHARACTER(LEN=BlockSize) CTMP
+
 !
 !  8. Subroutines used
 !
-!     INTSTR           Converts integer to string
 !     MSGERR           Writes error message
-!     TXPBLA           Removes leading and trailing blanks in string
-!     SWI2B            Calculates 32-bit representation of an
-!                      integer number
-!     SWR2B            Calculates 32-bit representation of a
-!                      floating-point number
 !
 !  9. Subroutines calling
 !
@@ -2183,14 +2029,12 @@
 ! 12. Structure
 !
 !     set Not a Number
-!
-!     set some flags
-!
-!     write header consisting of ITYPE, MROWS, NCOLS, IMAGF, NAMLEN and
-!     name of matrix MATNAM
-!
+!     length of name matrix
+!     size of data array
+!     write header once
+!     array name
 !     write matrix
-!
+!     write the size of the array
 !     if necessary, give message that error occurred while writing file
 !
 ! 13. Source text
@@ -2199,60 +2043,149 @@
       DATA IENT/0/
       IF (LTRACE) CALL STRACE (IENT,'SWRMAT')
 
+      IOS = 0
+
 !     --- set Not a Number
 
       NANVAL = 255 * 2**23 + 1
 
-!     --- set some flags
+!     --- length of name matrix
 
-      ITYPE = 1010
-      IMAGF = 0
-      IOS   = 0
+      NAMLEN = LEN_TRIM(MATNAM)
 
-!     --- write header consisting of ITYPE, MROWS, NCOLS, IMAGF,
-!         NAMLEN and name of matrix MATNAM
-!         the name should be ended by zero-byte terminator
+!     --- size of data array
 
-      CALL SWI2B ( ITYPE, BVAL )
-      DO I = 1, 4
-         IF (IOS.EQ.0) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CHAR(BVAL(I))
-         IREC = IREC + 1
-      END DO
+      NTOT = MROWS * NCOLS
 
-      CALL SWI2B ( MROWS, BVAL )
-      DO I = 1, 4
-         IF (IOS.EQ.0) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CHAR(BVAL(I))
-         IREC = IREC + 1
-      END DO
+!     --- descriptive header
 
-      CALL SWI2B ( NCOLS, BVAL )
-      DO I = 1, 4
-         IF (IOS.EQ.0) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CHAR(BVAL(I))
-         IREC = IREC + 1
-      END DO
+#ifdef SWAN_MODEL
+      WRITE (HEADERS, '(6A)') 'Data produced by SWAN version ',
+     &                       TRIM(VERTXT),'; project: ',TRIM(PROJID),
+     &                       '; run number: ',PROJNR
 
-      CALL SWI2B ( IMAGF, BVAL )
-      DO I = 1, 4
-         IF (IOS.EQ.0) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CHAR(BVAL(I))
-         IREC = IREC + 1
-      END DO
+!     --- data offset
 
-      CALL TXPBLA(MATNAM,IF,IL)
-      NAMLEN = IL - IF + 2
-      CALL SWI2B ( NAMLEN, BVAL )
-      DO I = 1, 4
-         IF (IOS.EQ.0) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CHAR(BVAL(I))
-         IREC = IREC + 1
-      END DO
+      HEADERS(117:124) = CHAR(ICHAR(' '))
 
-      DO I = IF, IL
-         IF (IOS.EQ.0) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) MATNAM(I:I)
-         IREC = IREC + 1
-      END DO
-      IF (IOS.EQ.0) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CHAR(0)
+!     --- version
+
+      HEADERS(125:126) = CHAR(0) // CHAR(1)
+
+!     --- endian indicator
+
+      WRITE(HEADERS(127:128),'(A)') INT(19785,KIND=2)
+
+!     --- write header once
+
+      IF ( IREC.EQ.1 ) THEN
+         DO I = 1, HeaderSize/DataSize
+            J = DataSize*(I-1) + 1
+            IF ( IOS.EQ.0 )
+     &         WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) HEADERS(J:J+DataSize-1)
+            IREC = IREC + 1
+         END DO
+      END IF
+#else
+      WRITE (HEADER, '(6A)') 'Data produced by SWAN version ',
+     &                       TRIM(VERTXT),'; project: ',TRIM(PROJID),
+     &                       '; run number: ',PROJNR
+
+!     --- data offset
+
+      HEADER(117:124) = CHAR(ICHAR(' '))
+
+!     --- version
+
+      HEADER(125:126) = CHAR(0) // CHAR(1)
+
+!     --- endian indicator
+
+      WRITE(HEADER(127:128),'(A)') INT(19785,KIND=2)
+
+!     --- write header once
+
+      IF ( IREC.EQ.1 ) THEN
+         DO I = 1, HeaderSize/DataSize
+            J = DataSize*(I-1) + 1
+            IF ( IOS.EQ.0 )
+     &         WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) HEADER(J:J+DataSize-1)
+            IREC = IREC + 1
+         END DO
+      END IF
+#endif
+
+!     --- array tag
+
+      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 14                ! Matlab array
+      IREC = IREC + 1
+      IRECS = IREC
+      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 0
       IREC = IREC + 1
 
+!     --- array flags
+
+      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) mInt32
+      IREC = IREC + 1
+      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 2*DataSize
+      IREC = IREC + 1
+      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 7                 ! single precision array
+      IREC = IREC + 1
+      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 0
+      IREC = IREC + 1
+
+      IF ( MOD(2,BlockSize/DataSize).NE.0 ) THEN
+         IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 0
+         IREC = IREC + 1
+      END IF
+
+!     --- dimensions array
+
+      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) mInt32
+      IREC = IREC + 1
+      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 2*DataSize
+      IREC = IREC + 1
+      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) MROWS
+      IREC = IREC + 1
+      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) NCOLS
+      IREC = IREC + 1
+
+      IF ( MOD(2,BlockSize/DataSize).NE.0 ) THEN
+         IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 0
+         IREC = IREC + 1
+      END IF
+
+!     --- array name
+
+      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) mChar
+      IREC = IREC + 1
+      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) NAMLEN
+      IREC = IREC + 1
+
+      I = 1
+      DO
+        CTMP(1:8) = CHAR(ICHAR(' '))
+        IF ( I.GT.NAMLEN ) THEN
+           EXIT
+        ELSE IF ( I+BlockSize.LE.NAMLEN ) THEN
+           CTMP(1:8) = MATNAM(I:I+BlockSize-1)
+        ELSE
+           CTMP(1:NAMLEN-I+1) = MATNAM(I:NAMLEN)
+        END IF
+
+        IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CTMP(1:4)
+        IREC = IREC + 1
+        IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CTMP(5:8)
+        I = I + BlockSize
+        IREC = IREC + 1
+      END DO
+
 !     --- write matrix
+
+      IF ( IOS.EQ.0 ) WRITE (IOUTMA,REC=IREC,IOSTAT=IOS) mSingle
+      IREC = IREC + 1
+      IF ( IOS.EQ.0 ) WRITE (IOUTMA,REC=IREC,IOSTAT=IOS) NTOT*DataSize
+      IREC = IREC + 1
 
       DO M = 1, NCOLS
          DO N = 1, MROWS
@@ -2261,27 +2194,32 @@
             ELSE
                J = (N-1)*NCOLS + M
             END IF
-            IF (RDATA(J).EQ.DUMVAL ) THEN
-               CALL SWI2B ( NANVAL, BVAL )
+            IF (RDATA(J).NE.DUMVAL ) THEN
+               WRITE (IOUTMA,REC=IREC) RDATA(J)
             ELSE
-               CALL SWR2B ( RDATA(J), BVAL )
+               WRITE (IOUTMA,REC=IREC) NANVAL
             END IF
-            DO I = 1, 4
-              IF (IOS.EQ.0)
-     &                   WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CHAR(BVAL(I))
-              IREC = IREC + 1
-            END DO
+            IREC = IREC + 1
          END DO
       END DO
+
+      IF ( MOD(NTOT,BlockSize/DataSize).NE.0 ) THEN
+         IF ( IOS.EQ.0 ) WRITE (IOUTMA,REC=IREC,IOSTAT=IOS) 0.
+         IREC = IREC + 1
+      END IF
+
+!     --- write the size of the array
+
+      IF ( IOS.EQ.0 )
+     &   WRITE (IOUTMA,REC=IRECS,IOSTAT=IOS) (IREC-IRECS-1)*DataSize
 
 !     --- if necessary, give message that error occurred while writing file
 
       IF ( IOS.NE.0 ) THEN
-         CHARS = INTSTR(IOS)
-         CALL TXPBLA(CHARS,IF,IL)
-         MSGSTR = 'Error while writing binary MAT-file - '//
-     &            'IOSTAT number is '//CHARS(IF:IL)
-         CALL MSGERR ( 4, MSGSTR )
+         WRITE (MSGSTR, '(A,I5)')
+     &            'Error while writing binary MAT-file - '//
+     &            'IOSTAT number is ', IOS
+         CALL MSGERR( 4, TRIM(MSGSTR) )
          RETURN
       END IF
 

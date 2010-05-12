@@ -10,6 +10,7 @@
 !
 !     SWCOMP  (main subroutine for the computational module)              31.02
 !     SWOMPU  (carries out computation for one grid point)                31.02
+!     SWPRSET (print all the settings used in SWAN run)                   40.80
 !     SACCUR  (calculate the accuracy and check if the iteration process
 !              can be terminated)
 !     INSAC   (initialize the values for the calculation of accuracy)     40.00
@@ -63,7 +64,7 @@
       USE m_constants                                                     40.41
       USE m_xnldata                                                       40.41
       USE m_fileio                                                        40.41
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       USE M_COUPLING
 #endif
 !
@@ -79,7 +80,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -391,8 +392,11 @@
 !     PTRIAD    1D    Coefficient for the triad interaction model
 !     PWCAP     1D    Coefficient for the white capping model
 !     PWIND     1D    Coefficient for the wind growth model
+!     SACC0     2D    Represents the mean wave frequency at iter-2
 !     SACC1     2D    Represents the mean wave frequency at iter-1
 !     SACC2     2D    Represents the mean wave frequency at iter
+!     TMDIFC    2D    Represent Tm(iter) - Tm(iter-2) meant for
+!                     computation of curvature of Tm
 !     PWTAIL    1D    coefficients for tail of spectrum
 !     IDCMIN    1D    frequency dependent counter in directional space
 !                     no current <---> current
@@ -426,7 +430,7 @@
 !
 !     PBOT(1)   = CFC      0.005    (Collins equation)
 !     PBOT(2)   = CFW      0.01     (Collins equation)
-!     PBOT(3)   = GAMJNS   0.0038   (Jonswap equation)
+!     PBOT(3)   = GAMJNS   0.067    (Jonswap equation)
 !     PBOT(4)   = MF      -0.08     (Madsen equation)
 !     PBOT(5)   = KN       0.05     (bottom roughness)
 !
@@ -434,7 +438,7 @@
 !                          2        (variable breaking coefficient
 !                                    according to Nelson (1994))
 !     PSURF(1)  = ALFA     1.0      (Battjes Janssen)
-!     PSURF(2)  = GAMMA    0.8      (Breaking criterium)
+!     PSURF(2)  = GAMMA    0.73     (breaking criterium)
 !
 !     PWCAP(1)  = ALFAWC   2.36e-5  (Empirical coefficient)
 !     PWCAP(2)  = ALFAPM   3.02E-3  (Alpha of Pierson Moskowitz frequency)
@@ -651,7 +655,7 @@
 !      |       |
 !      |       |--------+ WINDP3             Limit the energy spectrum
 !      |                                     for first and second
-!      |                                     genartion wind model
+!      |                                     generation wind model
 !      |
 !      |
 !      End parallel region over threads                                   40.22
@@ -802,10 +806,7 @@
      &                                       CAS,CAD                      40.22
 
       REAL, DIMENSION(:,:), ALLOCATABLE :: CGO,KWAVE                      40.22
-# ifdef BLOCK_JONSSON
-      REAL, DIMENSION(:,:), ALLOCATABLE :: UDIR                           07.09
-      REAL, DIMENSION(:,:), ALLOCATABLE :: UBLOCK                         07.09
-# endif
+
       REAL, DIMENSION(:,:), ALLOCATABLE :: ALIMW                          40.22
 
       REAL, DIMENSION(:,:), ALLOCATABLE :: UE,SA1,SA2,SFNL                40.22
@@ -820,6 +821,7 @@
 
       REAL, DIMENSION(:), ALLOCATABLE :: HSAC1,HSAC2,SACC1,SACC2          40.22
       REAL, DIMENSION(:), ALLOCATABLE :: HSAC0,HSDIFC                     40.41
+      REAL, DIMENSION(:), ALLOCATABLE :: SACC0,TMDIFC                     40.93
 
       REAL, DIMENSION(:,:), ALLOCATABLE :: SETPDA                         40.41 40.22
 
@@ -854,243 +856,7 @@
       DATA IENT/0/
       IF (LTRACE) CALL STRACE (IENT,'SWCOMP')
 !
-      IF (IT .EQ. 1 .AND. ITEST.GE.1) THEN                                40.00
-        WRITE(PRINTF,333) 'SWAN'                                          40.00
- 333    FORMAT(/,
-     &'----------------------------------------------------------------'
-     &,/,
-     &'                  COMPUTATIONAL PART OF ', A
-     &,/,
-     &'----------------------------------------------------------------'
-     &,/)
-!
-        IF ( ONED ) THEN                                                  32.02
-          WRITE(PRINTF,*) 'One-dimensional mode of SWAN is activated'     32.02
-        ENDIF                                                             32.02
-!
-        WRITE(PRINTF,7001) MXC,MYC
- 7001   FORMAT(' Gridresolution       : MXC    ',I12  ,' MYC   ',I12)
-        WRITE(PRINTF,7002) MCGRD                                          40.41
- 7002   FORMAT('                      : MCGRD  ',I12)                     40.41
-        WRITE(PRINTF,7101) MSC,MDC
- 7101   FORMAT('                      : MSC    ',I12  ,' MDC   ',I12)
-        WRITE(PRINTF,7201) MTC                                            40.41
- 7201   FORMAT('                      : MTC    ',I12)                     40.41
-        WRITE(PRINTF,7301) NSTATC, ITERMX
- 7301   FORMAT('                      : NSTATC ',I12  ,' ITERMX',I12)
-        WRITE(PRINTF,7013) ITFRE,IREFR
- 7013   FORMAT(' Propagation flags    : ITFRE  ',I12  ,' IREFR ',I12)
-        WRITE(PRINTF,7014) IBOT,ISURF
- 7014   FORMAT(' Source term flags    : IBOT   ',I12  ,' ISURF ',I12)
-        WRITE(PRINTF,7114) IWCAP,IWIND
- 7114   FORMAT('                      : IWCAP  ',I12  ,' IWIND ',I12)
-        WRITE(PRINTF,7015) ITRIAD,IQUAD
- 7015   FORMAT('                      : ITRIAD ',I12  ,' IQUAD ',I12)
-        WRITE(PRINTF,7004) DX,DY
- 7004   FORMAT(' Spatial step         : DX     ',E12.4,' DY    ',E12.4)
-        WRITE(PRINTF,7104) EXP(ALOG(SHIG/SLOW)/REAL(MSC-1))-1.,           40.41
-     &                     DDIR/DEGRAD                                    40.41
- 7104   FORMAT(' Spectral bin         : df/f   ',E12.4,' DDIR  ',E12.4)   40.41
-        WRITE(PRINTF,7003) GRAV, RHO                                      40.41
- 7003   FORMAT(' Physical constants   : GRAV   ',E12.4,' RHO   ',E12.4)   40.41
-        WRITE(PRINTF,7027) U10 , WDIC/DEGRAD
- 7027   FORMAT(' Wind input           : WSPEED ',E12.4,' DIR   ',E12.4)
-        WRITE(PRINTF,7123) PWTAIL(1),PWTAIL(2)
- 7123   FORMAT(' Tail parameters      : E(f)   ',E12.4,' E(k)  ',E12.4)
-        WRITE(PRINTF,7133) PWTAIL(3),PWTAIL(4)
- 7133   FORMAT('                      : A(f)   ',E12.4,' A(k)  ',E12.4)
-        WRITE(PRINTF,8013) PNUMS(1), PNUMS(4)                             40.41
- 8013   FORMAT(' Accuracy parameters  : DREL   ',E12.4,' NPNTS ',E12.4)   40.41
-        IF (PNUMS(21).EQ.0.) THEN                                         40.41
-           WRITE(PRINTF,8213) PNUMS(15),PNUMS(16)                         40.41
-        ELSE IF (PNUMS(21).EQ.1.) THEN                                    40.41
-           WRITE(PRINTF,8214) PNUMS(2),PNUMS(15)                          40.41
-        END IF                                                            40.41
- 8213   FORMAT('                      : DHOVAL ',E12.4,' DTOVAL',E12.4)   40.41
- 8214   FORMAT('                      : DHABS  ',E12.4,' CURVAT',E12.4)   40.41
-        WRITE(PRINTF,3613) PNUMS(20)
- 3613   FORMAT('                      : GRWMX  ',E12.4)
-        WRITE(PRINTF,8508) WLEV, DEPMIN                                   40.41
- 8508   FORMAT(' Drying/flooding      : LEVEL  ',E12.4,' DEPMIN',E12.4)   40.41
-        IF (BNAUT) THEN                                                   40.41
-           WRITE (PRINTF,8510) 'nautical '                                40.41
-        ELSE                                                              40.41
-           WRITE (PRINTF,8510) 'Cartesian'                                40.41
-        END IF                                                            40.41
- 8510   FORMAT(' The ',A9,                                                40.41
-     &         ' convention for wind and wave directions is used')        40.41
-        IF (PROPSC.EQ.3) THEN                                             40.41
-          WRITE(PRINTF,8511) 'S&L   '                                     40.41
-          ICMAX  = 10                                                     40.41
-        ELSE IF (PROPSC.EQ.2) THEN                                        40.41
-          WRITE(PRINTF,8511) 'SORDUP'                                     40.41
-          ICMAX  = 5                                                      40.41
-        ELSE                                                              40.41
-          WRITE(PRINTF,8511) 'BSBT  '                                     40.41
-          ICMAX  = 3                                                      40.41
-        END IF                                                            40.41
- 8511   FORMAT(' Scheme for geographic propagation is ',A6)               40.41
-        WRITE(PRINTF,8512) PROPSC, ICMAX                                  40.41
- 8512   FORMAT(' Scheme geogr. space  : PROPSC ',I12  ,' ICMAX ',I12)     40.41
-        WRITE(PRINTF,8513) PNUMS(7), PNUMS(6)                             40.41
- 8513   FORMAT(' Scheme freq. space   : CSS    ',E12.4,' CDD   ',E12.4)   40.41
-!
-        IF ( (DYNDEP .OR. ICUR.EQ.1) .AND. INT(PNUMS(8)).EQ.1 ) THEN      40.41
-           WRITE(PRINTF,*) 'Solver is SIP'                                40.23
-           WRITE(PRINTF,2213) PNUMS(12), INT(PNUMS(13))
- 2213      FORMAT('                      : EPS2   ',E12.4,' OUTPUT',I12)
-           WRITE(PRINTF,8223) INT(PNUMS(14))
- 8223      FORMAT('                      : NITER  ',I12)
-        END IF
-!
-        IF (ICUR.GT.0) THEN
-          WRITE (PRINTF,7115) 'on'
-        ELSE
-          WRITE (PRINTF,7115) 'off'
-        ENDIF
- 7115   FORMAT(' Current is ', A3)
-!
-        IF (IQUAD.GT.0) THEN
-           WRITE(PRINTF,8413) IQUAD
- 8413      FORMAT(' Quadruplets          : IQUAD  ',I12)
-           IF (IQUAD.LE.3 .OR. IQUAD.EQ.8) THEN                           40.41
-              WRITE(PRINTF,8414) PQUAD(1), PQUAD(2)                       40.41
- 8414         FORMAT('                      : LAMBDA ',E12.4,             40.41
-     &                                      ' CNL4  ',E12.4)              40.41
-              WRITE(PRINTF,8415) PQUAD(3), PQUAD(4)                       40.41
- 8415         FORMAT('                      : CSH1   ',E12.4,             40.41
-     &                                      ' CSH2  ',E12.4)              40.41
-              WRITE(PRINTF,8416) PQUAD(5)                                 40.41
- 8416         FORMAT('                      : CSH3   ',E12.4)             40.41
-           END IF                                                         40.41
-           WRITE(PRINTF,8417) PTRIAD(3)                                   40.41
- 8417      FORMAT(' Maximum Ursell nr for Snl4 :  ',E12.4)                40.41
-        ELSE
-          WRITE (PRINTF, *) 'Quadruplets is off'
-        END IF                                                            40.41
-        IF (ITRIAD.GT.0) THEN                                             40.41
-           WRITE(PRINTF,9413) ITRIAD, PTRIAD(1)
- 9413      FORMAT(' Triads               : ITRIAD ',I12  ,
-     &                                   ' TRFAC ',E12.4)
-           WRITE(PRINTF,9414) PTRIAD(2), PTRIAD(4)                        40.41
- 9414      FORMAT('                      : CUTFR  ',E12.4,                40.41
-     &                                   ' URCRI ',E12.4)                 40.41
-           WRITE(PRINTF,9415) PTRIAD(5)                                   40.41
- 9415      FORMAT(' Minimum Ursell nr for Snl3 :  ',E12.4)                40.41
-        ELSE
-          WRITE (PRINTF, *) 'Triads is off'
-        END IF                                                            40.41
-        IF (IBOT.EQ.2) THEN
-          WRITE(PRINTF,7005) PBOT(2),PBOT(1)
- 7005   FORMAT(' Collins (`72)        : CFW    ',E12.4,' CFC   ',E12.4)
-        ELSE IF (IBOT.EQ.3) THEN
-          WRITE(PRINTF,7335) PBOT(4),PBOT(5)
- 7335   FORMAT(' Madsen et al. (`84)  : MF     ',E12.4,' KN    ',E12.4)
-        ELSE IF (IBOT.EQ.1) THEN
-          WRITE(PRINTF,7325) PBOT(3)
- 7325     FORMAT(' JONSWAP (`73)        : GAMMA  ',E12.4)
-        ELSE
-          WRITE (PRINTF, *) 'Bottom friction is off'
-        ENDIF
-!
-        IF (IWCAP.EQ.1) THEN
-          WRITE(PRINTF,6005) PWCAP(1),PWCAP(2)
- 6005     FORMAT(' W-cap Komen (`84)    : EMPCOF ',E12.4,
-     &           ' APM   ',E12.4)
-        ELSE IF (IWCAP.EQ.2) THEN
-          WRITE(PRINTF,6335) PWCAP(3),PWCAP(4)
- 6335     FORMAT(' W-cap Janssen (`90)  : CFJANS ',E12.4,
-     &           ' DELTA ',E12.4)
-        ELSE IF (IWCAP.EQ.3) THEN
-          WRITE(PRINTF,6135) PWCAP(5)
- 6135     FORMAT(' W-cap Longuet-Higgins: CFLHIG ',E12.4)
-        ELSE IF (IWCAP.EQ.4) THEN
-          WRITE(PRINTF,6136) PWCAP(6), PWCAP(7)
- 6136     FORMAT(' W-cap Battjes/Janssen: BJSTP  ',E12.4,
-     &           ' BJALF ',E12.4)
-        ELSE IF (IWCAP.EQ.5) THEN
-          WRITE(PRINTF,6136) PWCAP(6), PWCAP(7)
-          WRITE(PRINTF,6137) PWCAP(8)
- 6137     FORMAT('                      : KCONV  ',E12.4)
-        ELSE IF (IWCAP.EQ.6) THEN                                         40.30
-          WRITE(PRINTF,6138) PWCAP(12), PWCAP(13)                         40.30
- 6138     FORMAT(' W-cap cum. steepness : CST    ',                       40.30
-     &           E12.4,' POW   ',E12.4)                                   40.30
-        ELSE IF (IWCAP.EQ.7) THEN                                         40.53
-          WRITE(PRINTF,6139) PWCAP(1), PWCAP(12)                          40.53
-          WRITE(PRINTF,6140) PWCAP(9), PWCAP(11)                          40.53
- 6139     FORMAT(' W-cap Alves-Banner   : CDS2   ',                       40.53
-     &           E12.4,' BR    ',E12.4)                                   40.53
- 6140     FORMAT('                      : POWST  ',                       40.53
-     &           E12.4,' POWK  ',E12.4)                                   40.53
-        ELSE
-          WRITE (PRINTF, *) 'Whitecapping is off'
-        ENDIF
-!
-        IF (ISURF.EQ.1) THEN
-          WRITE(PRINTF,7012) PSURF(1),PSURF(2)
- 7012     FORMAT(' Battjes&Janssen (`78): ALPHA  ',E12.4,
-     &           ' GAMMA ',E12.4)
-        ELSE IF (ISURF.EQ.2) THEN                                        970219
-          WRITE(PRINTF,7212) PSURF(1), PSURF(4), PSURF(5)
- 7212     FORMAT(' Nelson (`94): ALPHA  ',E12.4,
-     &           ' GAMmin ',E12.4, ' GAMmax ',E12.4)
-        ELSE
-          WRITE (PRINTF, *) 'Surf breaking is off'
-        ENDIF
-!
-        IF (LSETUP.GT.0) THEN
-          WRITE(PRINTF,7109) PSETUP(2)
- 7109     FORMAT(' Set-up               : SUPCOR ',E12.4)
-        ELSE
-          WRITE (PRINTF, *) 'Set-up is off'
-        END IF
-!
-        IF (IDIFFR.EQ.1) THEN                                             40.41
-          WRITE(PRINTF,7110) PDIFFR(1), NINT(PDIFFR(2))
- 7110     FORMAT(' Diffraction          : SMPAR  ',E12.4,
-     &           ' SMNUM ',I12)
-        ELSE
-          WRITE (PRINTF, *) 'Diffraction is off'
-        ENDIF
-!
-        WRITE(PRINTF,7126) PWIND(14), PWIND(15)
- 7126   FORMAT(' Janssen (`89,`90)    : ALPHA  ',E12.4,
-     &         ' KAPPA ',E12.4)
-        WRITE(PRINTF,7136) PWIND(16), PWIND(17)
- 7136   FORMAT(' Janssen (`89,`90)    : RHOA   ',E12.4,
-     &         ' RHOW  ',E12.4)
-        WRITE(PRINTF,*)
-        WRITE(PRINTF,1012) PWIND(1), PWIND(2)
- 1012   FORMAT(' 1st and 2nd gen. wind: CF10   ',E12.4,
-     &         ' CF20  ',E12.4)
-        WRITE(PRINTF,1013) PWIND(3), PWIND(4)
- 1013   FORMAT('                      : CF30   ',E12.4,
-     &         ' CF40  ',E12.4)
-        WRITE(PRINTF,1014) PWIND(5), PWIND(6)
- 1014   FORMAT('                      : CF50   ',E12.4,
-     &         ' CF60  ',E12.4)
-        WRITE(PRINTF,1015) PWIND(7), PWIND(8)
- 1015   FORMAT('                      : CF70   ',E12.4,
-     &         ' CF80  ',E12.4)
-        WRITE(PRINTF,1016) PWIND(9), PWIND(10)
- 1016   FORMAT('                      : RHOAW  ',E12.4,
-     &         ' EDMLPM',E12.4)
-        WRITE(PRINTF,1017) PWIND(11), PWIND(12)
- 1017   FORMAT('                      : CDRAG  ',E12.4,
-     &         ' UMIN  ',E12.4)
-        WRITE(PRINTF,1018) PWIND(13)
- 1018   FORMAT('                      : LIM_PM ',E12.4)
-!
-        WRITE(PRINTF,*)
-        IF ( ITEST .GT. 2
-     &                   )  THEN
-          DO IS = 1, MSC
-            WRITE(PRINTF,*)' IS and SPCSIG(IS)    :',IS,SPCSIG(IS)        30.72
-          ENDDO
-          WRITE(PRINTF,*)
-        ENDIF
-      END IF
+      IF (IT .EQ. 1 .AND. ITEST.GE.1) CALL SWPRSET (SPCSIG)               40.80
 !
 !     *** print test points ***
 !
@@ -1120,11 +886,16 @@
       JMAT5 = 5                                                           40.22
       JMAT6 = 6                                                           40.22
       JDIS0 = 7                                                           40.22
-      MSWMATR = 7                                                         40.67
-      JDIS1 = MSWMATR+MDISP                                               40.67 40.22
-      JLEK1 = MSWMATR+2*MDISP                                             40.67 40.22
-      JAOLD = MSWMATR+2*MDISP+1                                           40.67 40.22
-      MSWMATR = MSWMATR+2*MDISP+1                                         40.67 40.61 40.22
+      JDIS1 = JDIS0+MDISP                                                 40.67 40.22
+      JGEN0 = JDIS1+MDISP                                                 40.85
+      JGEN1 = JGEN0+MGENR                                                 40.85
+      JRED0 = JGEN1+MGENR                                                 40.85
+      JRED1 = JRED0+MREDS                                                 40.85
+      JTRA0 = JRED1+MREDS                                                 40.85
+      JTRA1 = JTRA0+MTRNP                                                 40.85
+      JAOLD = JTRA1+MTRNP                                                 40.85 40.67 40.22
+      JLEK1 = JAOLD+1                                                     40.67 40.22
+      MSWMATR = JLEK1                                                     40.85 40.67 40.61 40.22
       JABIN = 1                                                           40.22
       JABLK = 2                                                           40.22
       MLSWMAT = 2                                                         40.22
@@ -1154,6 +925,8 @@
       ALLOCATE(SACC2(MCGRD))                                              40.22
       ALLOCATE(HSAC0(MCGRD))                                              40.41
       ALLOCATE(HSDIFC(MCGRD))                                             40.41
+      ALLOCATE(SACC0(MCGRD))                                              40.93
+      ALLOCATE(TMDIFC(MCGRD))                                             40.93
 !
       ALLOCATE(ISLMIN(MCGRD))                                             40.23
       ALLOCATE(NFLIM(MCGRD))                                              40.23
@@ -1213,6 +986,8 @@
       SACC2 = 0.                                                          40.31
       HSAC0 = 0.                                                          40.41
       HSDIFC= 0.                                                          40.41
+      SACC0 = 0.                                                          40.93
+      TMDIFC= 0.                                                          40.93
       IF ( IQUAD.GE.3 ) MEMNL4 = 0.                                       40.41 40.31
       IF ( LSETUP.GT.0 ) SETPDA = 0.                                      40.31
 
@@ -1237,7 +1012,6 @@
 !$OMP+PRIVATE(IP,IDC,ISC)                                                 40.31
 !$OMP+PRIVATE(I1GRD,I2GRD,I1MYC,I2MYC)                                    40.31
 !$OMP+PRIVATE(JDUM,JJ,III)                                                40.31
-!$OMP+PRIVATE(IXGRID,IXQUAD,IQERR,J1,J2)                                  40.41
 !$OMP+PRIVATE(IS,IE,INCI,JS,JE,INCJ,JSD,JED,JNODE,JWFRS,JWFRE)            40.31
 !$OMP+COPYIN(ICMAX,CSETUP)
 !$OMP+COPYIN(COSLAT,PROPSL)
@@ -1245,7 +1019,10 @@
 !
 !$OMP MASTER                                                              40.22
 !  Print number of threads set by environment                             40.22
-!$    WRITE(SCREEN,*)"Number of OpenMP threads=",OMP_GET_NUM_THREADS()    40.22
+!$    IF ( IT.EQ.1 )                                                      41.10
+!$   +WRITE(SCREEN,'(a,i2/)')                                             41.10 40.22
+!$   +      ' Number of threads during execution of parallel region = ',  41.10 40.22
+!$   +      OMP_GET_NUM_THREADS()                                         41.10 40.22
 !$OMP END MASTER                                                          40.22
 
       CALL SWTSTA(101)                                                    40.23
@@ -1256,10 +1033,6 @@
 
       ALLOCATE(CAX(MDC,MSC,MICMAX))                                       40.22
       ALLOCATE(CAY(MDC,MSC,MICMAX))                                       40.22
-# ifdef BLOCK_JONSSON
-      ALLOCATE(UDIR(MDC,MICMAX))                                          07.09
-      ALLOCATE(UBLOCK(MSC,MICMAX))                                        07.09
-# endif
       ALLOCATE(CAX1(MDC,MSC,MICMAX))                                      40.22
       ALLOCATE(CAY1(MDC,MSC,MICMAX))                                      40.22
       ALLOCATE(CAS(MDC,MSC,MICMAX))                                       40.22
@@ -1344,9 +1117,6 @@
       CAD    = 0.                                                         40.31
       CGO    = 0.                                                         40.31
       KWAVE  = 0.                                                         40.31
-# ifdef BLOCK_JONSSON
-      UDIR  = 0.                                                          07.09
-# endif
       SWMATR = 0.                                                         40.31
       ALIMW  = 0.                                                         40.31
       IF ( IQUAD.GE.1 ) THEN                                              40.31
@@ -1409,6 +1179,7 @@
 !     *** interaction files                                    ***        40.41
 !                                                                         40.41
       CALL SWTSTA(135)                                                    40.41
+!$OMP MASTER
       IF (IQUAD.EQ.51.OR.IQUAD.EQ.52.OR.IQUAD.EQ.53) THEN                 40.41
          CALL init_constants                                              40.41
          IXQUAD = IQUAD - 50                                              40.41
@@ -1422,13 +1193,11 @@
          END IF                                                           40.41
 !                                                                         40.41
          IXGRID = 3                                                       40.41
-         J1 = I1GRD                                                       40.41
-         IF (J1.EQ.1) J1 = 2                                              40.41
-         J2 = I2GRD                                                       40.41
          CALL xnl_init(SPCSIG  , SPCDIR(:,1)*180./PI , MSC , MDC ,        40.41
-     &                 -PWTAIL(1), GRAV   , COMPDA(J1:J2,JDP2) ,          40.41
-     &                 J2-J1+1   , IXQUAD , IXGRID   ,INODE,IQERR )       40.41
+     &                 -PWTAIL(1), GRAV   , COMPDA(2,JDP2) ,              40.41
+     &                 MCGRD-1   , IXQUAD , IXGRID   ,INODE,IQERR )       40.41
       END IF                                                              40.41
+!$OMP END MASTER
       CALL SWTSTO(135)                                                    40.41
 !
       CALL SWTSTA(103)                                                    40.23
@@ -1437,7 +1206,8 @@
 !       initialise local (thread private) counter for SIP solver          40.31
         INOCNT = 0                                                        40.31
 !
-!       initialise Dissipation and Leak to 0 for each iteration
+!       initialise propagation, generation, dissipation, redistribution,  40.85
+!       leak and radiation stress for each iteration
 !       this is done in parallel within OpenMP environment                40.31
 !
         DO IP = I1GRD,I2GRD                                               40.31
@@ -1446,13 +1216,25 @@
           COMPDA(IP,JDSXB) = 0.                                           40.61
           COMPDA(IP,JDSXS) = 0.                                           40.61
           COMPDA(IP,JDSXW) = 0.                                           40.61
+          COMPDA(IP,JGENR) = 0.                                           40.85
+          COMPDA(IP,JGSXW) = 0.                                           40.85
+          COMPDA(IP,JREDS) = 0.                                           40.85
+          COMPDA(IP,JRSXQ) = 0.                                           40.85
+          COMPDA(IP,JRSXT) = 0.                                           40.85
+          COMPDA(IP,JTRAN) = 0.                                           40.85
+          COMPDA(IP,JTSXG) = 0.                                           40.85
+          COMPDA(IP,JTSXT) = 0.                                           40.85
+          COMPDA(IP,JTSXS) = 0.                                           40.85
+          COMPDA(IP,JRADS) = 0.                                           40.85
           COMPDA(IP,JQB  ) = 0.                                           40.67
         ENDDO
 !
 !       initialise Ursell number to 0 for each iteration                  40.03
 !       this is done in parallel within OpenMP environment                40.31
 !
-        IF (ITRIAD.GT.0) THEN
+        IF (ITRIAD.GT.0
+     &      .OR. ISURF.EQ.5                                               41.03
+     &                 ) THEN
            DO IP = I1GRD,I2GRD                                            40.31
             COMPDA(IP,JURSEL) = 0.
           ENDDO
@@ -1687,7 +1469,7 @@
 !
             IF (SCREEN.NE.PRINTF) THEN
               IF (NSTATC.EQ.1) THEN                                       40.00
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
                 IF (INODE.EQ.MASTER) WRITE(PRINTF,313) CHTIME, IT,
      &                                    ITER, SWPDIR, GRIDNUM
  313            FORMAT ('+time ', A18, ', step ',I4, '; iteration '
@@ -1885,17 +1667,9 @@
      &            OBREDF           ,REFLSO           ,                    40.41 40.22
      &            ISLMIN           ,NFLIM            ,NRSCAL           ,  40.23
      &            CAX1             ,CAY1                                  40.22
-# ifdef BLOCK_JONSSON
-     &            ,
-     &            UDIR            ,UBLOCK
-# endif
      &                                                                 )
                 CALL SWTSTO(104)                                          40.23
-!               This step is disallowed within a parallel region in       40.22
-!               OpenMP.                                                   40.22
-!OMP#ifndef _OPENMP                                                           40.22
                 IF (STPNOW()) RETURN                                      34.01
-!OMP#endif                                                                    40.22
 
 !----------------------------------------------------------------------   40.22
 !               Once the computation is done for grid point (IX,IY) the   40.22
@@ -2066,15 +1840,10 @@
 !       *** compute wave-induced setup ***                                32.02
 !
         CALL SWTSTA(106)                                                  40.23
-        IF (LSETUP.GT.0) THEN                                             31.03
-          CALL SETUPP ( KGRPNT, MSTPDA, SETPDA, AC2, COMPDA(1,JDP2),      40.41
+        IF (LSETUP.GT.0)                                                  31.03
+     &    CALL SETUPP ( KGRPNT, MSTPDA, SETPDA, AC2, COMPDA(1,JDP2),      40.41
      &                  COMPDA(1,JDPSAV), COMPDA(1,JSETUP),               40.41
      &                  XCGRID, YCGRID, SPCSIG, SPCDIR )                  40.41
-!         This step is disallowed within a parallel region in OpenMP.     40.22
-!OMP#ifndef _OPENMP                                                           40.22
-          IF (STPNOW()) RETURN                                            34.01
-!OMP#endif                                                                    40.22
-        ENDIF                                                             31.03
         CALL SWTSTO(106)                                                  40.23
 !
 !----------------------------------------------------------------------   40.31
@@ -2095,10 +1864,11 @@
      &             I1MYC           ,I2MYC                            )    40.31
         ELSE IF (PNUMS(21).EQ.1.) THEN                                    40.41
            CALL SWSTPC ( HSAC0         ,HSAC1           ,HSAC2 ,          40.41
-     &                   SACC1         ,SACC2           ,HSDIFC,          40.41
+     &                   SACC0         ,SACC1           ,SACC2 ,          40.93 40.41
+     &                   HSDIFC        ,TMDIFC          ,                 40.93 40.41
      &                   COMPDA(1,JDHS),COMPDA(1,JDTM)  ,                 40.41
      &                   COMPDA(1,JDP2),ACCUR           ,                 40.41
-     &                   I1MYC         ,I2MYC )                           40.41
+     &                   I1MYC         ,I2MYC           )                 40.93
         END IF                                                            40.41
         CALL SWTSTO(102)                                                  40.23
 !
@@ -2235,6 +2005,8 @@
       DEALLOCATE(SACC2)                                                   40.22
       DEALLOCATE(HSAC0)                                                   40.41
       DEALLOCATE(HSDIFC)                                                  40.41
+      DEALLOCATE(SACC0)                                                   40.93
+      DEALLOCATE(TMDIFC)                                                  40.93
       DEALLOCATE(ISLMIN)                                                  40.23
       DEALLOCATE(NFLIM)                                                   40.23
       DEALLOCATE(NRSCAL)                                                  40.23
@@ -2276,11 +2048,7 @@
      &                   KGRPNT   ,CROSS    ,                             16/MAY
      &                   OBREDF   ,REFLSO   ,                             40.41 040697
      &                   ISLMIN   ,NFLIM    ,NRSCAL   ,                   40.23
-     &                   CAX1     ,CAY1                                   33.08
-# ifdef BLOCK_JONSSON
-     &                   ,
-     &                   UDIR     ,UBLOCK
-# endif
+     &                   CAX1,CAY1                                        33.08
      &                                                 )
 !
 !************************************************************************
@@ -2307,7 +2075,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2608,10 +2376,11 @@
 !       Call SOURCE  to compute the source terms for each bin which fall
 !                    within a sweep:
 !                   1. Dissipation by wave-bottom effects
-!                   2. Dissipation due to whitecapping
-!                   3. Generation of wave energy by wind effects
-!                   4. Nonlinear wave-wave interactions (quadruplets)
-!                   5. Nonlinear wave-wave interactions (triads)
+!                   2. Dissipation due to surf breaking
+!                   3. Dissipation due to whitecapping
+!                   4. Generation of wave energy by wind effects
+!                   5. Nonlinear wave-wave interactions (quadruplets)
+!                   6. Nonlinear wave-wave interactions (triads)
 !       -----------------------------------------------------------------
 !       Call ACTION  calculate the derivatives in x,y,s,d space and store
 !                    the results in the corresponding arrays
@@ -2670,10 +2439,6 @@
      &         CAY1(MDC,MSC,MICMAX)     ,                                 33.08 40.22
      &         CAS(MDC,MSC,MICMAX)      ,                                 40.22
      &         CAD(MDC,MSC,MICMAX)                                        40.22
-# ifdef BLOCK_JONSSON
-      REAL  :: UDIR(MDC,MICMAX)                                           07.09
-      REAL  :: UBLOCK(MSC,MICMAX)                                         07.09
-# endif
       REAL  :: ALIMW(MDC,MSC)
 !              Since the logical piece of SWMATR was removed, the         40.22
 !              dimensions of SWMATR are now MSWMATR not MSWMAT            40.22
@@ -2973,26 +2738,17 @@
 !         then CAX1, CAY1 are not needed.                                 33.08
 !
           CALL SWTSTA(110)                                                40.23
- 
-#ifdef BLOCK_JONSSON
-          CALL SWAPAR ( COMPDA(1,JDP1), KWAVE, CGO, SPCSIG, UBLOCK )      40.41
-#else 
-          CALL SWAPAR ( COMPDA(1,JDP1), KWAVE, CGO, SPCSIG )
-#endif
-
+          CALL SWAPAR ( COMPDA(1,JDP1), KWAVE, CGO, SPCSIG )              40.41
           CALL SWTSTO(110)                                                40.23
 !
 !         *** compute the propagation velocities CAX1 and CAY1       ***
 !         *** for all directions for the gridpoints IC = 1 to ICMAX  ***
 
           CALL SWTSTA(111)                                                40.23
-          CALL SPROXY (CAX1           ,
+          CALL SPROXY (CAX1            ,
      &                 CAY1           ,CGO            ,SPCDIR(1,2)    ,   33.08
      &                 SPCDIR(1,3)    ,COMPDA(1,JVX1) ,COMPDA(1,JVY1) ,   33.08
-     &                 SWPDIR         
-#ifdef BLOCK_JONSSON
-     &                 ,UDIR
-#endif
+     &                 SWPDIR
      &                                                              )     33.08
           CALL SWTSTO(111)                                                40.23
 !
@@ -3003,12 +2759,8 @@
 !     *** Compute wavenumber KWAVE and group velocity CGO   ***
 !     *** in the gridpoints of the stencil                  ***
 
-      CALL SWTSTA(110) 
-# ifdef BLOCK_JONSSON
-      CALL SWAPAR ( COMPDA(1,JDP2), KWAVE, CGO, SPCSIG, UBLOCK )          40.41
-# else
-      CALL SWAPAR ( COMPDA(1,JDP2), KWAVE, CGO, SPCSIG )      
-# endif
+      CALL SWTSTA(110)                                                    40.23
+      CALL SWAPAR ( COMPDA(1,JDP2), KWAVE, CGO, SPCSIG )                  40.41
       CALL SWTSTO(110)                                                    40.23
 !
 !     *** compute the propagation velocities CAX and CAY        ***
@@ -3018,10 +2770,7 @@
       CALL SPROXY (CAX            ,
      &             CAY            ,CGO            ,SPCDIR(1,2)    ,
      &             SPCDIR(1,3)    ,COMPDA(1,JVX2) ,COMPDA(1,JVY2) ,
-     &             SWPDIR         
-# ifdef BLOCK_JONSSON  
-     &             ,UDIR
-# endif
+     &             SWPDIR
      &                                                            )
       CALL SWTSTO(111)                                                    40.23
 !
@@ -3061,8 +2810,9 @@
      &             SPCDIR(1,4)    ,SPCDIR(1,6)    ,SPCDIR(1,5)    ,       30.80
      &             RDX            ,RDY            ,                       30.80
      &             CAX            ,CAY            ,LSWMAT(1,1,JABIN),     40.02
-     &             KGRPNT         ,XCGRID         ,YCGRID,                40.03
-     &             IDDLOW         ,IDDTOP                         )       40.61
+     &             KGRPNT         ,XCGRID         ,YCGRID         ,       40.03
+     &             IDDLOW         ,IDDTOP                                 40.61
+     &                                                            )
       CALL SWTSTO(113)                                                    40.23
 
       CALL SWTSTA(114)                                                    40.23
@@ -3212,7 +2962,10 @@
      &  MEMNL4              ,WWINT               ,WWAWG               ,
      &  WWSWG               ,CGO                 ,COMPDA(1,JUSTAR)    ,
      &  COMPDA(1,JZEL)      ,SPCDIR              ,ANYWND              ,
+     &  CAS                 ,                                             41.11
      &  SWMATR(1,1,JDIS0)   ,SWMATR(1,1,JDIS1)   ,
+     &  SWMATR(1,1,JGEN0)   ,SWMATR(1,1,JGEN1)   ,                        40.85
+     &  SWMATR(1,1,JRED0)   ,SWMATR(1,1,JRED1)   ,                        40.85
      &  XIS                 ,COMPDA(1,JFRC2)     ,IT                  ,   40.00
      &  COMPDA(1,JURSEL)    ,LSWMAT(1,1,JABIN)   ,REFLSO                  40.41 40.03
      &                                                                )   30.21
@@ -3236,7 +2989,7 @@
      &         XCGRID            ,YCGRID            ,                     40.41
      &         ITER              ,KGRPNT            ,OBREDF            ,  40.41
      &         CAX1              ,CAY1              ,SPCDIR            ,  33.08
-     &         CGO                                                        33.08
+     &         CGO               ,SWMATR(1,1,JTRA0) ,SWMATR(1,1,JTRA1)    40.85 33.08
      &                                                                 )
         CALL SWTSTO(118)                                                  40.23
 !
@@ -3283,7 +3036,6 @@
      &                   INOCNV, IDDLOW, IDDTOP, ISSTOP, IDCMIN,          40.41
      &                   IDCMAX )
             CALL SWTSTO(120)                                              40.23
-            IF (STPNOW()) RETURN                                          34.01
 !
           ELSE IF (INT(PNUMS(8)).EQ.2 .OR. INT(PNUMS(8)).EQ.3) THEN       40.00
 !
@@ -3300,7 +3052,6 @@
      &                    LSWMAT(1,1,JABLK)  ,IDDLOW             ,        30.90
      &                    IDDTOP                                 )        5/mar
             CALL SWTSTO(120)                                              40.23
-!
 !
           END IF
 !
@@ -3334,6 +3085,32 @@
           ENDDO
         END IF
 !
+!       calculate propagation, generation, dissipation, redistribution
+!       leak and radiation stress in present grid point
+!
+        CALL SWTSTA(124)                                                  40.23
+        IF ( LADDS )                                                      40.85
+     &     CALL ADDDIS (COMPDA(1,JDISS)    ,COMPDA(1,JLEAK)    ,
+     &                  AC2                ,LSWMAT(1,1,JABIN)  ,          40.02
+     &                  SWMATR(1,1,JDIS0)  ,SWMATR(1,1,JDIS1)  ,
+     &                  SWMATR(1,1,JGEN0)  ,SWMATR(1,1,JGEN1)  ,          40.85
+     &                  SWMATR(1,1,JRED0)  ,SWMATR(1,1,JRED1)  ,          40.85
+     &                  SWMATR(1,1,JTRA0)  ,SWMATR(1,1,JTRA1)  ,          40.85
+     &                  SWMATR(1,1,JMATL)  ,SWMATR(1,1,JMATU)  ,          40.85
+     &                  SWMATR(1,1,JMAT5)  ,SWMATR(1,1,JMAT6)  ,          40.85
+     &                  COMPDA(1,JDSXB)    ,                              40.67 40.61
+     &                  COMPDA(1,JDSXS)    ,                              40.67 40.61
+     &                  COMPDA(1,JDSXW)    ,                              40.67 40.61
+     &                  COMPDA(1,JGSXW)    ,COMPDA(1,JGENR)    ,          40.85
+     &                  COMPDA(1,JRSXQ)    ,COMPDA(1,JRSXT)    ,          40.85
+     &                  COMPDA(1,JREDS)    ,                              40.85
+     &                  COMPDA(1,JTSXG)    ,COMPDA(1,JTSXT)    ,          40.85
+     &                  COMPDA(1,JTSXS)    ,COMPDA(1,JTRAN)    ,          40.85
+     &                  SWMATR(1,1,JLEK1)  ,COMPDA(1,JRADS)    ,          40.85
+     &                  SPCSIG                                            30.72
+     &                                                         )
+        CALL SWTSTO(124)                                                  40.23
+!
 !       *** if negative action density occur rescale with a factor ***
 !       *** only the sector computed is rescaled !!                ***
 !
@@ -3345,7 +3122,7 @@
 !
         CALL SWTSTA(122)                                                  40.23
         IF (PNUMS(20).LT.100.) THEN
-           IF (IWIND.NE.4) THEN                                           40.61
+           IF (IWIND.NE.4 .OR. NSTATC.NE.1) THEN                          40.96 40.61
 !             default limiter
               CALL PHILIM (AC2, SWMATR(1,1,JAOLD),                        40.31 40.16
      &                     CGO, KWAVE,                                    40.00
@@ -3386,23 +3163,355 @@
           ENDDO
         END IF
 !
-!       calculate Dissipation and Leak in all points
-!
  700    CONTINUE                                                          40.07
-        CALL SWTSTA(124)                                                  40.23
-        CALL ADDDIS (COMPDA(1,JDISS)    ,COMPDA(1,JLEAK)    ,
-     &               AC2                ,LSWMAT(1,1,JABIN)  ,             40.02
-     &               SWMATR(1,1,JDIS0)  ,SWMATR(1,1,JDIS1)  ,
-     &               COMPDA(1,JDSXB)    ,                                 40.67 40.61
-     &               COMPDA(1,JDSXS)    ,                                 40.67 40.61
-     &               COMPDA(1,JDSXW)    ,                                 40.67 40.61
-     &               SWMATR(1,1,JLEK1)  ,SPCSIG                           30.72
-     &                                                      )
-        CALL SWTSTO(124)                                                  40.23
 !
       END IF
 !
 !     End of the subroutine SWOMPU
+      RETURN
+      END
+!****************************************************************
+!
+      SUBROUTINE SWPRSET (SPCSIG)
+!
+!****************************************************************
+!
+      USE OCPCOMM4
+      USE SWCOMM2
+      USE SWCOMM3
+      USE SWCOMM4
+!
+      IMPLICIT NONE
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering                              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 2009  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+!
+!     40.80: Marcel Zijlema
+!
+!  1. Updates
+!
+!     40.80, Oct. 07: New subroutine
+!
+!  2. Purpose
+!
+!     Print all the settings used in SWAN run
+!
+!  4. Argument variables
+!
+!     SPCSIG      Relative frequencies in computational domain in sigma-space
+!
+      REAL SPCSIG(MSC)
+!
+!  6. Local variables
+!
+!     ICMX  :     stencil size
+!     IENT  :     number of entries in this subroutine
+!     IS    :     loop counter
+!
+      INTEGER ICMX, IS, IENT
+!
+!  9. Subroutines calling
+!
+!     SWCOMP
+!
+! 13. Source text
+!
+      SAVE IENT
+      DATA IENT/0/
+      IF (LTRACE) CALL STRACE (IENT,'SWPRSET')
+
+      WRITE(PRINTF,333) 'SWAN'                                            40.00
+ 333  FORMAT(/,
+     &'----------------------------------------------------------------'
+     &,/,
+     &'                  COMPUTATIONAL PART OF ', A
+     &,/,
+     &'----------------------------------------------------------------'
+     &,/)
+!
+      IF ( ONED ) THEN                                                    32.02
+         WRITE(PRINTF,*) 'One-dimensional mode of SWAN is activated'      32.02
+      ENDIF                                                               32.02
+!
+      IF (OPTG.NE.5) THEN                                                 40.80
+         WRITE(PRINTF,7001) MXC,MYC
+ 7001    FORMAT(' Gridresolution       : MXC    ',I12  ,' MYC   ',I12)
+         WRITE(PRINTF,7002) MCGRD                                         40.41
+ 7002    FORMAT('                      : MCGRD  ',I12)                    40.41
+         WRITE(PRINTF,7101) MSC,MDC
+ 7101    FORMAT('                      : MSC    ',I12  ,' MDC   ',I12)
+      ELSE
+         WRITE(PRINTF,7102) MSC,MDC
+ 7102    FORMAT(' Gridresolution       : MSC    ',I12  ,' MDC   ',I12)
+      ENDIF
+      WRITE(PRINTF,7201) MTC                                              40.41
+ 7201 FORMAT('                      : MTC    ',I12)                       40.41
+      WRITE(PRINTF,7301) NSTATC, ITERMX
+ 7301 FORMAT('                      : NSTATC ',I12  ,' ITERMX',I12)
+      WRITE(PRINTF,7013) ITFRE,IREFR
+ 7013 FORMAT(' Propagation flags    : ITFRE  ',I12  ,' IREFR ',I12)
+      WRITE(PRINTF,7014) IBOT,ISURF
+ 7014 FORMAT(' Source term flags    : IBOT   ',I12  ,' ISURF ',I12)
+      WRITE(PRINTF,7114) IWCAP,IWIND
+ 7114 FORMAT('                      : IWCAP  ',I12  ,' IWIND ',I12)
+      WRITE(PRINTF,7015) ITRIAD,IQUAD
+ 7015 FORMAT('                      : ITRIAD ',I12  ,' IQUAD ',I12)
+      IF (OPTG.NE.5) WRITE(PRINTF,7004) DX,DY                             40.80
+ 7004 FORMAT(' Spatial step         : DX     ',E12.4,' DY    ',E12.4)
+      WRITE(PRINTF,7104) EXP(ALOG(SHIG/SLOW)/REAL(MSC-1))-1.,             40.41
+     &                   DDIR/DEGRAD                                      40.41
+ 7104 FORMAT(' Spectral bin         : df/f   ',E12.4,' DDIR  ',E12.4)     40.41
+      WRITE(PRINTF,7003) GRAV, RHO                                        40.41
+ 7003 FORMAT(' Physical constants   : GRAV   ',E12.4,' RHO   ',E12.4)     40.41
+      WRITE(PRINTF,7027) U10 , WDIC/DEGRAD
+ 7027 FORMAT(' Wind input           : WSPEED ',E12.4,' DIR   ',E12.4)
+      WRITE(PRINTF,7123) PWTAIL(1),PWTAIL(2)
+ 7123 FORMAT(' Tail parameters      : E(f)   ',E12.4,' E(k)  ',E12.4)
+      WRITE(PRINTF,7133) PWTAIL(3),PWTAIL(4)
+ 7133 FORMAT('                      : A(f)   ',E12.4,' A(k)  ',E12.4)
+      WRITE(PRINTF,8013) PNUMS(1), PNUMS(4)                               40.41
+ 8013 FORMAT(' Accuracy parameters  : DREL   ',E12.4,' NPNTS ',E12.4)     40.41
+      IF (PNUMS(21).EQ.0.) THEN                                           40.41
+         WRITE(PRINTF,8213) PNUMS(15),PNUMS(16)                           40.41
+      ELSEIF (PNUMS(21).EQ.1.) THEN                                       40.41
+         WRITE(PRINTF,8214) PNUMS(2),PNUMS(15)                            40.41
+      ENDIF                                                               40.41
+ 8213 FORMAT('                      : DHOVAL ',E12.4,' DTOVAL',E12.4)     40.41
+ 8214 FORMAT('                      : DHABS  ',E12.4,' CURVAT',E12.4)     40.41
+      WRITE(PRINTF,3613) PNUMS(20)
+ 3613 FORMAT('                      : GRWMX  ',E12.4)
+      WRITE(PRINTF,8508) WLEV, DEPMIN                                     40.41
+ 8508 FORMAT(' Drying/flooding      : LEVEL  ',E12.4,' DEPMIN',E12.4)     40.41
+      IF (BNAUT) THEN                                                     40.41
+         WRITE (PRINTF,8510) 'nautical '                                  40.41
+      ELSE                                                                40.41
+         WRITE (PRINTF,8510) 'Cartesian'                                  40.41
+      ENDIF                                                               40.41
+ 8510 FORMAT(' The ',A9,                                                  40.41
+     &       ' convention for wind and wave directions is used')          40.41
+      IF (OPTG.EQ.5) THEN                                                 40.80
+        WRITE(PRINTF,8511) 'BSBT  '                                       40.80
+      ELSEIF (PROPSC.EQ.3) THEN                                           40.80 40.41
+        WRITE(PRINTF,8511) 'S&L   '                                       40.41
+        ICMX = 10                                                         40.41
+      ELSEIF (PROPSC.EQ.2) THEN                                           40.41
+        WRITE(PRINTF,8511) 'SORDUP'                                       40.41
+        ICMX = 5                                                          40.41
+      ELSE                                                                40.41
+        WRITE(PRINTF,8511) 'BSBT  '                                       40.41
+        ICMX = 3                                                          40.41
+      ENDIF                                                               40.41
+ 8511 FORMAT(' Scheme for geographic propagation is ',A6)                 40.41
+      IF (OPTG.NE.5) WRITE(PRINTF,8512) PROPSC, ICMX                      40.80 40.41
+ 8512 FORMAT(' Scheme geogr. space  : PROPSC ',I12  ,' ICMAX ',I12)       40.41
+      WRITE(PRINTF,8513) PNUMS(7), PNUMS(6)                               40.41
+ 8513 FORMAT(' Scheme spectral space: CSS    ',E12.4,' CDD   ',E12.4)     40.41
+!
+      IF ( (DYNDEP .OR. ICUR.EQ.1) .AND. INT(PNUMS(8)).EQ.1 ) THEN        40.41
+         WRITE(PRINTF,*) 'Solver is SIP'                                  40.23
+         WRITE(PRINTF,2213) PNUMS(12), INT(PNUMS(13))
+ 2213    FORMAT('                      : EPS2   ',E12.4,' OUTPUT',I12)
+         WRITE(PRINTF,8223) INT(PNUMS(14))
+ 8223    FORMAT('                      : NITER  ',I12)
+      ENDIF
+!
+      IF (ICUR.GT.0) THEN
+         WRITE (PRINTF,7115) 'on'
+      ELSE
+         WRITE (PRINTF,7115) 'off'
+      ENDIF
+ 7115 FORMAT(' Current is ', A3)
+!
+      IF (IQUAD.GT.0) THEN
+         WRITE(PRINTF,8413) IQUAD
+ 8413    FORMAT(' Quadruplets          : IQUAD  ',I12)
+         IF (IQUAD.LE.3 .OR. IQUAD.EQ.8) THEN                             40.41
+            WRITE(PRINTF,8414) PQUAD(1), PQUAD(2)                         40.41
+ 8414       FORMAT('                      : LAMBDA ',E12.4,               40.41
+     &                                    ' CNL4  ',E12.4)                40.41
+            WRITE(PRINTF,8415) PQUAD(3), PQUAD(4)                         40.41
+ 8415       FORMAT('                      : CSH1   ',E12.4,               40.41
+     &                                    ' CSH2  ',E12.4)                40.41
+            WRITE(PRINTF,8416) PQUAD(5)                                   40.41
+ 8416       FORMAT('                      : CSH3   ',E12.4)               40.41
+         ENDIF                                                            40.41
+         WRITE(PRINTF,8417) PTRIAD(3)                                     40.41
+ 8417    FORMAT(' Maximum Ursell nr for Snl4 :  ',E12.4)                  40.41
+      ELSE
+         WRITE (PRINTF, *) 'Quadruplets is off'
+      ENDIF                                                               40.41
+      IF (ITRIAD.GT.0) THEN                                               40.41
+         WRITE(PRINTF,9413) ITRIAD, PTRIAD(1)
+ 9413    FORMAT(' Triads               : ITRIAD ',I12  ,
+     &                                 ' TRFAC ',E12.4)
+         WRITE(PRINTF,9414) PTRIAD(2), PTRIAD(4)                          40.41
+ 9414    FORMAT('                      : CUTFR  ',E12.4,                  40.41
+     &                                 ' URCRI ',E12.4)                   40.41
+         WRITE(PRINTF,9415) PTRIAD(5)                                     40.41
+ 9415    FORMAT(' Minimum Ursell nr for Snl3 :  ',E12.4)                  40.41
+      ELSE
+         WRITE (PRINTF, *) 'Triads is off'
+      ENDIF                                                               40.41
+      IF (IBOT.EQ.2) THEN
+         WRITE(PRINTF,7005) PBOT(2), PBOT(1)
+ 7005    FORMAT(' Collins (`72)        : CFW    ',E12.4,' CFC   ',E12.4)
+      ELSEIF (IBOT.EQ.3) THEN
+         WRITE(PRINTF,7335) PBOT(4), PBOT(5)
+ 7335    FORMAT(' Madsen et al. (`84)  : MF     ',E12.4,' KN    ',E12.4)
+      ELSEIF (IBOT.EQ.1) THEN
+         WRITE(PRINTF,7325) PBOT(3)
+ 7325    FORMAT(' JONSWAP (`73)        : GAMMA  ',E12.4)
+      ELSEIF (IBOT.EQ.4) THEN                                             41.04
+         WRITE(PRINTF,7326) PBOT(6), PBOT(7)
+ 7326    FORMAT(' JONSWAP (`73)        : GAMMA1 ',E12.4,' GAMMA2',E12.4)
+         WRITE(PRINTF,7327) PBOT(8), PBOT(9)
+ 7327    FORMAT('                      : DSPR1  ',E12.4,' DSPR2 ',E12.4)
+      ELSE
+         WRITE (PRINTF, *) 'Bottom friction is off'
+      ENDIF
+!
+      IF (IWCAP.EQ.1) THEN
+         WRITE(PRINTF,6005) PWCAP(1),PWCAP(2)
+ 6005    FORMAT(' W-cap Komen (`84)    : EMPCOF ',E12.4,
+     &          ' APM   ',E12.4)
+      ELSEIF (IWCAP.EQ.2) THEN
+         WRITE(PRINTF,6335) PWCAP(3),PWCAP(4)
+ 6335    FORMAT(' W-cap Janssen (`90)  : CFJANS ',E12.4,
+     &          ' DELTA ',E12.4)
+      ELSEIF (IWCAP.EQ.3) THEN
+         WRITE(PRINTF,6135) PWCAP(5)
+ 6135    FORMAT(' W-cap Longuet-Higgins: CFLHIG ',E12.4)
+      ELSEIF (IWCAP.EQ.4) THEN
+         WRITE(PRINTF,6136) PWCAP(6), PWCAP(7)
+ 6136    FORMAT(' W-cap Battjes/Janssen: BJSTP  ',E12.4,
+     &          ' BJALF ',E12.4)
+      ELSEIF (IWCAP.EQ.5) THEN
+         WRITE(PRINTF,6136) PWCAP(6), PWCAP(7)
+         WRITE(PRINTF,6137) PWCAP(8)
+ 6137    FORMAT('                      : KCONV  ',E12.4)
+      ELSEIF (IWCAP.EQ.7) THEN                                            40.53
+         WRITE(PRINTF,6139) PWCAP(1), PWCAP(12)                           40.53
+         WRITE(PRINTF,6140) PWCAP(9), PWCAP(11)                           40.53
+ 6139    FORMAT(' W-cap Alves-Banner   : CDS2   ',                        40.53
+     &          E12.4,' BR    ',E12.4)                                    40.53
+ 6140    FORMAT('                      : POWST  ',                        40.53
+     &          E12.4,' POWK  ',E12.4)                                    40.53
+      ELSE
+         WRITE (PRINTF, *) 'Whitecapping is off'
+      ENDIF
+!
+      IF (ISURF.EQ.1) THEN
+         WRITE(PRINTF,7012) PSURF(1),PSURF(2)
+ 7012    FORMAT(' Battjes&Janssen (`78): ALPHA  ',E12.4,
+     &          ' GAMMA ',E12.4)
+      ELSEIF (ISURF.EQ.2) THEN                                            970219
+         WRITE(PRINTF,7212) PSURF(1), PSURF(4)
+ 7212    FORMAT(' Nelson (`94)         : ALPHA  ',E12.4,
+     &          ' GAMmin',E12.4)
+         WRITE(PRINTF,7213) PSURF(5)
+ 7213    FORMAT('                        GAMmax ',E12.4)
+      ELSEIF (ISURF.EQ.3) THEN                                            41.03
+         WRITE(PRINTF,7214) PSURF(1), PSURF(4)
+ 7214    FORMAT(' Ruessink et al (2003): ALPHA  ',E12.4,
+     &          ' A     ',E12.4)
+         WRITE(PRINTF,7215) PSURF(5)
+ 7215    FORMAT('                        B      ',E12.4)
+      ELSEIF (ISURF.EQ.4) THEN                                            41.03
+         WRITE(PRINTF,7216) PSURF(1), PSURF(2)
+ 7216    FORMAT(' Thornton&Guza (`83)  : ALPHA  ',E12.4,
+     &          ' GAMMA ',E12.4)
+         WRITE(PRINTF,7217) PSURF(4)
+ 7217    FORMAT('                        N      ',E12.4)
+      ELSEIF (ISURF.EQ.5) THEN                                            41.03
+         WRITE(PRINTF,7218) PSURF(1), PSURF(4)
+ 7218    FORMAT(' Surf biphase (2009)  : ALPHA  ',E12.4,
+     &          ' N     ',E12.4)
+         WRITE(PRINTF,7219) PSURF(5)
+ 7219    FORMAT('                        BREF   ',E12.4)
+      ELSE
+         WRITE (PRINTF, *) 'Surf breaking is off'
+      ENDIF
+!
+      IF (LSETUP.GT.0) THEN
+         WRITE(PRINTF,7109) PSETUP(2)
+ 7109    FORMAT(' Set-up               : SUPCOR ',E12.4)
+      ELSE
+         WRITE (PRINTF, *) 'Set-up is off'
+      ENDIF
+!
+      IF (IDIFFR.EQ.1) THEN                                               40.41
+         WRITE(PRINTF,7110) PDIFFR(1), NINT(PDIFFR(2))
+ 7110    FORMAT(' Diffraction          : SMPAR  ',E12.4,
+     &          ' SMNUM ',I12)
+      ELSE
+         WRITE (PRINTF, *) 'Diffraction is off'
+      ENDIF
+!
+      WRITE(PRINTF,7126) PWIND(14), PWIND(15)
+ 7126 FORMAT(' Janssen (`89,`90)    : ALPHA  ',E12.4,
+     &       ' KAPPA ',E12.4)
+      WRITE(PRINTF,7136) PWIND(16), PWIND(17)
+ 7136 FORMAT(' Janssen (`89,`90)    : RHOA   ',E12.4,
+     &       ' RHOW  ',E12.4)
+      WRITE(PRINTF,*)
+      WRITE(PRINTF,1012) PWIND(1), PWIND(2)
+ 1012 FORMAT(' 1st and 2nd gen. wind: CF10   ',E12.4,
+     &       ' CF20  ',E12.4)
+      WRITE(PRINTF,1013) PWIND(3), PWIND(4)
+ 1013 FORMAT('                      : CF30   ',E12.4,
+     &       ' CF40  ',E12.4)
+      WRITE(PRINTF,1014) PWIND(5), PWIND(6)
+ 1014 FORMAT('                      : CF50   ',E12.4,
+     &       ' CF60  ',E12.4)
+      WRITE(PRINTF,1015) PWIND(7), PWIND(8)
+ 1015 FORMAT('                      : CF70   ',E12.4,
+     &       ' CF80  ',E12.4)
+      WRITE(PRINTF,1016) PWIND(9), PWIND(10)
+ 1016 FORMAT('                      : RHOAW  ',E12.4,
+     &       ' EDMLPM',E12.4)
+      WRITE(PRINTF,1017) PWIND(11), PWIND(12)
+ 1017 FORMAT('                      : CDRAG  ',E12.4,
+     &       ' UMIN  ',E12.4)
+      WRITE(PRINTF,1018) PWIND(13)
+ 1018 FORMAT('                      : LIM_PM ',E12.4)
+!
+      WRITE(PRINTF,*)
+      IF ( ITEST .GT. 2 )  THEN
+         DO IS = 1, MSC
+            WRITE(PRINTF,*)' IS and SPCSIG(IS)    :',IS,SPCSIG(IS)        30.72
+         ENDDO
+         WRITE(PRINTF,*)
+      ENDIF
+
       RETURN
       END
 !****************************************************************
@@ -3438,7 +3547,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3720,7 +3829,6 @@
 !     Note that initialization of ACCUR is not needed since it is         40.31
 !     not being summed upon                                               40.31
       IACCURt = 0                                                         40.31
-      PI2     = 2.*PI
 !
 !     Calculate the mean Hs and Tm over all wet gridpoints. These means
 !     are then used as an overall accuracy measure.
@@ -3754,9 +3862,7 @@
       ARR(2) = SMN2                                                       40.30
       CALL SWREDUCE( ARR, 2, SWREAL, SWSUM )                              40.30
       CALL SWREDUCE( NINDX, 1, SWINT, SWSUM )                             40.41
-!OMP#ifndef _OPENMP                                                           40.31
       IF (STPNOW()) RETURN                                                40.30
-!OMP#endif                                                                    40.31
       HSMN2 = ARR(1) / REAL(NINDX)                                        40.30 30.82
        SMN2 = ARR(2) / REAL(NINDX)                                        40.30 30.82
 !$OMP END MASTER                                                          40.31
@@ -3855,9 +3961,7 @@
 !$OMP MASTER                                                              40.31
 !
       CALL SWREDUCE ( IACCUR, 1, SWINT, SWSUM )                           40.30
-!OMP#ifndef _OPENMP                                                           40.31
       IF (STPNOW()) RETURN                                                40.30
-!OMP#endif                                                                    40.31
       ACCUR  = REAL(IACCUR) * 100. / REAL(NINDX)
 !$OMP END MASTER                                                          40.31
 !$OMP BARRIER                                                             40.31
@@ -3907,7 +4011,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4105,11 +4209,7 @@
      &                   XCGRID     ,YCGRID     ,                         40.41
      &                   ITER       ,KGRPNT     ,OBREDF     ,             40.41
      &                   CAX1       ,CAY1       ,SPCDIR     ,             33.08
-     &                   CGO                                              33.08
-# ifdef BLOCK_JONSSON
-     &                   ,
-     &                   UDIR       ,UBLOCK    
-# endif  
+     &                   CGO        ,TRAC0      ,TRAC1                    40.85 33.08
      &                                                      )
 !
 !****************************************************************
@@ -4131,7 +4231,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4163,6 +4263,7 @@
 !     40.23: Marcel Zijlema
 !     40.28: Annette Kieftenburg
 !     40.41: Marcel Zijlema
+!     40.85: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -4186,6 +4287,7 @@
 !                     with other subroutines
 !     40.41, Aug. 04: call to SWTRCF removed because superfluous
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.85, Aug. 08: add transport for output purposes
 !
 !  2. Purpose
 !
@@ -4323,10 +4425,6 @@
 !
       REAL  :: AC2(MDC,MSC,MCGRD)  ,AC1(MDC,MSC,MCGRD)
       REAL  :: CAX(MDC,MSC,MICMAX)  ,CAY(MDC,MSC,MICMAX)                  40.22
-# ifdef BLOCK_JONSSON  
-      REAL  :: UDIR(MDC,MICMAX)                                           07.09
-      REAL  :: UBLOCK(MSC,MICMAX) 
-# endif
       REAL  :: CAX1(MDC,MSC,MICMAX) ,CAY1(MDC,MSC,MICMAX)                 33.08 40.22
       REAL  :: CGO(MSC,MICMAX)                                            33.08 40.22
       REAL  :: CAS(MDC,MSC,MICMAX) ,CAD(MDC,MSC,MICMAX)                   40.22
@@ -4336,7 +4434,9 @@
      &         LEAKC1(MDC,MSC)
       REAL  :: RDX(10)             ,RDY(10)             ,                 33.09 40.08
      &         OBREDF(MDC,MSC,2)   ,
-     &         SPCDIR(MDC,6)                                             33.08
+     &         SPCDIR(MDC,6)                                              33.08
+      REAL  :: TRAC0 (1:MDC,1:MSC,1:MTRNP)                                40.85
+      REAL  :: TRAC1 (1:MDC,1:MSC,1:MTRNP)                                40.85
 !
       LOGICAL  ANYBLK(MDC,MSC)     ,ANYBIN(MDC,MSC)
 !
@@ -4363,6 +4463,11 @@
         ENDDO
       ENDDO
 !
+!     *** set all transport coeff at 0 ***
+!
+      TRAC0(1:MDC,1:MSC,1:MTRNP) = 0.                                     40.85
+      TRAC1(1:MDC,1:MSC,1:MTRNP) = 0.                                     40.85
+!
       CALL SWTSTA(140)                                                    40.23
 !
 !     *** Call propagation module in X-Y space  ***
@@ -4371,16 +4476,17 @@
       IF (PROPSL.EQ.3) THEN    ! use S&L scheme
           CALL SANDL(ISSTOP   ,IDCMIN   ,IDCMAX   ,CGO     ,CAX    ,      33.09
      &               CAY      ,AC2      ,AC1      ,IMATRA  ,IMATDA ,      33.09
-     &               RDX      ,RDY      ,CAX1     ,CAY1    ,SPCDIR)       33.09
+     &               RDX      ,RDY      ,CAX1     ,CAY1    ,SPCDIR ,      33.09
+     &               TRAC0    ,TRAC1    )                                 40.85
       ELSE IF (PROPSL.EQ.2) THEN ! use SORDUP scheme                      33.10
          CALL SORDUP(ISSTOP   ,IDCMIN   ,IDCMAX   ,CAX      ,             33.10
      &               CAY      ,AC2      ,IMATRA   ,IMATDA   ,             33.10
-     &               RDX      ,RDY  )                                     33.10
+     &               RDX      ,RDY      ,TRAC0    ,TRAC1    )             40.85 33.10
       ELSE                     ! use BSBT scheme
          CALL STRSXY(ISSTOP   ,IDCMIN   ,IDCMAX   ,CAX      ,             40.00
      &               CAY      ,AC2      ,AC1      ,IMATRA   ,IMATDA   ,
      &                         RDX      ,RDY      ,                       40.00
-     &               OBREDF          )                                    40.00
+     &               OBREDF   ,TRAC0    ,TRAC1    )                       40.85 40.00
 !
       END IF                                                              33.08
       CALL SWTSTO(140)                                                    40.23
@@ -4420,7 +4526,7 @@
           CALL STRSSI (SPCSIG  ,
      &                 CAS     ,IMAT5L  ,IMATDA  ,IMAT6U  ,ANYBIN  ,
      &                 IMATRA  ,AC2     ,ISCMIN  ,ISCMAX  ,IDDLOW  ,
-     &                 IDDTOP                                      )      40.41 30.21
+     &                 IDDTOP  ,TRAC0   ,TRAC1                     )      40.85 40.41 30.21
 !
         ELSE IF ( INT(PNUMS(8)) .EQ. 2 ) THEN
 !
@@ -4432,11 +4538,7 @@
           CALL STRSSB (IDDLOW  ,IDDTOP  ,
      &                 IDCMIN  ,IDCMAX  ,ISSTOP  ,CAX     ,CAY     ,
      &                 CAS     ,AC2     ,SPCSIG  ,IMATRA  ,
-     &                 ANYBLK  ,RDX     ,RDY                              40.41 30.21
-# ifdef BLOCK_JONSSON  
-     &                 ,UDIR    ,UBLOCK                             
-# endif
-     &                 )
+     &                 ANYBLK  ,RDX     ,RDY     ,TRAC0            )      41.07 40.41 30.21
 !
         END IF
       END IF
@@ -4450,7 +4552,7 @@
             CALL STRSD (DDIR    ,IDCMIN  ,
      &                  IDCMAX  ,CAD     ,IMATLA  ,IMATDA  ,IMATUA  ,
      &                  IMATRA  ,AC2     ,ISSTOP  ,
-     &                  ANYBIN  ,LEAKC1                             )     40.41 30.21
+     &                  ANYBIN  ,LEAKC1  ,TRAC0   ,TRAC1            )     40.85 40.41 30.21
          ELSE IF ( PROPFL.EQ.1 ) THEN                                     40.23
             CALL SWFLXD (CAD, IMATLA, IMATDA, IMATUA, IMATRA,             40.23
      &                   AC2, DDIR, ANYBIN, LEAKC1, IDCMIN,               40.23
@@ -4523,7 +4625,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4626,7 +4728,7 @@
 !     QB      : computed in the subroutine FRABRE
 !     SIGM01  = ETOT1 / ETOT
 !     SIGM_10 = ETOT  / ACTOT
-!     UBOT    = Sqrt [ UB2 ]
+!     UBOT    = Sqrt [ 2 UB2 ] Note: this is Urms according to Madsen (1994)
 !     TMBOT   = 2*PI AB2 / UB2
 !
 !  4. Argument variables
@@ -4674,6 +4776,7 @@
 !
 !     AB2                : Sum of E_DSHKD2_DS_DD
 !     ACTOT_DSIG         : Integration term for calculating ACTOT
+!     BIPH               : parameterized biphase of the spectrum
 !     EDRKTOT_SWELL      : Swell-part of EDRKTOT
 !     EMAX               : Maximum energy according calculated HM
 !     ETOT_DRK_DSIG      : Integration term for calculating EDRKTOT
@@ -4687,8 +4790,11 @@
 !     FRINT_X_DDIR       : FRINTF * DDIR
 !     SINH_K_X_DEP_2     : SINH(KWAVE*DEP2)**2
 !     UB2                : Sum of ETOT_SIG2_DSHKD2_DSIG
+!     WH                 : fraction of breaking waves
 !
       REAL              :: AB2, EMAX, UB2
+      REAL              :: WH
+      REAL              :: BIPH
       REAL              :: FRINTF_X_DDIR
       REAL              :: BRCOEF   ! variable breaking coefficient (calc. in BRKPAR)  40.22
 !
@@ -4755,12 +4861,14 @@
 !
       ETOT = ETOT + ETOT_DSIG(MSC) * PWTAIL(6) / FRINTF
 !
-      IF (ISURF .EQ. 1) THEN
+      IF (ISURF .EQ. 1 .OR. ISURF.EQ.4                                    41.03
+     &    .OR. ISURF.EQ.5                                                 41.03
+     &                                ) THEN
         HM   = PSURF(2) * DEP2(KCGRD(1))                                  40.22
-      ELSEIF (ISURF .GE. 2) THEN
+      ELSEIF (ISURF .EQ. 2 .OR. ISURF.EQ.3) THEN                          41.03
 !        Calulate the correct breaking coefficient BRCOEF
          CALL BRKPAR (BRCOEF  ,SPCDIR(1,2), SPCDIR(1,3), AC2     ,
-     &                SIGPOW(:,1), DEP2, RDX, RDY            )            40.22
+     &                SIGPOW(:,1), DEP2, RDX, RDY, KWAVE         )        41.03 40.22
         HM   = BRCOEF * DEP2(KCGRD(1))                                    40.22
       ELSE
 !       breaking disabled, assign very high value to HM
@@ -4836,14 +4944,23 @@
           HS       = 4. * SQRT (ETOT)
         END IF
 !
-!     Calculate QB, when breaking is activated
+!       --- calculate Qb when Battjes/Janssen breaking is activated
 !
-        IF (ISURF.GT.0) CALL FRABRE (HM, ETOT, QB(KCGRD(1)))
+        IF ( ISURF.GT.0 .AND. ISURF.LT.4 ) THEN
+           CALL FRABRE (HM, ETOT, QB(KCGRD(1)))
+!
+!       --- calculate Qb when Thornton/Guza breaking is activated         41.03
+!
+        ELSEIF (ISURF.EQ.4) THEN
+           WH = (2.*SQRT(2.*ETOT)/HM)**PSURF(4)
+           WH = MIN(1.,WH)
+           QB(KCGRD(1)) = WH
+        ENDIF
 !
 !     Calculate the orbital velocity UBOT, orbital excursion ABRBOT and
 !     bottom wave period TMBOT                                            40.51
 !
-        IF ( UB2 .GT. 0.) UBOT(KCGRD(1)) = SQRT ( UB2 )
+        IF ( UB2 .GT. 0.) UBOT(KCGRD(1)) = SQRT ( 2. * UB2 )
         IF ( AB2 .GT. 0.) ABRBOT = SQRT (2. *  AB2)
         IF ( UB2.GT.0. .AND. AB2.GT.0. )                                  40.51
      &                               TMBOT(KCGRD(1)) = PI2*SQRT(AB2/UB2)  40.51
@@ -4853,7 +4970,9 @@
 !     *** calculate Ursell number ***
 !     *** update only for first encounter in a sweep                      40.16
 !
-      IF ( ITRIAD.GT.0 ) THEN                                             40.41
+      IF ( ITRIAD.GT.0                                                    40.41
+     &     .OR. ISURF.EQ.5                                                41.03
+     &                 ) THEN                                             40.41
          IF (( SWPDIR .EQ. 1) .OR.                                        40.16
      &       ( SWPDIR .EQ. 2 .AND. IXCGRD(1) .EQ. 1) .OR.                 40.16
      &       ( SWPDIR .EQ. 3 .AND. IYCGRD(1) .EQ. 1) .OR.                 40.16
@@ -4866,6 +4985,19 @@
         URSELL(KCGRD(1)) = 0.                                             40.41
       END IF                                                              40.41
 !
+!     --- calculate Qb when biphase scaling is activated                  41.03
+!
+      IF (ISURF.EQ.5) THEN
+         BIPH = 0.5*PI*(TANH(PTRIAD(4)/URSELL(KCGRD(1)))-1.)
+         IF ( BIPH.LT.0. ) THEN
+            WH = (BIPH/PSURF(5))**PSURF(4)
+            WH = MIN(1.,WH)
+            QB(KCGRD(1)) = WH
+         ENDIF
+      ENDIF
+!
+      QB_LOC = QB(KCGRD(1))
+!
 !     *** test output ***
 !
       IF (TESTFL .AND. ITEST.GE.60) THEN
@@ -4873,13 +5005,11 @@
  901     FORMAT (' SINTGRL: ETOT Hs Sigma K Aorb', 5(1X, E11.4))
       END IF
 !
-!
 !     Set variables used outside the whitecapping scope
 !
       AC2TOT = ACTOT
       KMESPC = KM_WAM
       SMEBRK = SIGM01
-      QB_LOC = QB(KCGRD(1))
 !
       RETURN
 !
@@ -4918,7 +5048,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5138,7 +5268,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5341,9 +5471,7 @@
       DO IS = 1, MSC
         DO ID = 1, MDC
           IMATRA(ID,IS) = 0.
-          IMATLA(ID,IS) = 0.
           IMATDA(ID,IS) = 0.
-          IMATUA(ID,IS) = 0.
         ENDDO
       ENDDO
 !
@@ -5386,7 +5514,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5674,9 +5802,7 @@
       DO IS = 1, MSC
         DO ID = 1, MDC
           IMATRA(ID,IS) = 0.
-          IMATLA(ID,IS) = 0.
           IMATDA(ID,IS) = 0.
-          IMATUA(ID,IS) = 0.
           ICOLU2(ID)    = 0.
         ENDDO
       ENDDO
@@ -5712,7 +5838,9 @@
      &                     MEMNL4     ,WWINT      ,WWAWG      ,
      &                     WWSWG      ,CGO        ,USTAR      ,
      &                     ZELEN      ,SPCDIR     ,ANYWND     ,
-     &                     DISSC0     ,DISSC1     ,
+     &                     CAS        ,                                   41.11
+     &                     DISSC0     ,DISSC1     ,GENC0      ,           40.85
+     &                     GENC1      ,REDC0      ,REDC1      ,           40.85
      &                     XIS        ,FRCOEF     ,IT         ,           30.00
      &                     URSELL     ,ANYBIN     ,REFLSO                 40.41 40.03
      &                                                        )           30.21
@@ -5743,7 +5871,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5775,6 +5903,7 @@
 !     40.41: Andre van der Westhuysen
 !     40.41: Marcel Zijlema
 !     40.61: Marcel Zijlema
+!     40.85: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -5800,6 +5929,7 @@
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.61, Sep. 06: introduction of all separate dissipation coefficients
 !                     for output purposes
+!     40.85, Aug. 08: add generation and redistribition for output purposes
 !
 !  2. Purpose
 !
@@ -5908,14 +6038,12 @@
 !
 !     PBOT(1)   = CFC      0.005    (Putnam and Collins equation)
 !     PBOT(2)   = CFW      0.01     (Putnam and Collins equation)
-!     PBOT(3)   = GAMJNS   0.0038   (Jonswap equation)
+!     PBOT(3)   = GAMJNS   0.067    (Jonswap equation)
 !     PBOT(4)   = MF      -0.08     (Madsen et al. equation)
 !     PBOT(5)   = KN       0.05     (Madsen et al. bottom roughness)
 !
-!     PNUMS(*)  =
-!
 !     PSURF(1)  = ALFA     1.0      (Battjes & Janssen, 1978)
-!     PSURF(2)  = GAMMA    0.8      (Breaking criterium)
+!     PSURF(2)  = GAMMA    0.73     (breaking criterium)
 !
 !     PWCAP(1)  = ALFAWC   2.36e-5  (Emperical coefficient)
 !     PWCAP(2)  = ALFAPM   3.02E-3  (Alpha of Pierson Moskowitz frequency)
@@ -5942,7 +6070,7 @@
 !     -----------
 !     PWIND(14) 1D    alfa (which is tuned at 0.01)
 !     PWIND(15) 1D    Kappa ( 0.41)
-!     PWIND(16) 1D    Rho air (1.32)
+!     PWIND(16) 1D    Rho air (1.28)
 !     PWIND(17) 1D    Rho water (1025)
 !
 !  6. Local variables
@@ -5971,7 +6099,6 @@
 !   ------------------------------------------------------------
 !   If SSURF is on (ISURF > 0 ) then,
 !     Call SSURF to compute the source term due to wave breaking
-!       according to Battjes and Janssen (1978)
 !   ------------------------------------------------------------
 !   IF IWIND =1 OR IWIND =2 THEN
 !     Call WNDPAR (first or second generation mode of source terms
@@ -6055,10 +6182,15 @@
       REAL  :: WWAWG(*)
       REAL  :: WWSWG(*)
       REAL  :: CGO(MSC,MICMAX)                                            40.22
+      REAL  :: CAS(MDC,MSC,MICMAX)                                        41.11
       REAL  :: USTAR(MCGRD)
       REAL  :: ZELEN(MCGRD)
       REAL  :: DISSC0(1:MDC,1:MSC,1:MDISP)                                40.67
       REAL  :: DISSC1(1:MDC,1:MSC,1:MDISP)                                40.67
+      REAL  :: GENC0 (1:MDC,1:MSC,1:MGENR)                                40.85
+      REAL  :: GENC1 (1:MDC,1:MSC,1:MGENR)                                40.85
+      REAL  :: REDC0 (1:MDC,1:MSC,1:MREDS)                                40.85
+      REAL  :: REDC1 (1:MDC,1:MSC,1:MREDS)                                40.85
       REAL  :: URSELL(MCGRD)                                              40.03
       REAL  :: FRCOEF(MCGRD)                                              20.68
       REAL  :: REFLSO(MDC,MSC)                                            40.41
@@ -6075,28 +6207,35 @@
       SAVE IENT
       DATA IENT/0/
       IF (LTRACE) CALL STRACE (IENT,'SOURCE')
-
 !
-!     *** set coefficients in the arrays 0 ***
+!     *** set relevant matrix elements to 0 ***
 !
-      DO IS = 1, MSC                                                      17/JAN
-        DO ID = 1, MDC
-          IMATRA(ID,IS) = 0.
-          IMATDA(ID,IS) = 0.
-        ENDDO
-      ENDDO
+      IF (OPTG.NE.5) THEN                                                 40.80
+         IMATRA = 0.
+         IMATDA = 0.
+      ENDIF
 !
 !     *** set all dissipation coeff at 0 ***
 !
       DISSC0(1:MDC,1:MSC,1:MDISP) = 0.                                    40.67
       DISSC1(1:MDC,1:MSC,1:MDISP) = 0.                                    40.67
 !
+!     *** set all generation coeff at 0 ***
+!
+      GENC0(1:MDC,1:MSC,1:MGENR) = 0.                                     40.85
+      GENC1(1:MDC,1:MSC,1:MGENR) = 0.                                     40.85
+!
+!     *** set all redistribution coeff at 0 ***
+!
+      REDC0(1:MDC,1:MSC,1:MREDS) = 0.                                     40.85
+      REDC1(1:MDC,1:MSC,1:MREDS) = 0.                                     40.85
+!
       CALL SWTSTA(130)                                                    40.23
       IF (IBOT .GE. 1) THEN
 !
 !       *** wave-bottom interactions ***
 !
-        CALL SBOT (ABRBOT   ,DEP2     ,ECOS     ,ESIN     ,
+        CALL SBOT (ABRBOT   ,DEP2     ,ECOS     ,ESIN     ,AC2      ,     41.04
      &             IMATDA   ,KWAVE    ,SPCSIG   ,UBOT     ,UX2      ,     30.72
      &             UY2      ,IDCMIN   ,IDCMAX   ,
      &             PLBTFR   ,ISSTOP   ,DISSC1   ,VARFR    ,FRCOEF   )     40.67
@@ -6106,13 +6245,10 @@
       CALL SWTSTA(131)                                                    40.23
       IF (ISURF .GE. 1) THEN
 !
-!       *** wave breaking with Kirby type formulation (f/fm)^2 ***
+!         *** calculate surf breaking source term (5 formulations) ***    41.03
 !
-!
-!         *** wave breaking according to Battjes and Janssen (1978) ***
-!
-          CALL SSURF (ETOT    ,HM      ,
-     &                QBLOC   ,SMEBRK  ,AC2     ,IMATRA  ,                30.81
+          CALL SSURF (ETOT    ,HM      ,QBLOC   ,SMEBRK  ,
+     &                KMESPC  ,SPCSIG  ,AC2     ,IMATRA  ,                30.81
      &                IMATDA  ,IDCMIN  ,IDCMAX  ,PLWBRK  ,
      &                ISSTOP  ,DISSC0  ,DISSC1  )                         40.67 40.61 30.21
 !
@@ -6130,13 +6266,13 @@
      &  CALL SWIND0 (IDCMIN  ,IDCMAX  ,ISSTOP  ,
      &               SPCSIG  ,THETAW  ,ANYWND  ,
      &               UFRIC   ,FPM     ,PLWNDA  ,
-     &               IMATRA  ,SPCDIR  )
+     &               IMATRA  ,SPCDIR  ,GENC0   )
       ENDIF
 !
       IF ( IWIND .EQ. 1 .OR. IWIND .EQ. 2 ) THEN                          970220
 !
          CALL WNDPAR (ISSTOP,IDWMIN,IDWMAX,IDCMIN,IDCMAX,                 32.06
-     &                   DEP2  ,WIND10,                                   32.06
+     &                   DEP2  ,WIND10,GENC0,GENC1,                       40.85 32.06
      &                   THETAW,AC2   ,KWAVE ,IMATRA,IMATDA,              32.06
      &                   SPCSIG,CGO   ,ALIMW ,GROWW ,ETOTW ,              32.06
      &                   PLWNDA,PLWNDB,SPCDIR,ITER            )           32.06
@@ -6146,10 +6282,10 @@
 !
 !       *** Wind input according to Snyder et al (1981) ***
 !
-        CALL SWIND3 (SPCSIG  ,THETAW  ,IMATDA  ,
-     &               KWAVE   ,IMATRA  ,
+        CALL SWIND3 (SPCSIG  ,THETAW  ,
+     &               KWAVE   ,IMATRA  ,GENC0   ,
      &               IDCMIN  ,IDCMAX  ,AC2     ,UFRIC   ,
-     &               FPM     ,PLWNDB  ,ISSTOP  ,SPCDIR  ,ANYWND  )
+     &               FPM     ,PLWNDA  ,ISSTOP  ,SPCDIR  ,ANYWND  )
 !
       ELSE IF ( IWIND .EQ. 4 ) THEN
 !
@@ -6157,9 +6293,9 @@
 !
         CALL SWIND4  (IDWMIN  ,IDWMAX  ,
      &                SPCSIG  ,WIND10  ,THETAW  ,XIS     ,
-     &                DDIR    ,KWAVE   ,IMATRA  ,
+     &                DDIR    ,KWAVE   ,IMATRA  ,GENC0   ,
      &                IDCMIN  ,IDCMAX  ,AC2     ,UFRIC   ,
-     &                PLWNDB  ,ISSTOP  ,ITER    ,USTAR   ,ZELEN   ,
+     &                PLWNDA  ,ISSTOP  ,ITER    ,USTAR   ,ZELEN   ,
      &                SPCDIR  ,ANYWND  ,IT      )
 !
       ELSE IF ( IWIND .EQ. 5 ) THEN
@@ -6168,8 +6304,8 @@
 !
         CALL SWIND5 (SPCSIG  ,THETAW  ,ISSTOP  ,
      &               UFRIC   ,KWAVE   ,IMATRA  ,IDCMIN  ,
-     &               IDCMAX  ,AC2     ,ANYWND  ,PLWNDB  ,
-     &               SPCDIR                             )
+     &               IDCMAX  ,AC2     ,ANYWND  ,PLWNDA  ,
+     &               SPCDIR  ,GENC0                     )
 
       END IF
       CALL SWTSTO(132)                                                    40.23
@@ -6181,6 +6317,7 @@
      &                            IDCMIN  ,IDCMAX  ,ISSTOP  ,             40.02
      &                            ETOT    ,IMATDA  ,IMATRA  ,PLWCAP  ,    40.02
      &                            CGO     ,UFRIC   ,                      40.53
+     &                            CAS     ,                               41.11
      &                            DEP2    ,DISSC1  ,DISSC0  )             40.67 40.61 40.12
       CALL SWTSTO(133)                                                    40.23
 !
@@ -6193,17 +6330,10 @@
 !       *** geographical gridpoint a continuous spectrum    ***
 !       *** is present, i.e., after first iteration         ***
 !
-        IF ( ICUR .EQ. 0 .AND. ITER .GE. 1 ) THEN
+        IF ( ICUR .EQ. 0 .OR. ITER .GT. 1 ) THEN
 !
             CALL SWLTA ( AC2   , DEP2  , CGO   , SPCSIG,                  40.55
-     &                   KWAVE , IMATRA, IMATDA,
-     &                   IDDLOW, IDDTOP, ISSTOP, IDCMIN, IDCMAX,
-     &                   HS    , SMEBRK, PLTRI , URSELL )
-!
-        ELSE IF ( ICUR .EQ. 1 .AND. ITER .GT. 1 ) THEN
-!
-            CALL SWLTA ( AC2   , DEP2  , CGO   , SPCSIG,                  40.55
-     &                   KWAVE , IMATRA, IMATDA,
+     &                   KWAVE , IMATRA, IMATDA, REDC0 , REDC1 ,          40.85
      &                   IDDLOW, IDDTOP, ISSTOP, IDCMIN, IDCMAX,
      &                   HS    , SMEBRK, PLTRI , URSELL )
 !
@@ -6240,7 +6370,7 @@
      &                 FACHFR  ,ISSTOP  ,DAL1    ,DAL2    ,DAL3    ,
      &                 SFNL    ,DSNL    ,DEP2    ,AC2     ,IMATDA  ,
      &                 IMATRA  ,PLNL4S  ,PLNL4D                    ,      34.00
-     &                                            IDDLOW  ,IDDTOP  )      34.00
+     &                 IDDLOW  ,IDDTOP  ,REDC0   ,REDC1   )               40.85 34.00
 !
         ELSE IF ( IQUAD .EQ. 2) THEN
 !
@@ -6251,8 +6381,8 @@
      &                 WWAWG   ,UE      ,SA1     ,ISSTOP  ,               40.17
      &                 SA2     ,SPCSIG  ,SNLC1   ,DAL1    ,DAL2    ,      30.72
      &                 DAL3    ,SFNL    ,DEP2    ,AC2     ,KMESPC  ,
-     &                                            IMATDA  ,IMATRA  ,      40.23 34.00
-     &                 FACHFR  ,PLNL4S           ,IDCMIN  ,IDCMAX  )      34.00
+     &                          REDC0   ,REDC1   ,IMATDA  ,IMATRA  ,      40.85 40.23 34.00
+     &                 FACHFR  ,PLNL4S  ,         IDCMIN  ,IDCMAX  )      34.00
 !
         ELSE IF ( IQUAD .EQ. 3) THEN
 !
@@ -6288,7 +6418,7 @@
 !         *** that fall within a sweep and store in right hand vector ***
 !
           CALL FILNL3 (IDCMIN  ,IDCMAX  ,IMATRA  ,IMATDA  ,AC2     ,      40.23
-     &                 MEMNL4  ,PLNL4S  ,ISSTOP                    )      40.41
+     &                 MEMNL4  ,PLNL4S  ,ISSTOP  ,REDC0   ,REDC1   )      40.85 40.41
 
         ELSE IF (IQUAD .EQ. 4) THEN                                       40.17
 
@@ -6317,7 +6447,7 @@
 !         only once per iteration
 
           CALL FILNL3 (IDCMIN  ,IDCMAX  ,IMATRA  ,IMATDA  ,AC2     ,      40.23
-     &                 MEMNL4  ,PLNL4S  ,ISSTOP                    )      40.41
+     &                 MEMNL4  ,PLNL4S  ,ISSTOP  ,REDC0   ,REDC1   )      40.85 40.41
 !
         ELSE IF (IQUAD .EQ. 6) THEN                                       40.17
 
@@ -6410,7 +6540,7 @@
           ENDIF                                                           40.10
 
           CALL FILNL3 (IDCMIN  ,IDCMAX  ,IMATRA  ,IMATDA  ,AC2     ,      40.23
-     &                 MEMNL4  ,PLNL4S  ,ISSTOP                    )      40.41 40.10
+     &                 MEMNL4  ,PLNL4S  ,ISSTOP  ,REDC0   ,REDC1   )      40.85 40.41 40.10
 
           IF (ITEST.GE.30) THEN                                           40.10
             WRITE (PRTEST,*) '+SOURCE: ITER, IQUAD, SWPDIR: ',            40.10
@@ -6450,7 +6580,7 @@
 !         *** that fall within a sweep and store in right hand vector ***
 !
           CALL FILNL3 (IDCMIN  ,IDCMAX  ,IMATRA  ,IMATDA  ,AC2     ,
-     &                 MEMNL4  ,PLNL4S  ,ISSTOP                    )          40.41
+     &                 MEMNL4  ,PLNL4S  ,ISSTOP  ,REDC0   ,REDC1   )      40.85 40.41
 !
         ELSEIF ((IQUAD.EQ.51).OR.(IQUAD.EQ.52).OR.(IQUAD.EQ.53)) THEN     40.41
 !
@@ -6490,7 +6620,7 @@
           ENDIF                                                           40.41
 !
           CALL FILNL3 (IDCMIN  ,IDCMAX  ,IMATRA  ,IMATDA  ,AC2     ,      40.41
-     &                 MEMNL4  ,PLNL4S  ,ISSTOP                    )      40.41
+     &                 MEMNL4  ,PLNL4S  ,ISSTOP  ,REDC0   ,REDC1   )      40.85 40.41
 !
           IF (ITEST.GE.30) THEN                                           40.41
             WRITE (PRTEST,*) '+SOURCE: ITER, IQUAD, SWPDIR, IQERR: ',     40.41
@@ -6542,7 +6672,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6693,7 +6823,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6837,7 +6967,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7021,12 +7151,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7605,10 +7735,6 @@
 
       IMATDA = 0.
       IMATRA = 0.
-      IMATLA = 0.
-      IMATUA = 0.
-      IMAT5L = 0.
-      IMAT6U = 0.
 
       RETURN
       END
@@ -7636,12 +7762,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7818,9 +7944,8 @@
             IF ( IMATDA(ID,IS).NE.0. ) THEN
                INVMDA(ID,IS) = 1./IMATDA(ID,IS)
             ELSE
-               CALL MSGERR ( 4,
+               CALL MSGERR ( 3,
      &                     'Main diagonal of spectral matrix is zero!' )
-               RETURN
             END IF
          END DO
       END DO
@@ -8151,7 +8276,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8243,9 +8368,9 @@
       END
 !****************************************************************
 !
-      SUBROUTINE SWSTPC ( HSACC0, HSACC1, HSACC2, SACC1 , SACC2,
-     &                    HSDIFC, DELHS , DELTM , DEP2  , ACCUR ,
-     &                    I1MYC , I2MYC )
+      SUBROUTINE SWSTPC ( HSACC0, HSACC1, HSACC2, SACC0 , SACC1,
+     &                    SACC2 , HSDIFC, TMDIFC, DELHS , DELTM,
+     &                    DEP2  , ACCUR , I1MYC , I2MYC )
 !
 !****************************************************************
 !
@@ -8269,7 +8394,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8291,23 +8416,25 @@
 !
 !     40.41: Andre van der Westhuysen
 !     40.41: Marcel Zijlema
+!     40.93: Andre van der Westhuysen
 !
 !  1. Updates
 !
 !     40.41, Jun. 04: New subroutine
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.93, Sep. 08: extended with curvature of Tm
 !
 !  2. Purpose
 !
 !     Check convergence based on the relative, absolute
-!     and curvature values of significant wave height
+!     and curvature values of wave height and period
 !
 !  4. Argument variables
 !
 !     ACCUR       indicates percentage of grid points in
 !                 which accuracy is reached
 !     DELHS       difference in Hs between last 2 iterations
-!     DELTM       difference in Tm01 between last 2 iterations
+!     DELTM       difference in Tm between last 2 iterations
 !     DEP2        depth
 !     HSACC0      significant wave height at iter-2
 !     HSACC1      significant wave height at iter-1
@@ -8316,8 +8443,11 @@
 !                 computation of curvature of Hs
 !     I1MYC       lower index for thread loop over y-grid row
 !     I2MYC       upper index for thread loop over y-grid row
+!     SACC0       mean wave frequency at iter-2
 !     SACC1       mean wave frequency at iter-1
 !     SACC2       mean wave frequency at iter
+!     TMDIFC      difference of Tm(i) - Tm(i-2) meant for
+!                 computation of curvature of Tm
 !
       INTEGER I1MYC, I2MYC
       REAL    ACCUR
@@ -8325,11 +8455,13 @@
      &        HSACC0(MCGRD)        ,
      &        HSACC1(MCGRD)        ,
      &        HSACC2(MCGRD)        ,
+     &        SACC0(MCGRD)         ,
      &        SACC1(MCGRD)         ,
      &        SACC2(MCGRD)         ,
      &        DELHS(MCGRD)         ,
      &        DELTM(MCGRD)         ,
-     &        HSDIFC(MCGRD)
+     &        HSDIFC(MCGRD)        ,
+     &        TMDIFC(MCGRD)
 !
 !  6. Local variables
 !
@@ -8354,7 +8486,10 @@
 !     IY1   :     lower index in y-direction
 !     IY2   :     upper index in y-direction
 !     LHEAD :     logical indicating to write header
-!     TMABS :     absolute value of Tm01
+!     TMABS :     absolute value of Tm
+!     TMCURV:     curvature value of Tm
+!     TMDIFO:     previous value of TMDIFC
+!     TMREL :     relative value of Tm
 !     TSTFL :     indicates whether grid point is a test point
 !     WETGRD:     number of wet grid points
 !     XMOM0 :     zeroth moment
@@ -8363,7 +8498,7 @@
       INTEGER ID, IS, IENT, II, INDX, IX, IY, IX1, IX2, IY1, IY2
       INTEGER IACCUR, WETGRD, IACCURt, WETGRDt, IARR(2)
       REAL    ACS2, ACS3, HSREL ,HSABS, HSCURV, HSDIFO, TMABS,
-     &        XMOM0, XMOM1
+     &        TMREL, TMCURV, TMDIFO, XMOM0, XMOM1
       LOGICAL LHEAD, TSTFL
 !
 !  7. Common blocks used
@@ -8393,7 +8528,7 @@
 !     store Hs and Tm as old values and count number of wet grid points
 !     compute new values of Hs and Tm
 !     calculate a set of accuracy parameters based on relative,
-!         absolute and curvature values of Hs and check accuracy
+!         absolute and curvature values of Hs, Tm and check accuracy
 !     global sum of IACCUR and WETGRD
 !     carry out reductions across all nodes
 !
@@ -8440,11 +8575,13 @@
             IF ( DEP2(INDX).GT.DEPMIN ) THEN
                HSACC0(INDX) = MAX( 1.E-20 , HSACC1(INDX) )
                HSACC1(INDX) = MAX( 1.E-20 , HSACC2(INDX) )
+               SACC0 (INDX) = MAX( 1.E-20 , SACC1 (INDX) )                40.93
                SACC1 (INDX) = MAX( 1.E-20 , SACC2 (INDX) )
                WETGRDt = WETGRDt + 1
             ELSE
                HSACC0(INDX) = 0.
                HSACC1(INDX) = 0.
+               SACC0 (INDX) = 0.                                          40.93
                SACC1 (INDX) = 0.
             END IF
          END DO
@@ -8512,10 +8649,15 @@
                HSABS = ABS ( HSACC2(INDX) - HSACC1(INDX) )
                HSREL = HSABS / HSACC2(INDX)
                TMABS = ABS ( (PI2/SACC2(INDX)) - (PI2/SACC1(INDX)) )
+               TMREL = TMABS / SACC2(INDX)                                40.93
 
                HSDIFO       = HSDIFC(INDX)
                HSDIFC(INDX) = 0.5*( HSACC2(INDX) - HSACC0(INDX) )
                HSCURV       = ABS(HSDIFC(INDX) - HSDIFO)/HSACC2(INDX)
+
+               TMDIFO       = TMDIFC(INDX)                                40.93
+               TMDIFC(INDX) = 0.5*( SACC2(INDX) - SACC0(INDX) )           40.93
+               TMCURV       = ABS(TMDIFC(INDX) - TMDIFO)/SACC2(INDX)      40.93
 
                DELHS(INDX) = HSABS
                IF (EQREAL(SACC1(INDX),1.E-20) .OR.
@@ -8525,21 +8667,26 @@
                   DELTM(INDX) = TMABS
                END IF
 
-!              --- add gridpoint in which wave height has reached
-!                  required accuracy
+!              --- add gridpoint in which wave height and period have
+!                  reached required accuracy
 
-               IF ( HSCURV.LE.PNUMS(15) .AND.
-     &             (HSREL.LE.PNUMS(1) .OR. HSABS.LE.PNUMS(2)) ) THEN
+               IF ( ( HSCURV.LE.PNUMS(15) .AND.
+     &               (HSREL.LE.PNUMS(1) .OR. HSABS.LE.PNUMS(2)) ) .AND.   40.93
+     &              ( TMCURV.LE.PNUMS(16) .AND.                           40.93
+     &               (TMREL.LE.PNUMS(1) .OR. TMABS.LE.PNUMS(3)) ) ) THEN  40.93
                   IACCURt = IACCURt + 1
                END IF
 
                IF (TSTFL) THEN
                   IF (LHEAD) WRITE(PRINTF,501)
                   WRITE(PRINTF,502) IX+MXF-2, IY+MYF-2, HSABS, HSREL,
-     &                              HSCURV
+     &                              HSCURV, TMABS, TMREL, TMCURV          40.93
  501              FORMAT(25X,'dHabs          ','dHrel          ',
-     &                       'Curvature ')
+     &                       'Curvature H    ',                           40.93
+     &                       'dTabs          ','dTrel          ',         40.93
+     &                       'Curvature T    ')                           40.93
  502              FORMAT(1X,SS,'(IX,IY)=(',I5,',',I5,')','  ',
+     &                   1PE13.6E2,'  ',1PE13.6E2,'  ',1PE13.6E2,'  ',    40.93
      &                   1PE13.6E2,'  ',1PE13.6E2,'  ',1PE13.6E2)
                   LHEAD=.FALSE.
                END IF
@@ -8562,9 +8709,7 @@
       IARR(1) = IACCUR
       IARR(2) = WETGRD
       CALL SWREDUCE ( IARR, 2, SWINT, SWSUM )
-!OMP#ifndef _OPENMP
       IF (STPNOW()) RETURN
-!OMP#endif
       IACCUR = IARR(1)
       WETGRD = IARR(2)
       ACCUR  = REAL(IACCUR) * 100. / REAL(WETGRD)
@@ -8609,7 +8754,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -9164,7 +9309,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

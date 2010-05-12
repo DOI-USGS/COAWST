@@ -14,7 +14,7 @@ $(eval $(call make-library,$(local_lib),$(local_src)))
 
 $(eval $(compile-rules))
 
-# swch = -unix -f95 -mpi
+# swch = -unix -f95 -mpi -impi -timg
 # @perl SWAN/switch.pl $(swch) SWAN/*.ftn
 
 
