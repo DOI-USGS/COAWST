@@ -1,8 +1,8 @@
 #!/bin/csh -f
 #
-# svn $Id: submit_is4dvar.sh 503 2008-01-10 00:11:51Z arango $
+# svn $Id: submit_is4dvar.sh 429 2009-12-20 17:30:26Z arango $
 #######################################################################
-# Copyright (c) 2002-2008 The ROMS/TOMS Group                         #
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                         #
 #   Licensed under a MIT/X style license                              #
 #   See License_ROMS.txt                                              #
 ################################################## Hernan G. Arango ###
@@ -84,7 +84,7 @@ set BRYname=/home/wilkin/roms/sw06/in/sw06_bndy_ggg_g2v2rd.nc
 
 # Set starting sequential assimilation first guess.
 
-set FIRST_GUESS=${MYROOT}/Data/sw06c_bck_run45.nc 
+set FIRST_GUESS=${MYROOT}/Data/sw06c_bck_run45.nc
 
 # Set background-error covariance standard deviations file.
 
@@ -327,7 +327,7 @@ while ($DAY <= $END_DAY)
 
    mv -f ${PREFIX}_his_${DAY}.nc ${STORAGE}
    mv -f nl_log.${DAY} $STORAGE
-   
+
 #---------------------------------------------------------------------
 # Advance starting day for next assimilation cycle. Set new initial
 # conditions file name.

@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 #
-# svn $Id: sfmakedepend 503 2008-01-10 00:11:51Z arango $
+# svn $Id: sfmakedepend 450 2010-03-04 18:57:26Z arango $
 #######################################################################
-# Copyright (c) 2002-2008 The ROMS/TOMS Group                         #
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                         #
 #   Licensed under a MIT/X style license                              #
 #   See License_ROMS.txt                                              #
 ##################################################### Kate Hedstrom ###
@@ -134,7 +134,7 @@ foreach $file (@ARGV) {
 
 if ($mf ne "-") {
     copy( "$mf", "$mf.old");
-    open(MFILE, "$mf.old") || die "can't read Makefile $mf.old: $!\n"; 
+    open(MFILE, "$mf.old") || die "can't read Makefile $mf.old: $!\n";
     open(NMFILE, "> $mf") || die "can't write $mf: $!\n";
     select(NMFILE);
 
@@ -162,11 +162,15 @@ if ( !( $cray || $parasoft) ) {
     foreach $modname (sort keys(%main::mod_files)) {
         my ($name, $path, $suffix) = fileparse(
 	    $sources{$main::mod_files{$modname}}->{'filepath'}, @suffixes);
-	my $object = $name . "." . $obj_ext;
-	if (!( $drop_circ && lc($modname) eq lc($name)) ) {
-	    $object =~ s#^\./##;
-	    print "$modname.$mod_ext: $object\n";
-	}
+        my $object = $name . "." . $obj_ext;
+        if (!( $drop_circ && lc($modname) eq lc($name)) ) {
+            $object =~ s#^\./##;
+            my $modfile = "$modname.$mod_ext";
+            my $objfile = $object;
+            $modfile = $mod_dir . '/' . $modfile if $mod_dir;
+            $objfile = $obj_dir . '/' . $objfile if $obj_dir;
+            print "$modfile: $objfile\n";
+        }
     }
 }
 
@@ -276,7 +280,7 @@ sub find_includes {
             $included = $1;
 	    $after = $';
         # Fortran 90 "use"
-        } elsif (/^\s*use\s+(\w+)/i) {   
+        } elsif (/^\s*use\s+(\w+)/i) {
 	    # Gavin Salam attempt at dealing with multiple uses on one line
 	    # remove trailing comments (do not take uses after a comment!)
 	    s/\!.*//;
@@ -410,7 +414,7 @@ sub find_mods {
     foreach $modname (@mod_list) {
 	$self->{'uses'}{$modname} = 1;
     }
-    
+
 # now find the filename that contains the module information
     foreach $modname (keys %{$self->{'uses'}}) {
 	if ($main::depend eq "obj") {
@@ -448,7 +452,7 @@ sub print {
     }
 
     $flag = $main::obj_dep_flag;
-    
+
 # print out "include" dependencies
     %flist = ();
     if (%{$self->{'includes'}}) {
@@ -621,7 +625,7 @@ for object files. For instance, to operate with (f77) ftnchek .prj
 files, you could use
 
 `--addext prj' to get rules like:
-foo.prj foo.o: ... 
+foo.prj foo.o: ...
 
 =item I<--case up|down|asis>
 
@@ -687,7 +691,7 @@ Example usage in gnuMakefile:
    SRCDIRS= srcdir1 srcdir2 srcdir3 ...
    FSRCS0 := $(foreach DIR, . $(SRCDIRSH),$(wildcard $(DIR)/*.f))
    FSRCS  := $(sort $(notdir $(FSRCS0)))
-   
+
    F_makedepend=sfmakedepend  --file - $(addprefix --srcdir ,$(SRCDIRSH)) \
                                       $(subst -I,-I ,$(Includes))
    depend $(MAKEFILE_INC):

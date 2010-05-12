@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# svn $Id: submit_is4dvar.bash 503 2008-01-10 00:11:51Z arango $
+# svn $Id: submit_is4dvar.bash 429 2009-12-20 17:30:26Z arango $
 #######################################################################
-# Copyright (c) 2002-2008 The ROMS/TOMS Group                         #
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                         #
 #   Licensed under a MIT/X style license                              #
 #   See License_ROMS.txt                                              #
 ################################################## Hernan G. Arango ###
@@ -187,7 +187,7 @@ INIname=${PREFIX}_ini_${DAY}.nc
 ITLname=${PREFIX}_itl_${DAY}.nc
 
 while [ $DAY -le $END_DAY ]; do
-   
+
   let "cycle+=1"
 
   echo ">>> Starting data assimilation cycle: $cycle"
@@ -327,14 +327,14 @@ while [ $DAY -le $END_DAY ]; do
 
    mv -f ${PREFIX}_his_${DAY}.nc ${STORAGE}
    mv -f nl_log.${DAY} $STORAGE
-   
+
 #---------------------------------------------------------------------
 # Advance starting day for next assimilation cycle. Set new initial
 # conditions file name.
 #---------------------------------------------------------------------
 
   let "DAY+=DayStep"
-  
+
   INIname=${PREFIX}_ini_${DAY}.nc
 
 #---------------------------------------------------------------------

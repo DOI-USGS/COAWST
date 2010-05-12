@@ -1,8 +1,8 @@
 #!/bin/bash
-# 
-# svn $Id: build.bash 677 2008-08-05 20:17:30Z arango $
+#
+# svn $Id: build.bash 429 2009-12-20 17:30:26Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2008 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
@@ -41,7 +41,7 @@
 parallel=0
 clean=1
 
-while [ $# -gt 0 ] 
+while [ $# -gt 0 ]
 do
   case "$1" in
     -j )
@@ -73,11 +73,11 @@ do
       echo ""
       exit 1
       ;;
-  esac         
+  esac
 done
 
 # Set the CPP option defining the particular application. This will
-# determine the name of the ".h" header file with the application 
+# determine the name of the ".h" header file with the application
 # CPP definitions.
 
 export   ROMS_APPLICATION=UPWELLING
@@ -93,17 +93,25 @@ export        NestedGrids=1
 export        MY_ROOT_DIR=/home/arango/ocean/toms/repository
 export     MY_PROJECT_DIR=${PWD}
 
-# The path to the user's local current ROMS source code. 
+# The path to the user's local current ROMS source code.
 #
-# If using svn locally, this would be the user's Working Copy Path (WCPATH). 
-# Note that one advantage of maintaining your source code locally with svn 
-# is that when working simultaneously on multiple machines (e.g. a local 
-# workstation, a local cluster and a remote supercomputer) you can checkout 
-# the latest release and always get an up-to-date customized source on each 
-# machine. This script is designed to more easily allow for differing paths 
-# to the code and inputs on differing machines. 
+# If using svn locally, this would be the user's Working Copy Path (WCPATH).
+# Note that one advantage of maintaining your source code locally with svn
+# is that when working simultaneously on multiple machines (e.g. a local
+# workstation, a local cluster and a remote supercomputer) you can checkout
+# the latest release and always get an up-to-date customized source on each
+# machine. This script is designed to more easily allow for differing paths
+# to the code and inputs on differing machines.
 
 export        MY_ROMS_SRC=${MY_ROOT_DIR}/branches/arango
+
+# Set path of the directory containing makefile configuration (*.mk) files.
+# The user has the option to specify a customized version of these files
+# in a different directory than the one distributed with the source code,
+# ${MY_ROMS_SCR}/Compilers. If this is the case, the you need to keep
+# these configurations files up-to-date.
+
+#export         COMPILERS=${MY_ROMS_SRC}/Compilers
 
 # Set tunable CPP options.
 #
@@ -142,27 +150,28 @@ export        MY_ROMS_SRC=${MY_ROOT_DIR}/branches/arango
 # appropriate "mpirun" to execute. Also notice that the path where the
 # MPI library is installed is computer dependent.
 
-if [ -n "${USE_MPIF90+1}" ]; then
+if [ -n "${USE_MPIF90:+1}" ]; then
   case "$FORT" in
     ifort )
 #     export PATH=/opt/intelsoft/mpich/bin:$PATH
-#     export PATH=/opt/intelsoft/mpich2/bin:$PATH
-      export PATH=/opt/intelsoft/openmpi/bin:$PATH
+      export PATH=/opt/intelsoft/mpich2/bin:$PATH
+#     export PATH=/opt/intelsoft/openmpi/bin:$PATH
       ;;
 
     pgi )
-      export PATH=/opt/pgisoft/mpich/bin:$PATH
+#     export PATH=/opt/pgisoft/mpich/bin:$PATH
+      export PATH=/opt/pgisoft/mpich2/bin:$PATH
 #     export PATH=/opt/pgisoft/openmpi/bin:$PATH
-      ;;
-
-    g95 )
-#     export PATH=/opt/g95soft/mpich2/bin:$PATH
-      export PATH=/opt/g95soft/openmpi/bin:$PATH
       ;;
 
     gfortran )
 #     export PATH=/opt/gfortransoft/mpich2/bin:$PATH
       export PATH=/opt/gfortansoft/openmpi/bin:$PATH
+      ;;
+
+    g95 )
+#     export PATH=/opt/g95soft/mpich2/bin:$PATH
+      export PATH=/opt/g95soft/openmpi/bin:$PATH
       ;;
 
   esac
@@ -175,64 +184,169 @@ fi
 # and edit the paths to your values. For most applications, only
 # the location of the NetCDF library (NETCDF_LIBDIR) and include
 # directorry (NETCDF_INCDIR) are needed!
+#
+# Notice that when the USE_NETCDF4 macro is activated, we need a
+# serial and parallel version of the NetCDF-4/HDF5 library. The
+# parallel library uses parallel I/O through MPI-I/O so we need
+# compile also with the MPI library. This is fine in ROMS
+# distributed-memory applications.  However, in serial or
+# shared-memory ROMS applications we need to use the serial
+# version of the NetCDF-4/HDF5 to avoid conflicts with the
+# compiler. Recall also that the MPI library comes in several
+# flavors: MPICH, MPICH2, OpenMPI.
 
-#export         USE_MY_LIBS=on
+#export           USE_MY_LIBS=on
 
-
-if [ -n "${USE_MY_LIBS+1}" ]; then
+if [ -n "${USE_MY_LIBS:+1}" ]; then
   case "$FORT" in
     ifort )
-      export  ARPACK_LIBDIR=/opt/intelsoft/PARPACK
-      export       ESMF_DIR=/opt/intelsoft/esmf-3.1.0
-      export        ESMF_OS=Linux
-      export  ESMF_COMPILER=ifort
-      export      ESMF_BOPT=O
-      export       ESMF_ABI=64
-      export      ESMF_COMM=mpich
-      export      ESMF_SITE=default
-      export    HDF5_LIBDIR=/opt/intelsoft/hdf5/lib
-      export     MCT_INCDIR=/opt/intelsoft/mct/include
-      export     MCT_LIBDIR=/opt/intelsoft/mct/lib
-      export  NETCDF_INCDIR=/opt/intelsoft/netcdf/include
-      export  NETCDF_LIBDIR=/opt/intelsoft/netcdf/lib
-      export PARPACK_LIBDIR=/opt/intelsoft/PARPACK
+      export           ESMF_DIR=/opt/intelsoft/esmf-3.1.0
+      export            ESMF_OS=Linux
+      export      ESMF_COMPILER=ifort
+      export          ESMF_BOPT=O
+      export           ESMF_ABI=64
+      export          ESMF_COMM=mpich
+      export          ESMF_SITE=default
+      export         MCT_INCDIR=/opt/intelsoft/mct/include
+      export         MCT_LIBDIR=/opt/intelsoft/mct/lib
+
+      export      ARPACK_LIBDIR=/opt/intelsoft/serial/ARPACK
+      if [ -n "${USE_MPI:+1}" ]; then
+#       export   PARPACK_LIBDIR=/opt/intelsoft/mpich/PARPACK
+        export   PARPACK_LIBDIR=/opt/intelsoft/mpich2/PARPACK
+#       export   PARPACK_LIBDIR=/opt/intelsoft/openmpi/PARPACK
+      fi
+
+      if [ -n "${USE_NETCDF4:+1}" ]; then
+        if [ -n "${USE_MPI:+1}" ]; then
+#         export  NETCDF_INCDIR=/opt/intelsoft/mpich/netcdf4/include
+#         export  NETCDF_LIBDIR=/opt/intelsoft/mpich/netcdf4/lib
+#         export    HDF5_LIBDIR=/opt/intelsoft/mpich/hdf5/lib
+
+          export  NETCDF_INCDIR=/opt/intelsoft/mpich2/netcdf4/include
+          export  NETCDF_LIBDIR=/opt/intelsoft/mpich2/netcdf4/lib
+          export    HDF5_LIBDIR=/opt/intelsoft/mpich2/hdf5/lib
+
+#         export  NETCDF_INCDIR=/opt/intelsoft/openmpi/netcdf4/include
+#         export  NETCDF_LIBDIR=/opt/intelsoft/openmpi/netcdf4/lib
+#         export    HDF5_LIBDIR=/opt/intelsoft/openmpi/hdf5/lib
+        else
+          export  NETCDF_INCDIR=/opt/intelsoft/serial/netcdf4/include
+          export  NETCDF_LIBDIR=/opt/intelsoft/serial/netcdf4/lib
+          export    HDF5_LIBDIR=/opt/intelsoft/serial/hdf5/lib
+        fi
+      else
+        export    NETCDF_INCDIR=/opt/intelsoft/serial/netcdf3/include
+        export    NETCDF_LIBDIR=/opt/intelsoft/serial/netcdf3/lib
+      fi
       ;;
 
     pgi )
-      export  ARPACK_LIBDIR=/opt/pgisoft/PARPACK
-      export       ESMF_DIR=/opt/pgisoft/esmf-3.1.0
-      export        ESMF_OS=Linux
-      export  ESMF_COMPILER=pgi
-      export      ESMF_BOPT=O
-      export       ESMF_ABI=64
-      export      ESMF_COMM=mpich
-      export      ESMF_SITE=default
-      export    HDF5_LIBDIR=/opt/pgisoft/hdf5/lib
-      export     MCT_INCDIR=/opt/pgisoft/mct/include
-      export     MCT_LIBDIR=/opt/pgisoft/mct/lib
-      export  NETCDF_INCDIR=/opt/pgisoft/netcdf/include
-      export  NETCDF_LIBDIR=/opt/pgisoft/netcdf/lib
-      export PARPACK_LIBDIR=/opt/pgisoft/PARPACK
-      ;;
+      export           ESMF_DIR=/opt/pgisoft/esmf-3.1.0
+      export            ESMF_OS=Linux
+      export      ESMF_COMPILER=pgi
+      export          ESMF_BOPT=O
+      export           ESMF_ABI=64
+      export          ESMF_COMM=mpich
+      export          ESMF_SITE=default
+      export         MCT_INCDIR=/opt/pgisoft/mct/include
+      export         MCT_LIBDIR=/opt/pgisoft/mct/lib
 
-    g95 )
-      export  ARPACK_LIBDIR=/opt/g95soft/PARPACK
-      export    HDF5_LIBDIR=/opt/g95soft/hdf5/lib
-      export     MCT_INCDIR=/opt/g95soft/mct/include
-      export     MCT_LIBDIR=/opt/g95soft/mct/lib
-      export  NETCDF_INCDIR=/opt/g95soft/netcdf/include
-      export  NETCDF_LIBDIR=/opt/g95soft/netcdf/lib
-      export PARPACK_LIBDIR=/opt/g95soft/PARPACK
+      export      ARPACK_LIBDIR=/opt/pgisoft/serial/ARPACK
+      if [ -n "${USE_MPI:+1}" ]; then
+        export   PARPACK_LIBDIR=/opt/pgisoft/mpich/PARPACK
+#       export   PARPACK_LIBDIR=/opt/pgisoft/mpich2/PARPACK
+#       export   PARPACK_LIBDIR=/opt/pgisoft/openmpi/PARPACK
+      fi
+
+      if [ -n "${USE_NETCDF4:+1}" ]; then
+        if [ -n "${USE_MPI:+1}" ]; then
+#         export  NETCDF_INCDIR=/opt/pgisoft/mpich/netcdf4/include
+#         export  NETCDF_LIBDIR=/opt/pgisoft/mpich/netcdf4/lib
+#         export    HDF5_LIBDIR=/opt/pgisoft/mpich/hdf5/lib
+
+          export  NETCDF_INCDIR=/opt/pgisoft/mpich2/netcdf4/include
+          export  NETCDF_LIBDIR=/opt/pgisoft/mpich2/netcdf4/lib
+          export    HDF5_LIBDIR=/opt/pgisoft/mpich2/hdf5/lib
+
+#         export  NETCDF_INCDIR=/opt/pgisoft/openmpi/netcdf4/include
+#         export  NETCDF_LIBDIR=/opt/pgisoft/openmpi/netcdf4/lib
+#         export    HDF5_LIBDIR=/opt/pgisoft/openmpi/hdf5/lib
+        else
+          export  NETCDF_INCDIR=/opt/pgisoft/serial/netcdf4/include
+          export  NETCDF_LIBDIR=/opt/pgisoft/serial/netcdf4/lib
+          export    HDF5_LIBDIR=/opt/pgisoft/serial/hdf5/lib
+        fi
+      else
+        export    NETCDF_INCDIR=/opt/pgisoft/serial/netcdf3/include
+        export    NETCDF_LIBDIR=/opt/pgisoft/serial/netcdf3/lib
+      fi
       ;;
 
     gfortran )
-      export  ARPACK_LIBDIR=/opt/gfortransoft/PARPACK
-      export    HDF5_LIBDIR=/opt/gfortransoft/hdf5/lib
-      export     MCT_INCDIR=/opt/gfortransoft/mct/include
-      export     MCT_LIBDIR=/opt/gfortransoft/mct/lib
-      export  NETCDF_INCDIR=/opt/gfortransoft/netcdf/include
-      export  NETCDF_LIBDIR=/opt/gfortransoft/netcdf/lib
-      export PARPACK_LIBDIR=/opt/gfortransoft/PARPACK
+      export         MCT_INCDIR=/opt/gfortransoft/mct/include
+      export         MCT_LIBDIR=/opt/gfortransoft/mct/lib
+
+      export      ARPACK_LIBDIR=/opt/gfortransoft/serial/ARPACK
+      if [ -n "${USE_MPI:+1}" ]; then
+#       export   PARPACK_LIBDIR=/opt/gfortransoft/mpich/PARPACK
+        export   PARPACK_LIBDIR=/opt/gfortransoft/mpich2/PARPACK
+#       export   PARPACK_LIBDIR=/opt/gfortransoft/openmpi/PARPACK
+      fi
+
+      if [ -n "${USE_NETCDF4:+1}" ]; then
+        if [ -n "${USE_MPI:+1}" ]; then
+#         export  NETCDF_INCDIR=/opt/gfortransoft/mpich/netcdf4/include
+#         export  NETCDF_LIBDIR=/opt/gfortransoft/mpich/netcdf4/lib
+#         export    HDF5_LIBDIR=/opt/gfortransoft/mpich/hdf5/lib
+
+          export  NETCDF_INCDIR=/opt/gfortransoft/mpich2/netcdf4/include
+          export  NETCDF_LIBDIR=/opt/gfortransoft/mpich2/netcdf4/lib
+          export    HDF5_LIBDIR=/opt/gfortransoft/mpich2/hdf5/lib
+
+#         export  NETCDF_INCDIR=/opt/gfortransoft/openmpi/netcdf4/include
+#         export  NETCDF_LIBDIR=/opt/gfortransoft/openmpi/netcdf4/lib
+#         export    HDF5_LIBDIR=/opt/gfortransoft/openmpi/hdf5/lib
+        else
+          export  NETCDF_INCDIR=/opt/gfortransoft/serial/netcdf4/include
+          export  NETCDF_LIBDIR=/opt/gfortransoft/serial/netcdf4/lib
+          export    HDF5_LIBDIR=/opt/gfortransoft/serial/hdf5/lib
+        fi
+      else
+          export  NETCDF_INCDIR=/opt/gfortransoft/serial/netcdf3/include
+          export  NETCDF_LIBDIR=/opt/gfortransoft/serial/netcdf3/lib
+      fi
+      ;;
+
+    g95 )
+      export         MCT_INCDIR=/opt/g95soft/mct/include
+      export         MCT_LIBDIR=/opt/g95soft/mct/lib
+
+      export      ARPACK_LIBDIR=/opt/g95soft/serial/ARPACK
+      if [ -n "${USE_MPI:+1}" ]; then
+#       export   PARPACK_LIBDIR=/opt/g95soft/mpich/PARPACK
+        export   PARPACK_LIBDIR=/opt/g95soft/mpich2/PARPACK
+        export   PARPACK_LIBDIR=/opt/g95soft/openmpi/PARPACK
+      fi
+
+      if [ -n "${USE_NETCDF4:+1}" ]; then
+        if [ -n "${USE_MPI:+1}" ]; then
+          export  NETCDF_INCDIR=/opt/g95soft/mpich2/netcdf4/include
+          export  NETCDF_LIBDIR=/opt/g95soft/mpich2/netcdf4/lib
+          export    HDF5_LIBDIR=/opt/g95soft/mpich2/hdf5/lib
+
+#         export  NETCDF_INCDIR=/opt/g95soft/openmpi/netcdf4/include
+#         export  NETCDF_LIBDIR=/opt/g95soft/openmpi/netcdf4/lib
+#         export    HDF5_LIBDIR=/opt/g95soft/openmpi/hdf5/lib
+        else
+          export  NETCDF_INCDIR=/opt/g95soft/serial/netcdf4/include
+          export  NETCDF_LIBDIR=/opt/g95soft/serial/netcdf4/lib
+          export    HDF5_LIBDIR=/opt/g95soft/serial/hdf5/lib
+        fi
+      else
+        export    NETCDF_INCDIR=/opt/g95soft/serial/netcdf3/include
+        export    NETCDF_LIBDIR=/opt/g95soft/serial/netcdf3/lib
+      fi
       ;;
 
   esac
@@ -240,17 +354,21 @@ fi
 
 # The rest of this script sets the path to the users header file and
 # analytical source files, if any. See the templates in User/Functionals.
+#
+# If applicable, use the MY_ANALYTICAL_DIR directory to place your
+# customized biology model header file (like fennel.h, nemuro.h, ecosim.h,
+# etc).
 
-#export     MY_HEADER_DIR=${MY_PROJECT_DIR}
+ export     MY_HEADER_DIR=${MY_PROJECT_DIR}
 
-#export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}
+ export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}
 
 # Put the binary to execute in the following directory.
 
  export            BINDIR=${MY_PROJECT_DIR}
 
 # Put the f90 files in a project specific Build directory to avoid conflict
-# with other projects. 
+# with other projects.
 
  export       SCRATCH_DIR=${MY_PROJECT_DIR}/Build
 
@@ -259,13 +377,13 @@ fi
 
  cd ${MY_ROMS_SRC}
 
-# Remove build directory. 
+# Remove build directory.
 
 if [ $clean -eq 1 ]; then
   make clean
 fi
 
-# Compile (the binary will go to BINDIR set above).  
+# Compile (the binary will go to BINDIR set above).
 
 if [ $parallel -eq 1 ]; then
   make $NCPUS

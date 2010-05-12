@@ -1,8 +1,8 @@
 #!/bin/csh -f
-# 
-# svn $Id: build.sh 677 2008-08-05 20:17:30Z arango $
+#
+# svn $Id: build.sh 442 2010-01-27 21:25:57Z arango $
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::: John Wilkin :::
-# Copyright (c) 2002-2008 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
@@ -61,7 +61,7 @@ while ( ($#argv) > 0 )
 
     case "-*":
       echo ""
-      echo "$0 : Unknonw option [ $1 ]"
+      echo "$0 : Unknown option [ $1 ]"
       echo ""
       echo "Available Options:"
       echo ""
@@ -76,10 +76,10 @@ while ( ($#argv) > 0 )
 end
 
 # Set the CPP option defining the particular application. This will
-# determine the name of the ".h" header file with the application 
+# determine the name of the ".h" header file with the application
 # CPP definitions.
 
-setenv ROMS_APPLICATION     CBLAST
+setenv ROMS_APPLICATION     UPWELLING
 
 # Set number of nested/composed/mosaic grids.  Currently, only one grid
 # is supported.
@@ -92,17 +92,25 @@ setenv NestedGrids          1
 setenv MY_ROOT_DIR          /home/arango/ocean/toms/repository
 setenv MY_PROJECT_DIR       ${PWD}
 
-# The path to the user's local current ROMS source code. 
+# The path to the user's local current ROMS source code.
 #
-# If using svn locally, this would be the user's Working Copy Path (WCPATH). 
-# Note that one advantage of maintaining your source code locally with svn 
-# is that when working simultaneously on multiple machines (e.g. a local 
-# workstation, a local cluster and a remote supercomputer) you can checkout 
-# the latest release and always get an up-to-date customized source on each 
-# machine. This script is designed to more easily allow for differing paths 
-# to the code and inputs on differing machines. 
+# If using svn locally, this would be the user's Working Copy Path (WCPATH).
+# Note that one advantage of maintaining your source code locally with svn
+# is that when working simultaneously on multiple machines (e.g. a local
+# workstation, a local cluster and a remote supercomputer) you can checkout
+# the latest release and always get an up-to-date customized source on each
+# machine. This script is designed to more easily allow for differing paths
+# to the code and inputs on differing machines.
 
 setenv MY_ROMS_SRC          ${MY_ROOT_DIR}/branches/arango
+
+# Set path of the directory containing makefile configuration (*.mk) files.
+# The user has the option to specify a customized version of these files
+# in a different directory than the one distributed with the source code,
+# ${MY_ROMS_SCR}/Compilers. If this is the case, the you need to keep
+# these configurations files up-to-date.
+
+#setenv COMPILERS            ${MY_ROMS_SRC}/Compilers
 
 # Set tunable CPP options.
 #
@@ -148,23 +156,24 @@ if ($?USE_MPIF90) then
 
     case "ifort"
 #     setenv PATH /opt/intelsoft/mpich/bin:$PATH
-#     setenv PATH /opt/intelsoft/mpich2/bin:$PATH
-      setenv PATH /opt/intelsoft/openmpi/bin:$PATH
+      setenv PATH /opt/intelsoft/mpich2/bin:$PATH
+#     setenv PATH /opt/intelsoft/openmpi/bin:$PATH
     breaksw
 
     case "pgi"
-      setenv PATH /opt/pgisoft/mpich/bin:$PATH
+#     setenv PATH /opt/pgisoft/mpich/bin:$PATH
+      setenv PATH /opt/pgisoft/mpich2/bin:$PATH
 #     setenv PATH /opt/pgisoft/openmpi/bin:$PATH
     breaksw
 
-    case "g95"
-#     setenv PATH /opt/g95soft/mpich2/bin:$PATH
-      setenv PATH /opt/g95soft/openmpi/bin:$PATH
+    case "gfortran"
+      setenv PATH /opt/gfortransoft/mpich2/bin:$PATH
+#     setenv PATH /opt/gfortransoft/openmpi/bin:$PATH
     breaksw
 
-    case "gfortran"
-#     setenv PATH /opt/gfortransoft/mpich2/bin:$PATH
-      setenv PATH /opt/gfortransoft/openmpi/bin:$PATH
+    case "g95"
+      setenv PATH /opt/g95soft/mpich2/bin:$PATH
+#     setenv PATH /opt/g95soft/openmpi/bin:$PATH
     breaksw
 
   endsw
@@ -177,64 +186,169 @@ endif
 # and edit the paths to your values. For most applications, only
 # the location of the NetCDF library (NETCDF_LIBDIR) and include
 # directorry (NETCDF_INCDIR) are needed!
+#
+# Notice that when the USE_NETCDF4 macro is activated, we need a
+# serial and parallel version of the NetCDF-4/HDF5 library. The
+# parallel library uses parallel I/O through MPI-I/O so we need
+# compile also with the MPI library. This is fine in ROMS
+# distributed-memory applications.  However, in serial or
+# shared-memory ROMS applications we need to use the serial
+# version of the NetCDF-4/HDF5 to avoid conflicts with the
+# compiler. Recall also that the MPI library comes in several
+# flavors: MPICH, MPICH2, OpenMPI.
 
-#setenv USE_MY_LIBS         on
+#setenv USE_MY_LIBS             on
 
 if ($?USE_MY_LIBS) then
   switch ($FORT)
 
     case "ifort"
-      setenv ARPACK_LIBDIR  /opt/intelsoft/PARPACK
-      setenv ESMF_DIR       /opt/intelsoft/esmf
-      setenv ESMF_OS        Linux
-      setenv ESMF_COMPILER  ifort
-      setenv ESMF_BOPT      O
-      setenv ESMF_ABI       64
-      setenv ESMF_COMM      mpich
-      setenv ESMF_SITE      default
-      setenv HDF5_LIBDIR    /opt/intelsoft/hdf5/lib
-      setenv MCT_INCDIR     /opt/intelsoft/mct/include
-      setenv MCT_LIBDIR     /opt/intelsoft/mct/lib
-      setenv NETCDF_INCDIR  /opt/intelsoft/netcdf/include
-      setenv NETCDF_LIBDIR  /opt/intelsoft/netcdf/lib
-      setenv PARPACK_LIBDIR /opt/intelsoft/PARPACK
+      setenv ESMF_DIR           /opt/intelsoft/esmf
+      setenv ESMF_OS            Linux
+      setenv ESMF_COMPILER      ifort
+      setenv ESMF_BOPT          O
+      setenv ESMF_ABI           64
+      setenv ESMF_COMM          mpich
+      setenv ESMF_SITE          default
+      setenv MCT_INCDIR         /opt/intelsoft/mct/include
+      setenv MCT_LIBDIR         /opt/intelsoft/mct/lib
+
+      setenv ARPACK_LIBDIR      /opt/intelsoft/serial/ARPACK
+      if ($?USE_MPI) then
+#       setenv PARPACK_LIBDIR   /opt/intelsoft/mpich/PARPACK
+        setenv PARPACK_LIBDIR   /opt/intelsoft/mpich2/PARPACK
+#       setenv PARPACK_LIBDIR   /opt/intelsoft/openmpi/PARPACK
+      endif
+
+      if ($?USE_NETCDF4) then
+        if ($?USE_MPI) then
+#         setenv NETCDF_INCDIR  /opt/intelsoft/mpich/netcdf4/include
+#         setenv NETCDF_LIBDIR  /opt/intelsoft/mpich/netcdf4/lib
+#         setenv HDF5_LIBDIR    /opt/intelsoft/mpich/hdf5/lib
+
+          setenv NETCDF_INCDIR  /opt/intelsoft/mpich2/netcdf4/include
+          setenv NETCDF_LIBDIR  /opt/intelsoft/mpich2/netcdf4/lib
+          setenv HDF5_LIBDIR    /opt/intelsoft/mpich2/hdf5/lib
+
+#         setenv NETCDF_INCDIR  /opt/intelsoft/openmpi/netcdf4/include
+#         setenv NETCDF_LIBDIR  /opt/intelsoft/openmpi/netcdf4/lib
+#         setenv HDF5_LIBDIR    /opt/intelsoft/openmpi/hdf5/lib
+        else
+          setenv NETCDF_INCDIR  /opt/intelsoft/serial/netcdf4/include
+          setenv NETCDF_LIBDIR  /opt/intelsoft/serial/netcdf4/lib
+          setenv HDF5_LIBDIR    /opt/intelsoft/serial/hdf5/lib
+        endif
+      else
+        setenv NETCDF_INCDIR    /opt/intelsoft/serial/netcdf3/include
+        setenv NETCDF_LIBDIR    /opt/intelsoft/serial/netcdf3/lib
+      endif
     breaksw
 
     case "pgi"
-      setenv ARPACK_LIBDIR  /opt/pgisoft/PARPACK
-      setenv ESMF_DIR       /opt/pgisoft/esmf-3.1.0
-      setenv ESMF_OS        Linux
-      setenv ESMF_COMPILER  pgi
-      setenv ESMF_BOPT      O
-      setenv ESMF_ABI       64
-      setenv ESMF_COMM      mpich
-      setenv ESMF_SITE      default
-      setenv HDF5_LIBDIR    /opt/pgisoft/hdf5/lib
-      setenv MCT_INCDIR     /opt/pgisoft/mct/include
-      setenv MCT_LIBDIR     /opt/pgisoft/mct/lib
-      setenv NETCDF_INCDIR  /opt/pgisoft/netcdf/include
-      setenv NETCDF_LIBDIR  /opt/pgisoft/netcdf/lib
-      setenv PARPACK_LIBDIR /opt/pgisoft/PARPACK
-    breaksw
+      setenv ESMF_DIR           /opt/pgisoft/esmf-3.1.0
+      setenv ESMF_OS            Linux
+      setenv ESMF_COMPILER      pgi
+      setenv ESMF_BOPT          O
+      setenv ESMF_ABI           64
+      setenv ESMF_COMM          mpich
+      setenv ESMF_SITE          default
+      setenv MCT_INCDIR         /opt/pgisoft/mct/include
+      setenv MCT_LIBDIR         /opt/pgisoft/mct/lib
 
-    case "g95"
-      setenv ARPACK_LIBDIR  /opt/g95soft/PARPACK
-      setenv HDF5_LIBDIR    /opt/g95soft/hdf5/lib
-      setenv MCT_INCDIR     /opt/g95soft/mct/include
-      setenv MCT_LIBDIR     /opt/g95soft/mct/lib
-      setenv NETCDF_INCDIR  /opt/g95soft/netcdf/include
-      setenv NETCDF_LIBDIR  /opt/g95soft/netcdf/lib
-      setenv PARPACK_LIBDIR /opt/g95soft/PARPACK
+      setenv ARPACK_LIBDIR      /opt/pgisoft/serial/ARPACK
+      if ($?USE_MPI) then
+        setenv PARPACK_LIBDIR   /opt/pgisoft/mpich/PARPACK
+#       setenv PARPACK_LIBDIR   /opt/pgisoft/mpich2/PARPACK
+#       setenv PARPACK_LIBDIR   /opt/pgisoft/openmpi/PARPACK
+      endif
+
+      if ($?USE_NETCDF4) then
+        if ($?USE_MPI) then
+#         setenv NETCDF_INCDIR  /opt/pgisoft/mpich/netcdf4/include
+#         setenv NETCDF_LIBDIR  /opt/pgisoft/mpich/netcdf4/lib
+#         setenv HDF5_LIBDIR    /opt/pgisoft/mpich/hdf5/lib
+
+          setenv NETCDF_INCDIR  /opt/pgisoft/mpich2/netcdf4/include
+          setenv NETCDF_LIBDIR  /opt/pgisoft/mpich2/netcdf4/lib
+          setenv HDF5_LIBDIR    /opt/pgisoft/mpich2/hdf5/lib
+
+#         setenv NETCDF_INCDIR  /opt/pgisoft/openmpi/netcdf4/include
+#         setenv NETCDF_LIBDIR  /opt/pgisoft/openmpi/netcdf4/lib
+#         setenv HDF5_LIBDIR    /opt/pgisoft/openmpi/hdf5/lib
+        else
+          setenv NETCDF_INCDIR  /opt/pgisoft/serial/netcdf4/include
+          setenv NETCDF_LIBDIR  /opt/pgisoft/serial/netcdf4/lib
+          setenv HDF5_LIBDIR    /opt/pgisoft/serial/hdf5/lib
+        endif
+      else
+        setenv NETCDF_INCDIR    /opt/pgisoft/serial/netcdf3/include
+        setenv NETCDF_LIBDIR    /opt/pgisoft/serial/netcdf3/lib
+      endif
     breaksw
 
     case "gfortran"
-      setenv ARPACK_LIBDIR  /opt/gfortransoft/PARPACK
-      setenv HDF5_LIBDIR    /opt/gfortransoft/hdf5/lib
-      setenv MCT_INCDIR     /opt/gfortransoft/mct/include
-      setenv MCT_LIBDIR     /opt/gfortransoft/mct/lib
-      setenv NETCDF_INCDIR  /opt/gfortransoft/netcdf/include
-      setenv NETCDF_LIBDIR  /opt/gfortransoft/netcdf/lib
-      setenv PARPACK_LIBDIR /opt/gfortransoft/PARPACK
+      setenv MCT_INCDIR         /opt/gfortransoft/mct/include
+      setenv MCT_LIBDIR         /opt/gfortransoft/mct/lib
+
+      setenv ARPACK_LIBDIR      /opt/gfortransoft/serial/ARPACK
+      if ($?USE_MPI) then
+#       setenv PARPACK_LIBDIR   /opt/gfortransoft/mpich/PARPACK
+        setenv PARPACK_LIBDIR   /opt/gfortransoft/mpich2/PARPACK
+#       setenv PARPACK_LIBDIR   /opt/gfortransoft/openmpi/PARPACK
+      endif
+
+      if ($?USE_NETCDF4) then
+        if ($?USE_MPI) then
+#         setenv NETCDF_INCDIR  /opt/gfortransoft/mpich/netcdf4/include
+#         setenv NETCDF_LIBDIR  /opt/gfortransoft/mpich/netcdf4/lib
+#         setenv HDF5_LIBDIR    /opt/gfortransoft/mpich/hdf5/lib
+
+          setenv NETCDF_INCDIR  /opt/gfortransoft/mpich2/netcdf4/include
+          setenv NETCDF_LIBDIR  /opt/gfortransoft/mpich2/netcdf4/lib
+          setenv HDF5_LIBDIR    /opt/gfortransoft/mpich2/hdf5/lib
+
+#         setenv NETCDF_INCDIR  /opt/gfortransoft/openmpi/netcdf4/include
+#         setenv NETCDF_LIBDIR  /opt/gfortransoft/openmpi/netcdf4/lib
+#         setenv HDF5_LIBDIR    /opt/gfortransoft/openmpi/hdf5/lib
+        else
+          setenv NETCDF_INCDIR  /opt/gfortransoft/serial/netcdf4/include
+          setenv NETCDF_LIBDIR  /opt/gfortransoft/serial/netcdf4/lib
+          setenv HDF5_LIBDIR    /opt/gfortransoft/serial/hdf5/lib
+        endif
+      else
+        setenv NETCDF_INCDIR    /opt/gfortransoft/serial/netcdf3/include
+        setenv NETCDF_LIBDIR    /opt/gfortransoft/serial/netcdf3/lib
+      endif
+    breaksw
+
+    case "g95"
+      setenv MCT_INCDIR         /opt/g95soft/mct/include
+      setenv MCT_LIBDIR         /opt/g95soft/mct/lib
+
+      setenv ARPACK_LIBDIR      /opt/g95soft/serial/ARPACK
+      if ($?USE_MPI) then
+        setenv PARPACK_LIBDIR   /opt/g95soft/mpich2/PARPACK
+#       setenv PARPACK_LIBDIR   /opt/g95soft/openmpi/PARPACK
+      endif
+
+      if ($?USE_NETCDF4) then
+        if ($?USE_MPI) then
+          setenv NETCDF_INCDIR  /opt/g95soft/mpich2/netcdf4/include
+          setenv NETCDF_LIBDIR  /opt/g95soft/mpich2/netcdf4/lib
+          setenv HDF5_LIBDIR    /opt/g95soft/mpich2/hdf5/lib
+
+#         setenv NETCDF_INCDIR  /opt/g95soft/openmpi/netcdf4/include
+#         setenv NETCDF_LIBDIR  /opt/g95soft/openmpi/netcdf4/lib
+#         setenv HDF5_LIBDIR    /opt/g95soft/openmpi/hdf5/lib
+        else
+          setenv NETCDF_INCDIR  /opt/g95soft/serial/netcdf4/include
+          setenv NETCDF_LIBDIR  /opt/g95soft/serial/netcdf4/lib
+          setenv HDF5_LIBDIR    /opt/g95soft/serial/hdf5/lib
+        endif
+      else
+        setenv NETCDF_INCDIR    /opt/g95soft/serial/netcdf3/include
+        setenv NETCDF_LIBDIR    /opt/g95soft/serial/netcdf3/lib
+      endif
     breaksw
 
   endsw
@@ -242,17 +356,21 @@ endif
 
 # The rest of this script sets the path to the users header file and
 # analytical source files, if any. See the templates in User/Functionals.
+#
+# If applicable, use the MY_ANALYTICAL_DIR directory to place your
+# customized biology model header file (like fennel.h, nemuro.h, ecosim.h,
+# etc).
 
  setenv MY_HEADER_DIR       ${MY_PROJECT_DIR}
 
-#setenv MY_ANALYTICAL_DIR   ${MY_PROJECT_DIR}
+ setenv MY_ANALYTICAL_DIR   ${MY_PROJECT_DIR}
 
 # Put the binary to execute in the following directory.
 
  setenv BINDIR              ${MY_PROJECT_DIR}
 
 # Put the f90 files in a project specific Build directory to avoid conflict
-# with other projects. 
+# with other projects.
 
  setenv SCRATCH_DIR         ${MY_PROJECT_DIR}/Build
 
@@ -268,13 +386,13 @@ if ( ${?USE_MPI} & ${?USE_OpenMP} ) then
   exit 1
 endif
 
-# Remove build directory. 
+# Remove build directory.
 
 if ( $clean == 1 ) then
   make clean
 endif
 
-# Compile (the binary will go to BINDIR set above).  
+# Compile (the binary will go to BINDIR set above).
 
 if ( $parallel == 1 ) then
   make $NCPUS
