@@ -1,7 +1,7 @@
 /*
-** svn $Id: shoreface.h 503 2008-01-10 00:11:51Z arango $
+** svn $Id: shoreface.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2008 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -13,6 +13,12 @@
 **                     sediment_shoreface.h
 */
 
+#undef  NEARSHORE_MELLOR
+#define NEARSHORE_WEC
+#ifdef  NEARSHORE_WEC
+# define ANA_PAIR
+#endif
+
 #define UV_VIS2
 #define MIX_S_UV
 #define DIAGNOSTICS_UV
@@ -20,7 +26,6 @@
 #define AVERAGES_NEARSHORE
 #define AVERAGES_BEDLOAD
 #define WET_DRY
-#define NEARSHORE_MELLOR
 #define OUT_DOUBLE
 #define UV_ADV
 #define TS_MPDATA

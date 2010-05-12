@@ -1,7 +1,7 @@
 /*
-** svn $Id: upwelling.h 629 2008-06-09 19:07:20Z arango $
+** svn $Id: upwelling.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2008 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -50,7 +50,7 @@
 # define ANA_VMIX
 #endif
 
-#if defined BIO_FASHAM  || defined ECOSIM || \
+#if defined BIO_FENNEL  || defined ECOSIM || \
     defined NPZD_POWELL || defined NEMURO
 # define ANA_BIOLOGY
 # define ANA_SPFLUX
@@ -63,7 +63,7 @@
 # undef  IVLEV_EXPLICIT
 #endif
 
-#ifdef BIO_FASHAM
+#ifdef BIO_FENNEL
 # define CARBON
 # define DENITRIFICATION
 # define BIO_SEDIMENT

@@ -1,21 +1,28 @@
 /*
 ** svn $Id: tile.h 737 2008-09-07 02:06:44Z jcwarner $
 *******************************************************************************
-** Copyright (c) 2002-2008 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
 */
-      integer :: Iend, Istr, Jend, Jstr
-      integer :: LBi, UBi, LBj, UBj
+      integer :: IminS, ImaxS, JminS, JmaxS
+      integer :: LBi, UBi, LBj, UBj, LBij, UBij
 !
-!  Set horizontal starting and ending indices for parallel domain
-!  partitions in the XI- and ETA-directions.
+!  Set horizontal starting and ending indices for automatic private storage
+!  arrays.
 !
-      Istr=BOUNDS(ng)%Istr(tile)
-      Iend=BOUNDS(ng)%Iend(tile)
-      Jstr=BOUNDS(ng)%Jstr(tile)
-      Jend=BOUNDS(ng)%Jend(tile)
+#ifdef REFINED_GRID
+      IminS=BOUNDS(ng)%Istr(tile)-4
+      ImaxS=BOUNDS(ng)%Iend(tile)+3
+      JminS=BOUNDS(ng)%Jstr(tile)-4
+      JmaxS=BOUNDS(ng)%Jend(tile)+3
+#else
+      IminS=BOUNDS(ng)%Istr(tile)-3
+      ImaxS=BOUNDS(ng)%Iend(tile)+3
+      JminS=BOUNDS(ng)%Jstr(tile)-3
+      JmaxS=BOUNDS(ng)%Jend(tile)+3
+#endif
 !
 !  Determine array lower and upper bounds in the I- and J-directions.
 !
@@ -23,3 +30,8 @@
       UBi=BOUNDS(ng)%UBi(tile)
       LBj=BOUNDS(ng)%LBj(tile)
       UBj=BOUNDS(ng)%UBj(tile)
+!
+!  Set array lower and upper bounds for MIN(I,J)- and MAX(I,J)-directions.
+!
+      LBij=BOUNDS(ng)%LBij
+      UBij=BOUNDS(ng)%UBij

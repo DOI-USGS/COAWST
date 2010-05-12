@@ -3,7 +3,7 @@
 **
 ** svn $Id: globaldefs.h 838 2008-11-17 04:22:18Z jcwarner $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2008 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
+** Copyright (c) 2002-2010 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -16,18 +16,35 @@
 */
 
 /*
-** Set assumed-shape array switch.  Imported arrays with dummy 
+** Set assumed-shape array switch.  Imported arrays with dummy
 ** arguments that takes the shape of the actual argument passed
 ** to it.  If off, all the arrays are explicit-shape.  In some
 ** computer explicit-shape arrays slow down performacnce because
 ** the arrays are copied when passed by arguments.
 */
 
-#define ASSUMED_SHAPE
-#if defined G95 && defined I686
-# undef ASSUMED_SHAPE
-#elif defined UNICOS_SN
-# undef ASSUMED_SHAPE
+#if !((defined G95 && defined I686) || defined UNICOS_SN)
+# define ASSUMED_SHAPE
+#endif
+
+/*
+** Set switch for computer lacking 4-byte (32 bit) floating point
+** representation, like some Crays.  This becomes important when
+** defining attributes for 4-byte float variables in NetCDF files.
+** We need to have the _FillValue attribute of the same type as
+** as the NetCDF variable.
+*/
+
+#if defined UNICOS_SN
+# define NO_4BYTE_REALS
+#endif
+
+/*
+** If parallel I/O and applicable, turn on NetCDF-4 type files.
+*/
+
+#if !defined NETCDF4 && defined PARALLEL_IO
+# define NETCDF4
 #endif
 
 /*
@@ -181,8 +198,10 @@
   # define PRIVATE_1D_SCRATCH_ARRAY Istr-4:Iend+3
   # define PRIVATE_2D_SCRATCH_ARRAY Istr-4:Iend+3,Jstr-4:Jend+3
   #else */
-#define PRIVATE_1D_SCRATCH_ARRAY LBi-1:UBi+1
-#define PRIVATE_2D_SCRATCH_ARRAY LBi-1:UBi+1,LBj-1:UBj+1
+/*#define PRIVATE_1D_SCRATCH_ARRAY LBi-1:UBi+1
+  #define PRIVATE_2D_SCRATCH_ARRAY LBi-1:UBi+1,LBj-1:UBj+1 */
+#define PRIVATE_1D_SCRATCH_ARRAY IminS:ImaxS
+#define PRIVATE_2D_SCRATCH_ARRAY IminS:ImaxS,JminS:JmaxS
 /*
 ** Set switch for distributed-memory applications to gather and scatter
 ** I/O data in 2D slabs. This is necessary on some platforms to conserve
@@ -258,10 +277,10 @@
 */
 
 #ifdef DISTRIBUTE
-# define SOUTH_WEST_TEST .true.
-# define NORTH_WEST_TEST .true.
-# define SOUTH_EAST_TEST .true.
-# define NORTH_EAST_TEST .true.
+# define SOUTH_WEST_TEST .TRUE.
+# define NORTH_WEST_TEST .TRUE.
+# define SOUTH_EAST_TEST .TRUE.
+# define NORTH_EAST_TEST .TRUE.
 #else
 # define SOUTH_WEST_TEST (Istr.eq.1).and.(Jstr.eq.1)
 # define NORTH_WEST_TEST (Istr.eq.1).and.(Jend.eq.Mm(ng))
@@ -315,40 +334,110 @@
 #endif
 
 /*
+** Set 4DVAR sensitivity switch.
+*/
+
+#if defined W4DPSAS_SENSITIVITY || \
+    defined W4DVAR_SENSITIVITY
+# define SENSITIVITY_4DVAR
+#endif
+
+/*
 ** Set tangent, tl_ioms and adjoint switches.
 */
 
-#if defined CONVOLUTION      || defined CORRELATION      || \
-    defined GRADIENT_CHECK   || defined FT_EIGENMODES    || \
-    defined FORCING_SV       || defined INNER_PRODUCT    || \
-    defined IS4DVAR          || defined IS4DVAR_OLD      || \
-    defined OBS_SENSITIVITY  || defined OPT_PERTURBATION || \
-    defined OPT_OBSERVATIONS || defined R_SYMMETRY       || \
-    defined RPM_DRIVER       || defined SANITY_CHECK     || \
-    defined TLM_CHECK        || defined TLM_DRIVER       || \
-    defined W4DPSAS          || defined W4DVAR
+#if defined CONVOLUTION         || defined CORRELATION        || \
+    defined FT_EIGENMODES       || defined FORCING_SV         || \
+    defined INNER_PRODUCT       || defined IS4DVAR            || \
+    defined IS4DVAR_SENSITIVITY || defined OPT_PERTURBATION   || \
+    defined OPT_OBSERVATIONS    || defined PICARD_TEST        || \
+    defined R_SYMMETRY          || defined RPM_DRIVER         || \
+    defined SANITY_CHECK        || defined SENSITIVITY_4DVAR  || \
+    defined TLM_CHECK           || defined TLM_DRIVER         || \
+    defined TL_W4DPSAS          || defined TL_W4DVAR          || \
+    defined W4DPSAS             || defined W4DVAR
 # define TANGENT
 #endif
-#if defined AD_SENSITIVITY   || defined ADM_DRIVER       || \
-    defined AFT_EIGENMODES   || defined CONVOLUTION      || \
-    defined CORRELATION      || defined GRADIENT_CHECK   || \
-    defined FORCING_SV       || defined INNER_PRODUCT    || \
-    defined IS4DVAR          || defined IS4DVAR_OLD      || \
-    defined OBS_SENSITIVITY  || defined OPT_PERTURBATION || \
-    defined OPT_OBSERVATIONS || defined R_SYMMETRY       || \
-    defined SANITY_CHECK     || defined SO_SEMI          || \
-    defined S4DVAR           || defined TLM_CHECK        || \
-    defined W4DPSAS          || defined W4DVAR
+#if defined AD_SENSITIVITY      || defined ADM_DRIVER         || \
+    defined AFT_EIGENMODES      || defined CONVOLUTION        || \
+    defined CORRELATION         || defined FORCING_SV         || \
+    defined INNER_PRODUCT       || defined IS4DVAR            || \
+    defined IS4DVAR_SENSITIVITY || defined OPT_PERTURBATION   || \
+    defined OPT_OBSERVATIONS    || defined R_SYMMETRY         || \
+    defined SANITY_CHECK        || defined SENSITIVITY_4DVAR  || \
+    defined SO_SEMI             || defined TLM_CHECK          || \
+    defined TL_W4DPSAS          || defined TL_W4DVAR          || \
+    defined W4DPSAS             || defined W4DVAR
 # define ADJOINT
 #endif
-#if defined PICARD_TEST      || defined RPM_DRIVER       || \
-    defined W4DVAR
+#if defined PICARD_TEST        || defined RPM_DRIVER         || \
+    defined TL_W4DVAR          || defined W4DVAR             || \
+    defined W4DVAR_SENSITIVITY
 # define TL_IOMS
 #endif
 #if !defined ANA_PERTURB                                 && \
     (defined CORRELATION     || defined SANITY_CHECK     || \
      defined R_SYMMETRY)
 # define ANA_PERTURB
+#endif
+
+/*
+** Since some of the tracer advection alogorithms are highly nonlinear,
+** it is possible to choose a simpler (less nonlinear) horizontal and
+** vertical tracer advection option for the tangent linear, representer
+** and adjoint routines. This is likely to improve the convergence of
+** the 4DVar algorithms. Notice that this strategy still allows us to
+** use highly nonlinear tracer advection schemes in the basic state
+** when running the nonlinear model.
+*/
+
+#if defined TANGENT || defined TL_IOMS || defined ADJOINT
+# if !defined TS_A4HADVECTION_TL       && \
+     !defined TS_C2HADVECTION_TL       && \
+     !defined TS_C4HADVECTION_TL       && \
+     !defined TS_U3HADVECTION_TL
+#  if defined TS_A4HADVECTION
+#   define TS_A4HADVECTION_TL
+#  elif defined TS_C2HADVECTION
+#   define TS_C2HADVECTION_TL
+#  elif defined TS_C4HADVECTION
+#   define TS_C4HADVECTION_TL
+#  elif defined TS_U3HADVECTION
+#   define TS_U3HADVECTION_TL
+#  endif
+# endif
+
+# if !defined TS_A4VADVECTION_TL       && \
+     !defined TS_C2VADVECTION_TL       && \
+     !defined TS_C4VADVECTION_TL       && \
+     !defined TS_SVADVECTION_TL
+#  if defined TS_A4VADVECTION
+#   define TS_A4VADVECTION_TL
+#  elif defined TS_C2VADVECTION
+#   define TS_C2VADVECTION_TL
+#  elif defined TS_C4VADVECTION
+#   define TS_C4VADVECTION_TL
+#  elif defined TS_SVADVECTION
+#   define TS_SVADVECTION_TL
+#  endif
+# endif
+#endif
+
+/*
+** Now, we need a switch the tracer advection schemes that
+** have not adjointed yet.
+*/
+
+#if defined TANGENT || defined TL_IOMS || defined ADJOINT
+# if defined TS_A4HADVECTION_TL || defined TS_C2HADVECTION_TL || \
+     defined TS_C4HADVECTION_TL || defined TS_U3HADVECTION_TL
+#  define TS_HADVECTION_TL
+# endif
+
+# if defined TS_A4VADVECTION_TL || defined TS_C2VADVECTION_TL || \
+     defined TS_C4VADVECTION_TL || defined TS_SVADVECTION_TL
+#  define TS_VADVECTION_TL
+# endif
 #endif
 
 /*
@@ -361,7 +450,7 @@
     defined INNER_PRODUCT    || defined OPT_OBSERVATIONS || \
     defined OPT_PERTURBATION || defined PICARD_TEST      || \
     defined RPM_DRIVER       || defined SANITY_CHECK     || \
-    defined SO_SEMI          || defined TLM_DRIVER 
+    defined SO_SEMI          || defined TLM_DRIVER
 # undef NONLINEAR
 #endif
 
@@ -443,72 +532,78 @@
 ** Set internal switches for all the 4DVAR schemes.
 */
 
-#if !defined WEAK_CONSTRAINT  && \
-    (defined R_SYMMETRY       || defined W4DVAR    || \
-     defined CONVOLUTION      || defined W4DPSAS)
+#if !defined WEAK_CONSTRAINT     && \
+    (defined CONVOLUTION         || defined R_SYMMETRY         || \
+     defined TL_W4DPSAS          || defined TL_W4DVAR          || \
+     defined W4DPSAS             || defined W4DVAR             || \
+     defined W4DPSAS_SENSITIVITY || defined W4DVAR_SENSITIVITY)
 # define WEAK_CONSTRAINT
 #endif
-#if !(defined WEAK_CONSTRAINT || defined IOM)      && \
-      defined RPM_RELAXATION
+#if !defined WEAK_CONSTRAINT     && defined RPM_RELAXATION
 # undef RPM_RELAXATION
 #endif
-#if defined CONVOLUTION      || defined CORRELATION      || \
-    defined GRADIENT_CHECK   || defined IOM              || \
-    defined IS4DVAR          || defined IS4DVAR_OLD      || \
-    defined OBS_SENSITIVITY  || defined OPT_OBSERVATIONS || \
-    defined S4DVAR           || defined TLM_CHECK        || \
+#if defined CONVOLUTION          || defined CORRELATION         || \
+    defined IS4DVAR              || defined IS4DVAR_SENSITIVITY || \
+    defined OPT_OBSERVATIONS     || defined TLM_CHECK           || \
     defined WEAK_CONSTRAINT
 # define FOUR_DVAR
 #endif
 #if !defined WEAK_CONSTRAINT && defined FOUR_DVAR
 # define CONVOLVE
 #endif
-#if defined IS4DVAR || defined IS4DVAR_OLD
+#if defined IS4DVAR
 # define BACKGROUND
+#endif
+#if !(defined W4DPSAS || defined W4DVAR) && defined POSTERIOR_EOFS
+# undef POSTERIOR_EOFS
+#endif
+#if !(defined W4DPSAS || defined W4DVAR) && defined POSTERIOR_ERROR_F
+# undef POSTERIOR_ERROR_F
+#endif
+#if !(defined W4DPSAS || defined W4DVAR) && defined POSTERIOR_ERROR_I
+# undef POSTERIOR_ERROR_I
+#endif
+#if !(defined WEAK_CONSTRAINT || defined IS4DVAR_SENSITIVITY) && \
+      defined OBS_IMPACT
+# undef OBS_IMPACT
 #endif
 
 /*
 ** Activate internal switch to process 4DVAR observations.
 */
 
-#if defined GRADIENT_CHECK  || defined IOM          || \
-    defined IS4DVAR         || defined IS4DVAR_OLD  || \
-    defined OBS_SENSITIVITY || defined S4DVAR       || \
-    defined TLM_CHECK       || defined VERIFICATION || \
-    defined W4DPSAS         || defined W4DVAR
+#if defined IS4DVAR            || defined IS4DVAR_SENSITIVITY || \
+    defined SENSITIVITY_4DVAR  || defined TLM_CHECK           || \
+    defined TL_W4DPSAS         || defined TL_W4DVAR           || \
+    defined VERIFICATION       || defined W4DPSAS             || \
+    defined W4DVAR
 # define OBSERVATIONS
 #endif
 
-#if defined GRADIENT_CHECK || defined IS4DVAR         || \
-    defined IS4DVAR_OLD    || defined OBS_SENSITIVITY || \
-    defined R_SYMMETRY     || defined TLM_CHECK       || \
-    defined W4DPSAS        || defined W4DVAR
+#if defined IS4DVAR            || defined IS4DVAR_SENSITIVITY || \
+    defined R_SYMMETRY         || defined SENSITIVITY_4DVAR   || \
+    defined TLM_CHECK          || defined TL_W4DPSAS          || \
+    defined TL_W4DVAR          || defined W4DPSAS             || \
+    defined W4DVAR
 # define TLM_OBS
-#endif
-
-/*
-**  Check S4DVar normalization switches.
-*/
-
-#if !(defined ENERGY1_NORM || defined ENERGY2_NORM || \
-      defined ENERGY3_NORM)
-# undef N2NORM_PROFILE
 #endif
 
 /*
 ** Activate reading and writting of the basic sate.
 */
 
-#if !defined FORWARD_READ  && \
-    (defined IS4DVAR         || defined IS4DVAR_OLD || \
-     defined OBS_SENSITIVITY || defined S4DVAR      || \
-     defined W4DPSAS         || defined W4DVAR)
+#if !defined FORWARD_READ      && \
+    (defined IS4DVAR           || defined IS4DVAR_SENSITIVITY || \
+     defined SENSITIVITY_4DVAR || defined TL_W4DPSAS          || \
+     defined TL_W4DVAR         || defined W4DPSAS             || \
+     defined W4DVAR)
 # define FORWARD_READ
 #endif
-#if !defined FORWARD_WRITE  && \
-    (defined IS4DVAR         || defined IS4DVAR_OLD || \
-     defined OBS_SENSITIVITY || defined S4DVAR      || \
-     defined W4DPSAS         || defined W4DVAR)
+#if !defined FORWARD_WRITE     && \
+    (defined IS4DVAR           || defined IS4DVAR_SENSITIVITY || \
+     defined SENSITIVITY_4DVAR || defined TL_W4DPSAS          || \
+     defined TL_W4DVAR         || defined W4DPSAS             || \
+     defined W4DVAR)
 # define FORWARD_WRITE
 #endif
 
@@ -516,7 +611,7 @@
 ** Set internal weak constraint switches.
 */
 
-#if defined WEAK_CONSTRAINT || defined IOM
+#ifdef WEAK_CONSTRAINT
 # define IMPULSE
 #endif
 
@@ -559,13 +654,17 @@
 #if (defined  ZCLIMATOLOGY && !defined ANA_SSH)     || \
     (defined M2CLIMATOLOGY && !defined ANA_M2CLIMA) || \
     (defined  TCLIMATOLOGY && !defined ANA_TCLIMA)  || \
-    (defined M3CLIMATOLOGY && !defined ANA_M3CLIMA)
+    (defined M3CLIMATOLOGY && !defined ANA_M3CLIMA) || \
+    (defined CLIMA_TS_MIX  && defined SOLVE3D       && \
+     (defined TS_DIF2      || defined TS_DIF4))
 # define CLM_FILE
 #endif
 #if defined ZCLIMATOLOGY   || defined M2CLIMATOLOGY || \
     defined TCLIMATOLOGY   || defined M3CLIMATOLOGY || \
     defined ZCLM_NUDGING   || defined M2CLM_NUDGING || \
-    defined TCLM_NUDGING   || defined M3CLM_NUDGING
+    defined TCLM_NUDGING   || defined M3CLM_NUDGING || \
+    (defined CLIMA_TS_MIX  && defined SOLVE3D       && \
+     (defined TS_DIF2      || defined TS_DIF4))
 # define CLIMATOLOGY
 #endif
 
@@ -578,7 +677,7 @@
 #endif
 
 /*
-** Activate internal switch for imposing REFDIF as a 
+** Activate internal switch for imposing REFDIF as a
 ** monochromatic wave driver.
 */
 
@@ -645,23 +744,23 @@
 #endif
 
 #if (defined WEST_FSRADIATION  && defined WEST_FSNUDGING)  || \
-     defined WEST_M2FLATHER    || defined WEST_FSCLAMPED   || \
-     defined WEST_M2REDUCED
+    (defined WEST_M2REDUCED    && defined FSOBC_REDUCED)   || \
+     defined WEST_M2FLATHER    || defined WEST_FSCLAMPED
 # define WEST_FSOBC
 #endif
 #if (defined EAST_FSRADIATION  && defined EAST_FSNUDGING)  || \
-     defined EAST_M2FLATHER    || defined EAST_FSCLAMPED   || \
-     defined EAST_M2REDUCED
+    (defined EAST_M2REDUCED    && defined FSOBC_REDUCED)   || \
+     defined EAST_M2FLATHER    || defined EAST_FSCLAMPED
 # define EAST_FSOBC
 #endif
 #if (defined SOUTH_FSRADIATION && defined SOUTH_FSNUDGING) || \
-     defined SOUTH_M2FLATHER   || defined SOUTH_FSCLAMPED  || \
-     defined SOUTH_M2REDUCED
+    (defined SOUTH_M2REDUCED   && defined FSOBC_REDUCED)   || \
+     defined SOUTH_M2FLATHER   || defined SOUTH_FSCLAMPED
 # define SOUTH_FSOBC
 #endif
 #if (defined NORTH_FSRADIATION && defined NORTH_FSNUDGING) || \
-     defined NORTH_M2FLATHER   || defined NORTH_FSCLAMPED  || \
-     defined NORTH_M2REDUCED
+    (defined NORTH_M2REDUCED   && defined FSOBC_REDUCED)   || \
+     defined NORTH_M2FLATHER   || defined NORTH_FSCLAMPED
 # define NORTH_FSOBC
 #endif
 
@@ -765,9 +864,8 @@
     defined ASSIMILATION_UV
 # define ASSIMILATION
 #endif
-#if defined NUDGING_SSH || defined NUDGING_SST   || \
-    defined NUDGING_T   || defined NUDGING_UVsur || \
-    defined NUDGING_UV
+#if defined NUDGING_SST   || defined NUDGING_T   || \
+    defined NUDGING_UVsur || defined NUDGING_UV
 # define NUDGING
 #endif
 
@@ -798,9 +896,9 @@
 ** module.
 */
 
-#if defined BIO_FASHAM  || defined ECOSIM      || \
+#if defined BIO_FENNEL  || defined ECOSIM      || \
     defined NEMURO      || defined NPZD_FRANKS || \
-    defined NPZD_POWELL
+    defined NPZD_IRON   || defined NPZD_POWELL
 # define BIOLOGY
 #endif
 
@@ -809,15 +907,30 @@
 **
 */
 
-#if defined WRF_COUPLING
+#if defined ROMS_MODEL && (defined SWAN_MODEL || defined WRF_MODEL)
+# define ROMS_COUPLING
+#endif
+#if defined SWAN_MODEL && (defined SWAN_MODEL || defined WRF_MODEL)
+# define SWAN_COUPLING
+#endif
+#if defined WRF_MODEL && (defined SWAN_MODEL || defined ROMS_MODEL)
+# define WRF_COUPLING
+#endif
+
+#if defined WRF_COUPLING && defined ROMS_COUPLING
 # define AIR_OCEAN
 #endif
 
-#if defined REFDIF_COUPLING || defined SWAN_COUPLING
+#if defined WRF_COUPLING && defined SWAN_COUPLING
+# define AIR_WAVES
+#endif
+
+#if (defined REFDIF_COUPLING || defined SWAN_COUPLING) && \
+     defined ROMS_COUPLING
 # define WAVES_OCEAN
 #endif
 
-#if defined AIR_OCEAN || defined WAVES_OCEAN
+#if defined AIR_OCEAN || defined AIR_WAVES || defined WAVES_OCEAN
 # define MODEL_COUPLING
 #endif
 
@@ -825,7 +938,11 @@
 ** Define internal option to process wave data.
 */
 
-#if defined BBL_MODEL   || defined NEARSHORE_MELLOR || \
+#if defined NEARSHORE_MELLOR || defined NEARSHORE_WEC
+#   define NEARSHORE
+#endif
+
+#if defined BBL_MODEL   || defined NEARSHORE || \
     defined WAVES_OCEAN
 # define WAVES_DIR
 #endif
@@ -837,21 +954,22 @@
 #endif
 
 #if (defined BBL_MODEL        && !defined WAVES_UB) ||  \
-     defined NEARSHORE_MELLOR || \
+     defined NEARSHORE        || \
      defined ZOS_HSIG         || defined COARE_TAYLOR_YELLAND || \
-     defined BEDLOAD_SOULSBY  || defined WAVES_OCEAN
+     defined BEDLOAD_SOULSBY  || defined WAVES_OCEAN || \
+     defined DRENNAN
 # define WAVES_HEIGHT
 #endif
 
 #if (!defined DEEPWATER_WAVES      && \
      (defined COARE_TAYLOR_YELLAND || defined COARE_OOST)) || \
-      defined NEARSHORE_MELLOR     || \
+      defined DRENNAN || defined NEARSHORE                 || \
       defined BEDLOAD_SOULSBY      || defined WAVES_OCEAN
 # define WAVES_LENGTH
 #endif
 
 #if defined COARE_TAYLOR_YELLAND   || defined COARE_OOST || \
-    defined WAVES_OCEAN
+    defined DRENNAN || defined WAVES_OCEAN
 # define WAVES_TOP_PERIOD
 #endif
 
@@ -940,10 +1058,10 @@
 #if defined ANA_BIOLOGY && !defined BIOLOGY
 # undef ANA_BIOLOGY
 #endif
-#if defined ANA_PASSIVE && !defined T_PASSIVE 
+#if defined ANA_PASSIVE && !defined T_PASSIVE
 # undef ANA_PASSIVE
 #endif
-#if defined ANA_SEDIMENT && !(defined SEDIMENT || defined BBL_MODEL) 
+#if defined ANA_SEDIMENT && !(defined SEDIMENT || defined BBL_MODEL)
 # undef ANA_SEDIMENT
 #endif
 #if  !defined ANA_INITIAL || \
@@ -993,7 +1111,7 @@
 #   undef DIAGNOSTICS_TS
 # endif
 #endif
-#if !defined BIO_FASHAM && defined DIAGNOSTICS_BIO
+#if !defined BIO_FENNEL && defined DIAGNOSTICS_BIO
 #  undef DIAGNOSTICS_BIO
 #endif
 #if defined DIAGNOSTICS_BIO || defined DIAGNOSTICS_TS || \
@@ -1002,15 +1120,14 @@
 #endif
 
 /*
-** Activate switch to modify MAIN3D to allow perfect restart. To
-** achieve this, the call to OUTPUT needs to be before to RHS3D.
-** Therefore, and additional routine (set_zeta) is needed to set
-** the free-surface to its time-averaged value.  This strategy
-** needs to be tested in the TLM, RPM, and ADM.
+** Activate switch to modify MAIN3D to recompute depths and
+** thicknesses using the new time filtered free-surface.  This
+** call is moved from STEP2D to facilitate nesting.
+** This strategy needs to be tested in the TLM, RPM, and ADM.
 */
 
 #if !(defined ADJOINT || defined TANGENT || defined TL_IOMS)
-# define SET_ZETA
+# define MOVE_SET_DEPTH
 #endif
 
 /*
@@ -1089,7 +1206,7 @@
 #endif
 
 /*
-** Define internal switch for Smagorinsky-like mixing. 
+** Define internal switch for Smagorinsky-like mixing.
 */
 
 #if !defined DIFF_3DCOEF && defined TS_SMAGORINSKY
@@ -1098,4 +1215,3 @@
 #if !defined VISC_3DCOEF && defined UV_SMAGORINSKY
 # define VISC_3DCOEF
 #endif
-

@@ -1,7 +1,7 @@
 /*
-** svn $Id: lab_canyon.h 503 2008-01-10 00:11:51Z arango $
+** svn $Id: lab_canyon.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2008 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -14,6 +14,7 @@
 
 #define UV_COR
 #define UV_ADV
+#define UV_LDRAG
 #define UV_VIS2
 #define MIX_S_UV
 #define DJ_GRADPS

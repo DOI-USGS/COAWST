@@ -1,7 +1,7 @@
 /*
-** svn $Id: double_gyre.h 503 2008-01-10 00:11:51Z arango $
+** svn $Id: double_gyre.h 440 2010-01-25 06:36:07Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2008 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -17,16 +17,13 @@
 #undef  AD_SENSITIVITY          /* Adjoint Sensitivity */
 #undef  AFT_EIGENMODES          /* Adjoint Finite Time Eigenmodes */
 #undef  CORRELATION             /* Background-error Correlation Check */
-#undef  GRADIENT_CHECK          /* TLM/ADM Gradient Check */
 #undef  FORCING_SV              /* Forcing Singular Vectors */
 #undef  FT_EIGENMODES           /* Finite Time Eigenmodes */
-#undef  IS4DVAR_OLD             /* Old Incremental, strong constraint 4DVAR */
 #define IS4DVAR                 /* Incremental, strong constraint 4DVAR */
 #undef  NLM_DRIVER              /* Nonlinear Basic State trajectory */
 #undef  OPT_PERTURBATION        /* Optimal perturbations */
 #undef  PICARD_TEST             /* Picard Iterations Test */
 #undef  R_SYMMETRY              /* Representer Matrix Symmetry Test */
-#undef  S4DVAR                  /* Strong constraint 4DVAR */
 #undef  SANITY_CHECK            /* Sanity Check */
 #undef  SO_SEMI                 /* Stochastic Optimals: Semi-norm */
 #undef  TLM_CHECK               /* Tangent Linear Model Check */
@@ -236,9 +233,8 @@
 **-----------------------------------------------------------------------------
 */
 
-#if defined CORRELATION || defined GRADIENT_CHECK || \
-    defined IS4DVAR     || defined IS4DVAR_OLD    || \
-    defined R_SYMMETRY  || defined TLM_CHECK      || \
+#if defined CORRELATION || defined IS4DVAR   || \
+    defined R_SYMMETRY  || defined TLM_CHECK || \
     defined W4DPSAS     || defined W4DVAR
 # if defined SOLVE3D                   /* 3D Application */
 #  undef  UV_C2ADVECTION
@@ -288,18 +284,9 @@
 #  endif
 #  define VCONVOLUTION
 #  define IMPLICIT_VCONV
-#  ifdef S4DVAR
-#   define ENERGY1_NORM
-#   undef  ENERGY2_NORM
-#   undef  ENERGY3_NORM
-#   define N2NORM_PROFILE
-#  endif
 #  ifdef W4DVAR
 #   define RPM_RELAXATION
 #   undef  CONVOLVE
-#  endif
-#  ifdef IS4DVAR_OLD
-#   undef  MULTIPLE_TLM
 #  endif
 # else                                 /* 2D Application */
 #  undef  UV_C2ADVECTION
@@ -316,9 +303,6 @@
 #  define NORTHERN_WALL
 #  define SOUTHERN_WALL
 #  define ANA_SMFLUX
-#  undef  ENERGY1_NORM
-#  undef  ENERGY2_NORM
-#  undef  ENERGY3_NORM
 #  define FORWARD_WRITE
 #  define FORWARD_READ
 #  define OUT_DOUBLE

@@ -1,7 +1,7 @@
 /*
-** svn $Id: nj_bight.h 503 2008-01-10 00:11:51Z arango $
+** svn $Id: nj_bight.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2008 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -124,17 +124,17 @@
 # define SOUTH_VOLCONS
 #endif
 
-#undef  BIO_FASHAM
+#undef  BIO_FENNEL
 #undef  ECOSIM
 
-#ifdef BIO_FASHAM
+#ifdef BIO_FENNEL
 # define CARBON
 # define DENITRIFICATION
 # define BIO_SEDIMENT
 # define DIAGNOSTICS_BIO
 #endif
 
-#if defined BIO_FASHAM || defined ECOSIM
+#if defined BIO_FENNEL || defined ECOSIM
 # define ANA_BIOLOGY
 # define ANA_SPFLUX
 # define ANA_BPFLUX
