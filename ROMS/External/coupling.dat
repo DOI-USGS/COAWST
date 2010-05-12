@@ -1,9 +1,9 @@
 !
 !  Export/Import Coupling Variables
 !
-!svn $Id: coupling.dat 608 2008-04-25 04:47:37Z arango $
+!svn $Id: coupling.dat 429 2009-12-20 17:30:26Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -59,14 +59,6 @@
   0.0d0
   1.0d0
 
-'Hair'                                             ! at 10 m, usually
-  'Hair'
-  'surface air relative humidity'
-  'percentage'                                     ! [percentage]
-  'r2dvar'
-  0.0d0
-  0.01d0                                           ! 1/100
-
 'Tair'                                             ! at 2 m, usually
   'Tair'
   'surface air temperature'
@@ -75,21 +67,13 @@
   273.16d0                                         ! Kelvin to Celsius
   1.0d0
 
-'UWind'                                            ! at 10 m, usually
-  'UWind'
-  'surface u-wind component'
-  'meter second-1'                                 ! [m/s]
+'Hair'                                             ! at 10 m, usually
+  'Hair'
+  'surface air relative humidity'
+  'percentage'                                     ! [percentage]
   'r2dvar'
   0.0d0
-  1.0d0
-
-'VWind'                                            ! at 10 m, usually
-  'VWind'
-  'surface v-wind component'
-  'meter second-1'                                 ! [m/s]
-  'r2dvar'
-  0.0d0
-  1.0d0
+  0.01d0                                           ! 1/100
 
 'cloud'                                            ! at 10 m, usually
   'cloud'
@@ -98,14 +82,6 @@
   'r2dvar'
   0.0d0
   1.0d0
-
-'rain'                                             ! at 10 m, usually
-  'rain'
-  'rain fall rate'
-  'kilogram meter-2 second-1'                      ! [kg m2/s]
-  'r2dvar'
-  0.0d0
-  1.0d0                                            ! 1/rhow (0.001 m3/kg) if m/s
 
 'SWrad'                                            ! at 10 m, usually
   'swrad'
@@ -123,6 +99,30 @@
   0.0d0
   1.0d0                                            ! 1/rho0/Cp
 
+'rain'                                             ! at 10 m, usually
+  'rain'
+  'rain fall rate'
+  'kilogram meter-2 second-1'                      ! [kg m2/s]
+  'r2dvar'
+  0.0d0
+  1.0d0                                            ! 1/rhow (0.001 m3/kg) if m/s
+
+'Uwind'                                            ! at 10 m, usually
+  'Uwind'
+  'surface u-wind component'
+  'meter second-1'                                 ! [m/s]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
+'Vwind'                                            ! at 10 m, usually
+  'Vwind'
+  'surface v-wind component'
+  'meter second-1'                                 ! [m/s]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
 !
 !  If BULK_FLUXES is not activated, the following fields are needed.
 !
@@ -135,7 +135,7 @@
   0.0d0
   1.0d0                                            ! 1/rho0/Cp
 
-'USTRESS'
+'Ustr'
   'sustr'
   'surface u-momentum stress'
   'meter2 second-2'                                ! [N/m2]
@@ -143,29 +143,13 @@
   0.0d0
   1.0d0                                            ! 1/rho0
 
-'VSTRESS'
+'Vstr'
   'svstr'
   'surface v-momentum stress'
   'meter2 second-2'                                ! [N/m2]
   'v2dvar'
   0.0d0
   1.0d0                                            ! 1/rho0
-
-'Lheat'
-  'lhflux'
-  'surface latent heat flux'
-  'Celsius meter second-1'                         ! [Watt/m2]
-  'r2dvar'
-  0.0d0
-  1.0d0                                            ! 1/rho0/Cp
-
-'Sheat'
-  'shflux'
-  'sensible net heat flux'
-  'Celsius meter second-1'                         ! [Watt/m2]
-  'r2dvar'
-  0.0d0
-  1.0d0                                            ! 1/rho0/Cp
 
 !
 !------------------------------------------------------------------------------

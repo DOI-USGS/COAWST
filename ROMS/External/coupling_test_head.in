@@ -1,9 +1,9 @@
 !
 ! Multiple model coupling parameters.
 !
-!svn $Id: coupling_test_head.in 601 2008-04-06 22:17:22Z arango $
+!svn $Id: coupling_test_head.in 429 2009-12-20 17:30:26Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -55,7 +55,7 @@
 ! Number of parallel threads assigned to each model in the coupled system,
 ! [1:Nmodels] KEYWORD entries are expected with the order label (OrderLabel)
 ! in parenthesis. The sum of all entries must be equal to the total number
-! of processors. 
+! of processors.
 
 Nthreads(ocean) = 1
 Nthreads(waves) = 1
@@ -67,7 +67,7 @@ Nthreads(waves) = 1
 !
 !      Aij     1      2     3
 !      i\j   ocean  waves atmos
-!  1  ocean    -      -     -          v(1): ocean-waves coupling interval           
+!  1  ocean    -      -     -          v(1): ocean-waves coupling interval
 !  2  waves   v(1)    -     -          v(2): ocean-atmos coupling interval
 !  3  atmos   v(2)   v(3)   -          v(3): waves-atmos coupling interval
 !
@@ -117,7 +117,7 @@ Nthreads(waves) = 1
 !   Wdiss   waves     ocean             wave energy dissipation
 !   Wbrk    waves     ocean             percent wave breaking
 !   Wubot   waves     ocean             wave bottom orbital velocity
-!   
+!
 ! Export fields per model, [1:Nexport(...)] string values are expected per
 ! coupled model. The string inside parenthesis must be the same as the one
 ! given in "OrderLabel". If there is no field to export, set
@@ -191,7 +191,7 @@ Nthreads(waves) = 1
 !                 and processed in "inp_par.F" (routine read_CouplePar).
 !
 !                 Use the same label code in  other KEYWORD entries set
-!                 in this input file. It is highly recommended to use 
+!                 in this input file. It is highly recommended to use
 !                 "ocean" first since all coupled models use ROMS framework
 !                 to build the program driver.  This allows ROMS to own
 !                 the master thread (node 0 in MPI).
@@ -206,7 +206,7 @@ Nthreads(waves) = 1
 !                 ...
 !
 !                 The sum of all entries must be equal to the total number
-!                 of processors. 
+!                 of processors.
 !
 ! TimeInterval  Time interval (seconds) between coupling of models,
 !                 [1:Nmodels] real values are expected corresponding to
@@ -224,7 +224,7 @@ Nthreads(waves) = 1
 !
 !                 where:
 !
-!                   v(1): ocean-waves coupling interval           
+!                   v(1): ocean-waves coupling interval
 !                   v(2): ocean-atmos coupling interval
 !                   v(3): waves-atmos coupling interval
 !                   ...
@@ -282,6 +282,7 @@ Nthreads(waves) = 1
 !               SSH       free-surface
 !               Ubar      vertically integrated U-momentum
 !               Vbar      vertically integrated V-momentum
+!               ZO        bottom roughness
 !               Wdir      wave direction
 !               Wamp      significant wave height
 !               Wlen      average wave length

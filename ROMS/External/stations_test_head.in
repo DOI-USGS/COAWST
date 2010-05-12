@@ -1,8 +1,8 @@
 !  Station Extraction Parameters.
 !
-!svn $Id: stations_test_head.in 576 2008-03-13 21:16:46Z arango $
+!svn $Id: stations_test_head.in 429 2009-12-20 17:30:26Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -43,14 +43,14 @@
 ! Logical switches (TRUE/FALSE) to activate writing of fields in STATION
 ! output file, [Sout(:,ng), ng=1, Ngrids].
 
-Sout(idBath) == T                          ! time-dependent bathymetry
-Sout(idFsur) == T                          ! free-surface
-Sout(idUbar) == T                          ! 2D U-velocity
-Sout(idVbar) == T                          ! 2D V-velocity
 Sout(idUvel) == T                          ! 3D U-velocity
 Sout(idVvel) == T                          ! 3D V-velocity
 Sout(idWvel) == T                          ! 3D W-velocity
 Sout(idOvel) == T                          ! 3D omega vertical velocity
+Sout(idUbar) == T                          ! 2D U-velocity
+Sout(idVbar) == T                          ! 2D V-velocity
+Sout(idFsur) == T                          ! free-surface
+Sout(idBath) == T                          ! time-dependent bathymetry
 
 Sout(idTvar) == T T                        ! all (NT) tracers
 
@@ -58,19 +58,51 @@ Sout(idUsms) == T                          ! surface U-stress
 Sout(idVsms) == T                          ! surface V-stress
 Sout(idUbms) == T                          ! bottom U-stress
 Sout(idVbms) == T                          ! bottom V-stress
+
+Sout(idUbrs) == T                          ! bottom U-current stress
+Sout(idVbrs) == T                          ! bottom V-current stress
 Sout(idUbws) == T                          ! bottom U-wave stress
 Sout(idVbws) == T                          ! bottom V-wave stress
+Sout(idUbcs) == T                          ! bottom max wave-current U-stress
+Sout(idVbcs) == T                          ! bottom max wave-current V-stress
 
-Sout(idUbed) == T                          ! bed wave orbital U-velocity
-Sout(idVbed) == T                          ! bed wave orbital V-velocity
-Sout(idUbot) == T                          ! bottom U-momentum above bed
-Sout(idVbot) == T                          ! bottom V-momentum above bed
+Sout(idUbot) == T                          ! bed wave orbital U-velocity
+Sout(idVbot) == T                          ! bed wave orbital V-velocity
+Sout(idUbur) == T                          ! bottom U-velocity above bed
+Sout(idVbvr) == T                          ! bottom V-velocity above bed
+
+Sout(idW2xx) == F                          ! 2D radiation stress, Sxx component
+Sout(idW2xy) == F                          ! 2D radiation stress, Sxy component
+Sout(idW2yy) == F                          ! 2D radiation stress, Syy component
+Sout(idU2rs) == F                          ! 2D radiation U-stress
+Sout(idV2rs) == F                          ! 2D radiation V-stress
+Sout(idU2Sd) == F                          ! 2D U-Stokes velocity
+Sout(idV2Sd) == F                          ! 2D V-Stokes velocity
+
+Sout(idW3xx) == F                          ! 3D radiation stress, Sxx component
+Sout(idW3xy) == F                          ! 3D radiation stress, Sxy component
+Sout(idW3yy) == F                          ! 3D radiation stress, Syy component
+Sout(idW3zx) == F                          ! 3D radiation stress, Szx component
+Sout(idW3zy) == F                          ! 3D radiation stress, Szy component
+Sout(idU3rs) == F                          ! 3D U-radiation stress
+Sout(idV3rs) == F                          ! 3D V-radiation stress
+Sout(idU3Sd) == F                          ! 3D U-Stokes velocity
+Sout(idV3Sd) == F                          ! 3D V-Stokes velocity
+
+Sout(idWamp) == T                          ! wave height
+Sout(idWlen) == T                          ! wave length
+Sout(idWdir) == T                          ! wave direction
+Sout(idWptp) == T                          ! wave surface period
+Sout(idWpbt) == T                          ! wave bottom period
+Sout(idWorb) == T                          ! wave bottom orbital velocity
+Sout(idWdis) == T                          ! wave dissipation
 
 Sout(idTsur) == F F                        ! surface net heat and salt flux
 Sout(idLhea) == F                          ! latent heat flux
 Sout(idShea) == F                          ! sensible heat flux
 Sout(idLrad) == F                          ! longwave radiation flux
 Sout(idSrad) == F                          ! shortwave radiation flux
+Sout(idEmPf) == F                          ! E-P flux
 Sout(idevap) == F                          ! evaporation rate
 Sout(idrain) == F                          ! precipitation rate
 
@@ -164,14 +196,14 @@ POS =  GRID  FLAG      X-POS       Y-POS     COMMENT
 ! for all switches.
 !------------------------------------------------------------------------------
 !
-!  Sout(idBath)  Write out time-dependent bathymetry.
-!  Sout(idFsur)  Write out free-surface.
-!  Sout(idUbar)  Write out 2D U-velocity component.
-!  Sout(idVbar)  Write out 2D V-velocity component.
 !  Sout(idUvel)  Write out 3D U-velocity component.
 !  Sout(idVvel)  Write out 3D V-velocity component.
 !  Sout(idWvel)  Write out 3D W-velocity component.
 !  Sout(idOvel)  Write out 3D omega vertical velocity.
+!  Sout(idUbar)  Write out 2D U-velocity component.
+!  Sout(idVbar)  Write out 2D V-velocity component.
+!  Sout(idFsur)  Write out free-surface.
+!  Sout(idBath)  Write out time-dependent bathymetry.
 !
 !  Sout(idTvar)  Write out tracer type variables,  (NT,Ngrids) values are
 !                  Expected.
@@ -180,19 +212,51 @@ POS =  GRID  FLAG      X-POS       Y-POS     COMMENT
 !  Sout(idVsms)  Write out surface V-momentum stress.
 !  Sout(idUbms)  Write out bottom  U-momentum stress.
 !  Sout(idVbms)  Write out bottom  V-momentum stress.
+!
+!  Sout(idUbrs)  Write out current-induced, U-momentum stress.
+!  Sout(idVbrs)  Write out current-induced, V-momentum stress.
 !  Sout(idUbws)  Write out wind-induced, bottom U-wave stress.
 !  Sout(idVbws)  Write out wind-induced, bottom V-wave stress.
+!  Sout(idUbcs)  Write out bottom maximum wave and current U-stress.
+!  Sout(idVbcs)  Write out bottom maximum wave and current V-stress.
 !
-!  Sout(idUbed)  Write out wind-induced, bed wave orbital U-velocity.
-!  Sout(idVbed)  Write out wind-induced, bed wave orbital V-velocity.
-!  Sout(idUbot)  Write out bottom U-momentum above bed.
-!  Sout(idVbot)  Write out bottom V-momentum above bed.
+!  Sout(idUbot)  Write out wind-induced, bed wave orbital U-velocity.
+!  Sout(idVbot)  Write out wind-induced, bed wave orbital V-velocity.
+!  Sout(idUbur)  Write out bottom U-velocity above bed.
+!  Sout(idVbvr)  Write out bottom V-velocity above bed.
+!
+!  Sout(idW2xx)  Write out 2D radiation stress, Sxx component.
+!  Sout(idW2xy)  Write out 2D radiation stress, Sxy component.
+!  Sout(idW2yy)  Write out 2D radiation stress, Syy component.
+!  Sout(idU2rs)  Write out 2D U-radiation stress.
+!  Sout(idV2rs)  Write out 2D V-radiation stress.
+!  Sout(idU2Sd)  Write out 2D U-Stokes velocity.
+!  Sout(idV2Sd)  Write out 2D V-Stokes velocity.
+!
+!  Sout(idW3xx)  Write out 3D radiation stress, Sxx component.
+!  Sout(idW3xy)  Write out 3D radiation stress, Sxy component.
+!  Sout(idW3yy)  Write out 3D radiation stress, Syy component.
+!  Sout(idW3zx)  Write out 3D radiation stress, Szx component.
+!  Sout(idW3zy)  Write out 3D radiation stress, Szy component.
+!  Sout(idU3rs)  Write out 3D U-radiation stress.
+!  Sout(idV3rs)  Write out 3D V-radiation stress.
+!  Sout(idU3Sd)  Write out 3D U-Stokes velocity.
+!  Sout(idV3Sd)  Write out 3D V-Stokes velocity.
+!
+!  Sout(idWamp)  Write out wave height.
+!  Sout(idWlen)  Write out wave length.
+!  Sout(idWdir)  Write out wave direction.
+!  Sout(idWptp)  Write out wave surface period.
+!  Sout(idWpbt)  Write out wave bottom period.
+!  Sout(idWorb)  Write out wave bottom orbital velocity.
+!  Sout(idWdis)  Write out wave dissipation.
 !
 !  Sout(idTsur)  Write out surface net heat and salt flux.
 !  Sout(idLhea)  Write out latent heat flux.
 !  Sout(idShea)  Write out sensible heat flux.
 !  Sout(idLrad)  Write out long-wave radiation flux.
 !  Sout(idSrad)  Write out short-wave radiation flux.
+!  Sout(idEmPf)  Write out E-P flux.
 !  Sout(idevap)  Write out evaporation rate.
 !  Sout(idrain)  Write out precipitation rate.
 !
@@ -208,14 +272,14 @@ POS =  GRID  FLAG      X-POS       Y-POS     COMMENT
 !  Sout(idBott)  Write out exposed sediment layer properties, 1:MBOTP.
 !
 !------------------------------------------------------------------------------
-! Station positions KEYWORDS. 
+! Station positions KEYWORDS.
 !------------------------------------------------------------------------------
 !
 !  NSTATION      Number of stations to process in each nested grid. Ngrids
 !                  values are expected.  These values are essential because
 !                  the station arrays are dynamically allocated using these
 !                  values.
-!                
+!
 !  POS           Station locations for all grids in any desired order.  The
 !                  horizontal location for a particular station can be
 !                  specified in terms of fractional (I,J) grid pairs (FLAG=0)
@@ -242,5 +306,5 @@ POS =  GRID  FLAG      X-POS       Y-POS     COMMENT
 !                Since there is no decoding during the reading of the stations
 !                locations, the POS keyword must be the last one to process.
 !                That is, it should be at the end of the input specification.
-!                
+!
 !

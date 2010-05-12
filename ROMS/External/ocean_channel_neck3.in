@@ -1,9 +1,9 @@
 !
 !  ROMS/TOMS Standard Input parameters.
 !
-!svn $Id: ocean_channel_neck3.in 576 2008-03-13 21:16:46Z arango $
+!svn $Id: ocean_channel_neck3.in 438 2010-01-10 17:20:24Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -121,6 +121,7 @@
         NADJ == 48
      NDEFADJ == 0
         NSFF == 48
+        NOBC == 48
 
 ! Output check pointing GST restart parameters.
 
@@ -132,23 +133,37 @@
 
     Ritz_tol =  1.0d-15
 
-! Harmonic/biharmonic horizontal diffusion of tracer: [1:NAT+NPT,Ngrids].
+! Harmonic/biharmonic horizontal diffusion of tracer for nonlinear model
+! and adjoint-based algorithms: [1:NAT+NPT,Ngrids].
 
         TNU2 == 500.0d0  0.0d0                  ! m2/s
         TNU4 == 0.0d0                           ! m4/s
 
-! Harmononic/biharmonic, horizontal viscosity coefficient: [Ngrids].
+     ad_TNU2 == 0.0d0    0.0d0                  ! m2/s
+     ad_TNU4 == 0.0d0                           ! m4/s
+
+! Harmononic/biharmonic, horizontal viscosity coefficient for nonlinear model
+! and adjoint-based algorithms: [Ngrids].
 
        VISC2 == 10.0d0                          ! m2/s
        VISC4 == 1.0d8                           ! m4/s
 
-! Vertical mixing coefficients for active tracers: [1:NAT+NPT,Ngrids]
+    ad_VISC2 == 0.0d0                           ! m2/s
+    ad_VISC4 == 0.0d0                           ! m4/s
+
+! Vertical mixing coefficients for tracers in nonlinear model and
+! basic state scale factor in adjoint-based algorithms: [1:NAT+NPT,Ngrids]
 
      AKT_BAK == 0.0d0  0.0d0                    ! m2/s
 
-! Vertical mixing coefficient for momentum: [Ngrids].
+  ad_AKT_fac == 1.0d0  1.0d0                    ! nondimensional
+
+! Vertical mixing coefficient for momentum for nonlinear model and
+! basic state scale factor in adjoint-based algorithms: [Ngrids].
 
      AKV_BAK == 4.0d-3                          ! m2/s
+
+  ad_AKV_fac == 1.0d0                           ! nondimensional
 
 ! Turbulent closure parameters.
 
@@ -203,11 +218,17 @@
      LEVSFRC == 3
      LEVBFRC == 1
 
+! Set vertical, terrain-following coordinates transformation equation and
+! stretching function (see below for details), [1:Ngrids].
+
+  Vtransform == 1                          ! transformation equation
+ Vstretching == 1                          ! stretching function
+
 ! Vertical S-coordinates parameters, [1:Ngrids].
 
-     THETA_S == 3                          ! 0 < THETA_S < 20
-     THETA_B == 0.2d0                      ! 0 < THETA_B < 1
-      TCLINE == 25.0d0                     ! m
+     THETA_S == 3                          ! surface stretching parameter
+     THETA_B == 0.2d0                      ! bottom  stretching parameter
+      TCLINE == 25.0d0                     ! critical depth (m)
 
 ! Mean Density and Brunt-Vaisala frequency.
 
@@ -247,6 +268,12 @@
 ! Slipperiness parameter: 1.0 (free slip) or -1.0 (no slip)
 
       GAMMA2 == 1.0d0
+
+! Logical switches (TRUE/FALSE) to specify which variables to consider on
+! tracers point Sources/Sinks (like river runoff): [1:NAT+NPT,Ngrids].
+! See glossary below for details.
+
+  LtracerSrc == T T                        ! temperature, salinity, inert
 
 ! Starting (DstrS) and ending (DendS) day for adjoint sensitivity forcing.
 ! DstrS must be less or equal to DendS. If both values are zero, their
@@ -350,12 +377,17 @@ Hout(idV3Sd) == F                          ! 3D V-Stokes velocity
 Hout(idWamp) == F                          ! wave height
 Hout(idWlen) == F                          ! wave length
 Hout(idWdir) == F                          ! wave direction
+Hout(idWptp) == F                          ! wave surface period
+Hout(idWpbt) == F                          ! wave bottom period
+Hout(idWorb) == F                          ! wave bottom orbital velocity
+Hout(idWdis) == F                          ! wave dissipation
 
 Hout(idTsur) == F F                        ! surface net heat and salt flux
 Hout(idLhea) == F                          ! latent heat flux
 Hout(idShea) == F                          ! sensible heat flux
 Hout(idLrad) == F                          ! longwave radiation flux
 Hout(idSrad) == F                          ! shortwave radiation flux
+Hout(idEmPf) == F                          ! E-P flux
 Hout(idevap) == F                          ! evaporation rate
 Hout(idrain) == F                          ! precipitation rate
 
@@ -408,12 +440,18 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
        NUSER =  8
        USER  =  4 1 28 45 15 15 1 1
 
+! NetCDF-4/HDF5 compression parameters for output files.
+
+  NC_SHUFFLE =  1                 ! if non-zero, turn on shuffle filter
+  NC_DEFLATE =  1                 ! if non-zero, turn on deflate filter
+   NC_DLEVEL =  1                 ! deflate level [0-9]
+
 ! Input NetCDF file names, [1:Ngrids].
 
      GRDNAME == ../Data/cneck_grd_bath01.nc
      ININAME == cneck_ini.nc
      ITLNAME == cneck_itl.nc
-     IRPNAME == cneck_irp.nc  
+     IRPNAME == cneck_irp.nc
      IADNAME == ../Data/cneck_ad_ini.nc
      CLMNAME == cneck_clm.nc
      BRYNAME == cneck_bry.nc
@@ -452,7 +490,7 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
      APARNAM =  ROMS/External/s4dvar.in
      SPOSNAM =  ROMS/External/stations.in
      FPOSNAM =  ROMS/External/floats.in
-     BPARNAM =  ROMS/External/bioFasham.in
+     BPARNAM =  ROMS/External/bio_Fennel.in
      SPARNAM =  ROMS/External/sediment.in
      USRNAME =  ROMS/External/MyFile.dat
 
@@ -461,7 +499,7 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 !  =========
 !
 !------------------------------------------------------------------------------
-! Application tile (string with a maximum of eighty characters) and 
+! Application tile (string with a maximum of eighty characters) and
 ! C-preprocessing flag.
 !------------------------------------------------------------------------------
 !
@@ -488,17 +526,17 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 ! WARNING: It is trivial and possible to change these dimension parameters in
 ! -------  idealized applications via analytical expressions.  However, in
 ! realistic applications any change to these parameters requires redoing all
-! input NetCDF files. 
+! input NetCDF files.
 !
 !  Lm          Number of INTERIOR grid RHO-points in the XI-direction for
 !                each nested grid, [1:Ngrids]. If using NetCDF files as
-!                input, Lm=xi_rho-2 where "xi_rho" is the NetCDF file 
+!                input, Lm=xi_rho-2 where "xi_rho" is the NetCDF file
 !                dimension of RHO-points. Recall that all RHO-point
 !                variables have a computational I-range of [0:Lm+1].
 !
 !  Mm          Number of INTERIOR grid RHO-points in the ETA-direction for
 !                each nested grid, [1:Ngrids]. If using NetCDF files as
-!                input, Mm=eta_rho-2 where "eta_rho" is the NetCDF file 
+!                input, Mm=eta_rho-2 where "eta_rho" is the NetCDF file
 !                dimension of RHO-points. Recall that all RHO-point
 !                variables have a computational J-range of [0:Mm+1].
 !
@@ -520,7 +558,7 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 !                     |                   |              |_______|
 !                   0 |___________________|              |       |
 !                              Ir                        |       | 1
-!                     0  1            Lm  Lm+1    h(i,j) |_______| 
+!                     0  1            Lm  Lm+1    h(i,j) |_______|
 !                                                        ::::::::: 0
 !                                                        :::::::::
 !                                                        ::::::::: Nbed-1
@@ -759,6 +797,17 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 !              relevant in 4DVAR when activating either ADJUST_STFLUX or
 !              ADJUST_WSTRESS.
 !
+!  NOBC        Number of time-steps between 4DVAR adjustment of open boundary
+!              fields. In strong constraint 4DVAR, it is possible to adjust
+!              open boundaries at other time intervals in addition to initial
+!              time.  This parameter is used to store the appropriate number
+!              of open boundary records in the output history NetCDF files:
+!              1+NTIMES/NOBC records. NOBC must be a factor of NTIMES or
+!              greater than NTIMES. If NOBC > NTIMES, only one record is
+!              stored in the NetCDF files and the adjustment is for constant
+!              forcing with constant correction. This parameter is only
+!              relevant in 4DVAR when activating ADJUST_BOUNDARY.
+!
 !------------------------------------------------------------------------------
 !  Generalized Stability Theory (GST) analysis parameters.
 !------------------------------------------------------------------------------
@@ -788,29 +837,61 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 ! Harmonic/Biharmonic horizontal diffusion for active tracers.
 !------------------------------------------------------------------------------
 !
-!  TNU2        Lateral, harmonic, constant, mixing coefficient (m2/s) for
-!              active (NAT) and inert (NPT) tracer variables.  If variable
-!              horizontal diffusion is activated, TNU2 is the mixing
-!              coefficient for the largest grid-cell in the domain.
+!  TNU2        Nonlinear model lateral, harmonic, constant, mixing
+!              coefficient (m2/s) for active (NAT) and inert (NPT) tracer
+!              variables. If variable horizontal diffusion is activated,
+!              TNU2 is the mixing coefficient for the largest grid-cell
+!              in the domain.
 !
-!  TNU4        Lateral, biharmonic, constant, mixing coefficient (m4/s) for
-!              active (NAT) and inert (NPT) tracer variables.  If variable
-!              horizontal diffusion is activated, TNU4 is the mixing
-!              coefficient for the largest grid-cell in the domain.
+!  TNU4        Nonlinear model lateral, biharmonic, constant, mixing
+!              coefficient (m4/s) for active (NAT) and inert (NPT) tracer
+!              variables. If variable horizontal diffusion is activated,
+!              TNU4 is the mixing coefficient for the largest grid-cell
+!              in the domain.
+!
+!  ad_TNU2     Adjoint-based algorithms lateral, harmonic, constant, mixing
+!              coefficient (m2/s) for active (NAT) and inert (NPT) tracer
+!              variables. If variable horizontal diffusion is activated,
+!              ad_TNU2 is the mixing coefficient for the largest grid-cell
+!              in the domain. In some applications, a larger value than
+!              that used in the nonlinear model (basic state) is necessary
+!              for stability.
+!
+!  ad_TNU4     Adjoint-based algorithms lateral, biharmonic, constant, mixing
+!              coefficient (m4/s) for active (NAT) and inert (NPT) tracer
+!              variables. If variable horizontal diffusion is activated,
+!              ad_TNU4 is the mixing coefficient for the largest grid-cell
+!              in the domain. In some applications, a larger value than
+!              that used in the nonlinear model (basic state) is necessary
+!              for stability.
 !
 !------------------------------------------------------------------------------
 ! Harmonic/biharmonic horizontal viscosity coefficients.
 !------------------------------------------------------------------------------
 !
-!  VISC2       Lateral, harmonic, constant, mixing coefficient (m2/s) for
-!              momentum.  If variable horizontal viscosity is activated, UVNU2
-!              is the mixing coefficient for the largest grid-cell in the
-!              domain.
+!  VISC2       Nonlinear model lateral, harmonic, constant, mixing
+!              coefficient (m2/s) for momentum. If variable horizontal
+!              viscosity is activated, UVNU2 is the mixing coefficient
+!              for the largest grid-cell in the domain.
 !
-!  VISC4       Lateral, biharmonic, constant mixing coefficient (m4/s) for
-!              momentum. If variable horizontal viscosity is activated, UVNU4
-!              is the mixing coefficient for the largest grid-cell in the
-!              domain.
+!  VISC4       Nonlinear model lateral, biharmonic, constant mixing
+!              coefficient (m4/s) for momentum. If variable horizontal
+!              viscosity is activated, UVNU4 is the mixing coefficient
+!              for the largest grid-cell in the domain.
+!
+!  ad_VISC2    Adjoint-based algorithms lateral, harmonic, constant, mixing
+!              coefficient (m2/s) for momentum. If variable horizontal
+!              viscosity is activated, ad_UVNU2 is the mixing coefficient
+!              for the largest grid-cell in the domain. In some applications,
+!              a larger value than that used in the nonlinear model (basic
+!              state) is necessary for stability.
+!
+!  ad_VISC4    Adjoint-based algorithms lateral, biharmonic, constant mixing
+!              coefficient (m4/s) for momentum. If variable horizontal
+!              viscosity is activated, ad_UVNU4 is the mixing coefficient
+!              for the largest grid-cell in the domain. In some applications,
+!              a larger value than that used in the nonlinear model (basic
+!              state) is necessary for stability.
 !
 !------------------------------------------------------------------------------
 ! Vertical mixing coefficients for active tracers.
@@ -819,11 +900,22 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 !  AKT_BAK     Background vertical mixing coefficient (m2/s) for active
 !              (NAT) and inert (NPT) tracer variables.
 !
+!  ad_AKT_fac  Adjoint-based algorithms vertical mixing, basic state, scale
+!              factor (nondimensional) for active (NAT) and inert (NPT)
+!              tracer variables. In some applications, a smaller/larger
+!              values of vertical mixing are necessary for stability. It
+!              is only used when FORWARD_MIXING is activated.
+!
 !------------------------------------------------------------------------------
 ! Vertical mixing coefficient for momentum.
 !------------------------------------------------------------------------------
 !
 !  AKV_BAK     Background vertical mixing coefficient (m2/s) for momentum.
+!
+!  ad_AKV_fac  Adjoint-based algorithms vertical mixing, basic state, scale
+!              factor (nondimensional) for momentum. In some applications,
+!              a smaller/larger values of vertical mixing are necessary for
+!              stability. It is only used when FORWARD_MIXING is activated.
 !
 !------------------------------------------------------------------------------
 ! Turbulent closure parameters.
@@ -898,7 +990,7 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 !
 !  CHARNOK_ALPHA   Charnok surface roughness,
 !                    Zos:   (charnok_alpha * u_star**2) / g
-!   
+!
 !  ZOS_HSIG_ALPHA  Roughness from wave amplitude,
 !                    Zos:   zos_hsig_alpha * Hsig
 !
@@ -957,17 +1049,99 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 ! Vertical S-coordinates parameters.
 !------------------------------------------------------------------------------
 !
-!  THETA_S     S-coordinate surface control parameter, [0 < theta_s < 20].
+! The parameters below must be consistent in all input fields associated with
+! the vertical grid.  The same vertical grid transformation (depths) needs to
+! be used when preparing initial conditions, boundary conditions, climatology,
+! observations, and so on. Please check
 !
-!  THETA_B     S-coordinate bottom  control parameter, [0 < theta_b < 1].
+!   https://www.myroms.org/wiki/index.php/Vertical_S-coordinate
 !
-!  TCLINE      Width (m) of surface or bottom boundary layer in which
-!              higher vertical resolution is required during stretching.
+! for details, rules and examples.
 !
-!              WARNING:  Users need to experiment with these parameters. We
-!                        have found out that the model goes unstable with
-!                        high values of THETA_S.  In steep and very tall
-!                        topography, it is recommended to use THETA_S < 3.0.
+!
+!  Vtransform  Vertical transformation equation:
+!
+!                (1) Original formulation (Shchepetkin and McWilliams, 2005),
+!                    Vtransform=1 (In ROMS since 1999)
+!
+!                      z(x,y,s,t)=Zo(x,y,s)+zeta(x,y,t)*[1+Zo(x,y,s)/h(x,y)]
+!
+!                    where
+!
+!                      Zo(x,y,s)=hc*s+[h(x,y)-hc]*C(s)
+!
+!                (2) New formulation (A. Shchepetkin),
+!                    Vtransform=2
+!
+!                      z(x,y,s,t)=zeta(x,y,t)*[zeta(x,y,t)+h(x,y)]*Zo(x,y,s)
+!
+!                    where
+!
+!                      Zo(x,y,s)=[hc*s(k)+h(x,y)*C(k)]/[hc+h(x,y)]
+!
+!  Vstretching Vertical stretching function, C(s):
+!
+!                (1) Original function (Song and Haidvogel, 1994),
+!                    Vstretching=1
+!
+!                    C(s)=(1-theta_b)*[SINH(s*theta_s)/SINH(theta_s)]+
+!                         theta_b*[-0.5+0.5*TANH(theta_s*(s+0.5))/
+!                                           TANH(0.5*theta_s)]
+!
+!                (2) A. Shchepetkin function,
+!                    Vstretching=2
+!
+!                      C(s)=Cweight*Csur(s)+(1-Cweight)*Cbot(s)
+!
+!                    where
+!
+!                      Csur(s)=[1-COSH(theta_s*s)]/[COSH(theta_s)-1]
+!
+!                      Cbot(s)=-1+[1-SINH(theta_b*(s+1))]/SINH(theta_b)
+!
+!                      Cweight=(s+1)**alpha*
+!                              (1+(alpha/beta)*(1-(s+1)**beta))
+!
+!                (3) R. Geyer function for shallow sediment applications,
+!                    Vstretching=3
+!
+!                      C(s)=Cweight*Cbot(s)+(1-Cweight)*Csur(s)
+!
+!                    where
+!
+!                      Csur(s)=-LOG(COSH(Hscale*ABS(s)** alpha))/
+!                               LOG(COSH(Hscale))
+!
+!                      Cbot(s)= LOG(COSH(Hscale*(s+1)** beta))/
+!                               LOG(COSH(Hscale))-1
+!
+!                      Cweight=0.5*(1-TANH(Hscale*(s+0.5))
+!
+!              Many other stretching functions (Vstretching>3) are possible
+!              provided that:
+!
+!                * C(s) is a dimensionless, nonlinear, monotonic function.
+!                * C(s) is a continuous differentiable function, or
+!                  a diffentiable piecewise function with smooth transition.
+!                * The stretching vertical coordinate ,s, is constrained
+!                  between -1 <= s <= 0, with s=0 corresponding to the
+!                  free-surface and s=-1 corresponding to the bathymetry.
+!                * Similarly, the stretching function, C(s), is constrained
+!                  between -1 <= C(s) <= 0, with C(0)=0 corresponding to the
+!                  free-surface and C(-1)=-1 corresponding to the bathymetry.
+!
+!              These functions are coded in routine "Utility/set_scoord.F".
+!
+!  THETA_S     S-coordinate surface control parameter. The range of optimal
+!              values depends on the vertical stretching function, C(s).
+!
+!  THETA_B     S-coordinate bottom  control parameter. The range of optimal
+!              values depends on the vertical stretching function, C(s).
+!
+!  TCLINE      Critical depth (hc) in meters (positive) contolling the
+!              stretching. It can be interpreted as the width of surface or
+!              bottom boundary layer in which higher vertical resolution
+!              (levels) is required during stretching.
 !
 !------------------------------------------------------------------------------
 ! Mean Density and background Brunt-Vaisala frequency.
@@ -1058,7 +1232,7 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 !              rho(:,:,:) = R0 - R0 * TCOEF * (t(:,:,:,:,itemp) - T0)
 !                              + R0 * SCOEF * (t(:,:,:,:,isalt) - S0)
 !
-!              Typical values:     R0 = 1027.0  kg/m3               
+!              Typical values:     R0 = 1027.0  kg/m3
 !                                  T0 = 10.0    Celsius
 !                                  S0 = 35.0    PSU
 !                               TCOEF = 1.7d-4  1/Celsius
@@ -1080,6 +1254,55 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 !------------------------------------------------------------------------------
 !
 !  GAMMA2      Slipperiness variable, either 1.0 (free slip) or -1.0 (no slip).
+!
+!------------------------------------------------------------------------------
+!  Tracer point Sources/Sink sources switches.
+!------------------------------------------------------------------------------
+!
+!  LtracerSrc  Logical switches (T/F) to specify which tracer variables
+!              to consider when the option TS_PSOURCE is activated. Only
+!              NAT active tracers (temperature, salinity) and NPT inert
+!              tracers need to be specified here:
+!
+!                LtracerSrc(itemp,ng)     for temperature (itemp=1)
+!                LtracerSrc(isalt,ng)     for salinity    (isalt=2)
+!                LtracerSrc(NAT+1,ng)     for inert tracer 1
+!                ...                      ...
+!                LtracerSrc(NAT+NPT,ng)   for inert tracer NPT
+!
+!              Other biological and sediment tracers switches are specified in
+!              their respective input scripts.
+!
+!              Recall that TS_PSOURCE is usually activated to add river runoff
+!              as a point source. At minimum, it is necessary to specify both
+!              temperature and salinity for all rivers.  The other tracers are
+!              optional.
+!
+!              This logical switch REPLACES and ELIMINATES the need to have
+!              or read the variable "river_flag(river)" in the input rivers
+!              forcing NetCDF file:
+!
+!                double river_flag(river)
+!                        river_flag:long_name = "river runoff tracer flag"
+!                        river_flag:option_0 = "all tracers are off"
+!                        river_flag:option_1 = "only temperature"
+!                        river_flag:option_2 = "only salinity"
+!                        river_flag:option_3 = "both temperature and salinity"
+!                        river_flag:units = "nondimensional"
+!
+!              This logic was too cumbersome and complicated when additional
+!              tracers are considered. However, this change is backward
+!              compatible.
+!
+!              The LtracerSrc switch will be used to activate the reading of
+!              respective tracer variable from input river forcing NetCDF
+!              file. If you want to add other tracer variables (other than
+!              temperature and salinity) as a source for a particular river(s),
+!              you just need to specify such values on those river(s). Then,
+!              set the values to ZERO on the other river(s) that do NOT
+!              require such river forcing for that tracer. Recall that you
+!              need to specify the tracer values for all rivers, even if
+!              their values are zero.
 !
 !------------------------------------------------------------------------------
 !  Adjoint sensitivity parameters.
@@ -1184,12 +1407,17 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 !  Hout(idWamp)  Write out wave height.
 !  Hout(idWlen)  Write out wave length.
 !  Hout(idWdir)  Write out wave direction.
+!  Hout(idWptp)  Write out wave surface period.
+!  Hout(idWpbt)  Write out wave bottom period.
+!  Hout(idWorb)  Write out wave bottom orbital velocity.
+!  Hout(idWdis)  Write out wave dissipation.
 !
 !  Hout(idTsur)  Write out surface net heat and salt flux
 !  Hout(idLhea)  Write out latent heat flux.
 !  Hout(idShea)  Write out sensible heat flux.
 !  Hout(idLrad)  Write out long-wave radiation flux.
 !  Hout(idSrad)  Write out short-wave radiation flux.
+!  Hout(idEmPf)  Write out E-P flux.
 !  Hout(idevap)  Write out evaporation rate.
 !  Hout(idrain)  Write out precipitation rate.
 !
@@ -1218,7 +1446,7 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 !
 !                INT(user(1)):  tangent state variable to perturb
 !                INT(user(2)):  adjoint state variable to perturb
-!                               [isFsur=1] free-surface 
+!                               [isFsur=1] free-surface
 !                               [isUbar=2] 2D U-momentum
 !                               [isVbar=3] 2D V-momentum
 !                               [isUvel=4] 3D U-momentum
@@ -1236,6 +1464,28 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 !
 !                Set tangent and adjoint parameters to the same values
 !                if perturbing and reporting the same variable.
+!
+!------------------------------------------------------------------------------
+! I/O NetCDF files parameters.
+!------------------------------------------------------------------------------
+!
+! NetCDF-4/HDF5 compression parameters for output files. This capability
+! is used when both NETCDF4 and DEFLATE C-preprocessing options are
+! activated. The user needs to compile with the NetCDF-4/HDF5 and MPI
+! libraries. File deflation cannot be used in parallel I/O for writing
+! because the compression makes it imposible for the HDF5 library
+! to exactly map the data to the disk location.  For more information,
+! check NetCDF official website: www.unidata.ucar.edu/software/netcdf.
+!
+! NC_SHUFFLE    Shuffle filter integer flag. If non-zero, turn on shuffle
+!                 filter.
+!
+! NC_DEFLATE    Deflate filter integer flag, If non-zero, turn on deflate
+!                 filter at the level specified by the NC_DLEVEL parameter.
+!
+! NC_DLEVEL     Deflate filter level parameter (integer). If NC_DEFLATE is
+!                 non-zero, set the deflate level to this value. Must be
+!                 between 0 and 9.
 !
 !------------------------------------------------------------------------------
 ! Input/output NetCDF file names (string with a maximum of eighty characters).

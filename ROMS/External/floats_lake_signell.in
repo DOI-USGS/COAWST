@@ -1,8 +1,8 @@
 !  Floats Input Parameters.
 !
-!svn $Id: floats_lake_signell.in 734 2008-09-07 01:58:06Z jcwarner $
+!svn $Id: floats_lake_signell.in 429 2009-12-20 17:30:26Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -55,7 +55,7 @@
 !
 !   G      Nested grid number
 !   C      Initial horizontal coordinate type (0: grid units, 1: spherical)
-!   T      Float trajectory type (1: neutral 3D Lagrangian, 2:isobaric)
+!   T      Float trajectory type (1: Lagrangian, 2: isobaric, 3: Geopotential)
 !   N      Number floats to be released at (Fx0,Fy0,Fz0)
 !   Ft0    Float release time (days) after model initialization
 !   Fx0    Initial float X-location (grid units or longitude)
@@ -84,7 +84,7 @@ POS = G, C, T, N,   Ft0,    Fx0,    Fy0,    Fz0,    Fdt,    Fdx,    Fdy,   Fdz
 ! Control Switches.
 !------------------------------------------------------------------------------
 !
-! Lfloats   Switch to control the computation of floats trajectories within 
+! Lfloats   Switch to control the computation of floats trajectories within
 !             nested and/or multiple connected grids. Ngrids values are
 !             expected. By default this switch is set to TRUE in "mod_scalars"
 !             for all grids when the CPP option FLOATS is activated. The
@@ -124,12 +124,14 @@ POS = G, C, T, N,   Ft0,    Fx0,    Fy0,    Fz0,    Fdt,    Fdx,    Fdy,   Fdz
 !
 !  T         Float trajectory type [Ftype]:
 !
-!              Ftype = 0,  neutral density 3D Lagrangian floats.
+!              Ftype = 1,  3D Lagrangian floats.
+!                          (flt_Lagran)
 !
-!              Ftype = 1,  isobaric (constant depth) floats.
+!              Ftype = 2,  Isobaric floats, p=g*(z+zeta)=constant.
+!                          (flt_Isobar)
 !
-!              Ftype = 2,  isobaric (constant elevation below free surface)
-!                          floats.
+!              Ftype = 3,  Geopotential floats, constant depth.
+!                          (flt_Geopot)
 !
 !  N         Number of floats [Fcount] to be released at the (Fx0,Fy0,Fz0)
 !              location.  It must be equal or greater than one. If Fcount
@@ -137,7 +139,7 @@ POS = G, C, T, N,   Ft0,    Fx0,    Fy0,    Fz0,    Fdt,    Fdx,    Fdy,   Fdz
 !              centered at (Fx0,Fy0,Fz0) is activated.
 !
 !              NOTE:  The total number of floats trajectories to compute
-!              ====   must add to NFLOATS. 
+!              ====   must add to NFLOATS.
 !
 !  Ft0       Time (days) of float release after model initialization (real).
 !
@@ -153,6 +155,12 @@ POS = G, C, T, N,   Ft0,    Fx0,    Fy0,    Fz0,    Fdt,    Fdx,    Fdy,   Fdz
 !
 !              Fz0 is the initial position relative to the W grid
 !              (0 = bottom; N = surface).
+!
+!              If the float trajectory type is Isobaric (Ftype=2) or
+!              Geopotential (Ftype=3), Fz0 must be a negative number
+!              representing depth in meters. If the float type is
+!              Lagrangian (Ftype=1), Fz0 can be a level (positive) or
+!              a depth in meters (negative).
 !
 !              WARNING: If the depth in meters at particular horizontal
 !                       is not bounded, the floats are released at the

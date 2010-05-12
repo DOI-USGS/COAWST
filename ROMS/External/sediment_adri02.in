@@ -1,9 +1,9 @@
 !
 !  ROMS/TOMS Cohesive and Non-cohesive Sediment Model Parameters.
 !
-!svn $Id: sediment_adri02.in 576 2008-03-13 21:16:46Z arango $
+!svn $Id: sediment_adri02.in 429 2009-12-20 17:30:26Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -54,9 +54,13 @@
 
     NEWLAYER_THICK == 0.01d0
 
+! Minimum thickness for second bed layer, [1:Ngrids]
+
+    MINLAYER_THICK == 0.01d0
+
 ! Bed load transport rate coefficient. [1:Ngrids].
 
-    BEDLOAD_COEFF == 0.05d0
+     BEDLOAD_COEFF == 0.05d0
 
 !------------------------------------------------------------------------------
 ! Suspended Cohesive Sediment Parameters, [1:NCS,1:Ngrids] values expected.
@@ -91,24 +95,37 @@
 
    MUD_POROS == 8*0.0d0
 
-! Lateral, harmonic and biharmonic, constant, diffusion coefficient.
+! Harmonic/biharmonic horizontal diffusion of tracer for nonlinear model
+! and adjoint-based algorithms.
 
     MUD_TNU2 == 8*0.0d0                         ! m2/s
     MUD_TNU4 == 8*0.0d0                         ! m4/s
 
-! Vertical diffusion coefficients.
+ ad_MUD_TNU2 == 8*0.0d0                         ! m2/s
+ ad_MUD_TNU4 == 8*0.0d0                         ! m4/s
+
+! Vertical mixing coefficients for tracers in nonlinear model and
+! basic state scale factor in adjoint-based algorithms.
 
  MUD_AKT_BAK == 8*5.0d-6                        ! m2/s
+
+ MUD_AKT_fac == 8*1.0d0                         ! nondimensional
 
 ! Nudging/relaxation time scales, inverse scales will be computed
 ! internally.
 
    MUD_TNUDG == 8*0.0d0                         ! days
 
-! Morphological time scale factor (greater than or equal to 1.0). A 
+! Morphological time scale factor (greater than or equal to 1.0). A
 ! value of 1.0 has no scale effect.
 
-MUD_MORPH_FAC == 1.0d0 1.0d0 1.0d0              ! nondimensional
+MUD_MORPH_FAC == 8*1.0d0                        ! nondimensional
+
+! Logical switches (TRUE/FALSE) to specify which variables to consider on
+! tracers point Sources/Sinks (like river runoff). See glossary below for
+! details.
+
+ MUD_Ltracer == 8*F
 
 ! Logical switch (TRUE/FALSE) to activate writing of cohesive sediment
 ! into HISTORY output file.
@@ -152,14 +169,21 @@ Hout(iMVbld) == T                               ! bed load at V-points
 
   SAND_POROS == 0.5d0
 
-! Lateral, harmonic and biharmonic, constant, diffusion coefficient.
+! Harmonic/biharmonic horizontal diffusion of tracer for nonlinear model
+! and adjoint-based algorithms.
 
    SAND_TNU2 == 0.0d0                           ! m2/s
    SAND_TNU4 == 0.0d0                           ! m4/s
 
-! Vertical diffusion coefficients.
+ad_SAND_TNU2 == 0.0d0                           ! m2/s
+ad_SAND_TNU4 == 0.0d0                           ! m4/s
+
+! Vertical mixing coefficients for tracers in nonlinear model and
+! basic state scale factor in adjoint-based algorithms.
 
 SAND_AKT_BAK == 5.0d-6                          ! m2/s
+
+SAND_AKT_fac == 1.0d0                           ! nondimensional
 
 ! Nudging/relaxation time scales, inverse scales will be computed
 ! internally.
@@ -169,7 +193,13 @@ SAND_AKT_BAK == 5.0d-6                          ! m2/s
 ! Morphological time scale factor (greater than or equal to 1.0). A
 ! value of 1.0 has no scale effect.
 
-SAND_MORPH_FAC == 1.0d0 1.0d0 1.0d0             ! nondimensional
+SAND_MORPH_FAC == 1.0d0                         ! nondimensional
+
+! Logical switches (TRUE/FALSE) to specify which variables to consider on
+! tracers point Sources/Sinks (like river runoff). See glossary below for
+! details.
+
+SAND_Ltracer == F
 
 ! Logical switches (TRUE/FALSE) to activate writing of non-cohesive
 ! sediment into HISTORY output file.
@@ -210,7 +240,7 @@ Hout(iSVbld) == T                               ! bed load at V-points
 !------------------------------------------------------------------------------
 !  General sediment bed model controls, [1:Ngrids] values are expected.
 !------------------------------------------------------------------------------
-! 
+!
 !  NEWLAYER_THICK  Depositional bed layer thickness criteria to create a new
 !                    layer (m). If deposition exceeds this value, then a new
 !                    layer is created.
@@ -238,18 +268,39 @@ Hout(iSVbld) == T                               ! bed load at V-points
 !
 !  MUD_POROS       Porosity (nondimensional: 0.0-1.0):  Vwater/(Vwater+Vsed).
 !
-!  MUD_TNU2        Lateral, harmonic, constant, mixing coefficient (m2/s),
-!                    TNU2(idsed(i)) with i=1:NCS.  If variable horizontal
-!                    diffusion is activated, TNU2 is the mixing coefficient
-!                    for the largest grid-cell in the domain.
+!  MUD_TNU2        Nonlinar model lateral, harmonic, constant, mixing
+!                    coefficient (m2/s) for suspended cohesive sediment;
+!                    [1:NCS,1:Ngrids]. If variable horizontal diffusion is
+!                    activated, MUD_TNU2 is the mixing coefficient for
+!                    the largest grid-cell in the domain.
 !
-!  MUD_TNU4        Lateral, biharmonic, constant, mixing coefficient (m4/s),
-!                    TNU2(idsed(i)) with i=1:NCS.  If variable horizontal
-!                    diffusion is activated, TNU4 is the mixing coefficient
-!                    for the largest grid-cell in the domain.
+!  MUD_TNU4        Nonlinar model lateral, biharmonic, constant, mixing
+!                    coefficient (m4/s) for suspended cohesive sediment;
+!                    [1:NCS,1:Ngrids]. If variable horizontal diffusion is
+!                    activated, MUD_TNU4 is the mixing coefficient for
+!                    the largest grid-cell in the domain.
+!
+!  ad_MUD_TNU2     Adjoint-based algorithms lateral, harmonic, constant,
+!                    mixing coefficient (m2/s) for suspended cohesive
+!                    sediment; [1:NCS,1:Ngrids]. If variable horizontal
+!                    diffusion is activated, ad_MUD_TNU2 is the mixing
+!                    coefficient for the largest grid-cell in the domain.
+!
+!  ad_MUD_TNU4     Adjoint-based algorithms lateral, harmonic, constant,
+!                    mixing coefficient (m4/s) for suspended cohesive
+!                    sediment; [1:NCS,1:Ngrids]. If variable horizontal
+!                    diffusion is activated, ad_MUD_TNU4 is the mixing
+!                    coefficient for the largest grid-cell in the domain.
 !
 !  MUD_AKT_BAK     Background vertical mixing coefficient (m2/s),
 !                    AKT_BAK(idsed(i)) with i=1:NCS.
+!
+!  MUD_AKT_fac     Adjoint-based algorithms vertical mixing, basic state,
+!                   scale factor (nondimensional) for biological tracer
+!                   variables; [1:NCS,1:Ngrids] values are expected. In
+!                   some applications, a smaller/larger values of vertical
+!                   mixing are necessary for stability. It is only used
+!                   when FORWARD_MIXING is activated.
 !
 !  MUD_TNUDG       Nudging time scale (days), TNUDG(idsed(i)) with i=1:NCS.
 !                    Inverse scale will be computed internally.
@@ -257,6 +308,47 @@ Hout(iSVbld) == T                               ! bed load at V-points
 !  MUD_MORPH_FAC   Morphological time scale factor (nondimensional; greater
 !                    than or equal to 1.0). A value of 1.0 has no scale
 !                    effect.
+!
+!  MUD_Ltracer     Logical switches (T/F) to specify which tracer variables
+!                    to consider when the option TS_PSOURCE is activated;
+!                    [1:NCS,1:Ngrids] values are expected.
+!
+!                      MUD_Ltracer(  1,ng)         sand_01
+!                      ...                         ...
+!                      MUD_Ltracer(NCS,ng)         ...
+!
+!                    Recall that TS_PSOURCE is usually activated to add river
+!                    runoff as a point source. At minimum, it is necessary to
+!                    specify both temperature and salinity for all rivers. The
+!                    other tracers are optional. The user needs to know the
+!                    correspondence between biological variables and indices
+!                    idbio(1:NBT) when activating one or more of these switches.
+!
+!                    This logical switch REPLACES and ELIMINATES the need to
+!                    have or read the variable "river_flag(river)" in the input
+!                    rivers forcing NetCDF file:
+!
+!                      double river_flag(river)
+!                        river_flag:long_name = "river runoff tracer flag"
+!                        river_flag:option_0 = "all tracers are off"
+!                        river_flag:option_1 = "only temperature"
+!                        river_flag:option_2 = "only salinity"
+!                        river_flag:option_3 = "both temperature and salinity"
+!                        river_flag:units = "nondimensional"
+!
+!                    This logic was too cumbersome and complicated when
+!                    additional tracers are considered. However, this change
+!                    is backward compatible.
+!
+!                    This logical switch will be used to activate the reading
+!                    of respective tracer variable from input river forcing
+!                    NetCDF file. If you want to add other tracer variables
+!                    (other than temperature and salinity) as a source for a
+!                    particular river(s), you just need to specify such values
+!                    on those river(s). Then, set the values to ZERO on the
+!                    other river(s) that do NOT require such river forcing for
+!                    that tracer. Recall that you need to specify the tracer
+!                    values for all rivers, even if their values are zero.
 !
 !  Hout(idmud)     Logical switches to activate writing of cohesive sediment
 !                    concentration into HISTORY NetCDF file,
@@ -299,24 +391,86 @@ Hout(iSVbld) == T                               ! bed load at V-points
 !
 !  SAND_POROS      Porosity (nondimensional: 0.0-1.0):  Vwater/(Vwater+Vsed).
 !
-!  SAND_TNU2       Lateral, harmonic, constant, mixing coefficient (m2/s),
-!                    TNU2(idsed(i)) with i=NCS+1:NST.  If variable horizontal
-!                    diffusion is activated, TNU2 is the mixing coefficient
-!                    for the largest grid-cell in the domain.
+!  SAND_TNU2       Nonlinar model lateral, harmonic, constant, mixing
+!                    coefficient (m2/s) for suspended non-cohesive sediment;
+!                    [1:NNS,1:Ngrids]. If variable horizontal diffusion
+!                    is activated, SAND_TNU2 is the mixing coefficient for
+!                    the largest grid-cell in the domain.
 !
-!  SAND_TNU4       Lateral, biharmonic, constant, mixing coefficient (m4/s),
-!                    TNU4(idsed(i)) with i=NCS+1:NST.  If variable horizontal
-!                    diffusion is activated, TNU4 is the mixing coefficient
-!                    for the largest grid-cell in the domain.
+!  SAND_TNU4       Nonlinar model lateral, harmonic, constant, mixing
+!                    coefficient (m4/s) for suspended non-cohesive sediment;
+!                    [1:NNS,1:Ngrids]. If variable horizontal diffusion
+!                    is activated, SAND_TNU4 is the mixing coefficient for
+!                    the largest grid-cell in the domain.
+!
+!  ad_SAND_TNU2    Adjoint-based algorithms lateral, harmonic, constant,
+!                    mixing coefficient (m2/s) for suspended non-cohesive
+!                    sediment; [1:NNS,1:Ngrids]. If variable horizontal
+!                    diffusion is activated, SAND_TNU2 is the mixing
+!                    coefficient for the largest grid-cell in the domain.
+!
+!  ad_SAND_TNU4    Adjoint-based algorithms lateral, harmonic, constant,
+!                    mixing coefficient (m4/s) for suspended non-cohesive
+!                    sediment; [1:NNS,1:Ngrids]. If variable horizontal
+!                    diffusion is activated, SAND_TNU4 is the mixing
+!                    coefficient for the largest grid-cell in the domain.
 !
 !  SAND_AKT_BAK    Background vertical mixing coefficient (m2/s),
 !                    AKT_BAK(idsed(i)) with i=NCS+1:NST.
+!
+!  SAND_AKT_fac    Adjoint-based algorithms vertical mixing, basic state,
+!                   scale factor (nondimensional) for biological tracer
+!                   variables; [1:NNS,1:Ngrids] values are expected.
+!                   In some applications, a smaller/larger values of
+!                   vertical mixing are necessary for stability. It is
+!                   only used when FORWARD_MIXING is activated.
 !
 !  SAND_TNUDG      Nudging time scale (days), TNUDG(idsed(i)) with i=NCS+1:NST.
 !                    Inverse scale will be computed internally,
 !
 !  SAND_MORPH_FAC  Morphological time scale factor (nondimensional; greater
 !                    than or equal to 1.0). A value of 1.0 has no scale effect.
+!
+!  SAND_Ltracer     Logical switches (T/F) to specify which tracer variables
+!                    to consider when the option TS_PSOURCE is activated;
+!                    [1:NNS,1:Ngrids] values are expected.
+!
+!                      SAND_Ltracer(  1,ng)        sand_01
+!                      ...                         ...
+!                      SAND_Ltracer(NNS,ng)        ...
+!
+!                    Recall that TS_PSOURCE is usually activated to add river
+!                    runoff as a point source. At minimum, it is necessary to
+!                    specify both temperature and salinity for all rivers. The
+!                    other tracers are optional. The user needs to know the
+!                    correspondence between biological variables and indices
+!                    idbio(1:NBT) when activating one or more of these switches.
+!
+!                    This logical switch REPLACES and ELIMINATES the need to
+!                    have or read the variable "river_flag(river)" in the input
+!                    rivers forcing NetCDF file:
+!
+!                      double river_flag(river)
+!                        river_flag:long_name = "river runoff tracer flag"
+!                        river_flag:option_0 = "all tracers are off"
+!                        river_flag:option_1 = "only temperature"
+!                        river_flag:option_2 = "only salinity"
+!                        river_flag:option_3 = "both temperature and salinity"
+!                        river_flag:units = "nondimensional"
+!
+!                    This logic was too cumbersome and complicated when
+!                    additional tracers are considered. However, this change
+!                    is backward compatible.
+!
+!                    This logical switch will be used to activate the reading
+!                    of respective tracer variable from input river forcing
+!                    NetCDF file. If you want to add other tracer variables
+!                    (other than temperature and salinity) as a source for a
+!                    particular river(s), you just need to specify such values
+!                    on those river(s). Then, set the values to ZERO on the
+!                    other river(s) that do NOT require such river forcing for
+!                    that tracer. Recall that you need to specify the tracer
+!                    values for all rivers, even if their values are zero.
 !
 !  Hout(idsand)    Logical switches to activate writing of non-cohesive
 !                     sediment concentration into HISTORY NetCDF file,
@@ -350,3 +504,4 @@ Hout(iSVbld) == T                               ! bed load at V-points
 !  Hout(iporo)     Sediment layer porosity.
 !
 !  Hout(idiff)     Biodiffusivity at the bottom of each layer.
+!

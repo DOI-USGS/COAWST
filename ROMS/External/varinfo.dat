@@ -3,7 +3,7 @@
 !
 !svn $Id: varinfo.dat 734 2008-09-07 01:58:06Z jcwarner $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -194,6 +194,39 @@
   'ocean_time'
   'idTvar(isalt)'
   'r3dvar'
+  1.0d0
+
+!
+!------------------------------------------------------------------------------
+!  Wet/dry masks.
+!------------------------------------------------------------------------------
+!
+
+'wetdry_mask_rho'                                  ! Input/Output
+  'wet/dry mask on RHO-points'
+  'nondimensional'
+  'wetdry_mask_rho, scalar, series'
+  'ocean_time'
+  'idRwet'
+  'r2dvar'
+  1.0d0
+
+'wetdry_mask_u'                                    ! Input/Output
+  'wet/dry mask on U-points'
+  'nondimensional'
+  'wetdry_mask_u, scalar, series'
+  'ocean_time'
+  'idUwet'
+  'u2dvar'
+  1.0d0
+
+'wetdry_mask_v'                                    ! Input/Output
+  'wet/dry mask on V-points'
+  'nondimensional'
+  'wetdry_mask_v, scalar, series'
+  'ocean_time'
+  'idVwet'
+  'v2dvar'
   1.0d0
 
 !
@@ -518,6 +551,15 @@
   'idsfwf'
   'r2dvar'
   1.157407d-7                                      ! 0.01/86400
+
+'EminusP'                                          ! Input/Output
+  'bulk_flux surface net freswater flux, (E-P)'
+  'meter second-1'                                 ! computed by NLM ROMS
+  'EminusP, scalar, series'                        ! bulk_flux.F and
+  'ocean_time'                                     ! needed in adjoint-based
+  'idEmPf'                                         ! applications
+  'r2dvar'
+  1.0d0
 
 'bhflux'                                           ! Input
   'bottom net heat flux'
@@ -1174,13 +1216,13 @@
   1.0d0
 
 'Qair'                                             ! Input
-  'surface air relative humidity'
-  'percentage'                                     ! [percentage]
+  'surface air relative humidity'                  !  relative    or  specific
+  'percentage'                                     ! [percentage  or  g/kg    ]
   'Qair, scalar, series'
   'qair_time'
   'idQair'
-  'r2dvar'
-  0.01d0                                           ! 1/100
+  'r2dvar'                                         ! relative        specific
+  0.01d0                                           ! 1/100      or   1.0
 
 'cloud'                                            ! Input
   'cloud fraction'
@@ -1653,6 +1695,15 @@
   'nulvar'
   1.0d0
 
+'river_dye_'                                       ! Input
+  'river runoff dye concentration'
+  'kilogram meter-3'                               ! [kg/m3]
+  'river_dye, scalar, series'
+  'ocean_time'
+  'idRtrc(inert(i))'
+  'nulvar'
+  1.0d0
+
 'river_mud_'                                       ! Input
   'river runoff suspended sediment concentration'
   'kilogram meter-3'                               ! [kg/m3]
@@ -1951,6 +2002,81 @@
   'idTads(isalt)'
   'r3dvar'
   1.0d0
+
+!
+!------------------------------------------------------------------------------
+!  Tangent linear model impulse forcing variables.
+!
+!  Notice that additional metadata is need here because with need different
+!  indices to avoid conflict with the forward basic state variables. They
+!  are used at the same time. The passive tracers (NAT+1:NT) are assigned
+!  internally to the same values as the basic state.
+!------------------------------------------------------------------------------
+!
+
+'zeta'                                             ! Input
+  'free-surface impulse forcing'
+  'meter'                                          ! [m]
+  'zeta, scalar, series'
+  'zeta_time'
+  'idZtlf'
+  'r2dvar'
+  1.0d0
+
+'ubar'                                             ! Input
+  'vertically integrated u-momentum impulse forcing'
+  'meter second-1'                                 ! [m/s]
+  'ubar-velocity, scalar, series'
+  'v2d_time'
+  'idUbtf'
+  'u2dvar'
+  1.0d0
+
+'vbar'                                             ! Input
+  'vertically integrated v-momentum impulse forcing'
+  'meter second-1'                                 ! [m/s]
+  'vbar-velocity, scalar, series'
+  'v2d_time'
+  'idVbtf'
+  'v2dvar'
+  1.0d0
+
+'u'                                                ! Input
+  'u-momentum component impulse forcing'
+  'meter second-1'                                 ! [m/s]
+  'u-velocity, scalar, series'
+  'v3d_time'
+  'idUtlf'
+  'u3dvar'
+  1.0d0
+
+'v'                                                ! Input
+  'v-momentum component impulse forcing'
+  'meter second-1'                                 ! [m/s]
+  'v-velocity, scalar, series'
+  'v3d_time'
+  'idVtlf'
+  'v3dvar'
+  1.0d0
+
+'temp'                                             ! Input
+  'potential temperature impulse forcing'
+  'Celsius'                                        ! [Celsius]
+  'temp_time, scalar, series'
+  'temp_time'
+  'idTtlf(itemp)'
+  'r3dvar'
+  1.0d0
+
+'salt'                                             ! Input
+  'salinity impulse forcing'
+  'nondimensional'                                 ! [PSU]
+  'salt_time, scalar, series'
+  'salt_time'
+  'idTtlf(isalt)'
+  'r3dvar'
+  1.0d0
+
 !
 !------------------------------------------------------------------------------
 !  Observation variables: Optimal Interpolation and Nudging.
@@ -2103,9 +2229,61 @@
   'r3dvar'
   1.0d0
 
+'dye_west_'                                        ! Input
+  'dye concentration western boundary condition'
+  'kilogram meter-3'                               ! [kg/m3]
+  'dye_west_, scalar, series'
+  'dye_time'
+  'idTbry(iwest,inert(i))'
+  'nulvar'
+  1.0d0
+
+'dye_east_'                                        ! Input
+  'dye concentration eastern boundary condition'
+  'kilogram meter-3'                               ! [kg/m3]
+  'dye_east_, scalar, series'
+  'dye_time'
+  'idTbry(ieast,inert(i))'
+  'nulvar'
+  1.0d0
+
+'dye_south_'                                       ! Input
+  'dye concentration southern boundary condition'
+  'kilogram meter-3'                               ! [kg/m3]
+  'dye_south_, scalar, series'
+  'dye_time'
+  'idTbry(isouth,inert(i))'
+  'nulvar'
+  1.0d0
+
+'dye_north_'                                       ! Input
+  'dye concentration northern boundary condition'
+  'kilogram meter-3'                               ! [kg/m3]
+  'dye_north_, scalar, series'
+  'dye_time'
+  'idTbry(inorth,inert(i))'
+  'nulvar'
+  1.0d0
+
 !
 !------------------------------------------------------------------------------
-!  Sediment variables.
+!  Sediment variables:  The actual variable name for some of the sediment
+!                       tracers are set-up internally in "mod_ncparam.F".
+!  It depends on the mumber of cohesive and noncohesive sediment tracers
+!  for a particular application. For example if you have 1 cohesive and
+!  2 noncohesive sediment classes, the variable names are:
+!
+!    "mud_"          becomes   "mud_01"
+!    "mud_west_"     becomes   "mud_west_01"
+!    "mud_east_"     becomes   "mud_east_01"
+!    "mud_south_"    becomes   "mud_south_01"
+!    "mud_north_"    becomes   "mud_north_01"
+!
+!    "sand_"         becomes   "sand_01",       "sand_02"
+!    "sand_west"     becomes   "sand_west_01",  "sand_west_02"
+!    "sand_east"     becomes   "sand_east_01",  "sand_east_02"
+!    "sand_south"    becomes   "sand_south_01", "sand_south_02"
+!    "sand_north"    becomes   "sand_north_01", "sand_north_02"
 !------------------------------------------------------------------------------
 !
 
@@ -2118,6 +2296,42 @@
   'r3dvar'
   1.0d0
 
+'mud_west_'                                        ! Input
+  'suspended cohesive sediment western boundary condition'
+  'kilogram meter-3'                               ! [kg/m3]
+  'mud_west_, scalar, series'
+  'mud_time'
+  'idTbry(iwest,idmud(i))'
+  'r3dvar'
+  1.0d0
+
+'mud_east_'                                        ! Input
+  'suspended cohesive sediment eastern boundary condition'
+  'kilogram meter-3'                               ! [kg/m3]
+  'mud_east_, scalar, series'
+  'mud_time'
+  'idTbry(ieast,idmud(i))'
+  'nulvar'
+  1.0d0
+
+'mud_south_'                                       ! Input
+  'suspended cohesive sediment southern boundary condition'
+  'kilogram meter-3'                               ! [kg/m3]
+  'mud_south_, scalar, series'
+  'mud_time'
+  'idTbry(isouth,idmud(i))'
+  'nulvar'
+  1.0d0
+
+'mud_north_'                                       ! Input
+  'suspended cohesive sediment northern boundary condition'
+  'kilogram meter-3'                               ! [kg/m3]
+  'mud_north_, scalar, series'
+  'mud_time'
+  'idTbry(inorth,idmud(i))'
+  'nulvar'
+  1.0d0
+
 'sand_'                                            ! Input/Output
   'suspended noncohesive sediment'
   'kilogram meter-3'                               ! [kg/m3]
@@ -2125,6 +2339,42 @@
   'ocean_time'
   'idTvar(isand(i))'
   'r3dvar'
+  1.0d0
+
+'sand_west_'                                       ! Input
+  'suspended noncohesive sediment western boundary condition'
+  'kilogram meter-3'                               ! [kg/m3]
+  'sand_west_, scalar, series'
+  'sand_time'
+  'idTbry(iwest,isand(i))'
+  'nulvar'
+  1.0d0
+
+'sand_east_'                                       ! Input
+  'suspended noncohesive sediment eastern boundary condition'
+  'kilogram meter-3'                               ! [kg/m3]
+  'sand_east_, scalar, series'
+  'sand_time'
+  'idTbry(ieast,isand(i))'
+  'nulvar'
+  1.0d0
+
+'sand_south_'                                      ! Input
+  'suspended noncohesive sediment southern boundary condition'
+  'kilogram meter-3'                               ! [kg/m3]
+  'sand_south_, scalar, series'
+  'sand_time'
+  'idTbry(isouth,isand(i))'
+  'nulvar'
+  1.0d0
+
+'sand_north_'                                      ! Input
+  'suspended noncohesive sediment northern boundary condition'
+  'kilogram meter-3'                               ! [kg/m3]
+  'sand_north_, scalar, series'
+  'sand_time'
+  'idTbry(inorth,isand(i))'
+  'nulvar'
   1.0d0
 
 'mudfrac_'                                         ! Input/Output
@@ -2204,7 +2454,7 @@
   'kilogram meter-2'                               ! [kg/m2]
   'ero_flux, scalar, series'
   'ocean_time'
-  'idBott(idflux)'
+  'idBott(idefx)'
   'r2dvar'
   1.0d0
 
@@ -2541,14 +2791,6 @@
   'r2dvar'
   1.0d0
 
-'wet_dry_masking'                                  ! Input/Output
-  'wet_dry mask'
-  '1'                                              ! []
-  'wet masking, scalar, series'
-  'ocean_time'
-  'idWmsk'
-  'r2dvar'
-  1.0d0
 
 !---------------------------------------------------------------------
 !  Define names of variables associated with InWave
@@ -2637,8 +2879,8 @@
 
 !
 !---------------------------------------------------------------------
-!  Define names of variables associated with Fasham, NEMURO or NPZD
-!  ecosystem models.
+!  Define names of variables associated with Fennel et al (2006),
+!  NEMURO or NPZD ecosystem models.
 !---------------------------------------------------------------------
 !
 
@@ -2714,6 +2956,24 @@
   'r3dvar'
   1.0d0
 
+'iron'                                             ! Input/Output
+  'available dissolved iron concentration'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'iron, scalar, series'
+  'ocean_time'
+  'idTvar(iFdis)'
+  'r3dvar'
+  1.0d0
+
+'iron'                                             ! Input
+  'available dissolved iron concentration functional'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'iron, scalar, series'
+  'ocean_time'
+  'idTads(iFdis)'
+  'r3dvar'
+  1.0d0
+
 'phytoplankton'                                    ! Input/Output
   'phytoplankton concentration'
   'millimole_nitrogen meter-3'                     ! [millimole/m3]
@@ -2729,6 +2989,24 @@
   'phytoplankton, scalar, series'
   'ocean_time'
   'idTads(iPhyt)'
+  'r3dvar'
+  1.0d0
+
+'phytoplanktonFe'                                  ! Input/Output
+  'phytoplankton, associated iron concentration'
+  'millimole_iron  meter-3'                        ! [millimole/m3]
+  'phytoplanktonFe, scalar, series'
+  'ocean_time'
+  'idTvar(iFphy)'
+  'r3dvar'
+  1.0d0
+
+'phytoplanktonFe'                                  ! Input
+  'phytoplankton, associated iron concentration functional'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'phytoplanktonFe, scalar, series'
+  'ocean_time'
+  'idTads(iFphy)'
   'r3dvar'
   1.0d0
 
@@ -2959,7 +3237,7 @@
 
 !
 !  Diagnostic variables.
-! 
+!
 
 'CO2_airsea'                                       ! Input/Output
   'CO2 air-sea flux'
@@ -2981,7 +3259,7 @@
 
 'pCO2'                                             ! Input/Output
   'partial pressure of CO2'
-  'atm'                                            ! [atm]
+  'microatmophere'                                 ! [microatmosphere]
   'pCO2, scalar, series'
   'ocean_time'
   'iDbio2(ipCO2)'
@@ -3017,7 +3295,7 @@
 
 !
 !  Boundary variables.
-! 
+!
 
 'NO3_east'                                         ! Input
   'nitrate eastern boundary condition'
@@ -3343,6 +3621,42 @@
   'nulvar'
   1.0d0
 
+'iron_east'                                        ! Input
+  'dissolved iron eastern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'iron_east, scalar, series'
+  'iron_time'
+  'idTbry(ieast,iFdis)'
+  'nulvar'
+  1.0d0
+
+'iron_west'                                        ! Input
+  'dissolved iron western boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'iron_west, scalar, series'
+  'iron_time'
+  'idTbry(iwest,iFdis)'
+  'nulvar'
+  1.0d0
+
+'iron_north'                                       ! Input
+  'dissolved iron northern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'iron_north, scalar, series'
+  'iron_time'
+  'idTbry(inorth,iFdis)'
+  'nulvar'
+  1.0d0
+
+'iron_south'                                       ! Input
+  'dissolved iron southern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'iron_south, scalar, series'
+  'iron_time'
+  'idTbry(isouth,iFdis)'
+  'nulvar'
+  1.0d0
+
 'phyt_east'                                        ! Input
   'phytoplankton eastern boundary condition'
   'millimole_nitrogen meter-3'                     ! [millimole/m3]
@@ -3376,6 +3690,42 @@
   'phyt_north, scalar, series'
   'phyt_time'
   'idTbry(inorth,iPhyt)'
+  'nulvar'
+  1.0d0
+
+'phytFe_east'                                      ! Input
+  'phytoplankton, iron concentration eastern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'phytFe_east, scalar, series'
+  'phytFe_time'
+  'idTbry(ieast,iFdis)'
+  'nulvar'
+  1.0d0
+
+'phytFe_west'                                      ! Input
+  'phytoplankton, iron concentration western boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'phytFe_west, scalar, series'
+  'phytFe_time'
+  'idTbry(iwest,iFphy)'
+  'nulvar'
+  1.0d0
+
+'phytFe_north'                                     ! Input
+  'phytoplankton, iron concentration northern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'phytFe_north, scalar, series'
+  'phytFe_time'
+  'idTbry(inorth,iFphy)'
+  'nulvar'
+  1.0d0
+
+'phytFe_south'                                     ! Input
+  'phytoplankton, iron concentration southern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'phytFe_south, scalar, series'
+  'phytFe_time'
+  'idTbry(isouth,iFphy)'
   'nulvar'
   1.0d0
 
@@ -4218,6 +4568,24 @@
 !  2D momentum diagnostic terms.
 !
 
+'pvorticity_bar'                                   ! Input/Output
+  '2D potential vorticity'
+  'meter-1 second-1'                               ! [1/m/s]
+  'pvorticity_bar, scalar, series'
+  'ocean_time'
+  'id2dPV'
+  'p2dvar'
+  1.0d0
+
+'rvorticity_bar'                                   ! Input/Output
+  '2D relative vorticity'
+  'second-1'                                       ! [1/s]
+  'rvorticity_bar, scalar, series'
+  'ocean_time'
+  'id2dRV'
+  'p2dvar'
+  1.0d0
+
 'ubar_accel'                                       ! Input/Output
   '2D u-momentum, acceleration term'
   'meter second-2'                                 ! [m/s2]
@@ -4281,12 +4649,48 @@
   'u2dvar'
   1.0d0
 
+'ubar_xadv'                                        ! Input/Output
+  '2D u-momentum, horizontal XI-advection term'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_xadv, scalar, series'
+  'ocean_time'
+  'idDu2d(M2xadv)'
+  'u2dvar'
+  1.0d0
+
+'ubar_yadv'                                        ! Input/Output
+  '2D u-momentum, horizontal ETA-advection term'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_yadv, scalar, series'
+  'ocean_time'
+  'idDu2d(M2yadv)'
+  'u2dvar'
+  1.0d0
+
 'vbar_hadv'                                        ! Input/Output
   '2D v-momentum, horizontal advection term'
   'meter second-2'                                 ! [m/s2]
   'vbar_hadv, scalar, series'
   'ocean_time'
   'idDv2d(M2hadv)'
+  'v2dvar'
+  1.0d0
+
+'vbar_xadv'                                        ! Input/Output
+  '2D v-momentum, horizontal XI-advection term'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_xadv, scalar, series'
+  'ocean_time'
+  'idDv2d(M2xadv)'
+  'v2dvar'
+  1.0d0
+
+'vbar_yadv'                                        ! Input/Output
+  '2D v-momentum, horizontal ETA-advection term'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_yadv, scalar, series'
+  'ocean_time'
+  'idDv2d(M2yadv)'
   'v2dvar'
   1.0d0
 
@@ -4317,12 +4721,48 @@
   'u2dvar'
   1.0d0
 
+'ubar_xvisc'                                       ! Input/Output
+  '2D u-momentum, horizontal XI-viscosity term'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_xvisc, scalar, series'
+  'ocean_time'
+  'idDu2d(M2xvis)'
+  'u2dvar'
+  1.0d0
+
+'ubar_yvisc'                                       ! Input/Output
+  '2D u-momentum, horizontal ETA-viscosity term'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_yvisc, scalar, series'
+  'ocean_time'
+  'idDu2d(M2yvis)'
+  'u2dvar'
+  1.0d0
+
 'vbar_hvisc'                                       ! Input/Output
   '2D v-momentum, horizontal viscosity term'
   'meter second-2'                                 ! [m/s2]
   'vbar_hvisc, scalar, series'
   'ocean_time'
   'idDv2d(M2hvis)'
+  'v2dvar'
+  1.0d0
+
+'vbar_xvisc'                                       ! Input/Output
+  '2D v-momentum, horizontal XI-viscosity term'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_xvisc, scalar, series'
+  'ocean_time'
+  'idDv2d(M2xvis)'
+  'v2dvar'
+  1.0d0
+
+'vbar_yvisc'                                       ! Input/Output
+  '2D v-momentum, horizontal ETA-viscosity term'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_yvisc, scalar, series'
+  'ocean_time'
+  'idDv2d(M2yvis)'
   'v2dvar'
   1.0d0
 
@@ -4365,7 +4805,25 @@
 !
 !  3D momentum diagnostic terms.
 !
- 
+
+'pvorticity'                                       ! Input/Output
+  'potential vorticity'
+  'meter-1 second-1'                               ! [1/m/s]
+  'pvorticity, scalar, series'
+  'ocean_time'
+  'id3dPV'
+  'p3dvar'
+  1.0d0
+
+'rvorticity'                                       ! Input/Output
+  'relative vorticity'
+  'second-1'                                       ! [1/s]
+  'rvorticity, scalar, series'
+  'ocean_time'
+  'id3dRV'
+  'p3dvar'
+  1.0d0
+
 'u_accel'                                          ! Input/Output
   '3D u-momentum, acceleration term'
   'meter second-2'                                 ! [m/s2]
@@ -4429,12 +4887,48 @@
   'u3dvar'
   1.0d0
 
+'u_xadv'                                           ! Input/Output
+  '3D u-momentum, horizontal XI-advection term'
+  'meter second-2'                                 ! [m/s2]
+  'u_xadv, scalar, series'
+  'ocean_time'
+  'idDu3d(M3xadv)'
+  'u3dvar'
+  1.0d0
+
+'u_yadv'                                           ! Input/Output
+  '3D u-momentum, horizontal ETA-advection term'
+  'meter second-2'                                 ! [m/s2]
+  'u_yadv, scalar, series'
+  'ocean_time'
+  'idDu3d(M3yadv)'
+  'u3dvar'
+  1.0d0
+
 'v_hadv'                                           ! Input/Output
   '3D v-momentum, horizontal advection term'
   'meter second-2'                                 ! [m/s2]
   'v_hadv, scalar, series'
   'ocean_time'
   'idDv3d(M3hadv)'
+  'v3dvar'
+  1.0d0
+
+'v_xadv'                                           ! Input/Output
+  '3D v-momentum, horizontal XI-advection term'
+  'meter second-2'                                 ! [m/s2]
+  'v_xadv, scalar, series'
+  'ocean_time'
+  'idDv3d(M3xadv)'
+  'v3dvar'
+  1.0d0
+
+'v_yadv'                                           ! Input/Output
+  '3D v-momentum, horizontal ETA-advection term'
+  'meter second-2'                                 ! [m/s2]
+  'v_yadv, scalar, series'
+  'ocean_time'
+  'idDv3d(M3yadv)'
   'v3dvar'
   1.0d0
 
@@ -4501,12 +4995,48 @@
   'u3dvar'
   1.0d0
 
+'u_xvisc'                                          ! Input/Output
+  '3D u-momentum, horizontal XI-viscosity term'
+  'meter second-2'                                 ! [m/s2]
+  'u_xvisc, scalar, series'
+  'ocean_time'
+  'idDu3d(M3xvis)'
+  'u3dvar'
+  1.0d0
+
+'u_yvisc'                                          ! Input/Output
+  '3D u-momentum, horizontal ETA-viscosity term'
+  'meter second-2'                                 ! [m/s2]
+  'u_yvisc, scalar, series'
+  'ocean_time'
+  'idDu3d(M3yvis)'
+  'u3dvar'
+  1.0d0
+
 'v_hvisc'                                          ! Input/Output
   '3D v-momentum, horizontal viscosity term'
   'meter second-2'                                 ! [m/s2]
   'v_hvisc, scalar, series'
   'ocean_time'
   'idDv3d(M3hvis)'
+  'v3dvar'
+  1.0d0
+
+'v_xvisc'                                          ! Input/Output
+  '3D v-momentum, horizontal XI-viscosity term'
+  'meter second-2'                                 ! [m/s2]
+  'v_xvisc, scalar, series'
+  'ocean_time'
+  'idDv3d(M3xvis)'
+  'v3dvar'
+  1.0d0
+
+'v_yvisc'                                          ! Input/Output
+  '3D v-momentum, horizontal ETA-viscosity term'
+  'meter second-2'                                 ! [m/s2]
+  'v_yvisc, scalar, series'
+  'ocean_time'
+  'idDv3d(M3yvis)'
   'v3dvar'
   1.0d0
 
@@ -4553,6 +5083,24 @@
   'r3dvar'
   1.0d0
 
+'_xadv'                                            ! Input/Output
+  'horizontal XI-advection term'
+  'second-1'                                       ! [1/s T]
+  '_xadv, scalar, series'
+  'ocean_time'
+  'idDtrc(iTxadv)'
+  'r3dvar'
+  1.0d0
+
+'_yadv'                                            ! Input/Output
+  'horizontal ETA-advection term'
+  'second-1'                                       ! [1/s T]
+  '_yadv, scalar, series'
+  'ocean_time'
+  'idDtrc(iTyadv)'
+  'r3dvar'
+  1.0d0
+
 '_vadv'                                            ! Input/Output
   'vertical advection term'
   'second-1'                                       ! [1/s T]
@@ -4568,6 +5116,33 @@
   '_hdiff, scalar, series'
   'ocean_time'
   'idDtrc(iThdif)'
+  'r3dvar'
+  1.0d0
+
+'_xdiff'                                           ! Input/Output
+  'horizontal XI-diffusion term'
+  'second-1'                                       ! [1/s T]
+  '_xdiff, scalar, series'
+  'ocean_time'
+  'idDtrc(iTxdif)'
+  'r3dvar'
+  1.0d0
+
+'_ydiff'                                           ! Input/Output
+  'horizontal ETA-diffusion term'
+  'second-1'                                       ! [1/s T]
+  '_ydiff, scalar, series'
+  'ocean_time'
+  'idDtrc(iTydif)'
+  'r3dvar'
+  1.0d0
+
+'_sdiff'                                           ! Input/Output
+  'horizontal S-diffusion rotated tensor term'
+  'second-1'                                       ! [1/s T]
+  '_sdiff, scalar, series'
+  'ocean_time'
+  'idDtrc(iTsdif)'
   'r3dvar'
   1.0d0
 
@@ -4869,68 +5444,5 @@
   'nulvar'
   'datum'
   'idMOMf'
-  'nulvar'
-  1.0d0
-
-'RepCoef'                                          ! Output
-  'representer coefficients'
-  'nulvar'
-  'nulvar'
-  'datum'
-  'idRepC'
-  'nulvar'
-  1.0d0
-
-'cg_p'                                             ! Output
-  'conjugate gradient p-vector'
-  'nulvar'
-  'nulvar'
-  'datum'
-  'idCG_P'
-  'nulvar'
-  1.0d0
-
-'cg_r'                                             ! Output
-  'conjugate gradient r-vector'
-  'nulvar'
-  'nulvar'
-  'datum'
-  'idCG_R'
-  'nulvar'
-  1.0d0
-
-'cg_s'                                             ! Output
-  'conjugate gradient s-vector'
-  'nulvar'
-  'nulvar'
-  'datum'
-  'idCG_S'
-  'nulvar'
-  1.0d0
-
-'cg_v'                                             ! Output
-  'conjugate gradient v-vector'
-  'nulvar'
-  'nulvar'
-  'datum'
-  'idCG_V'
-  'nulvar'
-  1.0d0
-
-'cg_x'                                             ! Output
-  'conjugate gradient x-vector'
-  'nulvar'
-  'nulvar'
-  'datum'
-  'idCG_X'
-  'nulvar'
-  1.0d0
-
-'cg_z'                                             ! Output
-  'conjugate gradient z-vector'
-  'nulvar'
-  'nulvar'
-  'datum'
-  'idCG_Z'
   'nulvar'
   1.0d0

@@ -1,9 +1,9 @@
 !
 !  EcoSim Biological Model Parameters.
 !
-!svn $Id: ecosim.in 576 2008-03-13 21:16:46Z arango $
+!svn $Id: ecosim.in 429 2009-12-20 17:30:26Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group              W. Paul Bissett   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group              W. Paul Bissett   !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -74,7 +74,7 @@
 
 ! Half-saturation for phytoplankton SiO uptake (micromole_SiO/liter),
 ! [Nphy,Ngrids] values are expected. A value of 1.0d+30 denotes no SiO
-! uptake being calculated for that phytoplankton group. 
+! uptake being calculated for that phytoplankton group.
 
          HsSiO == 1.8240d+00  1.4120d+00  1.0000d+30  1.0000d+30
 
@@ -85,7 +85,7 @@
 
 ! Half-saturation for phytoplankton Fe uptake (micromole_Fe/liter),
 ! [Nphy,Ngrids] values are expected. A value of 1.0d+30 denotes no Fe
-! uptake being calculated for that phytoplankton group. 
+! uptake being calculated for that phytoplankton group.
 
           HsFe == 1.0000d+30  1.0000d+30  1.0000d+30  1.0000d+30
 
@@ -156,7 +156,7 @@
 
 ! Maximum phytoplankton C:Fe ratio (micromole_C/micromole_Fe),
 ! [Nphy,Ngrids] values are expected. A value of 1.0d+30 denotes no Fe
-! uptake being calculated. 
+! uptake being calculated.
 
     maxC2FeALG == 1.0000d+30  1.0000d+30  1.0000d+30  1.0000d+30
 
@@ -168,7 +168,7 @@
 
 ! Absolute minimum phytoplankton C:Fe ratio (micromole_C/micromole_Fe),
 ! [Nphy,Ngrids] values are expected. A value of 1.0d+30 denotes no Fe
-! uptake being calculated. 
+! uptake being calculated.
 
  C2FeALGminABS == 1.0000d+30  1.0000d+30  1.0000d+30  1.0000d+30
 
@@ -476,7 +476,7 @@
 ! UV degradation of DOC to colorless labile DOC
 ! (micromole/meter/liter/hour at 410 nm),
 ! [Ngrids] values are expected.
- 
+
      RtUVR_DOC == 0.0034d0
 
 !-----------------------------------------------------------------------------
@@ -524,41 +524,114 @@
          RegFR == 0.10d0  0.0d0
 
 !-----------------------------------------------------------------------------
-! Physical and output parameters 
+! Physical and output parameters
 !-----------------------------------------------------------------------------
 
-! Lateral, constant, harmonic/biharmonic horizontal diffusion of biological
-! tracer, [NBT,Ngrids] values are expected.
+! Harmonic/biharmonic horizontal diffusion of biological tracer for
+! nonlinear model and adjoint-based algorithms: [NBT,Ngrids] values are
+! expected.
 
-          TNU2 == 63*0.0d0                       ! m2/s
+          TNU2 == 61*0.0d0                       ! m2/s
+          TNU4 == 61*0.0d0                       ! m4/s
 
-! Lateral, constant, harmonic/biharmonic horizontal diffusion of biological
-!! tracer, [NBT,Ngrids] values are expected.
+       ad_TNU2 == 61*0.0d0                       ! m2/s
+       ad_TNU4 == 61*0.0d0                       ! m4/s
 
-          TNU4 == 63*0.0d0                       ! m4/s
+! Vertical mixing coefficients for biological tracers for nonlinear model and
+! basic state scale factor in adjoint-based algorithms: [NBT,Ngrids] values
+! are expected.
 
-! Vertical mixing coefficients for biological tracers,
+       AKT_BAK == 61*1.0d-6                      ! m2/s
+
+    ad_AKT_BAK == 61*1.0d0                       ! nondimensional
+
+! Nudging/relaxation time scales, inverse scales will be computed internally,
 ! [NBT,Ngrids] values are expected.
 
-       AKT_BAK == 63*1.0d-6                      ! m2/s
+         TNUDG == 61*0.0d0                       ! days
 
-! Nudging/relaxation time scales, inverse scales will be computed internally, 
-! [NBT,Ngrids] values are expected.
+! Logical switches (TRUE/FALSE) to specify which variables to consider on
+! tracers point Sources/Sinks (like river runoff): [NBT,Ngrids] values are
+! expected. See glossary below for details.
 
-         TNUDG == 63*0.0d0                       ! days
+    LtracerSrc == 61*F
 
 ! Logical switches (T/F)  to write biological tracers into output NetCDF
 ! files, [NBT,Ngrids] values are expected.
 
-  Hout(idTvar) == 63*T                           ! biological tracer
-  Hout(idTsur) == 63*F                           ! surface tracer flux
+  Hout(idTvar) == 61*T                           ! biological tracer
+  Hout(idTsur) == 61*F                           ! surface tracer flux
 
 !
 !  GLOSSARY:
 !  =========
 !
 !==============================================================================
-! EcoSim Biological Model Parameters.
+! EcoSim Biological Model Parameters. It is configured with 61 biological
+! tracers by default:
+!
+!   idbio( 1)     DIC concentration
+!   idbio( 2)     Iron concentration
+!   idbio( 3)     Ammonium concentration
+!   idbio( 4)     Nitrate concentration
+!   idbio( 5)     Phosphate concentration
+!   idbio( 6)     Silica concentration
+!   idbio( 7)     Bacteria, Carbon Group 1
+!   idbio( 8)     Bacteria, Iron Group 1
+!   idbio( 9)     Bacteria, Nitrogen Group 1
+!   idbio(10)     Bacteria, Phosphorus Group 1
+!   idbio(11)     Color degradational matter, Carbon Group 1
+!   idbio(12)     Dissolved organic matter, Carbon Group 1
+!   idbio(13)     Dissolved organic matter, Nitrogen Group 1
+!   idbio(14)     Dissolved organic matter, Phosphorus Group 1
+!   idbio(15)     Color degradational matter, Carbon Group 2
+!   idbio(16)     Dissolved organic matter, Carbon Group 2
+!   idbio(17)     Dissolved organic matter, Nitrogen Group 2
+!   idbio(18)     Dissolved organic matter, Phosphorus Group 2
+!   idbio(19)     Fecal matter, Carbon Group 1
+!   idbio(20)     Fecal matter, Iron Group 1
+!   idbio(21)     Fecal matter, Nitrogen Group 1
+!   idbio(22)     Fecal matter, Phosphorus Group 1
+!   idbio(23)     Fecal matter, Silica Group 1
+!   idbio(24)     Fecal matter, Carbon Group 2
+!   idbio(25)     Fecal matter, Iron Group 2
+!   idbio(26)     Fecal matter, Nitrogen Group 2
+!   idbio(27)     Fecal matter, Phosphorus Group 2
+!   idbio(28)     Fecal matter, Silica Group 2
+!   idbio(29)     Small diatom, Carbon Group
+!   idbio(30)     Small diatom, Iron Group
+!   idbio(31)     Small diatom, Nitrogen Group
+!   idbio(32)     Small diatom, Phosphorus Group
+!   idbio(33)     Large diatom, Carbon Group
+!   idbio(34)     Large diatom, Iron Group
+!   idbio(35)     Large diatom, Nitrogen Group
+!   idbio(36)     Large diatom, Phosphorus Group
+!   idbio(37)     Large dinoflagellate, Carbon Group
+!   idbio(38)     Large dinoflagellate, Iron Group
+!   idbio(39)     Large dinoflagellate, Nitrogen Group
+!   idbio(40)     Large dinoflagellate, Phosphorus Group
+!   idbio(41)     Synechococcus, Carbon Group
+!   idbio(42)     Synechococcus, Iron Group
+!   idbio(43)     Synechococcus, Nitrogen Group
+!   idbio(44)     Synechococcus, Phosphorus Group
+!   idbio(45)     Small diatom, Silica Group
+!   idbio(46)     Large diatom, Silica Group
+!   idbio(47)     Small diatom, chlorophyll-a
+!   idbio(48)     Large diatom, chlorophyll-a
+!   idbio(49)     Large dinoflagellate, chlorophyll-a
+!   idbio(50)     Synechococcus, chlorophyll-a
+!   idbio(51)     Small diatom, chlorophyll-c
+!   idbio(52)     Large diatom, chlorophyll-c
+!   idbio(53)     Large dinoflagellate, chlorophyll-c
+!   idbio(54)     Small diatom, photosynthetic carotenoids
+!   idbio(55)     Large diatom, photosynthetic carotenoids
+!   idbio(56)     Large dinoflagellate, photosynthetic carotenoids
+!   idbio(57)     Small diatom, photoprotective carotenoids
+!   idbio(58)     Large diatom, photoprotective carotenoids
+!   idbio(59)     Large dinoflagellate, photoprotective carotenoids
+!   idbio(60)     Synechococcus, photoprotective carotenoids
+!   idbio(61)     Synechococcus, high urobilin phycoeurythin carotenoids
+!
 !==============================================================================
 !
 ! EcoSim equations and representative parameters may be found in:
@@ -584,7 +657,7 @@
 !------------------------------------------------------------------------------
 ! Model switches and flags.
 !------------------------------------------------------------------------------
-!  
+!
 !  Lbiology       Switch to control the computation of a particular module
 !                   within nested and/or multiple connected grids. By default
 !                   this switch is set to TRUE in "mod_scalars" for all grids.
@@ -598,7 +671,7 @@
 !  RtUVR_flag     Logical switch (T/F) to calculate CDOC UV photolysis.
 !
 !  NFIX_flag      Logical switch (T/F) to calculate temperature based nitrogen
-!                   fixation. (Not tested at this time; No nitrogen fixation 
+!                   fixation. (Not tested at this time; No nitrogen fixation
 !                   being calculated).
 !
 !  Regen_flag     Logical switch (T/F) to calculate fecal matter regeneration.
@@ -659,7 +732,7 @@
 !                   (micromole_C/micromole_Si).
 !                   << 1.0 denotes no silica used >>
 !
-!  C2SiALGminABS  Absolute minimum phytoplankton C:Si ratio, 
+!  C2SiALGminABS  Absolute minimum phytoplankton C:Si ratio,
 !                  (micromole_C/micromole_Si).
 !                  (1.0 denotes no silica used)
 !
@@ -778,7 +851,7 @@
 !  FecDOC         Proportion of grazing stress which is apportioned to DOM,
 !                   (nondimensional).
 !
-!  FecPEL         Proportion of grazing stress which is apportioned to fecal 
+!  FecPEL         Proportion of grazing stress which is apportioned to fecal
 !                   pellets, (nondimesional).
 !                   [Nphy,Nfec,Ngrids] values are expected.
 !
@@ -835,7 +908,7 @@
 !                   (1/day).
 !                   [Nbac,Ngrids] values are expected.
 !
-!  BacTbase       Phytoplankton temperature base for exponential response to 
+!  BacTbase       Phytoplankton temperature base for exponential response to
 !                   temperature, (Celsius).
 !                   [Nbac,Ngrids] values are expected.
 !
@@ -873,7 +946,7 @@
 !  RtNIT          Maximum nitrification rate,
 !                   (1/day).
 !
-!  HsNIT          Half-saturation constant for bacterial nitrification,  
+!  HsNIT          Half-saturation constant for bacterial nitrification,
 !                   (micromole_NH4/liter).
 !
 !------------------------------------------------------------------------------
@@ -886,10 +959,10 @@
 !                   [Ndom,Ngrids] values are expected.
 !
 !  RtUVR_DIC      UV degradation of DOC into DIC,
-!                   (micromole/meter/liter/hour at 410 nanometer). 
+!                   (micromole/meter/liter/hour at 410 nanometer).
 !
-!  RtUVR_DOC      UV degradation of DOC into colorless labile DOC,  
-!                   (micromole/meter/liter/hour at 410 nanometer). 
+!  RtUVR_DOC      UV degradation of DOC into colorless labile DOC,
+!                   (micromole/meter/liter/hour at 410 nanometer).
 !
 !------------------------------------------------------------------------------
 ! Fecal and detritus Parameters. Unless specified, [Nfec,Ngrids] values are
@@ -921,31 +994,100 @@
 !                   (1/day)
 !
 !------------------------------------------------------------------------------
-! Physical and output parameters. This file is configured for NBT=63.
+! Physical parameters. This file is configured for NBT=61.
 !------------------------------------------------------------------------------
 !
-!  TNU2           Lateral, Laplacian, constant, mixing coefficient (m2/s) for
-!                   biological tracer variables; [1:NBT,1:Ngrids] values are
-!                   expected.  If variable horizontal diffusion is activated,
-!                   TNU2 is the mixing coefficient for the largest grid-cell
-!                   in the domain.
+!  TNU2           Nonlinear model lateral, harmonic, constant, mixing
+!                   coefficient (m2/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, TNU2 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
 !
-!  TNU4           Lateral, biharmonic, constant, mixing coefficient (m4/s) for
-!                   biological tracer variables; [1:NBT,1:Ngrids] values are
-!                   expected.  If variable horizontal diffusion is activated,
-!                   TNU4 is the mixing coefficient for the largest grid-cell
-!                   in the domain.
+!  TNU4           Nonlinear model lateral, biharmonic, constant, mixing
+!                   coefficient (m4/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, TNU4 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  ad_TNU2        Adjoint-based algorithms lateral, harmonic, constant,
+!                   mixing coefficient (m2/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, ad_TNU2 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  ad_TNU4        Adjoint-based algorithms lateral, biharmonic, constant,
+!                   mixing coefficient (m4/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, ad_TNU4 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
 !
 !  AKT_BAK        Background vertical mixing coefficient (m2/s) for biological
 !                   tracer variables, [1:NBT,1:Ngrids] values are expected.
 !
-!  TNUDG           Nudging time scale (days), [1:NBT,1:Ngrids].  Inverse scale
-!                    will be computed internally.
 !
-!  Hout            Logical switches to write out biological tracers into
-!                    output NetCDF files, [1:NBT,1:Ngrids] values are
-!                    expected.
+!  ad_AKT_fac     Adjoint-based algorithms vertical mixing, basic state,
+!                   scale factor (nondimensional) for biological tracer
+!                   variables; [1:NBT,1:Ngrids] values are expected. In
+!                   some applications, a smaller/larger values of vertical
+!                   mixing are necessary for stability. It is only used
+!                   when FORWARD_MIXING is activated.
 !
-!                    Hout(idTvar)     biological tracers
-!                    Hout(idTsur)     biological tracers surface flux
+!  TNUDG          Nudging time scale (days), [1:NBT,1:Ngrids].  Inverse scale
+!                   will be computed internally.
+!
+!------------------------------------------------------------------------------
+!  Tracer point Sources/Sink sources switches.
+!------------------------------------------------------------------------------
+!
+!  LtracerSrc     Logical switches (T/F) to specify which tracer variables
+!                   to consider when the option TS_PSOURCE is activated;
+!                   [1:NBT,1:Ngrids] values are expected.
+!
+!                     LtracerSrc(idbio(  1),ng)
+!                     ...              ...
+!                     LtracerSrc(idbio(NBT),ng)
+!
+!                   Recall that TS_PSOURCE is usually activated to add river
+!                   runoff as a point source. At minimum, it is necessary to
+!                   specify both temperature and salinity for all rivers. The
+!                   other tracers are optional. The user needs to know the
+!                   correspondence between biological variables and indices
+!                   idbio(1:NBT) when activating one or more of these switches.
+!
+!                   This logical switch REPLACES and ELIMINATES the need to
+!                   have or read the variable "river_flag(river)" in the input
+!                   rivers forcing NetCDF file:
+!
+!                     double river_flag(river)
+!                        river_flag:long_name = "river runoff tracer flag"
+!                        river_flag:option_0 = "all tracers are off"
+!                        river_flag:option_1 = "only temperature"
+!                        river_flag:option_2 = "only salinity"
+!                        river_flag:option_3 = "both temperature and salinity"
+!                        river_flag:units = "nondimensional"
+!
+!                   This logic was too cumbersome and complicated when
+!                   additional tracers are considered. However, this change
+!                   is backward compatible.
+!
+!                   The LtracerSrc switch will be used to activate the reading
+!                   of respective tracer variable from input river forcing
+!                   NetCDF file. If you want to add other tracer variables
+!                   (other than temperature and salinity) as a source for a
+!                   particular river(s), you just need to specify such values
+!                   on those river(s). Then, set the values to ZERO on the
+!                   other river(s) that do NOT require such river forcing for
+!                   that tracer. Recall that you need to specify the tracer
+!                   values for all rivers, even if their values are zero.
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of fields into output files.
+!------------------------------------------------------------------------------
+!
+!  Hout             Logical switches to write out biological tracers into
+!                     output NetCDF files, [1:NBT,1:Ngrids] values are
+!                     expected.
+!
+!                      Hout(idTvar)     biological tracers
+!                      Hout(idTsur)     biological tracers surface flux
 !
