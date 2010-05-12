@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_grid.F 790 2008-10-14 19:32:07Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -12,6 +12,10 @@
 !  IJwaterU   Water points IJ couter for   U-points masked variables.  !
 !  IJwaterV   Water points IJ couter for   V-points masked variables.  !
 !  Hz         Thicknesses (m) of vertical RHO-points.                  !
+# ifdef ADJUST_BOUNDARY
+!  Hz_bry     Thicknesses (m) at the open boundaries; used only for    !
+!               4DVAR adjustments.                                     !
+# endif
 !  Huon       Total U-momentum flux term, Hz*u/pn.                     !
 !  Hvom       Total V-momentum flux term, Hz*v/pm.                     !
 !  IcePress   Pressure under the ice shelf at RHO-points.              !
@@ -25,8 +29,6 @@
 !               RHO-points.                                            !
 !  CosAngler  Cosine of curvilinear angle, angler.                     !
 !  SinAngler  Sine of curvilinear angle, angler.                       !
-!  bed_thick0 Sum all initial bed layer thicknesses (m)                !
-!  bed_thick  Instantaneous total bed thickness, 2 time levels (m)     !
 !  dmde       ETA-derivative of inverse metric factor pm,              !
 !               d(1/pm)/d(ETA).                                        !
 !  dndx       XI-derivative  of inverse metric factor pn,              !
@@ -155,11 +157,10 @@
           real(r8), pointer :: yu(:,:)
           real(r8), pointer :: yv(:,:)
 #ifdef SOLVE3D
-# if defined SEDIMENT && defined SED_MORPH
-          real(r8), pointer :: bed_thick0(:,:)
-          real(r8), pointer :: bed_thick(:,:,:)
-# endif
           real(r8), pointer :: Hz(:,:,:)
+# ifdef ADJUST_BOUNDARY
+          real(r8), pointer :: Hz_bry(:,:,:)
+# endif
           real(r8), pointer :: Huon(:,:,:)
           real(r8), pointer :: Hvom(:,:,:)
           real(r8), pointer :: z_r(:,:,:)
@@ -179,15 +180,19 @@
           real(r8), pointer :: vmask(:,:)
 #endif
 #ifdef WET_DRY
-          real(r8), pointer :: rmask_wet(:,:)
-          real(r8), pointer :: umask_wet(:,:)
-          real(r8), pointer :: vmask_wet(:,:)
 # ifdef SOLVE3D
           real(r8), pointer :: rmask_wet_avg(:,:)
 # endif
+          real(r8), pointer :: rmask_full(:,:)
+          real(r8), pointer :: rmask_wet(:,:)
+          real(r8), pointer :: umask_full(:,:)
+          real(r8), pointer :: umask_wet(:,:)
+          real(r8), pointer :: vmask_full(:,:)
+          real(r8), pointer :: vmask_wet(:,:)
 #endif
-#if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SO_SEMI
+#if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+    defined SO_SEMI
           real(r8), pointer :: Rscope(:,:)
           real(r8), pointer :: Uscope(:,:)
           real(r8), pointer :: Vscope(:,:)
@@ -198,11 +203,10 @@
 !
           real(r8), pointer :: tl_h(:,:)
 # ifdef SOLVE3D
-#  if defined SEDIMENT && defined SED_MORPH
-          real(r8), pointer :: tl_bed_thick0(:,:)
-          real(r8), pointer :: tl_bed_thick(:,:,:)
-#  endif
           real(r8), pointer :: tl_Hz(:,:,:)
+#  ifdef ADJUST_BOUNDARY
+          real(r8), pointer :: tl_Hz_bry(:,:,:)
+#  endif
           real(r8), pointer :: tl_Huon(:,:,:)
           real(r8), pointer :: tl_Hvom(:,:,:)
           real(r8), pointer :: tl_z_r(:,:,:)
@@ -216,78 +220,23 @@
 !
           real(r8), pointer :: ad_h(:,:)
 # ifdef SOLVE3D
-#  if defined SEDIMENT && defined SED_MORPH
-          real(r8), pointer :: ad_bed_thick0(:,:)
-          real(r8), pointer :: ad_bed_thick(:,:,:)
-#  endif
           real(r8), pointer :: ad_Hz(:,:,:)
+#  ifdef ADJUST_BOUNDARY
+          real(r8), pointer :: ad_Hz_bry(:,:,:)
+#  endif
           real(r8), pointer :: ad_Huon(:,:,:)
           real(r8), pointer :: ad_Hvom(:,:,:)
           real(r8), pointer :: ad_z_r(:,:,:)
           real(r8), pointer :: ad_z_w(:,:,:)
 # endif
 #endif
-#ifdef REFINED_GRID
-!         IF (ng.gt.1) THEN
-            real(r8), pointer :: angler_p(:,:)
-            real(r8), pointer :: h_p(:,:)
-            real(r8), pointer :: latp_p(:,:)
-            real(r8), pointer :: latr_p(:,:)
-            real(r8), pointer :: latu_p(:,:)
-            real(r8), pointer :: latv_p(:,:)
-            real(r8), pointer :: lonp_p(:,:)
-            real(r8), pointer :: lonr_p(:,:)
-            real(r8), pointer :: lonu_p(:,:)
-            real(r8), pointer :: lonv_p(:,:)
-            real(r8), pointer :: xp_p(:,:)
-            real(r8), pointer :: xr_p(:,:)
-            real(r8), pointer :: xu_p(:,:)
-            real(r8), pointer :: xv_p(:,:)
-            real(r8), pointer :: yp_p(:,:)
-            real(r8), pointer :: yr_p(:,:)
-            real(r8), pointer :: yu_p(:,:)
-            real(r8), pointer :: yv_p(:,:)
-# ifdef MASKING
-            real(r8), pointer :: rmask_p(:,:)
-            real(r8), pointer :: umask_p(:,:)
-            real(r8), pointer :: vmask_p(:,:)
-# endif
-!         END IF
-!
-!         IF (ng.lt.NestedGrids) THEN
-            real(r8), pointer :: angler_c(:,:)
-            real(r8), pointer :: h_c(:,:)
-            real(r8), pointer :: latp_c(:,:)
-            real(r8), pointer :: latr_c(:,:)
-            real(r8), pointer :: latu_c(:,:)
-            real(r8), pointer :: latv_c(:,:)
-            real(r8), pointer :: lonp_c(:,:)
-            real(r8), pointer :: lonr_c(:,:)
-            real(r8), pointer :: lonu_c(:,:)
-            real(r8), pointer :: lonv_c(:,:)
-            real(r8), pointer :: xp_c(:,:)
-            real(r8), pointer :: xr_c(:,:)
-            real(r8), pointer :: xu_c(:,:)
-            real(r8), pointer :: xv_c(:,:)
-            real(r8), pointer :: yp_c(:,:)
-            real(r8), pointer :: yr_c(:,:)
-            real(r8), pointer :: yu_c(:,:)
-            real(r8), pointer :: yv_c(:,:)
-# ifdef MASKING
-            real(r8), pointer :: rmask_c(:,:)
-            real(r8), pointer :: umask_c(:,:)
-            real(r8), pointer :: vmask_c(:,:)
-# endif
-!         END IF
-#endif
-
         END TYPE T_GRID
 
         TYPE (T_GRID), allocatable :: GRID(:)
 
       CONTAINS
 
-      SUBROUTINE allocate_grid (ng, LBi, UBi, LBj, UBj)
+      SUBROUTINE allocate_grid (ng, LBi, UBi, LBj, UBj, LBij, UBij)
 !
 !=======================================================================
 !                                                                      !
@@ -300,12 +249,7 @@
 !
 !  Local variable declarations.
 !
-      integer, intent(in) :: ng, LBi, UBi, LBj, UBj
-#ifdef REFINED_GRID
-      integer :: ngp, ngc
-      ngp=myparent(ng)
-      ngc=mychild(ng)
-#endif
+      integer, intent(in) :: ng, LBi, UBi, LBj, UBj, LBij, UBij
 !
 !-----------------------------------------------------------------------
 !  Allocate and initialize module variables.
@@ -373,11 +317,10 @@
       allocate ( GRID(ng) % yv(LBi:UBi,LBj:UBj) )
 
 #ifdef SOLVE3D
-# if defined SEDIMENT && defined SED_MORPH
-      allocate ( GRID(ng) % bed_thick0(LBi:UBi,LBj:UBj) )
-      allocate ( GRID(ng) % bed_thick(LBi:UBi,LBj:UBj,1:2) )
-# endif
       allocate ( GRID(ng) % Hz(LBi:UBi,LBj:UBj,N(ng)) )
+# ifdef ADJUST_BOUNDARY
+      allocate ( GRID(ng) % Hz_bry(LBij:UBij,N(ng),4) )
+# endif
       allocate ( GRID(ng) % Huon(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( GRID(ng) % Hvom(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( GRID(ng) % z_r(LBi:UBi,LBj:UBj,N(ng)) )
@@ -401,16 +344,20 @@
 #endif
 
 #ifdef WET_DRY
-      allocate ( GRID(ng) % rmask_wet(LBi:UBi,LBj:UBj) )
-      allocate ( GRID(ng) % umask_wet(LBi:UBi,LBj:UBj) )
-      allocate ( GRID(ng) % vmask_wet(LBi:UBi,LBj:UBj) )
 # ifdef SOLVE3D
       allocate ( GRID(ng) % rmask_wet_avg(LBi:UBi,LBj:UBj) )
 # endif
+      allocate ( GRID(ng) % rmask_full(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % rmask_wet(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % umask_full(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % umask_wet(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % vmask_full(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % vmask_wet(LBi:UBi,LBj:UBj) )
 #endif
 
-#if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SO_SEMI
+#if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+    defined SO_SEMI
       allocate ( GRID(ng) % Rscope(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % Uscope(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % Vscope(LBi:UBi,LBj:UBj) )
@@ -422,11 +369,10 @@
 !
       allocate ( GRID(ng) % tl_h(LBi:UBi,LBj:UBj) )
 # ifdef SOLVE3D
-#  if defined SEDIMENT && defined SED_MORPH
-      allocate ( GRID(ng) % tl_bed_thick0(LBi:UBi,LBj:UBj) )
-      allocate ( GRID(ng) % tl_bed_thick(LBi:UBi,LBj:UBj,1:2) )
-#  endif
       allocate ( GRID(ng) % tl_Hz(LBi:UBi,LBj:UBj,N(ng)) )
+#  ifdef ADJUST_BOUNDARY
+      allocate ( GRID(ng) % tl_Hz_bry(LBij:UBij,N(ng),4) )
+#  endif
       allocate ( GRID(ng) % tl_Huon(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( GRID(ng) % tl_Hvom(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( GRID(ng) % tl_z_r(LBi:UBi,LBj:UBj,N(ng)) )
@@ -441,64 +387,14 @@
       allocate ( GRID(ng) % ad_h(LBi:UBi,LBj:UBj) )
 # ifdef SOLVE3D
       allocate ( GRID(ng) % ad_Hz(LBi:UBi,LBj:UBj,N(ng)) )
+#  ifdef ADJUST_BOUNDARY
+      allocate ( GRID(ng) % ad_Hz_bry(LBij:UBij,N(ng),4) )
+#  endif
       allocate ( GRID(ng) % ad_Huon(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( GRID(ng) % ad_Hvom(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( GRID(ng) % ad_z_r(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( GRID(ng) % ad_z_w(LBi:UBi,LBj:UBj,0:N(ng)) )
 # endif
-#endif
-
-#ifdef REFINED_GRID
-      IF (ng.gt.1) THEN
-        allocate ( GRID(ng) % angler_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % h_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % latp_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % latr_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % latu_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % latv_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % lonp_p(XI_DIMp,ETA_DIMp))
-        allocate ( GRID(ng) % lonr_p(XI_DIMp,ETA_DIMp))
-        allocate ( GRID(ng) % lonu_p(XI_DIMp,ETA_DIMp))
-        allocate ( GRID(ng) % lonv_p(XI_DIMp,ETA_DIMp))
-        allocate ( GRID(ng) % xp_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % xr_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % xu_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % xv_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % yp_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % yr_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % yu_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % yv_p(XI_DIMp,ETA_DIMp) )
-# ifdef MASKING
-        allocate ( GRID(ng) % rmask_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % umask_p(XI_DIMp,ETA_DIMp) )
-        allocate ( GRID(ng) % vmask_p(XI_DIMp,ETA_DIMp) )
-# endif
-      END IF
-      IF (ng.lt.NestedGrids) THEN
-        allocate ( GRID(ng) % angler_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % h_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % latp_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % latr_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % latu_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % latv_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % lonp_c(XI_DIMc,ETA_DIMc))
-        allocate ( GRID(ng) % lonr_c(XI_DIMc,ETA_DIMc))
-        allocate ( GRID(ng) % lonu_c(XI_DIMc,ETA_DIMc))
-        allocate ( GRID(ng) % lonv_c(XI_DIMc,ETA_DIMc))
-        allocate ( GRID(ng) % xp_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % xr_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % xu_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % xv_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % yp_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % yr_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % yu_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % yv_c(XI_DIMc,ETA_DIMc) )
-# ifdef MASKING
-        allocate ( GRID(ng) % rmask_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % umask_c(XI_DIMc,ETA_DIMc) )
-        allocate ( GRID(ng) % vmask_c(XI_DIMc,ETA_DIMc) )
-# endif
-      END IF
 #endif
 
       RETURN
@@ -528,47 +424,40 @@
       integer :: i, j
 #ifdef SOLVE3D
       integer :: k
-#endif 
-#ifdef REFINED_GRID
-      integer :: ngp, ngc
 #endif
 
       real(r8), parameter :: IniVal = 0.0_r8
-!
-#include "tile.h"
+
+#include "set_bounds.h"
 !
 !  Set array initialization range.
 !
 #ifdef _OPENMP
       IF (WESTERN_EDGE) THEN
-        Imin=LBi
+        Imin=BOUNDS(ng)%LBi(tile)
       ELSE
         Imin=Istr
       END IF
       IF (EASTERN_EDGE) THEN
-        Imax=UBi
+        Imax=BOUNDS(ng)%UBi(tile)
       ELSE
         Imax=Iend
       END IF
       IF (SOUTHERN_EDGE) THEN
-        Jmin=LBj
+        Jmin=BOUNDS(ng)%LBj(tile)
       ELSE
         Jmin=Jstr
       END IF
       IF (NORTHERN_EDGE) THEN
-        Jmax=UBj
+        Jmax=BOUNDS(ng)%UBj(tile)
       ELSE
         Jmax=Jend
       END IF
 #else
-      Imin=LBi
-      Imax=UBi
-      Jmin=LBj
-      Jmax=UBj
-#endif
-#ifdef REFINED_GRID
-      ngp=myparent(ng)
-      ngc=mychild(ng)
+      Imin=BOUNDS(ng)%LBi(tile)
+      Imax=BOUNDS(ng)%UBi(tile)
+      Jmin=BOUNDS(ng)%LBj(tile)
+      Jmax=BOUNDS(ng)%UBj(tile)
 #endif
 !
 !-----------------------------------------------------------------------
@@ -653,16 +542,20 @@
 #endif
 
 #ifdef WET_DRY
-            GRID(ng) % rmask_wet(i,j) = IniVal
-            GRID(ng) % umask_wet(i,j) = IniVal
-            GRID(ng) % vmask_wet(i,j) = IniVal
 # ifdef SOLVE3D
             GRID(ng) % rmask_wet_avg(i,j) = IniVal
 # endif
+            GRID(ng) % rmask_full(i,j) = 1.0_r8
+            GRID(ng) % rmask_wet(i,j) = IniVal
+            GRID(ng) % umask_full(i,j) = 1.0_r8
+            GRID(ng) % umask_wet(i,j) = IniVal
+            GRID(ng) % vmask_full(i,j) = 1.0_r8
+            GRID(ng) % vmask_wet(i,j) = IniVal
 #endif
 
-#if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SO_SEMI
+#if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+    defined SO_SEMI
             GRID(ng) % Rscope(i,j) = IniVal
             GRID(ng) % Uscope(i,j) = IniVal
             GRID(ng) % Vscope(i,j) = IniVal
@@ -670,13 +563,6 @@
           END DO
 
 #ifdef SOLVE3D
-# if defined SEDIMENT && defined SED_MORPH
-          DO i=Imin,Imax
-            GRID(ng) % bed_thick0(i,j) = IniVal
-            GRID(ng) % bed_thick(i,j,1) = IniVal
-            GRID(ng) % bed_thick(i,j,2) = IniVal
-          END DO
-# endif
           DO k=1,N(ng)
             DO i=Imin,Imax
               GRID(ng) % Hz(i,j,k) = IniVal
@@ -695,6 +581,9 @@
           END DO
 #endif
         END DO
+#if defined ADJUST_BOUNDARY && defined SOLVE3D
+        GRID(ng) % Hz_bry = IniVal
+#endif
       END IF
 
 #if defined TANGENT || defined TL_IOMS
@@ -707,13 +596,6 @@
             GRID(ng) % tl_h(i,j) = IniVal
           END DO
 # ifdef SOLVE3D
-#  if defined SEDIMENT && defined SED_MORPH
-          DO i=Imin,Imax
-            GRID(ng) % tl_bed_thick0(i,j) = IniVal
-            GRID(ng) % tl_bed_thick(i,j,1) = IniVal
-            GRID(ng) % tl_bed_thick(i,j,2) = IniVal
-          END DO
-#  endif
           DO k=1,N(ng)
             DO i=Imin,Imax
               GRID(ng) % tl_Hz(i,j,k) = IniVal
@@ -726,9 +608,12 @@
             DO i=Imin,Imax
               GRID(ng) % tl_z_w(i,j,k) = IniVal
             END DO
-          END DO          
+          END DO
 # endif
         END DO
+# if defined ADJUST_BOUNDARY && defined SOLVE3D
+        GRID(ng) % tl_Hz_bry = IniVal
+# endif
       END IF
 #endif
 
@@ -742,13 +627,6 @@
             GRID(ng) % ad_h(i,j) = IniVal
           END DO
 # ifdef SOLVE3D
-#  if defined SEDIMENT && defined SED_MORPH
-          DO i=Imin,Imax
-            GRID(ng) % ad_bed_thick0(i,j) = IniVal
-            GRID(ng) % ad_bed_thick(i,j,1) = IniVal
-            GRID(ng) % ad_bed_thick(i,j,2) = IniVal
-          END DO
-#  endif
           DO k=1,N(ng)
             DO i=Imin,Imax
               GRID(ng) % ad_Hz(i,j,k) = IniVal
@@ -764,66 +642,9 @@
           END DO
 # endif
         END DO
-      END IF
-#endif
-
-#ifdef REFINED_GRID
-      IF (ng.gt.1) THEN
-        DO j=LOWER_BOUND_Jp,UPPER_BOUND_Jp
-          DO i=LOWER_BOUND_Ip,UPPER_BOUND_Ip
-            GRID(ng) % angler_p(i,j) = IniVal
-            GRID(ng) % h_p(i,j) = IniVal
-            GRID(ng) % latp_p(i,j) = IniVal
-            GRID(ng) % latr_p(i,j) = IniVal
-            GRID(ng) % latu_p(i,j) = IniVal
-            GRID(ng) % latv_p(i,j) = IniVal
-            GRID(ng) % lonp_p(i,j) = IniVal
-            GRID(ng) % lonr_p(i,j) = IniVal
-            GRID(ng) % lonu_p(i,j) = IniVal
-            GRID(ng) % lonv_p(i,j) = IniVal
-            GRID(ng) % xp_p(i,j) = IniVal
-            GRID(ng) % xr_p(i,j) = IniVal
-            GRID(ng) % xu_p(i,j) = IniVal
-            GRID(ng) % xv_p(i,j) = IniVal
-            GRID(ng) % yp_p(i,j) = IniVal
-            GRID(ng) % yu_p(i,j) = IniVal
-            GRID(ng) % yv_p(i,j) = IniVal
-#ifdef MASKING
-            GRID(ng) % rmask_p(i,j) = IniVal
-            GRID(ng) % umask_p(i,j) = IniVal
-            GRID(ng) % vmask_p(i,j) = IniVal
-#endif
-          END DO
-        END DO
-      END IF
-!
-      IF (ng.lt.NestedGrids) THEN
-        DO j=LOWER_BOUND_Jc,UPPER_BOUND_Jc
-          DO i=LOWER_BOUND_Ic,UPPER_BOUND_Ic
-            GRID(ng) % angler_c(i,j) = IniVal
-            GRID(ng) % h_c(i,j) = IniVal
-            GRID(ng) % latp_c(i,j) = IniVal
-            GRID(ng) % latr_c(i,j) = IniVal
-            GRID(ng) % latu_c(i,j) = IniVal
-            GRID(ng) % latv_c(i,j) = IniVal
-            GRID(ng) % lonp_c(i,j) = IniVal
-            GRID(ng) % lonr_c(i,j) = IniVal
-            GRID(ng) % lonu_c(i,j) = IniVal
-            GRID(ng) % lonv_c(i,j) = IniVal
-            GRID(ng) % xp_c(i,j) = IniVal
-            GRID(ng) % xr_c(i,j) = IniVal
-            GRID(ng) % xu_c(i,j) = IniVal
-            GRID(ng) % xv_c(i,j) = IniVal
-            GRID(ng) % yp_c(i,j) = IniVal
-            GRID(ng) % yu_c(i,j) = IniVal
-            GRID(ng) % yv_c(i,j) = IniVal
-#ifdef MASKING
-            GRID(ng) % rmask_c(i,j) = IniVal
-            GRID(ng) % umask_c(i,j) = IniVal
-            GRID(ng) % vmask_c(i,j) = IniVal
-#endif
-          END DO
-        END DO
+# if defined ADJUST_BOUNDARY && defined SOLVE3D
+        GRID(ng) % ad_Hz_bry = IniVal
+# endif
       END IF
 #endif
 

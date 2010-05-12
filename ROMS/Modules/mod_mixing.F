@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_mixing.F 737 2008-09-07 02:06:44Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -116,6 +116,8 @@
 !  Syy          3D Nearshore horizontal radiation stress, xx-component.!
 !  Szx          3D Nearshore vertical radiation stress, xx-component.  !
 !  Szy          3D Nearshore vertical radiation stress, xx-component.  !
+#endif
+#ifdef NEARSHORE
 !  rustr2d      2D radiation stress tensor in Xi-direction.            !
 !  rvstr2d      2D radiation stress tensor in ETA-direction.           !
 !  rustr3d      3D radiation stress tensor in Xi-direction.            !
@@ -157,26 +159,32 @@
           real(r8), pointer :: visc4_p(:,:)
           real(r8), pointer :: visc4_r(:,:)
 #endif
-# ifdef VISC_3DCOEF
-#  ifdef UV_U3ADV_SPLIT
+#ifdef VISC_3DCOEF
+# ifdef UV_U3ADV_SPLIT
           real(r8), pointer :: Uvis3d_r(:,:,:)
           real(r8), pointer :: Vvis3d_r(:,:,:)
-#  else
+# else
           real(r8), pointer :: visc3d_r(:,:,:)
-#  endif
 # endif
+#endif
 #ifdef NEARSHORE_MELLOR
           real(r8), pointer :: Sxx_bar(:,:)
           real(r8), pointer :: Sxy_bar(:,:)
           real(r8), pointer :: Syy_bar(:,:)
+#endif
+#ifdef NEARSHORE
           real(r8), pointer :: rustr2d(:,:)
           real(r8), pointer :: rvstr2d(:,:)
-# ifdef SOLVE3D
+#endif
+#ifdef SOLVE3D
+# ifdef NEARSHORE_MELLOR
           real(r8), pointer :: Sxx(:,:,:)
           real(r8), pointer :: Sxy(:,:,:)
           real(r8), pointer :: Syy(:,:,:)
           real(r8), pointer :: Szx(:,:,:)
           real(r8), pointer :: Szy(:,:,:)
+# endif
+# ifdef NEARSHORE
           real(r8), pointer :: rustr3d(:,:,:)
           real(r8), pointer :: rvstr3d(:,:,:)
 # endif
@@ -364,7 +372,7 @@
         TYPE (T_MIXING), allocatable :: MIXING(:)
 
       CONTAINS
-        
+
       SUBROUTINE allocate_mixing (ng, LBi, UBi, LBj, UBj)
 !
 !=======================================================================
@@ -385,7 +393,7 @@
 !-----------------------------------------------------------------------
 !
       IF (ng.eq.1) allocate ( MIXING(Ngrids) )
-! 
+!
 !  Nonlinear model state.
 !
 #if defined UV_VIS2 || !defined SOLVE3D
@@ -412,14 +420,20 @@
       allocate ( MIXING(ng) % Sxx_bar(LBi:UBi,LBj:UBj) )
       allocate ( MIXING(ng) % Sxy_bar(LBi:UBi,LBj:UBj) )
       allocate ( MIXING(ng) % Syy_bar(LBi:UBi,LBj:UBj) )
+#endif
+#ifdef NEARSHORE
       allocate ( MIXING(ng) % rustr2d(LBi:UBi,LBj:UBj) )
       allocate ( MIXING(ng) % rvstr2d(LBi:UBi,LBj:UBj) )
-# ifdef SOLVE3D
+#endif
+#ifdef SOLVE3D
+# ifdef NEARSHORE_MELLOR
       allocate ( MIXING(ng) % Sxx(LBi:UBi,LBj:UBj,1:N(ng)) )
       allocate ( MIXING(ng) % Sxy(LBi:UBi,LBj:UBj,1:N(ng)) )
       allocate ( MIXING(ng) % Syy(LBi:UBi,LBj:UBj,1:N(ng)) )
       allocate ( MIXING(ng) % Szx(LBi:UBi,LBj:UBj,1:N(ng)) )
       allocate ( MIXING(ng) % Szy(LBi:UBi,LBj:UBj,1:N(ng)) )
+# endif
+# ifdef NEARSHORE
       allocate ( MIXING(ng) % rustr3d(LBi:UBi,LBj:UBj,1:N(ng)) )
       allocate ( MIXING(ng) % rvstr3d(LBi:UBi,LBj:UBj,1:N(ng)) )
 # endif
@@ -667,37 +681,37 @@
 
       real(r8), parameter :: IniVal = 0.0_r8
       real(r8) :: cff1, cff2, cff3, cff4
-!
-#include "tile.h"
+
+#include "set_bounds.h"
 !
 !  Set array initialization range.
 !
 #ifdef _OPENMP
       IF (WESTERN_EDGE) THEN
-        Imin=LBi
+        Imin=BOUNDS(ng)%LBi(tile)
       ELSE
         Imin=Istr
       END IF
       IF (EASTERN_EDGE) THEN
-        Imax=UBi
+        Imax=BOUNDS(ng)%UBi(tile)
       ELSE
         Imax=Iend
       END IF
       IF (SOUTHERN_EDGE) THEN
-        Jmin=LBj
+        Jmin=BOUNDS(ng)%LBj(tile)
       ELSE
         Jmin=Jstr
       END IF
       IF (NORTHERN_EDGE) THEN
-        Jmax=UBj
+        Jmax=BOUNDS(ng)%UBj(tile)
       ELSE
         Jmax=Jend
       END IF
 #else
-      Imin=LBi
-      Imax=UBi
-      Jmin=LBj
-      Jmax=UBj
+      Imin=BOUNDS(ng)%LBi(tile)
+      Imax=BOUNDS(ng)%UBi(tile)
+      Jmin=BOUNDS(ng)%LBj(tile)
+      Jmax=BOUNDS(ng)%UBj(tile)
 #endif
 !
 !-----------------------------------------------------------------------
@@ -710,14 +724,14 @@
         DO j=Jmin,Jmax
 #if defined UV_VIS2 || !defined SOLVE3D
           DO i=Imin,Imax
-            MIXING(ng) % visc2_p(i,j) = visc2(ng)
-            MIXING(ng) % visc2_r(i,j) = visc2(ng)
+            MIXING(ng) % visc2_p(i,j) = IniVal
+            MIXING(ng) % visc2_r(i,j) = IniVal
           END DO
 #endif
 #ifdef UV_VIS4
           DO i=Imin,Imax
-            MIXING(ng) % visc4_p(i,j) = visc4(ng)
-            MIXING(ng) % visc4_r(i,j) = visc4(ng)
+            MIXING(ng) % visc4_p(i,j) = IniVal
+            MIXING(ng) % visc4_r(i,j) = IniVal
           END DO
 #endif
 #ifdef SOLVE3D
@@ -735,38 +749,42 @@
           END DO
 # endif
 #endif
-#ifdef NEARSHORE_MELLOR
+#ifdef NEARSHORE
           DO i=Imin,Imax
+# ifdef NEARSHORE_MELLOR
             MIXING(ng) % Sxx_bar(i,j) = IniVal
             MIXING(ng) % Sxy_bar(i,j) = IniVal
             MIXING(ng) % Syy_bar(i,j) = IniVal
+# endif
             MIXING(ng) % rustr2d(i,j) = IniVal
             MIXING(ng) % rvstr2d(i,j) = IniVal
 # ifdef SOLVE3D
             DO k=1,N(ng)
+#  ifdef NEARSHORE_MELLOR
               MIXING(ng) % Sxx(i,j,k) = IniVal
               MIXING(ng) % Sxy(i,j,k) = IniVal
               MIXING(ng) % Syy(i,j,k) = IniVal
               MIXING(ng) % Szx(i,j,k) = IniVal
               MIXING(ng) % Szy(i,j,k) = IniVal
+#  endif
               MIXING(ng) % rustr3d(i,j,k) = IniVal
               MIXING(ng) % rvstr3d(i,j,k) = IniVal
             END DO
-#endif
+# endif
           END DO
 #endif
 #ifdef SOLVE3D
 # ifdef TS_DIF2
           DO itrc=1,NT(ng)
             DO i=Imin,Imax
-              MIXING(ng) % diff2(i,j,itrc) = tnu2(itrc,ng)
+              MIXING(ng) % diff2(i,j,itrc) = IniVal
             END DO
           END DO
 # endif
 # ifdef TS_DIF4
           DO itrc=1,NT(ng)
             DO i=Imin,Imax
-              MIXING(ng) % diff4(i,j,itrc) = tnu4(itrc,ng)
+              MIXING(ng) % diff4(i,j,itrc) = IniVal
             END DO
           END DO
 # endif
@@ -905,7 +923,7 @@
              MIXING(ng) % Kh(i,j) = 1.0_r8
           END DO
 # ifdef SOLVE3D
-          DO k=0,N(ng)           
+          DO k=0,N(ng)
             DO i=Imin,Imax
               MIXING(ng) % Kv(i,j,k) = 1.0_r8
             END DO
@@ -959,7 +977,7 @@
             END DO
           END DO
 #  endif
-          DO k=0,N(ng)           
+          DO k=0,N(ng)
             DO i=Imin,Imax
               MIXING(ng) % tl_Akv(i,j,k) = IniVal
             END DO
@@ -1049,7 +1067,7 @@
             END DO
           END DO
 #  endif
-          DO k=0,N(ng)           
+          DO k=0,N(ng)
             DO i=Imin,Imax
               MIXING(ng) % ad_Akv(i,j,k) = IniVal
             END DO

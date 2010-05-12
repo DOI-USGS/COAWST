@@ -4,7 +4,7 @@
 !
 !svn $Id: mod_tides.F 737 2008-09-07 02:06:44Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -134,15 +134,9 @@
       USE mod_parallel
       USE mod_iounits
       USE mod_ncparam
+      USE mod_netcdf
       USE mod_scalars
-
-# ifdef DISTRIBUTE
-!
-      USE distribute_mod, ONLY : mp_bcasti
-#  if defined AVERAGES_DETIDE && defined AVERAGES
-      USE distribute_mod, ONLY : mp_bcastl
-#  endif
-# endif
+      USE mod_stepping
 !
 ! Inported variable declarations.
 !
@@ -150,39 +144,60 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, Nrec, nvd, Vsize(4)
+      logical :: foundit
+
+      integer :: Vid, i, ifile, mg, nvatt, nvdim
 !
 !-----------------------------------------------------------------------
 !  Allocate module variables.
 !-----------------------------------------------------------------------
 !
-      IF (ng.eq.1) allocate ( TIDES(Ngrids) )
-!
 !  Inquire about the maximum number of tidal components.
 !
       IF (ng.eq.1) THEN
-        IF (InpThread) THEN
-          CALL opencdf (ng, nFfiles(ng), FRCname(1,ng), ncfile, N(ng),  &
-     &                  idTper, Nrec, nvd, Vsize)
-          MTC=Vsize(1)
+        MTC=0
+        DO mg=1,Ngrids
+
+          foundit=.FALSE.
+
+          QUERY : DO ifile=1,nFfiles(mg)
+            CALL netcdf_inq_var (ng, iNLM, FRCname(ifile,mg),           &
+     &                           MyVarName = TRIM(Vname(1,idTper)),     &
+     &                           SearchVar = foundit,                   &
+     &                           VarID = Vid,                           &
+     &                           nVardim = nvdim,                       &
+     &                           nVarAtt = nvatt)
+            IF (exit_flag.ne.NoError) RETURN
+
 # if defined AVERAGES_DETIDE && defined AVERAGES
 !
 !  Check if detiding variables are available and set definition switch.
 !
-          DO i=1,nvars
-            IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idFsuH))) THEN
-              LdefTIDE(ng)=.FALSE.
+            IF (foundit) THEN
+              DO i=1,n_var
+                IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idFsuH))) THEN
+                  LdefTIDE(ng)=.FALSE.
+                END IF
+              END DO
+            ENDIF
+# endif
+!
+!  Set maximun numbert of tidal components.
+!
+            IF (foundit) THEN
+              MTC=MAX(MTC,var_Dsize(1))              ! first dimension
+              NTC(mg)=var_Dsize(1)
+              TIDEname(ng)=TRIM(FRCname(ifile,mg))
+              EXIT QUERY
             END IF
-          END DO
-# endif
-        END IF
-# ifdef DISTRIBUTE
-        CALL mp_bcasti (ng, iNLM, MTC, 1)
-#  if defined AVERAGES_DETIDE && defined AVERAGES
-        CALL mp_bcastl (ng, iNLM, LdefTIDE, Ngrids)
-#  endif
-# endif
+          END DO QUERY
+
+        END DO
       END IF
+!
+!  Allocate structure.
+!
+      IF (ng.eq.1) allocate ( TIDES(Ngrids) )
 !
 !  Allocate tidal forcing variables.
 !
@@ -257,38 +272,38 @@
       integer :: i, itide, j, jtide, k
 
       real(r8), parameter :: IniVal = 0.0_r8
-!
-# include "tile.h"
+
+# include "set_bounds.h"
 !
 !  Set array initialization range.
 !
-#ifdef _OPENMP
+# ifdef _OPENMP
       IF (WESTERN_EDGE) THEN
-        Imin=LBi
+        Imin=BOUNDS(ng)%LBi(tile)
       ELSE
         Imin=Istr
       END IF
       IF (EASTERN_EDGE) THEN
-        Imax=UBi
+        Imax=BOUNDS(ng)%UBi(tile)
       ELSE
         Imax=Iend
       END IF
       IF (SOUTHERN_EDGE) THEN
-        Jmin=LBj
+        Jmin=BOUNDS(ng)%LBj(tile)
       ELSE
         Jmin=Jstr
       END IF
       IF (NORTHERN_EDGE) THEN
-        Jmax=UBj
+        Jmax=BOUNDS(ng)%UBj(tile)
       ELSE
         Jmax=Jend
       END IF
-#else
-      Imin=LBi
-      Imax=UBi
-      Jmin=LBj
-      Jmax=UBj
-#endif
+# else
+      Imin=BOUNDS(ng)%LBi(tile)
+      Imax=BOUNDS(ng)%UBi(tile)
+      Jmin=BOUNDS(ng)%LBj(tile)
+      Jmax=BOUNDS(ng)%UBj(tile)
+# endif
 !
 !-----------------------------------------------------------------------
 !  Initialize module variables.

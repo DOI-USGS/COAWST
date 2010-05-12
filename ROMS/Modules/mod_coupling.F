@@ -4,7 +4,7 @@
 !
 !svn $Id: mod_coupling.F 737 2008-09-07 02:06:44Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -208,38 +208,38 @@
       integer :: i, j
 
       real(r8), parameter :: IniVal = 0.0_r8
-!
-# include "tile.h"
+
+# include "set_bounds.h"
 !
 !  Set array initialization range.
 !
-#ifdef _OPENMP
+# ifdef _OPENMP
       IF (WESTERN_EDGE) THEN
-        Imin=LBi
+        Imin=BOUNDS(ng)%LBi(tile)
       ELSE
         Imin=Istr
       END IF
       IF (EASTERN_EDGE) THEN
-        Imax=UBi
+        Imax=BOUNDS(ng)%UBi(tile)
       ELSE
         Imax=Iend
       END IF
       IF (SOUTHERN_EDGE) THEN
-        Jmin=LBj
+        Jmin=BOUNDS(ng)%LBj(tile)
       ELSE
         Jmin=Jstr
       END IF
       IF (NORTHERN_EDGE) THEN
-        Jmax=UBj
+        Jmax=BOUNDS(ng)%UBj(tile)
       ELSE
         Jmax=Jend
       END IF
-#else
-      Imin=LBi
-      Imax=UBi
-      Jmin=LBj
-      Jmax=UBj
-#endif
+# else
+      Imin=BOUNDS(ng)%LBi(tile)
+      Imax=BOUNDS(ng)%UBi(tile)
+      Jmin=BOUNDS(ng)%LBj(tile)
+      Jmax=BOUNDS(ng)%UBj(tile)
+# endif
 !
 !-----------------------------------------------------------------------
 !  Initialize module variables.

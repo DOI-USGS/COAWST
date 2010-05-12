@@ -3,12 +3,15 @@
 !
 !svn $Id: mod_scalars.F 787 2008-10-14 00:37:50Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !
         USE mod_param
+#ifdef NO_4BYTE_REALS
+        USE netcdf
+#endif
 !
         implicit none
 !
@@ -16,16 +19,20 @@
 ! Multiple grid structure.
 !-----------------------------------------------------------------------
 !
+#if defined READ_WATER && defined MASKING && defined DISTRIBUTE
 !    IJwater       IJ-indices of water points.
+#endif
 !    Lstate        Logical switches to control computations of the
 !                    model state.
 !    SOstate       Logical switches to control computations of the
 !                    stochastic optimals.
+#ifdef STATIONS
 !    Sflag         Station extraction special flag:
 !                    Sflag = 0  => locations in terms of (I,J) pairs.
 !                    Sflag = 1  => locations in terms of (lon,lat) pairs.
 !    SposX         Longitude or frational I-coordinate station location.
 !    SposY         Latitude  or frational J-coordinate station location.
+#endif
 !    Cs_r          Set of S-curves used to stretch the vertical grid
 !                    that follows the bathymetry at vertical RHO-points.
 !    Cs_w          Set of S-curves used to stretch the vertical grid
@@ -66,113 +73,6 @@
 #ifdef T_PASSIVE
         integer, pointer :: inert(:)  ! inert tracers
 #endif
-#ifdef SEDIMENT
-        integer, pointer :: idsed(:)  ! Cohesive and non-cohesive
-        integer, pointer :: idmud(:)  ! Cohesive sediment
-        integer, pointer :: isand(:)  ! Non-cohesive sediment
-#endif
-#if defined NPZD_FRANKS || defined NPZD_POWELL
-        integer, pointer :: idbio(:)  ! Biological tracers
-        integer :: iNO3_              ! Nitrate concentration
-        integer :: iPhyt              ! Phytoplankton concentration
-        integer :: iZoop              ! Zooplankton concentration
-        integer :: iSDet              ! Small detritus concentration
-#endif
-#ifdef BIO_FASHAM
-        integer, pointer :: idbio(:)  ! Biological tracers
-        integer :: iNO3_              ! Nitrate concentration
-        integer :: iNH4_              ! Ammonium concentration
-        integer :: iChlo              ! Chlorophyll concentration
-        integer :: iPhyt              ! Phytoplankton concentration
-        integer :: iZoop              ! Zooplankton concentration
-        integer :: iLDeN              ! Large detritus N-concentration
-        integer :: iSDeN              ! Small detritus N-concentration
-#  ifdef CARBON
-        integer :: iLDeC              ! Large detritus C-concentration
-        integer :: iSDeC              ! Small detritus C-concentration
-        integer :: iTIC_              ! Total inorganic carbon
-        integer :: iTAlk              ! Total alkalinity
-#  endif
-#  ifdef OXYGEN
-        integer :: iOxyg              ! Dissolved oxygen concentration
-#  endif
-#endif
-#ifdef BIO_LIMADONEY
-        integer, pointer :: idbio(:)  ! Biological tracers
-        integer :: iNO3_              ! Nitrate concentration
-        integer :: iNH4_              ! Ammonium concentration
-        integer :: iChl1              ! Small Phytoplankton Chlorophyll
-        integer :: iPh1C              ! Small Phytoplankton C-concentration
-        integer :: iPh1N              ! Small Phytoplankton N-concentration
-        integer :: iChl2              ! Large Phytoplankton Chlorophyll
-        integer :: iPh2C              ! Large Phytoplankton C-concentration
-        integer :: iPh2N              ! Large Phytoplankton N-concentration
-        integer :: iZooC              ! Zooplankton C-concentration
-        integer :: iZooN              ! Zooplankton N-concentration
-        integer :: iDe1C              ! Small suspended detritus Carbon
-        integer :: iDe1N              ! Small suspended detritus Nitrogen
-        integer :: iDe2C              ! Large sinking detritus Carbon
-        integer :: iDe2N              ! Large sinking detritus Nitrogen
-#endif
-#ifdef ECOSIM
-        integer, pointer :: idbio(:)  ! Biological tracers
-        integer :: iBacC(Nbac)        ! Bacteria, Carbon group
-        integer :: iBacN(Nbac)        ! Bacteria, Nitrogen group
-        integer :: iBacP(Nbac)        ! Bacteria, Phosphorous group
-        integer :: iBacF(Nbac)        ! Bacteria, Iron group
-        integer :: iCDMC(Ndom)        ! Color degradational matter
-        integer :: iDOMC(Ndom)        ! DOM, Carbon group
-        integer :: iDOMN(Ndom)        ! DOM, Nitrogen group
-        integer :: iDOMP(Ndom)        ! DOM, Phosphorous group
-        integer :: iFecC(Nfec)        ! Fecal matter, Carbon group
-        integer :: iFecN(Nfec)        ! Fecal matter, Nitrogen group
-        integer :: iFecP(Nfec)        ! Fecal matter, Phosphorous group
-        integer :: iFecF(Nfec)        ! Fecal matter, Iron group
-        integer :: iFecS(Nfec)        ! Fecal matter, Silica group
-        integer :: iPhyC(Nphy)        ! Phytoplankton, Carbon group
-        integer :: iPhyN(Nphy)        ! Phytoplankton, Nitrogen group
-        integer :: iPhyP(Nphy)        ! Phytoplankton, Phosphorous group
-        integer :: iPhyF(Nphy)        ! Phytoplankton, Iron group
-        integer :: iPhyS(Nphy)        ! Phytoplankton, Silica group
-        integer :: iPigs(Nphy,Npig)   ! Phytoplankton, pigment group
-        integer :: iNO3_              ! Nitrate concentration
-        integer :: iNH4_              ! Ammonium concentration
-        integer :: iPO4_              ! Phosphate concentration
-        integer :: iFeO_              ! Iron concentration
-        integer :: iSiO_              ! Silica concentration
-        integer :: iDIC_              ! Dissolved inorganic Carbon
-        integer :: FirstPig           ! Index of first tracer pigment
-!
-!  EcoSim group names used on standard output.
-!
-        character (len=16), dimension(Nbac) :: BacName
-        character (len=11), dimension(Ndom) :: DomName
-        character (len=13), dimension(Nfec) :: FecName
-        character (len=21), dimension(Nphy) :: PhyName
-
-        character (len=39), dimension(7) :: PigName =                   &
-     &            (/ 'chlorophyll-a                          ',         &
-     &               'chlorophyll-b                          ',         &
-     &               'chlorophyll-c                          ',         &
-     &               'photosythetic carotenoids              ',         &
-     &               'photoprotective carotenoids            ',         &
-     &               'low urobilin phycoeurythin carotenoids ',         &
-     &               'high urobilin phycoeurythin carotenoids' /)
-#endif
-#ifdef NEMURO
-        integer, pointer :: idbio(:)  ! Biological tracers
-        integer :: iLphy              ! Large Phytoplankton biomass
-        integer :: iSphy              ! Small Phytoplankton biomass
-        integer :: iLzoo              ! Large Zooplankton biomass
-        integer :: iSzoo              ! Small Zooplankton biomass
-        integer :: iPzoo              ! Predator Zooplankton biomass
-        integer :: iNO3_              ! Nitrate concentration
-        integer :: iNH4_              ! Ammonium concentration
-        integer :: iPON_              ! Particulate Organic Nitrogen
-        integer :: iDON_              ! Dissolved Organic Nitrogen
-        integer :: iSiOH              ! Silicate concentration
-        integer :: iopal              ! Particulate organic silica
-#endif
 #ifdef DIAGNOSTICS
 !
 !-----------------------------------------------------------------------
@@ -180,35 +80,48 @@
 !-----------------------------------------------------------------------
 !
 # ifdef DIAGNOSTICS_TS
-        integer :: iTrate            ! Tracer, time rate of change
-        integer :: iThadv            ! Tracer, horizontal advection
-        integer :: iThdif            ! Tracer, horizontal diffusion
-        integer :: iTvadv            ! Tracer, vertical advection
-        integer :: iTvdif            ! Tracer, vertical diffusion
+        integer :: iTrate          ! Tracer, time rate of change
+        integer :: iTvadv          ! Tracer, vertical advection
+        integer :: iThadv          ! Tracer, horizontal advection
+        integer :: iTxadv          ! Tracer, horizontal X-advection
+        integer :: iTyadv          ! Tracer, horizontal Y-advection
+        integer :: iTvdif          ! Tracer, vertical diffusion
+        integer :: iThdif          ! Tracer, horizontal diffusion
+        integer :: iTxdif          ! Tracer, horizontal X-diffusion
+        integer :: iTydif          ! Tracer, horizontal Y-diffusion
+        integer :: iTsdif          ! Tracer, horizontal S-diffusion
 # endif
 # ifdef DIAGNOSTICS_UV
-        integer :: M2pgrd            ! 2D momentum, pressure gradient
-        integer :: M2fcor            ! 2D momentum, Coriolis
-        integer :: M2rate            ! 2D momentum, time rate of change
-        integer :: M2hadv            ! 2D momentum, horizontal advection
+        integer :: M2fcor          ! 2D momentum, Coriolis
+        integer :: M2hadv          ! 2D momentum, horizontal advection
+        integer :: M2xadv          ! 2D momentum, horizontal X-advection
+        integer :: M2yadv          ! 2D momentum, horizontal Y-advection
 #  ifdef NEARSHORE_MELLOR
-        integer :: M2hrad            ! 2D momentum, horizontal stresses
+        integer :: M2hrad          ! 2D momentum, horizontal stresses
 #  endif
-        integer :: M2hvis            ! 2D momentum, horizontal viscosity
-        integer :: M2sstr            ! 2D momentum, surface stress
-        integer :: M2bstr            ! 2D momentum, bottom stress
+        integer :: M2pgrd          ! 2D momentum, pressure gradient
+        integer :: M2hvis          ! 2D momentum, horizontal viscosity
+        integer :: M2xvis          ! 2D momentum, horizontal X-viscosity
+        integer :: M2yvis          ! 2D momentum, horizontal Y-viscosity
+        integer :: M2sstr          ! 2D momentum, surface stress
+        integer :: M2bstr          ! 2D momentum, bottom stress
+        integer :: M2rate          ! 2D momentum, time rate of change
 #  ifdef SOLVE3D
-        integer :: M3fcor            ! 3D momentum, Coriolis
-        integer :: M3rate            ! 3D momentum, time rate of change
-        integer :: M3hadv            ! 3D momentum, horizontal advection
+        integer :: M3fcor          ! 3D momentum, Coriolis
+        integer :: M3vadv          ! 3D momentum, vertical advection
+        integer :: M3hadv          ! 3D momentum, horizontal advection
+        integer :: M3xadv          ! 3D momentum, horizontal X-advection
+        integer :: M3yadv          ! 3D momentum, horizontal Y-advection
 #   ifdef NEARSHORE_MELLOR
-        integer :: M3hrad            ! 3D momentum, horizontal stresses
-        integer :: M3vrad            ! 3D momentum, vertical stresses
+        integer :: M3hrad          ! 3D momentum, horizontal stresses
+        integer :: M3vrad          ! 3D momentum, vertical stresses
 #   endif
-        integer :: M3hvis            ! 3D momentum, horizontal viscosity
-        integer :: M3pgrd            ! 3D momentum, pressure gradient
-        integer :: M3vadv            ! 3D momentum, vertical advection
-        integer :: M3vvis            ! 3D momentum, vertical viscosity
+        integer :: M3pgrd          ! 3D momentum, pressure gradient
+        integer :: M3vvis          ! 3D momentum, vertical viscosity
+        integer :: M3hvis          ! 3D momentum, horizontal viscosity
+        integer :: M3xvis          ! 3D momentum, horizontal X-viscosity
+        integer :: M3yvis          ! 3D momentum, horizontal Y-viscosity
+        integer :: M3rate          ! 3D momentum, time rate of change
 #  endif
 # endif
 #endif
@@ -232,6 +145,29 @@
 # ifdef FLOAT_VWALK
         integer, parameter :: ifakt = 11         ! diffusivity, Akt
         integer, parameter :: ifdak = 12         ! d(Akt)/d(s)
+# endif
+# ifdef SOLVE3D
+!
+!  Tracer variables indices in the track array.
+!
+        integer, allocatable :: ifTvar(:)
+# endif
+!
+!  Set float tracjectory types:
+!
+!     flt_Lagran:  3D Lagrangian floats
+!     flt_Isobar:  Isobaric floats, p=g*(z+zeta)=constant
+!     flt_Geopot:  Geopotential floats, constant depth
+!
+      integer, parameter :: flt_Lagran = 1
+      integer, parameter :: flt_Isobar = 2
+      integer, parameter :: flt_Geopot = 3
+
+# ifdef FLOAT_VWALK
+!
+!  Vertical random walk, initial seed state.
+!
+      integer :: flt_iseed
 # endif
 #endif
 !
@@ -280,7 +216,7 @@
         integer, dimension(Ngrids) :: iif
         integer, dimension(Ngrids) :: ndtfast
         integer, dimension(Ngrids) :: nfast
- 
+
         real(r8), dimension(Ngrids) :: dt                ! seconds
         real(r8), dimension(Ngrids) :: dtfast            ! seconds
         real(r8), dimension(Ngrids) :: tdays             ! days
@@ -304,7 +240,7 @@
 !  Power-law shape filter parameters for time-averaging of barotropic
 !  Fields.  The power-law shape filters are given by:
 !
-!     F(xi)=xi^Falpha*(1-xi^Fbeta)-Fgamma*xi 
+!     F(xi)=xi^Falpha*(1-xi^Fbeta)-Fgamma*xi
 !
 !  Possible settings of parameters to yield the second-order accuracy:
 !
@@ -350,12 +286,6 @@
 !  Number of coupling models.
 !
         integer :: N_mctmodels
-
-# ifdef REFINED_GRID
-!  Number of swan time steps
-      integer :: NumSWANsteps
-      integer, dimension(Ngrids) :: sc
-# endif
 
 # if defined MCT_INTERP_WV2AT
 !
@@ -421,6 +351,9 @@
         integer :: Nrun = 1                     ! Current counter
         integer :: inner = 0                    ! inner loop counter
         integer :: outer = 0                    ! outer loop counter
+# ifdef SENSITIVITY_4DVAR
+        integer :: NrunSAVE = 0                 ! Loop counter
+# endif
 !
 !  First, starting, and ending timestepping parameters
 !
@@ -449,7 +382,7 @@
         logical, dimension(Ngrids) :: Lstations
 !
 !-----------------------------------------------------------------------
-!  Physical constants.   
+!  Physical constants.
 !-----------------------------------------------------------------------
 !
 !    Cp            Specific heat for seawater (Joules/Kg/degC).
@@ -467,7 +400,7 @@
         real(r8) :: Eradius = 6371315.0_r8      ! m
         real(r8) :: StefBo = 5.67E-8_r8         ! Watts/m2/K4
         real(r8) :: emmiss = 0.97_r8            ! non_dimensional
-        real(r8) :: rhow = 1000.0_r8            ! kg/m3         
+        real(r8) :: rhow = 1000.0_r8            ! kg/m3
 #ifdef SOLITON
         real(r8) :: g = 1.0_r8                  ! non-dimensional
 #else
@@ -489,6 +422,11 @@
 !
         logical :: Lstiffness = .TRUE.
 !
+!  Switch indicating which tracer field need to be processed for
+!  Sources/Sinks terms.
+!
+        logical, allocatable :: LtracerSrc(:,:)
+!
 !  Execution termination flag.
 !
 !    exit_flag = 0   No error
@@ -498,7 +436,9 @@
 !    exit_flag = 4   IO error
 !    exit_flag = 5   Configuration error
 !    exit_flag = 6   Partition error
-!     
+!    exit_flag = 7   Illegal input parameter
+!    exit_flag = 8   Fatal algorithm result
+!
         integer :: exit_flag = 0
         integer :: blowup = 0
         integer :: NoError = 0
@@ -525,7 +465,32 @@
         integer, dimension(Ngrids) :: levsfrc
         integer, dimension(Ngrids) :: levbfrc
 !
-!  Vertical grid parameters.
+!  Vertical coordinates transform.  Currently, there are two vertical
+!  transformation equations (see set_scoord.F for details):
+!
+!    Original transform (Vtransform=1):
+!
+!         z_r(x,y,s,t) = Zo_r + zeta(x,y,t) * [1.0 + Zo_r / h(x,y)]
+!
+!                 Zo_r = hc * [s(k) - C(k)] + C(k) * h(x,y)
+!
+!    New transform (Vtransform=2):
+!
+!         z_r(x,y,s,t) = zeta(x,y,t) + [zeta(x,y,t)+ h(x,y)] * Zo_r
+!
+!                 Zo_r = [hc * s(k) + C(k) * h(x,y)] / [hc + h(x,y)]
+!
+        integer :: Vtransform(Ngrids)
+!
+!  Vertical grid stretching function flag:
+!
+!    Vstretcing = 1   Original function (Song and Haidvogel, 1994)
+!               = 2   A. Shchepetkin (ROMS-UCLA) function
+!               = 3   R. Geyer BBL function
+!
+        integer :: Vstretching(Ngrids)
+!
+!  Vertical grid stretching parameters.
 !
 !    Tcline        Width (m) of surface or bottom boundary layer in
 !                    which higher vertical resolution is required
@@ -609,7 +574,7 @@
 !
 !  Background potential temperature (Celsius) and salinity (PSU) values
 !  used in analytical initializations.
-!                              
+!
         real(r8), dimension(Ngrids) :: T0
         real(r8), dimension(Ngrids) :: S0
 !
@@ -689,8 +654,20 @@
         real(r8), parameter :: rad2deg = 180.0_r8 / pi
         real(r8), parameter :: day2sec = 86400.0_r8
         real(r8), parameter :: sec2day = 1.0_r8 / 86400.0_r8
-        real(r8), parameter :: spval = 1.0E+35_r8
+#ifdef NO_4BYTE_REALS
+        real(r8), parameter :: spval = NF90_FILL_DOUBLE
+#else
+        real(r8), parameter :: spval = 1.0E+37_r8
+#endif
         real(r8), parameter :: jul_off = 2440000.0_r8
+!
+!  Set special check value.  Notice that a smaller value is assigned
+!  to account for both NetCDF fill value and roundoff. There are
+!  many Matlab scripts out there that do not inquire correctly
+!  the spval from the _FillValue attribute in single/double
+!  precision.
+!
+        real(r8), parameter :: spval_check = 1.0E+35_r8
 !
 !-----------------------------------------------------------------------
 !  Horizontal and vertical constant mixing coefficients.
@@ -706,30 +683,71 @@
 !                    momentum.
 !    Kdiff         Isopycnal mixing thickness diffusivity (m2/s) for
 !                    tracers.
-!    visc2         Lateral harmonic constant mixing coefficient
+!    ad_visc2      ADM lateral harmonic constant mixing coefficient
 !                    (m2/s) for momentum.
-!    visc4         Square root lateral biharmonic constant mixing
-!                    coefficient (m2 s^-1/2) for momentum.
+!    nl_visc2      NLM lateral harmonic constant mixing coefficient
+!                    (m2/s) for momentum.
+!    tl_visc2      TLM lateral harmonic constant mixing coefficient
+!                    (m2/s) for momentum.
+!    visc2         Current lateral harmonic constant mixing coefficient
+!                    (m2/s) for momentum.
+!    ad_visc4      ADM lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for momentum.
+!    nl_visc4      NLM lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for momentum.
+!    tl_visc4      TLM lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for momentum.
+!    visc4         Current lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for momentum.
+!    ad_tnu2       ADM lateral harmonic constant mixing coefficient
+!                    (m2/s) for tracer type variables.
+!    nl_tnu2       NLM lateral harmonic constant mixing coefficient
+!                    (m2/s) for tracer type variables.
+!    tl_tnu2       TLM lateral harmonic constant mixing coefficient
+!                    (m2/s) for tracer type variables.
+!    tnu2          Current lateral harmonic constant mixing coefficient
+!                    (m2/s) for tracer type variables.
+!    ad_tnu4       ADM lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for tracers.
+!    nl_tnu4       NLM lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for tracers.
+!    tl_tnu4       TLM lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for tracers.
+!    tnu4          Current lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for tracers.
 !    tkenu2        Lateral harmonic constant mixing coefficient
 !                    (m2/s) for turbulent energy.
-!    tkenu4        Square root lateral biharmonic constant mixing
+!    tkenu4        Lateral biharmonic (squared root) constant mixing
 !                    coefficient (m2 s^-1/2) for turbulent energy.
-!    tnu2          Lateral harmonic constant mixing coefficient
-!                    (m2/s) for tracer type variables.
-!    tnu4          Square root lateral biharmonic constant mixing
-!                    coefficient (m2 s^-1/2) for tracer type variables.
 !
         real(r8), dimension(Ngrids) :: Akk_bak       ! m2/s
         real(r8), dimension(Ngrids) :: Akp_bak       ! m2/s
         real(r8), dimension(Ngrids) :: Akv_bak       ! m2/s
+
+        real(r8), dimension(Ngrids) :: ad_visc2      ! m2/s
+        real(r8), dimension(Ngrids) :: nl_visc2      ! m2/s
+        real(r8), dimension(Ngrids) :: tl_visc2      ! m2/s
         real(r8), dimension(Ngrids) :: visc2         ! m2/s
+
+        real(r8), dimension(Ngrids) :: ad_visc4      ! m2 s-1/2
+        real(r8), dimension(Ngrids) :: nl_visc4      ! m2 s-1/2
+        real(r8), dimension(Ngrids) :: tl_visc4      ! m2 s-1/2
         real(r8), dimension(Ngrids) :: visc4         ! m2 s-1/2
+
         real(r8), dimension(Ngrids) :: tkenu2        ! m2/s
         real(r8), dimension(Ngrids) :: tkenu4        ! m2 s-1/2
 
         real(r8), allocatable :: Akt_bak(:,:)        ! m2/s
         real(r8), allocatable :: Kdiff(:,:)          ! m2/s
+
+        real(r8), allocatable :: ad_tnu2(:,:)        ! m2/s
+        real(r8), allocatable :: nl_tnu2(:,:)        ! m2/s
+        real(r8), allocatable :: tl_tnu2(:,:)        ! m2/s
         real(r8), allocatable :: tnu2(:,:)           ! m2/s
+
+        real(r8), allocatable :: ad_tnu4(:,:)        ! m2 s-1/2
+        real(r8), allocatable :: nl_tnu4(:,:)        ! m2 s-1/2
+        real(r8), allocatable :: tl_tnu4(:,:)        ! m2 s-1/2
         real(r8), allocatable :: tnu4(:,:)           ! m2 s-1/2
 !
 !  Horizontal diffusive relaxation coefficients (m2/s) used to smooth
@@ -741,6 +759,16 @@
 
         real(r8), allocatable :: tl_Tdiff(:,:)       ! tracers
 !
+!  Basic state vertical mixing coefficient scale factors for adjoint
+!  based algorithms. In some applications, a smaller/larger values of
+!  vertical mixing are necessary for stability.
+!
+        real(r8), dimension(Ngrids) :: ad_Akv_fac    ! ADM momentum
+        real(r8), dimension(Ngrids) :: tl_Akv_fac    ! TLM momentum
+
+        real(r8), allocatable :: ad_Akt_fac(:,:)     ! ADM tracers
+        real(r8), allocatable :: tl_Akt_fac(:,:)     ! TLM tracers
+!
 !-----------------------------------------------------------------------
 !  IO parameters.
 !-----------------------------------------------------------------------
@@ -750,14 +778,15 @@
         logical, dimension(Ngrids) :: LdefADJ    ! Adjoint file
         logical, dimension(Ngrids) :: LdefAVG    ! Average file
         logical, dimension(Ngrids) :: LdefDIA    ! Diagnostics file
+        logical, dimension(Ngrids) :: LdefERR    ! 4DVar error file
         logical, dimension(Ngrids) :: LdefFLT    ! Floats file
         logical, dimension(Ngrids) :: LdefHIS    ! History file
+        logical, dimension(Ngrids) :: LdefHSS    ! Hessian file
         logical, dimension(Ngrids) :: LdefINI    ! Initial file
         logical, dimension(Ngrids) :: LdefIRP    ! Initial RPM file
         logical, dimension(Ngrids) :: LdefITL    ! Initial TLM file
-        logical, dimension(Ngrids) :: LdefHSS    ! Hessian file
+        logical, dimension(Ngrids) :: LdefLCZ    ! Lanczos file
         logical, dimension(Ngrids) :: LdefMOD    ! 4DVAR file
-        logical, dimension(Ngrids) :: LdefNRM    ! Norm file
         logical, dimension(Ngrids) :: LdefRST    ! Restart file
         logical, dimension(Ngrids) :: LdefSTA    ! Stations file
         logical, dimension(Ngrids) :: LdefTIDE   ! tide forcing file
@@ -768,11 +797,13 @@
         logical, dimension(Ngrids) :: LwrtAVG    ! Write average file
         logical, dimension(Ngrids) :: LwrtDIA    ! Write diagnostic file
         logical, dimension(Ngrids) :: LwrtHIS    ! Write history file
-        logical, dimension(Ngrids) :: LwrtNRM    ! Write norm file
         logical, dimension(Ngrids) :: LwrtPER    ! Write during ensemble
         logical, dimension(Ngrids) :: LwrtRST    ! Write restart file
         logical, dimension(Ngrids) :: LwrtTLM    ! Write tangent file
         logical, dimension(Ngrids) :: LwrtTLF    ! Write impulse file
+
+        logical, dimension(4,Ngrids) :: LdefNRM  ! Norm file
+        logical, dimension(4,Ngrids) :: LwrtNRM  ! Write norm file
 !
 !  Switch to write out adjoint 2D state arrays instead of IO solution
 !  arrays and adjoint ocean time. This is used in 4DVAR for IO
@@ -825,20 +856,52 @@
         integer, dimension(Ngrids) :: NrecADJ    ! Adjoint file
         integer, dimension(Ngrids) :: NrecAVG    ! Average file
         integer, dimension(Ngrids) :: NrecDIA    ! Diagnostics file
+        integer, dimension(Ngrids) :: NrecERR    ! 4DVar error file
         integer, dimension(Ngrids) :: NrecFLT    ! Floats file
+        integer, dimension(Ngrids) :: NrecHIS    ! History file
+        integer, dimension(Ngrids) :: NrecHSS    ! Hessian file
         integer, dimension(Ngrids) :: NrecINI    ! NLM Initial file
         integer, dimension(Ngrids) :: NrecITL    ! TLM Initial file
-        integer, dimension(Ngrids) :: NrecHSS    ! Hessian file
-        integer, dimension(Ngrids) :: NrecNRM    ! norm file
-        integer, dimension(Ngrids) :: NrecHIS    ! History file
+        integer, dimension(Ngrids) :: NrecLCZ    ! Lanczos file
         integer, dimension(Ngrids) :: NrecRST    ! Restart file
         integer, dimension(Ngrids) :: NrecSTA    ! Station file
         integer, dimension(Ngrids) :: NrecTLM    ! Tangent linear file
+
+        integer, dimension(4,Ngrids) :: NrecNRM  ! norm file
 !
 !  Number of timesteps between print of single line information to
 !  standard output.
 !
         integer, dimension(Ngrids) :: ninfo
+!
+!  Number of timesteps between 4DVAR adjustment of open boundaries.
+!  In strong constraint 4DVAR, it is possible to open bounadies at
+!  other intervals in addition to initial time. These parameters are
+!  used to store the appropriate number of open boundary records in
+!  output history NetCDF files.
+!
+!    Nbrec(:) = 1 + ntimes(:) / nOBC(:)
+!
+!  Here, it is assumed that nOBC is a multiple of NTIMES or greater
+!  than NTIMES. If nOBC > NTIMES, only one record is stored in the
+!  output history NetCDF files and the adjustment is for constant
+!  open boundaries with constant correction.
+!
+        integer, dimension(Ngrids) :: nOBC       ! number of timesteps
+        integer, dimension(Ngrids) :: Nbrec      ! number of records
+        integer, dimension(Ngrids) :: OBCcount   ! record counter
+
+#ifdef ADJUST_BOUNDARY
+!
+!  Logical switches to process open boundary arrays during 4DVar
+!  adjustments.
+!
+        logical, allocatable :: Lobc(:,:,:)
+!
+!  Time (s) of surface forcing adjustment.
+!
+        real(r8), allocatable :: OBC_time(:,:)
+#endif
 !
 !  Number of timesteps between adjustment of 4DVAR surface forcing
 !  fields. In strong constraint 4DVAR, it is possible to adjust surface
@@ -857,6 +920,13 @@
         integer, dimension(Ngrids) :: Nfrec      ! number of records
         integer, dimension(Ngrids) :: SFcount    ! record counter
 
+#ifdef ADJUST_STFLUX
+!
+!  Logical switches to process surface tracer fluxes during 4DVar
+!  adjustments.
+!
+        logical, allocatable :: Lstflux(:,:)
+#endif
 #if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
 !
 !  Time (s) of surface forcing adjustment.
@@ -900,7 +970,6 @@
 !  field records are saved.
 !
         logical, dimension(Ngrids) :: LcycleADJ
-        logical, dimension(Ngrids) :: LcycleINI
         logical, dimension(Ngrids) :: LcycleRST
         logical, dimension(Ngrids) :: LcycleTLM
 
@@ -955,14 +1024,15 @@
 !
         integer :: MstateVar
 !
-!  Logical switches to compute correlation normalization coefficients
-!  for each state variable.
+!  Logical switch to compute initial conditions, model and surface
+!  forcing error covariance normalization factors.
 !
-        logical,  allocatable :: Cnorm(:)
+        logical,  allocatable :: Cnorm(:,:)
 !
-!  Weak constraint scale factor for the forcing error covariance matrix.
+!  Logical switch to compute boundary conditions error covariance
+!  normalization factors.
 !
-        real(r8),  allocatable :: Cfscale(:,:)
+        logical,  allocatable :: CnormB(:,:)
 !
 !  Logical switches to process weak constraint forcing as intermittent
 !  or continuous impulses.
@@ -972,15 +1042,58 @@
 !
 !  Stability and accuracy factor used to scale the time-step of the
 !  horizontal and vertical convolution operator below its theoretical
-!  (CFL) limit.
+!  (CFL) limit. Notice that four values are needed for these factors to
+!  facilitate the error covariance modeling for initial conditions (1),
+!  model (2), boundary conditions (3), and surface forcing (4).
 !
-        real(r8) :: Hgamma = 0.5
-        real(r8) :: Vgamma = 0.1
+        real(r8), dimension(4) :: Hgamma
+        real(r8), dimension(4) :: Vgamma
 !
-! Covariance horizontal and vertical decorrelation scale (m).
+!  Parameters used to compute balanced salinity in terms of temperature
+!  using empirical T-S relationships in error covariance balance
+!  operator.
 !
-        real(r8), allocatable :: Hdecay(:,:)
-        real(r8), allocatable :: Vdecay(:,:)
+        real(r8), dimension(Ngrids) :: dTdz_min  ! minimum dT/ds (C/m)
+        real(r8), dimension(Ngrids) :: ml_depth  ! mixed-layer depth (m)
+!
+!  Balance operator level of no motion depth (m; positive) used when
+!  computing balanced free-surface contribution.
+!
+        real(r8), dimension(Ngrids) :: LNM_depth
+!
+! Balance operator level of no motion flag used to compute balanced
+! free-surface contribution:
+!
+!      [0] Integrate from local bottom to the surface
+!      [1] Integrate from LNM_depth to surface or integrate from local bottom
+!          if shallower than LNM_depth
+!
+        integer :: LNM_flag
+!
+! Balance operator logical switches for state variables to consider in the
+! error covariance multivariate constraints.
+!
+        logical, allocatable :: balance(:)
+!
+!  Initial conditions, model and surface forcing error covariance
+!  horizontal decorrelation scales (m).
+!
+        real(r8), allocatable :: Hdecay(:,:,:)
+!
+!  Initial conditions, model and surface forcing error covariance
+!  vertical decorrelation scales (m).
+!
+        real(r8), allocatable :: Vdecay(:,:,:)
+!
+!  Boundary conditions error covariance horizontal decorrelation
+!  scales (m).
+!
+        real(r8), allocatable :: HdecayB(:,:,:)
+!
+!  Boundary conditions error covariance vertical decorrelation
+!  scales (m).
+!
+        real(r8), allocatable :: VdecayB(:,:,:)
 #endif
 !
 !-----------------------------------------------------------------------
@@ -993,7 +1106,7 @@
 !    ieast         East  identification index in boundary arrays.
 !    inorth        North identification index in boundary arrays.
 !    obcfac        Factor between passive and active open boundary
-!                    conditions (nondimensional and greater than one).  
+!                    conditions (nondimensional and greater than one).
 !                    The nudging time scales for the active conditions
 !                    are obtained by multiplying the passive values by
 !                    factor.
@@ -1463,16 +1576,11 @@
 !  Data assimilation parameters.
 !-----------------------------------------------------------------------
 !
-!  Switches to assimilate and perturb state variables
-!
-        logical, allocatable :: assi(:)
-        logical, allocatable :: pert(:)
-!
 !  Switches to assimilate observations.
 !
         logical, dimension(Ngrids) :: assi_SSH      ! Sea surface height
         logical, dimension(Ngrids) :: assi_SST      ! SST
-        logical, dimension(Ngrids) :: assi_UVsur    ! Surface currents 
+        logical, dimension(Ngrids) :: assi_UVsur    ! Surface currents
         logical, dimension(Ngrids) :: assi_UV       ! 3D currents
         logical, allocatable :: assi_T(:,:)         ! Tracers
 !
@@ -1524,10 +1632,6 @@
         real(r8), dimension(Ngrids) :: EobsUVmax
         real(r8), allocatable :: EobsTmin(:,:)      ! Tracers
         real(r8), allocatable :: EobsTmax(:,:)
-!
-!  Non-dimensional perturbation strength of state variables.
-!
-        real(r8), allocatable :: Prms(:)
 !
 !  Observations vertical extension coefficients.
 !
@@ -1593,17 +1697,6 @@
       integer :: i, ic, j, ng, itrc
 
       real(r8), parameter :: IniVal = 0.0_r8
-
-#ifdef ECOSIM
-      character (len=21), dimension(7) :: PhyGroups =                   &
-     &                                 (/ 'small diatom         ',      &
-     &                                    'large diatom         ',      &
-     &                                    'small dinoflagellate ',      &
-     &                                    'large dinoflagellate ',      &
-     &                                    'synechococcus        ',      &
-     &                                    'small prochlorococcus',      &
-     &                                    'large prochlorococcus' /)
-#endif
 !
 !-----------------------------------------------------------------------
 !  Allocate and initialize variables in module structure.
@@ -1622,14 +1715,14 @@
 #endif
 #ifdef SOLVE3D
         allocate ( SCALARS(ng) % SOstate(2+MT) )
-        SCALARS(ng) % SOstate(1:2+MT) = .FALSE.      
+        SCALARS(ng) % SOstate(1:2+MT) = .FALSE.
 #else
         allocate ( SCALARS(ng) % SOstate(2) )
-        SCALARS(ng) % SOstate(1:2) = .FALSE.      
+        SCALARS(ng) % SOstate(1:2) = .FALSE.
 #endif
 #if defined READ_WATER && defined MASKING && defined DISTRIBUTE
         allocate ( SCALARS(ng) % IJwater((Lm(ng)+2)*(Mm(ng)+2),4) )
-        SCALARS(ng) % IJwater((1:Lm(ng)+2)*(Mm(ng)+2),1:4) = 0
+        SCALARS(ng) % IJwater = 0
 #endif
 
         allocate ( SCALARS(ng) % Cs_r(N(ng)) )
@@ -1644,7 +1737,7 @@
         allocate ( SCALARS(ng) % sc_w(0:N(ng)) )
         SCALARS(ng) % sc_w(0:N(ng)) = IniVal
 
-      END DO                
+      END DO
 !
 !-----------------------------------------------------------------------
 !  Select the bigger value of number of tracer between all grids. Then,
@@ -1661,10 +1754,19 @@
 # endif
 !
 #endif
+      allocate ( LtracerSrc(MT,Ngrids) )
       allocate ( Akt_bak(MT,Ngrids) )
+      allocate ( ad_Akt_fac(MT,Ngrids) )
+      allocate ( tl_Akt_fac(MT,Ngrids) )
       allocate ( Kdiff(MT,Ngrids) )
       allocate ( SO_sdev(2+MT,Ngrids) )
+      allocate ( ad_tnu2(MT,Ngrids) )
+      allocate ( nl_tnu2(MT,Ngrids) )
+      allocate ( tl_tnu2(MT,Ngrids) )
       allocate ( tnu2(MT,Ngrids) )
+      allocate ( ad_tnu4(MT,Ngrids) )
+      allocate ( nl_tnu4(MT,Ngrids) )
+      allocate ( tl_tnu4(MT,Ngrids) )
       allocate ( tnu4(MT,Ngrids) )
       allocate ( tl_Tdiff(MT,Ngrids) )
 #ifdef SOLVE3D
@@ -1672,16 +1774,11 @@
       Tobc_in = IniVal
       allocate ( Tobc_out(MT,Ngrids,4) )
       Tobc_out = IniVal
-# ifdef BIOLOGY
-      allocate ( idbio(NBT) )
+# if defined FLOATS && defined SOLVE3D
+        allocate ( ifTvar(MT) )
 # endif
 # ifdef T_PASSIVE
       allocate ( inert(NPT) )
-# endif
-# ifdef SEDIMENT
-      allocate ( idsed(MAX(1,NST)) )
-      allocate ( idmud(MAX(1,NCS)) )
-      allocate ( isand(MAX(1,NNS)) )
 # endif
 #endif
       allocate ( Tnudg(MT,Ngrids) )
@@ -1695,18 +1792,25 @@
       allocate ( tsTobs(MT,Ngrids) )
       allocate ( EobsTmin(MT,Ngrids) )
       allocate ( EobsTmax(MT,Ngrids) )
-      allocate ( assi(NSV(ng)) )
-      allocate ( pert(NSV(ng)) )
-      allocate ( Prms(NSV(ng)) )
 #endif
 #if defined FOUR_DVAR || defined VERIFICATION
-      allocate ( Cnorm(MstateVar) )
-      allocate ( Cfscale(MstateVar,Ngrids) )
-      allocate ( Hdecay(MstateVar,Ngrids) )
-      allocate ( Vdecay(MstateVar,Ngrids) )
+      allocate ( balance(MstateVar) )
+
+      allocate ( Cnorm(2,MstateVar) )
+
+      allocate ( Hdecay(2,MstateVar,Ngrids) )
+      allocate ( Vdecay(2,MstateVar,Ngrids) )
+
+      allocate ( CnormB(MstateVar,4) )
+
+      allocate ( HdecayB(MstateVar,4,Ngrids) )
+      allocate ( VdecayB(MstateVar,4,Ngrids) )
 #endif
-#if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
-      allocate ( SF_time(MAXVAL(Nfrec),Ngrids) )
+#ifdef ADJUST_BOUNDARY
+      allocate ( Lobc(4,MstateVar,Ngrids) )
+#endif
+#ifdef ADJUST_STFLUX
+      allocate ( Lstflux(MT,Ngrids) )
 #endif
 !
 !---------------------------------------------------------------------
@@ -1727,244 +1831,113 @@
       END DO
 #endif
 
-#ifdef SEDIMENT
+#if defined FLOATS && defined SOLVE3D
 !
-!  Cohesive and noncohesive suspended sediment tracers indices.
+!  Indices for tracer variables in the floats array track.
 !
-      DO i=1,NCS
-        ic=ic+1
-        idmud(i)=ic
-        idsed(i)=idmud(i)
-      END DO
-      DO i=1,NNS
-        ic=ic+1
-        isand(i)=ic
-        idsed(NCS+i)=isand(i)
-      END DO
-#endif
-#if defined BIO_FASHAM
-!
-!  Set Fasham Nitrogen-based biological tracer indices.
-!
-      DO i=1,NBT
-        idbio(i)=ic+i
-      END DO
-      iNO3_=ic+1
-      iNH4_=ic+2
-      iChlo=ic+3
-      iPhyt=ic+4
-      iZoop=ic+5
-      iLDeN=ic+6
-      iSDeN=ic+7
-      ic=ic+7
-# ifdef CARBON
-      iLDeC=ic+1
-      iSDeC=ic+2
-      iTIC_=ic+3
-      iTAlk=ic+4
-      ic=ic+4
+# ifdef FLOAT_VWALK
+      ic=12
+# else
+      ic=10
 # endif
-# ifdef OXYGEN
-      iOxyg=ic+1
-      ic=ic+1
-# endif 
-#elif defined BIO_LIMADONEY
-!
-!  Set biological tracer indices.
-!
-      DO i=1,NBT
-        idbio(i)=ic+i
-      END DO
-      iNO3_=ic+1
-      iNH4_=ic+2
-      iChl1=ic+3
-      iPh1N=ic+4
-      iPh1C=ic+5
-      iChl2=ic+6
-      iPh2N=ic+7
-      iPh2C=ic+8
-      iZooN=ic+9
-      iZooC=ic+10
-      iDe1N=ic+11
-      iDe1C=ic+12
-      iDe2N=ic+13
-      iDe2C=ic+14
-      ic=ic+14
-#elif defined NEMURO
-!
-!  Set Nemuro ecosystem tracer indices.
-!
-      DO i=1,NBT
-        idbio(i)=ic+i
-      END DO
-      iSphy=ic+1
-      iLphy=ic+2
-      iSzoo=ic+3
-      iLzoo=ic+4
-      iPzoo=ic+5
-      iNO3_=ic+6
-      iNH4_=ic+7
-      iPON_=ic+8
-      iDON_=ic+9
-      iSiOH=ic+10
-      iopal=ic+11
-      ic=ic+11
-#elif defined NPZD_FRANKS || defined NPZD_POWELL
-!
-!  Set NPZD biological tracer indices.
-!
-      DO i=1,NBT
-        idbio(i)=ic+i
-      END DO
-      iNO3_=ic+1
-      iPhyt=ic+2
-      iZoop=ic+3
-      iSDet=ic+4
-      ic=ic+4
-#elif defined ECOSIM
-!
-!  Set bio-optical tracer indices.
-!
-      DO i=1,NBT
-        idbio(i)=ic+i
-      END DO
-      iDIC_=ic+1
-      iFeO_=ic+2
-      iNH4_=ic+3
-      iNO3_=ic+4
-      iPO4_=ic+5
-      iSiO_=ic+6
-      ic=ic+6
-      DO i=1,Nbac
-        iBacC(i)=ic+1
-        iBacF(i)=ic+2
-        iBacN(i)=ic+3
-        iBacP(i)=ic+4
-        ic=ic+4
-      END DO
-      DO i=1,Ndom
-        iCDMC(i)=ic+1
-        iDOMC(i)=ic+2
-        iDOMN(i)=ic+3
-        iDOMP(i)=ic+4
-        ic=ic+4
-      END DO
-      DO i=1,Nfec
-        iFecC(i)=ic+1
-        iFecF(i)=ic+2
-        iFecN(i)=ic+3
-        iFecP(i)=ic+4
-        iFecS(i)=ic+5
-        ic=ic+5
-      END DO
-      DO i=1,Nphy
-        iPhyC(i)=ic+1
-        iPhyF(i)=ic+2
-        iPhyN(i)=ic+3
-        iPhyP(i)=ic+4
-        ic=ic+4
-      END DO
-      DO i=1,Nphy
-        IF (PHY(i).le.2) THEN
-          ic=ic+1
-          iPhyS(i)=ic
-        ELSE
-          iPhyS(i)=0
-        END IF
-      END DO
-      FirstPig=ic+1
-      DO j=1,Npig
-        DO i=1,Nphy
-          iPigs(i,j)=0
-          IF (PIG(PHY(i),j).eq.1) THEN
-            ic=ic+1
-            iPigs(i,j)=ic
-          END IF
-        END DO
-      END DO
-!
-!  Set EcoSim group variable names.
-!
-      DO i=1,Nphy
-        PhyName(i)=PhyGroups(PHY(i))
-      END DO
-      DO i=1,Nbac
-        WRITE (BacName(i),'(a,1x,i1)') 'Bacteria Group', i
-      END DO
-      DO i=1,Ndom
-        WRITE (DomName(i),'(a,1x,i1)') 'DOM Group', i
-      END DO
-      DO i=1,Nfec
-        WRITE (FecName(i),'(a,1x,i1)') 'Fecal Group', i
+      DO i=1,MT
+        ic=ic+1
+        ifTvar(i)=ic
       END DO
 #endif
+
 #ifdef DIAGNOSTICS
 !
 !---------------------------------------------------------------------
 !  Set diagnostic fields identification indices.
 !---------------------------------------------------------------------
-!
+
 # ifdef DIAGNOSTICS_TS
+!
+!  Indices for tracer diagnostic variables.
+!
       iThadv=1
-      iTvadv=2
-      ic=2
+      iTxadv=2
+      iTyadv=3
+      iTvadv=4
+      ic=4
 #  if defined TS_DIF2 || defined TS_DIF4
       iThdif=ic+1
+      iTxdif=ic+2
+      iTydif=ic+3
+      ic=ic+3
+#   if defined MIX_GEO_TS || defined MIX_ISO_TS
+      iTsdif=ic+1
       ic=ic+1
+#   endif
 #  endif
       iTvdif=ic+1
       iTrate=ic+2
 # endif
 # ifdef DIAGNOSTICS_UV
 !
-!  Indices for 2D momentum diagnostic variables.
-!  Order is important!
+!  Indices for 2D momentum diagnostic variables.  In some places in
+!  the code a compact DO-loop (idiag=1:M2pgrd) is used to improve
+!  flexibility. Therefore, the order of indices is very important.
+!  Only those fields that require special treatment are set below
+!  the M2pgrd index.
 !
-      M2pgrd=1
-      ic=1
+      ic=0
 #  if defined UV_COR
       M2fcor=ic+1
       ic=ic+1
 #  endif
 #  if defined UV_ADV
       M2hadv=ic+1
-      ic=ic+1
+      M2xadv=ic+2
+      M2yadv=ic+3
+      ic=ic+3
 #  endif
 #  if defined NEARSHORE_MELLOR
       M2hrad=ic+1
       ic=ic+1
 #  endif
-      M2sstr=ic+1
-      ic=ic+1
-      M2bstr=ic+1
 #  if defined UV_VIS2 || defined UV_VIS4
-      M2hvis=ic+2
+      M2hvis=ic+1
+      M2xvis=ic+2
+      M2yvis=ic+3
+      ic=ic+3
 #  endif
-      M2rate=NDM2d
+      M2pgrd=ic+1
+      M2sstr=ic+2             ! These indices need to be
+      M2bstr=ic+3             ! specified last to allow a
+      M2rate=NDM2d            ! compact DO-loop structure
 #  ifdef SOLVE3D
 !
-!  Indices for 3D momentum diagnostic variables.
-!  Order is important!
+!  Indices for 3D momentum diagnostic variables.  In some places in
+!  the code a compact DO-loop (idiag=1:M3pgrd) is used to improve
+!  flexibility. Therefore, the order of indices is very important.
+!  Only those fields that require special treatment are set below
+!  the M3pgrd index.
 !
-      M3pgrd=1
-      ic=1
+      ic=0
 #   if defined UV_COR
       M3fcor=ic+1
       ic=ic+1
 #   endif
 #   if defined UV_ADV
-      M3hadv=ic+1
-      M3vadv=ic+2
-      ic=ic+2
+      M3vadv=ic+1
+      M3hadv=ic+2
+      M3xadv=ic+3
+      M3yadv=ic+4
+      ic=ic+4
 #   endif
 #   if defined NEARSHORE_MELLOR
       M3hrad=ic+1
       M3vrad=ic+2
       ic=ic+2
 #   endif
-      M3vvis=ic+1
+      M3pgrd=ic+1             ! needs to be here, indices below
+      M3vvis=ic+2             ! require special treatment
 #   if defined UV_VIS2 || defined UV_VIS4
-      M3hvis=ic+2
+      M3hvis=ic+3
+      M3xvis=ic+4
+      M3yvis=ic+5
 #   endif
       M3rate=NDM3d
 #  endif
@@ -1980,13 +1953,41 @@
         Lassimilate(ng)=.TRUE.
         Lbiology(ng)=.TRUE.
         LcycleADJ(ng)=.FALSE.
-        LcycleINI(ng)=.FALSE.
         LcycleRST(ng)=.FALSE.
         LcycleTLM(ng)=.FALSE.
         Lfloats(ng)=.TRUE.
         Lsediment(ng)=.TRUE.
         Lstations(ng)=.TRUE.
       END DO
+
+#ifdef ADJUST_BOUNDARY
+!
+!-----------------------------------------------------------------------
+!  Initilize switches to process open boundary arrays for 4DVar
+!  adjustments.
+!-----------------------------------------------------------------------
+!
+      DO ng=1,Ngrids
+        DO j=1,MstateVar
+          DO i=1,4
+            Lobc(i,j,ng)=.FALSE.
+          END DO
+        END DO
+      END DO
+#endif
+#ifdef ADJUST_STFLUX
+!
+!-----------------------------------------------------------------------
+!  Initilize switches to process surface tracer fluexes for 4DVar
+!  adjustments.
+!-----------------------------------------------------------------------
+!
+      DO ng=1,Ngrids
+        DO i=1,MT
+          Lstflux(i,ng)=.FALSE.
+        END DO
+      END DO
+#endif
 !
 !-----------------------------------------------------------------------
 !  Initialize several scalar variables.
@@ -1998,25 +1999,60 @@
         ntstart(ng)=1
         ntend(ng)=0
         gamma2(ng)=-1.0_r8
+        Vtransform(ng)=1
+        Vstretching(ng)=1
 #if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
         Hcount(ng)=0
+#endif
+#ifdef ADJUST_BOUNDARY
+        OBCcount(ng)=0
 #endif
 #if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
         SFcount(ng)=0
 #endif
         first_time(ng)=0
-        DO itrc=1,NAT+NPT
+        DO itrc=1,MT
+          LtracerSrc(itrc,ng)=.FALSE.
+          ad_Akt_fac(itrc,ng)=1.0_r8
+          tl_Akt_fac(itrc,ng)=1.0_r8
+          ad_tnu2(itrc,ng)=IniVal
+          nl_tnu2(itrc,ng)=IniVal
+          tl_tnu2(itrc,ng)=IniVal
           tnu2(itrc,ng)=IniVal
+          ad_tnu4(itrc,ng)=IniVal
+          nl_tnu4(itrc,ng)=IniVal
+          tl_tnu4(itrc,ng)=IniVal
           tnu4(itrc,ng)=IniVal
         END DO
+        ad_Akv_fac(ng)=1.0_r8
+        tl_Akv_fac(ng)=1.0_r8
+        ad_visc2(ng)=IniVal
+        nl_visc2(ng)=IniVal
+        tl_visc2(ng)=IniVal
         visc2(ng)=IniVal
+        ad_visc4(ng)=IniVal
+        nl_visc4(ng)=IniVal
+        tl_visc4(ng)=IniVal
         visc4(ng)=IniVal
-#ifdef BULK_FLUX
+#ifdef BULK_FLUXES
         blk_ZQ(ng)=10.0_r8
         blk_ZT(ng)=10.0_r8
         blk_ZW(ng)=10.0_r8
 #endif
+        DO i=1,4
+          FSobc_in (ng,i)=IniVal
+          FSobc_out(ng,i)=IniVal
+          M2obc_in (ng,i)=IniVal
+          M2obc_out(ng,i)=IniVal
+#ifdef SOLVE3D
+          M3obc_in (ng,i)=IniVal
+          M3obc_out(ng,i)=IniVal
+#endif
+        END DO
       END DO
+#if defined FLOATS && defined FLOAT_VWALK
+      flt_iseed=149876
+#endif
 #if defined LMD_SKPP || defined LMD_BKPP
 !
 !  Proportionality coefficient parameterizing boundary layer
@@ -2024,6 +2060,21 @@
 !
       lmd_Cg=lmd_Cstar*                                                 &
      &       vonKar*(lmd_cs*vonKar*lmd_epsilon)**(1.0_r8/3.0_r8)
+#endif
+
+#if defined FOUR_DVAR || defined VERIFICATION
+!
+!  Initialize error covariace variables.
+!
+      balance=.FALSE.
+
+      Cnorm=.FALSE.
+      Hdecay=IniVal
+      Vdecay=IniVal
+
+      CnormB=.FALSE.
+      HdecayB=IniVal
+      VdecayB=IniVal
 #endif
 !
 !  Initialize several IO flags.
@@ -2037,6 +2088,7 @@
         LdefADJ(ng)=.FALSE.
         LdefAVG(ng)=.TRUE.
         LdefDIA(ng)=.TRUE.
+        LdefERR(ng)=.FALSE.
 #ifdef FLOATS
         LdefFLT(ng)=.TRUE.
 #endif
@@ -2068,14 +2120,17 @@
         NrecADJ(ng)=0
         NrecAVG(ng)=0
         NrecDIA(ng)=0
+        NrecERR(ng)=0
         NrecFLT(ng)=0
         NrecINI(ng)=0
         NrecITL(ng)=0
-        NrecNRM(ng)=0
         NrecHIS(ng)=0
+        NrecHSS(ng)=0
         NrecRST(ng)=0
         NrecSTA(ng)=0
         NrecTLM(ng)=0
+
+        NrecNRM(1:4,ng)=0
 
       END DO
 
@@ -2138,15 +2193,6 @@
       my_Sm4=18.0_r8*my_A1*my_A1+9.0_r8*my_A1*my_A2
 # endif
 #endif
-
-!#if defined AIR_OCEAN && defined WAVES_OCEAN
-!        Ncouple=Ncouple+2
-!#elif defined AIR_OCEAN
-!        Ncouple=Ncouple+1
-!#elif defined WAVES_OCEAN
-!        Ncouple=Ncouple+1
-!#endif
-
 
       RETURN
       END SUBROUTINE initialize_scalars

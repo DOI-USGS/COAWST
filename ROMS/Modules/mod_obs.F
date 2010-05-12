@@ -4,7 +4,7 @@
 !
 !svn $Id: mod_obs.F 737 2008-09-07 02:06:44Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -71,17 +71,11 @@
         implicit none
 
         TYPE T_OBS
-      
-# if defined ASSIMILATION_SSH || defined NUDGING_SSH
+
+# ifdef ASSIMILATION_SSH
+          real(r8), pointer :: EmodSSH(:,:)
           real(r8), pointer :: EobsSSH(:,:)
           real(r8), pointer :: SSHobs (:,:)
-#  ifdef ASSIMILATION_SSH
-          real(r8), pointer :: EmodSSH(:,:)
-#  endif
-#  ifdef NUDGING_SSH
-          real(r8), pointer :: EdatSSH(:,:,:)
-          real(r8), pointer :: SSHdat (:,:,:)
-#  endif
 # endif
 
 # if defined ASSIMILATION_SST || defined NUDGING_SST
@@ -162,16 +156,10 @@
 !
       IF (ng.eq.1) allocate ( OBS(Ngrids) )
 !
-# if defined ASSIMILATION_SSH || defined NUDGING_SSH
+# ifdef ASSIMILATION_SSH
+      allocate ( OBS(ng) % EmodSSH(LBi:UBi,LBj:UBj) )
       allocate ( OBS(ng) % EobsSSH(LBi:UBi,LBj:UBj) )
       allocate ( OBS(ng) % SSHobs(LBi:UBi,LBj:UBj) )
-#  ifdef ASSIMILATION_SSH
-      allocate ( OBS(ng) % EmodSSH(LBi:UBi,LBj:UBj) )
-#  endif
-#  ifdef NUDGING_SSH
-      allocate ( OBS(ng) % EdatSSH(LBi:UBi,LBj:UBj,2) )
-      allocate ( OBS(ng) % SSHdat(LBi:UBi,LBj:UBj,2) )
-#  endif
 # endif
 
 # if defined ASSIMILATION_SST || defined NUDGING_SST
@@ -255,37 +243,37 @@
 # endif
 
       real(r8), parameter :: IniVal = 0.0_r8
-!
-# include "tile.h"
+
+# include "set_bounds.h"
 !
 !  Set array initialization range.
 !
 # ifdef _OPENMP
       IF (WESTERN_EDGE) THEN
-        Imin=LBi
+        Imin=BOUNDS(ng)%LBi(tile)
       ELSE
         Imin=Istr
       END IF
       IF (EASTERN_EDGE) THEN
-        Imax=UBi
+        Imax=BOUNDS(ng)%UBi(tile)
       ELSE
         Imax=Iend
       END IF
       IF (SOUTHERN_EDGE) THEN
-        Jmin=LBj
+        Jmin=BOUNDS(ng)%LBj(tile)
       ELSE
         Jmin=Jstr
       END IF
       IF (NORTHERN_EDGE) THEN
-        Jmax=UBj
+        Jmax=BOUNDS(ng)%UBj(tile)
       ELSE
         Jmax=Jend
       END IF
 # else
-      Imin=LBi
-      Imax=UBi
-      Jmin=LBj
-      Jmax=UBj
+      Imin=BOUNDS(ng)%LBi(tile)
+      Imax=BOUNDS(ng)%UBi(tile)
+      Jmin=BOUNDS(ng)%LBj(tile)
+      Jmax=BOUNDS(ng)%UBj(tile)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -293,24 +281,12 @@
 !-----------------------------------------------------------------------
 !
       DO j=Jmin,Jmax
-# if defined ASSIMILATION_SSH || defined NUDGING_SSH
+# ifdef ASSIMILATION_SSH
         DO i=Imin,Imax
+          OBS(ng) % EmodSSH(i,j) = IniVal
           OBS(ng) % EobsSSH(i,j) = IniVal
           OBS(ng) % SSHobs(i,j) = IniVal
         END DO
-#  ifdef ASSIMILATION_SSH
-        DO i=Imin,Imax
-          OBS(ng) % EmodSSH(i,j) = IniVal
-        END DO
-#  endif
-#  ifdef NUDGING_SSH
-        DO i=Imin,Imax
-          OBS(ng) % EdatSSH(i,j,1) = IniVal
-          OBS(ng) % EdatSSH(i,j,2) = IniVal
-          OBS(ng) % SSHdat(i,j,1) = IniVal
-          OBS(ng) % SSHdat(i,j,2) = IniVal
-        END DO        
-#  endif
 # endif
 # if defined ASSIMILATION_SST || defined NUDGING_SST
         DO i=Imin,Imax

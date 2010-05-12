@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_parallel.F 1607 2008-07-27 03:03:34Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -48,14 +48,14 @@
 !  Parallel nodes assined to the atmosphere model.
 !
         integer :: peATM_frst          ! first atmosphere parallel node
-        integer :: peATM_last          ! last  atmosphere parallel node 
+        integer :: peATM_last          ! last  atmosphere parallel node
 #endif
 #ifdef WAVES_OCEAN
 !
 !  Parallel nodes assined to the wave model.
 !
         integer :: peWAV_frst          ! first atmosphere parallel node
-        integer :: peWAV_last          ! last  atmosphere parallel node 
+        integer :: peWAV_last          ! last  atmosphere parallel node
 #endif
 !
 !  Parallel nodes assined to the ocean model.
@@ -98,6 +98,10 @@
 !  Ocean model MPI group communicator handle.
 !
         integer :: OCN_COMM_WORLD
+!
+!  Set mpi_info opaque object handle.
+!
+        integer :: MP_INFO = MPI_INFO_NULL
 # endif
 !
 !  Type of message-passage floating point bindings.
@@ -170,8 +174,16 @@
             RETURN
           END IF
 !
-!  Identify master thread and output thread.
+!  Identify master, input and output threads.
 !
+#  ifdef PARALLEL_IO
+          Master=.FALSE.
+          InpThread=.TRUE.
+          OutThread=.TRUE.
+          IF (MyRank.eq.MyMaster) THEN
+            Master=.TRUE.
+          END IF
+#  else
           Master=.FALSE.
           InpThread=.FALSE.
           OutThread=.FALSE.
@@ -180,6 +192,7 @@
             InpThread=.TRUE.
             OutThread=.TRUE.
           END IF
+#  endif
 # endif
 #endif
 !

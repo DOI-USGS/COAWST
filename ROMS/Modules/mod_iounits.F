@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_iounits.F 755 2008-09-14 19:07:08Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -14,12 +14,14 @@
 !  AVGbase     Output averages base file name.                         !
 !  AVGname     Output averages file name.                              !
 !  Aname       Atmosphere model stadard input file name.               !
+!  BLKname     Input bulk fluxes file name.                            !
 !  BRYname     Input boundary data file name.                          !
 !  CLMname     Input climatology file name.                            !
 !  DIAbase     Output diagnostics base file name.                      !
 !  DIAname     Output diagnostics file name.                           !
+!  ERRname     Output 4DVar posterior error file name.                 !
 !  FLTname     Output floats file name.                                !
-!  FRCids      NetCDF ID descriptors associated with FRCname.          ! 
+!  FRCids      NetCDF ID descriptors associated with FRCname.          !
 !  FRCname     Input forcing fields file name(s).                      !
 !  FWDbase     Input forward solution base file name.                  !
 !  FWDname     Input forward solution file name.                       !
@@ -27,15 +29,21 @@
 !  GSTname     Input/output GST analysis check pointing NetCDF file.   !
 !  HISbase     Output history base file name.                          !
 !  HISname     Output history file name.                               !
+!  HSSbase     Input/output Hessian eigenvectors base file name.       !
+!  HSSname     Input/output Hessian eigenvectors file name.            !
 !  IADname     Input adjoint initial conditions file name.             !
 !  INIname     Input nonlinear initial conditions file name.           !
 !  IPRname     Input representer initial conditions file name.         !
 !  ITLname     Input tangent linear initial conditions file name.      !
-!  HSSname     Input/output Hessian eigenvectors file name.            !
 !  Iname       Physical parameters standard input script file name.    !
+!  LCZname     Input/output Lanczos vectors file name.                 !
 !  MODname     Output 4DVAR processed fields file name.                !
 !  MyAppCPP    Application C-preprocessing flag.                       !
-!  NRMname     Input/output correlations normalization file name.      !
+!  NRMname     Input/output error covariance normalization file name:  !
+!                NRMname(1)  initial conditions                        !
+!                NRMname(2)  model                                     !
+!                NRMname(3)  boundary conditions                       !
+!                NRMname(4)  surface forcing                           !
 !  OBSname     Input/output datum observations file name.              !
 !  REPname     Input/output representer coefficients file name.        !
 !  Rerror      Running error messages.                                 !
@@ -59,8 +67,14 @@
 !  nFfiles     Number of forcing files.                                !
 !  sparnam     Input sediment transport parameters file name.          !
 !  sposnam     Input station positions file name.                      !
+!  SourceFile  Current executed file name. It is used for IO error     !
+!                purposes.                                             !
 !  STAname     Output station data file name.                          !
-!  STDname     Input background-error standard deviations file name.   !
+!  STDname     Input error covariance standard deviations file name:   !
+!                STDname(1)  initial conditions                        !
+!                STDname(2)  model                                     !
+!                STDname(3)  boundary conditions                       !
+!                STDname(4)  surface forcing                           !
 !  stdinp      Unit number for standard input (often 5).               !
 !  stdout      Unit number for standard output (often 6).              !
 !  usrout      Unit number for generic USER output.                    !
@@ -81,13 +95,17 @@
 
         integer, allocatable :: FRCids(:,:)
 
-        character (len=50), dimension(6) :: Rerror =                    &
+        character (len=80) :: SourceFile
+
+        character (len=50), dimension(8) :: Rerror =                    &
      &       (/ ' ROMS/TOMS - Blows up ................ exit_flag: ',   &
      &          ' ROMS/TOMS - Input error ............. exit_flag: ',   &
      &          ' ROMS/TOMS - Output error ............ exit_flag: ',   &
-     &          ' ROMS/TOMS - IO error ................ exit_flag: ',   &
+     &          ' ROMS/TOMS - I/O error ............... exit_flag: ',   &
      &          ' ROMS/TOMS - Configuration error ..... exit_flag: ',   &
-     &          ' ROMS/TOMS - Partition error ......... exit_flag: ' /)
+     &          ' ROMS/TOMS - Partition error ......... exit_flag: ',   &
+     &          ' ROMS/TOMS - Illegal input parameter . exit_flag: ',   &
+     &          ' ROMS/TOMS - Fatal algorithm result .. exit_flag: ' /)
 
         character (len=80), allocatable :: FRCname(:,:)
 
@@ -96,10 +114,12 @@
         character (len=80), dimension(Ngrids) :: ADSname
         character (len=80), dimension(Ngrids) :: AVGbase
         character (len=80), dimension(Ngrids) :: AVGname
+        character (len=80), dimension(Ngrids) :: BLKname
         character (len=80), dimension(Ngrids) :: BRYname
         character (len=80), dimension(Ngrids) :: CLMname
         character (len=80), dimension(Ngrids) :: DIAbase
         character (len=80), dimension(Ngrids) :: DIAname
+        character (len=80), dimension(Ngrids) :: ERRname
         character (len=80), dimension(Ngrids) :: FLTname
         character (len=80), dimension(Ngrids) :: FWDbase
         character (len=80), dimension(Ngrids) :: FWDname
@@ -107,21 +127,31 @@
         character (len=80), dimension(Ngrids) :: GSTname
         character (len=80), dimension(Ngrids) :: HISbase
         character (len=80), dimension(Ngrids) :: HISname
+        character (len=80), dimension(Ngrids) :: HSSbase
+        character (len=80), dimension(Ngrids) :: HSSname
         character (len=80), dimension(Ngrids) :: IADname
         character (len=80), dimension(Ngrids) :: INIname
         character (len=80), dimension(Ngrids) :: IRPname
         character (len=80), dimension(Ngrids) :: ITLname
-        character (len=80), dimension(Ngrids) :: HSSname
+        character (len=80), dimension(Ngrids) :: LCZname
         character (len=80), dimension(Ngrids) :: MODname
-        character (len=80), dimension(Ngrids) :: NRMname
         character (len=80), dimension(Ngrids) :: OBSname
         character (len=80), dimension(Ngrids) :: REPname
+#ifdef MODEL_COUPLING
         character (len=80), dimension(Ngrids) :: O2Aname
         character (len=80), dimension(Ngrids) :: O2Wname
         character (len=80), dimension(Ngrids) :: W2Aname
         character (len=80), dimension(Ngrids) :: W2Oname
         character (len=80), dimension(Ngrids) :: A2Wname
         character (len=80), dimension(Ngrids) :: A2Oname
+        character (len=80), dimension(Ngrids) :: SWAN_infile
+        character (len=80), dimension(Ngrids) :: Wname
+        character (len=80) :: Aname
+# ifdef INWAVE_COUPLING
+        character (len=80), dimension(Ngrids) :: IWINIname
+        character (len=80), dimension(Ngrids) :: IWBNDname
+# endif
+#endif
         character (len=80), dimension(Ngrids) :: SSHname
         character (len=80), dimension(Ngrids) :: SSTname
         character (len=80), dimension(Ngrids) :: TIDEname
@@ -133,15 +163,11 @@
         character (len=80), dimension(Ngrids) :: VOBSname
         character (len=80), dimension(Ngrids) :: RSTname
         character (len=80), dimension(Ngrids) :: STAname
-        character (len=80), dimension(Ngrids) :: STDname
-        character (len=80), dimension(Ngrids) :: SWAN_infile
-#ifdef INWAVE_COUPLING
-        character (len=80), dimension(Ngrids) :: IWINIname
-        character (len=80), dimension(Ngrids) :: IWBNDname
-#endif
+
+        character (len=80), dimension(4,Ngrids) :: NRMname
+        character (len=80), dimension(4,Ngrids) :: STDname
+
         character (len=80) :: Iname
-        character (len=80), dimension(Ngrids) :: Wname
-        character (len=80) :: Aname
         character (len=80) :: MyAppCPP
         character (len=80) :: USRname
         character (len=80) :: aparnam

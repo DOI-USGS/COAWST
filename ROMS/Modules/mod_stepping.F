@@ -3,16 +3,21 @@
 !
 !svn $Id: mod_stepping.F 1404 2008-02-20 01:43:42Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
 !  This MODULE contains time stepping indices.                         !
 !                                                                      !
-#if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
-!  Lfinp      Surface forcing adjustment input  fields index.          !
-!  Lfout      Surface forcing adjustment output fields index.          !
+#ifdef BOUNDARY
+!  Lbinp     Open boundary adjustment input  fields index.             !
+!  Lbout     Open boundary adjustment output fields index.             !
+#endif
+#if defined ADJUST_BOUNDARY || defined ADJUST_STFLUX || \
+    defined ADJUST_WSTRESS
+!  Lfinp     Surface forcing adjustment input  fields index.           !
+!  Lfout     Surface forcing adjustment output fields index.           !
 #endif
 !  Lnew      New descent algorithm state solution index.               !
 !  Lold      Previous descent algorithm state solution index.          !
@@ -70,7 +75,12 @@
 #if defined SSH_TIDES || defined UV_TIDES
         integer, dimension(Ngrids) :: NTC
 #endif
-#if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+#ifdef ADJUST_BOUNDARY
+        integer, dimension(Ngrids) :: Lbinp = (/ (1, ig=1,Ngrids) /)
+        integer, dimension(Ngrids) :: Lbout = (/ (1, ig=1,Ngrids) /)
+#endif
+#if defined ADJUST_BOUNDARY || defined ADJUST_STFLUX || \
+    defined ADJUST_WSTRESS
         integer, dimension(Ngrids) :: Lfinp = (/ (1, ig=1,Ngrids) /)
         integer, dimension(Ngrids) :: Lfout = (/ (1, ig=1,Ngrids) /)
 #endif

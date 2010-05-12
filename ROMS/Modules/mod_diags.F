@@ -4,7 +4,7 @@
 !
 !svn $Id: mod_diags.F 737 2008-09-07 02:06:44Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -18,6 +18,11 @@
 !  DiaV2d    Diagnostics for 2D V-momentum terms.                      !
 !  DiaU3d    Diagnostics for 3D U-momentum terms.                      !
 !  DiaV3d    Diagnostics for 3D V-momentum terms.                      !
+!                                                                      !
+!  pvor_bar  2D, vertically integrated, potential vorticity.           !
+!  rvor_bar  2D, vertically integrated, relative vorticity.            !
+!  pvor      3D potential vorticity.                                   !
+!  rvor      3D relative vorticity.                                    !
 !                                                                      !
 !  Diagnostics fields work arrays.                                     !
 !                                                                      !
@@ -45,7 +50,7 @@
 
         TYPE T_DIAGS
 
-# ifdef BIO_FASHAM
+# ifdef BIO_FENNEL
           real(r8), pointer :: DiaBio2d(:,:,:)
           real(r8), pointer :: DiaBio3d(:,:,:,:)
 # endif
@@ -77,6 +82,12 @@
 #  endif
 
 # endif
+          real(r8), pointer :: pvor_bar(:,:)
+          real(r8), pointer :: rvor_bar(:,:)
+# ifdef SOLVE3D
+          real(r8), pointer :: pvor(:,:,:)
+          real(r8), pointer :: rvor(:,:,:)
+# endif
 
         END TYPE T_DIAGS
 
@@ -105,7 +116,7 @@
 !
       IF (ng.eq.1 ) allocate ( DIAGS(Ngrids) )
 !
-# ifdef BIO_FASHAM
+# ifdef BIO_FENNEL
       allocate ( DIAGS(ng) % DiaBio2d(LBi:UBi,LBj:UBj,NDbio2d) )
       allocate ( DIAGS(ng) % DiaBio3d(LBi:UBi,LBj:UBj,N(ng),NDbio3d) )
 # endif
@@ -138,6 +149,13 @@
 
 # endif
 
+      allocate ( DIAGS(ng) % pvor_bar(LBi:UBi,LBj:UBj) )
+      allocate ( DIAGS(ng) % rvor_bar(LBi:UBi,LBj:UBj) )
+# ifdef SOLVE3D
+      allocate ( DIAGS(ng) % pvor(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( DIAGS(ng) % rvor(LBi:UBi,LBj:UBj,N(ng)) )
+# endif
+
       RETURN
       END SUBROUTINE allocate_diags
 
@@ -168,45 +186,45 @@
 # endif
 
       real(r8), parameter :: IniVal = 0.0_r8
-!
-# include "tile.h"
+
+# include "set_bounds.h"
 !
 !  Set array initialization range.
 !
-#ifdef _OPENMP
+# ifdef _OPENMP
       IF (WESTERN_EDGE) THEN
-        Imin=LBi
+        Imin=BOUNDS(ng)%LBi(tile)
       ELSE
         Imin=Istr
       END IF
       IF (EASTERN_EDGE) THEN
-        Imax=UBi
+        Imax=BOUNDS(ng)%UBi(tile)
       ELSE
         Imax=Iend
       END IF
       IF (SOUTHERN_EDGE) THEN
-        Jmin=LBj
+        Jmin=BOUNDS(ng)%LBj(tile)
       ELSE
         Jmin=Jstr
       END IF
       IF (NORTHERN_EDGE) THEN
-        Jmax=UBj
+        Jmax=BOUNDS(ng)%UBj(tile)
       ELSE
         Jmax=Jend
       END IF
-#else
-      Imin=LBi
-      Imax=UBi
-      Jmin=LBj
-      Jmax=UBj
-#endif
+# else
+      Imin=BOUNDS(ng)%LBi(tile)
+      Imax=BOUNDS(ng)%UBi(tile)
+      Jmin=BOUNDS(ng)%LBj(tile)
+      Jmax=BOUNDS(ng)%UBj(tile)
+# endif
 !
 !-----------------------------------------------------------------------
 !  Initialize module variables.
 !-----------------------------------------------------------------------
 !
       DO j=Jmin,Jmax
-# ifdef BIO_FASHAM
+# ifdef BIO_FENNEL
         DO idiag=1,NDbio2d
           DO i=Imin,Imax
             DIAGS(ng) % DiaBio2d(i,j,idiag) = IniVal
@@ -283,6 +301,18 @@
           END DO
         END DO
 #  endif
+# endif
+        DO i=Imin,Imax
+          DIAGS(ng) % pvor_bar(i,j) = IniVal
+          DIAGS(ng) % rvor_bar(i,j) = IniVal
+        END DO
+# ifdef SOLVE3D
+        DO k=1,N(ng)
+          DO i=Imin,Imax
+            DIAGS(ng) % pvor(i,j,k) = IniVal
+            DIAGS(ng) % rvor(i,j,k) = IniVal
+          END DO
+        END DO
 # endif
       END DO
 

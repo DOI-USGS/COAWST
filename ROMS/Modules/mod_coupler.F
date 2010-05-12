@@ -5,7 +5,7 @@
 !
 !svn $Id: mod_coupler.F 755 2008-09-14 19:07:08Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -38,7 +38,7 @@
       TYPE T_FIELD
         integer :: FieldID              ! field ID
         integer :: GridID               ! associated grid ID
-        integer :: MaskID               ! associated land/sea mask ID         
+        integer :: MaskID               ! associated land/sea mask ID
         integer :: GridType             ! grid type (RHO-, U-, V-points)
         real(r8) :: AddOffset           ! number added to data
         real(r8) :: scale               ! scaling factor
@@ -132,7 +132,7 @@
 !  Their sum must be equal to the total number of processors.
 !
       integer, allocatable :: Nthreads(:)
-!      
+!
 !  Assigned Pertsistent Execution Threads (PETs) for each coupled
 !  model.
 !
@@ -177,10 +177,10 @@
 !  Export fields attribute string.
 !
       character (len=240), allocatable :: ExportList(:)
-!
+
 # if defined ESMF_COUPLING || defined ESMF_LIB
 !
-!  Gridded components objects handle.  
+!  Gridded components objects handle.
 !
       TYPE (ESMF_GridComp), allocatable :: GridComp(:)
 !
@@ -430,7 +430,7 @@
         STOP
       ELSE
         IF (MyRank.eq.0) THEN
-          WRITE (stdout,90) 
+          WRITE (stdout,90)
           DO model=1,Nmodels
             IF (model.eq.Iocean) THEN
               string='Ocean Model MPI nodes:'
@@ -466,7 +466,7 @@
 !  Allocate various coupling models arrays.
 !-----------------------------------------------------------------------
 !
-!  Gridded components objects handle.  
+!  Gridded components objects handle.
 !
       IF (.not.allocated(GridComp)) THEN
         allocate ( GridComp(Nmodels) )

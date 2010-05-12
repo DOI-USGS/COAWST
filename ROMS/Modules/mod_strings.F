@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_strings.F 1589 2008-07-24 04:02:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -12,7 +12,7 @@
 !  fflags      F90/F95 compiler flags.                                 !
 !  title       Title of model run.                                     !
 !  Coptions    Activated C-preprocessing options.                      !
-!  Mstate      Model state processing messages.                        !
+!  StateMsg    Model state processing messages.                        !
 !  Pregion     Model regions identifiers used for time profiling.      !
 !                                                                      !
 !=======================================================================
@@ -24,16 +24,18 @@
 
         integer, parameter :: Nregion = 48
 
-        character (len=55), dimension(9) :: Mstate =                    &
+        character (len=55), dimension(11) :: StateMsg =                 &
      &    (/'Read state initial conditions,               ',            &
      &      'Read previous state initial conditions,      ',            &
      &      'Read previous adjoint state solution,        ',            &
      &      'Read latest adjoint state solution,          ',            &
-     &      'Read covariance normalization factors,       ',            &
+     &      'Read initial/model normalization factors,    ',            &
      &      'Read correlation standard deviation,         ',            &
      &      'Read impulse forcing,                        ',            &
      &      'Read v-space increments,                     ',            &
-     &      'Read background state,                       '/)
+     &      'Read background state,                       ',            &
+     &      'Read boundary normalization factors,         ',            &
+     &      'Read forcing normalization factors,          '/)
 
         character (len=50), dimension(Nregion) :: Pregion =             &
      &    (/'Initialization ...................................',       &

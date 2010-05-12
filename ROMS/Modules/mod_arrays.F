@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_arrays.F 1589 2008-07-24 04:02:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -19,10 +19,12 @@
 #ifdef AVERAGES
       USE mod_average, ONLY : allocate_average, initialize_average
 #endif
+#ifdef OBC
       USE mod_boundary, ONLY : allocate_boundary, initialize_boundary
-#if defined AD_SENSITIVITY  || defined CLIMATOLOGY      || \
-    defined OBS_SENSITIVITY || defined OPT_OBSERVATIONS || \
-    defined SO_SEMI
+#endif
+#if defined AD_SENSITIVITY      || defined CLIMATOLOGY      || \
+    defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS || \
+    defined SENSITIVITY_4DVAR   || defined SO_SEMI
       USE mod_clima, ONLY : allocate_clima, initialize_clima
 #endif
 #ifdef SOLVE3D
@@ -38,6 +40,9 @@
       USE mod_obs, ONLY : allocate_obs, initialize_obs
 #endif
       USE mod_ocean, ONLY : allocate_ocean, initialize_ocean
+#if defined SEDIMENT || defined BBL_MODEL
+      USE mod_sedbed, ONLY : allocate_sedbed, initialize_sedbed
+#endif
 #if defined UV_PSOURCE || defined TS_PSOURCE || defined Q_PSOURCE
       USE mod_sources, ONLY : allocate_sources
 #endif
@@ -46,6 +51,9 @@
 #endif
 #ifdef BBL_MODEL
       USE mod_bbl, ONLY : allocate_bbl, initialize_bbl
+#endif
+#ifdef REFINED_GRID
+      USE mod_refined, ONLY : allocate_refined, initialize_refined
 #endif
 !
       implicit none
@@ -57,7 +65,7 @@
 !  Local variable declarations.
 !
       integer :: ng
-      integer :: LBi, UBi, LBj, UBj
+      integer :: LBi, UBi, LBj, UBj, LBij, UBij
       integer :: tile, subs, thread
 
       integer, parameter :: model = 0
@@ -73,16 +81,20 @@
           UBi=BOUNDS(ng)%UBi(TILE)
           LBj=BOUNDS(ng)%LBj(TILE)
           UBj=BOUNDS(ng)%UBj(TILE)
+          LBij=BOUNDS(ng)%LBij
+          UBij=BOUNDS(ng)%UBij
 #ifdef AVERAGES
           CALL allocate_average (ng, LBi, UBi, LBj, UBj)
 #endif
+#ifdef OBC
           CALL allocate_boundary (ng)
+#endif
 #ifdef BBL_MODEL
           CALL allocate_bbl (ng, LBi, UBi, LBj, UBj)
 #endif
-#if defined AD_SENSITIVITY  || defined CLIMATOLOGY      || \
-    defined OBS_SENSITIVITY || defined OPT_OBSERVATIONS || \
-    defined SO_SEMI
+#if defined AD_SENSITIVITY      || defined CLIMATOLOGY      || \
+    defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS || \
+    defined SENSITIVITY_4DVAR   || defined SO_SEMI
           CALL allocate_clima (ng, LBi, UBi, LBj, UBj)
 #endif
 #ifdef SOLVE3D
@@ -92,17 +104,23 @@
           CALL allocate_diags (ng, LBi, UBi, LBj, UBj)
 #endif
           CALL allocate_forces (ng, LBi, UBi, LBj, UBj)
-          CALL allocate_grid (ng, LBi, UBi, LBj, UBj)
+          CALL allocate_grid (ng, LBi, UBi, LBj, UBj, LBij, UBij)
           CALL allocate_mixing (ng, LBi, UBi, LBj, UBj)
 #if defined ASSIMILATION || defined NUDGING
           CALL allocate_obs (ng, LBi, UBi, LBj, UBj)
 #endif
-          CALL allocate_ocean  (ng, LBi, UBi, LBj, UBj)
+          CALL allocate_ocean (ng, LBi, UBi, LBj, UBj)
+#if defined SEDIMENT || defined BBL_MODEL
+          CALL allocate_sedbed (ng, LBi, UBi, LBj, UBj)
+#endif
 #if defined SSH_TIDES || defined UV_TIDES
           CALL allocate_tides (ng, LBi, UBi, LBj, UBj)
 #endif
 #if defined UV_PSOURCE || defined TS_PSOURCE || defined Q_PSOURCE
           CALL allocate_sources (ng)
+#endif
+#ifdef REFINED_GRID
+          CALL allocate_refined (ng)
 #endif
         END DO
       END IF
@@ -126,10 +144,12 @@
 #ifdef BBL_MODEL
             CALL initialize_bbl (ng, TILE)
 #endif
-            CALL initialize_boundary (ng, TILE)
-#if defined AD_SENSITIVITY  || defined CLIMATOLOGY      || \
-    defined OBS_SENSITIVITY || defined OPT_OBSERVATIONS || \
-    defined SO_SEMI
+#ifdef OBC
+            CALL initialize_boundary (ng, TILE, model)
+#endif
+#if defined AD_SENSITIVITY      || defined CLIMATOLOGY      || \
+    defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS || \
+    defined SENSITIVITY_4DVAR   || defined SO_SEMI
             CALL initialize_clima (ng, TILE)
 #endif
 #ifdef SOLVE3D
@@ -145,8 +165,14 @@
             CALL initialize_obs (ng, TILE)
 #endif
             CALL initialize_ocean (ng, TILE, model)
+#if defined SEDIMENT || defined BBL_MODEL
+            CALL initialize_sedbed (ng, TILE, model)
+#endif
 #if defined SSH_TIDES || defined UV_TIDES
             CALL initialize_tides (ng, TILE)
+#endif
+#ifdef REFINED_GRID
+            CALL initialize_refined (ng, TILE, model)
 #endif
           END DO
         END DO

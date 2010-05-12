@@ -4,20 +4,18 @@
 !
 !svn $Id: mod_floats.F 737 2008-09-07 02:06:44Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
 !  Findex     Indices of spherical coordinates entries in initial      !
-!               location arrays, if any.                               ! 
+!               location arrays, if any.                               !
 !  Flon       Initial longitude locations, if any.                     !
 !  Flat       Initial latitude locations, if any.                      !
 !  Ftype      Float trajectory type:                                   !
-!               Ftype(:) = 0,  neutral density 3D Lagrangian           !
-!               Ftype(:) = 1,  isobaric (constant depth) float.        !
-!               Ftype(:) = 2,  constant elevation below free surface   !
-!                              float.                                  !
+!               Ftype(:) = 1,  neutral density 3D Lagrangian           !
+!               Ftype(:) = 2,  isobaric (constant depth) float.        !
 !  Tinfo      Float trajectory initial information.                    !
 !  bounded    Float bounded status switch.                             !
 !  track      Multivariate float trajectory data at several time       !

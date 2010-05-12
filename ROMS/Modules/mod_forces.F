@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_forces.F 737 2008-09-07 02:06:44Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -159,7 +159,8 @@
 !
           real(r8), pointer :: sustr(:,:)
           real(r8), pointer :: svstr(:,:)
-#if !defined ANA_SMFLUX && !defined BULK_FLUXES
+#if !defined ANA_SMFLUX     && !defined BULK_FLUXES || \
+     defined NL_BULK_FLUXES
           real(r8), pointer :: sustrG(:,:,:)
           real(r8), pointer :: svstrG(:,:,:)
 #endif
@@ -169,6 +170,14 @@
 #endif
           real(r8), pointer :: bustr(:,:)
           real(r8), pointer :: bvstr(:,:)
+
+#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
+    defined NEARSHORE_WEC
+          real(r8), pointer :: Pair(:,:)
+# ifndef ANA_PAIR
+          real(r8), pointer :: PairG(:,:,:)
+# endif
+#endif
 
 #ifdef WAVES_DIR
           real(r8), pointer :: Dwave(:,:)
@@ -262,12 +271,6 @@
 #  endif
 # endif
 
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
-          real(r8), pointer :: Pair(:,:)
-#  ifndef ANA_PAIR
-          real(r8), pointer :: PairG(:,:,:)
-#  endif
-# endif
 # if defined BULK_FLUXES || defined ECOSIM
           real(r8), pointer :: Uwind(:,:)
           real(r8), pointer :: Vwind(:,:)
@@ -283,19 +286,22 @@
           real(r8), pointer :: rainG(:,:,:)
 #  endif
 #  ifdef EMINUSP
+          real(r8), pointer :: EminusP(:,:)
           real(r8), pointer :: evap(:,:)
 #  endif
 # endif
 
           real(r8), pointer :: stflx(:,:,:)
-# if !defined ANA_STFLUX || !defined ANA_SSFLUX
+# if !defined ANA_STFLUX || !defined ANA_SSFLUX || \
+     !defined ANA_SPFLUX
           real(r8), pointer :: stflxG(:,:,:,:)
 # endif
 # ifdef ADJUST_STFLUX
           real(r8), pointer :: tflux(:,:,:,:,:)
 # endif
           real(r8), pointer :: btflx(:,:,:)
-# if !defined ANA_BTFLUX || !defined ANA_BSFLUX
+# if !defined ANA_BTFLUX || !defined ANA_BSFLUX || \
+     !defined ANA_BPFLUX
           real(r8), pointer :: btflxG(:,:,:,:)
 # endif
 
@@ -432,6 +438,9 @@
 !=======================================================================
 !
       USE mod_param
+#ifdef BIOLOGY
+      USE mod_biology
+#endif
 #if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
       USE mod_scalars
 #endif
@@ -451,7 +460,8 @@
       allocate ( FORCES(ng) % sustr(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % svstr(LBi:UBi,LBj:UBj) )
 
-#if !defined ANA_SMFLUX && !defined BULK_FLUXES
+#if !defined ANA_SMFLUX     && !defined BULK_FLUXES || \
+     defined NL_BULK_FLUXES
       allocate ( FORCES(ng) % sustrG(LBi:UBi,LBj:UBj,2) )
       allocate ( FORCES(ng) % svstrG(LBi:UBi,LBj:UBj,2) )
 #endif
@@ -461,6 +471,14 @@
 #endif
       allocate ( FORCES(ng) % bustr(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % bvstr(LBi:UBi,LBj:UBj) )
+
+#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
+    defined NEARSHORE_WEC
+      allocate ( FORCES(ng) % Pair(LBi:UBi,LBj:UBj) )
+# ifndef ANA_PAIR
+      allocate ( FORCES(ng) % PairG(LBi:UBi,LBj:UBj,2) )
+# endif
+#endif
 
 #ifdef WAVES_DIR
       allocate ( FORCES(ng) % Dwave(LBi:UBi,LBj:UBj) )
@@ -562,14 +580,6 @@
 #  endif
 # endif
 
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
-      allocate ( FORCES(ng) % Pair(LBi:UBi,LBj:UBj) )
-
-#  ifndef ANA_PAIR
-      allocate ( FORCES(ng) % PairG(LBi:UBi,LBj:UBj,2) )
-#  endif
-# endif
-
 # if defined BULK_FLUXES || defined ECOSIM
       allocate ( FORCES(ng) % Uwind(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % Vwind(LBi:UBi,LBj:UBj) )
@@ -587,13 +597,15 @@
       allocate ( FORCES(ng) % rainG(LBi:UBi,LBj:UBj,2) )
 #  endif
 #  ifdef EMINUSP
+      allocate ( FORCES(ng) % EminusP(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % evap(LBi:UBi,LBj:UBj) )
 #  endif
 # endif
 
       allocate ( FORCES(ng) % stflx(LBi:UBi,LBj:UBj,NT(ng)) )
 
-# if !defined ANA_STFLUX || !defined ANA_SSFLUX
+# if !defined ANA_STFLUX || !defined ANA_SSFLUX || \
+     !defined ANA_SPFLUX
       allocate ( FORCES(ng) % stflxG(LBi:UBi,LBj:UBj,2,NT(ng)) )
 # endif
 # ifdef ADJUST_STFLUX
@@ -602,7 +614,8 @@
 # endif
       allocate ( FORCES(ng) % btflx(LBi:UBi,LBj:UBj,NT(ng)) )
 
-# if !defined ANA_BTFLUX || !defined ANA_BSFLUX
+# if !defined ANA_BTFLUX || !defined ANA_BSFLUX || \
+     !defined ANA_BPFLUX
       allocate ( FORCES(ng) % btflxG(LBi:UBi,LBj:UBj,2,NT(ng)) )
 # endif
 
@@ -745,6 +758,9 @@
 !=======================================================================
 !
       USE mod_param
+#ifdef BIOLOGY
+      USE mod_biology
+#endif
 #if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
       USE mod_scalars
 #endif
@@ -762,37 +778,37 @@
 #endif
 
       real(r8), parameter :: IniVal = 0.0_r8
-!
-#include "tile.h"
+
+#include "set_bounds.h"
 !
 !  Set array initialization range.
 !
 #ifdef _OPENMP
       IF (WESTERN_EDGE) THEN
-        Imin=LBi
+        Imin=BOUNDS(ng)%LBi(tile)
       ELSE
         Imin=Istr
       END IF
       IF (EASTERN_EDGE) THEN
-        Imax=UBi
+        Imax=BOUNDS(ng)%UBi(tile)
       ELSE
         Imax=Iend
       END IF
       IF (SOUTHERN_EDGE) THEN
-        Jmin=LBj
+        Jmin=BOUNDS(ng)%LBj(tile)
       ELSE
         Jmin=Jstr
       END IF
       IF (NORTHERN_EDGE) THEN
-        Jmax=UBj
+        Jmax=BOUNDS(ng)%UBj(tile)
       ELSE
         Jmax=Jend
       END IF
 #else
-      Imin=LBi
-      Imax=UBi
-      Jmin=LBj
-      Jmax=UBj
+      Imin=BOUNDS(ng)%LBi(tile)
+      Imax=BOUNDS(ng)%UBi(tile)
+      Jmin=BOUNDS(ng)%LBj(tile)
+      Jmax=BOUNDS(ng)%UBj(tile)
 #endif
 !
 !-----------------------------------------------------------------------
@@ -814,7 +830,8 @@
 #endif
             FORCES(ng) % sustr(i,j) = IniVal
             FORCES(ng) % svstr(i,j) = IniVal
-#if !defined ANA_SMFLUX && !defined BULK_FLUXES
+#if !defined ANA_SMFLUX     && !defined BULK_FLUXES || \
+     defined NL_BULK_FLUXES
             FORCES(ng) % sustrG(i,j,1) = IniVal
             FORCES(ng) % sustrG(i,j,2) = IniVal
             FORCES(ng) % svstrG(i,j,1) = IniVal
@@ -822,6 +839,14 @@
 #endif
             FORCES(ng) % bustr(i,j) = IniVal
             FORCES(ng) % bvstr(i,j) = IniVal
+#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
+    defined NEARSHORE_WEC
+            FORCES(ng) % Pair(i,j) = IniVal
+# ifndef ANA_PAIR
+            FORCES(ng) % PairG(i,j,1) = IniVal
+            FORCES(ng) % PairG(i,j,2) = IniVal
+# endif
+#endif
 #ifdef WAVES_DIR
             FORCES(ng) % Dwave(i,j) = IniVal
 # ifndef ANA_WWAVE
@@ -904,9 +929,6 @@
             FORCES(ng) % Hair(i,j) = IniVal
             FORCES(ng) % Tair(i,j) = IniVal
 # endif
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
-            FORCES(ng) % Pair(i,j) = IniVal
-# endif
 # if defined BULK_FLUXES || defined ECOSIM
             FORCES(ng) % Uwind(i,j) = IniVal
             FORCES(ng) % Vwind(i,j) = IniVal
@@ -914,6 +936,7 @@
 # ifdef BULK_FLUXES
             FORCES(ng) % rain(i,j) = IniVal
 #  ifdef EMINUSP
+            FORCES(ng) % EminusP(i,j) = IniVal
             FORCES(ng) % evap(i,j) = IniVal
 #  endif
 # endif
@@ -925,12 +948,6 @@
 #  ifndef ANA_HUMIDITY
             FORCES(ng) % HairG(i,j,1) = IniVal
             FORCES(ng) % HairG(i,j,2) = IniVal
-#  endif
-# endif
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
-#  ifndef ANA_PAIR
-            FORCES(ng) % PairG(i,j,1) = IniVal
-            FORCES(ng) % PairG(i,j,2) = IniVal
 #  endif
 # endif
 # if defined BULK_FLUXES || defined ECOSIM
@@ -975,11 +992,13 @@
 # endif
               FORCES(ng) % stflx(i,j,itrc) = IniVal
               FORCES(ng) % btflx(i,j,itrc) = IniVal
-# if !defined ANA_STFLUX || !defined ANA_SSFLUX
+# if !defined ANA_STFLUX || !defined ANA_SSFLUX || \
+     !defined ANA_SPFLUX
               FORCES(ng) % stflxG(i,j,1,itrc) = IniVal
               FORCES(ng) % stflxG(i,j,2,itrc) = IniVal
 # endif
-# if !defined ANA_BTFLUX || !defined ANA_BSFLUX
+# if !defined ANA_BTFLUX || !defined ANA_BSFLUX || \
+     !defined ANA_BPFLUX
               FORCES(ng) % btflxG(i,j,1,itrc) = IniVal
               FORCES(ng) % btflxG(i,j,2,itrc) = IniVal
 # endif

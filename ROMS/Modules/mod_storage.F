@@ -5,7 +5,7 @@
 !
 !svn $Id: mod_storage.F 1338 2008-01-24 02:47:35Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -20,7 +20,7 @@
 !                 optimals adjoint state vector.                       !
 # endif
 !  Nsize        Size of the eigenvalue problem: Nend-Nstr+1.           !
-!  Nstate       Size of NODE partition state vector: Nstate=Mstate in  ! 
+!  Nstate       Size of NODE partition state vector: Nstate=Mstate in  !
 !                 serial applications.                                 !
 !  Nstr         State vector node partition starting index.            !
 !  Nend         State vector node partition ending   index.            !
@@ -55,7 +55,7 @@
 # ifdef SO_SEMI
 !  so_state     Stochastic optimals adjoint state surface forcing      !
 !                 vector sample in time.                               !
-# endif 
+# endif
 !  which        ARPACK Ritz eigenvalues to compute identifier:         !
 !                 which='LA'   compute NEV largest (algebraic)         !
 !                 which='SA'   compute NEV smallest (algebraic)        !
@@ -94,9 +94,9 @@
 !
         integer, dimension(11) :: iparam
 # if defined AFT_EIGENMODES || defined FT_EIGENMODES
-        integer, dimension(14) :: ipntr 
+        integer, dimension(14) :: ipntr
 # else
-        integer, dimension(11) :: ipntr 
+        integer, dimension(11) :: ipntr
 # endif
 !
         logical, allocatable :: select(:)           ! [NCV]
@@ -118,14 +118,14 @@
 # endif
 !
 !  ARPACK private common blocks containing parameters needed for
-!  checkpoiniting. The original include files "i_aupd.h" and 
+!  checkpoiniting. The original include files "i_aupd.h" and
 !  "idaup2.h" have several parameters in their commom blocks. All
 !  these values are compacted here in vector arrays to allow IO
 !  manipulations during checkpointing.
 !
       integer  :: iaitr(8), iaup2(8), iaupd(20)
-      logical  :: laitr(5), laup2(5) 
-      real(r8) :: raitr(8), raup2(2) 
+      logical  :: laitr(5), laup2(5)
+      real(r8) :: raitr(8), raup2(2)
 !
       common /i_aupd/ iaupd
 # ifdef DOUBLE_PRECISION

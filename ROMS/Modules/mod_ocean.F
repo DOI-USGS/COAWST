@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_ocean.F 787 2008-10-14 00:37:50Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -32,40 +32,7 @@
 !                                                                      !
 !  pH           Surface concentration of hydrogen ions.                !
 !                                                                      !
-!  Sediment Variables.                                                 !
-!                                                                      !
-!  bed          Sediment properties in each bed layer:                 !
-!                 bed(:,:,:,ithck) => layer thickness                  !
-!                 bed(:,:,:,iaged) => layer age                        !
-!                 bed(:,:,:,iporo) => layer porosity                   !
-!                 bed(:,:,:,idiff) => layer bio-diffusivity            !
-!  bedldu         Bed load u-transport (kg/m/s)                        !
-!  bedldv         Bed load v-transport (kg/m/s)                        !
-!  bed_frac     Sediment fraction of each size class in each bed layer !
-!                 (nondimensional: 0-1.0).  Sum of bed_frac = 1.0      !
-!  bed_mass     Sediment mass of each size class in each bed layer     !
-!                 (kg/m2).                                             !
-!  bottom       Exposed sediment layer properties:                     !
-!                 bottom(:,:,isd50) => mean grain diameter             !
-!                 bottom(:,:,idens) => mean grain density              !
-!                 bottom(:,:,iwsed) => mean settling velocity          !
-!                 bottom(:,:,itauc) => mean critical erosion stress    !
-!                 bottom(:,:,irlen) => ripple length                   !
-!                 bottom(:,:,irhgt) => ripple height                   !
-!                 bottom(:,:,ibwav) => bed wave excursion amplitude    !
-!                 bottom(:,:,izNik) => Nikuradse bottom roughness      !
-!                 bottom(:,:,izbio) => biological bottom roughness     !
-!                 bottom(:,:,izbfm) => bed form bottom roughness       !
-!                 bottom(:,:,izbld) => bed load bottom roughness       !
-!                 bottom(:,:,izapp) => apparent bottom roughness       !
-!                 bottom(:,:,izwbl) => wave bottom roughness           !
-!                 bottom(:,:,izdef) => default bottom roughness        !
-!                 bottom(:,:,iactv) => active layer thickness          !
-!                 bottom(:,:,ishgt) => saltation height                !
-!                 ero_flux(:,:,ised) => flux from erosion              !
-!                 settling_flux(:,:,ised) => flux from settling        !
-!                                                                      !
-#ifdef NEARSHORE_MELLOR
+#ifdef NEARSHORE
 !  Nearshore radiation stresses:                                       !
 !                                                                      !
 !  rulag2d      2D U-Stokes tendency term (m4/s2).                     !
@@ -76,6 +43,7 @@
 !  rvlag3d      3D V-Stokes tendency term (m4/s2).                     !
 !  u_stokes     3D U-Stokes drift velocity (m/s).                      !
 !  v_stokes     3D V-Stokes drift velocity (m/s).                      !
+!  w_stokes     3D W-Stokes drift velocity (m/s).                      !
 !                                                                      !
 #endif
 !=======================================================================
@@ -94,15 +62,14 @@
           real(r8), pointer :: ubar(:,:,:)
           real(r8), pointer :: vbar(:,:,:)
           real(r8), pointer :: zeta(:,:,:)
-#if defined NEARSHORE_MELLOR
+#if defined NEARSHORE_WEC
+          real(r8), pointer :: zetat(:,:)
+#endif
+#if defined NEARSHORE
           real(r8), pointer :: rulag2d(:,:)
           real(r8), pointer :: rvlag2d(:,:)
           real(r8), pointer :: ubar_stokes(:,:)
           real(r8), pointer :: vbar_stokes(:,:)
-#endif
-#if defined REFINED_GRID_nouse
-          real(r8), pointer :: DUon(:,:)
-          real(r8), pointer :: DVom(:,:)
 #endif
 #ifdef SOLVE3D
           real(r8), pointer :: pden(:,:,:)
@@ -114,34 +81,19 @@
           real(r8), pointer :: v(:,:,:,:)
           real(r8), pointer :: W(:,:,:)
           real(r8), pointer :: wvel(:,:,:)
-# if defined NEARSHORE_MELLOR
+# if defined NEARSHORE
           real(r8), pointer :: rulag3d(:,:,:)
           real(r8), pointer :: rvlag3d(:,:,:)
           real(r8), pointer :: u_stokes(:,:,:)
           real(r8), pointer :: v_stokes(:,:,:)
+          real(r8), pointer :: w_stokes(:,:,:)
 # endif
 # ifdef UV_KIRBY
           real(r8), pointer :: uwave(:,:)
           real(r8), pointer :: vwave(:,:)
 # endif
-# if defined BIO_FASHAM && defined CARBON
+# if defined BIO_FENNEL && defined CARBON
           real(r8), pointer :: pH(:,:)
-# endif
-# if defined SEDIMENT
-          real(r8), pointer :: bed(:,:,:,:)
-          real(r8), pointer :: bed_frac(:,:,:,:)
-          real(r8), pointer :: bed_mass(:,:,:,:,:)
-#  ifdef SUSPLOAD
-          real(r8), pointer ::ero_flux(:,:,:)
-          real(r8), pointer ::settling_flux(:,:,:)
-#  endif
-# endif
-# if defined SEDIMENT || defined BBL_MODEL
-          real(r8), pointer :: bottom(:,:,:)
-#  ifdef BEDLOAD
-          real(r8), pointer :: bedldu(:,:,:)
-          real(r8), pointer :: bedldv(:,:,:)
-#  endif
 # endif
 #endif
 
@@ -263,17 +215,16 @@
 
 #if defined FOUR_DVAR || defined IMPULSE
 !
-!  Working arrays to store adjoint impulse forcing, background error
-!  covariance, background-error standard deviations, or descent
-!  conjugate vectors (directions).
+!  Working arrays to store adjoint impulse forcing, error covariance,
+!  standard deviations, or descent conjugate vectors (directions).
 !
-          real(r8), pointer :: b_ubar(:,:)
-          real(r8), pointer :: b_vbar(:,:)
-          real(r8), pointer :: b_zeta(:,:)
+          real(r8), pointer :: b_ubar(:,:,:)
+          real(r8), pointer :: b_vbar(:,:,:)
+          real(r8), pointer :: b_zeta(:,:,:)
 # ifdef SOLVE3D
-          real(r8), pointer :: b_t(:,:,:,:)
-          real(r8), pointer :: b_u(:,:,:)
-          real(r8), pointer :: b_v(:,:,:)
+          real(r8), pointer :: b_t(:,:,:,:,:)
+          real(r8), pointer :: b_u(:,:,:,:)
+          real(r8), pointer :: b_v(:,:,:,:)
 # endif
 # ifdef FOUR_DVAR
           real(r8), pointer :: d_ubar(:,:)
@@ -284,16 +235,16 @@
           real(r8), pointer :: d_u(:,:,:)
           real(r8), pointer :: d_v(:,:,:)
 #  endif
-          real(r8), pointer :: e_ubar(:,:)
-          real(r8), pointer :: e_vbar(:,:)
-          real(r8), pointer :: e_zeta(:,:)
+          real(r8), pointer :: e_ubar(:,:,:)
+          real(r8), pointer :: e_vbar(:,:,:)
+          real(r8), pointer :: e_zeta(:,:,:)
 #  ifdef SOLVE3D
-          real(r8), pointer :: e_t(:,:,:,:)
-          real(r8), pointer :: e_u(:,:,:)
-          real(r8), pointer :: e_v(:,:,:)
+          real(r8), pointer :: e_t(:,:,:,:,:)
+          real(r8), pointer :: e_u(:,:,:,:)
+          real(r8), pointer :: e_v(:,:,:,:)
 #  endif
 # endif
-# if defined WEAK_CONSTRAINT || defined IOM
+# ifdef WEAK_CONSTRAINT
           real(r8), pointer :: f_ubar(:,:)
           real(r8), pointer :: f_vbar(:,:)
           real(r8), pointer :: f_zeta(:,:)
@@ -328,6 +279,17 @@
           real(r8), pointer :: uG(:,:,:,:)
           real(r8), pointer :: vG(:,:,:,:)
 # endif
+# ifdef WEAK_CONSTRAINT
+          real(r8), pointer :: f_zetaG(:,:,:)
+#  ifdef SOLVE3D
+          real(r8), pointer :: f_tG(:,:,:,:,:)
+          real(r8), pointer :: f_uG(:,:,:,:)
+          real(r8), pointer :: f_vG(:,:,:,:)
+#  else
+          real(r8), pointer :: f_ubarG(:,:,:)
+          real(r8), pointer :: f_vbarG(:,:,:)
+#  endif
+# endif
 #endif
 
         END TYPE T_OCEAN
@@ -346,9 +308,6 @@
 !=======================================================================
 !
       USE mod_param
-#if defined SEDIMENT || defined BBL_MODEL
-      USE mod_sediment
-#endif
 !
 !  Imported variable declarations.
 !
@@ -369,16 +328,14 @@
       allocate ( OCEAN(ng) % ubar(LBi:UBi,LBj:UBj,3) )
       allocate ( OCEAN(ng) % vbar(LBi:UBi,LBj:UBj,3) )
       allocate ( OCEAN(ng) % zeta(LBi:UBi,LBj:UBj,3) )
-
-#if defined NEARSHORE_MELLOR
+#if defined NEARSHORE_WEC
+      allocate ( OCEAN(ng) % zetat(LBi:UBi,LBj:UBj) )
+#endif
+#if defined NEARSHORE
       allocate ( OCEAN(ng) % rulag2d(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % rvlag2d(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % ubar_stokes(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % vbar_stokes(LBi:UBi,LBj:UBj) )
-#endif
-#if defined REFINED_GRID_nouse
-      allocate ( OCEAN(ng) % DUon(LBi:UBi,LBj:UBj) )
-      allocate ( OCEAN(ng) % DVom(LBi:UBi,LBj:UBj) )
 #endif
 
 #ifdef SOLVE3D
@@ -394,38 +351,23 @@
       allocate ( OCEAN(ng) % W(LBi:UBi,LBj:UBj,0:N(ng)) )
       allocate ( OCEAN(ng) % wvel(LBi:UBi,LBj:UBj,0:N(ng)) )
 
-# if defined NEARSHORE_MELLOR
+# if defined NEARSHORE
       allocate ( OCEAN(ng) % rulag3d(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % rvlag3d(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % u_stokes(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % v_stokes(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % w_stokes(LBi:UBi,LBj:UBj,0:N(ng)) )
 # endif
 # ifdef UV_KIRBY
       allocate ( OCEAN(ng) % uwave(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % vwave(LBi:UBi,LBj:UBj) )
 # endif
 
-# if defined BIO_FASHAM && defined CARBON
+# if defined BIO_FENNEL && defined CARBON
       allocate ( OCEAN(ng) % pH(LBi:UBi,LBj:UBj) )
 # endif
-
-# if defined SEDIMENT
-      allocate ( OCEAN(ng) % bed(LBi:UBi,LBj:UBj,Nbed,MBEDP) )
-      allocate ( OCEAN(ng) % bed_frac(LBi:UBi,LBj:UBj,Nbed,NST) )
-      allocate ( OCEAN(ng) % bed_mass(LBi:UBi,LBj:UBj,Nbed,2,NST) )
-#  ifdef SUSPLOAD
-      allocate ( OCEAN(ng) % ero_flux(LBi:UBi,LBj:UBj,NST) )
-      allocate ( OCEAN(ng) % settling_flux(LBi:UBi,LBj:UBj,NST) )
-#  endif
-# endif
-# if defined SEDIMENT || defined BBL_MODEL
-      allocate ( OCEAN(ng) % bottom(LBi:UBi,LBj:UBj,MBOTP) )
-#  ifdef BEDLOAD
-      allocate ( OCEAN(ng) % bedldu(LBi:UBi,LBj:UBj,NST) )
-      allocate ( OCEAN(ng) % bedldv(LBi:UBi,LBj:UBj,NST) )
-#  endif
-# endif
 #endif
+
 
 #if defined REFINED_GRID
           allocate ( OCEAN(ng) % hindpi_u(LBi:UBi,LBj:UBj) )
@@ -562,14 +504,14 @@
 !  covariance, background-error standard deviations, or descent
 !  conjugate vectors (directions).
 !
-      allocate ( OCEAN(ng) % b_ubar(LBi:UBi,LBj:UBj) )
-      allocate ( OCEAN(ng) % b_vbar(LBi:UBi,LBj:UBj) )
-      allocate ( OCEAN(ng) % b_zeta(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % b_ubar(LBi:UBi,LBj:UBj,NSA) )
+      allocate ( OCEAN(ng) % b_vbar(LBi:UBi,LBj:UBj,NSA) )
+      allocate ( OCEAN(ng) % b_zeta(LBi:UBi,LBj:UBj,NSA) )
 
 # ifdef SOLVE3D
-      allocate ( OCEAN(ng) % b_t(LBi:UBi,LBj:UBj,N(ng),NT(ng)) )
-      allocate ( OCEAN(ng) % b_u(LBi:UBi,LBj:UBj,N(ng)) )
-      allocate ( OCEAN(ng) % b_v(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % b_t(LBi:UBi,LBj:UBj,N(ng),NSA,NT(ng)) )
+      allocate ( OCEAN(ng) % b_u(LBi:UBi,LBj:UBj,N(ng),NSA) )
+      allocate ( OCEAN(ng) % b_v(LBi:UBi,LBj:UBj,N(ng),NSA) )
 # endif
 
 # ifdef FOUR_DVAR
@@ -583,17 +525,17 @@
       allocate ( OCEAN(ng) % d_v(LBi:UBi,LBj:UBj,N(ng)) )
 #  endif
 
-      allocate ( OCEAN(ng) % e_ubar(LBi:UBi,LBj:UBj) )
-      allocate ( OCEAN(ng) % e_vbar(LBi:UBi,LBj:UBj) )
-      allocate ( OCEAN(ng) % e_zeta(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % e_ubar(LBi:UBi,LBj:UBj,NSA) )
+      allocate ( OCEAN(ng) % e_vbar(LBi:UBi,LBj:UBj,NSA) )
+      allocate ( OCEAN(ng) % e_zeta(LBi:UBi,LBj:UBj,NSA) )
 
 #  ifdef SOLVE3D
-      allocate ( OCEAN(ng) % e_t(LBi:UBi,LBj:UBj,N(ng),NT(ng)) )
-      allocate ( OCEAN(ng) % e_u(LBi:UBi,LBj:UBj,N(ng)) )
-      allocate ( OCEAN(ng) % e_v(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % e_t(LBi:UBi,LBj:UBj,N(ng),NSA,NT(ng)) )
+      allocate ( OCEAN(ng) % e_u(LBi:UBi,LBj:UBj,N(ng),NSA) )
+      allocate ( OCEAN(ng) % e_v(LBi:UBi,LBj:UBj,N(ng),NSA) )
 #  endif
 
-#  if defined WEAK_CONSTRAINT || defined IOM
+#  ifdef WEAK_CONSTRAINT
       allocate ( OCEAN(ng) % f_ubar(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % f_vbar(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % f_zeta(LBi:UBi,LBj:UBj) )
@@ -631,6 +573,17 @@
       allocate ( OCEAN(ng) % uG(LBi:UBi,LBj:UBj,N(ng),2) )
       allocate ( OCEAN(ng) % vG(LBi:UBi,LBj:UBj,N(ng),2) )
 # endif
+# ifdef WEAK_CONSTRAINT
+      allocate ( OCEAN(ng) % f_zetaG(LBi:UBi,LBj:UBj,2) )
+#  ifdef SOLVE3D
+      allocate ( OCEAN(ng) % f_tG(LBi:UBi,LBj:UBj,N(ng),2,NT(ng)) )
+      allocate ( OCEAN(ng) % f_uG(LBi:UBi,LBj:UBj,N(ng),2) )
+      allocate ( OCEAN(ng) % f_vG(LBi:UBi,LBj:UBj,N(ng),2) )
+#  else
+      allocate ( OCEAN(ng) % f_ubarG(LBi:UBi,LBj:UBj,2) )
+      allocate ( OCEAN(ng) % f_vbarG(LBi:UBi,LBj:UBj,2) )
+#  endif
+# endif
 #endif
 
       RETURN
@@ -649,9 +602,6 @@
 !=======================================================================
 !
       USE mod_param
-#if defined SEDIMENT || defined BBL_MODEL
-      USE mod_sediment
-#endif
 !
 !  Imported variable declarations.
 !
@@ -660,44 +610,43 @@
 !  Local variable declarations.
 !
       integer :: Imin, Imax, Jmin, Jmax
-      integer :: i, j
+      integer :: i, j, rec
 #ifdef SOLVE3D
       integer :: itrc, k
 #endif
 
-      integer, parameter :: IniVali = 0
       real(r8), parameter :: IniVal = 0.0_r8
-!
-#include "tile.h"
+
+#include "set_bounds.h"
 !
 !  Set array initialization range.
 !
 #ifdef _OPENMP
       IF (WESTERN_EDGE) THEN
-        Imin=LBi
+        Imin=BOUNDS(ng)%LBi(tile)
       ELSE
         Imin=Istr
       END IF
       IF (EASTERN_EDGE) THEN
-        Imax=UBi
+        Imax=BOUNDS(ng)%UBi(tile)
       ELSE
         Imax=Iend
       END IF
       IF (SOUTHERN_EDGE) THEN
-        Jmin=LBj
+        Jmin=BOUNDS(ng)%LBj(tile)
       ELSE
         Jmin=Jstr
       END IF
       IF (NORTHERN_EDGE) THEN
-        Jmax=UBj
+        Jmax=BOUNDS(ng)%UBj(tile)
       ELSE
         Jmax=Jend
       END IF
 #else
-      Imin=LBi
-      Imax=UBi
-      Jmin=LBj
-      Jmax=UBj
+      Imin=BOUNDS(ng)%LBi(tile)
+      Imax=BOUNDS(ng)%UBi(tile)
+      Jmin=BOUNDS(ng)%LBj(tile)
+      Jmax=BOUNDS(ng)%UBj(tile)
 #endif
 !
 !-----------------------------------------------------------------------
@@ -706,32 +655,32 @@
 !
 !  Nonlinear model state.
 !
-# if defined REFINED_GRID
-            OCEAN(ng) % hindpr(1) = IniVali
-            OCEAN(ng) % hindpr(2) = IniVali
-            OCEAN(ng) % hindpr(3) = IniVali
-            OCEAN(ng) % hindpr(4) = IniVali
-            OCEAN(ng) % hindpu(1) = IniVali
-            OCEAN(ng) % hindpu(2) = IniVali
-            OCEAN(ng) % hindpu(3) = IniVali
-            OCEAN(ng) % hindpu(4) = IniVali
-            OCEAN(ng) % hindpv(1) = IniVali
-            OCEAN(ng) % hindpv(2) = IniVali
-            OCEAN(ng) % hindpv(3) = IniVali
-            OCEAN(ng) % hindpv(4) = IniVali
-            OCEAN(ng) % hindcr(1) = IniVali
-            OCEAN(ng) % hindcr(2) = IniVali
-            OCEAN(ng) % hindcr(3) = IniVali
-            OCEAN(ng) % hindcr(4) = IniVali
-            OCEAN(ng) % hindcu(1) = IniVali
-            OCEAN(ng) % hindcu(2) = IniVali
-            OCEAN(ng) % hindcu(3) = IniVali
-            OCEAN(ng) % hindcu(4) = IniVali
-            OCEAN(ng) % hindcv(1) = IniVali
-            OCEAN(ng) % hindcv(2) = IniVali
-            OCEAN(ng) % hindcv(3) = IniVali
-            OCEAN(ng) % hindcv(4) = IniVali
-# endif
+#if defined REFINED_GRID
+            OCEAN(ng) % hindpr(1) = IniVal
+            OCEAN(ng) % hindpr(2) = IniVal
+            OCEAN(ng) % hindpr(3) = IniVal
+            OCEAN(ng) % hindpr(4) = IniVal
+            OCEAN(ng) % hindpu(1) = IniVal
+            OCEAN(ng) % hindpu(2) = IniVal
+            OCEAN(ng) % hindpu(3) = IniVal
+            OCEAN(ng) % hindpu(4) = IniVal
+            OCEAN(ng) % hindpv(1) = IniVal
+            OCEAN(ng) % hindpv(2) = IniVal
+            OCEAN(ng) % hindpv(3) = IniVal
+            OCEAN(ng) % hindpv(4) = IniVal
+            OCEAN(ng) % hindcr(1) = IniVal
+            OCEAN(ng) % hindcr(2) = IniVal
+            OCEAN(ng) % hindcr(3) = IniVal
+            OCEAN(ng) % hindcr(4) = IniVal
+            OCEAN(ng) % hindcu(1) = IniVal
+            OCEAN(ng) % hindcu(2) = IniVal
+            OCEAN(ng) % hindcu(3) = IniVal
+            OCEAN(ng) % hindcu(4) = IniVal
+            OCEAN(ng) % hindcv(1) = IniVal
+            OCEAN(ng) % hindcv(2) = IniVal
+            OCEAN(ng) % hindcv(3) = IniVal
+            OCEAN(ng) % hindcv(4) = IniVal
+#endif
       IF ((model.eq.0).or.(model.eq.iNLM)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
@@ -751,27 +700,24 @@
             OCEAN(ng) % zeta(i,j,1) = IniVal
             OCEAN(ng) % zeta(i,j,2) = IniVal
             OCEAN(ng) % zeta(i,j,3) = IniVal
-# if defined NEARSHORE_MELLOR
+#if defined NEARSHORE_WEC
+            OCEAN(ng) % zetat(i,j) = IniVal
+#endif
+#if defined NEARSHORE
             OCEAN(ng) % rulag2d(i,j) = IniVal
             OCEAN(ng) % rvlag2d(i,j) = IniVal
             OCEAN(ng) % ubar_stokes(i,j) = IniVal
             OCEAN(ng) % vbar_stokes(i,j) = IniVal
-# endif
-#if defined REFINED_GRID_nouse
-            OCEAN(ng) % DUon(i,j) = IniVal
-            OCEAN(ng) % DVom(i,j) = IniVal
 #endif
-# if defined BIO_FASHAM && defined CARBON && defined SOLVE3D
+#if defined BIO_FENNEL && defined CARBON && defined SOLVE3D
             OCEAN(ng) % pH(i,j) = 8.0_r8
-# endif
-          END DO
-#ifdef SOLVE3D
-# ifdef UV_KIRBY
-          DO i=Imin,Imax
+#endif
+#ifdef UV_KIRBY
             OCEAN(ng) % uwave(i,j) = IniVal
             OCEAN(ng) % vwave(i,j) = IniVal
+#endif
           END DO
-# endif
+#ifdef SOLVE3D
           DO k=1,N(ng)
             DO i=Imin,Imax
               OCEAN(ng) % pden(i,j,k) = IniVal
@@ -781,7 +727,7 @@
               OCEAN(ng) % u(i,j,k,2) = IniVal
               OCEAN(ng) % v(i,j,k,1) = IniVal
               OCEAN(ng) % v(i,j,k,2) = IniVal
-# if defined NEARSHORE_MELLOR
+# if defined NEARSHORE
               OCEAN(ng) % rulag3d(i,j,k) = IniVal
               OCEAN(ng) % rvlag3d(i,j,k) = IniVal
               OCEAN(ng) % u_stokes(i,j,k) = IniVal
@@ -798,6 +744,9 @@
 
               OCEAN(ng) % W(i,j,k) = IniVal
               OCEAN(ng) % wvel(i,j,k) = IniVal
+# if defined NEARSHORE
+              OCEAN(ng) % w_stokes(i,j,k) = IniVal
+# endif
             END DO
           END DO
           DO itrc=1,NT(ng)
@@ -809,50 +758,7 @@
               END DO
             END DO
           END DO 
-# ifdef SEDIMENT
-          DO itrc=1,NST
-            DO k=1,Nbed
-              DO i=Imin,Imax
-                OCEAN(ng) % bed_frac(i,j,k,itrc) = IniVal
-                OCEAN(ng) % bed_mass(i,j,k,1,itrc) = IniVal
-                OCEAN(ng) % bed_mass(i,j,k,2,itrc) = IniVal
-              END DO
-            END DO
-          END DO
-          DO itrc=1,MBEDP
-            DO k=1,Nbed
-              DO i=Imin,Imax
-                OCEAN(ng) % bed(i,j,k,itrc) = IniVal
-              END DO
-            END DO
-          END DO
-#  ifdef SUSPLOAD
-          DO itrc=1,NST
-            DO i=Imin,Imax
-              OCEAN(ng) % ero_flux(i,j,itrc) = IniVal
-              OCEAN(ng) % settling_flux(i,j,itrc) = IniVal
-            END DO
-          END DO
-#  endif
-# endif
-# if defined SEDIMENT || defined BBL_MODEL
-          DO itrc=1,MBOTP
-            DO i=Imin,Imax
-              OCEAN(ng) % bottom(i,j,itrc) = IniVal
-            END DO
-          END DO
-#  ifdef BEDLOAD
-          DO itrc=1,NST
-            DO i=Imin,Imax
-              OCEAN(ng) % bedldu(i,j,itrc) = IniVal
-              OCEAN(ng) % bedldv(i,j,itrc) = IniVal
-            END DO
-          END DO
-#  endif
-# endif
-#endif
-
-#if defined REFINED_GRID
+# if defined REFINED_GRID
           DO i=Imin,Imax
             OCEAN(ng) % hindpi_u(i,j) = IniVal
             OCEAN(ng) % hindpj_u(i,j) = IniVal
@@ -867,8 +773,8 @@
             OCEAN(ng) % hindci_r(i,j) = IniVal
             OCEAN(ng) % hindcj_r(i,j) = IniVal
           END DO
-#endif
-#ifdef COMPOSED_GRID
+# endif
+# ifdef COMPOSED_GRID
           OCEAN(ng) % hind_init(1:12)=.FALSE.
           DO i=Imin,Imax
             OCEAN(ng) % hind2di_u(i,j) = IniVal
@@ -890,8 +796,8 @@
             OCEAN(ng) % hind4di_r(i,j) = IniVal
             OCEAN(ng) % hind4dj_r(i,j) = IniVal
           END DO
+# endif
 #endif
-
         END DO
       END IF
 
@@ -1051,57 +957,79 @@
 !
       IF (model.eq.0) THEN
         DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            OCEAN(ng) % b_ubar(i,j) = IniVal
-            OCEAN(ng) % b_vbar(i,j) = IniVal
-            OCEAN(ng) % b_zeta(i,j) = IniVal
+          DO rec=1,NSA
+            DO i=Imin,Imax
+              OCEAN(ng) % b_ubar(i,j,rec) = IniVal
+              OCEAN(ng) % b_vbar(i,j,rec) = IniVal
+              OCEAN(ng) % b_zeta(i,j,rec) = IniVal
 # ifdef FOUR_DVAR
+              OCEAN(ng) % e_ubar(i,j,rec) = IniVal
+              OCEAN(ng) % e_vbar(i,j,rec) = IniVal
+              OCEAN(ng) % e_zeta(i,j,rec) = IniVal
+# endif
+            END DO
+          END DO
+# ifdef FOUR_DVAR
+          DO i=Imin,Imax
             OCEAN(ng) % d_ubar(i,j) = IniVal
             OCEAN(ng) % d_vbar(i,j) = IniVal
             OCEAN(ng) % d_zeta(i,j) = IniVal
 
-            OCEAN(ng) % e_ubar(i,j) = IniVal
-            OCEAN(ng) % e_vbar(i,j) = IniVal
-            OCEAN(ng) % e_zeta(i,j) = IniVal
-#  if defined WEAK_CONSTRAINT || defined IOM
+#  ifdef WEAK_CONSTRAINT
             OCEAN(ng) % f_ubar(i,j) = IniVal
             OCEAN(ng) % f_vbar(i,j) = IniVal
             OCEAN(ng) % f_zeta(i,j) = IniVal
 #  endif
+          END DO
 # endif
-          END DO
 # ifdef SOLVE3D
-          DO k=1,N(ng)
-            DO i=Imin,Imax
-              OCEAN(ng) % b_u(i,j,k) = IniVal
-              OCEAN(ng) % b_v(i,j,k) = IniVal
-#  ifdef FOUR_DVAR
-              OCEAN(ng) % d_u(i,j,k) = IniVal
-              OCEAN(ng) % d_v(i,j,k) = IniVal
-
-              OCEAN(ng) % e_u(i,j,k) = IniVal
-              OCEAN(ng) % e_v(i,j,k) = IniVal
-#   if defined WEAK_CONSTRAINT || defined IOM
-              OCEAN(ng) % f_u(i,j,k) = IniVal
-              OCEAN(ng) % f_v(i,j,k) = IniVal
-#   endif
-#  endif
-            END DO
-          END DO
-          DO itrc=1,NT(ng)
+          DO rec=1,NSA
             DO k=1,N(ng)
               DO i=Imin,Imax
-                OCEAN(ng) % b_t(i,j,k,itrc) = IniVal
+                OCEAN(ng) % b_u(i,j,k,rec) = IniVal
+                OCEAN(ng) % b_v(i,j,k,rec) = IniVal
 #  ifdef FOUR_DVAR
-                OCEAN(ng) % d_t(i,j,k,itrc) = IniVal
-
-                OCEAN(ng) % e_t(i,j,k,itrc) = IniVal
-#   if defined WEAK_CONSTRAINT || defined IOM
-                OCEAN(ng) % f_t(i,j,k,itrc) = IniVal
-#   endif
+                OCEAN(ng) % e_u(i,j,k,rec) = IniVal
+                OCEAN(ng) % e_v(i,j,k,rec) = IniVal
 #  endif
               END DO
             END DO
+          END DO
+#  ifdef FOUR_DVAR
+          DO k=1,N(ng)
+            DO i=Imin,Imax
+              OCEAN(ng) % d_u(i,j,k) = IniVal
+              OCEAN(ng) % d_v(i,j,k) = IniVal
+
+#   ifdef WEAK_CONSTRAINT
+              OCEAN(ng) % f_u(i,j,k) = IniVal
+              OCEAN(ng) % f_v(i,j,k) = IniVal
+#   endif
+            END DO
+          END DO
+#  endif
+          DO itrc=1,NT(ng)
+            DO rec=1,NSA
+              DO k=1,N(ng)
+                DO i=Imin,Imax
+                  OCEAN(ng) % b_t(i,j,k,rec,itrc) = IniVal
+#  ifdef FOUR_DVAR
+                  OCEAN(ng) % e_t(i,j,k,rec,itrc) = IniVal
+#  endif
+                END DO
+              END DO
+            END DO
+#  ifdef FOUR_DVAR
+            DO k=1,N(ng)
+              DO i=Imin,Imax
+                OCEAN(ng) % d_t(i,j,k,itrc) = IniVal
+
+#   ifdef WEAK_CONSTRAINT
+                OCEAN(ng) % f_t(i,j,k,itrc) = IniVal
+#   endif
+              END DO
+            END DO
+#  endif
           END DO
 # endif
         END DO
@@ -1131,6 +1059,16 @@
             OCEAN(ng) % vbarG(i,j,2) = IniVal
             OCEAN(ng) % zetaG(i,j,1) = IniVal
             OCEAN(ng) % zetaG(i,j,2) = IniVal
+# ifdef WEAK_CONSTRAINT
+            OCEAN(ng) % f_zetaG(i,j,1) = IniVal
+            OCEAN(ng) % f_zetaG(i,j,2) = IniVal
+#  ifndef SOLVE3D
+            OCEAN(ng) % f_ubarG(i,j,1) = IniVal
+            OCEAN(ng) % f_ubarG(i,j,2) = IniVal
+            OCEAN(ng) % f_vbarG(i,j,1) = IniVal
+            OCEAN(ng) % f_vbarG(i,j,2) = IniVal
+#  endif
+# endif
           END DO
 # ifdef SOLVE3D
           DO k=1,N(ng)
@@ -1139,6 +1077,12 @@
               OCEAN(ng) % uG(i,j,k,2) = IniVal
               OCEAN(ng) % vG(i,j,k,1) = IniVal
               OCEAN(ng) % vG(i,j,k,2) = IniVal
+#  ifdef WEAK_CONSTRAINT
+              OCEAN(ng) % f_uG(i,j,k,1) = IniVal
+              OCEAN(ng) % f_uG(i,j,k,2) = IniVal
+              OCEAN(ng) % f_vG(i,j,k,1) = IniVal
+              OCEAN(ng) % f_vG(i,j,k,2) = IniVal
+#  endif
             END DO
           END DO
 #  ifdef FORWARD_RHS
@@ -1156,6 +1100,10 @@
               DO i=Imin,Imax
                 OCEAN(ng) % tG(i,j,k,1,itrc) = IniVal
                 OCEAN(ng) % tG(i,j,k,2,itrc) = IniVal
+#  ifdef WEAK_CONSTRAINT
+                OCEAN(ng) % f_tG(i,j,k,1,itrc) = IniVal
+                OCEAN(ng) % f_tG(i,j,k,2,itrc) = IniVal
+#  endif
               END DO
             END DO
           END DO

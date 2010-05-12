@@ -4,7 +4,7 @@
 !
 !svn $Id: mod_average.F 737 2008-09-07 02:06:44Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -20,8 +20,6 @@
 !  avgAKs     Vertical diffusion of Salinity (m2/s).                   !
 !  avgAKt     Vertical diffusion of temperature (m2/s).                !
 !  avgAKv     Vertical viscosity (m2/s).                               !
-!  avgbedldu  Bed load flux u-direction (kg/m2/s).                     !
-!  avgbedldv  Bed load flux v-direction (kg/m2/s).                     !
 !  avglhf     Latent heat flux (W/m2).                                 !
 !  avglrf     Longwave radiation flux (W/m2).                          !
 !  avgHuon    U-momentum flux, Hz*u/pn (m3/s).                         !
@@ -190,11 +188,6 @@
           real(r8), pointer :: avgbus(:,:)
           real(r8), pointer :: avgbvs(:,:)
 # endif
-# if defined SEDIMENT && defined BEDLOAD
-          real(r8), pointer :: avgbedldu(:,:,:)
-          real(r8), pointer :: avgbedldv(:,:,:)
-# endif
-
         END TYPE T_AVERAGE
 
         TYPE (T_AVERAGE), allocatable :: AVERAGE(:)
@@ -315,11 +308,6 @@
       allocate ( AVERAGE(ng) % avgbvs(LBi:UBi,LBj:UBj) )
 # endif
 
-# if defined SEDIMENT && defined BEDLOAD
-      allocate ( AVERAGE(ng) % avgbedldu(LBi:UBi,LBj:UBj,NST) )
-      allocate ( AVERAGE(ng) % avgbedldv(LBi:UBi,LBj:UBj,NST) )
-# endif
-
       RETURN
       END SUBROUTINE allocate_average
 
@@ -336,9 +324,6 @@
 !=======================================================================
 !
       USE mod_param
-# if defined SEDIMENT || defined BBL_MODEL
-      USE mod_sediment
-# endif
 !
 !  Imported variable declarations.
 !
@@ -353,37 +338,37 @@
 # endif
 
       real(r8), parameter :: IniVal = 0.0_r8
-!
-# include "tile.h"
+
+# include "set_bounds.h"
 !
 !  Set array initialization range.
 !
 # ifdef _OPENMP
       IF (WESTERN_EDGE) THEN
-        Imin=LBi
+        Imin=BOUNDS(ng)%LBi(tile)
       ELSE
         Imin=Istr
       END IF
       IF (EASTERN_EDGE) THEN
-        Imax=UBi
+        Imax=BOUNDS(ng)%UBi(tile)
       ELSE
         Imax=Iend
       END IF
       IF (SOUTHERN_EDGE) THEN
-        Jmin=LBj
+        Jmin=BOUNDS(ng)%LBj(tile)
       ELSE
         Jmin=Jstr
       END IF
       IF (NORTHERN_EDGE) THEN
-        Jmax=UBj
+        Jmax=BOUNDS(ng)%UBj(tile)
       ELSE
         Jmax=Jend
       END IF
 # else
-      Imin=LBi
-      Imax=UBi
-      Jmin=LBj
-      Jmax=UBj
+      Imin=BOUNDS(ng)%LBi(tile)
+      Imax=BOUNDS(ng)%UBi(tile)
+      Jmin=BOUNDS(ng)%LBj(tile)
+      Jmax=BOUNDS(ng)%UBj(tile)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -501,14 +486,6 @@
             END DO
           END DO
         END DO
-#  if defined SEDIMENT && defined BEDLOAD
-        DO itrc=1,NST
-          DO i=Imin,Imax
-            AVERAGE(ng) % avgbedldu(i,j,itrc) = IniVal
-            AVERAGE(ng) % avgbedldv(i,j,itrc) = IniVal
-          END DO
-        END DO
-#  endif
 # endif
       END DO
 

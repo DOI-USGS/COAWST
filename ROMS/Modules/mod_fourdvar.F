@@ -5,7 +5,7 @@
 !
 !svn $Id: mod_fourdvar.F 737 2008-09-07 02:06:44Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -16,15 +16,13 @@
 !  BackCost     Current background cost function misfit (mean squared  !
 !                 difference) between model and background state, Jb.  !
 !  CostFun      Current iteration total cost function (background      !
-!                 plus observations), J.                               !    
+!                 plus observations), J.                               !
 !  CostFunOld   Previous iteration total cost function (background     !
-!                 plus observations), J.                               !    
-!  CostGrad     Cost function gradient norm.                           !
-!  CostGradDot  Adjoint solution (gradient) dot product used to adjust !
-!                 cost function values in the cgradient algorithm.     !
-!  CostGradOld  Cost function gradient norm from previous iteration.   !
+!                 plus observations), J.                               !
 !  CostNorm     Total cost function normalization scales (minimization !
 !                 starting value, Jb+Jo).                              !
+!  Cost0        The total cost function at the beggining of the inner  !
+!                 loop (inner=0) for each outer loop.                  !
 !  DTsizeH      Horizontal diffusion time-step size for spatial        !
 !                 convolutions.                                        !
 !  DTsizeV      Vertical diffusion time-step size for spatial          !
@@ -40,13 +38,19 @@
 !                 "extract_obs3d" and written to observation NetCDF    !
 !                 file for latter use.                                 !
 !  LhessianEV   Logical switch to compute Hessian eigenvectors.        !
-!  Lprecond     Logical switch to pre-conditioning with Hessian        !
-!                 eigenvectors.                                        !
+!  LhotStart    Logical switch to activate hot start of subsquent      !
+!                 outer loops in the weak-constraint algorithms.       !
+!  Lprecond     Logical switch for conjugate gradient preconditioning. !
+!  Lritz        Logical switch for Ritz limited-memory preconditioning.!
 !  nConvRitz    Number of converged Ritz eigenvalues.                  !
 !  NLmodVal     Nonlinear model values at observation locations.       !
-!  NritzEV      If preconditioning, number of eigenpairs to use.       !
 !  NHsteps      Full number of horizontal diffusion steps for spatial  !
 !                 convolutions.                                        !
+!  NLobsCost    Current NLM observation cost function misfit (mean     !
+!                 squared difference) between NLM and observations.    !
+!  NpostI       Number of Lanczos iterations used for the posterior    !
+!                 analysis error covariance matrix estimation.         !
+!  NritzEV      If preconditioning, number of eigenpairs to use.       !
 !  NVsteps      Full number of vertical diffusion steps for spatial    !
 !                 convolutions.                                        !
 !  ObsCost      Current observation cost function misfit (mean squared !
@@ -95,6 +99,64 @@
         implicit none
 
 # ifdef OBSERVATIONS
+!
+!  Define module structure.
+!
+        TYPE T_FOURDVAR
+
+          integer , pointer :: NobsSurvey(:)
+          integer , pointer :: ObsCount(:)
+          integer , pointer :: ObsReject(:)
+#  ifdef FOUR_DVAR
+          real(r8), pointer :: BackCost(:)
+          real(r8), pointer :: Cost0(:)
+          real(r8), pointer :: CostFun(:)
+          real(r8), pointer :: CostFunOld(:)
+          real(r8), pointer :: CostNorm(:)
+          real(r8), pointer :: ObsCost(:)
+          real(r8), pointer :: DataPenalty(:)
+#   if defined DATALESS_LOOPS || defined TL_W4DPSAS          || \
+       defined W4DPSAS        || defined W4DPSAS_SENSITIVITY
+          real(r8), pointer :: NLPenalty(:)
+#   endif
+          real(r8), pointer :: NLobsCost(:)
+
+#   if defined BALANCE_OPERATOR && defined ZETA_ELLIPTIC
+          real(r8), pointer :: bc_ak(:)
+          real(r8), pointer :: bc_bk(:)
+
+          real(r8), pointer :: zdf1(:)
+          real(r8), pointer :: zdf2(:)
+          real(r8), pointer :: zdf3(:)
+
+          real(r8), pointer :: pc_r2d(:,:)
+          real(r8), pointer :: rhs_r2d(:,:)
+          real(r8), pointer :: r2d_ref(:,:)
+          real(r8), pointer :: zeta_ref(:,:)
+
+          real(r8), pointer :: p_r2d(:,:,:)
+          real(r8), pointer :: r_r2d(:,:,:)
+          real(r8), pointer :: bp_r2d(:,:,:)
+          real(r8), pointer :: br_r2d(:,:,:)
+
+          real(r8), pointer :: tl_rhs_r2d(:,:)
+          real(r8), pointer :: tl_r2d_ref(:,:)
+          real(r8), pointer :: tl_zeta_ref(:,:)
+
+          real(r8), pointer :: ad_rhs_r2d(:,:)
+          real(r8), pointer :: ad_r2d_ref(:,:)
+          real(r8), pointer :: ad_zeta_ref(:,:)
+#   endif
+#  endif
+          real(r8), pointer :: ObsVar(:)
+          real(r8), pointer :: SurveyTime(:)
+
+        END TYPE T_FOURDVAR
+
+        TYPE (T_FOURDVAR), allocatable :: FOURDVAR(:)
+!
+!  Define other module arrays.
+!
         integer,  allocatable :: ObsType(:)
 
         real(r8), allocatable :: ObsErr(:)
@@ -105,51 +167,48 @@
         real(r8), allocatable :: Yobs(:)
 #  ifdef SOLVE3D
         real(r8), allocatable :: Zobs(:)
-#  endif          
-        real(r8), allocatable :: ADmodVal(:)
-#  ifdef S4DVAR
-        real(r8), allocatable :: NLmodVal(:,:)
-#  else
-        real(r8), allocatable :: NLmodVal(:)
 #  endif
+        real(r8), allocatable :: ADmodVal(:)
+        real(r8), allocatable :: NLmodVal(:)
 #  ifdef TLM_OBS
-#   ifdef IS4DVAR_OLD
-        real(r8), allocatable :: TLmodVal(:,:)
-#   else
         real(r8), allocatable :: TLmodVal(:)
+#   if defined SENSITIVITY_4DVAR    || defined TL_W4DPSAS || \
+       defined TL_W4DVAR            || defined W4DPSAS    || \
+       defined W4DVAR
+        real(r8), allocatable :: TLmodVal_S(:,:,:)
+#   endif
+#   if defined TL_W4DPSAS           || defined W4DPSAS    || \
+       defined W4DPSAS_SENSITIVITY
+
+        real(r8), allocatable :: BCKmodVal(:)
 #   endif
 #  endif
-#  if defined WEAK_CONSTRAINT || defined IOM
-        real(r8), allocatable :: zdelta(:)
-        real(r8), allocatable :: zbeta(:)
-        real(r8), allocatable :: zcglwk(:,:)
-        real(r8), allocatable :: vcglev(:,:)
-        real(r8), allocatable :: zgrad0(:)
-        real(r8), allocatable :: zqg0(:)
-        real(r8) :: zgnorm = 0.0_r8
-#  endif
-!
-        TYPE T_FOURDVAR
+#  ifdef WEAK_CONSTRAINT
+        real(r8), allocatable :: zcglwk(:,:,:)
+        real(r8), allocatable :: vcglev(:,:,:)
+        real(r8), allocatable :: zgrad0(:,:)
+        real(r8), allocatable :: vgrad0(:)
+        real(r8), allocatable :: vgrad0s(:)
+        real(r8), allocatable :: gdgw(:)
+        real(r8), allocatable :: vgnorm(:)
+        real(r8), allocatable :: cg_innov(:)
+        real(r8), allocatable :: cg_pxsave(:)
+        real(r8), allocatable :: cg_dla(:,:)
+#   if defined TL_W4DPSAS          || defined TL_W4DVAR          || \
+       defined W4DPSAS_SENSITIVITY || defined W4DVAR_SENSITIVITY
+        real(r8), allocatable :: ad_zcglwk(:,:)
+        real(r8), allocatable :: ad_zgrad0(:)
+        real(r8), allocatable :: ad_cg_innov(:)
+        real(r8), allocatable :: ad_cg_pxsave(:)
+        real(r8), allocatable :: ad_ObsVal(:)
 
-          integer , pointer :: NobsSurvey(:)
-          integer , pointer :: ObsCount(:)
-          integer , pointer :: ObsReject(:)
-#  ifdef FOUR_DVAR
-          real(r8), pointer :: BackCost(:)
-          real(r8), pointer :: CostFun(:)
-          real(r8), pointer :: CostFunOld(:)
-          real(r8), pointer :: CostGrad(:)
-          real(r8), pointer :: CostGradOld(:)
-          real(r8), pointer :: CostGradDot(:)
-          real(r8), pointer :: CostNorm(:)
-          real(r8), pointer :: ObsCost(:)
+        real(r8), allocatable :: tl_zcglwk(:,:)
+        real(r8), allocatable :: tl_zgrad0(:)
+        real(r8), allocatable :: tl_cg_innov(:)
+        real(r8), allocatable :: tl_cg_pxsave(:)
+        real(r8), allocatable :: tl_ObsVal(:)
+#   endif
 #  endif
-          real(r8), pointer :: ObsVar(:)
-          real(r8), pointer :: SurveyTime(:)
-  
-        END TYPE T_FOURDVAR
-
-        TYPE (T_FOURDVAR), allocatable :: FOURDVAR(:)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -193,7 +252,7 @@
 !
 !  Size of observation NetCDF file unlimited dimension.
 !
-        integer, dimension(Ngrids) :: Ndatum         
+        integer, dimension(Ngrids) :: Ndatum
 !
 !  Number of observations surveys available.
 !
@@ -233,6 +292,11 @@
 !
         integer :: Nrandom = 1000
 !
+!  Number of Lanczos iterations used in the posterior analysis
+!  error covariance matrix estimation.
+!
+        integer :: NpostI
+!
 !  Optimal, normalized cost funtion minimum.  If the statistical
 !  hypotheses between the background and observations errors
 !  is consistemt, the cost function value at the minimum, Jmin,
@@ -265,6 +329,37 @@
 !  misfit (innovation) vector into 4DVAR output NetCDF file.
 !
         logical, dimension(Ngrids) :: wrtMisfit
+
+# if defined IS4DVAR_SENSITIVITY
+#  ifdef OBS_IMPACT
+!
+!  Switch to control the writing of the total observation impact for
+!  incremental 4D-Var.
+!
+        logical, dimension(Ngrids) :: wrtIMPACT_TOT
+#  endif
+#  ifdef OBS_IMPACT_SPLIT
+!
+!  Switch to control the writing of the observation impact for initial
+!  conditions for incremental 4D-Var.
+!
+        logical, dimension(Ngrids) :: wrtIMPACT_IC
+#   if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
+!
+!  Switch to control the writing of the observation impact for surface
+!  forcing for incremental 4D-Var.
+!
+        logical, dimension(Ngrids) :: wrtIMPACT_FC
+#   endif
+#   if defined ADJUST_BOUNDARY
+!
+!  Switch to control the writing of the observation impact for surface
+!  forcing for incremental 4D-Var.
+!
+        logical, dimension(Ngrids) :: wrtIMPACT_BC
+#   endif
+#  endif
+# endif
 !
 !  Swiches indicating that there is representer coeffiecients,
 !  nonlinear, and tangent linear model data available to process
@@ -279,17 +374,31 @@
 !  Spatial convolutions parameters
 !-----------------------------------------------------------------------
 !
-!  Full number of horizontal and vertical diffusion operator step for
-!  spatial convolutions.
+!  Initial conditions, surface forcing and model error covariance: Full
+!  number of horizontal and vertical diffusion operator step for spatial
+!  convolutions.
 !
-        integer, allocatable :: NHsteps(:)
-        integer, allocatable :: NVsteps(:)
+        integer, allocatable :: NHsteps(:,:)
+        integer, allocatable :: NVsteps(:,:)
 !
+!  Boundary conditions error covariance: Full number of horizontal and
+!  vertical diffusion operator step for spatial convolutions.
+!
+        integer, allocatable :: NHstepsB(:,:)
+        integer, allocatable :: NVstepsB(:,:)
+!
+!  Initial conditions, surface forcing and model error covariance:
 !  Horizontal and vertical diffusion operator time-step size for
 !  spatial convolutions.
 !
-        real(r8), allocatable :: DTsizeH(:)
-        real(r8), allocatable :: DTsizeV(:)
+        real(r8), allocatable :: DTsizeH(:,:)
+        real(r8), allocatable :: DTsizeV(:,:)
+!
+!  Boundary conditions error covariance: Horizontal and vertical
+!  diffusion operator time-step size for spatial convolutions.
+!
+        real(r8), allocatable :: DTsizeHB(:,:)
+        real(r8), allocatable :: DTsizeVB(:,:)
 !
 !  Minimum and maximum Horizontal and vertical diffusion coefficients
 !  used in spatial convolutions.
@@ -299,7 +408,7 @@
         real(r8), dimension(Ngrids) :: KvMin
         real(r8), dimension(Ngrids) :: KvMax
 
-# if defined IS4DVAR
+# if defined IS4DVAR || defined WEAK_CONSTRAINT
 !
 !-----------------------------------------------------------------------
 !  Conjugate gradient parameters.
@@ -307,13 +416,15 @@
 !
 !  Conjugate gradient coefficients.
 !
+#  if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS  || \
+      defined TL_W4DVAR
+        real(r8), allocatable :: ad_cg_beta(:)
+
+        real(r8), allocatable :: tl_cg_beta(:)
+#  endif
         real(r8), allocatable :: cg_alpha(:,:)
         real(r8), allocatable :: cg_beta(:,:)
         real(r8), allocatable :: cg_tau(:,:)
-!
-!  Number of converged Ritz eigenvalues.
-!
-        integer :: nConvRitz
 !
 !  Ritz values maximum error limit.
 !
@@ -323,28 +434,46 @@
 !  preconditioning.
 !
         real(r8), allocatable :: Ritz(:)
-
-#  if defined LANCZOS
+!
+!  Orthogonal eigenvectors of Lanczos recurrence term Q(k)T(k).
+!
+#  ifdef WEAK_CONSTRAINT
+        real(r8), allocatable :: cg_zv(:,:,:)
+#  else
+        real(r8), allocatable :: cg_zv(:,:)
+#  endif
 !
 !  Lanczos algorithm coefficients.
 !
+#  if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS  || \
+      defined TL_W4DVAR
+        real(r8), allocatable :: ad_cg_delta(:)
+        real(r8), allocatable :: ad_cg_QG(:)
+        real(r8), allocatable :: ad_cg_Gnorm(:)
+
+        real(r8), allocatable :: tl_cg_delta(:)
+        real(r8), allocatable :: tl_cg_QG(:)
+        real(r8), allocatable :: tl_cg_Gnorm(:)
+#  endif
         real(r8), allocatable :: cg_delta(:,:)
         real(r8), allocatable :: cg_gamma(:,:)
 !
 !  Initial gradient vector normalization factor.
-!  
+!
         real(r8), allocatable :: cg_Gnorm(:)
+        real(r8), allocatable :: cg_Gnorm_v(:)
+        real(r8), allocatable :: cg_Gnorm_y(:)
 !
 !  Reduction in the gradient norm; excess cost function.
 !
         real(r8), allocatable :: cg_Greduc(:,:)
 !
 !  Lanczos vector normalization factor.
-!  
+!
         real(r8), allocatable :: cg_QG(:,:)
 !
 !  Lanczos recurrence symmetric, tridiagonal matrix, T(k).
-! 
+!
         real(r8), allocatable :: cg_Tmatrix(:,:)
         real(r8), allocatable :: cg_zu(:,:)
 !
@@ -353,13 +482,57 @@
 !
         real(r8), allocatable :: cg_Ritz(:,:)
         real(r8), allocatable :: cg_RitzErr(:,:)
+# endif
+# if defined BALANCE_OPERATOR
 !
-!  Orthogonal eigenvectors of Lanczos recurrence term Q(k)T(k).
+!-----------------------------------------------------------------------
+!  Balance operator variables.
+!-----------------------------------------------------------------------
 !
-        real(r8), allocatable :: cg_zv(:,:)
+!  Logical switch to write balance operator reference free-surface.
+!
+        logical, dimension(Ngrids) :: wrtZetaRef
+# endif
+# if defined POSTERIOR_EOFS    || defined POSTERIOR_ERROR_I || \
+     defined POSTERIOR_ERROR_F
+!
+!-----------------------------------------------------------------------
+!  Posterior analysis error covariance matrix parameters.
+!-----------------------------------------------------------------------
+!
+!  Lanczos algorithm parameters.
+!
+        real(r8), allocatable :: ae_delta(:,:)
+        real(r8), allocatable :: ae_beta(:,:)
+        real(r8), allocatable :: ae_zv(:,:)
+        real(r8), allocatable :: ae_trace(:)
+!
+!  Initial gradient vector normalization factor.
+!
+        real(r8), allocatable :: ae_Gnorm(:)
+!
+!  Lanczos recurrence symmetric, tridiagonal matrix, T(k).
+!
+        real(r8), allocatable :: ae_Tmatrix(:,:)
+        real(r8), allocatable :: ae_zu(:,:)
+!
+!  Eigenvalues of the Lanczos recurrence term Q(k)T(k)
+!  algorithm and their relative error (accuaracy).
+!
+        real(r8), allocatable :: ae_Ritz(:,:)
+        real(r8), allocatable :: ae_RitzErr(:,:)
+
+#  if defined POSTERIOR_ERROR_I || defined POSTERIOR_ERROR_F
+!
+!  Initial or final full posterior error covariance Lanczos vectors
+!  tridiagonal system.
+!
+        real(r8), allocatable :: zLanczos_coef(:,:)    ! coefficients
+        real(r8), allocatable :: zLanczos_inv(:,:)     ! inverse
+        real(r8), allocatable :: zLanczos_err(:,:)     ! error, identity
 #  endif
 # endif
-# if defined OBS_SENSITIVITY
+# if defined IS4DVAR_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  Lanczos algorithm coefficients.
@@ -372,6 +545,7 @@
 !
         real(r8), allocatable :: cg_beta(:,:)
         real(r8), allocatable :: cg_delta(:,:)
+        real(r8), allocatable :: cg_zu(:,:)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -382,62 +556,33 @@
 !
         logical :: LhessianEV
 !
-!  Switch to pre-conditioning with Hessian eigenpairs.
+!  Switch switch to activate hot start of subsquent outerloops in the
+!  weak-constraint algorithms.
+!
+        logical :: LhotStart
+!
+!  Switch to activate conjugate gradient preconditioning.
 !
         logical :: Lprecond
-
-!  Number of iteration between each steepest descent step.
 !
-        integer :: NiterSD
+!  Switch to activate Ritz limited-memory preconditioning using the
+!  eigenpairs approximation of the Hessian matrix (Tshimanga et al.,
+!  2008).
 !
-!  Iteration of the last steepest descent.
+        logical :: Lritz
 !
-        integer :: IterSD
-!
-!  Conjugate gradient algorithm: [0] Fletcher-Reeves [1] Polak-Riviere
-!
-        integer :: ICG
-!
-!  Pass number into the descent algorithm within the same iteration.
-!
-        integer :: Ipass = 0
-!
-!  If preconditioning, number of Ritz eigenpairs to use.
+!  Number of converged Ritz eigenvalues. If input parameter NritzEV > 0,
+!  then nConvRitz=NritzEV.  Therefore, only nConvRitz eigenpairs will
+!  used for preconditioning and the RitzMaxErr threshold is ignored.
 !
         integer :: NritzEV
-!
-!  Conjugate gradient alogorithm step size.
-!
-        real(r8) :: CGstepI              ! initial step size
-        real(r8) :: CGstepF              ! first guess step size
-        real(r8) :: CGstepR              ! refined step size
-!
-!  Step size contributions from background and observations
-!
-        real(r8) :: StepBotBck = 0.0_r8  ! background denominator
-        real(r8) :: StepBotObs = 0.0_r8  ! observation denominator
-        real(r8) :: StepTopBck = 0.0_r8  ! background numerator
-        real(r8) :: StepTopObs = 0.0_r8  ! observation numerator
-!
-!  Strong constraint conjugate gradient orthogonality tolerance: dot
-!  product orthogonality between current and previous search.
-!
-        real(r8) :: CGtol
-!
-!  Weak constraint conjugate gradient algorithm convergence criteria.
-!
-        real(r8) :: CGeps
+        integer :: nConvRitz = 0
 !
 !  Weak contraint conjugate gradient norms.
 !
         real(r8) :: cg_gammam1 = 0.0_r8
         real(r8) :: cg_sigmam1 = 0.0_r8
         real(r8) :: cg_rnorm = 0.0_r8
-!
-!  Cost function percentage change between succesive iterations for
-!  convergence.
-!
-        real(r8) :: CostFunFac
 !
 !  Upper bound on the relative error of the gradient when computing
 !  Hessian eigenvectors.
@@ -448,12 +593,6 @@
 !  innacurate eigenvectors are usefull for pre-condtioning purposes.
 !
         real(r8) :: HevecErr
-!
-!  Brunt-Vaisala expansion polynomial used for cost function
-!  normalization.
-!
-        integer :: npN2
-        real(r8), allocatable :: pcoef_N2(:)
 
 # ifdef FOUR_DVAR
 !
@@ -473,6 +612,32 @@
 
         real(r8), dimension(1000) :: g1
         real(r8), dimension(1000) :: g2
+# endif
+# ifdef WEAK_CONSTRAINT
+!
+!------------------------------------------------------------------------
+!  Weak constraint parameters.
+!------------------------------------------------------------------------
+!
+!  Switch to activate writing of weak constraint forings
+!  into the adjoint NetCDF file.
+!
+        logical, dimension(Ngrids) :: WRTforce
+#  ifdef RPM_RELAXATION
+        logical, dimension(Ngrids) :: LweakRelax
+#  endif
+#  if defined W4DPSAS_SENSITIVITY  || defined W4DVAR_SENSITIVITY
+!
+!  Switch to activate reading of adjoint sensitivity initial conditions
+!  for weak constraint 4DVAR observation sensitivity.
+!
+        logical, dimension(Ngrids) :: LsenPSAS
+#  endif
+!
+!  Weak-constraint forcing time.  A new variable is required since this
+!  forcing is delayed by nADJ time-steps.
+!
+        real(r8), dimension(Ngrids) :: ForceTime
 # endif
 
       CONTAINS
@@ -494,13 +659,23 @@
 !
 !  Local variable declarations.
 !
-      integer :: Nritz, i, ng
+      integer :: my_NstateVar, i, ng
+# if defined BALANCE_OPERATOR && defined ZETA_ELLIPTIC
+      integer :: LBi, UBi, LBj, UBj
 
-# ifdef OBSERVATIONS
-      real(r8), parameter :: IniVal = 0.0_r8
+      integer, parameter :: tile = 0
 # endif
+      real(r8), parameter :: IniVal = 0.0_r8
+!
+      SourceFile='mod_fourdvar.F, initialize_fourdvar'
 
 # ifdef OBSERVATIONS
+!
+!-----------------------------------------------------------------------
+!  Allocate module structure.
+!-----------------------------------------------------------------------
+!
+      allocate ( FOURDVAR(Ngrids) )
 !
 !-----------------------------------------------------------------------
 !  Inquire observations NetCDF and determine the maximum dimension of
@@ -521,6 +696,8 @@
             Ndatum(ng)=dim_size(i)
           ELSE IF (TRIM(dim_name(i)).eq.'survey') THEN
             Nsurvey(ng)=dim_size(i)
+          ELSE IF (TRIM(dim_name(i)).eq.'state_variable') THEN
+            my_NstateVar=dim_size(i)
           END IF
         END DO
         IF (Ndatum(ng).eq.0) THEN
@@ -536,13 +713,17 @@
       END DO
 !
 !-----------------------------------------------------------------------
-!  Allocate module structure.
+!  Allocate module variables.
 !-----------------------------------------------------------------------
 !
-      allocate ( FOURDVAR(Ngrids) )
-
       DO ng=1,Ngrids
 
+#  if defined BALANCE_OPERATOR && defined ZETA_ELLIPTIC
+        LBi=BOUNDS(ng)%LBi(TILE)
+        UBi=BOUNDS(ng)%UBi(TILE)
+        LBj=BOUNDS(ng)%LBj(TILE)
+        UBj=BOUNDS(ng)%UBj(TILE)
+#  endif
 #  ifdef SOLVE3D
         NstateVar(ng)=5+NT(ng)
 #   ifdef ADJUST_STFLUX
@@ -565,27 +746,93 @@
         allocate ( FOURDVAR(ng) % BackCost(0:NstateVar(ng)) )
         FOURDVAR(ng) % BackCost = IniVal
 
+        allocate ( FOURDVAR(ng) % Cost0(Nouter) )
+        FOURDVAR(ng) % Cost0 = IniVal
+
         allocate ( FOURDVAR(ng) % CostFun(0:NstateVar(ng)) )
         FOURDVAR(ng) % CostFun = IniVal
 
         allocate ( FOURDVAR(ng) % CostFunOld(0:NstateVar(ng)) )
         FOURDVAR(ng) % CostFunOld = IniVal
 
-        allocate ( FOURDVAR(ng) % CostGrad(0:NstateVar(ng)) )
-        FOURDVAR(ng) % CostGrad = IniVal
-
-        allocate ( FOURDVAR(ng) % CostGradOld(0:NstateVar(ng)) )
-        FOURDVAR(ng) % CostGradOld = IniVal
-
-        allocate ( FOURDVAR(ng) % CostGradDot(0:NstateVar(ng)) )
-        FOURDVAR(ng) % CostGradDot = IniVal
-
         allocate ( FOURDVAR(ng) % CostNorm(0:NstateVar(ng)) )
         FOURDVAR(ng) % CostNorm = IniVal
 
         allocate ( FOURDVAR(ng) % ObsCost(0:NstateVar(ng)) )
         FOURDVAR(ng) % ObsCost = IniVal
+
+        allocate ( FOURDVAR(ng) % DataPenalty(0:NstateVar(ng)) )
+        FOURDVAR(ng) % DataPenalty = IniVal
+
+#   if defined DATALESS_LOOPS || defined TL_W4DPSAS          || \
+       defined W4DPSAS        || defined W4DPSAS_SENSITIVITY
+        allocate ( FOURDVAR(ng) % NLPenalty(0:NstateVar(ng)) )
+        FOURDVAR(ng) % NLPenalty = IniVal
+#   endif
+
+        allocate ( FOURDVAR(ng) % NLobsCost(0:NstateVar(ng)) )
+        FOURDVAR(ng) % NLobsCost = IniVal
+
+#   if defined BALANCE_OPERATOR && defined ZETA_ELLIPTIC
+        allocate ( FOURDVAR(ng) % bc_ak(Nbico(ng)) )
+        FOURDVAR(ng) % bc_ak = IniVal
+
+        allocate ( FOURDVAR(ng) % bc_bk(Nbico(ng)) )
+        FOURDVAR(ng) % bc_bk = IniVal
+
+        allocate ( FOURDVAR(ng) % zdf1(Nbico(ng)) )
+        FOURDVAR(ng) % zdf1 = IniVal
+
+        allocate ( FOURDVAR(ng) % zdf2(Nbico(ng)) )
+        FOURDVAR(ng) % zdf2 = IniVal
+
+        allocate ( FOURDVAR(ng) % zdf3(Nbico(ng)) )
+        FOURDVAR(ng) % zdf3 = IniVal
+
+        allocate ( FOURDVAR(ng) % pc_r2d(LBi:UBi,LBj:UBj) )
+        FOURDVAR(ng) % pc_r2d = IniVal
+
+        allocate ( FOURDVAR(ng) % rhs_r2d(LBi:UBi,LBj:UBj) )
+        FOURDVAR(ng) % rhs_r2d = IniVal
+
+        allocate ( FOURDVAR(ng) % r2d_ref(LBi:UBi,LBj:UBj) )
+        FOURDVAR(ng) % r2d_ref = IniVal
+
+        allocate ( FOURDVAR(ng) % zeta_ref(LBi:UBi,LBj:UBj) )
+        FOURDVAR(ng) % zeta_ref = IniVal
+
+        allocate ( FOURDVAR(ng) % p_r2d(LBi:UBi,LBj:UBj,Nbico(ng)) )
+        FOURDVAR(ng) % p_r2d = IniVal
+
+        allocate ( FOURDVAR(ng) % r_r2d(LBi:UBi,LBj:UBj,Nbico(ng)) )
+        FOURDVAR(ng) % r_r2d = IniVal
+
+        allocate ( FOURDVAR(ng) % bp_r2d(LBi:UBi,LBj:UBj,Nbico(ng)) )
+        FOURDVAR(ng) % bp_r2d = IniVal
+
+        allocate ( FOURDVAR(ng) % br_r2d(LBi:UBi,LBj:UBj,Nbico(ng)) )
+        FOURDVAR(ng) % br_r2d = IniVal
+
+        allocate ( FOURDVAR(ng) % tl_rhs_r2d(LBi:UBi,LBj:UBj) )
+        FOURDVAR(ng) % tl_rhs_r2d = IniVal
+
+        allocate ( FOURDVAR(ng) % tl_r2d_ref(LBi:UBi,LBj:UBj) )
+        FOURDVAR(ng) % tl_r2d_ref = IniVal
+
+        allocate ( FOURDVAR(ng) % tl_zeta_ref(LBi:UBi,LBj:UBj) )
+        FOURDVAR(ng) % tl_zeta_ref = IniVal
+
+        allocate ( FOURDVAR(ng) % ad_rhs_r2d(LBi:UBi,LBj:UBj) )
+        FOURDVAR(ng) % ad_rhs_r2d = IniVal
+
+        allocate ( FOURDVAR(ng) % ad_r2d_ref(LBi:UBi,LBj:UBj) )
+        FOURDVAR(ng) % ad_r2d_ref = IniVal
+
+        allocate ( FOURDVAR(ng) % ad_zeta_ref(LBi:UBi,LBj:UBj) )
+        FOURDVAR(ng) % ad_zeta_ref = IniVal
+#   endif
 #  endif
+
         allocate ( FOURDVAR(ng) % ObsVar(NstateVar(ng)) )
         FOURDVAR(ng) % ObsVar = 1.0_r8
 
@@ -607,19 +854,23 @@
 !
         CALL netcdf_get_ivar (ng, iNLM, TRIM(OBSname(ng)),              &
      &                        TRIM(Vname(1,idNobs)),                    &
-     &                        FOURDVAR(ng)%NobsSurvey)
+     &                        FOURDVAR(ng)%NobsSurvey,                  &
+     &                        start = (/1/),                            &
+     &                        total = (/Nsurvey(ng)/))
         IF (exit_flag.ne.NoError) RETURN
 !
 !  Read in the time of each observation survey.
 !
         CALL netcdf_get_fvar (ng, iNLM, TRIM(OBSname(ng)),              &
      &                        TRIM(Vname(1,idOday)),                    &
-     &                        FOURDVAR(ng)%SurveyTime)
+     &                        FOURDVAR(ng)%SurveyTime,                  &
+     &                        start = (/1/),                            &
+     &                        total = (/Nsurvey(ng)/))
         IF (exit_flag.ne.NoError) RETURN
 !
 !  Determine maximum size of observation arrays.
 !
-#  if defined WEAK_CONSTRAINT || defined IOM
+#  ifdef WEAK_CONSTRAINT
         Mobs=MAXVAL(Ndatum)
 #  else
         Mobs=0
@@ -630,7 +881,7 @@
       END DO
 !
 !-----------------------------------------------------------------------
-!  Allocate and initialize model and observation variables. 
+!  Allocate and initialize model and observation variables.
 !-----------------------------------------------------------------------
 !
       allocate ( ObsType(Mobs) )
@@ -650,7 +901,7 @@
 
       allocate ( Xobs(Mobs) )
       Xobs = IniVal
- 
+
       allocate ( Yobs(Mobs) )
       Yobs = IniVal
 
@@ -658,52 +909,100 @@
       allocate ( Zobs(Mobs) )
       Zobs = IniVal
 #  endif
- 
+
       allocate ( ADmodVal(Mobs) )
       ADmodVal = IniVal
 
-#  ifdef S4DVAR
-      allocate ( NLmodVal(Mobs,2) )
-#  else
       allocate ( NLmodVal(Mobs) )
-#  endif
       NLmodVal = IniVal
 
 #  ifdef TLM_OBS
-#   ifdef IS4DVAR_OLD
-      allocate ( TLmodVal(Mobs,2) )
-#   else
       allocate ( TLmodVal(Mobs) )
-#   endif
       TLmodVal = IniVal
+#   if defined SENSITIVITY_4DVAR    || defined TL_W4DPSAS || \
+       defined TL_W4DVAR            || defined W4DPSAS    || \
+       defined W4DVAR
+      allocate ( TLmodVal_S(Mobs,Ninner,Nouter) )
+      TLmodVal_S = IniVal
+#   endif
+#   if defined TL_W4DPSAS           || defined W4DPSAS    || \
+       defined W4DPSAS_SENSITIVITY
+      allocate ( BCKmodVal(Mobs) )
+      BCKmodVal = IniVal
+#   endif
 #  endif
 
-#  if defined WEAK_CONSTRAINT || defined IOM
+#  ifdef WEAK_CONSTRAINT
 !
 !  Allocate and initialize weak constraint conjugate gradient vectors.
 !
-      allocate ( zdelta(Ninner) )
-      zdelta = IniVal
+#   if defined TL_W4DPSAS          || defined TL_W4DVAR          || \
+       defined W4DPSAS_SENSITIVITY || defined W4DVAR_SENSITIVITY
+      allocate ( ad_zcglwk(Mobs,Ninner+1) )
+      ad_zcglwk = IniVal
 
-      allocate ( zbeta(Ninner+1) )
-      zbeta = IniVal
+      allocate ( ad_zgrad0(Mobs) )
+      ad_zgrad0 = IniVal
 
-      allocate ( zcglwk(Mobs,Ninner+1) )
+      allocate ( ad_cg_innov(Mobs) )
+      ad_cg_innov = IniVal
+
+      allocate ( ad_cg_pxsave(Mobs) )
+      ad_cg_pxsave = IniVal
+
+      allocate ( tl_zcglwk(Mobs,Ninner+1) )
+      tl_zcglwk = IniVal
+
+      allocate ( tl_zgrad0(Mobs) )
+      tl_zgrad0 = IniVal
+
+      allocate ( tl_cg_innov(Mobs) )
+      tl_cg_innov = IniVal
+
+      allocate ( tl_cg_pxsave(Mobs) )
+      tl_cg_pxsave = IniVal
+
+      allocate ( tl_ObsVal(Mobs) )
+      tl_ObsVal = IniVal
+
+      allocate ( ad_ObsVal(Mobs) )
+      ad_ObsVal = IniVal
+#   endif
+      allocate ( cg_dla(Ninner,Nouter) )
+      cg_dla = IniVal
+
+      allocate ( zcglwk(Mobs,Ninner+1,Nouter) )
       zcglwk = IniVal
 
-      allocate ( vcglev(Mobs,Ninner) )
+      allocate ( vcglev(Mobs,Ninner,Nouter) )
       vcglev = IniVal
 
-      allocate ( zgrad0(Mobs) )
+      allocate ( zgrad0(Mobs,Nouter) )
       zgrad0 = IniVal
 
-      allocate ( zqg0(Ninner+1) )
-      zqg0 = IniVal
+      allocate ( vgrad0(Mobs) )
+      vgrad0 = IniVal
+
+      allocate ( vgrad0s(Mobs) )
+      vgrad0s = IniVal
+
+      allocate ( gdgw(Mobs) )
+      gdgw = IniVal
+
+      allocate ( vgnorm(Nouter) )
+      vgnorm = IniVal
+
+      allocate ( cg_innov(Mobs) )
+      cg_innov = IniVal
+
+      allocate ( cg_pxsave(Mobs) )
+      cg_pxsave = IniVal
 #  endif
+
 # else
 !
 !-----------------------------------------------------------------------
-!  Allocate module variables.
+!  Allocate other module variables.
 !-----------------------------------------------------------------------
 !
 !  Set number of state variables.
@@ -722,63 +1021,123 @@
 #  endif
       END DO
 # endif
-# ifdef IS4DVAR
-!
-!  Determine the number of Hessian eigenpairs available for
-!  preconditioning.
-!
-      Nritz=Ninner+1
-#  if !defined LANCZOS
-      IF (Lprecond) THEN
-        DO ng=1,Ngrids
-          CALL netcdf_get_dim (ng, iNLM, TRIM(HSSname(ng)),             &
-     &                         TRIM(Vname(1,idtime)),                   &
-     &                         Nritz)
-          IF (exit_flag.ne.NoError) RETURN
-        END DO
-      END IF
-#  endif
-#  ifndef LANCZOS
-!
-!  Set number of eigenpairs to use to available quantity.
-!
-      IF (Lprecond) THEN
-        IF (NritzEV.eq.0) THEN
-          NritzEV=Nritz
-        END IF
-      END IF
-#  endif
-# endif
 !
 !  Allocate convolution parameters.
 !
-      allocate ( NHsteps(MstateVar) )
-      allocate ( NVsteps(MstateVar) )
-      allocate ( DTsizeH(MstateVar) )
-      allocate ( DTsizeV(MstateVar) )
+      allocate ( NHsteps(2,MstateVar) )
+      NHsteps = 0
 
-# ifdef IS4DVAR
+      allocate ( NVsteps(2,MstateVar) )
+      NVsteps = 0
+
+      allocate ( DTsizeH(2,MstateVar) )
+      DTsizeH = IniVal
+
+      allocate ( DTsizeV(2,MstateVar) )
+      DTsizeV = IniVal
+
+      allocate ( NVstepsB(4,MstateVar) )
+      NVstepsB = 0
+
+      allocate ( NHstepsB(4,MstateVar) )
+      NHstepsB = 0
+
+      allocate ( DTsizeHB(4,MstateVar) )
+      DTsizeHB = IniVal
+
+      allocate ( DTsizeVB(4,MstateVar) )
+      DTsizeVB = IniVal
+
+
+# if defined IS4DVAR || defined WEAK_CONSTRAINT
 !
 !  Allocate conjugate gradient variables.
 !
+#  if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS  || \
+      defined TL_W4DVAR
+      allocate ( ad_cg_beta(Ninner+1) )
+      ad_cg_beta = IniVal
+
+      allocate ( ad_cg_delta(Ninner) )
+      ad_cg_delta = IniVal
+
+      allocate ( ad_cg_QG(Ninner+1) )
+      ad_cg_QG = IniVal
+
+      allocate ( ad_cg_Gnorm(Nouter) )
+      ad_cg_Gnorm = IniVal
+
+      allocate ( tl_cg_beta(Ninner+1) )
+      tl_cg_beta = IniVal
+
+      allocate ( tl_cg_delta(Ninner) )
+      tl_cg_delta = IniVal
+
+      allocate ( tl_cg_QG(Ninner+1) )
+      tl_cg_QG = IniVal
+
+      allocate ( tl_cg_Gnorm(Nouter) )
+      tl_cg_Gnorm = IniVal
+#  endif
+
       allocate ( cg_alpha(0:Ninner,Nouter) )
       cg_alpha = IniVal
 
-#  ifdef LANCZOS
       allocate ( cg_beta(Ninner+1,Nouter) )
       cg_beta = IniVal
-#  else
-      allocate ( cg_beta(0:Ninner,Nouter) )
-      cg_beta = IniVal
-#  endif
 
       allocate ( cg_tau(0:Ninner,Nouter) )
       cg_tau = IniVal
 
-      allocate ( Ritz(Nritz) )
+      allocate ( Ritz(Ninner+1) )
       Ritz = IniVal
 
-#  ifdef LANCZOS
+# if defined POSTERIOR_EOFS    || defined POSTERIOR_ERROR_I || \
+     defined POSTERIOR_ERROR_F
+
+      allocate ( ae_beta(NpostI+1,Nouter) )
+      ae_beta = IniVal
+
+      allocate ( ae_zv(NpostI,NpostI) )
+      ae_zv = IniVal
+
+      allocate ( ae_delta(NpostI,Nouter) )
+      ae_delta = IniVal
+
+      allocate ( ae_trace(NpostI+1) )
+      ae_trace = IniVal
+
+      allocate ( ae_Gnorm(Nouter) )
+      ae_Gnorm = IniVal
+
+      allocate ( ae_Tmatrix(NpostI,3) )
+      ae_Tmatrix = IniVal
+
+      allocate ( ae_Ritz(NpostI,Nouter) )
+      ae_Ritz = IniVal
+
+      allocate ( ae_RitzErr(NpostI,Nouter) )
+      ae_RitzErr = IniVal
+
+#  if defined POSTERIOR_ERROR_I || defined POSTERIOR_ERROR_F
+      allocate ( zLanczos_coef(Ninner,Ninner) )
+      zLanczos_coef = IniVal
+
+      allocate ( zLanczos_inv(Ninner,Ninner) )
+      zLanczos_inv = IniVal
+
+      allocate ( zLanczos_err(Ninner,Ninner) )
+      zLanczos_err = IniVal
+#  endif
+# endif
+
+#  ifdef WEAK_CONSTRAINT
+      allocate ( cg_zv(Ninner,Ninner,Nouter) )
+#  else
+      allocate ( cg_zv(Ninner,Ninner) )
+#  endif
+      cg_zv = IniVal
+
       allocate ( cg_delta(Ninner,Nouter) )
       cg_delta = IniVal
 
@@ -787,6 +1146,12 @@
 
       allocate ( cg_Gnorm(Nouter) )
       cg_Gnorm = IniVal
+
+      allocate ( cg_Gnorm_v(Nouter) )
+      cg_Gnorm_v = IniVal
+
+      allocate ( cg_Gnorm_y(Nouter) )
+      cg_Gnorm_y = IniVal
 
       allocate ( cg_Greduc(Ninner,Nouter) )
       cg_Greduc = IniVal
@@ -806,12 +1171,8 @@
       allocate ( cg_zu(Ninner,Nouter) )
       cg_zu = IniVal
 
-      allocate ( cg_zv(Ninner,Ninner) )
-      cg_zv = IniVal
-
-#  endif
 # endif
-# if defined OBS_SENSITIVITY
+# if defined IS4DVAR_SENSITIVITY
 !
 !  Allocate Lanczos algorithm coefficients.
 !
@@ -820,6 +1181,9 @@
 
       allocate ( cg_delta(Ninner,Nouter) )
       cg_delta = IniVal
+
+      allocate ( cg_zu(Ninner,Nouter) )
+      cg_zu = IniVal
 # endif
 !
 !-----------------------------------------------------------------------
@@ -834,11 +1198,31 @@
         wrtNLmod(ng)=.FALSE.
         wrtRPmod(ng)=.FALSE.
         wrtTLmod(ng)=.FALSE.
+# ifdef BALANCE_OPERATOR
+        wrtZetaRef(ng)=.FALSE.
+# endif
+# ifdef IS4DVAR_SENSITIVITY
+#  ifdef OBS_IMPACT
+        wrtIMPACT_TOT(ng)=.FALSE.
+#  endif
+#  ifdef OBS_IMPACT_SPLIT
+        wrtIMPACT_IC(ng)=.FALSE.
+#   if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
+        wrtIMPACT_FC(ng)=.FALSE.
+#   endif
+#   if defined ADJUST_BOUNDARY
+        wrtIMPACT_BC(ng)=.FALSE.
+#   endif
+#  endif
+# endif
         KhMin(ng)=1.0_r8
         KhMax(ng)=1.0_r8
         KvMin(ng)=1.0_r8
         KvMax(ng)=1.0_r8
         Optimality(ng)=0.0_r8
+# ifdef WEAK_CONSTRAINT
+        ForceTime(ng)=0.0_r8
+# endif
 
 # ifdef OBSERVATIONS
 !
@@ -846,7 +1230,9 @@
 !
         CALL netcdf_get_fvar (ng, iNLM, TRIM(OBSname(ng)),              &
      &                        TRIM(Vname(1,idOvar)),                    &
-     &                        FOURDVAR(ng)%ObsVar)
+     &                        FOURDVAR(ng)%ObsVar,                      &
+     &                        start = (/1/),                            &
+     &                        total = (/my_NstateVar/))
         IF (exit_flag.ne.NoError) RETURN
 # endif
       END DO
