@@ -108,7 +108,7 @@
         NAVG == 3600
      NDEFAVG == 0
       NTSDIA == 1
-        NDIA == 3600
+        NDIA == 30
      NDEFDIA == 0
 
 ! Output tangent linear and adjoint models parameters.

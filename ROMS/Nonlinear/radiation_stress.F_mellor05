@@ -3,7 +3,7 @@
       MODULE radiation_stress_mod
 #ifdef NEARSHORE_MELLOR
 !
-!svn $Id: radiation_stress.F 1384 2008-02-18 17:22:35Z jcwarner $
+!svn $Id: radiation_stress.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
 !  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -52,7 +52,7 @@
 # ifdef PROFILE
       CALL wclock_on (ng, iNLM, 21)
 # endif
-      CALL radiation_stress_tile (ng, Istr, Iend, Jstr, Jend,           &
+      CALL radiation_stress_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj, N(ng),            &
 # ifdef SOLVE3D
      &                            nrhs(ng),                             &
@@ -123,7 +123,7 @@
       END SUBROUTINE radiation_stress
 !
 !***********************************************************************
-      SUBROUTINE radiation_stress_tile (ng, Istr, Iend, Jstr, Jend,     &
+      SUBROUTINE radiation_stress_tile (ng, tile,                       &
      &                                  LBi, UBi, LBj, UBj, UBk,        &
 # ifdef SOLVE3D
      &                                  nrhs,                           &
@@ -178,7 +178,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, Istr, Iend, Jstr, Jend
+      integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj, UBk
 # ifdef SOLVE3D
       integer, intent(in) :: nrhs
@@ -323,7 +323,6 @@
 #  endif
 # endif
 
-      integer :: IstrR, IendR, JstrR, JendR, IstrU, JstrV
       integer :: ILB, IUB, JLB, JUB
       integer :: i, j, k
 
@@ -415,10 +414,12 @@
           DO k=1,N(ng)
             cff2=SCALARS(ng)%Cs_r(k)
 !! tanh s^4 functional
-            oroller(i,j)=oroller(i,j)+Hz(i,j,k)*                        &
+            oroller(i,j)=oroller(i,j)+                                  &
+     &                   Hz(i,j,k)*                                     &
      &                   (1.0_r8-TANH((2.0_r8*cff2*gamw(i,j))**4))
 !! s^4 functional
-!           oroller(i,j)=oroller(i,j)+Hz(i,j,k)*(1.0_r8-cff2**4)
+!!             oroller(i,j)=oroller(i,j)+                               &
+!!   &                      Hz(i,j,k)*(1.0_r8-cff2**4)
           END DO
           oroller(i,j)=1.0_r8/(oroller(i,j)+eps)
 
@@ -463,8 +464,9 @@
 !! tanh s^4 functional
             cff3=(1.0_r8-TANH((2.0_r8*(fac2-1.0_r8)*gamw(i,j))**4))
 !! s^4 functional
-!           cff3=(1.0_r8-(fac2-1.0_r8)**4)
-            waveEr(i,j)=waveEr(i,j)+cff3*rollA(i,j)*oroller(i,j)
+!!          cff3=(1.0_r8-(fac2-1.0_r8)**4)
+            waveEr(i,j)=waveEr(i,j)+                                    &
+     &                 cff3*rollA(i,j)*oroller(i,j)
 #  endif
 !
 !  Compute local copy of radiation stresses at RHO-points.
@@ -552,8 +554,8 @@
      &           g*cff4*(Dstp(i-1,j)+Dstp(i,j))*                        &
      &           (Wave_break(i-1,j)+Wave_break(i,j))
 #   else
-            cff2=cff2+0.25_r8*                                          &
-     &           0.0424_r8*g*(Hwave(i-1,j)+Hwave(i,j))*                 &
+            cff2=cff2+                                                  &
+     &           0.25_r8*0.0424_r8*g*(Hwave(i-1,j)+Hwave(i,j))*         &
      &           (Wave_break(i-1,j)+Wave_break(i,j))*                   &
      &           (Dstp(i-1,j)+Dstp(i,j))
 #   endif
@@ -625,8 +627,8 @@
      &           g*cff4*(Dstp(i,j-1)+Dstp(i,j))*                        &
      &           (Wave_break(i,j-1)+Wave_break(i,j))
 #   else
-            cff2=cff2+0.25_r8*                                          &
-     &           0.0424_r8*g*(Hwave(i,j-1)+Hwave(i,j))*                 &
+            cff2=cff2+                                                  &
+     &           0.25_r8*0.0424_r8*g*(Hwave(i,j-1)+Hwave(i,j))*         &
      &           (Wave_break(i,j-1)+Wave_break(i,j))*                   &
      &           (Dstp(i,j-1)+Dstp(i,j))
 #   endif
@@ -638,8 +640,8 @@
              v_stokes(i,j,k)=cff2*                                      &
      &                       (waveny(i,j-1)+waveny(i,j))/               &
      &                       (wavec (i,j-1)+wavec (i,j))*               &
-     &                       COSH(cff3*fac2)*0.5_r8*                    &
-     &                       (o2sinh(i,j-1)+o2sinh(i,j))
+     &                       COSH(cff3*fac2)*                           &
+     &                       0.5_r8*(o2sinh(i,j-1)+o2sinh(i,j))
 #  ifdef MASKING
               v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
 #  endif
@@ -1144,71 +1146,71 @@
 !
 !  Apply boundary conditions.
 !
-      CALL bc_r2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Sxx_bar)
-      CALL bc_r2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Sxy_bar)
-      CALL bc_r2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Syy_bar)
-      CALL bc_u2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  ubar_stokes)
-      CALL bc_v2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  vbar_stokes)
-      CALL bc_u2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  rustr2d)
-      CALL bc_v2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  rvstr2d)
 # ifdef SOLVE3D
-      CALL bc_r3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  Sxx)
-      CALL bc_r3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  Sxy)
-      CALL bc_r3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  Syy)
-      CALL bc_r3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  Szx)
-      CALL bc_r3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_r3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  Szy)
-      CALL bc_u3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_u3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  u_stokes)
-      CALL bc_v3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_v3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  v_stokes)
-      CALL bc_u3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_u3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  rustr3d)
-      CALL bc_v3d_tile (ng, Istr, Iend, Jstr, Jend,                     &
+      CALL bc_v3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  rvstr3d)
 # endif
 # ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, iNLM, 4, Istr, Iend, Jstr, Jend,          &
+      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rustr2d, rvstr2d, rulag2d, rvlag2d)
-      CALL mp_exchange2d (ng, iNLM, 2, Istr, Iend, Jstr, Jend,          &
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    ubar_stokes, vbar_stokes)
 #  ifdef SOLVE3D
-      CALL mp_exchange3d (ng, iNLM, 4, Istr, Iend, Jstr, Jend,          &
+      CALL mp_exchange3d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rustr3d,  rvstr3d, rulag3d,  rvlag3d)
-      CALL mp_exchange3d (ng, iNLM, 2, Istr, Iend, Jstr, Jend,          &
+      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    u_stokes, v_stokes)

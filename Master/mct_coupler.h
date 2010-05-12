@@ -91,6 +91,8 @@
       N_mctmodels=Ngrids+1
 # elif defined AIR_OCEAN && defined WAVES_OCEAN
       N_mctmodels=Ncouple*Ngrids+1
+# else
+      N_mctmodels=Ncouple*Ngrids
 # endif
 #else
       N_mctmodels=Ncouple

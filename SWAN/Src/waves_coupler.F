@@ -183,7 +183,9 @@
         ALLOCATE(GlobalSegMap_G(Ngrids))
         ALLOCATE(AttrVect_G(Ngrids))
         ALLOCATE(Router_G(Ngrids))
+# ifdef MCT_INTERP_WV2AT
         ALLOCATE(SMPlus_G(Ngrids))
+# endif
       END IF
 !
 # ifdef REFINED_GRID

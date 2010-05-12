@@ -53,3 +53,4 @@
 # define N2S2_HORAVG
 #endif
 
+#define DIAGNOSTICS_UV
