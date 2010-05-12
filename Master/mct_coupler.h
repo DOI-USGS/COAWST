@@ -2,7 +2,7 @@
 !
 !svn $Id$
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !==================================================== John C. Warner ===
@@ -114,7 +114,7 @@
       pelast=peATM_last
 #endif
       IF (pelast.ne.Nnodes-1) THEN
-        IF (Master) THEN
+        IF (MyRank.eq.0) THEN
           WRITE (stdout,10) pelast, Nnodes
  10       FORMAT (/,' mct_coupler - Number assigned processors: '       &
      &            ,i3.3,/,15x,'not equal to spawned MPI nodes: ',i3.3)

@@ -2,10 +2,10 @@
 !
 !svn $Id: ocean.h 594 2008-04-01 18:11:31Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!======================================================================= 
+!=======================================================================
 !                                                                      !
 !  Regional Ocean Model System (ROMS)                                  !
 !  Terrain-following Ocean Model System (TOMS)                         !
@@ -113,7 +113,7 @@
         Tend(ng)=ntend(ng)+1
       END DO
       IF (exit_flag.eq.NoError) THEN
-        CALL ROMS_run (Tstr, Tend) 
+        CALL ROMS_run (Tstr, Tend)
       END IF
 !
 !-----------------------------------------------------------------------

@@ -1,7 +1,7 @@
 /*
 ** svn $Id: mct_roms_swan.h 756 2008-09-14 20:18:28Z jcwarner $
 ***************************************************** John C. Warner ***
-** Copyright (c) 2002-2008 The ROMS/TOMS Group      Hernan G. Arango  **
+** Copyright (c) 2002-2010 The ROMS/TOMS Group      Hernan G. Arango  **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -306,14 +306,14 @@
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapSWAN,            &
      &      OCN_COMM_WORLD)
       CALL AttrVect_init(wav2ocn_AV2,                                   &
-     &     rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",       &
+     &     rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:QB",             &
      &     lsize=Asize)
       CALL AttrVect_zero (wav2ocn_AV2)
 !
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
      &      OCN_COMM_WORLD)
       CALL AttrVect_init(AttrVect_G(ng)%wav2ocn_AV,                     &
-     &     rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",       &
+     &     rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:QB",             &
      &     lsize=Asize)
       CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
 !
@@ -347,7 +347,7 @@
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
      &                         OCN_COMM_WORLD)
       CALL AttrVect_init(AttrVect_G(ng)%wav2ocn_AV,                     &
-     &  rList="DISSIP:HSIGN:RTP:SETUP:TMBOT:UBOT:DIR:WLEN:QB",          &
+     &  rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:QB",                &
      &  lsize=Asize)
       CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
 !
@@ -418,17 +418,18 @@
       CALL wclock_on (ng, iNLM, 48)
 #endif
       CALL ocn2wav_coupling_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj)
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            IminS, ImaxS, JminS, JmaxS)
 #ifdef PROFILE
       CALL wclock_off (ng, iNLM, 48)
 #endif
-
       RETURN
       END SUBROUTINE ocn2wav_coupling
 !
 !***********************************************************************
       SUBROUTINE ocn2wav_coupling_tile (ng, tile,                       &
-     &                                  LBi, UBi, LBj, UBj)
+     &                                  LBi, UBi, LBj, UBj,             &
+     &                                  IminS, ImaxS, JminS, JmaxS)
 !***********************************************************************
 !
       USE mod_param
@@ -440,6 +441,7 @@
       USE mod_scalars
       USE mod_stepping
       USE mod_iounits
+      USE mod_sedbed
       USE mod_sediment
 #ifdef UV_KIRBY
       USE mod_coupling
@@ -460,6 +462,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 !  Local variable declarations.
 !
@@ -922,7 +925,7 @@
           ij=ij+1
 #ifdef BBL_MODEL
                 A(ij)=MAX(0.0001_r8,                                    &
-     &                      OCEAN(ng)%bottom(i,j,izNik)*30.0_r8)
+     &                    SEDBED(ng)%bottom(i,j,izNik)*30.0_r8)
 #else
                 A(ij)=MAX(0.0001_r8,rdrg2(ng))
 #endif

@@ -3,9 +3,9 @@
 
 #ifdef MODEL_COUPLING
 !
-!svn $Id$
+!svn $Id: roms_export.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -43,7 +43,7 @@
 # ifdef DISTRIBUTE
       USE distribute_mod,  ONLY : mp_reduce
 # endif
-!     
+!
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile, id, gtype
@@ -79,7 +79,7 @@
       real(r8), dimension(2) :: range
 
 # ifdef MCT_LIB
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Awork
+      real(r8), dimension(LBi:UBi,LBj:UBj) :: Awork
 # endif
 # ifdef DISTRIBUTE
       character (len=3), dimension(2) :: op_handle

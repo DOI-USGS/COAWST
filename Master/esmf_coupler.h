@@ -2,7 +2,7 @@
 !
 !svn $Id: esmf_coupler.h 584 2008-03-18 20:01:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -20,7 +20,7 @@
 #ifdef SWAN_COUPLING
 !  SWAN, Simulating WAves Nearshore model:                             !
 !        http://vlm089.citg.tudelft.nl/swan/index.htm                  !
-!                                                                      ! 
+!                                                                      !
 #endif
 !=======================================================================
 !
@@ -84,7 +84,7 @@
 !  Assign ocean global communicator to ocean communicator.
 !
       OCN_COMM_WORLD=MyMPIcomm
-! 
+!
 !  Read in coupling models parameters from standard input.
 !
       CALL read_CouplePar (iNLM)
@@ -265,7 +265,7 @@
 !  Get external clock current time.
 !
         CALL ESMF_ClockGet (TimeClock(0),                               &
-     &                      currTime=CurrTime(0),                       &       
+     &                      currTime=CurrTime(0),                       &
      &                      rc=status)
         IF (CheckError(status, 'ESMF', 'esmf_coupler.h',                &
      &                 'getting external current time object')) EXIT

@@ -8,7 +8,7 @@
 !
 !svn $Id: esmf_roms.F 607 2008-04-23 04:02:27Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -35,7 +35,7 @@
       implicit none
 !
 !  Public/Private routines.
-!  
+!
       PUBLIC  :: ROMS_SetServices
       PUBLIC  :: ROMS_SetGridArrays
       PUBLIC  :: ROMS_SetStates
@@ -510,7 +510,7 @@
         IF (CheckError(status, 'ESMF', 'ROMS_SetGridArrays',            &
      &                 'setting 2D array descriptor')) RETURN
 !
-!-----------------------------------------------------------------------      
+!-----------------------------------------------------------------------
 !  Create ROMS exchange arrays. Notice that after initialization all
 !  ROMS grid arrays are allocated and initialized.
 !-----------------------------------------------------------------------
@@ -1019,7 +1019,7 @@
 !  Get ROMS internal clock current time.
 !
       CALL ESMF_ClockGet (TimeClock(Iocean),                            &
-     &                    currTime=CurrTime(Iocean),                    &       
+     &                    currTime=CurrTime(Iocean),                    &
      &                    rc=status)
       IF (CheckError(status, 'ESMF', 'ROMS_SetClock',                   &
      &               'getting ROMS current time object')) RETURN
@@ -1114,8 +1114,8 @@
         JstrV=BOUNDS(ng)%JstrV(MyRank)
         LBi=BOUNDS(ng)%LBi(MyRank)
         UBi=BOUNDS(ng)%UBi(MyRank)
-        LBj=BOUNDS(ng)%LBi(MyRank)
-        UBj=BOUNDS(ng)%UBi(MyRank)
+        LBj=BOUNDS(ng)%LBj(MyRank)
+        UBj=BOUNDS(ng)%UBj(MyRank)
 
         DO ifield=1,Nimport(Iocean)
           id=ImportID(Iocean)%val(ifield)
@@ -1909,7 +1909,7 @@
 !  Get ROMS internal clock current time.
 !
         CALL ESMF_ClockGet (TimeClock(Iocean),                          &
-     &                      currTime=CurrTime(Iocean),                  &       
+     &                      currTime=CurrTime(Iocean),                  &
      &                      rc=status)
         IF (CheckError(status, 'ESMF', 'ROMS_SetRun',                   &
      &                 'getting ROMS current time object')) RETURN
@@ -2040,6 +2040,6 @@
         RETURN
       END IF
 
-      END SUBROUTINE ROMS_SetFinalize 
+      END SUBROUTINE ROMS_SetFinalize
 #endif
       END MODULE ESMF_ROMS

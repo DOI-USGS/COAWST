@@ -1,7 +1,7 @@
 /*
 ** svn $Id: mct_roms_wrf.h 756 2008-09-14 20:18:28Z jcwarner $
 ***************************************************** John C. Warner ***
-** Copyright (c) 2002-2008 The ROMS/TOMS Group      Hernan G. Arango  **
+** Copyright (c) 2002-2010 The ROMS/TOMS Group      Hernan G. Arango  **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -997,7 +997,7 @@
         DO i=IstrT,IendT
           ij=ij+1
 #ifdef SST_CONST
-          A(ij)=29.0_r8  ! exp A. rhe 03/13/08
+          A(ij)=0._r8  ! exp A. rhe 03/13/08
 #else       
           A(ij)=OCEAN(ng)%t(i,j,N(ng),nstp(ng),itemp)
 #endif
