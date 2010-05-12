@@ -1,5 +1,6 @@
 #include "cppdefs.h"
-      SUBROUTINE regrid (ng, model, ncid, ncvarid, gtype, iflag,        &
+      SUBROUTINE regrid (ng, model, ncname, ncid,                       &
+     &                   ncvname, ncvarid, gtype, iflag,                &
      &                   Nx, Ny, Ainp, Amin, Amax,                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   Imin, Imax, Jmin, Jmax,                        &
@@ -7,7 +8,7 @@
 !
 !svn $Id: regrid.F 771 2008-09-30 02:30:00Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -17,42 +18,45 @@
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
-!     ng         Nested grid number.                                   !
-!     model      Calling model identifier.                             !
-!     ncid       NetCDF file ID.                                       !
-!     ncvarid    NetCDF variable ID.                                   !
-!     gtype      Grid type.                                            !
-!     iflag      Interpolation flag (0: linear, 1: cubic).             !
-!     Nx         X-dimension size for gridded data, Ainp.              !
-!     Ny         Y-dimension size for gridded data, Ainp.              !
-!     Ainp       Gridded data to interpolate from.                     !
-!     Amin       Gridded data minimum value.                           !
-!     Amax       Gridded data maximum value.                           !
-!     LBi        I-dimension Lower bound of data to interpolate, Aout. !
-!     UBi        I-dimension Upper bound of data to interpolate, Aout. !
-!     LBj        J-dimension Lower bound of data to interpolate, Aout. !
-!     UBj        J-dimension Upper bound of data to interpolate, Aout. !
-!     Imin       Starting data I-index to interpolate, Aout.           !
-!     Imax       Ending   data I-index to interpolate, Aout.           !
-!     Jmin       Starting data J-index to interpolate, Aout.           !
-!     Jmax       Ending   data J-index to interpolate, Aout.           !
-!     Xout       X-locations to interpolate.                           !
-!     Yout       Y-locations to interpolate.                           !
+!     ng         Nested grid number (integer)                          !
+!     model      Calling model identifier (integer)                    !
+!     ncname     NetCDF file name (string)                             !
+!     ncid       NetCDF file ID (integer)                              !
+!     ncvname    NetCDF variable name (string)                         !
+!     ncvarid    NetCDF variable ID (integer)                          !
+!     gtype      C-grid type (integer)                                 !
+!     iflag      Interpolation flag (integer, 0: linear, 1: cubic)     !
+!     Nx         X-dimension size for gridded data, Ainp (integer)     !
+!     Ny         Y-dimension size for gridded data, Ainp (integer)     !
+!     Ainp       Gridded data to interpolate from (real)               !
+!     Amin       Gridded data minimum value (integer)                  !
+!     Amax       Gridded data maximum value (integer)                  !
+!     LBi        Aout I-dimension Lower bound (integer)                !
+!     UBi        Aout I-dimension Upper bound (integer)                !
+!     LBj        Aout J-dimension Lower bound (integer)                !
+!     UBj        Aout J-dimension Upper bound (integer)                !
+!     Imin       Aout starting data I-index (integer)                  !
+!     Imax       Aout ending   data I-index (integer)                  !
+!     Jmin       Aout starting data J-index (integer)                  !
+!     Jmax       Aout ending   data J-index (integer)                  !
+!     Xout       X-locations (longitude) to interpolate (real)         !
+!     Yout       Y-locations (latitude)  to interpolate (real)         !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
-!     Aout       Interpolated field.                                   !
+!     Aout       Interpolated field (real)                             !
 !                                                                      !
 !=======================================================================
 !
       USE mod_param
       USE mod_parallel
       USE mod_iounits
+      USE mod_ncparam
       USE mod_scalars
 !
       USE interpolate_mod
 #ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcastf, mp_reduce
+      USE distribute_mod, ONLY : mp_reduce
 #endif
 !
       implicit none
@@ -72,15 +76,17 @@
       real(r8), intent(in) :: Yout(LBi:UBi,LBj:UBj)
 
       real(r8), intent(out) :: Aout(LBi:UBi,LBj:UBj)
+
+      character (len=*), intent(in) :: ncname
+      character (len=*), intent(in) :: ncvname
 !
 !  Local variable declarations
 !
       logical :: rectangular
-      integer :: i, j, Nghost
+      integer :: i, j
       integer :: Istr, Iend, Jstr, Jend
-      integer :: Xminr, Xmaxr, Yminr, Ymaxr
 #ifdef DISTRIBUTE
-      integer :: Itile, Jtile, Npts, ic, mc, nc
+      integer :: Cgrid, ghost
 #endif
       real(r8), parameter :: IJspv = 0.0_r8
 
@@ -93,8 +99,6 @@
       real(r8), dimension(LBi:UBi,LBj:UBj) :: Iout
       real(r8), dimension(LBi:UBi,LBj:UBj) :: Jout
 
-      real(r8), dimension(7+3*Nx*Ny) :: Awrk
-
 #ifdef DISTRIBUTE
       real(r8), dimension(2) :: buffer
       character (len=3), dimension(2) :: op_handle
@@ -105,7 +109,8 @@
 !  Get input variable coordinates.
 !-----------------------------------------------------------------------
 !
-      CALL get_varcoords (ng, model, ncid, ncvarid, Nx, Ny,             &
+      CALL get_varcoords (ng, model, ncname, ncid,                      &
+     &                    ncvname, ncvarid, Nx, Ny,                     &
      &                    Xmin, Xmax, Xinp, Ymin, Ymax, Yinp,           &
      &                    rectangular)
       IF (exit_flag.ne.NoError) RETURN
@@ -117,73 +122,12 @@
           angle(i,j)=0.0_r8
         END DO
       END DO
-
-#ifdef DISTRIBUTE
 !
-!-----------------------------------------------------------------------
-!  If distributed-memory, broadcast gridded data to all nodes.
-!-----------------------------------------------------------------------
+!  Initialize local fractional coordinates arrays to avoid
+!  deframentation.
 !
-!  Pack all gridded data so it can be broadcasted to all nodes in the
-!  group.
-!
-      ic=0
-      mc=Nx*Ny
-      nc=2*mc
-      IF (MyRank.eq.MyMaster) THEN
-        DO j=1,Ny
-          DO i=1,Nx
-            ic=ic+1
-            Awrk(ic   )=Xinp(i,j)
-            Awrk(ic+mc)=Yinp(i,j)
-            Awrk(ic+nc)=Ainp(i,j)
-          END DO
-        END DO
-        ic=3*mc
-        Awrk(ic+1)=Amin
-        Awrk(ic+2)=Amax
-        Awrk(ic+3)=Xmin
-        Awrk(ic+4)=Xmax
-        Awrk(ic+5)=Ymin
-        Awrk(ic+6)=Ymax
-        IF (rectangular) THEN
-          Awrk(ic+7)=1.0_r8
-        ELSE
-          Awrk(ic+7)=0.0_r8
-        END IF
-      END IF
-      Npts=3*mc+7
-!
-!  Broadcast gridded data to all nodes in the group, itself included.
-!
-      CALL mp_bcastf (ng, model, Awrk, Npts)
-!
-!  Unpack broadcasted data.
-!
-      IF (MyRank.ne.MyMaster) THEN
-        ic=0
-        DO j=1,Ny
-          DO i=1,Nx
-            ic=ic+1
-            Xinp(i,j)=Awrk(ic   )
-            Yinp(i,j)=Awrk(ic+mc)
-            Ainp(i,j)=Awrk(ic+nc)
-          END DO
-        END DO
-        ic=3*mc
-        Amin=Awrk(ic+1)
-        Amax=Awrk(ic+2)
-        Xmin=Awrk(ic+3)
-        Xmax=Awrk(ic+4)
-        Ymin=Awrk(ic+5)
-        Ymax=Awrk(ic+6)
-        IF (Awrk(ic+7).gt.0.0_r8) THEN
-          rectangular=.TRUE.
-        ELSE
-          rectangular=.FALSE.
-        END IF
-      END IF
-#endif
+      Iout=0.0_r8
+      Jout=0.0_r8
 !
 !-----------------------------------------------------------------------
 !  Check if gridded data contains model grid.
@@ -212,14 +156,28 @@
 !  Interpolate (bilinear or bicubic) to requested positions.
 !-----------------------------------------------------------------------
 !
-#ifdef DISTRIBUTE
-
-!  Set physical, non-overlaping (no ghost-points) ranges according to
-!  tile rank.
+!  Set tile starting and ending indices.
 !
-      Nghost=0
-      CALL get_bounds (ng, MyRank, gtype, Nghost, Itile, Jtile,         &
-     &                 Istr, Iend, Jstr, Jend)
+#ifdef DISTRIBUTE
+      ghost=0                        ! non-overlapping, no ghost points
+
+      SELECT CASE (ABS(gtype))
+        CASE (p2dvar, p3dvar)
+          Cgrid=1
+        CASE (r2dvar, r3dvar)
+          Cgrid=2
+        CASE (u2dvar, u3dvar)
+          Cgrid=3
+        CASE (v2dvar, v3dvar)
+          Cgrid=4
+        CASE DEFAULT
+          Cgrid=1
+      END SELECT
+
+      Istr=BOUNDS(ng)%Imin(Cgrid,ghost,MyRank)
+      Iend=BOUNDS(ng)%Imax(Cgrid,ghost,MyRank)
+      Jstr=BOUNDS(ng)%Jmin(Cgrid,ghost,MyRank)
+      Jend=BOUNDS(ng)%Jmax(Cgrid,ghost,MyRank)
 #else
       Istr=Imin
       Iend=Imax
@@ -236,7 +194,7 @@
      &               Istr, Iend, Jstr, Jend,                            &
      &               Xout, Yout,                                        &
      &               Iout, Jout,                                        &
-     &               IJspv, rectangular, Xminr, Xmaxr, Yminr, Ymaxr)
+     &               IJspv, rectangular)
 
       IF (iflag.eq.linear) THEN
         CALL linterp2d (ng, 1, Nx, 1, Ny,                               &

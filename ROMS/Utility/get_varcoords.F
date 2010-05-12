@@ -1,11 +1,12 @@
 #include "cppdefs.h"
-      SUBROUTINE get_varcoords (ng, model, ncid, ncvarid,               &
-     &                          Nx, Ny, Xmin, Xmax, X, Ymin, Ymax, Y,   &
+      SUBROUTINE get_varcoords (ng, model, ncname, ncid,                &
+     &                          ncvname, ncvarid, Nx, Ny,               &
+     &                          Xmin, Xmax, X, Ymin, Ymax, Y,           &
      &                          rectangular)
 !
 !svn $Id: get_varcoords.F 1336 2008-01-24 02:45:56Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -44,6 +45,9 @@
       integer, intent(in) :: ng, model, ncid, ncvarid
       integer, intent(in) :: Nx, Ny
 
+      character (len=*), intent(in) :: ncname
+      character (len=*), intent(in) :: ncvname
+
       logical, intent(out) :: rectangular
 
       real(r8), intent(out) :: Xmin, Xmax, Ymin, Ymax
@@ -53,173 +57,159 @@
 !
 !  Local variable declarations
 !
-      integer :: i, ic, j, jc
-      integer :: alen, atype, blank, ndims, status, varid
+      logical :: foundit
 
-      integer, dimension(2) :: start, total
+      integer :: i, ic, j, jc
+      integer :: alen, blank, varid
 
       real(r8), dimension(Nx) :: Xwrk
       real(r8), dimension(Ny) :: Ywrk
 
-      character (len=20) :: name, Xname, Yname
-      character (len=40) :: text
+      character (len=20) :: Xname, Yname
+!
+      SourceFile='get_varcoords.F'
 !
 !-----------------------------------------------------------------------
 !  Get coarse variable coordinates.
 !-----------------------------------------------------------------------
 !
+!  Inquire the variable attributes.
+!
+      CALL netcdf_inq_var (ng, model, ncname,                           &
+     &                     ncid = ncid,                                 &
+     &                     myVarName = ncvname)
+      IF (exit_flag.ne.NoError) RETURN
+!
 !  Get names of variable coordinates.
 !
-      IF (InpThread) THEN
-        status=nf90_inquire_attribute(ncid, ncvarid, 'coordinates',     &
-     &                                atype, alen)
-        IF (status.eq.nf90_noerr) THEN
-          status=nf90_get_att(ncid, ncvarid, 'coordinates',             &
-     &                        text(1:alen))
-          IF (status.eq.nf90_noerr) THEN
-            blank=INDEX(text(1:alen),' ')
-            Xname=text(1:blank-1)
-            Yname=text(blank+1:alen)
-          ELSE
-            status=nf90_inquire_variable(ncid, ncvarid, name)
-            WRITE (stdout,10) 'coordinates', TRIM(name)
-            exit_flag=4
-            ioerror=status
-            RETURN
-          END IF       
-        ELSE
-          WRITE (stdout,20) 'coordinates', TRIM(name)
-          exit_flag=4
-          ioerror=status
-          RETURN
+      foundit=.FALSE.
+      rectangular=.FALSE.
+
+      DO i=1,n_vatt
+        IF (TRIM(var_Aname(i)).eq.'coordinates') THEN
+          alen=LEN_TRIM(var_Achar(i))
+          blank=INDEX(var_Achar(i)(1:alen),' ')
+          Xname=var_Achar(i)(1:blank-1)
+          Yname=var_Achar(i)(blank+1:alen)
+          foundit=.TRUE.
+          EXIT
         END IF
-        rectangular=.FALSE.
+      END DO
+      IF (.not.foundit) THEN
+        IF (Master) WRITE (stdout,10) TRIM(ncvname), TRIM(ncname)
+        exit_flag=2
+        ioerror=0
+      END IF
 !
 !  Read in X-coordinates.
 !
-        status=nf90_inq_varid(ncid, TRIM(Xname), varid)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,30) TRIM(Xname)
-          exit_flag=4
-          ioerror=status
-        END IF
-        status=nf90_inquire_variable(ncid, varid, ndims = ndims)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,40) TRIM(Xname)
-          exit_flag=4
-          ioerror=status
-        END IF
-        IF (ndims.eq.1) THEN
-          start(1)=1
-          total(1)=Nx
-          status=nf90_get_var(ncid, varid, Xwrk, start, total)
-        ELSE
-          start(1)=1
-          total(1)=Nx
-          start(2)=1
-          total(2)=Ny
-          status=nf90_get_var(ncid, varid, X, start, total)
-        END IF        
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,50) TRIM(Xname)
-          exit_flag=4
-          ioerror=status
-        END IF
-        IF (ndims.eq.1) THEN
-          rectangular=.TRUE.
-          jc=0
-          DO j=1,Ny
-            DO i=1,Nx
-              X(i,j)=Xwrk(i)
-            END DO
+      CALL netcdf_inq_var (ng, model, ncname,                           &
+     &                     ncid = ncid,                                 &
+     &                     myVarName = Xname,                           &
+     &                     VarID= varid)
+      IF (exit_flag.ne.NoError) RETURN
+!
+      IF (n_vdim.eq.1) THEN
+        CALL netcdf_get_fvar (ng, model, ncname, Xname,                 &
+     &                        Xwrk,                                     &
+     &                        ncid = ncid,                              &
+     &                        start = (/1/),                            &
+     &                        total = (/Nx/))
+        IF (exit_flag.ne.NoError) RETURN
+
+        rectangular=.TRUE.
+        jc=0
+        DO j=1,Ny
+          DO i=1,Nx
+            X(i,j)=Xwrk(i)
           END DO
-        ELSE
-          jc=1
-          DO j=2,Ny
-            IF (X(1,j).eq.X(1,1)) THEN
-              jc=jc+1
-            END IF
-          END DO
-        END IF
+        END DO
+      ELSE
+        CALL netcdf_get_fvar (ng, model, ncname, Xname,                 &
+     &                        X,                                        &
+     &                        ncid = ncid,                              &
+     &                        start = (/1,1/),                          &
+     &                        total = (/Nx,Ny/))
+        IF (exit_flag.ne.NoError) RETURN
+
+        jc=1
+        DO j=2,Ny
+          IF (X(1,j).eq.X(1,1)) THEN
+            jc=jc+1
+          END IF
+        END DO
+      END IF
 !
 !  Read in Y-coordinates.
 !
-        status=nf90_inq_varid(ncid, TRIM(Yname), varid)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,30) TRIM(Yname)
-          exit_flag=4
-          ioerror=status
-        END IF
-        status=nf90_inquire_variable(ncid, varid, ndims = ndims)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,40) TRIM(Yname)
-          exit_flag=4
-          ioerror=status
-        END IF
-        IF (ndims.eq.1) THEN
-          start(1)=1
-          total(1)=Ny
-          status=nf90_get_var(ncid, varid, Ywrk, start, total)
-        ELSE
-          start(1)=1
-          total(1)=Nx
-          start(2)=1
-          total(2)=Ny
-          status=nf90_get_var(ncid, varid, Y, start, total)
-        END IF        
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,50) TRIM(Yname)
-          exit_flag=4
-          ioerror=status
-        END IF
-        IF (ndims.eq.1) THEN
-          rectangular=.TRUE.
-          ic=0
-          DO j=1,Ny
-            DO i=1,Nx
-              Y(i,j)=Ywrk(j)
-            END DO
+      CALL netcdf_inq_var (ng, model, ncname,                           &
+     &                     ncid = ncid,                                 &
+     &                     myVarName = Yname,                           &
+     &                     VarID= varid)
+      IF (exit_flag.ne.NoError) RETURN
+!
+      IF (n_vdim.eq.1) THEN
+        CALL netcdf_get_fvar (ng, model, ncname, Yname,                 &
+     &                        Ywrk,                                     &
+     &                        ncid = ncid,                              &
+     &                        start = (/1/),                            &
+     &                        total = (/Ny/))
+        IF (exit_flag.ne.NoError) RETURN
+
+        rectangular=.TRUE.
+        ic=0
+        DO j=1,Ny
+          DO i=1,Nx
+            Y(i,j)=Ywrk(j)
           END DO
-        ELSE
-          ic=1
-          DO i=2,Nx
-            IF (Y(i,1).eq.Y(1,1)) THEN
-              ic=ic+1
-            END IF
-          END DO
-        END IF
+        END DO
+      ELSE
+        CALL netcdf_get_fvar (ng, model, ncname, Yname,                 &
+     &                        Y,                                        &
+     &                        ncid = ncid,                              &
+     &                        start = (/1,1/),                          &
+     &                        total = (/Nx,Ny/))
+        IF (exit_flag.ne.NoError) RETURN
+
+        ic=1
+        DO i=2,Nx
+          IF (Y(i,1).eq.Y(1,1)) THEN
+            ic=ic+1
+          END IF
+        END DO
+      END IF
 !
 !  Determine "rectangular" switch.
 !
-        IF (((ic.ne.0).and.(ic.eq.Nx)).and.                             &
-     &      ((jc.ne.0).and.(jc.eq.Ny))) THEN
-          rectangular=.TRUE.
-        END IF
+      IF (((ic.ne.0).and.(ic.eq.Nx)).and.                               &
+     &    ((jc.ne.0).and.(jc.eq.Ny))) THEN
+        rectangular=.TRUE.
+      END IF
 !
 !  Determine minimum and maximum positions.
 !
-        Xmin=1.0E+35_r8
-        Xmax=-1.0E+35_r8
-        Ymin=1.0E+35_r8
-        Ymax=-1.0E+35_r8
-        DO j=1,Ny
-          DO i=1,Nx
-            Xmin=MIN(Xmin,X(i,j))
-            Xmax=MAX(Xmax,X(i,j))
-            Ymin=MIN(Ymin,Y(i,j))
-            Ymax=MAX(Ymax,Y(i,j))
-          END DO
+      Xmin= spval
+      Xmax=-spval
+      Ymin= spval
+      Ymax=-spval
+      DO j=1,Ny
+        DO i=1,Nx
+          Xmin=MIN(Xmin,X(i,j))
+          Xmax=MAX(Xmax,X(i,j))
+          Ymin=MIN(Ymin,Y(i,j))
+          Ymax=MAX(Ymax,Y(i,j))
         END DO
-      END IF
+      END DO
 
- 10   FORMAT (/,' GET_VARCOORDS - error while reading attribute: ', a,  &
-     &          ' for variable: ', a)
- 20   FORMAT (/,' GET_VARCOORDS - error while inquiring attribute: ',   &
-     &        a,' for variable: ', a)
- 30   FORMAT (/,' GET_VARCOORDS - cannot inquire ID for variable: ', a)
- 40   FORMAT (/,' GET_VARCOORDS - error while inquiring dimensions',    &
-     &          ' for variable: ', a)
- 50   FORMAT (/,' GET_VARCOORDS - error while reading variable: ', a)
+ 10   FORMAT (/,' GET_VARCOORDS - Cannot find "coordinates" attribute', &
+     &        ' for variable:',2x,a,/,17x,'in file:',2x,a,/,            &
+     &     /,17x,'This attribute is needed to interpolate input data',  &
+     &     /,17x,'to model grid. Following CF compliance, we need:',/,  &
+     &     /,17x,'float my_var(time, lat, lon) ;',                      &
+     &     /,17x,'      my_var:long_name = "my variable long name" ;',  &
+     &     /,17x,'      my_var:units = "my variable units" ;',          &
+     &     /,17x,'      my_var:coordinates = "lon lat" ;',              &
+     &     /,17x,'      my_var:time = "my_var_time" ;',/)
 
       RETURN
       END SUBROUTINE get_varcoords

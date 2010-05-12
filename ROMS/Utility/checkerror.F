@@ -1,9 +1,9 @@
 #include "cppdefs.h"
-      FUNCTION CheckError (ErrorFlag, source, routine, message)      
+      FUNCTION CheckError (ErrorFlag, source, routine, message)
 !
-!svn $Id: checkerror.F 168 2008-03-18 20:12:43Z arango $
+!svn $Id: checkerror.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -59,7 +59,7 @@
 #endif
         CASE DEFAULT
           CheckError=.FALSE.
-        
+
       END SELECT
 !
 !  Report error message.

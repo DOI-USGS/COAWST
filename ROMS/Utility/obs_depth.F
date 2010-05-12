@@ -3,9 +3,9 @@
     defined DISTRIBUTE && defined SOLVE3D
       SUBROUTINE obs_depth (ng, tile, model)
 !
-!svn $Id: obs_depth.F 584 2008-03-18 20:01:12Z arango $
+!svn $Id: obs_depth.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -33,7 +33,7 @@
 !
       logical :: r_bound, u_bound, v_bound
 
-      integer :: Mstr, Mend, i, iobs, itrc, j
+      integer :: Mstr, Mend, iobs, itrc
 
       real(r8) :: IniVal = 0.0_r8
 
@@ -49,7 +49,7 @@
 !  only the observation for the current time window are loaded
 !  and started from vector index one.
 !
-# if defined WEAK_CONSTRAINT || defined IOM
+# ifdef WEAK_CONSTRAINT
       Mstr=NstrObs(ng)
       Mend=NendObs(ng)
 # else
@@ -60,24 +60,19 @@
 !  Process vertical positions.
 !
       DO iobs=Mstr,Mend
-        i=INT(Xobs(iobs))
-        j=INT(Yobs(iobs))
         IF (Zobs(iobs).lt.0.0_r8) THEN
-# ifdef FULL_GRID
-          r_bound=((IstrR.le.i).and.(i.le.IendR)).and.                  &
-     &            ((JstrR.le.j).and.(j.le.JendR))
-          u_bound=((Istr .le.i).and.(i.le.IendR)).and.                  &
-     &            ((JstrR.le.j).and.(j.le.JendR))
-          v_bound=((IstrR.le.i).and.(i.le.IendR)).and.                  &
-     &            ((Jstr .le.j).and.(j.le.JendR))
-# else
-          r_bound=((Istr .le.i).and.(i.le.Iend )).and.                  &
-     &            ((Jstr .le.j).and.(j.le.Jend ))
-          u_bound=((IstrU.le.i).and.(i.le.Iend )).and.                  &
-     &            ((Jstr .le.j).and.(j.le.Jend ))
-          v_bound=((Istr .le.i).and.(i.le.Iend )).and.                  &
-     &            ((JstrV.le.j).and.(j.le.Jend ))
-# endif
+          r_bound=((rXmin(ng) .le.Xobs(iobs)).and.                      &
+     &             (Xobs(iobs).lt.rXmax(ng))).and.                      &
+     &            ((rYmin(ng) .le.Yobs(iobs)).and.                      &
+     &             (Yobs(iobs).lt.rYmax(ng)))
+          u_bound=((uXmin(ng) .le.Xobs(iobs)).and.                      &
+     &             (Xobs(iobs).lt.uXmax(ng))).and.                      &
+     &            ((uYmin(ng) .le.Yobs(iobs)).and.                      &
+     &             (Yobs(iobs).lt.uYmax(ng)))
+          v_bound=((vXmin(ng) .le.Xobs(iobs)).and.                      &
+     &             (Xobs(iobs).lt.vXmax(ng))).and.                      &
+     &            ((vYmin(ng) .le.Yobs(iobs)).and.                      &
+     &             (Yobs(iobs).lt.vYmax(ng)))
           IF (ObsType(iobs).eq.isUvel) THEN
             IF (.not.u_bound) THEN
               Zobs(iobs)=IniVal

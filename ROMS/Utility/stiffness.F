@@ -3,7 +3,7 @@
 !
 !svn $Id: stiffness.F 733 2008-09-07 01:56:45Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -45,6 +45,7 @@
 !
       CALL stiffness_tile (ng, tile, model,                             &
      &                     LBi, UBi, LBj, UBj,                          &
+     &                     IminS, ImaxS, JminS, JmaxS,                  &
 #ifdef MASKING
      &                     GRID(ng) % rmask,                            &
      &                     GRID(ng) % umask,                            &
@@ -55,7 +56,7 @@
 #ifdef SOLVE3D
      &                     GRID(ng) % Hz,                               &
      &                     GRID(ng) % z_w,                              &
-#endif 
+#endif
      &                     OCEAN(ng)% zeta)
       RETURN
       END SUBROUTINE stiffness
@@ -63,6 +64,7 @@
 !***********************************************************************
       SUBROUTINE stiffness_tile (ng, tile, model,                       &
      &                           LBi, UBi, LBj, UBj,                    &
+     &                           IminS, ImaxS, JminS, JmaxS,            &
 #ifdef MASKING
      &                           rmask, umask, vmask,                   &
 #endif
@@ -88,6 +90,7 @@
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 
 #ifdef ASSUMED_SHAPE
 # ifdef MASKING

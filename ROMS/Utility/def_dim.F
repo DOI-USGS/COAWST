@@ -4,7 +4,7 @@
 !
 !svn $Id: def_dim.F 677 2008-08-05 20:17:30Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -33,10 +33,10 @@
       USE mod_netcdf
       USE mod_scalars
 
-# ifdef DISTRIBUTE
+#if !defined PARALLEL_IO  && defined DISTRIBUTE
 !
       USE distribute_mod, ONLY : mp_bcasti
-# endif
+#endif
 !
       implicit none
 !
@@ -56,7 +56,7 @@
 
       integer :: def_dim
 
-#ifdef DISTRIBUTE
+#if !defined PARALLEL_IO  && defined DISTRIBUTE
       integer, dimension(3) :: buffer
 #endif
 !
@@ -64,6 +64,8 @@
 !  Define requested NetCDF dimension.
 !-----------------------------------------------------------------------
 !
+      status=nf90_noerr
+
       IF (OutThread) THEN
         status=nf90_def_dim(ncid, TRIM(DimName), DimSize, DimId)
         IF (status.ne.nf90_noerr) THEN
@@ -73,14 +75,14 @@
         END IF
       END IF
 
-#ifdef DISTRIBUTE
+#if !defined PARALLEL_IO  && defined DISTRIBUTE
 !
 !  Broadcast information to all threads in the group.
 !
       buffer(1)=DimID
       buffer(2)=status
       buffer(3)=exit_flag
-      CALL mp_bcasti (ng, model, buffer, 3)
+      CALL mp_bcasti (ng, model, buffer)
       DimID=buffer(1)
       status=buffer(2)
       exit_flag=buffer(3)
@@ -90,7 +92,7 @@
 !
       def_dim=status
 !
- 10   FORMAT (/,' DEF_VAR - error while defining dimension: ',a,        &
+ 10   FORMAT (/,' DEF_DIM - error while defining dimension: ',a,        &
      &        /,11x,'in file: ',a)
 
       RETURN

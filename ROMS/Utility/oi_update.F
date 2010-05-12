@@ -18,7 +18,7 @@
 !
 !svn $Id: oi_update.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -67,6 +67,7 @@
 # ifdef ASSIMILATION_SSH
       CALL oi_ssh_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  knew(ng),                                       &
 #  ifdef MASKING
      &                  GRID(ng) % rmask,                               &
@@ -80,6 +81,7 @@
 # ifdef ASSIMILATION_T
       CALL oi_trc_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  nnew(ng),                                       &
 #  ifdef MASKING
      &                  GRID(ng) % rmask,                               &
@@ -93,6 +95,7 @@
 # if defined ASSIMILATION_UV || defined ASSIMILATION_UVsur
       CALL oi_vel_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  knew(ng), nnew(ng),                             &
 #  ifdef MASKING
      &                  GRID(ng) % umask,                               &
@@ -122,6 +125,7 @@
 !***********************************************************************
       SUBROUTINE oi_ssh_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        knew,                                     &
 #  ifdef MASKING
      &                        rmask,                                    &
@@ -139,6 +143,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: knew
 !
 #  ifdef ASSUMED_SHAPE
@@ -244,6 +249,7 @@
 !***********************************************************************
       SUBROUTINE oi_trc_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nnew,                                     &
 #  ifdef MASKING
      &                        rmask,                                    &
@@ -261,6 +267,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nnew
 !
 #  ifdef ASSUMED_SHAPE
@@ -380,6 +387,7 @@
 !***********************************************************************
       SUBROUTINE oi_vel_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        knew, nnew,                               &
 #  ifdef MASKING
      &                        umask, vmask,                             &
@@ -401,6 +409,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: knew, nnew
 !
 #  ifdef ASSUMED_SHAPE
@@ -450,8 +459,8 @@
       real(r8) :: Eobs, arg, cff, cff1, cff2, delta
       real(r8) :: decay, mu, ratio, Aweight, Tval
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: Uwrk
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY,2) :: Vwrk
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: Uwrk
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: Vwrk
 
       character (len=14) :: t_code
 

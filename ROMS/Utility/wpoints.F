@@ -18,7 +18,7 @@
 !
 !svn $Id: wpoints.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -54,6 +54,7 @@
 !
       CALL wpoints_tile (ng, tile, model,                               &
      &                   LBi, UBi, LBj, UBj,                            &
+     &                   IminS, ImaxS, JminS, JmaxS,                    &
 # ifdef MASKING
      &                   GRID(ng) % pmask,                              &
      &                   GRID(ng) % rmask,                              &
@@ -73,6 +74,7 @@
 !***********************************************************************
       SUBROUTINE wpoints_tile (ng, tile, model,                         &
      &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
 # ifdef MASKING
      &                         pmask, rmask, umask, vmask,              &
 #  ifdef PROPAGATOR
@@ -92,7 +94,7 @@
 # endif
 # ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_bcastf, mp_gather, mp_reduce
+      USE distribute_mod, ONLY : mp_bcastf, mp_gather2d, mp_reduce
 # endif
 !
       implicit none
@@ -101,6 +103,7 @@
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 # ifdef ASSUMED_SHAPE
 #  ifdef MASKING
@@ -167,7 +170,7 @@
 # if defined MASKING && (defined READ_WATER || defined WRITE_WATER)
 !
 !-----------------------------------------------------------------------
-!  Determine number of water points. 
+!  Determine number of water points.
 !-----------------------------------------------------------------------
 !
 !  Determine interior and boundary points for IO purposes.
@@ -188,7 +191,7 @@
           END IF
         END DO
       END DO
-      DO j=Jstr,MIN(JendR,Mm(ng)+1) 
+      DO j=Jstr,MIN(JendR,Mm(ng)+1)
         DO i=Istr,MIN(IendR,Lm(ng)+1)
           IF (pmask(i,j).eq.1.0_r8) THEN
             my_Nxyp=my_Nxyp+1
@@ -308,6 +311,12 @@
         NwaterV(ng)=INT(wp_buffer(3))
 #  endif
 # endif
+# if defined MASKING && (defined READ_WATER || defined WRITE_WATER)
+        IOBOUNDS(ng) % xy_psi = Nxyp(ng)
+        IOBOUNDS(ng) % xy_rho = Nxyr(ng)
+        IOBOUNDS(ng) % xy_u   = Nxyu(ng)
+        IOBOUNDS(ng) % xy_v   = Nxyv(ng)
+# endif
       END IF
 !$OMP END CRITICAL (MAX_WATER)
 
@@ -377,7 +386,7 @@
            j=MIN(Mstate(ng),i+block_size-1)
            WRITE (stdout,20) ic, i, j, j-i+1
  20        FORMAT (11x, i2, 3(1x,i10))
-        END DO          
+        END DO
         WRITE (stdout,'(/)')
       END IF
       Nstr(ng)=1+MyRank*block_size
@@ -396,7 +405,8 @@
 #  endif
 # endif
 
-# if defined MASKING
+# if ((defined READ_WATER && defined DISTRIBUTE) || \
+      defined PROPAGATOR) && defined MASKING
 !
 !-----------------------------------------------------------------------
 !  If distributed-memory, set process water indices arrays.
@@ -405,10 +415,10 @@
 !
 !  Gather masking at RHO-points from all nodes.
 !
-      CALL mp_gather (ng, model, LBi, UBi, LBj, UBj, 1, 1,              &
-     &                r2dvar, 1.0_r8,                                   &
-     &                rmask, rmask, Npts, mask)
-      CALL mp_bcastf (ng, model, mask, Npts)
+      CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj,                  &
+     &                  0, r2dvar, 1.0_r8,                              &
+     &                  rmask, rmask, Npts, mask, .FALSE.)
+      CALL mp_bcastf (ng, model, mask)
 #  else
 !
 !  Load masking at RHO-points in mask vector.
@@ -422,7 +432,7 @@
       END DO
       Npts=ic
 #  endif
-#  ifdef READ_WATER
+#  if defined READ_WATER && defined DISTRIBUTE
 !
 !  Determine water RHO-points for IO purposes.
 !
@@ -439,7 +449,7 @@
 !
 !  Determine water points for the propagator state vector at RHO-points.
 !
-      ic=0      
+      ic=0
       ij=0
 #   ifdef FULL_GRID
       Imin=0
@@ -482,28 +492,14 @@
       END DO
 #  endif
 
-#  ifdef READ_WATER
-#   ifdef DISTRIBUTE
+#  if defined READ_WATER && defined DISTRIBUTE
 !
 !  Gather masking at PSI-points from all nodes.
 !
-      CALL mp_gather (ng, model, LBi, UBi, LBj, UBj, 1, 1,              &
-     &                p2dvar, 1.0_r8,                                   &
-     &                pmask, pmask, Npts, mask)
-      CALL mp_bcastf (ng, model, mask, Npts)
-#   else
-!
-!  Load masking at PSI-points in mask vector.
-!
-      ic=0
-      DO j=1,Mm(ng)
-        DO i=1,Lm(ng)
-          ic=ic+1
-          mask(ic)=pmask(i,j)
-        END DO
-      END DO
-      Npts=ic
-#   endif
+      CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj,                  &
+     &                  0, p2dvar, 1.0_r8,                              &
+     &                  pmask, pmask, Npts, mask, .FALSE.)
+      CALL mp_bcastf (ng, model, mask)
 !
 !  Determine water PSI-points for IO purposes.
 !
@@ -516,14 +512,15 @@
       END DO
       my_Nxyp=ic
 #  endif
+
 #  ifdef DISTRIBUTE
 !
 !  Gather masking at U-points from all nodes.
 !
-      CALL mp_gather (ng, model, LBi, UBi, LBj, UBj, 1, 1,              &
-     &                u2dvar, 1.0_r8,                                   &
-     &                umask, umask, Npts, mask)
-      CALL mp_bcastf (ng, model, mask, Npts)
+      CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj,                  &
+     &                  0, u2dvar, 1.0_r8,                              &
+     &                  umask, umask, Npts, mask, .FALSE.)
+      CALL mp_bcastf (ng, model, mask)
 #  else
 !
 !  Load masking at U-points in mask vector.
@@ -537,7 +534,7 @@
       END DO
       Npts=ic
 #  endif
-#  ifdef READ_WATER
+#  if defined READ_WATER && defined DISTRIBUTE
 !
 !  Determine water U-points for IO purposes.
 !
@@ -596,14 +593,15 @@
         END DO
       END DO
 #  endif
+
 #  ifdef DISTRIBUTE
 !
 !  Gather masking at V-points from all nodes.
 !
-      CALL mp_gather (ng, model, LBi, UBi, LBj, UBj, 1, 1,              &
-     &                v2dvar, 1.0_r8,                                   &
-     &                vmask, vmask, Npts, mask)
-      CALL mp_bcastf (ng, model, mask, Npts)
+      CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj,                  &
+     &                  0, v2dvar, 1.0_r8,                              &
+     &                  vmask, vmask, Npts, mask, .FALSE.)
+      CALL mp_bcastf (ng, model, mask)
 #  else
 !
 !  Load masking at V-points in mask vector.
@@ -617,7 +615,7 @@
       END DO
       Npts=ic
 #  endif
-#  ifdef READ_WATER
+#  if defined READ_WATER && defined DISTRIBUTE
 !
 !  Determine water V-points for IO purposes.
 !

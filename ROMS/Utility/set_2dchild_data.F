@@ -69,12 +69,13 @@
       USE mod_stepping
       USE mod_parallel
       USE mod_ocean
+      USE mod_refined
       USE mod_scalars
       USE mod_coupling
       USE interpolate_mod
 
 # ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcasti, mp_gather
+      USE distribute_mod, ONLY : mp_bcasti, mp_gather2d
 # endif
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
@@ -235,7 +236,7 @@
             DO i=Imin,Imax
               ic=ic+1
 # ifdef MASKING
-              Amask(i,j)=GRID(ng)%rmask_c(i,j)
+              Amask(i,j)=REFINED(ng)%rmask_c(i,j)
 # else
               Amask(i,j)=1.0_r8
 # endif
@@ -244,7 +245,7 @@
 !
 ! get zeta
 !
-          CALL mp_gather (ngc, model, LBic, UBic, LBjc, UBjc, 1, 1,     &
+          CALL mp_gather2d (ngc, model, LBic, UBic, LBjc, UBjc, 0,      &
      &                    gtype, 1.0_r8,                                &
 # ifdef MASKING
      &                    GRID(ngc) % rmask(LBic:UBic,LBjc:UBjc),       &
@@ -287,8 +288,8 @@
           Ymax=OCEAN(ng)%hindcr(4)
           IF (spherical) THEN
             CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                          GRID(ng)%lonr_c(Imin:Imax,Jmin:Jmax),   &
-     &                          GRID(ng)%latr_c(Imin:Imax,Jmin:Jmax),   &
+     &                          REFINED(ng)%lonr_c(Imin:Imax,Jmin:Jmax),&
+     &                          REFINED(ng)%latr_c(Imin:Imax,Jmin:Jmax),&
      &                          A, Amask,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Xmin, Xmax, Ymin, Ymax,                 &
@@ -297,8 +298,8 @@
      &                          my_min, my_max)
           ELSE
             CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                          GRID(ng)%xr_c(Imin:Imax,Jmin:Jmax),     &
-     &                          GRID(ng)%yr_c(Imin:Imax,Jmin:Jmax),     &
+     &                          REFINED(ng)%xr_c(Imin:Imax,Jmin:Jmax),  &
+     &                          REFINED(ng)%yr_c(Imin:Imax,Jmin:Jmax),  &
      &                          A, Amask,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Xmin, Xmax, Ymin, Ymax,                 &
@@ -336,7 +337,7 @@
             DO i=Imin,Imax
               ic=ic+1
 # ifdef MASKING
-              Amask(i,j)=GRID(ng)%umask_c(i,j)
+              Amask(i,j)=REFINED(ng)%umask_c(i,j)
 # else
               Amask(i,j)=1.0_r8
 # endif
@@ -345,7 +346,7 @@
 !
 ! get ubar
 !
-          CALL mp_gather (ngc, model, LBic, UBic, LBjc, UBjc, 1, 1,     &
+          CALL mp_gather2d (ngc, model, LBic, UBic, LBjc, UBjc, 0,      &
      &                    gtype, 1.0_r8,                                &
 # ifdef MASKING
      &                    GRID(ngc) % umask(LBic:UBic,LBjc:UBjc),       &
@@ -384,8 +385,8 @@
           Ymax=OCEAN(ng)%hindcu(4)
           IF (spherical) THEN
             CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                          GRID(ng)%lonu_c(Imin:Imax,Jmin:Jmax),   &
-     &                          GRID(ng)%latu_c(Imin:Imax,Jmin:Jmax),   &
+     &                          REFINED(ng)%lonu_c(Imin:Imax,Jmin:Jmax),&
+     &                          REFINED(ng)%latu_c(Imin:Imax,Jmin:Jmax),&
      &                          A, Amask,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Xmin, Xmax, Ymin, Ymax,                 &
@@ -394,8 +395,8 @@
      &                          my_min, my_max)
           ELSE
             CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                          GRID(ng)%xu_c(Imin:Imax,Jmin:Jmax),     &
-     &                          GRID(ng)%yu_c(Imin:Imax,Jmin:Jmax),     &
+     &                          REFINED(ng)%xu_c(Imin:Imax,Jmin:Jmax),  &
+     &                          REFINED(ng)%yu_c(Imin:Imax,Jmin:Jmax),  &
      &                          A, Amask,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Xmin, Xmax, Ymin, Ymax,                 &
@@ -427,7 +428,7 @@
             DO i=Imin,Imax
               ic=ic+1
 # ifdef MASKING
-              Amask(i,j)=GRID(ng)%vmask_c(i,j)
+              Amask(i,j)=REFINED(ng)%vmask_c(i,j)
 # else
               Amask(i,j)=1.0_r8
 # endif
@@ -436,7 +437,7 @@
 !
 ! get vbar
 !
-          CALL mp_gather (ngc, model, LBic, UBic, LBjc, UBjc, 1, 1,     &
+          CALL mp_gather2d (ngc, model, LBic, UBic, LBjc, UBjc, 0,      &
      &                    gtype, 1.0_r8,                                &
 # ifdef MASKING
      &                    GRID(ngc) % vmask(LBic:UBic,LBjc:UBjc),       &
@@ -475,8 +476,8 @@
           Ymax=OCEAN(ng)%hindcv(4)
           IF (spherical) THEN
             CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                          GRID(ng)%lonv_c(Imin:Imax,Jmin:Jmax),   &
-     &                          GRID(ng)%latv_c(Imin:Imax,Jmin:Jmax),   &
+     &                          REFINED(ng)%lonv_c(Imin:Imax,Jmin:Jmax),&
+     &                          REFINED(ng)%latv_c(Imin:Imax,Jmin:Jmax),&
      &                          A, Amask,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Xmin, Xmax, Ymin, Ymax,                 &
@@ -485,8 +486,8 @@
      &                          my_min, my_max)
           ELSE
             CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                          GRID(ng)%xv_c(Imin:Imax,Jmin:Jmax),     &
-     &                          GRID(ng)%yv_c(Imin:Imax,Jmin:Jmax),     &
+     &                          REFINED(ng)%xv_c(Imin:Imax,Jmin:Jmax),  &
+     &                          REFINED(ng)%yv_c(Imin:Imax,Jmin:Jmax),  &
      &                          A, Amask,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Xmin, Xmax, Ymin, Ymax,                 &

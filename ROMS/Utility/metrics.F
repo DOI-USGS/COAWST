@@ -3,7 +3,7 @@
 !
 !svn $Id: metrics.F 733 2008-09-07 01:56:45Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -29,6 +29,9 @@
       USE mod_mixing
 #endif
       USE mod_ocean
+#if defined SEDIMENT && defined SED_MORPH && defined SOLVE3D
+      USE mod_sedbed
+#endif
       USE mod_stepping
 !
 !  Imported variable declarations.
@@ -41,6 +44,7 @@
 !
       CALL metrics_tile (ng, tile, model,                               &
      &                   LBi, UBi, LBj, UBj,                            &
+     &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   nstp(ng), nnew(ng),                            &
      &                   GRID(ng) % f,                                  &
      &                   GRID(ng) % h,                                  &
@@ -60,7 +64,7 @@
      &                   GRID(ng) % zice,                               &
 # endif
 # if defined SEDIMENT && defined SED_MORPH
-     &                   GRID(ng) % bed_thick,                          &
+     &                   SEDBED(ng) % bed_thick,                        &
 # endif
      &                   GRID(ng) % Hz,                                 &
      &                   GRID(ng) % z_r,                                &
@@ -69,7 +73,7 @@
 #if defined DIFF_GRID || defined DIFF_3DCOEF || \
     defined VISC_GRID || defined VISC_3DCOEF
      &                   GRID(ng) % grdscl,                             &
-#endif 
+#endif
 #if defined DIFF_3DCOEF
      &                   MIXING(ng) % Hdiffusion,                       &
 #endif
@@ -100,6 +104,7 @@
 !***********************************************************************
       SUBROUTINE metrics_tile (ng, tile, model,                         &
      &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         nstp, nnew,                              &
      &                         f, h, pm, pn,                            &
 #ifdef MASKING
@@ -162,6 +167,7 @@
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nstp, nnew
 
 #ifdef ASSUMED_SHAPE
@@ -296,7 +302,7 @@
       logical :: NSperiodic=.FALSE.
 # endif
 #endif
-      integer :: NSUB, i, is, j, k
+      integer :: NSUB, bry, i, is, j, k, rec
 
       real(r8), parameter :: Large = 1.0E+20_r8
 #if defined DIFF_3DCOEF || defined VISC_3DCOEF
@@ -317,6 +323,9 @@
 #endif
 #if defined DIFF_3DCOEF || defined VISC_3DCOEF
       character (len=4) :: units
+#endif
+#if defined FOUR_DVAR
+      character (len=50) :: Text
 #endif
 
 #ifdef DISTRIBUTE
@@ -535,49 +544,49 @@
           IF ((rmask(i-1,j  ).gt.0.5_r8).and.                           &
      &        (rmask(i  ,j  ).gt.0.5_r8).and.                           &
      &        (rmask(i-1,j-1).gt.0.5_r8).and.                           &
-     &        (rmask(i  ,j-1).gt.0.5_r8)) THEN 
+     &        (rmask(i  ,j-1).gt.0.5_r8)) THEN
             pmask(i,j)=1.0_r8
           ELSE IF ((rmask(i-1,j  ).lt.0.5_r8).and.                      &
      &             (rmask(i  ,j  ).gt.0.5_r8).and.                      &
      &             (rmask(i-1,j-1).gt.0.5_r8).and.                      &
-     &             (rmask(i  ,j-1).gt.0.5_r8)) THEN 
+     &             (rmask(i  ,j-1).gt.0.5_r8)) THEN
             pmask(i,j)=cff1
           ELSE IF ((rmask(i-1,j  ).gt.0.5_r8).and.                      &
      &             (rmask(i  ,j  ).lt.0.5_r8).and.                      &
      &             (rmask(i-1,j-1).gt.0.5_r8).and.                      &
-     &             (rmask(i  ,j-1).gt.0.5_r8)) THEN 
+     &             (rmask(i  ,j-1).gt.0.5_r8)) THEN
             pmask(i,j)=cff1
           ELSE IF ((rmask(i-1,j  ).gt.0.5_r8).and.                      &
      &             (rmask(i  ,j  ).gt.0.5_r8).and.                      &
      &             (rmask(i-1,j-1).lt.0.5_r8).and.                      &
-     &             (rmask(i  ,j-1).gt.0.5_r8)) THEN 
+     &             (rmask(i  ,j-1).gt.0.5_r8)) THEN
             pmask(i,j)=cff1
           ELSE IF ((rmask(i-1,j  ).gt.0.5_r8).and.                      &
      &             (rmask(i  ,j  ).gt.0.5_r8).and.                      &
      &             (rmask(i-1,j-1).gt.0.5_r8).and.                      &
-     &             (rmask(i  ,j-1).lt.0.5_r8)) THEN 
+     &             (rmask(i  ,j-1).lt.0.5_r8)) THEN
             pmask(i,j)=cff1
           ELSE IF ((rmask(i-1,j  ).gt.0.5_r8).and.                      &
      &             (rmask(i  ,j  ).lt.0.5_r8).and.                      &
      &             (rmask(i-1,j-1).gt.0.5_r8).and.                      &
-     &             (rmask(i  ,j-1).lt.0.5_r8)) THEN 
+     &             (rmask(i  ,j-1).lt.0.5_r8)) THEN
             pmask(i,j)=cff2
           ELSE IF ((rmask(i-1,j  ).lt.0.5_r8).and.                      &
      &             (rmask(i  ,j  ).gt.0.5_r8).and.                      &
      &             (rmask(i-1,j-1).lt.0.5_r8).and.                      &
-     &             (rmask(i  ,j-1).gt.0.5_r8)) THEN 
+     &             (rmask(i  ,j-1).gt.0.5_r8)) THEN
             pmask(i,j)=cff2
           ELSE IF ((rmask(i-1,j  ).gt.0.5_r8).and.                      &
      &             (rmask(i  ,j  ).gt.0.5_r8).and.                      &
      &             (rmask(i-1,j-1).lt.0.5_r8).and.                      &
-     &             (rmask(i  ,j-1).lt.0.5_r8)) THEN 
+     &             (rmask(i  ,j-1).lt.0.5_r8)) THEN
             pmask(i,j)=cff2
           ELSE IF ((rmask(i-1,j  ).lt.0.5_r8).and.                      &
      &             (rmask(i  ,j  ).lt.0.5_r8).and.                      &
      &             (rmask(i-1,j-1).gt.0.5_r8).and.                      &
      &             (rmask(i  ,j-1).gt.0.5_r8)) THEN
             pmask(i,j)=cff2
-          ELSE 
+          ELSE
             pmask(i,j)=0.0_r8
           END IF
         END DO
@@ -734,6 +743,7 @@
 
       CALL set_depth_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
+     &                     IminS, ImaxS, JminS, JmaxS,                  &
      &                     nstp, nnew,                                  &
      &                     h,                                           &
 # ifdef ICESHELF
@@ -992,7 +1002,7 @@
       END IF
 !$OMP END CRITICAL (REDUCTIONS)
 
-#if defined FOUR_DVAR && !defined OBS_SENSITIVITY
+#if defined FOUR_DVAR
 !
 !-----------------------------------------------------------------------
 !  Spatial convolution parameters.
@@ -1009,67 +1019,220 @@
 !  its theoretical limit for stability and accurary.
 !
       cff=MIN(DXmin(ng),DYmin(ng))
-      DO is=1,NstateVar(ng)
-        DTsizeH(is)=Hgamma*cff*cff/(4.0_r8*KhMax(ng))
+      DO rec=1,2
+        DO is=1,NstateVar(ng)
+#  ifdef SOLVE3D
+          IF (is.le.(5+NT(ng))) THEN
+#  else
+          IF (is.le.3) THEN
+#  endif
+            DTsizeH(rec,is)=Hgamma(rec)*cff*cff/(4.0_r8*KhMax(ng))
+          ELSE              ! use stability factor for surface forcing
+            DTsizeH(rec,is)=Hgamma(4)*cff*cff/(4.0_r8*KhMax(ng))
+          END IF
 # ifdef SOLVE3D
 #  ifdef IMPLICIT_VCONV
-        DTsizeV(is)=Vgamma*DZmax(ng)*DZmax(ng)/(2.0_r8*KvMax(ng))
+          DTsizeV(rec,is)=Vgamma(rec)*DZmax(ng)*DZmax(ng)/              &
+     &                    (2.0_r8*KvMax(ng))
 #  else
-        DTsizeV(is)=Vgamma*DZmin(ng)*DZmin(ng)/(2.0_r8*KvMax(ng))
+          DTsizeV(rec,is)=Vgamma(rec)*DZmin(ng)*DZmin(ng)/              &
+     &                    (2.0_r8*KvMax(ng))
 #  endif
 # endif
+        END DO
       END DO
+
+# ifdef ADJUST_BOUNDARY
 !
+!  Open boundaries convolutions. Recall that the horizontal convolutions
+!  are one-dimensional so a factor of 2 is used instead.
+!
+      DO bry=1,4
+        DO is=1,NstateVar(ng)
+          IF ((bry.eq.iwest).or.(bry.eq.ieast)) THEN
+            DTsizeHB(bry,is)=Hgamma(3)*DYmin(ng)*DYmin(ng)/             &
+     &                       (2.0_r8*KhMax(ng))
+          ELSE IF ((bry.eq.isouth).or.(bry.eq.inorth)) THEN
+            DTsizeHB(bry,is)=Hgamma(3)*DXmin(ng)*DXmin(ng)/             &
+     &                       (2.0_r8*KhMax(ng))
+          END IF
+#  ifdef SOLVE3D
+#   ifdef IMPLICIT_VCONV
+          DTsizeVB(bry,is)=Vgamma(3)*DZmax(ng)*DZmax(ng)/               &
+     &                     (2.0_r8*KvMax(ng))
+#   else
+          DTsizeVB(bry,is)=Vgamma(3)*DZmin(ng)*DZmin(ng)/               &
+     &                     (2.0_r8*KvMax(ng))
+#   endif
+#  endif
+        END DO
+      END DO
+# endif
+!
+!-----------------------------------------------------------------------
 !  Determine FULL number of integeration steps as function of the
 !  spatial decorrelation scale (Hdecay, Vdecay). Notice that in
 !  the squared-root filter only half of number of step is used.
 !  Thefore, the number of steps are forced to be even.
+!-----------------------------------------------------------------------
 !
-      DO is=1,NstateVar(ng)
-        NHsteps(is)=NINT(Hdecay(is,ng)*Hdecay(is,ng)/                   &
-     &                   (2.0_r8*KhMax(ng)*DTsizeH(is)))
-        IF (MOD(NHsteps(is),2).ne.0) THEN
-          NHsteps(is)=NHsteps(is)+1
-        END IF
+!  Initial conditions, surface forcing and model error covariance.
+!
+      DO rec=1,2
+        DO is=1,NstateVar(ng)
+          IF (Hdecay(rec,is,ng).gt.0.0_r8) THEN
+            NHsteps(rec,is)=NINT(Hdecay(rec,is,ng)*                     &
+     &                           Hdecay(rec,is,ng)/                     &
+     &                           (2.0_r8*KhMax(ng)*DTsizeH(rec,is)))
+            IF (MOD(NHsteps(rec,is),2).ne.0) THEN
+              NHsteps(rec,is)=NHsteps(rec,is)+1
+            END IF
+          END IF
 # ifdef SOLVE3D
-        NVsteps(is)=NINT(Vdecay(is,ng)*Vdecay(is,ng)/                   &
-     &                   (2.0_r8*KvMax(ng)*DTsizeV(is)))
+          IF (Vdecay(rec,is,ng).gt.0.0_r8) THEN
+            NVsteps(rec,is)=NINT(Vdecay(rec,is,ng)*                     &
+     &                           Vdecay(rec,is,ng)/                     &
+     &                           (2.0_r8*KvMax(ng)*DTsizeV(rec,is)))
 #  ifdef IMPLICIT_VCONV
-        NVsteps(is)=MAX(1,NVsteps(is))
+            NVsteps(rec,is)=MAX(1,NVsteps(rec,is))
 #  endif
-        IF (MOD(NVsteps(is),2).ne.0) THEN
-          NVsteps(is)=NVsteps(is)+1
-        END IF
+            IF (MOD(NVsteps(rec,is),2).ne.0) THEN
+              NVsteps(rec,is)=NVsteps(rec,is)+1
+            END IF
 # endif
+          END IF
+        END DO
       END DO
+
+# ifdef ADJUST_BOUNDARY
+!
+!  Boundary conditions model error covariance.
+!
+      DO bry=1,4
+        DO is=1,NstateVar(ng)
+          IF (HdecayB(is,bry,ng).gt.0.0_r8) THEN
+            NHstepsB(bry,is)=NINT(HdecayB(is,bry,ng)*                   &
+     &                            HdecayB(is,bry,ng)/                   &
+     &                           (2.0_r8*KhMax(ng)*DTsizeHB(bry,is)))
+            IF (MOD(NHstepsB(bry,is),2).ne.0) THEN
+              NHstepsB(bry,is)=NHstepsB(bry,is)+1
+            END IF
+          END IF
+#  ifdef SOLVE3D
+          IF (VdecayB(is,bry,ng).gt.0.0_r8) THEN
+            NVstepsB(bry,is)=NINT(VdecayB(is,bry,ng)*                   &
+     &                            VdecayB(is,bry,ng)/                   &
+     &                           (2.0_r8*KvMax(ng)*DTsizeVB(bry,is)))
+#   ifdef IMPLICIT_VCONV
+            NVstepsB(bry,is)=MAX(1,NVstepsB(bry,is))
+#   endif
+            IF (MOD(NVstepsB(bry,is),2).ne.0) THEN
+              NVstepsB(bry,is)=NVstepsB(bry,is)+1
+            END IF
+#  endif
+          END IF
+        END DO
+      END DO
+# endif
 !
 !  Report convolution parameters.
 !
       IF (Master.and.LwrtInfo(ng)) THEN
-        DO is=1,NstateVar(ng)
-          WRITE (stdout,70) NHsteps(is), DTsizeH(ng),                   &
-     &                      TRIM(Vname(1,idSvar(is)))
-  70      FORMAT (' Horizontal convolution, NHsteps, DTsizeH = ',       &
-     &            i5,1x,1pe15.8,' s',2x,a)
+        LwrtInfo(ng)=.FALSE.
+        DO rec=1,NSA
+          DO is=1,NstateVar(ng)
+            IF (rec.eq.1) THEN
+              Text='Horizontal convolution, NHstepsI, DTsizeH  ='
+            ELSE IF (rec.eq.2) THEN
+              Text='Horizontal convolution, NHstepsM, DTsizeH  ='
+#  ifdef SOLVE3D
+            ELSE IF (is.gt.(5+NT(ng))) THEN
+#  else
+            ELSE IF (is.gt.3) THEN
+#  endif
+              Text='Horizontal convolution, NHstepsF, DTsizeH  ='
+            END IF
+            IF (Hdecay(rec,is,ng).gt.0.0_r8) THEN
+              WRITE (stdout,70) TRIM(Text), NHsteps(rec,is),            &
+     &                          DTsizeH(rec,is),                        &
+     &                          TRIM(Vname(1,idSvar(is)))
+            END IF
+          END DO
+          WRITE (stdout,80)
         END DO
 # if defined SOLVE3D && defined VCONVOLUTION
-        WRITE (stdout,'(1x)')
-        DO is=4,5+NT(ng)
-          WRITE (stdout,80) NVsteps(is), DTsizeV(is),                   &
-     &                      TRIM(Vname(1,idSvar(is)))
-  80      FORMAT (' Vertical   convolution, NVsteps, DTsizeV = ',       &
-     &            i5,1x,1pe15.8,' s',2x,a)
+        DO rec=1,NSA
+          DO is=1,NstateVar(ng)
+            IF (rec.eq.1) THEN
+              Text='Vertical   convolution, NVstepsI, DTsizeV  ='
+            ELSE IF (rec.eq.2) THEN
+              Text='Vertical   convolution, NVstepsM, DTsizeV  ='
+#  ifdef SOLVE3D
+            ELSE IF (is.gt.(5+NT(ng))) THEN
+#  else
+            ELSE IF (is.gt.3) THEN
+#  endif
+              Text='Vertical   convolution, NVstepsF, DTsizeV  ='
+            END IF
+            IF (Vdecay(rec,is,ng).gt.0.0_r8) THEN
+              WRITE (stdout,70) TRIM(Text), NVsteps(rec,is),            &
+     &                          DTsizeV(rec,is),                        &
+     &                          TRIM(Vname(1,idSvar(is)))
+             END IF
+          END DO
+          WRITE (stdout,80)
         END DO
 # endif
-        WRITE (stdout,'(/)')
+# ifdef ADJUST_BOUNDARY
+        DO is=1,NstateVar(ng)
+          DO bry=1,4
+            IF (Lobc(bry,is,ng)) THEN
+              IF (bry.eq.iwest) THEN
+                Text='West  bry Hconvolution, NHstepsB, DTsizeHB ='
+              ELSE IF (bry.eq.isouth) THEN
+                Text='South bry Hconvolution, NHstepsB, DTsizeHB ='
+              ELSE IF (bry.eq.ieast) THEN
+                Text='East  bry Hconvolution, NHstepsB, DTsizeHB ='
+              ELSE IF (bry.eq.isouth) THEN
+                Text='North bry Hconvolution, NHstepsB, DTsizeHB ='
+              END IF
+              IF (HdecayB(is,bry,ng).gt.0.0_r8) THEN
+                WRITE (stdout,70) TRIM(Text), NHstepsB(bry,is),         &
+     &                            DTsizeHB(bry,is),                     &
+     &                            TRIM(Vname(1,idSbry(is)))
+              END IF
+            END IF
+          END DO
+        END DO
+        WRITE (stdout,80)
+#  if defined SOLVE3D && defined VCONVOLUTION
+        DO is=1,NstateVar(ng)
+          DO bry=1,4
+            IF (Lobc(bry,is,ng)) THEN
+              IF (bry.eq.iwest) THEN
+                Text='West  bry Vconvolution, NVstepsB, DTsizeVB ='
+              ELSE IF (bry.eq.isouth) THEN
+                Text='South bry Vconvolution, NVstepsB, DTsizeVB ='
+              ELSE IF (bry.eq.ieast) THEN
+                Text='East  bry Vconvolution, NVstepsB, DTsizeVB ='
+              ELSE IF (bry.eq.isouth) THEN
+                Text='North bry Vconvolution, NVstepsB, DTsizeVB ='
+              END IF
+              IF (VdecayB(is,bry,ng).gt.0.0_r8) THEN
+                WRITE (stdout,70) TRIM(Text), NVstepsB(bry,is),         &
+     &                            DTsizeVB(bry,is),                     &
+     &                            TRIM(Vname(1,idSbry(is)))
+              END IF
+            END IF
+          END DO
+        END DO
+#  endif
+# endif
       END IF
+
+  70  FORMAT (1X,a,i5,1x,1pe15.8,' s',2x,a)
+  80  FORMAT (1x)
 #endif
-!
-!  Turn off application information switch.
-!
-      IF (SOUTH_WEST_TEST) THEN
-        LwrtInfo(ng)=.FALSE.
-      END IF
 
       RETURN
       END SUBROUTINE metrics_tile

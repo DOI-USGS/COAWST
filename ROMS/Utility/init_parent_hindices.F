@@ -9,8 +9,8 @@
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
-!  This routine initializes the horizontal indices that match locations!
-!  of the child grid in the parent and the parent grid in the child.   !
+!  This routine initializes the horizontal indices of the child grid   !
+!  that match locations in the parent grid.                            !
 !                                                                      !
 !=======================================================================
 !
@@ -60,6 +60,7 @@
       USE mod_stepping
       USE mod_parallel
       USE mod_ocean
+      USE mod_refined
       USE interpolate_mod
 !
       implicit none
@@ -174,7 +175,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%h_p(i,j)=A(ic)
+              REFINED(ng)%h_p(i,j)=A(ic)
             END DO
           END DO
 !
@@ -189,7 +190,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%angler_p(i,j)=A(ic)
+              REFINED(ng)%angler_p(i,j)=A(ic)
             END DO
           END DO
 !
@@ -204,7 +205,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%lonr_p(i,j)=A(ic)
+              REFINED(ng)%lonr_p(i,j)=A(ic)
             END DO
           END DO
 !
@@ -219,7 +220,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%latr_p(i,j)=A(ic)
+              REFINED(ng)%latr_p(i,j)=A(ic)
             END DO
           END DO
 !
@@ -234,7 +235,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%xr_p(i,j)=A(ic)
+              REFINED(ng)%xr_p(i,j)=A(ic)
             END DO
           END DO
 !
@@ -249,7 +250,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%yr_p(i,j)=A(ic)
+              REFINED(ng)%yr_p(i,j)=A(ic)
             END DO
           END DO
 # ifdef MASKING
@@ -265,7 +266,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%rmask_p(i,j)=A(ic)
+              REFINED(ng)%rmask_p(i,j)=A(ic)
             END DO
           END DO
 # endif
@@ -294,7 +295,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%lonu_p(i,j)=A(ic)
+              REFINED(ng)%lonu_p(i,j)=A(ic)
             END DO
           END DO
 !
@@ -309,7 +310,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%latu_p(i,j)=A(ic)
+              REFINED(ng)%latu_p(i,j)=A(ic)
             END DO
           END DO
 !
@@ -324,7 +325,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%xu_p(i,j)=A(ic)
+              REFINED(ng)%xu_p(i,j)=A(ic)
             END DO
           END DO
 !
@@ -339,7 +340,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%yu_p(i,j)=A(ic)
+              REFINED(ng)%yu_p(i,j)=A(ic)
             END DO
           END DO
 # ifdef MASKING
@@ -355,7 +356,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%umask_p(i,j)=A(ic)
+              REFINED(ng)%umask_p(i,j)=A(ic)
             END DO
           END DO
 # endif
@@ -384,7 +385,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%lonv_p(i,j)=A(ic)
+              REFINED(ng)%lonv_p(i,j)=A(ic)
             END DO
           END DO
 !
@@ -399,7 +400,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%latv_p(i,j)=A(ic)
+              REFINED(ng)%latv_p(i,j)=A(ic)
             END DO
           END DO
 !
@@ -414,7 +415,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%xv_p(i,j)=A(ic)
+              REFINED(ng)%xv_p(i,j)=A(ic)
             END DO
           END DO
 !
@@ -429,7 +430,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%yv_p(i,j)=A(ic)
+              REFINED(ng)%yv_p(i,j)=A(ic)
             END DO
           END DO
 # ifdef MASKING
@@ -445,7 +446,7 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              GRID(ng)%vmask_p(i,j)=A(ic)
+              REFINED(ng)%vmask_p(i,j)=A(ic)
             END DO
           END DO
 # endif
@@ -466,9 +467,9 @@
           IF (spherical) THEN
             CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
      &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   GRID(ng)%angler_p(Imin:Imax,Jmin:Jmax),        &
-     &                   GRID(ng)%lonr_p(Imin:Imax,Jmin:Jmax),          &
-     &                   GRID(ng)%latr_p(Imin:Imax,Jmin:Jmax),          &
+     &                   REFINED(ng)%angler_p(Imin:Imax,Jmin:Jmax),     &
+     &                   REFINED(ng)%lonr_p(Imin:Imax,Jmin:Jmax),       &
+     &                   REFINED(ng)%latr_p(Imin:Imax,Jmin:Jmax),       &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   GRID(ng)%lonr, GRID(ng)%latr,                  &
@@ -477,9 +478,9 @@
           ELSE
             CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
      &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   GRID(ng)%angler_p(Imin:Imax,Jmin:Jmax),        &
-     &                   GRID(ng)%xr_p(Imin:Imax,Jmin:Jmax),            &
-     &                   GRID(ng)%yr_p(Imin:Imax,Jmin:Jmax),            &
+     &                   REFINED(ng)%angler_p(Imin:Imax,Jmin:Jmax),     &
+     &                   REFINED(ng)%xr_p(Imin:Imax,Jmin:Jmax),         &
+     &                   REFINED(ng)%yr_p(Imin:Imax,Jmin:Jmax),         &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   GRID(ng)%xr, GRID(ng)%yr,                      &
@@ -496,9 +497,9 @@
           IF (spherical) THEN
             CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
      &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   GRID(ng)%angler_p(Imin:Imax,Jmin:Jmax),        &
-     &                   GRID(ng)%lonu_p(Imin:Imax,Jmin:Jmax),          &
-     &                   GRID(ng)%latu_p(Imin:Imax,Jmin:Jmax),          &
+     &                   REFINED(ng)%angler_p(Imin:Imax,Jmin:Jmax),     &
+     &                   REFINED(ng)%lonu_p(Imin:Imax,Jmin:Jmax),       &
+     &                   REFINED(ng)%latu_p(Imin:Imax,Jmin:Jmax),       &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   GRID(ng)%lonu, GRID(ng)%latu,                  &
@@ -507,9 +508,9 @@
           ELSE
             CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
      &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   GRID(ng)%angler_p(Imin:Imax,Jmin:Jmax),        &
-     &                   GRID(ng)%xu_p(Imin:Imax,Jmin:Jmax),            &
-     &                   GRID(ng)%yu_p(Imin:Imax,Jmin:Jmax),            &
+     &                   REFINED(ng)%angler_p(Imin:Imax,Jmin:Jmax),     &
+     &                   REFINED(ng)%xu_p(Imin:Imax,Jmin:Jmax),         &
+     &                   REFINED(ng)%yu_p(Imin:Imax,Jmin:Jmax),         &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   GRID(ng)%xu, GRID(ng)%yu,                      &
@@ -526,9 +527,9 @@
           IF (spherical) THEN
             CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
      &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   GRID(ng)%angler_p(Imin:Imax,Jmin:Jmax),        &
-     &                   GRID(ng)%lonv_p(Imin:Imax,Jmin:Jmax),          &
-     &                   GRID(ng)%latv_p(Imin:Imax,Jmin:Jmax),          &
+     &                   REFINED(ng)%angler_p(Imin:Imax,Jmin:Jmax),     &
+     &                   REFINED(ng)%lonv_p(Imin:Imax,Jmin:Jmax),       &
+     &                   REFINED(ng)%latv_p(Imin:Imax,Jmin:Jmax),       &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   GRID(ng)%lonv, GRID(ng)%latv,                  &
@@ -537,9 +538,9 @@
           ELSE
             CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
      &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   GRID(ng)%angler_p(Imin:Imax,Jmin:Jmax),        &
-     &                   GRID(ng)%xv_p(Imin:Imax,Jmin:Jmax),            &
-     &                   GRID(ng)%yv_p(Imin:Imax,Jmin:Jmax),            &
+     &                   REFINED(ng)%angler_p(Imin:Imax,Jmin:Jmax),     &
+     &                   REFINED(ng)%xv_p(Imin:Imax,Jmin:Jmax),         &
+     &                   REFINED(ng)%yv_p(Imin:Imax,Jmin:Jmax),         &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   GRID(ng)%xv, GRID(ng)%yv,                      &

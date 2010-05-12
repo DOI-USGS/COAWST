@@ -4,7 +4,7 @@
 !
 !svn $Id: set_weights.F 1601 2008-07-25 15:02:43Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -58,7 +58,7 @@
 !
 !  The power-law shape filters are given by:
 !
-!     F(xi)=xi^Falpha*(1-xi^Fbeta)-Fgamma*xi 
+!     F(xi)=xi^Falpha*(1-xi^Fbeta)-Fgamma*xi
 !
 !  where xi=scale*i/ndtfast; and scale, Falpha, Fbeta, Fgamma, and
 !  normalization are chosen to yield the correct zeroth-order

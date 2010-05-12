@@ -2,16 +2,16 @@
 #if (defined FOUR_DVAR || defined VERIFICATION) && defined OBSERVATIONS
       SUBROUTINE obs_read (ng, model, backward)
 !
-!svn $Id: obs_read.F 584 2008-03-18 20:01:12Z arango $
+!svn $Id: obs_read.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
 !  This subroutine reads in observations data when appropriate from    !
-!  observations input NetCDF file.  The observations data is stored    !     
-!  for use elsewhere.                                                  ! 
+!  observations input NetCDF file.  The observations data is stored    !
+!  for use elsewhere.                                                  !
 !                                                                      !
 !=======================================================================
 !
@@ -22,10 +22,6 @@
       USE mod_ncparam
       USE mod_netcdf
       USE mod_scalars
-# ifdef DISTRIBUTE
-!
-      USE distribute_mod, ONLY : mp_bcastf, mp_bcasti, mp_bcastl
-# endif
 !
       implicit none
 !
@@ -41,8 +37,8 @@
 
       integer :: Mstr, Mend
       integer :: i, iobs, itrc, status
-
-      integer, dimension(2) :: start, total
+!
+      SourceFile='obs_read.F'
 !
 !---------------------------------------------------------------------
 !  Read observation variables needed for interpolating the model
@@ -50,11 +46,12 @@
 !---------------------------------------------------------------------
 !
       IF (ProcessObs(ng)) THEN
-# if defined S4DVAR
-        readNLmod=backward
-# elif defined TLM_OBS
+# if defined TLM_OBS
         readNLmod=.TRUE.
         readTLmod=.TRUE.
+# else
+        readNLmod=.FALSE.
+        readTLmod=.FALSE.
 # endif
 !
 !  Initialize observations processing counters.
@@ -82,15 +79,13 @@
           NstrObs(ng)=NendObs(ng)+1
           NendObs(ng)=NstrObs(ng)+Nobs(ng)-1
         END IF
-        start(1)=NstrObs(ng)
-        total(1)=Nobs(ng)
 !
 !  Set starting index of obervation vectors for reading.  In weak
 !  constraint, the entire observation data is loaded. Otherwise,
 !  only the observartion for the current time window are loaded
 !  and started from vector index one.
 !
-# if defined WEAK_CONSTRAINT || defined IOM
+# ifdef WEAK_CONSTRAINT
         Mstr=NstrObs(ng)
         Mend=NendObs(ng)
 # else
@@ -100,71 +95,39 @@
 !
 !  Read in observation type identifier.
 !
-        IF (InpThread) THEN
-          status=nf90_get_var(ncOBSid(ng), obsVid(idOtyp,ng),           &
-     &                        ObsType(Mstr:), start, total)
-          IF (status.ne.nf90_noerr) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idOtyp)), ObsSurvey(ng),     &
-     &                        TRIM(OBSname(ng))
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
-        END IF
-# ifdef DISTRIBUTE
-        CALL mp_bcasti (ng, model, ObsType, Mobs)
-# endif
+        CALL netcdf_get_ivar (ng, model, OBSname(ng), Vname(1,idOtyp),  &
+     &                        ObsType(Mstr:),                           &
+     &                        ncid = ncOBSid(ng),                       &
+     &                        start = (/NstrObs(ng)/),                  &
+     &                        total = (/Nobs(ng)/))
+        IF (exit_flag.ne.NoError) RETURN
 !
 !  Read in observation time (days).
 !
-        IF (InpThread) THEN
-          status=nf90_get_var(ncOBSid(ng), obsVid(idObsT,ng),           &
-     &                        Tobs(Mstr:), start, total)
-          IF (status.ne.nf90_noerr) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idObsT)), ObsSurvey(ng),     &
-     &                        TRIM(OBSname(ng))
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
-        END IF
-# ifdef DISTRIBUTE
-        CALL mp_bcastf (ng, model, Tobs, Mobs)
-# endif
+        CALL netcdf_get_fvar (ng, model, OBSname(ng), Vname(1,idObsT),  &
+     &                        Tobs(Mstr:),                              &
+     &                        ncid = ncOBSid(ng),                       &
+     &                        start = (/NstrObs(ng)/),                  &
+     &                        total = (/Nobs(ng)/))
+        IF (exit_flag.ne.NoError) RETURN
 !
 !  Read in observation X-location (grid units).
 !
-        IF (InpThread) THEN
-          status=nf90_get_var(ncOBSid(ng), obsVid(idObsX,ng),           &
-     &                        Xobs(Mstr:), start, total)
-          IF (status.ne.nf90_noerr) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idObsX)), ObsSurvey(ng),     &
-     &                        TRIM(OBSname(ng))
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
-        END IF
-# ifdef DISTRIBUTE
-        CALL mp_bcastf (ng, model, Xobs, Mobs)
-# endif
+        CALL netcdf_get_fvar (ng, model, OBSname(ng), Vname(1,idObsX),  &
+     &                        Xobs(Mstr:),                              &
+     &                        ncid = ncOBSid(ng),                       &
+     &                        start = (/NstrObs(ng)/),                  &
+     &                        total = (/Nobs(ng)/))
+        IF (exit_flag.ne.NoError) RETURN
 !
 !  Read in observation Y-location (grid units).
 !
-        IF (InpThread) THEN
-          status=nf90_get_var(ncOBSid(ng), obsVid(idObsY,ng),           &
-     &                        Yobs(Mstr:), start, total)
-          IF (status.ne.nf90_noerr) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idObsY)), ObsSurvey(ng),     &
-     &                        TRIM(OBSname(ng))
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
-        END IF
-# ifdef DISTRIBUTE
-        CALL mp_bcastf (ng, model, Yobs, Mobs)
-# endif
+        CALL netcdf_get_fvar (ng, model, OBSname(ng), Vname(1,idObsY),  &
+     &                        Yobs(Mstr:),                              &
+     &                        ncid = ncOBSid(ng),                       &
+     &                        start = (/NstrObs(ng)/),                  &
+     &                        total = (/Nobs(ng)/))
+        IF (exit_flag.ne.NoError) RETURN
 
 # ifdef SOLVE3D
 !
@@ -174,37 +137,28 @@
 !  computed in routine "extract_obs3d" and over-written so it can
 !  be written into the observation NetCDF file for latter use.
 !
-        IF (InpThread) THEN
-          IF (wrote_Zobs(ng)) THEN
-            status=nf90_get_var(ncOBSid(ng), obsVid(idObsZ,ng),         &
-     &                          Zobs(Mstr:), start, total)
-            IF (status.ne.nf90_noerr) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idObsZ)), ObsSurvey(ng),   &
-     &                          TRIM(OBSname(ng))
-              exit_flag=2
-              ioerror=status
-              RETURN
-            END IF
-          ELSE
-            status=nf90_get_var(ncOBSid(ng), obsVid(idObsD,ng),         &
-     &                          Zobs(Mstr:), start, total)
-            IF (status.ne.nf90_noerr) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idObsD)), ObsSurvey(ng),   &
-     &                          TRIM(OBSname(ng))
-              exit_flag=2
-              ioerror=status
-              RETURN
-            END IF
-          END IF
-          Load_Zobs(ng)=.FALSE.
-          IF ((MINVAL(Zobs).lt.0.0_r8).or.                              &
-     &        (MAXVAL(Zobs).lt.0.0_r8)) THEN
-            Load_Zobs(ng)=.TRUE.
-          END IF
+        IF (wrote_Zobs(ng)) THEN
+          CALL netcdf_get_fvar (ng, model, OBSname(ng), Vname(1,idObsZ),&
+     &                          Zobs(Mstr:),                            &
+     &                          ncid = ncOBSid(ng),                     &
+     &                          start = (/NstrObs(ng)/),                &
+     &                          total = (/Nobs(ng)/))
+          IF (exit_flag.ne.NoError) RETURN
+        ELSE
+          CALL netcdf_get_fvar (ng, model, OBSname(ng), Vname(1,idObsD),&
+     &                          Zobs(Mstr:),                            &
+     &                          ncid = ncOBSid(ng),                     &
+     &                          start = (/NstrObs(ng)/),                &
+     &                          total = (/Nobs(ng)/))
+          IF (exit_flag.ne.NoError) RETURN
         END IF
+        Load_Zobs(ng)=.FALSE.
+        IF ((MINVAL(Zobs).lt.0.0_r8).or.                                &
+     &      (MAXVAL(Zobs).lt.0.0_r8)) THEN
+          Load_Zobs(ng)=.TRUE.
+        END IF
+
 #  ifdef DISTRIBUTE
-        CALL mp_bcastl (ng, model, Load_Zobs(ng), 1)
-        CALL mp_bcastf (ng, model, Zobs, Mobs)
 !
 !  If distributed-memory and Zobs in meters (Zobs < 0),  zero-out
 !  Zobs values in all nodes by itself to facilitate exchages between
@@ -218,164 +172,68 @@
 !
 !  Read in observation values.
 !
-        IF (InpThread) THEN
-          status=nf90_get_var(ncOBSid(ng), obsVid(idOval,ng),           &
-     &                        ObsVal(Mstr:), start, total)
-          IF (status.ne.nf90_noerr) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idOval)), ObsSurvey(ng),     &
-     &                        TRIM(OBSname(ng))
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
-        END IF
-# ifdef DISTRIBUTE
-        CALL mp_bcastf (ng, model, ObsVal, Mobs)
-# endif
+        CALL netcdf_get_fvar (ng, model, OBSname(ng), Vname(1,idOval),  &
+     &                        ObsVal(Mstr:),                            &
+     &                        ncid = ncOBSid(ng),                       &
+     &                        start = (/NstrObs(ng)/),                  &
+     &                        total = (/Nobs(ng)/))
+        IF (exit_flag.ne.NoError) RETURN
 !
-# if defined WEAK_CONSTRAINT || defined IOM
+# ifdef WEAK_CONSTRAINT
 !  Read in observation error covariance.
 # else
 !  Read in observation error covariance. To avoid successive divisions,
 !  convert to inverse observation error covariance.
 # endif
 !
-        IF (InpThread) THEN
-          status=nf90_get_var(ncOBSid(ng), obsVid(idOerr,ng),           &
-     &                        ObsErr(Mstr:), start, total)
-          IF (status.ne.nf90_noerr) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idOerr)), ObsSurvey(ng),     &
-     &                        TRIM(OBSname(ng))
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
-# if !(defined WEAK_CONSTRAINT || defined IOM)
-          DO iobs=1,Nobs(ng)
-            ObsErr(iobs)=1.0_r8/ObsErr(iobs)
-          END DO
-# endif
-        END IF
-# ifdef DISTRIBUTE
-        CALL mp_bcastf (ng, model, ObsErr, Mobs)
+        CALL netcdf_get_fvar (ng, model, OBSname(ng), Vname(1,idOerr),  &
+     &                        ObsErr(Mstr:),                            &
+     &                        ncid = ncOBSid(ng),                       &
+     &                        start = (/NstrObs(ng)/),                  &
+     &                        total = (/Nobs(ng)/))
+        IF (exit_flag.ne.NoError) RETURN
+
+# ifndef WEAK_CONSTRAINT
+        DO iobs=1,Nobs(ng)
+          ObsErr(iobs)=1.0_r8/ObsErr(iobs)
+        END DO
 # endif
 !
 !  Read in nonlinear model values at observation locations.
 !
         IF (readNLmod.and.haveNLmod(ng)) THEN
-          IF (InpThread) THEN
-# ifdef S4DVAR
-            start(1)=NstrObs(ng)
-            total(1)=Nobs(ng)
-            start(2)=Ipass
-            total(2)=1
-            status=nf90_get_var(ncMODid(ng), modVid(idNLmo,ng),         &
-     &                          NLmodVal(:,Ipass), start, total)
-# else
-            start(1)=NstrObs(ng)
-            total(1)=Nobs(ng)
-            status=nf90_get_var(ncMODid(ng), modVid(idNLmo,ng),         &
-     &                          NLmodVal(Mstr:), start, total)
-# endif
-            IF (status.ne.nf90_noerr) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idNLmo)), ObsSurvey(ng),   &
-     &                          TRIM(MODname(ng))
-              exit_flag=2
-              ioerror=status
-              RETURN
-            END IF
-          END IF
-# ifdef DISTRIBUTE
-#  ifdef S4DVAR
-          CALL mp_bcastf (ng, model, NLmodVal(:,Ipass), Mobs)
-#  else
-          CALL mp_bcastf (ng, model, NLmodVal, Mobs)
-#  endif
-# endif
+          CALL netcdf_get_fvar (ng, model, MODname(ng), Vname(1,idNLmo),&
+     &                          NLmodVal(Mstr:),                        &
+     &                          ncid = ncMODid(ng),                     &
+     &                          start = (/NstrObs(ng)/),                &
+     &                          total = (/Nobs(ng)/))
+          IF (exit_flag.ne.NoError) RETURN
         END IF
 
-# if defined TLM_OBS && !(defined WEAK_CONSTRAINT || defined IOM)
+# if defined TLM_OBS && !defined WEAK_CONSTRAINT
 !
-!  If adjoint pass and incremental S4DVAR, read in tangent linear model
+!  If adjoint pass and incremental 4DVar, read in tangent linear model
 !  values at observation locations.
 !
-#  ifdef IS4DVAR_OLD
-        IF (readTLmod.and.haveTLmod(ng).and.(Ipass.ne.0)) THEN
-#  else
         IF (readTLmod.and.haveTLmod(ng)) THEN
-#  endif
-          IF (InpThread) THEN
-#  ifdef IS4DVAR_OLD
-            start(1)=NstrObs(ng)
-            total(1)=Nobs(ng)
-            start(2)=Ipass
-            total(2)=1
-            status=nf90_get_var(ncMODid(ng), modVid(idTLmo,ng),         &
-     &                          TLmodVal(:,Ipass), start, total)
-#  else
-            start(1)=NstrObs(ng)
-            total(1)=Nobs(ng)
-            status=nf90_get_var(ncMODid(ng), modVid(idTLmo,ng),         &
-     &                          TLmodVal(Mstr:), start, total)
-#  endif
-            IF (status.ne.nf90_noerr) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idTLmo)), ObsSurvey(ng),   &
-     &                          TRIM(MODname(ng))
-              exit_flag=2
-              ioerror=status
-              RETURN
-            END IF
-          END IF
+          CALL netcdf_get_fvar (ng, model, MODname(ng), Vname(1,idTLmo),&
+     &                          TLmodVal(Mstr:),                        &
+     &                          ncid = ncMODid(ng),                     &
+     &                          start = (/NstrObs(ng)/),                &
+     &                          total = (/Nobs(ng)/))
+          IF (exit_flag.ne.NoError) RETURN
+
+#  if defined IS4DVAR
 !
 !  Reset TLM values to zero at the first pass of the inner loop.
 !
-#  if defined IS4DVAR_OLD
-          IF ((inner.eq.1).and.(Ipass.eq.1)) THEN
-            DO iobs=1,Mobs
-              TLmodVal(iobs,1)=0.0_r8
-              TLmodVal(iobs,2)=0.0_r8
-            END DO
-          END IF
-#  elif defined IS4DVAR
           IF (inner.eq.0) THEN
             DO iobs=1,Mobs
               TLmodVal(iobs)=0.0_r8
             END DO
           END IF
 #  endif
-#  ifdef DISTRIBUTE
-#   ifdef IS4DVAR_OLD
-          CALL mp_bcastf (ng, model, TLmodVal(:,1), Mobs)
-          CALL mp_bcastf (ng, model, TLmodVal(:,2), Mobs)
-#   else
-          CALL mp_bcastf (ng, model, TLmodVal, Mobs)
-#   endif
-#  endif
         END IF
-# endif
-# if defined IOM && defined ADJOINT
-!
-!  If multiple executables, read in representer coefficients (or
-!  its approximation) and load it in ADmodVal.
-!
-        IF (backward) THEN
-          IF (InpThread) THEN
-            start(1)=1
-            total(1)=Ndatum(ng)
-            status=nf90_get_var(ncMODid(ng), modVid(idRepC,ng),         &
-     &                          ADmodVal, start, total)
-            IF (status.ne.nf90_noerr) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idRepC)), ObsSurvey(ng),   &
-     &                          TRIM(MODname(ng))
-              exit_flag=2
-              ioerror=status
-              RETURN
-            END IF
-          END IF
-#  ifdef DISTRIBUTE
-          CALL mp_bcastf (ng, model, ADmodVal, Mobs)
-#  endif
-        END IF            
 # endif
 !
 !-----------------------------------------------------------------------
@@ -416,7 +274,7 @@
 !-----------------------------------------------------------------------
 !
         IF (Master) THEN
-          WRITE (stdout,20) ObsTime(ng)*sec2day
+          WRITE (stdout,10) ObsTime(ng)*sec2day
         END IF
         IF (backward) THEN
           IF ((ObsSurvey(ng)-1).ge.1) THEN
@@ -429,10 +287,7 @@
         END IF
       END IF
 !
-  10  FORMAT (/,' OBS_READ - error while reading variable: ',a,         &
-     &        ' at survey record = ',i4,/,                              &
-     &        11x,'in input NetCDF file: ',a)
-  20  FORMAT (/,' Number of State Observations Processed:',             &
+  10  FORMAT (/,' Number of State Observations Processed:',             &
      &        t58,'ObsTime = ',f12.4,/,/,                               &
      &        10x,'Variable',10x,'IstrObs',4x,'IendObs',6x,'Count',     &
      &        3x,'Rejected',/)

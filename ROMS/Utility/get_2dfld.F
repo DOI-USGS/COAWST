@@ -8,7 +8,7 @@
 !
 !svn $Id: get_2dfld.F 1598 2008-07-25 03:29:09Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -47,12 +47,9 @@
       USE mod_ncparam
       USE mod_netcdf
       USE mod_scalars
-
-#ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
-      USE distribute_mod, ONLY : mp_bcastl, mp_bcasts
-#endif
+      USE nf_fread2d_mod, ONLY : nf_fread2d
+      USE nf_fread3d_mod, ONLY : nf_fread3d
 !
       implicit none
 !
@@ -73,21 +70,21 @@
 !
 !  Local variable declarations.
 !
-      logical :: Liocycle, Lgrided, Lonerec, got_var, got_time, special
+      logical :: Liocycle, Lgridded, Lonerec
+      logical :: foundit, got_var, got_time, special
 
       integer :: Tid, Tindex, Trec, Vid, Vtype
-      integer :: dimsiz, i, lend, lfvar, lstr, ltvar, lvar, nrec, nvatts
-      integer :: nvd, status, vartype
-      integer :: Vsize(4), start(4), total(4)
-
-      integer :: nf_fread2d, nf_fread3d
+      integer :: i, ifile, lend, lstr, lvar, nrec
+      integer :: gtype, nvatt, nvdim, status
+      integer :: Vsize(4)
 
       real(r8) :: Clength, Fmax, Fmin, Tdelta, Tend
       real(r8) :: Tmax, Tmin, Tmono, Tscale, Tstr, scale
-      real(r8) :: Fval(1), Tval(1)
+      real(r8) :: Fval, Tval
 
       character (len=14) :: t_code
-      character (len=45) :: attnam, dimnam
+!
+      SourceFile='get_2dfld.F'
 !
 !-----------------------------------------------------------------------
 !  On first call, inquire about the contents of input NetCDF file.
@@ -100,228 +97,258 @@
 !  Intialize local variables.
 !
         Vid=-1
-        Tid=-1        
+        Tid=-1
+        nrec=0
         Liocycle=.FALSE.
-        Lgrided=.FALSE.
+        Lgridded=.FALSE.
         Lonerec=.FALSE.
         got_var=.FALSE.
         got_time=.FALSE.
         Vtype=Iinfo(1,ifield,ng)
-        lfvar=LEN_TRIM(Vname(1,ifield))
-        ltvar=LEN_TRIM(Tname(ifield))
 !
-!  Inquire about the dimensions and variables. Check for consistency.
+!  If several input NetCDF files (nfiles>1), scan files until the
+!  requested variable is found.
 !
-        IF (InpThread) THEN
-          CALL opencdf (ng, nfiles, fname, ncfile, N(ng), ifield, nrec, &
-     &                  nvd, Vsize)
+        foundit=.FALSE.
+        QUERY: DO ifile=1,nfiles
+!
+!  Inquire about the dimensions and check for consistency.
+!
+          CALL netcdf_check_dim (ng, model, fname(ifile))
           IF (exit_flag.ne.NoError) RETURN
 !
-!  Scan variable list from input NetCDF and check for requested
-!  variables.
+!  Inquire about requested variable.
 !
-          DO i=1,nvars
-            IF (lfvar.gt.0) THEN
-              IF (TRIM(varnam(i)).eq.TRIM(Vname(1,ifield))) THEN
-                Vid=i
-                got_var=.TRUE.
-                IF (nvdims(i).gt.1) Lgrided=.TRUE.
-              END IF
-            END IF
-            IF (ltvar.gt.0) THEN
-              IF (TRIM(varnam(i)).eq.TRIM(Tname(ifield))) THEN
-                Tid=i
-                got_time=.TRUE.
-              END IF
-            END IF
-          END DO
-          Linfo(1,ifield,ng)=Lgrided
-          Iinfo(2,ifield,ng)=Vid
-          Iinfo(3,ifield,ng)=Tid
-          Iinfo(4,ifield,ng)=nrec
-          Iinfo(5,ifield,ng)=Vsize(1)
-          Iinfo(6,ifield,ng)=Vsize(2)
+          CALL netcdf_inq_var (ng, model, fname(ifile),                 &
+     &                         MyVarName = TRIM(Vname(1,ifield)),       &
+     &                         SearchVar = foundit,                     &
+     &                         VarID = Vid,                             &
+     &                         nVarDim = nvdim,                         &
+     &                         nVarAtt = nvatt)
+          IF (exit_flag.ne.NoError) RETURN
 !
-!  Terminate execution requested variables are not found.
+!  Determine if gridded or point data.  Set variable dimensions.
 !
-          IF (.not.got_var) THEN
-            IF (nfiles.gt.1) THEN
-              WRITE (stdout,10) TRIM(Vname(1,ifield)), 'files:'
-              DO i=1,nfiles
-                WRITE (stdout,'(15x,a)') TRIM(fname(i))
-              END DO
-            ELSE
-              WRITE (stdout,10) TRIM(Vname(1,ifield)), 'file:'
-              WRITE (stdout,'(15x,a)') TRIM(ncfile)
-            END IF
-            exit_flag=2
-            RETURN
+          IF (foundit) THEN
+            got_var=.TRUE.
+            ncfile=fname(ifile)
+            IF (nvdim.gt.1) Lgridded=.TRUE.
+            Vsize=0
+            DO i=1,nvdim
+              Vsize(i)=var_Dsize(i)
+            END DO
           END IF
-          IF (.not.got_time) THEN
-            IF (nfiles.gt.1) THEN
-              WRITE (stdout,10) TRIM(Tname(ifield)), 'files:'
-              DO i=1,nfiles
-                WRITE (stdout,'(15x,a)') TRIM(fname(i))
-              END DO
-            ELSE
-              WRITE (stdout,10) TRIM(Tname(ifield)), 'file:'
-              WRITE (stdout,'(15x,a)') TRIM(ncfile)
-            END IF
-            exit_flag=2
-            RETURN
-          END IF
-!
-!  If appropriate, open input NetCDF file for reading.  If processing
-!  model forcing (multiple files allowed), check if file for requested
-!  field has been already opened and get/save its ID from/to the
-!  association table. 
-!
-          CALL openids (nFfiles(ng), FRCname(1,ng), FRCids(1,ng),       &
-     &                  ncfile, ncid)
-          IF (ncid.eq.-1) THEN
-            status=nf90_open(TRIM(ncfile), nf90_nowrite, ncid)
-            IF (status.ne.nf90_noerr) THEN
-              WRITE (stdout,20) TRIM(ncfile)
-              exit_flag=2
-              ioerror=status
-              RETURN
-            END IF
-            CALL openids (nFfiles(ng), FRCname(1,ng), FRCids(1,ng),     &
-     &                    ncfile, ncid)
-          END IF
-          Cinfo(ifield,ng)=TRIM(ncfile)
 !
 !  If "scale_factor" attribute is present for a variable, the data are
 !  to be multiplied by this factor.  Check if only water points are
-!  available. Also check if processing special 2D fields with additional
-!  dimensions (for example, tides).
+!  available.
 !
-          IF (got_var) THEN
-            status=nf90_inquire_variable(ncid, Vid, varnam(ifield),     &
-     &                                   vartype, nvdims(ifield),       &
-     &                                   vdims(:,ifield), nvatts)
-            IF (status.eq.nf90_noerr) THEN
-              DO i=1,nvatts
-                status=nf90_inq_attname(ncid, Vid, i, attnam)
-                IF (status.eq.nf90_noerr) THEN
-                  IF (TRIM(attnam).eq.'scale_factor') THEN
-                    status=nf90_get_att(ncid, Vid, TRIM(attnam),        &
-     &                                  scale)
-                    IF (status.eq.nf90_noerr) THEN
-                      Fscale(ifield,ng)=Fscale(ifield,ng)*scale
-                    ELSE
-                      WRITE (stdout,30) TRIM(attnam)
-                      exit_flag=2
-                      RETURN
-                    END IF
-                  ELSE IF (TRIM(attnam).eq.'water_points') THEN
-                    Iinfo(1,ifield,ng)=-ABS(Iinfo(1,ifield,ng))
-                    Vtype=Iinfo(1,ifield,ng)
+          IF (foundit) THEN
+            DO i=1,nvatt
+              IF (TRIM(var_Aname(i)).eq.'scale_factor') THEN
+                scale=var_Afloat(i)
+                Finfo(10,ifield,ng)=scale
+              ELSE IF (TRIM(var_Aname(i)).eq.'water_points') THEN
+                Iinfo(1,ifield,ng)=-ABS(Iinfo(1,ifield,ng))
+                Vtype=Iinfo(1,ifield,ng)
+              END IF
+            END DO
+          END IF
+!
+!  Check if processing special 2D fields with additional dimensions
+!  (for example, tides).
+!
+          IF (foundit) THEN
+            special=.FALSE.
+            DO i=1,nvdim
+              IF (INDEX(TRIM(var_Dname(i)),'period').ne.0) THEN
+                special=.TRUE.
+              END IF
+            END DO
+            Linfo(4,ifield,ng)=special
+          END IF
+!
+!  Inquire about associated time dimension, if any, and get number of
+!  available time records.
+!
+          IF (foundit) THEN
+            IF (LEN_TRIM(Vname(5,ifield)).gt.0) THEN
+              Tname(ifield)=TRIM(Vname(5,ifield))
+              DO i=1,nvdim
+                IF (var_Dname(i).eq.TRIM(Tname(ifield))) THEN
+                  nrec=var_Dsize(i)
+                  got_time=.TRUE.
+                END IF
+              END DO
+            END IF
+!
+!  If the associated time variable is different to that specified in
+!  "varinfo.dat" (nrec still zero), reset associated time-variable name
+!  to that specified in the "time" attribute.
+!
+            IF (nrec.eq.0) THEN
+              DO i=1,nvatt
+                IF (TRIM(var_Aname(i)).eq.'time') THEN
+                  Tname(ifield)=TRIM(var_Achar(i))
+                  got_time=.TRUE.
+                END IF
+              END DO
+              IF (got_time) THEN
+                DO i=1,n_dim
+                  IF (TRIM(dim_name(i)).eq.TRIM(Tname(ifield))) THEN
+                    nrec=dim_size(i)
                   END IF
-                ELSE
-                  WRITE (stdout,40) TRIM(varnam(ifield))
-                  exit_flag=2
-                  RETURN
-                END IF
-              END DO
+                END DO
+              END IF
+            END IF
 !
-              special=.FALSE.
-              DO i=1,nvdims(ifield)
-                status=nf90_inquire_dimension(ncid, vdims(i,ifield),    &
-     &                                        dimnam, dimsiz)
-                IF (status.eq.nf90_noerr) THEN
-                  IF (INDEX(TRIM(dimnam),'period').ne.0) THEN
-                    special=.TRUE.
-                  END IF                  
-                ELSE
-                  WRITE (stdout,50) TRIM(varnam(ifield))
-                  exit_flag=2
-                  RETURN
+!  If Nrec=0, input file is not CF compliant, check variable dimension
+!  to see if the dimension contains the "time" string.
+!
+            IF (got_time.and.(Nrec.eq.0)) THEN
+              DO i=1,n_vdim
+                IF (INDEX(TRIM(var_Dname(i)),'time').ne.0) THEN
+                  Nrec=var_Dsize(i)
                 END IF
               END DO
-              Linfo(4,ifield,ng)=special
-            ELSE
-              WRITE (stdout,60)
-              exit_flag=2
+            END IF
+            IF (got_time.and.(Nrec.eq.0)) THEN
+              IF (Master) WRITE (stdout,10) TRIM(Tname(ifield)),        &
+     &                                      TRIM(Vname(1,ifield)),      &
+     &                                      TRIM(fname(ifile))
+              exit_flag=4
               RETURN
             END IF
           END IF
 !
 !  Determine initial time record to read and cycling switch.
 !
-          CALL get_cycle (ng, ncid, Tid, nrec, tdays(ng), Liocycle,     &
-     &                    Clength, Trec, Tstr, Tend, Tmin, Tmax, Tscale)
-          IF (exit_flag.ne.NoError) RETURN
-          Linfo(2,ifield,ng)=Liocycle
-          Finfo(1,ifield,ng)=Tmin
-          Finfo(2,ifield,ng)=Tmax
-          Finfo(3,ifield,ng)=Tstr
-          Finfo(4,ifield,ng)=Tend
-          Finfo(5,ifield,ng)=Clength
-          Finfo(6,ifield,ng)=Tscale
+          IF (foundit) THEN
+            CALL get_cycle (ng, model, ncfile, Tname(ifield), nrec,     &
+     &                      tdays(ng), Tid, Liocycle, Clength,          &
+     &                      Trec, Tstr, Tend, Tmin, Tmax,  Tscale)
+            IF (exit_flag.ne.NoError) RETURN
+          END IF
+!
+!  Store variable information into global information arrays.
+!
+          IF (foundit) THEN
+            Linfo(1,ifield,ng)=Lgridded
+            Linfo(2,ifield,ng)=Liocycle
+            Iinfo(2,ifield,ng)=Vid
+            Iinfo(3,ifield,ng)=Tid
+            Iinfo(4,ifield,ng)=nrec
+            Iinfo(5,ifield,ng)=Vsize(1)
+            Iinfo(6,ifield,ng)=Vsize(2)
+            Finfo(1,ifield,ng)=Tmin
+            Finfo(2,ifield,ng)=Tmax
+            Finfo(3,ifield,ng)=Tstr
+            Finfo(4,ifield,ng)=Tend
+            Finfo(5,ifield,ng)=Clength
+            Finfo(6,ifield,ng)=Tscale
+            EXIT QUERY
+          END IF
+        END DO QUERY
+!
+!  Terminate execution requested variables are not found.
+!
+        IF (.not.got_var) THEN
+          IF (nfiles.gt.1) THEN
+            WRITE (stdout,20) TRIM(Vname(1,ifield)), 'files:'
+            DO i=1,nfiles
+              WRITE (stdout,'(15x,a)') TRIM(fname(i))
+            END DO
+          ELSE
+            WRITE (stdout,20) TRIM(Vname(1,ifield)), 'file:'
+            WRITE (stdout,'(15x,a)') TRIM(ncfile)
+          END IF
+          exit_flag=2
+          RETURN
+        END IF
+        IF (.not.got_time) THEN
+          IF (nfiles.gt.1) THEN
+            WRITE (stdout,20) TRIM(Tname(ifield)), 'files:'
+            DO i=1,nfiles
+              WRITE (stdout,'(15x,a)') TRIM(fname(i))
+            END DO
+          ELSE
+            WRITE (stdout,20) TRIM(Tname(ifield)), 'file:'
+            WRITE (stdout,'(15x,a)') TRIM(ncfile)
+          END IF
+          exit_flag=2
+          RETURN
+        END IF
+!
+!  If appropriate, open input NetCDF file for reading.  If processing
+!  model forcing (multiple files allowed), check if file for requested
+!  field has been already opened and get/save its ID from/to the
+!  association table.
+!
+        CALL netcdf_openid (nFfiles(ng), FRCname(1,ng), FRCids(1,ng),   &
+     &                      ncfile, ncid)
+        IF (ncid.eq.-1) THEN
+          CALL netcdf_open (ng, model, ncfile, 0, ncid)
+          IF (exit_flag.ne.NoError) THEN
+            WRITE (stdout,30) TRIM(ncfile)
+            RETURN
+          END IF
+          CALL netcdf_openid (nFfiles(ng), FRCname(1,ng), FRCids(1,ng), &
+     &                        ncfile, ncid)
+        END IF
+        Cinfo(ifield,ng)=TRIM(ncfile)
 !
 !  The strategy here is to create a local, monotonically increasing
 !  time variable so the interpolation between snapshots is trivial
 !  when cycling forcing fields. Subtract one to time record counter
 !  "Trec" to avoid doing special case at initialization.
 !
-          IF (Irec.eq.1) THEN
-            Tindex=Iout
-          ELSE
-            Tindex=1
-          END IF
-          IF (Liocycle) THEN
-            IF (Trec.eq.nrec) THEN
-              IF (tdays(ng).lt.Tmax) THEN
-                Tmono=Tstr-Clength
-              ELSE
-                Tmono=tdays(ng)+(Tstr-Clength)
-                IF (Tstr.eq.Tmax) THEN
-                  Tmono=Tmono+(Tmin-MOD(tdays(ng)+Tmin,Clength))
-                ELSE
-                  Tmono=Tmono+(Tstr-MOD(tdays(ng)+Tstr,Clength))
-                END IF
-              END IF
+        IF (Irec.eq.1) THEN
+          Tindex=Iout
+        ELSE
+          Tindex=1
+        END IF
+        IF (Liocycle) THEN
+          IF (Trec.eq.nrec) THEN
+            IF (tdays(ng).lt.Tmax) THEN
+              Tmono=Tstr-Clength
             ELSE
-              IF (tdays(ng).gt.Clength) THEN
-                Tmono=tdays(ng)-MOD(tdays(ng)-Tstr,Clength)
+              Tmono=tdays(ng)+(Tstr-Clength)
+              IF (Tstr.eq.Tmax) THEN
+                Tmono=Tmono+(Tmin-MOD(tdays(ng)+Tmin,Clength))
               ELSE
-                Tmono=Tstr
+                Tmono=Tmono+(Tstr-MOD(tdays(ng)+Tstr,Clength))
               END IF
             END IF
           ELSE
-            Tmono=Tstr
+            IF (tdays(ng).gt.Clength) THEN
+              Tmono=tdays(ng)-MOD(tdays(ng)-Tstr,Clength)
+            ELSE
+              Tmono=Tstr
+            END IF
           END IF
-          Tmono=Tmono*day2sec
-          Trec=Trec-1
-          Iinfo(8,ifield,ng)=Tindex
-          Iinfo(9,ifield,ng)=Trec
-          Finfo(7,ifield,ng)=Tmono
+        ELSE
+          Tmono=Tstr
+        END IF
+        Tmono=Tmono*day2sec
+        Trec=Trec-1
+        Iinfo(8,ifield,ng)=Tindex
+        Iinfo(9,ifield,ng)=Trec
+        Finfo(7,ifield,ng)=Tmono
 !
 !  Set switch for one time record dataset. In this case, the input
 !  data is always the same and time interpolation is not performed.
 !
-          IF (nrec.eq.1) Lonerec=.TRUE.
-          Linfo(3,ifield,ng)=Lonerec
-        END IF
-#ifdef DISTRIBUTE
-!
-!  Broadcast variable information to all nodes in the group.
-!
-        CALL mp_bcastl (ng, model, Linfo(:,ifield,ng), 4)
-        CALL mp_bcasti (ng, model, Iinfo(:,ifield,ng), 9)
-        CALL mp_bcastf (ng, model, Finfo(:,ifield,ng), 7)
-        CALL mp_bcasts (ng, model, Cinfo(ifield,ng), 80)
-#endif
+        IF (nrec.eq.1) Lonerec=.TRUE.
+        Linfo(3,ifield,ng)=Lonerec
         Tindex=Iinfo(8,ifield,ng)
         Vtime(Tindex,ifield,ng)=Finfo(3,ifield,ng)
-      END IF         
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Get requested field information from global storage.
 !-----------------------------------------------------------------------
 !
-      Lgrided =Linfo(1,ifield,ng)
+      Lgridded=Linfo(1,ifield,ng)
       Liocycle=Linfo(2,ifield,ng)
       Lonerec =Linfo(3,ifield,ng)
       special =Linfo(4,ifield,ng)
@@ -353,6 +380,7 @@
           Trec=Trec+1
         END IF
         Iinfo(9,ifield,ng)=Trec
+
         IF (Trec.le.nrec) THEN
 !
 !  Set rolling index for two-time record storage of input data.  If
@@ -371,23 +399,19 @@
 !
 !  Read in time coordinate and scale it to day units.
 !
-          IF (InpThread.and.(Tid.ge.0)) THEN
-            start(1)=Trec
-            total(1)=1
-            status=nf90_get_var(ncid, Tid, Tval, start, total)
-            IF (status.ne.nf90_noerr) THEN
-              WRITE (stdout,70) TRIM(Tname(ifield)), Trec
-              exit_flag=2
-              ioerror=status
+          IF (Tid.ge.0) THEN
+            CALL netcdf_get_fvar (ng, model, ncfile, Tname(ifield),     &
+     &                            Tval,                                 &
+     &                            ncid = ncid,                          &
+     &                            start = (/Trec/),                     &
+     &                            total = (/1/))
+            IF (exit_flag.ne.NoError) THEN
+              IF (Master) WRITE (stdout,40) TRIM(Tname(ifield)), Trec
               RETURN
             END IF
           END IF
-#ifdef DISTRIBUTE
-          CALL mp_bcasti (ng, model, exit_flag, 1)
-          CALL mp_bcastf (ng, model, Tval, 1)
-#endif
-          Tval(1)=Tval(1)*Tscale
-          Vtime(Tindex,ifield,ng)=Tval(1)
+          Tval=Tval*Tscale
+          Vtime(Tindex,ifield,ng)=Tval
 !
 !  Read in 2D-grided or point data. Notice for special 2D fields, Vtype
 !  is augmented by four indicating reading a 3D field. This rational is
@@ -396,63 +420,59 @@
           IF (Vid.ge.0) THEN
             Fmin=0.0_r8
             Fmax=0.0_r8
-            IF (Lgrided) THEN
+            IF (Lgridded) THEN
               IF (special) THEN
                 Vsize(3)=Irec
-                status=nf_fread3d(ng, model, ncid, Vid, 0, Vtype+4,     &
-     &                            Vsize, LBi, UBi, LBj, UBj, 1, Irec,   &
+                gtype=Vtype+4
+                status=nf_fread3d(ng, model, ncfile, ncid,              &
+     &                            Vname(1,ifield), Vid,                 &
+     &                            0, gtype, Vsize,                      &
+     &                            LBi, UBi, LBj, UBj, 1, Irec,          &
      &                            Fscale(ifield,ng), Fmin, Fmax,        &
 #ifdef MASKING
-     &                            Fmask(LBi,LBj),                       &
+     &                            Fmask,                                &
 #endif
-     &                            Fout(LBi,LBj,1))
-                Finfo(8,ifield,ng)=Fmin
-                Finfo(9,ifield,ng)=Fmax
+     &                            Fout)
               ELSE
-                status=nf_fread2d(ng, model, ncid, Vid, Trec, Vtype,    &
-     &                            Vsize, LBi, UBi, LBj, UBj,            &
+                status=nf_fread2d(ng, model, ncfile, ncid,              &
+     &                            Vname(1,ifield), Vid,                 &
+     &                            Trec, Vtype, Vsize,                   &
+     &                            LBi, UBi, LBj, UBj,                   &
      &                            Fscale(ifield,ng), Fmin, Fmax,        &
 #ifdef MASKING
-     &                            Fmask(LBi,LBj),                       &
+     &                            Fmask,                                &
 #endif
-     &                            Fout(LBi,LBj,Tindex))
-                Finfo(8,ifield,ng)=Fmin
-                Finfo(9,ifield,ng)=Fmax
+     &                            Fout(:,:,Tindex))
               END IF
             ELSE
-              IF (InpThread) THEN
-                start(1)=Trec
-                total(1)=1
-                status=nf90_get_var(ncid, Vid, Fval, start, total)
-              END IF
-#ifdef DISTRIBUTE
-              CALL mp_bcasti (ng, model, status, 1)
-              CALL mp_bcastf (ng, model, Fval, 1)
-#endif
-              Fpoint(Tindex,ifield,ng)=Fval(1)*Fscale(ifield,ng)
-              Fmin=Fval(1)
-              Fmax=Fval(1)
+              CALL netcdf_get_fvar (ng, model, ncfile, Vname(1,ifield), &
+     &                              Fval,                               &
+     &                              ncid = ncid,                        &
+     &                              start = (/Trec/),                   &
+     &                              total = (/1/))
+              Fval=Fval*Fscale(ifield,ng)
+              Fpoint(Tindex,ifield,ng)=Fval
+              Fmin=Fval
+              Fmax=Fval
             END IF
-            IF (status.ne.nf90_noerr) THEN
-              IF (Master) THEN
-                WRITE (stdout,70) TRIM(Vname(1,ifield)), Trec
-              END IF
-              exit_flag=2
-              ioerror=status
+            IF (exit_flag.ne.NoError) THEN
+              IF (Master) WRITE (stdout,40) TRIM(Vname(1,ifield)), Trec
               RETURN
             END IF
+            Finfo(8,ifield,ng)=Fmin
+            Finfo(9,ifield,ng)=Fmax
             IF (Master) THEN
               IF (special) THEN
-                WRITE (stdout,80) TRIM(Vname(2,ifield)), Fmin, Fmax
+                WRITE (stdout,50) TRIM(Vname(2,ifield)), Fmin, Fmax
               ELSE
                 lstr=SCAN(ncfile,'/',BACK=.TRUE.)+1
                 lend=LEN_TRIM(ncfile)
                 lvar=MIN(43,LEN_TRIM(Vname(2,ifield)))
-                Tval(1)=Tval(1)*day2sec
-                CALL time_string (Tval(1), t_code)
-                WRITE (stdout,90) Vname(2,ifield)(1:lvar),              &
-     &                            t_code, ncfile(lstr:lend),            &
-     &                            Trec, Tindex, Tmin, Tmax, Fmin, Fmax
+                Tval=Tval*day2sec
+                CALL time_string (Tval, t_code)
+                WRITE (stdout,60) Vname(2,ifield)(1:lvar), t_code,      &
+     &                            Trec, Tindex, ncfile(lstr:lend),      &
+     &                            Tmin, Tmax, Fmin, Fmax
               END IF
             END IF
             update=.TRUE.
@@ -475,23 +495,20 @@
         END IF
       END IF
 !
-  10  FORMAT (/,' GET_2DFLD   - unable to find requested variable: ',a, &
-     &        /,15x,'in input NetCDF ',a)
-  20  FORMAT (/,' GET_2DFLD   - unable to open input NetCDF file: ',a)
-  30  FORMAT (/,' GET_2DFLD   - error while reading attribute: ',a)
-  40  FORMAT (/,' GET_2DFLD   - error while inquiring attributes for',  &
-     &        ' variable: ',a)
-  50  FORMAT (/,' GET_2DFLD   - error while inquiring dimensions for',  &
-     &        ' variable: ',a) 
-  60  FORMAT (/,' GET_2DFLD   - cannot inquire about time variable',    &
-     &        ' from input NetCDF file.')
-  70  FORMAT (/,' GET_2DFLD   - error while reading variable: ',a,2x,   &
+  10  FORMAT (/,' GET_2DFLD   - unable to find dimension ',a,           &
+     &        /,15x,'for variable: ',a,/,15x,'in file: ',a,             &
+     &        /,15x,'file is not CF compliant...')
+  20  FORMAT (/,' GET_2DFLD   - unable to find requested variable: ',a, &
+     &        /,15x,'in ',a)
+  30  FORMAT (/,' GET_2DFLD   - unable to open input NetCDF file: ',a)
+  40  FORMAT (/,' GET_2DFLD   - error while reading variable: ',a,2x,   &
      &        ' at TIME index = ',i4)
-  80  FORMAT (3x,' GET_2DFLD   - ',a,/,19x,'(Min = ',1p,e15.8,0p,       &
+  50  FORMAT (3x,' GET_2DFLD   - ',a,/,19x,'(Min = ',1p,e15.8,0p,       &
      &        ' Max = ',1p,e15.8,0p,')')
-  90  FORMAT (3x,' GET_2DFLD   - ',a,',',t62,'t = ',a,/,19x,            &
-     &        '(File: ',a,', Rec=',i4.4,', Index=',i1,')',/,19x,        &
+  60  FORMAT (3x,' GET_2DFLD   - ',a,',',t62,'t = ',a,/,19x,            &
+     &        '(Rec=',i4.4,', Index=',i1,', File: ',a,')',/,19x,        &
      &        '(Tmin= ', f15.4, ' Tmax= ', f15.4,')',/, 19x,            &
      &        '(Min = ', 1p,e15.8,0p,' Max = ',1p,e15.8,0p,')')
+
       RETURN
       END SUBROUTINE get_2dfld

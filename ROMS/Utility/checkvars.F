@@ -4,7 +4,7 @@
 !
 !svn $Id: checkvars.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -34,6 +34,9 @@
 !
       USE mod_param
       USE mod_parallel
+#ifdef BIOLOGY
+      USE mod_biology
+#endif
       USE mod_iounits
       USE mod_ncparam
       USE mod_netcdf
@@ -59,6 +62,8 @@
 !
       integer :: IDmod, i, itrc
 !
+      SourceFile='checkvars.F'
+!
 !-----------------------------------------------------------------------
 !  Determine state variables needed and check if they are available in
 !  requested NetCDF file.
@@ -81,7 +86,7 @@
 !
 !  Inquire about the variables.
 !
-      CALL netcdf_inq_var (ng, IDmod, ncname)        
+      CALL netcdf_check_var (ng, model, ncname)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Initialize logical switches.
@@ -91,10 +96,26 @@
         have_var(i)=.FALSE.
       END DO
 !
-!  Determine state variables to read from input NetCDF file.
+!  Determine state variables to read from input NetCDF file.  Notice
+!  that these state variable are only assigned if input flag model < 8.
+!  Higher values are used to process only boundary condition or
+!  surface forcing in the variational data assimilation algorithms.
 !
+      IF (model.lt.8) THEN
 #ifdef ANA_INITIAL
-      IF (nrrec(ng).ne.0) THEN
+        IF (nrrec(ng).ne.0) THEN
+          get_var(idFsur)=.TRUE.
+          get_var(idUbar)=.TRUE.
+          get_var(idVbar)=.TRUE.
+# ifdef SOLVE3D
+          get_var(idUvel)=.TRUE.
+          get_var(idVvel)=.TRUE.
+          DO itrc=1,NAT
+            get_var(idTvar(itrc))=.TRUE.
+          END DO
+# endif
+        END IF
+#else
         get_var(idFsur)=.TRUE.
         get_var(idUbar)=.TRUE.
         get_var(idVbar)=.TRUE.
@@ -105,49 +126,47 @@
           get_var(idTvar(itrc))=.TRUE.
         END DO
 # endif
-      END IF
-#else
-      get_var(idFsur)=.TRUE.
-      get_var(idUbar)=.TRUE.
-      get_var(idVbar)=.TRUE.
-# ifdef SOLVE3D
-      get_var(idUvel)=.TRUE.
-      get_var(idVvel)=.TRUE.
-      DO itrc=1,NAT
-        get_var(idTvar(itrc))=.TRUE.
-      END DO
-# endif
 #endif
 #ifdef SOLVE3D
 # if defined BIOLOGY
 #  if defined ANA_BIOLOGY
-      IF (nrrec(ng).ne.0) THEN
+        IF (nrrec(ng).ne.0) THEN
+          DO itrc=1,NBT
+            get_var(idTvar(idbio(itrc)))=.TRUE.
+          END DO
+        END IF
+#  else
         DO itrc=1,NBT
           get_var(idTvar(idbio(itrc)))=.TRUE.
         END DO
-      END IF
-#  else
-      DO itrc=1,NBT
-        get_var(idTvar(idbio(itrc)))=.TRUE.
-      END DO
 #  endif
 # endif
 # if defined T_PASSIVE
 #  if defined ANA_PASSIVE
-      IF (nrrec(ng).ne.0) THEN
+        IF (nrrec(ng).ne.0) THEN
+          DO itrc=1,NPT
+            get_var(idTvar(inert(itrc)))=.TRUE.
+          END DO
+        END IF
+#  else
         DO itrc=1,NPT
           get_var(idTvar(inert(itrc)))=.TRUE.
         END DO
-      END IF
-#  else
-      DO itrc=1,NPT
-        get_var(idTvar(inert(itrc)))=.TRUE.
-      END DO
 #  endif
 # endif
 # ifdef SEDIMENT
 #  ifdef ANA_SEDIMENT
-      IF (nrrec(ng).ne.0) THEN
+        IF (nrrec(ng).ne.0) THEN
+          DO itrc=1,NST
+            get_var(idTvar(idsed(itrc)))=.TRUE.
+            get_var(idfrac(itrc))=.TRUE.
+            get_var(idBmas(itrc))=.TRUE.
+          END DO
+          DO itrc=1,MBEDP
+            get_var(idSbed(itrc))=.TRUE.
+          END DO
+        END IF
+#  else
         DO itrc=1,NST
           get_var(idTvar(idsed(itrc)))=.TRUE.
           get_var(idfrac(itrc))=.TRUE.
@@ -156,69 +175,94 @@
         DO itrc=1,MBEDP
           get_var(idSbed(itrc))=.TRUE.
         END DO
-      END IF
-#  else
-      DO itrc=1,NST
-        get_var(idTvar(idsed(itrc)))=.TRUE.
-        get_var(idfrac(itrc))=.TRUE.
-        get_var(idBmas(itrc))=.TRUE.
-      END DO
-      DO itrc=1,MBEDP
-        get_var(idSbed(itrc))=.TRUE.
-      END DO
 #  endif
 #  ifdef BEDLOAD
-      IF (nrrec(ng).ne.0) THEN
-        DO itrc=1,NST
-          get_var(idUbld(itrc))=.TRUE.
-          get_var(idVbld(itrc))=.TRUE.
-        END DO
-      END IF
+        IF (nrrec(ng).ne.0) THEN
+          DO itrc=1,NST
+            get_var(idUbld(itrc))=.TRUE.
+            get_var(idVbld(itrc))=.TRUE.
+          END DO
+        END IF
 #  endif
 #  ifdef SED_MORPH
-      IF (nrrec(ng).ne.0) THEN
-        get_var(idbath)=.TRUE.
-      END IF
+        IF (nrrec(ng).ne.0) THEN
+          get_var(idbath)=.TRUE.
+        END IF
 #  endif
-# endif 
+# endif
 # if defined SEDIMENT || defined BBL_MODEL
-      DO itrc=1,MBOTP
-        get_var(idBott(itrc))=.TRUE.
-      END DO
+#  ifndef ANA_SEDIMENT
+        DO itrc=1,MBOTP
+          get_var(idBott(itrc))=.TRUE.
+        END DO
+#  endif
 # endif
 #endif
 #ifdef PERFECT_RESTART
 !
 !  Determine perfect restart fields to read from input NetCDF file.
 !
-      IF ((model.eq.0).and.(nrrec(ng).ne.0)) THEN
+        IF (((model.eq.0).or.(model.eq.iNLM)).and.(nrrec(ng).ne.0)) THEN
 # ifdef SOLVE3D
-        get_var(idRu3d)=.TRUE.
-        get_var(idRv3d)=.TRUE.
+          get_var(idRu3d)=.TRUE.
+          get_var(idRv3d)=.TRUE.
 # endif
-        get_var(idRzet)=.TRUE.
-        get_var(idRu2d)=.TRUE.
-        get_var(idRv2d)=.TRUE.
+          get_var(idRzet)=.TRUE.
+          get_var(idRu2d)=.TRUE.
+          get_var(idRv2d)=.TRUE.
 # if defined GLS_MIXING || defined MY25_MIXING
-        get_var(idMtke)=.TRUE.
-        get_var(idMtls)=.TRUE.
-        get_var(idVmLS)=.TRUE.
-        get_var(idVmKK)=.TRUE.
+          get_var(idMtke)=.TRUE.
+          get_var(idMtls)=.TRUE.
+          get_var(idVmLS)=.TRUE.
+          get_var(idVmKK)=.TRUE.
 #  ifdef GLS_MIXING
-        get_var(idVmKP)=.TRUE.
+          get_var(idVmKP)=.TRUE.
 #  endif
+# endif
+        END IF
+#endif
+      END IF
+#ifdef ADJUST_BOUNDARY
+!
+!  Determine 4DVar surface forcing variables to adjust.
+!
+      IF ((model.eq.iADM).or.(model.eq.iTLM).or.(model.eq.iNLM).or.     &
+     &    (model.eq.iRPM).or.(model.eq.8).or.(model.eq.10)) THEN
+        IF (ANY(Lobc(:,isFsur,ng))) THEN
+          get_var(idSbry(isFsur))=.TRUE.
+        END IF
+        IF (ANY(Lobc(:,isUbar,ng))) THEN
+          get_var(idSbry(isUbar))=.TRUE.
+        END IF
+        IF (ANY(Lobc(:,isVbar,ng))) THEN
+          get_var(idSbry(isVbar))=.TRUE.
+        END IF
+# ifdef SOLVE3D
+        IF (ANY(Lobc(:,isUvel,ng))) THEN
+          get_var(idSbry(isUvel))=.TRUE.
+        END IF
+        IF (ANY(Lobc(:,isVvel,ng))) THEN
+          get_var(idSbry(isVvel))=.TRUE.
+        END IF
+        DO itrc=1,NT(ng)
+          IF (ANY(Lobc(:,isTvar(itrc),ng))) THEN
+            get_var(idSbry(isTvar(itrc)))=.TRUE.
+          END IF
+        END DO
 # endif
       END IF
 #endif
 #if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
 !
-!  Determine aditional 4Dvar state variables to adjust.
+!  Determine 4DVar surface forcing variables to adjust.
 !
-      IF ((model.eq.iADM).or.(model.eq.iTLM).or.(model.eq.iNLM).or.    &
-     &    (model.eq.5).or.(model.eq.6)) THEN
+      IF ((model.eq.iADM).or.(model.eq.iTLM).or.(model.eq.iNLM).or.     &
+     &    (model.eq.iRPM).or.(model.eq.9).or.(model.eq.11)) THEN
 # ifdef ADJUST_STFLUX
         DO itrc=1,NT(ng)
-          get_var(idTsur(itrc))=.TRUE.
+          IF (Lstflux(itrc,ng)) THEN
+            get_var(idTsur(itrc))=.TRUE.
+          END IF
         END DO
 # endif
 # ifdef ADJUST_WSTRESS
@@ -238,6 +282,30 @@
 #if defined SEDIMENT && defined SED_MORPH
         ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idbath))) THEN
           have_var(idbath)=.TRUE.
+#endif
+#ifdef ADJUST_BOUNDARY
+        ELSE IF (ANY(Lobc(:,isFsur,ng)).and.                            &
+     &           (TRIM(var_name(i)).eq.                                 &
+     &            TRIM(Vname(1,idSbry(isFsur))))) THEN
+          have_var(idSbry(isFsur))=.TRUE.
+        ELSE IF (ANY(Lobc(:,isUbar,ng)).and.                            &
+     &           (TRIM(var_name(i)).eq.                                 &
+     &            TRIM(Vname(1,idSbry(isUbar))))) THEN
+          have_var(idSbry(isUbar))=.TRUE.
+        ELSE IF (ANY(Lobc(:,isVbar,ng)).and.                            &
+     &           (TRIM(var_name(i)).eq.                                 &
+     &            TRIM(Vname(1,idSbry(isVbar))))) THEN
+          have_var(idSbry(isVbar))=.TRUE.
+# ifdef SOLVE3D
+        ELSE IF (ANY(Lobc(:,isUvel,ng)).and.                            &
+     &           (TRIM(var_name(i)).eq.                                 &
+     &            TRIM(Vname(1,idSbry(isUvel))))) THEN
+          have_var(idSbry(isUvel))=.TRUE.
+        ELSE IF (ANY(Lobc(:,isVvel,ng)).and.                            &
+     &           (TRIM(var_name(i)).eq.                                 &
+     &            TRIM(Vname(1,idSbry(isVvel))))) THEN
+          have_var(idSbry(isVvel))=.TRUE.
+# endif
 #endif
 #ifdef SOLVE3D
         ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idKver))) THEN
@@ -298,6 +366,12 @@
         DO itrc=1,NT(ng)
           IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTvar(itrc)))) THEN
             have_var(idTvar(itrc))=.TRUE.
+# ifdef ADJUST_BOUNDARY
+          ELSE IF (ANY(Lobc(:,isTvar(itrc),ng)).and.                    &
+     &             (TRIM(var_name(i)).eq.                               &
+     &              TRIM(Vname(1,idSbry(isTvar(itrc)))))) THEN
+            have_var(idSbry(isTvar(itrc)))=.TRUE.
+# endif
 # ifdef ADJUST_STFLUX
           ELSE IF (TRIM(var_name(i)).eq.                                &
      &             TRIM(Vname(1,idTsur(itrc)))) THEN
@@ -341,7 +415,7 @@
 !  Check if model state variables are available in input NetCDF file.
 !
       IF (.not.have_var(idtime)) THEN
-        IF (Master) WRITE (stdout,10) string, TRIM(tvarnam),            &
+        IF (Master) WRITE (stdout,10) string, TRIM(Vname(1,idtime)),    &
      &                                TRIM(ncname)
         exit_flag=2
         RETURN
@@ -360,6 +434,52 @@
         exit_flag=2
         RETURN
       END IF
+#ifdef ADJUST_BOUNDARY
+      IF ((model.eq.5).or.(model.eq.6)) THEN
+        IF (.not.have_var(idSbry(isFsur)).and.                          &
+     &      ANY(Lobc(:,isFsur,ng)).and.get_var(idSbry(isFsur))) THEN
+          IF (Master) WRITE (stdout,10) string,                         &
+     &                                  TRIM(Vname(1,idSbry(isFsur))),  &
+     &                                  TRIM(ncname)
+          exit_flag=2
+          RETURN
+        END IF
+        IF (.not.have_var(idSbry(isUbar)).and.                          &
+     &      ANY(Lobc(:,isUbar,ng)).and.get_var(idSbry(isUbar))) THEN
+          IF (Master) WRITE (stdout,10) string,                         &
+     &                                  TRIM(Vname(1,idSbry(isUbar))),  &
+     &                                  TRIM(ncname)
+          exit_flag=2
+          RETURN
+        END IF
+        IF (.not.have_var(idSbry(isVbar)).and.                          &
+     &      ANY(Lobc(:,isVbar,ng)).and.get_var(idSbry(isVbar))) THEN
+          IF (Master) WRITE (stdout,10) string,                         &
+     &                                  TRIM(Vname(1,idSbry(isVbar))),  &
+     &                                  TRIM(ncname)
+          exit_flag=2
+          RETURN
+        END IF
+# ifdef SOLVE3D
+        IF (.not.have_var(idSbry(isUvel)).and.                          &
+     &      ANY(Lobc(:,isUvel,ng)).and.get_var(idSbry(isUvel))) THEN
+          IF (Master) WRITE (stdout,10) string,                         &
+     &                                  TRIM(Vname(1,idSbry(isUvel))),  &
+     &                                  TRIM(ncname)
+          exit_flag=2
+          RETURN
+        END IF
+        IF (.not.have_var(idSbry(isVvel)).and.                          &
+     &      ANY(Lobc(:,isVvel,ng)).and.get_var(idSbry(isVvel))) THEN
+          IF (Master) WRITE (stdout,10) string,                         &
+     &                                  TRIM(Vname(1,idSbry(isVvel))),  &
+     &                                  TRIM(ncname)
+          exit_flag=2
+          RETURN
+        END IF
+# endif
+      END IF
+#endif
       IF (.not.have_var(idRzet).and.get_var(idRzet)) THEN
         IF (Master) WRITE (stdout,10) string, TRIM(Vname(1,idRzet)),    &
      &                                TRIM(ncname)
@@ -441,11 +561,28 @@
           RETURN
         END IF
       END DO
+# ifdef ADJUST_BOUNDARY
+      IF ((model.eq.5).or.(model.eq.6)) THEN
+        DO itrc=1,NT(ng)
+          IF (.not.have_var(idSbry(isTvar(itrc))).and.                  &
+     &        ANY(Lobc(:,isTvar(itrc),ng)).and.                         &
+     &        get_var(idSbry(isTvar(itrc)))) THEN
+            IF (Master) THEN
+              WRITE (stdout,10) string,                                 &
+     &                          TRIM(Vname(1,idSbry(isTvar(itrc)))),    &
+     &                          TRIM(ncname)
+              exit_flag=2
+              RETURN
+            END IF
+          END IF
+        END DO
+      END IF
+# endif
 # ifdef ADJUST_STFLUX
       IF ((model.eq.5).or.(model.eq.6)) THEN
         DO itrc=1,NT(ng)
           IF (.not.have_var(idTsur(itrc)).and.                          &
-     &        get_var(idTsur(itrc))) THEN
+     &        get_var(idTsur(itrc)).and.Lstflux(itrc,ng)) THEN
             IF (Master) WRITE (stdout,10) string,                       &
      &                                    TRIM(Vname(1,idTsur(itrc))),  &
      &                                    TRIM(ncname)

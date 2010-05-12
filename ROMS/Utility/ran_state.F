@@ -1,8 +1,8 @@
         MODULE ran_state
 !
-!svn $Id: ran_state.F 503 2008-01-10 00:11:51Z arango $
+!svn $Id: ran_state.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -115,7 +115,7 @@
      &  CALL nrerror ('RAN_INIT: arith assump 9 fails')
 !
 !  Reallocate or allocate state space.
-!      
+!
       IF (lenran.gt.0) THEN
         ranseeds => reallocate (ranseeds, length, 5_i4b)
         ranv => reallocate (ranv, length-1_i4b)

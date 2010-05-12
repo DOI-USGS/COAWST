@@ -77,16 +77,11 @@
       USE mod_stepping
       USE mod_parallel
       USE mod_ocean
+      USE mod_refined
       USE mod_scalars
       USE mod_coupling
       USE interpolate_mod
 
-# ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcasti, mp_gather
-# endif
-# ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcasti, mp_gather
-# endif
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
 # endif
@@ -191,8 +186,8 @@
           DO i=IstrT,Istr-1
 !         DO i=IstrT,Istr-2
             ic=i+Nghostpoints+1
-            my_val=fac1*BOUNDARY(ng)%zetaR_west(ic,j,t1)+               &
-     &             fac2*BOUNDARY(ng)%zetaR_west(ic,j,t2)
+            my_val=fac1*REFINED(ng)%zetaR_west(ic,j,t1)+                &
+     &             fac2*REFINED(ng)%zetaR_west(ic,j,t2)
 # ifdef MASKING
             my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
@@ -215,8 +210,8 @@
           DO i=Iend+1,IendT
 !         DO i=Iend+2,IendT
             ic=i-Iend+1
-            my_val=fac1*BOUNDARY(ng)%zetaR_east(ic,j,t1)+               &
-     &             fac2*BOUNDARY(ng)%zetaR_east(ic,j,t2)
+            my_val=fac1*REFINED(ng)%zetaR_east(ic,j,t1)+                &
+     &             fac2*REFINED(ng)%zetaR_east(ic,j,t2)
 # ifdef MASKING
             my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
@@ -239,8 +234,8 @@
 !       DO j=JstrT,Jstr-2
           DO i=IstrT,IendT
             jc=j+Nghostpoints+1
-            my_val=fac1*BOUNDARY(ng)%zetaR_south(i,jc,t1)+               &
-     &             fac2*BOUNDARY(ng)%zetaR_south(i,jc,t2)
+            my_val=fac1*REFINED(ng)%zetaR_south(i,jc,t1)+               &
+     &             fac2*REFINED(ng)%zetaR_south(i,jc,t2)
 # ifdef MASKING
             my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
@@ -263,8 +258,8 @@
 !       DO j=Jend+2,JendT
           DO i=IstrT,IendT
             jc=j-Jend+1
-            my_val=fac1*BOUNDARY(ng)%zetaR_north(i,jc,t1)+               &
-     &             fac2*BOUNDARY(ng)%zetaR_north(i,jc,t2)
+            my_val=fac1*REFINED(ng)%zetaR_north(i,jc,t1)+               &
+     &             fac2*REFINED(ng)%zetaR_north(i,jc,t2)
 # ifdef MASKING
             my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
@@ -290,8 +285,8 @@
           DO i=IstrT+1,Istr
 !         DO i=IstrT+1,Istr-1
             ic=i+Nghostpoints
-            my_valu=fac1*BOUNDARY(ng)%ubarR_west(ic,j,t1)+              &
-     &              fac2*BOUNDARY(ng)%ubarR_west(ic,j,t2)
+            my_valu=fac1*REFINED(ng)%ubarR_west(ic,j,t1)+               &
+     &              fac2*REFINED(ng)%ubarR_west(ic,j,t2)
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
@@ -321,8 +316,8 @@
           DO i=Iend+1,IendT
 !         DO i=Iend+2,IendT
             ic=i-Iend
-            my_valu=fac1*BOUNDARY(ng)%ubarR_east(ic,j,t1)+              &
-     &              fac2*BOUNDARY(ng)%ubarR_east(ic,j,t2)
+            my_valu=fac1*REFINED(ng)%ubarR_east(ic,j,t1)+               &
+     &              fac2*REFINED(ng)%ubarR_east(ic,j,t2)
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
@@ -352,8 +347,8 @@
 !       DO j=JstrT,Jstr-2
           DO i=IstrTU+1,IendT
             jc=j+Nghostpoints+1
-            my_valu=fac1*BOUNDARY(ng)%ubarR_south(i,jc,t1)+             &
-     &              fac2*BOUNDARY(ng)%ubarR_south(i,jc,t2)
+            my_valu=fac1*REFINED(ng)%ubarR_south(i,jc,t1)+              &
+     &              fac2*REFINED(ng)%ubarR_south(i,jc,t2)
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
@@ -383,8 +378,8 @@
 !       DO j=Jend+2,JendT
           DO i=IstrTU+1,IendT
             jc=j-Jend
-            my_valu=fac1*BOUNDARY(ng)%ubarR_north(i,jc,t1)+             &
-     &             fac2*BOUNDARY(ng)%ubarR_north(i,jc,t2)
+            my_valu=fac1*REFINED(ng)%ubarR_north(i,jc,t1)+              &
+     &              fac2*REFINED(ng)%ubarR_north(i,jc,t2)
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
@@ -418,8 +413,8 @@
         DO j=JstrT,JendT
           DO i=IstrT+1,Istr
             ic=i+Nghostpoints
-            my_val=fac1*BOUNDARY(ng)%DUonR_west(ic,j,t1)+               &
-     &             fac2*BOUNDARY(ng)%DUonR_west(ic,j,t2)
+            my_val=fac1*REFINED(ng)%DUonR_west(ic,j,t1)+                &
+     &             fac2*REFINED(ng)%DUonR_west(ic,j,t2)
             my_val=my_val*fac3
 #  ifdef MASKING
             my_val=my_val*GRID(ng)%umask(i,j)
@@ -432,8 +427,8 @@
         DO j=JstrT,JendT
           DO i=Iend+1,IendT
             ic=i-Iend
-            my_val=fac1*BOUNDARY(ng)%DUonR_east(ic,j,t1)+               &
-     &             fac2*BOUNDARY(ng)%DUonR_east(ic,j,t2)
+            my_val=fac1*REFINED(ng)%DUonR_east(ic,j,t1)+                &
+     &             fac2*REFINED(ng)%DUonR_east(ic,j,t2)
             my_val=my_val*fac3
 #  ifdef MASKING
             my_val=my_val*GRID(ng)%umask(i,j)
@@ -446,8 +441,8 @@
         DO j=JstrT,Jstr-1
           DO i=IstrT,IendT
             jc=j+Nghostpoints+1
-            my_val=fac1*BOUNDARY(ng)%DUonR_south(i,jc,t1)+              &
-     &             fac2*BOUNDARY(ng)%DUonR_south(i,jc,t2)
+            my_val=fac1*REFINED(ng)%DUonR_south(i,jc,t1)+               &
+     &             fac2*REFINED(ng)%DUonR_south(i,jc,t2)
             my_val=my_val*fac3
 #  ifdef MASKING
             my_val=my_val*GRID(ng)%umask(i,j)
@@ -460,8 +455,8 @@
         DO j=Jend+1,JendT
           DO i=IstrT,IendT
             jc=j-Jend
-            my_val=fac1*BOUNDARY(ng)%DUonR_north(i,jc,t1)+               &
-     &             fac2*BOUNDARY(ng)%DUonR_north(i,jc,t2)
+            my_val=fac1*REFINED(ng)%DUonR_north(i,jc,t1)+               &
+     &             fac2*REFINED(ng)%DUonR_north(i,jc,t2)
             my_val=my_val*fac3
 #  ifdef MASKING
             my_val=my_val*GRID(ng)%umask(i,j)
@@ -479,8 +474,8 @@
           DO i=IstrT,Istr-1
 !         DO i=IstrT,Istr-2
             ic=i+Nghostpoints+1
-            my_valv=fac1*BOUNDARY(ng)%vbarR_west(ic,j,t1)+              &
-     &              fac2*BOUNDARY(ng)%vbarR_west(ic,j,t2)
+            my_valv=fac1*REFINED(ng)%vbarR_west(ic,j,t1)+               &
+     &              fac2*REFINED(ng)%vbarR_west(ic,j,t2)
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
@@ -510,8 +505,8 @@
           DO i=Iend+1,IendT
 !         DO i=Iend+2,IendT
             ic=i-Iend
-            my_valv=fac1*BOUNDARY(ng)%vbarR_east(ic,j,t1)+              &
-     &              fac2*BOUNDARY(ng)%vbarR_east(ic,j,t2)
+            my_valv=fac1*REFINED(ng)%vbarR_east(ic,j,t1)+               &
+     &              fac2*REFINED(ng)%vbarR_east(ic,j,t2)
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
@@ -541,8 +536,8 @@
 !       DO j=JstrT+1,Jstr-1
           DO i=IstrT,IendT
             jc=j+Nghostpoints
-            my_valv=fac1*BOUNDARY(ng)%vbarR_south(i,jc,t1)+             &
-     &              fac2*BOUNDARY(ng)%vbarR_south(i,jc,t2)
+            my_valv=fac1*REFINED(ng)%vbarR_south(i,jc,t1)+              &
+     &              fac2*REFINED(ng)%vbarR_south(i,jc,t2)
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
@@ -572,8 +567,8 @@
 !       DO j=Jend+2,JendT
           DO i=IstrT,IendT
             jc=j-Jend
-            my_valv=fac1*BOUNDARY(ng)%vbarR_north(i,jc,t1)+             &
-     &              fac2*BOUNDARY(ng)%vbarR_north(i,jc,t2)
+            my_valv=fac1*REFINED(ng)%vbarR_north(i,jc,t1)+              &
+     &              fac2*REFINED(ng)%vbarR_north(i,jc,t2)
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
@@ -607,8 +602,8 @@
         DO j=JstrT,JendT
           DO i=IstrT,Istr-1
             ic=i+Nghostpoints+1
-            my_val=fac1*BOUNDARY(ng)%DVomR_west(ic,j,t1)+               &
-     &             fac2*BOUNDARY(ng)%DVomR_west(ic,j,t2)
+            my_val=fac1*REFINED(ng)%DVomR_west(ic,j,t1)+                &
+     &             fac2*REFINED(ng)%DVomR_west(ic,j,t2)
             my_val=my_val*fac3
 #  ifdef MASKING
             my_val=my_val*GRID(ng)%vmask(i,j)
@@ -621,8 +616,8 @@
         DO j=JstrT,JendT
           DO i=Iend+1,IendT
             ic=i-Iend
-            my_val=fac1*BOUNDARY(ng)%DVomR_east(ic,j,t1)+               &
-     &             fac2*BOUNDARY(ng)%DVomR_east(ic,j,t2)
+            my_val=fac1*REFINED(ng)%DVomR_east(ic,j,t1)+                &
+     &             fac2*REFINED(ng)%DVomR_east(ic,j,t2)
             my_val=my_val*fac3
 #  ifdef MASKING
             my_val=my_val*GRID(ng)%vmask(i,j)
@@ -635,8 +630,8 @@
         DO j=JstrT+1,Jstr
           DO i=IstrT,IendT
             jc=j+Nghostpoints
-            my_val=fac1*BOUNDARY(ng)%DVomR_south(i,jc,t1)+               &
-     &             fac2*BOUNDARY(ng)%DVomR_south(i,jc,t2)
+            my_val=fac1*REFINED(ng)%DVomR_south(i,jc,t1)+               &
+     &             fac2*REFINED(ng)%DVomR_south(i,jc,t2)
             my_val=my_val*fac3
 #  ifdef MASKING
             my_val=my_val*GRID(ng)%vmask(i,j)
@@ -649,8 +644,8 @@
         DO j=Jend+1,JendT
           DO i=IstrT,IendT
             jc=j-Jend
-            my_val=fac1*BOUNDARY(ng)%DVomR_north(i,jc,t1)+               &
-     &             fac2*BOUNDARY(ng)%DVomR_north(i,jc,t2)
+            my_val=fac1*REFINED(ng)%DVomR_north(i,jc,t1)+               &
+     &             fac2*REFINED(ng)%DVomR_north(i,jc,t2)
             my_val=my_val*fac3
 #  ifdef MASKING
             my_val=my_val*GRID(ng)%vmask(i,j)

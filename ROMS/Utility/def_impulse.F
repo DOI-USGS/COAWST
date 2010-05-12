@@ -1,10 +1,10 @@
 #include "cppdefs.h"
-#if defined WEAK_CONSTRAINT || defined IOM
+#ifdef WEAK_CONSTRAINT
       SUBROUTINE def_impulse (ng)
 !
-!svn $Id: def_impulse.F 733 2008-09-07 01:56:45Z jcwarner $
+!svn $Id: def_impulse.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -17,6 +17,9 @@
 !
       USE mod_param
       USE mod_parallel
+# ifdef BIOLOGY
+      USE mod_biology
+# endif
       USE mod_fourdvar
       USE mod_iounits
       USE mod_ncparam
@@ -25,10 +28,8 @@
 # if defined SEDIMENT || defined BBL_MODEL
       USE mod_sediment
 # endif
-# ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_bcasti
-# endif
+      USE def_var_mod, ONLY : def_var
 !
       implicit none
 !
@@ -38,17 +39,17 @@
 !
 !  Local variable declarations.
 !
-      integer, parameter :: Natt = 24
-
       logical :: Ldefine, got_var(NV)
 
-      integer :: i, j, nrec, nvd, nvd3, nvd4
+      integer, parameter :: Natt = 25
+
+      integer :: i, j, nvd3, nvd4
       integer :: recdim, status, varid
 
-      integer :: CostDim(2), DimIDs(29), t2dgrd(3), u2dgrd(3), v2dgrd(3)
+      integer :: DimIDs(32), t2dgrd(3), u2dgrd(3), v2dgrd(3)
       integer :: Vsize(4)
 
-      integer :: def_info, def_var, wrt_info
+      integer :: def_dim
 
 # ifdef SOLVE3D
       integer :: itrc
@@ -59,102 +60,157 @@
       real(r8) :: Aval(6)
 
       character (len=80) :: Vinfo(Natt)
-      character (len=80) :: fname, ncname
+      character (len=80) :: ncname
+!
+      SourceFile='def_impulse.F'
 !
 !=======================================================================
-!  Create a new background covariace normalization file.
+!  Create a new impulse forcing file.
 !=======================================================================
 !
       IF (exit_flag.ne.NoError) RETURN
       ncname=TLFname(ng)
-      IF (LdefTLF(ng).and.OutThread) THEN
-        status=nf90_create(TRIM(ncname),nf90_clobber,ncTLFid(ng))
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) TRIM(ncname)
-          exit_flag=3
-          ioerror=status
+!
+      DEFINE : IF (LdefTLF(ng)) THEN
+        CALL netcdf_create (ng, iTLM, TRIM(ncname), ncTLFid(ng))
+        IF (exit_flag.ne.NoError) THEN
+          IF (Master) WRITE (stdout,10) TRIM(ncname)
           RETURN
         END IF
-      END IF
-# ifdef DISTRIBUTE
-      IF (LdefTLF(ng)) THEN
-        CALL mp_bcasti (ng, iTLM, ncTLFid(ng), 1)
-      END IF
-# endif
 !
 !-----------------------------------------------------------------------
-!  Define the dimensions of staggered fields.
+!  Define file dimensions.
 !-----------------------------------------------------------------------
 !
-      IF (LdefTLF(ng).and.OutThread) THEN
-        status=nf90_def_dim(ncTLFid(ng),'xi_rho'  ,Lm(ng)+2,            &
-     &                      DimIDs( 1))
-        status=nf90_def_dim(ncTLFid(ng),'xi_u'    ,Lm(ng)+1,            &
-     &                      DimIDs( 2))
-        status=nf90_def_dim(ncTLFid(ng),'xi_v'    ,Lm(ng)+2,            &
-     &                      DimIDs( 3))
-        status=nf90_def_dim(ncTLFid(ng),'xi_psi'  ,Lm(ng)+1,            &
-     &                      DimIDs( 4))
-        status=nf90_def_dim(ncTLFid(ng),'eta_rho' ,Mm(ng)+2,            &
-     &                      DimIDs( 5))
-        status=nf90_def_dim(ncTLFid(ng),'eta_u'   ,Mm(ng)+2,            &
-     &                      DimIDs( 6))
-        status=nf90_def_dim(ncTLFid(ng),'eta_v'   ,Mm(ng)+1,            &
-     &                      DimIDs( 7))
-        status=nf90_def_dim(ncTLFid(ng),'eta_psi' ,Mm(ng)+1,            &
-     &                      DimIDs( 8))
+        DimIDs=0
+!
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xi_rho',         &
+     &                 IOBOUNDS(ng)%xi_rho, DimIDs( 1))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xi_u',           &
+     &                 IOBOUNDS(ng)%xi_u, DimIDs( 2))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xi_v',           &
+     &                 IOBOUNDS(ng)%xi_v, DimIDs( 3))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xi_psi',         &
+     &                 IOBOUNDS(ng)%xi_psi, DimIDs( 4))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'eta_rho',        &
+     &                 IOBOUNDS(ng)%eta_rho, DimIDs( 5))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'eta_u',          &
+     &                 IOBOUNDS(ng)%eta_u, DimIDs( 6))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'eta_v',          &
+     &                 IOBOUNDS(ng)%eta_v, DimIDs( 7))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'eta_psi',        &
+     &                 IOBOUNDS(ng)%eta_psi, DimIDs( 8))
+        IF (exit_flag.ne.NoError) RETURN
+
 # if defined WRITE_WATER && defined MASKING
-        status=nf90_def_dim(ncTLFid(ng),'xy_rho'  ,Nxyr(ng),            &
-     &                      DimIDs(17))
-        status=nf90_def_dim(ncTLFid(ng),'xy_u'    ,Nxyu(ng),            &
-     &                      DimIDs(18))
-        status=nf90_def_dim(ncTLFid(ng),'xy_v'    ,Nxyv(ng),            &
-     &                      DimIDs(19))
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xy_rho',         &
+     &                 IOBOUNDS(ng)%xy_rho, DimIDs(17))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xy_u',           &
+     &                 IOBOUNDS(ng)%xy_u, DimIDs(18))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xy_v',           &
+     &                 IOBOUNDS(ng)%xy_v, DimIDs(19))
+        IF (exit_flag.ne.NoError) RETURN
 # endif
+
 # ifdef SOLVE3D
 #  if defined WRITE_WATER && defined MASKING
-        status=nf90_def_dim(ncTLFid(ng),'xyz_rho' ,Nxyr(ng)*N(ng),      &
-     &                      DimIDs(20))
-        status=nf90_def_dim(ncTLFid(ng),'xyz_u'   ,Nxyu(ng)*N(ng),      &
-     &                      DimIDs(21))
-        status=nf90_def_dim(ncTLFid(ng),'xyz_v'   ,Nxyv(ng)*N(ng),      &
-     &                      DimIDs(22))
-        status=nf90_def_dim(ncTLFid(ng),'xyz_w'   ,Nxyr(ng)*(N(ng)+1),  &
-     &                      DimIDs(23))
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xyz_rho',        &
+     &                 IOBOUNDS(ng)%xy_rho*N(ng), DimIDs(20))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xyz_u',          &
+     &                 IOBOUNDS(ng)%xy_u*N(ng), DimIDs(21))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xyz_v',          &
+     &                 IOBOUNDS(ng)%xy_v*N(ng), DimIDs(22))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xyz_w',          &
+     &                 IOBOUNDS(ng)%xy_rho*(N(ng)+1), DimIDs(23))
+        IF (exit_flag.ne.NoError) RETURN
 #  endif
-        status=nf90_def_dim(ncTLFid(ng),'s_rho'   ,N(ng),               &
-     &                      DimIDs( 9))
-        status=nf90_def_dim(ncTLFid(ng),'s_w'     ,N(ng)+1,             &
-     &                      DimIDs(10))
-        status=nf90_def_dim(ncTLFid(ng),'tracer'  ,NT(ng),              &
-     &                      DimIDs(11))
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 's_rho',          &
+     &                 N(ng), DimIDs( 9))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 's_w',            &
+     &                 N(ng)+1, DimIDs(10))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'tracer',         &
+     &                 NT(ng), DimIDs(11))
+        IF (exit_flag.ne.NoError) RETURN
+
 #  ifdef SEDIMENT
-        status=nf90_def_dim(ncTLFid(ng),'Nbed'    ,Nbed,                &
-     &                      DimIDs(16))
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'NST',            &
+     &                 NST, DimIDs(32))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'Nbed',           &
+     &                 Nbed, DimIDs(16))
+        IF (exit_flag.ne.NoError) RETURN
+
 #   if defined WRITE_WATER && defined MASKING
-        status=nf90_def_dim(ncTLFid(ng),'xybed'   ,Nxyr(ng)*Nbed,       &
-     &                      DimIDs(24))
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xybed',          &
+     &                 IOBOUNDS(ng)%xy_rho*Nbed, DimIDs(24))
+        IF (exit_flag.ne.NoError) RETURN
 #   endif
 #  endif
+
 #  ifdef ECOSIM
-        status=nf90_def_dim(ncTLFid(ng),'Nphy'    ,Nphy,                &
-     &                      DimIDs(25))
-        status=nf90_def_dim(ncTLFid(ng),'Nbac'    ,Nbac,                &
-     &                      DimIDs(26))
-        status=nf90_def_dim(ncTLFid(ng),'Ndom'    ,Ndom,                &
-     &                      DimIDs(27))
-        status=nf90_def_dim(ncTLFid(ng),'Nfec'    ,Nfec,                &
-     &                      DimIDs(28))
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'Nphy',           &
+     &                 Nphy, DimIDs(25))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'Nbac',           &
+     &                 Nbac, DimIDs(26))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'Ndom',           &
+     &                 Ndom, DimIDs(27))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'Nfec',           &
+     &                 Nfec, DimIDs(28))
+        IF (exit_flag.ne.NoError) RETURN
 #  endif
 # endif
-        status=nf90_def_dim(ncTLFid(ng),'boundary',4,                   &
-     &                      DimIDs(14))
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'boundary',       &
+     &                 4, DimIDs(14))
+        IF (exit_flag.ne.NoError) RETURN
+
 # ifdef FOUR_DVAR
-        status=nf90_def_dim(ncTLFid(ng),'Nstate  ',NstateVar(ng),       &
-     &                      DimIDs(29))
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'Nstate',         &
+     &                 NstateVar(ng), DimIDs(29))
+        IF (exit_flag.ne.NoError) RETURN
 # endif
-        status=nf90_def_dim(ncTLFid(ng),TRIM(ADJUSTL(Vname(5,idtime))), &
-     &                      nf90_unlimited,DimIDs(12))
+
+        status=def_dim(ng, iTLM, ncTLFid(ng), ncname,                   &
+     &                 TRIM(ADJUSTL(Vname(5,idtime))),                  &
+     &                 nf90_unlimited, DimIDs(12))
+        IF (exit_flag.ne.NoError) RETURN
+
         recdim=DimIDs(12)
 !
 !  Set number of dimensions for output variables.
@@ -237,8 +293,8 @@
 !  Initialize local information variable arrays.
 !
         DO i=1,Natt
-          DO j=1,80
-            Vinfo(i)=' '
+          DO j=1,LEN(Vinfo(1))
+            Vinfo(i)(j:j)=' '
           END DO
         END DO
         DO i=1,6
@@ -249,7 +305,7 @@
 !  Define time-recordless information variables.
 !-----------------------------------------------------------------------
 !
-        status=def_info(ng,ncTLFid(ng),ncname,DimIDs)
+        CALL def_info (ng, iTLM, ncTLFid(ng), ncname, DimIDs)
         IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
@@ -274,97 +330,105 @@
           Vinfo( 4)='standard'
         END IF
         Vinfo(14)=Vname(4,idtime)
-        status=def_var(ncTLFid(ng),tlfVid(idtime,ng),NF_TYPE,           &
-     &                 1,recdim,Aval,Vinfo,ncname)
+        status=def_var(ng, iTLM, ncTLFid(ng), tlfVid(idtime,ng),        &
+     &                 NF_TYPE, 1, (/recdim/), Aval, Vinfo, ncname,     &
+     &                 SetParAccess = .FALSE.)
+        IF (exit_flag.ne.NoError) RETURN
 !
 !  Define free-surface impulse forcing.
 !
-        Vinfo( 1)=Vname(1,idFsur)
-        WRITE (Vinfo( 2),20) TRIM(Vname(2,idFsur))
-        Vinfo( 3)=Vname(3,idFsur)
-        Vinfo(14)=Vname(4,idFsur)
+        Vinfo( 1)=Vname(1,idZtlf)
+        Vinfo( 2)=Vname(2,idZtlf)
+        Vinfo( 3)=Vname(3,idZtlf)
+        Vinfo(14)=Vname(4,idZtlf)
         Vinfo(16)=Vname(1,idtime)
 # if defined WRITE_WATER && defined MASKING
         Vinfo(20)='mask_rho'
 # endif
         Vinfo(22)='coordinates'
-        Aval(5)=REAL(Iinfo(1,idFsur,ng),r8)
-        status=def_var(ncTLFid(ng),tlfVid(idFsur,ng),NF_FOUT,           &
-     &                 nvd3,t2dgrd,Aval,Vinfo,ncname)
+        Aval(5)=REAL(Iinfo(1,idZtlf,ng),r8)
+        status=def_var(ng, iTLM, ncTLFid(ng), tlfVid(idZtlf,ng),        &
+     &                 NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+        IF (exit_flag.ne.NoError) RETURN
 !
-!  Define 2D momentum impulse forcing in the XI-direction.
+!  Define 2D U-momentum component impulse forcing.
 !
-        Vinfo( 1)=Vname(1,idUbar)
-        WRITE (Vinfo( 2),20) TRIM(Vname(2,idUbar))
-        Vinfo( 3)=Vname(3,idUbar)
-        Vinfo(14)=Vname(4,idUbar)
+        Vinfo( 1)=Vname(1,idUbtf)
+        Vinfo( 2)=Vname(2,idUbtf)
+        Vinfo( 3)=Vname(3,idUbtf)
+        Vinfo(14)=Vname(4,idUbtf)
         Vinfo(16)=Vname(1,idtime)
 # if defined WRITE_WATER && defined MASKING
         Vinfo(20)='mask_u'
 # endif
         Vinfo(22)='coordinates'
-        Aval(5)=REAL(Iinfo(1,idUbar,ng),r8)
-        status=def_var(ncTLFid(ng),tlfVid(idUbar,ng),NF_FOUT,           &
-     &                 nvd3,u2dgrd,Aval,Vinfo,ncname)
+        Aval(5)=REAL(Iinfo(1,idUbtf,ng),r8)
+        status=def_var(ng, iTLM, ncTLFid(ng), tlfVid(idUbtf,ng),        &
+     &                 NF_FOUT, nvd3, u2dgrd, Aval, Vinfo, ncname)
+        IF (exit_flag.ne.NoError) RETURN
 !
-!  Define 2D momentum impulse forcing in the ETA-direction.
+!  Define 2D V-momentum component impulse forcing.
 !
-        Vinfo( 1)=Vname(1,idVbar)
-        WRITE (Vinfo( 2),20) TRIM(Vname(2,idVbar))
-        Vinfo( 3)=Vname(3,idVbar)
-        Vinfo(14)=Vname(4,idVbar)
+        Vinfo( 1)=Vname(1,idVbtf)
+        Vinfo( 2)=Vname(2,idVbtf)
+        Vinfo( 3)=Vname(3,idVbtf)
+        Vinfo(14)=Vname(4,idVbtf)
         Vinfo(16)=Vname(1,idtime)
 # if defined WRITE_WATER && defined MASKING
         Vinfo(20)='mask_v'
 # endif
         Vinfo(22)='coordinates'
-        Aval(5)=REAL(Iinfo(1,idVbar,ng),r8)
-        status=def_var(ncTLFid(ng),tlfVid(idVbar,ng),NF_FOUT,           &
-     &                 nvd3,v2dgrd,Aval,Vinfo,ncname)
+        Aval(5)=REAL(Iinfo(1,idVbtf,ng),r8)
+        status=def_var(ng, iTLM, ncTLFid(ng), tlfVid(idVbtf,ng),        &
+     &                 NF_FOUT, nvd3, v2dgrd, Aval, Vinfo, ncname)
+        IF (exit_flag.ne.NoError) RETURN
+
 # ifdef SOLVE3D
 !
-!  Define 3D momentum impulse forcing in the XI-direction.
+!  Define 3D U-momentum component impulse forcing.
 !
-        Vinfo( 1)=Vname(1,idUvel)
-        WRITE (Vinfo( 2),20) TRIM(Vname(2,idUvel))
-        Vinfo( 3)=Vname(3,idUvel)
-        Vinfo(14)=Vname(4,idUvel)
+        Vinfo( 1)=Vname(1,idUtlf)
+        Vinfo( 2)=Vname(2,idUtlf)
+        Vinfo( 3)=Vname(3,idUtlf)
+        Vinfo(14)=Vname(4,idUtlf)
         Vinfo(16)=Vname(1,idtime)
 #  if defined WRITE_WATER && defined MASKING
         Vinfo(20)='mask_u'
 #  endif
         Vinfo(22)='coordinates'
-        Aval(5)=REAL(Iinfo(1,idUvel,ng),r8)
-        status=def_var(ncTLFid(ng),tlfVid(idUvel,ng),NF_FOUT,           &
-     &                 nvd4,u3dgrd,Aval,Vinfo,ncname)
+        Aval(5)=REAL(Iinfo(1,idUtlf,ng),r8)
+        status=def_var(ng, iTLM, ncTLFid(ng), tlfVid(idUtlf,ng),        &
+     &                 NF_FOUT, nvd4, u3dgrd, Aval, Vinfo, ncname)
+        IF (exit_flag.ne.NoError) RETURN
 !
-!  Define 3D momentum norm in the ETA-direction.
+!  Define 3D V-momentum component impulse forcing.
 !
-        Vinfo( 1)=Vname(1,idVvel)
-        WRITE (Vinfo( 2),20) TRIM(Vname(2,idVvel))
-        Vinfo( 3)=Vname(3,idVvel)
-        Vinfo(14)=Vname(4,idVvel)
+        Vinfo( 1)=Vname(1,idVtlf)
+        Vinfo( 2)=Vname(2,idVtlf)
+        Vinfo( 3)=Vname(3,idVtlf)
+        Vinfo(14)=Vname(4,idVtlf)
         Vinfo(16)=Vname(1,idtime)
 #  if defined WRITE_WATER && defined MASKING
         Vinfo(20)='mask_v'
 #  endif
         Vinfo(22)='coordinates'
-        Aval(5)=REAL(Iinfo(1,idVvel,ng),r8)
-        status=def_var(ncTLFid(ng),tlfVid(idVvel,ng),NF_FOUT,           &
-     &                 nvd4,v3dgrd,Aval,Vinfo,ncname)
+        Aval(5)=REAL(Iinfo(1,idVtlf,ng),r8)
+        status=def_var(ng, iTLM, ncTLFid(ng), tlfVid(idVtlf,ng),        &
+     &                 NF_FOUT, nvd4, v3dgrd, Aval, Vinfo, ncname)
+        IF (exit_flag.ne.NoError) RETURN
 !
 !  Define tracer type impulse forcing variables.
 !
         DO itrc=1,NT(ng)
-          Vinfo( 1)=Vname(1,idTvar(itrc))
-          WRITE (Vinfo( 2),20) TRIM(Vname(2,idTvar(itrc)))
-          Vinfo( 3)=Vname(3,idTvar(itrc))
-          Vinfo(14)=Vname(4,idTvar(itrc))
+          Vinfo( 1)=Vname(1,idTtlf(itrc))
+          Vinfo( 2)=Vname(2,idTtlf(itrc))
+          Vinfo( 3)=Vname(3,idTtlf(itrc))
+          Vinfo(14)=Vname(4,idTtlf(itrc))
           Vinfo(16)=Vname(1,idtime)
 #  ifdef SEDIMENT
             DO i=1,NST
               IF (itrc.eq.idsed(i)) THEN
-                WRITE (Vinfo(19),30) 1000.0_r8*Sd50(i,ng)
+                WRITE (Vinfo(19),20) 1000.0_r8*Sd50(i,ng)
               END IF
             END DO
 #  endif
@@ -373,51 +437,52 @@
 #  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r3dvar,r8)
-          status=def_var(ncTLFid(ng),tlfTid(itrc,ng),NF_FOUT,           &
-     &                   nvd4,t3dgrd,Aval,Vinfo,ncname)
+          status=def_var(ng, iTLM, ncTLFid(ng), tlfTid(itrc,ng),        &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
         END DO
-
 # endif
 !
 !-----------------------------------------------------------------------
 !  Leave definition mode.
 !-----------------------------------------------------------------------
 !
-        status=nf90_enddef(ncTLFid(ng))
-      END IF
+        CALL netcdf_enddef (ng, iTLM, ncname, ncTLFid(ng))
+        IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
 !  Write out time-recordless, information variables.  Deactive file
 !  creation switch.
 !-----------------------------------------------------------------------
 !
-      IF (LdefTLF(ng)) THEN
-        status=wrt_info(ng, iNLM, ncTLFid(ng), OutThread, ncname)
+        CALL wrt_info (ng, iTLM, ncTLFid(ng), ncname)
         IF (exit_flag.ne.NoError) RETURN
         LdefTLF(ng)=.FALSE.
-      END IF
+      END IF DEFINE
 !
 !=======================================================================
 !  Open an existing impulse forcing file, check its contents, and
 !  prepare for appending data.
 !=======================================================================
 !
-      IF (.not.LdefTLF(ng).and.OutThread) THEN
-!
-!  Inquire about the contents of impulse forcing NetCDF file:  Inquire
-!  about the dimensions and variables.  Check for consistency.
-!
+      QUERY : IF (.not.LdefTLF(ng)) THEN
         ncname=TLFname(ng)
-        CALL opencdf (ng, 1, ncname, fname, N(ng), 0, nrec, nvd, Vsize)
+!
+!  Inquire about the dimensions and check for consistency.
+!
+        CALL netcdf_check_dim (ng, iTLM, ncname)
+        IF (exit_flag.ne.NoError) RETURN
+!
+!  Inquire about the variables.
+!
+        CALL netcdf_inq_var (ng, iTLM, ncname)
         IF (exit_flag.ne.NoError) RETURN
 !
 !  Open impulse forcing file for read/write.
 !
-        status=nf90_open(TRIM(ncname),nf90_write,ncTLFid(ng))
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,40) TRIM(ncname)
-          exit_flag=3
-          ioerror=status
+        CALL netcdf_open (ng, iTLM, ncname, 1, ncTLFid(ng))
+        IF (exit_flag.ne.NoError) THEN
+          WRITE (stdout,30) TRIM(ncname)
           RETURN
         END IF
 !
@@ -430,44 +495,33 @@
 !  Scan variable list from input NetCDF and activate switches for
 !  impulse forcing variables. Get variable IDs.
 !
-        DO i=1,nvars
-          IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idtime))) THEN
+        DO i=1,n_var
+          IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idtime))) THEN
             got_var(idtime)=.TRUE.
-            status=nf90_inq_varid(ncTLFid(ng),TRIM(Vname(1,idtime)),    &
-     &                            tlfVid(idtime,ng))
-          END IF
-          IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idFsur))) THEN
-            got_var(idFsur)=.TRUE.
-            status=nf90_inq_varid(ncTLFid(ng),TRIM(Vname(1,idFsur)),    &
-     &                            tlfVid(idFsur,ng))
-          END IF
-          IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idUbar))) THEN
-            got_var(idUbar)=.TRUE.
-            status=nf90_inq_varid(ncTLFid(ng),TRIM(Vname(1,idUbar)),    &
-     &                            tlfVid(idUbar,ng))
-          END IF
-          IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idVbar))) THEN
-            got_var(idVbar)=.TRUE.
-            status=nf90_inq_varid(ncTLFid(ng),TRIM(Vname(1,idVbar)),    &
-     &                            tlfVid(idVbar,ng))
+            tlfVid(idtime,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idZtlf))) THEN
+            got_var(idZtlf)=.TRUE.
+            tlfVid(idZtlf,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUbtf))) THEN
+            got_var(idUbtf)=.TRUE.
+            tlfVid(idUbtf,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVbtf))) THEN
+            got_var(idVbtf)=.TRUE.
+            tlfVid(idVbtf,ng)=var_id(i)
+# ifdef SOLVE3D
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUtlf))) THEN
+            got_var(idUtlf)=.TRUE.
+            tlfVid(idUtlf,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVtlf))) THEN
+            got_var(idVtlf)=.TRUE.
+            tlfVid(idVtlf,ng)=var_id(i)
+# endif
           END IF
 # ifdef SOLVE3D
-          IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idUvel))) THEN
-            got_var(idUvel)=.TRUE.
-            status=nf90_inq_varid(ncTLFid(ng),TRIM(Vname(1,idUvel)),    &
-     &                            tlfVid(idUvel,ng))
-          END IF
-          IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idVvel))) THEN
-            got_var(idVvel)=.TRUE.
-            status=nf90_inq_varid(ncTLFid(ng),TRIM(Vname(1,idVvel)),    &
-     &                            tlfVid(idVvel,ng))
-          END IF
           DO itrc=1,NT(ng)
-            IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idTvar(itrc)))) THEN
-             got_var(idTvar(itrc))=.TRUE.
-             status=nf90_inq_varid(ncTLFid(ng),                         &
-     &                             TRIM(Vname(1,idTvar(itrc))),         &
-     &                             tlfTid(itrc,ng))
+            IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTtlf(itrc)))) THEN
+             got_var(idTtlf(itrc))=.TRUE.
+             tlfTid(itrc,ng)=var_id(i)
             END IF
           END DO
 # endif
@@ -477,39 +531,48 @@
 !  file.
 !
         IF (.not.got_var(idtime)) THEN
-          WRITE (stdout,40) TRIM(Vname(1,idtime)), TRIM(ncname)
+          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idtime)),          &
+     &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idFsur)) THEN
-          WRITE (stdout,40) TRIM(Vname(1,idFsur)), TRIM(ncname)
+        IF (.not.got_var(idZtlf)) THEN
+          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idZtlf)),          &
+     &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idUbar)) THEN
-          WRITE (stdout,40) TRIM(Vname(1,idUbar)), TRIM(ncname)
+        IF (.not.got_var(idUbtf)) THEN
+          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idUbtf)),          &
+     &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idVbar)) THEN
-          WRITE (stdout,40) TRIM(Vname(1,idVbar)), TRIM(ncname)
+        IF (.not.got_var(idVbtf)) THEN
+          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idVbtf)),          &
+     &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
 # ifdef SOLVE3D
-        IF (.not.got_var(idUvel)) THEN
-          WRITE (stdout,40) TRIM(Vname(1,idUvel)), TRIM(ncname)
+        IF (.not.got_var(idUtlf)) THEN
+          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idUtlf)),          &
+     &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idVvel)) THEN
-          WRITE (stdout,40) TRIM(Vname(1,idVvel)), TRIM(ncname)
+        IF (.not.got_var(idVtlf)) THEN
+          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idVtlf)),          &
+     &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
+# endif
+# ifdef SOLVE3D
         DO itrc=1,NT(ng)
-          IF (.not.got_var(idTvar(itrc))) THEN
-            WRITE (stdout,40) TRIM(Vname(1,idTvar(itrc))), TRIM(ncname)
+          IF (.not.got_var(idTtlf(itrc))) THEN
+            IF (Master) WRITE (stdout,40) TRIM(Vname(1,idTtlf(itrc))),  &
+     &                                   TRIM(ncname)
             exit_flag=3
             RETURN
           END IF
@@ -518,15 +581,16 @@
 !
 !  Set unlimited time record dimension to the appropriate value.
 !
-        tTLFindx(ng)=tsize
-      END IF
+        tTLFindx(ng)=rec_size
+      END IF QUERY
 !
   10  FORMAT (/,' DEF_IMPULSE - unable to create impulse forcing',      &
      &          ' NetCDF file: ',a)
-  20  FORMAT (a,', impulse forcing')
-  30  FORMAT (1pe11.4,1x,'millimeter')
+  20  FORMAT (1pe11.4,1x,'millimeter')
+  30  FORMAT (/,' DEF_IMPULSE - unable to open norm NetCDF file: ',a)
   40  FORMAT (/,' DEF_IMPULSE - unable to find variable: ',a,2x,        &
      &        ' in impulse forcing NetCDF file: ',a)
+
       RETURN
       END SUBROUTINE def_impulse
 #else

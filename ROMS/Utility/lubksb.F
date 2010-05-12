@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE lubksb (a, n, np, indx, b)
 !
-!svn $Id: lubksb.F 503 2008-01-10 00:11:51Z arango $
+!svn $Id: lubksb.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

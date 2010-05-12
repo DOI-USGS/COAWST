@@ -2,9 +2,9 @@
       MODULE extract_obs_mod
 #if defined FOUR_DVAR || defined VERIFICATION
 !
-!svn $Id: extract_obs.F 503 2008-01-10 00:11:51Z arango $
+!svn $Id: extract_obs.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -18,29 +18,29 @@
 !  On Input:                                                           !
 !                                                                      !
 !     ng         Nested grid number.                                   !
-!     Imin       I-coordinate lower bound threshold for requested      !
-!                  state field type.                                   !
-!     Imax       I-coordinate upper bound threshold for requested      !
-!                  state field type.                                   !
-!     Jmin       J-coordinate lower bound threshold for requested      !
-!                  state field type.                                   !
-!     Jmax       J-coordinate upper bound threshold for requested      !
-!                  state field type.                                   !
+!     Imin       Global I-coordinate lower bound threshold for         !
+!                  requested state field type.                         !
+!     Imax       Global I-coordinate upper bound threshold for         !
+!                  requested state field type.                         !
+!     Jmin       Global J-coordinate lower bound threshold for         !
+!                  requested state field type.                         !
+!     Jmax       Global J-coordinate upper bound threshold for         !
+!                  requested state field type.                         !
 !     LBi        I-dimension Lower bound.                              !
 !     UBi        I-dimension Upper bound.                              !
 !     LBj        J-dimension Lower bound.                              !
 !     UBj        J-dimension Upper bound.                              !
 !     LBk        K-dimension Lower bound.                              !
 !     UBk        K-dimension Upper bound.                              !
-!     ILB        Global lower bound I-coordinate to consider.          !
-!     IUB        Global upper bound I-coordinate to consider.          !
-!     JLB        Global lower bound J-coordinate to consider.          !
-!     JUB        Global upper bound J-coordinate to consider.          !
 !     ifield     State field identification to process.                !
 !     Mobs       Observation dimension in the calling program.         !
 !     NobsSTR    Starting observation to process.                      !
 !     NobsEND    Last observations to process.                         !
-!     time       Current model time (secods).                          !
+!     Xmin       Global minimum fractional I-coordinate to consider.   !
+!     Xmax       Global maximum fractional I-coordinate to consider.   !
+!     Ymin       Global minimum fractional J-coordinate to consider.   !
+!     Ymax       Global maximum fractional J-coordinate to consider.   !
+!     time       Current model time (seconds).                         !
 !     dt         Model baroclinic time-step (seconds).                 !
 !     ObsType    Observations type.                                    !
 !     Tobs       Observations time (days).                             !
@@ -54,7 +54,7 @@
 !  On Output:                                                          !
 !                                                                      !
 !     ObsScale   Observation screenning flag.                          !
-!     Aobs       Extracted model values at observation positions.      ! 
+!     Aobs       Extracted model values at observation positions.      !
 !     Zobs       Observations Z-locations (grid coordinates).          !
 !                                                                      !
 !  The interpolation weights matrix, Hmat(1:8), is as follows:         !
@@ -70,6 +70,44 @@
 !                             |.          | /                          !
 !                  (i1,j1,k1) |___________|/                           !
 !                             1           2                            !
+!                                                                      !
+!  Notice that the indices i2 and j2 are reset when observations are   !
+!  located exactly at the eastern and/or northern boundaries. This is  !
+!  needed to avoid out-of-range array computations.                    !
+!                                                                      !
+!  All the observations are assumed to in fractional coordinates with  !
+!  respect to RHO-points:                                              !
+!                                                                      !
+!                                                                      !
+!  M      r..u..r..u..r..u..r..u..r..u..r..u..r..u..r..u..r..u..r      !
+!         :                                                     :      !
+!  Mm+.5  v  p++v++p++v++p++v++p++v++p++v++p++v++p++v++p++v++p  v      !
+!         :  +     |     |     |     |     |     |     |     +  :      !
+!  Mm     r  u  r  u  r  u  r  u  r  u  r  u  r  u  r  u  r  u  r      !
+!         :  +     |     |     |     |     |     |     |     +  :      !
+!  Mm-.5  v  p--v--p--v--p--v--p--v--p--v--p--v--p--v--p--v--p  v      !
+!         :  +     |     |     |     |     |     |     |     +  :      !
+!         r  u  r  u  r  u  r  u  r  u  r  u  r  u  r  u  r  u  r      !
+!         :  +     |     |     |     |     |     |     |     +  :      !
+!         v  p--v--p--v--p--v--p--v--p--v--p--v--p--v--p--v--p  v      !
+!         :  +     |     |     |     |     |     |     |     +  :      !
+!         r  u  r  u  r  u  r  u  r  u  r  u  r  u  r  u  r  u  r      !
+!         :  +     |     |     |     |     |     |     |     +  :      !
+!  2.5    v  p--v--p--v--p--v--p--v--p--v--p--v--p--v--p--v--p  v      !
+!         :  +     |     |     |     |     |     |     |     +  :      !
+!  2.0    r  u  r  u  r  u  r  u  r  u  r  u  r  u  r  u  r  u  r      !
+!         :  +     |     |     |     |     |     |     |     +  :      !
+!  1.5    v  p--v--p--v--p--v--p--v--p--v--p--v--p--v--p--v--p  v      !
+!         :  +     |     |     |     |     |     |     |     +  :      !
+!  1.0    r  u  r  u  r  u  r  u  r  u  r  u  r  u  r  u  r  u  r      !
+!         :  +     |     |     |     |     |     |     |     +  :      !
+!  0.5    v  p++v++p++v++p++v++p++v++p++v++p++v++p++v++p++v++p  v      !
+!         :                                                     :      !
+!  0.0    r..u..r..u..r..u..r..u..r..u..r..u..r..u..r..u..r..u..r      !
+!                                                                      !
+!           0.5   1.5   2.5                          Lm-.5 Lm+.5       !
+!                                                                      !
+!        0.0   1.0   2.0                                  Lm    L      !
 !                                                                      !
 !=======================================================================
 !
@@ -87,8 +125,8 @@
 !***********************************************************************
       SUBROUTINE extract_obs2d (ng, Imin, Imax, Jmin, Jmax,             &
      &                          LBi, UBi, LBj, UBj,                     &
-     &                          ILB, IUB, JLB, JUB,                     &
      &                          ifield, Mobs, NobsSTR, NobsEND,         &
+     &                          Xmin, Xmax, Ymin, Ymax,                 &
      &                          time, dt,                               &
      &                          ObsType, ObsScale,                      &
      &                          Tobs, Xobs, Yobs,                       &
@@ -103,9 +141,9 @@
 !
       integer, intent(in) :: ng, Imin, Imax, Jmin, Jmax
       integer, intent(in) :: LBi, UBi, LBj, UBj
-      integer, intent(in) :: ILB, IUB, JLB, JUB
       integer, intent(in) :: ifield, Mobs, NobsSTR, NobsEND
 !
+      real(r8), intent(in) :: Xmin, Xmax, Ymin, Ymax
       real(r8), intent(in) :: time, dt
 !
 # ifdef ASSUMED_SHAPE
@@ -151,16 +189,28 @@
       TimeUB=(time+0.5_r8*dt)/86400.0_r8
 !
       DO iobs=NobsSTR,NobsEND
-        i1=INT(Xobs(iobs))
-        i2=i1+1
-        j1=INT(Yobs(iobs))
-        j2=j1+1
         IF ((ObsType(iobs).eq.ifield).and.                              &
      &      ((TimeLB.le.Tobs(iobs)).and.(Tobs(iobs).lt.TimeUB)).and.    &
-     &      ((Imin.le.i1).and.(i1.le.Imax)).and.                        &
-     &      ((ILB .le.i1).and.(i1.le.IUB )).and.                        &
-     &      ((Jmin.le.j1).and.(j1.le.Jmax)).and.                        &
-     &      ((JLB .le.j1).and.(j1.le.JUB ))) THEN
+     &      ((Xmin.le.Xobs(iobs)).and.(Xobs(iobs).lt.Xmax)).and.        &
+     &      ((Ymin.le.Yobs(iobs)).and.(Yobs(iobs).lt.Ymax))) THEN
+          IF (ObsType(iobs).eq.2) THEN
+            i1=INT(Xobs(iobs)+0.5_r8)        ! 2D U-grid type variable
+            j1=INT(Yobs(iobs))
+          ELSE IF (ObsType(iobs).eq.3) THEN
+            i1=INT(Xobs(iobs))               ! 2D V-grid type variable
+            j1=INT(Yobs(iobs)+0.5_r8)
+          ELSE
+            i1=INT(Xobs(iobs))               ! 2D RHO-grid type variable
+            j1=INT(Yobs(iobs))
+          END IF
+          i2=i1+1
+          j2=j1+1
+          IF (i2.gt.Imax) THEN
+            i2=i1                 ! Observation at the eastern boundary
+          END IF
+          IF (j2.gt.Jmax) THEN
+            j2=j1                 ! Observation at the northern boundary
+          END IF
           p2=REAL(i2-i1,r8)*(Xobs(iobs)-REAL(i1,r8))
           q2=REAL(j2-j1,r8)*(Yobs(iobs)-REAL(j1,r8))
           p1=1.0_r8-p2
@@ -180,21 +230,19 @@
           END DO
           IF (wsum.gt.0.0_r8) THEN
             wsum=1.0_r8/wsum
-            DO ic=1,4 
-              Hmat(ic)=Hmat(ic)*wsum 
+            DO ic=1,4
+              Hmat(ic)=Hmat(ic)*wsum
             END DO
-          END IF          
+          END IF
 # endif
           Aobs(iobs)=Hmat(1)*A(i1,j1)+                                  &
      &               Hmat(2)*A(i2,j1)+                                  &
      &               Hmat(3)*A(i2,j2)+                                  &
      &               Hmat(4)*A(i1,j2)
-# ifndef S4DVAR
-#  ifdef MASKING
+# ifdef MASKING
           IF (wsum.gt.0.0_r8) ObsScale(iobs)=1.0_r8
-#  else
+# else
           ObsScale(iobs)=1.0_r8
-#  endif
 # endif
         END IF
       END DO
@@ -207,8 +255,8 @@
 !***********************************************************************
       SUBROUTINE extract_obs3d (ng, Imin, Imax, Jmin, Jmax,             &
      &                          LBi, UBi, LBj, UBj, LBk, UBk,           &
-     &                          ILB, IUB, JLB, JUB,                     &
      &                          ifield, Mobs, NobsSTR, NobsEND,         &
+     &                          Xmin, Xmax, Ymin, Ymax,                 &
      &                          time, dt,                               &
      &                          ObsType, ObsScale,                      &
      &                          Tobs, Xobs, Yobs, Zobs,                 &
@@ -225,9 +273,9 @@
 !
       integer, intent(in) :: ng, Imin, Imax, Jmin, Jmax
       integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk
-      integer, intent(in) :: ILB, IUB, JLB, JUB
       integer, intent(in) :: ifield, Mobs, NobsSTR, NobsEND
 !
+      real(r8), intent(in) :: Xmin, Xmax, Ymin, Ymax
       real(r8), intent(in) :: time, dt
 !
 #  ifdef ASSUMED_SHAPE
@@ -277,16 +325,28 @@
       TimeUB=(time+0.5_r8*dt)/86400.0_r8
 !
       DO iobs=NobsSTR,NobsEND
-        i1=INT(Xobs(iobs))
-        i2=i1+1
-        j1=INT(Yobs(iobs))
-        j2=j1+1
         IF ((ObsType(iobs).eq.ifield).and.                              &
      &      ((TimeLB.le.Tobs(iobs)).and.(Tobs(iobs).lt.TimeUB)).and.    &
-     &      ((Imin.le.i1).and.(i1.le.Imax)).and.                        &
-     &      ((ILB .le.i1).and.(i1.le.IUB )).and.                        &
-     &      ((Jmin.le.j1).and.(j1.le.Jmax)).and.                        &
-     &      ((JLB .le.j1).and.(j1.le.JUB ))) THEN
+     &      ((Xmin.le.Xobs(iobs)).and.(Xobs(iobs).lt.Xmax)).and.        &
+     &      ((Ymin.le.Yobs(iobs)).and.(Yobs(iobs).lt.Ymax))) THEN
+          IF (ObsType(iobs).eq.4) THEN
+            i1=INT(Xobs(iobs)+0.5_r8)        ! 3D U-grid type variable
+            j1=INT(Yobs(iobs))
+          ELSE IF (ObsType(iobs).eq.5) THEN
+            i1=INT(Xobs(iobs))               ! 3D V-grid type variable
+            j1=INT(Yobs(iobs)+0.5_r8)
+          ELSE
+            i1=INT(Xobs(iobs))               ! 3D RHO-grid type variable
+            j1=INT(Yobs(iobs))
+          END IF
+          i2=i1+1
+          j2=j1+1
+          IF (i2.gt.Imax) THEN
+            i2=i1                 ! Observation at the eastern boundary
+          END IF
+          IF (j2.gt.Jmax) THEN
+            j2=j1                 ! Observation at the northern boundary
+          END IF
           p2=REAL(i2-i1,r8)*(Xobs(iobs)-REAL(i1,r8))
           q2=REAL(j2-j1,r8)*(Yobs(iobs)-REAL(j1,r8))
           p1=1.0_r8-p2
@@ -296,24 +356,22 @@
           w22=p2*q2
           w12=p1*q2
           IF (Zobs(iobs).gt.0.0_r8) THEN
-            k1=INT(Zobs(iobs))                 ! Positions in fractional 
+            k1=INT(Zobs(iobs))                 ! Positions in fractional
             k2=MIN(k1+1,N(ng))                 ! levels
             r2=REAL(k2-k1,r8)*(Zobs(iobs)-REAL(k1,r8))
             r1=1.0_r8-r2
           ELSE
             Ztop=Adepth(i1,j1,N(ng))
-            Zbot=Adepth(i1,j1,1    )              
+            Zbot=Adepth(i1,j1,1    )
             IF (Zobs(iobs).ge.Ztop) THEN
-              k1=N(ng)                         ! If shallower, assign
-              k2=k1                            ! observation to surface
-              r1=1.0_r8                        ! level
+              r1=0.0_r8                        ! If shallower, ignore.
               r2=0.0_r8
-              Zobs(iobs)=REAL(k1,r8)           ! overwrite
+              ObsScale(iobs)=0.0_r8
             ELSE IF (Zbot.ge.Zobs(iobs)) THEN
               r1=0.0_r8                        ! If deeper, ignore.
               r2=0.0_r8
               ObsScale(iobs)=0.0_r8
-            ELSE                    
+            ELSE
               DO k=N(ng),2,-1                  ! Otherwise, interpolate
                 Ztop=Adepth(i1,j1,k  )         ! to fractional level
                 Zbot=Adepth(i1,j1,k-1)
@@ -355,7 +413,7 @@
               DO ic=1,8
                 Hmat(ic)=Hmat(ic)*wsum
               END DO
-            END IF          
+            END IF
 #  endif
             Aobs(iobs)=Hmat(1)*A(i1,j1,k1)+                             &
      &                 Hmat(2)*A(i2,j1,k1)+                             &
@@ -365,12 +423,10 @@
      &                 Hmat(6)*A(i2,j1,k2)+                             &
      &                 Hmat(7)*A(i2,j2,k2)+                             &
      &                 Hmat(8)*A(i1,j2,k2)
-#  ifndef S4DVAR
-#   ifdef MASKING
+#  ifdef MASKING
             IF (wsum.gt.0.0_r8) ObsScale(iobs)=1.0_r8
-#   else
+#  else
             ObsScale(iobs)=1.0_r8
-#   endif
 #  endif
           END IF
         END IF

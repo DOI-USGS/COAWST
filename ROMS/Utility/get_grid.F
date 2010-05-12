@@ -4,7 +4,7 @@
 !
 !svn $Id: get_grid.F 787 2008-10-14 00:37:50Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -25,10 +25,11 @@
       USE exchange_2d_mod
 # endif
 # ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcastf, mp_bcasti, mp_bcastl
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
-
+      USE nf_fread2d_mod, ONLY : nf_fread2d
+      USE strings_mod, ONLY : find_string
+!
       implicit none
 !
 !  Imported variable declarations.
@@ -49,18 +50,15 @@
       logical :: NSperiodic=.FALSE.
 #  endif
 # endif
-# if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-     defined OPT_OBSERVATIONS || defined SO_SEMI
+# if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+     defined SO_SEMI
       logical :: GotScope(6)
 # endif
-      logical :: find_string
-
       integer :: tile, LBi, UBi, LBj, UBj
       integer :: gtype, i, status, vindex
 
       integer :: Vsize(4)
-
-      integer :: nf_fread2d
 
       real(r8), parameter :: Fscl = 1.0_r8
 
@@ -68,6 +66,8 @@
 
       character (len=1 ) :: char1
       character (len=80) :: ncname
+!
+      SourceFile='get_grid.F'
 !
 !-----------------------------------------------------------------------
 !  Inquire about the contents of grid NetCDF file:  Inquire about
@@ -169,7 +169,7 @@
         RETURN
       END IF
       IF (.not.find_string(var_name,n_var,'mask_psi',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'mask_rho', TRIM(ncname)
+        IF (Master) WRITE (stdout,10) 'mask_psi', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
@@ -177,50 +177,29 @@
 !
 !  Open grid NetCDF file for reading.
 !
-      IF (InpThread.and.(ncGRDid(ng).eq.-1)) THEN
-        status=nf90_open(TRIM(ncname), nf90_nowrite, ncGRDid(ng))
-        IF (status.ne.nf90_noerr) THEN
+      IF (ncGRDid(ng).eq.-1) THEN
+        CALL netcdf_open (ng, model, ncname, 0, ncGRDid(ng))
+        IF (exit_flag.ne.NoError) THEN
           WRITE (stdout,20) TRIM(ncname)
-          exit_flag=4
-          ioerror=status
+          RETURN
         END IF
       END IF
-# ifdef DISTRIBUTE
-      CALL mp_bcasti (ng, model, exit_flag, 1)
-# endif
-      IF (exit_flag.ne.NoError) RETURN
 !
 !  Read in logical switch for spherical grid configuration.
 !
       spherical=.FALSE.
-      DO i=1,n_var
-        IF (TRIM(var_name(i)).eq.'spherical') THEN
-          IF (Inpthread) THEN
-            status=nf90_get_var(ncGRDid(ng), var_id(i), char1)
-            IF (status.ne.nf90_noerr) THEN
-              exit_flag=2
-              ioerror=status
-            ELSE
-              IF ((char1.eq.'t').or.(char1.eq.'T')) THEN
-                spherical=.TRUE.
-              END IF
-            END IF
+      IF (find_string(var_name,n_var,'spherical',vindex)) THEN
+        CALL netcdf_get_svar (ng, model, ncname, 'spherical',           &
+     &                        char1,                                    &
+     &                         ncid = ncGRDid(ng))
+        IF (exit_flag.eq.NoError) THEN
+          IF ((char1.eq.'t').or.(char1.eq.'T')) THEN
+            spherical=.TRUE.
           END IF
-          EXIT
-        END IF
-      END DO
-# ifdef DISTRIBUTE
-      CALL mp_bcasti (ng, model, exit_flag, 1)
-# endif
-      IF (exit_flag.ne.NoError) THEN
-        IF (Master) THEN
+        ELSE
           WRITE (stdout,30) 'spherical', TRIM(ncname)
         END IF
-        RETURN
       END IF
-# ifdef DISTRIBUTE
-      CALL mp_bcastl (ng, model, spherical, 1)
-# endif
 !
 !-----------------------------------------------------------------------
 !  Read in grid variables.
@@ -254,50 +233,32 @@
 !  Read in basin X-length.
 !
           CASE ('xl')
-            IF (InpThread) THEN
-              status=nf90_get_var(ncGRDid(ng), var_id(i), xl(ng))
-              IF (status.ne.nf90_noerr) THEN
-                exit_flag=2
-                ioerror=status
-              END IF
-            END IF
-# ifdef DISTRIBUTE
-            CALL mp_bcasti (ng, model, exit_flag, 1)
-# endif
+            CALL netcdf_get_fvar (ng, model, ncname, 'xl',              &
+     &                            xl(ng),                               &
+     &                            ncid = ncGRDid(ng))
             IF (exit_flag.ne.NoError) EXIT
-# ifdef DISTRIBUTE
-            CALL mp_bcastf (ng, model, xl(ng), 1)
-# endif
 !
 !  Read in basin Y-length.
 !
           CASE ('el')
-            IF (InpThread) THEN
-              status=nf90_get_var(ncGRDid(ng), var_id(i), el(ng))
-              IF (status.ne.nf90_noerr) THEN
-                exit_flag=2
-                ioerror=status
-              END IF
-            END IF
-# ifdef DISTRIBUTE
-            CALL mp_bcasti (ng, model, exit_flag, 1)
-# endif
+            CALL netcdf_get_fvar (ng, model, ncname, 'el',              &
+     &                            el(ng),                               &
+     &                            ncid = ncGRDid(ng))
             IF (exit_flag.ne.NoError) EXIT
-# ifdef DISTRIBUTE
-            CALL mp_bcastf (ng, model, el(ng), 1)
-# endif
 !
 !  Read in bathymetry.
 !
           CASE ('h')
             gtype=r2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, hmin(ng), hmax(ng),                 &
 # ifdef MASKING
-     &                        GRID(ng) % rmask(LBi,LBj),                &
+     &                        GRID(ng) % rmask,                         &
 # endif
-     &                        GRID(ng) % h(LBi,LBj))
+     &                        GRID(ng) % h)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -320,11 +281,13 @@
 !
           CASE ('mask_rho')
             gtype=r2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
-     &                        GRID(ng) % rmask(LBi,LBj),                &
-     &                        GRID(ng) % rmask(LBi,LBj))
+     &                        GRID(ng) % rmask,                         &
+     &                        GRID(ng) % rmask)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -346,11 +309,13 @@
 !
           CASE ('mask_u')
             gtype=u2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
-     &                        GRID(ng) % umask(LBi,LBj),                &
-     &                        GRID(ng) % umask(LBi,LBj))
+     &                        GRID(ng) % umask,                         &
+     &                        GRID(ng) % umask)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -372,11 +337,13 @@
 !
           CASE ('mask_v')
             gtype=v2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
-     &                        GRID(ng) % vmask(LBi,LBj),                &
-     &                        GRID(ng) % vmask(LBi,LBj))
+     &                        GRID(ng) % vmask,                         &
+     &                        GRID(ng) % vmask)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -398,11 +365,13 @@
 !
           CASE ('mask_psi')
             gtype=p2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
-     &                        GRID(ng) % pmask(LBi,LBj),                &
-     &                        GRID(ng) % pmask(LBi,LBj))
+     &                        GRID(ng) % pmask,                         &
+     &                        GRID(ng) % pmask)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -426,13 +395,15 @@
 !
           CASE ('zice')
             gtype=r2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 #  ifdef MASKING
-     &                        GRID(ng) % rmask(LBi,LBj),                &
+     &                        GRID(ng) % rmask,                         &
 #  endif
-     &                        GRID(ng) % zice(LBi,LBj))
+     &                        GRID(ng) % zice)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -455,18 +426,15 @@
 !
           CASE ('f')
             gtype=r2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
-     &                        GRID(ng) % rmask(LBi,LBj),                &
+     &                        GRID(ng) % rmask,                         &
 # endif
-     &                        GRID(ng) % f(LBi,LBj))
-#undef SOLITON_REVERSE
-#ifdef SOLITON_REVERSE
-             GRID(ng) % f(:,:)=-GRID(ng) % f(:,:)
-#endif
-#undef SOLITON_REVERSE
+     &                        GRID(ng) % f)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -489,13 +457,15 @@
 !
           CASE ('pm')
             gtype=r2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
-     &                        GRID(ng) % rmask(LBi,LBj),                &
+     &                        GRID(ng) % rmask,                         &
 # endif
-     &                        GRID(ng) % pm(LBi,LBj))
+     &                        GRID(ng) % pm)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -518,13 +488,15 @@
 !
           CASE ('pn')
             gtype=r2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
-     &                        GRID(ng) % rmask(LBi,LBj),                &
+     &                        GRID(ng) % rmask,                         &
 # endif
-     &                        GRID(ng) % pn(LBi,LBj))
+     &                        GRID(ng) % pn)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -547,13 +519,15 @@
 !
           CASE ('dmde')
             gtype=r2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
-     &                        GRID(ng) % rmask(LBi,LBj),                &
+     &                        GRID(ng) % rmask,                         &
 # endif
-     &                        GRID(ng) % dmde(LBi,LBj))
+     &                        GRID(ng) % dmde)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -575,13 +549,15 @@
 !
           CASE ('dndx')
             gtype=r2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
-     &                        GRID(ng) % rmask(LBi,LBj),                &
+     &                        GRID(ng) % rmask,                         &
 # endif
-     &                        GRID(ng) % dndx(LBi,LBj))
+     &                        GRID(ng) % dndx)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -604,13 +580,15 @@
 !
           CASE ('x_psi')
             gtype=p2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
-     &                        GRID(ng) % pmask(LBi,LBj),                &
+     &                        GRID(ng) % pmask,                         &
 # endif
-     &                        GRID(ng) % xp(LBi,LBj))
+     &                        GRID(ng) % xp)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -627,13 +605,15 @@
 !
           CASE ('y_psi')
             gtype=p2dvar
-            status=nf_fread2d(ng, model,  ncGRDid(ng), var_id(i), 0,    &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
-     &                        GRID(ng) % pmask(LBi,LBj),                &
+     &                        GRID(ng) % pmask,                         &
 # endif
-     &                        GRID(ng) % yp(LBi,LBj))
+     &                        GRID(ng) % yp)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -650,13 +630,15 @@
 !
           CASE ('x_rho')
             gtype=r2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
-     &                        GRID(ng) % rmask(LBi,LBj),                &
+     &                        GRID(ng) % rmask,                         &
 # endif
-     &                        GRID(ng) % xr(LBi,LBj))
+     &                        GRID(ng) % xr)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -673,13 +655,15 @@
 !
           CASE ('y_rho')
             gtype=r2dvar
-            status=nf_fread2d(ng, model,  ncGRDid(ng), var_id(i), 0,    &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
-     &                        GRID(ng) % rmask(LBi,LBj),                &
+     &                        GRID(ng) % rmask,                         &
 # endif
-     &                        GRID(ng) % yr(LBi,LBj))
+     &                        GRID(ng) % yr)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -696,13 +680,15 @@
 !
           CASE ('x_u')
             gtype=u2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
-     &                        GRID(ng) % umask(LBi,LBj),                &
+     &                        GRID(ng) % umask,                         &
 # endif
-     &                        GRID(ng) % xu(LBi,LBj))
+     &                        GRID(ng) % xu)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -719,13 +705,15 @@
 !
           CASE ('y_u')
             gtype=u2dvar
-            status=nf_fread2d(ng, model,  ncGRDid(ng), var_id(i), 0,    &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
-     &                        GRID(ng) % umask(LBi,LBj),                &
+     &                        GRID(ng) % umask,                         &
 # endif
-     &                        GRID(ng) % yu(LBi,LBj))
+     &                        GRID(ng) % yu)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -742,13 +730,15 @@
 !
           CASE ('x_v')
             gtype=v2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
-     &                        GRID(ng) % vmask(LBi,LBj),                &
+     &                        GRID(ng) % vmask,                         &
 # endif
-     &                        GRID(ng) % xv(LBi,LBj))
+     &                        GRID(ng) % xv)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -765,13 +755,15 @@
 !
           CASE ('y_v')
             gtype=v2dvar
-            status=nf_fread2d(ng, model,  ncGRDid(ng), var_id(i), 0,    &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
-     &                        GRID(ng) % vmask(LBi,LBj),                &
+     &                        GRID(ng) % vmask,                         &
 # endif
-     &                        GRID(ng) % yv(LBi,LBj))
+     &                        GRID(ng) % yv)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -789,13 +781,15 @@
           CASE ('lon_psi')
             IF (spherical) THEN
               gtype=p2dvar
-              status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,   &
-     &                          gtype, Vsize, LBi, UBi, LBj, UBj,       &
+              status=nf_fread2d(ng, model, ncname, ncGRDid(ng),         &
+     &                          var_name(i), var_id(i),                 &
+     &                          0, gtype, Vsize,                        &
+     &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, Fmin, Fmax,                       &
 # ifdef MASKING
-     &                          GRID(ng) % pmask(LBi,LBj),              &
+     &                          GRID(ng) % pmask,                       &
 # endif
-     &                          GRID(ng) % lonp(LBi,LBj))
+     &                          GRID(ng) % lonp)
               IF (status.ne.nf90_noerr) THEN
                 exit_flag=2
                 ioerror=status
@@ -814,13 +808,15 @@
           CASE ('lat_psi')
             IF (spherical) THEN
               gtype=p2dvar
-              status=nf_fread2d(ng, model,  ncGRDid(ng), var_id(i), 0,  &
-     &                          gtype, Vsize, LBi, UBi, LBj, UBj,       &
+              status=nf_fread2d(ng, model, ncname, ncGRDid(ng),         &
+     &                          var_name(i), var_id(i),                 &
+     &                          0, gtype, Vsize,                        &
+     &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, Fmin, Fmax,                       &
 # ifdef MASKING
-     &                          GRID(ng) % pmask(LBi,LBj),              &
+     &                          GRID(ng) % pmask,                       &
 # endif
-     &                          GRID(ng) % latp(LBi,LBj))
+     &                          GRID(ng) % latp)
               IF (status.ne.nf90_noerr) THEN
                 exit_flag=2
                 ioerror=status
@@ -839,13 +835,15 @@
           CASE ('lon_rho')
             IF (spherical) THEN
               gtype=r2dvar
-              status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,   &
-     &                          gtype, Vsize, LBi, UBi, LBj, UBj,       &
+              status=nf_fread2d(ng, model, ncname, ncGRDid(ng),         &
+     &                          var_name(i), var_id(i),                 &
+     &                          0, gtype, Vsize,                        &
+     &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, LonMin(ng), LonMax(ng),           &
 # ifdef MASKING
-     &                          GRID(ng) % rmask(LBi,LBj),              &
+     &                          GRID(ng) % rmask,                       &
 # endif
-     &                          GRID(ng) % lonr(LBi,LBj))
+     &                          GRID(ng) % lonr)
               IF (status.ne.nf90_noerr) THEN
                 exit_flag=2
                 ioerror=status
@@ -864,13 +862,15 @@
           CASE ('lat_rho')
             IF (spherical) THEN
               gtype=r2dvar
-              status=nf_fread2d(ng, model,  ncGRDid(ng), var_id(i), 0,  &
-     &                          gtype, Vsize, LBi, UBi, LBj, UBj,       &
+              status=nf_fread2d(ng, model, ncname, ncGRDid(ng),         &
+     &                          var_name(i), var_id(i),                 &
+     &                          0, gtype, Vsize,                        &
+     &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, LatMin(ng), LatMax(ng),           &
 # ifdef MASKING
-     &                          GRID(ng) % rmask(LBi,LBj),              &
+     &                          GRID(ng) % rmask,                       &
 # endif
-     &                          GRID(ng) % latr(LBi,LBj))
+     &                          GRID(ng) % latr)
               IF (status.ne.nf90_noerr) THEN
                 exit_flag=2
                 ioerror=status
@@ -889,13 +889,15 @@
           CASE ('lon_u')
             IF (spherical) THEN
               gtype=u2dvar
-              status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,   &
-     &                          gtype, Vsize, LBi, UBi, LBj, UBj,       &
+              status=nf_fread2d(ng, model, ncname, ncGRDid(ng),         &
+     &                          var_name(i), var_id(i),                 &
+     &                          0, gtype, Vsize,                        &
+     &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, Fmin, Fmax,                       &
 # ifdef MASKING
-     &                          GRID(ng) % umask(LBi,LBj),              &
+     &                          GRID(ng) % umask,                       &
 # endif
-     &                          GRID(ng) % lonu(LBi,LBj))
+     &                          GRID(ng) % lonu)
               IF (status.ne.nf90_noerr) THEN
                 exit_flag=2
                 ioerror=status
@@ -914,13 +916,15 @@
           CASE ('lat_u')
             IF (spherical) THEN
               gtype=u2dvar
-              status=nf_fread2d(ng, model,  ncGRDid(ng), var_id(i), 0,  &
-     &                          gtype, Vsize, LBi, UBi, LBj, UBj,       &
+              status=nf_fread2d(ng, model, ncname, ncGRDid(ng),         &
+     &                          var_name(i), var_id(i),                 &
+     &                          0, gtype, Vsize,                        &
+     &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, Fmin, Fmax,                       &
 # ifdef MASKING
-     &                          GRID(ng) % umask(LBi,LBj),              &
+     &                          GRID(ng) % umask,                       &
 # endif
-     &                          GRID(ng) % latu(LBi,LBj))
+     &                          GRID(ng) % latu)
               IF (status.ne.nf90_noerr) THEN
                 exit_flag=2
                 ioerror=status
@@ -939,13 +943,15 @@
           CASE ('lon_v')
             IF (spherical) THEN
               gtype=v2dvar
-              status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,   &
-     &                          gtype, Vsize, LBi, UBi, LBj, UBj,       &
+              status=nf_fread2d(ng, model, ncname, ncGRDid(ng),         &
+     &                          var_name(i), var_id(i),                 &
+     &                          0, gtype, Vsize,                        &
+     &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, Fmin, Fmax,                       &
 # ifdef MASKING
-     &                          GRID(ng) % vmask(LBi,LBj),              &
+     &                          GRID(ng) % vmask,                       &
 # endif
-     &                          GRID(ng) % lonv(LBi,LBj))
+     &                          GRID(ng) % lonv)
               IF (status.ne.nf90_noerr) THEN
                 exit_flag=2
                 ioerror=status
@@ -964,13 +970,15 @@
           CASE ('lat_v')
             IF (spherical) THEN
               gtype=v2dvar
-              status=nf_fread2d(ng, model,  ncGRDid(ng), var_id(i), 0,  &
-     &                          gtype, Vsize, LBi, UBi, LBj, UBj,       &
+              status=nf_fread2d(ng, model, ncname, ncGRDid(ng),         &
+     &                          var_name(i), var_id(i),                 &
+     &                          0, gtype, Vsize,                        &
+     &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, Fmin, Fmax,                       &
 # ifdef MASKING
-     &                          GRID(ng) % vmask(LBi,LBj),              &
+     &                          GRID(ng) % vmask,                       &
 # endif
-     &                          GRID(ng) % latv(LBi,LBj))
+     &                          GRID(ng) % latv)
               IF (status.ne.nf90_noerr) THEN
                 exit_flag=2
                 ioerror=status
@@ -988,13 +996,15 @@
 !
           CASE ('angle')
             gtype=r2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
-     &                        GRID(ng) % rmask(LBi,LBj),                &
+     &                        GRID(ng) % rmask,                         &
 # endif
-     &                        GRID(ng) % angler(LBi,LBj))
+     &                        GRID(ng) % angler)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -1011,20 +1021,23 @@
      &                          NghostPoints, EWperiodic, NSperiodic,   &
      &                          GRID(ng) % angler)
 # endif
-# if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-     defined OPT_OBSERVATIONS || defined SO_SEMI
+# if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+     defined SO_SEMI
 !
 !  Read in adjoint sensitivity spatial scope masking at RHO-points.
 !
           CASE ('scope_rho')
             gtype=r2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 #  ifdef MASKING
-     &                        GRID(ng) % rmask(LBi,LBj),                &
+     &                        GRID(ng) % rmask,                         &
 #  endif
-     &                        GRID(ng) % Rscope(LBi,LBj))
+     &                        GRID(ng) % Rscope)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -1047,13 +1060,15 @@
 !
           CASE ('scope_u')
             gtype=u2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 #  ifdef MASKING
-     &                        GRID(ng) % umask(LBi,LBj),                &
+     &                        GRID(ng) % umask,                         &
 #  endif
-     &                        GRID(ng) % Uscope(LBi,LBj))
+     &                        GRID(ng) % Uscope)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -1076,13 +1091,15 @@
 !
           CASE ('scope_v')
             gtype=v2dvar
-            status=nf_fread2d(ng, model, ncGRDid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncGRDid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 #  ifdef MASKING
-     &                        GRID(ng) % vmask(LBi,LBj),                &
+     &                        GRID(ng) % vmask,                         &
 #  endif
-     &                        GRID(ng) % Vscope(LBi,LBj))
+     &                        GRID(ng) % Vscope)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -1110,13 +1127,12 @@
 !
 ! Close GRID NetCDF file.
 !
-      IF (InpThread) THEN
-        status=nf90_close(ncGRDid(ng))
-        ncGRDid(ng)=-1
-      END IF
+      CALL netcdf_close (ng, model, ncGRDid(ng), ncname, .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
 
-# if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-     defined OPT_OBSERVATIONS || defined SO_SEMI
+# if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+     defined SO_SEMI
 !
 !-----------------------------------------------------------------------
 !  Inquire adjoint sensitivity forcing file. Read scope arrays again.
@@ -1166,18 +1182,13 @@
 !
 !  Open adjoint sensitivity NetCDF file for reading.
 !
-      IF (InpThread.and.GotScope(4).and.(ncADSid(ng).eq.-1)) THEN
-        status=nf90_open(TRIM(ncname), nf90_nowrite, ncADSid(ng))
-        IF (status.ne.nf90_noerr) THEN
+      IF (GotScope(4).and.(ncADSid(ng).eq.-1)) THEN
+        CALL netcdf_open (ng, model, ncname, 0, ncADSid(ng))
+        IF (exit_flag.ne.NoError) THEN
           WRITE (stdout,20) TRIM(ncname)
-          exit_flag=4
-          ioerror=status
+          RETURN
         END IF
       END IF
-# ifdef DISTRIBUTE
-      CALL mp_bcasti (ng, model, exit_flag, 1)
-# endif
-      IF (exit_flag.ne.NoError) RETURN
 !
 !  Scan adjoint sensitivity variables.
 !
@@ -1189,13 +1200,15 @@
 !
           CASE ('scope_rho')
             gtype=r2dvar
-            status=nf_fread2d(ng, model, ncADSid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncADSid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 #  ifdef MASKING
-     &                        GRID(ng) % rmask(LBi,LBj),                &
+     &                        GRID(ng) % rmask,                         &
 #  endif
-     &                        GRID(ng) % Rscope(LBi,LBj))
+     &                        GRID(ng) % Rscope)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -1217,13 +1230,15 @@
 !
           CASE ('scope_u')
             gtype=u2dvar
-            status=nf_fread2d(ng, model, ncADSid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncADSid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 #  ifdef MASKING
-     &                        GRID(ng) % umask(LBi,LBj),                &
+     &                        GRID(ng) % umask,                         &
 #  endif
-     &                        GRID(ng) % Uscope(LBi,LBj))
+     &                        GRID(ng) % Uscope)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -1245,13 +1260,15 @@
 !
           CASE ('scope_v')
             gtype=v2dvar
-            status=nf_fread2d(ng, model, ncADSid(ng), var_id(i), 0,     &
-     &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
+            status=nf_fread2d(ng, model, ncname, ncADSid(ng),           &
+     &                        var_name(i), var_id(i),                   &
+     &                        0, gtype, Vsize,                          &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
 #  ifdef MASKING
-     &                        GRID(ng) % vmask(LBi,LBj),                &
+     &                        GRID(ng) % vmask,                         &
 #  endif
-     &                        GRID(ng) % Vscope(LBi,LBj))
+     &                        GRID(ng) % Vscope)
             IF (status.ne.nf90_noerr) THEN
               exit_flag=2
               ioerror=status
@@ -1281,7 +1298,7 @@
   20  FORMAT (/,' GET_GRID - unable to open grid NetCDF file: ',a)
   30  FORMAT (/,' GET_GRID - error while reading variable: ',a,         &
      &        /,12x,'in grid NetCDF file: ',a)
- 40   FORMAT (/,' GET_GRID - Reading adjoint sensitivity scope arrays', &
+  40  FORMAT (/,' GET_GRID - Reading adjoint sensitivity scope arrays', &
      &        ' from file:',/12x,a)
 #else
       SUBROUTINE get_grid

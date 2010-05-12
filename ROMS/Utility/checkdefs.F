@@ -3,7 +3,7 @@
 !
 !svn $Id: checkdefs.F 365 2007-07-08 16:15:48Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -23,7 +23,6 @@
 !
 !  Local variable declarations.
 !
-      integer :: EnergyN = 0
       integer :: FS_east = 0
       integer :: FS_west = 0
       integer :: FS_north = 0
@@ -49,6 +48,8 @@
       integer :: idriver = 0
       integer :: itrcHadv = 0
       integer :: itrcVadv = 0
+      integer :: itrcHadvtl = 0
+      integer :: itrcVadvtl = 0
       integer :: ivelHadv = 0
       integer :: ivelVadv = 0
       integer :: ivmix = 0
@@ -62,7 +63,7 @@
       Coptions=' '
       IF (Master) WRITE (stdout,10)
   10  FORMAT (/,' Activated C-preprocessing Options:',/)
-  20  FORMAT (2x,a,t22,a)
+  20  FORMAT (1x,a,t22,a)
 !
       IF (Master) THEN
         WRITE (stdout,20) TRIM(ADJUSTL(MyAppCPP)), TRIM(ADJUSTL(title))
@@ -91,17 +92,38 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+9)=' ADJOINT,'
 #endif
-#if defined ADJUST_STFLUX && defined IS4DVAR
+#if defined ADJUST_BOUNDARY   && \
+   (defined IS4DVAR           || defined IS4DVAR_SENSITIVITY || \
+    defined SENSITIVITY_4DVAR || defined W4DPSAS             || \
+    defined W4DVAR)
+      IF (Master) WRITE (stdout,20) 'ADJUST_BOUNDARY',                  &
+     &   'Including boundary conditions in 4DVar state estimation.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' ADJUST_BOUNDARY,'
+#endif
+#if defined ADJUST_STFLUX     && \
+   (defined IS4DVAR           || defined IS4DVAR_SENSITIVITY || \
+    defined SENSITIVITY_4DVAR || defined W4DPSAS             || \
+    defined W4DVAR)
       IF (Master) WRITE (stdout,20) 'ADJUST_STFLUX',                    &
      &   'Including surface tracer flux in 4DVar state estimation.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' ADJUST_STFLUX,'
 #endif
-#if defined ADJUST_WSTRESS && defined IS4DVAR
+#if defined ADJUST_WSTRESS    && \
+   (defined IS4DVAR           || defined IS4DVAR_SENSITIVITY || \
+    defined SENSITIVITY_4DVAR || defined W4DPSAS             || \
+    defined W4DVAR)
       IF (Master) WRITE (stdout,20) 'ADJUST_WSTRESS',                   &
      &   'Including surface wind stress in 4DVar state estimation.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' ADJUST_WSTRESS,'
+#endif
+#if defined AD_IMPULSE
+      IF (Master) WRITE (stdout,20) 'AD_IMPULSE',                       &
+     &   'Force adjoint model with intermittent impulses.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' AD_IMPULSE,'
 #endif
 #ifdef ADM_DRIVER
       IF (Master) WRITE (stdout,20) 'ADM_DRIVER',                       &
@@ -149,7 +171,7 @@
       Coptions(is:is+13)=' CONVOLUTION,'
       idriver=idriver+1
 #endif
-#if defined CONVOLVE && defined W4DVAR
+#if defined CONVOLVE && defined W4DVAR && defined W4DVAR_SENSITIVITY
       IF (Master) WRITE (stdout,20) 'CONVOLVE',                         &
      &   'Convolve Adjoint State Solution.'
       is=LEN_TRIM(Coptions)+1
@@ -167,6 +189,14 @@
      &   'Analytical biology initial conditions.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' ANA_BIOLOGY,'
+#endif
+#if defined SEDIMENT && !defined ANA_SEDIMENT
+# ifdef ANA_BMFLUX
+      IF (Master) WRITE (stdout,20) 'ANA_BMFLUX',                       &
+     &   'Analytical spatially varying bottom roughness.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' ANA_BMFLUX,'
+# endif
 #endif
 #if defined SEDIMENT || defined BIOLOGY
 # ifdef ANA_BPFLUX
@@ -284,7 +314,16 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+10)=' ANA_RAIN,'
 #endif
-#if defined SEDIMENT && defined ANA_SEDIMENT
+#if defined ANA_SCOPE        && \
+   (defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+    defined SO_SEMI)
+      IF (Master) WRITE (stdout,20) 'ANA_SCOPE',                        &
+     &   'Analytical spatial scope masking arrays.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' ANA_SCOPE,'
+#endif
+#if defined ANA_SEDIMENT && (defined SEDIMENT || defined BBL_MODEL)
       IF (Master) WRITE (stdout,20) 'ANA_SEDIMENT',                     &
      &   'Analytical sediment initial conditions.'
       is=LEN_TRIM(Coptions)+1
@@ -479,14 +518,15 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' BEDLOAD_SOULSBY,'
 #endif
-#ifdef BIO_FASHAM
-      IF (Master) WRITE (stdout,20) 'BIO_FASHAM',                       &
-     &   'Fasham type nitrogen-based model.'
+#ifdef BIO_FENNEL
+      IF (Master) WRITE (stdout,20) 'BIO_FENNEL',                       &
+     &   'Fennel et al. (2006) nitrogen-based model.'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+12)=' BIO_FASHAM,'
+      Coptions(is:is+12)=' BIO_FENNEL,'
       ibiology=ibiology+1
 #endif
-#if defined BIO_SEDIMENT && (defined BIO_FASHAM || defined NEMURO)
+#if defined BIO_SEDIMENT && \
+   (defined BIO_FENNEL   || defined NEMURO || defined ECOSIM)
       IF (Master) WRITE (stdout,20) 'BIO_SEDIMENT',                     &
      &   'Restore fallen particulate material to the nutrient pool.'
       is=LEN_TRIM(Coptions)+1
@@ -523,7 +563,7 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+8)=' CANUTO_B,'
 #endif
-#if defined CARBON && defined BIO_FASHAM
+#if defined CARBON && defined BIO_FENNEL
       IF (Master) WRITE (stdout,20) 'CARBON',                           &
      &   'Add Carbon constituents.'
       is=LEN_TRIM(Coptions)+1
@@ -541,6 +581,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' CELERETY_WRITE,'
 #endif
+#if defined DATALESS_LOOPS && defined W4DVAR
+      IF (Master) WRITE (stdout,20) 'DATALESS_LOOPS',                   &
+     &   'Testing convergence of RPM Picard iterations.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' DATALESS_LOOPS,'
+#endif
 #if defined GLS_MIXING && defined CHARNOK
       IF (Master) WRITE (stdout,20) 'CHARNOK',                          &
      &   'Charnok surface roughness from wind stress.'
@@ -552,6 +598,13 @@
      &   'Processing checkpointing NetCDF for GST analysis.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' CHECKPOINTING,'
+#endif
+#if defined CLIMA_TS_MIX && defined SOLVE3D && \
+   (defined TS_DIF2      || defined TS_DIF4)
+      IF (Master) WRITE (stdout,20) 'CLIMA_TS_MIX',                     &
+     &   'Horizontal diffusion of tracer perturbation (T-Tclm).'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' CLIMA_TS_MIX,'
 #endif
 #if defined GLS_MIXING && defined CRAIG_BANNER
       IF (Master) WRITE (stdout,20) 'CRAIG_BANNER',                     &
@@ -601,13 +654,19 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' DEEPWATER_WAVES,'
 #endif
-#if defined DENITRIFICATION && defined BIO_FASHAM
+#if defined DEFLATE && defined NETCDF4
+      IF (Master) WRITE (stdout,20) 'DEFLATE',                          &
+     &   'Setting compression in output NetCDF-4/HDF5 files.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+9)=' DEFLATE,'
+#endif
+#if defined DENITRIFICATION && defined BIO_FENNEL
       IF (Master) WRITE (stdout,20) 'DENITRIFICATION',                  &
      &   'Add denitrification processes.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' DENITRIFICATION,'
 #endif
-#if defined DIAGNOSTICS_BIO && defined BIO_FASHAM
+#if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
       IF (Master) WRITE (stdout,20) 'DIAGNOSTICS_BIO',                  &
      &   'Computing and writing biological diagnostic terms.'
       is=LEN_TRIM(Coptions)+1
@@ -839,27 +898,6 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+10)=' ENSEMBLE,'
 #endif
-#if defined ENERGY1_NORM && defined FOUR_DVAR
-      IF (Master) WRITE (stdout,20) 'ENERGY1_NORM',                     &
-     &   'Cost function scaled with the energy norm, 1'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+14)=' ENERGY1_NORM,'
-      EnergyN=EnergyN+1
-#endif
-#if defined ENERGY2_NORM && defined FOUR_DVAR
-      IF (Master) WRITE (stdout,20) 'ENERGY2_NORM',                     &
-     &   'Cost function scaled with the energy norm, 2'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+14)=' ENERGY2_NORM,'
-      EnergyN=EnergyN+1
-#endif
-#if defined ENERGY3_NORM && defined FOUR_DVAR
-      IF (Master) WRITE (stdout,20) 'ENERGY3_NORM',                     &
-     &   'Cost function scaled with the energy norm, 3'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+14)=' ENERGY3_NORM,'
-      EnergyN=EnergyN+1
-#endif
 #ifdef EW_PERIODIC
       IF (Master) WRITE (stdout,20) 'EW_PERIODIC',                      &
      &   'East-West periodic boundaries.'
@@ -884,7 +922,7 @@
 #endif
 #if defined FLOATS && defined FLOAT_VWALK && defined SOLVE3D
       IF (Master) WRITE (stdout,20) 'FLOAT_VWALK',                      &
-     &   'Lagrangian drifter vertical diffusion.'
+     &   'Lagrangian drifters with vertical diffusion, random walk.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' FLOAT_VWALK,'
 #endif
@@ -932,10 +970,10 @@
       Coptions(is:is+15)=' FT_EIGENMODES,'
       idriver=idriver+1
 #endif
-#if defined FOUR_DVAR || defined PROPAGATOR
+#if defined FOUR_DVAR || defined PROPAGATOR || defined VERIFICATION
 # ifdef FULL_GRID
       IF (Master) WRITE (stdout,20) 'FULL_GRID',                        &
-#  if defined FOUR_DVAR
+#  if (defined FOUR_DVAR || defined VERIFICATION)
      &   'Considering observations at interior and boundary points.'
 #  elif defined PROPAGATOR
      &   'State vector includes interior and boundary points.'
@@ -944,7 +982,7 @@
       Coptions(is:is+11)=' FULL_GRID,'
 # else
       IF (Master) WRITE (stdout,20) '!FULL_GRID',                       &
-#  if defined FOUR_DVAR
+#  if (defined FOUR_DVAR || defined VERIFICATION)
      &   'Considering observations at interior points only.'
 #  elif defined PROPAGATOR
      &   'State vector includes interior points only.'
@@ -959,13 +997,6 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' GLS_MIXING,'
       ivmix=ivmix+1
-#endif
-#ifdef GRADIENT_CHECK
-      IF (Master) WRITE (stdout,20) 'GRADIENT_CHECK',                   &
-     &   'Tangent Linear and Adjoint Models Gradient Check.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+16)=' GRADIENT_CHECK,'
-      idriver=idriver+1
 #endif
 #if defined HOLLING_GRAZING && defined NEMURO
       IF (Master) WRITE (stdout,20) 'HOLLING_GRAZING',                  &
@@ -985,11 +1016,17 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' IMPLICIT_VCONV,'
 #endif
-#ifdef IOM
-      IF (Master) WRITE (stdout,20) 'IOM',                              &
-     &   'IOM Multiple Executable interface.'
+#if defined NPZD_IRON && defined IRON_LIMIT
+      IF (Master) WRITE (stdout,20) 'IRON_LIMIT',                       &
+     &   'Include dissolved iron limitation on phytoplankton growth.'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+5)=' IOM,'
+      Coptions(is:is+12)=' IRON_LIMIT,'
+#endif
+#if defined NPZD_IRON && defined IRON_LIMIT && defined IRON_RELAX
+      IF (Master) WRITE (stdout,20) 'IRON_RELAX',                       &
+     &   'Nudge dissolved iron over the shelf, h <= FeHmin.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' IRON_RELAX,'
 #endif
 #ifdef IMPULSE
       IF (Master) WRITE (stdout,20) 'IMPULSE',                          &
@@ -1006,16 +1043,16 @@
 #endif
 #ifdef IS4DVAR
       IF (Master) WRITE (stdout,20) 'IS4DVAR',                          &
-     &   'Incremental strong constraint 4DVAR data assimilation.'
+     &   'Incremental strong constraint 4D-Var data assimilation.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+9)=' IS4DVAR,'
       idriver=idriver+1
 #endif
-#ifdef IS4DVAR_OLD
-      IF (Master) WRITE (stdout,20) 'IS4DVAR_OLD',                      &
-     &   'Old incremental strong constraint 4DVAR data assimilation.'
+#ifdef IS4DVAR_SENSITIVITY
+      IF (Master) WRITE (stdout,20) 'IS4DVAR_SENSITIVITY',              &
+     &   'I4D-Var Observations Sensitivity Analysis.'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+13)=' IS4DVAR_OLD,'
+      Coptions(is:is+21)=' IS4DVAR_SENSITIVITY,'
       idriver=idriver+1
 #endif
 #if defined INLINE_2DIO && defined DISTRIBUTE
@@ -1035,12 +1072,6 @@
      &   'Kantha and Clayson stability function formulation.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' KANTHA_CLAYSON,'
-#endif
-#if defined LANCZOS && defined IS4DVAR
-      IF (Master) WRITE (stdout,20) 'LANCZOS',                          &
-     &   'Using Lanczos conjugate gradient algorithm.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+9)=' LANCZOS,'
 #endif
 #ifdef LMD_BKPP
       IF (Master) WRITE (stdout,20) 'LMD_BKPP',                         &
@@ -1249,7 +1280,26 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+18)=' NEARSHORE_MELLOR,'
 #endif
-#if defined NLM_OUTER && (defined WEAK_CONSTRAINT || defined IOM)
+#ifdef NEMURO
+      IF (Master) WRITE (stdout,20) 'NEMURO',                           &
+     &   'Nemuro Lower Trophic Level Ecosystem Model.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+8)=' NEMURO,'
+      ibiology=ibiology+1
+#endif
+#ifdef NETCDF4
+      IF (Master) WRITE (stdout,20) 'NETCDF4',                          &
+     &   'Creating NetCDF-4/HDF5 format files.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+9)=' NETCDF4,'
+#endif
+#if defined NL_BULK_FLUXES
+      IF (Master) WRITE (stdout,20) 'NL_BULK_FLUXES',                   &
+     &   'Using bulk fluxes computed by nonlinear model.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' NL_BULK_FLUXES,'
+#endif
+#if defined NLM_OUTER && defined WEAK_CONSTRAINT
       IF (Master) WRITE (stdout,20) 'NLM_OUTER',                        &
      &   'Using the Nonlinear model as Basic State in Outer Loop.'
       is=LEN_TRIM(Coptions)+1
@@ -1260,13 +1310,6 @@
      &   'Nonlinear Model.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+10)=' NONLINEAR,'
-#endif
-#ifdef NEMURO
-      IF (Master) WRITE (stdout,20) 'NEMURO',                           &
-     &   'Nemuro Lower Trophic Level Ecosystem Model.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+8)=' NEMURO,'
-      ibiology=ibiology+1
 #endif
 #ifdef SOLVE3D
 # if defined NONLIN_EOS
@@ -1438,6 +1481,12 @@
       Coptions(is:is+18)=' NORTH_TRADIATION,'
       T_north=T_north+1
 #endif
+#if defined NO_READ_GHOST && defined DISTRIBUTE
+      IF (Master) WRITE (stdout,20) 'NO_READ_GRID',                     &
+     &   'Not including ghost points during scattering read data.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' NO_READ_GRID,'
+#endif
 #ifdef NO_WRITE_GRID
       IF (Master) WRITE (stdout,20) 'NO_WRITE_GRID',                    &
      &   'Not Writing grid arrays into NetCDF ouput files.'
@@ -1451,18 +1500,19 @@
       Coptions(is:is+13)=' NPZD_FRANKS,'
       ibiology=ibiology+1
 #endif
+#ifdef NPZD_IRON
+      IF (Master) WRITE (stdout,20) 'NPZD_IRON',                        &
+     &   'NPZD Biological Model (Powell et al.) with iron limitation'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' NPZD_IRON,'
+      ibiology=ibiology+1
+#endif
 #ifdef NPZD_POWELL
       IF (Master) WRITE (stdout,20) 'NPZD_POWELL',                      &
      &   'NPZD Biological Model, Powell et al. fomulation.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' NPZD_POWELL,'
       ibiology=ibiology+1
-#endif
-#ifdef NUDGING_SSH
-      IF (Master) WRITE (stdout,20) 'NUDGING_SSH',                      &
-     &   'Nudging SSH observations.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+13)=' NUDGING_SSH,'
 #endif
 #ifdef NUDGING_SST
       IF (Master) WRITE (stdout,20) 'NUDGING_SST',                      &
@@ -1504,12 +1554,6 @@
       T_north=T_north+1
       T_south=T_south+1
 #endif
-#if defined N2NORM_PROFILE && defined FOUR_DVAR
-      IF (Master) WRITE (stdout,20) 'N2NORM_PROFILE',                   &
-     &   'Using N2(z) profile during energy normalization.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+16)=' N2NORM_PROFILE,'
-#endif
 #if defined N2S2_HORAVG && (defined GLS_MIXING || defined MY25_MIXING)
       IF (Master) WRITE (stdout,20) 'N2S2_HORAVG',                      &
      &   'Horizontal smoothing of buoyancy and shear.'
@@ -1522,12 +1566,17 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' OBSERVATIONS,'
 #endif
-#ifdef OBS_SENSITIVITY
-      IF (Master) WRITE (stdout,20) 'OBS_SENSITIVITY',                  &
-     &   '4DVAR Observations Sensitivity Analysis.'
+#ifdef OBS_IMPACT
+      IF (Master) WRITE (stdout,20) 'OBS_IMPACT',                       &
+     &   'Compute observation impact to the 4DVAR system.'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+17)=' OBS_SENSITIVITY,'
-      idriver=idriver+1
+      Coptions(is:is+12)=' OBS_IMPACT,'
+#endif
+#if defined OBS_IMPACT && defined OBS_IMPACT_SPLIT
+      IF (Master) WRITE (stdout,20) 'OBS_IMPACT_SPLIT',                 &
+     &   'Separate impact due to IC, surface forcing, and OBC'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' OBS_IMPACT_SPLIT,'
 #endif
 #ifdef OUT_DOUBLE
       IF (Master) WRITE (stdout,20) 'OUT_DOUBLE',                       &
@@ -1555,7 +1604,7 @@
       Coptions(is:is+18)=' OPT_PERTURBATION,'
       idriver=idriver+1
 #endif
-#if defined OXYGEN && defined BIO_FASHAM
+#if defined OXYGEN && defined BIO_FENNEL
 # ifdef OCMIP_OXYGEN_SC
       IF (Master) WRITE (stdout,20) 'OCMIP_OXYGEN_SC',                  &
      &   'Schmidt number from Keeling et al. (1998).'
@@ -1571,6 +1620,12 @@
      &   'Add oxygen dynamics.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+8)=' OXYGEN,'
+#endif
+#if defined PARALLEL_IO && defined DISTRIBUTE
+      IF (Master) WRITE (stdout,20) 'PARALLEL_IO',                      &
+     &   'Parallel I/O processing with NetCDF-4/HDF5 libraries.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' PERFECT_RESTART,'
 #endif
 #ifdef PERFECT_RESTART
       IF (Master) WRITE (stdout,20) 'PERFECT_RESTART',                  &
@@ -1602,6 +1657,24 @@
      &   'Quartic 4 polynomial Pressure Jacobian (Shchepetkin, 2002).'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' PJ_GRADPQ4,'
+#endif
+#if defined POSTERIOR_EOFS && defined WEAK_CONSTRAINT
+      IF (Master) WRITE (stdout,20) 'POSTERIOR_EOFS',                   &
+     &   'Estimating posterior analysis error covariace matrix EOFs.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' POSTERIOR_EOFS,'
+#endif
+#if defined POSTERIOR_ERROR_F && defined WEAK_CONSTRAINT
+      IF (Master) WRITE (stdout,20) 'POSTERIOR_ERROR_F',                &
+     &   'Estimating final posterior analysis error covariace matrix.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' POSTERIOR_ERROR_F,'
+#endif
+#if defined POSTERIOR_ERROR_I && defined WEAK_CONSTRAINT
+      IF (Master) WRITE (stdout,20) 'POSTERIOR_ERROR_I',                &
+     &   'Estimating initial posterior analysis error covariace matrix.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' POSTERIOR_ERROR_F,'
 #endif
 #if defined POWER_LAW && defined SOLVE3D
       IF (Master) WRITE (stdout,20) 'POWER_LAW',                        &
@@ -1695,18 +1768,6 @@
       Coptions(is:is+12)=' REP_MATRIX,'
       idriver=idriver+1
 #endif
-#if defined RIVER_BIOLOGY && defined BIOLOGY
-      IF (Master) WRITE (stdout,20) 'RIVER_BIOLOGY',                    &
-     &   'River biology point sources.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+15)=' RIVER_BIOLOGY,'
-#endif
-#if defined RIVER_SEDIMENT && defined SEDIMENT
-      IF (Master) WRITE (stdout,20) 'RIVER_SEDIMENT',                   &
-     &   'River sediment point sources.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+16)=' RIVER_SEDIMENT,'
-#endif
 #if defined LMD_MIXING
 # ifdef RI_HORAVG
       IF (Master) WRITE (stdout,20) 'RI_HORAVG',                        &
@@ -1751,13 +1812,6 @@
      &   'Double precision fields in restart NetCDF file.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' !RST_SINGLE,'
-#endif
-#ifdef S4DVAR
-      IF (Master) WRITE (stdout,20) 'S4DVAR',                           &
-     &   'Strong constraint 4DVAR data assimilation.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+8)=' S4DVAR,'
-      idriver=idriver+1
 #endif
 #ifdef SALINITY
       IF (Master) WRITE (stdout,20) 'SALINITY',                         &
@@ -2083,19 +2137,19 @@
        is=LEN_TRIM(Coptions)+1
        Coptions(is:is+19)=' SSW_FORM_DRAG_COR,'
 # endif
-# ifdef SSW_Z0BIO
+# ifdef SSW_ZOBIO
        IF (Master) WRITE (stdout,20) 'SSW_Z0BIO',                       &
      &   'Biogenic bedfrom roughness from ripples.'
        is=LEN_TRIM(Coptions)+1
        Coptions(is:is+11)=' SSW_Z0BIO,'
 # endif
-# ifdef SSW_Z0BL
+# ifdef SSW_ZOBL
        IF (Master) WRITE (stdout,20) 'SSW_Z0BL',                        &
      &   'Bedload roughness from ripples.'
        is=LEN_TRIM(Coptions)+1
        Coptions(is:is+10)=' SSW_Z0BL,'
 # endif
-# ifdef SSW_Z0RIP
+# ifdef SSW_ZORIP
        IF (Master) WRITE (stdout,20) 'SSW_Z0RIP',                       &
      &   'Bedfrom roughness from ripples.'
        is=LEN_TRIM(Coptions)+1
@@ -2132,10 +2186,10 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' SWAN_COUPLING,'
 #endif
-#if defined CARBON && defined BIO_FASHAM
-# ifdef TALK_PROGNOSTIC
-      IF (Master) WRITE (stdout,20) 'TALK_PROGNOSTIC',                  &
-     &   'Prognostic computation of alkalinity.'
+#if defined CARBON && defined BIO_FENNEL
+# ifdef TALK_NONCONSERV
+      IF (Master) WRITE (stdout,20) 'TALK_NONCONSERV',                  &
+     &   'Nonconservative computation of alkalinity.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' TALK_PROGNOSTIC,'
 # else
@@ -2202,7 +2256,7 @@
       Coptions(is:is+11)=' T_PASSIVE,'
 # endif
 # ifdef TS_MPDATA
-      IF (Master) WRITE (stdout,20) 'TS_MPDATA',                       &
+      IF (Master) WRITE (stdout,20) 'TS_MPDATA',                        &
      &   'Recursive flux corrected MPDATA 3D advection of tracers.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+11)=' TS_MPDATA,'
@@ -2216,12 +2270,28 @@
       Coptions(is:is+17)=' TS_A4HADVECTION,'
       itrcHadv=itrcHadv+1
 # endif
+# if defined TS_A4HADVECTION_TL && \
+    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
+      IF (Master) WRITE (stdout,20) 'TS_A4HADVECTION_TL',               &
+     &   'TL/AD fourth-order Akima horizontal tracer advection.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' TS_A4HADVECTION_TL,'
+      itrcHadvtl=itrcHadvtl+1
+# endif
 # ifdef TS_C2HADVECTION
       IF (Master) WRITE (stdout,20) 'TS_C2HADVECTION',                  &
      &   'Second-order centered horizontal advection of tracers.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' TS_C2HADVECTION,'
       itrcHadv=itrcHadv+1
+# endif
+# if defined TS_C2HADVECTION_TL && \
+    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
+      IF (Master) WRITE (stdout,20) 'TS_C2HADVECTION_TL',               &
+     &   'TL/AD second-order centered horizontal tracer advection.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' TS_C2HADVECTION_TL,'
+      itrcHadvtl=itrcHadvtl+1
 # endif
 # if defined TS_C4HADVECTION || defined TS_U3ADV_SPLIT
       IF (Master) WRITE (stdout,20) 'TS_C4HADVECTION',                  &
@@ -2230,12 +2300,28 @@
       Coptions(is:is+17)=' TS_C4HADVECTION,'
       itrcHadv=itrcHadv+1
 # endif
+# if defined TS_C4HADVECTION_TL && \
+    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
+      IF (Master) WRITE (stdout,20) 'TS_C4HADVECTION_TL',               &
+     &   'TL/AD fourth-order centered horizontal tracer advection.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' TS_C4HADVECTION_TL,'
+      itrcHadvtl=itrcHadvtl+1
+# endif
 # ifdef TS_U3HADVECTION
       IF (Master) WRITE (stdout,20) 'TS_U3HADVECTION',                  &
      &   'Third-order upstream horizontal advection of tracers.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' TS_U3HADVECTION,'
       itrcHadv=itrcHadv+1
+# endif
+# if defined TS_U3HADVECTION_TL && \
+    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
+      IF (Master) WRITE (stdout,20) 'TS_U3HADVECTION_TL',               &
+     &   'TL/AD third-order upstream horizontal tracer advection.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' TS_U3HADVECTION_TL,'
+      itrcHadvtl=itrcHadvtl+1
 # endif
 # if !(defined TS_MPDATA       || defined TS_A4HADVECTION || \
        defined TS_C2HADVECTION || defined TS_C4HADVECTION || \
@@ -2253,12 +2339,28 @@
       Coptions(is:is+17)=' TS_A4VADVECTION,'
       itrcVadv=itrcVadv+1
 # endif
+# if defined TS_A4VADVECTION_TL && \
+    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
+      IF (Master) WRITE (stdout,20) 'TS_A4VADVECTION_TL',               &
+     &   'TL/AD fourth-order Akima vertical tracer advection.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' TS_A4VADVECTION_TL,'
+      itrcVadvtl=itrcVadvtl+1
+# endif
 # ifdef TS_C2VADVECTION
       IF (Master) WRITE (stdout,20) 'TS_C2VADVECTION',                  &
      &   'Second-order centered vertical advection of tracers.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' TS_C2VADVECTION,'
       itrcVadv=itrcVadv+1
+# endif
+# if defined TS_C2VADVECTION_TL && \
+    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
+      IF (Master) WRITE (stdout,20) 'TS_C2VADVECTION_TL',               &
+     &   'TL/AD second-order centered vertical tracer advection.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' TS_C2VADVECTION_TL,'
+      itrcVadvtl=itrcVadvtl+1
 # endif
 # if defined TS_C4VADVECTION || defined TS_U3ADV_SPLIT
       IF (Master) WRITE (stdout,20) 'TS_C4VADVECTION',                  &
@@ -2267,12 +2369,28 @@
       Coptions(is:is+17)=' TS_C4VADVECTION,'
       itrcVadv=itrcVadv+1
 # endif
+# if defined TS_C4VADVECTION_TL && \
+    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
+      IF (Master) WRITE (stdout,20) 'TS_C4VADVECTION_TL',               &
+     &   'TL/AD fourth-order centered vertical tracer advection.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' TS_C4VADVECTION_TL,'
+      itrcVadvtl=itrcVadvtl+1
+# endif
 # ifdef TS_SVADVECTION
       IF (Master) WRITE (stdout,20) 'TS_SVADVECTION',                   &
      &   'Parabolic splines vertical advection of tracers.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' TS_SVADVECTION,'
       itrcVadv=itrcVadv+1
+# endif
+# if defined TS_SVADVECTION_TL && \
+    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
+      IF (Master) WRITE (stdout,20) 'TS_SVADVECTION_TL',                &
+     &   'TL/AD parabolic splines vertical tracer advection.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+19)=' TS_SVADVECTION_TL,'
+      itrcVadvtl=itrcVadvtl+1
 # endif
 # if !(defined TS_MPDATA       || defined TS_A4VADVECTION || \
        defined TS_C2VADVECTION || defined TS_C4VADVECTION || \
@@ -2363,7 +2481,7 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' UV_U3HADVECTION,'
       ivelHadv=ivelHadv+1
-#  endif 
+#  endif
 #  if !(defined UV_C2ADVECTION  || defined UV_C4ADVECTION || \
         defined UV_SADVECTION)
       IF (Master) WRITE (stdout,20) 'UV_C4VADVECTION',                  &
@@ -2464,6 +2582,19 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' VERIFICATION,'
 #endif
+#if defined FLOATS && defined FLOAT_VWALK && defined SOLVE3D
+# ifdef VWALK_FORWARD
+      IF (Master) WRITE (stdout,20) 'VWALK_FORWARD',                    &
+     &   'Lagrangian drifters, forward stepping random walk.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+15)=' VWALK_FORWARD,'
+# else
+      IF (Master) WRITE (stdout,20) '!VWALK_FORWARD',                   &
+     &   'Lagrangian drifters, predictor/corrector random walk.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' !VWALK_FORWARD,'
+# endif
+#endif
 #if defined VISC_3DCOEF
       IF (Master) WRITE (stdout,20) 'VISC_3DCOEF',                      &
      &   'Horizontal, time-dependent 3D viscosity coefficient.'
@@ -2477,11 +2608,25 @@
       Coptions(is:is+9)=' W4DPSAS,'
       idriver=idriver+1
 #endif
+#ifdef W4DPSAS_SENSITIVITY
+      IF (Master) WRITE (stdout,20) 'W4DPSAS_SENSITIVITY',              &
+     &   'Weak constraint 4D-PSAS observation sensitivity.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+21)=' W4DPSAS_SENSITIVITY,'
+      idriver=idriver+1
+#endif
 #ifdef W4DVAR
       IF (Master) WRITE (stdout,20) 'W4DVAR',                           &
      &   'Weak constraint 4DVAR data assimilation.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+8)=' W4DVAR,'
+      idriver=idriver+1
+#endif
+#ifdef W4DVAR_SENSITIVITY
+      IF (Master) WRITE (stdout,20) 'W4DVAR_SENSITIVITY',               &
+     &   'Weak constraint 4DVAR observation sensitivity.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' W4DVAR_SENSITIVITY,'
       idriver=idriver+1
 #endif
 #ifdef WAVES_OCEAN
@@ -2696,12 +2841,26 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' ZCLM_NUDGING,'
 #endif
+#if defined ZETA_ELLIPTIC && defined BALANCE_OPERATOR && \
+    defined FOUR_DVAR
+      IF (Master) WRITE (stdout,20) 'ZETA_ELLIPTIC',                    &
+     &   'Solving SSH elliptic equation in balance operator.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+15)=' ZETA_ELLIPTIC,'
+#endif
 #ifdef ZOS_HSIG
       IF (Master) WRITE (stdout,20) 'ZOS_HSIG',                         &
      &   'Wave amplitude used for Zos calculation.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' ZOS_HSIG,'
 #endif
+!
+!-----------------------------------------------------------------------
+!  Stop if unsupported C-preprocessing options or report issues with
+!  particular options.
+!-----------------------------------------------------------------------
+!
+      CALL checkadj
 !
 !-----------------------------------------------------------------------
 !  Check C-preprocessing options.
@@ -2869,32 +3028,21 @@
         END IF
       END DO
 #endif
-#if defined FOUR_DVAR
-!
-!  Stop if more that one energy norm is defined.
-!
-      IF (Master.and.(EnergyN.gt.1)) THEN
-        WRITE (stdout,100)
- 100    FORMAT (/,' CHECKDEFS - only one energy norm scaling is',       &
-     &            ' allowed.')
-        exit_flag=5
-      END IF
-#endif
 #if defined ADJOINT && defined _OPENMP
       IF (Master) THEN
-        WRITE (stdout,110)
- 110    FORMAT (/,' CHECKDEFS - cannot run the adjoint model in',       &
+        WRITE (stdout,100)
+ 100    FORMAT (/,' CHECKDEFS - cannot run the adjoint model in',       &
      &            ' shared-memory mode.')
         exit_flag=5
       END IF
 #endif
-#if defined NEMURO && defined HOLLING_GRAZING && IVLEV_EXPLICIT
+#if defined NEMURO && defined HOLLING_GRAZING && defined IVLEV_EXPLICIT
 !
 !  Stop if using more than one grazing algorithm.
 !
       IF (Master) THEN
-        WRITE (stdout,120)
- 120    FORMAT (/,' CHECKDEFS - More than one grazing algorithm',       &
+        WRITE (stdout,110)
+ 110    FORMAT (/,' CHECKDEFS - More than one grazing algorithm',       &
      &            ' selected for Nemuro model.')
         exit_flag=5
       END IF
@@ -2905,8 +3053,8 @@
 !  Stop if using more than vertical convolution algorithm.
 !
       IF (Master) THEN
-        WRITE (stdout,130)
- 130    FORMAT (/,' CHECKDEFS - More than one vertical convolution',    &
+        WRITE (stdout,120)
+ 120    FORMAT (/,' CHECKDEFS - More than one vertical convolution',    &
      &            ' algorithm selected.')
         exit_flag=5
       END IF
@@ -2914,9 +3062,18 @@
 #endif
 #if defined MODEL_COUPLING && (defined ESMF_LIB && defined MCT_LIB)
       IF (Master) THEN
-        WRITE (stdout,140)
- 140    FORMAT (/,' CHECKDEFS - More than one coupling library',        &
+        WRITE (stdout,130)
+ 130    FORMAT (/,' CHECKDEFS - More than one coupling library',        &
      &            ' selected.')
+        exit_flag=5
+      END IF
+#endif
+#if defined POSTERIOR_ERROR_F && defined POSTERIOR_ERROR_I && \
+    defined WEAK_CONSTRAINT
+      IF (Master) THEN
+        WRITE (stdout,140)
+ 140    FORMAT (/,' CHECKDEFS - Both initial and final posterior',      &
+     &            ' error covariance analysis selected, choose one.')
         exit_flag=5
       END IF
 #endif
@@ -2944,6 +3101,18 @@
         WRITE (stdout,150) 'vertical','tracers','itrcVadv =',itrcVadv
         exit_flag=5
       END IF
+# if defined TANGENT || defined TL_IOMS || defined ADJOINT
+      IF (Master.and.(itrcHadvtl.gt.1)) THEN
+        WRITE (stdout,150) 'TL/AD horizontal','tracers','itrcHadvtl =', &
+     &                     itrcHadvtl
+        exit_flag=5
+      END IF
+      IF (Master.and.(itrcVadvtl.gt.1)) THEN
+        WRITE (stdout,150) 'TL/AD vertical','tracers','itrcVadvtl =',   &
+     &                     itrcVadvtl
+        exit_flag=5
+      END IF
+# endif
 #endif
  150  FORMAT (/,' CHECKDEFS - only one ',a,' advection scheme',         &
      &        /,13x,'is allowed for ',a,', ',a,1x,i1)

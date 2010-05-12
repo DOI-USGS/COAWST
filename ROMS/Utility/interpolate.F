@@ -6,7 +6,7 @@
 !
 !svn $Id: interpolate.F 771 2008-09-30 02:30:00Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -352,7 +352,6 @@
 !
       USE mod_param
       USE mod_scalars
-      USE mod_grid
 !
 !  Imported variable declarations.
 !
@@ -378,7 +377,6 @@
       integer :: i, i1, i2, j, j1, j2
 
       real(r8) :: p1, p2, q1, q2
-      real(r8) :: cff7, cff8, cff9
 !
 !-----------------------------------------------------------------------
 !  Linearly interpolate requested field
@@ -707,7 +705,7 @@
       real(r8) :: a11, a12, a21, a22
       real(r8) :: e11, e12, e21, e22
       real(r8) :: cff, d1, d2, dfc, dx, dy, eta, xi, xy, yx
-      real(r8) :: f0, fx, fxx, fxxx, fxxy, fxy, fxyy, fy, fyy, fyyy   
+      real(r8) :: f0, fx, fxx, fxxx, fxxy, fxy, fxyy, fy, fyy, fyyy
 
       real(r8), parameter :: C01 = 1.0_r8/48.0_r8
       real(r8), parameter :: C02 = 1.0_r8/32.0_r8
@@ -1140,7 +1138,8 @@
 
       real(r8), intent(out) :: Ipos(LBm:UBm,LBn:UBn)
       real(r8), intent(out) :: Jpos(LBm:UBm,LBn:UBn)
-      integer, intent(out) :: Xmin, Xmax, Ymin, Ymax
+
+      integer, intent(out), optional :: Xmin, Xmax, Ymin, Ymax
 !
 !  Local variable declarations.
 !

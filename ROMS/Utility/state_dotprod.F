@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE state_dotprod_mod
 !
-!svn $Id: state_dotprod.F 584 2008-03-18 20:01:12Z arango $
+!svn $Id: state_dotprod.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -32,7 +32,16 @@
 #endif
 !      DotProd(isFsur)      Free-surface contribution                  !
 !                                                                      !
-!-----------------------------------------------------------------------
+#ifdef ADJUST_BOUNDARY
+!                                                                      !
+!  Notice that the state variables are processed over the full grid    !
+!  even when the adjustment of open boundaries is activated.  This     !
+!  is harmless because the S1 and S2 states are originated from the    !
+!  tangent linear and adjoit models and currently have as zero         !
+!  value at the boundary edges when data is imposed (clamped).         !
+!                                                                      !
+#endif
+!=======================================================================
 !
       implicit none
 
@@ -42,10 +51,20 @@
 !
 !***********************************************************************
       SUBROUTINE state_dotprod (ng, tile, model,                        &
-     &                          LBi, UBi, LBj, UBj,                     &
+     &                          LBi, UBi, LBj, UBj, LBij, UBij,         &
      &                          NstateVars, DotProd,                    &
 #ifdef MASKING
      &                          rmask, umask, vmask,                    &
+#endif
+#ifdef ADJUST_BOUNDARY
+# ifdef SOLVE3D
+     &                          s1_t_obc, s2_t_obc,                     &
+     &                          s1_u_obc, s2_u_obc,                     &
+     &                          s1_v_obc, s2_v_obc,                     &
+# endif
+     &                          s1_ubar_obc, s2_ubar_obc,               &
+     &                          s1_vbar_obc, s2_vbar_obc,               &
+     &                          s1_zeta_obc, s2_zeta_obc,               &
 #endif
 #ifdef ADJUST_WSTRESS
      &                          s1_sustr, s2_sustr,                     &
@@ -68,7 +87,8 @@
       USE mod_param
       USE mod_parallel
       USE mod_ncparam
-#if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+#if defined ADJUST_BOUNDARY || defined ADJUST_STFLUX || \
+    defined ADJUST_WSTRESS
       USE mod_scalars
 #endif
 #ifdef DISTRIBUTE
@@ -79,7 +99,7 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile, model
-      integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: LBi, UBi, LBj, UBj, LBij, UBij
       integer, intent(in) :: NstateVars
 !
 #ifdef ASSUMED_SHAPE
@@ -87,6 +107,22 @@
       real(r8), intent(in) :: rmask(LBi:,LBj:)
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
+# endif
+# ifdef ADJUST_BOUNDARY
+#  ifdef SOLVE3D
+      real(r8), intent(in) :: s1_t_obc(LBij:,:,:,:,:)
+      real(r8), intent(in) :: s2_t_obc(LBij:,:,:,:,:)
+      real(r8), intent(in) :: s1_u_obc(LBij:,:,:,:)
+      real(r8), intent(in) :: s2_u_obc(LBij:,:,:,:)
+      real(r8), intent(in) :: s1_v_obc(LBij:,:,:,:)
+      real(r8), intent(in) :: s2_v_obc(LBij:,:,:,:)
+#  endif
+      real(r8), intent(in) :: s1_ubar_obc(LBij:,:,:)
+      real(r8), intent(in) :: s2_ubar_obc(LBij:,:,:)
+      real(r8), intent(in) :: s1_vbar_obc(LBij:,:,:)
+      real(r8), intent(in) :: s2_vbar_obc(LBij:,:,:)
+      real(r8), intent(in) :: s1_zeta_obc(LBij:,:,:)
+      real(r8), intent(in) :: s2_zeta_obc(LBij:,:,:)
 # endif
 # ifdef ADJUST_WSTRESS
       real(r8), intent(in) :: s1_sustr(LBi:,LBj:,:)
@@ -121,6 +157,25 @@
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 # endif
+
+# ifdef ADJUST_BOUNDARY
+#  ifdef SOLVE3D
+      real(r8), intent(in) :: s1_t_obc(LBij:UBij,N(ng),4,               &
+     &                                 Nbrec(ng),NT(ng))
+      real(r8), intent(in) :: s2_t_obc(LBij:UBij,N(ng),4,               &
+     &                                 Nbrec(ng),NT(ng))
+      real(r8), intent(in) :: s1_u_obc(LBij:UBij,N(ng),4,Nbrec(ng))
+      real(r8), intent(in) :: s2_u_obc(LBij:UBij,N(ng),4,Nbrec(ng))
+      real(r8), intent(in) :: s1_v_obc(LBij:UBij,N(ng),4,Nbrec(ng))
+      real(r8), intent(in) :: s2_v_obc(LBij:UBij,N(ng),4,Nbrec(ng))
+#  endif
+      real(r8), intent(in) :: s1_ubar_obc(LBij:UBij,4,Nbrec(ng))
+      real(r8), intent(in) :: s2_ubar_obc(LBij:UBij,4,Nbrec(ng))
+      real(r8), intent(in) :: s1_vbar_obc(LBij:UBij,4,Nbrec(ng))
+      real(r8), intent(in) :: s2_vbar_obc(LBij:UBij,4,Nbrec(ng))
+      real(r8), intent(in) :: s1_zeta_obc(LBij:UBij,4,Nbrec(ng))
+      real(r8), intent(in) :: s2_zeta_obc(LBij:UBij,4,Nbrec(ng))
+# endif
 # ifdef ADJUST_WSTRESS
       real(r8), intent(in) :: s1_sustr(LBi:UBi,LBj:UBj,Nfrec(ng))
       real(r8), intent(in) :: s2_sustr(LBi:UBi,LBj:UBj,Nfrec(ng))
@@ -153,9 +208,8 @@
 !  Local variable declarations.
 !
       integer :: NSUB, i, j, k
-#ifdef SOLVE3D
-      integer :: itrc
-#endif
+      integer :: ir, it
+
       real(r8) :: cff
       real(r8), dimension(0:NstateVars) :: my_DotProd
 #ifdef DISTRIBUTE
@@ -185,9 +239,63 @@
         END DO
       END DO
 
+#ifdef ADJUST_BOUNDARY
+!
+!  Free-surface open boundaries.
+!
+      IF (ANY(Lobc(:,isFsur,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isFsur,ng)).and.WESTERN_EDGE) THEN
+            DO j=Jstr,Jend
+              cff=s1_zeta_obc(j,iwest,ir)*                              &
+     &            s2_zeta_obc(j,iwest,ir)
+# ifdef MASKING
+              cff=cff*rmask(Istr-1,j)
+# endif
+              my_DotProd(0)=my_DotProd(0)+cff
+              my_DotProd(isFsur)=my_DotProd(isFsur)+cff
+            END DO
+          END IF
+          IF ((Lobc(ieast,isFsur,ng)).and.EASTERN_EDGE) THEN
+            DO j=Jstr,Jend
+              cff=s1_zeta_obc(j,ieast,ir)*                              &
+     &            s2_zeta_obc(j,ieast,ir)
+# ifdef MASKING
+              cff=cff*rmask(Iend+1,j)
+# endif
+              my_DotProd(0)=my_DotProd(0)+cff
+              my_DotProd(isFsur)=my_DotProd(isFsur)+cff
+            END DO
+          END IF
+          IF ((Lobc(isouth,isFsur,ng)).and.SOUTHERN_EDGE) THEN
+            DO i=Istr,Iend
+              cff=s1_zeta_obc(i,isouth,ir)*                             &
+     &            s2_zeta_obc(i,isouth,ir)
+# ifdef MASKING
+              cff=cff*rmask(i,Jstr-1)
+# endif
+              my_DotProd(0)=my_DotProd(0)+cff
+              my_DotProd(isFsur)=my_DotProd(isFsur)+cff
+            END DO
+          END IF
+          IF ((Lobc(inorth,isFsur,ng)).and.NORTHERN_EDGE) THEN
+            DO i=Istr,Iend
+              cff=s1_zeta_obc(i,inorth,ir)*                             &
+     &            s2_zeta_obc(i,inorth,ir)
+# ifdef MASKING
+              cff=cff*rmask(i,Jend+1)
+# endif
+              my_DotProd(0)=my_DotProd(0)+cff
+              my_DotProd(isFsur)=my_DotProd(isFsur)+cff
+            END DO
+          END IF
+        END DO
+      END IF
+#endif
+
 #ifndef SOLVE3D
 !
-!  2D momentum.
+!  2D U-momentum component.
 !
       DO j=JstrR,JendR
         DO i=Istr,IendR
@@ -199,6 +307,66 @@
           my_DotProd(isUbar)=my_DotProd(isUbar)+cff
         END DO
       END DO
+#endif
+
+#ifdef ADJUST_BOUNDARY
+!
+!  2D U-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isUbar,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isUbar,ng)).and.WESTERN_EDGE) THEN
+            DO j=Jstr,Jend
+              cff=s1_ubar_obc(j,iwest,ir)*                              &
+     &            s2_ubar_obc(j,iwest,ir)
+# ifdef MASKING
+              cff=cff*umask(Istr,j)
+# endif
+              my_DotProd(0)=my_DotProd(0)+cff
+              my_DotProd(isUbar)=my_DotProd(isUbar)+cff
+            END DO
+          END IF
+          IF ((Lobc(ieast,isUbar,ng)).and.EASTERN_EDGE) THEN
+            DO j=Jstr,Jend
+              cff=s1_ubar_obc(j,ieast,ir)*                              &
+     &            s2_ubar_obc(j,ieast,ir)
+# ifdef MASKING
+              cff=cff*umask(Iend+1,j)
+# endif
+              my_DotProd(0)=my_DotProd(0)+cff
+              my_DotProd(isUbar)=my_DotProd(isUbar)+cff
+            END DO
+          END IF
+          IF ((Lobc(isouth,isUbar,ng)).and.SOUTHERN_EDGE) THEN
+            DO i=IstrU,Iend
+              cff=s1_ubar_obc(i,isouth,ir)*                             &
+     &            s2_ubar_obc(i,isouth,ir)
+# ifdef MASKING
+              cff=cff*umask(i,Jstr-1)
+# endif
+              my_DotProd(0)=my_DotProd(0)+cff
+              my_DotProd(isUbar)=my_DotProd(isUbar)+cff
+            END DO
+          END IF
+          IF ((Lobc(inorth,isUbar,ng)).and.NORTHERN_EDGE) THEN
+            DO i=IstrU,Iend
+              cff=s1_ubar_obc(i,inorth,ir)*                             &
+     &            s2_ubar_obc(i,inorth,ir)
+# ifdef MASKING
+              cff=cff*umask(i,Jend+1)
+# endif
+              my_DotProd(0)=my_DotProd(0)+cff
+              my_DotProd(isUbar)=my_DotProd(isUbar)+cff
+            END DO
+          END IF
+        END DO
+      END IF
+#endif
+
+#ifndef SOLVE3D
+!
+!  2D V-momentum component.
+!
       DO j=Jstr,JendR
         DO i=IstrR,IendR
           cff=s1_vbar(i,j)*s2_vbar(i,j)
@@ -211,14 +379,68 @@
       END DO
 #endif
 
+#ifdef ADJUST_BOUNDARY
+!
+!  2D V-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isVbar,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isVbar,ng)).and.WESTERN_EDGE) THEN
+            DO j=JstrV,Jend
+              cff=s1_vbar_obc(j,iwest,ir)*                              &
+     &            s2_vbar_obc(j,iwest,ir)
+# ifdef MASKING
+              cff=cff*vmask(Istr-1,j)
+# endif
+              my_DotProd(0)=my_DotProd(0)+cff
+              my_DotProd(isVbar)=my_DotProd(isVbar)+cff
+            END DO
+          END IF
+          IF ((Lobc(ieast,isVbar,ng)).and.EASTERN_EDGE) THEN
+            DO j=JstrV,Jend
+              cff=s1_vbar_obc(j,ieast,ir)*                              &
+     &            s2_vbar_obc(j,ieast,ir)
+# ifdef MASKING
+              cff=cff*vmask(Iend+1,j)
+# endif
+              my_DotProd(0)=my_DotProd(0)+cff
+              my_DotProd(isVbar)=my_DotProd(isVbar)+cff
+            END DO
+          END IF
+          IF ((Lobc(isouth,isVbar,ng)).and.SOUTHERN_EDGE) THEN
+            DO i=Istr,Iend
+              cff=s1_vbar_obc(i,isouth,ir)*                             &
+     &            s2_vbar_obc(i,isouth,ir)
+# ifdef MASKING
+              cff=cff*vmask(i,Jstr)
+# endif
+              my_DotProd(0)=my_DotProd(0)+cff
+              my_DotProd(isVbar)=my_DotProd(isVbar)+cff
+            END DO
+          END IF
+          IF ((Lobc(inorth,isVbar,ng)).and.NORTHERN_EDGE) THEN
+            DO i=Istr,Iend
+              cff=s1_vbar_obc(i,inorth,ir)*                             &
+     &            s2_vbar_obc(i,inorth,ir)
+# ifdef MASKING
+              cff=cff*vmask(i,Jend+1)
+# endif
+              my_DotProd(0)=my_DotProd(0)+cff
+              my_DotProd(isVbar)=my_DotProd(isVbar)+cff
+            END DO
+          END IF
+        END DO
+      END IF
+#endif
+
 #ifdef ADJUST_WSTRESS
 !
 !  Surface momentum stress.
 !
-      DO k=1,Nfrec(ng)
+      DO ir=1,Nfrec(ng)
         DO j=JstrR,JendR
           DO i=Istr,IendR
-            cff=s1_sustr(i,j,k)*s2_sustr(i,j,k)
+            cff=s1_sustr(i,j,ir)*s2_sustr(i,j,ir)
 # ifdef MASKING
             cff=cff*umask(i,j)
 # endif
@@ -228,7 +450,7 @@
         END DO
         DO j=Jstr,JendR
           DO i=IstrR,IendR
-            cff=s1_svstr(i,j,k)*s2_svstr(i,j,k)
+            cff=s1_svstr(i,j,ir)*s2_svstr(i,j,ir)
 # ifdef MASKING
             cff=cff*vmask(i,j)
 # endif
@@ -241,7 +463,7 @@
 
 #ifdef SOLVE3D
 !
-!  3D momentum.
+!  3D U-momentum component.
 !
       DO k=1,N(ng)
         DO j=JstrR,JendR
@@ -255,6 +477,71 @@
           END DO
         END DO
       END DO
+
+# ifdef ADJUST_BOUNDARY
+!
+!  3D U-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isUvel,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isUvel,ng)).and.WESTERN_EDGE) THEN
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                cff=s1_u_obc(j,k,iwest,ir)*                             &
+     &              s2_u_obc(j,k,iwest,ir)
+#  ifdef MASKING
+                cff=cff*umask(Istr,j)
+#  endif
+                my_DotProd(0)=my_DotProd(0)+cff
+                my_DotProd(isUvel)=my_DotProd(isUvel)+cff
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(ieast,isUvel,ng)).and.EASTERN_EDGE) THEN
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                cff=s1_u_obc(j,k,ieast,ir)*                             &
+     &              s2_u_obc(j,k,ieast,ir)
+#  ifdef MASKING
+                cff=cff*umask(Iend+1,j)
+#  endif
+                my_DotProd(0)=my_DotProd(0)+cff
+                my_DotProd(isUvel)=my_DotProd(isUvel)+cff
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(isouth,isUvel,ng)).and.SOUTHERN_EDGE) THEN
+            DO k=1,N(ng)
+              DO i=IstrU,Iend
+                cff=s1_u_obc(i,k,isouth,ir)*                            &
+     &              s2_u_obc(i,k,isouth,ir)
+#  ifdef MASKING
+                cff=cff*umask(i,Jstr-1)
+#  endif
+                my_DotProd(0)=my_DotProd(0)+cff
+                my_DotProd(isUvel)=my_DotProd(isUvel)+cff
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(inorth,isUvel,ng)).and.NORTHERN_EDGE) THEN
+            DO k=1,N(ng)
+              DO i=IstrU,Iend
+                cff=s1_u_obc(i,k,inorth,ir)*                            &
+     &              s2_u_obc(i,k,inorth,ir)
+#  ifdef MASKING
+                cff=cff*umask(i,Jend+1)
+#  endif
+                my_DotProd(0)=my_DotProd(0)+cff
+                my_DotProd(isUvel)=my_DotProd(isUvel)+cff
+              END DO
+            END DO
+          END IF
+        END DO
+      END IF
+# endif
+!
+!  3D V-momentum component.
+!
       DO k=1,N(ng)
         DO j=Jstr,JendR
           DO i=IstrR,IendR
@@ -267,43 +554,172 @@
           END DO
         END DO
       END DO
+
+# ifdef ADJUST_BOUNDARY
+!
+!  3D V-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isVvel,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isVvel,ng)).and.WESTERN_EDGE) THEN
+            DO k=1,N(ng)
+              DO j=JstrV,Jend
+                cff=s1_v_obc(j,k,iwest,ir)*                             &
+     &              s2_v_obc(j,k,iwest,ir)
+#  ifdef MASKING
+                cff=cff*vmask(Istr-1,j)
+#  endif
+                my_DotProd(0)=my_DotProd(0)+cff
+                my_DotProd(isVvel)=my_DotProd(isVvel)+cff
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(ieast,isVvel,ng)).and.EASTERN_EDGE) THEN
+            DO k=1,N(ng)
+              DO j=JstrV,Jend
+                cff=s1_v_obc(j,k,ieast,ir)*                             &
+     &              s2_v_obc(j,k,ieast,ir)
+#  ifdef MASKING
+                cff=cff*vmask(Iend+1,j)
+#  endif
+                my_DotProd(0)=my_DotProd(0)+cff
+                my_DotProd(isVvel)=my_DotProd(isVvel)+cff
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(isouth,isVvel,ng)).and.SOUTHERN_EDGE) THEN
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                cff=s1_v_obc(i,k,isouth,ir)*                            &
+     &              s2_v_obc(i,k,isouth,ir)
+#  ifdef MASKING
+                cff=cff*vmask(i,Jstr)
+#  endif
+                my_DotProd(0)=my_DotProd(0)+cff
+                my_DotProd(isVvel)=my_DotProd(isVvel)+cff
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(inorth,isVvel,ng)).and.NORTHERN_EDGE) THEN
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                cff=s1_v_obc(i,k,inorth,ir)*                            &
+     &              s2_v_obc(i,k,inorth,ir)
+#  ifdef MASKING
+                cff=cff*vmask(i,Jend+1)
+#  endif
+                my_DotProd(0)=my_DotProd(0)+cff
+                my_DotProd(isVvel)=my_DotProd(isVvel)+cff
+              END DO
+            END DO
+          END IF
+        END DO
+      END IF
+# endif
 !
 !  Tracers.
 !
-      DO itrc=1,NT(ng)
+      DO it=1,NT(ng)
         DO k=1,N(ng)
           DO j=JstrR,JendR
             DO i=IstrR,IendR
-              cff=s1_t(i,j,k,itrc)*s2_t(i,j,k,itrc)
+              cff=s1_t(i,j,k,it)*s2_t(i,j,k,it)
 # ifdef MASKING
               cff=cff*rmask(i,j)
 # endif
               my_DotProd(0)=my_DotProd(0)+cff
-              my_DotProd(isTvar(itrc))=my_DotProd(isTvar(itrc))+cff
+              my_DotProd(isTvar(it))=my_DotProd(isTvar(it))+cff
             END DO
           END DO
         END DO
       END DO
 
+# ifdef ADJUST_BOUNDARY
+!
+!  Tracers open boundaries.
+!
+      DO it=1,NT(ng)
+        IF (ANY(Lobc(:,isTvar(it),ng))) THEN
+          DO ir=1,Nbrec(ng)
+            IF ((Lobc(iwest,isTvar(it),ng)).and.WESTERN_EDGE) THEN
+              DO k=1,N(ng)
+                DO j=Jstr,Jend
+                  cff=s1_t_obc(j,k,iwest,ir,it)*                        &
+     &                s2_t_obc(j,k,iwest,ir,it)
+#  ifdef MASKING
+                  cff=cff*rmask(Istr-1,j)
+#  endif
+                  my_DotProd(0)=my_DotProd(0)+cff
+                  my_DotProd(isTvar(it))=my_DotProd(isTvar(it))+cff
+                END DO
+              END DO
+            END IF
+            IF ((Lobc(ieast,isTvar(it),ng)).and.EASTERN_EDGE) THEN
+              DO k=1,N(ng)
+                DO j=Jstr,Jend
+                  cff=s1_t_obc(j,k,ieast,ir,it)*                        &
+     &                s2_t_obc(j,k,ieast,ir,it)
+#  ifdef MASKING
+                  cff=cff*rmask(Iend+1,j)
+#  endif
+                  my_DotProd(0)=my_DotProd(0)+cff
+                  my_DotProd(isTvar(it))=my_DotProd(isTvar(it))+cff
+                END DO
+              END DO
+            END IF
+            IF ((Lobc(isouth,isTvar(it),ng)).and.SOUTHERN_EDGE) THEN
+              DO k=1,N(ng)
+                DO i=Istr,Iend
+                  cff=s1_t_obc(i,k,isouth,ir,it)*                       &
+     &                s2_t_obc(i,k,isouth,ir,it)
+#  ifdef MASKING
+                  cff=cff*rmask(i,Jstr-1)
+#  endif
+                  my_DotProd(0)=my_DotProd(0)+cff
+                  my_DotProd(isTvar(it))=my_DotProd(isTvar(it))+cff
+                END DO
+              END DO
+            END IF
+            IF ((Lobc(inorth,isTvar(it),ng)).and.NORTHERN_EDGE) THEN
+              DO k=1,N(ng)
+                DO i=Istr,Iend
+                  cff=s1_t_obc(i,k,inorth,ir,it)*                       &
+     &                s2_t_obc(i,k,inorth,ir,it)
+#  ifdef MASKING
+                  cff=cff*rmask(i,Jend+1)
+#  endif
+                  my_DotProd(0)=my_DotProd(0)+cff
+                  my_DotProd(isTvar(it))=my_DotProd(isTvar(it))+cff
+                END DO
+              END DO
+            END IF
+          END DO
+        END IF
+      END DO
+# endif
+
 # ifdef ADJUST_STFLUX
 !
 !  Surface tracers flux.
 !
-      DO itrc=1,NT(ng)
-        DO k=1,Nfrec(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
-              cff=s1_tflux(i,j,k,itrc)*s2_tflux(i,j,k,itrc)
+      DO it=1,NT(ng)
+        IF (Lstflux(it,ng)) THEN
+          DO ir=1,Nfrec(ng)
+            DO j=JstrR,JendR
+              DO i=IstrR,IendR
+                cff=s1_tflux(i,j,ir,it)*s2_tflux(i,j,ir,it)
 #  ifdef MASKING
-              cff=cff*rmask(i,j)
+                cff=cff*rmask(i,j)
 #  endif
-              my_DotProd(0)=my_DotProd(0)+cff
-              my_DotProd(isTsur(itrc))=my_DotProd(isTsur(itrc))+cff
+                my_DotProd(0)=my_DotProd(0)+cff
+                my_DotProd(isTsur(it))=my_DotProd(isTsur(it))+cff
+              END DO
             END DO
           END DO
-        END DO
+        END IF
       END DO
 # endif
+
 #endif
 !
 !-----------------------------------------------------------------------

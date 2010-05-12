@@ -75,10 +75,11 @@
       USE mod_stepping
       USE mod_parallel
       USE mod_ocean
+      USE mod_refined
       USE interpolate_mod
 
 #  ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcasti, mp_gather
+      USE distribute_mod, ONLY : mp_bcasti, mp_gather3d
 #  endif
 !
       implicit none
@@ -211,7 +212,7 @@
             DO i=Imin,Imax
               ic=ic+1
 # ifdef MASKING
-              Amask(i,j)=GRID(ng)%rmask_p(i,j)
+              Amask(i,j)=REFINED(ng)%rmask_p(i,j)
 # else
               Amask(i,j)=1.0_r8
 # endif
@@ -220,8 +221,8 @@
 !
           DO itrc=1,NT(ng)
             Npts=MySize
-            CALL mp_gather (ngp, model, LBip, UBip, LBjp, UBjp,         &
-     &                      1, N(ngp), gtype, 1.0_r8,                   &
+            CALL mp_gather3d (ngp, model, LBip, UBip, LBjp, UBjp,         &
+     &                      1, N(ngp), 0, gtype, 1.0_r8,                   &
 #  ifdef MASKING
      &                      GRID(ngp) % rmask(LBip:UBip,LBjp:UBjp),     &
 #  endif
@@ -246,33 +247,33 @@
 !
             IF (spherical) THEN 
               CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,           &
-     &                            Kmin, Kmax,                           &
-     &                            GRID(ng)%lonr_p(Imin:Imax,Jmin:Jmax), &
-     &                            GRID(ng)%latr_p(Imin:Imax,Jmin:Jmax), &
-     &                            A, Amask,                             &
-     &                            LBi, UBi, LBj, UBj, 1, N(ngp),        &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            OCEAN(ng)%hindpi_r,OCEAN(ng)%hindpj_r,&
-     &                            GRID(ng)%lonr, GRID(ng)%latr, A2,     &
-     &                            my_min, my_max)
+     &                          Kmin, Kmax,                             &
+     &                          REFINED(ng)%lonr_p(Imin:Imax,Jmin:Jmax),&
+     &                          REFINED(ng)%latr_p(Imin:Imax,Jmin:Jmax),&
+     &                          A, Amask,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ngp),          &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          OCEAN(ng)%hindpi_r,OCEAN(ng)%hindpj_r,  &
+     &                          GRID(ng)%lonr, GRID(ng)%latr, A2,       &
+     &                          my_min, my_max)
             ELSE
               CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,           &
-     &                            Kmin, Kmax,                           &
-     &                            GRID(ng)%xr_p(Imin:Imax,Jmin:Jmax),   &
-     &                            GRID(ng)%yr_p(Imin:Imax,Jmin:Jmax),   &
-     &                            A, Amask,                             &
-     &                            LBi, UBi, LBj, UBj, 1, N(ngp),        &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            OCEAN(ng)%hindpi_r,OCEAN(ng)%hindpj_r,&
-     &                            GRID(ng)%xr, GRID(ng)%yr, A2,         &
-     &                            my_min, my_max)
+     &                          Kmin, Kmax,                             &
+     &                          REFINED(ng)%xr_p(Imin:Imax,Jmin:Jmax),  &
+     &                          REFINED(ng)%yr_p(Imin:Imax,Jmin:Jmax),  &
+     &                          A, Amask,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ngp),          &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          OCEAN(ng)%hindpi_r,OCEAN(ng)%hindpj_r,  &
+     &                          GRID(ng)%xr, GRID(ng)%yr, A2,           &
+     &                          my_min, my_max)
             END IF
             IF (WESTERN_EDGE) THEN
               DO k=1,N(ng)
                 DO j=JstrT,JendT
                   DO i=IstrT,Istr-1
                     ic=i+Nghostpoints+1
-                    BOUNDARY(ng)%tR_west(ic,j,k,t1,itrc)=A2(i,j,k)
+                    REFINED(ng)%tR_west(ic,j,k,t1,itrc)=A2(i,j,k)
                   END DO
                 END DO
               END DO
@@ -282,7 +283,7 @@
                 DO j=JstrT,JendT
                   DO i=Iend+1,IendT
                     ic=i-Iend
-                    BOUNDARY(ng)%tR_east(ic,j,k,t1,itrc)=A2(i,j,k)
+                    REFINED(ng)%tR_east(ic,j,k,t1,itrc)=A2(i,j,k)
                   END DO
                 END DO
               END DO
@@ -292,7 +293,7 @@
                 DO j=JstrT,Jstr-1
                   DO i=IstrT,IendT
                     jc=j+Nghostpoints+1
-                    BOUNDARY(ng)%tR_south(i,jc,k,t1,itrc)=A2(i,j,k)
+                    REFINED(ng)%tR_south(i,jc,k,t1,itrc)=A2(i,j,k)
                   END DO
                 END DO
               END DO
@@ -302,7 +303,7 @@
                 DO j=Jend+1,JendT
                   DO i=IstrT,IendT
                     jc=j-Jend
-                    BOUNDARY(ng)%tR_north(i,jc,k,t1,itrc)=A2(i,j,k)
+                    REFINED(ng)%tR_north(i,jc,k,t1,itrc)=A2(i,j,k)
                   END DO
                 END DO
               END DO
@@ -320,7 +321,7 @@
             DO i=Imin,Imax
               ic=ic+1
 # ifdef MASKING
-              Amask(i,j)=GRID(ng)%umask_p(i,j)
+              Amask(i,j)=REFINED(ng)%umask_p(i,j)
 # else
               Amask(i,j)=1.0_r8
 # endif
@@ -328,8 +329,8 @@
           END DO
 !
           Npts=MySize
-          CALL mp_gather (ngp, model, LBip, UBip, LBjp, UBjp, 1, N(ngp),&
-     &                    gtype, 1.0_r8,                                &
+          CALL mp_gather3d (ngp, model, LBip, UBip, LBjp, UBjp,         &
+     &                    1, N(ngp), 0, gtype, 1.0_r8,                  &
 #  ifdef MASKING
      &                    GRID(ngp) % umask(LBip:UBip,LBjp:UBjp),       &
 #  endif
@@ -354,31 +355,31 @@
 !
           IF (spherical) THEN
             CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax, Kmin, Kmax, &
-     &                          GRID(ng)%lonu_p(Imin:Imax,Jmin:Jmax),   &
-     &                          GRID(ng)%latu_p(Imin:Imax,Jmin:Jmax),   &
-     &                          A, Amask,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ngp),          &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u, &
-     &                          GRID(ng)%lonu, GRID(ng)%latu, A2,       &
-     &                          my_min, my_max)
+     &                        REFINED(ng)%lonu_p(Imin:Imax,Jmin:Jmax),  &
+     &                        REFINED(ng)%latu_p(Imin:Imax,Jmin:Jmax),  &
+     &                        A, Amask,                                 &
+     &                        LBi, UBi, LBj, UBj, 1, N(ngp),            &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,   &
+     &                        GRID(ng)%lonu, GRID(ng)%latu, A2,         &
+     &                        my_min, my_max)
           ELSE
             CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax, Kmin, Kmax, &
-     &                          GRID(ng)%xu_p(Imin:Imax,Jmin:Jmax),     &
-     &                          GRID(ng)%yu_p(Imin:Imax,Jmin:Jmax),     &
-     &                          A, Amask,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ngp),          &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u, &
-     &                          GRID(ng)%xu, GRID(ng)%yu, A2,           &
-     &                          my_min, my_max)
+     &                        REFINED(ng)%xu_p(Imin:Imax,Jmin:Jmax),    &
+     &                        REFINED(ng)%yu_p(Imin:Imax,Jmin:Jmax),    &
+     &                        A, Amask,                                 &
+     &                        LBi, UBi, LBj, UBj, 1, N(ngp),            &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,   &
+     &                        GRID(ng)%xu, GRID(ng)%yu, A2,             &
+     &                        my_min, my_max)
           END IF
           IF (WESTERN_EDGE) THEN
             DO k=1,N(ng)
               DO j=JstrT,JendT
                 DO i=IstrT+1,Istr
                   ic=i+Nghostpoints
-                  BOUNDARY(ng)%uR_west(ic,j,k,t1)=A2(i,j,k)
+                  REFINED(ng)%uR_west(ic,j,k,t1)=A2(i,j,k)
                 END DO
               END DO
             END DO
@@ -388,7 +389,7 @@
               DO j=JstrT,JendT
                 DO i=Iend+1,IendT
                   ic=i-Iend
-                  BOUNDARY(ng)%uR_east(ic,j,k,t1)=A2(i,j,k)
+                  REFINED(ng)%uR_east(ic,j,k,t1)=A2(i,j,k)
                 END DO
               END DO
             END DO
@@ -398,7 +399,7 @@
               DO j=JstrT,Jstr-1
                 DO i=IstrT,IendT
                   jc=j+Nghostpoints+1
-                  BOUNDARY(ng)%uR_south(i,jc,k,t1)=A2(i,j,k)
+                  REFINED(ng)%uR_south(i,jc,k,t1)=A2(i,j,k)
                 END DO
               END DO
             END DO
@@ -408,7 +409,7 @@
               DO j=Jend+1,JendT
                 DO i=IstrT,IendT
                   jc=j-Jend
-                  BOUNDARY(ng)%uR_north(i,jc,k,t1)=A2(i,j,k)
+                  REFINED(ng)%uR_north(i,jc,k,t1)=A2(i,j,k)
                 END DO
               END DO
             END DO
@@ -425,7 +426,7 @@
             DO i=Imin,Imax
               ic=ic+1
 # ifdef MASKING
-              Amask(i,j)=GRID(ng)%vmask_p(i,j)
+              Amask(i,j)=REFINED(ng)%vmask_p(i,j)
 # else
               Amask(i,j)=1.0_r8
 # endif
@@ -433,8 +434,8 @@
           END DO
 !
           Npts=MySize
-          CALL mp_gather (ngp, model, LBip, UBip, LBjp, UBjp, 1, N(ngp),&
-     &                    gtype, 1.0_r8,                                &
+          CALL mp_gather3d (ngp, model, LBip, UBip, LBjp, UBjp,         &
+     &                    1, N(ngp), 0,  gtype, 1.0_r8,                 &
 #  ifdef MASKING
      &                    GRID(ngp) % vmask(LBip:UBip,LBjp:UBjp),       &
 #  endif
@@ -459,31 +460,31 @@
 !
           IF (spherical) THEN
             CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax, Kmin, Kmax, &
-     &                          GRID(ng)%lonv_p(Imin:Imax,Jmin:Jmax),   &
-     &                          GRID(ng)%latv_p(Imin:Imax,Jmin:Jmax),   &
-     &                          A, Amask,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ngp),          &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v, &
-     &                          GRID(ng)%lonv, GRID(ng)%latv, A2,       &
-     &                          my_min, my_max)
+     &                        REFINED(ng)%lonv_p(Imin:Imax,Jmin:Jmax),  &
+     &                        REFINED(ng)%latv_p(Imin:Imax,Jmin:Jmax),  &
+     &                        A, Amask,                                 &
+     &                        LBi, UBi, LBj, UBj, 1, N(ngp),            &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,   &
+     &                        GRID(ng)%lonv, GRID(ng)%latv, A2,         &
+     &                        my_min, my_max)
           ELSE
             CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax, Kmin, Kmax, &
-     &                          GRID(ng)%xv_p(Imin:Imax,Jmin:Jmax),     &
-     &                          GRID(ng)%yv_p(Imin:Imax,Jmin:Jmax),     &
-     &                          A, Amask,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ngp),          &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v, &
-     &                          GRID(ng)%xv, GRID(ng)%yv, A2,           &
-     &                          my_min, my_max)
+     &                        REFINED(ng)%xv_p(Imin:Imax,Jmin:Jmax),    &
+     &                        REFINED(ng)%yv_p(Imin:Imax,Jmin:Jmax),    &
+     &                        A, Amask,                                 &
+     &                        LBi, UBi, LBj, UBj, 1, N(ngp),            &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,   &
+     &                        GRID(ng)%xv, GRID(ng)%yv, A2,             &
+     &                        my_min, my_max)
           END IF
           IF (WESTERN_EDGE) THEN
             DO k=1,N(ng)
               DO j=JstrT,JendT
                 DO i=IstrT,Istr-1
                   ic=i+Nghostpoints+1
-                  BOUNDARY(ng)%vR_west(ic,j,k,t1)=A2(i,j,k)
+                  REFINED(ng)%vR_west(ic,j,k,t1)=A2(i,j,k)
                 END DO
               END DO
             END DO
@@ -493,7 +494,7 @@
               DO j=JstrT,JendT
                 DO i=Iend+1,IendT
                   ic=i-Iend
-                  BOUNDARY(ng)%vR_east(ic,j,k,t1)=A2(i,j,k)
+                  REFINED(ng)%vR_east(ic,j,k,t1)=A2(i,j,k)
                 END DO
               END DO
             END DO
@@ -503,7 +504,7 @@
               DO j=JstrT+1,Jstr
                 DO i=IstrT,IendT
                   jc=j+Nghostpoints
-                  BOUNDARY(ng)%vR_south(i,jc,k,t1)=A2(i,j,k)
+                  REFINED(ng)%vR_south(i,jc,k,t1)=A2(i,j,k)
                 END DO
               END DO
             END DO
@@ -513,7 +514,7 @@
               DO j=Jend+1,JendT
                 DO i=IstrT,IendT
                   jc=j-Jend
-                  BOUNDARY(ng)%vR_north(i,jc,k,t1)=A2(i,j,k)
+                  REFINED(ng)%vR_north(i,jc,k,t1)=A2(i,j,k)
                 END DO
               END DO
             END DO

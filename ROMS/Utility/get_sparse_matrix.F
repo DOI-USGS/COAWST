@@ -34,22 +34,15 @@
 !
 !  Local variable declarations
 !
-      integer ::  ndims, status, varid, ncid, numelem
-
+      integer ::  ndims, status, varid, ncid, numelem, ncSPSid
       integer, dimension(2) :: start, total
       integer, dimension(nf90_max_var_dims) :: dimIDs
 
-!     character (len=80) :: ncname
-!
 !  Open grid NetCDF file for reading.
 !
-!     ncname=SPSname(ng)
-
-!  Hard code this for now, since swan does not init it.
-      ncSPSid(ng)=-1
-
-      IF (ncSPSid(ng).eq.-1) THEN
-        status=nf90_open(TRIM(nc_name), nf90_nowrite, ncSPSid(ng))
+      ncSPSid=-1
+      IF (ncSPSid.eq.-1) THEN
+        status=nf90_open(TRIM(nc_name), nf90_nowrite, ncSPSid)
         IF (status.ne.nf90_noerr) THEN
           WRITE (stdout,5) TRIM(nc_name)
           exit_flag=2
@@ -57,12 +50,12 @@
           RETURN
         END IF
       END IF
-      ncid=ncSPSid(ng)
+      ncid=ncSPSid
 !
 ! Determine number of weights.
 !
-      status=nf90_inq_varid(ncSPSid(ng),'src_address', varid)
-      status=nf90_inquire_variable(ncSPSid(ng),varid,dimids = dimIDs)
+      status=nf90_inq_varid(ncSPSid,'src_address', varid)
+      status=nf90_inquire_variable(ncSPSid,varid,dimids = dimIDs)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('num_links')
         exit_flag=4
@@ -85,7 +78,7 @@
 !
 ! Get the src and dest grid dimensions.
 !
-      status=nf90_inq_varid(ncSPSid(ng),'src_grid_dims', varid)
+      status=nf90_inq_varid(ncSPSid,'src_grid_dims', varid)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('src_grid_dims')
         exit_flag=4
@@ -95,7 +88,7 @@
       total(1)=2
       status=nf90_get_var(ncid, varid, src_grid_dims, start, total)
 !
-      status=nf90_inq_varid(ncSPSid(ng),'dst_grid_dims', varid)
+      status=nf90_inq_varid(ncSPSid,'dst_grid_dims', varid)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('dst_grid_dims')
         exit_flag=4
@@ -107,7 +100,7 @@
 !
 ! Get the rows.
 !
-      status=nf90_inq_varid(ncSPSid(ng),'dst_address', varid)
+      status=nf90_inq_varid(ncSPSid,'dst_address', varid)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('dst_address')
         exit_flag=4
@@ -119,7 +112,7 @@
 !
 ! Get the cols.
 !
-      status=nf90_inq_varid(ncSPSid(ng),'src_address', varid)
+      status=nf90_inq_varid(ncSPSid,'src_address', varid)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('src_address')
         exit_flag=4
@@ -131,7 +124,7 @@
 !
 ! Get the weights.
 !
-      status=nf90_inq_varid(ncSPSid(ng),'remap_matrix', varid)
+      status=nf90_inq_varid(ncSPSid,'remap_matrix', varid)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('remap_matrix')
         exit_flag=4
@@ -145,7 +138,7 @@
 !
 ! Get the destination grid mask
 !
-      status=nf90_inq_varid(ncSPSid(ng),'dst_grid_imask', varid)
+      status=nf90_inq_varid(ncSPSid,'dst_grid_imask', varid)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('dst_grid_imask')
         exit_flag=4
@@ -159,8 +152,8 @@
 !
 ! Close GRID NetCDF file.
 !
-      status=nf90_close(ncSPSid(ng))
-      ncSPSid(ng)=-1
+      status=nf90_close(ncSPSid)
+      ncSPSid=-1
 !
 
   5   FORMAT (/,' GET_SPARSE - error while opening file: ', a)

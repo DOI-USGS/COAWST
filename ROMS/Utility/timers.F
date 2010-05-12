@@ -3,7 +3,7 @@
 !
 !svn $Id: timers.F 1598 2008-07-25 03:29:09Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -93,7 +93,7 @@
 !
       USE distribute_mod, ONLY : mp_barrier, mp_reduce
 #endif
-!    
+!
       implicit none
 !
 !  Imported variable declarations.

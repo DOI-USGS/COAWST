@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE extract_sta_mod
 !
-!svn $Id: extract_sta.F 584 2008-03-18 20:01:12Z arango $
+!svn $Id: extract_sta.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -34,13 +34,13 @@
 !     Ascl       Factor to scale field after extraction.               !
 !     A          Tile array (2D or 3D) to process.                     !
 !     Npos       Number of values to extract.                          !
-!     Xpos       X-extraction positions (grid coordinates).            ! 
-!     Ypos       Y-extraction positions (grid coordinates).            ! 
-!     Zpos       Z-extraction positions (grid coordinates or depth).   ! 
+!     Xpos       X-extraction positions (grid coordinates).            !
+!     Ypos       Y-extraction positions (grid coordinates).            !
+!     Zpos       Z-extraction positions (grid coordinates or depth).   !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
-!     Apos       Extracted values.                                     ! 
+!     Apos       Extracted values.                                     !
 !                                                                      !
 !=======================================================================
 !
@@ -85,11 +85,11 @@
 !
 !  Local variable declarations.
 !
-      integer :: Imin, Imax, Jmin, Jmax
       integer :: i1, i2, j1, j2, np
 
       real(r8), parameter :: Aspv = 0.0_r8
 
+      real(r8) :: Xmin, Xmax, Ymin, Ymax
       real(r8) :: Xgrd, Xoff, Ygrd, Yoff
       real(r8) :: p1, p2, q1, q2, r1, r2, wsum
       real(r8) :: w111, w211, w121, w221
@@ -97,49 +97,30 @@
       real(r8), dimension(Npos) :: bounded
 !
 !-----------------------------------------------------------------------
-!  Get physical non-overlapping horizontal tile bounds.
-!-----------------------------------------------------------------------
-!    
-#ifdef DISTRIBUTE
-      Imin=BOUNDS(ng)%Istr(MyRank)
-      Imax=BOUNDS(ng)%Iend(MyRank)
-      Jmin=BOUNDS(ng)%Jstr(MyRank)
-      Jmax=BOUNDS(ng)%Jend(MyRank)
-#else
-      Imin=1
-      Imax=Lm(ng)
-      Jmin=1
-      Jmax=Mm(ng)
-#endif
-!
-!-----------------------------------------------------------------------
-!  Determine if interpolating at RHO-points or at the native staggered
-!  C-grid.
-!-----------------------------------------------------------------------
-!
-      IF (Cgrid) THEN
-        Xoff=0.0_r8
-        Yoff=0.0_r8
-      ELSE
-        Xoff=0.5_r8
-        Yoff=0.5_r8
-      END IF
-!
-!-----------------------------------------------------------------------
 !  Interpolate from 2D field at RHO-points.
 !-----------------------------------------------------------------------
 !
       IF (gtype.eq.r2dvar) THEN
+        Xmin=rXmin(ng)
+        Xmax=rXmax(ng)
+        Ymin=rYmin(ng)
+        Ymax=rYmax(ng)
         DO np=1,Npos
           Xgrd=Xpos(np)
           Ygrd=Ypos(np)
-          i1=INT(Xgrd)
-          i2=i1+1
-          j1=INT(Ygrd)
-          j2=j1+1
           bounded(np)=0.0_r8
-          IF (((Imin.le.i1).and.(i1.le.Imax)).and.                      &
-     &        ((Jmin.le.j1).and.(j1.le.Jmax))) THEN
+          IF (((Xmin.le.Xgrd).and.(Xgrd.lt.Xmax)).and.                  &
+     &        ((Ymin.le.Ygrd).and.(Ygrd.lt.Ymax))) THEN
+            i1=INT(Xgrd)
+            j1=INT(Ygrd)
+            i2=i1+1
+            j2=j1+1
+            IF (i2.gt.Lm(ng)+1) THEN
+              i2=i1                   ! station at the eastern boundary
+            END IF
+            IF (j2.gt.Mm(ng)+1) THEN
+              j2=j1                   ! station at the northern boundary
+            END IF
             bounded(np)=1.0_r8
             p2=REAL(i2-i1,r8)*(Xgrd-REAL(i1,r8))
             q2=REAL(j2-j1,r8)*(Ygrd-REAL(j1,r8))
@@ -157,13 +138,13 @@
             wsum=w111+w211+w121+w221
             IF (wsum.gt.0.0_r8) THEN
               wsum=1.0_r8/wsum
-              w111=w111*wsum 
+              w111=w111*wsum
               w211=w211*wsum
               w121=w121*wsum
               w221=w221*wsum
             ELSE
               bounded(np)=0.0_r8
-            ENDIF          
+            ENDIF
 #endif
             Apos(np)=Ascl*(w111*A(i1,j1)+                               &
      &                     w211*A(i2,j1)+                               &
@@ -179,16 +160,35 @@
 !-----------------------------------------------------------------------
 !
       ELSE IF (gtype.eq.u2dvar) THEN
+        IF (Cgrid) THEN
+          Xmin=uXmin(ng)+0.5_r8
+          Xmax=uXmax(ng)+0.5_r8
+          Ymin=uYmin(ng)
+          Ymax=uYmax(ng)
+          Xoff=0.0_r8
+        ELSE
+          Xmin=rXmin(ng)
+          Xmax=rXmax(ng)
+          Ymin=rYmin(ng)
+          Ymax=rYmax(ng)
+          Xoff=0.5_r8
+        END IF
         DO np=1,Npos
           Xgrd=Xpos(np)+Xoff
           Ygrd=Ypos(np)
-          i1=INT(Xgrd)
-          i2=i1+1
-          j1=INT(Ygrd)
-          j2=j1+1
           bounded(np)=0.0_r8
-          IF (((Imin.le.i1).and.(i1.le.Imax)).and.                      &
-     &        ((Jmin.le.j1).and.(j1.le.Jmax))) THEN
+          IF (((Xmin.le.Xgrd).and.(Xgrd.lt.Xmax)).and.                  &
+     &        ((Ymin.le.Ygrd).and.(Ygrd.lt.Ymax))) THEN
+            i1=INT(Xgrd)
+            j1=INT(Ygrd)
+            i2=i1+1
+            j2=j1+1
+            IF (i2.gt.Lm(ng)+1) THEN
+              i2=i1                   ! station at the eastern boundary
+            END IF
+            IF (j2.gt.Mm(ng)+1) THEN
+              j2=j1                   ! station at the northern boundary
+            END IF
             bounded(np)=1.0_r8
             p2=REAL(i2-i1,r8)*(Xgrd-REAL(i1,r8))
             q2=REAL(j2-j1,r8)*(Ygrd-REAL(j1,r8))
@@ -212,7 +212,7 @@
               w221=w221*wsum
             ELSE
               bounded(np)=0.0_r8
-            END IF          
+            END IF
 #endif
             Apos(np)=Ascl*(w111*A(i1,j1)+                               &
      &                     w211*A(i2,j1)+                               &
@@ -228,16 +228,35 @@
 !-----------------------------------------------------------------------
 !
       ELSE IF (gtype.eq.v2dvar) THEN
+        IF (Cgrid) THEN
+          Xmin=vXmin(ng)
+          Xmax=vXmax(ng)
+          Ymin=vYmin(ng)+0.5_r8
+          Ymax=vYmax(ng)+0.5_r8
+          Yoff=0.0_r8
+        ELSE
+          Xmin=rXmin(ng)
+          Xmax=rXmax(ng)
+          Ymin=rYmin(ng)
+          Ymax=rYmax(ng)
+          Yoff=0.5_r8
+        END IF
         DO np=1,Npos
           Xgrd=Xpos(np)
           Ygrd=Ypos(np)+Yoff
-          i1=INT(Xgrd)
-          i2=i1+1
-          j1=INT(Ygrd)
-          j2=j1+1
           bounded(np)=0.0_r8
-          IF (((Imin.le.i1).and.(i1.le.Imax)).and.                      &
-     &        ((Jmin.le.j1).and.(j1.le.Jmax))) THEN
+          IF (((Xmin.le.Xgrd).and.(Xgrd.lt.Xmax)).and.                  &
+     &        ((Ymin.le.Ygrd).and.(Ygrd.lt.Ymax))) THEN
+            i1=INT(Xgrd)
+            j1=INT(Ygrd)
+            i2=i1+1
+            j2=j1+1
+            IF (i2.gt.Lm(ng)+1) THEN
+              i2=i1                   ! station at the eastern boundary
+            END IF
+            IF (j2.gt.Mm(ng)+1) THEN
+              j2=j1                   ! station at the northern boundary
+            END IF
             bounded(np)=1.0_r8
             p2=REAL(i2-i1,r8)*(Xgrd-REAL(i1,r8))
             q2=REAL(j2-j1,r8)*(Ygrd-REAL(j1,r8))
@@ -261,7 +280,7 @@
               w221=w221*wsum
             ELSE
               bounded(np)=0.0_r8
-            END IF          
+            END IF
 #endif
             Apos(np)=Ascl*(w111*A(i1,j1)+                               &
      &                     w211*A(i2,j1)+                               &
@@ -333,64 +352,43 @@
 !
 !  Local variable declarations.
 !
-      integer :: Imin, Imax, Jmin, Jmax
       integer :: i1, i2, j1, j2, k, k1, k2, np
 
       real(r8), parameter :: Aspv = 0.0_r8
 
-      real(r8) :: Xgrd, Xoff, Ygrd, Yoff, Zgrd, Zoff, Zbot, Ztop
+      real(r8) :: Xmin, Xmax, Ymin, Ymax
+      real(r8) :: Xgrd, Xoff, Ygrd, Yoff, Zgrd, Zbot, Ztop
       real(r8) :: dz, p1, p2, q1, q2, r1, r2, wsum
       real(r8) :: w111, w211, w121, w221, w112, w212, w122, w222
 
       real(r8), dimension(Npos) :: bounded
 !
 !-----------------------------------------------------------------------
-!  Get physical non-overlapping horizontal tile bounds.
-!-----------------------------------------------------------------------
-!    
-# ifdef DISTRIBUTE
-      Imin=BOUNDS(ng)%Istr(MyRank)
-      Imax=BOUNDS(ng)%Iend(MyRank)
-      Jmin=BOUNDS(ng)%Jstr(MyRank)
-      Jmax=BOUNDS(ng)%Jend(MyRank)
-# else
-      Imin=1
-      Imax=Lm(ng)
-      Jmin=1
-      Jmax=Mm(ng)
-# endif
-!
-!-----------------------------------------------------------------------
-!  Determine if interpolating at RHO-points or at the native staggered
-!  C-grid.
-!-----------------------------------------------------------------------
-!
-      IF (Cgrid) THEN
-        Xoff=0.0_r8
-        Yoff=0.0_r8
-        Zoff=0.0_r8
-      ELSE
-        Xoff=0.5_r8
-        Yoff=0.5_r8
-        Zoff=0.5_r8
-      END IF
-!
-!-----------------------------------------------------------------------
 !  Interpolate from 3D field at RHO-points.
 !-----------------------------------------------------------------------
 !
       IF (gtype.eq.r3dvar) THEN
+        Xmin=rXmin(ng)
+        Xmax=rXmax(ng)
+        Ymin=rYmin(ng)
+        Ymax=rYmax(ng)
         DO np=1,Npos
           Xgrd=Xpos(np)
           Ygrd=Ypos(np)
           Zgrd=Zpos(np)
-          i1=INT(Xgrd)
-          i2=i1+1
-          j1=INT(Ygrd)
-          j2=j1+1
           bounded(np)=0.0_r8
-          IF (((Imin.le.i1).and.(i1.le.Imax)).and.                      &
-     &        ((Jmin.le.j1).and.(j1.le.Jmax))) THEN
+          IF (((Xmin.le.Xgrd).and.(Xgrd.lt.Xmax)).and.                  &
+     &        ((Ymin.le.Ygrd).and.(Ygrd.lt.Ymax))) THEN
+            i1=INT(Xgrd)
+            j1=INT(Ygrd)
+            i2=i1+1
+            j2=j1+1
+            IF (i2.gt.Lm(ng)+1) THEN
+              i2=i1                   ! station at the eastern boundary
+            END IF
+            IF (j2.gt.Mm(ng)+1) THEN
+              j2=j1                   ! station at the northern boundary
+            END IF
             bounded(np)=1.0_r8
             p2=REAL(i2-i1,r8)*(Xgrd-REAL(i1,r8))
             q2=REAL(j2-j1,r8)*(Ygrd-REAL(j1,r8))
@@ -411,19 +409,19 @@
               r2=0.0_r8
             ELSE
               Ztop=GRID(ng)%z_r(i1,j1,N(ng))
-              Zbot=GRID(ng)%z_r(i1,j1,1)              
+              Zbot=GRID(ng)%z_r(i1,j1,1)
               IF (Zgrd.ge.Ztop) THEN
-                k1=N(ng)
-                k2=N(ng)
-                r1=1.0_r8
+                k1=N(ng)                     ! If shallower, assign
+                k2=N(ng)                     ! station to surface
+                r1=1.0_r8                    ! level
                 r2=0.0_r8
               ELSE IF (Zbot.ge.Zgrd) THEN
-                k1=1
-                k2=1
-                r1=1.0_r8
+                k1=1                         ! If deeper, assign
+                k2=1                         ! station to bottom
+                r1=1.0_r8                    ! level
                 r2=0.0_r8
-              ELSE                    
-                DO k=N(ng),2,-1         
+              ELSE
+                DO k=N(ng),2,-1
                   Ztop=GRID(ng)%z_r(i1,j1,k)
                   Zbot=GRID(ng)%z_r(i1,j1,k-1)
                   IF ((Ztop.gt.Zgrd).and.(Zgrd.ge.Zbot)) THEN
@@ -466,7 +464,7 @@
               w222=w222*wsum
             ELSE
               bounded(np)=0.0_r8
-            END IF          
+            END IF
 # endif
             Apos(np)=Ascl*(w111*A(i1,j1,k1)+                            &
      &                     w211*A(i2,j1,k1)+                            &
@@ -486,17 +484,36 @@
 !-----------------------------------------------------------------------
 !
       ELSE IF (gtype.eq.u3dvar) THEN
+        IF (Cgrid) THEN
+          Xmin=uXmin(ng)+0.5_r8
+          Xmax=uXmax(ng)+0.5_r8
+          Ymin=uYmin(ng)
+          Ymax=uYmax(ng)
+          Xoff=0.0_r8
+        ELSE
+          Xmin=rXmin(ng)
+          Xmax=rXmax(ng)
+          Ymin=rYmin(ng)
+          Ymax=rYmax(ng)
+          Xoff=0.5_r8
+        END IF
         DO np=1,Npos
           Xgrd=Xpos(np)+Xoff
           Ygrd=Ypos(np)
           Zgrd=Zpos(np)
-          i1=INT(Xgrd)
-          i2=i1+1
-          j1=INT(Ygrd)
-          j2=j1+1
           bounded(np)=0.0_r8
-          IF (((Imin.le.i1).and.(i1.le.Imax)).and.                      &
-     &        ((Jmin.le.j1).and.(j1.le.Jmax))) THEN
+          IF (((Xmin.le.Xgrd).and.(Xgrd.lt.Xmax)).and.                  &
+     &        ((Ymin.le.Ygrd).and.(Ygrd.lt.Ymax))) THEN
+            i1=INT(Xgrd)
+            j1=INT(Ygrd)
+            i2=i1+1
+            j2=j1+1
+            IF (i2.gt.Lm(ng)+1) THEN
+              i2=i1                   ! station at the eastern boundary
+            END IF
+            IF (j2.gt.Mm(ng)+1) THEN
+              j2=j1                   ! station at the northern boundary
+            END IF
             bounded(np)=1.0_r8
             p2=REAL(i2-i1,r8)*(Xgrd-REAL(i1,r8))
             q2=REAL(j2-j1,r8)*(Ygrd-REAL(j1,r8))
@@ -521,17 +538,17 @@
               Zbot=0.5_r8*(GRID(ng)%z_r(i1-1,j1,1)+                     &
      &                     GRID(ng)%z_r(i1  ,j1,1))
               IF (Zgrd.ge.Ztop) THEN
-                k1=N(ng)
-                k2=N(ng)
-                r1=1.0_r8
+                k1=N(ng)                     ! If shallower, assign
+                k2=N(ng)                     ! station to surface
+                r1=1.0_r8                    ! level
                 r2=0.0_r8
               ELSE IF (Zbot.ge.Zgrd) THEN
-                k1=1
-                k2=1
-                r1=1.0_r8
+                k1=1                         ! If deeper, assign
+                k2=1                         ! station to bottom
+                r1=1.0_r8                    ! level
                 r2=0.0_r8
-              ELSE                    
-                DO k=N(ng),2,-1         
+              ELSE
+                DO k=N(ng),2,-1
                   Ztop=0.5_r8*(GRID(ng)%z_r(i1-1,j1,k)+                 &
      &                         GRID(ng)%z_r(i1  ,j1,k))
                   Zbot=0.5_r8*(GRID(ng)%z_r(i1-1,j1,k-1)+               &
@@ -580,7 +597,7 @@
               w222=w222*wsum
             ELSE
               bounded(np)=0.0_r8
-            END IF          
+            END IF
 # endif
             Apos(np)=Ascl*(w111*A(i1,j1,k1)+                            &
      &                     w211*A(i2,j1,k1)+                            &
@@ -600,17 +617,36 @@
 !-----------------------------------------------------------------------
 !
       ELSE IF (gtype.eq.v3dvar) THEN
+        IF (Cgrid) THEN
+          Xmin=vXmin(ng)
+          Xmax=vXmax(ng)
+          Ymin=vYmin(ng)+0.5_r8
+          Ymax=vYmax(ng)+0.5_r8
+          Yoff=0.0_r8
+        ELSE
+          Xmin=rXmin(ng)
+          Xmax=rXmax(ng)
+          Ymin=rYmin(ng)
+          Ymax=rYmax(ng)
+          Yoff=0.5_r8
+        END IF
         DO np=1,Npos
           Xgrd=Xpos(np)
           Ygrd=Ypos(np)+Yoff
           Zgrd=Zpos(np)
-          i1=INT(Xgrd)
-          i2=i1+1
-          j1=INT(Ygrd)
-          j2=j1+1
           bounded(np)=0.0_r8
-          IF (((Imin.le.i1).and.(i1.le.Imax)).and.                      &
-     &        ((Jmin.le.j1).and.(j1.le.Jmax))) THEN
+          IF (((Xmin.le.Xgrd).and.(Xgrd.lt.Xmax)).and.                  &
+     &        ((Ymin.le.Ygrd).and.(Ygrd.lt.Ymax))) THEN
+            i1=INT(Xgrd)
+            j1=INT(Ygrd)
+            i2=i1+1
+            j2=j1+1
+            IF (i2.gt.Lm(ng)+1) THEN
+              i2=i1                   ! station at the eastern boundary
+            END IF
+            IF (j2.gt.Mm(ng)+1) THEN
+              j2=j1                   ! station at the northern boundary
+            END IF
             bounded(np)=1.0_r8
             p2=REAL(i2-i1,r8)*(Xgrd-REAL(i1,r8))
             q2=REAL(j2-j1,r8)*(Ygrd-REAL(j1,r8))
@@ -635,17 +671,17 @@
               Zbot=0.5_r8*(GRID(ng)%z_r(i1,j1-1,1)+                     &
      &                     GRID(ng)%z_r(i1,j1  ,1))
               IF (Zgrd.ge.Ztop) THEN
-                k1=N(ng)
-                k2=N(ng)
-                r1=1.0_r8
+                k1=N(ng)                     ! If shallower, assign
+                k2=N(ng)                     ! station to surface
+                r1=1.0_r8                    ! level
                 r2=0.0_r8
               ELSE IF (Zbot.ge.Zgrd) THEN
-                k1=1
-                k2=1
-                r1=1.0_r8
+                k1=1                         ! If deeper, assign
+                k2=1                         ! station to bottom
+                r1=1.0_r8                    ! level
                 r2=0.0_r8
-              ELSE                    
-                DO k=N(ng),2,-1         
+              ELSE
+                DO k=N(ng),2,-1
                   Ztop=0.5_r8*(GRID(ng)%z_r(i1,j1-1,k)+                 &
      &                         GRID(ng)%z_r(i1,j1  ,k))
                   Zbot=0.5_r8*(GRID(ng)%z_r(i1,j1-1,k-1)+               &
@@ -694,7 +730,7 @@
               w222=w222*wsum
             ELSE
               bounded(np)=0.0_r8
-            END IF          
+            END IF
 # endif
             Apos(np)=Ascl*(w111*A(i1,j1,k1)+                            &
      &                     w211*A(i2,j1,k1)+                            &
@@ -714,17 +750,27 @@
 !-----------------------------------------------------------------------
 !
       ELSE IF (gtype.eq.w3dvar) THEN
+        Xmin=rXmin(ng)
+        Xmax=rXmax(ng)
+        Ymin=rYmin(ng)
+        Ymax=rYmax(ng)
         DO np=1,Npos
           Xgrd=Xpos(np)
           Ygrd=Ypos(np)
           Zgrd=Zpos(np)
-          i1=INT(Xgrd)
-          i2=i1+1
-          j1=INT(Ygrd)
-          j2=j1+1
           bounded(np)=0.0_r8
-          IF (((Imin.le.i1).and.(i1.le.Imax)).and.                      &
-     &        ((Jmin.le.j1).and.(j1.le.Jmax))) THEN
+          IF (((Xmin.le.Xgrd).and.(Xgrd.lt.Xmax)).and.                  &
+     &        ((Ymin.le.Ygrd).and.(Ygrd.lt.Ymax))) THEN
+            i1=INT(Xgrd)
+            j1=INT(Ygrd)
+            i2=i1+1
+            j2=j1+1
+            IF (i2.gt.Lm(ng)+1) THEN
+              i2=i1                   ! station at the eastern boundary
+            END IF
+            IF (j2.gt.Mm(ng)+1) THEN
+              j2=j1                   ! station at the northern boundary
+            END IF
             bounded(np)=1.0_r8
             p2=REAL(i2-i1,r8)*(Xgrd-REAL(i1,r8))
             q2=REAL(j2-j1,r8)*(Ygrd-REAL(j1,r8))
@@ -745,19 +791,19 @@
               r2=0.0_r8
             ELSE
               Ztop=GRID(ng)%z_w(i1,j1,N(ng))
-              Zbot=GRID(ng)%z_r(i1,j1,0)
+              Zbot=GRID(ng)%z_w(i1,j1,0)
               IF (Zgrd.ge.Ztop) THEN
-                k1=N(ng)
-                k2=N(ng)
-                r1=1.0_r8
+                k1=N(ng)                     ! If shallower, assign
+                k2=N(ng)                     ! station to surface
+                r1=1.0_r8                    ! level
                 r2=0.0_r8
               ELSE IF (Zbot.ge.Zgrd) THEN
-                k1=0
-                k2=0
-                r1=1.0_r8
+                k1=0                         ! If deeper, assign
+                k2=0                         ! station to bottom
+                r1=1.0_r8                    ! level
                 r2=0.0_r8
-              ELSE                    
-                DO k=N(ng),2,-1         
+              ELSE
+                DO k=N(ng),2,-1
                   Ztop=GRID(ng)%z_w(i1,j1,k)
                   Zbot=GRID(ng)%z_w(i1,j1,k-1)
                   IF ((Ztop.gt.Zgrd).and.(Zgrd.ge.Zbot)) THEN
@@ -800,7 +846,7 @@
               w222=w222*wsum
             ELSE
               bounded(np)=0.0_r8
-            END IF          
+            END IF
 # endif
             Apos(np)=Ascl*(w111*A(i1,j1,k1)+                            &
      &                     w211*A(i2,j1,k1)+                            &

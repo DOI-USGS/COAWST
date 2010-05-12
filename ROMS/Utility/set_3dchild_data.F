@@ -71,12 +71,13 @@
       USE mod_stepping
       USE mod_parallel
       USE mod_ocean
+      USE mod_refined
       USE mod_scalars
       USE mod_coupling
       USE interpolate_mod
 
 # ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcasti, mp_gather
+      USE distribute_mod, ONLY : mp_bcasti, mp_gather3d
 # endif
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
@@ -239,7 +240,7 @@
             DO i=Imin,Imax
               ic=ic+1
 # ifdef MASKING
-              Amask(i,j)=GRID(ng)%rmask_c(i,j)
+              Amask(i,j)=REFINED(ng)%rmask_c(i,j)
 # else
               Amask(i,j)=1.0_r8
 # endif
@@ -296,8 +297,8 @@
             IF (spherical) THEN
               CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,           &
      &                            Kmin, Kmax,                           &
-     &                            GRID(ng)%lonr_c(Imin:Imax,Jmin:Jmax), &
-     &                            GRID(ng)%latr_c(Imin:Imax,Jmin:Jmax), &
+     &                          REFINED(ng)%lonr_c(Imin:Imax,Jmin:Jmax),&
+     &                          REFINED(ng)%latr_c(Imin:Imax,Jmin:Jmax),&
      &                            A, Amask,                             &
      &                            LBi, UBi, LBj, UBj, 1, N(ngc),        &
      &                            Xmin, Xmax, Ymin, Ymax,               &
@@ -307,8 +308,8 @@
             ELSE
               CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,           &
      &                            Kmin, Kmax,                           &
-     &                            GRID(ng)%xr_c(Imin:Imax,Jmin:Jmax),   &
-     &                            GRID(ng)%yr_c(Imin:Imax,Jmin:Jmax),   &
+     &                            REFINED(ng)%xr_c(Imin:Imax,Jmin:Jmax),&
+     &                            REFINED(ng)%yr_c(Imin:Imax,Jmin:Jmax),&
      &                            A, Amask,                             &
      &                            LBi, UBi, LBj, UBj, 1, N(ngc),        &
      &                            Xmin, Xmax, Ymin, Ymax,               &
@@ -344,7 +345,7 @@
             DO i=Imin,Imax
               ic=ic+1
 # ifdef MASKING
-              Amask(i,j)=GRID(ng)%umask_c(i,j)
+              Amask(i,j)=REFINED(ng)%umask_c(i,j)
 # else
               Amask(i,j)=1.0_r8
 # endif
@@ -400,8 +401,8 @@
           IF (spherical) THEN
             CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,             &
      &                          Kmin, Kmax,                             &
-     &                          GRID(ng)%lonu_c(Imin:Imax,Jmin:Jmax),   &
-     &                          GRID(ng)%latu_c(Imin:Imax,Jmin:Jmax),   &
+     &                          REFINED(ng)%lonu_c(Imin:Imax,Jmin:Jmax),&
+     &                          REFINED(ng)%latu_c(Imin:Imax,Jmin:Jmax),&
      &                          A, Amask,                               &
      &                          LBi, UBi, LBj, UBj, 1, N(ngc),          &
      &                          Xmin, Xmax, Ymin, Ymax,                 &
@@ -411,8 +412,8 @@
           ELSE
             CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,             &
      &                          Kmin, Kmax,                             &
-     &                          GRID(ng)%xu_c(Imin:Imax,Jmin:Jmax),     &
-     &                          GRID(ng)%yu_c(Imin:Imax,Jmin:Jmax),     &
+     &                          REFINED(ng)%xu_c(Imin:Imax,Jmin:Jmax),  &
+     &                          REFINED(ng)%yu_c(Imin:Imax,Jmin:Jmax),  &
      &                          A, Amask,                               &
      &                          LBi, UBi, LBj, UBj, 1, N(ngc),          &
      &                          Xmin, Xmax, Ymin, Ymax,                 &
@@ -445,7 +446,7 @@
             DO i=Imin,Imax
               ic=ic+1
 # ifdef MASKING
-              Amask(i,j)=GRID(ng)%vmask_c(i,j)
+              Amask(i,j)=REFINED(ng)%vmask_c(i,j)
 # else
               Amask(i,j)=1.0_r8
 # endif
@@ -501,8 +502,8 @@
           IF (spherical) THEN
             CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,             &
      &                          Kmin, Kmax,                             &
-     &                          GRID(ng)%lonv_c(Imin:Imax,Jmin:Jmax),   &
-     &                          GRID(ng)%latv_c(Imin:Imax,Jmin:Jmax),   &
+     &                          REFINED(ng)%lonv_c(Imin:Imax,Jmin:Jmax),&
+     &                          REFINED(ng)%latv_c(Imin:Imax,Jmin:Jmax),&
      &                          A, Amask,                               &
      &                          LBi, UBi, LBj, UBj, 1, N(ngc),          &
      &                          Xmin, Xmax, Ymin, Ymax,                 &
@@ -512,8 +513,8 @@
           ELSE
             CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,             &
      &                          Kmin, Kmax,                             &
-     &                          GRID(ng)%xv_c(Imin:Imax,Jmin:Jmax),     &
-     &                          GRID(ng)%yv_c(Imin:Imax,Jmin:Jmax),     &
+     &                          REFINED(ng)%xv_c(Imin:Imax,Jmin:Jmax),  &
+     &                          REFINED(ng)%yv_c(Imin:Imax,Jmin:Jmax),  &
      &                          A, Amask,                               &
      &                          LBi, UBi, LBj, UBj, 1, N(ngc),          &
      &                          Xmin, Xmax, Ymin, Ymax,                 &

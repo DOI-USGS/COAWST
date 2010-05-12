@@ -4,7 +4,7 @@
 !
 !svn $Id: wrt_diags.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -16,12 +16,20 @@
 !
       USE mod_param
       USE mod_parallel
+# ifdef BIOLOGY
+      USE mod_biology
+# endif
       USE mod_diags
       USE mod_grid
       USE mod_iounits
       USE mod_ncparam
       USE mod_netcdf
       USE mod_scalars
+!
+      USE nf_fwrite2d_mod, ONLY : nf_fwrite2d
+# ifdef SOLVE3D
+      USE nf_fwrite3d_mod, ONLY : nf_fwrite3d
+# endif
 !
       implicit none
 !
@@ -33,13 +41,10 @@
 !
       integer :: LBi, UBi, LBj, UBj
       integer :: gfactor, gtype, ifield, itrc, ivar, status
-      integer :: start(4), total(4)
 
-      integer :: nf_fwrite2d
-# ifdef SOLVE3D
-      integer :: nf_fwrite3d
-# endif
       real(r8) :: scale
+!
+      SourceFile='wrt_diags.F'
 !
       LBi=LBOUND(GRID(ng)%h,DIM=1)
       UBi=UBOUND(GRID(ng)%h,DIM=1)
@@ -68,17 +73,51 @@
 !
 !  Write out averaged time.
 !
-      IF (OutThread) THEN
-        start(1)=tDIAindx(ng)
-        total(1)=1
-        status=nf90_put_var(ncDIAid(ng), diaVid(idtime,ng),             &
-     &                      DIAtime(ng:), start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) TRIM(Vname(1,idtime)), tDIAindx(ng)
-          exit_flag=3
-          ioerror=status
-          RETURN
+      CALL netcdf_put_fvar (ng, iNLM, DIAname(ng),                      &
+     &                      TRIM(Vname(idtime,ng)), DIAtime(ng:),       &
+     &                      (/tDIAindx(ng)/), (/1/),                    &
+     &                      ncid = ncDIAid(ng),                         &
+     &                      varid = diaVid(idtime,ng))
+      IF (exit_flag.ne.NoError) RETURN
+!
+!  Write out 2D potential vorticity.
+!
+      scale=1.0_r8/(REAL(nDIA(ng),r8)*dt(ng))
+      gtype=gfactor*p2dvar
+      status=nf_fwrite2d(ng, iNLM, ncDIAid(ng), diaVid(id2dPV,ng),      &
+     &                   tDIAindx(ng), gtype,                           &
+     &                   LBi, UBi, LBj, UBj, scale,                     &
+#  ifdef MASKING
+     &                   GRID(ng) % pmask,                              &
+#  endif
+     &                   DIAGS(ng) % pvor_bar)
+      IF (status.ne.nf90_noerr) THEN
+        IF (Master) THEN
+          WRITE (stdout,10) TRIM(Vname(1,id2dPV)), tDIAindx(ng)
         END IF
+        exit_flag=3
+        ioerror=status
+        RETURN
+      END IF
+!
+!  Write out 2D relative vorticity.
+!
+      scale=1.0_r8/(REAL(nDIA(ng),r8)*dt(ng))
+      gtype=gfactor*p2dvar
+      status=nf_fwrite2d(ng, iNLM, ncDIAid(ng), diaVid(id2dRV,ng),      &
+     &                   tDIAindx(ng), gtype,                           &
+     &                   LBi, UBi, LBj, UBj, scale,                     &
+#  ifdef MASKING
+     &                   GRID(ng) % pmask,                              &
+#  endif
+     &                   DIAGS(ng) % rvor_bar)
+      IF (status.ne.nf90_noerr) THEN
+        IF (Master) THEN
+          WRITE (stdout,10) TRIM(Vname(1,id2dRV)), tDIAindx(ng)
+        END IF
+        exit_flag=3
+        ioerror=status
+        RETURN
       END IF
 
 # ifdef DIAGNOSTICS_UV
@@ -93,9 +132,9 @@
      &                     tDIAindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #  endif
-     &                     DIAGS(ng) % DiaU2d(LBi,LBj,ivar))
+     &                     DIAGS(ng) % DiaU2d(:,:,ivar))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,ifield)), tDIAindx(ng)
@@ -112,9 +151,9 @@
      &                     tDIAindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #  endif
-     &                     DIAGS(ng) % DiaV2d(LBi,LBj,ivar))
+     &                     DIAGS(ng) % DiaV2d(:,:,ivar))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,ifield)), tDIAindx(ng)
@@ -124,6 +163,7 @@
           RETURN
         END IF
       END DO
+
 #  ifdef SOLVE3D
 !
 !  Write out 3D momentum diagnostic fields.
@@ -136,9 +176,9 @@
      &                     tDIAindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #   endif
-     &                     DIAGS(ng) % DiaU3d(LBi,LBj,1,ivar))
+     &                     DIAGS(ng) % DiaU3d(:,:,:,ivar))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,ifield)), tDIAindx(ng)
@@ -155,9 +195,9 @@
      &                     tDIAindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #   endif
-     &                     DIAGS(ng) % DiaV3d(LBi,LBj,1,ivar))
+     &                     DIAGS(ng) % DiaV3d(:,:,:,ivar))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,ifield)), tDIAindx(ng)
@@ -169,7 +209,48 @@
       END DO
 #  endif
 # endif
-
+# ifdef SOLVE3D
+!
+!  Write out 3D potential vorticity.
+!
+      scale=1.0_r8/(REAL(nDIA(ng),r8)*dt(ng))
+      gtype=gfactor*p3dvar
+      status=nf_fwrite3d(ng, iNLM, ncDIAid(ng), diaVid(id3dPV,ng),      &
+     &                   tDIAindx(ng), gtype,                           &
+     &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
+#  ifdef MASKING
+     &                   GRID(ng) % pmask,                              &
+#  endif
+     &                   DIAGS(ng) % pvor)
+      IF (status.ne.nf90_noerr) THEN
+        IF (Master) THEN
+          WRITE (stdout,10) TRIM(Vname(1,id3dPV)), tDIAindx(ng)
+        END IF
+        exit_flag=3
+        ioerror=status
+        RETURN
+      END IF
+!
+!  Write out 3D relative vorticity.
+!
+      scale=1.0_r8/(REAL(nDIA(ng),r8)*dt(ng))
+      gtype=gfactor*p3dvar
+      status=nf_fwrite3d(ng, iNLM, ncDIAid(ng), diaVid(id3dRV,ng),      &
+     &                   tDIAindx(ng), gtype,                           &
+     &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
+#  ifdef MASKING
+     &                   GRID(ng) % pmask,                              &
+#  endif
+     &                   DIAGS(ng) % rvor)
+      IF (status.ne.nf90_noerr) THEN
+        IF (Master) THEN
+          WRITE (stdout,10) TRIM(Vname(1,id3dRV)), tDIAindx(ng)
+        END IF
+        exit_flag=3
+        ioerror=status
+        RETURN
+      END IF
+# endif
 # ifdef DIAGNOSTICS_TS
 !
 !  Write out tracer diagnostic fields.
@@ -183,9 +264,9 @@
      &                       tDIAindx(ng), gtype,                       &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask(LBi,LBj),                 &
+     &                       GRID(ng) % rmask,                          &
 #  endif
-     &                       DIAGS(ng) % DiaTrc(LBi,LBj,1,itrc,ivar))
+     &                       DIAGS(ng) % DiaTrc(:,:,:,itrc,ivar))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,ifield)), tDIAindx(ng)
@@ -198,7 +279,7 @@
       END DO
 # endif
 
-# ifdef BIO_FASHAM
+# ifdef BIO_FENNEL
 !
 !  Write out 2D biological diagnostic fields.
 !
@@ -211,9 +292,9 @@
      &                       tDIAindx(ng), gtype,                       &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask(LBi,LBj),                 &
+     &                       GRID(ng) % rmask,                          &
 #  endif
-     &                       DIAGS(ng) % DiaBio2d(LBi,LBj,ivar))
+     &                       DIAGS(ng) % DiaBio2d(:,:,ivar))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,ifield)), tDIAindx(ng)
@@ -236,9 +317,9 @@
      &                       tDIAindx(ng), gtype,                       &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask(LBi,LBj),                 &
+     &                       GRID(ng) % rmask,                          &
 #  endif
-     &                       DIAGS(ng) % DiaBio3d(LBi,LBj,1,ivar))
+     &                       DIAGS(ng) % DiaBio3d(:,:,:,ivar))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,ifield)), tDIAindx(ng)
@@ -254,26 +335,18 @@
 !  Synchronize time-average NetCDF file to disk to allow other processes
 !  to access data immediately after it is written.
 !
-      IF (OutThread) THEN
-        status=nf90_sync(ncDIAid(ng))
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,20)
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-        WRITE (stdout,30) tDIAindx(ng)
-      END IF
+      CALL netcdf_sync (ng, iNLM, DIAname(ng), ncDIAid(ng))
+      IF (exit_flag.ne.NoError) RETURN
+
+      IF (Master) WRITE (stdout,20) tDIAindx(ng)
 !
-  10  FORMAT (/,' WRT_DIAGS - error while writing variable: ',a,/,11x,  &
+  10  FORMAT (/,' WRT_DIAGS - error while writing variable: ',a,/,13x,  &
      &        'into diagnostics NetCDF file for time record: ',i4)
-  20  FORMAT (/,' WRT_DIAGS - unable to synchronize diagnostics ',      &
-     &        'NetCDF file to disk.')
-  30  FORMAT (6x,'WRT_DIAGS - wrote diagnostics fields into time ',     &
+  20  FORMAT (6x,'WRT_DIAGS - wrote diagnostics fields into time ',     &
      &        'record = ',t72,i7.7)
 #else
       SUBROUTINE wrt_diags
 #endif
       RETURN
       END SUBROUTINE wrt_diags
-      
+

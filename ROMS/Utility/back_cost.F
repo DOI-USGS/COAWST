@@ -2,9 +2,9 @@
       MODULE back_cost_mod
 #ifdef BACKGROUND
 !
-!svn $Id: back_cost.F 733 2008-09-07 01:56:45Z jcwarner $
+!svn $Id: back_cost.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -67,59 +67,94 @@
       CONTAINS
 !
 !***********************************************************************
-      SUBROUTINE back_cost (ng, tile, Lbck)
+      SUBROUTINE back_cost (ng, tile, Lsum)
 !***********************************************************************
 !
       USE mod_param
+# ifdef ADJUST_BOUNDARY
+      USE mod_boundary
+# endif
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
       USE mod_forces
+# endif
+# ifdef MASKING
+      USE mod_grid
 # endif
       USE mod_ocean
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile, Lbck
+      integer, intent(in) :: ng, tile, Lsum
 !
 !  Local variable declarations.
 !
 # include "tile.h"
 !
       CALL back_cost_tile (ng, tile,                                    &
-     &                     LBi, UBi, LBj, UBj,                          &
-     &                     Lbck,                                        &
+     &                     LBi, UBi, LBj, UBj, LBij, UBij,              &
+     &                     IminS, ImaxS, JminS, JmaxS,                  &
+     &                     Lsum,                                        &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+     &                     GRID(ng) % umask,                            &
+     &                     GRID(ng) % vmask,                            &
+# endif
+# ifdef ADJUST_BOUNDARY
+#  ifdef SOLVE3D
+     &                     BOUNDARY(ng) % tl_t_obc,                     &
+     &                     BOUNDARY(ng) % tl_u_obc,                     &
+     &                     BOUNDARY(ng) % tl_v_obc,                     &
+#  endif
+     &                     BOUNDARY(ng) % tl_ubar_obc,                  &
+     &                     BOUNDARY(ng) % tl_vbar_obc,                  &
+     &                     BOUNDARY(ng) % tl_zeta_obc,                  &
+# endif
 # ifdef ADJUST_WSTRESS
      &                     FORCES(ng) % tl_ustr,                        &
      &                     FORCES(ng) % tl_vstr,                        &
 # endif
 # ifdef SOLVE3D
-     &                     OCEAN(ng) % tl_t,                            &
-     &                     OCEAN(ng) % tl_u,                            &
-     &                     OCEAN(ng) % tl_v,                            &
 #  ifdef ADJUST_STFLUX
      &                     FORCES(ng) % tl_tflux,                       &
 #  endif
+     &                     OCEAN(ng) % tl_t,                            &
+     &                     OCEAN(ng) % tl_u,                            &
+     &                     OCEAN(ng) % tl_v,                            &
 # else
      &                     OCEAN(ng) % tl_ubar,                         &
      &                     OCEAN(ng) % tl_vbar,                         &
 # endif
      &                     OCEAN(ng) % tl_zeta)
+
       RETURN
       END SUBROUTINE back_cost
 !
 !***********************************************************************
       SUBROUTINE back_cost_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj,                    &
-     &                           Lbck,                                  &
+     &                           LBi, UBi, LBj, UBj, LBij, UBij,        &
+     &                           IminS, ImaxS, JminS, JmaxS,            &
+     &                           Lsum,                                  &
+# ifdef MASKING
+     &                           rmask, umask, vmask,                   &
+# endif
+# ifdef ADJUST_BOUNDARY
+#  ifdef SOLVE3D
+     &                           tl_t_obc, tl_u_obc, tl_v_obc,          &
+#  endif
+     &                           tl_ubar_obc, tl_vbar_obc,              &
+     &                           tl_zeta_obc,                           &
+# endif
 # ifdef ADJUST_WSTRESS
-     &                           tl_ustr, tl_vstr,                      &
+     &                           tl_ustr,                               &
+     &                           tl_vstr,                               &
 # endif
 # ifdef SOLVE3D
-     &                           tl_t,                                  &
-     &                           tl_u,                                  &
-     &                           tl_v,                                  &
 #  ifdef ADJUST_STFLUX
      &                           tl_tflux,                              &
 #  endif
+     &                           tl_t,                                  &
+     &                           tl_u,                                  &
+     &                           tl_v,                                  &
 # else
      &                           tl_ubar,                               &
      &                           tl_vbar,                               &
@@ -141,39 +176,73 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile
-      integer, intent(in) :: LBi, UBi, LBj, UBj
-      integer, intent(in) :: Lbck
+      integer, intent(in) :: LBi, UBi, LBj, UBj, LBij, UBij
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
+      integer, intent(in) :: Lsum
 !
 # ifdef ASSUMED_SHAPE
+#  ifdef MASKING
+      real(r8), intent(in) :: rmask(LBi:,LBj:)
+      real(r8), intent(in) :: umask(LBi:,LBj:)
+      real(r8), intent(in) :: vmask(LBi:,LBj:)
+#  endif
+#  ifdef ADJUST_BOUNDARY
+#   ifdef SOLVE3D
+      real(r8), intent(in) :: tl_t_obc(LBij:,:,:,:,:,:)
+      real(r8), intent(in) :: tl_u_obc(LBij:,:,:,:,:)
+      real(r8), intent(in) :: tl_v_obc(LBij:,:,:,:,:)
+#   endif
+      real(r8), intent(in) :: tl_ubar_obc(LBij:,:,:,:)
+      real(r8), intent(in) :: tl_vbar_obc(LBij:,:,:,:)
+      real(r8), intent(in) :: tl_zeta_obc(LBij:,:,:,:)
+#  endif
 #  ifdef ADJUST_WSTRESS
       real(r8), intent(in) :: tl_ustr(LBi:,LBj:,:,:)
       real(r8), intent(in) :: tl_vstr(LBi:,LBj:,:,:)
 #  endif
 #  ifdef SOLVE3D
-      real(r8), intent(in) :: tl_t(LBi:,LBj:,:,:,:)
-      real(r8), intent(in) :: tl_u(LBi:,LBj:,:,:)
-      real(r8), intent(in) :: tl_v(LBi:,LBj:,:,:)
 #   ifdef ADJUST_STFLUX
       real(r8), intent(in) :: tl_tflux(LBi:,LBj:,:,:,:)
 #   endif
+      real(r8), intent(in) :: tl_t(LBi:,LBj:,:,:,:)
+      real(r8), intent(in) :: tl_u(LBi:,LBj:,:,:)
+      real(r8), intent(in) :: tl_v(LBi:,LBj:,:,:)
 #  else
       real(r8), intent(in) :: tl_ubar(LBi:,LBj:,:)
       real(r8), intent(in) :: tl_vbar(LBi:,LBj:,:)
 #  endif
       real(r8), intent(in) :: tl_zeta(LBi:,LBj:,:)
+
 # else
+
+#  ifdef MASKING
+      real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
+#  endif
+#  ifdef ADJUST_BOUNDARY
+#   ifdef SOLVE3D
+      real(r8), intent(in) :: tl_t_obc(LBij:UBij,N(ng),4,               &
+     &                                 Nbrec(ng),2,NT(ng))
+      real(r8), intent(in) :: tl_u_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
+      real(r8), intent(in) :: tl_v_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
+#   endif
+      real(r8), intent(in) :: tl_ubar_obc(LBij:UBij,4,Nbrec(ng),2)
+      real(r8), intent(in) :: tl_vbar_obc(LBij:UBij,4,Nbrec(ng),2)
+      real(r8), intent(in) :: tl_zeta_obc(LBij:UBij,4,Nbrec(ng),2)
+#  endif
 #  ifdef ADJUST_WSTRESS
       real(r8), intent(in) :: tl_ustr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
       real(r8), intent(in) :: tl_vstr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
 #  endif
 #  ifdef SOLVE3D
-      real(r8), intent(in) :: tl_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
-      real(r8), intent(in) :: tl_u(LBi:UBi,LBj:UBj,N(ng),2)
-      real(r8), intent(in) :: tl_v(LBi:UBi,LBj:UBj,N(ng),2)
 #   ifdef ADJUST_STFLUX
       real(r8), intent(in) :: tl_tflux(LBi:UBi,LBj:UBj,                 &
      &                                 Nfrec(ng),2,NT(ng))
 #   endif
+      real(r8), intent(in) :: tl_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
+      real(r8), intent(in) :: tl_u(LBi:UBi,LBj:UBj,N(ng),2)
+      real(r8), intent(in) :: tl_v(LBi:UBi,LBj:UBj,N(ng),2)
 #  else
       real(r8), intent(in) :: tl_ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: tl_vbar(LBi:UBi,LBj:UBj,3)
@@ -183,14 +252,14 @@
 !
 !  Local variable declarations.
 !
-      integer :: NSUB, i, j, k
+      integer :: NSUB, i, ib, ir, j, k
 # ifdef SOLVE3D
       integer :: itrc
 # endif
 
       real(r8), dimension(0:NstateVar(ng)) :: my_BackCost
 
-      real(r8) :: cff
+      real(r8) :: cff1, cff2
 
 # ifdef DISTRIBUTE
       character (len=3), dimension(0:NstateVar(ng)) :: op_handle
@@ -199,8 +268,11 @@
 # include "set_bounds.h"
 !
 !----------------------------------------------------------------------
-!  Compute background cost function (Jb) as misfit between model and
-!  background states at initial time of the assimilation window.
+!  Compute v-space background cost function (Jb) as misfit between
+!  model and background states at initial time of the assimilation
+!  window using the sum of all the previous outer-loop increments
+!  (Lsum).
+!
 !  Initially, the misfit innovation matrix (X-Xb) is zero. As the
 !  assimilation algorithm iterates, Jb becomes greater than zero.
 !----------------------------------------------------------------------
@@ -211,104 +283,534 @@
 !
 !  Free-surface contribution.
 !
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          cff=0.5_r8*tl_zeta(i,j,Lbck)*tl_zeta(i,j,Lbck)
-          my_BackCost(0)=my_BackCost(0)+cff
-          my_BackCost(isFsur)=my_BackCost(isFsur)+cff
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          cff1=tl_zeta(i,j,Lsum)
+# ifdef MASKING
+          cff1=cff1*rmask(i,j)
+# endif
+          cff2=0.5_r8*cff1*cff1
+          my_BackCost(0)=my_BackCost(0)+cff2
+          my_BackCost(isFsur)=my_BackCost(isFsur)+cff2
         END DO
       END DO
 
-# if !defined SOLVE3D
+# ifdef ADJUST_BOUNDARY
 !
-!  2D momentum contribution.
+!  Free-surface open boundaries.
 !
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
-          cff=0.5_r8*tl_ubar(i,j,Lbck)*tl_ubar(i,j,Lbck)
-          my_BackCost(0)=my_BackCost(0)+cff
-          my_BackCost(isUbar)=my_BackCost(isUbar)+cff
+      IF (ANY(Lobc(:,isFsur,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isFsur,ng)).and.WESTERN_EDGE) THEN
+            ib=iwest
+            DO j=Jstr,Jend
+              cff1=tl_zeta_obc(j,ib,ir,Lsum)
+#  ifdef MASKING
+              cff1=cff1*rmask(Istr-1,j)
+#  endif
+              cff2=0.5_r8*cff1*cff1
+              my_BackCost(0)=my_BackCost(0)+cff2
+              my_BackCost(isFsur)=my_BackCost(isFsur)+cff2
+            END DO
+          END IF
+          IF ((Lobc(ieast,isFsur,ng)).and.EASTERN_EDGE) THEN
+            ib=ieast
+            DO j=Jstr,Jend
+              cff1=tl_zeta_obc(j,ib,ir,Lsum)
+#  ifdef MASKING
+              cff1=cff1*rmask(Iend+1,j)
+#  endif
+              cff2=0.5_r8*cff1*cff1
+              my_BackCost(0)=my_BackCost(0)+cff2
+              my_BackCost(isFsur)=my_BackCost(isFsur)+cff2
+            END DO
+          END IF
+          IF ((Lobc(isouth,isFsur,ng)).and.SOUTHERN_EDGE) THEN
+            ib=isouth
+            DO i=Istr,Iend
+              cff1=tl_zeta_obc(i,ib,ir,Lsum)
+#  ifdef MASKING
+              cff1=cff1*rmask(i,Jstr-1)
+#  endif
+              cff2=0.5_r8*cff1*cff1
+              my_BackCost(0)=my_BackCost(0)+cff2
+              my_BackCost(isFsur)=my_BackCost(isFsur)+cff2
+            END DO
+          END IF
+          IF ((Lobc(inorth,isFsur,ng)).and.NORTHERN_EDGE) THEN
+            ib=inorth
+            DO i=Istr,Iend
+              cff1=tl_zeta_obc(i,ib,ir,Lsum)
+#  ifdef MASKING
+              cff1=cff1*rmask(i,Jend+1)
+#  endif
+              cff2=0.5_r8*cff1*cff1
+              my_BackCost(0)=my_BackCost(0)+cff2
+              my_BackCost(isFsur)=my_BackCost(isFsur)+cff2
+            END DO
+          END IF
+        END DO
+      END IF
+# endif
+
+# ifndef SOLVE3D
+!
+!  2D U-momentum contribution.
+!
+      DO j=Jstr,Jend
+        DO i=IstrU,Iend
+          cff1=tl_ubar(i,j,Lsum)
+#  ifdef MASKING
+          cff1=cff1*umask(i,j)
+#  endif
+          cff2=0.5_r8*cff1*cff1
+          my_BackCost(0)=my_BackCost(0)+cff2
+          my_BackCost(isUbar)=my_BackCost(isUbar)+cff2
         END DO
       END DO
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
-          cff=0.5_r8*tl_vbar(i,j,Lbck)*tl_vbar(i,j,Lbck)
-          my_BackCost(0)=my_BackCost(0)+cff
-          my_BackCost(isVbar)=my_BackCost(isVbar)+cff
+# endif
+
+# ifdef ADJUST_BOUNDARY
+!
+!  2D U-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isUbar,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isUbar,ng)).and.WESTERN_EDGE) THEN
+            ib=iwest
+            DO j=Jstr,Jend
+              cff1=tl_ubar_obc(j,ib,ir,Lsum)
+#  ifdef MASKING
+              cff1=cff1*umask(Istr,j)
+#  endif
+              cff2=0.5_r8*cff1*cff1
+              my_BackCost(0)=my_BackCost(0)+cff2
+              my_BackCost(isUbar)=my_BackCost(isUbar)+cff2
+            END DO
+          END IF
+          IF ((Lobc(ieast,isUbar,ng)).and.EASTERN_EDGE) THEN
+            ib=ieast
+            DO j=Jstr,Jend
+              cff1=tl_ubar_obc(j,ib,ir,Lsum)
+#  ifdef MASKING
+              cff1=cff1*umask(Iend+1,j)
+#  endif
+              cff2=0.5_r8*cff1*cff1
+              my_BackCost(0)=my_BackCost(0)+cff2
+              my_BackCost(isUbar)=my_BackCost(isUbar)+cff2
+            END DO
+          END IF
+          IF ((Lobc(isouth,isUbar,ng)).and.SOUTHERN_EDGE) THEN
+            ib=isouth
+            DO i=IstrU,Iend
+              cff1=tl_ubar_obc(i,ib,ir,Lsum)
+#  ifdef MASKING
+              cff1=cff1*umask(i,Jstr-1)
+#  endif
+              cff2=0.5_r8*cff1*cff1
+              my_BackCost(0)=my_BackCost(0)+cff2
+              my_BackCost(isUbar)=my_BackCost(isUbar)+cff2
+            END DO
+          END IF
+          IF ((Lobc(inorth,isUbar,ng)).and.NORTHERN_EDGE) THEN
+            ib=inorth
+            DO i=IstrU,Iend
+              cff1=tl_ubar_obc(i,ib,ir,Lsum)
+#  ifdef MASKING
+              cff1=cff1*umask(i,Jend+1)
+#  endif
+              cff2=0.5_r8*cff1*cff1
+              my_BackCost(0)=my_BackCost(0)+cff2
+              my_BackCost(isUbar)=my_BackCost(isUbar)+cff2
+            END DO
+          END IF
+        END DO
+      END IF
+# endif
+
+# ifndef SOLVE3D
+!
+!  2D V-momentum contribution.
+!
+      DO j=JstrV,Jend
+        DO i=Istr,Iend
+          cff1=tl_vbar(i,j,Lsum)
+#  ifdef MASKING
+          cff1=cff1*vmask(i,j)
+#  endif
+          cff2=0.5_r8*cff1*cff1
+          my_BackCost(0)=my_BackCost(0)+cff2
+          my_BackCost(isVbar)=my_BackCost(isVbar)+cff2
         END DO
       END DO
-# else
+# endif
+
+# ifdef ADJUST_BOUNDARY
 !
-!  3D momentum contribution.
+!  2D V-momentum open boundaries.
 !
-      DO k=1,N(ng)
+      IF (ANY(Lobc(:,isVbar,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isVbar,ng)).and.WESTERN_EDGE) THEN
+            ib=iwest
+            DO j=JstrV,Jend
+              cff1=tl_vbar_obc(j,ib,ir,Lsum)
+#  ifdef MASKING
+              cff1=cff1*vmask(Istr-1,j)
+#  endif
+              cff2=0.5_r8*cff1*cff1
+              my_BackCost(0)=my_BackCost(0)+cff2
+              my_BackCost(isVbar)=my_BackCost(isVbar)+cff2
+            END DO
+          END IF
+          IF ((Lobc(ieast,isVbar,ng)).and.EASTERN_EDGE) THEN
+            ib=ieast
+            DO j=JstrV,Jend
+              cff1=tl_vbar_obc(j,ib,ir,Lsum)
+#  ifdef MASKING
+              cff1=cff1*vmask(Iend+1,j)
+#  endif
+              cff2=0.5_r8*cff1*cff1
+              my_BackCost(0)=my_BackCost(0)+cff2
+              my_BackCost(isVbar)=my_BackCost(isVbar)+cff2
+            END DO
+          END IF
+          IF ((Lobc(isouth,isVbar,ng)).and.SOUTHERN_EDGE) THEN
+            ib=isouth
+            DO i=Istr,Iend
+              cff1=tl_vbar_obc(i,ib,ir,Lsum)
+#  ifdef MASKING
+              cff1=cff1*vmask(i,Jstr)
+#  endif
+              cff2=0.5_r8*cff1*cff1
+              my_BackCost(0)=my_BackCost(0)+cff2
+              my_BackCost(isVbar)=my_BackCost(isVbar)+cff2
+            END DO
+          END IF
+          IF ((Lobc(inorth,isVbar,ng)).and.NORTHERN_EDGE) THEN
+            ib=inorth
+            DO i=Istr,Iend
+              cff1=tl_vbar_obc(i,ib,ir,Lsum)
+#  ifdef MASKING
+              cff1=cff1*vmask(i,Jend+1)
+#  endif
+              cff2=0.5_r8*cff1*cff1
+              my_BackCost(0)=my_BackCost(0)+cff2
+              my_BackCost(isVbar)=my_BackCost(isVbar)+cff2
+            END DO
+          END IF
+        END DO
+      END IF
+# endif
+
+# ifdef ADJUST_WSTRESS
+!
+!  Surface momentum stress contribution.
+!
+      DO ir=1,Nfrec(ng)
         DO j=JstrR,JendR
           DO i=Istr,IendR
-            cff=0.5_r8*tl_u(i,j,k,Lbck)*tl_u(i,j,k,Lbck)
-            my_BackCost(0)=my_BackCost(0)+cff
-            my_BackCost(isUvel)=my_BackCost(isUvel)+cff
+            cff1=tl_ustr(i,j,ir,Lsum)
+#  ifdef MASKING
+            cff1=cff1*umask(i,j)
+#  endif
+            cff2=0.5_r8*cff1*cff1
+            my_BackCost(0)=my_BackCost(0)+cff2
+            my_BackCost(isUstr)=my_BackCost(isUstr)+cff2
           END DO
         END DO
         DO j=Jstr,JendR
           DO i=IstrR,IendR
-            cff=0.5_r8*tl_v(i,j,k,Lbck)*tl_v(i,j,k,Lbck)
-            my_BackCost(0)=my_BackCost(0)+cff
-            my_BackCost(isVvel)=my_BackCost(isVvel)+cff
+            cff1=tl_vstr(i,j,ir,Lsum)
+#  ifdef MASKING
+            cff1=cff1*vmask(i,j)
+#  endif
+            cff2=0.5_r8*cff1*cff1
+            my_BackCost(0)=my_BackCost(0)+cff2
+            my_BackCost(isVstr)=my_BackCost(isVstr)+cff2
           END DO
         END DO
       END DO
+# endif
+
+# ifdef SOLVE3D
+!
+!  3D U-momentum contribution.
+!
+      DO k=1,N(ng)
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff1=tl_u(i,j,k,Lsum)
+#  ifdef MASKING
+            cff1=cff1*umask(i,j)
+#  endif
+            cff2=0.5_r8*cff1*cff1
+            my_BackCost(0)=my_BackCost(0)+cff2
+            my_BackCost(isUvel)=my_BackCost(isUvel)+cff2
+          END DO
+        END DO
+      END DO
+
+#  ifdef ADJUST_BOUNDARY
+!
+!  3D U-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isUvel,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isUvel,ng)).and.WESTERN_EDGE) THEN
+            ib=iwest
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                cff1=tl_u_obc(j,k,ib,ir,Lsum)
+#   ifdef MASKING
+                cff1=cff1*umask(Istr,j)
+#   endif
+                cff2=0.5_r8*cff1*cff1
+                my_BackCost(0)=my_BackCost(0)+cff2
+                my_BackCost(isUvel)=my_BackCost(isUvel)+cff2
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(ieast,isUvel,ng)).and.EASTERN_EDGE) THEN
+            ib=ieast
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                cff1=tl_u_obc(j,k,ib,ir,Lsum)
+#   ifdef MASKING
+                cff1=cff1*umask(Iend+1,j)
+#   endif
+                cff2=0.5_r8*cff1*cff1
+                my_BackCost(0)=my_BackCost(0)+cff2
+                my_BackCost(isUvel)=my_BackCost(isUvel)+cff2
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(isouth,isUvel,ng)).and.SOUTHERN_EDGE) THEN
+            ib=isouth
+            DO k=1,N(ng)
+              DO i=IstrU,Iend
+                cff1=tl_u_obc(i,k,ib,ir,Lsum)
+#   ifdef MASKING
+                cff1=cff1*umask(i,Jstr-1)
+#   endif
+                cff2=0.5_r8*cff1*cff1
+                my_BackCost(0)=my_BackCost(0)+cff2
+                my_BackCost(isUvel)=my_BackCost(isUvel)+cff2
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(inorth,isUvel,ng)).and.NORTHERN_EDGE) THEN
+            ib=inorth
+            DO k=1,N(ng)
+              DO i=IstrU,Iend
+                cff1=tl_u_obc(i,k,ib,ir,Lsum)
+#   ifdef MASKING
+                cff1=cff1*umask(i,Jend+1)
+#   endif
+                cff2=0.5_r8*cff1*cff1
+                my_BackCost(0)=my_BackCost(0)+cff2
+                my_BackCost(isUvel)=my_BackCost(isUvel)+cff2
+              END DO
+            END DO
+          END IF
+        END DO
+      END IF
+#  endif
+!
+!  3D V-momentum contribution.
+!
+      DO k=1,N(ng)
+        DO j=JstrV,Jend
+          DO i=Istr,Iend
+            cff1=tl_v(i,j,k,Lsum)
+#  ifdef MASKING
+            cff1=cff1*vmask(i,j)
+#  endif
+            cff2=0.5_r8*cff1*cff1
+            my_BackCost(0)=my_BackCost(0)+cff2
+            my_BackCost(isVvel)=my_BackCost(isVvel)+cff2
+          END DO
+        END DO
+      END DO
+
+#  ifdef ADJUST_BOUNDARY
+!
+!  3D V-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isVvel,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isVvel,ng)).and.WESTERN_EDGE) THEN
+            ib=iwest
+            DO k=1,N(ng)
+              DO j=JstrV,Jend
+                cff1=tl_v_obc(j,k,ib,ir,Lsum)
+#   ifdef MASKING
+                cff1=cff1*vmask(Istr-1,j)
+#   endif
+                cff2=0.5_r8*cff1*cff1
+                my_BackCost(0)=my_BackCost(0)+cff2
+                my_BackCost(isVvel)=my_BackCost(isVvel)+cff2
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(ieast,isVvel,ng)).and.EASTERN_EDGE) THEN
+            ib=ieast
+            DO k=1,N(ng)
+              DO j=JstrV,Jend
+                cff1=tl_v_obc(j,k,ib,ir,Lsum)
+#   ifdef MASKING
+                cff1=cff1*vmask(Iend+1,j)
+#   endif
+                cff2=0.5_r8*cff1*cff1
+                my_BackCost(0)=my_BackCost(0)+cff2
+                my_BackCost(isVvel)=my_BackCost(isVvel)+cff2
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(isouth,isVvel,ng)).and.SOUTHERN_EDGE) THEN
+            ib=isouth
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                cff1=tl_v_obc(i,k,ib,ir,Lsum)
+#   ifdef MASKING
+                cff1=cff1*vmask(i,Jstr)
+#   endif
+                cff2=0.5_r8*cff1*cff1
+                my_BackCost(0)=my_BackCost(0)+cff2
+                my_BackCost(isVvel)=my_BackCost(isVvel)+cff2
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(inorth,isVvel,ng)).and.NORTHERN_EDGE) THEN
+            ib=inorth
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                cff1=tl_v_obc(i,k,ib,ir,Lsum)
+#   ifdef MASKING
+                cff1=cff1*vmask(i,Jend+1)
+#   endif
+                cff2=0.5_r8*cff1*cff1
+                my_BackCost(0)=my_BackCost(0)+cff2
+                my_BackCost(isVvel)=my_BackCost(isVvel)+cff2
+              END DO
+            END DO
+          END IF
+        END DO
+      END IF
+#  endif
 !
 !  Tracers contribution.
 !
       DO itrc=1,NT(ng)
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
-              cff=0.5_r8*tl_t(i,j,k,Lbck,itrc)*tl_t(i,j,k,Lbck,itrc)
-              my_BackCost(0)=my_BackCost(0)+cff
-              my_BackCost(isTvar(itrc))=my_BackCost(isTvar(itrc))+cff
+          DO j=Jstr,Jend
+            DO i=Istr,Iend
+              cff1=tl_t(i,j,k,Lsum,itrc)
+#  ifdef MASKING
+              cff1=cff1*rmask(i,j)
+#  endif
+              cff2=0.5_r8*cff1*cff1
+              my_BackCost(0)=my_BackCost(0)+cff2
+              my_BackCost(isTvar(itrc))=my_BackCost(isTvar(itrc))+cff2
             END DO
           END DO
         END DO
       END DO
+
+#  ifdef ADJUST_BOUNDARY
+!
+!  Tracers open boundaries.
+!
+      DO itrc=1,NT(ng)
+        IF (ANY(Lobc(:,isTvar(itrc),ng))) THEN
+          DO ir=1,Nbrec(ng)
+            IF ((Lobc(iwest,isTvar(itrc),ng)).and.WESTERN_EDGE) THEN
+              ib=iwest
+              DO k=1,N(ng)
+                DO j=Jstr,Jend
+                  cff1=tl_t_obc(j,k,ib,ir,Lsum,itrc)
+#   ifdef MASKING
+                  cff1=cff1*rmask(Istr-1,j)
+#   endif
+                  cff2=0.5_r8*cff1*cff1
+                  my_BackCost(0)=my_BackCost(0)+cff2
+                  my_BackCost(isTvar(itrc))=my_BackCost(isTvar(itrc))+  &
+     &                                      cff2
+                END DO
+              END DO
+            END IF
+            IF ((Lobc(ieast,isTvar(itrc),ng)).and.EASTERN_EDGE) THEN
+              ib=ieast
+              DO k=1,N(ng)
+                DO j=Jstr,Jend
+                  cff1=tl_t_obc(j,k,ib,ir,Lsum,itrc)
+#   ifdef MASKING
+                  cff1=cff1*rmask(Iend+1,j)
+#   endif
+                  cff2=0.5_r8*cff1*cff1
+                  my_BackCost(0)=my_BackCost(0)+cff2
+                  my_BackCost(isTvar(itrc))=my_BackCost(isTvar(itrc))+  &
+     &                                      cff2
+                END DO
+              END DO
+            END IF
+            IF ((Lobc(isouth,isTvar(itrc),ng)).and.SOUTHERN_EDGE) THEN
+              ib=isouth
+              DO k=1,N(ng)
+                DO i=Istr,Iend
+                  cff1=tl_t_obc(i,k,ib,ir,Lsum,itrc)
+#   ifdef MASKING
+                  cff1=cff1*rmask(i,Jstr-1)
+#   endif
+                  cff2=0.5_r8*cff1*cff1
+                  my_BackCost(0)=my_BackCost(0)+cff2
+                  my_BackCost(isTvar(itrc))=my_BackCost(isTvar(itrc))+  &
+     &                                      cff2
+                END DO
+              END DO
+            END IF
+            IF ((Lobc(inorth,isTvar(itrc),ng)).and.NORTHERN_EDGE) THEN
+              ib=inorth
+              DO k=1,N(ng)
+                DO i=Istr,Iend
+                  cff1=tl_t_obc(i,k,ib,ir,Lsum,itrc)
+#   ifdef MASKING
+                  cff1=cff1*rmask(i,Jend+1)
+#   endif
+                  cff2=0.5_r8*cff1*cff1
+                  my_BackCost(0)=my_BackCost(0)+cff2
+                  my_BackCost(isTvar(itrc))=my_BackCost(isTvar(itrc))+  &
+     &                                      cff2
+                END DO
+              END DO
+            END IF
+          END DO
+        END IF
+      END DO
+#  endif
+
 #  ifdef ADJUST_STFLUX
 !
 !  Surface tracers flux contribution.
 !
       DO itrc=1,NT(ng)
-        DO k=1,Nfrec(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
-              cff=0.5_r8*tl_tflux(i,j,k,Lbck,itrc)*                     &
-     &                   tl_tflux(i,j,k,Lbck,itrc)
-              my_BackCost(0)=my_BackCost(0)+cff
-              my_BackCost(isTsur(itrc))=my_BackCost(isTsur(itrc))+cff
+        IF (Lstflux(itrc,ng)) THEN
+          DO ir=1,Nfrec(ng)
+            DO j=JstrR,JendR
+              DO i=IstrR,IendR
+                cff1=tl_tflux(i,j,ir,Lsum,itrc)
+#   ifdef MASKING
+                cff1=cff1*rmask(i,j)
+#   endif
+                cff2=0.5_r8*cff1*cff1
+                my_BackCost(0)=my_BackCost(0)+cff2
+                my_BackCost(isTsur(itrc))=my_BackCost(isTsur(itrc))+cff2
+              END DO
             END DO
           END DO
-        END DO
+        END IF
       END DO
 #  endif
-# endif
-# ifdef ADJUST_WSTRESS
-!
-!  Surface momentum stress contribution.
-!
-      DO k=1,Nfrec(ng)
-        DO j=JstrR,JendR
-          DO i=Istr,IendR
-            cff=0.5_r8*tl_ustr(i,j,k,Lbck)*tl_ustr(i,j,k,Lbck)
-            my_BackCost(0)=my_BackCost(0)+cff
-            my_BackCost(isUstr)=my_BackCost(isUstr)+cff
-          END DO
-        END DO
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
-            cff=0.5_r8*tl_vstr(i,j,k,Lbck)*tl_vstr(i,j,k,Lbck)
-            my_BackCost(0)=my_BackCost(0)+cff
-            my_BackCost(isVstr)=my_BackCost(isVstr)+cff
-          END DO
-        END DO
-      END DO
 # endif
 !
 !-----------------------------------------------------------------------
@@ -338,22 +840,12 @@
 # ifdef DISTRIBUTE
         DO i=0,NstateVar(ng)
           op_handle(i)='SUM'
-        END DO 
+        END DO
         CALL mp_reduce (ng, iNLM, NstateVar(ng)+1,                      &
      &                  FOURDVAR(ng)%BackCost(0:),  op_handle(0:))
 # endif
       END IF
 !$OMP END CRITICAL (BACKCOST)
-!
-!  If start of minimization, add background contribution to total cost
-!  function scales used to report normalized values.
-!
-      IF (Nrun.eq.1) THEN
-        DO i=0,NstateVar(ng)
-          FOURDVAR(ng)%CostNorm(i)=FOURDVAR(ng)%CostNorm(i)+            &
-     &                             FOURDVAR(ng)%BackCost(i)
-        END DO
-      END IF
 
       RETURN
       END SUBROUTINE back_cost_tile

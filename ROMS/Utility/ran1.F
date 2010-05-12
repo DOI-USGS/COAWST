@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE ran1_s (harvest)
 !
-!svn $Id: ran1.F 503 2008-01-10 00:11:51Z arango $
+!svn $Id: ran1.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -58,7 +58,7 @@
 !
 !  Once only per cycle, advance sequence by 1, shortening its period to
 !  2^(32)-2.
-! 
+!
       IF (nran0.eq.1) nran0=270369_i4b
 !
 !  Update Marsaglia shift sequence with perios 2^(32)-1.
@@ -138,7 +138,7 @@
 !
 !  Once only per cycle, advance sequence by 1, shortening its period to
 !  2^(32)-2.
-! 
+!
       WHERE (nran(1:n).eq.1)                                            &
      &  nran(1:n)=270369_i4b
 !

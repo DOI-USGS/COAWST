@@ -20,9 +20,9 @@
 
 #ifdef PROPAGATOR
 !
-!svn $Id: packing.F 733 2008-09-07 01:56:45Z jcwarner $
+!svn $Id: packing.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -100,6 +100,7 @@
 #  endif
       CALL ad_pack_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
+     &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   kstp(ng),                                      &
 #  ifdef SOLVE3D
      &                   nstp(ng),                                      &
@@ -147,11 +148,12 @@
       CALL wclock_off (ng, iADM, 1)
 #  endif
       RETURN
-      END SUBROUTINE ad_pack      
+      END SUBROUTINE ad_pack
 !
 !***********************************************************************
       SUBROUTINE ad_pack_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         kstp,                                    &
 #  ifdef SOLVE3D
      &                         nstp,                                    &
@@ -184,11 +186,12 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: Nstr, Nend
       integer, intent(in) :: kstp
 #  ifdef SOLVE3D
       integer, intent(in) :: nstp
-#  endif 
+#  endif
 !
 #  ifdef ASSUMED_SHAPE
 #   ifdef MASKING
@@ -733,6 +736,7 @@
 #  endif
       CALL ad_unpack_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
+     &                     IminS, ImaxS, JminS, JmaxS,                  &
      &                     knew(ng),                                    &
 #  ifdef SOLVE3D
      &                     nstp(ng),                                    &
@@ -765,11 +769,12 @@
       CALL wclock_off (ng, iADM, 1)
 #  endif
       RETURN
-      END SUBROUTINE ad_unpack      
+      END SUBROUTINE ad_unpack
 !
 !***********************************************************************
       SUBROUTINE ad_unpack_tile (ng, tile,                              &
      &                           LBi, UBi, LBj, UBj,                    &
+     &                           IminS, ImaxS, JminS, JmaxS,            &
      &                           knew,                                  &
 #  ifdef SOLVE3D
      &                           nstp,                                  &
@@ -798,6 +803,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: Nstr, Nend
       integer, intent(in) :: knew
 #  ifdef SOLVE3D
@@ -1236,6 +1242,7 @@
 #  endif
       CALL tl_pack_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
+     &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   krhs(ng), kstp(ng), knew(ng),                  &
 #  ifdef SOLVE3D
      &                   nstp(ng),                                      &
@@ -1278,11 +1285,12 @@
       CALL wclock_off (ng, iTLM, 1)
 #  endif
       RETURN
-      END SUBROUTINE tl_pack      
+      END SUBROUTINE tl_pack
 !
 !***********************************************************************
       SUBROUTINE tl_pack_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         krhs, kstp, knew,                        &
 #  ifdef SOLVE3D
      &                         nstp,                                    &
@@ -1311,11 +1319,12 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: Nstr, Nend
       integer, intent(in) :: krhs, kstp, knew
 #  ifdef SOLVE3D
       integer, intent(in) :: nstp
-#  endif 
+#  endif
 !
 #  ifdef ASSUMED_SHAPE
 #   ifdef MASKING
@@ -1767,6 +1776,7 @@
 #  endif
       CALL tl_unpack_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
+     &                     IminS, ImaxS, JminS, JmaxS,                  &
      &                     kstp(ng),                                    &
 #  ifdef SOLVE3D
      &                     nstp(ng),                                    &
@@ -1804,11 +1814,12 @@
       CALL wclock_off (ng, iTLM, 1)
 #  endif
       RETURN
-      END SUBROUTINE tl_unpack      
+      END SUBROUTINE tl_unpack
 !
 !***********************************************************************
       SUBROUTINE tl_unpack_tile (ng, tile,                              &
      &                           LBi, UBi, LBj, UBj,                    &
+     &                           IminS, ImaxS, JminS, JmaxS,            &
      &                           kstp,                                  &
 #  ifdef SOLVE3D
      &                           nstp,                                  &
@@ -1841,6 +1852,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: Nstr, Nend
       integer, intent(in) :: kstp
 #  ifdef SOLVE3D
@@ -2380,6 +2392,7 @@
 #  endif
       CALL so_pack_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
+     &                   IminS, ImaxS, JminS, JmaxS,                    &
 #  ifdef DISTRIBUTE
      &                   1, Mstate(ng), Swork,                          &
 #  else
@@ -2413,11 +2426,12 @@
       CALL wclock_off (ng, iADM, 1)
 #  endif
       RETURN
-      END SUBROUTINE so_pack      
+      END SUBROUTINE so_pack
 !
 !***********************************************************************
       SUBROUTINE so_pack_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         Nstr, Nend,                              &
      &                         so_state,                                &
 #  ifdef MASKING
@@ -2440,6 +2454,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: Nstr, Nend
 !
 #  ifdef ASSUMED_SHAPE
@@ -2737,6 +2752,7 @@
 #  endif
       CALL so_unpack_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
+     &                     IminS, ImaxS, JminS, JmaxS,                  &
 #  ifdef DISTRIBUTE
      &                     1, Mstate(ng), Swork,                        &
 #  else
@@ -2760,11 +2776,12 @@
       CALL wclock_off (ng, iNLM, 1)
 #  endif
       RETURN
-      END SUBROUTINE so_unpack      
+      END SUBROUTINE so_unpack
 !
 !***********************************************************************
       SUBROUTINE so_unpack_tile (ng, tile,                              &
      &                           LBi, UBi, LBj, UBj,                    &
+     &                           IminS, ImaxS, JminS, JmaxS,            &
      &                           Nstr, Nend, state,                     &
 #  ifdef MASKING
      &                           IJwaterR, IJwaterU, IJwaterV,          &
@@ -2785,6 +2802,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: Nstr, Nend
 !
 #  ifdef ASSUMED_SHAPE
@@ -3070,7 +3088,7 @@
 !
 !  Compute normalization factor.
 !
-	cff=REAL((nADJ(ng)-1)*(2*nADJ(ng)-1),r8)/REAL(6*nADJ(ng),r8)
+        cff=REAL((nADJ(ng)-1)*(2*nADJ(ng)-1),r8)/REAL(6*nADJ(ng),r8)
         cff1=1.0_r8+cff
         cff2=0.5_r8*REAL((nADJ(ng)-1))-cff
 !
@@ -3079,7 +3097,7 @@
         DO is=Mstr,Mend
           my_SOnorm=my_SOnorm+so_state(is,rec)*state(is)
         END DO
-!                
+!
         IF (rec.ne.Nsemi) THEN
           DO is=Mstr,Mend
             my_SOnorm1=my_SOnorm1+so_state(is,rec+1)*state(is)
@@ -3087,11 +3105,11 @@
      &                cff1*so_state(is,rec)*so_state(is,rec)+           &
      &                2.0_r8*cff2*so_state(is,rec)*so_state(is,rec+1)+  &
      &                cff*so_state(is,rec+1)*so_state(is,rec+1)
-          END DO   
+          END DO
         ELSE
           DO is=Mstr,Mend
             my_TRnorm=my_TRnorm+so_state(is,rec)*so_state(is,rec)
-          END DO  
+          END DO
         END IF
 !
 !  Global reduction of normalization factor.
@@ -3138,7 +3156,7 @@
 !  Compute new perturbation vector.
 !
         IF (rec.ne.Nsemi) THEN
-          DO is=Mstr,Mend           
+          DO is=Mstr,Mend
             ad_state(is)=ad_state(is)+                                  &
      &                   cff1*SOnorm *so_state(is,rec  )+               &
      &                   cff2*SOnorm1*so_state(is,rec  )+               &
@@ -3146,7 +3164,7 @@
      &                   cff *SOnorm1*so_state(is,rec+1)
           END DO
         ELSE
-          DO is=Mstr,Mend         
+          DO is=Mstr,Mend
             ad_state(is)=ad_state(is)+SOnorm*so_state(is,rec)
           END DO
         END IF
@@ -3359,9 +3377,9 @@
       integer, intent(in) :: ng, ntAD, ntTL
 
       real(r8), intent(out):: Bcoef
-!                
+!
 !  Local variable declarations.
-!                
+!
       integer :: i, it1, it2
 
       real(r8) :: Acoef, Acoef1, Acoef2, df1, rov

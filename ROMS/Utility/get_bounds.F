@@ -4,7 +4,7 @@
 !
 !svn $Id: get_bounds.F 814 2008-10-29 01:42:17Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -18,8 +18,8 @@
 !     gtype      C-grid type. If zero, compute array allocation bounds.!
 !                  Otherwise, compute bounds for IO processing.        !
 !     Nghost     Number of ghost-points in the halo region:            !
-!                  Nghost = 0,  compute non-overlaping bounds.         !
-!                  Nghost > 0,  compute overlaping bounds.             !
+!                  Nghost = 0,  compute non-overlapping bounds.        !
+!                  Nghost > 0,  compute overlapping bounds.            !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
@@ -105,7 +105,7 @@
 # endif
       END IF
 !
-!  Set physical, overlaping (Nghost>0) or non-overlaping (Nghost=0) 
+!  Set physical, overlapping (Nghost>0) or non-overlapping (Nghost=0)
 !  grid bounds according to tile rank.
 !
       CALL get_tile (ng, tile, Itile, Jtile,                            &
@@ -114,22 +114,22 @@
      &               JstrR, JstrT, JstrV, JendR, JendT,                 &
      &               IstrTU, JstrTV, IendTU, JendTV)
 !
-      IF (Itile.eq.0) THEN
+      IF ((Itile.eq.-1).or.(Itile.eq.0)) THEN
         LBi=Imin
       ELSE
         LBi=Istr-Nghost
       END IF
-      IF (Itile.eq.(NtileI(ng)-1)) THEN
+      IF ((Itile.eq.-1).or.(Itile.eq.(NtileI(ng)-1))) THEN
         UBi=Imax
       ELSE
         UBi=Iend+Nghost
       END IF
-      IF (Jtile.eq.0) THEN
+      IF ((Jtile.eq.-1).or.(Jtile.eq.0)) THEN
         LBj=Jmin
       ELSE
         LBj=Jstr-Nghost
       END IF
-      IF (Jtile.eq.(NtileJ(ng)-1)) THEN
+      IF ((Jtile.eq.-1).or.(Jtile.eq.(NtileJ(ng)-1))) THEN
         UBj=Jmax
       ELSE
         UBj=Jend+Nghost
@@ -150,6 +150,320 @@
 #endif
       RETURN
       END SUBROUTINE get_bounds
+
+      SUBROUTINE get_domain (ng, tile, gtype, Nghost,                   &
+     &                       epsilon, Lfullgrid,                        &
+     &                       Xmin, Xmax, Ymin, Ymax)
+!
+!=======================================================================
+!                                                                      !
+!  This routine computes tile minimum and maximum fractional grid      !
+!  coordinates.                                                        !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     tile       Domain partition.                                     !
+!     Nghost     Number of ghost-points in the halo region:            !
+!                  Nghost = 0,  compute non-overlapping coordinates.   !
+!                  Nghost > 0,  compute overlapping bounds.            !
+!     gtype      C-grid type                                           !
+!     epsilon    Small value to add to Xmax and Ymax when the tile     !
+!                  is lying on the eastern and northern boundaries     !
+!                  of the grid. This is usefull when processing        !
+!                  observations.                                       !
+!     Lfullgrid  Switch to include interior and boundaries points      !
+!                  (TRUE) or just interior points (FALSE).             !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     Xmin       Minimum tile fractional X-coordinate.                 !
+!     Xmax       Maximum tile fractional X-coordinate.                 !
+!     Ymin       Minimum tile fractional Y-coordinate.                 !
+!     Ymax       Maximum tile fractional Y-coordinate.                 !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_ncparam
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      logical, intent(in) :: Lfullgrid
+
+      integer, intent(in) :: ng, tile, gtype, Nghost
+
+      real(r8), intent(in) :: epsilon
+      real(r8), intent(out) :: Xmin, Xmax, Ymin, Ymax
+!
+!  Local variable declarations.
+!
+      integer :: Imin, Imax, Jmin, Jmax
+      integer :: Itile, Jtile
+!
+!-----------------------------------------------------------------------
+!  Computes tile minimum and maximum fractional-grid coordinates.
+!-----------------------------------------------------------------------
+!
+      CALL get_bounds (ng, tile, gtype, Nghost, Itile, Jtile,           &
+     &                 Imin, Imax, Jmin, Jmax)
+!
+!  Include interior and boundary points.
+!
+      IF (Lfullgrid) THEN
+        IF ((Itile.eq.0).and.                                           &
+     &      ((gtype.eq.r2dvar).or.(gtype.eq.r3dvar).or.                 &
+     &       (gtype.eq.v2dvar).or.(gtype.eq.v3dvar))) THEN
+          Xmin=REAL(Imin,r8)
+        ELSE
+          Xmin=REAL(Imin,r8)-0.5_r8
+        END IF
+        IF (Itile.eq.(NtileI(ng)-1)) THEN
+          IF ((gtype.eq.u2dvar).or.(gtype.eq.u3dvar)) THEN
+            Xmax=REAL(Imax,r8)-0.5_r8
+          ELSE
+            Xmax=REAL(Imax,r8)
+          END IF
+        ELSE
+          Xmax=REAL(Imax,r8)+0.5_r8
+        END IF
+        IF ((Jtile.eq.0).and.                                           &
+     &      ((gtype.eq.r2dvar).or.(gtype.eq.r3dvar).or.                 &
+     &       (gtype.eq.u2dvar).or.(gtype.eq.u3dvar))) THEN
+          Ymin=REAL(Jmin,r8)
+        ELSE
+          Ymin=REAL(Jmin,r8)-0.5_r8
+        END IF
+        IF (Jtile.eq.(NtileJ(ng)-1)) THEN
+          IF ((gtype.eq.v2dvar).or.(gtype.eq.v3dvar)) THEN
+            Ymax=REAL(Jmax,r8)-0.5_r8
+          ELSE
+            Ymax=REAL(Jmax,r8)
+          END IF
+        ELSE
+          Ymax=REAL(Jmax,r8)+0.5_r8
+        END IF
+!
+!   Include only interior points.
+!
+      ELSE
+        IF (Itile.eq.0) THEN
+          IF ((gtype.eq.u2dvar).or.(gtype.eq.u3dvar)) THEN
+             Xmin=REAL(Imin,r8)
+          ELSE
+             Xmin=REAL(Imin,r8)+0.5_r8
+          END IF
+        ELSE
+          Xmin=REAL(Imin,r8)-0.5_r8
+        END IF
+        IF (Itile.eq.(NtileI(ng)-1)) THEN
+          IF ((gtype.eq.u2dvar).or.(gtype.eq.u3dvar)) THEN
+            Xmax=REAL(Imax,r8)-1.0_r8
+          ELSE
+            Xmax=REAL(Imax,r8)-0.5_r8
+          END IF
+        ELSE
+          Xmax=REAL(Imax,r8)+0.5_r8
+        END IF
+        IF (Jtile.eq.0) THEN
+          IF ((gtype.eq.v2dvar).or.(gtype.eq.v3dvar)) THEN
+            Ymin=REAL(Jmin,r8)
+          ELSE
+            Ymin=REAL(Jmin,r8)+0.5
+          END IF
+        ELSE
+          Ymin=REAL(Jmin,r8)-0.5_r8
+        END IF
+        IF (Jtile.eq.(NtileJ(ng)-1)) THEN
+          IF ((gtype.eq.v2dvar).or.(gtype.eq.v3dvar)) THEN
+            Ymax=REAL(Jmax,r8)-1.0_r8
+          ELSE
+            Ymax=REAL(Jmax,r8)-0.5_r8
+          END IF
+        ELSE
+          Ymax=REAL(Jmax,r8)+0.5_r8
+        END IF
+      END IF
+!
+!  If tile lie at the grid eastern or northen boundary, add provided
+!  offset value to allow processing at those boundaries.
+!
+      IF (Itile.eq.(NtileI(ng)-1)) THEN
+        Xmax=Xmax+epsilon
+      END IF
+      IF (Jtile.eq.(NtileJ(ng)-1)) THEN
+        Ymax=Ymax+epsilon
+      END IF
+
+      RETURN
+
+      END SUBROUTINE get_domain
+
+      SUBROUTINE get_iobounds (ng)
+!
+!=======================================================================
+!                                                                      !
+!  This routine computes the horizontal lower bound, upper bound, and  !
+!  grid size for IO (NetCDF) variables.  Nested grids require special  !
+!  attention due to their connetivity.                                 !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!                                                                      !
+!  On Output, the horizontal lower/upper bounds and grid size for      !
+!  each variable type and nested grid number  are loaded into the      !
+!  IOBOUNDS structure which is declared in module MOD_PARAM:           !
+!                                                                      !
+!   IOBOUNDS(ng) % ILB_psi     I-direction lower bound (PSI)           !
+!   IOBOUNDS(ng) % IUB_psi     I-direction upper bound (PSI)           !
+!   IOBOUNDS(ng) % JLB_psi     J-direction lower bound (PSI)           !
+!   IOBOUNDS(ng) % JUB_psi     J-direction upper bound (PSI)           !
+!                                                                      !
+!   IOBOUNDS(ng) % ILB_rho     I-direction lower bound (RHO)           !
+!   IOBOUNDS(ng) % IUB_rho     I-direction upper bound (RHO)           !
+!   IOBOUNDS(ng) % JLB_rho     J-direction lower bound (RHO)           !
+!   IOBOUNDS(ng) % JUB_rho     J-direction upper bound (RHO)           !
+!                                                                      !
+!   IOBOUNDS(ng) % ILB_u       I-direction lower bound (U)             !
+!   IOBOUNDS(ng) % IUB_u       I-direction upper bound (U)             !
+!   IOBOUNDS(ng) % JLB_u       J-direction lower bound (U)             !
+!   IOBOUNDS(ng) % JUB_u       J-direction upper bound (U)             !
+!                                                                      !
+!   IOBOUNDS(ng) % ILB_v       I-direction lower bound (V)             !
+!   IOBOUNDS(ng) % IUB_v       I-direction upper bound (V)             !
+!   IOBOUNDS(ng) % JLB_v       J-direction lower bound (V)             !
+!   IOBOUNDS(ng) % JUB_v       J-direction upper bound (V)             !
+!                                                                      !
+!   IOBOUNDS(ng) % xi_psi      Number of I-direction points (PSI)      !
+!   IOBOUNDS(ng) % xi_rho      Number of I-direction points (RHO)      !
+!   IOBOUNDS(ng) % xi_u        Number of I-direction points (U)        !
+!   IOBOUNDS(ng) % xi_v        Number of I-direction points (V)        !
+!                                                                      !
+!   IOBOUNDS(ng) % eta_psi     Number of J-direction points (PSI)      !
+!   IOBOUNDS(ng) % eta_rho     Number of J-direction points (RHO)      !
+!   IOBOUNDS(ng) % eta_u       Number of I-direction points (U)        !
+!   IOBOUNDS(ng) % eta_v       Number of I-direction points (V)        !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng
+      integer :: Imin, Imax, Jmin, Jmax
+!
+!-----------------------------------------------------------------------
+!  Set IO lower/upper bounds and grid size for each C-grid type
+!  variable.
+!-----------------------------------------------------------------------
+!
+!  Recall that in non-nested applications the horizontal range,
+!  including interior and boundary points, for all variable types
+!  are:
+!
+!    PSI-type      [xi_psi, eta_psi] = [1:Lm(ng)+1, 1:Mm(ng)+1]
+!    RHO-type      [xi_rho, eta_rho] = [0:Lm(ng)+1, 0:Mm(ng)+1]
+!    U-type        [xi_u,   eta_u  ] = [1:Lm(ng)+1, 0:Mm(ng)+1]
+!    V-type        [xi_v,   eta_v  ] = [0:Lm(ng)+1, 1:Mm(ng)+1]
+!
+
+#ifdef COMPOSED_GRID
+      Imin=LOWER_BOUND_I
+      Imax=Lm(ng)+GHOST_POINTS
+      Jmin=LOWER_BOUND_J
+      Jmax=Mm(ng)+GHOST_POINTS
+#elif defined REFINED_GRID
+      IF (ng.eq.1) THEN
+        Imin=0
+        Imax=Lm(ng)+1
+        Jmin=0
+        Jmax=Mm(ng)+1
+      ELSE
+        Imin=LOWER_BOUND_I
+        Imax=Lm(ng)+GHOST_POINTS
+        Jmin=LOWER_BOUND_J
+        Jmax=Mm(ng)+GHOST_POINTS
+      END IF
+#else
+      Imin=0
+      Imax=Lm(ng)+1
+      Jmin=0
+      Jmax=Mm(ng)+1
+#endif
+
+      IOBOUNDS(ng) % ILB_psi = Imin+1
+      IOBOUNDS(ng) % IUB_psi = Imax
+      IOBOUNDS(ng) % JLB_psi = Jmin+1
+      IOBOUNDS(ng) % JUB_psi = Jmax
+!
+      IOBOUNDS(ng) % ILB_rho = Imin
+      IOBOUNDS(ng) % IUB_rho = Imax
+      IOBOUNDS(ng) % JLB_rho = Jmin
+      IOBOUNDS(ng) % JUB_rho = Jmax
+!
+      IOBOUNDS(ng) % ILB_u = Imin+1
+      IOBOUNDS(ng) % IUB_u = Imax
+      IOBOUNDS(ng) % JLB_u = Jmin
+      IOBOUNDS(ng) % JUB_u = Jmax
+!
+      IOBOUNDS(ng) % ILB_v = Imin
+      IOBOUNDS(ng) % IUB_v = Imax
+      IOBOUNDS(ng) % JLB_v = Jmin+1
+      IOBOUNDS(ng) % JUB_v = Jmax
+!
+!      IOBOUNDS(ng) % ILB_psi = 1
+!      IOBOUNDS(ng) % IUB_psi = Lm(ng)+1
+!      IOBOUNDS(ng) % JLB_psi = 1
+!      IOBOUNDS(ng) % JUB_psi = Mm(ng)+1
+!!
+!      IOBOUNDS(ng) % ILB_rho = 0
+!      IOBOUNDS(ng) % IUB_rho = Lm(ng)+1
+!      IOBOUNDS(ng) % JLB_rho = 0
+!      IOBOUNDS(ng) % JUB_rho = Mm(ng)+1
+!!
+!      IOBOUNDS(ng) % ILB_u = 1
+!      IOBOUNDS(ng) % IUB_u = Lm(ng)+1
+!      IOBOUNDS(ng) % JLB_u = 0
+!      IOBOUNDS(ng) % JUB_u = Mm(ng)+1
+!!
+!      IOBOUNDS(ng) % ILB_v = 0
+!      IOBOUNDS(ng) % IUB_v = Lm(ng)+1
+!      IOBOUNDS(ng) % JLB_v = 1
+!      IOBOUNDS(ng) % JUB_v = Mm(ng)+1
+!
+!  Set IO NetCDF files horizontal dimension size. Recall that NetCDF
+!  does not support arrays with zero index as an array element.
+!
+      IOBOUNDS(ng) % IorJ    = BOUNDS(ng) % UBij -                      &
+     &                         BOUNDS(ng) % LBij + 1
+!
+      IOBOUNDS(ng) % xi_psi  = IOBOUNDS(ng) % IUB_psi -                 &
+     &                         IOBOUNDS(ng) % ILB_psi + 1
+      IOBOUNDS(ng) % xi_rho  = IOBOUNDS(ng) % IUB_rho -                 &
+     &                         IOBOUNDS(ng) % ILB_rho + 1
+      IOBOUNDS(ng) % xi_u    = IOBOUNDS(ng) % IUB_u   -                 &
+     &                         IOBOUNDS(ng) % ILB_u   + 1
+      IOBOUNDS(ng) % xi_v    = IOBOUNDS(ng) % IUB_v   -                 &
+     &                         IOBOUNDS(ng) % ILB_v   + 1
+!
+      IOBOUNDS(ng) % eta_psi = IOBOUNDS(ng) % JUB_psi -                 &
+     &                         IOBOUNDS(ng) % JLB_psi + 1
+      IOBOUNDS(ng) % eta_rho = IOBOUNDS(ng) % JUB_rho -                 &
+     &                         IOBOUNDS(ng) % JLB_rho + 1
+      IOBOUNDS(ng) % eta_u   = IOBOUNDS(ng) % JUB_u   -                 &
+     &                         IOBOUNDS(ng) % JLB_u   + 1
+      IOBOUNDS(ng) % eta_v   = IOBOUNDS(ng) % JUB_v   -                 &
+     &                         IOBOUNDS(ng) % JLB_v   + 1
+
+      RETURN
+      END SUBROUTINE get_iobounds
 
       SUBROUTINE get_tile (ng, tile, Itile, Jtile,                      &
      &                     Istr, Iend, Jstr, Jend,                      &
@@ -209,7 +523,7 @@
       integer :: ChunkSizeI, ChunkSizeJ, MarginI, MarginJ
 !
 !-----------------------------------------------------------------------
-!  Set physical non-overlaping grid bounds according to tile rank.
+!  Set physical non-overlapping grid bounds according to tile rank.
 !-----------------------------------------------------------------------
 !
 !  Non-tiled grid bounds.  This is used in serial or shared-memory
@@ -258,6 +572,138 @@
 
       RETURN
       END SUBROUTINE get_tile
+
+      SUBROUTINE tile_bounds_1d (ng, tile, Imax, Istr, Iend)
+!
+!=======================================================================
+!                                                                      !
+!  This routine computes the starting and ending indices for the 1D    !
+!  decomposition between all available threads or partitions.          !
+!                                                                      !
+!                    1 _____________________  Imax                     !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number                                    !
+!     tile       Thread or partition                                   !
+!     Imax       Global number of points                               !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     Istr       Starting partition index                              !
+!     Iend       Ending   partition index                              !
+!                                                                      !
+!======================================================================!
+!
+      USE mod_param
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile, Imax
+      integer, intent(out) :: Iend, Istr
+!
+!  Local variable declarations.
+!
+      integer :: ChunkSize, Margin, Nnodes
+!
+!-----------------------------------------------------------------------
+!  Compute 1D decomposition starting and ending indices.
+!-----------------------------------------------------------------------
+!
+      Nnodes=NtileI(ng)*NtileJ(ng)
+      ChunkSize=(Imax+Nnodes-1)/Nnodes
+      Margin=(Nnodes*ChunkSize-Imax)/2
+
+      IF (Imax.ge.Nnodes) THEN
+        Istr=1+tile*ChunkSize-Margin
+        Iend=Istr+ChunkSize-1
+        Istr=MAX(Istr,1)
+        Iend=MIN(Iend,Imax)
+      ELSE
+        Istr=1
+        Iend=Imax
+      END IF
+
+      RETURN
+      END SUBROUTINE tile_bounds_1d
+
+      SUBROUTINE tile_bounds_2d (ng, tile, Imax, Jmax, Itile, Jtile,    &
+     &                           Istr, Iend, Jstr, Jend)
+!
+!=======================================================================
+!                                                                      !
+!  This routine computes the starting and ending horizontal indices    !
+!  for each sub-domain partition or tile for a grid bounded between    !
+!  (1,1) and (Imax,Jmax):                                              !
+!                                                                      !
+!                      _________  (Imax,Jmax)                          !
+!                     |         |                                      !
+!                     |         |                                      !
+!                     |_________|                                      !
+!                (1,1)                                                 !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number                                    !
+!     tile       Sub-domain partition                                  !
+!     Imax       Global number of points in the I-direction            !
+!     Jmax       Global number of points in the J-direction            !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     Itile      I-tile coordinate (a value from 0 to NtileI(ng))      !
+!     Jtile      J-tile coordinate (a value from 0 to NtileJ(ng))      !
+!     Istr       Starting tile index in the I-direction                !
+!     Iend       Ending   tile index in the I-direction                !
+!     Jstr       Starting tile index in the J-direction                !
+!     Jend       Ending   tile index in the J-direction                !
+!                                                                      !
+!======================================================================!
+!
+      USE mod_param
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile, Imax, Jmax
+      integer, intent(out) :: Itile, Jtile
+      integer, intent(out) :: Iend, Istr, Jend, Jstr
+!
+!  Local variable declarations.
+!
+      integer :: ChunkSizeI, ChunkSizeJ, MarginI, MarginJ
+!
+!-----------------------------------------------------------------------
+!  Compute tile decomposition for a horizontal grid bounded between
+!  (1,1) and (Imax,Jmax).
+!-----------------------------------------------------------------------
+!
+      ChunkSizeI=(Imax+NtileI(ng)-1)/NtileI(ng)
+      ChunkSizeJ=(Jmax+NtileJ(ng)-1)/NtileJ(ng)
+      MarginI=(NtileI(ng)*ChunkSizeI-Imax)/2
+      MarginJ=(NtileJ(ng)*ChunkSizeJ-Jmax)/2
+      Jtile=tile/NtileI(ng)
+      Itile=tile-Jtile*NtileI(ng)
+!
+!  Tile bounds in the I-direction.
+!
+      Istr=1+Itile*ChunkSizeI-MarginI
+      Iend=Istr+ChunkSizeI-1
+      Istr=MAX(Istr,1)
+      Iend=MIN(Iend,Imax)
+!
+!  Tile bounds in the J-direction.
+!
+      Jstr=1+Jtile*ChunkSizeJ-MarginJ
+      Jend=Jstr+ChunkSizeJ-1
+      Jstr=MAX(Jstr,1)
+      Jend=MIN(Jend,Jmax)
+
+      RETURN
+      END SUBROUTINE tile_bounds_2d
 
       SUBROUTINE var_bounds (ng, Istr, Iend, Jstr, Jend,                &
      &                       IstrR, IstrT, IstrU, IendR, IendT,         &
@@ -348,12 +794,12 @@
 !      :                                                           :
 !  0   r..u..r..u..r..u..r..u..r..u..r..u..r..u..r..u..r..u..r..u..r
 !         1     2                                        Lm     L
-!      0     1     2                                         Lm    L 
+!      0     1     2                                         Lm    L
 !
 !                           interior       Boundary Conditions
 !                         computations     W     E     S     N
 !
-!    RH0-type variables:  [1:Lm, 1:Mm]   [0,:] [L,:] [:,0] [:,M] 
+!    RH0-type variables:  [1:Lm, 1:Mm]   [0,:] [L,:] [:,0] [:,M]
 !    PSI-type variables:  [2:Lm, 2:Mm]   [1,:] [L,:] [:,1] [:,M]
 !      U-type variables:  [2:Lm, 1:Mm]   [1,:] [L,:] [:,0] [:,M]
 !      V-type variables:  [1:Lm, 2:Mm]   [0,:] [L,:] [:,1] [:,M]
@@ -439,7 +885,7 @@
 !  Conversely, for an internal subdomain which does not include a
 !  segments of the physical boundary, all bounds with suffixes R,U,V
 !  are set to the same values of corresponding non-suffixed bounds.
-! 
+!
 !  Notice that the indices IstrT, IendT, JstrT, JendT are used during
 !  nesting and include the overlap contact points between refined,
 !  mosaic, or composed grids.  If not nesting, they are set to the

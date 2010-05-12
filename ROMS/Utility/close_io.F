@@ -3,7 +3,7 @@
 !
 !svn $Id: close_io.F 1601 2008-07-25 15:02:43Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -23,9 +23,11 @@
 !
 !  Local variable declarations.
 !
-      logical :: First = .TRUE.
+      logical :: First
 
       integer :: MyError, i, ng, status
+!
+      SourceFile='close_io.F'
 !
 !-----------------------------------------------------------------------
 !  Close output NetCDF files. Set file indices to closed state.
@@ -33,41 +35,48 @@
 !
       DO ng=1,Ngrids
         IF (ncRSTid(ng).ne.-1) THEN
-          status=nf90_close(ncRSTid(ng))
-          ncRSTid(ng)=-1
+          CALL netcdf_close (ng, iNLM, ncRSTid(ng))
         END IF
+#if defined FORWARD_READ || defined FORWARD_WRITE
+        IF ((ncFWDid(ng).ne.-1).and.(ncFWDid(ng).eq.ncHISid(ng))) THEN
+          ncFWDid(ng)=-1
+        END IF
+        IF (ncFWDid(ng).ne.-1) THEN
+          CALL netcdf_close (ng, iNLM, ncFWDid(ng))
+        END IF
+#endif
         IF (ncHISid(ng).ne.-1) THEN
-          status=nf90_close(ncHISid(ng))
-          ncHISid(ng)=-1
+          CALL netcdf_close (ng, iNLM, ncHISid(ng))
         END IF
 #ifdef ADJOINT
         IF (ncADJid(ng).ne.-1) THEN
-          status=nf90_close(ncADJid(ng))
-          ncADJid(ng)=-1
+          CALL netcdf_close (ng, iADM, ncADJid(ng))
         END IF
 #endif
 #ifdef TANGENT
         IF (ncTLMid(ng).ne.-1) THEN
-          status=nf90_close(ncTLMid(ng))
-          ncTLMid(ng)=-1
+          CALL netcdf_close (ng, iTLM, ncTLMid(ng))
         END IF
 #endif
 #ifdef AVERAGES
         IF (ncAVGid(ng).ne.-1) THEN
-          status=nf90_close(ncAVGid(ng))
-          ncAVGid=-1
+          CALL netcdf_close (ng, iNLM, ncAVGid(ng))
+        END IF
+#endif
+#ifdef DIAGNOSTICS
+        IF (ncDIAid(ng).ne.-1) THEN
+          CALL netcdf_close (ng, iNLM, ncDIAid(ng))
         END IF
 #endif
 #ifdef FLOATS
         IF (ncFLTid(ng).ne.-1) THEN
-          status=nf90_close(ncFLTid(ng))
-          ncFLTid(ng)=-1
+          CALL netcdf_close (ng, iNLM, ncFLTid(ng))
         END IF
 #endif
-#if defined FORWARD_READ || defined FORWARD_WRITE
-        IF (ncFWDid(ng).ne.-1) THEN
-          status=nf90_close(ncFWDid(ng))
-          ncFWDid(ng)=-1
+#if defined WEAK_CONSTRAINT   && \
+   (defined POSTERIOR_ERROR_F || defined POSTERIOR_ERROR_I)
+        IF (ncERRid(ng).ne.-1) THEN
+          CALL netcdf_close (ng, iTLM, ncERRid(ng))
         END IF
 #endif
 !
@@ -108,6 +117,12 @@
             WRITE (stdout,20) 'STATION', NrecSTA(ng)
           END IF
 #endif
+#if defined WEAK_CONSTRAINT   && \
+   (defined POSTERIOR_ERROR_F || defined POSTERIOR_ERROR_I)
+          IF (NrecERR(ng).gt.0) THEN
+            WRITE (stdout,20) 'ERROR  ', NrecERR(ng)
+          END IF
+#endif
         END IF
       END DO
 !
@@ -116,16 +131,37 @@
 !-----------------------------------------------------------------------
 !
       IF (Master) THEN
+        First=.TRUE.
         DO i=1,37
           IF (LEN_TRIM(ANANAME(i)).gt.0) THEN
             IF (First) THEN
               First=.FALSE.
-              WRITE (stdout,30)
+              WRITE (stdout,30) ' Analytical header files used:'
             END IF
             WRITE (stdout,'(5x,a)') TRIM(ADJUSTL(ANANAME(i)))
           END IF
         END DO
       END IF
+
+#ifdef BIOLOGY
+!
+!-----------------------------------------------------------------------
+!  Report biology model header files used.
+!-----------------------------------------------------------------------
+!
+      IF (Master) THEN
+        First=.TRUE.
+        DO i=1,4
+          IF (LEN_TRIM(BIONAME(i)).gt.0) THEN
+            IF (First) THEN
+              First=.FALSE.
+              WRITE (stdout,30) ' Biology model header files used:'
+            END IF
+            WRITE (stdout,'(5x,a)') TRIM(ADJUSTL(BIONAME(i)))
+          END IF
+        END DO
+      END IF
+#endif
 !
 !-----------------------------------------------------------------------
 !  If applicable, report internal exit errors.
@@ -144,20 +180,22 @@
       ELSE IF (exit_flag.eq.3) THEN
         IF (Master) WRITE (stdout,80) nf90_strerror(ioerror)
       ELSE IF (exit_flag.eq.4) THEN
-        IF (Master) WRITE (stdout,90) nf90_strerror(ioerror)
+        IF (Master) WRITE (stdout,90)
       ELSE IF (exit_flag.eq.5) THEN
         IF (Master) WRITE (stdout,100)
       ELSE IF (exit_flag.eq.6) THEN
         IF (Master) WRITE (stdout,110)
       ELSE IF (exit_flag.eq.7) THEN
         IF (Master) WRITE (stdout,120)
+      ELSE IF (exit_flag.eq.8) THEN
+        IF (Master) WRITE (stdout,130)
       END IF
 !
  10   FORMAT (/,' ROMS/TOMS - Output NetCDF summary for Grid ',         &
      &        i2.2,':')
  20   FORMAT (13x,'number of time records written in ',                 &
      &        a,' file = ',i8.8)
- 30   FORMAT (/,' Analytical header files used:',/)
+ 30   FORMAT (/,a,/)
  40   FORMAT (/,a,i3,/)
  50   FORMAT (/,' ROMS/TOMS: DONE... ',a)
  60   FORMAT (/,' MAIN: Abnormal termination: BLOWUP.')
@@ -165,11 +203,11 @@
      &          ' REASON: ',a)
  80   FORMAT (/,' ERROR: Abnormal termination: NetCDF OUTPUT.',/,       &
      &          ' REASON: ',a)
- 90   FORMAT (/,' ERROR: OPENCDF - Can not open NetCDF file.',/,        &
-     &          ' REASON: ',a)
-100   FORMAT (/,' ERROR: CHECKDEFS - Illegal model configuration.')
-110   FORMAT (/,' ERROR: PARAM - Illegal domain partition.')
-120   FORMAT (/,' ERROR: INP_PAR - Illegal input parameter.')
+ 90   FORMAT (/,' ERROR: I/O related problem.')
+100   FORMAT (/,' ERROR: Illegal model configuration.')
+110   FORMAT (/,' ERROR: Illegal domain partition.')
+120   FORMAT (/,' ERROR: Illegal input parameter.')
+130   FORMAT (/,' ERROR: Fatal algorithm result.')
 
       RETURN
       END SUBROUTINE close_io

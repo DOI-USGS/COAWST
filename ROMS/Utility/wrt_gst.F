@@ -2,9 +2,9 @@
 #if defined PROPAGATOR && defined CHECKPOINTING
       SUBROUTINE wrt_gst (ng, model)
 !
-!svn $Id: wrt_gst.F 733 2008-09-07 01:56:45Z jcwarner $
+!svn $Id: wrt_gst.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -24,7 +24,7 @@
 
 #ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_ncwrite
+      USE distribute_mod, ONLY : mp_bcasti, mp_ncwrite
 #endif
 !
       implicit none
@@ -47,6 +47,8 @@
 # endif
       character (len=1) :: lchar(5)
 !
+      SourceFile='wrt_gst.F'
+!
 !-----------------------------------------------------------------------
 !  Write out checkpointing information variables.
 !-----------------------------------------------------------------------
@@ -55,300 +57,160 @@
 !
 !  Write out number of eigenvalues to compute.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'NEV', varid)
-        status=nf90_put_var(ncGSTid(ng), varid, NEV)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'NEV', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_ivar (ng, model, GSTname(ng), 'NEV',              &
+     &                      NEV, (/0/), (/0/),                          &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out number of Lanczos vectors to compute.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'NCV', varid)
-        status=nf90_put_var(ncGSTid(ng), varid, NCV)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'NCV', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_ivar (ng, model, GSTname(ng), 'NCV',              &
+     &                      NCV, (/0/), (/0/),                          &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out size of the eigenvalue problem.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'Mstate', varid)
-        status=nf90_put_var(ncGSTid(ng), varid, Mstate(ng))
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'Mstate', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_ivar (ng, model, GSTname(ng), 'Mstate',           &
+     &                      Mstate(ng), (/0/), (/0/),                   &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 
 # ifdef DISTRIBUTE
 !
 !  Write out number of distributed-memory nodes.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'Nnodes', varid)
-        status=nf90_put_var(ncGSTid(ng), varid, numnodes)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'Nnodes', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_ivar (ng, model, GSTname(ng), 'Nnodes',           &
+     &                      numnodes, (/0/), (/0/),                     &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 # endif
 !
 !  Write out iteration number.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'iter', varid)
-        status=nf90_put_var(ncGSTid(ng), varid, Nrun)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'iter', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_ivar (ng, model, GSTname(ng), 'iter',             &
+     &                      Nrun, (/0/), (/0/),                         &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out reverse communications flag.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'ido', varid)
-        status=nf90_put_var(ncGSTid(ng), varid, ido)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'ido', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_ivar (ng, model, GSTname(ng), 'ido',              &
+     &                      ido, (/0/), (/0/),                          &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out information and error flag.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'info', varid)
-        status=nf90_put_var(ncGSTid(ng), varid, info)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'info', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_ivar (ng, model, GSTname(ng), 'info',             &
+     &                      info, (/0/), (/0/),                         &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out eigenvalue problem type.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'bmat', varid)
-        status=nf90_put_var(ncGSTid(ng), varid, bmat)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'bmat', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_svar (ng, model, GSTname(ng), 'bmat',             &
+     &                      bmat, (/1/), (/1/),                         &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out Ritz eigenvalues to compute.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'which', varid)
-        start(1)=1
-        total(1)=2
-        status=nf90_put_var(ncGSTid(ng), varid, which, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'which', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_svar (ng, model, GSTname(ng), 'which',            &
+     &                      which, (/1/), (/2/),                        &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out form of basis function.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'howmany', varid)
-        status=nf90_put_var(ncGSTid(ng), varid, howmany)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'howmay', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_svar (ng, model, GSTname(ng), 'howmany',          &
+     &                      howmany, (/1/), (/1/),                      &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out relative accuracy of computed Ritz values.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'Ritz_tol', varid)
-        status=nf90_put_var(ncGSTid(ng), varid, Ritz_tol)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'Ritz_tol', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_fvar (ng, model, GSTname(ng), 'Ritz_tol',         &
+     &                      Ritz_tol, (/0/), (/0/),                     &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out eigenproblem parameters.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'iparam', varid)
-        start(1)=1
-        total(1)=SIZE(iparam)
-        status=nf90_put_var(ncGSTid(ng), varid, iparam, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'iparam', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_ivar (ng, model, GSTname(ng), 'iparam',           &
+     &                      iparam, (/1/), (/SIZE(iparam)/),            &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out pointers to mark starting location in work arrays.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'ipntr', varid)
-        start(1)=1
-        total(1)=SIZE(ipntr)
-        status=nf90_put_var(ncGSTid(ng), varid, ipntr, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'ipntr', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_ivar (ng, model, GSTname(ng), 'ipntr',            &
+     &                      ipntr, (/1/), (/SIZE(ipntr)/),              &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write ARPACK internal integer parameters to _aupd routines.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'iaupd', varid)
-        start(1)=1
-        total(1)=SIZE(iaupd)
-        status=nf90_put_var(ncGSTid(ng), varid, iaupd, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'iaupd', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_ivar (ng, model, GSTname(ng), 'iaupd',            &
+     &                      iaupd, (/1/), (/SIZE(iaupd)/),              &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write ARPACK internal integer parameters to _aitr routines.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'iaitr', varid)
-        start(1)=1
-        total(1)=SIZE(iaitr)
-        status=nf90_put_var(ncGSTid(ng), varid, iaitr, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'iaitr', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_ivar (ng, model, GSTname(ng), 'iaitr',            &
+     &                      iaitr, (/1/), (/SIZE(iaitr)/),              &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write ARPACK internal integer parameters to _aup2 routines.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'iaup2', varid)
-        start(1)=1
-        total(1)=SIZE(iaup2)
-        status=nf90_put_var(ncGSTid(ng), varid, iaup2, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'iaup2', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_ivar (ng, model, GSTname(ng), 'iaup2',            &
+     &                      iaup2, (/1/), (/SIZE(iaup2)/),              &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write ARPACK internal logical parameters to _aitr routines.
 !
-      IF (OutThread) THEN
-        DO i=1,SIZE(laitr)
-          IF (laitr(i)) THEN
-            lchar(i)='T'
-          ELSE
-            lchar(i)='F'
-          END IF
-        END DO
-        status=nf90_inq_varid(ncGSTid(ng), 'laitr', varid)
-        start(1)=1
-        total(1)=SIZE(laitr)
-        status=nf90_put_var(ncGSTid(ng), varid, lchar, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'laitr', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
+      DO i=1,SIZE(laitr)
+        IF (laitr(i)) THEN
+          lchar(i)='T'
+        ELSE
+          lchar(i)='F'
         END IF
-      END IF
+      END DO
+      CALL netcdf_put_svar (ng, model, GSTname(ng), 'laitr',            &
+     &                      lchar, (/1/), (/SIZE(laitr)/),              &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write ARPACK internal logical parameters to _aupd routines.
 !
-      IF (OutThread) THEN
-        DO i=1,SIZE(laup2)
-          IF (laup2(i)) THEN
-            lchar(i)='T'
-          ELSE
-            lchar(i)='F'
-          END IF
-        END DO
-        status=nf90_inq_varid(ncGSTid(ng), 'laup2', varid)
-        start(1)=1
-        total(1)=SIZE(laup2)
-        status=nf90_put_var(ncGSTid(ng), varid, lchar, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'laup2', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
+      DO i=1,SIZE(laup2)
+        IF (laup2(i)) THEN
+          lchar(i)='T'
+        ELSE
+          lchar(i)='F'
         END IF
-      END IF
+      END DO
+      CALL netcdf_put_svar (ng, model, GSTname(ng), 'laup2',            &
+     &                      lchar, (/1/), (/SIZE(laup2)/),              &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Define ARPACK internal real parameters to _aitr routines.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'raitr', varid)
-        start(1)=1
-        total(1)=SIZE(raitr)
-        status=nf90_put_var(ncGSTid(ng), varid, raitr, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'raitr', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_fvar (ng, model, GSTname(ng), 'raitr',            &
+     &                      raitr, (/1/), (/SIZE(raitr)/),              &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Define ARPACK internal real parameters to _aup2 routines.
 !
-      IF (OutThread) THEN
-        status=nf90_inq_varid(ncGSTid(ng), 'raup2', varid)
-        start(1)=1
-        total(1)=SIZE(raup2)
-        status=nf90_put_var(ncGSTid(ng), varid, raup2, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'raup2', TRIM(GSTname(ng))
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_fvar (ng, model, GSTname(ng), 'raup2',            &
+     &                      raup2, (/1/), (/SIZE(raup2)/),              &
+     &                      ncid = ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
 !  Write out checkpointing variables associated with the state vector.
@@ -362,22 +224,13 @@
      &                   vrecord, Nstr(ng), Nend(ng), 1, NCV, scale,    &
      &                   Bvec(Nstr(ng):,1))
 # else
-      IF (OutThread) THEN
-        start(1)=Nstr(ng)
-        total(1)=Nend(ng)-Nstr(ng)+1
-        start(2)=1
-        total(2)=NCV
-        status=nf90_inq_varid(ncGSTid(ng), 'Bvec', varid)
-        status=nf90_put_var(ncGSTid(ng), varid, Bvec(Nstr(ng):,1),      &
-     &                      start, total)
-      END IF
+      CALL netcdf_put_fvar (ng, model, GSTname(ng), 'Bvec',             &
+     &                      Bvec(Nstr(ng):,1),                          &
+     &                      (/Nstr(ng),1/),                             &
+     &                      (/Nend(ng)-Nstr(ng)+1,NCV/),                &
+     &                      ncid = ncGSTid(ng))
 # endif
-      IF (OutThread.and.(status.ne.nf90_noerr)) THEN
-        WRITE (stdout,10) 'Bvec', TRIM(GSTname(ng))
-        exit_flag=3
-        ioerror=status
-        RETURN
-      END IF
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out eigenproblem residual vector.
 !
@@ -387,20 +240,12 @@
      &                  vrecord, Nstr(ng), Nend(ng), 1, 1, scale,       &
      &                  resid(Nstr(ng):))
 # else
-      IF (OutThread) THEN
-        start(1)=Nstr(ng)
-        total(1)=Nend(ng)-Nstr(ng)+1
-        status=nf90_inq_varid(ncGSTid(ng), 'resid', varid)
-        status=nf90_put_var(ncGSTid(ng), varid, resid(Nstr(ng):),       &
-     &                      start, total)
-      END IF
+      CALL netcdf_put_fvar (ng, model, GSTname(ng), 'resid',            &
+     &                      resid(Nstr(ng):),                           &
+     &                      (/Nstr(ng)/), (/Nend(ng)-Nstr(ng)+1/),      &
+     &                      ncid = ncGSTid(ng))
 # endif
-      IF (OutThread.and.(status.ne.nf90_noerr)) THEN
-        WRITE (stdout,10) 'resid', TRIM(GSTname(ng))
-        exit_flag=3
-        ioerror=status
-        RETURN
-      END IF
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out state reverse communication work array.
 # ifdef DISTRIBUTE
@@ -413,20 +258,11 @@
      &                  vrecord, 1, 3*Nstate(ng), 0, 0, scale,          &
      &                  SworkD)
 # else
-      IF (OutThread) THEN
-        start(1)=1
-        total(1)=3*Nstate(ng)
-        status=nf90_inq_varid(ncGSTid(ng), 'SworkD', varid)
-        status=nf90_put_var(ncGSTid(ng), varid, SworkD,                 &
-     &                      start, total)
-      END IF
+      CALL netcdf_put_fvar (ng, model, GSTname(ng), 'SworkD',           &
+     &                      SworkD, (/1/), (/3*Nstate(ng)/),            &
+     &                      ncid = ncGSTid(ng))
 # endif
-      IF (OutThread.and.(status.ne.nf90_noerr)) THEN
-        WRITE (stdout,10) 'SworkD', TRIM(GSTname(ng))
-        exit_flag=3
-        ioerror=status
-        RETURN
-      END IF
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out eigenproblem work array.
 # ifdef DISTRIBUTE
@@ -439,45 +275,24 @@
      &                  vrecord, 1, LworkL, 0, 0, scale,                &
      &                  SworkL)
 # else
-      IF (OutThread) THEN
-        start(1)=1
-        total(1)=LworkL
-        status=nf90_inq_varid(ncGSTid(ng), 'SworkL', varid)
-        status=nf90_put_var(ncGSTid(ng), varid, SworkL,                 &
-     &                      start, total)
-      END IF
-# endif 
-      IF (OutThread.and.(status.ne.nf90_noerr)) THEN
-        WRITE (stdout,10) 'SworkL', TRIM(GSTname(ng))
-        exit_flag=3
-        ioerror=status
-        RETURN
-      END IF
+      CALL netcdf_put_fvar (ng, model, GSTname(ng), 'SworkL',           &
+     &                      SworkL, (/1/), (/LworkL/),                  &
+     &                      ncid = ncGSTid(ng))
+# endif
+      IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
 !  Synchronize GST checkpointing NetCDF file to disk so the file
 !  is available to other processes.
 !-----------------------------------------------------------------------
 !
-      IF (OutThread) THEN
-        status=nf90_sync(ncGSTid(ng))
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,20)
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
-      IF (Master) THEN
-        WRITE (stdout,30) Nrun+1
-      END IF
+      CALL netcdf_sync (ng, model, GSTname(ng), ncGSTid(ng))
+      IF (exit_flag.ne.NoError) RETURN
+
+      IF (Master) WRITE (stdout,10) Nrun+1
 !
-  10  FORMAT (/,' WRT_GST - error while writing variable: ', a,         &
-     &        /,11x,'into GST restart NetCDF file: ', a)
-  20  FORMAT (/,' WRT_GST - unable to synchronize restart NetCDF to ',  &
-     &        'disk.')
-  30  FORMAT (6x,'WRT_GST   - wrote GST checkpointing fields at ',      &
-     &           'iteration: ', i5.5)
+  10  FORMAT (6x,'WRT_GST   - wrote GST checkpointing fields at ',      &
+     &        'iteration: ', i5.5)
 
       RETURN
       END SUBROUTINE wrt_gst

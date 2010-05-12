@@ -1,18 +1,36 @@
 #include "cppdefs.h"
-#if defined FOUR_DVAR && defined OBSERVATIONS && \
-    !(defined WEAK_CONSTRAINT || defined IOM)
+#if defined FOUR_DVAR && defined OBSERVATIONS
       SUBROUTINE obs_cost (ng, model)
 !
-!svn $Id: obs_cost.F 503 2008-01-10 00:11:51Z arango $
+!svn $Id: obs_cost.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
+
+# ifdef WEAK_CONSTRAINT
+#  if defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY
 !                                                                      !
-!  If minimization first pass, this routine computes the observation   !
-!  cost function (Jo) as the misfit (squared difference) between the   !
-!  model and observations.                                             !
+!  This routine computes the data penalty function directly in during  !
+!  runs of the representer model:                                      !
+!                                                                      !
+#  else
+!                                                                      !
+!  This routine computes the data penalty function directly in during  !
+!  runs of the nonlinear model:                                        !
+!                                                                      !
+#  endif
+!         Jdata = transpose(H X - Xo) * O^(-1) * (H X - Xo)            !
+!                                                                      !
+!         H  : observation operator (linearized if incremental)        !
+!         Xo : observations vector                                     !
+!       H X  : representer model at observation points                 !
+!         O  : observations error covariance                           !
+# else
+!                                                                      !
+!  This routine computes the observation cost function (Jo) as the     !
+!  misfit (squared difference) between the model and observations.     !
 !                                                                      !
 !  If conventional strong contraint 4DVAR:                             !
 !                                                                      !
@@ -33,22 +51,7 @@
 !       H X  : nonlinear model at observation points                   !
 !  H deltaX  : increment at observation point                          !
 !         O  : observations error covariance                           !
-!                                                                      !
-!  If minimization second pass (m=2), it computes conjugate gradient   !
-!  step size numerator and denominator factors due to observations:    !
-!                                                                      !
-!  If conventional strong contraint 4DVAR:                             !
-!                                                                      !
-!    StepTopObs = 1/2 * (H X(m-1) - Xo) * O^(-1) * (H X(m) - H X(m-1)) !
-!                                                                      !
-!    StepBotObs = 1/2 * O^(-1) * (H X(m) - H X(m-1)) ** 2              ! 
-!                                                                      !
-!  or if incremental strong contraint 4DVAR:                           !
-!                                                                      !
-!    StepTopObs = 1/2 * (H deltaX(m-1) - d) * O^(-1) *                 !
-!                       (H deltaX(m) - H deltaX(m-1))                  !
-!                                                                      !
-!    StepBotObs = 1/2 * O^(-1) * (H deltaX(m) - H deltaX(m-1)) ** 2    ! 
+# endif
 !                                                                      !
 !=======================================================================
 !
@@ -67,74 +70,95 @@
 !
       integer :: NSUB, iobs, ivar
 
-      real(r8) ::  cff
-# if defined IS4DVAR_OLD || defined S4DVAR
-      real(r8) ::  my_StepBot, my_StepTop
-# endif
+      real(r8) ::  cff, cff1
+
       real(r8), dimension(0:NstateVar(ng)) :: my_ObsCost
+# if defined DATALESS_LOOPS && \
+    (defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY)
+      real(r8), dimension(0:NstateVar(ng)) :: my_ObsCost1
+# endif
 !
 !-----------------------------------------------------------------------
 !  Compute observation misfit cost function (ObsCost).
 !-----------------------------------------------------------------------
+
+# if defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY
 !
-      DO ivar=0,NstateVar(ng)
-        my_ObsCost(ivar)=0.0_r8
-      END DO
-# if defined IS4DVAR
-      DO iobs=1,Nobs(ng)
-        ivar=ObsType(iobs)
-        cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)*                         &
-     &      (NLmodVal(iobs)+TLmodVal(iobs)-ObsVal(iobs))**2
-        my_ObsCost(0)=my_ObsCost(0)+cff
-        my_ObsCost(ivar)=my_ObsCost(ivar)+cff
-      END DO
-# else
-      IF (Ipass.eq.1) THEN
-        DO iobs=1,Nobs(ng)
-          ivar=ObsType(iobs)
-#  if defined S4DVAR
-          cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)*                       &
-     &        (NLmodVal(iobs,Ipass)-ObsVal(iobs))**2
-#  elif defined IS4DVAR_OLD
-          cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)*                       &
-     &        (NLmodVal(iobs)+TLmodVal(iobs,Ipass)-ObsVal(iobs))**2
+!  Compute data penalty function.
+!
+      IF (model.eq.iRPM) THEN
+        DO ivar=0,NstateVar(ng)
+          my_ObsCost(ivar)=0.0_r8
+#  ifdef DATALESS_LOOPS
+          my_ObsCost1(ivar)=0.0_r8
 #  endif
+        END DO
+        DO iobs=NstrObs(ng),NendObs(ng)
+          ivar=ObsType(iobs)
+          IF (ObsErr(iobs).ne.0.0_r8) THEN
+            cff=ObsScale(iobs)*(TLmodVal(iobs)-ObsVal(iobs))**2/        &
+     &          ObsErr(iobs)
+#  ifdef DATALESS_LOOPS
+            cff1=ObsScale(iobs)*(NLmodVal(iobs)-ObsVal(iobs))**2/       &
+     &           ObsErr(iobs)
+#  endif
+          END IF
+          my_ObsCost(0)=my_ObsCost(0)+cff
+          my_ObsCost(ivar)=my_ObsCost(ivar)+cff
+#  ifdef DATALESS_LOOPS
+          my_ObsCost1(0)=my_ObsCost1(0)+cff1
+          my_ObsCost1(ivar)=my_ObsCost1(ivar)+cff1
+#  endif
+        END DO
+      END IF
+
+# elif defined TL_W4DPSAS          || defined W4DPSAS || \
+       defined W4DPSAS_SENSITIVITY
+!
+!  Compute nonlinear model data penalty function.
+!
+      IF (model.eq.iNLM) THEN
+        DO ivar=0,NstateVar(ng)
+          my_ObsCost(ivar)=0.0_r8
+        END DO
+        DO iobs=NstrObs(ng),NendObs(ng)
+          ivar=ObsType(iobs)
+          IF (ObsErr(iobs).NE.0.0_r8) THEN
+            cff=ObsScale(iobs)*(NLmodVal(iobs)-ObsVal(iobs))**2/        &
+     &          ObsErr(iobs)
+          END IF
           my_ObsCost(0)=my_ObsCost(0)+cff
           my_ObsCost(ivar)=my_ObsCost(ivar)+cff
         END DO
       END IF
-# endif
-# if defined S4DVAR || defined IS4DVAR_OLD
+# else
 !
-!-----------------------------------------------------------------------
-!  Compute Conjugate gradient algorithm step size dot products,
-!  StepTopObs, StepBotObs.
-!-----------------------------------------------------------------------
+!  Compute tangent linear model cost function.
 !
-      IF (Ipass.eq.2) THEN
-        my_StepTop=0.0_r8
-        my_StepBot=0.0_r8
+      IF (model.eq.iTLM) THEN
+        DO ivar=0,NstateVar(ng)
+          my_ObsCost(ivar)=0.0_r8
+        END DO
         DO iobs=1,Nobs(ng)
-#  if defined S4DVAR
-          cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)
-          my_StepTop=my_StepTop+                                        &
-     &               cff*                                               &
-     &               (NLmodVal(iobs,Ipass-1)-ObsVal(iobs))*             &
-     &               (NLmodVal(iobs,Ipass)-NLmodVal(iobs,Ipass-1))
-          my_StepBot=my_StepBot+                                        &
-     &               cff*                                               &
-     &               (NLmodVal(iobs,Ipass)-NLmodVal(iobs,Ipass-1))**2
-#  elif defined IS4DVAR_OLD
-          cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)
-          my_StepTop=my_StepTop+                                        &
-     &               cff*                                               &
-     &               (NLmodVal(iobs)+TLmodVal(iobs,Ipass-1)-            &
-     &                ObsVal(iobs))*                                    &
-     &               (TLmodVal(iobs,Ipass)-TLmodVal(iobs,Ipass-1))
-          my_StepBot=my_StepBot+                                        &
-     &               cff*                                               &
-     &               (TLmodVal(iobs,Ipass)-TLmodVal(iobs,Ipass-1))**2
-#  endif 
+          ivar=ObsType(iobs)
+          cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)*                       &
+     &        (NLmodVal(iobs)+TLmodVal(iobs)-ObsVal(iobs))**2
+          my_ObsCost(0)=my_ObsCost(0)+cff
+          my_ObsCost(ivar)=my_ObsCost(ivar)+cff
+        END DO
+!
+!  Compute nonlinear model cost function.
+!
+      ELSE IF (model.eq.iNLM) THEN
+        DO ivar=0,NstateVar(ng)
+          my_ObsCost(ivar)=0.0_r8
+        END DO
+        DO iobs=1,Nobs(ng)
+          ivar=ObsType(iobs)
+          cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)*                       &
+     &        (NLmodVal(iobs)-ObsVal(iobs))**2
+          my_ObsCost(0)=my_ObsCost(0)+cff
+          my_ObsCost(ivar)=my_ObsCost(ivar)+cff
         END DO
       END IF
 # endif
@@ -150,29 +174,58 @@
       tile_count=tile_count+1
       IF (tile_count.eq.NSUB) THEN
         tile_count=0
-        DO ivar=0,NstateVar(ng)
-          FOURDVAR(ng)%ObsCost(ivar)=FOURDVAR(ng)%ObsCost(ivar)+        &
-     &                               my_ObsCost(ivar)
-        END DO
-# ifdef IS4DVAR_OLD
-        StepBotObs=StepBotObs+my_StepBot
-        StepTopObs=StepTopObs+my_StepTop
+# if defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY
+        IF (model.eq.iRPM) THEN
+          DO ivar=0,NstateVar(ng)
+            FOURDVAR(ng)%DataPenalty(ivar)=my_ObsCost(ivar)+            &
+     &                                    FOURDVAR(ng)%DataPenalty(ivar)
+#  ifdef DATALESS_LOOPS
+            FOURDVAR(ng)%NLPenalty(ivar)=my_ObsCost1(ivar)+             &
+     &                                   FOURDVAR(ng)%NLPenalty(ivar)
+#  endif
+          END DO
+        END IF
+# elif defined TL_W4DPSAS          || defined W4DPSAS || \
+       defined W4DPSAS_SENSITIVITY
+        IF (model.eq.iNLM) THEN
+          DO ivar=0,NstateVar(ng)
+            FOURDVAR(ng)%NLPenalty(ivar)=my_ObsCost(ivar)+              &
+     &                                   FOURDVAR(ng)%NLPenalty(ivar)
+          END DO
+        END IF
+# else
+        IF (model.eq.iTLM) THEN
+          DO ivar=0,NstateVar(ng)
+            FOURDVAR(ng)%ObsCost(ivar)=FOURDVAR(ng)%ObsCost(ivar)+      &
+     &                                 my_ObsCost(ivar)
+          END DO
+        ELSE IF (model.eq.iNLM) THEN
+          DO ivar=0,NstateVar(ng)
+            FOURDVAR(ng)%NLobsCost(ivar)=FOURDVAR(ng)%NLobsCost(ivar)+  &
+     &                                   my_ObsCost(ivar)
+          END DO
+        END IF
 # endif
       END IF
 !$OMP END CRITICAL (COST_FUN)
+
+# ifndef WEAK_CONSTRAINT
 !
 !  If start of minimization, set cost function scales used to report
 !  normalized values.
 !
-# ifdef IS4DVAR_OLD
-      IF ((Nrun.eq.1).and.(Ipass.eq.1)) THEN
-# else
-      IF (Nrun.eq.1) THEN
-# endif
+      IF ((Nrun.eq.1).and.(model.eq.iTLM)) THEN
         DO ivar=0,NstateVar(ng)
           FOURDVAR(ng)%CostNorm(ivar)=FOURDVAR(ng)%ObsCost(ivar)
         END DO
       END IF
+!
+!  Save initial inner loop cost function.
+!
+      IF ((inner.eq.0).and.(model.eq.iTLM)) THEN
+        FOURDVAR(ng)%Cost0(outer)=FOURDVAR(ng)%ObsCost(0)
+      END IF
+# endif
 
       RETURN
       END SUBROUTINE obs_cost

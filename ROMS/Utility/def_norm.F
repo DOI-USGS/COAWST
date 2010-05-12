@@ -1,22 +1,25 @@
 #include "cppdefs.h"
 #ifdef FOUR_DVAR
-      SUBROUTINE def_norm (ng)
+      SUBROUTINE def_norm (ng, model, ifile)
 !
-!svn $Id: def_norm.F 733 2008-09-07 01:56:45Z jcwarner $
+!svn $Id: def_norm.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
-!  This routine creates a background covariance normalization factors  !
-!  NetCDF file used for variational data assimilation. It defines its  !
-!  dimensions, attributes, and variables.                              !
+!  This routine creates error covariance normalization factors NetCDF  !
+!  file used for variational data assimilation.  Four different files  !
+!  can
 !                                                                      !
 !=======================================================================
 !
       USE mod_param
       USE mod_parallel
+# ifdef BIOLOGY
+      USE mod_biology
+# endif
       USE mod_fourdvar
       USE mod_iounits
       USE mod_ncparam
@@ -25,136 +28,206 @@
 # if defined SEDIMENT || defined BBL_MODEL
       USE mod_sediment
 # endif
-# ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_bcasti
-# endif
+      USE def_var_mod, ONLY : def_var
 !
       implicit none
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng
+      integer, intent(in) :: ng, model, ifile
 !
 !  Local variable declarations.
 !
-      integer, parameter :: Natt = 24
-
       logical :: Ldefine, got_var(NV)
 
-      integer :: i, j, nrec, nvd, nvd3, nvd4
-      integer :: recdim, status, varid
+      integer, parameter :: Natt = 25
 
-      integer :: CostDim(2), DimIDs(29), t2dgrd(3), u2dgrd(3), v2dgrd(3)
+      integer :: i, j, nvd3, nvd4
+      integer :: recdim, status, varid
+# ifdef ADJUST_BOUNDARY
+      integer :: IorJdim, ifield
+# endif
+      integer :: DimIDs(32), t2dgrd(3), u2dgrd(3), v2dgrd(3)
+# ifdef ADJUST_BOUNDARY
+      integer :: t2dobc(3)
+# endif
       integer :: Vsize(4)
 
-      integer :: def_info, def_var, wrt_info
+      integer :: def_dim
 
 # ifdef SOLVE3D
       integer :: itrc
 
       integer :: t3dgrd(4), u3dgrd(4), v3dgrd(4)
+#  ifdef ADJUST_BOUNDARY
+      integer :: t3dobc(4)
+#  endif
 # endif
 
       real(r8) :: Aval(6)
 
-      character (len=80) :: Vinfo(Natt)
-      character (len=80) :: fname, ncname
+      character (len=60 ) :: Text
+      character (len=80 ) :: ncname
+      character (len=120) :: Vinfo(Natt)
+!
+      SourceFile='def_norm.F'
 !
 !=======================================================================
 !  Create a new background covariace normalization file.
 !=======================================================================
 !
       IF (exit_flag.ne.NoError) RETURN
-      ncname=NRMname(ng)
-      IF (LdefNRM(ng).and.OutThread) THEN
-        status=nf90_create(TRIM(ncname),nf90_clobber,ncNRMid(ng))
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) TRIM(ncname)
-          exit_flag=3
-          ioerror=status
+      ncname=NRMname(ifile,ng)
+!
+      DEFINE : IF (LdefNRM(ifile,ng)) THEN
+        CALL netcdf_create (ng, iTLM, TRIM(ncname), ncNRMid(ifile,ng))
+        IF (exit_flag.ne.NoError) THEN
+          IF (Master) WRITE (stdout,10) TRIM(ncname)
           RETURN
         END IF
-      END IF
-# ifdef DISTRIBUTE
-      IF (LdefNRM(ng)) THEN
-        CALL mp_bcasti (ng, iNLM, ncNRMid(ng), 1)
-      END IF
-# endif
 !
 !-----------------------------------------------------------------------
 !  Define the dimensions of staggered fields.
 !-----------------------------------------------------------------------
 !
-      IF (LdefNRM(ng).and.OutThread) THEN
-        status=nf90_def_dim(ncNRMid(ng),'xi_rho'  ,Lm(ng)+2,            &
-     &                      DimIDs( 1))
-        status=nf90_def_dim(ncNRMid(ng),'xi_u'    ,Lm(ng)+1,            &
-     &                      DimIDs( 2))
-        status=nf90_def_dim(ncNRMid(ng),'xi_v'    ,Lm(ng)+2,            &
-     &                      DimIDs( 3))
-        status=nf90_def_dim(ncNRMid(ng),'xi_psi'  ,Lm(ng)+1,            &
-     &                      DimIDs( 4))
-        status=nf90_def_dim(ncNRMid(ng),'eta_rho' ,Mm(ng)+2,            &
-     &                      DimIDs( 5))
-        status=nf90_def_dim(ncNRMid(ng),'eta_u'   ,Mm(ng)+2,            &
-     &                      DimIDs( 6))
-        status=nf90_def_dim(ncNRMid(ng),'eta_v'   ,Mm(ng)+1,            &
-     &                      DimIDs( 7))
-        status=nf90_def_dim(ncNRMid(ng),'eta_psi' ,Mm(ng)+1,            &
-     &                      DimIDs( 8))
-# if defined WRITE_WATER && defined MASKING
-        status=nf90_def_dim(ncNRMid(ng),'xy_rho'  ,Nxyr(ng),            &
-     &                      DimIDs(17))
-        status=nf90_def_dim(ncNRMid(ng),'xy_u'    ,Nxyu(ng),            &
-     &                      DimIDs(18))
-        status=nf90_def_dim(ncNRMid(ng),'xy_v'    ,Nxyv(ng),            &
-     &                      DimIDs(19))
+        DimIDs=0
+!
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'xi_rho',   &
+     &                 IOBOUNDS(ng)%xi_rho, DimIDs( 1))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'xi_u',     &
+     &                 IOBOUNDS(ng)%xi_u, DimIDs( 2))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'xi_v',     &
+     &                 IOBOUNDS(ng)%xi_v, DimIDs( 3))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'xi_psi',   &
+     &                 IOBOUNDS(ng)%xi_psi, DimIDs( 4))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'eta_rho',  &
+     &                 IOBOUNDS(ng)%eta_rho, DimIDs( 5))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'eta_u',    &
+     &                 IOBOUNDS(ng)%eta_u, DimIDs( 6))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'eta_v',    &
+     &                 IOBOUNDS(ng)%eta_v, DimIDs( 7))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'eta_psi',  &
+     &                 IOBOUNDS(ng)%eta_psi, DimIDs( 8))
+        IF (exit_flag.ne.NoError) RETURN
+
+# ifdef ADJUST_BOUNDARY
+        IF (ifile.eq.3) THEN
+          status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'IorJ',   &
+     &                   IOBOUNDS(ng)%IorJ, IorJdim)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
 # endif
+
+# if defined WRITE_WATER && defined MASKING
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'xy_rho',   &
+     &                 IOBOUNDS(ng)%xy_rho, DimIDs(17))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'xy_u',     &
+     &                 IOBOUNDS(ng)%xy_u, DimIDs(18))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'xy_v',     &
+     &                 IOBOUNDS(ng)%xy_v, DimIDs(19))
+        IF (exit_flag.ne.NoError) RETURN
+# endif
+
 # ifdef SOLVE3D
 #  if defined WRITE_WATER && defined MASKING
-        status=nf90_def_dim(ncNRMid(ng),'xyz_rho' ,Nxyr(ng)*N(ng),      &
-     &                      DimIDs(20))
-        status=nf90_def_dim(ncNRMid(ng),'xyz_u'   ,Nxyu(ng)*N(ng),      &
-     &                      DimIDs(21))
-        status=nf90_def_dim(ncNRMid(ng),'xyz_v'   ,Nxyv(ng)*N(ng),      &
-     &                      DimIDs(22))
-        status=nf90_def_dim(ncNRMid(ng),'xyz_w'   ,Nxyr(ng)*(N(ng)+1),  &
-     &                      DimIDs(23))
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'xyz_rho',  &
+     &                 IOBOUNDS(ng)%xy_rho*N(ng), DimIDs(20))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'xyz_u',    &
+     &                 IOBOUNDS(ng)%xy_u*N(ng), DimIDs(21))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'xyz_v',    &
+     &                 IOBOUNDS(ng)%xy_v*N(ng), DimIDs(22))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'xyz_w',    &
+     &                 IOBOUNDS(ng)%xy_rho*(N(ng)+1), DimIDs(23))
+        IF (exit_flag.ne.NoError) RETURN
 #  endif
-        status=nf90_def_dim(ncNRMid(ng),'s_rho'   ,N(ng),               &
-     &                      DimIDs( 9))
-        status=nf90_def_dim(ncNRMid(ng),'s_w'     ,N(ng)+1,             &
-     &                      DimIDs(10))
-        status=nf90_def_dim(ncNRMid(ng),'tracer'  ,NT(ng),              &
-     &                      DimIDs(11))
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 's_rho',    &
+     &                 N(ng), DimIDs( 9))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 's_w',      &
+     &                 N(ng)+1, DimIDs(10))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'tracer',   &
+     &                 NT(ng), DimIDs(11))
+        IF (exit_flag.ne.NoError) RETURN
+
 #  ifdef SEDIMENT
-        status=nf90_def_dim(ncNRMid(ng),'Nbed'    ,Nbed,                &
-     &                      DimIDs(16))
+        status=def_dim(ng, iTLM, ncNRMid(ng), ncname, 'NST',            &
+     &                 NST, DimIDs(32))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'Nbed',     &
+     &                 Nbed, DimIDs(16))
+        IF (exit_flag.ne.NoError) RETURN
+
 #   if defined WRITE_WATER && defined MASKING
-        status=nf90_def_dim(ncNRMid(ng),'xybed'   ,Nxyr(ng)*Nbed,       &
-     &                      DimIDs(24))
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'xybed',    &
+     &                 IOBOUNDS(ng)%xy_rho*Nbed, DimIDs(24))
+        IF (exit_flag.ne.NoError) RETURN
 #   endif
 #  endif
+
 #  ifdef ECOSIM
-        status=nf90_def_dim(ncNRMid(ng),'Nphy'    ,Nphy,                &
-     &                      DimIDs(25))
-        status=nf90_def_dim(ncNRMid(ng),'Nbac'    ,Nbac,                &
-     &                      DimIDs(26))
-        status=nf90_def_dim(ncNRMid(ng),'Ndom'    ,Ndom,                &
-     &                      DimIDs(27))
-        status=nf90_def_dim(ncNRMid(ng),'Nfec'    ,Nfec,                &
-     &                      DimIDs(28))
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'Nphy',     &
+     &                 Nphy, DimIDs(25))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'Nbac',     &
+     &                 Nbac, DimIDs(26))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'Ndom',     &
+     &                 Ndom, DimIDs(27))
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'Nfec',     &
+     &                 Nfec, DimIDs(28))
+        IF (exit_flag.ne.NoError) RETURN
 #  endif
 # endif
-        status=nf90_def_dim(ncNRMid(ng),'boundary',4,                   &
-     &                      DimIDs(14))
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'boundary', &
+     &                 4, DimIDs(14))
+        IF (exit_flag.ne.NoError) RETURN
+
 # ifdef FOUR_DVAR
-        status=nf90_def_dim(ncNRMid(ng),'Nstate  ',NstateVar(ng),       &
-     &                      DimIDs(29))
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname, 'Nstate',   &
+     &                 NstateVar(ng), DimIDs(29))
+        IF (exit_flag.ne.NoError) RETURN
 # endif
-        status=nf90_def_dim(ncNRMid(ng),TRIM(ADJUSTL(Vname(5,idtime))), &
-     &                      nf90_unlimited,DimIDs(12))
+
+        status=def_dim(ng, iTLM, ncNRMid(ifile,ng), ncname,             &
+     &                 TRIM(ADJUSTL(Vname(5,idtime))),                  &
+     &                 nf90_unlimited, DimIDs(12))
+        IF (exit_flag.ne.NoError) RETURN
+
         recdim=DimIDs(12)
 !
 !  Set number of dimensions for output variables.
@@ -185,6 +258,17 @@
         t3dgrd(2)=DimIDs( 5)
         t3dgrd(3)=DimIDs( 9)
         t3dgrd(4)=DimIDs(12)
+#  endif
+# endif
+# ifdef ADJUST_BOUNDARY
+        t2dobc(1)=IorJdim
+        t2dobc(2)=DimIDs(14)
+        t2dobc(3)=DimIDs(12)
+#  ifdef SOLVE3D
+        t3dobc(1)=IorJdim
+        t3dobc(2)=DimIDs( 9)
+        t3dobc(3)=DimIDs(14)
+        t3dobc(4)=DimIDs(12)
 #  endif
 # endif
 !
@@ -232,13 +316,13 @@
 !
 !  Initialize unlimited time record dimension.
 !
-        tNRMindx(ng)=0
+        tNRMindx(ifile,ng)=0
 !
 !  Initialize local information variable arrays.
 !
         DO i=1,Natt
-          DO j=1,80
-            Vinfo(i)=' '
+          DO j=1,LEN(Vinfo(1))
+            Vinfo(i)(j:j)=' '
           END DO
         END DO
         DO i=1,6
@@ -249,7 +333,7 @@
 !  Define time-recordless information variables.
 !-----------------------------------------------------------------------
 !
-        status=def_info(ng,ncNRMid(ng),ncname,DimIDs)
+        CALL def_info (ng, iTLM, ncNRMid(ifile,ng), ncname, DimIDs)
         IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
@@ -274,93 +358,118 @@
           Vinfo( 4)='standard'
         END IF
         Vinfo(14)=Vname(4,idtime)
-        status=def_var(ncNRMid(ng),nrmVid(idtime,ng),NF_TYPE,           &
-     &                 1,recdim,Aval,Vinfo,ncname)
+        status=def_var(ng, iTLM, ncNRMid(ifile,ng),                     &
+     &                 nrmVid(ifile,idtime,ng),                         &
+     &                 NF_TYPE, 1, (/recdim/), Aval, Vinfo, ncname,     &
+     &                 SetParAccess = .FALSE.)
+        IF (exit_flag.ne.NoError) RETURN
 !
-!  Define free-surface norm.
+!-----------------------------------------------------------------------
+!  Initial conditions or model error covariance normalization factors.
+!-----------------------------------------------------------------------
 !
-        Vinfo( 1)=Vname(1,idFsur)
-        WRITE (Vinfo( 2),20) TRIM(Vname(2,idFsur))
-        Vinfo( 3)='nondimensional'
-        Vinfo(14)=Vname(4,idFsur)
-        Vinfo(16)=Vname(1,idtime)
+        IF ((ifile.eq.1).or.(ifile.eq.2)) THEN
+          IF (ifile.eq.1) THEN
+            Text='initial conditions error covariance normalization'
+          ELSE IF (ifile.eq.2) THEN
+            Text='model error covariance normalization'
+          END IF
+!
+!  Define free-surface normalization factor.
+!
+          Vinfo( 1)=Vname(1,idFsur)
+          WRITE (Vinfo( 2),20) TRIM(Vname(2,idFsur)), TRIM(Text)
+          Vinfo( 3)='nondimensional'
+          Vinfo(14)=Vname(4,idFsur)
+          Vinfo(16)=Vname(1,idtime)
 # if defined WRITE_WATER && defined MASKING
-        Vinfo(20)='mask_rho'
+          Vinfo(20)='mask_rho'
 # endif
-        Vinfo(22)='coordinates'
-        Aval(5)=REAL(Iinfo(1,idFsur,ng),r8)
-        status=def_var(ncNRMid(ng),nrmVid(idFsur,ng),NF_FOUT,           &
-     &                 nvd3,t2dgrd,Aval,Vinfo,ncname)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idFsur,ng),r8)
+          status=def_var(ng, iTLM, ncNRMid(ifile,ng),                   &
+     &                   nrmVid(ifile,idFsur,ng),                       &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
 !
-!  Define 2D momentum norm in the XI-direction.
+!  Define 2D U-momentum normalization factor.
 !
-        Vinfo( 1)=Vname(1,idUbar)
-        WRITE (Vinfo( 2),20) TRIM(Vname(2,idUbar))
-        Vinfo( 3)='nondimensional'
-        Vinfo(14)=Vname(4,idUbar)
-        Vinfo(16)=Vname(1,idtime)
+          Vinfo( 1)=Vname(1,idUbar)
+          WRITE (Vinfo( 2),20) TRIM(Vname(2,idUbar)), TRIM(Text)
+          Vinfo( 3)='nondimensional'
+          Vinfo(14)=Vname(4,idUbar)
+          Vinfo(16)=Vname(1,idtime)
 # if defined WRITE_WATER && defined MASKING
-        Vinfo(20)='mask_u'
+          Vinfo(20)='mask_u'
 # endif
-        Vinfo(22)='coordinates'
-        Aval(5)=REAL(Iinfo(1,idUbar,ng),r8)
-        status=def_var(ncNRMid(ng),nrmVid(idUbar,ng),NF_FOUT,           &
-     &                 nvd3,u2dgrd,Aval,Vinfo,ncname)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idUbar,ng),r8)
+          status=def_var(ng, iTLM, ncNRMid(ifile,ng),                   &
+     &                   nrmVid(ifile,idUbar,ng),                       &
+     &                   NF_FOUT, nvd3, u2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
 !
-!  Define 2D momentum norm in the ETA-direction.
+!  Define 2D V-momentum normalization factor.
 !
-        Vinfo( 1)=Vname(1,idVbar)
-        WRITE (Vinfo( 2),20) TRIM(Vname(2,idVbar))
-        Vinfo( 3)='nondimensional'
-        Vinfo(14)=Vname(4,idVbar)
-        Vinfo(16)=Vname(1,idtime)
+          Vinfo( 1)=Vname(1,idVbar)
+          WRITE (Vinfo( 2),20) TRIM(Vname(2,idVbar)), TRIM(Text)
+          Vinfo( 3)='nondimensional'
+          Vinfo(14)=Vname(4,idVbar)
+          Vinfo(16)=Vname(1,idtime)
 # if defined WRITE_WATER && defined MASKING
-        Vinfo(20)='mask_v'
+          Vinfo(20)='mask_v'
 # endif
-        Vinfo(22)='coordinates'
-        Aval(5)=REAL(Iinfo(1,idVbar,ng),r8)
-        status=def_var(ncNRMid(ng),nrmVid(idVbar,ng),NF_FOUT,           &
-     &                 nvd3,v2dgrd,Aval,Vinfo,ncname)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idVbar,ng),r8)
+          status=def_var(ng, iTLM, ncNRMid(ifile,ng),                   &
+     &                   nrmVid(ifile,idVbar,ng),                       &
+     &                   NF_FOUT, nvd3, v2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+
 # ifdef SOLVE3D
 !
-!  Define 3D momentum norm in the XI-direction.
+!  Define 3D U-momentum normalization factor.
 !
-        Vinfo( 1)=Vname(1,idUvel)
-        WRITE (Vinfo( 2),20) TRIM(Vname(2,idUvel))
-        Vinfo( 3)='nondimensional'
-        Vinfo(14)=Vname(4,idUvel)
-        Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
-        Vinfo(20)='mask_u'
-#  endif
-        Vinfo(22)='coordinates'
-        Aval(5)=REAL(Iinfo(1,idUvel,ng),r8)
-        status=def_var(ncNRMid(ng),nrmVid(idUvel,ng),NF_FOUT,           &
-     &                 nvd4,u3dgrd,Aval,Vinfo,ncname)
-!
-!  Define 3D momentum norm in the ETA-direction.
-!
-        Vinfo( 1)=Vname(1,idVvel)
-        WRITE (Vinfo( 2),20) TRIM(Vname(2,idVvel))
-        Vinfo( 3)='nondimensional'
-        Vinfo(14)=Vname(4,idVvel)
-        Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
-        Vinfo(20)='mask_v'
-#  endif
-        Vinfo(22)='coordinates'
-        Aval(5)=REAL(Iinfo(1,idVvel,ng),r8)
-        status=def_var(ncNRMid(ng),nrmVid(idVvel,ng),NF_FOUT,           &
-     &                 nvd4,v3dgrd,Aval,Vinfo,ncname)
-!
-!  Define tracer type norm variables.
-!
-        DO itrc=1,NT(ng)
-          Vinfo( 1)=Vname(1,idTvar(itrc))
-          WRITE (Vinfo( 2),20) TRIM(Vname(2,idTvar(itrc)))
+          Vinfo( 1)=Vname(1,idUvel)
+          WRITE (Vinfo( 2),20) TRIM(Vname(2,idUvel)), TRIM(Text)
           Vinfo( 3)='nondimensional'
-          Vinfo(14)=Vname(4,idTvar(itrc))
+          Vinfo(14)=Vname(4,idUvel)
           Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_u'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idUvel,ng),r8)
+          status=def_var(ng, iTLM, ncNRMid(ifile,ng),                   &
+     &                   nrmVid(ifile,idUvel,ng),                       &
+     &                   NF_FOUT, nvd4, u3dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+!
+!  Define 3D V-momentum normalization factor.
+!
+          Vinfo( 1)=Vname(1,idVvel)
+          WRITE (Vinfo( 2),20) TRIM(Vname(2,idVvel)), TRIM(Text)
+          Vinfo( 3)='nondimensional'
+          Vinfo(14)=Vname(4,idVvel)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_v'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idVvel,ng),r8)
+          status=def_var(ng, iTLM, ncNRMid(ifile,ng),                   &
+     &                   nrmVid(ifile,idVvel,ng),                       &
+     &                 NF_FOUT, nvd4, v3dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+!
+!  Define tracer type normalization factors.
+!
+          DO itrc=1,NT(ng)
+            Vinfo( 1)=Vname(1,idTvar(itrc))
+            WRITE (Vinfo( 2),20) TRIM(Vname(2,idTvar(itrc))), TRIM(Text)
+            Vinfo( 3)='nondimensional'
+            Vinfo(14)=Vname(4,idTvar(itrc))
+            Vinfo(16)=Vname(1,idtime)
 #  ifdef SEDIMENT
             DO i=1,NST
               IF (itrc.eq.idsed(i)) THEN
@@ -369,106 +478,255 @@
             END DO
 #  endif
 #  if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
+            Vinfo(20)='mask_rho'
 #  endif
+            Vinfo(22)='coordinates'
+            Aval(5)=REAL(r3dvar,r8)
+            status=def_var(ng, iTLM, ncNRMid(ifile,ng),                 &
+     &                     nrmVid(ifile,idTvar(itrc),ng),               &
+     &                     NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+          END DO
+          IF (exit_flag.ne.NoError) RETURN
+# endif
+
+# ifdef ADJUST_BOUNDARY
+!
+!-----------------------------------------------------------------------
+!  Boundary conditions error covariance normalization factors.
+!-----------------------------------------------------------------------
+!
+        ELSE IF (ifile.eq.3) THEN
+          Text='error covariance normalization'
+!
+!  Define free-surface open boundaries.
+!
+          IF (ANY(Lobc(:,isFsur,ng))) THEN
+            ifield=idSbry(isFsur)
+            Vinfo( 1)=Vname(1,ifield)
+            WRITE (Vinfo( 2),20) TRIM(Vname(2,ifield)), TRIM(Text)
+            Vinfo( 3)=Vname(3,ifield)
+            Vinfo(14)=Vname(4,ifield)
+            Vinfo(16)=Vname(1,idtime)
+            Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
+            status=def_var(ng, iTLM, ncNRMid(ifile,ng),                 &
+     &                     nrmVid(ifile,ifield,ng),                     &
+     &                     NF_FOUT, 3, t2dobc, Aval, Vinfo, ncname,     &
+     &                   SetFillVal = .FALSE.)
+            IF (exit_flag.ne.NoError) RETURN
+          END IF
+!
+!  Define 2D U-momentum component open boundaries.
+!
+          IF (ANY(Lobc(:,isUbar,ng))) THEN
+            ifield=idSbry(isUbar)
+            Vinfo( 1)=Vname(1,ifield)
+            WRITE (Vinfo( 2),20) TRIM(Vname(2,ifield)), TRIM(Text)
+            Vinfo( 3)=Vname(3,ifield)
+            Vinfo(14)=Vname(4,ifield)
+            Vinfo(16)=Vname(1,idtime)
+            Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
+            status=def_var(ng, iTLM, ncNRMid(ifile,ng),                 &
+     &                     nrmVid(ifile,ifield,ng),                     &
+     &                     NF_FOUT, 3, t2dobc, Aval, Vinfo, ncname,     &
+     &                     SetFillVal = .FALSE.)
+            IF (exit_flag.ne.NoError) RETURN
+          END IF
+!
+!  Define 2D V-momentum component open boundaries.
+!
+          IF (ANY(Lobc(:,isVbar,ng))) THEN
+            ifield=idSbry(isVbar)
+            Vinfo( 1)=Vname(1,ifield)
+            WRITE (Vinfo( 2),20) TRIM(Vname(2,ifield)), TRIM(Text)
+            Vinfo( 3)=Vname(3,ifield)
+            Vinfo(14)=Vname(4,ifield)
+            Vinfo(16)=Vname(1,idtime)
+            Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
+            status=def_var(ng, iTLM, ncNRMid(ifile,ng),                 &
+     &                     nrmVid(ifile,ifield,ng),                     &
+     &                     NF_FOUT, 3, t2dobc, Aval, Vinfo, ncname,     &
+     &                     SetFillVal = .FALSE.)
+            IF (exit_flag.ne.NoError) RETURN
+          END IF
+
+#  ifdef SOLVE3D
+!
+!  Define 3D U-momentum component open boundaries.
+!
+          IF (ANY(Lobc(:,isUvel,ng))) THEN
+            ifield=idSbry(isUvel)
+            Vinfo( 1)=Vname(1,ifield)
+            WRITE (Vinfo( 2),20) TRIM(Vname(2,ifield)), TRIM(Text)
+            Vinfo( 3)=Vname(3,ifield)
+            Vinfo(14)=Vname(4,ifield)
+            Vinfo(16)=Vname(1,idtime)
+            Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
+            status=def_var(ng, iTLM, ncNRMid(ifile,ng),                 &
+     &                     nrmVid(ifile,ifield,ng),                     &
+     &                     NF_FOUT, 4, t3dobc, Aval, Vinfo, ncname,     &
+     &                     SetFillVal = .FALSE.)
+            IF (exit_flag.ne.NoError) RETURN
+          END IF
+!
+!  Define 3D V-momentum component open boundaries.
+!
+          IF (ANY(Lobc(:,isVvel,ng))) THEN
+            ifield=idSbry(isVvel)
+            Vinfo( 1)=Vname(1,ifield)
+            WRITE (Vinfo( 2),20) TRIM(Vname(2,ifield)), TRIM(Text)
+            Vinfo( 3)=Vname(3,ifield)
+            Vinfo(14)=Vname(4,ifield)
+            Vinfo(16)=Vname(1,idtime)
+            Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
+            status=def_var(ng, iTLM, ncNRMid(ifile,ng),                 &
+     &                     nrmVid(ifile,ifield,ng),                     &
+     &                     NF_FOUT, 4, t3dobc, Aval, Vinfo, ncname,     &
+     &                     SetFillVal = .FALSE.)
+            IF (exit_flag.ne.NoError) RETURN
+          END IF
+!
+!  Define tracer type variables open boundaries.
+!
+          DO itrc=1,NT(ng)
+            IF (ANY(Lobc(:,isTvar(itrc),ng))) THEN
+              ifield=idSbry(isTvar(itrc))
+              Vinfo( 1)=Vname(1,ifield)
+              WRITE (Vinfo( 2),20) TRIM(Vname(2,ifield)), TRIM(Text)
+              Vinfo( 3)=Vname(3,ifield)
+              Vinfo(14)=Vname(4,ifield)
+              Vinfo(16)=Vname(1,idtime)
+#   ifdef SEDIMENT
+              DO i=1,NST
+                IF (itrc.eq.idsed(i)) THEN
+                  WRITE (Vinfo(19),30) 1000.0_r8*Sd50(i,ng)
+                END IF
+              END DO
+#   endif
+              Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
+              status=def_var(ng, iTLM, ncNRMid(ifile,ng),               &
+     &                       nrmVid(ifile,ifield,ng),                   &
+     &                       NF_FOUT, 4, t3dobc, Aval, Vinfo, ncname,   &
+     &                       SetFillVal = .FALSE.)
+              IF (exit_flag.ne.NoError) RETURN
+            END IF
+          END DO
+#  endif
+# endif
+
+# if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
+!
+!-----------------------------------------------------------------------
+!  Surface forcing error covariance normalization factors.
+!-----------------------------------------------------------------------
+!
+        ELSE IF (ifile.eq.4) THEN
+          Text='error covariance normalization'
+
+#  ifdef ADJUST_WSTRESS
+!
+!  Define surface U-momentum stress normalization factors.
+!
+          Vinfo( 1)=Vname(1,idUsms)
+          WRITE (Vinfo( 2),20) TRIM(Vname(2,idUsms)), TRIM(Text)
+          Vinfo( 3)='nondimensional'
+          Vinfo(14)=Vname(4,idUsms)
+          Vinfo(16)=Vname(1,idtime)
+#   if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_u'
+#   endif
           Vinfo(22)='coordinates'
-          Aval(5)=REAL(r3dvar,r8)
-          status=def_var(ncNRMid(ng),nrmTid(itrc,ng),NF_FOUT,           &
-     &                   nvd4,t3dgrd,Aval,Vinfo,ncname)
-        END DO
-#  ifdef ADJUST_STFLUX
+          Aval(5)=REAL(u2dvar,r8)
+          status=def_var(ng, iTLM, ncNRMid(ifile,ng),                   &
+     &                   nrmVid(ifile,idUsms,ng),                       &
+     &                   NF_FOUT, nvd3, u2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+!
+!  Define surface V-momentum stress normalization factors.
+!
+          Vinfo( 1)=Vname(1,idVsms)
+          WRITE (Vinfo( 2),20) TRIM(Vname(2,idVsms)), TRIM(Text)
+          Vinfo( 2)=Vname(2,idVsms)
+          Vinfo( 3)='nondimensional'
+          Vinfo(14)=Vname(4,idVsms)
+          Vinfo(16)=Vname(1,idtime)
+#   if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_v'
+#   endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(v2dvar,r8)
+          status=def_var(ng, iTLM, ncNRMid(ifile,ng),                   &
+     &                   nrmVid(ifile,idVsms,ng),                       &
+     &                   NF_FOUT, nvd3, v2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+#  endif
+
+#  if defined ADJUST_STFLUX && defined SOLVE3D
 !
 !  Define surface tracer fluxes.
 !
-        DO itrc=1,NT(ng)
-          Vinfo( 1)=Vname(1,idTsur(itrc))
-          WRITE (Vinfo( 2),20) TRIM(Vname(2,idTsur(itrc)))
-          Vinfo( 3)='nondimensional'
-          Vinfo(14)=Vname(4,idTsur(itrc))
-          Vinfo(16)=Vname(1,idtime)
+          DO itrc=1,NT(ng)
+            IF (Lstflux(itrc,ng)) THEN
+              Vinfo( 1)=Vname(1,idTsur(itrc))
+              WRITE (Vinfo( 2),20) TRIM(Vname(2,idTsur(itrc))),         &
+     &                             TRIM(Text)
+              Vinfo( 3)='nondimensional'
+              Vinfo(14)=Vname(4,idTsur(itrc))
+              Vinfo(16)=Vname(1,idtime)
 #   if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
+              Vinfo(20)='mask_rho'
 #   endif
-          Vinfo(22)='coordinates'
-          Aval(5)=REAL(r2dvar,r8)
-          status=def_var(ncNRMid(ng),nrmVid(idTsur(itrc),ng),           &
-     &                   NF_FOUT,nvd3,t2dgrd,Aval,Vinfo,ncname)
-        END DO
+              Vinfo(22)='coordinates'
+              Aval(5)=REAL(r2dvar,r8)
+              status=def_var(ng, iTLM, ncNRMid(ifile,ng),               &
+     &                       nrmVid(ifile,idTsur(itrc),ng), NF_FOUT,    &
+     &                       nvd3, t2dgrd, Aval, Vinfo, ncname)
+              IF (exit_flag.ne.NoError) RETURN
+            END IF
+          END DO
 #  endif
 # endif
-# ifdef ADJUST_WSTRESS
-!
-!  Define surface U-momentum stress.
-!
-        Vinfo( 1)=Vname(1,idUsms)
-        WRITE (Vinfo( 2),20) TRIM(Vname(2,idUsms))
-        Vinfo( 3)='nondimensional'
-        Vinfo(14)=Vname(4,idUsms)
-        Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
-        Vinfo(20)='mask_u'
-#  endif
-        Vinfo(22)='coordinates'
-        Aval(5)=REAL(u2dvar,r8)
-        status=def_var(ncNRMid(ng),nrmVid(idUsms,ng),NF_FOUT,           &
-     &                 nvd3,u2dgrd,Aval,Vinfo,ncname)
-!
-!  Define surface V-momentum stress.
-!
-        Vinfo( 1)=Vname(1,idVsms)
-        WRITE (Vinfo( 2),20) TRIM(Vname(2,idVsms))
-        Vinfo( 2)=Vname(2,idVsms)
-        Vinfo( 3)='nondimensional'
-        Vinfo(14)=Vname(4,idVsms)
-        Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
-        Vinfo(20)='mask_v'
-#  endif
-        Vinfo(22)='coordinates'
-        Aval(5)=REAL(v2dvar,r8)
-        status=def_var(ncNRMid(ng),nrmVid(idVsms,ng),NF_FOUT,           &
-     &                 nvd3,v2dgrd,Aval,Vinfo,ncname)
-# endif
+        END IF
 !
 !-----------------------------------------------------------------------
 !  Leave definition mode.
 !-----------------------------------------------------------------------
 !
-        status=nf90_enddef(ncNRMid(ng))
-      END IF
+        CALL netcdf_enddef (ng, model, ncname, ncNRMid(ifile,ng))
+        IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
 !  Write out time-recordless, information variables.  Deactive file
 !  creation switch.
 !-----------------------------------------------------------------------
 !
-      IF (LdefNRM(ng)) THEN
-        status=wrt_info(ng, iNLM, ncNRMid(ng), OutThread, ncname)
+        CALL wrt_info (ng, model, ncNRMid(ifile,ng), ncname)
         IF (exit_flag.ne.NoError) RETURN
-        LdefNRM(ng)=.FALSE.
-      END IF
+        LdefNRM(ifile,ng)=.FALSE.
+      END IF DEFINE
 !
 !=======================================================================
 !  Open an existing normalization file, check its contents, and
 !  prepare for appending data.
 !=======================================================================
 !
-      IF (.not.LdefNRM(ng).and.OutThread) THEN
+      QUERY : IF (.not.LdefNRM(ifile,ng)) THEN
+        ncname=NRMname(ifile,ng)
 !
-!  Inquire about the contents of normalization NetCDF file:  Inquire
-!  about the dimensions and variables.  Check for consistency.
+!  Inquire about the dimensions and check for consistency.
 !
-        ncname=NRMname(ng)
-        CALL opencdf (ng, 1, ncname, fname, N(ng), 0, nrec, nvd, Vsize)
+        CALL netcdf_check_dim (ng, model, ncname)
+        IF (exit_flag.ne.NoError) RETURN
+!
+!  Inquire about the variables.
+!
+        CALL netcdf_inq_var (ng, model, ncname)
         IF (exit_flag.ne.NoError) RETURN
 !
 !  Open normalization file for read/write.
 !
-        status=nf90_open(TRIM(ncname),nf90_write,ncNRMid(ng))
-        IF (status.ne.nf90_noerr) THEN
+        CALL netcdf_open (ng, model, ncname, 1, ncNRMid(ifile,ng))
+        IF (exit_flag.ne.NoError) THEN
           WRITE (stdout,40) TRIM(ncname)
-          exit_flag=3
-          ioerror=status
           RETURN
         END IF
 !
@@ -481,68 +739,79 @@
 !  Scan variable list from input NetCDF and activate switches for
 !  normalization variables. Get variable IDs.
 !
-        DO i=1,nvars
-          IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idtime))) THEN
+        DO i=1,n_var
+          IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idtime))) THEN
             got_var(idtime)=.TRUE.
-            status=nf90_inq_varid(ncNRMid(ng),TRIM(Vname(1,idtime)),    &
-     &                            nrmVid(idtime,ng))
-          END IF
-          IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idFsur))) THEN
+            nrmVid(ifile,idtime,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idFsur))) THEN
             got_var(idFsur)=.TRUE.
-            status=nf90_inq_varid(ncNRMid(ng),TRIM(Vname(1,idFsur)),    &
-     &                            nrmVid(idFsur,ng))
-          END IF
-          IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idUbar))) THEN
+            nrmVid(ifile,idFsur,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUbar))) THEN
             got_var(idUbar)=.TRUE.
-            status=nf90_inq_varid(ncNRMid(ng),TRIM(Vname(1,idUbar)),    &
-     &                            nrmVid(idUbar,ng))
-          END IF
-          IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idVbar))) THEN
+            nrmVid(ifile,idUbar,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVbar))) THEN
             got_var(idVbar)=.TRUE.
-            status=nf90_inq_varid(ncNRMid(ng),TRIM(Vname(1,idVbar)),    &
-     &                            nrmVid(idVbar,ng))
-          END IF
+            nrmVid(ifile,idVbar,ng)=var_id(i)
+# ifdef ADJUST_BOUNDARY
+          ELSE IF (TRIM(var_name(i)).eq.                                &
+     &             TRIM(Vname(1,idSbry(isFsur)))) THEN
+            got_var(idSbry(isFsur))=.TRUE.
+            nrmVid(ifile,idSbry(isFsur),ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.                                &
+     &             TRIM(Vname(1,idSbry(isUbar)))) THEN
+            got_var(idSbry(isUbar))=.TRUE.
+            nrmVid(ifile,idSbry(isUbar),ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.                                &
+     &             TRIM(Vname(1,idSbry(isVbar)))) THEN
+            got_var(idSbry(isVbar))=.TRUE.
+            nrmVid(ifile,idSbry(isVbar),ng)=var_id(i)
+# endif
 # ifdef SOLVE3D
-          IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idUvel))) THEN
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUvel))) THEN
             got_var(idUvel)=.TRUE.
-            status=nf90_inq_varid(ncNRMid(ng),TRIM(Vname(1,idUvel)),    &
-     &                            nrmVid(idUvel,ng))
-          END IF
-          IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idVvel))) THEN
+            nrmVid(ifile,idUvel,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVvel))) THEN
             got_var(idVvel)=.TRUE.
-            status=nf90_inq_varid(ncNRMid(ng),TRIM(Vname(1,idVvel)),    &
-     &                            nrmVid(idVvel,ng))
-          END IF
-          DO itrc=1,NT(ng)
-            IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idTvar(itrc)))) THEN
-             got_var(idTvar(itrc))=.TRUE.
-             status=nf90_inq_varid(ncNRMid(ng),                         &
-     &                             TRIM(Vname(1,idTvar(itrc))),         &
-     &                             nrmTid(itrc,ng))
-            END IF
-          END DO
-#  ifdef ADJUST_STFLUX
-          DO itrc=1,NT(ng)
-            IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idTsur(itrc)))) THEN
-              got_var(idTsur(itrc))=.TRUE.
-              status=nf90_inq_varid(ncNRMid(ng),                        &
-     &                              TRIM(Vname(1,idTsur(itrc))),        &
-     &                              nrmVid(idTsur(itrc),ng))
-            END IF
-          END DO
+            nrmVid(ifile,idVvel,ng)=var_id(i)
+#  ifdef ADJUST_BOUNDARY
+          ELSE IF (TRIM(var_name(i)).eq.                                &
+     &             TRIM(Vname(1,idSbry(isUvel)))) THEN
+            got_var(idSbry(isUvel))=.TRUE.
+            nrmVid(ifile,idSbry(isUvel),ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.                                &
+     &             TRIM(Vname(1,idSbry(isVvel)))) THEN
+            got_var(idSbry(isVvel))=.TRUE.
+            nrmVid(ifile,idSbry(isVvel),ng)=var_id(i)
 #  endif
 # endif
 # ifdef ADJUST_WSTRESS
-          IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idUsms))) THEN
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUsms))) THEN
             got_var(idUsms)=.TRUE.
-            status=nf90_inq_varid(ncNRMid(ng),TRIM(Vname(1,idUsms)),    &
-     &                            nrmVid(idUsms,ng))
-          END IF
-          IF (TRIM(varnam(i)).eq.TRIM(Vname(1,idVsms))) THEN
+            nrmVid(ifile,idUsms,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVsms))) THEN
             got_var(idVsms)=.TRUE.
-            status=nf90_inq_varid(ncNRMid(ng),TRIM(Vname(1,idVsms)),    &
-     &                            nrmVid(idVsms,ng))
+            nrmVid(ifile,idVsms,ng)=var_id(i)
+# endif
           END IF
+# ifdef SOLVE3D
+          DO itrc=1,NT(ng)
+            IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTvar(itrc)))) THEN
+              got_var(idTvar(itrc))=.TRUE.
+              nrmVid(ifile,idTvar(itrc),ng)=var_id(i)
+#  ifdef ADJUST_BOUNDARY
+            ELSE IF (TRIM(var_name(i)).eq.                              &
+     &               TRIM(Vname(1,idSbry(isTvar(itrc))))) THEN
+              got_var(idSbry(isTvar(itrc)))=.TRUE.
+              nrmVid(ifile,idSbry(isTvar(itrc)),ng)=var_id(i)
+#  endif
+#  ifdef ADJUST_STFLUX
+            ELSE IF (TRIM(var_name(i)).eq.                              &
+     &               TRIM(Vname(1,idTsur(itrc)))) THEN
+              got_var(idTsur(itrc))=.TRUE.
+              nrmVid(ifile,idTsur(itrc),ng)=var_id(i)
+#  endif
+            END IF
+          END DO
 # endif
         END DO
 !
@@ -550,77 +819,133 @@
 !  file.
 !
         IF (.not.got_var(idtime)) THEN
-          WRITE (stdout,40) TRIM(Vname(1,idtime)), TRIM(ncname)
+          IF (Master) WRITE (stdout,50) TRIM(Vname(1,idtime)),          &
+     &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idFsur)) THEN
-          WRITE (stdout,40) TRIM(Vname(1,idFsur)), TRIM(ncname)
+        IF (.not.got_var(idFsur).and.(ifile.le.2)) THEN
+          IF (Master) WRITE (stdout,50) TRIM(Vname(1,idFsur)),          &
+     &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idUbar)) THEN
-          WRITE (stdout,40) TRIM(Vname(1,idUbar)), TRIM(ncname)
+        IF (.not.got_var(idUbar).and.(ifile.le.2)) THEN
+          IF (Master) WRITE (stdout,50) TRIM(Vname(1,idUbar)),          &
+     &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idVbar)) THEN
-          WRITE (stdout,40) TRIM(Vname(1,idVbar)), TRIM(ncname)
+        IF (.not.got_var(idVbar).and.(ifile.le.2)) THEN
+          IF (Master) WRITE (stdout,50) TRIM(Vname(1,idVbar)),          &
+     &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
+# ifdef ADJUST_BOUNDARY
+        IF (.not.got_var(idSbry(isFsur)).and.(ifile.eq.3)) THEN
+          IF (Master) WRITE (stdout,50) TRIM(Vname(1,idSbry(isFsur))),  &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idSbry(isUbar)).and.(ifile.eq.3)) THEN
+          IF (Master) WRITE (stdout,50) TRIM(Vname(1,idSbry(isUbar))),  &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idSbry(isVbar)).and.(ifile.eq.3)) THEN
+          IF (Master) WRITE (stdout,50) TRIM(Vname(1,idSbry(isVbar))),  &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+# endif
 # ifdef SOLVE3D
-        IF (.not.got_var(idUvel)) THEN
-          WRITE (stdout,40) TRIM(Vname(1,idUvel)), TRIM(ncname)
+        IF (.not.got_var(idUvel).and.(ifile.le.2)) THEN
+          IF (Master) WRITE (stdout,50) TRIM(Vname(1,idUvel)),          &
+     &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idVvel)) THEN
-          WRITE (stdout,40) TRIM(Vname(1,idVvel)), TRIM(ncname)
+        IF (.not.got_var(idVvel).and.(ifile.le.2)) THEN
+          IF (Master) WRITE (stdout,50) TRIM(Vname(1,idVvel)),          &
+     &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
-        DO itrc=1,NT(ng)
-          IF (.not.got_var(idTvar(itrc))) THEN
-            WRITE (stdout,40) TRIM(Vname(1,idTvar(itrc))), TRIM(ncname)
-            exit_flag=3
-            RETURN
-          END IF
-        END DO
-#  ifdef ADJUST_STFLUX
-        DO itrc=1,NT(ng)
-          IF (.not.got_var(idTsur(itrc))) THEN
-            WRITE (stdout,40) TRIM(Vname(1,idTsur(itrc))), TRIM(ncname)
-            exit_flag=3
-            RETURN
-          END IF
-        END DO
+#  ifdef ADJUST_BOUNDARY
+        IF (.not.got_var(idSbry(isUvel)).and.(ifile.eq.3)) THEN
+          IF (Master) WRITE (stdout,50) TRIM(Vname(1,idSvar(isUvel))),  &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idSbry(isVvel)).and.(ifile.eq.3)) THEN
+          IF (Master) WRITE (stdout,50) TRIM(Vname(1,idSvar(isVvel))),  &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
 #  endif
 # endif
 # ifdef ADJUST_WSTRESS
-        IF (.not.got_var(idUsms)) THEN
-          WRITE (stdout,40) TRIM(Vname(1,idUsms)), TRIM(ncname)
+        IF (.not.got_var(idUsms).and.(ifile.eq.4)) THEN
+          IF (Master) WRITE (stdout,50) TRIM(Vname(1,idUsms)),          &
+     &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idVsms)) THEN
-          WRITE (stdout,40) TRIM(Vname(1,idVsms)), TRIM(ncname)
+        IF (.not.got_var(idVsms).and.(ifile.eq.4)) THEN
+          IF (Master) WRITE (stdout,50) TRIM(Vname(1,idVsms)),          &
+     &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
+# endif
+# ifdef SOLVE3D
+        DO itrc=1,NT(ng)
+          IF (.not.got_var(idTvar(itrc)).and.(ifile.le.2)) THEN
+            IF (Master) WRITE (stdout,50) TRIM(Vname(1,idTvar(itrc))),  &
+     &                                    TRIM(ncname)
+            exit_flag=3
+            RETURN
+          END IF
+#  ifdef ADJUST_BOUNDARY
+          IF (.not.got_var(idSbry(isTvar(itrc))).and.(ifile.eq.3)) THEN
+            IF (Master) WRITE (stdout,50)                               &
+     &                        TRIM(Vname(1,idSbry(isTvar(itrc)))),      &
+     &                        TRIM(ncname)
+            exit_flag=3
+            RETURN
+          END IF
+#  endif
+#  ifdef ADJUST_STFLUX
+          IF (.not.got_var(idTsur(itrc)).and.(ifile.eq.4).and.          &
+     &        Lstflux(itrc,ng)) THEN
+            IF (Master) WRITE (stdout,50) TRIM(Vname(1,idTsur(itrc))),  &
+     &                                    TRIM(ncname)
+            exit_flag=3
+            RETURN
+          END IF
+#  endif
+        END DO
 # endif
 !
 !  Set unlimited time record dimension to zero to allow other programs
 !  to process and write normalization factors for different variable.
 !
-        tNRMindx(ng)=0
-      END IF
+        tNRMindx(ifile,ng)=0
+      END IF QUERY
 !
   10  FORMAT (/,' DEF_NORM - unable to create norm NetCDF file: ',a)
-  20  FORMAT (a,', background error covariance norm')
+  20  FORMAT (a,', ',a)
   30  FORMAT (1pe11.4,1x,'millimeter')
-  40  FORMAT (/,' DEF_NORM - unable to find variable: ',a,2x,            &
+  40  FORMAT (/,' DEF_NORM - unable to open norm NetCDF file: ',a)
+  50  FORMAT (/,' DEF_NORM - unable to find variable: ',a,2x,           &
      &        ' in norm NetCDF file: ',a)
+
       RETURN
       END SUBROUTINE def_norm
 #else

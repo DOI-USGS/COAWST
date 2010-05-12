@@ -4,7 +4,7 @@
 !
 !svn $Id: mp_exchange.F 1598 2008-07-25 03:29:09Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -51,12 +51,17 @@
 !                                                                      !
 !  Routines:                                                           !
 !                                                                      !
-!  mp_exchange2d     2D variables tile ghost-points exchange           !
-!  mp_exchange3d     3D variables tile ghost-points exchange           !
-!  mp_exchange4d     4D variables tile ghost-points exchange           !
-!  ad_mp_exchange2d  2D variables tile ghost-points adjoint exchange   !
-!  ad_mp_exchange3d  3D variables tile ghost-points adjoint exchange   !
-!  ad_mp_exchange4d  4D variables tile ghost-points adjoint exchange   !
+!  mp_exchange2d         2D variables tile exchanges                   !
+!  mp_exchange2d_bry     2D boundary variables tile exchanges          !
+!  mp_exchange3d         3D variables tile exchanges                   !
+!  mp_exchange3d_bry     3D boundary variables tile exchanges          !
+!  mp_exchange4d         4D variables tile exchanges                   !
+!                                                                      !
+!  ad_mp_exchange2d      2D variables tile adjoint exchanges           !
+!  ad_mp_exchange2d_bry  2D boundary variables tile adjoint exchanges  !
+!  ad_mp_exchange3d      3D variables tile adjoint exchanges           !
+!  ad_mp_exchange3d_bry  3D boundary variables tile adjoint exchanges  !
+!  ad_mp_exchange4d      4D variables tile adjoint exchanges           !
 !                                                                      !
 !=======================================================================
 !
@@ -290,7 +295,7 @@
 !
       USE mod_param
       USE mod_parallel
-      USE mod_iounits 
+      USE mod_iounits
       USE mod_scalars
 !
       implicit none
@@ -324,7 +329,6 @@
       integer :: i, icS, icN, ioff, Imin, Imax, Ilen
       integer :: j, jcW, jcE, joff, Jmin, Jmax, Jlen
       integer :: m, mc, Ierror, Lstr
-      integer :: rank, MyRankI, MyRankJ
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
       integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
@@ -402,7 +406,7 @@
 !  Pack Western and Eastern tile boundary data including ghost-points.
 !-----------------------------------------------------------------------
 !
-      IF (Wexchange) THEN      
+      IF (Wexchange) THEN
         sizeW=0
         DO m=1,GsendW
           mc=(m-1)*Jlen
@@ -451,7 +455,7 @@
         END IF
       END IF
 !
-      IF (Eexchange) THEN     
+      IF (Eexchange) THEN
         sizeE=0
         DO m=1,GsendE
           mc=(m-1)*Jlen
@@ -781,7 +785,7 @@
         END IF
 # endif
         DO m=GrecvS,1,-1
-          mc=(GrecvS-m)*Ilen     
+          mc=(GrecvS-m)*Ilen
           j=Jstr-m
           DO i=Imin,Imax
             icS=1+(i-Imin)+mc
@@ -791,7 +795,7 @@
         IF (PRESENT(B)) THEN
           ioff=icS
           DO m=GrecvS,1,-1
-            mc=(GrecvS-m)*Ilen     
+            mc=(GrecvS-m)*Ilen
             j=Jstr-m
             DO i=Imin,Imax
               icS=ioff+1+(i-Imin)+mc
@@ -802,7 +806,7 @@
         IF (PRESENT(C)) THEN
           ioff=icS
           DO m=GrecvS,1,-1
-            mc=(GrecvS-m)*Ilen     
+            mc=(GrecvS-m)*Ilen
             j=Jstr-m
             DO i=Imin,Imax
               icS=ioff+1+(i-Imin)+mc
@@ -813,7 +817,7 @@
         IF (PRESENT(D)) THEN
           ioff=icS
           DO m=GrecvS,1,-1
-            mc=(GrecvS-m)*Ilen     
+            mc=(GrecvS-m)*Ilen
             j=Jstr-m
             DO i=Imin,Imax
               icS=ioff+1+(i-Imin)+mc
@@ -890,6 +894,507 @@
       END SUBROUTINE mp_exchange2d
 !
 !***********************************************************************
+      SUBROUTINE mp_exchange2d_bry (ng, tile, model, Nvar, boundary,    &
+     &                              LBij, UBij,                         &
+     &                              Nghost, EWperiodic, NSperiodic,     &
+     &                              A, B, C, D)
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      logical, intent(in) :: EWperiodic, NSperiodic
+
+      integer, intent(in) :: ng, tile, model, Nvar, boundary
+      integer, intent(in) :: LBij, UBij
+      integer, intent(in) :: Nghost
+!
+# ifdef ASSUMED_SHAPE
+      real(r8), intent(inout) :: A(LBij:)
+
+      real(r8), intent(inout), optional :: B(LBij:)
+      real(r8), intent(inout), optional :: C(LBij:)
+      real(r8), intent(inout), optional :: D(LBij:)
+# else
+      real(r8), intent(inout) :: A(LBij:UBij)
+
+      real(r8), intent(inout), optional :: B(LBij:UBij)
+      real(r8), intent(inout), optional :: C(LBij:UBij)
+      real(r8), intent(inout), optional :: D(LBij:UBij)
+# endif
+!
+!  Local variable declarations.
+!
+      logical :: Wexchange, Sexchange, Eexchange, Nexchange
+
+      integer :: i, icS, icN
+      integer :: j, jcW, jcE
+      integer :: m, Ierror, Lstr
+      integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
+      integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
+      integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
+      integer :: Ntile, GsendN, GrecvN, Ntag, Nerror, Nrequest
+      integer :: EWsize, sizeW, sizeE
+      integer :: NSsize, sizeS, sizeN
+
+# ifdef MPI
+      integer, dimension(MPI_STATUS_SIZE,4) :: status
+# endif
+
+# if defined EW_PERIODIC || defined NS_PERIODIC
+      integer, parameter :: pp = 1
+# else
+      integer, parameter :: pp = 0
+# endif
+!
+      real(r8), dimension(Nvar*(Nghost+pp)) :: sendW, sendE
+      real(r8), dimension(Nvar*(Nghost+pp)) :: recvW, recvE
+
+      real(r8), dimension(Nvar*(Nghost+pp)) :: sendS, sendN
+      real(r8), dimension(Nvar*(Nghost+pp)) :: recvS, recvN
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# include "set_bounds.h"
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 39)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Determine rank of tile neighbors and number of ghost-points to
+!  exchange.
+!-----------------------------------------------------------------------
+!
+      CALL tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,          &
+     &                     GrecvW, GsendW, Wtile, Wexchange,            &
+     &                     GrecvE, GsendE, Etile, Eexchange,            &
+     &                     GrecvS, GsendS, Stile, Sexchange,            &
+     &                     GrecvN, GsendN, Ntile, Nexchange)
+!
+!  Adjust exchange swiches according to boundary edge to process.
+!
+      Wexchange=Wexchange.and.((boundary.eq.isouth).or.                 &
+     &                         (boundary.eq.inorth))
+      Eexchange=Eexchange.and.((boundary.eq.isouth).or.                 &
+     &                         (boundary.eq.inorth))
+      Sexchange=Sexchange.and.((boundary.eq.iwest).or.                  &
+     &                         (boundary.eq.ieast))
+      Nexchange=Nexchange.and.((boundary.eq.iwest).or.                  &
+     &                         (boundary.eq.ieast))
+!
+!  Set communication tags.
+!
+      Wtag=1
+      Stag=2
+      Etag=3
+      Ntag=4
+!
+!  Determine range and length of the distributed tile boundary segments.
+!
+      EWsize=Nvar*(Nghost+pp)
+      NSsize=Nvar*(Nghost+pp)
+      IF (SIZE(sendE).lt.EWsize) THEN
+        WRITE (stdout,10) 'EWsize = ', EWsize, SIZE(sendE)
+ 10     FORMAT (/,' MP_EXCHANGE2D_BRY - communication buffer too ',     &
+     &          'small, ',a, 2i8)
+      END IF
+      IF (SIZE(sendN).lt.NSsize) THEN
+        WRITE (stdout,10) 'NSsize = ', NSsize, SIZE(sendN)
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Pack Western and Eastern tile boundary data including ghost-points.
+!-----------------------------------------------------------------------
+!
+      IF (Wexchange) THEN
+        jcW=0
+        sizeW=0
+        DO m=1,GsendW
+          i=Istr+m-1
+          sizeW=sizeW+1
+          jcW=jcW+1
+          sendW(jcW)=A(i)
+        END DO
+        IF (PRESENT(B)) THEN
+          DO m=1,GsendW
+            i=Istr+m-1
+            sizeW=sizeW+1
+            jcW=jcW+1
+            sendW(jcW)=B(i)
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          DO m=1,GsendW
+            i=Istr+m-1
+            sizeW=sizeW+1
+            jcW=jcW+1
+            sendW(jcW)=C(i)
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          DO m=1,GsendW
+            i=Istr+m-1
+            sizeW=sizeW+1
+            jcW=jcW+1
+            sendW(jcW)=D(i)
+          END DO
+        END IF
+      END IF
+!
+      IF (Eexchange) THEN
+        jcE=0
+        sizeE=0
+        DO m=1,GsendE
+          i=Iend-GsendE+m
+          sizeE=sizeE+1
+          jcE=jcE+1
+          sendE(jcE)=A(i)
+        END DO
+        IF (PRESENT(B)) THEN
+          DO m=1,GsendE
+            i=Iend-GsendE+m
+            sizeE=sizeE+1
+            jcE=jcE+1
+            sendE(jcE)=B(i)
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          DO m=1,GsendE
+            i=Iend-GsendE+m
+            sizeE=sizeE+1
+            jcE=jcE+1
+            sendE(jcE)=C(i)
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          DO m=1,GsendE
+            i=Iend-GsendE+m
+            sizeE=sizeE+1
+            jcE=jcE+1
+            sendE(jcE)=D(i)
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Send and receive Western and Eastern segments.
+!-----------------------------------------------------------------------
+!
+# if defined MPI
+      IF (Wexchange) THEN
+        CALL mpi_irecv (recvW, EWsize, MP_FLOAT, Wtile, Etag,           &
+     &                  OCN_COMM_WORLD, Wrequest, Werror)
+      END IF
+      IF (Eexchange) THEN
+        CALL mpi_irecv (recvE, EWsize, MP_FLOAT, Etile, Wtag,           &
+     &                  OCN_COMM_WORLD, Erequest, Eerror)
+      END IF
+      IF (Wexchange) THEN
+        CALL mpi_send  (sendW, sizeW, MP_FLOAT, Wtile, Wtag,            &
+     &                  OCN_COMM_WORLD, Werror)
+      END IF
+      IF (Eexchange) THEN
+        CALL mpi_send  (sendE, sizeE, MP_FLOAT, Etile, Etag,            &
+     &                  OCN_COMM_WORLD, Eerror)
+      END IF
+# endif
+!
+!-----------------------------------------------------------------------
+!  Unpack Western and Eastern segments.
+!-----------------------------------------------------------------------
+!
+      IF (Wexchange) THEN
+# ifdef MPI
+        CALL mpi_wait (Wrequest, status(1,1), Werror)
+        IF (Werror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Werror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Western Edge)',        &
+     &                      MyRank, Werror, string(1:Lstr)
+ 20       FORMAT (/,' MP_EXCHANGE2D_BRY - error during ',a,             &
+     &            ' call, Node = ',i3.3,' Error = ',i3,/,15x,a)
+          exit_flag=2
+          RETURN
+        END IF
+# endif
+        jcW=0
+        DO m=GrecvW,1,-1
+          i=Istr-m
+          jcW=jcW+1
+          A(i)=recvW(jcW)
+        END DO
+        IF (PRESENT(B)) THEN
+          DO m=GrecvW,1,-1
+            i=Istr-m
+            jcW=jcW+1
+            B(i)=recvW(jcW)
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          DO m=GrecvW,1,-1
+            i=Istr-m
+            jcW=jcW+1
+            C(i)=recvW(jcW)
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          DO m=GrecvW,1,-1
+            i=Istr-m
+            jcW=jcW+1
+            D(i)=recvW(jcW)
+          END DO
+        END IF
+      END IF
+!
+      IF (Eexchange) THEN
+# ifdef MPI
+        CALL mpi_wait (Erequest, status(1,3), Eerror)
+        IF (Eerror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Eerror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Eastern Edge)',        &
+     &                      MyRank, Eerror, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+# endif
+        jcE=0
+        DO m=1,GrecvE
+          i=Iend+m
+          jcE=jcE+1
+          A(i)=recvE(jcE)
+        END DO
+        IF (PRESENT(B)) THEN
+          DO m=1,GrecvE
+            i=Iend+m
+            jcE=jcE+1
+            B(i)=recvE(jcE)
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          DO m=1,GrecvE
+            i=Iend+m
+            jcE=jcE+1
+            C(i)=recvE(jcE)
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          DO m=1,GrecvE
+            i=Iend+m
+            jcE=jcE+1
+            D(i)=recvE(jcE)
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Pack Southern and Northern tile boundary data including ghost-points.
+!-----------------------------------------------------------------------
+!
+      IF (Sexchange) THEN
+        icS=0
+        sizeS=0
+        DO m=1,GsendS
+          j=Jstr+m-1
+          sizeS=sizeS+1
+          icS=icS+1
+          sendS(icS)=A(j)
+        END DO
+        IF (PRESENT(B)) THEN
+          DO m=1,GsendS
+            j=Jstr+m-1
+            sizeS=sizeS+1
+            icS=icS+1
+            sendS(icS)=B(j)
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          DO m=1,GsendS
+            j=Jstr+m-1
+            sizeS=sizeS+1
+            icS=icS+1
+            sendS(icS)=C(j)
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          DO m=1,GsendS
+            j=Jstr+m-1
+            sizeS=sizeS+1
+            icS=icS+1
+            sendS(icS)=D(j)
+          END DO
+        END IF
+      END IF
+!
+      IF (Nexchange) THEN
+        icN=0
+        sizeN=0
+        DO m=1,GsendN
+          j=Jend-GsendN+m
+          sizeN=sizeN+1
+          icN=icN+1
+          sendN(icN)=A(j)
+        END DO
+        IF (PRESENT(B)) THEN
+          DO m=1,GsendN
+            j=Jend-GsendN+m
+            sizeN=sizeN+1
+            icN=icN+1
+            sendN(icN)=B(j)
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          DO m=1,GsendN
+            j=Jend-GsendN+m
+            sizeN=sizeN+1
+            icN=icN+1
+            sendN(icN)=C(j)
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          DO m=1,GsendN
+            j=Jend-GsendN+m
+            sizeN=sizeN+1
+            icN=icN+1
+            sendN(icN)=D(j)
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Send and receive Southern and Northern segments.
+!-----------------------------------------------------------------------
+!
+# if defined MPI
+      IF (Sexchange) THEN
+        CALL mpi_irecv (recvS, NSsize, MP_FLOAT, Stile, Ntag,           &
+     &                  OCN_COMM_WORLD, Srequest, Serror)
+      END IF
+      IF (Nexchange) THEN
+        CALL mpi_irecv (recvN, NSsize, MP_FLOAT, Ntile, Stag,           &
+     &                  OCN_COMM_WORLD, Nrequest, Nerror)
+      END IF
+      IF (Sexchange) THEN
+        CALL mpi_send  (sendS, sizeS, MP_FLOAT, Stile, Stag,            &
+     &                  OCN_COMM_WORLD, Serror)
+      END IF
+      IF (Nexchange) THEN
+        CALL mpi_send  (sendN, sizeN, MP_FLOAT, Ntile, Ntag,            &
+     &                  OCN_COMM_WORLD, Nerror)
+      END IF
+# endif
+!
+!-----------------------------------------------------------------------
+!  Unpack Northern and Southern segments.
+!-----------------------------------------------------------------------
+!
+      IF (Sexchange) THEN
+# ifdef MPI
+        CALL mpi_wait (Srequest, status(1,2), Serror)
+        IF (Serror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Serror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Southern Edge)',       &
+     &                      MyRank, Serror, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+# endif
+        icS=0
+        DO m=GrecvS,1,-1
+          j=Jstr-m
+          icS=icS+1
+          A(j)=recvS(icS)
+        END DO
+        IF (PRESENT(B)) THEN
+          DO m=GrecvS,1,-1
+            j=Jstr-m
+            icS=icS+1
+            B(j)=recvS(icS)
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          DO m=GrecvS,1,-1
+            j=Jstr-m
+            icS=icS+1
+            C(j)=recvS(icS)
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          DO m=GrecvS,1,-1
+            j=Jstr-m
+            icS=icS+1
+            D(j)=recvS(icS)
+          END DO
+        END IF
+      END IF
+!
+      IF (Nexchange) THEN
+# ifdef MPI
+        CALL mpi_wait (Nrequest, status(1,4), Nerror)
+        IF (Nerror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Nerror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Northern Edge)',       &
+     &                      MyRank, Nerror, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+# endif
+        icN=0
+        DO m=1,GrecvN
+          j=Jend+m
+          icN=icN+1
+          A(j)=recvN(icN)
+        END DO
+        IF (PRESENT(B)) THEN
+          DO m=1,GrecvN
+            j=Jend+m
+            icN=icN+1
+            B(j)=recvN(icN)
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          DO m=1,GrecvN
+            j=Jend+m
+            icN=icN+1
+            C(j)=recvN(icN)
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          DO m=1,GrecvN
+            j=Jend+m
+            icN=icN+1
+            D(j)=recvN(icN)
+          END DO
+        END IF
+      END IF
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 39)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_exchange2d_bry
+!
+!***********************************************************************
       SUBROUTINE mp_exchange3d (ng, tile, model, Nvar,                  &
      &                          LBi, UBi, LBj, UBj, LBk, UBk,           &
      &                          Nghost, EWperiodic, NSperiodic,         &
@@ -898,7 +1403,7 @@
 !
       USE mod_param
       USE mod_parallel
-      USE mod_iounits 
+      USE mod_iounits
       USE mod_scalars
 !
       implicit none
@@ -930,9 +1435,8 @@
       logical :: Wexchange, Sexchange, Eexchange, Nexchange
 
       integer :: i, ikS, ikN, ioff, Imin, Imax, Ilen, IKlen
-      integer :: j, jkW, jkE, joff, Jmin, Jmax, Jlen, JKlen 
+      integer :: j, jkW, jkE, joff, Jmin, Jmax, Jlen, JKlen
       integer :: k, kc,  m, mc, Ierror, Klen, Lstr
-      integer :: rank, MyRankI, MyRankJ
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
       integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
@@ -1137,7 +1641,7 @@
             END DO
           END DO
         END IF
-      END IF        
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Send and receive Western and Eastern segments.
@@ -1468,7 +1972,7 @@
         END IF
 # endif
         DO m=GrecvS,1,-1
-          mc=(GrecvS-m)*IKlen     
+          mc=(GrecvS-m)*IKlen
           j=Jstr-m
           DO k=LBk,UBk
             kc=(k-LBk)*Ilen+mc
@@ -1481,7 +1985,7 @@
         IF (PRESENT(B)) THEN
           ioff=ikS
           DO m=GrecvS,1,-1
-            mc=(GrecvS-m)*IKlen     
+            mc=(GrecvS-m)*IKlen
             j=Jstr-m
             DO k=LBk,UBk
               kc=(k-LBk)*Ilen+mc
@@ -1495,7 +1999,7 @@
         IF (PRESENT(C)) THEN
           ioff=ikS
           DO m=GrecvS,1,-1
-            mc=(GrecvS-m)*IKlen     
+            mc=(GrecvS-m)*IKlen
             j=Jstr-m
             DO k=LBk,UBk
               kc=(k-LBk)*Ilen+mc
@@ -1509,7 +2013,7 @@
         IF (PRESENT(D)) THEN
           ioff=ikS
           DO m=GrecvS,1,-1
-            mc=(GrecvS-m)*IKlen     
+            mc=(GrecvS-m)*IKlen
             j=Jstr-m
             DO k=LBk,UBk
               kc=(k-LBk)*Ilen+mc
@@ -1599,6 +2103,621 @@
 
       RETURN
       END SUBROUTINE mp_exchange3d
+
+!
+!***********************************************************************
+      SUBROUTINE mp_exchange3d_bry (ng, tile, model, Nvar, boundary,    &
+     &                              LBij, UBij, LBk, UBk,               &
+     &                              Nghost, EWperiodic, NSperiodic,     &
+     &                              A, B, C, D)
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      logical, intent(in) :: EWperiodic, NSperiodic
+
+      integer, intent(in) :: ng, tile, model, Nvar, boundary
+      integer, intent(in) :: LBij, UBij, LBk, UBk
+      integer, intent(in) :: Nghost
+!
+# ifdef ASSUMED_SHAPE
+      real(r8), intent(inout) :: A(LBij:,LBk:)
+
+      real(r8), intent(inout), optional :: B(LBij:,LBk:)
+      real(r8), intent(inout), optional :: C(LBij:,LBk:)
+      real(r8), intent(inout), optional :: D(LBij:,LBk:)
+# else
+      real(r8), intent(inout) :: A(LBij:UBij,LBk:UBk)
+
+      real(r8), intent(inout), optional :: B(LBij:UBij,LBk:UBk)
+      real(r8), intent(inout), optional :: C(LBij:UBij,LBk:UBk)
+      real(r8), intent(inout), optional :: D(LBij:UBij,LBk:UBk)
+# endif
+!
+!  Local variable declarations.
+!
+      logical :: Wexchange, Sexchange, Eexchange, Nexchange
+
+      integer :: i, ikS, ikN, ioff
+      integer :: j, jkW, jkE, joff
+      integer :: k, m, mc, Ierror, Klen, Lstr
+      integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
+      integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
+      integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
+      integer :: Ntile, GsendN, GrecvN, Ntag, Nerror, Nrequest
+      integer :: EWsize, sizeW, sizeE
+      integer :: NSsize, sizeS, sizeN
+
+# ifdef MPI
+      integer, dimension(MPI_STATUS_SIZE,4) :: status
+# endif
+
+# if defined EW_PERIODIC || defined NS_PERIODIC
+      integer, parameter :: pp = 1
+# else
+      integer, parameter :: pp = 0
+# endif
+!
+      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: sendW, sendE
+      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: recvW, recvE
+      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: sendS, sendN
+      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: recvS, recvN
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# include "set_bounds.h"
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 40)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Determine rank of tile neighbors and number of ghost-points to
+!  exchange.
+!-----------------------------------------------------------------------
+!
+      CALL tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,          &
+     &                     GrecvW, GsendW, Wtile, Wexchange,            &
+     &                     GrecvE, GsendE, Etile, Eexchange,            &
+     &                     GrecvS, GsendS, Stile, Sexchange,            &
+     &                     GrecvN, GsendN, Ntile, Nexchange)
+!
+!  Adjust exchange swiches according to boundary edge to process.
+!
+      Wexchange=Wexchange.and.((boundary.eq.isouth).or.                 &
+     &                         (boundary.eq.inorth))
+      Eexchange=Eexchange.and.((boundary.eq.isouth).or.                 &
+     &                         (boundary.eq.inorth))
+      Sexchange=Sexchange.and.((boundary.eq.iwest).or.                  &
+     &                         (boundary.eq.ieast))
+      Nexchange=Nexchange.and.((boundary.eq.iwest).or.                  &
+     &                         (boundary.eq.ieast))
+!
+!  Set communication tags.
+!
+      Wtag=1
+      Stag=2
+      Etag=3
+      Ntag=4
+!
+!  Determine range and length of the distributed tile boundary segments.
+!
+      Klen=UBk-LBk+1
+      EWsize=Nvar*(Nghost+pp)*Klen
+      NSsize=Nvar*(Nghost+pp)*Klen
+      IF (SIZE(sendE).lt.EWsize) THEN
+        WRITE (stdout,10) 'EWsize = ', EWsize, SIZE(sendE)
+ 10     FORMAT (/,' MP_EXCHANGE3D_BRY - communication buffer too ',     &
+     &          'small, ', a, 2i8)
+      END IF
+      IF (SIZE(sendN).lt.NSsize) THEN
+        WRITE (stdout,10) 'NSsize = ', NSsize, SIZE(sendN)
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Pack Western and Eastern tile boundary data including ghost-points.
+!-----------------------------------------------------------------------
+!
+      IF (Wexchange) THEN
+        sizeW=0
+        DO m=1,GsendW
+          mc=(m-1)*Klen
+          i=Istr+m-1
+          DO k=LBk,UBk
+            sizeW=sizeW+1
+            jkW=1+(k-LBk)+mc
+            sendW(jkW)=A(i,k)
+          END DO
+        END DO
+        IF (PRESENT(B)) THEN
+          joff=jkW
+          DO m=1,GsendW
+            mc=(m-1)*Klen
+            i=Istr+m-1
+            DO k=LBk,UBk
+              sizeW=sizeW+1
+              jkW=joff+1+(k-LBk)+mc
+              sendW(jkW)=B(i,k)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          joff=jkW
+          DO m=1,GsendW
+            mc=(m-1)*Klen
+            i=Istr+m-1
+            DO k=LBk,UBk
+              sizeW=sizeW+1
+              jkW=joff+1+(k-LBk)+mc
+              sendW(jkW)=C(i,k)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          joff=jkW
+          DO m=1,GsendW
+            mc=(m-1)*Klen
+            i=Istr+m-1
+            DO k=LBk,UBk
+              sizeW=sizeW+1
+              jkW=joff+1+(k-LBk)+mc
+              sendW(jkW)=D(i,k)
+            END DO
+          END DO
+        END IF
+      END IF
+!
+      IF (Eexchange) THEN
+        sizeE=0
+        DO m=1,GsendE
+          mc=(m-1)*Klen
+          i=Iend-GsendE+m
+          DO k=LBk,UBk
+            sizeE=sizeE+1
+            jkE=1+(k-LBk)+mc
+            sendE(jkE)=A(i,k)
+          END DO
+        END DO
+        IF (PRESENT(B)) THEN
+          joff=jkE
+          DO m=1,GsendE
+            mc=(m-1)*Klen
+            i=Iend-GsendE+m
+            DO k=LBk,UBk
+              sizeE=sizeE+1
+              jkE=joff+1+(k-LBk)+mc
+              sendE(jkE)=B(i,k)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          joff=jkE
+          DO m=1,GsendE
+            mc=(m-1)*Klen
+            i=Iend-GsendE+m
+            DO k=LBk,UBk
+              sizeE=sizeE+1
+              jkE=joff+1+(k-LBk)+mc
+              sendE(jkE)=C(i,k)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          joff=jkE
+          DO m=1,GsendE
+            mc=(m-1)*Klen
+            i=Iend-GsendE+m
+            DO k=LBk,UBk
+              sizeE=sizeE+1
+              jkE=joff+1+(k-LBk)+mc
+              sendE(jkE)=D(i,k)
+            END DO
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Send and receive Western and Eastern segments.
+!-----------------------------------------------------------------------
+!
+# if defined MPI
+      IF (Wexchange) THEN
+        CALL mpi_irecv (recvW, EWsize, MP_FLOAT, Wtile, Etag,           &
+     &                  OCN_COMM_WORLD, Wrequest, Werror)
+      END IF
+      IF (Eexchange) THEN
+        CALL mpi_irecv (recvE, EWsize, MP_FLOAT, Etile, Wtag,           &
+     &                  OCN_COMM_WORLD, Erequest, Eerror)
+      END IF
+      IF (Wexchange) THEN
+        CALL mpi_send  (sendW, sizeW, MP_FLOAT, Wtile, Wtag,            &
+     &                  OCN_COMM_WORLD, Werror)
+      END IF
+      IF (Eexchange) THEN
+        CALL mpi_send  (sendE, sizeE, MP_FLOAT, Etile, Etag,            &
+     &                  OCN_COMM_WORLD, Eerror)
+      END IF
+# endif
+!
+!-----------------------------------------------------------------------
+!  Unpack Eastern and Western segments.
+!-----------------------------------------------------------------------
+!
+      IF (Wexchange) THEN
+# ifdef MPI
+        CALL mpi_wait (Wrequest, status(1,1), Werror)
+        IF (Werror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Werror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Western Edge)',        &
+     &                      MyRank, Werror, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+# endif
+        DO m=GrecvW,1,-1
+          mc=(GrecvW-m)*Klen
+          i=Istr-m
+          DO k=LBk,UBk
+            jkW=1+(k-LBk)+mc
+            A(i,k)=recvW(jkW)
+          END DO
+        END DO
+        IF (PRESENT(B)) THEN
+          joff=jkW
+          DO m=GrecvW,1,-1
+            mc=(GrecvW-m)*Klen
+            i=Istr-m
+            DO k=LBk,UBk
+              jkW=joff+1+(k-LBk)+mc
+              B(i,k)=recvW(jkW)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          joff=jkW
+          DO m=GrecvW,1,-1
+            mc=(GrecvW-m)*Klen
+            i=Istr-m
+            DO k=LBk,UBk
+              jkW=joff+1+(k-LBk)+mc
+              C(i,k)=recvW(jkW)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          joff=jkW
+          DO m=GrecvW,1,-1
+            mc=(GrecvW-m)*Klen
+            i=Istr-m
+            DO k=LBk,UBk
+              jkW=joff+1+(k-LBk)+mc
+              D(i,k)=recvW(jkW)
+            END DO
+          END DO
+        END IF
+      END IF
+!
+      IF (Eexchange) THEN
+# ifdef MPI
+        CALL mpi_wait (Erequest, status(1,3), Eerror)
+        IF (Eerror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Eerror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Eastern Edge)',        &
+     &                      MyRank, Eerror, string(1:Lstr)
+ 20       FORMAT (/,' MP_EXCHANGE3D_BRY - error during ',a,             &
+     &            ' call, Node = ',i3.3,' Error = ',i3,/,15x,a)
+          exit_flag=2
+          RETURN
+        END IF
+# endif
+        DO m=1,GrecvE
+          mc=(m-1)*Klen
+          i=Iend+m
+          DO k=LBk,UBk
+            jkE=1+(k-LBk)+mc
+            A(i,k)=recvE(jkE)
+          END DO
+        END DO
+        IF (PRESENT(B)) THEN
+          joff=jkE
+          DO m=1,GrecvE
+            mc=(m-1)*Klen
+            i=Iend+m
+            DO k=LBk,UBk
+              jkE=joff+1+(k-LBk)+mc
+              B(i,k)=recvE(jkE)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          joff=jkE
+          DO m=1,GrecvE
+            mc=(m-1)*Klen
+            i=Iend+m
+            DO k=LBk,UBk
+              jkE=joff+1+(k-LBk)+mc
+              C(i,k)=recvE(jkE)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          joff=jkE
+          DO m=1,GrecvE
+            mc=(m-1)*Klen
+            i=Iend+m
+            DO k=LBk,UBk
+              jkE=joff+1+(k-LBk)+mc
+              D(i,k)=recvE(jkE)
+            END DO
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Pack Southern and Northern tile boundary data including ghost-points.
+!-----------------------------------------------------------------------
+!
+      IF (Sexchange) THEN
+        sizeS=0
+        DO m=1,GsendS
+          mc=(m-1)*Klen
+          j=Jstr+m-1
+          DO k=LBk,UBk
+            sizeS=sizeS+1
+            ikS=1+(k-LBk)+mc
+            sendS(ikS)=A(j,k)
+          END DO
+        END DO
+        IF (PRESENT(B)) THEN
+          ioff=ikS
+          DO m=1,GsendS
+            mc=(m-1)*Klen
+            j=Jstr+m-1
+            DO k=LBk,UBk
+              sizeS=sizeS+1
+              ikS=ioff+1+(k-LBk)+mc
+              sendS(ikS)=B(j,k)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          ioff=ikS
+          DO m=1,GsendS
+            mc=(m-1)*Klen
+            j=Jstr+m-1
+            DO k=LBk,UBk
+              sizeS=sizeS+1
+              ikS=ioff+1+(k-LBk)+mc
+              sendS(ikS)=C(j,k)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          ioff=ikS
+          DO m=1,GsendS
+            mc=(m-1)*Klen
+            j=Jstr+m-1
+            DO k=LBk,UBk
+              sizeS=sizeS+1
+              ikS=ioff+1+(k-LBk)+mc
+              sendS(ikS)=D(j,k)
+            END DO
+          END DO
+        END IF
+      END IF
+!
+      IF (Nexchange) THEN
+        sizeN=0
+        DO m=1,GsendN
+          mc=(m-1)*Klen
+          j=Jend-GsendN+m
+          DO k=LBk,UBk
+            sizeN=sizeN+1
+            ikN=1+(k-LBk)+mc
+            sendN(ikN)=A(j,k)
+          END DO
+        END DO
+        IF (PRESENT(B)) THEN
+          ioff=ikN
+          DO m=1,GsendN
+            mc=(m-1)*Klen
+            j=Jend-GsendN+m
+            DO k=LBk,UBk
+              sizeN=sizeN+1
+              ikN=ioff+1+(k-LBk)+mc
+              sendN(ikN)=B(j,k)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          ioff=ikN
+          DO m=1,GsendN
+            mc=(m-1)*Klen
+            j=Jend-GsendN+m
+            DO k=LBk,UBk
+              sizeN=sizeN+1
+              ikN=ioff+1+(k-LBk)+mc
+              sendN(ikN)=C(j,k)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          ioff=ikN
+          DO m=1,GsendN
+            mc=(m-1)*Klen
+            j=Jend-GsendN+m
+            DO k=LBk,UBk
+              sizeN=sizeN+1
+              ikN=ioff+1+(k-LBk)+mc
+              sendN(ikN)=D(j,k)
+            END DO
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Send and receive Southern and Northern segments.
+!-----------------------------------------------------------------------
+!
+# if defined MPI
+      IF (Sexchange) THEN
+        CALL mpi_irecv (recvS, NSsize, MP_FLOAT, Stile, Ntag,           &
+     &                  OCN_COMM_WORLD, Srequest, Serror)
+      END IF
+      IF (Nexchange) THEN
+        CALL mpi_irecv (recvN, NSsize, MP_FLOAT, Ntile, Stag,           &
+     &                  OCN_COMM_WORLD, Nrequest, Nerror)
+      END IF
+      IF (Sexchange) THEN
+        CALL mpi_send  (sendS, sizeS, MP_FLOAT, Stile, Stag,            &
+     &                  OCN_COMM_WORLD, Serror)
+      END IF
+      IF (Nexchange) THEN
+        CALL mpi_send  (sendN, sizeN, MP_FLOAT, Ntile, Ntag,            &
+     &                  OCN_COMM_WORLD, Nerror)
+      END IF
+# endif
+!
+!-----------------------------------------------------------------------
+!  Unpack Northern and Southern segments.
+!-----------------------------------------------------------------------
+!
+      IF (Sexchange) THEN
+# ifdef MPI
+        CALL mpi_wait (Srequest, status(1,2), Serror)
+        IF (Serror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Serror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Southern Edge)',       &
+     &                      MyRank, Serror, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+# endif
+        DO m=GrecvS,1,-1
+          mc=(GrecvS-m)*Klen
+          j=Jstr-m
+          DO k=LBk,UBk
+            ikS=1+(k-LBk)+mc
+            A(j,k)=recvS(ikS)
+          END DO
+        END DO
+        IF (PRESENT(B)) THEN
+          ioff=ikS
+          DO m=GrecvS,1,-1
+            mc=(GrecvS-m)*Klen
+            j=Jstr-m
+            DO k=LBk,UBk
+              ikS=ioff+1+(k-LBk)+mc
+              B(j,k)=recvS(ikS)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          ioff=ikS
+          DO m=GrecvS,1,-1
+            mc=(GrecvS-m)*Klen
+            j=Jstr-m
+            DO k=LBk,UBk
+              ikS=ioff+1+(k-LBk)+mc
+              C(j,k)=recvS(ikS)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          ioff=ikS
+          DO m=GrecvS,1,-1
+            mc=(GrecvS-m)*Klen
+            j=Jstr-m
+            DO k=LBk,UBk
+              ikS=ioff+1+(k-LBk)+mc
+              D(j,k)=recvS(ikS)
+            END DO
+          END DO
+        END IF
+      END IF
+!
+      IF (Nexchange) THEN
+# ifdef MPI
+        CALL mpi_wait (Nrequest, status(1,4), Nerror)
+        IF (Nerror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Nerror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Northern Edge)',       &
+     &                      MyRank, Nerror, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+# endif
+        DO m=1,GrecvN
+          mc=(m-1)*Klen
+          j=Jend+m
+          DO k=LBk,UBk
+            ikN=1+(k-LBk)+mc
+            A(j,k)=recvN(ikN)
+          END DO
+        END DO
+        IF (PRESENT(B)) THEN
+          ioff=ikN
+          DO m=1,GrecvN
+            mc=(m-1)*Klen
+            j=Jend+m
+            DO k=LBk,UBk
+              ikN=ioff+1+(k-LBk)+mc
+              B(j,k)=recvN(ikN)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          ioff=ikN
+          DO m=1,GrecvN
+            mc=(m-1)*Klen
+            j=Jend+m
+            DO k=LBk,UBk
+              ikN=ioff+1+(k-LBk)+mc
+              C(j,k)=recvN(ikN)
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(D)) THEN
+          ioff=ikN
+          DO m=1,GrecvN
+            mc=(m-1)*Klen
+            j=Jend+m
+            DO k=LBk,UBk
+              ikN=ioff+1+(k-LBk)+mc
+              D(j,k)=recvN(ikN)
+            END DO
+          END DO
+        END IF
+      END IF
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 40)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_exchange3d_bry
+
 !
 !***********************************************************************
       SUBROUTINE mp_exchange4d (ng, tile, model, Nvar,                  &
@@ -1609,7 +2728,7 @@
 !
       USE mod_param
       USE mod_parallel
-      USE mod_iounits 
+      USE mod_iounits
       USE mod_scalars
 !
       implicit none
@@ -1640,7 +2759,7 @@
       integer :: i, ikS, ikN, ioff, Imin, Imax, Ilen, IKlen, IKTlen
       integer :: j, jkW, jkE, joff, Jmin, Jmax, Jlen, JKlen, JKTlen
       integer :: k, kc, m, mc, Ierror, Klen, Lstr, Tlen
-      integer :: l, lc, rank, MyRankI, MyRankJ
+      integer :: l, lc
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
       integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
@@ -1800,7 +2919,7 @@
             END DO
           END DO
         END IF
-      END IF        
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Send and receive Western and Eastern segments.
@@ -2138,7 +3257,7 @@
 !
       USE mod_param
       USE mod_parallel
-      USE mod_iounits 
+      USE mod_iounits
       USE mod_scalars
 !
       implicit none
@@ -2172,7 +3291,6 @@
       integer :: i, icS, icN, ioff, Imin, Imax, Ilen
       integer :: j, jcW, jcE, joff, Jmin, Jmax, Jlen
       integer :: m, mc, Ierror, Lstr
-      integer :: rank, MyRankI, MyRankJ
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
       integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
@@ -2324,7 +3442,7 @@
         sizeS=0
         DO m=GrecvS,1,-1
           mc=(GrecvS-m)*Ilen
-          j=Jstr-m          
+          j=Jstr-m
           DO i=Imin,Imax
             sizeS=sizeS+1
             icS=1+(i-Imin)+mc
@@ -2338,7 +3456,7 @@
           ioff=icS
           DO m=GrecvS,1,-1
             mc=(GrecvS-m)*Ilen
-            j=Jstr-m          
+            j=Jstr-m
             DO i=Imin,Imax
               sizeS=sizeS+1
               icS=ioff+1+(i-Imin)+mc
@@ -2353,7 +3471,7 @@
           ioff=icS
           DO m=GrecvS,1,-1
             mc=(GrecvS-m)*Ilen
-            j=Jstr-m          
+            j=Jstr-m
             DO i=Imin,Imax
               sizeS=sizeS+1
               icS=ioff+1+(i-Imin)+mc
@@ -2368,7 +3486,7 @@
           ioff=icS
           DO m=GrecvS,1,-1
             mc=(GrecvS-m)*Ilen
-            j=Jstr-m          
+            j=Jstr-m
             DO i=Imin,Imax
               sizeS=sizeS+1
               icS=ioff+1+(i-Imin)+mc
@@ -2418,7 +3536,7 @@
 !
 !  Adjoint of packing tile boundary data including ghost-points.
 !
-      IF (Sexchange) THEN            
+      IF (Sexchange) THEN
 #  ifdef MPI
         CALL mpi_wait (Srequest, status(1,2), Serror)
         IF (Serror.ne.MPI_SUCCESS) THEN
@@ -2869,6 +3987,642 @@
 
       RETURN
       END SUBROUTINE ad_mp_exchange2d
+
+!
+!***********************************************************************
+      SUBROUTINE ad_mp_exchange2d_bry (ng, tile, model, Nvar, boundary, &
+     &                                 LBij, UBij,                      &
+     &                                 Nghost, EWperiodic, NSperiodic,  &
+     &                                 ad_A, ad_B, ad_C, ad_D)
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      logical, intent(in) :: EWperiodic, NSperiodic
+
+      integer, intent(in) :: ng, tile, model, Nvar, boundary
+      integer, intent(in) :: LBij, UBij
+      integer, intent(in) :: Nghost
+!
+# ifdef ASSUMED_SHAPE
+      real(r8), intent(inout) :: ad_A(LBij:)
+
+      real(r8), intent(inout), optional :: ad_B(LBij:)
+      real(r8), intent(inout), optional :: ad_C(LBij:)
+      real(r8), intent(inout), optional :: ad_D(LBij:)
+# else
+      real(r8), intent(inout) :: ad_A(LBij:UBij)
+
+      real(r8), intent(inout), optional :: ad_B(LBij:UBij)
+      real(r8), intent(inout), optional :: ad_C(LBij:UBij)
+      real(r8), intent(inout), optional :: ad_D(LBij:UBij)
+# endif
+!
+!  Local variable declarations.
+!
+      logical :: Wexchange, Sexchange, Eexchange, Nexchange
+
+      integer :: i, icS, icN
+      integer :: j, jcW, jcE
+      integer :: m, Ierror, Lstr
+      integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
+      integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
+      integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
+      integer :: Ntile, GsendN, GrecvN, Ntag, Nerror, Nrequest
+      integer :: BufferSizeEW, EWsize, sizeW, sizeE
+      integer :: BufferSizeNS, NSsize, sizeS, sizeN
+
+#  ifdef MPI
+      integer, dimension(MPI_STATUS_SIZE,4) :: status
+#  endif
+
+#  if defined EW_PERIODIC || defined NS_PERIODIC
+      integer, parameter :: pp = 1
+#  else
+      integer, parameter :: pp = 0
+#  endif
+!
+      real(r8), dimension(Nvar*(Nghost+pp)) :: sendW, sendE
+      real(r8), dimension(Nvar*(Nghost+pp)) :: recvW, recvE
+
+      real(r8), dimension(Nvar*(Nghost+pp)) :: sendS, sendN
+      real(r8), dimension(Nvar*(Nghost+pp)) :: recvS, recvN
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+#  include "set_bounds.h"
+#  ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 39)
+#  endif
+!
+!-----------------------------------------------------------------------
+!  Determine rank of tile neighbors and number of ghost-points to
+!  exchange.
+!-----------------------------------------------------------------------
+!
+      CALL tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,          &
+     &                     GrecvW, GsendW, Wtile, Wexchange,            &
+     &                     GrecvE, GsendE, Etile, Eexchange,            &
+     &                     GrecvS, GsendS, Stile, Sexchange,            &
+     &                     GrecvN, GsendN, Ntile, Nexchange)
+!
+!  Adjust exchange swiches according to boundary edge to process.
+!
+      Wexchange=Wexchange.and.((boundary.eq.isouth).or.                 &
+     &                         (boundary.eq.inorth))
+      Eexchange=Eexchange.and.((boundary.eq.isouth).or.                 &
+     &                         (boundary.eq.inorth))
+      Sexchange=Sexchange.and.((boundary.eq.iwest).or.                  &
+     &                         (boundary.eq.ieast))
+      Nexchange=Nexchange.and.((boundary.eq.iwest).or.                  &
+     &                         (boundary.eq.ieast))
+!
+!  Set communication tags.
+!
+      Wtag=1
+      Stag=2
+      Etag=3
+      Ntag=4
+!
+!  Determine range and length of the distributed tile boundary segments.
+!
+      NSsize=Nvar*(Nghost+pp)
+      EWsize=Nvar*(Nghost+pp)
+      BufferSizeNS=Nvar*(Nghost+pp)
+      BufferSizeEW=Nvar*(Nghost+pp)
+      IF (SIZE(sendE).lt.EWsize) THEN
+        WRITE (stdout,10) 'EWsize = ', EWsize, SIZE(sendE)
+ 10     FORMAT (/,' AD_MP_EXCHANGE2D_BRY - communication buffer too',   &
+     &          ' small, ',a, 2i8)
+      END IF
+      IF (SIZE(sendN).lt.NSsize) THEN
+        WRITE (stdout,10) 'NSsize = ', NSsize, SIZE(sendN)
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Adjoint of unpacking Northern and Southern segments.
+!-----------------------------------------------------------------------
+!
+      IF (Nexchange) THEN
+        DO i=1,BufferSizeNS
+          recvN(i)=0.0_r8
+          sendN(i)=0.0_r8
+        END DO
+        icN=0
+        sizeN=0
+        DO m=1,GrecvN
+          j=Jend+m
+          sizeN=sizeN+1
+          icN=icN+1
+!>        A(j)=recvN(icN)
+!>
+          recvN(icN)=ad_A(j)
+          ad_A(j)=0.0_r8
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          DO m=1,GrecvN
+            j=Jend+m
+            sizeN=sizeN+1
+            icN=icN+1
+!>          B(j)=recvN(icN)
+!>
+            recvN(icN)=ad_B(j)
+            ad_B(j)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          DO m=1,GrecvN
+            j=Jend+m
+            sizeN=sizeN+1
+            icN=icN+1
+!>          C(j)=recvN(icN)
+!>
+            recvN(icN)=ad_C(j)
+            ad_C(j)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          DO m=1,GrecvN
+            j=Jend+m
+            sizeN=sizeN+1
+            icN=icN+1
+!>          D(j)=recvN(icN)
+!>
+            recvN(icN)=ad_D(j)
+            ad_D(j)=0.0_r8
+          END DO
+        END IF
+      END IF
+!
+      IF (Sexchange) THEN
+        DO i=1,BufferSizeNS
+          recvS(i)=0.0_r8
+          sendS(i)=0.0_r8
+        END DO
+        icS=0
+        sizeS=0
+        DO m=GrecvS,1,-1
+          j=Jstr-m
+          sizeS=sizeS+1
+          icS=icS+1
+!>        A(j)=recvS(icS)
+!>
+          recvS(icS)=ad_A(j)
+          ad_A(j)=0.0_r8
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          DO m=GrecvS,1,-1
+            j=Jstr-m
+            sizeS=sizeS+1
+            icS=icS+1
+!>          B(j)=recvS(icS)
+!>
+            recvS(icS)=ad_B(j)
+            ad_B(j)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          DO m=GrecvS,1,-1
+            j=Jstr-m
+            sizeS=sizeS+1
+            icS=icS+1
+!>          C(j)=recvS(icS)
+!>
+            recvS(icS)=ad_C(j)
+            ad_C(j)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          DO m=GrecvS,1,-1
+            j=Jstr-m
+            sizeS=sizeS+1
+            icS=icS+1
+!>          D(j)=recvS(icS)
+!>
+            recvS(icS)=ad_D(j)
+            ad_D(j)=0.0_r8
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Adjoint of send and receive Southern and Northern segments.
+!-----------------------------------------------------------------------
+!
+#  if defined MPI
+      IF (Sexchange) THEN
+!>      CALL mpi_irecv (recvS, NSsize, MP_FLOAT, Stile, Ntag,           &
+!>   &                  OCN_COMM_WORLD, Srequest, Serror)
+!>
+        CALL mpi_irecv (sendS, NSsize, MP_FLOAT, Stile, Ntag,           &
+     &                  OCN_COMM_WORLD, Srequest, Serror)
+      END IF
+      IF (Nexchange) THEN
+!>      CALL mpi_irecv (recvN, NSsize, MP_FLOAT, Ntile, Stag,           &
+!>   &                  OCN_COMM_WORLD, Nrequest, Nerror)
+!>
+        CALL mpi_irecv (sendN, NSsize, MP_FLOAT, Ntile, Stag,           &
+     &                  OCN_COMM_WORLD, Nrequest, Nerror)
+      END IF
+      IF (Sexchange) THEN
+!>      CALL mpi_send  (sendS, sizeS, MP_FLOAT, Stile, Stag,            &
+!>   &                  OCN_COMM_WORLD, Serror)
+!>
+        CALL mpi_send  (recvS, sizeS, MP_FLOAT, Stile, Stag,            &
+     &                  OCN_COMM_WORLD, Serror)
+      END IF
+      IF (Nexchange) THEN
+!>      CALL mpi_send  (sendN, sizeN, MP_FLOAT, Ntile, Ntag,            &
+!>   &                  OCN_COMM_WORLD, Nerror)
+!>
+        CALL mpi_send  (recvN, sizeN, MP_FLOAT, Ntile, Ntag,            &
+     &                  OCN_COMM_WORLD, Nerror)
+      END IF
+#  endif
+!
+!  Adjoint of packing tile boundary data including ghost-points.
+!
+      IF (Sexchange) THEN
+#  ifdef MPI
+        CALL mpi_wait (Srequest, status(1,2), Serror)
+        IF (Serror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Serror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Southern Edge)',       &
+     &                      MyRank, Serror, string(1:Lstr)
+ 20       FORMAT (/,' AD_MP_EXCHANGE2D_BRY - error during ',a,' call,', &
+     &            ' Node = ', i3.3,' Error = ',i3,/,18x,a)
+          exit_flag=2
+          RETURN
+        END IF
+#  endif
+        icS=0
+        DO m=1,GsendS
+          j=Jstr+m-1
+          icS=icS+1
+!>        sendS(icS)=A(j)
+!>
+          ad_A(j)=ad_A(j)+sendS(icS)
+          sendS(icS)=0.0_r8
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          DO m=1,GsendS
+            j=Jstr+m-1
+            icS=icS+1
+!>          sendS(icS)=B(j)
+!>
+            ad_B(j)=ad_B(j)+sendS(icS)
+            sendS(icS)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          DO m=1,GsendS
+            j=Jstr+m-1
+            icS=ics+1
+!>          sendS(icS)=C(j)
+!>
+            ad_C(j)=ad_C(j)+sendS(icS)
+            sendS(icS)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          DO m=1,GsendS
+            j=Jstr+m-1
+            icS=icS+1
+!>          sendS(icS)=D(j)
+!>
+            ad_D(j)=ad_D(j)+sendS(icS)
+            sendS(icS)=0.0_r8
+          END DO
+        END IF
+      END IF
+!
+      IF (Nexchange) THEN
+#  ifdef MPI
+        CALL mpi_wait (Nrequest, status(1,4), Nerror)
+        IF (Nerror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Nerror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Northern Edge)',       &
+     &                      MyRank, Nerror, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+#  endif
+        icN=0
+        DO m=1,GsendN
+          j=Jend-GsendN+m
+          icN=icN+1
+!>        sendN(icN)=A(j)
+!>
+          ad_A(j)=ad_A(j)+sendN(icN)
+          sendN(icN)=0.0_r8
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          DO m=1,GsendN
+            j=Jend-GsendN+m
+            icN=icN+1
+!>          sendN(icN)=B(j)
+!>
+            ad_B(j)=ad_B(j)+sendN(icN)
+            sendN(icN)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          DO m=1,GsendN
+            j=Jend-GsendN+m
+            icN=icN+1
+!>          sendN(icN)=C(j)
+!>
+            ad_C(j)=ad_C(j)+sendN(icN)
+            sendN(icN)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          DO m=1,GsendN
+            j=Jend-GsendN+m
+            icN=icN+1
+!>          sendN(icN)=D(j)
+!>
+            ad_D(j)=ad_D(j)+sendN(icN)
+            sendN(icN)=0.0_r8
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Adjoint of unpack Eastern and Western segments.
+!-----------------------------------------------------------------------
+!
+      IF (Eexchange) THEN
+        DO i=1,BufferSizeEW
+          recvE(i)=0.0_r8
+          sendE(i)=0.0_r8
+        END DO
+        jcE=0
+        sizeE=0
+        DO m=1,GrecvE
+          i=Iend+m
+          sizeE=sizeE+1
+          jcE=jcE+1
+!>        A(i)=recvE(jcE)
+!>
+          recvE(jcE)=ad_A(i)
+          ad_A(i)=0.0_r8
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          DO m=1,GrecvE
+            i=Iend+m
+            sizeE=sizeE+1
+            jcE=jcE+1
+!>          B(i)=recvE(jcE)
+!>
+            recvE(jcE)=ad_B(i)
+            ad_B(i)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          DO m=1,GrecvE
+            i=Iend+m
+            sizeE=sizeE+1
+            jcE=jcE+1
+!>          C(i)=recvE(jcE)
+!>
+            recvE(jcE)=ad_C(i)
+            ad_C(i)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          DO m=1,GrecvE
+            i=Iend+m
+            sizeE=sizeE+1
+            jcE=jcE+1
+!>          D(i)=recvE(jcE)
+!>
+            recvE(jcE)=ad_D(i)
+            ad_D(i)=0.0_r8
+          END DO
+        END IF
+      END IF
+!
+      IF (Wexchange) THEN
+        DO i=1,BufferSizeEW
+          recvW(i)=0.0_r8
+          sendW(i)=0.0_r8
+        END DO
+        jcW=0
+        sizeW=0
+        DO m=GrecvW,1,-1
+          i=Istr-m
+          sizeW=sizeW+1
+          jcW=jcW+1
+!>        A(i)=recvW(jcW)
+!>
+          recvW(jcW)=ad_A(i)
+          ad_A(i)=0.0_r8
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          DO m=GrecvW,1,-1
+            i=Istr-m
+            sizeW=sizeW+1
+            jcW=jcW+1
+!>          B(i)=recvW(jcW)
+!>
+            recvW(jcW)=ad_B(i)
+            ad_B(i)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          DO m=GrecvW,1,-1
+            i=Istr-m
+            sizeW=sizeW+1
+            jcW=jcW+1
+!>          C(i)=recvW(jcW)
+!>
+            recvW(jcW)=ad_C(i)
+            ad_C(i)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          DO m=GrecvW,1,-1
+            i=Istr-m
+            sizeW=sizeW+1
+            jcW=jcW+1
+!>          D(i)=recvW(jcW)
+!>
+            recvW(jcW)=ad_D(i)
+            ad_D(i)=0.0_r8
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Send and receive Western and Eastern segments.
+!-----------------------------------------------------------------------
+!
+#  if defined MPI
+      IF (Wexchange) THEN
+!>      CALL mpi_irecv (recvW, EWsize, MP_FLOAT, Wtile, Etag,           &
+!>   &                  OCN_COMM_WORLD, Wrequest, Werror)
+!>
+        CALL mpi_irecv (sendW, EWsize, MP_FLOAT, Wtile, Etag,           &
+     &                  OCN_COMM_WORLD, Wrequest, Werror)
+      END IF
+      IF (Eexchange) THEN
+!>      CALL mpi_irecv (recvE, EWsize, MP_FLOAT, Etile, Wtag,           &
+!>   &                  OCN_COMM_WORLD, Erequest, Eerror)
+!>
+        CALL mpi_irecv (sendE, EWsize, MP_FLOAT, Etile, Wtag,           &
+     &                  OCN_COMM_WORLD, Erequest, Eerror)
+      END IF
+      IF (Wexchange) THEN
+!>      CALL mpi_send  (sendW, sizeW, MP_FLOAT, Wtile, Wtag,            &
+!>   &                  OCN_COMM_WORLD, Werror)
+!>
+        CALL mpi_send  (recvW, sizeW, MP_FLOAT, Wtile, Wtag,            &
+     &                  OCN_COMM_WORLD, Werror)
+      END IF
+      IF (Eexchange) THEN
+!>      CALL mpi_send  (sendE, sizeE, MP_FLOAT, Etile, Etag,            &
+!>   &                  OCN_COMM_WORLD, Eerror)
+!>
+        CALL mpi_send  (recvE, sizeE, MP_FLOAT, Etile, Etag,            &
+     &                  OCN_COMM_WORLD, Eerror)
+      END IF
+#  endif
+!
+!  Adjoint of packing tile boundary data including ghost-points.
+!
+      IF (Wexchange) THEN
+#  ifdef MPI
+        CALL mpi_wait (Wrequest, status(1,1), Werror)
+        IF (Werror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Werror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Western Edge)',        &
+     &                      MyRank, Werror, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+#  endif
+        jcW=0
+        DO m=1,GsendW
+          i=Istr+m-1
+          jcW=jcW+1
+!>        sendW(jcW)=A(i)
+!>
+          ad_A(i)=ad_A(i)+sendW(jcW)
+          sendW(jcW)=0.0_r8
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          DO m=1,GsendW
+            i=Istr+m-1
+            jcW=jcW+1
+!>          sendW(jcW)=B(i)
+!>
+            ad_B(i)=ad_B(i)+sendW(jcW)
+            sendW(jcW)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          DO m=1,GsendW
+            i=Istr+m-1
+            jcW=jcW+1
+!>          sendW(jcW)=C(i)
+!>
+            ad_C(i)=ad_C(i)+sendW(jcW)
+            sendW(jcW)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          DO m=1,GsendW
+            i=Istr+m-1
+            jcW=jcW+1
+!>          sendW(jcW)=D(i)
+!>
+            ad_D(i)=ad_D(i)+sendW(jcW)
+            sendW(jcW)=0.0_r8
+          END DO
+        END IF
+      END IF
+!
+      IF (Eexchange) THEN
+#  ifdef MPI
+        CALL mpi_wait (Erequest, status(1,3), Eerror)
+        IF (Eerror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Eerror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Eastern Edge)',        &
+     &                      MyRank, Eerror, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+#  endif
+        jcE=0
+        DO m=1,GsendE
+          i=Iend-GsendE+m
+          jcE=jcE+1
+!>        sendE(jcE)=A(i)
+!>
+          ad_A(i)=ad_A(i)+sendE(jcE)
+          sendE(jcE)=0.0_r8
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          DO m=1,GsendE
+            i=Iend-GsendE+m
+            jcE=jcE+1
+!>          sendE(jcE)=B(i)
+!>
+            ad_B(i)=ad_B(i)+sendE(jcE)
+            sendE(jcE)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          DO m=1,GsendE
+            i=Iend-GsendE+m
+            jcE=jcE+1
+!>          sendE(jcE)=C(i)
+!>
+            ad_C(i)=ad_C(i)+sendE(jcE)
+            sendE(jcE)=0.0_r8
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          DO m=1,GsendE
+            i=Iend-GsendE+m
+            jcE=jcE+1
+!>          sendE(jcE)=D(i)
+!>
+            ad_D(i)=ad_D(i)+sendE(jcE)
+            sendE(jcE)=0.0_r8
+          END DO
+        END IF
+      END IF
+
+#  ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 39)
+#  endif
+
+      RETURN
+      END SUBROUTINE ad_mp_exchange2d_bry
+
 !
 !***********************************************************************
       SUBROUTINE ad_mp_exchange3d (ng, tile, model, Nvar,               &
@@ -2879,7 +4633,7 @@
 !
       USE mod_param
       USE mod_parallel
-      USE mod_iounits 
+      USE mod_iounits
       USE mod_scalars
 !
       implicit none
@@ -2913,7 +4667,6 @@
       integer :: i, ikS, ikN, ioff, Imin, Imax, Ilen, IKlen
       integer :: j, jkW, jkE, joff, Jmin, Jmax, Jlen, JKlen
       integer :: k, kc, m, mc, Ierror, Klen, Lstr
-      integer :: rank, MyRankI, MyRankJ
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
       integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
@@ -2931,11 +4684,15 @@
       integer, parameter :: pp = 0
 #  endif
 !
-      real(r8), dimension(Nvar*HaloSizeJ(ng)*(UBk-LBk+1)) :: sendW, sendE
-      real(r8), dimension(Nvar*HaloSizeI(ng)*(UBk-LBk+1)) :: sendS, sendN
+      real(r8), dimension(Nvar*HaloSizeJ(ng)*                           &
+     &                           (UBk-LBk+1)) :: sendW, sendE
+      real(r8), dimension(Nvar*HaloSizeI(ng)*                           &
+     &                           (UBk-LBk+1)) :: sendS, sendN
 
-      real(r8), dimension(Nvar*HaloSizeJ(ng)*(UBk-LBk+1)) :: recvW, recvE
-      real(r8), dimension(Nvar*HaloSizeI(ng)*(UBk-LBk+1)) :: recvS, recvN
+      real(r8), dimension(Nvar*HaloSizeJ(ng)*                           &
+     &                           (UBk-LBk+1)) :: recvW, recvE
+      real(r8), dimension(Nvar*HaloSizeI(ng)*                           &
+     &                           (UBk-LBk+1)) :: recvS, recvN
 
       character (len=MPI_MAX_ERROR_STRING) :: string
 
@@ -3186,7 +4943,7 @@
 !
 !  Adjoint of packing tile boundary data including ghost-points.
 !
-      IF (Sexchange) THEN            
+      IF (Sexchange) THEN
 #  ifdef MPI
         CALL mpi_wait (Srequest, status(1,2), Serror)
         IF (Serror.ne.MPI_SUCCESS) THEN
@@ -3711,6 +5468,753 @@
       END SUBROUTINE ad_mp_exchange3d
 !
 !***********************************************************************
+      SUBROUTINE ad_mp_exchange3d_bry (ng, tile, model, Nvar, boundary, &
+     &                                 LBij, UBij, LBk, UBk,            &
+     &                                 Nghost, EWperiodic, NSperiodic,  &
+     &                                 ad_A, ad_B, ad_C, ad_D)
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      logical, intent(in) :: EWperiodic, NSperiodic
+
+      integer, intent(in) :: ng, tile, model, Nvar, boundary
+      integer, intent(in) :: LBij, UBij, LBk, UBk
+      integer, intent(in) :: Nghost
+!
+# ifdef ASSUMED_SHAPE
+      real(r8), intent(inout) :: ad_A(LBij:,LBk:)
+
+      real(r8), intent(inout), optional :: ad_B(LBij:,LBk:)
+      real(r8), intent(inout), optional :: ad_C(LBij:,LBk:)
+      real(r8), intent(inout), optional :: ad_D(LBij:,LBk:)
+# else
+      real(r8), intent(inout) :: ad_A(LBij:UBij,LBk:UBk)
+
+      real(r8), intent(inout), optional :: ad_B(LBij:UBij,LBk:UBk)
+      real(r8), intent(inout), optional :: ad_C(LBij:UBij,LBk:UBk)
+      real(r8), intent(inout), optional :: ad_D(LBij:UBij,LBk:UBk)
+# endif
+!
+!  Local variable declarations.
+!
+      logical :: Wexchange, Sexchange, Eexchange, Nexchange
+
+      integer :: i, ikS, ikN, ioff
+      integer :: j, jkW, jkE, joff
+      integer :: k, m, mc, Ierror, Klen, Lstr
+      integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
+      integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
+      integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
+      integer :: Ntile, GsendN, GrecvN, Ntag, Nerror, Nrequest
+      integer :: BufferSizeEW, EWsize, sizeW, sizeE
+      integer :: BufferSizeNS, NSsize, sizeS, sizeN
+
+#  ifdef MPI
+      integer, dimension(MPI_STATUS_SIZE,4) :: status
+#  endif
+
+#  if defined EW_PERIODIC || defined NS_PERIODIC
+      integer, parameter :: pp = 1
+#  else
+      integer, parameter :: pp = 0
+#  endif
+!
+      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: sendW, sendE
+      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: recvW, recvE
+      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: sendS, sendN
+      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: recvS, recvN
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+#  include "set_bounds.h"
+
+#  ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 40)
+#  endif
+!
+!-----------------------------------------------------------------------
+!  Determine rank of tile neighbors and number of ghost-points to
+!  exchange.
+!-----------------------------------------------------------------------
+!
+      CALL tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,          &
+     &                     GrecvW, GsendW, Wtile, Wexchange,            &
+     &                     GrecvE, GsendE, Etile, Eexchange,            &
+     &                     GrecvS, GsendS, Stile, Sexchange,            &
+     &                     GrecvN, GsendN, Ntile, Nexchange)
+!
+!  Adjust exchange swiches according to boundary edge to process.
+!
+      Wexchange=Wexchange.and.((boundary.eq.isouth).or.                 &
+     &                         (boundary.eq.inorth))
+      Eexchange=Eexchange.and.((boundary.eq.isouth).or.                 &
+     &                         (boundary.eq.inorth))
+      Sexchange=Sexchange.and.((boundary.eq.iwest).or.                  &
+     &                         (boundary.eq.ieast))
+      Nexchange=Nexchange.and.((boundary.eq.iwest).or.                  &
+     &                         (boundary.eq.ieast))
+!
+!  Set communication tags.
+!
+      Wtag=1
+      Stag=2
+      Etag=3
+      Ntag=4
+!
+!  Determine range and length of the distributed tile boundary segments.
+!
+      Klen=UBk-LBk+1
+      NSsize=Nvar*(Nghost+pp)*Klen
+      EWsize=Nvar*(Nghost+pp)*Klen
+      BufferSizeNS=Nvar*(Nghost+pp)*Klen
+      BufferSizeEW=Nvar*(Nghost+pp)*Klen
+      IF (SIZE(sendE).lt.EWsize) THEN
+        WRITE (stdout,10) 'EWsize = ', EWsize, SIZE(sendE)
+ 10     FORMAT (/,' AD_MP_EXCHANGE3D_BRY - communication buffer too',   &
+     &          ' small, ',a, 2i8)
+      END IF
+      IF (SIZE(sendN).lt.NSsize) THEN
+        WRITE (stdout,10) 'NSsize = ', NSsize, SIZE(sendN)
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Adjoint of unpacking Northern and Southern segments.
+!-----------------------------------------------------------------------
+!
+      IF (Nexchange) THEN
+        DO i=1,BufferSizeNS
+          recvN(i)=0.0_r8
+          sendN(i)=0.0_r8
+        END DO
+        sizeN=0
+        DO m=1,GrecvN
+          mc=(m-1)*Klen
+          j=Jend+m
+          DO k=LBk,UBk
+            sizeN=sizeN+1
+            ikN=1+(k-LBk)+mc
+!>          A(j,k)=recvN(ikN)
+!>
+            recvN(ikN)=ad_A(j,k)
+            ad_A(j,k)=0.0_r8
+          END DO
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          ioff=ikN
+          DO m=1,GrecvN
+            mc=(m-1)*Klen
+            j=Jend+m
+            DO k=LBk,UBk
+              sizeN=sizeN+1
+              ikN=ioff+1+(k-LBk)+mc
+!>            B(j,k)=recvN(ikN)
+!>
+              recvN(ikN)=ad_B(j,k)
+              ad_B(j,k)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          ioff=ikN
+          DO m=1,GrecvN
+            mc=(m-1)*Klen
+            j=Jend+m
+            DO k=LBk,UBk
+              sizeN=sizeN+1
+              ikN=ioff+1+(k-LBk)+mc
+!>            C(j,k)=recvN(ikN)
+!>
+              recvN(ikN)=ad_C(j,k)
+              ad_C(j,k)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          ioff=ikN
+          DO m=1,GrecvN
+            mc=(m-1)*Klen
+            j=Jend+m
+            DO k=LBk,UBk
+              sizeN=sizeN+1
+              ikN=ioff+1+(k-LBk)+mc
+!>            D(j,k)=recvN(ikN)
+!>
+              recvN(ikN)=ad_D(j,k)
+              ad_D(j,k)=0.0_r8
+            END DO
+          END DO
+        END IF
+      END IF
+!
+      IF (Sexchange) THEN
+        DO i=1,BufferSizeNS
+          recvS(i)=0.0_r8
+          sendS(i)=0.0_r8
+        END DO
+        sizeS=0
+        DO m=GrecvS,1,-1
+          mc=(GrecvS-m)*Klen
+          j=Jstr-m
+          DO k=LBk,UBk
+            sizeS=sizeS+1
+            ikS=1+(k-LBk)+mc
+!>          A(j,k)=recvS(ikS)
+!>
+            recvS(ikS)=ad_A(j,k)
+            ad_A(j,k)=0.0_r8
+          END DO
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          ioff=ikS
+          DO m=GrecvS,1,-1
+            mc=(GrecvS-m)*Klen
+            j=Jstr-m
+            DO k=LBk,UBk
+              sizeS=sizeS+1
+              ikS=ioff+1+(k-LBk)+mc
+!>            B(j,k)=recvS(ikS)
+!>
+              recvS(ikS)=ad_B(j,k)
+              ad_B(j,k)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          ioff=ikS
+          DO m=GrecvS,1,-1
+            mc=(GrecvS-m)*Klen
+            j=Jstr-m
+            DO k=LBk,UBk
+              sizeS=sizeS+1
+              ikS=ioff+1+(k-LBk)+mc
+!>            C(j,k)=recvS(ikS)
+!>
+              recvS(ikS)=ad_C(j,k)
+              ad_C(j,k)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          ioff=ikS
+          DO m=GrecvS,1,-1
+            mc=(GrecvS-m)*Klen
+            j=Jstr-m
+            DO k=LBk,UBk
+              sizeS=sizeS+1
+              ikS=ioff+1+(k-LBk)+mc
+!>            D(j,k)=recvS(ikS)
+!>
+              recvS(ikS)=ad_D(j,k)
+              ad_D(j,k)=0.0_r8
+            END DO
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Adjoint of send and receive Southern and Northern segments.
+!-----------------------------------------------------------------------
+!
+#  if defined MPI
+      IF (Sexchange) THEN
+!>      CALL mpi_irecv (recvS, NSsize, MP_FLOAT, Stile, Ntag,           &
+!>   &                  OCN_COMM_WORLD, Srequest, Serror)
+!>
+        CALL mpi_irecv (sendS, NSsize, MP_FLOAT, Stile, Ntag,           &
+     &                  OCN_COMM_WORLD, Srequest, Serror)
+      END IF
+      IF (Nexchange) THEN
+!>      CALL mpi_irecv (recvN, NSsize, MP_FLOAT, Ntile, Stag,           &
+!>   &                  OCN_COMM_WORLD, Nrequest, Nerror)
+!>
+        CALL mpi_irecv (sendN, NSsize, MP_FLOAT, Ntile, Stag,           &
+     &                  OCN_COMM_WORLD, Nrequest, Nerror)
+      END IF
+      IF (Sexchange) THEN
+!>      CALL mpi_send  (sendS, sizeS, MP_FLOAT, Stile, Stag,            &
+!>   &                  OCN_COMM_WORLD, Serror)
+!>
+        CALL mpi_send  (recvS, sizeS, MP_FLOAT, Stile, Stag,            &
+     &                  OCN_COMM_WORLD, Serror)
+      END IF
+      IF (Nexchange) THEN
+!>      CALL mpi_send  (sendN, sizeN, MP_FLOAT, Ntile, Ntag,            &
+!>   &                  OCN_COMM_WORLD, Nerror)
+!>
+        CALL mpi_send  (recvN, sizeN, MP_FLOAT, Ntile, Ntag,            &
+     &                  OCN_COMM_WORLD, Nerror)
+      END IF
+#  endif
+!
+!  Adjoint of packing tile boundary data including ghost-points.
+!
+      IF (Sexchange) THEN
+#  ifdef MPI
+        CALL mpi_wait (Srequest, status(1,2), Serror)
+        IF (Serror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Serror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Southern Edge)',       &
+     &                      MyRank, Serror, string(1:Lstr)
+ 20       FORMAT (/,' AD_MP_EXCHANGE3D_BRY - error during ',a,' call,', &
+     &            ' Node = ', i3.3,' Error = ',i3,/,18x,a)
+          exit_flag=2
+          RETURN
+        END IF
+#  endif
+        DO m=1,GsendS
+          mc=(m-1)*Klen
+          j=Jstr+m-1
+          DO k=LBk,UBk
+            ikS=1+(k-LBk)+mc
+!>          sendS(ikS)=A(j,k)
+!>
+            ad_A(j,k)=ad_A(j,k)+sendS(ikS)
+            sendS(ikS)=0.0_r8
+          END DO
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          ioff=ikS
+          DO m=1,GsendS
+            mc=(m-1)*Klen
+            j=Jstr+m-1
+            DO k=LBk,UBk
+              ikS=ioff+1+(k-LBk)+mc
+!>            sendS(ikS)=B(j,k)
+!>
+              ad_B(j,k)=ad_B(j,k)+sendS(ikS)
+              sendS(ikS)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          ioff=ikS
+          DO m=1,GsendS
+            mc=(m-1)*Klen
+            j=Jstr+m-1
+            DO k=LBk,UBk
+              ikS=ioff+1+(k-LBk)+mc
+!>            sendS(ikS)=C(j,k)
+!>
+              ad_C(j,k)=ad_C(j,k)+sendS(ikS)
+              sendS(ikS)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          ioff=ikS
+          DO m=1,GsendS
+            mc=(m-1)*Klen
+            j=Jstr+m-1
+            DO k=LBk,UBk
+              ikS=ioff+1+(k-LBk)+mc
+!>            sendS(ikS)=D(j,k)
+!>
+              ad_D(j,k)=ad_D(j,k)+sendS(ikS)
+              sendS(ikS)=0.0_r8
+            END DO
+          END DO
+        END IF
+      END IF
+!
+      IF (Nexchange) THEN
+#  ifdef MPI
+        CALL mpi_wait (Nrequest, status(1,4), Nerror)
+        IF (Nerror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Nerror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Northern Edge)',       &
+     &                      MyRank, Nerror, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+#  endif
+        DO m=1,GsendN
+          mc=(m-1)*Klen
+          j=Jend-GsendN+m
+          DO k=LBk,UBk
+            ikN=1+(k-LBk)+mc
+!>          sendN(ikN)=A(j,k)
+!>
+            ad_A(j,k)=ad_A(j,k)+sendN(ikN)
+            sendN(ikN)=0.0_r8
+          END DO
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          ioff=ikN
+          DO m=1,GsendN
+            mc=(m-1)*Klen
+            j=Jend-GsendN+m
+            DO k=LBk,UBk
+              ikN=ioff+1+(k-LBk)+mc
+!>            sendN(ikN)=B(j,k)
+!>
+              ad_B(j,k)=ad_B(j,k)+sendN(ikN)
+              sendN(ikN)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          ioff=ikN
+          DO m=1,GsendN
+            mc=(m-1)*Klen
+            j=Jend-GsendN+m
+            DO k=LBk,UBk
+              ikN=ioff+1+(k-LBk)+mc
+!>            sendN(ikN)=C(j,k)
+!>
+              ad_C(j,k)=ad_C(j,k)+sendN(ikN)
+              sendN(ikN)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          ioff=ikN
+          DO m=1,GsendN
+            mc=(m-1)*Klen
+            j=Jend-GsendN+m
+            DO k=LBk,UBk
+              ikN=ioff+1+(k-LBk)+mc
+!>            sendN(ikN)=D(j,k)
+!>
+              ad_D(j,k)=ad_D(j,k)+sendN(ikN)
+              sendN(ikN)=0.0_r8
+            END DO
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Adjoint of unpack Eastern and Western segments.
+!-----------------------------------------------------------------------
+!
+      IF (Eexchange) THEN
+        DO i=1,BufferSizeEW
+          recvE(i)=0.0_r8
+          sendE(i)=0.0_r8
+        END DO
+        sizeE=0
+        DO m=1,GrecvE
+          mc=(m-1)*Klen
+          i=Iend+m
+          DO k=LBk,UBk
+            sizeE=sizeE+1
+            jkE=1+(k-LBk)+mc
+!>          A(i,k)=recvE(jkE)
+!>
+            recvE(jkE)=ad_A(i,k)
+            ad_A(i,k)=0.0_r8
+          ENDDO
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          joff=jkE
+          DO m=1,GrecvE
+            mc=(m-1)*Klen
+            i=Iend+m
+            DO k=LBk,UBk
+              sizeE=sizeE+1
+              jkE=joff+1+(k-LBk)+mc
+!>            B(i,k)=recvE(jkE)
+!>
+              recvE(jkE)=ad_B(i,k)
+              ad_B(i,k)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          joff=jkE
+          DO m=1,GrecvE
+            mc=(m-1)*Klen
+            i=Iend+m
+            DO k=LBk,UBk
+              sizeE=sizeE+1
+              jkE=joff+1+(k-LBk)+mc
+!>            C(i,k)=recvE(jkE)
+!>
+              recvE(jkE)=ad_C(i,k)
+              ad_C(i,k)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          joff=jkE
+          DO m=1,GrecvE
+            mc=(m-1)*Klen
+            i=Iend+m
+            DO k=LBk,UBk
+              sizeE=sizeE+1
+              jkE=joff+1+(k-LBk)+mc
+!>            D(i,k)=recvE(jkE)
+!>
+              recvE(jkE)=ad_D(i,k)
+              ad_D(i,k)=0.0_r8
+            END DO
+          END DO
+        END IF
+      END IF
+!
+      IF (Wexchange) THEN
+        DO i=1,BufferSizeEW
+          recvW(i)=0.0_r8
+          sendW(i)=0.0_r8
+        END DO
+        sizeW=0
+        DO m=GrecvW,1,-1
+          mc=(GrecvW-m)*Klen
+          i=Istr-m
+          DO k=LBk,UBk
+            sizeW=sizeW+1
+            jkW=1+(k-LBk)+mc
+!>          A(i,k)=recvW(jkW)
+!>
+            recvW(jkW)=ad_A(i,k)
+            ad_A(i,k)=0.0_r8
+          END DO
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          joff=jkW
+          DO m=GrecvW,1,-1
+            mc=(GrecvW-m)*Klen
+            i=Istr-m
+            DO k=LBk,UBk
+              sizeW=sizeW+1
+              jkW=joff+1+(k-LBk)+mc
+!>            B(i,k)=recvW(jkW)
+!>
+              recvW(jkW)=ad_B(i,k)
+              ad_B(i,k)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          joff=jkW
+          DO m=GrecvW,1,-1
+            mc=(GrecvW-m)*Klen
+            i=Istr-m
+            DO k=LBk,UBk
+              sizeW=sizeW+1
+              jkW=joff+1+(k-LBk)+mc
+!>            C(i,k)=recvW(jkW)
+!>
+              recvW(jkW)=ad_C(i,k)
+              ad_C(i,k)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          joff=jkW
+          DO m=GrecvW,1,-1
+            mc=(GrecvW-m)*Klen
+            i=Istr-m
+            DO k=LBk,UBk
+              sizeW=sizeW+1
+              jkW=joff+1+(k-LBk)+mc
+!>            D(i,k)=recvW(jkW)
+!>
+              recvW(jkW)=ad_D(i,k)
+              ad_D(i,k)=0.0_r8
+            END DO
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Send and receive Western and Eastern segments.
+!-----------------------------------------------------------------------
+!
+#  if defined MPI
+      IF (Wexchange) THEN
+!>      CALL mpi_irecv (recvW, EWsize, MP_FLOAT, Wtile, Etag,           &
+!>   &                  OCN_COMM_WORLD, Wrequest, Werror)
+!>
+        CALL mpi_irecv (sendW, EWsize, MP_FLOAT, Wtile, Etag,           &
+     &                  OCN_COMM_WORLD, Wrequest, Werror)
+      END IF
+      IF (Eexchange) THEN
+!>      CALL mpi_irecv (recvE, EWsize, MP_FLOAT, Etile, Wtag,           &
+!>   &                  OCN_COMM_WORLD, Erequest, Eerror)
+!>
+        CALL mpi_irecv (sendE, EWsize, MP_FLOAT, Etile, Wtag,           &
+     &                  OCN_COMM_WORLD, Erequest, Eerror)
+      END IF
+      IF (Wexchange) THEN
+!>      CALL mpi_send  (sendW, sizeW, MP_FLOAT, Wtile, Wtag,            &
+!>   &                  OCN_COMM_WORLD, Werror)
+!>
+        CALL mpi_send  (recvW, sizeW, MP_FLOAT, Wtile, Wtag,            &
+     &                  OCN_COMM_WORLD, Werror)
+      END IF
+      IF (Eexchange) THEN
+!>      CALL mpi_send  (sendE, sizeE, MP_FLOAT, Etile, Etag,            &
+!>   &                  OCN_COMM_WORLD, Eerror)
+!>
+        CALL mpi_send  (recvE, sizeE, MP_FLOAT, Etile, Etag,            &
+     &                  OCN_COMM_WORLD, Eerror)
+      END IF
+#  endif
+!
+!  Adjoint of packing tile boundary data including ghost-points.
+!
+      IF (Wexchange) THEN
+#  ifdef MPI
+        CALL mpi_wait (Wrequest, status(1,1), Werror)
+        IF (Werror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Werror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Western Edge)',        &
+     &                      MyRank, Werror, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+#  endif
+        DO m=1,GsendW
+          mc=(m-1)*Klen
+          i=Istr+m-1
+          DO k=LBk,UBk
+            jkW=1+(k-LBk)+mc
+!>          sendW(jkW)=A(i,k)
+!>
+            ad_A(i,k)=ad_A(i,k)+sendW(jkW)
+            sendW(jkW)=0.0_r8
+          END DO
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          joff=jkW
+          DO m=1,GsendW
+            mc=(m-1)*Klen
+            i=Istr+m-1
+            DO k=LBk,UBk
+              jkW=joff+1+(k-LBk)+mc
+!>            sendW(jkW)=B(i,k)
+!>
+              ad_B(i,k)=ad_B(i,k)+sendW(jkW)
+              sendW(jkW)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          joff=jkW
+          DO m=1,GsendW
+            mc=(m-1)*Klen
+            i=Istr+m-1
+            DO k=LBk,UBk
+              jkW=joff+1+(k-LBk)+mc
+!>            sendW(jkW)=C(i,k)
+!>
+              ad_C(i,k)=ad_C(i,k)+sendW(jkW)
+              sendW(jkW)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          joff=jkW
+          DO m=1,GsendW
+            mc=(m-1)*Klen
+            i=Istr+m-1
+            DO k=LBk,UBk
+              jkW=joff+1+(k-LBk)+mc
+!>            sendW(jkW)=D(i,k)
+!>
+              ad_D(i,k)=ad_D(i,k)+sendW(jkW)
+              sendW(jkW)=0.0_r8
+            END DO
+          END DO
+        END IF
+      END IF
+!
+      IF (Eexchange) THEN
+#  ifdef MPI
+        CALL mpi_wait (Erequest, status(1,3), Eerror)
+        IF (Eerror.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (Eerror, string, Lstr, Ierror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,20) 'MPI_SEND/MPI_IRECV (Eastern Edge)',        &
+     &                      MyRank, Eerror, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+#  endif
+        DO m=1,GsendE
+          mc=(m-1)*Klen
+          i=Iend-GsendE+m
+          DO k=LBk,UBk
+            jkE=1+(k-LBk)+mc
+!>          sendE(jkE)=A(i,k)
+!>
+            ad_A(i,k)=ad_A(i,k)+sendE(jkE)
+            sendE(jkE)=0.0_r8
+          END DO
+        END DO
+        IF (PRESENT(ad_B)) THEN
+          joff=jkE
+          DO m=1,GsendE
+            mc=(m-1)*Klen
+            i=Iend-GsendE+m
+            DO k=LBk,UBk
+              jkE=joff+1+(k-LBk)+mc
+!>            sendE(jkE)=B(i,k)
+!>
+              ad_B(i,k)=ad_B(i,k)+sendE(jkE)
+              sendE(jkE)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          joff=jkE
+          DO m=1,GsendE
+            mc=(m-1)*Klen
+            i=Iend-GsendE+m
+            DO k=LBk,UBk
+              jkE=joff+1+(k-LBk)+mc
+!>            sendE(jkE)=C(i,k)
+!>
+              ad_C(i,k)=ad_C(i,k)+sendE(jkE)
+              sendE(jkE)=0.0_r8
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_D)) THEN
+          joff=jkE
+          DO m=1,GsendE
+            mc=(m-1)*Klen
+            i=Iend-GsendE+m
+            DO k=LBk,UBk
+              jkE=joff+1+(k-LBk)+mc
+!>            sendE(jkE)=D(i,k)
+!>
+              ad_D(i,k)=ad_D(i,k)+sendE(jkE)
+              sendE(jkE)=0.0_r8
+            END DO
+          END DO
+        END IF
+      END IF
+
+#  ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 40)
+#  endif
+
+      RETURN
+      END SUBROUTINE ad_mp_exchange3d_bry
+!
+!***********************************************************************
       SUBROUTINE ad_mp_exchange4d (ng, tile, model, Nvar,               &
      &                             LBi, UBi, LBj, UBj, LBk, UBk,        &
      &                             LBt, UBt,                            &
@@ -3720,7 +6224,7 @@
 !
       USE mod_param
       USE mod_parallel
-      USE mod_iounits 
+      USE mod_iounits
       USE mod_scalars
 !
       implicit none
@@ -3751,7 +6255,7 @@
       integer :: i, ikS, ikN, ioff, Imin, Imax, Ilen, IKlen, IKTlen
       integer :: j, jkW, jkE, joff, Jmin, Jmax, Jlen, JKlen, JKTlen
       integer :: k, kc, m, mc, Ierror, Klen, Lstr, Tlen
-      integer :: l, lc, rank, MyRankI, MyRankJ
+      integer :: l, lc
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
       integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
@@ -3769,14 +6273,14 @@
       integer, parameter :: pp = 0
 #  endif
 !
-      real(r8), dimension(Nvar*HaloSizeJ(ng)*(UBk-LBk+1)*                &
+      real(r8), dimension(Nvar*HaloSizeJ(ng)*(UBk-LBk+1)*               &
      &                                      (UBt-LBt+1)) :: sendW, sendE
-      real(r8), dimension(Nvar*HaloSizeI(ng)*(UBk-LBk+1)*                &
+      real(r8), dimension(Nvar*HaloSizeI(ng)*(UBk-LBk+1)*               &
      &                                      (UBt-LBt+1)) :: sendS, sendN
 
-      real(r8), dimension(Nvar*HaloSizeJ(ng)*(UBk-LBk+1)*                &
+      real(r8), dimension(Nvar*HaloSizeJ(ng)*(UBk-LBk+1)*               &
      &                                      (UBt-LBt+1)) :: recvW, recvE
-      real(r8), dimension(Nvar*HaloSizeI(ng)*(UBk-LBk+1)*                &
+      real(r8), dimension(Nvar*HaloSizeI(ng)*(UBk-LBk+1)*               &
      &                                      (UBt-LBt+1)) :: recvS, recvN
 
       character (len=MPI_MAX_ERROR_STRING) :: string
@@ -3971,7 +6475,7 @@
 !
 !  Adjoint of packing tile boundary data including ghost-points.
 !
-      IF (Sexchange) THEN            
+      IF (Sexchange) THEN
 #  ifdef MPI
         CALL mpi_wait (Srequest, status(1,2), Serror)
         IF (Serror.ne.MPI_SUCCESS) THEN

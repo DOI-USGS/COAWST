@@ -4,7 +4,7 @@
 !
 !svn $Id: wrt_floats.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -33,15 +33,15 @@
 !
       integer :: itrc, l, status
 
-      integer, dimension(2) :: start, total
-
       real(r8), dimension(Nfloats(ng)) :: Tout
+!
+      SourceFile='wrt_floats.F'
 !
 !-----------------------------------------------------------------------
 !  Write out station data at RHO-points.
 !-----------------------------------------------------------------------
 !
-      if (exit_flag.ne.NoError) RETURN
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Set time record index.
 !
@@ -50,202 +50,161 @@
 !
 !  Write out model time (s).
 !
-      IF (Master) THEN
-        start(1)=tFLTindx(ng)
-        total(1)=1
-        status=nf90_put_var(ncFLTid(ng), fltVid(idtime,ng),             &
-     &                      time(ng:), start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) TRIM(Vname(1,idtime)), tFLTindx(ng)
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
-      start(1)=1
-      total(1)=Nfloats(ng)
-      start(2)=tFLTindx(ng)
-      total(2)=1
+      CALL netcdf_put_fvar (ng, iNLM, FLTname(ng),                      &
+     &                      TRIM(Vname(1,idtime)), time(ng:),           &
+     &                      (/tFLTindx(ng)/), (/1/),                    &
+     &                      ncid = ncFLTid(ng),                         &
+     &                      varid = fltVid(idtime,ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out floats X-grid locations.
 !
-      IF (Master) THEN
-        DO l=1,Nfloats(ng)
-          IF (FLT(ng)%bounded(l)) THEN
-            Tout(l)=FLT(ng)%track(ixgrd,nf(ng),l)
-          ELSE
-            Tout(l)=spval
-          END IF
-        END DO
-        status=nf90_put_var(ncFLTid(ng), fltVid(idXgrd,ng),             &
-     &                      Tout, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'Xgrid', tFLTindx(ng)
-          exit_flag=3
-          ioerror=status
-          RETURN
+      DO l=1,Nfloats(ng)
+        IF (FLT(ng)%bounded(l)) THEN
+          Tout(l)=FLT(ng)%track(ixgrd,nf(ng),l)
+        ELSE
+          Tout(l)=spval
         END IF
-      END IF
+      END DO
+      CALL netcdf_put_fvar (ng, iNLM, FLTname(ng),                      &
+     &                      'Xgrid', Tout,                              &
+     &                      (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),      &
+     &                      ncid = ncFLTid(ng),                         &
+     &                      varid = fltVid(idXgrd,ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out floats Y-grid locations.
 !
-      IF (Master) THEN
-        DO l=1,Nfloats(ng)
-          IF (FLT(ng)%bounded(l)) THEN
-            Tout(l)=FLT(ng)%track(iygrd,nf(ng),l)
-          ELSE
-            Tout(l)=spval
-          END IF
-        END DO
-        status=nf90_put_var(ncFLTid(ng), fltVid(idYgrd,ng),             &
-     &                      Tout, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'Ygrid', tFLTindx(ng)
-          exit_flag=3
-          ioerror=status
-          RETURN
+      DO l=1,Nfloats(ng)
+        IF (FLT(ng)%bounded(l)) THEN
+          Tout(l)=FLT(ng)%track(iygrd,nf(ng),l)
+        ELSE
+          Tout(l)=spval
         END IF
-      END IF
+      END DO
+      CALL netcdf_put_fvar (ng, iNLM, FLTname(ng),                      &
+     &                      'Ygrid', Tout,                              &
+     &                      (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),      &
+     &                      ncid = ncFLTid(ng),                         &
+     &                      varid = fltVid(idYgrd,ng))
+      IF (exit_flag.ne.NoError) RETURN
+
 # ifdef SOLVE3D
 !
 !  Write out floats Z-grid locations.
 !
-      IF (Master) THEN
-        DO l=1,Nfloats(ng)
-          IF (FLT(ng)%bounded(l)) THEN
-            Tout(l)=FLT(ng)%track(izgrd,nf(ng),l)
-          ELSE
-            Tout(l)=spval
-          END IF
-        END DO
-        status=nf90_put_var(ncFLTid(ng), fltVid(idZgrd,ng),             &
-     &                      Tout, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'Zgrid', tFLTindx(ng)
-          exit_flag=3
-          ioerror=status
-          RETURN
+      DO l=1,Nfloats(ng)
+        IF (FLT(ng)%bounded(l)) THEN
+          Tout(l)=FLT(ng)%track(izgrd,nf(ng),l)
+        ELSE
+          Tout(l)=spval
         END IF
-      END IF
+      END DO
+      CALL netcdf_put_fvar (ng, iNLM, FLTname(ng),                      &
+     &                      'Zgrid', Tout,                              &
+     &                      (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),      &
+     &                      ncid = ncFLTid(ng),                         &
+     &                      varid = fltVid(idZgrd,ng))
+      IF (exit_flag.ne.NoError) RETURN
 # endif
 !
 !  Write out floats (lon,lat) or (x,y) locations.
 !
-      IF (Master) THEN
-        DO l=1,Nfloats(ng)
-          Tout(l)=FLT(ng)%track(iflon,nf(ng),l)
-        END DO
-        status=nf90_put_var(ncFLTid(ng), fltVid(idglon,ng),             &
-     &                      Tout, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          IF (spherical) THEN
-            WRITE (stdout,10) 'lon', tFLTindx(ng)
-          ELSE
-            WRITE (stdout,10) 'x', tFLTindx(ng)
-          END IF
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-        DO l=1,Nfloats(ng)
-          Tout(l)=FLT(ng)%track(iflat,nf(ng),l)
-        END DO
-        status=nf90_put_var(ncFLTid(ng), fltVid(idglat,ng),             &
-     &                      Tout, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          IF (spherical) THEN
-            WRITE (stdout,10) 'lat', tFLTindx(ng)
-          ELSE
-            WRITE (stdout,10) 'y', tFLTindx(ng)
-          END IF
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
+      DO l=1,Nfloats(ng)
+        Tout(l)=FLT(ng)%track(iflon,nf(ng),l)
+      END DO
+      IF (spherical) THEN
+        CALL netcdf_put_fvar (ng, iNLM, FLTname(ng),                    &
+     &                        'lon', Tout,                              &
+     &                        (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),    &
+     &                        ncid = ncFLTid(ng),                       &
+     &                        varid = fltVid(idglon,ng))
+      ELSE
+        CALL netcdf_put_fvar (ng, iNLM, FLTname(ng),                    &
+     &                        'x', Tout,                                &
+     &                        (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),    &
+     &                        ncid = ncFLTid(ng),                       &
+     &                        varid = fltVid(idglon,ng))
       END IF
+      IF (exit_flag.ne.NoError) RETURN
+!
+      DO l=1,Nfloats(ng)
+        Tout(l)=FLT(ng)%track(iflat,nf(ng),l)
+      END DO
+      IF (spherical) THEN
+        CALL netcdf_put_fvar (ng, iNLM, FLTname(ng),                    &
+     &                        'lat', Tout,                              &
+     &                        (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),    &
+     &                        ncid = ncFLTid(ng),                       &
+     &                        varid = fltVid(idglat,ng))
+      ELSE
+        CALL netcdf_put_fvar (ng, iNLM, FLTname(ng),                    &
+     &                        'y', Tout,                                &
+     &                        (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),    &
+     &                        ncid = ncFLTid(ng),                       &
+     &                        varid = fltVid(idglat,ng))
+      END IF
+      IF (exit_flag.ne.NoError) RETURN
+
 # ifdef SOLVE3D
 !
 !  Write out floats depths.
 !
-      IF (Master) THEN
-        DO l=1,Nfloats(ng)
-          IF (FLT(ng)%bounded(l)) THEN
-            Tout(l)=FLT(ng)%track(idpth,nf(ng),l)
-          ELSE
-            Tout(l)=spval
-          END IF
-        END DO
-        status=nf90_put_var(ncFLTid(ng), fltVid(iddpth,ng),             &
-     &                      Tout, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) 'depth', tFLTindx(ng)
-          exit_flag=3
-          ioerror=status
-          RETURN
+      DO l=1,Nfloats(ng)
+        IF (FLT(ng)%bounded(l)) THEN
+          Tout(l)=FLT(ng)%track(idpth,nf(ng),l)
+        ELSE
+          Tout(l)=spval
         END IF
-      END IF
+      END DO
+      CALL netcdf_put_fvar (ng, iNLM, FLTname(ng),                      &
+     &                      'depth', Tout,                              &
+     &                      (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),      &
+     &                      ncid = ncFLTid(ng),                         &
+     &                      varid = fltVid(iddpth,ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out density anomaly.
 !
-      IF (Master) THEN
+      DO l=1,Nfloats(ng)
+        IF (FLT(ng)%bounded(l)) THEN
+          Tout(l)=FLT(ng)%track(ifden,nf(ng),l)
+        ELSE
+          Tout(l)=spval
+        END IF
+      END DO
+      CALL netcdf_put_fvar (ng, iNLM, FLTname(ng),                      &
+     &                      TRIM(Vname(1,idDano)), Tout,                &
+     &                      (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),      &
+     &                      ncid = ncFLTid(ng),                         &
+     &                      varid = fltVid(idDano,ng))
+      IF (exit_flag.ne.NoError) RETURN
+!
+!  Write out tracer type variables.
+!
+      DO itrc=1,NT(ng)
         DO l=1,Nfloats(ng)
           IF (FLT(ng)%bounded(l)) THEN
-            Tout(l)=FLT(ng)%track(ifden,nf(ng),l)
+            Tout(l)=FLT(ng)%track(ifTvar(itrc),nf(ng),l)
           ELSE
             Tout(l)=spval
           END IF
         END DO
-        status=nf90_put_var(ncFLTid(ng), fltVid(idDano,ng),             &
-     &                      Tout, start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) TRIM(Vname(1,idDano)), tFLTindx(ng)
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
-!
-!  Write out tracer type variables.
-!
-      IF (Master) THEN
-        DO itrc=1,NT(ng)
-          DO l=1,Nfloats(ng)
-            IF (FLT(ng)%bounded(l)) THEN
-              Tout(l)=FLT(ng)%track(itrc+10,nf(ng),l)
-            ELSE
-              Tout(l)=spval
-            END IF
-          END DO
-          status=nf90_put_var(ncFLTid(ng), fltTid(itrc,ng),             &
-     &                        Tout, start, total)
-          IF (status.ne.nf90_noerr) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))), tFLTindx(ng)
-            exit_flag=3
-            ioerror=status
-            RETURN
-          END IF
-        END DO
-      END IF
+        CALL netcdf_put_fvar (ng, iNLM, FLTname(ng),                    &
+     &                        TRIM(Vname(1,idTvar(itrc))), Tout,        &
+     &                        (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),    &
+     &                        ncid = ncFLTid(ng),                       &
+     &                        varid = fltTid(itrc,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END DO
 # endif
 !
 !-----------------------------------------------------------------------
 !  Synchronize floats NetCDF file to disk.
 !-----------------------------------------------------------------------
 !
-      IF (Master) THEN
-        status=nf90_sync(ncFLTid(ng))
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,20)
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
-!
-  10  FORMAT (/,' WRT_FLOATS - error while writing variable: ',a,/,     &
-     &        14x,'into floats NetCDF file for time record: ',i4)
-  20  FORMAT (/,' WRT_FLOATS - unable to synchronize stations',         &
-     &        1x,'NetCDF file to disk.')
+      CALL netcdf_sync (ng, iNLM, FLTname(ng), ncFLTid(ng))
+
 #else
       SUBROUTINE wrt_floats
 #endif

@@ -1,11 +1,11 @@
 #include "cppdefs.h"
       MODULE dotproduct_mod
 
-#if defined GRADIENT_CHECK || defined TLM_CHECK || defined PROPAGATOR
+#if defined TLM_CHECK || defined PROPAGATOR
 !
-!svn $Id: dotproduct.F 733 2008-09-07 01:56:45Z jcwarner $
+!svn $Id: dotproduct.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -18,7 +18,7 @@
       implicit none
 
       PRIVATE
-# if defined GRADIENT_CHECK || defined TLM_CHECK
+# ifdef TLM_CHECK
       PUBLIC :: ad_dotproduct
 # endif
 # ifdef TLM_CHECK
@@ -62,6 +62,7 @@
 #  endif
       CALL nl_dotproduct_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         KOUT, Linp,                              &
 #  ifdef SOLVE3D
      &                         NOUT,                                    &
@@ -100,6 +101,7 @@
 !***********************************************************************
       SUBROUTINE nl_dotproduct_tile (ng, tile,                          &
      &                               LBi, UBi, LBj, UBj,                &
+     &                               IminS, ImaxS, JminS, JmaxS,        &
      &                               Kinp, Linp,                        &
 #  ifdef SOLVE3D
      &                               Ninp,                              &
@@ -133,6 +135,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: Kinp, Linp
 #  ifdef SOLVE3D
       integer, intent(in) :: Ninp
@@ -354,7 +357,7 @@
  10         FORMAT (5x,'(Outer,Inner) = ','(',i4.4,',',i4.4,')',3x,     &
      &              'TLM Check, p  = ',1p,e21.14,0p,/,5x,a,4x,          &
      &              '(Index=',i1,')',5x,'TLM Check, g1 = ',1p,e21.14,0p)
-          END IF        
+          END IF
         END IF
 !$OMP END CRITICAL (NL_DOT)
       END IF
@@ -392,6 +395,7 @@
 #  endif
       CALL ad_statenorm_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        Kinp, Ninp,                               &
      &                        StateNorm,                                &
 #  ifdef MASKING
@@ -403,7 +407,7 @@
      &                        GRID(ng) % Hz,                            &
 #  else
      &                        GRID(ng) % h,                             &
-#  endif      
+#  endif
 #  ifdef SOLVE3D
      &                        OCEAN(ng) % ad_t,                         &
      &                        OCEAN(ng) % ad_u,                         &
@@ -422,6 +426,7 @@
 !***********************************************************************
       SUBROUTINE ad_statenorm_tile (ng, tile,                           &
      &                              LBi, UBi, LBj, UBj,                 &
+     &                              IminS, ImaxS, JminS, JmaxS,         &
      &                              Kinp, Ninp,                         &
      &                              StateNorm,                          &
 #  ifdef MASKING
@@ -453,6 +458,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: Kinp, Ninp
 
       real(r8), intent(out) :: StateNorm
@@ -696,6 +702,7 @@
 #  endif
       CALL tl_statenorm_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        Kinp, Ninp,                               &
      &                        StateNorm,                                &
 #  ifdef MASKING
@@ -707,7 +714,7 @@
      &                        GRID(ng) % Hz,                            &
 #  else
      &                        GRID(ng) % h,                             &
-#  endif      
+#  endif
 #  ifdef SOLVE3D
      &                        OCEAN(ng) % tl_t,                         &
      &                        OCEAN(ng) % tl_u,                         &
@@ -727,6 +734,7 @@
 !***********************************************************************
       SUBROUTINE tl_statenorm_tile (ng, tile,                           &
      &                              LBi, UBi, LBj, UBj,                 &
+     &                              IminS, ImaxS, JminS, JmaxS,         &
      &                              Kinp, Ninp,                         &
      &                              StateNorm,                          &
 #  ifdef MASKING
@@ -758,6 +766,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: Kinp, Ninp
 
       real(r8), intent(out) :: StateNorm
@@ -1000,6 +1009,7 @@
 #  endif
       CALL tl_dotproduct_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         KOUT, Linp,                              &
 #  ifdef SOLVE3D
      &                         NOUT,                                    &
@@ -1033,6 +1043,7 @@
 !***********************************************************************
       SUBROUTINE tl_dotproduct_tile (ng, tile,                          &
      &                               LBi, UBi, LBj, UBj,                &
+     &                               IminS, ImaxS, JminS, JmaxS,        &
      &                               Kinp, Linp,                        &
 #  ifdef SOLVE3D
      &                               Ninp,                              &
@@ -1065,6 +1076,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: Kinp, Linp
 #  ifdef SOLVE3D
       integer, intent(in) :: Ninp
@@ -1264,7 +1276,7 @@
  10         FORMAT (5x,'(Outer,Inner) = ','(',i4.4,',',i4.4,')',3x,     &
      &              'TLM Check, p  = ',1p,e21.14,0p,/,5x,a,18x,         &
      &              'TLM Check, g2 = ',1p,e21.14,0p)
-          END IF        
+          END IF
         END IF
 !$OMP END CRITICAL (TL_DOT)
       END IF
@@ -1273,7 +1285,7 @@
       END SUBROUTINE tl_dotproduct_tile
 # endif
 
-# if defined GRADIENT_CHECK || defined TLM_CHECK
+# ifdef TLM_CHECK
       SUBROUTINE ad_dotproduct (ng, tile, Linp)
 !
 !=======================================================================
@@ -1300,6 +1312,7 @@
 #  endif
       CALL ad_dotproduct_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         Linp,                                    &
 #  ifdef MASKING
      &                         GRID(ng) % rmask,                        &
@@ -1323,6 +1336,7 @@
 !***********************************************************************
       SUBROUTINE ad_dotproduct_tile (ng, tile,                          &
      &                               LBi, UBi, LBj, UBj,                &
+     &                               IminS, ImaxS, JminS, JmaxS,        &
      &                               Linp,                              &
 #  ifdef MASKING
      &                               rmask, umask, vmask,               &
@@ -1348,6 +1362,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: Linp
 !
 #  ifdef ASSUMED_SHAPE
@@ -1507,7 +1522,7 @@
         IF (Master) THEN
           WRITE (stdout,10) adDotProduct
  10       FORMAT (/,' Adjoint Solution Dot Product: ',1p,e21.14)
-        END IF        
+        END IF
       END IF
 !$OMP END CRITICAL (AD_DOT)
 

@@ -4,7 +4,7 @@
 !
 !svn $Id: wrt_avg.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -24,12 +24,17 @@
       USE mod_netcdf
       USE mod_scalars
 # if defined SEDIMENT || defined BBL_MODEL
+      USE mod_sedbed
       USE mod_sediment
 # endif
 # if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
       USE mod_tides
 # endif
-
+!
+      USE nf_fwrite2d_mod, ONLY : nf_fwrite2d
+# ifdef SOLVE3D
+      USE nf_fwrite3d_mod, ONLY : nf_fwrite3d
+# endif
 !
       implicit none
 !
@@ -41,13 +46,10 @@
 !
       integer :: LBi, UBi, LBj, UBj
       integer :: gfactor, gtype, i, itrc, status
-      integer :: start(4), total(4)
 
-      integer :: nf_fwrite2d
-# ifdef SOLVE3D
-      integer :: nf_fwrite3d
-# endif
       real(r8) :: scale
+!
+      SourceFile='wrt_avg.F'
 !
       LBi=LBOUND(GRID(ng)%h,DIM=1)
       UBi=UBOUND(GRID(ng)%h,DIM=1)
@@ -76,18 +78,12 @@
 !
 !  Write out averaged time.
 !
-      IF (OutThread) THEN
-        start(1)=tAVGindx(ng)
-        total(1)=1
-        status=nf90_put_var(ncAVGid(ng), avgVid(idtime,ng),             &
-     &                      AVGtime(ng:), start, total)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,10) TRIM(Vname(1,idtime)), tAVGindx(ng)
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+      CALL netcdf_put_fvar (ng, iNLM, AVGname(ng),                      &
+     &                      TRIM(Vname(idtime,ng)), AVGtime(ng:),       &
+     &                      (/tAVGindx(ng)/), (/1/),                    &
+     &                      ncid = ncAVGid(ng),                         &
+     &                      varid = avgVid(idtime,ng))
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out free-surface (m).
 !
@@ -98,9 +94,14 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 # endif
-     &                     AVERAGE(ng) % avgzeta(LBi,LBj))
+# ifdef WET_DRY
+     &                     AVERAGE(ng) % avgzeta,                       &
+     &                     SetFillVal = .FALSE.)
+# else
+     &                     AVERAGE(ng) % avgzeta)
+# endif
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idFsur)), tAVGindx(ng)
@@ -121,9 +122,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 #  ifdef MASKING
-     &                   GRID(ng) % rmask(LBi,LBj),                     &
+     &                   GRID(ng) % rmask,                              &
 #  endif
-     &                   TIDES(ng) % zeta_detided(LBi,LBj))
+     &                   TIDES(ng) % zeta_detided)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idFsuD)), tAVGindx(ng)
@@ -143,9 +144,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 # endif
-     &                     AVERAGE(ng) % avgu2d(LBi,LBj))
+     &                     AVERAGE(ng) % avgu2d)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUbar)), tAVGindx(ng)
@@ -166,9 +167,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 #  ifdef MASKING
-     &                   GRID(ng) % umask(LBi,LBj),                     &
+     &                   GRID(ng) % umask,                              &
 #  endif
-     &                   TIDES(ng) % ubar_detided(LBi,LBj))
+     &                   TIDES(ng) % ubar_detided)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idu2dD)), tAVGindx(ng)
@@ -188,9 +189,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 # endif
-     &                     AVERAGE(ng) % avgv2d(LBi,LBj))
+     &                     AVERAGE(ng) % avgv2d)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVbar)), tAVGindx(ng)
@@ -211,9 +212,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 #  ifdef MASKING
-     &                   GRID(ng) % vmask(LBi,LBj),                     &
+     &                   GRID(ng) % vmask,                              &
 #  endif
-     &                   TIDES(ng) % vbar_detided(LBi,LBj))
+     &                   TIDES(ng) % vbar_detided)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idv2dD)), tAVGindx(ng)
@@ -233,9 +234,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 #  ifdef MASKING
-     &                   GRID(ng) % umask(LBi,LBj),                     &
+     &                   GRID(ng) % umask,                              &
 #  endif
-     &                   AVERAGE(ng) % avgDU_avg1(LBi,LBj))
+     &                   AVERAGE(ng) % avgDU_avg1)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUfx1)), tAVGindx(ng)
@@ -250,9 +251,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 #  ifdef MASKING
-     &                   GRID(ng) % umask(LBi,LBj),                     &
+     &                   GRID(ng) % umask,                              &
 #  endif
-     &                   AVERAGE(ng) % avgDU_avg2(LBi,LBj))
+     &                   AVERAGE(ng) % avgDU_avg2)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUfx2)), tAVGindx(ng)
@@ -267,9 +268,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 #  ifdef MASKING
-     &                   GRID(ng) % vmask(LBi,LBj),                     &
+     &                   GRID(ng) % vmask,                              &
 #  endif
-     &                   AVERAGE(ng) % avgDV_avg1(LBi,LBj))
+     &                   AVERAGE(ng) % avgDV_avg1)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVfx1)), tAVGindx(ng)
@@ -284,9 +285,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 #  ifdef MASKING
-     &                   GRID(ng) % umask(LBi,LBj),                     &
+     &                   GRID(ng) % umask,                              &
 #  endif
-     &                   AVERAGE(ng) % avgDV_avg2(LBi,LBj))
+     &                   AVERAGE(ng) % avgDV_avg2)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVfx2)), tAVGindx(ng)
@@ -307,9 +308,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgSxx2d(LBi,LBj))
+     &                     AVERAGE(ng) % avgSxx2d)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW2xx)), tAVGindx(ng)
@@ -329,9 +330,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgSxy2d(LBi,LBj))
+     &                     AVERAGE(ng) % avgSxy2d)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW2xy)), tAVGindx(ng)
@@ -351,9 +352,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgSyy2d(LBi,LBj))
+     &                     AVERAGE(ng) % avgSyy2d)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW2yy)), tAVGindx(ng)
@@ -373,9 +374,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgu2RS(LBi,LBj))
+     &                     AVERAGE(ng) % avgu2RS)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idU2rs)), tAVGindx(ng)
@@ -395,9 +396,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgv2RS(LBi,LBj))
+     &                     AVERAGE(ng) % avgv2RS)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idV2rs)), tAVGindx(ng)
@@ -417,9 +418,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgu2Sd(LBi,LBj))
+     &                     AVERAGE(ng) % avgu2Sd)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idU2Sd)), tAVGindx(ng)
@@ -439,9 +440,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgv2Sd(LBi,LBj))
+     &                     AVERAGE(ng) % avgv2Sd)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idV2Sd)), tAVGindx(ng)
@@ -463,9 +464,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgu3d(LBi,LBj,1))
+     &                     AVERAGE(ng) % avgu3d)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUvel)), tAVGindx(ng)
@@ -486,9 +487,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
 #   ifdef MASKING
-     &                   GRID(ng) % umask(LBi,LBj),                     &
+     &                   GRID(ng) % umask,                              &
 #   endif
-     &                   TIDES(ng) % u_detided(LBi,LBj,1))
+     &                   TIDES(ng) % u_detided)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idu3dD)), tAVGindx(ng)
@@ -508,9 +509,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgv3d(LBi,LBj,1))
+     &                     AVERAGE(ng) % avgv3d)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVvel)), tAVGindx(ng)
@@ -531,9 +532,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
 #   ifdef MASKING
-     &                   GRID(ng) % vmask(LBi,LBj),                     &
+     &                   GRID(ng) % vmask,                              &
 #   endif
-     &                   TIDES(ng) % v_detided(LBi,LBj,1))
+     &                   TIDES(ng) % v_detided)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idv3dD)), tAVGindx(ng)
@@ -554,9 +555,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgSxx3d(LBi,LBj,1))
+     &                     AVERAGE(ng) % avgSxx3d)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW3xx)), tAVGindx(ng)
@@ -576,9 +577,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgSxy3d(LBi,LBj,1))
+     &                     AVERAGE(ng) % avgSxy3d)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW3xy)), tAVGindx(ng)
@@ -598,9 +599,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgSyy3d(LBi,LBj,1))
+     &                     AVERAGE(ng) % avgSyy3d)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW3yy)), tAVGindx(ng)
@@ -620,9 +621,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgSzx3d(LBi,LBj,1))
+     &                     AVERAGE(ng) % avgSzx3d)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW3zx)), tAVGindx(ng)
@@ -642,9 +643,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgSzy3d(LBi,LBj,1))
+     &                     AVERAGE(ng) % avgSzy3d)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW3zy)), tAVGindx(ng)
@@ -664,9 +665,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgu3RS(LBi,LBj,1))
+     &                     AVERAGE(ng) % avgu3RS)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idU3rs)), tAVGindx(ng)
@@ -686,9 +687,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgv3RS(LBi,LBj,1))
+     &                     AVERAGE(ng) % avgv3RS)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idV3rs)), tAVGindx(ng)
@@ -708,9 +709,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgu3Sd(LBi,LBj,1))
+     &                     AVERAGE(ng) % avgu3Sd)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idU3Sd)), tAVGindx(ng)
@@ -730,9 +731,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgv3Sd(LBi,LBj,1))
+     &                     AVERAGE(ng) % avgv3Sd)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idV3Sd)), tAVGindx(ng)
@@ -753,9 +754,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgw3d(LBi,LBj,0))
+     &                     AVERAGE(ng) % avgw3d)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idOvel)), tAVGindx(ng)
@@ -775,9 +776,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgwvel(LBi,LBj,0))
+     &                     AVERAGE(ng) % avgwvel)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idOvel)), tAVGindx(ng)
@@ -798,9 +799,9 @@
      &                       tAVGindx(ng), gtype,                       &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask(LBi,LBj),                 &
+     &                       GRID(ng) % rmask,                          &
 #  endif
-     &                       AVERAGE(ng) % avgt(LBi,LBj,1,itrc))
+     &                       AVERAGE(ng) % avgt(:,:,:,itrc))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))),            &
@@ -822,9 +823,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgrho(LBi,LBj,1))
+     &                     AVERAGE(ng) % avgrho)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idDano)), tAVGindx(ng)
@@ -845,9 +846,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #   endif
-     &                     AVERAGE(ng) % avghsbl(LBi,LBj))
+     &                     AVERAGE(ng) % avghsbl)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idHsbl)), tAVGindx(ng)
@@ -869,9 +870,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #   endif
-     &                     AVERAGE(ng) % avghbbl(LBi,LBj))
+     &                     AVERAGE(ng) % avghbbl)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idHbbl)), tAVGindx(ng)
@@ -893,9 +894,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 #  ifdef MASKING
-     &                   GRID(ng) % rmask(LBi,LBj),                     &
+     &                   GRID(ng) % rmask,                              &
 #  endif
-     &                   AVERAGE(ng) % avgZZ(LBi,LBj))
+     &                   AVERAGE(ng) % avgZZ)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idZZav)), tAVGindx(ng)
@@ -913,9 +914,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 #  ifdef MASKING
-     &                   GRID(ng) % umask(LBi,LBj),                     &
+     &                   GRID(ng) % umask,                              &
 #  endif
-     &                   AVERAGE(ng) % avgU2(LBi,LBj))
+     &                   AVERAGE(ng) % avgU2)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idU2av)), tAVGindx(ng)
@@ -933,9 +934,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 #  ifdef MASKING
-     &                   GRID(ng) % vmask(LBi,LBj),                     &
+     &                   GRID(ng) % vmask,                              &
 #  endif
-     &                   AVERAGE(ng) % avgV2(LBi,LBj))
+     &                   AVERAGE(ng) % avgV2)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idV2av)), tAVGindx(ng)
@@ -956,9 +957,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
 #   ifdef MASKING
-     &                   GRID(ng) % umask(LBi,LBj),                     &
+     &                   GRID(ng) % umask,                              &
 #   endif
-     &                   AVERAGE(ng) % avgHuon(LBi,LBj,1))
+     &                   AVERAGE(ng) % avgHuon)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idHUav)), tAVGindx(ng)
@@ -976,9 +977,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
 #   ifdef MASKING
-     &                   GRID(ng) % vmask(LBi,LBj),                     &
+     &                   GRID(ng) % vmask,                              &
 #   endif
-     &                   AVERAGE(ng) % avgHvom(LBi,LBj,1))
+     &                   AVERAGE(ng) % avgHvom)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idHVav)), tAVGindx(ng)
@@ -996,9 +997,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
 #   ifdef MASKING
-     &                   GRID(ng) % umask(LBi,LBj),                     &
+     &                   GRID(ng) % umask,                              &
 #   endif
-     &                   AVERAGE(ng) % avgUU(LBi,LBj,1))
+     &                   AVERAGE(ng) % avgUU)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUUav)), tAVGindx(ng)
@@ -1016,9 +1017,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
 #   ifdef MASKING
-     &                   GRID(ng) % rmask(LBi,LBj),                     &
+     &                   GRID(ng) % rmask,                              &
 #   endif
-     &                   AVERAGE(ng) % avgUV(LBi,LBj,1))
+     &                   AVERAGE(ng) % avgUV)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUVav)), tAVGindx(ng)
@@ -1036,9 +1037,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
 #   ifdef MASKING
-     &                   GRID(ng) % vmask(LBi,LBj),                     &
+     &                   GRID(ng) % vmask,                              &
 #   endif
-     &                   AVERAGE(ng) % avgVV(LBi,LBj,1))
+     &                   AVERAGE(ng) % avgVV)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVVav)), tAVGindx(ng)
@@ -1057,9 +1058,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgTT(LBi,LBj,1,i))
+     &                     AVERAGE(ng) % avgTT(:,:,:,i))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTTav(i))), tAVGindx(ng)
@@ -1079,9 +1080,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgHuonT(LBi,LBj,1,i))
+     &                     AVERAGE(ng) % avgHuonT(:,:,:,i))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,iHUTav(i))), tAVGindx(ng)
@@ -1097,9 +1098,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgHvomT(LBi,LBj,1,i))
+     &                     AVERAGE(ng) % avgHvomT(:,:,:,i))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,iHVTav(i))), tAVGindx(ng)
@@ -1119,9 +1120,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgUT(LBi,LBj,1,i))
+     &                     AVERAGE(ng) % avgUT(:,:,:,i))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUTav(i))), tAVGindx(ng)
@@ -1137,9 +1138,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgVT(LBi,LBj,1,i))
+     &                     AVERAGE(ng) % avgVT(:,:,:,i))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVTav(i))), tAVGindx(ng)
@@ -1160,9 +1161,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, 0, N(ng), scale,           &
 #   ifdef MASKING
-     &                   GRID(ng) % rmask(LBi,LBj),                     &
+     &                   GRID(ng) % rmask,                              &
 #   endif
-     &                   AVERAGE(ng) % avgAKv(LBi,LBj,0))
+     &                   AVERAGE(ng) % avgAKv)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVvis)), tAVGindx(ng)
@@ -1182,9 +1183,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, 0, N(ng), scale,           &
 #   ifdef MASKING
-     &                   GRID(ng) % rmask(LBi,LBj),                     &
+     &                   GRID(ng) % rmask,                              &
 #   endif
-     &                   AVERAGE(ng) % avgAKt(LBi,LBj,0))
+     &                   AVERAGE(ng) % avgAKt)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idTdif)), tAVGindx(ng)
@@ -1204,9 +1205,9 @@
      &                   tAVGindx(ng), gtype,                           &
      &                   LBi, UBi, LBj, UBj, 0, N(ng), scale,           &
 #   ifdef MASKING
-     &                   GRID(ng) % rmask(LBi,LBj),                     &
+     &                   GRID(ng) % rmask,                              &
 #   endif
-     &                   AVERAGE(ng) % avgAKs(LBi,LBj,0))
+     &                   AVERAGE(ng) % avgAKs)
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idSdif)), tAVGindx(ng)
@@ -1222,7 +1223,7 @@
 !
       IF (Hout(idTsur(itemp),ng)) THEN
 #   ifdef ADJOINT
-#    if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
+#    if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
         defined OPT_OBSERVATIONS
         scale=1.0_r8/(rho0*Cp)
 #    else
@@ -1237,9 +1238,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgstf(LBi,LBj))
+     &                     AVERAGE(ng) % avgstf)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTsur(itemp))), tAVGindx(ng)
@@ -1260,9 +1261,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #   endif
-     &                     AVERAGE(ng) % avgswf(LBi,LBj))
+     &                     AVERAGE(ng) % avgswf)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTsur(isalt))), tAVGindx(ng)
@@ -1287,9 +1288,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #    ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #    endif
-     &                     AVERAGE(ng) % avglhf(LBi,LBj))
+     &                     AVERAGE(ng) % avglhf)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idLhea)), tAVGindx(ng)
@@ -1313,9 +1314,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #    ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #    endif
-     &                     AVERAGE(ng) % avgshf(LBi,LBj))
+     &                     AVERAGE(ng) % avgshf)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idShea)), tAVGindx(ng)
@@ -1339,9 +1340,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #    ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #    endif
-     &                     AVERAGE(ng) % avglrf(LBi,LBj))
+     &                     AVERAGE(ng) % avglrf)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idLrad)), tAVGindx(ng)
@@ -1362,9 +1363,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #     ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #     endif
-     &                     AVERAGE(ng) % avgevap(LBi,LBj))
+     &                     AVERAGE(ng) % avgevap)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idevap)), tAVGindx(ng)
@@ -1384,9 +1385,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #     ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #     endif
-     &                     AVERAGE(ng) % avgrain(LBi,LBj))
+     &                     AVERAGE(ng) % avgrain)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idrain)), tAVGindx(ng)
@@ -1413,13 +1414,13 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #    ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #    endif
-     &                     AVERAGE(ng) % avgsrf(LBi,LBj))
+     &                     AVERAGE(ng) % avgsrf)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSrad)), tAVGindx(ng)
-          END IF          
+          END IF
           exit_flag=3
           ioerror=status
           RETURN
@@ -1434,7 +1435,7 @@
 !
       IF (Hout(idUsms,ng)) THEN
 #  ifdef ADJOINT
-#   if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
+#   if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
        defined OPT_OBSERVATIONS
         scale=1.0_r8/rho0
 #   else
@@ -1448,13 +1449,13 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgsus(LBi,LBj))
+     &                     AVERAGE(ng) % avgsus)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUsms)), tAVGindx(ng)
-          END IF                    
+          END IF
           exit_flag=3
           ioerror=status
           RETURN
@@ -1465,7 +1466,7 @@
 !
       IF (Hout(idVsms,ng)) THEN
 #  ifdef ADJOINT
-#   if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
+#   if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
        defined OPT_OBSERVATIONS
         scale=1.0_r8/rho0
 #   else
@@ -1479,9 +1480,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgsvs(LBi,LBj))
+     &                     AVERAGE(ng) % avgsvs)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVsms)), tAVGindx(ng)
@@ -1496,7 +1497,7 @@
 !
       IF (Hout(idUbms,ng)) THEN
 #  ifdef ADJOINT
-#   if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
+#   if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
        defined OPT_OBSERVATIONS
         scale=1.0_r8/rho0
 #   else
@@ -1510,13 +1511,13 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % umask(LBi,LBj),                   &
+     &                     GRID(ng) % umask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgbus(LBi,LBj))
+     &                     AVERAGE(ng) % avgbus)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUbms)), tAVGindx(ng)
-          END IF                    
+          END IF
           exit_flag=3
           ioerror=status
           RETURN
@@ -1527,7 +1528,7 @@
 !
       IF (Hout(idVbms,ng)) THEN
 #  ifdef ADJOINT
-#   if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
+#   if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
        defined OPT_OBSERVATIONS
         scale=1.0_r8/rho0
 #   else
@@ -1541,9 +1542,9 @@
      &                     tAVGindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % vmask(LBi,LBj),                   &
+     &                     GRID(ng) % vmask,                            &
 #  endif
-     &                     AVERAGE(ng) % avgbvs(LBi,LBj))
+     &                     AVERAGE(ng) % avgbvs)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVbms)), tAVGindx(ng)
@@ -1567,9 +1568,9 @@
      &                       tAVGindx(ng), gtype,                       &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #  ifdef MASKING
-     &                       GRID(ng) % umask(LBi,LBj),                 &
+     &                       GRID(ng) % umask,                          &
 #  endif
-     &                       AVERAGE(ng) % avgbedldu(LBi,LBj,itrc))
+     &                       SEDBED(ng) % avgbedldu(:,:,itrc))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idUbld(itrc))),            &
@@ -1591,9 +1592,9 @@
      &                       tAVGindx(ng), gtype,                       &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #  ifdef MASKING
-     &                       GRID(ng) % vmask(LBi,LBj),                 &
+     &                       GRID(ng) % vmask,                          &
 #  endif
-     &                       AVERAGE(ng) % avgbedldv(LBi,LBj,itrc))
+     &                       SEDBED(ng) % avgbedldv(:,:,itrc))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idVbld(itrc))),            &
@@ -1612,22 +1613,14 @@
 !  to access data immediately after it is written.
 !-----------------------------------------------------------------------
 !
-      IF (OutThread) THEN
-        status=nf90_sync(ncAVGid(ng))
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,20)
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-        WRITE (stdout,30) tAVGindx(ng)
-      END IF
+      CALL netcdf_sync (ng, iNLM, AVGname(ng), ncAVGid(ng))
+      IF (exit_flag.ne.NoError) RETURN
+
+      IF (Master) WRITE (stdout,20) tAVGindx(ng)
 !
   10  FORMAT (/,' WRT_AVG - error while writing variable: ',a,/,11x,    &
      &        'into averages NetCDF file for time record: ',i4)
-  20  FORMAT (/,' WRT_AVG - unable to synchronize averages NetCDF to ', &
-     &        'disk.')
-  30  FORMAT (6x,'WRT_AVG   - wrote averaged fields into time ',        &
+  20  FORMAT (6x,'WRT_AVG   - wrote averaged fields into time ',        &
      &        'record =',t72,i7.7)
 #else
       SUBROUTINE wrt_avg

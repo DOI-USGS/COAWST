@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE ludcmp (a, n, np, indx, d)
 !
-!svn $Id: ludcmp.F 139 2008-01-10 00:17:29Z arango $
+!svn $Id: ludcmp.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -31,7 +31,7 @@
       integer, intent(in) :: n, np
 
       integer, intent(out) :: indx(n)
-    
+
       real(r8), intent(inout) :: a(np,np)
       real(r8), intent(out) :: d
 !
