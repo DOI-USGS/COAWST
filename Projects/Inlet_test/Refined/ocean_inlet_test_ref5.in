@@ -324,6 +324,7 @@ Hout(idUbws) == T T                        ! bottom U-wave stress
 Hout(idVbws) == T T                        ! bottom V-wave stress
 Hout(idUbcs) == T T                        ! bottom max wave-current U-stress
 Hout(idVbcs) == T T                        ! bottom max wave-current V-stress
+Hout(idUVwc) == T T                        ! bottom max wave-current stress magnitude
 
 Hout(idUbot) == F F                        ! bed wave orbital U-velocity
 Hout(idVbot) == F F                        ! bed wave orbital V-velocity
@@ -335,8 +336,8 @@ Hout(idW2xy) == T T                        ! 2D radiation stress, Sxy component
 Hout(idW2yy) == T T                        ! 2D radiation stress, Syy component
 Hout(idU2rs) == F F                        ! 2D radiation U-stress
 Hout(idV2rs) == F F                        ! 2D radiation V-stress
-Hout(idU2Sd) == F F                        ! 2D U-Stokes velocity
-Hout(idV2Sd) == F F                        ! 2D V-Stokes velocity
+Hout(idU2Sd) == T T                        ! 2D U-Stokes velocity
+Hout(idV2Sd) == T T                        ! 2D V-Stokes velocity
 
 Hout(idW3xx) == F F                        ! 3D radiation stress, Sxx component
 Hout(idW3xy) == F F                        ! 3D radiation stress, Sxy component

@@ -18,59 +18,48 @@
 # undef ExpE
 # undef ExpF
 # define ExpG
+#define ROMS_MODEL
 
 #ifdef ExpA            /*WRF->ROMS */
 # define AKLIMIT
-# define WRF_COUPLING
+# define WRF_MODEL
 # define SST_CONST
-# undef SWAN_COUPLING
-# undef NEARSHORE_MELLOR
-# undef SSW_BBL
 #endif
 
 #ifdef ExpB  /*WRF<->ROMS */
-# define WRF_COUPLING
-# undef SWAN_COUPLING
-# undef NEARSHORE_MELLOR
-# undef SSW_BBL
+# define WRF_MODEL
 #endif
 
 #ifdef ExpC /* WRF<->ROMS<- SWAN :enhanced surface stress, no currents from ROMS to SWAN*/
-# define WRF_COUPLING
-# define SWAN_COUPLING
+# define WRF_MODEL
+# define SWAN_MODEL
 # define UV_CONST
 # define COARE_TAYLOR_YELLAND
-# undef NEARSHORE_MELLOR
-# undef SSW_BBL
 #endif
 
 #ifdef ExpD /* WRF<->ROMS<-> SWAN :enhanced surface stress, currents from ROMS to SWAN*/
-# define WRF_COUPLING
-# define SWAN_COUPLING
+# define WRF_MODEL
+# define SWAN_MODEL
 # define COARE_TAYLOR_YELLAND
-# undef NEARSHORE_MELLOR
-# undef SSW_BBL
 #endif
             /* WRF<->ROMS<-> SWAN; WRF<->SWAN: WRF wind to SWAN, SWAN roughness coef to WRF PBL scheme */
 #ifdef ExpE /* Joe finds out WRF PBL condition, if it accepts wave info*/
-# define WRF_COUPLING
-# define SWAN_COUPLING
+# define WRF_MODEL
+# define SWAN_MODEL
 # define COARE_TAYLOR_YELLAND
-# undef NEARSHORE_MELLOR
-# undef SSW_BBL
 #endif
 
 #ifdef ExpF  /*Same as ExpD, but will SWAN BBL dynamics */
-# define WRF_COUPLING
-# define SWAN_COUPLING
+# define WRF_MODEL
+# define SWAN_MODEL
 # define COARE_TAYLOR_YELLAND
 # undef NEARSHORE_MELLOR
 # define SSW_BBL
 #endif
 
 #ifdef ExpG /*Same as ExpD, but will both SWAN BBL dynamics and SWAN radiation stress*/
-# define WRF_COUPLING
-# define SWAN_COUPLING
+# define SWAN_MODEL
+# define WRF_MODEL
 # define COARE_TAYLOR_YELLAND
 # define NEARSHORE_MELLOR
 # define SSW_BBL
@@ -92,7 +81,7 @@
 #else
 # define UV_LOGDRAG
 #endif
-#if !defined SWAN_COUPLING && defined SSW_BBL
+#if !defined SWAN_MODEL && defined SSW_BBL
 # define ANA_WWAVE
 #endif
 
@@ -114,10 +103,10 @@
 #undef NO_MASK_TEMP        /* JBZ 28 Jan 09, undefined */
 
 /* Forcing */
-#if defined WRF_COUPLING || defined SWAN_COUPLING
+#if defined WRF_MODEL || defined SWAN_MODEL
 # define MCT_LIB
 #endif
-#ifdef WRF_COUPLING
+#ifdef WRF_MODEL
 # define BULK_FLUXES
 # define ANA_SSFLUX
 # undef LONGWAVE_OUT

@@ -77,7 +77,7 @@
 ! Time-Stepping parameters.
 
       NTIMES == 12000     60000     !ref5
-          DT == 0.025d0  0.005d0   !ref5
+          DT == 0.025d0   0.005d0   !ref5
 !      NTIMES == 6000     18000          !ref3
 !          DT == 0.025d0  0.008333333333d0 !ref3
 !      NTIMES == 6000     6000          !ref1

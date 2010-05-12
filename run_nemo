@@ -1,6 +1,6 @@
 #!/bin/bash
 ### Job name
-#PBS -N joe_tc
+#PBS -N cwstv3
 ### Number of nodes
 #PBS -l nodes=1:ppn=8,walltime=120:00:00
 ### Mail to user
@@ -19,6 +19,7 @@ cat $PBS_NODEFILE
 
 NPROCS=`wc -l < $PBS_NODEFILE`
 
-cd /raid1/jcwarner/Models/COAWST_regress/20091202/
+cd /raid1/jcwarner/Models/COAWST_regress/15apr2010_coawstv3
 
-/usr/local/mpi/bin/mpirun -np 3 -machinefile $PBS_NODEFILE ./coawstM Projects/JOE_TCd/coupling_joe_tc.in > joe_tc.out
+###/usr/local/mpi/bin/mpirun -np 2 -machinefile $PBS_NODEFILE ./coawstM Projects/JOE_TCd/coupling_joe_tc.in > joe_tc.out
+/usr/local/mpi/bin/mpirun -np 8 -machinefile $PBS_NODEFILE ./coawstM Projects/Inlet_test/Coupled/coupling_inlet_test.in > cwstv3.out

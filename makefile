@@ -1,6 +1,6 @@
 # $Id: makefile 787 2008-10-14 00:37:50Z jcwarner $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
-# Copyright (c) 2002-2008 The ROMS/TOMS Group             Kate Hedstrom :::
+# Copyright (c) 2002-2010 The ROMS/TOMS Group             Kate Hedstrom :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -36,7 +36,7 @@ $(if $(filter $(MAKE_VERSION),$(NEED_VERSION)),,        \
 #  Initialize some things.
 #--------------------------------------------------------------------------
 
-  sources    := 
+  sources    :=
   libraries  :=
 
 #==========================================================================
@@ -57,21 +57,24 @@ $(if $(filter $(MAKE_VERSION),$(NEED_VERSION)),,        \
 #  The only constrain is that the application CPP option must be unique
 #  and header file name is the lowercase value of ROMS_APPLICATION with
 #  the .h extension. For example, the upwelling application includes the
-#  "upwelling.h" header file.  
+#  "upwelling.h" header file.
 
-ROMS_APPLICATION ?= INLET_TEST
+ROMS_APPLICATION ?= SHOREFACE
 
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
 
-MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Refined
+MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/ROMS/Include
 
-#  If your application requires analytical expressions and they are not
-#  located in "ROMS/Functionals", provide an alternate directory.
+#  If your application requires analytical expressions and they are
+#  not located in "ROMS/Functionals", provide an alternate directory.
 #  Notice that a set analytical expressions templates can be found in
 #  "User/Functionals".
+#
+#  If applicable, also used this directory to place your customized
+#  biology model header file (like fennel.h, nemuro.h, ecosim.h, etc).
 
-MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/Projects/Inlet_test/Refined
+MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/ROMS/Functionals
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying
@@ -88,7 +91,7 @@ MY_CPP_FLAGS ?=
 #  one grid is supported.  This option will be available in the near
 #  future.
 
- NestedGrids ?= 2
+ NestedGrids ?= 1
 
 #  Activate debugging compiler options:
 
@@ -97,7 +100,7 @@ MY_CPP_FLAGS ?=
 #  If parallel applications, use at most one of these definitions
 #  (leave both definitions blank in serial applications):
 
-     USE_MPI ?= on
+     USE_MPI ?=
   USE_OpenMP ?=
 
 #  If distributed-memory, turn on compilation via the script "mpif90".
@@ -214,8 +217,9 @@ endif
 #  header file ROMS/Include/cppdefs.h to determine macro definitions.
 #--------------------------------------------------------------------------
 
-MAKE_MACROS := $(shell echo ${HOME} | sed 's| |\\ |g')/make_macros.mk
+  COMPILERS ?= $(CURDIR)/Compilers
 
+MAKE_MACROS := $(shell echo ${HOME} | sed 's| |\\ |g')/make_macros.mk
 
 ifneq "$(MAKECMDGOALS)" "clean"
  MACROS := $(shell cpp -P $(ROMS_CPPFLAGS) Compilers/make_macros.h > \
@@ -273,7 +277,7 @@ endef
 # $(call one-compile-rule, binary-file, f90-file, source-files)
 define one-compile-rule
   $1: $2 $3
-	cd $$(SCRATCH_DIR); $$(FC) -c $$(FFLAGS) $(notdir $2) /object:$(notdir $1)
+	cd $$(SCRATCH_DIR); $$(FC) -c $$(FFLAGS) $(notdir $2)
 
   $2: $3
 	$$(CPP) $$(CPPFLAGS) $$(MY_CPP_FLAGS) $$< > $$@
@@ -323,8 +327,6 @@ SVNREV ?= $(shell svnversion -n .)
 
 ROOTDIR := $(shell pwd)
 
-COMPILERS := ./Compilers
-
 ifndef FORT
   $(error Variable FORT not set)
 endif
@@ -372,7 +374,7 @@ ifdef SVNREV
 else
   SVNREV := $(shell grep Revision ./ROMS/Version | sed 's/.* \([0-9]*\) .*/\1/')
   CPPFLAGS += -D'SVN_REV="$(SVNREV)"'
-endif  
+endif
 
 #--------------------------------------------------------------------------
 #  Build target directories.
@@ -384,44 +386,52 @@ all: $(SCRATCH_DIR) $(SCRATCH_DIR)/MakeDepend $(BIN) rm_macros
 
  modules  :=
 ifdef USE_ADJOINT
- modules  +=	ROMS/Adjoint
+ modules  +=	ROMS/Adjoint \
+		ROMS/Adjoint/Biology
 endif
 ifdef USE_REPRESENTER
- modules  +=	ROMS/Representer
+ modules  +=	ROMS/Representer \
+		ROMS/Representer/Biology
 endif
 ifdef USE_SEAICE
  modules  +=	ROMS/SeaIce
 endif
 ifdef USE_TANGENT
- modules  +=	ROMS/Tangent
+ modules  +=	ROMS/Tangent \
+		ROMS/Tangent/Biology
 endif
  modules  +=	ROMS/Nonlinear \
+		ROMS/Nonlinear/Biology \
+		ROMS/Nonlinear/Sediment \
 		ROMS/Functionals \
 		ROMS/Utility \
 		ROMS/Modules
 
  includes :=	ROMS/Include
+ifdef MY_ANALYTICAL
+ includes +=	$(MY_ANALYTICAL_DIR)
+endif
 ifdef USE_ADJOINT
- includes +=	ROMS/Adjoint
+ includes +=	ROMS/Adjoint \
+		ROMS/Adjoint/Biology
 endif
 ifdef USE_REPRESENTER
- includes +=	ROMS/Representer
+ includes +=	ROMS/Representer \
+		ROMS/Representer/Biology
 endif
 ifdef USE_SEAICE
  includes +=	ROMS/SeaIce
 endif
 ifdef USE_TANGENT
- includes +=	ROMS/Tangent
+ includes +=	ROMS/Tangent \
+		ROMS/Tangent/Biology
 endif
  includes +=	ROMS/Nonlinear \
+		ROMS/Nonlinear/Biology \
+		ROMS/Nonlinear/Sediment \
 		ROMS/Utility \
-		ROMS/Drivers
-
-ifdef MY_ANALYTICAL
- includes +=	$(MY_ANALYTICAL_DIR)
-endif
- includes +=    ROMS/Functionals
-
+		ROMS/Drivers \
+        ROMS/Functionals
 ifdef MY_HEADER_DIR
  includes +=	$(MY_HEADER_DIR)
 endif
@@ -453,12 +463,12 @@ include $(addsuffix /Module.mk,$(modules))
 
 MDEPFLAGS += $(patsubst %,-I %,$(includes)) --silent --moddir $(SCRATCH_DIR)
 
-CPPFLAGS += $(patsubst %,-I%,$(includes))
+CPPFLAGS  += $(patsubst %,-I%,$(includes))
 
 ifdef MY_HEADER_DIR
   CPPFLAGS += -D'HEADER_DIR="$(MY_HEADER_DIR)"'
 else
-  CPPFLAGS += -D'HEADER_DIR="./ROMS/Include"'
+  CPPFLAGS += -D'HEADER_DIR="$(ROOTDIR)/ROMS/Include"'
 endif
 
 $(SCRATCH_DIR):
@@ -485,7 +495,6 @@ $(SCRATCH_DIR):
 $(SCRATCH_DIR)/mod_strings.f90: CPPFLAGS += -DMY_OS='"$(OS)"' \
               -DMY_CPU='"$(CPU)"' -DMY_FORT='"$(FORT)"' \
               -DMY_FC='"$(FC)"' -DMY_FFLAGS='"$(FFLAGS)"'
-
 #--------------------------------------------------------------------------
 #  ROMS/TOMS libraries.
 #--------------------------------------------------------------------------
@@ -495,6 +504,22 @@ MYLIB := libocean.a
 .PHONY: libraries
 
 libraries: $(libraries)
+
+#--------------------------------------------------------------------------
+#  Build WRF.
+#--------------------------------------------------------------------------
+
+.PHONY: wrf
+
+wrf:
+ifdef USE_WRF
+	cd $(WRF_DIR); ls; ./clean -a;                            \
+	echo " "; echo " ";                                       \
+	echo "Compiling wrf, please wait. this may take 20 min."; \
+	./compile em_real;                                        \
+	echo "";                                                  \
+	echo "-------- Finished compiling WRF ------------"
+endif
 
 #--------------------------------------------------------------------------
 #  Target to create ROMS/TOMS dependecies.
@@ -518,7 +543,7 @@ $(SCRATCH_DIR)/MakeDepend: makefile \
 SFMAKEDEPEND := ./ROMS/Bin/sfmakedepend
 
 depend: $(SCRATCH_DIR)
-	$(SFMAKEDEPEND) $(MDEPFLAGS) $(sources) > $(SCRATCH_DIR)/MakeDepend 
+	$(SFMAKEDEPEND) $(MDEPFLAGS) $(sources) > $(SCRATCH_DIR)/MakeDepend
 
 ifneq "$(MAKECMDGOALS)" "clean"
   -include $(SCRATCH_DIR)/MakeDepend

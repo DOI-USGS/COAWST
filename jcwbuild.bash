@@ -1,8 +1,8 @@
 #!/bin/bash
-# 
-# svn $Id: build.bash 365 2009-07-09 03:16:28Z arango $
+#
+# svn $Id: build.bash 429 2009-12-20 17:30:26Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2009 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
@@ -29,9 +29,10 @@
 #                                                                       :::
 # Options:                                                              :::
 #                                                                       :::
-#    -j [N]      Compile in parallel using N CPUs                       :::
+#    -j [N]       Compile in parallel using N CPUs                      :::
 #                  omit argument for all available CPUs                 :::
-#    -noclean    Do not clean already compiled objects                  :::
+#    -noclean     Do not clean already compiled roms objects            :::
+#    -noclean_wrf Do not clean already compiled wrf objects             :::
 #                                                                       :::
 # Notice that sometimes the parallel compilation fail to find MPI       :::
 # include file "mpif.h".                                                :::
@@ -40,8 +41,9 @@
 
 parallel=0
 clean=1
+clean_wrf=1
 
-while [ $# -gt 0 ] 
+while [ $# -gt 0 ]
 do
   case "$1" in
     -j )
@@ -61,6 +63,11 @@ do
       clean=0
       ;;
 
+    -noclean_wrf )
+      shift
+      clean_wrf=0
+      ;;
+
     * )
       echo ""
       echo "$0 : Unknown option [ $1 ]"
@@ -69,18 +76,21 @@ do
       echo ""
       echo "-j [N]      Compile in parallel using N CPUs"
       echo "              omit argument for all avaliable CPUs"
-      echo "-noclean    Do not clean already compiled objects"
+      echo "-noclean       Do not clean already compiled objects"
+      echo "-noclean_wrf   Do not clean already compiled wrf objects"
       echo ""
       exit 1
       ;;
-  esac         
+  esac
 done
 
 # Set the CPP option defining the particular application. This will
-# determine the name of the ".h" header file with the application 
+# determine the name of the ".h" header file with the application
 # CPP definitions.
 
-export   ROMS_APPLICATION=GRIZ_BAY
+export   ROMS_APPLICATION=SHOREFACE
+#export   ROMS_APPLICATION=INLET_TEST
+#export   ROMS_APPLICATION=JOE_TC
 
 # Set number of nested/composed/mosaic grids.  Currently, only one grid
 # is supported.
@@ -90,18 +100,19 @@ export     NestedGrids=1
 # Set a local environmental variable to define the path to the directories
 # where all this project's files are kept.
 
-export     MY_ROOT_DIR=/cygdrive/d/data/models/COAWST
+#export     MY_ROOT_DIR=/raid1/jcwarner/Models/COAWST_regress/15apr2010_coawstv3
+export     MY_ROOT_DIR=/cygdrive/d/data/models/COAWST_v3
 export     MY_PROJECT_DIR=${MY_ROOT_DIR}
 
-# The path to the user's local current ROMS source code. 
+# The path to the user's local current ROMS source code.
 #
-# If using svn locally, this would be the user's Working Copy Path (WCPATH). 
-# Note that one advantage of maintaining your source code locally with svn 
-# is that when working simultaneously on multiple machines (e.g. a local 
-# workstation, a local cluster and a remote supercomputer) you can checkout 
-# the latest release and always get an up-to-date customized source on each 
-# machine. This script is designed to more easily allow for differing paths 
-# to the code and inputs on differing machines. 
+# If using svn locally, this would be the user's Working Copy Path (WCPATH).
+# Note that one advantage of maintaining your source code locally with svn
+# is that when working simultaneously on multiple machines (e.g. a local
+# workstation, a local cluster and a remote supercomputer) you can checkout
+# the latest release and always get an up-to-date customized source on each
+# machine. This script is designed to more easily allow for differing paths
+# to the code and inputs on differing machines.
 
 export        MY_ROMS_SRC=${MY_ROOT_DIR}/
 
@@ -130,13 +141,14 @@ export        MY_ROMS_SRC=${MY_ROOT_DIR}/
 # out. Any string value (including off) will evaluate to TRUE in
 # conditional if-stamentents.
 
- export           USE_MPI=on
+ export           USE_MPI=
  export        USE_MPIF90=
  export              FORT=ifort
+#export              FORT=pgi
 
 #export        USE_OpenMP=on
 
-#export         USE_DEBUG=on
+ export         USE_DEBUG=
  export         USE_LARGE=
 #export       USE_NETCDF4=on
 
@@ -189,7 +201,7 @@ fi
 # serial and parallel version of the NetCDF-4/HDF5 library. The
 # parallel library uses parallel I/O through MPI-I/O so we need
 # compile also with the MPI library. This is fine in ROMS
-# distributed-memory applications.  However, in serial or 
+# distributed-memory applications.  However, in serial or
 # shared-memory ROMS applications we need to use the serial
 # version of the NetCDF-4/HDF5 to avoid conflicts with the
 # compiler. Recall also that the MPI library comes in several
@@ -359,11 +371,13 @@ fi
 # customized biology model header file (like fennel.h, nemuro.h, ecosim.h,
 # etc).
 
-# export     MY_HEADER_DIR=${MY_PROJECT_DIR}/ROMS/Include
-  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Griz_Bay
+  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/ROMS/Include
+# export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Refined
+# export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/JOE_TCs
 
-# export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/ROMS/Include
-  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Griz_Bay
+  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/ROMS/Include
+# export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Refined
+# export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/JOE_TCs
 
 # Put the binary to execute in the following directory.
 
@@ -371,7 +385,7 @@ fi
   export            BINDIR=./
 
 # Put the f90 files in a project specific Build directory to avoid conflict
-# with other projects. 
+# with other projects.
 
 # export       SCRATCH_DIR=${MY_PROJECT_DIR}/Build
   export       SCRATCH_DIR=./Build
@@ -381,13 +395,19 @@ fi
 
  cd ${MY_ROMS_SRC}
 
-# Remove build directory. 
+# Remove build directory.
 
 if [ $clean -eq 1 ]; then
   make clean
 fi
 
-# Compile (the binary will go to BINDIR set above).  
+# Compile (the binary will go to BINDIR set above).
+
+if [ $clean_wrf -eq 1 ]; then
+  export WRF_DIR=${MY_ROMS_SRC}/WRF
+  make wrf
+  cd ${MY_ROMS_SRC}
+fi
 
 if [ $parallel -eq 1 ]; then
   make $NCPUS

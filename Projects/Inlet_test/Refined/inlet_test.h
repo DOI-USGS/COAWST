@@ -14,6 +14,12 @@
 **                     sediment_inlet_test.in
 */
 
+#define ROMS_MODEL
+#define SWAN_MODEL
+#define MCT_LIB
+#define REFINED_GRID
+#define REFINED_GRID_BC
+
 #define UV_VIS2
 #define MIX_S_UV
 #define MASKING
@@ -36,20 +42,12 @@
 
 #define SOLVE3D
 #define SPLINES
-#define SWAN_COUPLING
 #define NEARSHORE_MELLOR
 #define UV_KIRBY
 #define ANA_INITIAL
 #define ANA_SMFLUX
 #define ANA_FSOBC
 #define ANA_M2OBC
-
-#ifdef SWAN_COUPLING
-# define MCT_LIB
-# undef  MCT_INTERP_OC2WV
-#endif
-#define REFINED_GRID
-#define REFINED_GRID_BC
 
 /* define only one of the following 5 */
 #undef  UV_LOGDRAG
