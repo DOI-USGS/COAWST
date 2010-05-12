@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: picard_ocean.h 652 2008-07-24 23:20:53Z arango $
+!svn $Id: picard_ocean.h 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -54,7 +54,7 @@
       USE mod_iounits
       USE mod_scalars
 !
-#ifdef AIR_OCEAN 
+#ifdef AIR_OCEAN
       USE ocean_coupler_mod, ONLY : initialize_atmos_coupling
 #endif
 #ifdef WAVES_OCEAN
@@ -153,6 +153,8 @@
       USE mod_param
       USE mod_parallel
       USE mod_iounits
+      USE mod_ncparam
+      USE mod_netcdf
       USE mod_scalars
 !
 !  Imported variable declarations
@@ -222,7 +224,17 @@
 !
 !  Close IO and re-initialize NetCDF switches.
 !
-          CALL close_io
+          SourceFile='picard_ocean.h, ROMS_run'
+
+          IF (ncTLMid(ng).ne.-1) THEN
+            CALL netcdf_close (ng, iRPM, ncTLMid(ng))
+            IF (exit_flag.ne.NoError) RETURN
+          END IF
+
+          IF (ncFWDid(ng).ne.-1) THEN
+            CALL netcdf_close (ng, iRPM, ncFWDid(ng))
+            IF (exit_flag.ne.NoError) RETURN
+          END IF
 
         END DO ITER_LOOP
 
@@ -264,7 +276,7 @@
       DO ng=1,Ngrids
         IF (LwrtRST(ng).and.(exit_flag.eq.1)) THEN
           IF (Master) WRITE (stdout,10)
- 10       FORMAT (/,' Blowing-up: Saving latest model state into ',     & 
+ 10       FORMAT (/,' Blowing-up: Saving latest model state into ',     &
      &              ' RESTART file',/)
           IF (LcycleRST(ng).and.(NrecRST(ng).ge.2)) THEN
             tRSTindx(ng)=2

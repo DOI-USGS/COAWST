@@ -2,7 +2,7 @@
 !
 !svn $Id: nl_ocean.h 814 2008-10-29 01:42:17Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -45,7 +45,7 @@
       USE mod_iounits
       USE mod_scalars
 !
-#ifdef AIR_OCEAN 
+#ifdef AIR_OCEAN
       USE ocean_coupler_mod, ONLY : initialize_ocn2atm_coupling
 #endif
 #ifdef WAVES_OCEAN
@@ -121,7 +121,7 @@
 !  Allocate and initialize modules variables.
 !
         CALL mod_arrays (allocate_vars)
-!
+
 #if defined MCT_LIB && (defined AIR_OCEAN || defined WAVES_OCEAN)
 !
 !  Initialize coupling streams between model(s).
@@ -176,17 +176,6 @@
           CALL def_mod (ng)
           IF (exit_flag.ne.NoError) RETURN
         END DO
-      END IF
-#endif
-
-#ifdef IOM
-!
-!  Set the current outer loop iteration.
-!
-      outer=Nouter
-      IF (Master) THEN
-        WRITE (stdout,'(/,a,i3,/)')                                     &
-     &        'NL ROMS/TOMS: Outer Loop Iteration = ', outer
       END IF
 #endif
 !
@@ -255,8 +244,8 @@
 !       count(ng)=my_iic-Tstr(1)
         count(ng)=0
       END DO
-      rtime_start=0.
-      rtime_end=9999999.00
+      rtime_start=0.0_r8
+      rtime_end=9999999.0_r8
       rtime=rtime_start
 !
 !  Main job control loop here.
@@ -277,6 +266,12 @@
 # endif
           END IF
           run_grid(ng)=.FALSE.
+          IF (exit_flag.ne.NoError) THEN
+            IF (Master) THEN
+              WRITE (stdout,'(/,a,i3,/)') Rerror(exit_flag), exit_flag
+            END IF
+            RETURN
+          END IF
         END DO
 !
 !  Advance the time counter by the smallest dt.
@@ -288,17 +283,11 @@
 !
         DO ng=1,Ngrids
           cff=rtime-rtime_start
-          IF (MOD(cff,dt(ng)).eq.0.0_r8) THEN
+          IF (MOD(cff,dt(ng)).lt.0.000001_r8) THEN
             run_grid(ng)=.TRUE.
           END IF
         END DO
       END DO
-      IF (exit_flag.ne.NoError) THEN
-        IF (Master) THEN
-          WRITE (stdout,'(/,a,i3,/)') Rerror(exit_flag), exit_flag
-        END IF
-        RETURN
-      END IF
 
 #elif defined COMPOSED_GRID
 
@@ -394,7 +383,7 @@
       DO ng=1,Ngrids
         IF (LwrtRST(ng).and.(exit_flag.eq.1)) THEN
           IF (Master) WRITE (stdout,10)
- 10       FORMAT (/,' Blowing-up: Saving latest model state into ',     & 
+ 10       FORMAT (/,' Blowing-up: Saving latest model state into ',     &
      &              ' RESTART file',/)
           IF (LcycleRST(ng).and.(NrecRST(ng).ge.2)) THEN
             tRSTindx(ng)=2

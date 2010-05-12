@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: convolution.h 652 2008-07-24 23:20:53Z arango $
+!svn $Id: convolution.h 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -53,7 +53,7 @@
 !
       logical :: allocate_vars = .TRUE.
 
-      integer :: STDrec, ng, thread
+      integer :: STDrec, Tindex, ng, thread
 
 #ifdef DISTRIBUTE
 !
@@ -110,15 +110,54 @@
 !
         CALL initialize_fourdvar
 !
-!  Read in background/model error standard deviation factors and
-!  spatial convolution diffusion coefficients.
-!  
+!  Read in standard deviation factors for initial conditions
+!  error covariance.  They are loaded in Tindex=1 of the
+!  e_var(...,Tindex) state variables.
+!
         STDrec=1
+        Tindex=1
         DO ng=1,Ngrids
-          CALL get_state (ng, 6, 6, STDname(ng), STDrec, 1)
+          CALL get_state (ng, 6, 6, STDname(1,ng), STDrec, Tindex)
           IF (exit_flag.ne.NoError) RETURN
         END DO
+!
+!  Read in standard deviation factors for model error covariance.
+!  They are loaded in Tindex=2 of the e_var(...,Tindex) state
+!  variables.
+!
+        STDrec=1
+        Tindex=2
+        DO ng=1,Ngrids
+          IF (NSA.eq.2) THEN
+            CALL get_state (ng, 6, 6, STDname(2,ng), STDrec, Tindex)
+            IF (exit_flag.ne.NoError) RETURN
+          END IF
+        END DO
 
+#ifdef ADJUST_BOUNDARY
+!
+!  Read in standard deviation factors for boundary conditions
+!  error covariance.
+!
+        STDrec=1
+        Tindex=1
+        DO ng=1,Ngrids
+          CALL get_state (ng, 8, 8, STDname(3,ng), STDrec, Tindex)
+          IF (exit_flag.ne.NoError) RETURN
+        END DO
+#endif
+#if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
+!
+!  Read in standard deviation factors for surface forcing
+!  error covariance.
+!
+        STDrec=1
+        Tindex=1
+        DO ng=1,Ngrids
+          CALL get_state (ng, 9, 9, STDname(4,ng), STDrec, Tindex)
+          IF (exit_flag.ne.NoError) RETURN
+        END DO
+#endif
       END IF
 
       RETURN
@@ -147,7 +186,6 @@
 #endif
       USE ad_convolution_mod, ONLY : ad_convolution
       USE ad_variability_mod, ONLY : ad_variability
-      USE impulse_mod, ONLY : impulse
       USE ini_adjust_mod, ONLY : load_ADtoTL
       USE ini_adjust_mod, ONLY : load_TLtoAD
       USE normalization_mod, ONLY : normalization
@@ -164,12 +202,13 @@
 !
 !  Local variable declarations.
 !
-      logical :: add, Lweak, outer_impulse
+      logical :: add, Lweak
 
       integer :: IADrec, Nrec, i, ng, subs, tile, thread
 #ifdef BALANCE_OPERATOR
       integer :: Lbck = 1
 #endif
+      integer :: NRMrec
 !
 !-----------------------------------------------------------------------
 !  Run model for all nested grids, if any.
@@ -193,11 +232,24 @@
 !  computation and needs to be computed once for a particular
 !  application grid.
 !
-        IF (LwrtNRM(ng)) THEN
-          CALL def_norm (ng)
+        IF (ANY(LwrtNRM(:,ng))) THEN
+          CALL def_norm (ng, iNLM, 1)
           IF (exit_flag.ne.NoError) RETURN
-!$OMP PARALLEL DO PRIVATE(ng,thread,subs,tile)                          &
-!$OMP&            SHARED(inner,numthreads)
+
+          IF (NSA.eq.2) THEN
+            CALL def_norm (ng, iNLM, 2)
+          IF (exit_flag.ne.NoError) RETURN
+          END IF
+#ifdef ADJUST_BOUNDARY
+          CALL def_norm (ng, iNLM, 3)
+          IF (exit_flag.ne.NoError) RETURN
+#endif
+#if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
+          CALL def_norm (ng, iNLM, 4)
+          IF (exit_flag.ne.NoError) RETURN
+#endif
+          IF (exit_flag.ne.NoError) RETURN
+!$OMP PARALLEL DO PRIVATE(ng,thread,subs,tile) SHARED(numthreads)
           DO thread=0,numthreads-1
             subs=NtileX(ng)*NtileE(ng)/numthreads
             DO tile=subs*thread,subs*(thread+1)-1
@@ -205,12 +257,25 @@
             END DO
           END DO
 !$OMP END PARALLEL DO
-          LdefNRM(ng)=.FALSE.
-          LwrtNRM(ng)=.FALSE.
+          LdefNRM(1:4,ng)=.FALSE.
+          LwrtNRM(1:4,ng)=.FALSE.
         ELSE
-          tNRMindx(ng)=1
-          CALL get_state (ng, 5, 5, NRMname(ng), tNRMindx(ng), 1)
+          NRMrec=1
+          CALL get_state (ng, 5, 5, NRMname(1,ng), NRMrec, 1)
           IF (exit_flag.ne.NoError) RETURN
+
+          IF (NSA.eq.2) THEN
+            CALL get_state (ng, 5, 5, NRMname(2,ng), NRMrec, 2)
+            IF (exit_flag.ne.NoError) RETURN
+          END IF
+#ifdef ADJUST_BOUNDARY
+          CALL get_state (ng, 10, 10, NRMname(3,ng), NRMrec, 1)
+          IF (exit_flag.ne.NoError) RETURN
+#endif
+#if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
+          CALL get_state (ng, 11, 11, NRMname(4,ng), NRMrec, 1)
+          IF (exit_flag.ne.NoError) RETURN
+#endif
         END IF
 
 #ifdef BALANCE_OPERATOR
@@ -230,6 +295,8 @@
 !
 !  Inquire about the number of records in input NetCDF.
 !
+        SourceFile='convolution.h, ROMS_run'
+
         CALL netcdf_get_dim (ng, iADM, IADname(ng))
         IF (exit_flag.ne.NoError) RETURN
         Nrec=rec_size
@@ -270,9 +337,9 @@
           CALL get_state (ng, iTLM, 4, IADname(ng), IADrec, Lnew(ng))
           IF (exit_flag.ne.NoError) RETURN
 !
-!  Load interior solution, read above, into adjoint state arrays. 
+!  Load interior solution, read above, into adjoint state arrays.
 !  Then, multiply adjoint solution by the background-error standard
-!  deviations. Next, convolve resulting adjoint solution with the 
+!  deviations. Next, convolve resulting adjoint solution with the
 !  squared-root adjoint diffusion operator which impose the model-error
 !  spatial correlations. Notice that the spatial convolution is only
 !  done for half of the diffusion steps (squared-root filter). Clear
@@ -289,7 +356,7 @@
               CALL ad_balance (ng, TILE, Lbck, Lnew(ng))
 #endif
               CALL ad_variability (ng, TILE, Lnew(ng), Lweak)
-              CALL ad_convolution (ng, TILE, Lnew(ng), 2)
+              CALL ad_convolution (ng, TILE, Lnew(ng), Lweak, 2)
               CALL initialize_ocean (ng, TILE, iTLM)
             END DO
           END DO
@@ -310,7 +377,7 @@
             subs=NtileX(ng)*NtileE(ng)/numthreads
             DO tile=subs*thread,subs*(thread+1)-1,+1
               CALL load_ADtoTL (ng, TILE, Lnew(ng), Lnew(ng), add)
-              CALL tl_convolution (ng, TILE, Lnew(ng), 2)
+              CALL tl_convolution (ng, TILE, Lnew(ng), Lweak, 2)
               CALL tl_variability (ng, TILE, Lnew(ng), Lweak)
 #ifdef BALANCE_OPERATOR
               CALL tl_balance (ng, TILE, Lbck, Lnew(ng))
@@ -341,13 +408,12 @@
         tTLFindx(ng)=0
         CALL def_impulse (ng)
         IF (exit_flag.ne.NoError) RETURN
-        outer_impulse=.FALSE.
 #ifdef DISTRIBUTE
         tile=MyRank
 #else
         tile=-1
 #endif
-        CALL impulse (ng, tile, iADM, outer_impulse, ADJname(ng))
+        CALL wrt_impulse (ng, tile, iADM, ADJname(ng))
         IF (exit_flag.ne.NoError) RETURN
 
       END DO NEST_LOOP
@@ -382,7 +448,7 @@
       DO ng=1,Ngrids
         IF (LwrtRST(ng).and.(exit_flag.eq.1)) THEN
           IF (Master) WRITE (stdout,10)
- 10       FORMAT (/,' Blowing-up: Saving latest model state into ',     & 
+ 10       FORMAT (/,' Blowing-up: Saving latest model state into ',     &
      &              ' RESTART file',/)
           IF (LcycleRST(ng).and.(NrecRST(ng).ge.2)) THEN
             tRSTindx(ng)=2

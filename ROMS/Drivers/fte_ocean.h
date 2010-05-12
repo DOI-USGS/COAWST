@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: fte_ocean.h 652 2008-07-24 23:20:53Z arango $
+!svn $Id: fte_ocean.h 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -23,7 +23,7 @@
 !                                                                      !
 !  Reference:                                                          !
 !                                                                      !
-!    Moore, A.M. et al., 2004: A comprehensice ocean prediction and    !
+!    Moore, A.M. et al., 2004: A comprehensive ocean prediction and    !
 !      analysis system based on the tangent linear and adjoint of a    !
 !      regional ocean model, Ocean Modelling, 7, 227-258.              !
 !                                                                      !
@@ -52,7 +52,7 @@
       USE mod_iounits
       USE mod_scalars
 !
-#ifdef AIR_OCEAN 
+#ifdef AIR_OCEAN
       USE ocean_coupler_mod, ONLY : initialize_atmos_coupling
 #endif
 #ifdef WAVES_OCEAN
@@ -178,8 +178,7 @@
 !
       logical :: ITERATE, Lcomplex, LwrtGST
 
-      integer :: NconvRitz, i, iter, ng, status, varid
-      integer :: start(4), total(4)
+      integer :: NconvRitz, i, iter, ng
 
 #ifdef DISTRIBUTE
       real(r8), external :: dlapy2, pdnorm2
@@ -192,6 +191,16 @@
 !=======================================================================
 !  Run model for all nested grids, if any.
 !=======================================================================
+
+#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+!
+!  Set file name containing the nonlinear model bulk fluxes to be read
+!  and processed by other algorithms.
+!
+      DO ng=1,Ngrids
+        BLKname(ng)=FWDname(ng)
+      END DO
+#endif
 !
 !  Initialize tangent linear for all grids first in order to compute
 !  the size of the state vector, Nstate.  This size is computed in
@@ -203,7 +212,7 @@
       END DO
 !
 !  Currently, only non-nested applications are considered.  Otherwise,
-!  a different structure for mod_storage is needed. 
+!  a different structure for mod_storage is needed.
 !
       NEST_LOOP : DO ng=1,Ngrids
 
@@ -450,21 +459,27 @@
 !  Write out Ritz eigenvalues and Ritz eigenvector Euclidean norm to
 !  NetCDF file(s).
 !
-                  IF (OutThread.and.LwrtTLM(ng)) THEN
-                    start(1)=i
-                    total(1)=1
-                    status=nf90_inq_varid(ncTLMid(ng), 'Ritz_rvalue',   &
-     &                                    varid)
-                    status=nf90_put_var(ncTLMid(ng), varid, RvalueR(i:),&
-     &                                  start, total)
-                    status=nf90_inq_varid(ncTLMid(ng), 'Ritz_ivalue',   &
-     &                                    varid)
-                    status=nf90_put_var(ncTLMid(ng), varid, RvalueI(i:),&
-     &                                  start, total)
-                    status=nf90_inq_varid(ncTLMid(ng), 'Ritz_norm',     &
-     &                                    varid)
-                    status=nf90_put_var(ncTLMid(ng), varid, norm(i:),   &
-     &                                  start, total)
+                  IF (LwrtTLM(ng)) THEN
+                    CALL netcdf_put_fvar (ng, iTLM, TLMname(ng),        &
+     &                                    'Ritz_rvalue', RvalueR(i:),   &
+     &                                    start = (/i/),                &
+     &                                    total = (/1/),                &
+     &                                    ncid = ncTLMid(ng))
+                    IF (exit_flag.ne. NoError) RETURN
+
+                    CALL netcdf_put_fvar (ng, iTLM, TLMname(ng),        &
+     &                                    'Ritz_ivalue', RvalueI(i:),   &
+     &                                    start = (/i/),                &
+     &                                    total = (/1/),                &
+     &                                    ncid = ncTLMid(ng))
+                    IF (exit_flag.ne. NoError) RETURN
+
+                    CALL netcdf_put_fvar (ng, iTLM, TLMname(ng),        &
+     &                                    'Ritz_norm', norm(i:),        &
+     &                                    start = (/i/),                &
+     &                                    total = (/1/),                &
+     &                                    ncid = ncTLMid(ng))
+                    IF (exit_flag.ne. NoError) RETURN
                   END IF
                 END DO
               END IF

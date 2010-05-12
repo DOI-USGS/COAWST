@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: so_semi_ocean.h 652 2008-07-24 23:20:53Z arango $
+!svn $Id: so_semi_ocean.h 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -53,7 +53,7 @@
       USE mod_iounits
       USE mod_scalars
 !
-#ifdef AIR_OCEAN 
+#ifdef AIR_OCEAN
       USE ocean_coupler_mod, ONLY : initialize_atmos_coupling
 #endif
 #ifdef WAVES_OCEAN
@@ -188,9 +188,8 @@
 !
       logical :: ITERATE, LwrtGST
 
-      integer :: NconvRitz, i, iter, ng, status, varid
+      integer :: NconvRitz, i, iter, ng
       integer :: thread, subs, tile
-      integer :: start(4), total(4)
 
 #ifdef DISTRIBUTE
       real(r8), external :: pdnorm2
@@ -203,6 +202,16 @@
 !=======================================================================
 !  Run model for all nested grids, if any.
 !=======================================================================
+
+#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+!
+!  Set file name containing the nonlinear model bulk fluxes to be read
+!  and processed by other algorithms.
+!
+      DO ng=1,Ngrids
+        BLKname(ng)=FWDname(ng)
+      END DO
+#endif
 !
 !  Initialize tangent linear for all grids first in order to compute
 !  the size of the state vector, Nstate.  This size is computed in
@@ -214,7 +223,7 @@
       END DO
 !
 !  Currently, only non-nested applications are considered.  Otherwise,
-!  a different structure for mod_storage is needed. 
+!  a different structure for mod_storage is needed.
 !
       NEST_LOOP : DO ng=1,Ngrids
 
@@ -475,23 +484,25 @@
 !  Write out Ritz eigenvalues and Ritz eigenvector Euclidean norm to
 !  NetCDF file.
 !
-                  IF (OutThread) THEN
-                    start(1)=i
-                    total(1)=1
-                    status=nf90_inq_varid(ncHISid(ng), 'Ritz_rvalue',   &
-     &                                    varid)
-                    status=nf90_put_var(ncHISid(ng), varid, RvalueR(i:),&
-     &                                  start, total)
-                    status=nf90_inq_varid(ncHISid(ng), 'Ritz_norm',     &
-     &                                    varid)
-                    status=nf90_put_var(ncHISid(ng), varid, norm(i:),   &
-     &                                  start, total)
-                    IF (i.eq.1) THEN
-                      status=nf90_inq_varid(ncHISid(ng), 'SO_trace',    &
-     &                                      varid)
-                      status=nf90_put_var(ncHISid(ng), varid,           &
-     &                                    TRnorm(ng))
-                    END IF
+                  CALL netcdf_put_fvar (ng, iNLM, HISname(ng),          &
+     &                                  'Ritz_rvalue', RvalueR(i:),     &
+     &                                  start = (/i/),                  &
+     &                                  total = (/1/),                  &
+     &                                  ncid = ncHISid(ng))
+                  IF (exit_flag.ne. NoError) RETURN
+
+                  CALL netcdf_put_fvar (ng, iNLM, HISname(ng),          &
+     &                                  'Ritz_norm', norm(i:),          &
+     &                                  start = (/i/),                  &
+     &                                  total = (/1/),                  &
+     &                                  ncid = ncHISid(ng))
+                  IF (exit_flag.ne. NoError) RETURN
+
+                  IF (i.eq.1) THEN
+                    CALL netcdf_put_fvar (ng, iNLM, HISname(ng),          &
+     &                                    'SO_trace', TRnorm(ng),         &
+     &                                    ncid = ncHISid(ng))
+                    IF (exit_flag.ne. NoError) RETURN
                   END IF
                 END DO
               END IF

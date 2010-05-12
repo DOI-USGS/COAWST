@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: rp_ocean.h 652 2008-07-24 23:20:53Z arango $
+!svn $Id: rp_ocean.h 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -40,13 +40,10 @@
 !
       USE mod_param
       USE mod_parallel
-#ifdef IOM
-      USE mod_fourdvar
-#endif
       USE mod_iounits
       USE mod_scalars
 !
-#ifdef AIR_OCEAN 
+#ifdef AIR_OCEAN
       USE ocean_coupler_mod, ONLY : initialize_atmos_coupling
 #endif
 #ifdef WAVES_OCEAN
@@ -129,12 +126,6 @@
 !  Allocate and initialize modules variables.
 !
         CALL mod_arrays (allocate_vars)
-#ifdef IOM
-!
-!  Allocate and initialize observation arrays.
-!
-        CALL initialize_fourdvar
-#endif
       END IF
 !
 !-----------------------------------------------------------------------
@@ -160,9 +151,6 @@
 !
       USE mod_param
       USE mod_parallel
-#ifdef IOM
-      USE mod_fourdvar
-#endif
       USE mod_iounits
       USE mod_scalars
 !
@@ -181,25 +169,12 @@
 !
       Nrun=1
 
-#ifdef IOM
-!
-!  Set the current outer loop iteration.
-!
-      outer=Nouter
-      IF (Master) THEN
-        WRITE (stdout,20) 'RP ROMS/TOMS: Outer Loop Iteration = ', outer
-      END IF
-#endif
-      
       NEST_LOOP : DO ng=1,Ngrids
 !
 !  Activate tangent linear output.
 !
         LdefTLM(ng)=.TRUE.
         LwrtTLM(ng)=.TRUE.
-#ifdef IOM
-        wrtRPmod(ng)=.TRUE.
-#endif
         LcycleTLM(ng)=.FALSE.
 !
 !  Time-step representers tangent linear model.
@@ -226,9 +201,6 @@
 !
  10   FORMAT (/,'RP ROMS/TOMS: started time-stepping:',                 &
      &            '( TimeSteps: ',i8.8,' - ',i8.8,')',/)
-#ifdef IOM
- 20   FORMAT (/,a,i3,/)
-#endif
 
       RETURN
       END SUBROUTINE ROMS_run
@@ -260,7 +232,7 @@
       DO ng=1,Ngrids
         IF (LwrtRST(ng).and.(exit_flag.eq.1)) THEN
           IF (Master) WRITE (stdout,10)
- 10       FORMAT (/,' Blowing-up: Saving latest model state into ',     & 
+ 10       FORMAT (/,' Blowing-up: Saving latest model state into ',     &
      &              ' RESTART file',/)
           IF (LcycleRST(ng).and.(NrecRST(ng).ge.2)) THEN
             tRSTindx(ng)=2

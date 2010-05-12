@@ -1,8 +1,8 @@
       SUBROUTINE propagator (ng, Nstr, Nend, state, tl_state)
 !
-!svn $Id: propagator_fte.h 652 2008-07-24 23:20:53Z arango $
+!svn $Id: propagator_fte.h 429 2009-12-20 17:30:26Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************

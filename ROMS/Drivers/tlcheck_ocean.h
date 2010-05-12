@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: tlcheck_ocean.h 652 2008-07-24 23:20:53Z arango $
+!svn $Id: tlcheck_ocean.h 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -46,7 +46,7 @@
       USE mod_iounits
       USE mod_scalars
 !
-#ifdef AIR_OCEAN 
+#ifdef AIR_OCEAN
       USE ocean_coupler_mod, ONLY : initialize_atmos_coupling
 #endif
 #ifdef WAVES_OCEAN
@@ -156,9 +156,6 @@
       USE mod_scalars
       USE mod_stepping
 !
-#ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcasti
-#endif
       USE dotproduct_mod, ONLY : ad_dotproduct
 !
 !  Imported variable declarations
@@ -188,7 +185,6 @@
         Lold(ng)=1
         Lnew(ng)=1
         Nrun=1
-        Ipass=1
         ERstr=1
         ERend=NstateVar(ng)+1
         IniRec=1
@@ -227,18 +223,11 @@
 !
 !  Close current nonlinear model history file.
 !
-        IF (OutThread) THEN
-          status=nf90_close(ncHISid(ng))
-          IF (status.ne.nf90_noerr) THEN
-            WRITE (stdout,20) TRIM(HISname(ng))
-            exit_flag=3
-            ioerror=status
-          END IF
-        END IF
-#ifdef DISTRIBUTE
-        CALL mp_bcasti (ng, iNLM, exit_flag, 1)
-#endif
+        SourceFile='tlcheck_ocean.h, ROMS_run'
+
+        CALL netcdf_close (ng, iNLM, ncHISid(ng))
         IF (exit_flag.ne.NoError) RETURN
+
         wrtNLmod(ng)=.FALSE.
         wrtTLmod(ng)=.TRUE.
 !
@@ -248,7 +237,7 @@
         DO i=0,NstateVar(ng)
           FOURDVAR(ng)%CostFunOld(i)=FOURDVAR(ng)%CostFun(i)
         END DO
-        IF (Master) THEN        
+        IF (Master) THEN
           WRITE (stdout,30) FOURDVAR(ng)%CostFunOld(0)
           DO i=1,NstateVar(ng)
             IF (FOURDVAR(ng)%CostFunOld(i).gt.0.0_r8) THEN
@@ -334,7 +323,7 @@
 !
 !  INNER LOOP: scale perturbation amplitude by selecting "p" scalar,
 !  ==========  such that:
-!                              p = 10 ** FLOAT(-inner) 
+!                              p = 10 ** FLOAT(-inner)
 !
           INNER_LOOP : DO inner=1,Ninner
 !
@@ -346,10 +335,9 @@
             CALL initial (ng)
             IF (exit_flag.ne.NoError) RETURN
 
-            IF (Master) THEN
-              lstr=LEN_TRIM(HISbase(ng))
-              WRITE (HISname,60) HISbase(ng)(1:lstr-3), Nrun
-            END IF
+            lstr=LEN_TRIM(HISbase(ng))
+            WRITE (HISname,60) HISbase(ng)(1:lstr-3), Nrun
+
             IF (ndefTLM(ng).lt.0) THEN
               LdefHIS(ng)=.FALSE.              ! suppress IO
               LwrtHIS(ng)=.FALSE.
@@ -387,14 +375,13 @@
 !
 !  Initialize tangent linear with the steepest decent direction
 !  (adjoint state, GRAD(J)) times the perturbation amplitude "p".
-! 
+!
             CALL tl_initial (ng)
             IF (exit_flag.ne.NoError) RETURN
 
-            IF (Master) THEN
-              lstr=LEN_TRIM(TLMbase(ng))
-              WRITE (TLMname(ng),60) TLMbase(ng)(1:lstr-3), Nrun
-            END IF
+            lstr=LEN_TRIM(TLMbase(ng))
+            WRITE (TLMname(ng),60) TLMbase(ng)(1:lstr-3), Nrun
+
             IF (ndefTLM(ng).lt.0) THEN
               LdefTLM(ng)=.FALSE.              ! suppress IO
               LwrtTLM(ng)=.FALSE.
@@ -425,17 +412,9 @@
 !
 !  Close current tangent linear model history file.
 !
-            IF (OutThread) THEN
-              status=nf90_close(ncTLMid(ng))
-              IF (status.ne.nf90_noerr) THEN
-                WRITE (stdout,20) TRIM(TLMname(ng))
-                exit_flag=3
-                ioerror=status
-              END IF
-            END IF
-#ifdef DISTRIBUTE
-            CALL mp_bcasti (ng, iTLM, exit_flag, 1)
-#endif
+            SourceFile='tlcheck_ocean.h, ROMS_run'
+
+            CALL netcdf_close (ng, iTLM, ncTLMid(ng))
             IF (exit_flag.ne.NoError) RETURN
 !
 !  Advance model run counter.
@@ -470,7 +449,6 @@
 !
  10   FORMAT (/,1x,a,1x,'ROMS/TOMS : started time-stepping:',           &
      &        '( TimeSteps: ',i8.8,' - ',i8.8,')',/)
- 20   FORMAT (/,' TLCHECK_OCEAN - unable to close file : ',a)
  30   FORMAT (/,' Nonlinear Model Cost Function = ',1p,e21.14)
  40   FORMAT (' --------------- ','cost function = ',1p,e21.14,2x,a)
  50   FORMAT (17x,'cost function = ',1p,e21.14,2x,a)
