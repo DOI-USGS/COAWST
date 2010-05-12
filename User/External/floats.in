@@ -1,0 +1,197 @@
+!  Floats Input Parameters.
+!
+!svn $Id: floats.in 429 2009-12-20 17:30:26Z arango $
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  Comments will be ignored  during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+! Switch to control the computation of floats trajectories within nested
+! and/or multiple connected grids, [1:Ngrids].
+!
+     Lfloats == T
+
+! Flag indicating re-start from previous solution. If FRREC = 0, a new
+! NetCDF output file is created.
+
+       FRREC == 0
+
+! Number of floats to release in each nested grid.  These values are
+! essential because the FLOATS structure in "mod_floats" is dynamically
+! allocated using these values, [1:Ngrids].
+
+     NFLOATS == 9
+
+! Initial floats locations for all grids:
+!
+!   G      Nested grid number
+!   C      Initial horizontal coordinate type (0: grid units, 1: spherical)
+!   T      Float trajectory type (1: Lagrangian, 2: isobaric, 3: Geopotential)
+!   N      Number floats to be released at (Fx0,Fy0,Fz0)
+!   Ft0    Float release time (days) after model initialization
+!   Fx0    Initial float X-location (grid units or longitude)
+!   Fy0    Initial float Y-location (grid units or latitude)
+!   Fz0    Initial float Z-location (grid units or depth)
+!   Fdt    Float cluster release time interval (days)
+!   Fdx    Float cluster X-distribution parameter
+!   Fdy    Float cluster Y-distribution parameter
+!   Fdz    Float cluster Z-distribution parameter
+
+POS = G, C, T, N,   Ft0,    Fx0,    Fy0,    Fz0,    Fdt,    Fdx,    Fdy,   Fdz
+
+      1  0  1  1    0.d0    5.d0    5.d0  -45.d0   0.d0     0.d0   0.d0   0.d0
+      1  0  1  8    0.d0   10.d0   10.d0  -25.d0   0.25d0   0.d0   0.d0   0.d0
+
+!
+!  GLOSSARY:
+!  =========
+!
+!  This input file provides the initial locations of the float trajectories
+!  to compute.
+!
+!------------------------------------------------------------------------------
+! Control Switches.
+!------------------------------------------------------------------------------
+!
+! Lfloats   Switch to control the computation of floats trajectories within
+!             nested and/or multiple connected grids. Ngrids values are
+!             expected. By default this switch is set to TRUE in "mod_scalars"
+!             for all grids when the CPP option FLOATS is activated. The
+!             USER can control which grid to process by turning on/off this
+!             switch.
+!
+! FRREC     Flag to indicate re-start from a previous solution.  Use
+!             FRREC=0 for new solutions. In a re-start solution, FRREC
+!             is the time index in the floats NetCDF file assigned for
+!             initialization.  If FRREC is negative (say FRREC=-1), the
+!             floats will re-start from the most recent time record.
+!             That is, the initialization record is assigned internally.
+!
+!------------------------------------------------------------------------------
+! Number of floats.
+!------------------------------------------------------------------------------
+!
+!  NFLOATS   Number of floats to release in each nested grid.  Provide
+!              the exact number of floats.  These values are used to
+!              dynamically allocate the arrays in FLOATS array structure.
+!
+!------------------------------------------------------------------------------
+! Initial float location KEYWORDS.  The model variable name is not used as
+! keyword in some parameters.  However, it namce is provided in brackets.
+!------------------------------------------------------------------------------
+!
+!  G         Nested grid number [ng].
+!
+!  C         Initial horizontal location coordinate type [Fcoor]:
+!
+!              Fcoor = 0,  rho grid units
+!                             0.5 =< Fx0 =< Lm(ng)+0.5,
+!                             0.5 =< Fy0 =< Mm(ng)+0.5
+!
+!              Fcoor = 1,  Fx0 is longitude (west values are negative).
+!                          Fy0 is latitude (south values are negative).
+!
+!  T         Float trajectory type [Ftype]:
+!
+!              Ftype = 1,  3D Lagrangian floats.
+!                          (flt_Lagran)
+!
+!              Ftype = 2,  Isobaric floats, p=g*(z+zeta)=constant.
+!                          (flt_Isobar)
+!
+!              Ftype = 3,  Geopotential floats, constant depth.
+!                          (flt_Geopot)
+!
+!  N         Number of floats [Fcount] to be released at the (Fx0,Fy0,Fz0)
+!              location.  It must be equal or greater than one. If Fcount
+!              is greater than one, a cluster distribution of floats
+!              centered at (Fx0,Fy0,Fz0) is activated.
+!
+!              NOTE:  The total number of floats trajectories to compute
+!              ====   must add to NFLOATS.
+!
+!  Ft0       Time (days) of float release after model initialization (real).
+!
+!  Fx0       Initial float x-location (real; grid units or longitude).
+!
+!  Fy0       Initial float y-location (real; grid units or latitude).
+!
+!  Fz0       Initial float z-location (real; vertical level or depth).
+!              If Fz0 is less than or equal to zero, Fz0 is the initial
+!              depth in meters.  Otherwise, if Fz0 is positive and
+!
+!                             0 < Fz0 =< N(ng),
+!
+!              Fz0 is the initial position relative to the W grid
+!              (0 = bottom; N = surface).
+!
+!              If the float trajectory type is Isobaric (Ftype=2) or
+!              Geopotential (Ftype=3), Fz0 must be a negative number
+!              representing depth in meters. If the float type is
+!              Lagrangian (Ftype=1), Fz0 can be a level (positive) or
+!              a depth in meters (negative).
+!
+!              WARNING: If the depth in meters at particular horizontal
+!                       is not bounded, the floats are released at the
+!                       surface.
+!
+!  Fdt       Float cluster release time interval (real; days), only used
+!              if Fcount > 1:
+!
+!              Fdt = 0,  Fcount floats will be deployed simultaneously
+!                        with a distribution centered at (Fx0,Fy0,Fz0)
+!                        and defined by (Fdx,Fdy,Fdz).
+!
+!              Fdt > 0,  a cluster of floats will be deployed from
+!                        (Fx0,Fy0,Fz0) at Fdt intervals until Fcount
+!                        floats are released.
+!
+!  Fdx       Cluster x-distribution parameter (real), only used if
+!              Fcount > 1 and Fdt = 0.
+!
+!  Fdy       Cluster y-distribution parameter (real), only used if
+!              Fcount > 1 and Fdt = 0.
+!
+!  Fdz       Cluster z-distribution parameter (real), only used if
+!              Fcount > 1 and Fdt = 0.
+!
+!            NOTE:  the parameters (Fdx,Fdy,Fdz) can be used to specify
+!            ====   any type of cluster distribution, for instance:
+!
+!                   * Lines of floats:
+!
+!                         Fdx > 0,  Fdy = 0,  Fdz = 0
+!                         Fdx = 0,  Fdy > 0,  Fdz = 0
+!                         Fdx = 0,  Fdy = 0,  Fdz > 0
+!
+!             The USER can use any of these parameters to design any
+!             cluster distribution in routine "init_floats.F".

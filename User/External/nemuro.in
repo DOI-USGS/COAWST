@@ -1,0 +1,672 @@
+!  NEMURO Ecosystem Model Parameters.
+!
+!svn $Id: nemuro.in 429 2009-12-20 17:30:26Z arango $
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  Comments will be ignored  during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+! NOTICE: Input parameter units are specified within brackets and default
+! ******  values are specified within braces.
+!
+! Switch to control the computation of biology within nested and/or multiple
+! connected grids.
+
+    Lbiology == T
+
+! Maximum number of iterations to achieve convergence of the nonlinear
+! solution.
+
+     BioIter == 1
+
+! Light attenuation due to seawater [1/m].
+
+       AttSW == 0.04d0
+
+! Light attenuation due to phytoplankton, self-shading coefficient,
+! [m2/millimole_N].
+
+       AttPS == 0.04d0                     ! small biomass
+       AttPL == 0.04d0                     ! large biomass
+
+! Fraction of shortwave radiation that is photosynthetically active,
+! [nondimensional].
+
+     PARfrac == 0.43d0
+
+! Phytoplankton photochemical reaction coefficient, initial slope of
+! the P-I curve [1/(W/m2) 1/day].
+
+     AlphaPS == 0.01d0                     ! small biomass
+     AlphaPL == 0.01d0                     ! large biomass
+
+! Phytoplankton photoinhibition coefficient, [1/(W/m2) 1/day].
+
+      BetaPS == 4.5d-4                     ! small biomass
+      BetaPL == 4.5d-4                     ! large biomass
+
+! Phytoplankton maximum photosynthetic rate at 0 Celsius [1/day].
+
+       VmaxS == 0.4d0                      ! small biomass
+       VmaxL == 0.8d0                      ! large biomass
+
+! Phytoplankton half saturation constant for Nitrate [millimole_N/m3].
+
+       KNO3S == 1.0d0                      ! small biomass
+       KNO3L == 3.0d0                      ! large biomass
+
+! Phytoplankton half saturation constant for Ammonium [millimole_N/m3].
+
+       KNH4S == 0.1d0                      ! small biomass
+       KNH4L == 0.3d0                      ! large biomass
+
+! Phytoplankton half saturation constant for Silicate [millimole_Si/m3].
+
+        KSiL == 6.0d0                      ! large biomass
+
+! Phytoplankton Ammonium inhibition coefficient [m3/millimole_N].
+
+      PusaiS == 1.5d0                      ! small biomass
+      PusaiL == 1.5d0                      ! large biomass
+
+! Phytoplankton temperature coefficient for photosynthetic rate [1/Celsius].
+
+       KGppS == 6.93d-2                    ! small biomass
+       KGppL == 6.93d-2                    ! large biomass
+
+! Phytoplankton respiration rate at 0 Celsius [1/day].
+
+      ResPS0 == 0.03d0                     ! small biomass
+      ResPL0 == 0.03d0                     ! large biomass
+
+! Phytoplankton temperature coefficient for respiration [1/Celsius].
+
+      KResPS == 0.0519d0                   ! small biomass
+      KResPL == 0.0519d0                   ! large biomass
+
+! Phytoplankton ratio of extracellular excretion to photosynthesis
+! [nondimensional].
+
+      GammaS == 0.135d0                    ! small biomass
+      GammaL == 0.135d0                    ! large biomass
+
+! Phytoplankton mortality rate at 0 Celsius [m3/millimole_N 1/day].
+
+      MorPS0 == 58.5d-3                    ! small biomass
+      MorPL0 == 29.0d-3                    ! large biomass
+
+! Phytoplankton temperature coefficient for mortality [1/Celsius].
+
+      KMorPS == 6.93d-2                    ! small biomass
+      KMorPL == 6.93d-2                    ! large biomass
+
+! Zooplankton maximum grazing rate at 0 Celsius [1/day].
+
+    GRmaxSps == 0.40d0                     ! small Zoo on small phy
+    GRmaxLps == 0.10d0                     ! large Zoo on small Phy
+    GRmaxLpl == 0.40d0                     ! large Zoo on large Phy
+    GRmaxLzs == 0.40d0                     ! large Zoo on small Zoo
+    GRmaxPpl == 0.20d0                     ! predator Zoo on large Phy
+    GRmaxPzs == 0.20d0                     ! predator Zoo on small Zoo
+    GRmaxPzl == 0.20d0                     ! predator Zoo on large Zoo
+
+! Zooplankton temperature coefficient for grazing [1/Celsius].
+
+       KGraS == 6.93d-2                    ! small biomass
+       KGraL == 6.93d-2                    ! large biomass
+       KGraP == 6.93d-2                    ! predator biomass
+
+! Zooplankton Ivlev constant [m3/millimole_N].
+
+        LamS == 1.4d0                      ! small biomass
+        LamL == 1.4d0                      ! large biomass
+        LamP == 1.4d0                      ! predator biomass
+
+! Zooplankton half-saturation coefficient (squared) for ingestion used
+! only when the Holling-type grazing formulation is activated
+! [millimole_N/m3]^2.
+
+      KPS2ZS == 0.16d0                     ! small Zoo on small Phy
+      KPS2ZL == 0.16d0                     ! large Zoo on small Phy
+      KPL2ZL == 0.16d0                     ! large Zoo on large Phy
+      KZS2ZL == 0.16d0                     ! large Zoo on small Zoo
+      KPL2ZP == 0.16d0                     ! predator Zoo on large Phy
+      KZS2ZP == 0.16d0                     ! predator Zoo on small Zoo
+      KZL2ZP == 0.16d0                     ! predator Zoo on large Zoo
+
+! Zooplankton threshold value for grazing [millimole_N/m3].
+
+   PS2ZSstar == 4.3d-2                     ! small Zoo on small Phy
+   PS2ZLstar == 4.0d-2                     ! large Zoo on small Phy
+   PL2ZLstar == 4.0d-2                     ! large Zoo on large Phy
+   ZS2ZLstar == 4.0d-2                     ! large Zoo on small Zoo
+   PL2ZPstar == 4.0d-2                     ! predator Zoo on large Phy
+   ZS2ZPstar == 4.0d-2                     ! predator Zoo on small Zoo
+   ZL2ZPstar == 4.0d-2                     ! predator Zoo on large Zoo
+
+! Zooplankton grazing inhibition coefficient [m3/millimole_N].
+
+     PusaiPL == 4.605d0                    ! predator Zoo on large Phy
+     PusaiZS == 3.010d0                    ! predator Zoo on small Zoo
+
+! Zooplankton mortality rate at 0 Celsius [m3/millimole_N 1/day].
+
+      MorZS0 == 58.5d-3                    ! small biomass
+      MorZL0 == 58.5d-3                    ! large biomass
+      MorZP0 == 58.5d-3                    ! predator biomass
+
+! Zooplankton temperature coefficient for mortality [1/Celsius].
+
+      KMorZS == 0.0693d0                   ! small biomass
+      KMorZL == 0.0693d0                   ! large biomass
+      KMorZP == 0.0693d0                   ! predator biomass
+
+! Zooplankton assimilation efficiency [nondimemsional].
+
+     AlphaZS == 0.70d0                     ! small biomass
+     AlphaZL == 0.70d0                     ! large biomass
+     AlphaZP == 0.70d0                     ! predator biomass
+
+! Zooplankton growth efficiency [nondimensional].
+
+      BetaZS == 0.30d0                     ! small biomass
+      BetaZL == 0.30d0                     ! large biomass
+      BetaZP == 0.30d0                     ! predator biomass
+
+! Decomposition rates at 0 Celsius [1/day].
+
+        Nit0 == 0.03d0                     ! NH4 nitrification
+       VP2N0 == 0.10d0                     ! PON to NH4
+       VP2D0 == 0.10d0                     ! PON to DON
+       VD2N0 == 0.20d0                     ! DON to NH4
+       VO2S0 == 0.10d0                     ! Opal to Silicate
+
+! Temperature coefficients for decomposition [1/Celsius]
+
+        KNit == 6.93d-2                    ! NH4 nitrification
+        KP2D == 6.93d-2                    ! PON to DON
+        KP2N == 6.93d-2                    ! PON to NH4
+        KD2N == 6.93d-2                    ! DON to NH4
+        KO2S == 6.93d-2                    ! Opal to Silicate
+
+! Si:N ratio [millimole_Si/millimole_N].
+
+        RSiN == 2.0d0
+
+! Settling (sinking) velocities [m/day].
+
+      setVPON == 40.0d0                    ! PON
+     setVOpal == 40.0d0                    ! Opal
+
+! Harmonic/biharmonic horizontal diffusion of biological tracer for
+! nonlinear model and adjoint-based algorithms: [1:NBT,Ngrids].
+
+        TNU2 == 11*0.0d0                   ! m2/s
+        TNU4 == 11*0.0d0                   ! m4/s
+
+     ad_TNU2 == 11*0.0d0                   ! m2/s
+     ad_TNU4 == 11*0.0d0                   ! m4/s
+
+! Vertical mixing coefficients for biological tracers for nonlinear
+! model and basic state scale factor in adjoint-based algorithms:
+! [1:NBT,Ngrids].
+
+     AKT_BAK == 11*1.0d-6                  ! m2/s
+
+  ad_AKT_fac == 11*1.0d0                   ! nondimensional
+
+! Nudging/relaxation time scales, inverse scales will be computed
+! internally: [1:NBT,Ngrids].
+
+       TNUDG == 11*0.0d0                   ! days
+
+! Logical switches (TRUE/FALSE) to specify which variables to consider on
+! tracers point Sources/Sinks (like river runoff): [NBT,Ngrids] values are
+! expected. See glossary below for details.
+
+  LtracerSrc == 11*F
+
+! Logical switches (TRUE/FALSE) to activate writing of biological tracers
+! into HISTORY output file: [1:NBT,Ngrids].
+
+Hout(idTvar) == 11*T                       ! biological tracers
+Hout(idTsur) == 11*F                       ! surface tracer flux
+
+!
+!  GLOSSARY:
+!  =========
+!
+!------------------------------------------------------------------------------
+! NEMURO Ecosystem Model Parameters, [1:Ngrids] values are expected. Currently,
+! it can be configured with 11 biological tracers:
+!
+!   idbio( 1)     Nanophytoplankton biomass
+!   idbio( 2)     Diatom biomass
+!   idbio( 3)     Microzooplankton biomass
+!   idbio( 4)     Mesozooplankton biomass
+!   idbio( 5)     Predactor zooplankton biomass
+!   idbio( 6)     Nitrate concentration
+!   idbio( 7)     Ammonium concentration
+!   idbio( 8)     Particulate Organic Nitrogen concentration
+!   idbio( 9)     Dissolved Organic Nitrogen concentration
+!   idbio(10)     Silicate concentration
+!   idbio(11)     Particulate organic silica (opal) concentration
+!
+!------------------------------------------------------------------------------
+!
+!  Lbiology       Switch to control the computation of a particular module
+!                   within nested and/or multiple connected grids. By default
+!                   this switch is set to TRUE in "mod_scalars" for all grids.
+!                   Ngrids values are expected. The USER has the option, for
+!                   example, to compute the biology in just one of the nested
+!                   grids. If so, this switch needs to be consistent with the
+!                   dimension parameter NBT in "mod_param".  In order to make
+!                   the model more efficient in memory usage, NBT(:) should
+!                   be zero in such grids.
+!
+!  BioIter        Maximum number of iterations to achieve convergence of
+!                   the nonlinear solution.
+!
+!------------------------------------------------------------------------------
+! Light Parameters, [1:Ngrids] values are expected.
+!------------------------------------------------------------------------------
+!
+!  AttSW          Light attenuation due to seawater [1/m].
+!
+!  AttPS          Light attenuation due to Small Phytoplankton, self-shading
+!                   coefficient, [m2/millimole_N].
+!
+!  AttPL          Light attenuation due to Large Phytoplankton, self-shading
+!                   coefficient, [m2/millimole_N].
+!
+!  PARfrac        Fraction of shortwave radiation that is photosynthetically
+!                   active, [nondimensional].
+!
+!  AlphaPS        Small Phytoplankton photochemical reaction coefficient:
+!                   initial slope (low light) of the P-I curve (Platt et al,
+!                   1980), [1/(W/m2) 1/day].
+!
+!  AlphaPL        Large Phytoplankton photochemical reaction coefficient:
+!                   initial slope (low light) of the P-I curve (Platt et al.,
+!                   1980), [1/(W/m2) 1/day].
+!
+!  BetaPS         Small Phytoplankton photoinhibition coefficient (Platt
+!                   et al., 1980), [1/(W/m2) 1/day].  Set it to zero for no
+!                   inhibition.
+!
+!  BetaPL         Large Phytoplankton photoinhibition coefficient (Platt
+!                   et al., 1980), [1/(W/m2) 1/day].  Set it to zero for no
+!                   inhibition.
+!
+!------------------------------------------------------------------------------
+! Phytoplankton Parameters,  [1:Ngrids] values are expected.
+!------------------------------------------------------------------------------
+!
+!  VmaxS          Maximum Small Phytoplankton photosynthetic rate [1/day] in
+!                   the absence of photoinhibition under optimal light.
+!
+!  VmaxL          Maximum Large Phytoplankton photosynthetic rate [1/day] in
+!                   the absence of photoinhibition under optimal light.
+!
+!  KNO3S          Small Phytoplankton half saturation constant for Nitrate,
+!                   [millimole_N/m3].
+!
+!  KNO3L          Large Phytoplankton half saturation constant for Nitrate,
+!                   [millimole_N/m3].
+!
+!  KNH4S          Small Phytoplankton half saturation constant for Ammonium,
+!                   [millimole_N/m3].
+!
+!  KNH4L          Large Phytoplankton half saturation constant for Ammonium,
+!                   [millimole_N/m3].
+!
+!  KSiL           Large Phytoplankton half saturation constant for Silicate,
+!                   [millimole_Si/m3].
+!
+!  PusaiS         Small Phytoplankton Ammonium inhibition coefficient,
+!                   [m3/millimole_N].
+!
+!  PusaiL         Large Phytoplankton Ammonium inhibition coefficient,
+!                   [m3/millimole_N].
+!
+!  KGppS          Small Phytoplankton temperature coefficient for
+!                   photosynthetic rate, [1/Celsius].
+!
+!  KGppL          Large Phytoplankton temperature coefficient for
+!                   photosynthetic rate, [1/Celsius].
+!
+!  ResPS0         Small Phytoplankton respiration rate at 0 Celsius, [1/day].
+!
+!  ResPL0         Large Phytoplankton respiration rate at 0 Celsius, [1/day].
+!
+!  KResPS         Small Phytoplankton temperature coefficient for respiration,
+!                   [1/Celsius].
+!
+!  KResPL         Large Phytoplankton temperature coefficient for respiration,
+!                   [1/Celsius].
+!
+!  GammaS         Small Phytoplankton ratio of extracellular excretion to
+!                   photosynthesis [nondimensional].
+!
+!  GammaL         Large Phytoplankton ratio of extracellular excretion to
+!                   photosynthesis [nondimensional].
+!
+!  MorPS0         Small Phytoplankton mortality rate at 0 Celsius,
+!                   [m3/millimole_N 1/day].
+!
+!  MorPL0         Large Phytoplankton mortality rate at 0 Celsius,
+!                   [m3/millimole_N 1/day].
+!
+!  KMorPS         Small Phytoplankton temperature coefficient for mortality,
+!                   [1/Celsius].
+!
+!  KMorPL         Large Phytoplankton temperature coefficient for mortality,
+!                   [1/Celsius].
+!
+!------------------------------------------------------------------------------
+! Zooplankton parameters, [1:Ngrids] values are expected.
+!------------------------------------------------------------------------------
+!
+!  GRmaxSps       Small Zooplankton maximum grazing rate on Small
+!                   Phytoplankton at 0 Celsius, [1/day].
+!
+!  GRmaxLps       Large Zooplankton maximum grazing rate on Small
+!                   Phytoplankton at 0 Celsius, [1/day].
+!
+!  GRmaxLpl       Large Zooplankton maximum grazing rate on Large
+!                   Phytoplankton at 0 Celsius, [1/day].
+!
+!  GRmaxLzs       Small Zooplankton maximum grazing rate on Small
+!                   Zooplankton at 0 Celsius, [1/day].
+!
+!  GRmaxPpl       Predator Zooplankton maximum grazing rate on Large
+!                   Phytoplankton at 0 Celsius, [1/day].
+!
+!  GRmaxPzs       Predator Zooplankton maximum grazing rate on Small
+!                   Zooplankton at 0 Celsius, [1/day].
+!
+!  GRmaxPzl       Predator Zooplankton maximum grazing rate on Large
+!                   Phytoplankton at 0 Celsius, [1/day].
+!
+!  KGraS          Small Zooplankton temperature coefficient for grazing,
+!                   [1/Celsius].
+!
+!  KGraL          Large Zooplankton temperature coefficient for grazing,
+!                   [1/Celsius].
+!
+!  KGraP          Predator Zooplankton temperature coefficient for grazing,
+!                   [1/Celsius].
+!
+!  LamS           Small Zooplankton Ivlev constant, [m3/millimole_N].
+!
+!  LamL           Large Zooplankton Ivlev constant, [m3/millimole_N].
+!
+!  LamP           Predator Zooplankton Ivlev constant, [m3/millimole_N].
+!
+!  KPS2ZS         Small Zooplankton half-saturation, squared coefficient for
+!                   ingestion on Small Phytoplankton [millimole_N/m3]^2.
+!
+!  KPS2ZL         Large Zooplankton half-saturation, squared coefficient for
+!                   ingestion on Small Phytoplankton [millimole_N/m3]^2.
+!
+!  KPL2ZL         Large Zooplankton half-saturation, squared coefficient for
+!                   ingestion on Large Phytoplankton [millimole_N/m3]^2.
+!
+!  KZS2ZL         Large Zooplankton half-saturation, squared coefficient for
+!                   ingestion on Small Phytoplankton [millimole_N/m3]^2.
+!
+!  KPL2ZP         Predator Zooplankton half-saturation, squared coefficient for
+!                  ingestion on Large Phytoplankton [millimole_N/m3]^2.
+!
+!  KZS2ZP         Predator Zooplankton half-saturation, squared coefficient for
+!                   ingestion on Small Zooplankton [millimole_N/m3]^2.
+!
+!  KZL2ZP         Predator Zooplankton half-saturation, squared coefficient for
+!                   ingestion on Large Zooplankton [millimole_N/m3]^2.
+!
+!  PS2ZSstar      Small Zooplankton threshold value for grazing on
+!                   Small Phytoplankton, [millimole_N/m3].
+!
+!  PS2ZLstar      Large Zooplankton threshold value for grazing on
+!                   Small Phytoplankton, [millimole_N/m3].
+!
+!  PL2ZLstar      Large Zooplankton threshold value for grazing on
+!                   Large Phytoplankton, [millimole_N/m3].
+!
+!  ZS2ZLstar      Large Zooplankton threshold value for grazing on
+!                   Small Zooplankton, [millimole_N/m3].
+!
+!  PL2ZPstar      Predator Zooplankton threshold value for grazing on
+!                   Large Phytoplankton, [millimole_N/m3].
+!
+!  ZS2ZPstar      Predator Zooplankton threshold value for grazing on
+!                   Small Zooplankton, [millimole_N/m3].
+!
+!  ZL2ZPstar      Small Zooplankton threshold value for grazing on
+!                   Small Phytoplankton, [millimole_N/m3].
+!
+!  PusaiPL        Predator Zooplankton grazing on Large Phytoplankton
+!                   inhibition coefficient, [m3/millimole_N].
+!
+!  PusaiZS        Predator Zooplankton grazing on Small Zooplankton
+!                   inhibition coefficient, [m3/millimole_N].
+!
+!  MorZS0         Small Zooplankton mortality rate at 0 Celsius,
+!                   [m3/millimole_N 1/day].
+!
+!  MorZL0         Large Zooplankton mortality rate at 0 Celsius,
+!                   [m3/millimole_N 1/day].
+!
+!  MorZP0         Predator Zooplankton mortality rate at 0 Celsius,
+!                   [m3/millimole_N 1/day].
+!
+!  KMorZS         Small Zooplankton temperature coefficient for mortality,
+!                   [1/Celsius].
+!
+!  KMorZL         Large Zooplankton temperature coefficient for mortality,
+!                   [1/Celsius].
+!
+!  KMorZP         Predator Zooplankton temperature coefficient for mortality,
+!                   [1/Celsius].
+!
+!  AlphaZS        Small Zooplankton assimilation efficiency
+!                   [nondimemsional].
+!
+!  AlphaZL        Large Zooplankton assimilation efficiency
+!                   [nondimemsional].
+!
+!  AlphaZP        Predator Zooplankton assimilation efficiency
+!                   [nondimemsional].
+!
+!  BetaZS         Small Zooplankton growth efficiency
+!                   [nondimensional].
+!
+!  BetaZL         Large Zooplankton growth efficiency
+!                   [nondimensional].
+!
+!  BetaZP         Predator Zooplankton growth efficiency
+!                   [nondimensional].
+!
+!------------------------------------------------------------------------------
+! Nutrient parameters.
+!------------------------------------------------------------------------------
+!
+!  Nit0           Nitrification (NH4 to NO3) rate at 0 Celsius, [1/day].
+!
+!  VP2N0          PON to NH4 decomposition rate at 0 Celsius, [1/day].
+!
+!  VP2D0          PON to DON decomposition rate at 0 Celsius, [1/day].
+!
+!  VD2N0          DON to NH4 decomposition rate at 0 Celsius, [1/day].
+!
+!  VO2S0          Opal to Silicate decomposition rate at 0 Celsius, [1/day].
+!
+!  KNit           Temperature coefficient for nitrification (NH4 -> NO3)
+!                   decomposition, [1/Celsius].
+!
+!  KP2D           Temperature coefficient for PON to DON decomposition,
+!                   [1/Celsius].
+!
+!  KP2N           Temperature coefficient for PON to NH4 decomposition,
+!                   [1/Celsius].
+!
+!  KD2N           Temperature coefficient for DON to NH4 decomposition,
+!                   [1/Celsius].
+!
+!  KO2S           Temperature coefficient for Opal to Silicate decomposition,
+!                   [1/Celsius].
+!
+!  RSiN           Si:N ratio [millimole_Si/millimole_N].
+!
+!  setVPON        PON Settling (sinking) velocity [m/day].
+!
+!  setVOpal       Opal Settling (sinking) velocity [m/day].
+!
+!------------------------------------------------------------------------------
+! Physical Parameters, [1:NBT,1:Ngrids] values are expected.
+!------------------------------------------------------------------------------
+!
+!  TNU2           Nonlinear model lateral, harmonic, constant, mixing
+!                   coefficient (m2/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, TNU2 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  TNU4           Nonlinear model lateral, biharmonic, constant, mixing
+!                   coefficient (m4/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, TNU4 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  ad_TNU2        Adjoint-based algorithms lateral, harmonic, constant,
+!                   mixing coefficient (m2/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, ad_TNU2 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  ad_TNU4        Adjoint-based algorithms lateral, biharmonic, constant,
+!                   mixing coefficient (m4/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, ad_TNU4 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  AKT_BAK        Background vertical mixing coefficient (m2/s) for biological
+!                   tracer variables, [1:NBT,1:Ngrids] values are expected.
+!
+!
+!  ad_AKT_fac     Adjoint-based algorithms vertical mixing, basic state,
+!                   scale factor (nondimensional) for biological tracer
+!                   variables; [1:NBT,1:Ngrids] values are expected. In
+!                   some applications, a smaller/larger values of vertical
+!                   mixing are necessary for stability. It is only used
+!                   when FORWARD_MIXING is activated.
+!
+!  TNUDG          Nudging time scale (days), [1:NBT,1:Ngrids]. Inverse scale
+!                   will be computed internally.
+!
+!
+!------------------------------------------------------------------------------
+!  Tracer point Sources/Sink sources switches.
+!------------------------------------------------------------------------------
+!
+!  LtracerSrc     Logical switches (T/F) to specify which tracer variables
+!                   to consider when the option TS_PSOURCE is activated;
+!                   [1:NBT,1:Ngrids] values are expected.
+!
+!                     LtracerSrc(idbio( 1),ng)    Small Phytoplankton biomass
+!                     LtracerSrc(idbio( 2),ng)    Large Phytoplankton biomass
+!                     LtracerSrc(idbio( 3),ng)    Small Zooplankton biomass
+!                     LtracerSrc(idbio( 4),ng)    Large Zooplankton biomass
+!                     LtracerSrc(idbio( 5),ng)    Predator Zooplankton biomass
+!                     LtracerSrc(idbio( 6),ng)    Nitrate concentration
+!                     LtracerSrc(idbio( 7),ng)    Ammonium concentration
+!                     LtracerSrc(idbio( 8),ng)    Particulate Organic Nitrogen
+!                     LtracerSrc(idbio( 9),ng)    Dissolved Organic Nitrogen
+!                     LtracerSrc(idbio(10),ng)    Silicate concentration
+!                     LtracerSrc(idbio(11),ng)    Particulate organic silica
+!
+!                   Recall that TS_PSOURCE is usually activated to add river
+!                   runoff as a point source. At minimum, it is necessary to
+!                   specify both temperature and salinity for all rivers. The
+!                   other tracers are optional. The user needs to know the
+!                   correspondence between biological variables and indices
+!                   idbio(1:NBT) when activating one or more of these switches.
+!
+!                   This logical switch REPLACES and ELIMINATES the need to
+!                   have or read the variable "river_flag(river)" in the input
+!                   rivers forcing NetCDF file:
+!
+!                     double river_flag(river)
+!                        river_flag:long_name = "river runoff tracer flag"
+!                        river_flag:option_0 = "all tracers are off"
+!                        river_flag:option_1 = "only temperature"
+!                        river_flag:option_2 = "only salinity"
+!                        river_flag:option_3 = "both temperature and salinity"
+!                        river_flag:units = "nondimensional"
+!
+!                   This logic was too cumbersome and complicated when
+!                   additional tracers are considered. However, this change
+!                   is backward compatible.
+!
+!                   The LtracerSrc switch will be used to activate the reading
+!                   of respective tracer variable from input river forcing
+!                   NetCDF file. If you want to add other tracer variables
+!                   (other than temperature and salinity) as a source for a
+!                   particular river(s), you just need to specify such values
+!                   on those river(s). Then, set the values to ZERO on the
+!                   other river(s) that do NOT require such river forcing for
+!                   that tracer. Recall that you need to specify the tracer
+!                   values for all rivers, even if their values are zero.
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of fields into output files.
+!------------------------------------------------------------------------------
+!
+!  Hout           Logical switches (T/F) to write out biological data into
+!                   output History/Average NetCDF files. Currently, NEMURO
+!                   has NBT=11 ecosystem compartments.
+!
+!                   Hout(idTvar)               biological tracers
+!                   Hout(idTsur)               biological tracers surface flux
+!
+!                   idTvar(idbio( 1))=iSphy    Small Phytoplankton biomass
+!                   idTvar(idbio( 2))=iLphy    Large Phytoplankton biomass
+!                   idTvar(idbio( 3))=iSzoo    Small Zooplankton biomass
+!                   idTvar(idbio( 4))=iLzoo    Large Zooplankton biomass
+!                   idTvar(idbio( 5))=iPzoo    Predator Zooplankton biomass
+!                   idTvar(idbio( 6))=iNO3_    Nitrate concentration
+!                   idTvar(idbio( 7))=iNH4_    Ammonium concentration
+!                   idTvar(idbio( 8))=iPON_    Particulate Organic Nitrogen
+!                   idTvar(idbio( 9))=iDON_    Dissolved Organic Nitrogen
+!                   idTvar(idbio(10))=iSiOH    Silicate concentration
+!                   idTvar(idbio(11))=iopal    Particulate organic silica
+!

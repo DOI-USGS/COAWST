@@ -1,0 +1,482 @@
+!  Fennel et al (2006) Nitrogen-based Biological Model Parameters.
+!
+!svn $Id: bio_Fennel.in 429 2009-12-20 17:30:26Z arango $
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  Comments will be ignored  during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+! NOTICE: Input parameter units are specified within brackets and default
+! ******  values are specified within braces.
+!
+! Switch to control the computation of biology within nested and/or multiple
+! connected grids.
+
+    Lbiology == T
+
+! Maximum number of iterations to achieve convergence of the nonlinear
+! solution.
+
+     BioIter == 1
+
+! Light attenuation due to seawater [1/m], {0.04d0}.
+
+       AttSW == 0.04d0
+
+! Light attenuation by chlorophyll [1/(mg_Chl m2)], {0.02486d0}.
+
+      AttChl == 0.02486d0
+
+! Fraction of shortwave radiation that is photosynthetically active
+! (nondimensional), {0.43d0}.
+
+     PARfrac == 0.43d0
+
+! Eppley temperature-limited growth parameter [nondimensional], {1.0d0}
+
+         Vp0 == 1.0d0
+
+! Radiation threshold for nitrification inhibition [Watts/m2], {0.0095d0}.
+
+     I_thNH4 == 0.0095d0
+
+! Half-saturation radiation for nitrification inhibition [Watts/m2], {0.036d0}.
+
+     D_p5NH4 == 0.1d0
+
+! Nitrification rate: oxidation of NH4 to NO3 [1/day], {0.05d0}.
+
+      NitriR == 0.05d0
+
+! Inverse half-saturation for phytoplankton NO3 uptake [1/(millimole_N m-3)],
+! {2.0d0}.
+
+       K_NO3 == 2.0d0
+
+! Inverse half-saturation for phytoplankton NH4 uptake [1/(millimole_N m-3)],
+! {2.0d0}.
+
+       K_NH4 == 2.0d0
+
+! Zooplankton half-saturation constant (squared) for ingestion
+! [millimole_N m-3]^2, {1.0d0}.
+
+       K_Phy == 2.0d0
+
+! Maximum chlorophyll to carbon ratio [mg_Chl/mg_C], {0.0535d0}.
+
+     Chl2C_m == 0.0535d0
+
+! Chlorophyll minimum threshold value [mg_Chl/m3], {0.0d0}.
+
+      ChlMin == 0.001d0
+
+! Phytoplankton Carbon:Nitrogen ratio [mole_C/mole_N] , {6.625d0}.
+
+       PhyCN == 6.625d0
+
+! Phytoplankton, NH4 inhibition parameter [1/(millimole_N)], {1.5d0}.
+
+       PhyIP == 1.5d0
+
+! Phytoplankton, initial slope of P-I curve [mg_C/(mg_Chl Watts m-2 day)],
+! {0.025d0}.
+
+       PhyIS == 0.025d0
+
+! Phytoplankton minimum threshold value [millimole_N/m3], {0.0d0}.
+
+      PhyMin == 0.001d0
+
+! Phytoplankton mortality rate [1/day], {0.072d0}.
+
+       PhyMR == 0.15d0
+
+! Zooplankton Nitrogen assimilation efficiency [nondimesnional], {0.75d0}.
+
+     ZooAE_N == 0.75d0
+
+! Zooplankton Basal metabolism [1/day], {0.1d0}.
+
+       ZooBM == 0.1d0
+
+! Zooplankton Carbon:Nitrogen ratio [mole_C/mole_N], {5.0d0}.
+
+       ZooCN == 6.625d0
+
+! Zooplankton specific excretion rate [1/day], {0.1d0}.
+
+       ZooER == 0.1d0
+
+! Zooplankton maximum growth rate [1/day], {0.75d0}.
+
+       ZooGR == 0.6d0
+
+! Zooplankton minimum threshold value [millimole_N/m3], {0.0d0}.
+
+      ZooMin == 0.001d0
+
+! Zooplankton mortality rate [1/day], {0.025d0}.
+
+       ZooMR == 0.025d0
+
+! Large detritus remineralization rate N-fraction [1/day], {0.01d0}.
+
+       LDeRRN == 0.01d0
+
+! Large detritus remineralization rate C-fraction [1/day].
+
+       LDeRRC == 0.01d0
+
+! Coagulation rate: aggregation rate of SDeN + Phy ==> LDeN
+! [1/day], {0.005d0}.
+
+       CoagR == 0.005d0
+
+! Small detritus remineralization rate N-fraction [1/day], {0.03d0}.
+
+       SDeRRN == 0.03d0
+
+! Small detritus remineralization rate C-fraction[1/day].
+
+       SDeRRC == 0.03d0
+
+! Vertical sinking velocity for phytoplankton [m/day], {0.1d0}.
+
+        wPhy == 0.1d0
+
+! Vertical sinking velocity for large detritus [m/day],
+! {1.0d0}.
+
+       wLDet == 1.0d0
+
+! Vertical sinking velocity for small detritus [m/day],
+! {0.1d0}.
+
+       wSDet == 0.1d0
+
+! CO2 partial pressure in the air (parts per million by volume),
+! {377.0d0}.
+
+     pCO2air == 370.0d0
+
+! Harmonic/biharmonic horizontal diffusion of biological tracer for
+! nonlinear model and adjoint-based algorithms: [1:NBT,Ngrids].
+
+        TNU2 == 12*0.0d0                        ! m2/s
+        TNU4 == 12*0.0d0                        ! m4/s
+
+     ad_TNU2 == 12*0.0d0                        ! m2/s
+     ad_TNU4 == 12*0.0d0                        ! m4/s
+
+! Vertical mixing coefficients for biological tracers for nonlinear
+! model and basic state scale factor in adjoint-based algorithms:
+! [1:NBT,Ngrids].
+
+     AKT_BAK == 12*1.0d-6                       ! m2/s
+
+  ad_AKT_fac == 12*1.0d0                        ! nondimensional
+
+! Nudging/relaxation time scales, inverse scales will be computed
+! internally: [1:NBT,Ngrids].
+
+       TNUDG == 12*0.0d0                        ! days
+
+! Logical switches (TRUE/FALSE) to specify which variables to consider on
+! tracers point Sources/Sinks (like river runoff): [NBT,Ngrids] values are
+! expected. See glossary below for details.
+
+  LtracerSrc == 12*F
+
+! Logical switches (TRUE/FALSE) to activate writing of biological tracers
+! into HISTORY output file: [1:NBT,Ngrids].
+
+Hout(idTvar) == 12*T                  ! biological tracer
+Hout(idTsur) == 12*F                  ! surface tracer flux
+
+! Logical switches (TRUE/FALSE) to activate writing of diagnostics terms
+! into diagnostic output file [Ngrids].
+
+Hout(iCOfx) == T                      ! air-sea CO2 flux
+Hout(iDNIT) == T                      ! denitrification flux
+Hout(ipCO2) == T                      ! CO2 partial pressure
+Hout(iO2fx) == T                      ! air-sea O2 flux
+Hout(iPPro) == T                      ! primary production
+Hout(iNO3u) == T                      ! NO3 uptake
+
+!
+!  GLOSSARY:
+!  =========
+!
+!------------------------------------------------------------------------------
+! Fennel et al (2006), Nitrogen-based Biological Model Parameters. Currently,
+! it can be configured with 12 biological tracers:
+!
+!   idbio( 1)     Nitrate concentration
+!   idbio( 2)     Ammonium concentration
+!   idbio( 3)     Chorophyll concentration
+!   idbio( 4)     Phytoplankton biomass
+!   idbio( 5)     Zooplankton biomass
+!   idbio( 6)     Large detritus N-concentration
+!   idbio( 7)     Small detritus N-concentration
+!   idbio( 8)     Large detritus C-concentration       if CARBON
+!   idbio( 9)     Small detritus C-concentration       if CARBON
+!   idbio(10)     Total inorganic carbon               if CARBON
+!   idbio(11)     Alkalinity                           if CARBON
+!   idbio(12)     Oxygen concentration                 if OXYGEN
+!
+!------------------------------------------------------------------------------
+!
+!  Lbiology       Switch to control the computation of a particular module
+!                   within nested and/or multiple connected grids. By default
+!                   this switch is set to TRUE in "mod_scalars" for all grids.
+!                   Ngrids values are expected. The USER has the option, for
+!                   example, to compute the biology in just one of the nested
+!                   grids. If so, this switch needs to be consistent with the
+!                   dimension parameter NBT in "mod_param".  In order to make
+!                   the model more efficient in memory usage, NBT(:) should
+!                   be zero in such grids.
+!
+!  BioIter        Maximum number of iterations to achieve convergence of
+!                   the nonlinear solution.
+!
+!  AttSW          Light attenuation due to seawater [1/m].
+!
+!  AttChl         Light attenuation by chlorophyll [1/(mg_Chl m2)].
+!
+!  PARfrac        Fraction of shortwave radiation that is photosynthetically
+!                   active (nondimensional).
+!
+!  Vp0            Eppley temperature-limited and light-limited growth tuning
+!                   parameter [nondimensional].
+!
+!  I_thNH4        Radiation threshold for nitrification inhibition [Watts/m2].
+!
+!  D_p5HN4        Half-saturation radiation for nitrification inhibition
+!                   [Watts/m2].
+!
+!  NitriR         Nitrification rate: oxidation of NH4 to NO3 [day-1].
+!
+!  K_NO3          Inverse half-saturation for phytoplankton NO3 uptake
+!                   [1/(millimole_N m-3)].
+!
+!  K_NH4          Inverse half-saturation for phytoplankton NH4 uptake
+!                   [1/(millimole_N m-3)].
+!
+!  K_Phy          Zooplankton half-saturation, squared constant for ingestion
+!                   [millimole_N m-3]^2.
+!
+!  Chl2C_m        Maximum chlorophyll to carbon ratio [mg_Chl/mg_C].
+!
+!  ChlMin         Chlorophyll minimum threshold value [mg_Chl/m3].  Set to
+!                   zero to avoid limiting.
+!
+!  PhyCN          Phytoplankton Carbon:Nitrogen ratio [mole_C/mole_N].
+!
+!  PhyIP          Phytoplankton, NH4 inhibition parameter [1/(millimole_N)].
+!
+!  PhyIS          Phytoplankton, initial slope of P-I curve
+!                   [(mg_C)/(mg_Chl Watts m-2 day)].
+!
+!  PhyMin         Phytoplankton minimum threshold value [millimole_N/m3].
+!                   Set to zero to avoid limiting.
+!
+!  PhyMR          Phytoplankton mortality rate [1/day].
+!
+!  ZooAE_N        Zooplankton Nitrogen assimilation efficiency
+!                   [nondimensional].
+!
+!  ZooBM          Basal metabolism of zooplankton [1/day].
+!
+!  ZooCN          Zooplankton Carbon:Nitrogen ratio [mole_C/mole_N].
+!
+!  ZooER          Zooplankton specific excretion rate [1/day].
+!
+!  ZooGR          Zooplankton maximum growth rate [1/day].
+!
+!  ZooMin         Zooplankton minimum threshold value [millimole_N/m3].
+!                   Set to zero to avoid limiting.
+!
+!  ZooMR          Zooplankton mortality rate [1/day].
+!
+!  LDeRRN         Large nitrogen detritus remineralization rate [day-1].
+!
+!  LDeRRC         Large carbon detritus remineralization rate [day-1].
+!
+!  CoagR          Coagulation rate: aggregation rate of SDeN + Phyt ==> LDeN
+!                   [day-1].
+!
+!  SDeRRN         Small nitrogen detritus remineralization rate [day-1].
+!
+!  SDeRRC         Small carbon detritus remineralization rate [day-1].
+!
+!  wPhy           Vertical sinking velocity for phytoplankton [m/day].
+!
+!  wLDet          Vertical sinking velocity for large detritus
+!                   [m/day].
+!
+!  wLDet          Vertical sinking velocity for large detritus
+!                   [m/day].
+!
+!  pCO2air        CO2 partial pressure in the air (parts per million by
+!                   volume).
+!
+!------------------------------------------------------------------------------
+! Physical parameters. This file is configured for NBT=12.
+!------------------------------------------------------------------------------
+!
+!  TNU2           Nonlinear model lateral, harmonic, constant, mixing
+!                   coefficient (m2/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, TNU2 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  TNU4           Nonlinear model lateral, biharmonic, constant, mixing
+!                   coefficient (m4/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, TNU4 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  ad_TNU2        Adjoint-based algorithms lateral, harmonic, constant,
+!                   mixing coefficient (m2/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, ad_TNU2 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  ad_TNU4        Adjoint-based algorithms lateral, biharmonic, constant,
+!                   mixing coefficient (m4/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, ad_TNU4 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  AKT_BAK        Background vertical mixing coefficient (m2/s) for biological
+!                   tracer variables, [1:NBT,1:Ngrids] values are expected.
+!
+!
+!  ad_AKT_fac     Adjoint-based algorithms vertical mixing, basic state,
+!                   scale factor (nondimensional) for biological tracer
+!                   variables; [1:NBT,1:Ngrids] values are expected. In
+!                   some applications, a smaller/larger values of vertical
+!                   mixing are necessary for stability. It is only used
+!                   when FORWARD_MIXING is activated.
+!
+!  TNUDG          Nudging time scale (days), [1:NBT,1:Ngrids].  Inverse scale
+!                   will be computed internally.
+!
+!------------------------------------------------------------------------------
+!  Tracer point Sources/Sink sources switches.
+!------------------------------------------------------------------------------
+!
+!  LtracerSrc     Logical switches (T/F) to specify which tracer variables
+!                   to consider when the option TS_PSOURCE is activated;
+!                   [1:NBT,1:Ngrids] values are expected.
+!
+!                     LtracerSrc(idbio( 1),ng)    Nitrate concentration
+!                     LtracerSrc(idbio( 2),ng)    Ammonium concentration
+!                     LtracerSrc(idbio( 3),ng)    Chorophyll concentration
+!                     LtracerSrc(idbio( 4),ng)    Phytoplankton biomass
+!                     LtracerSrc(idbio( 5),ng)    Zooplankton biomass
+!                     LtracerSrc(idbio( 6),ng)    Large N-detritus
+!                     LtracerSrc(idbio( 7),ng)    Small N-detritus
+!                     LtracerSrc(idbio( 8),ng)    Large C-detritus
+!                     LtracerSrc(idbio( 9),ng)    Small C-detritus
+!                     LtracerSrc(idbio(10),ng)    Total inorganic carbon
+!                     LtracerSrc(idbio(11),ng)    Alkalinity
+!                     LtracerSrc(idbio(12),ng)    Oxygen concentration
+!
+!                   Recall that TS_PSOURCE is usually activated to add river
+!                   runoff as a point source. At minimum, it is necessary to
+!                   specify both temperature and salinity for all rivers. The
+!                   other tracers are optional. The user needs to know the
+!                   correspondence between biological variables and indices
+!                   idbio(1:NBT) when activating one or more of these switches.
+!
+!                   This logical switch REPLACES and ELIMINATES the need to
+!                   have or read the variable "river_flag(river)" in the input
+!                   rivers forcing NetCDF file:
+!
+!                     double river_flag(river)
+!                        river_flag:long_name = "river runoff tracer flag"
+!                        river_flag:option_0 = "all tracers are off"
+!                        river_flag:option_1 = "only temperature"
+!                        river_flag:option_2 = "only salinity"
+!                        river_flag:option_3 = "both temperature and salinity"
+!                        river_flag:units = "nondimensional"
+!
+!                   This logic was too cumbersome and complicated when
+!                   additional tracers are considered. However, this change
+!                   is backward compatible.
+!
+!                   The LtracerSrc switch will be used to activate the reading
+!                   of respective tracer variable from input river forcing
+!                   NetCDF file. If you want to add other tracer variables
+!                   (other than temperature and salinity) as a source for a
+!                   particular river(s), you just need to specify such values
+!                   on those river(s). Then, set the values to ZERO on the
+!                   other river(s) that do NOT require such river forcing for
+!                   that tracer. Recall that you need to specify the tracer
+!                   values for all rivers, even if their values are zero.
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of fields into output files.
+!------------------------------------------------------------------------------
+!
+!  Hout           Logical switches (T/F) to write out biological data into
+!                   output NetCDF files:
+!
+!                 History/Average file, [1:NBT,1:Ngrids] values are expected:
+!
+!                   Hout(idTvar)               biological tracers
+!                   Hout(idTsur)               biological tracers surface flux
+!
+!                   idTvar(idbio( 1))=iNO3_    Nitrate concentration
+!                   idTvar(idbio( 2))=iNH4_    Ammonium concentration
+!                   idTvar(idbio( 3))=iChlo    Chorophyll concentration
+!                   idTvar(idbio( 4))=iPhyt    Phytoplankton biomass
+!                   idTvar(idbio( 5))=iZoop    Zooplankton biomass
+!                   idTvar(idbio( 6))=iLDeN    Large detritus N-concentration
+!                   idTvar(idbio( 7))=iSDeN    Small detritus N-concentration
+!                   idTvar(idbio( 8))=iLDeC    Large detritus C-concentration
+!                   idTvar(idbio( 9))=iSDeC    Small detritus C-concentration
+!                   idTvar(idbio(10))=iTIC_    Total inorganic carbon
+!                   idTvar(idbio(11))=iTAlk    Alkalinity
+!                   idTvar(idbio(12))=iOxyg    Oxygen concentration
+!
+!                Diagnostics file, [Ngrids] values are expected:
+!
+!                  Hout(iCOfx)      air-sea CO2 flux
+!                  Hout(iDNIT)      denitrification flux
+!                  Hout(ipCO2)      CO2 partial pressure
+!                  Hout(iO2fx)      air-sea O2 flux
+!                  Hout(iPPro)      primary production
+!                  Hout(iNO3u)      NO3 uptake
+!

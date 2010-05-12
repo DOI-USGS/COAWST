@@ -1,0 +1,405 @@
+!  Nutrient-Phytoplankton-Zooplankton-Detritus Biological Model Parameters.
+!
+!svn $Id: npzd_iron.in 429 2009-12-20 17:30:26Z arango $
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  Comments will be ignored  during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+! NOTICE: Input parameter units are specified within brackets and default
+! ******  values are specified within braces.
+!
+! Switch to control the computation of biology within nested and/or multiple
+! connected grids.
+
+    Lbiology == T
+
+! Maximum number of iterations to achieve convergence of the nonlinear
+! solution.
+
+     BioIter == 1
+
+! Initial concentration for analytical uniform initial conditions.
+! [millimole/meter3].
+
+BioIni(iNO3_) == 17.0d0                          ! nitrate
+BioIni(iPhyt) == 1.0d0                           ! phytoplankton
+BioIni(iZoop) == 1.0d0                           ! zooplankton
+BioIni(iSDet) == 1.0d0                           ! detritus
+BioIni(iFdis) == 0.0d0                           ! dissolved iron
+BioIni(iFphy) == 0.0d0                           ! iron in phytoplankton
+
+! Fraction of shortwave radiation that is photosynthetically active
+! (nondimensional), {0.43d0}.
+
+     PARfrac == 0.43d0
+
+! Light attenuation due to seawater [1/m], {0.067d0}.
+
+       AttSW == 0.067d0                          ! k_ext
+
+! Light attenuation due to phytoplankton, self-shading coefficient,
+! [m2/millimole_N], {0.0095d0}.
+
+      AttPhy == 0.04d0                         ! k_extP
+
+! Phytoplankton, initial slope of P-I curve [m2/W], {0.025d0}.
+
+       PhyIS == 0.02d0                          ! alpha
+
+! Nitrate uptake rate, [1/day], {1.5d0}.
+
+       Vm_NO3 == 1.0d0                           ! Vm
+
+! Phytoplankton mortality rate to Detritus pool [1/day], {0.1d0}.
+
+      PhyMRD == 0.1d0                            ! sigmaD
+
+! Phytoplankton mortality rate to Nitrogen pool [1/day], {0.0d0}.
+
+      PhyMRN == 0.0d0                            ! sigmaN
+
+! Inverse half-saturation for phytoplankton nitrate uptake
+! [1/(millimole_N m-3)], {1.0d0}.
+
+        K_NO3 == 1.0d0                           ! k_N
+
+! Ivlev constant for zooplankton grazing parameterization
+! [Nondimensional], {14*0.06=0.84d0}
+
+        Ivlev == 0.84d0
+
+! Zooplankton grazing rate, [1/day], {0.52}.
+
+        ZooGR == 0.65d0                          ! R_m
+
+! Zooplankton excretion efficiency to Detritus pool [nondimensional],
+! {0.3d0}
+
+       ZooEED == 0.0d0                           ! gammaD
+
+! Zooplankton excretion efficiency to Nitrogen pool [nondimensional],
+! {0.3d0}
+
+       ZooEEN == 0.3d0                           ! gammaN
+
+! Zooplankton mortality rate to Detritus pool, [1/day], {0.0d0}.
+
+       ZooMRD == 0.145d0                         ! zetaD
+
+! Zooplankton mortality rate to Nitrogen pool, [1/day], {0.145d0}.
+
+       ZooMRN == 0.0d0                           ! zetaN
+
+! Detritus remineralization rate, [1/day], {0.1d0}.
+
+        DetRR == 1.0d0                           ! delta
+
+! Phytoplankton sinking rate, [m/day], {0.0d0}.
+
+         wPhy == 0.0d0                           ! wP
+
+! Detrital sinking rate, [m/day], {8.0d0}.
+
+         wDet == 8.0d0                           ! wD
+
+! Iron uptake timescale, [day], {1.0d0}.
+
+         T_Fe == 1.0d0                           ! T_Fe
+
+! Empirical Fe:C power, [nondimensional], {0.6d0}.
+
+         A_Fe == 0.6d0                           ! A_Fe
+
+! Empirical Fe:C coefficient, [1/M-C], {64.0d0}.
+
+         B_Fe == 64.0d0                          ! B_Fe
+
+! Fe:C at F=0.5, [muM-Fe/M-C], {16.9d0}.
+
+         K_FeC == 16.9d0                         ! K_FeC
+
+! Fe remineralization rate, [1/day], {1.0d0}.
+
+         FeRR == 0.5d0                           ! FeRR
+
+! If applicable, dissolved Fe relaxation (nudging) parameters to simulate
+! Fe source over the shelf (h <= FeHmin).
+
+        FeHmin == 200.0d0                        ! minimum depth (m)
+    FeNudgTime == 5.0d0                          ! nudging time (days)
+         FeMax == 2.0d0                          ! Fe value (mmole/m3) to nudge
+
+! Harmonic/biharmonic horizontal diffusion of biological tracer for
+! nonlinear model and adjoint-based algorithms: [1:NBT,Ngrids].
+
+         TNU2 == 6*5.0d0                         ! m2/s
+         TNU4 == 6*0.0d0                         ! m4/s
+
+      ad_TNU2 == 6*0.0d0                         ! m2/s
+      ad_TNU4 == 6*0.0d0                         ! m4/s
+
+! Vertical mixing coefficients for biological tracers for nonlinear
+! model and basic state scale factor in adjoint-based algorithms:
+! [1:NBT,Ngrids].
+
+      AKT_BAK == 6*1.0d-6                        ! m2/s
+
+   ad_AKT_fac == 6*1.0d0                         ! nondimensional
+
+! Nudging/relaxation time scales, inverse scales will be computed
+! internally: [1:NBT,Ngrids].
+
+        TNUDG == 6*0.0d0                         ! days
+
+! Logical switches (TRUE/FALSE) to specify which variables to consider on
+! tracers point Sources/Sinks (like river runoff): [NBT,Ngrids] values are
+! expected. See glossary below for details.
+
+  LtracerSrc == 6*F
+
+! Logical switches (TRUE/FALSE) to activate writing of biological tracers
+! into HISTORY/AVERAGE output files: [1:NBT,Ngrids].
+
+ Hout(idTvar) == 6*T                             ! biological tracer
+ Hout(idTsur) == 6*F                             ! surface tracer flux
+
+!
+!  GLOSSARY:
+!  =========
+!
+!------------------------------------------------------------------------------
+! NPZD-Iron (Fiechter et al, 2009) Biological Model Parameters. Currently, it
+! is configured with 6 biological tracers:
+!
+!   idbio(1)      Nitrate concentration
+!   idbio(2)      Phytoplankton biomass
+!   idbio(3)      Zooplankton biomass
+!   idbio(4)      Detritus concentration
+!   idbio(5)      Dissolved iron concentration               if IRON
+!   idbio(6)      Iron concentration in phytoplankton        if IRON
+!
+!------------------------------------------------------------------------------
+!
+!  Lbiology       Switch to control the computation of a particular module
+!                   within nested and/or multiple connected grids. By default
+!                   this switch is set to TRUE in "mod_scalars" for all grids.
+!                   Ngrids values are expected. The USER has the option, for
+!                   example, to compute the biology in just one of the nested
+!                   grids. If so, this switch needs to be consistent with the
+!                   dimension parameter NBT in "mod_param".  In order to make
+!                   the model more efficient in memory usage, NBT(:) should
+!                   be zero in such grids.
+!
+!  BioIter        Maximum number of iterations to achieve convergence of
+!                   the nonlinear implicit solution.
+!
+!  BioIni         Initial concentration for analytical uniform initial
+!                   conditions, [millimole/meter3]. It is only used when
+!                   ANA_BIOLOGY is activated.
+!
+!                     BioIni(iNO3_)          Nitrate concentration
+!                     BioIni(iPhyt)          Phytoplankton biomass
+!                     BioIni(iZoop)          Zooplankton biomass
+!                     BioIni(iSDet)          Detritus concentration
+!                     BioIni(iFdis)          Dissolved iron concentration
+!                     BioIni(iFphy)          Phytoplankton Iron concentration
+!
+!  PARfrac        Fraction of shortwave radiation that is photosynthetically
+!                   active (nondimensional).
+!
+!  AttSW          Light attenuation due to seawater [1/m].
+!
+!  AttPhy         Light attenuation by phytoplankton, self-shading
+!                   coefficient, [m2/millimole_N].
+!
+!  PhyIS          Phytoplankton, initial slope of P-I curve [m2/W].
+!
+!  Vm_NO3         Nitrate uptake rate, [1/day].
+!
+!  PhyMRD         Phytoplankton mortality rate to Detritus, [1/day].
+!
+!  PhyMRN         Phytoplankton mortality rate to Nitrogen, [1/day].
+!
+!  K_NO3          Inverse half-saturation for phytoplankton nitrate uptake
+!                   [1/(millimole_N m-3)].
+!
+!  Ivlev          Ivlev constant for zooplankton grazing parameterization,
+!                   [nondimensional].
+!
+!  ZooGR          Zooplankton grazing rate, [1/day].
+!
+!  ZooEED         Zooplankton excretion efficiency to Detritus pool,
+!                   [nondimensional].
+!
+!  ZooEEN         Zooplankton excretion efficiency to Nitrogen pool,
+!                   [nondimensional].
+!
+!  ZooMRD         Zooplankton mortality rate to Detritus pool, [1/day].
+!
+!  ZooMRN         Zooplankton mortality rate to Nitrogen pool, [1/day].
+!
+!  DetRR          Detritus remineralization rate, [1/day].
+!
+!  wPhy           Phytoplankton sinking rate, [m/day].
+!
+!  wDet           Detrital sinking rate, [m/day].
+!
+!  T_Fe           Iron uptake timescale, [day].
+!
+!  A_Fe           Empirical Fe:C power, [nondimensional]
+!
+!  B_Fe           Empirical Fe:C coefficient, [1/M-C].
+!
+!  K_FeC          Fe:C at F=0.5, [muM-Fe/M-C].
+!
+!  FeRR           Fe remineralization rate, [1/day].
+!
+!  FeHmin         Minimum bathymetry value (meter; positive) considered to
+!                   nudge dissolved iron over the shelf (h <= FeHmin).
+!
+!  FeNudgTime     Dissolved iron nudging time scale (days) over the shelf.
+!                  Inverse scale will be computed internally.
+!
+!  FeMax          Dissolved iron value (mmole/m3) to nudge over the shelf to
+!                   simulate Fe coastal source.  It is only considered when
+!                   the IRON_RELAX c-preprocessing option is activated.
+!
+!------------------------------------------------------------------------------
+! Physical Parameters, [1:NBT,1:Ngrids] values are expected.
+!------------------------------------------------------------------------------
+!
+!  TNU2           Nonlinear model lateral, harmonic, constant, mixing
+!                   coefficient (m2/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, TNU2 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  TNU4           Nonlinear model lateral, biharmonic, constant, mixing
+!                   coefficient (m4/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, TNU4 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  ad_TNU2        Adjoint-based algorithms lateral, harmonic, constant,
+!                   mixing coefficient (m2/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, ad_TNU2 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  ad_TNU4        Adjoint-based algorithms lateral, biharmonic, constant,
+!                   mixing coefficient (m4/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, ad_TNU4 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  AKT_BAK        Background vertical mixing coefficient (m2/s) for biological
+!                   tracer variables, [1:NBT,1:Ngrids] values are expected.
+!
+!
+!  ad_AKT_fac     Adjoint-based algorithms vertical mixing, basic state,
+!                   scale factor (nondimensional) for biological tracer
+!                   variables; [1:NBT,1:Ngrids] values are expected. In
+!                   some applications, a smaller/larger values of vertical
+!                   mixing are necessary for stability. It is only used
+!                   when FORWARD_MIXING is activated.
+!
+!  TNUDG          Nudging time scale (days), [1:NBT,1:Ngrids]. Inverse scale
+!                   will be computed internally.
+!
+!
+!------------------------------------------------------------------------------
+!  Tracer point Sources/Sink sources switches.
+!------------------------------------------------------------------------------
+!
+!  LtracerSrc     Logical switches (T/F) to specify which tracer variables
+!                   to consider when the option TS_PSOURCE is activated;
+!                   [1:NBT,1:Ngrids] values are expected.
+!
+!                     LtracerSrc(idbio(1),ng)     Nitrate concetration
+!                     LtracerSrc(idbio(2),ng)     Phytoplankton biomass
+!                     LtracerSrc(idbio(3),ng)     Zooplankton biomass
+!                     LtracerSrc(idbio(4),ng)     Detritus concentration
+!                     LtracerSrc(idbio(5),ng)     Dissolved iron concentration
+!                     LtracerSrc(idbio(6),ng)     Iron concentration
+!
+!                   Recall that TS_PSOURCE is usually activated to add river
+!                   runoff as a point source. At minimum, it is necessary to
+!                   specify both temperature and salinity for all rivers. The
+!                   other tracers are optional. The user needs to know the
+!                   correspondence between biological variables and indices
+!                   idbio(1:NBT) when activating one or more of these switches.
+!
+!                   This logical switch REPLACES and ELIMINATES the need to
+!                   have or read the variable "river_flag(river)" in the input
+!                   rivers forcing NetCDF file:
+!
+!                     double river_flag(river)
+!                        river_flag:long_name = "river runoff tracer flag"
+!                        river_flag:option_0 = "all tracers are off"
+!                        river_flag:option_1 = "only temperature"
+!                        river_flag:option_2 = "only salinity"
+!                        river_flag:option_3 = "both temperature and salinity"
+!                        river_flag:units = "nondimensional"
+!
+!                   This logic was too cumbersome and complicated when
+!                   additional tracers are considered. However, this change
+!                   is backward compatible.
+!
+!                   The LtracerSrc switch will be used to activate the reading
+!                   of respective tracer variable from input river forcing
+!                   NetCDF file. If you want to add other tracer variables
+!                   (other than temperature and salinity) as a source for a
+!                   particular river(s), you just need to specify such values
+!                   on those river(s). Then, set the values to ZERO on the
+!                   other river(s) that do NOT require such river forcing for
+!                   that tracer. Recall that you need to specify the tracer
+!                   values for all rivers, even if their values are zero.
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of fields into output files.
+!------------------------------------------------------------------------------
+!
+!  Hout           Logical switches (T/F) to write out biological data into
+!                   output History/Average NetCDF file, [1:NBT,1:Ngrids]
+!                   values are expected.
+!
+!                   Hout(idTvar)              biological tracers
+!                   Hout(idTsur)              biological tracers surface flux
+!
+!                   idTvar(idbio(1))=iNO3_    Nitrate concentration
+!                   idTvar(idbio(2))=iPhyt    Phytoplankton biomass
+!                   idTvar(idbio(3))=iZoop    Zooplankton biomass
+!                   idTvar(idbio(4))=iSdet    Detritus concentration
+!                   idTvar(idbio(5))=iFdis    Dissolved iron concentration
+!                   idTvar(idbio(6))=iFphy    Phytoplankton Iron concentration
+!

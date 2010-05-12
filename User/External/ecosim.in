@@ -1,0 +1,1093 @@
+!
+!  EcoSim Biological Model Parameters.
+!
+!svn $Id: ecosim.in 429 2009-12-20 17:30:26Z arango $
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group              W. Paul Bissett   !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  Comments will be ignored  during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!=============================================================================!
+!
+! Switch to control the computation of EcoSim within nested and/or multiple
+! connected grids.
+
+      Lbiology == T
+
+! Maximum number of iterations to achieve convergence of the nonlinear
+! solution.
+
+       BioIter == 1
+
+! Logical switch (T/F) to calculate CDOC UV photolysis.
+
+    RtUVR_flag == T
+
+! Logical switch (T/F) to calculate temperature based nitrogen fixation.
+
+     NFIX_flag == F
+
+! Logical switch (T/F) to calculate fecal matter regeneration.
+
+    Regen_flag == T
+
+!-----------------------------------------------------------------------------
+! Phytoplankton group parameters.
+!-----------------------------------------------------------------------------
+!
+! Half-saturation for phytoplankton NO3 uptake (micromole_NO3/liter),
+! [Nphy,Ngrids] values are expected.
+
+         HsNO3 == 8.2400d-01  4.1200d-01  8.2400d-01  1.6700d-01
+
+! Half-saturation for phytoplankton NH4 uptake (micromole_NH4/liter),
+! [Nphy,Ngrids] values are expected.
+
+         HsNH4 == 4.1400d-01  2.0800d-01  4.1400d-01  8.3000d-02
+
+! Half-saturation for phytoplankton SiO uptake (micromole_SiO/liter),
+! [Nphy,Ngrids] values are expected. A value of 1.0d+30 denotes no SiO
+! uptake being calculated for that phytoplankton group.
+
+         HsSiO == 1.8240d+00  1.4120d+00  1.0000d+30  1.0000d+30
+
+! Half-saturation for phytoplankton PO4 uptake (micromole_PO4/liter),
+! [Nphy,Ngrids] values are expected.
+
+         HsPO4 == 5.1500d-02  2.5750d-02  5.1500d-02  1.0438d-02
+
+! Half-saturation for phytoplankton Fe uptake (micromole_Fe/liter),
+! [Nphy,Ngrids] values are expected. A value of 1.0d+30 denotes no Fe
+! uptake being calculated for that phytoplankton group.
+
+          HsFe == 1.0000d+30  1.0000d+30  1.0000d+30  1.0000d+30
+
+! Maximum phytoplankton 24 hour growth rate (1/d),
+! [Nphy,Ngrids] values are expected.
+
+     GtALG_max == 3.7000d+00  3.7000d+00  2.0000d+00  2.0000d+00
+
+! Phytoplankton temperature base for exponential response to temperature
+! (Celsius), [Nphy,Ngrids] values are expected.
+
+      PhyTbase == 4*27.0d0
+
+! Phytoplankton exponential temperature factor (1/Celsius),
+! [Nphy,Ngrids] values are expected.
+
+       PhyTfac == 4*0.0633d0
+
+! Nitrate uptake inhibition for NH4 (l/micromole),
+! [Nphy,Ngrids] values are expected.
+
+          BET_ == 1.2800d+00  2.6000d+00  1.2800d+00  6.5000d+00
+
+! Maximum phytoplankton C:N ratio (micromole_C/micromole_N),
+! [Nphy,Ngrids] values are expected.
+
+     maxC2nALG == 1.4000d+01  1.7750d+01  1.7000d+01  6.6250d+00
+
+! Balanced phytoplankton C:N ratio (micromole_C/micromole_N),
+! [Nphy,Ngrids] values are expected.
+
+     minC2nALG == 6.6250d+00  6.6250d+00  6.6250d+00  6.6250d+00
+
+! Absolute minimum phytoplankton C:N ratio (micromole_C/micromole_N),
+! [Nphy,Ngrids] values are expected.
+
+  C2nALGminABS == 5.5000d+00  5.5000d+00  5.5000d+00  5.5000d+00
+
+! Maximum phytoplankton C:Si ratio (micromole_C/micromole_Si),
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no silica used.
+
+    maxC2SiALG == 5.5210d+00  5.5210d+00  0.0000d+00  0.0000d+00
+
+! Balanced phytoplankton C:Si ratio (micromole_C/micromole_Si),
+! [Nphy,Ngrids] values are expected. A value of 1.0 denotes no silica used.
+
+    minC2SiALG == 5.5210d+00  5.5210d+00  1.0000d+00  1.0000d+00
+
+! Absolute minimum phytoplankton C:Si ratio (micromole_C/micromole_Si)
+! [Nphy,Ngrids] values are expected. A value of 1.0 denotes no silica used.
+
+ C2SiALGminABS == 4.5831d+00  4.5831d+00  1.0000d+00  1.0000d+00
+
+! Maximum phytoplankton C:P ratio (micromole_C/micromole_P),
+! [Nphy,Ngrids] values are expected. A value of 1.0 denotes no silica used.
+
+     maxC2pALG == 1.0600d+02  1.0600d+02  1.3000d+02  1.0600d+02
+
+! Balanced phytoplankton C:P ratio (micromole_C/micromole_P),
+! [Nphy,Ngrids] values are expected.
+
+     minC2pALG == 1.0600d+02  1.0600d+02  1.0600d+02  1.0600d+02
+
+! Absolute minimum phytoplankton C:P ratio (micromole_C/micromole_P),
+! [Nphy,Ngrids] values are expected.
+
+  C2pALGminABS == 8.800d+01   8.800d+01   8.800d+01   8.800d+01
+
+! Maximum phytoplankton C:Fe ratio (micromole_C/micromole_Fe),
+! [Nphy,Ngrids] values are expected. A value of 1.0d+30 denotes no Fe
+! uptake being calculated.
+
+    maxC2FeALG == 1.0000d+30  1.0000d+30  1.0000d+30  1.0000d+30
+
+! Balanced phytoplankton C:Fe ratio (micromole_C/micromole_Fe),
+! [Nphy,Ngrids] values are expected. A value of 1.0d+30 denotes no Fe
+! uptake being calculated.
+
+    minC2FeALG == 1.0000d+30  1.0000d+30  1.0000d+30  1.0000d+30
+
+! Absolute minimum phytoplankton C:Fe ratio (micromole_C/micromole_Fe),
+! [Nphy,Ngrids] values are expected. A value of 1.0d+30 denotes no Fe
+! uptake being calculated.
+
+ C2FeALGminABS == 1.0000d+30  1.0000d+30  1.0000d+30  1.0000d+30
+
+! Maximum quantum yield (micromole_C/micromole_quanta),
+! [Nphy,Ngrids] values are expected.
+
+        qu_yld == 8.3300d-02  8.3300d-02  8.3300d-02  8.3300d-02
+
+! Compensation light level (micromole_quanta),
+! [Nphy,Ngrids] values are expected.
+
+       E0_comp == 1.0000d+01  1.0000d+01  1.0000d+01  6.0000d+00
+
+! Light level for onset of photoinhibition (micromole_quanta),
+! [Nphy,Ngrids] values are expected.
+
+      E0_inhib == 1.0000d+04  1.0000d+04  1.0500d+02  1.0000d+04
+
+! Exponential decay factor for light limited growth (1/micromole_quanta),
+! [Nphy,Ngrids] values are expected.
+
+     inhib_fac == 0.0000d+00  0.0000d+00  1.0000d-03  0.0000d+00
+
+! Maximum lighted limited (nutrient replete) C:Chl ratio
+! (microgram_C/microgram_Chl), [Nphy,Ngrids] values are expected.
+
+     C2CHL_max == 6.0000d+01  4.2000d+01  1.2400d+02  1.6000d+02
+
+! Rate of change in light limited C:Chl ratio
+! (microgram_C/microgram_Chl/micromole_quanta),
+! [Nphy,Ngrids] values are expected.
+
+        mxC2Cl == 1.2000d-01  1.1440d-01  4.7790d-01  1.0000d-01
+
+! Minimum lighted limited (nutrient replete) C:Chl ratio
+! (microgram_C/microgram_Chl), [Nphy,Ngrids] values are expected.
+
+        b_C2Cl == 2.5000d+01  1.4800d+01  4.7530d+01  3.0000d+01
+
+! Rate of change in nutient limited C:Chl ratio
+! [(microgram_C/microgram_Chl)/(micromole_C/micromole_N)],
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no change
+! in C:Chl with nutrient status.
+
+        mxC2Cn == 1.2200d+01  6.8315d+00  1.0350d+01  0.0000d+00
+
+! Minimum nutrient limited C:Chl ratio (microgram_C/microgram_Chl),
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no change
+! in C:Chl with nutrient status.
+
+        b_C2Cn == 6.0000d+01  4.2000d+01  1.2400d+02  0.0000d+00
+
+! Rate of change in package effect [1/(microgram_C/microgram_Chl)],
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no change
+! in package effect.
+
+      mxPacEff == 1.4290d-02  1.8380d-02  0.0000d+00  0.0000d+00
+
+! Maximum package effect [1/(microgram_C/microgram_Chl)],
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no change
+! in package effect.
+
+      b_PacEff == 5.0000d-01  5.0000d-01  0.0000d+00  0.0000d+00
+
+! Rate of change in the Chl_b:Chl_a ratio
+! [(microgram_Chl_b/microgram_Chl_a)/[microgram_C/microgram_Chl_ a)],
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotea no change
+! in Chl_b:Chl_a ratio.
+
+        mxChlB == 0.0000d+00  0.0000d+00  0.0000d+00  0.0000d+00
+
+! Maximum Chl_b:Chl_a ratio (microgram_Chl_b/microgram_Chl_a),
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no Chl_b.
+
+        b_ChlB == 0.0000d+00  0.0000d+00  0.0000d+00  0.0000d+00
+
+! Rate of change in the Chl_c:Chl_a ratio.
+! [(microgram_Chl_c/microgram_Chl_a)/(microgram_C/microgram_Chl_a)],
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no change
+! in Chl_c:Chl_a ratio.
+
+        mxChlC == -1.3600d-03 -1.2000d-03 0.0000d+00  0.0000d+00
+
+! Maximum Chl_c:Chl_a ratio (microgram_Chl_c/microgram_Chl_a),
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no Chl_c.
+
+        b_ChlC == 3.4000d-01  3.4000d-01  5.6000d-02  0.0000d+00
+
+! Rate of change in the PSC:Chl_a ratio
+! [(microgram_PSC/microgram_Chl_a)/microgram_C/microgram_Chl_a)],
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no change
+! in PSC:Chl_a ratio.
+
+         mxPSC == -1.2000d-02 -1.0400d-02 0.0000d+00  0.0000d+00
+
+! Maximum PSC:Chl_a ratio (microgram_PSC/microgram_Chl_a),
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no
+! Photosynthetic Caroteniods.
+
+         b_PSC == 2.0000d+00  2.0000d+00  1.1060d+00  0.0000d+00
+
+! Rate of change in the PPC:Chl_a ratio
+! [(microgram_PPC/microgram_Chl_a)/(microgram_C/microgram_Chl_ a)],
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no change
+! in PPC:Chl_a ratio.
+
+         mxPPC == 0.0000d+00  0.0000d+00  1.8000d-03  9.0000d-03
+
+! Maximum PPC:Chl_a ratio (microgram_Chl_c/microgram_Chl_a),
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no
+! Photoprotective Caroteniods.
+
+         b_PPC == 1.0000d-01  1.0000d-01  1.6000d-01  3.0000d-01
+
+! Rate of change in the LPUb:Chl_a ratio
+! [(microgram_LPUb/microgram_Chl_a)/(microgram_C/microgram_Chl_a)],
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no change
+! in LPUb:Chl_a ratio.
+
+        mxLPUb == 0.0000d+00  0.0000d+00  0.0000d+00  0.0000d+00
+
+! Maximum LPUb:Chl_a ratio (migrogram_HPUb/microgram_Chl_a),
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no LPUb.
+
+        b_LPUb == 0.0000d+00  0.0000d+00  0.0000d+00  0.0000d+00
+
+! Rate of change in the HPUb:Chl_a ratio
+! [(microgram_HPUb/microgram_Chl_a)/(microgram_C/microgram_Chl_a)],
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no change
+! in HPUb:Chl_a ratio.
+
+        mxHPUb == 0.0000d+00  0.0000d+00  0.0000d+00 -1.3000d-01
+
+! Maximum HPUb:Chl_a ratio (microgram_HPUb/microgram_Chl_a),
+! [Nphy,Ngrids] values are expected. A value of 0.0 denotes no HPUb.
+
+        b_HPUb == 0.0000d+00  0.0000d+00  0.0000d+00  2.0000d+01
+
+! Proportion of grazing stress that is apportioned to DOM
+! (nondimensional), [Nphy,Ngrids] values are expected.
+
+        FecDOC == 3.3330d-01  3.3330d-01  3.3330d-01  4.1670d-01
+
+! Proportion of grazing stress that is apportioned to fecal
+! (nondimensional), [Nphy,Nfec,Ngrids] values are expected.
+
+        FecPEL == 3*1.6670d-01  8.3350d-02  3*1.6670d-01  8.3350d-02
+
+! Proportion of grazing stress that is recycled (nondimensional),
+! [Nphy,Ngrids] values are expected.
+
+        FecCYC == 3.3330d-01  3.3330d-01  3.3330d-01  4.1660d-01
+
+! Proportion of daily production that is lost to excretion
+! (nondimensional), [Nphy,Ngrids] values are expected.
+
+         ExALG == 5.0000d-03  5.0000d-03  5.0000d-03  5.0000d-03
+
+! Phytoplankton sinking speed (meters/day),
+! [Nphy,Ngrids] values are expected.
+
+            WS == 0.0000d+00  0.0000d+00  0.0000d+00  0.0000d+00
+
+! Phytoplankton grazing parameter (nondimensional).
+! [Nphy,Ngrids] values are expected.
+
+         HsGRZ == 0.0100d+00  0.0100d+00  0.0100d+00  0.0100d+00
+
+! Refuge Phytoplankton population (micromole_C/liter),
+! [Nphy,Ngrids] values are expected.
+
+     MinRefuge == 2.0000d-02  2.0000d-02  2.0000d-02  2.0000d-02
+
+! Maximum Refuge Phytoplankton depth (meters),
+! [Nphy,Ngrids] values are expected.
+
+     RefugeDep == 4.0000d+01  4.0000d+01  4.0000d+01  4.0000d+01
+
+! Normalized Volume factor (nondimensional),
+! [Nphy,Ngrids] values are expected. (1 micron diameter cell = 1).
+
+      Norm_Vol == 7.2398d+01  7.2398d+01  7.2398d+01  4.6370d+00
+
+! Normalized Surface Area factor (nondimensional),
+! [Nphy,Ngrids] values are expected. (1 micron diameter cell = 1).
+
+     Norm_Surf == 1.7361d+01  1.7361d+01  1.7361d+01  2.7781d+00
+
+! Half Saturation Constant for DOP uptake (micromole_DOP/liter),
+! [Nphy,Ngrids] values are expected.
+
+         HsDOP == 1.0000d-05  1.0000d-05  2.0000d+00  1.0000d-05
+
+! C:P ratio where DOP uptake begins (micromole_C/micromole_P),
+! [Nphy,Ngrids] values are expected. Values above maxC2pALG denote
+! no DOP uptake.
+
+    C2pALKPHOS == 5.0000d+02  5.0000d+02  1.1000d+02  5.0000d+02
+
+! Half Saturation constant for DON uptake (micromole_DON/liter),
+! [Nphy,Ngrids] values are expected.
+
+         HsDON == 1.0000d-05  1.0000d-05  2.0000d+00  1.0000d-05
+
+! C:N ratio where DON uptake begins (micromole_C/micromole_N),
+! [Nphy,Ngrids] values are expected. Values above maxC2nALG denote
+! no DOP uptake.
+
+     C2nNupDON == 5.0000d+02  5.0000d+02  1.4000d+01  5.0000d+02
+
+!-----------------------------------------------------------------------------
+! Bacteria group parameters.
+!-----------------------------------------------------------------------------
+!
+! Half saturation constant for bacteria DOC uptake (micromole_DOC/liter),
+! [Nbac,Ngrids] values are expected.
+
+      HsDOC_ba == 130.0d+00
+
+! Maximum 24 hour bacterial growth rate (1/day),
+! [Nbac,Ngrids] values are expected.
+
+     GtBAC_max == 2.0d+00
+
+! Bacteria temperature base for exponential response to temperature
+! (Celsius), [Nbac,Ngrids] values are expected.
+
+      BacTbase == 27.0d+0
+
+! Bacteria exponential temperature factor (1/Celsius),
+! [Nbac,Ngrids] values are expected.
+
+       BacTfac == 0.092d+00
+
+! Carbon to Nitrogen ratio of Bacteria (micromole_C/micromole_N),
+! [Ngrids] values are expected.
+
+        C2nBAC == 5.0d+00
+
+! Carbon to Phosphorus ratio of Bacteria (micromole_C/micromole_P)
+! [Ngrids] values are expected.
+
+        C2pBAC == 60.0d+00
+
+! Carbon to Iron ratio of Bacteria (micromole_C/micromole_Fe),
+! [Ngrids] values are expected.
+
+       C2FeBAC == 1000.0d+00
+
+! Proportion of bacteria grazing stress that is apportioned to DOM
+! (nondimensional), [Ngrids] values are expected.
+
+        BacDOC == 4.583d-01
+
+! Proportion of bacteria grazing stress that is apportioned to fecal
+! (nondimensional), [Ngrids] values are expected.
+
+        BacPEL == 8.340d-02
+
+! Proportion of bacteria grazing stress that is recycled
+! (nondimensional), [Ngrids] values are expected.
+
+        BacCYC == 4.583d-01
+
+! Bacterial recalcitrant carbon excretion as a proportion of uptake
+! (nondimensional), [Ngrids] values are expected.
+
+       ExBAC_c == 4.0d-02
+
+! Bacterial recalcitrant excretion carbon to nitrogen ratio
+! (micromole_C/micromole_N), [Ngrids] values are expected.
+
+      ExBacC2N == 15.0d0
+
+! Bacterial gross growth carbon efficiency (nondimensional),
+! [Ngrids] values are expected.
+
+      Bac_Ceff == 0.3d0
+
+! Maximum nitrification rate (1/day),
+! [Ngrids] values are expected.
+
+         RtNIT == 0.4d0
+
+! Half-saturation constant for bacterial nitrification (micromole_NH4/liter),
+! [Ngrids] values are expected.
+
+         HsNIT == 0.1d0
+
+!-----------------------------------------------------------------------------
+! DOM group parameters.
+!-----------------------------------------------------------------------------
+!
+! Colored fraction of DOC from phytoplankton and bacterial losses
+! (nondimensional), [Ndom,Ngrids] values are expected
+
+    cDOCfrac_c == 0.0323d0  0.0930d0
+
+! UV degradation of DOC into DIC
+! (micromole/meter/liter/hour at 410 nm),
+! [Ngrids] values are expected.
+
+     RtUVR_DIC == 0.0193d0
+
+! UV degradation of DOC to colorless labile DOC
+! (micromole/meter/liter/hour at 410 nm),
+! [Ngrids] values are expected.
+
+     RtUVR_DOC == 0.0034d0
+
+!-----------------------------------------------------------------------------
+! Fecal and detritus group parameters.
+!-----------------------------------------------------------------------------
+!
+! Fecal sinking flux (meters/day),
+! [Nfec,Ngrids] values are expected.
+
+            WF == 0.0d0   100.0d0
+
+! Fecal regeneration temp base for exponential response to tempemperaute
+! (Celsius), [Nfec,Ngrids] values are expected.
+
+      RegTbase == 2*27.0d0
+
+! Fecal regeneration exponential temperature factor,
+! (1/Celsius), [Nfec,Ngrids] values are expected.
+
+       RegTfac == 2*0.092d0
+
+! Fecal carbon regeneration rate (1/day),
+! [Nfec,Ngrids] values are expected.
+
+         RegCR == 0.10d0  0.0d0
+
+! Fecal nitrogen regeneration rate (1/day),
+! [Nfec,Ngrids] values are expected.
+
+         RegNR == 0.10d0  0.0d0
+
+! Fecal silica regeneration rate (1/day),
+! [Nfec,Ngrids] values are expected.
+
+         RegSR == 0.13d0  0.0d0
+
+! Fecal phosphorus regeneration rate (1/day),
+! [Nfec,Ngrids] values are expected.
+
+         RegPR == 0.10d0  0.0d0
+
+! Fecal iron regeneration rate (1/day),
+! [Nfec,Ngrids] values are expected.
+
+         RegFR == 0.10d0  0.0d0
+
+!-----------------------------------------------------------------------------
+! Physical and output parameters
+!-----------------------------------------------------------------------------
+
+! Harmonic/biharmonic horizontal diffusion of biological tracer for
+! nonlinear model and adjoint-based algorithms: [NBT,Ngrids] values are
+! expected.
+
+          TNU2 == 61*0.0d0                       ! m2/s
+          TNU4 == 61*0.0d0                       ! m4/s
+
+       ad_TNU2 == 61*0.0d0                       ! m2/s
+       ad_TNU4 == 61*0.0d0                       ! m4/s
+
+! Vertical mixing coefficients for biological tracers for nonlinear model and
+! basic state scale factor in adjoint-based algorithms: [NBT,Ngrids] values
+! are expected.
+
+       AKT_BAK == 61*1.0d-6                      ! m2/s
+
+    ad_AKT_BAK == 61*1.0d0                       ! nondimensional
+
+! Nudging/relaxation time scales, inverse scales will be computed internally,
+! [NBT,Ngrids] values are expected.
+
+         TNUDG == 61*0.0d0                       ! days
+
+! Logical switches (TRUE/FALSE) to specify which variables to consider on
+! tracers point Sources/Sinks (like river runoff): [NBT,Ngrids] values are
+! expected. See glossary below for details.
+
+    LtracerSrc == 61*F
+
+! Logical switches (T/F)  to write biological tracers into output NetCDF
+! files, [NBT,Ngrids] values are expected.
+
+  Hout(idTvar) == 61*T                           ! biological tracer
+  Hout(idTsur) == 61*F                           ! surface tracer flux
+
+!
+!  GLOSSARY:
+!  =========
+!
+!==============================================================================
+! EcoSim Biological Model Parameters. It is configured with 61 biological
+! tracers by default:
+!
+!   idbio( 1)     DIC concentration
+!   idbio( 2)     Iron concentration
+!   idbio( 3)     Ammonium concentration
+!   idbio( 4)     Nitrate concentration
+!   idbio( 5)     Phosphate concentration
+!   idbio( 6)     Silica concentration
+!   idbio( 7)     Bacteria, Carbon Group 1
+!   idbio( 8)     Bacteria, Iron Group 1
+!   idbio( 9)     Bacteria, Nitrogen Group 1
+!   idbio(10)     Bacteria, Phosphorus Group 1
+!   idbio(11)     Color degradational matter, Carbon Group 1
+!   idbio(12)     Dissolved organic matter, Carbon Group 1
+!   idbio(13)     Dissolved organic matter, Nitrogen Group 1
+!   idbio(14)     Dissolved organic matter, Phosphorus Group 1
+!   idbio(15)     Color degradational matter, Carbon Group 2
+!   idbio(16)     Dissolved organic matter, Carbon Group 2
+!   idbio(17)     Dissolved organic matter, Nitrogen Group 2
+!   idbio(18)     Dissolved organic matter, Phosphorus Group 2
+!   idbio(19)     Fecal matter, Carbon Group 1
+!   idbio(20)     Fecal matter, Iron Group 1
+!   idbio(21)     Fecal matter, Nitrogen Group 1
+!   idbio(22)     Fecal matter, Phosphorus Group 1
+!   idbio(23)     Fecal matter, Silica Group 1
+!   idbio(24)     Fecal matter, Carbon Group 2
+!   idbio(25)     Fecal matter, Iron Group 2
+!   idbio(26)     Fecal matter, Nitrogen Group 2
+!   idbio(27)     Fecal matter, Phosphorus Group 2
+!   idbio(28)     Fecal matter, Silica Group 2
+!   idbio(29)     Small diatom, Carbon Group
+!   idbio(30)     Small diatom, Iron Group
+!   idbio(31)     Small diatom, Nitrogen Group
+!   idbio(32)     Small diatom, Phosphorus Group
+!   idbio(33)     Large diatom, Carbon Group
+!   idbio(34)     Large diatom, Iron Group
+!   idbio(35)     Large diatom, Nitrogen Group
+!   idbio(36)     Large diatom, Phosphorus Group
+!   idbio(37)     Large dinoflagellate, Carbon Group
+!   idbio(38)     Large dinoflagellate, Iron Group
+!   idbio(39)     Large dinoflagellate, Nitrogen Group
+!   idbio(40)     Large dinoflagellate, Phosphorus Group
+!   idbio(41)     Synechococcus, Carbon Group
+!   idbio(42)     Synechococcus, Iron Group
+!   idbio(43)     Synechococcus, Nitrogen Group
+!   idbio(44)     Synechococcus, Phosphorus Group
+!   idbio(45)     Small diatom, Silica Group
+!   idbio(46)     Large diatom, Silica Group
+!   idbio(47)     Small diatom, chlorophyll-a
+!   idbio(48)     Large diatom, chlorophyll-a
+!   idbio(49)     Large dinoflagellate, chlorophyll-a
+!   idbio(50)     Synechococcus, chlorophyll-a
+!   idbio(51)     Small diatom, chlorophyll-c
+!   idbio(52)     Large diatom, chlorophyll-c
+!   idbio(53)     Large dinoflagellate, chlorophyll-c
+!   idbio(54)     Small diatom, photosynthetic carotenoids
+!   idbio(55)     Large diatom, photosynthetic carotenoids
+!   idbio(56)     Large dinoflagellate, photosynthetic carotenoids
+!   idbio(57)     Small diatom, photoprotective carotenoids
+!   idbio(58)     Large diatom, photoprotective carotenoids
+!   idbio(59)     Large dinoflagellate, photoprotective carotenoids
+!   idbio(60)     Synechococcus, photoprotective carotenoids
+!   idbio(61)     Synechococcus, high urobilin phycoeurythin carotenoids
+!
+!==============================================================================
+!
+! EcoSim equations and representative parameters may be found in:
+!
+!    Bissett, W.P., J.J. Walsh, D.A. Dieterle, K.L. Carder, 1999:
+!      Carbon cycling in the upper waters of the Sargasso Sea: I.
+!      Numerical  simulation of  differential carbon and nitrogen
+!      fluxes,  Deep-Sea Res., 46, 205-269.
+!
+!    Bissett, W.P., K.L. Carder, J.J. Walsh, D.A. Dieterle, 1999:
+!      Carbon cycling in the upper waters of the Sargasso Sea: II.
+!      Numerical  simulation  of  apparent  and  inherent optical
+!      properties, Deep-Sea Res., 46, 271-317.
+!
+!    Bissett, W., Arnone, R., DeBra, S., Dieterle, D., Dye, D.,
+!      Kirkpatrick, G., Schofield, O. and Vargo, G., 2003.
+!      Predicting the optical properties of the West Florida Shelf:
+!      Resolving the potential impacts of a terrestrial boundary
+!      condition on the distribution of colored dissolved and
+!      particulate matter. Marine Chemistry, submitted.
+!      (For a PDF preprint, see: www.flenvironmental.org/Publications)
+!
+!------------------------------------------------------------------------------
+! Model switches and flags.
+!------------------------------------------------------------------------------
+!
+!  Lbiology       Switch to control the computation of a particular module
+!                   within nested and/or multiple connected grids. By default
+!                   this switch is set to TRUE in "mod_scalars" for all grids.
+!                   Ngrids values are expected. The USER has the option, for
+!                   example, to compute the biology in just one of the nested
+!                   grids.
+!
+!  BioIter        Maximum number of iterations to achieve convergence of
+!                   the nonlinear solution.
+!
+!  RtUVR_flag     Logical switch (T/F) to calculate CDOC UV photolysis.
+!
+!  NFIX_flag      Logical switch (T/F) to calculate temperature based nitrogen
+!                   fixation. (Not tested at this time; No nitrogen fixation
+!                   being calculated).
+!
+!  Regen_flag     Logical switch (T/F) to calculate fecal matter regeneration.
+!
+!------------------------------------------------------------------------------
+! Phytoplankton Parameters. Unless specified, [Nphy,Ngrids] values are
+! expected. This file is configured for Nphy=1 and Ngrids=1. The order
+! of phytoplankton are:
+!                          [1] larger diatoms
+!                          [2] small diatoms
+!                          [3] dinoflagellates
+!                          [4] synechococcus
+!------------------------------------------------------------------------------
+!
+!  HsNO3          Half-saturation for phytoplankton NO3 uptake,
+!                   (micromole_NO3/liter).
+!
+!  HsNH4          Half-saturation for phytoplankton NH4 uptake,
+!                   (micromole_NH4/liter).
+!
+!  HsSiO          Half-saturation for phytoplankton SiO uptake,
+!                   (micromole_SiO/liter).
+!                   << 1.0d+30 denotes no SiO uptake being calculated >>
+!
+!  HsPO4          Half-saturation for phytoplankton PO4 uptake,
+!                   (micromole_PO4/liter).
+!
+!  HsFe           Half-saturation for phytoplankton Fe uptake,
+!                  (micromole_Fe/liter).
+!                  << 1.0d+30 denotes no Fe uptake being calculated >>
+!
+!  GtALG_max      Maximum 24 hour growth rate,
+!                   (1/day).
+!
+!  PhyTbase       Phytoplankton temperature base for exponential response
+!                   to temperature, (Celsius).
+!
+!  PhyTfac        Phytoplankton exponential temperature factor,
+!                   (1/Celsius).
+!
+!  BET_           Nitrate uptake inhibition for NH4,
+!                   (l/micromole).
+!
+!  maxC2nALG      Maximum phytoplankton C:N ratio,
+!                   (micromole_C/micromole_N).
+!
+!  minC2nALG      Balanced phytoplankton C:N ratio,
+!                   (micromole_C/micromole_N).
+!
+!  C2nALGminABS   Absolute minimum phytoplankton C:N ratio,
+!                   (micromole_C/micromole_N).
+!
+!  maxC2SiALG     Maximum phytoplankton C:Si ratio,
+!                   (micromole_C/micromole_Si).
+!                   (0.0 denotes no silica used)
+!
+!  minC2SiALG     Balanced phytoplankton C:Si ratio,
+!                   (micromole_C/micromole_Si).
+!                   << 1.0 denotes no silica used >>
+!
+!  C2SiALGminABS  Absolute minimum phytoplankton C:Si ratio,
+!                  (micromole_C/micromole_Si).
+!                  (1.0 denotes no silica used)
+!
+!  maxC2pALG      Maximum phytoplankton C:P ratio,
+!                   (micromole_C/micromole_P).
+!
+!  minC2pALG      Balanced phytoplankton C:P ratio,
+!                   (micromole_C/micromole_P).
+!
+!  C2pALGminABS   Absolute minimum phytoplankton C:P ratio,
+!                   (micromole_C/micromole_P).
+!
+!  maxC2FeALG     Maximum phytoplankton C:Fe ratio,
+!                   (micromole_C/micromole_Fe).
+!                   << 1.0d+30 denotes no Fe uptake being calculated >>
+!
+!  minC2FeALG     Balanced phytoplankton C:Fe ratio,
+!                   (micromole_C/micromole_Fe).
+!                   << 1.0d+30 denotes no Fe uptake being calculated >>
+!
+!  C2FeALGminABS  Absolute minimum phytoplankton C:Fe ratio,
+!                   (micromole_C/micromole_Fe).
+!                   << 1.0d+30 denotes no Fe uptake being calculated >>
+!
+!  qu_yld         Maximum quantum yield,
+!                   (micromole_C/micromole_quanta).
+!
+!  E0_comp        Compensation light level,
+!                   (micromole_quanta).
+!
+!  E0_inhib       Light level for onset of photoinhibition,
+!                   (micromole_quanta).
+!
+!  inhib_fac      Exponential decay factor for light limited growth,
+!                   (1/micromole_quanta).
+!
+!  C2Chl_max      Maximum lighted limited (nutrient replete) C:Chl ratio,
+!                   (microgram_C/microgram_Chl).
+!
+!  mxC2Cl         Rate of change in the lighted limited C:Chl ratio,
+!                   (microgram_C/microgram_Chl/micromole_quanta).
+!
+!  b_C2Cl         Minimum lighted limited (nutrient replete) C:Chl ratio,
+!                   (microgram_C/microgram_Chl).
+!
+!  mxC2Cn         Rate of change in the nutrient limited C:Chl ratio,
+!                   [(microgram_C/microgram_Chl)/(micromole_C/micromole_N)].
+!                   << Zeros denote no change in C:Chl with nutrient status >>
+!
+!  b_C2Cn         Minimum nutrient limited C:Chl ratio,
+!                   (microgram_C/microgram_Chl).
+!                   << Zeros denote no change in C:Chl with nutrient status >>
+!
+!  mxPacEff       Rate of change in package effect,
+!                   [1/(microgram_C/microgram_Chl)].
+!                   << Zeros denote no change in Package Effect >>
+!
+!  b_PacEff       Maximum package effect,
+!                   [1/(microgram_C/microgram_Chl)].
+!                   << Zeros denote no package effect >>
+!
+!  mxChlB         Rate of change in the Chl_b:Chl_a ratio,
+!                   [(microgram_Chl_b/microgram_Chl_a)/
+!                    (microgram_C/microgram_Chl_a)].
+!                   << Zeros denote no change in Chl_b:Chl_a ratio >>
+!
+!  b_ChlB         Maximum Chl_b:Chl_a ratio,
+!                   (microgram_Chl_b/microgram_Chl_a).
+!                   (Zeros denote no Chl_b)
+!
+!  mxChlC         Rate of change in the Chl_c:Chl_a ratio.
+!                   [(microgram_Chl_c/microgram_Chl_a)/
+!                    (microgram_C/microgram_Chl_a)].
+!                   << Zeros denote no change in Chl_c:Chl_a ratio >>
+!
+!  b_ChlC         Maximum Chl_c:Chl_a ratio,
+!                   (microgram_Chl_c/microgram_Chl_a).
+!                   << Zeros denote no Chl_c >>
+!
+!  mxPSC          Rate of change in the PSC:Chl_a ratio,
+!                   [(microgram_PSC/microgram_Chl_a)/
+!                    (microgram_C/microgram_Chl_a)].
+!                   << Zeros denote no change in PSC:Chla ratio >>
+!
+!  b_PSC          Maximum PSC:Chl_a ratio,
+!                  (microgram_Chl_c/microgram_Chl_a).
+!                  << Zeros denote no Photosynthetic Caroteniods >>
+!
+!  mxPPC          Rate of change in the PPC:Chl_a ratio,
+!                   [(microgram_PPC/microgram_Chl_a)/
+!                    (microgram_C/microgram_Chl_a)].
+!                   << Zeros denote no change in PPC:Chl_a ratio >>
+!
+!  b_PPC          Maximum PPC:Chl_a ratio,
+!                  (microgram_Chl_c/microgram_Chl_a).
+!                  << Zeros denote no Photoprotective Caroteniods >>
+!
+!  mxLPUb         Rate of change in the LPUb:Chl_a ratio,
+!                   [(microgram_LPUb/microgram_Chl_a)/
+!                    (microgram_C/microgram_Chl_a)].
+!                   << Zeros denote no change in LPUb:Chl_a ratio >>
+!
+!  b_LPUb         Maximum LPUb:Chl_a ratio,
+!                   (microgram_HPUb/microgram_Chl_a).
+!                   << Zeros denote no LPUb >>
+!
+!  mxHPUb         Rate of change in the HPUb:Chl_a ratio,
+!                   [(microgram_HPUb/microgram_Chl_a)/
+!                    (microgram_C/microgram_Chl_a)].
+!                   << Zeros denote no change in HPUb:Chl_a ratio >>
+!
+!  b_HPUb         Maximum HPUb:Chl_a ratio,
+!                   (microgram_HPUb/microgram_Chl_a).
+!                   << Zeros denote no HPUb >>
+!
+!  FecDOC         Proportion of grazing stress which is apportioned to DOM,
+!                   (nondimensional).
+!
+!  FecPEL         Proportion of grazing stress which is apportioned to fecal
+!                   pellets, (nondimesional).
+!                   [Nphy,Nfec,Ngrids] values are expected.
+!
+!  FecCYC         Proportion of grazing stress which is apportioned to direct
+!                   remineralization, (nondimensional).
+!
+!  ExALG          Proportion of daily production that is lost to excretion,
+!                   (nondimensional).
+!
+!  WS             Phytoplankton sinking speed,
+!                   (meters/day).
+!
+!  HsGRZ          Phytoplankton grazing parameter,
+!                   (nondimensional).
+!
+!  MinRefuge      Refuge Phytoplankton population,
+!                   (micromole_C/liter).
+!
+!  RefugeDep      Maximum Refuge Phytoplankton depth,
+!                   (meters).
+!
+!  Norm_Vol       Normalized Volume factor,
+!                   (nondimensional).
+!                   << 1 micron diameter cell = 1 >>
+!
+!  Norm_Surf      Normalized surface area factor,
+!                   (nondimensional).
+!                   << 1 micron diameter cell = 1 >>
+!
+!  HsDOP          Half Saturation Constant for DOP uptake,
+!                   (micromole_DOP/liter).
+!
+!  C2pALKPHOS     C:P ratio where DOP uptake begins,
+!                   (micromole_C/micromole_P).
+!                   << Values above maxC2pALG denote no DOP uptake >>
+!
+!  HsDON          Half Saturation Constant for DON uptake,
+!                   (micromole_DON/liter).
+!
+!  C2nNupDON      C:N ratio where DON uptake begins,
+!                   (micromole_C/micromole_N).
+!                   << Values above maxC2nALG denote no DOP uptake >>
+!
+!------------------------------------------------------------------------------
+! Bacteria Parameters. Unless specified, [Ngrids] values are expected. This
+! file is configured for Nbac=1 and Ngrids=1.
+!------------------------------------------------------------------------------
+!
+!  HsDOC_ba       Half saturation constant for bacteria DOC uptake,
+!                   (micromole_DOC/liter).
+!                   [Nbac,Ngrids] values are expected.
+!
+!  GtBAC_max      Maximum 24 hour bacterial growth rate,
+!                   (1/day).
+!                   [Nbac,Ngrids] values are expected.
+!
+!  BacTbase       Phytoplankton temperature base for exponential response to
+!                   temperature, (Celsius).
+!                   [Nbac,Ngrids] values are expected.
+!
+!  BacTfac        Phytoplankton exponential temperature factor,
+!                   (1/Celsius).
+!                   [Nbac,Ngrids] values are expected.
+!
+!  C2nBAC         Carbon to Nitrogen ratio of Bacteria,
+!                   (micromole_C/micromole_N).
+!
+!  C2pBAC         Carbon to Phosphorus ratio of Bacteria,
+!                   (micromole_C/micromole_P).
+!
+!  C2FeBAC        Carbon to Iron ratio of Bacteria,
+!                   (micromole_C/micromole_Fe).
+!
+!  BacDOC         Proportion of bacterial grazing stress which is apportioned
+!                   to DOM, (nondimensional).
+!
+!  BacPEL         Proportion of bacterial grazing stress which is apportioned
+!                   to fecal pellets, (nondimensional).
+!
+!  BacCYC         Proportion of bacterial grazing stress which is apportioned
+!                   to direct remineralization, (nondimensional).
+!
+!  ExBAC_c        Bacterial recalcitrant carbon excretion as a proportion
+!                   of uptake, (nondimensional)
+!
+!  ExBacC2N       Bacterial recalcitrant excretion carbon to nitrogen ratio,
+!                   (micromole_C/micromole_N).
+!
+!  Bac_Ceff       Bacterial gross growth carbon efficiency,
+!                   (nondimensional).
+!
+!  RtNIT          Maximum nitrification rate,
+!                   (1/day).
+!
+!  HsNIT          Half-saturation constant for bacterial nitrification,
+!                   (micromole_NH4/liter).
+!
+!------------------------------------------------------------------------------
+! DOM Parameters. Unless specified, [Ngrids] values are expected. This
+! file is configured for Ndom=2 and Ngrids=1.
+!------------------------------------------------------------------------------
+!
+!  cDOCfrac_c     Colored fraction of DOC production from phytoplankton and
+!                   bacterial losses, (nondimensional).
+!                   [Ndom,Ngrids] values are expected.
+!
+!  RtUVR_DIC      UV degradation of DOC into DIC,
+!                   (micromole/meter/liter/hour at 410 nanometer).
+!
+!  RtUVR_DOC      UV degradation of DOC into colorless labile DOC,
+!                   (micromole/meter/liter/hour at 410 nanometer).
+!
+!------------------------------------------------------------------------------
+! Fecal and detritus Parameters. Unless specified, [Nfec,Ngrids] values are
+! expected. This file is configured for Nfec=2 and Ngrids=1.
+!------------------------------------------------------------------------------
+!
+!  WF             Fecal sinking flux,
+!                   (meters/day)
+!
+!  RegTbase       Fecal regeneration temperature base for exponential response
+!                   to temperature, (Celsius).
+!
+!  RegTfac        Fecal regeneration exponential temperature factor,
+!                   (1/Celsius).
+!
+!  RegCR          Fecal carbon regeneration rate,
+!                   (1/day).
+!
+!  RegNR          Fecal nitrogen regeneration rate,
+!                   (1/day).
+!
+!  RegSR          Fecal silica regeneration rate,
+!                   (1/day).
+!
+!  RegPR          Fecal phosphorus regeneration rate,
+!                   (1/day).
+!
+!  RegFR          Fecal iron regeneration rate,
+!                   (1/day)
+!
+!------------------------------------------------------------------------------
+! Physical parameters. This file is configured for NBT=61.
+!------------------------------------------------------------------------------
+!
+!  TNU2           Nonlinear model lateral, harmonic, constant, mixing
+!                   coefficient (m2/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, TNU2 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  TNU4           Nonlinear model lateral, biharmonic, constant, mixing
+!                   coefficient (m4/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, TNU4 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  ad_TNU2        Adjoint-based algorithms lateral, harmonic, constant,
+!                   mixing coefficient (m2/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, ad_TNU2 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  ad_TNU4        Adjoint-based algorithms lateral, biharmonic, constant,
+!                   mixing coefficient (m4/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, ad_TNU4 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  AKT_BAK        Background vertical mixing coefficient (m2/s) for biological
+!                   tracer variables, [1:NBT,1:Ngrids] values are expected.
+!
+!
+!  ad_AKT_fac     Adjoint-based algorithms vertical mixing, basic state,
+!                   scale factor (nondimensional) for biological tracer
+!                   variables; [1:NBT,1:Ngrids] values are expected. In
+!                   some applications, a smaller/larger values of vertical
+!                   mixing are necessary for stability. It is only used
+!                   when FORWARD_MIXING is activated.
+!
+!  TNUDG          Nudging time scale (days), [1:NBT,1:Ngrids].  Inverse scale
+!                   will be computed internally.
+!
+!------------------------------------------------------------------------------
+!  Tracer point Sources/Sink sources switches.
+!------------------------------------------------------------------------------
+!
+!  LtracerSrc     Logical switches (T/F) to specify which tracer variables
+!                   to consider when the option TS_PSOURCE is activated;
+!                   [1:NBT,1:Ngrids] values are expected.
+!
+!                     LtracerSrc(idbio(  1),ng)
+!                     ...              ...
+!                     LtracerSrc(idbio(NBT),ng)
+!
+!                   Recall that TS_PSOURCE is usually activated to add river
+!                   runoff as a point source. At minimum, it is necessary to
+!                   specify both temperature and salinity for all rivers. The
+!                   other tracers are optional. The user needs to know the
+!                   correspondence between biological variables and indices
+!                   idbio(1:NBT) when activating one or more of these switches.
+!
+!                   This logical switch REPLACES and ELIMINATES the need to
+!                   have or read the variable "river_flag(river)" in the input
+!                   rivers forcing NetCDF file:
+!
+!                     double river_flag(river)
+!                        river_flag:long_name = "river runoff tracer flag"
+!                        river_flag:option_0 = "all tracers are off"
+!                        river_flag:option_1 = "only temperature"
+!                        river_flag:option_2 = "only salinity"
+!                        river_flag:option_3 = "both temperature and salinity"
+!                        river_flag:units = "nondimensional"
+!
+!                   This logic was too cumbersome and complicated when
+!                   additional tracers are considered. However, this change
+!                   is backward compatible.
+!
+!                   The LtracerSrc switch will be used to activate the reading
+!                   of respective tracer variable from input river forcing
+!                   NetCDF file. If you want to add other tracer variables
+!                   (other than temperature and salinity) as a source for a
+!                   particular river(s), you just need to specify such values
+!                   on those river(s). Then, set the values to ZERO on the
+!                   other river(s) that do NOT require such river forcing for
+!                   that tracer. Recall that you need to specify the tracer
+!                   values for all rivers, even if their values are zero.
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of fields into output files.
+!------------------------------------------------------------------------------
+!
+!  Hout             Logical switches to write out biological tracers into
+!                     output NetCDF files, [1:NBT,1:Ngrids] values are
+!                     expected.
+!
+!                      Hout(idTvar)     biological tracers
+!                      Hout(idTsur)     biological tracers surface flux
+!
