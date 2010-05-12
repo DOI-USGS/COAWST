@@ -1,6 +1,6 @@
 # svn $Id: Linux-pgi.mk 734 2008-09-07 01:58:06Z jcwarner $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2008 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -13,7 +13,6 @@
 # FFLAGS         Flags to the fortran compiler
 # CPP            Name of the C-preprocessor
 # CPPFLAGS       Flags to the C-preprocessor
-# CLEAN          Name of cleaning executable after C-preprocessing
 # NETCDF_INCDIR  NetCDF include directory
 # NETCDF_LIBDIR  NetCDF libary directory
 # LD             Program to load the objects into an executable
@@ -27,8 +26,7 @@
            FFLAGS :=
               CPP := /usr/bin/cpp
          CPPFLAGS := -P -traditional
-               LD := $(FC)
-          LDFLAGS := 
+          LDFLAGS :=
                AR := ar
           ARFLAGS := r
             MKDIR := mkdir -p
@@ -46,7 +44,7 @@
 # The user may want to uncomment this option to allow similar,
 # if not identical solutions between different of the PGI compiler.
 
-          FFLAGS += -Kieee
+#          FFLAGS += -Kieee
 
 #
 # Library locations, can be overridden by environment variables.
@@ -57,8 +55,8 @@ ifdef USE_NETCDF4
     NETCDF_LIBDIR ?= /opt/pgisoft/netcdf4/lib
       HDF5_LIBDIR ?= /opt/pgisoft/hdf5/lib
 else
-    NETCDF_INCDIR ?= /usr/local/apps/netcdf-3.6.1/pgi/6.0/x86_64/include
-    NETCDF_LIBDIR ?= /usr/local/apps/netcdf-3.6.1/pgi/6.0/x86_64/lib
+    NETCDF_INCDIR ?= /opt/pgisoft/netcdf/include
+    NETCDF_LIBDIR ?= /opt/pgisoft/netcdf/lib
 endif
              LIBS := -L$(NETCDF_LIBDIR) -lnetcdf -L/opt/mx/lib64
 ifdef USE_NETCDF4
@@ -78,7 +76,6 @@ ifdef USE_MPI
          CPPFLAGS += -DMPI
  ifdef USE_MPIF90
                FC := mpif90
-               LD := $(FC)
  else
              LIBS += -Bdynamic -lfmpi-pgi -lmpi-pgi -Bstatic
  endif
@@ -86,6 +83,7 @@ endif
 
 ifdef USE_OpenMP
          CPPFLAGS += -D_OPENMP
+           FFLAGS += -mp
 endif
 
 # According to the PGI manual, the -u -Bstatic flags initializes
@@ -97,6 +95,7 @@ endif
 ifdef USE_DEBUG
 #          FFLAGS += -g -C -Mchkstk -Mchkfpstk
            FFLAGS += -g -C
+#          FFLAGS += -gopt -C
 #          FFLAGS += -g
 else
 #          FFLAGS += -u -Bstatic -fastsse -Mipa=fast -tp k8-64
@@ -148,15 +147,26 @@ endif
 # Use full path of compiler.
 #
                FC := $(shell which ${FC})
+               LD := $(FC)
 
 #
 # Set free form format in source files to allow long string for
 # local directory and compilation flags inside the code.
 #
 
-$(SCRATCH_DIR)/analytical.o: FFLAGS += -Mfree
 $(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -Mfree
 $(SCRATCH_DIR)/mod_strings.o: FFLAGS := $(MY_FFLAGS) -Mfree
+$(SCRATCH_DIR)/analytical.o: FFLAGS += -Mfree
+$(SCRATCH_DIR)/biology.o: FFLAGS += -Mfree
+ifdef USE_ADJOINT
+$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -Mfree
+endif
+ifdef USE_REPRESENTER
+$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -Mfree
+endif
+ifdef USE_TANGENT
+$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -Mfree
+endif
 
 #
 # Supress free format in SWAN source files since there are comments

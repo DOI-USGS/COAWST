@@ -1,6 +1,6 @@
 # svn $Id: SunOS-ftn.mk 655 2008-07-25 18:57:05Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2008 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -27,7 +27,6 @@
            FFLAGS := -e I -e m
               CPP := $(HOME)/bin/cpp
          CPPFLAGS := -P
-               LD := $(FC)
           LDFLAGS :=
                AR := ar
           ARFLAGS := -rv
@@ -94,10 +93,28 @@ ifdef USE_ESMF
              LIBS += $(ESMF_F90LINKPATHS) -lesmf -lC
 endif
 
+ifdef USE_WRF
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+             LIBS += WRF/main/module_wrf_top.o
+             LIBS += WRF/main/libwrflib.a
+             LIBS += WRF/external/fftpack/fftpack5/libfftpack.a
+             LIBS += WRF/external/io_grib1/libio_grib1.a
+             LIBS += WRF/external/io_grib_share/libio_grib_share.a
+             LIBS += WRF/external/io_int/libwrfio_int.a
+             LIBS += WRF/external/esmf_time_f90/libesmf_time.a
+             LIBS += WRF/external/RSL_LITE/librsl_lite.a
+             LIBS += WRF/frame/module_internal_header_util.o
+             LIBS += WRF/frame/pack_utils.o
+             LIBS += WRF/external/io_netcdf/libwrfio_nf.a
+#            LIBS += WRF/external/io_netcdf/wrf_io.o
+endif
+
 #
 # Use full path of compiler.
 #
                FC := $(shell which ${FC})
+               LD := $(FC)
 
 # Cray specials
 
@@ -112,6 +129,16 @@ $(SCRATCH_DIR)/lmd_bkpp.o: FFLAGS += -O inlinefrom=lmd_wscale.f90
 $(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -free-form
 $(SCRATCH_DIR)/mod_strings.o: FFLAGS += -free-form
 $(SCRATCH_DIR)/analytical.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/biology.o: FFLAGS += -free-form
+ifdef USE_ADJOINT
+$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -free-form
+endif
+ifdef USE_REPRESENTER
+$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -free-form
+endif
+ifdef USE_TANGENT
+$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -free-form
+endif
 
 #
 # Supress free format in SWAN source files since there are comments

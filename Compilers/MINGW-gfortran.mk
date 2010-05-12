@@ -1,11 +1,11 @@
 # svn $Id: MINGW-gfortran.mk 655 2008-07-25 18:57:05Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2008 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #
-# Include file for GNU g95 on MSYS/MinGW
+# Include file for GNU on MSYS/MinGW
 # -------------------------------------------------------------------------
 #
 # ARPACK_LIBDIR  ARPACK libary directory
@@ -13,7 +13,6 @@
 # FFLAGS         Flags to the fortran compiler
 # CPP            Name of the C-preprocessor
 # CPPFLAGS       Flags to the C-preprocessor
-# CLEAN          Name of cleaning executable after C-preprocessing
 # NETCDF_INCDIR  NetCDF include directory
 # NETCDF_LIBDIR  NetCDF libary directory
 # LD             Program to load the objects into an executable
@@ -30,8 +29,7 @@
            FFLAGS := -frepack-arrays
               CPP := cpp
          CPPFLAGS := -P -traditional
-               LD := $(FC)
-          LDFLAGS := 
+          LDFLAGS :=
                AR := ar
           ARFLAGS := -r
             MKDIR := mkdir -p
@@ -90,15 +88,48 @@ ifdef USE_ESMF
              LIBS += $(ESMF_F90LINKPATHS) -lesmf -lC
 endif
 
+ifdef USE_WRF
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+             LIBS += WRF/main/module_wrf_top.o
+             LIBS += WRF/main/libwrflib.a
+             LIBS += WRF/external/fftpack/fftpack5/libfftpack.a
+             LIBS += WRF/external/io_grib1/libio_grib1.a
+             LIBS += WRF/external/io_grib_share/libio_grib_share.a
+             LIBS += WRF/external/io_int/libwrfio_int.a
+             LIBS += WRF/external/esmf_time_f90/libesmf_time.a
+             LIBS += WRF/external/RSL_LITE/librsl_lite.a
+             LIBS += WRF/frame/module_internal_header_util.o
+             LIBS += WRF/frame/pack_utils.o
+             LIBS += WRF/external/io_netcdf/libwrfio_nf.a
+#            LIBS += WRF/external/io_netcdf/wrf_io.o
+endif
+
 #
 # Use full path of compiler.
 #
                FC := $(shell which ${FC})
+               LD := $(FC)
 
+#
 # Turn off bounds checking for function def_var, as "dimension(*)"
 # declarations confuse Gnu Fortran 95 bounds-checking code.
+#
 
 $(SCRATCH_DIR)/def_var.o: FFLAGS += -fno-bounds-check
+
+#
+# Allow integer overflow in ran_state.F.  This is not allowed
+# during -O3 optimization. This option should be applied only for
+# Gfortran versions >= 4.2.
+#
+
+FC_TEST := $(findstring $(shell ${FC} --version | head -1 | cut -d " " -f 5 | \
+                              cut -d "." -f 1-2),4.0 4.1)
+
+ifeq "${FC_TEST}" ""
+$(SCRATCH_DIR)/ran_state.o: FFLAGS += -fno-strict-overflow
+endif
 
 #
 # Set free form format in source files to allow long string for
@@ -108,6 +139,16 @@ $(SCRATCH_DIR)/def_var.o: FFLAGS += -fno-bounds-check
 $(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -ffree-form -ffree-line-length-none
 $(SCRATCH_DIR)/mod_strings.o: FFLAGS += -ffree-form -ffree-line-length-none
 $(SCRATCH_DIR)/analytical.o: FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/biology.o: FFLAGS += -ffree-form -ffree-line-length-none
+ifdef USE_ADJOINT
+$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -ffree-form -ffree-line-length-none
+endif
+ifdef USE_REPRESENTER
+$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -ffree-form -ffree-line-length-none
+endif
+ifdef USE_TANGENT
+$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -ffree-form -ffree-line-length-none
+endif
 
 #
 # Supress free format in SWAN source files since there are comments

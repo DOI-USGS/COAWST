@@ -1,11 +1,11 @@
 # svn $Id: Linux-ifort.mk 734 2008-09-07 01:58:06Z jcwarner $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2008 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #
-# Include file for Intel IFORT (version 8.x) compiler on Linux
+# Include file for Intel IFORT (version 10.1) compiler on Linux
 # -------------------------------------------------------------------------
 #
 # ARPACK_LIBDIR  ARPACK libary directory
@@ -24,10 +24,9 @@
 # First the defaults
 #
                FC := ifort
-           FFLAGS :=
+           FFLAGS := -heap-arrays -fp-model precise
               CPP := /usr/bin/cpp
          CPPFLAGS := -P -traditional
-               LD := $(FC)
           LDFLAGS := -Vaxlib
                AR := ar
           ARFLAGS := r
@@ -68,11 +67,9 @@ endif
 ifdef USE_MPI
          CPPFLAGS += -DMPI
  ifdef USE_MPIF90
-               FC := /opt/intelsoft/mpich/bin/mpif90
-#              FC := /opt/intelsoft/mpich2/bin/mpif90
-               LD := $(FC)
+               FC := mpif90
  else
-             LIBS += -lfmpi-pgi -lmpi-pgi 
+             LIBS += -lfmpi-pgi -lmpi-pgi
  endif
 endif
 
@@ -82,7 +79,8 @@ ifdef USE_OpenMP
 endif
 
 ifdef USE_DEBUG
-           FFLAGS += -g -check bounds -traceback
+#          FFLAGS += -g -check bounds -traceback
+           FFLAGS += -g -check uninit -ftrapuv -traceback
 else
            FFLAGS += -ip -O3
  ifeq ($(CPU),i686)
@@ -130,6 +128,7 @@ endif
 # Use full path of compiler.
 #
                FC := $(shell which ${FC})
+               LD := $(FC)
 
 #
 # Set free form format in source files to allow long string for
@@ -139,6 +138,16 @@ endif
 $(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -free
 $(SCRATCH_DIR)/mod_strings.o: FFLAGS += -free
 $(SCRATCH_DIR)/analytical.o: FFLAGS += -free
+$(SCRATCH_DIR)/biology.o: FFLAGS += -free
+ifdef USE_ADJOINT
+$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -free
+endif
+ifdef USE_REPRESENTER
+$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -free
+endif
+ifdef USE_TANGENT
+$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -free
+endif
 
 #
 # Supress free format in SWAN source files since there are comments

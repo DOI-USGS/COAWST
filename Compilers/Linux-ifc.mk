@@ -1,6 +1,6 @@
 # svn $Id: Linux-ifc.mk 655 2008-07-25 18:57:05Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2008 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -24,10 +24,9 @@
 # First the defaults
 #
                FC := ifc
-           FFLAGS := 
+           FFLAGS :=
               CPP := /usr/bin/cpp
          CPPFLAGS := -P -traditional
-               LD := $(FC)
           LDFLAGS := -Vaxlib
                AR := ar
           ARFLAGS := r
@@ -69,9 +68,8 @@ ifdef USE_MPI
          CPPFLAGS += -DMPI
  ifdef USE_MPIF90
                FC := /opt/intelsoft/mpich2/bin/mpif90
-               LD := $(FC)
  else
-             LIBS += -lfmpi-pgi -lmpi-pgi 
+             LIBS += -lfmpi-pgi -lmpi-pgi
  endif
 endif
 
@@ -107,12 +105,30 @@ ifdef USE_ESMF
              LIBS += $(ESMF_F90LINKPATHS) -lesmf -lC
 endif
 
+ifdef USE_WRF
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+             LIBS += WRF/main/module_wrf_top.o
+             LIBS += WRF/main/libwrflib.a
+             LIBS += WRF/external/fftpack/fftpack5/libfftpack.a
+             LIBS += WRF/external/io_grib1/libio_grib1.a
+             LIBS += WRF/external/io_grib_share/libio_grib_share.a
+             LIBS += WRF/external/io_int/libwrfio_int.a
+             LIBS += WRF/external/esmf_time_f90/libesmf_time.a
+             LIBS += WRF/external/RSL_LITE/librsl_lite.a
+             LIBS += WRF/frame/module_internal_header_util.o
+             LIBS += WRF/frame/pack_utils.o
+             LIBS += WRF/external/io_netcdf/libwrfio_nf.a
+#            LIBS += WRF/external/io_netcdf/wrf_io.o
+endif
+
        clean_list += ifc* work.pc*
 
 #
 # Use full path of compiler.
 #
                FC := $(shell which ${FC})
+               LD := $(FC)
 
 #
 # Set free form format in source files to allow long string for
@@ -122,6 +138,16 @@ endif
 $(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -free
 $(SCRATCH_DIR)/mod_strings.o: FFLAGS += -free
 $(SCRATCH_DIR)/analytical.o: FFLAGS += -free
+$(SCRATCH_DIR)/biology.o: FFLAGS += -free
+ifdef USE_ADJOINT
+$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -free
+endif
+ifdef USE_REPRESENTER
+$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -free
+endif
+ifdef USE_TANGENT
+$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -free
+endif
 
 #
 # Supress free format in SWAN source files since there are comments

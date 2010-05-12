@@ -1,6 +1,6 @@
 # svn $Id: CYGWIN-gfortran.mk 655 2008-07-25 18:57:05Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2008 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -29,8 +29,7 @@
            FFLAGS := -frepack-arrays
               CPP := /usr/bin/cpp
          CPPFLAGS := -P -traditional
-               LD := $(FC)
-          LDFLAGS := 
+          LDFLAGS :=
                AR := ar
           ARFLAGS := -r
             MKDIR := mkdir -p
@@ -50,7 +49,7 @@ ifdef USE_NETCDF4
     NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
       HDF5_LIBDIR ?= /usr/local/hdf5/lib
 else
-    NETCDF_INCDIR ?= /usr/include
+    NETCDF_INCDIR ?= /usr/local/include
     NETCDF_LIBDIR ?= /usr/local/lib
 endif
              LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
@@ -63,13 +62,25 @@ ifdef USE_ARPACK
              LIBS += -L$(ARPACK_LIBDIR) -larpack
 endif
 
+ifdef USE_MPI
+         CPPFLAGS += -DMPI
+ ifdef USE_MPIF90
+               FC := mpif90
+  ifdef USE_DEBUG
+           FFLAGS += -mpe=mpicheck
+  endif
+ else
+  # MPI without mpif90 is not currently supported
+ endif
+endif
+
 ifdef USE_OpenMP
          CPPFLAGS += -D_OPENMP
            FFLAGS += -fopenmp
 endif
 
 ifdef USE_DEBUG
-           FFLAGS += -g -fbounds-check -Wall -Wno-unused-variable -Wno-unused-label
+           FFLAGS += -g -fbounds-check -fbacktrace
 else
            FFLAGS += -O3 -ffast-math
 endif
@@ -89,15 +100,48 @@ ifdef USE_ESMF
              LIBS += $(ESMF_F90LINKPATHS) -lesmf -lC
 endif
 
+ifdef USE_WRF
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+             LIBS += WRF/main/module_wrf_top.o
+             LIBS += WRF/main/libwrflib.a
+             LIBS += WRF/external/fftpack/fftpack5/libfftpack.a
+             LIBS += WRF/external/io_grib1/libio_grib1.a
+             LIBS += WRF/external/io_grib_share/libio_grib_share.a
+             LIBS += WRF/external/io_int/libwrfio_int.a
+             LIBS += WRF/external/esmf_time_f90/libesmf_time.a
+             LIBS += WRF/external/RSL_LITE/librsl_lite.a
+             LIBS += WRF/frame/module_internal_header_util.o
+             LIBS += WRF/frame/pack_utils.o
+             LIBS += WRF/external/io_netcdf/libwrfio_nf.a
+#            LIBS += WRF/external/io_netcdf/wrf_io.o
+endif
+
 #
 # Use full path of compiler.
 #
                FC := $(shell which ${FC})
+               LD := $(FC)
 
+#
 # Turn off bounds checking for function def_var, as "dimension(*)"
 # declarations confuse Gnu Fortran 95 bounds-checking code.
+#
 
 $(SCRATCH_DIR)/def_var.o: FFLAGS += -fno-bounds-check
+
+#
+# Allow integer overflow in ran_state.F.  This is not allowed
+# during -O3 optimization. This option should be applied only for
+# Gfortran versions >= 4.2.
+#
+
+FC_TEST := $(findstring $(shell ${FC} --version | head -1 | cut -d " " -f 5 | \
+                              cut -d "." -f 1-2),4.0 4.1)
+
+ifeq "${FC_TEST}" ""
+$(SCRATCH_DIR)/ran_state.o: FFLAGS += -fno-strict-overflow
+endif
 
 #
 # Set free form format in source files to allow long string for
@@ -107,6 +151,16 @@ $(SCRATCH_DIR)/def_var.o: FFLAGS += -fno-bounds-check
 $(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -ffree-form -ffree-line-length-none
 $(SCRATCH_DIR)/mod_strings.o: FFLAGS += -ffree-form -ffree-line-length-none
 $(SCRATCH_DIR)/analytical.o: FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/biology.o: FFLAGS += -ffree-form -ffree-line-length-none
+ifdef USE_ADJOINT
+$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -ffree-form -ffree-line-length-none
+endif
+ifdef USE_REPRESENTER
+$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -ffree-form -ffree-line-length-none
+endif
+ifdef USE_TANGENT
+$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -ffree-form -ffree-line-length-none
+endif
 
 #
 # Supress free format in SWAN source files since there are comments

@@ -1,6 +1,6 @@
 # svn $Id: CYGWIN-df.mk 734 2008-09-07 01:58:06Z jcwarner $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2008 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -30,8 +30,7 @@
            FFLAGS := /stand:f95
               CPP := /usr/bin/cpp
          CPPFLAGS := -P -DCYGWIN
-               LD := $(FC)
-          LDFLAGS := /link /nodefaultlib:libcmt /nodefaultlib:libifcore /stack:67108864 
+          LDFLAGS := /link /nodefaultlib:libcmt /nodefaultlib:libifcore /stack:67108864
                AR := ar
           ARFLAGS := r
             MKDIR := mkdir -p
@@ -76,7 +75,7 @@ endif
 ifdef USE_MPI
        MPI_INCDIR ?= c:\\work\\models\\MPICH2\\include
        MPI_LIBDIR ?= c:\\work\\models\\MPICH2\\lib
-       LIBS_WIN32 += $(MPI_LIBDIR)\\fmpich2s.lib 
+       LIBS_WIN32 += $(MPI_LIBDIR)\\fmpich2s.lib
            FFLAGS += -I$(MPI_INCDIR)
          CPPFLAGS += -DMPI -I$(MPI_INCDIR)
 endif
@@ -86,7 +85,7 @@ ifdef USE_MCT
       MPEU_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\mpeu
        LIBS_WIN32 += $(MCT_LIBDIR)\\libmct.a $(MPEU_LIBDIR)\\libmpeu.a
          CPPFLAGS += -traditional-cpp
-           FFLAGS += -I$(MCT_LIBDIR) -I$(MPEU_LIBDIR) 
+           FFLAGS += -I$(MCT_LIBDIR) -I$(MPEU_LIBDIR)
            FFLAGS += /noextend_source -assume:byterecl
 endif
 
@@ -96,6 +95,23 @@ ifdef USE_ESMF
                      include $(ESMF_MK_DIR)/esmf.mk
            FFLAGS += $(ESMF_F90COMPILEPATHS)
        LIBS_WIN32 += $(ESMF_F90LINKPATHS) -lesmf -lC
+endif
+
+ifdef USE_WRF
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+             LIBS += WRF/main/module_wrf_top.o
+             LIBS += WRF/main/libwrflib.a
+             LIBS += WRF/external/fftpack/fftpack5/libfftpack.a
+             LIBS += WRF/external/io_grib1/libio_grib1.a
+             LIBS += WRF/external/io_grib_share/libio_grib_share.a
+             LIBS += WRF/external/io_int/libwrfio_int.a
+             LIBS += WRF/external/esmf_time_f90/libesmf_time.a
+             LIBS += WRF/external/RSL_LITE/librsl_lite.a
+             LIBS += WRF/frame/module_internal_header_util.o
+             LIBS += WRF/frame/pack_utils.o
+             LIBS += WRF/external/io_netcdf/libwrfio_nf.a
+#            LIBS += WRF/external/io_netcdf/wrf_io.o
 endif
 
 #
@@ -125,7 +141,8 @@ endif
 #
 # Use full path of compiler.
 #
-                FC := $(shell which ${FC})
+                FC := "$(shell which ${FC})"
+                LD := $(FC)
 
 #
 # Set free form format in source files to allow long string for
@@ -135,6 +152,16 @@ endif
 $(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += /free
 $(SCRATCH_DIR)/mod_strings.o: FFLAGS += /free
 $(SCRATCH_DIR)/analytical.o: FFLAGS += /free
+$(SCRATCH_DIR)/biology.o: FFLAGS += /free
+ifdef USE_ADJOINT
+$(SCRATCH_DIR)/ad_biology.o: FFLAGS += /free
+endif
+ifdef USE_REPRESENTER
+$(SCRATCH_DIR)/rp_biology.o: FFLAGS += /free
+endif
+ifdef USE_TANGENT
+$(SCRATCH_DIR)/tl_biology.o: FFLAGS += /free
+endif
 
 #
 # Supress free format in SWAN source files since there are comments

@@ -1,6 +1,6 @@
 # svn $Id: Darwin-pgi.mk 655 2008-07-25 18:57:05Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2008 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -27,8 +27,7 @@
            FFLAGS :=
               CPP := /usr/bin/cpp-4.0
          CPPFLAGS := -P -traditional-cpp
-               LD := $(FC)
-          LDFLAGS := 
+          LDFLAGS :=
                AR := ar
           ARFLAGS := r
             MKDIR := mkdir -p
@@ -69,7 +68,6 @@ ifdef USE_MPI
          CPPFLAGS += -DMPI
  ifdef USE_MPIF90
                FC := /usr/local/openmpi-pgi/bin/mpif90
-               LD := $(FC)
  else
              LIBS += -Bdynamic -lfmpi-pgi -lmpi-pgi -Bstatic
  endif
@@ -109,12 +107,30 @@ ifdef USE_ESMF
              LIBS += $(ESMF_F90LINKPATHS) -lesmf -lC
 endif
 
+ifdef USE_WRF
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+             LIBS += WRF/main/module_wrf_top.o
+             LIBS += WRF/main/libwrflib.a
+             LIBS += WRF/external/fftpack/fftpack5/libfftpack.a
+             LIBS += WRF/external/io_grib1/libio_grib1.a
+             LIBS += WRF/external/io_grib_share/libio_grib_share.a
+             LIBS += WRF/external/io_int/libwrfio_int.a
+             LIBS += WRF/external/esmf_time_f90/libesmf_time.a
+             LIBS += WRF/external/RSL_LITE/librsl_lite.a
+             LIBS += WRF/frame/module_internal_header_util.o
+             LIBS += WRF/frame/pack_utils.o
+             LIBS += WRF/external/io_netcdf/libwrfio_nf.a
+#            LIBS += WRF/external/io_netcdf/wrf_io.o
+endif
+
        clean_list += ifc* work.pc*
 
 #
 # Use full path of compiler.
 #
                FC := $(shell which ${FC})
+               LD := $(FC)
 
 #
 # Perform floating-point operations in strict conformance with the
@@ -133,6 +149,16 @@ endif
 $(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -Mfree
 $(SCRATCH_DIR)/mod_strings.o: FFLAGS += -Mfree
 $(SCRATCH_DIR)/analytical.o: FFLAGS += -Mfree
+$(SCRATCH_DIR)/biology.o: FFLAGS += -Mfree
+ifdef USE_ADJOINT
+$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -Mfree
+endif
+ifdef USE_REPRESENTER
+$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -Mfree
+endif
+ifdef USE_TANGENT
+$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -Mfree
+endif
 
 #
 # Supress free format in SWAN source files since there are comments

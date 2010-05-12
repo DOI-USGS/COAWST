@@ -1,6 +1,6 @@
 # svn $Id: CYGWIN-ifort.mk 734 2008-09-07 01:58:06Z jcwarner $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2008 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -31,7 +31,6 @@
            FFLAGS := /align /G7 /MD
               CPP := /usr/bin/cpp
          CPPFLAGS := -P -DCYGWIN -DCYGWIN_ifort -traditional
-               LD := $(FC)
           LDFLAGS := /link /stack:67108864
                AR := ar
           ARFLAGS := r
@@ -116,6 +115,23 @@ ifdef USE_REFDIF
        LIBS_WIN32 += "$(MCT_LIBDIR)\libmct.a" "$(MPEU_LIBDIR)\libmpeu.a"
 endif
 
+ifdef USE_WRF
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+             LIBS += WRF/main/module_wrf_top.o
+             LIBS += WRF/main/libwrflib.a
+             LIBS += WRF/external/fftpack/fftpack5/libfftpack.a
+             LIBS += WRF/external/io_grib1/libio_grib1.a
+             LIBS += WRF/external/io_grib_share/libio_grib_share.a
+             LIBS += WRF/external/io_int/libwrfio_int.a
+             LIBS += WRF/external/esmf_time_f90/libesmf_time.a
+             LIBS += WRF/external/RSL_LITE/librsl_lite.a
+             LIBS += WRF/frame/module_internal_header_util.o
+             LIBS += WRF/frame/pack_utils.o
+             LIBS += WRF/external/io_netcdf/libwrfio_nf.a
+#            LIBS += WRF/external/io_netcdf/wrf_io.o
+endif
+
 #
 # For a Windows compiler, create variables pointing to the Windows
 # file names needed when linking. Use of the "=" sign means that
@@ -132,15 +148,39 @@ endif
         LD_WINDOWS := on
 
 #
-# Use full path of compiler.
+# Use full path of compiler. Notice that a very special editing is
+# done for the FC defintion to allow blank spaces and parenthesis in the
+# compiler path. For example, we can have:
 #
-#              FC := "$(shell which ${FC})"
+#      c:\\Software\\My Compilers (64 bit)
+# or
+#      /cygdrive/c/Program Files (x86)/Intel/Compiler/11.1/051/bin/ia32/ifort
+# or
+#      /cygdrive/c/Program Files/Intel/Compiler/11.1/051/bin/ia32/ifort
+#
+               FC := $(shell which ${FC} | sed 's|\([ |(|)]\)|\\\1|g')
+               LD := $(FC)
+
 #
 # For a Windows compiler, override the compilation rule
 #
 
 %.o: %.f90
 	cd $(SCRATCH_DIR); $(FC) -c $(FFLAGS) $(notdir $<) /object:$(notdir $@)
+
+#
+# Override rule for object files. Use .o instead of .obj
+#
+
+define one-compile-rule
+  $1: $2 $3
+	cd $$(SCRATCH_DIR); $$(FC) -c $$(FFLAGS) $(notdir $2) /object:$(notdir $1)
+
+  $2: $3
+	$$(CPP) $$(CPPFLAGS) $$(MY_CPP_FLAGS) $$< > $$@
+	$$(CLEAN) $$@
+
+endef
 
 #
 # Set free form format in source files to allow long string for
@@ -150,6 +190,16 @@ endif
 $(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -free
 $(SCRATCH_DIR)/mod_strings.o: FFLAGS += -free
 $(SCRATCH_DIR)/analytical.o: FFLAGS += -free
+$(SCRATCH_DIR)/biology.o: FFLAGS += -free
+ifdef USE_ADJOINT
+$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -free
+endif
+ifdef USE_REPRESENTER
+$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -free
+endif
+ifdef USE_TANGENT
+$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -free
+endif
 
 #
 # Supress free format in SWAN source files since there are comments
