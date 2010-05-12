@@ -1,8 +1,0 @@
-#define WRF_COUPLING   /* always keep this one defined */
-#define SWAN_COUPLING  /* this gives winds to swan */
-
-#ifdef SWAN_COUPLING
-# define COARE_TAYLOR_YELLAND
-#endif
-
-

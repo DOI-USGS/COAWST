@@ -1,5 +1,5 @@
 !WRF:MEDIATION_LAYER:SOLVER
-#include "cppdefs.wrf"
+#include "wrfcpp.h"
 #define BENCH_START(A)
 #define BENCH_END(A)
 

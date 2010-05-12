@@ -1,6 +1,6 @@
 !WRF:DRIVER_LAYER:INTEGRATION
 !
-#include "cppdefs.wrf"
+#include "wrfcpp.h"
 
 MODULE module_integrate
 

@@ -1,6 +1,6 @@
 !WRF:PACKAGE:RSL 
 !
-#include "cppdefs.wrf"
+#include "wrfcpp.h"
 
 MODULE module_dm
 

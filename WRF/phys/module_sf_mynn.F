@@ -1,4 +1,4 @@
-# include "cppdefs.wrf"
+# include "wrfcpp.h"
 MODULE module_sf_mynn
 
   USE module_model_constants, only: &

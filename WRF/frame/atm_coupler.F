@@ -1,4 +1,4 @@
-#include "cppdefs.wrf"
+#include "wrfcpp.h"
       MODULE atm_coupler_mod
 #ifdef WRF_COUPLING
 !svn $Id$

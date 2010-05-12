@@ -8,6 +8,11 @@ RM      =       /bin/rm -f
 deflt :
 		@ echo Please compile the code using ./compile
 
+#jcw
+CPPFLAGS += -D'PROJECT_HEADER="$(MY_HEADER_DIR)/$(HEADER)"'
+CPPFLAGS += -D'ROMS_GLOBAL_DEFS="$(MY_SRC_DIR)/ROMS/Include/globaldefs.h"'
+#jcw
+
 include ./configure.wrf
 
 EM_MODULE_DIR = -I../dyn_em

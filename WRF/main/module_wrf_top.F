@@ -2,7 +2,7 @@
 !
 
 !TBH:  $$$  move this to ../frame?  
-#include "cppdefs.wrf"
+#include "wrfcpp.h"
 
 MODULE module_wrf_top
 !<DESCRIPTION>

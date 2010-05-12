@@ -1,4 +1,4 @@
-# include "cppdefs.wrf"
+# include "wrfcpp.h"
 !----------------------------------------------------------------------
 !
       MODULE MODULE_SF_MYJSFC

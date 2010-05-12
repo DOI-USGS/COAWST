@@ -1,6 +1,6 @@
 !WRF:DRIVER_LAYER:MAIN
 !
-#include "cppdefs.wrf"
+#include "wrfcpp.h"
 
 #ifdef WRF_COUPLING
 SUBROUTINE wrf

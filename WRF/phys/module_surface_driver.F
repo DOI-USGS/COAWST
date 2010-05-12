@@ -1,6 +1,6 @@
 !WRF:MEDIATION_LAYER:PHYSICS
 !
-#include "cppdefs.wrf"
+#include "wrfcpp.h"
 MODULE module_surface_driver
 CONTAINS
 
