@@ -1,11 +1,11 @@
       SUBROUTINE ana_hmixcoef (ng, tile, model)
 !
-!! svn $Id: ana_hmixcoef.h 737 2008-09-07 02:06:44Z jcwarner $
+!! svn $Id: ana_hmixcoef.h 429 2009-12-20 17:30:26Z arango $
 !!================================================= Hernan G. Arango ===
-!! Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
-!!======================================================================
+!=======================================================================
 !                                                                      !
 !  This routine rescales horizontal mixing coefficients according      !
 !  to the grid size.  Also,  if applicable,  increases horizontal      !
@@ -34,6 +34,7 @@
 
       CALL ana_hmixcoef_tile (ng, tile, model,                          &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
 #ifdef SOLVE3D
 # ifdef TS_DIF2
      &                        MIXING(ng) % diff2,                       &
@@ -56,7 +57,11 @@
 !
 ! Set analytical header file name used.
 !
+#ifdef DISTRIBUTE
       IF (Lanafile) THEN
+#else
+      IF (Lanafile.and.(tile.eq.0)) THEN
+#endif
         ANANAME( 8)=__FILE__
       END IF
 
@@ -66,6 +71,7 @@
 !***********************************************************************
       SUBROUTINE ana_hmixcoef_tile (ng, tile, model,                    &
      &                              LBi, UBi, LBj, UBj,                 &
+     &                              IminS, ImaxS, JminS, JmaxS,         &
 #ifdef SOLVE3D
 # ifdef TS_DIF2
      &                              diff2,                              &
@@ -102,6 +108,7 @@
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 
 #ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: grdscl(LBi:,LBj:)
@@ -172,7 +179,7 @@
 !
 !! WARNING:  This section is generic for all applications. Please do not
 !!           change the code below.
-!!            
+!!
 # ifdef UV_VIS2
       cff=visc2(ng)/grdmax(ng)
       DO j=JstrR,JendR
@@ -212,7 +219,7 @@
 !
 !! WARNING:  This section is generic for all applications. Please do not
 !!           change the code below.
-!!            
+!!
 # ifdef TS_DIF2
       DO itrc=1,NT(ng)
         cff=tnu2(itrc,ng)/grdmax(ng)
@@ -242,7 +249,7 @@
 !
 !! User modifiable section.  Please specify the appropiate sponge area
 !! by increasing its horizontal mixing coefficients.
-!!            
+!!
 
 # if defined ADRIA02
 !
@@ -288,7 +295,7 @@
 !
 !! WARNING:  This section is generic for all applications. Please do not
 !!           change the code below.
-!!            
+!!
 # if defined EW_PERIODIC || defined NS_PERIODIC
 #  ifdef UV_VIS2
       CALL exchange_r2d_tile (ng, tile,                                 &

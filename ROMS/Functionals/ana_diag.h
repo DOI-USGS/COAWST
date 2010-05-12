@@ -1,8 +1,8 @@
       SUBROUTINE ana_diag (ng, tile, model)
 !
-!! svn $Id: ana_diag.h 737 2008-09-07 02:06:44Z jcwarner $
+!! svn $Id: ana_diag.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -25,6 +25,7 @@
 !
       CALL ana_diag_tile (ng, tile, model,                              &
      &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
 #ifdef SOLVE3D
      &                    OCEAN(ng) % u,                                &
      &                    OCEAN(ng) % v,                                &
@@ -34,7 +35,11 @@
 !
 ! Set analytical header file name used.
 !
+#ifdef DISTRIBUTE
       IF (Lanafile) THEN
+#else
+      IF (Lanafile.and.(tile.eq.0)) THEN
+#endif
         ANANAME( 5)=__FILE__
       END IF
 
@@ -44,6 +49,7 @@
 !***********************************************************************
       SUBROUTINE ana_diag_tile (ng, tile, model,                        &
      &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
 #ifdef SOLVE3D
      &                          u, v,                                   &
 #endif
@@ -61,6 +67,7 @@
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 #ifdef ASSUMED_SHAPE
 # ifdef SOLVE3D

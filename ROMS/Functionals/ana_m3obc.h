@@ -1,8 +1,8 @@
       SUBROUTINE ana_m3obc (ng, tile, model)
 !
-!! svn $Id: ana_m3obc.h 737 2008-09-07 02:06:44Z jcwarner $
+!! svn $Id: ana_m3obc.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -23,11 +23,16 @@
 #include "tile.h"
 !
       CALL ana_m3obc_tile (ng, tile, model,                             &
-     &                     LBi, UBi, LBj, UBj)
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     IminS, ImaxS, JminS, JmaxS)
 !
 ! Set analytical header file name used.
 !
+#ifdef DISTRIBUTE
       IF (Lanafile) THEN
+#else
+      IF (Lanafile.and.(tile.eq.0)) THEN
+#endif
         ANANAME(14)=__FILE__
       END IF
 
@@ -36,7 +41,8 @@
 !
 !***********************************************************************
       SUBROUTINE ana_m3obc_tile (ng, tile, model,                       &
-     &                           LBi, UBi, LBj, UBj)
+     &                           LBi, UBi, LBj, UBj,                    &
+     &                           IminS, ImaxS, JminS, JmaxS)
 !***********************************************************************
 !
       USE mod_param
@@ -46,6 +52,7 @@
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 !  Local variable declarations.
 !
@@ -59,6 +66,7 @@
 !-----------------------------------------------------------------------
 !
 #if defined SED_TEST1
+# ifdef WEST_M3OBC
       IF (WESTERN_EDGE) THEN
         fac=5.0E-06_r8
         DO k=1,N(ng)
@@ -75,6 +83,8 @@
           END DO
         END DO
       END IF
+# endif
+# ifdef EAST_M3OBC
       IF (EASTERN_EDGE) THEN
         fac=5.0E-06_r8
         DO k=1,N(ng)
@@ -91,7 +101,9 @@
           END DO
         END DO
       END IF
+# endif
 #else
+# ifdef EAST_M3OBC
       IF (EASTERN_EDGE) THEN
         DO k=1,N(ng)
           DO j=JstrR,JendR
@@ -102,6 +114,8 @@
           END DO
         END DO
       END IF
+# endif
+# ifdef WEST_M3OBC
       IF (WESTERN_EDGE) THEN
         DO k=1,N(ng)
           DO j=JstrR,JendR
@@ -112,6 +126,8 @@
           END DO
         END DO
       END IF
+# endif
+# ifdef SOUTH_M3OBC
       IF (SOUTHERN_EDGE) THEN
         DO k=1,N(ng)
           DO i=Istr,IendR
@@ -122,6 +138,8 @@
           END DO
         END DO
       END IF
+# endif
+# ifdef NORTH_M3OBC
       IF (NORTHERN_EDGE) THEN
         DO k=1,N(ng)
           DO i=Istr,IendR
@@ -132,6 +150,7 @@
           END DO
         END DO
       END IF
+# endif
 #endif
       RETURN
       END SUBROUTINE ana_m3obc_tile

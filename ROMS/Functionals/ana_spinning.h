@@ -1,8 +1,8 @@
       SUBROUTINE ana_spinning (ng, tile, model)
 !
-!! svn $Id: ana_spinning.h 737 2008-09-07 02:06:44Z jcwarner $
+!! svn $Id: ana_spinning.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -25,6 +25,7 @@
 !
       CALL ana_spinning_tile (ng, tile, model,                          &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
 #ifdef SPHERICAL
      &                        GRID(ng) % lonr,                          &
      &                        GRID(ng) % latr,                          &
@@ -38,7 +39,11 @@
 !
 ! Set analytical header file name used.
 !
+#ifdef DISTRIBUTE
       IF (Lanafile) THEN
+#else
+      IF (Lanafile.and.(tile.eq.0)) THEN
+#endif
         ANANAME(26)=__FILE__
       END IF
 
@@ -48,6 +53,7 @@
 !***********************************************************************
       SUBROUTINE ana_spinning_tile (ng, tile, model,                    &
      &                              LBi, UBi, LBj, UBj,                 &
+     &                              IminS, ImaxS, JminS, JmaxS,         &
 #ifdef SPHERICAL
      &                              lonr, latr                          &
 #else
@@ -63,6 +69,7 @@
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 #ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: f(LBi:,LBj:)

@@ -1,8 +1,8 @@
       SUBROUTINE ana_initial (ng, tile, model)
 !
-!! svn $Id: ana_initial.h 737 2008-09-07 02:06:44Z jcwarner $
+!! svn $Id: ana_initial.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -27,6 +27,7 @@
       IF (model.eq.iNLM) THEN
         CALL ana_NLMinitial_tile (ng, tile, model,                      &
      &                            LBi, UBi, LBj, UBj,                   &
+     &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            GRID(ng) % h,                         &
 #ifdef SPHERICAL
      &                            GRID(ng) % lonr,                      &
@@ -48,6 +49,7 @@
       ELSE IF ((model.eq.iTLM).or.(model.eq.iRPM)) THEN
         CALL ana_TLMinitial_tile (ng, tile, model,                      &
      &                            LBi, UBi, LBj, UBj,                   &
+     &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            kstp(ng),                             &
 # ifdef SOLVE3D
      &                            nstp(ng),                             &
@@ -63,6 +65,7 @@
       ELSE IF (model.eq.iADM) THEN
         CALL ana_ADMinitial_tile (ng, tile, model,                      &
      &                            LBi, UBi, LBj, UBj,                   &
+     &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            knew(ng),                             &
 # ifdef SOLVE3D
      &                            nstp(ng),                             &
@@ -78,7 +81,11 @@
 !
 ! Set analytical header file name used.
 !
+#ifdef DISTRIBUTE
       IF (Lanafile) THEN
+#else
+      IF (Lanafile.and.(tile.eq.0)) THEN
+#endif
         ANANAME(10)=__FILE__
       END IF
 
@@ -88,6 +95,7 @@
 !***********************************************************************
       SUBROUTINE ana_NLMinitial_tile (ng, tile, model,                  &
      &                                LBi, UBi, LBj, UBj,               &
+     &                                IminS, ImaxS, JminS, JmaxS,       &
      &                                h,                                &
 #ifdef SPHERICAL
      &                                lonr, latr,                       &
@@ -108,6 +116,7 @@
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 #ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: h(LBi:,LBj:)
@@ -657,6 +666,7 @@
 !***********************************************************************
       SUBROUTINE ana_TLMinitial_tile (ng, tile, model,                  &
      &                                LBi, UBi, LBj, UBj,               &
+     &                                IminS, ImaxS, JminS, JmaxS,       &
      &                                kstp,                             &
 # ifdef SOLVE3D
      &                                nstp,                             &
@@ -672,6 +682,7 @@
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: kstp
 # ifdef SOLVE3D
       integer, intent(in) :: nstp
@@ -769,6 +780,7 @@
 !***********************************************************************
       SUBROUTINE ana_ADMinitial_tile (ng, tile, model,                  &
      &                                LBi, UBi, LBj, UBj,               &
+     &                                IminS, ImaxS, JminS, JmaxS,       &
      &                                knew,                             &
 # ifdef SOLVE3D
      &                                nstp,                             &
@@ -784,6 +796,7 @@
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: knew
 # ifdef SOLVE3D
       integer, intent(in) :: nstp

@@ -1,8 +1,8 @@
       SUBROUTINE ana_specir (ng, tile, model)
 !
-!! svn $Id: ana_specir.h 737 2008-09-07 02:06:44Z jcwarner $
+!! svn $Id: ana_specir.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -32,6 +32,7 @@
 !
       CALL ana_specir_tile (ng, tile, model,                            &
      &                      LBi, UBi, LBj, UBj,                         &
+     &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      GRID(ng) % lonr,                            &
      &                      GRID(ng) % latr,                            &
      &                      FORCES(ng) % cloud,                         &
@@ -45,7 +46,11 @@
 !
 ! Set analytical header file name used.
 !
+#ifdef DISTRIBUTE
       IF (Lanafile) THEN
+#else
+      IF (Lanafile.and.(tile.eq.0)) THEN
+#endif
         ANANAME(25)=__FILE__
       END IF
 
@@ -55,6 +60,7 @@
 !***********************************************************************
       SUBROUTINE ana_specir_tile (ng, tile, model,                      &
      &                            LBi, UBi, LBj, UBj,                   &
+     &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            lonr, latr,                           &
      &                            cloud, Hair, Tair, Pair,              &
      &                            Uwind, Vwind,                         &
@@ -65,7 +71,7 @@
       USE mod_scalars
       USE mod_eclight
       USE mod_iounits
-!  
+!
 #if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_3d_mod, ONLY : exchange_r3d_tile
 #endif
@@ -79,6 +85,7 @@
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 #ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: lonr(LBi:,LBj:)
@@ -139,7 +146,7 @@
       real(r8) :: alg, arg, asymp, cosunz, Fa
       real(r8) :: frh, rh, rlam, rlogc
       real(r8) :: rm, rmin, rmo, rmp, rod, rof
-      real(r8) :: ros, rospd, rosps, rpls 
+      real(r8) :: ros, rospd, rosps, rpls
       real(r8) :: sumx, sumx2, sumxy, sumy
       real(r8) :: taa, tas, to3, wa, wspeed, zenith
 
@@ -200,8 +207,8 @@
      &         SIN(1.28_r8*LatRad)*SIN(1.28_r8*LatRad))*                &
      &        0.001_r8                                 ! sco3 conversion
 !
-!  Local daylight is a function of the declination (Dangle) and hour 
-!  angle adjusted for the local meridian (Hangle-lonr(i,j)*deg2rad). 
+!  Local daylight is a function of the declination (Dangle) and hour
+!  angle adjusted for the local meridian (Hangle-lonr(i,j)*deg2rad).
 !
           cosunz=SIN(LatRad)*SIN(Dangle)+                               &
      &           COS(LatRad)*COS(Dangle)*COS(Hangle-lonr(i,j)*deg2rad)
@@ -266,8 +273,8 @@
             DO ic=1,3
               cff1=LOG10(r_arr(ic))
               cff2=LOG10(dndr(ic))
-              sumx=sumx+cff1 
-              sumy=sumy+cff2 
+              sumx=sumx+cff1
+              sumy=sumy+cff2
               sumxy=sumxy+cff1*cff2
               sumx2=sumx2+cff1*cff1
             END DO

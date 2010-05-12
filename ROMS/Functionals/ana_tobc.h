@@ -1,8 +1,8 @@
       SUBROUTINE ana_tobc (ng, tile, model)
 !
-!! svn $Id: ana_tobc.h 737 2008-09-07 02:06:44Z jcwarner $
+!! svn $Id: ana_tobc.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -26,13 +26,19 @@
 #include "tile.h"
 !
       CALL ana_tobc_tile (ng, tile, model,                              &
-     &                    LBi, UBi, LBj, UBj, nstp(ng),                 &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
+     &                    nstp(ng),                                     &
      &                    GRID(ng) % z_r,                               &
      &                    OCEAN(ng) % t)
 !
 ! Set analytical header file name used.
 !
+#ifdef DISTRIBUTE
       IF (Lanafile) THEN
+#else
+      IF (Lanafile.and.(tile.eq.0)) THEN
+#endif
         ANANAME(34)=__FILE__
       END IF
 
@@ -41,7 +47,9 @@
 !
 !***********************************************************************
       SUBROUTINE ana_tobc_tile (ng, tile, model,                        &
-     &                          LBi, UBi, LBj, UBj, nstp,               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
+     &                          nstp,                                   &
      &                          z_r, t)
 !***********************************************************************
 !
@@ -53,7 +61,9 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile, model
-      integer, intent(in) :: LBi, UBi, LBj, UBj, nstp
+      integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
+      integer, intent(in) :: nstp
 
 #ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
@@ -75,33 +85,38 @@
 !-----------------------------------------------------------------------
 !
 #ifdef ESTUARY_TEST
+# ifdef EAST_TOBC
       IF (EASTERN_EDGE) THEN
         DO k=1,N(ng)
           DO j=JstrR,JendR
             BOUNDARY(ng)%t_east(j,k,itemp)=T0(ng)
             BOUNDARY(ng)%t_east(j,k,isalt)=0.0_r8
-# if defined SEDIMENT
+#  if defined SEDIMENT
             DO ised=1,NST
               BOUNDARY(ng)%t_east(j,k,idsed(ised))=0.0_r8
             END DO
-# endif
+#  endif
           END DO
         END DO
       END IF
+# endif
+# ifdef WEST_TOBC
       IF (WESTERN_EDGE) THEN
         DO k=1,N(ng)
           DO j=JstrR,JendR
             BOUNDARY(ng)%t_west(j,k,itemp)=T0(ng)
             BOUNDARY(ng)%t_west(j,k,isalt)=30.0_r8
-# if defined SEDIMENT
+#  if defined SEDIMENT
             DO ised=1,NST
               BOUNDARY(ng)%t_west(j,k,idsed(ised))=0.0_r8
             END DO
-# endif
+#  endif
           END DO
         END DO
       END IF
+# endif
 #elif defined NJ_BIGHT
+# ifdef EAST_TOBC
       IF (EASTERN_EDGE) THEN
         DO k=1,N(ng)
           DO j=JstrR,JendR
@@ -144,6 +159,8 @@
           END DO
         END DO
       END IF
+# endif
+# ifdef SOUTH_TOBC
       IF (SOUTHERN_EDGE) THEN
         DO k=1,N(ng)
           DO i=IstrR,IendR
@@ -186,7 +203,9 @@
           END DO
         END DO
       END IF
+# endif
 #elif defined SED_TEST1
+# ifdef EAST_TOBC
       IF (EASTERN_EDGE) THEN
         DO k=1,N(ng)
           DO j=JstrR,JendR
@@ -195,22 +214,9 @@
           END DO
         END DO
       END IF
-#elif defined TRENCH
-      IF (WESTERN_EDGE) THEN
-        DO k=1,N(ng)
-          DO j=JstrR,JendR
-            BOUNDARY(ng)%t_west(j,k,itemp)=10.0_r8
-!           BOUNDARY(ng)%t_west(j,k,isalt)=0.0_r8
-#  if defined SEDIMENT
-            DO ised=1,NST
-              BOUNDARY(ng)%t_west(j,k,idsed(ised))=                     &
-     &                                  t(1,j,k,nstp,idsed(ised))
-            END DO
-#  endif
-          END DO
-        END DO
-      END IF
+# endif
 #else
+# ifdef EAST_TOBC
       IF (EASTERN_EDGE) THEN
         DO itrc=1,NT(ng)
           DO k=1,N(ng)
@@ -220,6 +226,8 @@
           END DO
         END DO
       END IF
+# endif
+# ifdef WEST_TOBC
       IF (WESTERN_EDGE) THEN
         DO itrc=1,NT(ng)
           DO k=1,N(ng)
@@ -229,6 +237,8 @@
           END DO
         END DO
       END IF
+# endif
+# ifdef SOUTH_TOBC
       IF (SOUTHERN_EDGE) THEN
         DO itrc=1,NT(ng)
           DO k=1,N(ng)
@@ -238,6 +248,8 @@
           END DO
         END DO
       END IF
+# endif
+# ifdef NORTH_TOBC
       IF (NORTHERN_EDGE) THEN
         DO itrc=1,NT(ng)
           DO k=1,N(ng)
@@ -247,6 +259,7 @@
           END DO
         END DO
       END IF
+# endif
 #endif
       RETURN
       END SUBROUTINE ana_tobc_tile

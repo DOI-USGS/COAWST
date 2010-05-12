@@ -2,9 +2,9 @@
       MODULE analytical_mod
 #ifdef ANALYTICAL
 !
-!svn $Id: analytical.F 1588 2008-07-24 03:43:37Z jcwarner $
+!svn $Id: analytical.F 440 2010-01-25 06:36:07Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -20,8 +20,7 @@
 !!                       tracers.                                      !
 !! ana_btflux.h        Analytical kinematic bottom flux of tracer      !
 !!                       type variables.                               !
-!! ana_bmflux.h        Analytical bottom momentm flux - so can have    !
-!!                       spatially varying zo                          !
+!! ana_bmflux.h        Analytical spatially varying bottom roughness   !
 !! ana_cloud.h         Analytical cloud fraction.                      !
 !! ana_diag.h          Customized diagnostics.                         !
 !! ana_fsobc.h         Analytical free-surface boundary conditions.    !
@@ -171,9 +170,10 @@
 #  include <ana_rain.h>
 # endif
 
-# if defined ANA_GRID       && \
-   (defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SO_SEMI)
+# if defined ANA_GRID        && \
+   (defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+    defined SO_SEMI)
 #  include <ana_scope.h>
 # endif
 
@@ -189,7 +189,7 @@
 #  include <ana_spinning.h>
 # endif
 
-# if (defined ANA_SRFLUX && defined SOLVE3D) || defined DIURNAL_SRFLUX 
+# if (defined ANA_SRFLUX && defined SOLVE3D) || defined DIURNAL_SRFLUX
 #  include <ana_srflux.h>
 # endif
 

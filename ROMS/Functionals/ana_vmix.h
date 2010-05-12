@@ -1,8 +1,8 @@
       SUBROUTINE ana_vmix (ng, tile, model)
 !
-!! svn $Id: ana_vmix.h 737 2008-09-07 02:06:44Z jcwarner $
+!! svn $Id: ana_vmix.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -27,6 +27,7 @@
 !
       CALL ana_vmix_tile (ng, tile, model,                              &
      &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    knew(ng),                                     &
      &                    GRID(ng) % h,                                 &
      &                    GRID(ng) % z_r,                               &
@@ -37,7 +38,11 @@
 !
 ! Set analytical header file name used.
 !
+#ifdef DISTRIBUTE
       IF (Lanafile) THEN
+#else
+      IF (Lanafile.and.(tile.eq.0)) THEN
+#endif
         ANANAME(35)=__FILE__
       END IF
 
@@ -47,6 +52,7 @@
 !***********************************************************************
       SUBROUTINE ana_vmix_tile (ng, tile, model,                        &
      &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          knew,                                   &
      &                          h, z_r, z_w, zeta, Akv, Akt)
 !***********************************************************************
@@ -65,6 +71,7 @@
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: knew
 !
 #ifdef ASSUMED_SHAPE

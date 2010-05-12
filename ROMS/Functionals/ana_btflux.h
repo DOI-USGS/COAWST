@@ -1,8 +1,8 @@
       SUBROUTINE ana_btflux (ng, tile, model, itrc)
 !
-!! svn $Id: ana_btflux.h 737 2008-09-07 02:06:44Z jcwarner $
+!! svn $Id: ana_btflux.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -24,6 +24,7 @@
 !
       CALL ana_btflux_tile (ng, tile, model, itrc,                      &
      &                      LBi, UBi, LBj, UBj,                         &
+     &                      IminS, ImaxS, JminS, JmaxS,                 &
 #ifdef TL_IOMS
      &                      FORCES(ng) % tl_btflx,                      &
 #endif
@@ -31,7 +32,11 @@
 !
 ! Set analytical header file name used.
 !
+#ifdef DISTRIBUTE
       IF (Lanafile) THEN
+#else
+      IF (Lanafile.and.(tile.eq.0)) THEN
+#endif
         ANANAME( 3)=__FILE__
       END IF
 
@@ -41,6 +46,7 @@
 !***********************************************************************
       SUBROUTINE ana_btflux_tile (ng, tile, model, itrc,                &
      &                            LBi, UBi, LBj, UBj,                   &
+     &                            IminS, ImaxS, JminS, JmaxS,           &
 #ifdef TL_IOMS
      &                            tl_btflx,                             &
 #endif
@@ -54,6 +60,7 @@
 !
       integer, intent(in) :: ng, tile, model, itrc
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 #ifdef ASSUMED_SHAPE
       real(r8), intent(inout) :: btflx(LBi:,LBj:,:)

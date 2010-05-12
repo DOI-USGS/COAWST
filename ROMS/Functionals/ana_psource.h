@@ -1,8 +1,8 @@
       SUBROUTINE ana_psource (ng, tile, model)
 !
-!! svn $Id: ana_psource.h 737 2008-09-07 02:06:44Z jcwarner $
+!! svn $Id: ana_psource.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -21,16 +21,12 @@
 !
       integer, intent(in) :: ng, tile, model
 
-      integer :: LBi, UBi, LBj, UBj
+#include "tile.h"
 !
-      LBi=LBOUND(GRID(ng)%h,DIM=1)
-      UBi=UBOUND(GRID(ng)%h,DIM=1)
-      LBj=LBOUND(GRID(ng)%h,DIM=2)
-      UBj=UBOUND(GRID(ng)%h,DIM=2)
-!
-      CALL ana_psource_grid (ng, tile, model,                           &
+      CALL ana_psource_tile (ng, tile, model,                           &
      &                       LBi, UBi, LBj, UBj,                        &
-     &                       nnew(ng), knew(ng), Nsrc(ng),              &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
+     &                       nnew(ng), knew(ng), Msrc(ng), Nsrc(ng),    &
      &                       OCEAN(ng) % zeta,                          &
      &                       OCEAN(ng) % ubar,                          &
      &                       OCEAN(ng) % vbar,                          &
@@ -44,7 +40,6 @@
      &                       GRID(ng) % om_v,                           &
      &                       SOURCES(ng) % Isrc,                        &
      &                       SOURCES(ng) % Jsrc,                        &
-     &                       SOURCES(ng) % Lsrc,                        &
      &                       SOURCES(ng) % Dsrc,                        &
 #ifdef SOLVE3D
 # if defined UV_PSOURCE || defined Q_PSOURCE
@@ -71,15 +66,16 @@
       END SUBROUTINE ana_psource
 !
 !***********************************************************************
-      SUBROUTINE ana_psource_grid (ng, tile, model,                     &
+      SUBROUTINE ana_psource_tile (ng, tile, model,                     &
      &                             LBi, UBi, LBj, UBj,                  &
-     &                             nnew, knew, Nsrc,                    &
+     &                             IminS, ImaxS, JminS, JmaxS,          &
+     &                             nnew, knew, Msrc, Nsrc,              &
      &                             zeta, ubar, vbar,                    &
 #ifdef SOLVE3D
      &                             u, v, z_w,                           &
 #endif
      &                             h, on_u, om_v,                       &
-     &                             Isrc, Jsrc, Lsrc, Dsrc,              &
+     &                             Isrc, Jsrc, Dsrc,                    &
 #ifdef SOLVE3D
 # if defined UV_PSOURCE || defined Q_PSOURCE
      &                             Qshape, Qsrc,                        &
@@ -92,30 +88,28 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_parallel
       USE mod_scalars
 #ifdef SEDIMENT
       USE mod_sediment
 #endif
 #ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_bcastf, mp_bcasti, mp_bcastl
+      USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
       USE distribute_mod, ONLY : mp_collect, mp_reduce
-#endif
-#ifndef ASSUMED_SHAPE
-      USE mod_sources, ONLY : Msrc
 #endif
 !
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nnew, knew
+      integer, intent(in) :: Msrc
 
       integer, intent(out) :: Nsrc
 !
 #ifdef ASSUMED_SHAPE
-      logical, intent(inout) :: Lsrc(:,:)
-
       integer, intent(inout) :: Isrc(:)
       integer, intent(inout) :: Jsrc(:)
 
@@ -143,8 +137,6 @@
 #  endif
 # endif
 #else
-      logical, intent(inout) :: Lsrc(Msrc,NT(ng))
-
       integer, intent(inout) :: Isrc(Msrc)
       integer, intent(inout) :: Jsrc(Msrc)
 
@@ -200,10 +192,10 @@
 !
 !  Set-up point Sources/Sink number (Nsrc), direction (Dsrc), I- and
 !  J-grid locations (Isrc,Jsrc), and logical switch for type of tracer
-!  to apply (Lsrc). Currently, the direction can be along XI-direction
-!  (Dsrc = 0) or along ETA-direction (Dsrc > 0).  The mass sources are
-!  located at U- or V-points so the grid locations should range from
-!  1 =< Isrc =< L  and  1 =< Jsrc =< M.
+!  to apply (LtracerSrc).  Currently, the direction can be along
+!  XI-direction (Dsrc = 0) or along ETA-direction (Dsrc > 0).  The
+!  mass sources are located at U- or V-points so the grid locations
+!  should range from 1 =< Isrc =< L  and  1 =< Jsrc =< M.
 !
 #if defined RIVERPLUME1
         IF (Master.and.SOUTH_WEST_TEST) THEN
@@ -211,52 +203,46 @@
           Dsrc(Nsrc)=0.0_r8
           Isrc(Nsrc)=1
           Jsrc(Nsrc)=50
-          Lsrc(Nsrc,itemp)=.TRUE.
-          Lsrc(Nsrc,isalt)=.TRUE.
+          LtracerSrc(itemp,ng)=.TRUE.
+          LtracerSrc(isalt,ng)=.TRUE.
         END IF
 #elif defined RIVERPLUME2
         IF (Master.and.SOUTH_WEST_TEST) THEN
           Nsrc=1+Lm(ng)*2
+          LtracerSrc(itemp,ng)=.TRUE.
+          LtracerSrc(isalt,ng)=.TRUE.
           DO is=1,(Nsrc-1)/2
             Dsrc(is)=1.0_r8
             Isrc(is)=is
             Jsrc(is)=1
-            Lsrc(is,itemp)=.TRUE.
-            Lsrc(is,isalt)=.TRUE.
           END DO
           DO is=(Nsrc-1)/2+1,Nsrc-1
             Dsrc(is)=1.0_r8
             Isrc(is)=is-Lm(ng)
             Jsrc(is)=Mm(ng)+1
-            Lsrc(is,itemp)=.TRUE.
-            Lsrc(is,isalt)=.TRUE.
           END DO
           Dsrc(Nsrc)=0.0_r8
           Isrc(Nsrc)=1
           Jsrc(Nsrc)=60
-          Lsrc(Nsrc,itemp)=.TRUE.
-          Lsrc(Nsrc,isalt)=.TRUE.
         END IF
 #elif defined SED_TEST1
         IF (Master.and.SOUTH_WEST_TEST) THEN
           Nsrc=Mm(ng)*2
+          LtracerSrc(itemp,ng)=.TRUE.
+          LtracerSrc(isalt,ng)=.TRUE.
           DO is=1,Nsrc/2
             Dsrc(is)=0.0_r8
             Isrc(is)=1
             Jsrc(is)=is
-            Lsrc(is,itemp)=.TRUE.
-            Lsrc(is,isalt)=.TRUE.
           END DO
           DO is=Nsrc/2+1,Nsrc
             Dsrc(is)=0.0_r8
             Isrc(is)=Lm(ng)+1
             Jsrc(is)=is-Mm(ng)
-            Lsrc(is,itemp)=.TRUE.
-            Lsrc(is,isalt)=.TRUE.
           END DO
         END IF
 #else
-        ana_psource.h: No values provided for Lsrc, Nsrc, Dsrc,
+        ana_psource.h: No values provided for LtracerSrc, Nsrc, Dsrc,
                                               Isrc, Jsrc.
 #endif
 #ifdef DISTRIBUTE
@@ -266,7 +252,6 @@
         CALL mp_bcasti (ng, iNLM, Nsrc)
         CALL mp_bcasti (ng, iNLM, Isrc)
         CALL mp_bcasti (ng, iNLM, Jsrc)
-        CALL mp_bcastl (ng, iNLM, Lsrc)
         CALL mp_bcastf (ng, iNLM, Dsrc)
 #endif
       END IF
@@ -282,7 +267,7 @@
 #  endif
       Npts=Msrc*N(ng)
 
-!$OMP BARRRIER
+!$OMP BARRIER
 
 #  if defined SED_TEST1
       DO k=1,N(ng)
@@ -448,7 +433,7 @@
         tile_count=0
 #  ifdef DISTRIBUTE
         buffer(1)=area_west
-        buffer(2)=area_east 
+        buffer(2)=area_east
         io_handle(1)='SUM'
         io_handle(2)='SUM'
         CALL mp_reduce (ng, iNLM, 2, buffer, io_handle)
@@ -522,4 +507,4 @@
 #endif
 
       RETURN
-      END SUBROUTINE ana_psource_grid
+      END SUBROUTINE ana_psource_tile

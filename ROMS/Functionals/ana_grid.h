@@ -1,8 +1,8 @@
       SUBROUTINE ana_grid (ng, tile, model)
 !
-!! svn $Id: ana_grid.h 737 2008-09-07 02:06:44Z jcwarner $
+!! svn $Id: ana_grid.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -45,6 +45,7 @@
 !
       CALL ana_grid_tile (ng, tile, model,                              &
      &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    GRID(ng) % angler,                            &
 #if defined CURVGRID && defined UV_ADV
      &                    GRID(ng) % dmde,                              &
@@ -79,7 +80,11 @@
 !
 ! Set analytical header file name used.
 !
+#ifdef DISTRIBUTE
       IF (Lanafile) THEN
+#else
+      IF (Lanafile.and.(tile.eq.0)) THEN
+#endif
         ANANAME( 7)=__FILE__
       END IF
 
@@ -89,6 +94,7 @@
 !***********************************************************************
       SUBROUTINE ana_grid_tile (ng, tile, model,                        &
      &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          angler,                                 &
 #if defined CURVGRID && defined UV_ADV
      &                          dmde, dndx,                             &
@@ -124,6 +130,7 @@
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 #ifdef ASSUMED_SHAPE
       real(r8), intent(out) :: angler(LBi:,LBj:)
@@ -220,8 +227,8 @@
 #ifdef WEDDELL
       real(r8) :: hwrk(-1:235), xwrk(-1:235), zwrk
 #endif
-      real(r8) :: wrkX(PRIVATE_2D_SCRATCH_ARRAY)
-      real(r8) :: wrkY(PRIVATE_2D_SCRATCH_ARRAY)
+      real(r8) :: wrkX(IminS:ImaxS,JminS:JmaxS)
+      real(r8) :: wrkY(IminS:ImaxS,JminS:JmaxS)
 !
 #include "set_bounds.h"
 !
@@ -816,8 +823,8 @@
 #elif defined SEAMOUNT
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-          val1=(xr(i,j)-xr(Lm(ng)/2,Mm(ng)/2))/40000.0_r8
-          val2=(yr(i,j)-yr(Lm(ng)/2,Mm(ng)/2))/40000.0_r8
+          val1=(xr(i,j)-0.5_r8*Xsize)/40000.0_r8
+          val2=(yr(i,j)-0.5_r8*Ysize)/40000.0_r8
           h(i,j)=depth-4500.0_r8*EXP(-(val1*val1+val2*val2))
         END DO
       END DO

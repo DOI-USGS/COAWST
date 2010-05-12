@@ -1,8 +1,8 @@
       SUBROUTINE ana_biology (ng, tile, model)
 !
-!! svn $Id: ana_biology.h 737 2008-09-07 02:06:44Z jcwarner $
+!! svn $Id: ana_biology.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -24,11 +24,16 @@
 !
       CALL ana_biology_tile (ng, tile, model,                           &
      &                       LBi, UBi, LBj, UBj,                        &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       OCEAN(ng) % t)
 !
 ! Set analytical header file name used.
 !
+#ifdef DISTRIBUTE
       IF (Lanafile) THEN
+#else
+      IF (Lanafile.and.(tile.eq.0)) THEN
+#endif
         ANANAME( 1)=__FILE__
       END IF
 
@@ -38,6 +43,7 @@
 !***********************************************************************
       SUBROUTINE ana_biology_tile (ng, tile, model,                     &
      &                             LBi, UBi, LBj, UBj,                  &
+     &                             IminS, ImaxS, JminS, JmaxS,          &
      &                             t)
 !***********************************************************************
 !
@@ -49,6 +55,7 @@
 !
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 #ifdef ASSUMED_SHAPE
       real(r8), intent(inout) :: t(LBi:,LBj:,:,:,:)
@@ -60,7 +67,7 @@
 !
       integer :: i, is, itrc, j, k
 
-#if defined BIO_FASHAM || defined NEMURO
+#if defined BIO_FENNEL || defined NEMURO
       real(r8) :: SiO4, cff1, cff2, temp
 #elif defined ECOSIM
       real(r8) :: cff1, cff2, cff3, cff4, cff5, cff6, cff7, cff8, cff9
@@ -70,10 +77,10 @@
 
 #include "set_bounds.h"
 
-#if defined BIO_FASHAM
+#if defined BIO_FENNEL
 !
 !-----------------------------------------------------------------------
-!  Fasham type, nitrogen-based biology model.
+!  Fennel et al. (2006), nitrogen-based biology model.
 !-----------------------------------------------------------------------
 !
       cff1=20.0_r8/3.0_r8
@@ -170,6 +177,28 @@
         END DO
       END DO
 
+#elif defined NPZD_IRON
+!
+!-----------------------------------------------------------------------
+!  NPZD biology model with or without iron limitation on phytoplankton
+!  growth.
+!-----------------------------------------------------------------------
+!
+      DO k=1,N(ng)
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            t(i,j,k,1,iNO3_)=BioIni(iNO3_,ng)
+            t(i,j,k,1,iPhyt)=BioIni(iPhyt,ng)
+            t(i,j,k,1,iZoop)=BioIni(iZoop,ng)
+            t(i,j,k,1,iSDet)=BioIni(iSDet,ng)
+# ifdef IRON_LIMIT
+            t(i,j,k,1,iFphy)=BioIni(iFphy,ng)
+            t(i,j,k,1,iFdis)=BioIni(iFdis,ng)
+# endif
+          END DO
+        END DO
+      END DO
+
 #elif defined ECOSIM
 !
 !---------------------------------------------------------------------
@@ -261,7 +290,7 @@
               IF (iPigs(is,3).gt.0) THEN
                  t(i,j,k,1,iPigs(is,3))=t(i,j,k,1,iPigs(is,1))*         &
      &                                  (b_ChlC(is,ng)+                 &
-     &                                   mxChlC(is,ng)*cff6) 
+     &                                   mxChlC(is,ng)*cff6)
               END IF
 !
 !  Photosynthetic Carotenoids.
@@ -277,7 +306,7 @@
               IF (iPigs(is,5).gt.0) THEN
                  t(i,j,k,1,iPigs(is,5))=t(i,j,k,1,iPigs(is,1))*         &
      &                                  (b_PPC(is,ng)+                  &
-     &                                   mxPPC(is,ng)*cff6) 
+     &                                   mxPPC(is,ng)*cff6)
               END IF
 !
 !  Low Urobilin Phycoeurythin Carotenoids.
@@ -285,7 +314,7 @@
               IF (iPigs(is,6).gt.0) THEN
                  t(i,j,k,1,iPigs(is,6))=t(i,j,k,1,iPigs(is,1))*         &
      &                                  (b_LPUb(is,ng)+                 &
-     &                                   mxLPUb(is,ng)*cff6) 
+     &                                   mxLPUb(is,ng)*cff6)
               END IF
 !
 !  High Urobilin Phycoeurythin Carotenoids.
@@ -293,7 +322,7 @@
               IF (iPigs(is,7).gt.0) THEN
                  t(i,j,k,1,iPigs(is,7))=t(i,j,k,1,iPigs(is,1))*         &
      &                                  (b_HPUb(is,ng)+                 &
-     &                                   mxHPUb(is,ng)*cff6) 
+     &                                   mxHPUb(is,ng)*cff6)
               END IF
             END DO
 !

@@ -1,8 +1,8 @@
       SUBROUTINE ana_perturb (ng, tile, model)
 !
-!! svn $Id: ana_perturb.h 737 2008-09-07 02:06:44Z jcwarner $
+!! svn $Id: ana_perturb.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -36,6 +36,9 @@
 !
       USE mod_param
       USE mod_ncparam
+#ifdef ADJUST_BOUNDARY
+      USE mod_boundary
+#endif
       USE mod_ocean
 #if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
       USE mod_forces
@@ -49,35 +52,58 @@
 #include "tile.h"
 !
       CALL ana_perturb_tile (ng, tile, model,                           &
-     &                       LBi, UBi, LBj, UBj,                        &
+     &                       LBi, UBi, LBj, UBj, LBij, UBij,            &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       kstp(ng), krhs(ng), knew(ng),              &
 #ifdef SOLVE3D
      &                       nstp(ng), nrhs(ng), nnew(ng),              &
-     &                       OCEAN(ng) % ad_u,                          &
-     &                       OCEAN(ng) % ad_v,                          &
-     &                       OCEAN(ng) % ad_t,                          &
-# ifdef ADJUST_STFLUX
-     &                       FORCES(ng) % ad_tflux,                     &
+#endif
+#ifdef ADJUST_BOUNDARY
+# ifdef SOLVE3D
+     &                       BOUNDARY(ng) % ad_t_obc,                   &
+     &                       BOUNDARY(ng) % ad_u_obc,                   &
+     &                       BOUNDARY(ng) % ad_v_obc,                   &
 # endif
+     &                       BOUNDARY(ng) % ad_ubar_obc,                &
+     &                       BOUNDARY(ng) % ad_vbar_obc,                &
+     &                       BOUNDARY(ng) % ad_zeta_obc,                &
 #endif
 #ifdef ADJUST_WSTRESS
      &                       FORCES(ng) % ad_ustr,                      &
      &                       FORCES(ng) % ad_vstr,                      &
 #endif
+#if defined ADJUST_STFLUX && defined SOLVE3D
+     &                       FORCES(ng) % ad_tflux,                     &
+#endif
+#ifdef SOLVE3D
+     &                       OCEAN(ng) % ad_t,                          &
+     &                       OCEAN(ng) % ad_u,                          &
+     &                       OCEAN(ng) % ad_v,                          &
+#endif
      &                       OCEAN(ng) % ad_ubar,                       &
      &                       OCEAN(ng) % ad_vbar,                       &
      &                       OCEAN(ng) % ad_zeta,                       &
-#ifdef SOLVE3D
-     &                       OCEAN(ng) % tl_u,                          &
-     &                       OCEAN(ng) % tl_v,                          &
-     &                       OCEAN(ng) % tl_t,                          &
-# ifdef ADJUST_STFLUX
-     &                       FORCES(ng) % tl_tflux,                     &
+#ifdef ADJUST_BOUNDARY
+# ifdef SOLVE3D
+     &                       BOUNDARY(ng) % tl_t_obc,                   &
+     &                       BOUNDARY(ng) % tl_u_obc,                   &
+     &                       BOUNDARY(ng) % tl_v_obc,                   &
 # endif
+     &                       BOUNDARY(ng) % tl_ubar_obc,                &
+     &                       BOUNDARY(ng) % tl_vbar_obc,                &
+     &                       BOUNDARY(ng) % tl_zeta_obc,                &
 #endif
 #ifdef ADJUST_WSTRESS
      &                       FORCES(ng) % tl_ustr,                      &
      &                       FORCES(ng) % tl_vstr,                      &
+#endif
+#if defined ADJUST_STFLUX && defined SOLVE3D
+     &                       FORCES(ng) % tl_tflux,                     &
+#endif
+#ifdef SOLVE3D
+     &                       OCEAN(ng) % tl_t,                          &
+     &                       OCEAN(ng) % tl_u,                          &
+     &                       OCEAN(ng) % tl_v,                          &
 #endif
      &                       OCEAN(ng) % tl_ubar,                       &
      &                       OCEAN(ng) % tl_vbar,                       &
@@ -85,7 +111,11 @@
 !
 ! Set analytical header file name used.
 !
+#ifdef DISTRIBUTE
       IF (Lanafile) THEN
+#else
+      IF (Lanafile.and.(tile.eq.0)) THEN
+#endif
         ANANAME(19)=__FILE__
       END IF
 
@@ -94,27 +124,46 @@
 !
 !***********************************************************************
       SUBROUTINE ana_perturb_tile (ng, tile, model,                     &
-     &                             LBi, UBi, LBj, UBj,                  &
+     &                             LBi, UBi, LBj, UBj, LBij, UBij,      &
+     &                             IminS, ImaxS, JminS, JmaxS,          &
      &                             kstp, krhs, knew,                    &
 #ifdef SOLVE3D
      &                             nstp, nrhs, nnew,                    &
-     &                             ad_u, ad_v, ad_t,                    &
-# ifdef ADJUST_STFLUX
-     &                             ad_tflux,                            &
+#endif
+#ifdef ADJUST_BOUNDARY
+# ifdef SOLVE3D
+     &                             ad_t_obc, ad_u_obc, ad_v_obc,        &
 # endif
+     &                             ad_ubar_obc, ad_vbar_obc,            &
+     &                             ad_zeta_obc,                         &
 #endif
 #ifdef ADJUST_WSTRESS
      &                             ad_ustr, ad_vstr,                    &
 #endif
-     &                             ad_ubar, ad_vbar, ad_zeta,           &
+#if defined ADJUST_STFLUX && defined SOLVE3D
+     &                             ad_tflux,                            &
+#endif
 #ifdef SOLVE3D
-     &                             tl_u, tl_v, tl_t,                    &
-# ifdef ADJUST_STFLUX
-     &                             tl_tflux,                            &
+     &                             ad_t, ad_u, ad_v,                    &
+#endif
+     &                             ad_ubar, ad_vbar, ad_zeta,           &
+
+
+#ifdef ADJUST_BOUNDARY
+# ifdef SOLVE3D
+     &                             tl_t_obc, tl_u_obc, tl_v_obc,        &
 # endif
+     &                             tl_ubar_obc, tl_vbar_obc,            &
+     &                             tl_zeta_obc,                         &
 #endif
 #ifdef ADJUST_WSTRESS
      &                             tl_ustr, tl_vstr,                    &
+#endif
+#if defined ADJUST_STFLUX && defined SOLVE3D
+     &                             tl_tflux,                            &
+#endif
+#ifdef SOLVE3D
+     &                             tl_t, tl_u, tl_v,                    &
 #endif
      &                             tl_ubar, tl_vbar, tl_zeta)
 !***********************************************************************
@@ -128,72 +177,117 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile, model
-      integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: LBi, UBi, LBj, UBj, LBij, UBij
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: kstp, krhs, knew
 #ifdef SOLVE3D
       integer, intent(in) :: nstp, nrhs, nnew
 #endif
 !
 #ifdef ASSUMED_SHAPE
-# ifdef SOLVE3D
-      real(r8), intent(inout) :: ad_u(LBi:,LBj:,:,:)
-      real(r8), intent(inout) :: ad_v(LBi:,LBj:,:,:)
-      real(r8), intent(inout) :: ad_t(LBi:,LBj:,:,:,:)
-#  ifdef ADJUST_STFLUX
-      real(r8), intent(inout) :: ad_tflux(LBi:,LBj:,:,:,:)
+# ifdef ADJUST_BOUNDARY
+#  ifdef SOLVE3D
+      real(r8), intent(inout) :: ad_t_obc(LBij:,:,:,:,:,:)
+      real(r8), intent(inout) :: ad_u_obc(LBij:,:,:,:,:)
+      real(r8), intent(inout) :: ad_v_obc(LBij:,:,:,:,:)
 #  endif
+      real(r8), intent(inout) :: ad_ubar_obc(LBij:,:,:,:)
+      real(r8), intent(inout) :: ad_vbar_obc(LBij:,:,:,:)
+      real(r8), intent(inout) :: ad_zeta_obc(LBij:,:,:,:)
 # endif
 # ifdef ADJUST_WSTRESS
       real(r8), intent(inout) :: ad_ustr(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: ad_vstr(LBi:,LBj:,:,:)
 # endif
+# if defined ADJUST_STFLUX && defined SOLVE3D
+      real(r8), intent(inout) :: ad_tflux(LBi:,LBj:,:,:,:)
+# endif
+# ifdef SOLVE3D
+      real(r8), intent(inout) :: ad_t(LBi:,LBj:,:,:,:)
+      real(r8), intent(inout) :: ad_u(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: ad_v(LBi:,LBj:,:,:)
+# endif
       real(r8), intent(inout) :: ad_ubar(LBi:,LBj:,:)
       real(r8), intent(inout) :: ad_vbar(LBi:,LBj:,:)
       real(r8), intent(inout) :: ad_zeta(LBi:,LBj:,:)
-# ifdef SOLVE3D
-      real(r8), intent(inout) :: tl_u(LBi:,LBj:,:,:)
-      real(r8), intent(inout) :: tl_v(LBi:,LBj:,:,:)
-      real(r8), intent(inout) :: tl_t(LBi:,LBj:,:,:,:)
-#  ifdef ADJUST_STFLUX
-      real(r8), intent(inout) :: tl_tflux(LBi:,LBj:,:,:,:)
+# ifdef ADJUST_BOUNDARY
+#  ifdef SOLVE3D
+      real(r8), intent(inout) :: tl_t_obc(LBij:,:,:,:,:,:)
+      real(r8), intent(inout) :: tl_u_obc(LBij:,:,:,:,:)
+      real(r8), intent(inout) :: tl_v_obc(LBij:,:,:,:,:)
 #  endif
+      real(r8), intent(inout) :: tl_ubar_obc(LBij:,:,:,:)
+      real(r8), intent(inout) :: tl_vbar_obc(LBij:,:,:,:)
+      real(r8), intent(inout) :: tl_zeta_obc(LBij:,:,:,:)
 # endif
 # ifdef ADJUST_WSTRESS
       real(r8), intent(inout) :: tl_ustr(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: tl_vstr(LBi:,LBj:,:,:)
 # endif
+# if defined ADJUST_STFLUX && defined SOLVE3D
+      real(r8), intent(inout) :: tl_tflux(LBi:,LBj:,:,:,:)
+# endif
+# ifdef SOLVE3D
+      real(r8), intent(inout) :: tl_t(LBi:,LBj:,:,:,:)
+      real(r8), intent(inout) :: tl_u(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: tl_v(LBi:,LBj:,:,:)
+# endif
       real(r8), intent(inout) :: tl_ubar(LBi:,LBj:,:)
       real(r8), intent(inout) :: tl_vbar(LBi:,LBj:,:)
       real(r8), intent(inout) :: tl_zeta(LBi:,LBj:,:)
+
 #else
-# ifdef SOLVE3D
-      real(r8), intent(inout) :: ad_u(LBi:UBi,LBj:UBj,N(ng),2)
-      real(r8), intent(inout) :: ad_v(LBi:UBi,LBj:UBj,N(ng),2)
-      real(r8), intent(inout) :: ad_t(LBi:UBI,LBj:UBj,N(ng),2,NT(ng))
-#  ifdef ADJUST_STFLUX
-      real(r8), intent(inout) :: ad_tflux(LBi:UBi,LBj:UBj,              &
-     &                                    Nfrec(ng),2,NT(ng))
+
+# ifdef ADJUST_BOUNDARY
+#  ifdef SOLVE3D
+      real(r8), intent(inout) :: ad_t_obc(LBij:UBij,N(ng),4,            &
+     &                                    Nbrec(ng),2,NT(ng))
+      real(r8), intent(inout) :: ad_u_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
+      real(r8), intent(inout) :: ad_v_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
 #  endif
+      real(r8), intent(inout) :: ad_ubar_obc(LBij:UBij,4,Nbrec(ng),2)
+      real(r8), intent(inout) :: ad_vbar_obc(LBij:UBij,4,Nbrec(ng),2)
+      real(r8), intent(inout) :: ad_zeta_obc(LBij:UBij,4,Nbrec(ng),2)
 # endif
 # ifdef ADJUST_WSTRESS
       real(r8), intent(inout) :: ad_ustr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
       real(r8), intent(inout) :: ad_vstr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
 # endif
+# if defined ADJUST_STFLUX && defined SOLVE3D
+      real(r8), intent(inout) :: ad_tflux(LBi:UBi,LBj:UBj,              &
+     &                                    Nfrec(ng),2,NT(ng))
+# endif
+# ifdef SOLVE3D
+      real(r8), intent(inout) :: ad_t(LBi:UBI,LBj:UBj,N(ng),2,NT(ng))
+      real(r8), intent(inout) :: ad_u(LBi:UBi,LBj:UBj,N(ng),2)
+      real(r8), intent(inout) :: ad_v(LBi:UBi,LBj:UBj,N(ng),2)
+# endif
       real(r8), intent(inout) :: ad_ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(inout) :: ad_vbar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(inout) :: ad_zeta(LBi:UBi,LBj:UBj,3)
-# ifdef SOLVE3D
-      real(r8), intent(inout) :: tl_u(LBi:UBi,LBj:UBj,N(ng),2)
-      real(r8), intent(inout) :: tl_v(LBi:UBi,LBj:UBj,N(ng),2)
-      real(r8), intent(inout) :: tl_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
-#  ifdef ADJUST_STFLUX
-      real(r8), intent(inout) :: tl_tflux(LBi:UBi,LBj:UBj,              &
-     &                                    Nfrec(ng),2,NT(ng))
+# ifdef ADJUST_BOUNDARY
+#  ifdef SOLVE3D
+      real(r8), intent(inout) :: tl_t_obc(LBij:UBij,N(ng),4,            &
+     &                                    Nbrec(ng),2,NT(ng))
+      real(r8), intent(inout) :: tl_u_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
+      real(r8), intent(inout) :: tl_v_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
 #  endif
+      real(r8), intent(inout) :: tl_ubar_obc(LBij:UBij,4,Nbrec(ng),2)
+      real(r8), intent(inout) :: tl_vbar_obc(LBij:UBij,4,Nbrec(ng),2)
+      real(r8), intent(inout) :: tl_zeta_obc(LBij:UBij,4,Nbrec(ng),2)
 # endif
 # ifdef ADJUST_WSTRESS
       real(r8), intent(inout) :: tl_ustr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
       real(r8), intent(inout) :: tl_vstr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
+# endif
+# if defined ADJUST_STFLUX && defined SOLVE3D
+      real(r8), intent(inout) :: tl_tflux(LBi:UBi,LBj:UBj,              &
+     &                                    Nfrec(ng),2,NT(ng))
+# endif
+# ifdef SOLVE3D
+      real(r8), intent(inout) :: tl_u(LBi:UBi,LBj:UBj,N(ng),2)
+      real(r8), intent(inout) :: tl_v(LBi:UBi,LBj:UBj,N(ng),2)
+      real(r8), intent(inout) :: tl_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
 # endif
       real(r8), intent(inout) :: tl_ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(inout) :: tl_vbar(LBi:UBi,LBj:UBj,3)
@@ -202,9 +296,12 @@
 !
 !  Local variable declarations.
 !
+#ifdef ADJUST_BOUNDARY
+      logical :: Lperturb(4)
+#endif
       integer :: IperAD, JperAD, KperAD, ivarAD
       integer :: IperTL, JperTL, KperTL, ivarTL
-      integer :: i, itrc, j, k
+      integer :: i, ib, ir, itrc, j, k
 
 #include "set_bounds.h"
 !
@@ -235,11 +332,11 @@
      &                        IperTL, JperTL
 #ifdef ADJUST_WSTRESS
           ELSE IF (ivarTL.eq.isUstr) THEN
-            WRITE (stdout,10) 'tl_ustr perturbed at (i,j,k) = ',        &
-     &                        IperTL, JperTL, KperTL
+            WRITE (stdout,10) 'tl_ustr perturbed at (i,j) = ',          &
+     &                        IperTL, JperTL
           ELSE IF (ivarTL.eq.isVstr) THEN
-            WRITE (stdout,10) 'tl_vstr perturbed at (i,j,k) = ',        &
-     &                        IperTL, JperTL, KperTL
+            WRITE (stdout,10) 'tl_vstr perturbed at (i,j) = ',          &
+     &                        IperTL, JperTL
 #endif
 #ifdef SOLVE3D
           ELSE IF (ivarTL.eq.isUvel) THEN
@@ -263,6 +360,46 @@
            END IF
           END DO
 #endif
+#ifdef ADJUST_BOUNDARY
+          IF (ivarTL.eq.isUbar) THEN
+            WRITE (stdout,10) 'tl_ubar_obc (S/N) perturbed at (i) = ',  &
+     &                         IperTL
+            WRITE (stdout,10) 'tl_ubar_obc (E/W) perturbed at (j) = ',  &
+     &                         JperTL
+          ELSE IF (ivarTL.eq.isVbar) THEN
+            WRITE (stdout,10) 'tl_vbar_obc (S/N) perturbed at (i) = ',  &
+     &                         IperTL
+            WRITE (stdout,10) 'tl_vbar_obc (E/W) perturbed at (j) = ',  &
+     &                         JperTL
+          ELSE IF (ivarTL.eq.isFsur) THEN
+            WRITE (stdout,10) 'tl_zeta_obc (S/N) perturbed at (i) = ',  &
+     &                         IperTL
+            WRITE (stdout,10) 'tl_zeta_obc (E/W) perturbed at (j) = ',  &
+     &                         JperTL
+# ifdef SOLVE3D
+          ELSE IF (ivarTL.eq.isUvel) THEN
+            WRITE (stdout,10) 'tl_u_obc (S/N) perturbed at (i,k) = ',   &
+     &                         IperTL, KperTL
+            WRITE (stdout,10) 'tl_u_obc (E/W) perturbed at (j,k) = ',   &
+     &                         JperTL, KperTL
+          ELSE IF (ivarTL.eq.isUvel) THEN
+            WRITE (stdout,10) 'tl_u_obc (S/N) perturbed at (i,k) = ',   &
+     &                         IperTL, KperTL
+            WRITE (stdout,10) 'tl_u_obc (E/W) perturbed at (j,k) = ',   &
+     &                         JperTL, KperTL
+# endif
+          END IF
+# ifdef SOLVE3D
+          DO itrc=1,NT(ng)
+            IF (ivarTL.eq.isTvar(itrc)) THEN
+              WRITE (stdout,20) 'tl_t_obc perturbed at (i,k,itrc) = ',  &
+     &                          IperTL, KperTL, itrc
+              WRITE (stdout,20) 'tl_t_obc perturbed at (j,k,itrc) = ',  &
+     &                          JperTL, KperTL, itrc
+            END IF
+          END DO
+# endif
+#endif
         END IF
         IF (ADmodel) THEN
           IF (ivarAD.eq.isUbar) THEN
@@ -277,10 +414,10 @@
 #ifdef ADJUST_WSTRESS
           ELSE IF (ivarAD.eq.isUstr) THEN
             WRITE (stdout,40) 'ad_ustr perturbed at (i,j,k) = ',        &
-     &                        IperAD, JperAD, KperAD
+     &                        IperAD, JperAD
           ELSE IF (ivarAD.eq.isVstr) THEN
             WRITE (stdout,40) 'ad_vstr perturbed at (i,j,k) = ',        &
-     &                        IperAD, JperAD, KperAD
+     &                        IperAD, JperAD
 #endif
 #ifdef SOLVE3D
           ELSE IF (ivarAD.eq.isUvel) THEN
@@ -303,6 +440,46 @@
 # endif
             END IF
           END DO
+#endif
+#ifdef ADJUST_BOUNDARY
+          IF (ivarAD.eq.isUbar) THEN
+            WRITE (stdout,40) 'ad_ubar_obc (S/N) perturbed at (i) = ',  &
+     &                         IperAD
+            WRITE (stdout,40) 'ad_ubar_obc (E/W) perturbed at (j) = ',  &
+     &                         JperAD
+          ELSE IF (ivarAD.eq.isVbar) THEN
+            WRITE (stdout,40) 'ad_vbar_obc (S/N) perturbed at (i) = ',  &
+     &                         IperAD
+            WRITE (stdout,40) 'ad_vbar_obc (E/W) perturbed at (j) = ',  &
+     &                         JperAD
+          ELSE IF (ivarAD.eq.isFsur) THEN
+            WRITE (stdout,40) 'ad_zeta_obc (S/N) perturbed at (i) = ',  &
+     &                         IperAD
+            WRITE (stdout,40) 'ad_zeta_obc (E/W) perturbed at (j) = ',  &
+     &                         JperAD
+# ifdef SOLVE3D
+          ELSE IF (ivarAD.eq.isUvel) THEN
+            WRITE (stdout,40) 'ad_u_obc (S/N) perturbed at (i,k) = ',   &
+     &                         IperAD, KperAD
+            WRITE (stdout,40) 'ad_u_obc (E/W) perturbed at (j,k) = ',   &
+     &                         JperAD, KperAD
+          ELSE IF (ivarAD.eq.isUvel) THEN
+            WRITE (stdout,40) 'ad_u_obc (S/N) perturbed at (i,k) = ',   &
+     &                         IperAD, KperAD
+            WRITE (stdout,40) 'ad_u_obc (E/W) perturbed at (j,k) = ',   &
+     &                         JperAD, KperAD
+# endif
+          END IF
+# ifdef SOLVE3D
+          DO itrc=1,NT(ng)
+            IF (ivarAD.eq.isTvar(itrc)) THEN
+              WRITE (stdout,50) 'ad_t_obc perturbed at (i,k,itrc) = ',  &
+     &                          IperAD, KperAD, itrc
+              WRITE (stdout,50) 'ad_t_obc perturbed at (j,k,itrc) = ',  &
+     &                          JperAD, KperAD, itrc
+            END IF
+          END DO
+# endif
 #endif
         END IF
       END IF
@@ -363,15 +540,15 @@
 !-----------------------------------------------------------------------
 !
       IF (TLmodel) THEN
-        DO k=1,Nfrec(ng)
+        DO ir=1,Nfrec(ng)
           DO j=JstrR,JendR
             DO i=Istr,IendR
               IF ((ivarTL.eq.isUstr).and.                               &
      &            (i.eq.IperTL).and.(j.eq.JperTL).and.                  &
-     &            (k.eq.KperTL)) THEN
-                tl_ustr(i,j,k,kstp)=1.0_r8
+     &            (ir.eq.KperTL)) THEN
+                tl_ustr(i,j,ir,kstp)=1.0_r8
               ELSE
-                tl_ustr(i,j,k,kstp)=0.0_r8
+                tl_ustr(i,j,ir,kstp)=0.0_r8
               END IF
             END DO
           END DO
@@ -379,10 +556,10 @@
             DO i=IstrR,IendR
               IF ((ivarTL.eq.isVstr).and.                               &
      &            (i.eq.IperTL).and.(j.eq.JperTL).and.                  &
-     &            (k.eq.KperTL)) THEN
-                tl_vstr(i,j,k,kstp)=1.0_r8
+     &            (ir.eq.KperTL)) THEN
+                tl_vstr(i,j,ir,kstp)=1.0_r8
               ELSE
-                tl_vstr(i,j,k,kstp)=0.0_r8
+                tl_vstr(i,j,ir,kstp)=0.0_r8
               END IF
             END DO
           END DO
@@ -390,15 +567,15 @@
       END IF
 !
       IF (ADmodel) THEN
-        DO k=1,Nfrec(ng)
+        DO ir=1,Nfrec(ng)
           DO j=JstrR,JendR
             DO i=Istr,IendR
               IF ((ivarAD.eq.isUstr).and.                               &
      &            (i.eq.IperAD).and.(j.eq.JperAD).and.                  &
-     &            (k.eq.KperAD)) THEN
-                ad_ustr(i,j,k,knew)=1.0_r8
+     &            (ir.eq.KperAD)) THEN
+                ad_ustr(i,j,ir,knew)=1.0_r8
               ELSE
-                ad_ustr(i,j,k,knew)=0.0_r8
+                ad_ustr(i,j,ir,knew)=0.0_r8
               END IF
             END DO
           END DO
@@ -406,10 +583,10 @@
             DO i=IstrR,IendR
               IF ((ivarAD.eq.isVstr).and.                               &
      &            (i.eq.IperAD).and.(j.eq.JperAD).and.                  &
-     &            (k.eq.KperAD)) THEN
-                ad_vstr(i,j,k,knew)=1.0_r8
+     &            (ir.eq.KperAD)) THEN
+                ad_vstr(i,j,ir,knew)=1.0_r8
               ELSE
-                ad_vstr(i,j,k,knew)=0.0_r8
+                ad_vstr(i,j,ir,knew)=0.0_r8
               END IF
             END DO
           END DO
@@ -554,15 +731,15 @@
 !
       IF (TLmodel) THEN
         DO itrc=1,NT(ng)
-          DO k=1,Nfrec(ng)
+          DO ir=1,Nfrec(ng)
             DO j=JstrR,JendR
               DO i=IstrR,IendR
                 IF ((ivarTL.eq.isTsur(itrc)).and.                       &
      &              (i.eq.IperTL).and.(j.eq.JperTL).and.                &
-     &              (k.eq.KperTL)) THEN
-                  tl_tflux(i,j,k,nstp,itrc)=1.0_r8
+     &              (ir.eq.KperTL)) THEN
+                  tl_tflux(i,j,ir,nstp,itrc)=1.0_r8
                 ELSE
-                  tl_tflux(i,j,k,nstp,itrc)=0.0_r8
+                  tl_tflux(i,j,ir,nstp,itrc)=0.0_r8
                 END IF
               END DO
             END DO
@@ -572,21 +749,318 @@
 !
       IF (ADmodel) THEN
         DO itrc=1,NT(ng)
-          DO k=1,Nfrec(ng)
+          DO ir=1,Nfrec(ng)
             DO j=JstrR,JendR
               DO i=IstrR,IendR
                 IF ((ivarAD.eq.isTsur(itrc)).and.                       &
      &              (i.eq.IperAD).and.(j.eq.JperAD).and.                &
-     &              (k.eq.KperAD)) THEN
-                  ad_tflux(i,j,k,nstp,itrc)=1.0_r8
+     &              (ir.eq.KperAD)) THEN
+                  ad_tflux(i,j,ir,nstp,itrc)=1.0_r8
                 ELSE
-                  ad_tflux(i,j,k,nstp,itrc)=0.0_r8
+                  ad_tflux(i,j,ir,nstp,itrc)=0.0_r8
                 END IF
               END DO
             END DO
           END DO
         END DO
       END IF
+# endif
+# ifdef ADJUST_BOUNDARY
+!
+!-----------------------------------------------------------------------
+!  Perturb open boundary conditions.
+!-----------------------------------------------------------------------
+!
+      Lperturb(iwest )=WESTERN_EDGE
+      Lperturb(ieast )=EASTERN_EDGE
+      Lperturb(isouth)=SOUTHERN_EDGE
+      Lperturb(inorth)=NORTHERN_EDGE
+
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+!
+!  Perturb free-surface open boundaries.
+!
+          IF (Lperturb(ib).and.Lobc(ib,isFsur,ng)) THEN
+            IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+              IF (TLmodel.and.(ivarTL.eq.isFsur)) THEN
+                DO j=Jstr,Jend
+                  IF (j.eq.JperTL) THEN
+                    tl_zeta_obc(j,ib,ir,1)=1.0_r8
+                  ELSE
+                    tl_zeta_obc(j,ib,ir,1)=0.0_r8
+                  END IF
+                END DO
+              ELSE IF (ADmodel.and.(ivarAD.eq.isFsur)) THEN
+                DO j=Jstr,Jend
+                  IF (j.eq.JperAD) THEN
+                    ad_zeta_obc(j,ib,ir,1)=1.0_r8
+                  ELSE
+                    ad_zeta_obc(j,ib,ir,1)=0.0_r8
+                  END IF
+                END DO
+              END IF
+            ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+              IF (TLmodel.and.(ivarTL.eq.isFsur)) THEN
+                DO i=Istr,Iend
+                  IF (i.eq.IperTL) THEN
+                    tl_zeta_obc(i,ib,ir,1)=1.0_r8
+                  ELSE
+                    tl_zeta_obc(i,ib,ir,1)=0.0_r8
+                  END IF
+                END DO
+              ELSE IF (ADmodel.and.(ivarAD.eq.isFsur)) THEN
+                DO i=Istr,Iend
+                  IF (i.eq.IperAD) THEN
+                    ad_zeta_obc(i,ib,ir,1)=1.0_r8
+                  ELSE
+                    ad_zeta_obc(i,ib,ir,1)=0.0_r8
+                  END IF
+                END DO
+              END IF
+            END IF
+          END IF
+!
+!  Perturb 2D U-momentum open boundaries.
+!
+          IF (Lperturb(ib).and.Lobc(ib,isUbar,ng)) THEN
+            IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+              IF (TLmodel.and.(ivarTL.eq.isUbar)) THEN
+                DO j=Jstr,Jend
+                  IF (j.eq.JperTL) THEN
+                    tl_ubar_obc(j,ib,ir,1)=1.0_r8
+                  ELSE
+                    tl_ubar_obc(j,ib,ir,1)=0.0_r8
+                  END IF
+                END DO
+              ELSE IF (ADmodel.and.(ivarAD.eq.isUbar)) THEN
+                DO j=Jstr,Jend
+                  IF (j.eq.JperAD) THEN
+                    ad_ubar_obc(j,ib,ir,1)=1.0_r8
+                  ELSE
+                    ad_ubar_obc(j,ib,ir,1)=0.0_r8
+                  END IF
+                END DO
+              END IF
+            ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+              IF (TLmodel.and.(ivarTL.eq.isUbar)) THEN
+                DO i=IstrU,Iend
+                  IF (i.eq.IperTL) THEN
+                    tl_ubar_obc(i,ib,ir,1)=1.0_r8
+                  ELSE
+                    tl_ubar_obc(i,ib,ir,1)=0.0_r8
+                  END IF
+                END DO
+              ELSE IF (ADmodel.and.(ivarAD.eq.isUbar)) THEN
+                DO i=IstrU,Iend
+                  IF (i.eq.IperAD) THEN
+                    ad_ubar_obc(i,ib,ir,1)=1.0_r8
+                  ELSE
+                    ad_ubar_obc(i,ib,ir,1)=0.0_r8
+                  END IF
+                END DO
+              END IF
+            END IF
+          END IF
+!
+!  Perturb 2D V-momentum open boundaries.
+!
+          IF (Lperturb(ib).and.Lobc(ib,isVbar,ng)) THEN
+            IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+              IF (TLmodel.and.(ivarTL.eq.isVbar)) THEN
+                DO j=JstrV,Jend
+                  IF (j.eq.JperTL) THEN
+                    tl_vbar_obc(j,ib,ir,1)=1.0_r8
+                  ELSE
+                    tl_vbar_obc(j,ib,ir,1)=0.0_r8
+                  END IF
+                END DO
+              ELSE IF (ADmodel.and.(ivarAD.eq.isVbar)) THEN
+                DO j=JstrV,Jend
+                  IF (j.eq.JperAD) THEN
+                    ad_vbar_obc(j,ib,ir,1)=1.0_r8
+                  ELSE
+                    ad_vbar_obc(j,ib,ir,1)=0.0_r8
+                  END IF
+                END DO
+              END IF
+            ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+              IF (TLmodel.and.(ivarTL.eq.isVbar)) THEN
+                DO i=Istr,Iend
+                  IF (i.eq.IperTL) THEN
+                    tl_vbar_obc(i,ib,ir,1)=1.0_r8
+                  ELSE
+                    tl_vbar_obc(i,ib,ir,1)=0.0_r8
+                  END IF
+                END DO
+              ELSE IF (ADmodel.and.(ivarAD.eq.isVbar)) THEN
+                DO i=Istr,Iend
+                  IF (i.eq.IperAD) THEN
+                    ad_vbar_obc(i,ib,ir,1)=1.0_r8
+                  ELSE
+                    ad_vbar_obc(i,ib,ir,1)=0.0_r8
+                  END IF
+                END DO
+              END IF
+            END IF
+          END IF
+
+#  ifdef SOLVE3D
+!
+!  Perturb 3D U-momentum open boundaries.
+!
+          IF (Lperturb(ib).and.Lobc(ib,isUvel,ng)) THEN
+            IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+              IF (TLmodel.and.(ivarTL.eq.isUvel)) THEN
+                DO k=1,N(ng)
+                  DO j=Jstr,Jend
+                    IF ((j.eq.JperTL).and.(k.eq.KperTL)) THEN
+                      tl_u_obc(j,k,ib,ir,1)=1.0_r8
+                    ELSE
+                      tl_u_obc(j,k,ib,ir,1)=0.0_r8
+                    END IF
+                  END DO
+                END DO
+              ELSE IF (ADmodel.and.(ivarAD.eq.isUvel)) THEN
+                DO k=1,N(ng)
+                  DO j=Jstr,Jend
+                    IF ((j.eq.JperAD).and.(k.eq.KperAD)) THEN
+                      ad_u_obc(j,k,ib,ir,1)=1.0_r8
+                    ELSE
+                      ad_u_obc(j,k,ib,ir,1)=0.0_r8
+                    END IF
+                  END DO
+                END DO
+              END IF
+            ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+              IF (TLmodel.and.(ivarTL.eq.isUvel)) THEN
+                DO k=1,N(ng)
+                  DO i=IstrU,Iend
+                    IF ((i.eq.IperTL).and.(k.eq.KperTL)) THEN
+                      tl_u_obc(i,k,ib,ir,1)=1.0_r8
+                    ELSE
+                      tl_u_obc(i,k,ib,ir,1)=0.0_r8
+                    END IF
+                  END DO
+                END DO
+              ELSE IF (ADmodel.and.(ivarAD.eq.isUvel)) THEN
+                DO k=1,N(ng)
+                  DO i=IstrU,Iend
+                    IF ((i.eq.IperAD).and.(k.eq.KperAD)) THEN
+                      ad_u_obc(i,k,ib,ir,1)=1.0_r8
+                    ELSE
+                      ad_u_obc(i,k,ib,ir,1)=0.0_r8
+                    END IF
+                  END DO
+                END DO
+              END IF
+            END IF
+          END IF
+!
+!  Perturb 3D V-momentum open boundaries.
+!
+          IF (Lperturb(ib).and.Lobc(ib,isVvel,ng)) THEN
+            IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+              IF (TLmodel.and.(ivarTL.eq.isVvel)) THEN
+                DO k=1,N(ng)
+                  DO j=JstrV,Jend
+                    IF ((j.eq.JperTL).and.(k.eq.KperTL)) THEN
+                      tl_v_obc(j,k,ib,ir,1)=1.0_r8
+                    ELSE
+                      tl_v_obc(j,k,ib,ir,1)=0.0_r8
+                    END IF
+                  END DO
+                END DO
+              ELSE IF (ADmodel.and.(ivarAD.eq.isVvel)) THEN
+                DO k=1,N(ng)
+                  DO j=JstrV,Jend
+                    IF ((j.eq.JperAD).and.(k.eq.KperAD)) THEN
+                      ad_v_obc(j,k,ib,ir,1)=1.0_r8
+                    ELSE
+                      ad_v_obc(j,k,ib,ir,1)=0.0_r8
+                    END IF
+                  END DO
+                END DO
+              END IF
+            ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+              IF (TLmodel.and.(ivarTL.eq.isVvel)) THEN
+                DO k=1,N(ng)
+                  DO i=Istr,Iend
+                    IF ((i.eq.IperTL).and.(k.eq.KperTL)) THEN
+                      tl_v_obc(i,k,ib,ir,1)=1.0_r8
+                    ELSE
+                      tl_v_obc(i,k,ib,ir,1)=0.0_r8
+                    END IF
+                  END DO
+                END DO
+              ELSE IF (ADmodel.and.(ivarAD.eq.isVvel)) THEN
+                DO k=1,N(ng)
+                  DO i=Istr,Iend
+                    IF ((i.eq.IperAD).and.(k.eq.KperAD)) THEN
+                      ad_v_obc(i,k,ib,ir,1)=1.0_r8
+                    ELSE
+                      ad_v_obc(i,k,ib,ir,1)=0.0_r8
+                    END IF
+                  END DO
+                END DO
+              END IF
+            END IF
+          END IF
+!
+!  Perturb tracers open boundaries.
+!
+          DO itrc=1,NT(ng)
+            IF (Lperturb(ib).and.Lobc(ib,isTvar(itrc),ng)) THEN
+              IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+                IF (TLmodel.and.(ivarTL.eq.isTvar(itrc))) THEN
+                  DO k=1,N(ng)
+                    DO j=Jstr,Jend
+                      IF ((j.eq.JperTL).and.(k.eq.KperTL)) THEN
+                        tl_t_obc(j,k,ib,ir,1,itrc)=1.0_r8
+                      ELSE
+                        tl_t_obc(j,k,ib,ir,1,itrc)=0.0_r8
+                      END IF
+                    END DO
+                  END DO
+                ELSE IF (ADmodel.and.(ivarAD.eq.isTvar(itrc))) THEN
+                  DO k=1,N(ng)
+                    DO j=Jstr,Jend
+                      IF ((j.eq.JperAD).and.(k.eq.KperAD)) THEN
+                        ad_t_obc(j,k,ib,ir,1,itrc)=1.0_r8
+                      ELSE
+                        ad_t_obc(j,k,ib,ir,1,itrc)=0.0_r8
+                      END IF
+                    END DO
+                  END DO
+                END IF
+              ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+                IF (TLmodel.and.(ivarTL.eq.isTvar(itrc))) THEN
+                  DO k=1,N(ng)
+                    DO i=Istr,Iend
+                      IF ((i.eq.IperTL).and.(k.eq.KperTL)) THEN
+                        tl_t_obc(i,k,ib,ir,1,itrc)=1.0_r8
+                      ELSE
+                        tl_t_obc(i,k,ib,ir,1,itrc)=0.0_r8
+                      END IF
+                    END DO
+                  END DO
+                ELSE IF (ADmodel.and.(ivarAD.eq.isTvar(itrc))) THEN
+                  DO k=1,N(ng)
+                    DO i=Istr,Iend
+                      IF ((i.eq.IperAD).and.(k.eq.KperAD)) THEN
+                        ad_t_obc(i,k,ib,ir,1,itrc)=1.0_r8
+                      ELSE
+                        ad_t_obc(i,k,ib,ir,1,itrc)=0.0_r8
+                      END IF
+                    END DO
+                  END DO
+                END IF
+              END IF
+            END IF
+          END DO
+#  endif
+        END DO
+      END DO
 # endif
 #endif
 !
