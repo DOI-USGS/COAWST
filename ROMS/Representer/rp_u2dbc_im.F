@@ -2,9 +2,9 @@
       MODULE rp_u2dbc_mod
 #ifdef TL_IOMS
 !
-!svn $Id: rp_u2dbc_im.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: rp_u2dbc_im.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -132,7 +132,7 @@
 !
       IF (WESTERN_EDGE) THEN
 
-#  if defined WEST_M2RADIATION
+#  if defined WEST_M2RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -147,7 +147,7 @@
           DO j=Jstr,Jend
 #   ifdef WEST_M2NUDGING
             IF (BOUNDARY(ng)%ubar_west_Cx(j).eq.0.0_r8) THEN
-     &        tau=M2obc_in(ng,iwest)
+              tau=M2obc_in(ng,iwest)
             ELSE
               tau=M2obc_out(ng,iwest)
             END IF
@@ -199,7 +199,8 @@
           bry_pgr=-g*(zeta(Istr,j,know)-                                &
      &                BOUNDARY(ng)%zeta_west(j))*                       &
      &            0.5_r8*GRID(ng)%pm(Istr,j)
-          tl_bry_pgr=-g*tl_zeta(Istr,j,know)*                           &
+          tl_bry_pgr=-g*(tl_zeta(Istr,j,know)-                          &
+     &                   BOUNDARY(ng)%tl_zeta_west(j))*                 &
      &               0.5_r8*GRID(ng)%pm(Istr,j)
 #    else
           bry_pgr=-g*(zeta(Istr  ,j,know)-                              &
@@ -282,7 +283,7 @@
 #   else
 !>        bry_val=BOUNDARY(ng)%ubar_west(j)
 !>
-          tl_bry_val=0.0_r8
+          tl_bry_val=BOUNDARY(ng)%tl_ubar_west(j)
 #   endif
           cff=1.0_r8/(0.5_r8*(GRID(ng)%h(Istr-1,j)+                     &
      &                        zeta(Istr-1,j,know)+                      &
@@ -310,10 +311,12 @@
      &                                        zeta(Istr  ,j,know))-     &
      &                                BOUNDARY(ng)%zeta_west(j))-       &
      &                         Cx*(0.5_r8*(tl_zeta(Istr-1,j,know)+      &
-     &                                     tl_zeta(Istr  ,j,know)))+    &
+     &                                     tl_zeta(Istr  ,j,know))-     &
+     &                             BOUNDARY(ng)%tl_zeta_west(j))+       &
 #   ifdef TL_IOMS
      &                         Cx*(0.5_r8*(zeta(Istr-1,j,know)+         &
-     &                                     zeta(Istr  ,j,know)))
+     &                                     zeta(Istr  ,j,know))-        &
+     &                             BOUNDARY(ng)%zeta_west(j))
 #   endif
 #   ifdef MASKING
 !>        ubar(Istr,j,kout)=ubar(Istr,j,kout)*                          &
@@ -331,13 +334,12 @@
 !
         DO j=Jstr,Jend
 !>        ubar(Istr,j,kout)=BOUNDARY(ng)%ubar_west(j)
+!>
+          tl_ubar(Istr,j,kout)=BOUNDARY(ng)%tl_ubar_west(j)
 #   ifdef MASKING
 !>        ubar(Istr,j,kout)=ubar(Istr,j,kout)*                          &
 !>   &                      GRID(ng)%umask(Istr,j)
-#   endif
 !>
-          tl_ubar(Istr,j,kout)=BOUNDARY(ng)%ubar_west(j)
-#   ifdef MASKING
           tl_ubar(Istr,j,kout)=tl_ubar(Istr,j,kout)*                    &
      &                         GRID(ng)%umask(Istr,j)
 #   endif
@@ -370,7 +372,8 @@
 !>   &                BOUNDARY(ng)%zeta_west(j))*                       &
 !>   &            0.5_r8*GRID(ng)%pm(Istr,j)
 !>
-          tl_bry_pgr=-g*tl_zeta(Istr,j,know)*                           &
+          tl_bry_pgr=-g*(tl_zeta(Istr,j,know)-                          &
+     &                   BOUNDARY(ng)%tl_zeta_west(j))*                 &
      &               0.5_r8*GRID(ng)%pm(Istr,j)
 #  else
 !>        bry_pgr=-g*(zeta(Istr,j,know)-                                &
@@ -460,7 +463,7 @@
 !
       IF (EASTERN_EDGE) THEN
 
-#  if defined EAST_M2RADIATION
+#  if defined EAST_M2RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -498,7 +501,7 @@
      &                              Cx *tl_ubar(Iend  ,j,kout)-         &
      &                              MAX(Ce,0.0_r8)*tl_grad(Iend+1,j  )- &
      &                              MIN(Ce,0.0_r8)*tl_grad(Iend+1,j+1))/&
-     &                             (cff+Cx) 
+     &                             (cff+Cx)
 #   ifdef EAST_M2NUDGING
 !>          ubar(Iend+1,j,kout)=ubar(Iend+1,j,kout)+                    &
 !>   &                          tau*(BOUNDARY(ng)%ubar_east(j)-         &
@@ -527,7 +530,8 @@
           bry_pgr=-g*(BOUNDARY(ng)%zeta_east(j)-                        &
      &                zeta(Iend,j,know))*                               &
      &            0.5_r8*GRID(ng)%pm(Iend,j)
-          tl_bry_pgr=g*tl_zeta(Iend,j,know)*                            &
+          tl_bry_pgr=-g*(BOUNDARY(ng)%tl_zeta_east(j)-                  &
+     &                   tl_zeta(Iend,j,know))*                         &
      &               0.5_r8*GRID(ng)%pm(Iend,j)
 #    else
           bry_pgr=-g*(zeta(Iend+1,j,know)-                              &
@@ -610,7 +614,7 @@
 #   else
 !>        bry_val=BOUNDARY(ng)%ubar_east(j)
 !>
-          tl_bry_val=0.0_r8
+          tl_bry_val=BOUNDARY(ng)%tl_ubar_east(j)
 #   endif
           cff=1.0_r8/(0.5_r8*(GRID(ng)%h(Iend  ,j)+                     &
      &                        zeta(Iend  ,j,know)+                      &
@@ -638,10 +642,12 @@
      &                                          zeta(Iend+1,j,know))-   &
      &                                  BOUNDARY(ng)%zeta_east(j))+     &
      &                           Cx*(0.5_r8*(tl_zeta(Iend  ,j,know)+    &
-     &                                       tl_zeta(Iend+1,j,know)))-  &
+     &                                       tl_zeta(Iend+1,j,know))-   &
+     &                               BOUNDARY(ng)%tl_zeta_east(j))-     &
 #   ifdef TL_IOMS
      &                           Cx*(0.5_r8*(zeta(Iend  ,j,know)+       &
-     &                                       zeta(Iend+1,j,know)))
+     &                                       zeta(Iend+1,j,know))-      &
+     &                               BOUNDARY(ng)%zeta_east(j))
 #   endif
 #   ifdef MASKING
 !>   &    ubar(Iend+1,j,kout)=ubar(Iend+1,j,kout)*                      &
@@ -658,13 +664,12 @@
 !
         DO j=Jstr,Jend
 !>        ubar(Iend+1,j,kout)=BOUNDARY(ng)%ubar_east(j)
+!>
+          tl_ubar(Iend+1,j,kout)=BOUNDARY(ng)%tl_ubar_east(j)
 #   ifdef MASKING
 !>        ubar(Iend+1,j,kout)=ubar(Iend+1,j,kout)*                      &
 !>   &                        GRID(ng)%umask(Iend+1,j)
-#   endif
 !>
-          tl_ubar(Iend+1,j,kout)=BOUNDARY(ng)%ubar_east(j)
-#   ifdef MASKING
           tl_ubar(Iend+1,j,kout)=tl_ubar(Iend+1,j,kout)*                &
      &                           GRID(ng)%umask(Iend+1,j)
 #   endif
@@ -697,7 +702,8 @@
 !>   &                zeta(Iend,j,know))*                               &
 !>   &             0.5_r8*GRID(ng)%pm(Iend,j)
 !>
-          tl_bry_pgr=g*tl_zeta(Iend,j,know)*                            &
+          tl_bry_pgr=-g*(BOUNDARY(ng)%tl_zeta_east(j)-                  &
+     &                   tl_zeta(Iend,j,know))*                         &
      &               0.5_r8*GRID(ng)%pm(Iend,j)
 #  else
 !>        bry_pgr=-g*(zeta(Iend+1,j,know)-                              &
@@ -790,7 +796,7 @@
 !
       IF (SOUTHERN_EDGE) THEN
 
-#  if defined SOUTH_M2RADIATION
+#  if defined SOUTH_M2RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -828,7 +834,7 @@
      &                              Ce *tl_ubar(i,Jstr  ,kout)-         &
      &                              MAX(Cx,0.0_r8)*tl_grad(i-1,Jstr-1)- &
      &                              MIN(Cx,0.0_r8)*tl_grad(i  ,Jstr-1))/&
-     &                             (cff+Ce) 
+     &                             (cff+Ce)
 #   ifdef SOUTH_M2NUDGING
 !>          ubar(i,Jstr-1,kout)=ubar(i,Jstr-1,kout)+                    &
 !>   &                          tau*(BOUNDARY(ng)%ubar_south(i)-        &
@@ -882,7 +888,7 @@
      &                                 Ce*tl_ubar(i,Jstr,kout))-        &
 #   ifdef TL_IOMS
      &                           cff2*(ubar(i,Jstr-1,know)+             &
-     &                                 Ce*ubar(i,Jstr,kout))
+     &                                 2.0_r8*Ce*ubar(i,Jstr,kout))
 #   endif
 #   ifdef MASKING
 !>        ubar(i,Jstr-1,kout)=ubar(i,Jstr-1,kout)*                      &
@@ -899,13 +905,12 @@
 !
         DO i=IstrU,Iend
 !>        ubar(i,Jstr-1,kout)=BOUNDARY(ng)%ubar_south(i)
+!>
+          tl_ubar(i,Jstr-1,kout)=BOUNDARY(ng)%tl_ubar_south(i)
 #   ifdef MASKING
 !>        ubar(i,Jstr-1,kout)=ubar(i,Jstr-1,kout)*                      &
 !>   &                        GRID(ng)%umask(i,Jstr-1)
-#   endif
 !>
-          tl_ubar(i,Jstr-1,kout)=BOUNDARY(ng)%ubar_south(i)
-#   ifdef MASKING
           tl_ubar(i,Jstr-1,kout)=tl_ubar(i,Jstr-1,kout)*                &
      &                           GRID(ng)%umask(i,Jstr-1)
 #   endif
@@ -960,7 +965,7 @@
 !
       IF (NORTHERN_EDGE) THEN
 
-#  if defined NORTH_M2RADIATION
+#  if defined NORTH_M2RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -998,7 +1003,7 @@
      &                              Ce *tl_ubar(i,Jend  ,kout)-         &
      &                              MAX(Cx,0.0_r8)*tl_grad(i-1,Jend+1)- &
      &                              MIN(Cx,0.0_r8)*tl_grad(i  ,Jend+1))/&
-     &                             (cff+Ce) 
+     &                             (cff+Ce)
 #   ifdef NORTH_M2NUDGING
 !>          ubar(i,Jend+1,kout)=ubar(i,Jend+1,kout)+                    &
 !>   &                          tau*(BOUNDARY(ng)%ubar_north(i)-        &
@@ -1052,7 +1057,7 @@
      &                                 Ce*tl_ubar(i,Jend,kout))-        &
 #   ifdef TL_IOMS
      &                           cff2*(ubar(i,Jend+1,know)+             &
-     &                                 Ce*ubar(i,Jend,kout))
+     &                                 2.0_r8*Ce*ubar(i,Jend,kout))
 #   endif
 #   ifdef MASKING
 !>        ubar(i,Jend+1,kout)=ubar(i,Jend+1,kout)*                      &
@@ -1069,13 +1074,12 @@
 !
         DO i=IstrU,Iend
 !>        ubar(i,Jend+1,kout)=BOUNDARY(ng)%ubar_north(i)
+!>
+          tl_ubar(i,Jend+1,kout)=BOUNDARY(ng)%tl_ubar_north(i)
 #   ifdef MASKING
 !>        ubar(i,Jend+1,kout)=ubar(i,Jend+1,kout)*                      &
 !>   &                        GRID(ng)%umask(i,Jend+1)
-#   endif
 !>
-          tl_ubar(i,Jend+1,kout)=BOUNDARY(ng)%ubar_north(i)
-#   ifdef MASKING
           tl_ubar(i,Jend+1,kout)=tl_ubar(i,Jend+1,kout)*                &
      &                           GRID(ng)%umask(i,Jend+1)
 #   endif
@@ -1165,6 +1169,95 @@
      &                               tl_ubar(Iend  ,Jend+1,kout))
       END IF
 # endif
+
+# if defined WET_DRY_NOT_YET
+!
+!-----------------------------------------------------------------------
+!  Impose wetting and drying conditions.
+!
+!  HGA:  need RPM code here.
+!-----------------------------------------------------------------------
+!
+#  ifndef EW_PERIODIC
+      IF (WESTERN_EDGE) THEN
+        DO j=Jstr,Jend
+!>        cff1=ABS(ABS(GRID(ng)%umask_wet(Istr,j))-1.0_r8)
+!>        cff2=0.5_r8+DSIGN(0.5_r8,ubar(Istr,j,kout))*                  &
+!>   &                GRID(ng)%umask_wet(Istr,j)
+!>        cff=0.5_r8*GRID(ng)%umask_wet(Istr,j)*cff1+                   &
+!>   &        cff2*(1.0_r8-cff1)
+!>        ubar(Istr,j,kout)=ubar(Istr,j,kout)*cff
+        END DO
+      END IF
+      IF (EASTERN_EDGE) THEN
+        DO j=Jstr,Jend
+!>        cff1=ABS(ABS(GRID(ng)%umask_wet(Iend+1,j))-1.0_r8)
+!>        cff2=0.5_r8+DSIGN(0.5_r8,ubar(Iend+1,j,kout))*                &
+!>   &                GRID(ng)%umask_wet(Iend+1,j)
+!>        cff=0.5_r8*GRID(ng)%umask_wet(Iend+1,j)*cff1+                 &
+!>   &        cff2*(1.0_r8-cff1)
+!>        ubar(Iend+1,j,kout)=ubar(Iend+1,j,kout)*cff
+        END DO
+      END IF
+#  endif
+#  ifndef NS_PERIODIC
+      IF (SOUTHERN_EDGE) THEN
+        DO i=IstrU,Iend
+!>        cff1=ABS(ABS(GRID(ng)%umask_wet(i,Jstr-1))-1.0_r8)
+!>        cff2=0.5_r8+DSIGN(0.5_r8,ubar(i,Jstr-1,kout))*                &
+!>   &                GRID(ng)%umask_wet(i,Jstr-1)
+!>        cff=0.5_r8*GRID(ng)%umask_wet(i,Jstr-1)*cff1+                 &
+!>   &        cff2*(1.0_r8-cff1)
+!>        ubar(i,Jstr-1,kout)=ubar(i,Jstr-1,kout)*cff
+        END DO
+      END IF
+      IF (NORTHERN_EDGE) THEN
+        DO i=Istr,Iend
+!>        cff1=ABS(ABS(GRID(ng)%umask_wet(i,Jend+1))-1.0_r8)
+!>        cff2=0.5_r8+DSIGN(0.5_r8,ubar(i,Jend+1,kout))*                &
+!>   &                GRID(ng)%umask_wet(i,Jend+1)
+!>        cff=0.5_r8*GRID(ng)%umask_wet(i,Jend+1)*cff1+                 &
+!>   &        cff2*(1.0_r8-cff1)
+!>        ubar(i,Jend+1,kout)=ubar(i,Jend+1,kout)*cff
+        END DO
+      END IF
+#  endif
+#  if !defined EW_PERIODIC && !defined NS_PERIODIC
+      IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+!>      cff1=ABS(ABS(GRID(ng)%umask_wet(Istr,Jstr-1))-1.0_r8)
+!>      cff2=0.5_r8+DSIGN(0.5_r8,ubar(Istr,Jstr-1,kout))*               &
+!>   &              GRID(ng)%umask_wet(Istr,Jstr-1)
+!>      cff=0.5_r8*GRID(ng)%umask_wet(Istr,Jstr-1)*cff1+                &
+!>   &      cff2*(1.0_r8-cff1)
+!>      ubar(Istr,Jstr-1,kout)=ubar(Istr,Jstr-1,kout)*cff
+      END IF
+      IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+!>      cff1=ABS(ABS(GRID(ng)%umask_wet(Iend+1,Jstr-1))-1.0_r8)
+!>      cff2=0.5_r8+DSIGN(0.5_r8,ubar(Iend+1,Jstr-1,kout))*             &
+!>   &              GRID(ng)%umask_wet(Iend+1,Jstr-1)
+!>      cff=0.5_r8*GRID(ng)%umask_wet(Iend+1,Jstr-1)*cff1+              &
+!>   &      cff2*(1.0_r8-cff1)
+!>      ubar(Iend+1,Jstr-1,kout)=ubar(Iend+1,Jstr-1,kout)*cff
+      END IF
+      IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+!>      cff1=ABS(ABS(GRID(ng)%umask_wet(Istr,Jend+1))-1.0_r8)
+!>      cff2=0.5_r8+DSIGN(0.5_r8,ubar(Istr,Jend+1,kout))*               &
+!>   &              GRID(ng)%umask_wet(Istr,Jend+1)
+!>      cff=0.5_r8*GRID(ng)%umask_wet(Istr,Jend+1)*cff1+                &
+!>   &      cff2*(1.0_r8-cff1)
+!>      ubar(Istr,Jend+1,kout)=ubar(Istr,Jend+1,kout)*cff
+      END IF
+      IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+!>      cff1=ABS(ABS(GRID(ng)%umask_wet(Iend+1,Jend+1))-1.0_r8)
+!>      cff2=0.5_r8+DSIGN(0.5_r8,ubar(Iend+1,Jend+1,kout))*             &
+!>   &              GRID(ng)%umask_wet(Iend+1,Jend+1)
+!>      cff=0.5_r8*GRID(ng)%umask_wet(Iend+1,Jend+1)+cff1+              &
+!>   &      cff2*(1.0_r8-cff1)
+!>      ubar(Iend+1,Jend+1,kout)=ubar(Iend+1,Jend+1,kout)*cff
+      END IF
+#  endif
+# endif
+
       RETURN
       END SUBROUTINE rp_u2dbc_tile
 #endif

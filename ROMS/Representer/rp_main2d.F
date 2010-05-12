@@ -2,9 +2,9 @@
 #if defined TL_IOMS && !defined SOLVE3D
       SUBROUTINE rp_main2d (ng)
 !
-!svn $Id: rp_main2d.F 672 2008-08-05 18:14:56Z arango $
+!svn $Id: rp_main2d.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -25,9 +25,6 @@
       USE mod_scalars
       USE mod_stepping
 !
-# ifdef ADJUST_WSTRESS
-      USE frc_adjust_mod, ONLY : load_TLforcing
-# endif
 # ifdef AIR_OCEAN_NOT_YET
       USE ocean_coupler_mod, ONLY : atmos_coupling
 # endif
@@ -38,7 +35,13 @@
 !!    USE oi_update_mod, ONLY : oi_update
 # endif
       USE rp_diag_mod, ONLY : rp_diag
+# ifdef defined ADJUST_WSTRESS
+      USE rp_frc_adjust_mod, ONLY : rp_frc_adjust
+# endif
       USE rp_ini_fields_mod, ONLY : rp_ini_fields, rp_ini_zeta
+# ifdef ADJUST_BOUNDARY
+      USE rp_obc_adjust_mod, ONLY : rp_obc_adjust
+# endif
 # ifdef NEARSHORE_MELLOR_NOT_YET
 !!    USE rp_radiation_stress_mod, ONLY : rp_radiation_stress
 # endif
@@ -53,7 +56,7 @@
 # ifdef FLOATS_NOT_YET
 !!    USE rp_step_floats_mod, ONLY : rp_step_floats
 # endif
-# if defined WEAK_CONSTRAINT || defined IOM
+# ifdef WEAK_CONSTRAINT
       USE tl_forcing_mod, ONLY : tl_forcing
 # endif
 !
@@ -80,11 +83,11 @@
       tdays(ng)=time(ng)*sec2day
       CALL time_string (time(ng), time_code(ng))
 
-# if defined WEAK_CONSTRAINT || defined IOM
+# ifdef WEAK_CONSTRAINT
 !
 !-----------------------------------------------------------------------
 !  If appropriate, add convolved adjoint solution impulse forcing to
-!  the representer model solution. Notice that the forcing is only 
+!  the representer model solution. Notice that the forcing is only
 !  needed after finishing all inner loops. The forcing is continuous.
 !  That is, it is time interpolated at every time-step from available
 !  snapshots (FrequentImpulse=TRUE).
@@ -168,7 +171,7 @@
 # ifdef AVERAGES
 !!        CALL rp_set_avg (ng, TILE)
 # endif
-# ifdef DIAGNOSTICS_UV
+# ifdef DIAGNOSTICS
 !!        CALL rp_set_diags (ng, TILE)
 # endif
           CALL rp_diag (ng, TILE)
@@ -248,20 +251,42 @@
       END DO
 !$OMP END PARALLEL DO
 
+# ifdef ADJUST_BOUNDARY
+!
+!-----------------------------------------------------------------------
+!  Interpolate open boundary increments and adjust open boundaries.
+!  Skip the last output timestep.
+!-----------------------------------------------------------------------
+!
+      IF (iic(ng).lt.(ntend(ng)+1)) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL rp_obc_adjust (ng, TILE, Lbinp(ng))
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+      END IF
+# endif
+
 # ifdef ADJUST_WSTRESS
 !
 !-----------------------------------------------------------------------
-!  Load surface forcing to storage arrays.
+!  Interpolate surface forcing increments and adjust surface forcing.
+!  Skip the last output timestep.
 !-----------------------------------------------------------------------
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,Lfout,numthreads)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1,+1
-          CALL load_TLforcing (ng, TILE, Lfout(ng))
+      IF (iic(ng).lt.(ntend(ng)+1)) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL rp_frc_adjust (ng, TILE, Lfinp(ng))
+          END DO
         END DO
-      END DO
 !$OMP END PARALLEL DO
+      END IF
 # endif
 !
 !-----------------------------------------------------------------------
@@ -338,23 +363,25 @@
 !  Compute Lagrangian drifters trajectories.
 !-----------------------------------------------------------------------
 !
+      IF (Lfloats(Ng)) THEN
 !$OMP PARALLEL DO PRIVATE(thread,chunk_size,Lstr,Lend)                  &
 !$OMP&            SHARED(ng,numthreads,Nfloats)
-      DO thread=0,numthreads-1
-        chunk_size=(Nfloats(ng)+numthreads-1)/numthreads
-        Lstr=1+thread*chunk_size
-        Lend=MIN(Nfloats(ng),Lstr+chunk_size-1)
-        CALL rp_step_floats (ng, Lstr, Lend)
-      END DO
+        DO thread=0,numthreads-1
+          chunk_size=(Nfloats(ng)+numthreads-1)/numthreads
+          Lstr=1+thread*chunk_size
+          Lend=MIN(Nfloats(ng),Lstr+chunk_size-1)
+          CALL rp_step_floats (ng, Lstr, Lend)
+        END DO
 !$OMP END PARALLEL DO
 !
 !  Shift floats time indices.
 !
-      nfp1(ng)=MOD(nfp1(ng)+1,NFT+1)
-      nf(ng)  =MOD(nf(ng)  +1,NFT+1)
-      nfm1(ng)=MOD(nfm1(ng)+1,NFT+1)
-      nfm2(ng)=MOD(nfm2(ng)+1,NFT+1)
-      nfm3(ng)=MOD(nfm3(ng)+1,NFT+1)
+        nfp1(ng)=MOD(nfp1(ng)+1,NFT+1)
+        nf(ng)  =MOD(nf(ng)  +1,NFT+1)
+        nfm1(ng)=MOD(nfm1(ng)+1,NFT+1)
+        nfm2(ng)=MOD(nfm2(ng)+1,NFT+1)
+        nfm3(ng)=MOD(nfm3(ng)+1,NFT+1)
+      END IF
 # endif
 
       RETURN

@@ -3,9 +3,9 @@
 
 #if defined TL_IOMS && defined RPM_RELAXATION && defined SOLVE3D
 !
-!svn $Id: rp_t3drelax.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: rp_t3drelax.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -143,7 +143,7 @@
                 FX(i,j)=0.5_r8*tl_Tdiff(itrc,ng)*pmon_u(i,j)*           &
      &                  (Hz(i,j,k)+Hz(i-1,j,k))*                        &
      &                  (tl_t(i  ,j,k,nrhs,itrc)-t(i  ,j,k,nrhs,itrc)-  &
-     &                   tl_t(i-1,j,k,nrhs,itrc)-t(i-1,j,k,nrhs,itrc))
+     &                   tl_t(i-1,j,k,nrhs,itrc)+t(i-1,j,k,nrhs,itrc))
 # ifdef MASKING
                 FX(i,j)=FX(i,j)*umask(i,j)
 # endif
@@ -154,7 +154,7 @@
                 FE(i,j)=0.5_r8*tl_Tdiff(itrc,ng)*pnom_v(i,j)*           &
      &                  (Hz(i,j,k)+Hz(i,j-1,k))*                        &
      &                  (tl_t(i,j  ,k,nrhs,itrc)-t(i,j  ,k,nrhs,itrc)-  &
-     &                   tl_t(i,j-1,k,nrhs,itrc)-t(i,j-1,k,nrhs,itrc))
+     &                   tl_t(i,j-1,k,nrhs,itrc)+t(i,j-1,k,nrhs,itrc))
 # ifdef MASKING
                 FE(i,j)=FE(i,j)*vmask(i,j)
 # endif

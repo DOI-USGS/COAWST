@@ -2,9 +2,9 @@
       MODULE rp_u3dbc_mod
 #if defined TL_IOMS && defined SOLVE3D
 !
-!svn $Id: rp_u3dbc_im.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: rp_u3dbc_im.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -93,13 +93,13 @@
 !
       IF (WESTERN_EDGE) THEN
 
-#  if defined WEST_M3RADIATION
+#  if defined WEST_M3RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
 !  Western edge, implicit upstream radiation condition.
 !
-          DO k=1,N(ng)(ng)
+          DO k=1,N(ng)
             DO j=Jstr,Jend+1
 !>            grad(Istr,j)=u(Istr,j  ,k,nstp)-                          &
 !>   &                     u(Istr,j-1,k,nstp)
@@ -109,7 +109,7 @@
             DO j=Jstr,Jend
 #   ifdef WEST_M2NUDGING
               IF (BOUNDARY(ng)%u_west_Cx(j,k).eq.0.0_r8) THEN
-     &          tau=M3obc_in(ng,iwest)
+                tau=M3obc_in(ng,iwest)
               ELSE
                 tau=M3obc_out(ng,iwest)
               END IF
@@ -134,7 +134,7 @@
      &                                tl_grad(Istr,j  )-                &
      &                             MIN(Ce,0.0_r8)*                      &
      &                                tl_grad(Istr,j+1))/               &
-     &                            (cff+Cx) 
+     &                            (cff+Cx)
 #   ifdef WEST_M3NUDGING
 !>            u(Istr,j,k,nout)=u(Istr,j,k,nout)+                        &
 !>   &                         tau*(BOUNDARY(ng)%u_west(j,k)-           &
@@ -161,13 +161,12 @@
         DO k=1,N(ng)
           DO j=Jstr,Jend
 !>          u(Istr,j,k,nout)=BOUNDARY(ng)%u_west(j,k)
+!>
+            tl_u(Istr,j,k,nout)=BOUNDARY(ng)%tl_u_west(j,k)
 #   ifdef MASKING
 !>          u(Istr,j,k,nout)=u(Istr,j,k,nout)*                          &
 !>   &                       GRID(ng)%umask(Istr,j)
-#   endif
 !>
-            tl_u(Istr,j,k,nout)=BOUNDARY(ng)%u_west(j,k)
-#   ifdef MASKING
             tl_u(Istr,j,k,nout)=tl_u(Istr,j,k,nout)*                    &
      &                          GRID(ng)%umask(Istr,j)
 #   endif
@@ -213,7 +212,7 @@
 !
       IF (EASTERN_EDGE) THEN
 
-#  if defined EAST_M3RADIATION
+#  if defined EAST_M3RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -229,9 +228,9 @@
             DO j=Jstr,Jend
 #   ifdef EAST_M3NUDGING
               IF (BOUNDARY(ng)%u_east_Cx(j,k).eq.0.0_r8) THEN
-                tau=M3obc_in(ieast)
+                tau=M3obc_in(ng,ieast)
               ELSE
-                tau=M3obc_out(ieast)
+                tau=M3obc_out(ng,ieast)
               END IF
               tau=tau*dt(ng)
 #   endif
@@ -254,7 +253,7 @@
      &                                  tl_grad(Iend+1,j  )-            &
      &                               MIN(Ce,0.0_r8)*                    &
      &                                  tl_grad(Iend+1,j+1))/           &
-     &                              (cff+Cx) 
+     &                              (cff+Cx)
 #   ifdef EAST_M3NUDGING
 !>            u(Iend+1,j,k,nout)=u(Iend+1,j,k,nout)+                    &
 !>   &                           tau*(BOUNDARY(ng)%u_east(j,k)-         &
@@ -281,13 +280,12 @@
       DO k=1,N(ng)
         DO j=Jstr,Jend
 !>          u(Iend+1,j,k,nout)=BOUNDARY(ng)%u_east(j,k)
+!>
+            tl_u(Iend+1,j,k,nout)=BOUNDARY(ng)%tl_u_east(j,k)
 #   ifdef MASKING
 !>          u(Iend+1,j,k,nout)=u(Iend+1,j,k,nout)*                      &
 !>   &                         GRID(ng)%umask(Iend+1,j)
-#   endif
 !>
-            tl_u(Iend+1,j,k,nout)=BOUNDARY(ng)%u_east(j,k)
-#   ifdef MASKING
             tl_u(Iend+1,j,k,nout)=tl_u(Iend+1,j,k,nout)*                &
      &                            GRID(ng)%umask(Iend+1,j)
 #   endif
@@ -336,7 +334,7 @@
 !
       IF (SOUTHERN_EDGE) THEN
 
-#  if defined SOUTH_M3RADIATION
+#  if defined SOUTH_M3RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -352,9 +350,9 @@
             DO i=IstrU,Iend
 #   ifdef SOUTH_M3NUDGING
               IF (BOUNDARY(ng)%u_south_Ce(i,k).eq.0.0_r8) THEN
-                tau=M3obc_in(isouth)
+                tau=M3obc_in(ng,isouth)
               ELSE
-                tau=M3obc_out(isouth)
+                tau=M3obc_out(ng,isouth)
               END IF
               tau=tau*dt(ng)
 #   endif
@@ -377,7 +375,7 @@
      &                                  tl_grad(i-1,Jstr-1)-            &
      &                               MIN(Cx,0.0_r8)*                    &
      &                                  tl_grad(i  ,Jstr-1))/           &
-     &                              (cff+Ce) 
+     &                              (cff+Ce)
 #   ifdef SOUTH_M3NUDGING
 !>            u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)+                    &
 !>   &                           tau*(BOUNDARY(ng)%u_south(i,k)-        &
@@ -404,13 +402,12 @@
         DO k=1,N(ng)
           DO i=IstrU,Iend
 !>          u(i,Jstr-1,k,nout)=BOUNDARY(ng)%u_south(i,k)
+!>
+            tl_u(i,Jstr-1,k,nout)=BOUNDARY(ng)%tl_u_south(i,k)
 #   ifdef MASKING
 !>          u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)*                      &
 !>   &                         GRID(ng)%umask(i,Jstr-1)
-#   endif
 !>
-            tl_u(i,Jstr-1,k,nout)=BOUNDARY(ng)%u_south(i,k)
-#   ifdef MASKING
             tl_u(i,Jstr-1,k,nout)=tl_u(i,Jstr-1,k,nout)*                &
      &                            GRID(ng)%umask(i,Jstr-1)
 #   endif
@@ -471,7 +468,7 @@
 !
       IF (NORTHERN_EDGE) THEN
 
-#  if defined NORTH_M3RADIATION
+#  if defined NORTH_M3RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -487,9 +484,9 @@
             DO i=IstrU,Iend
 #   ifdef NORTH_M3NUDGING
               IF (BOUNDARY(ng)%u_north_Ce(i,k).eq.0.0_r8) THEN
-                tau=M3obc_in(inorth)
+                tau=M3obc_in(ng,inorth)
               ELSE
-                tau=M3obc_out(inorth)
+                tau=M3obc_out(ng,inorth)
               END IF
               tau=tau*dt(ng)
 #   endif
@@ -512,7 +509,7 @@
      &                                  tl_grad(i-1,Jend+1)-            &
      &                               MIN(Cx,0.0_r8)*                    &
      &                                  tl_grad(i  ,Jend+1))/           &
-     &                              (cff+Ce) 
+     &                              (cff+Ce)
 #   ifdef NORTH_M3NUDGING
 !>            u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)+                    &
 !>   &                           tau*(BOUNDARY(ng)%u_north(i,k)-        &
@@ -539,13 +536,12 @@
         DO k=1,N(ng)
           DO i=IstrU,Iend
 !>          u(i,Jend+1,k,nout)=BOUNDARY(ng)%u_north(i,k)
+!>
+            tl_u(i,Jend+1,k,nout)=BOUNDARY(ng)%tl_u_north(i,k)
 #   ifdef MASKING
 !>          u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)*                      &
 !>   &                         GRID(ng)%umask(i,Jend+1)
-#   endif
 !>
-            tl_u(i,Jend+1,k,nout)=BOUNDARY(ng)%u_north(i,k)
-#   ifdef MASKING
             tl_u(i,Jend+1,k,nout)=tl_u(i,Jend+1,k,nout)*                &
      &                            GRID(ng)%umask(i,Jend+1)
 #   endif
@@ -564,7 +560,7 @@
 #   ifdef MASKING
 !>          u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)*                      &
 !>   &                         GRID(ng)%umask(i,Jend+1)
-!>          
+!>
             tl_u(i,Jend+1,k,nout)=tl_u(i,Jend+1,k,nout)*                &
      &                            GRID(ng)%umask(i,Jend+1)
 #   endif

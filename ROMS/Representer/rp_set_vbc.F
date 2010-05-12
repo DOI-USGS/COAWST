@@ -2,9 +2,9 @@
       MODULE rp_set_vbc_mod
 #ifdef TL_IOMS
 !
-!svn $Id: rp_set_vbc.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: rp_set_vbc.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -389,7 +389,7 @@
      &                        tl_btflx(i,j,isalt)*                      &
      &                        t(i,j,1,nrhs,isalt)-                      &
 #  ifdef TL_IOMS
-     &                        btflx(i,j,isalt)
+     &                        btflx(i,j,isalt)*t(i,j,1,nrhs,isalt)
 #  endif
         END DO
       END DO
@@ -882,7 +882,7 @@
 #   endif
 !
 !  Apply boundary conditions.
-! 
+!
 !>    CALL bc_u2d_tile (ng, tile,                                       &
 !>   &                  LBi, UBi, LBj, UBj,                             &
 !>   &                  bustr)

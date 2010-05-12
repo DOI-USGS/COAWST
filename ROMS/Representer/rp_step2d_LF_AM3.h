@@ -2,19 +2,11 @@
 #ifdef TL_IOMS
       SUBROUTINE rp_step2d (ng, tile)
 !
-!svn $Id: rp_step2d_LF_AM3.h 694 2008-08-08 18:33:05Z arango $
-!================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
-!    Licensed under a MIT/X style license                              !
-!    See License_ROMS.txt                                              !
+!svn $Id: rp_step2d_LF_AM3.h 429 2009-12-20 17:30:26Z arango $
 !=======================================================================
 !                                                                      !
-!  This routine performs a fast (predictor or corrector)  time-step    !
-!  for the free-surface and 2D momentum representers tangent linear    !
-!  equations. The predictor step is Leap-Frog whereas the corrector    !
-!  step  is  trapezoidal,  Adams-Moulton.  If  applicable,  it also    !
-!  calculates time filtering variables over all fast-time steps  to    !
-!  damp high frequency signals in 3D applications.                     !
+!  Representer model shallow-water primitive equations predictor       !
+!  (Leap-frog) and corrector (Adams-Moulton) time-stepping engine.     !
 !                                                                      !
 !=======================================================================
 !
@@ -34,6 +26,9 @@
       USE mod_mixing
 # endif
       USE mod_ocean
+# if defined SEDIMENT && defined SED_MORPH && defined SOLVE3D
+      USE mod_sedbed
+# endif
 # if defined UV_PSOURCE || defined Q_PSOURCE
       USE mod_sources
 # endif
@@ -58,7 +53,7 @@
      &                     nstp(ng), nnew(ng),                          &
 # endif
 # if defined UV_PSOURCE || defined Q_PSOURCE
-     &                     Nsrc(ng),                                    &
+     &                     Msrc(ng), Nsrc(ng),                          &
      &                     SOURCES(ng) % Isrc,     SOURCES(ng) % Jsrc,  &
      &                     SOURCES(ng) % Dsrc,     SOURCES(ng) % Qbar,  &
 # endif
@@ -67,15 +62,19 @@
      &                     GRID(ng) % umask,       GRID(ng) % vmask,    &
 # endif
 # ifdef WET_DRY_NOT_YET
-     &                     GRID(ng) % rmask_wet,                        &
-     &                     GRID(ng) % umask_wet,   GRID(ng) % vmask_wet,&
+     &                     GRID(ng) % rmask_wet, GRID(ng) % rmask_full, &
+     &                     GRID(ng) % umask_wet, GRID(ng) % umask_full, &
+     &                     GRID(ng) % vmask_wet, GRID(ng) % vmask_full, &
+#  ifdef SOLVE3D
+     &                     GRID(ng) % rmask_wet_avg,                    &
+#  endif
 # endif
-# ifdef SOLVE3D
+# if !defined MOVE_SET_DEPTH && defined SOLVE3D
 #  ifdef ICESHELF
      &                     GRID(ng) % zice,                             &
 #  endif
 #  if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
-     &                     GRID(ng) % tl_bed_thick,                     &
+     &                     SEDBED(ng) % tl_bed_thick,                   &
 #  endif
      &                     GRID(ng) % tl_Hz,                            &
      &                     GRID(ng) % tl_z_r,      GRID(ng) % tl_z_w,   &
@@ -128,6 +127,9 @@
      &                     FORCES(ng) % tl_bustr,                       &
      &                     FORCES(ng) % tl_bvstr,                       &
 #  endif
+#  ifdef ATM_PRESS
+     &                     FORCES(ng) % Pair,                           &
+#  endif
 # else
 #  ifdef VAR_RHO_2D
      &                     COUPLING(ng) % rhoA,                         &
@@ -175,15 +177,20 @@
      &                           nstp, nnew,                            &
 # endif
 # if defined UV_PSOURCE || defined Q_PSOURCE
-     &                           Nsrc, Isrc, Jsrc, Dsrc, Qbar,          &
+     &                           Msrc, Nsrc, Isrc, Jsrc, Dsrc, Qbar,    &
 # endif
 # ifdef MASKING
      &                           pmask, rmask, umask, vmask,            &
 # endif
 # ifdef WET_DRY_NOT_YET
-     &                           rmask_wet, umask_wet, vmask_wet,       &
+     &                           rmask_wet, rmask_full,                 &
+     &                           umask_wet, umask_full,                 &
+     &                           vmask_wet, vmask_full,                 &
+#  ifdef SOLVE3D
+     &                           rmask_wet_avg,                         &
+#  endif
 # endif
-# ifdef SOLVE3D
+# if !defined MOVE_SET_DEPTH && defined SOLVE3D
 #  ifdef ICESHELF
      &                           zice,                                  &
 #  endif
@@ -227,6 +234,9 @@
      &                           tl_sustr, tl_svstr,                    &
      &                           tl_bustr, tl_bvstr,                    &
 #  endif
+#  ifdef ATM_PRESS
+     &                           Pair,                                  &
+#  endif
 # else
 #  ifdef VAR_RHO_2D
      &                           rhoA, tl_rhoA, rhoS, tl_rhoS,          &
@@ -259,9 +269,6 @@
       USE mod_sediment
 # endif
 !
-# ifdef WET_DRY_NOT_YET
-      USE bc_2d_mod
-# endif
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
 # endif
@@ -272,12 +279,15 @@
       USE obc_volcons_mod
       USE rp_obc_volcons_mod
 # endif
-# ifdef SOLVE3D
+# if !defined MOVE_SET_DEPTH && defined SOLVE3D
       USE rp_set_depth_mod, ONLY : rp_set_depth_tile
 # endif
       USE rp_u2dbc_mod, ONLY : rp_u2dbc_tile
       USE rp_v2dbc_mod, ONLY : rp_v2dbc_tile
       USE rp_zetabc_mod, ONLY : rp_zetabc_tile
+# ifdef WET_DRY_NOT_YET
+!>    USE wetdry_mod, ONLY : wetdry_tile
+# endif
 !
 !  Imported variable declarations.
 !
@@ -288,12 +298,15 @@
 # ifdef SOLVE3D
       integer, intent(in) :: nstp, nnew
 # endif
+# if defined UV_PSOURCE || defined Q_PSOURCE
+      integer, intent(in) :: Msrc, Nsrc
+# endif
 !
 # ifdef ASSUMED_SHAPE
 #  if defined UV_PSOURCE || defined Q_PSOURCE
-      integer, intent(in) :: Nsrc
       integer, intent(in) :: Isrc(:)
       integer, intent(in) :: Jsrc(:)
+
       real(r8), intent(in) :: Dsrc(:)
       real(r8), intent(in) :: Qbar(:)
 #  endif
@@ -303,7 +316,7 @@
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
-#  ifdef SOLVE3D
+#  if !defined MOVE_SET_DEPTH && defined SOLVE3D
 #   ifdef ICESHELF
       real(r8), intent(in) :: zice(LBi:,LBj:)
 #   endif
@@ -370,6 +383,9 @@
       real(r8), intent(in) :: tl_bustr(LBi:,LBj:)
       real(r8), intent(in) :: tl_bvstr(LBi:,LBj:)
 #   endif
+#   ifdef ATM_PRESS
+      real(r8), intent(in) :: Pair(LBi:,LBj:)
+#   endif
 #  else
 #   ifdef VAR_RHO_2D
       real(r8), intent(in) :: rhoA(LBi:,LBj:)
@@ -398,9 +414,15 @@
       real(r8), intent(inout) :: tl_vbar_stokes(LBi:,LBj:)
 #  endif
 #  ifdef WET_DRY_NOT_YET
+      real(r8), intent(inout) :: rmask_full(LBi:,LBj:)
       real(r8), intent(inout) :: rmask_wet(LBi:,LBj:)
+      real(r8), intent(inout) :: umask_full(LBi:,LBj:)
       real(r8), intent(inout) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(inout) :: vmask_full(LBi:,LBj:)
       real(r8), intent(inout) :: vmask_wet(LBi:,LBj:)
+#   ifdef SOLVE3D
+      real(r8), intent(inout) :: rmask_wet_avg(LBi:,LBj:)
+#   endif
 #  endif
 #  ifdef DIAGNOSTICS_UV
 !!    real(r8), intent(inout) :: DiaU2wrk(LBi:,LBj:,:)
@@ -429,12 +451,11 @@
 # else
 
 #  if defined UV_PSOURCE || defined Q_PSOURCE
-      integer, intent(in) :: Nsrc
-      integer, intent(in) :: Isrc(Nsrc)
-      integer, intent(in) :: Jsrc(Nsrc)
+      integer, intent(in) :: Isrc(Msrc)
+      integer, intent(in) :: Jsrc(Msrc)
 
-      real(r8), intent(in) :: Dsrc(Nsrc)
-      real(r8), intent(in) :: Qbar(Nsrc)
+      real(r8), intent(in) :: Dsrc(Msrc)
+      real(r8), intent(in) :: Qbar(Msrc)
 #  endif
 #  ifdef MASKING
       real(r8), intent(in) :: pmask(LBi:UBi,LBj:UBj)
@@ -442,7 +463,7 @@
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 #  endif
-#  ifdef SOLVE3D
+#  if !defined MOVE_SET_DEPTH && defined SOLVE3D
 #   ifdef ICESHELF
       real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
 #   endif
@@ -509,6 +530,9 @@
       real(r8), intent(in) :: tl_bustr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: tl_bvstr(LBi:UBi,LBj:UBj)
 #   endif
+#   ifdef ATM_PRESS
+      real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
+#   endif
 #  else
 #   ifdef VAR_RHO_2D
       real(r8), intent(in) :: rhoA(LBi:UBi,LBj:UBj)
@@ -537,9 +561,15 @@
       real(r8), intent(inout) :: tl_vbar_stokes(LBi:UBi,LBj:UBj)
 #  endif
 #  ifdef WET_DRY_NOT_YET
+      real(r8), intent(inout) :: rmask_full(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: rmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: umask_full(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: vmask_full(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: vmask_wet(LBi:UBi,LBj:UBj)
+#   ifdef SOLVE3D
+      real(r8), intent(inout) :: rmask_wet_avg(LBi:UBi,LBj:UBj)
+#   endif
 #  endif
 #  ifdef DIAGNOSTICS_UV
 !!    real(r8), intent(inout) :: DiaU2wrk(LBi:UBi,LBj:UBj,NDM2d)
@@ -589,8 +619,8 @@
 !!    integer :: idiag
 # endif
 
-      real(r8) :: cff, cff1, cff2, cff3, cff4, cff5
-      real(r8) :: fac, fac1, fac2
+      real(r8) :: cff, cff1, cff2, cff3, cff4, cff5, cff6, cff7
+      real(r8) :: fac, fac1, fac2, fac3
       real(r8) :: tl_cff, tl_cff1, tl_fac, tl_fac1
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dgrad
@@ -624,7 +654,7 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zeta_new
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zwrk
 # ifdef WET_DRY_NOT_YET
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wetdry
+!>    real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wetdry
 # endif
 # ifdef DIAGNOSTICS_UV
 !!    real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Uwrk
@@ -663,6 +693,9 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tl_rhs_zeta
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tl_zeta_new
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tl_zwrk
+# ifdef WET_DRY_NOT_YET
+!>    real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tl_wetdry
+# endif
 
 # include "set_bounds.h"
 !
@@ -797,10 +830,10 @@
         DO i=Istr,Iend
           rhs_ubar(i,j)=0.0_r8
           rhs_vbar(i,j)=0.0_r8
-	  rubar(i,j,1)=0.0_r8
-	  rubar(i,j,2)=0.0_r8
-	  rvbar(i,j,1)=0.0_r8
-	  rvbar(i,j,2)=0.0_r8
+          rubar(i,j,1)=0.0_r8
+          rubar(i,j,2)=0.0_r8
+          rvbar(i,j,1)=0.0_r8
+          rvbar(i,j,2)=0.0_r8
         END DO
       END DO
 # endif
@@ -954,6 +987,7 @@
 !  conditions to time averaged fields.
 !
       IF ((iif(ng).eq.(nfast(ng)+1)).and.PREDICTOR_2D_STEP(ng)) THEN
+
 #  if defined EW_PERIODIC || defined NS_PERIODIC
 !>      CALL exchange_r2d_tile (ng, tile,                               &
 !>   &                          LBi, UBi, LBj, UBj,                     &
@@ -988,17 +1022,18 @@
      &                      NghostPoints, EWperiodic, NSperiodic,       &
      &                      tl_Zt_avg1, tl_DU_avg1, tl_DV_avg1)
 #  endif
+#  ifndef MOVE_SET_DEPTH
 !>      CALL set_depth_tile (ng, tile,                                  &
 !>   &                       LBi, UBi, LBj, UBj,                        &
 !>   &                       IminS, ImaxS, JminS, JmaxS,                &
 !>   &                       nstp, nnew,                                &
 !>   &                       h,                                         &
-#  ifdef ICESHELF
+#   ifdef ICESHELF
 !>   &                       zice,                                      &
-#  endif
-#  if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   endif
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
 !>   &                       bed_thick,                                 &
-#  endif
+#   endif
 !>   &                       Zt_avg1, Hz, z_r, z_w)
 !>
         CALL rp_set_depth_tile (ng, tile,                               &
@@ -1006,15 +1041,39 @@
      &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nstp, nnew,                             &
      &                          h, tl_h,                                &
-#  ifdef ICESHELF
+#   ifdef ICESHELF
      &                          zice,                                   &
-#  endif
-#  if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   endif
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
      &                          tl_bed_thick,                           &
-#  endif
+#   endif
      &                          Zt_avg1, tl_Zt_avg1,                    &
      &                          tl_Hz, tl_z_r, tl_z_w)
+#  endif
       END IF
+# endif
+# ifdef WET_DRY_NOT_YET
+!
+!-----------------------------------------------------------------------
+!  Compute new wet/dry masks.
+!-----------------------------------------------------------------------
+!
+!>    CALL wetdry_tile (ng, tile,                                       &
+!>   &                  LBi, UBi, LBj, UBj,                             &
+!>   &                  IminS, ImaxS, JminS, JmaxS,                     &
+#  ifdef MASKING
+!>   &                  rmask, umask, vmask,                            &
+#  endif
+!>   &                  h, zeta(:,:,kstp),                              &
+#  ifdef SOLVE3D
+!>   &                  DU_avg1, DV_avg1,                               &
+!>   &                  rmask_wet_avg,                                  &
+#  endif
+!>   &                  rmask_full, umask_full, vmask_full,             &
+!>   &                  rmask_wet, umask_wet, vmask_wet)
+!>
+!>  HGA: Need the RPM code here.
+!>
 # endif
 !
 !  Do not perform the actual time stepping during the auxiliary
@@ -1334,6 +1393,9 @@
 !
       cff1=0.5_r8*g
       cff2=1.0_r8/3.0_r8
+# if !defined SOLVE3D && defined ATM_PRESS
+      fac3=0.5_r8*100.0_r8/rho0
+# endif
       DO j=Jstr,Jend
         DO i=IstrU,Iend
 !>        rhs_ubar(i,j)=cff1*on_u(i,j)*                                 &
@@ -1412,6 +1474,26 @@
 # endif
      &                      (tl_gzeta2(i-1,j)-                          &
      &                       tl_gzeta2(i  ,j)))
+# if defined ATM_PRESS && !defined SOLVE3D
+!>        rhs_ubar(i,j)=rhs_ubar(i,j)+                                  &
+!>   &                  fac3*on_u(i,j)*                                 &
+!>   &                  (h(i-1,j)+h(i,j)+                               &
+!>   &                   gzeta(i-1,j)+gzeta(i,j))*                      &
+!>   &                  (Pair(i-1,j)-Pair(i,j))
+!>
+#  if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+          tl_rhs_ubar(i,j)=tl_rhs_ubar(i,j)+                            &
+     &                     fac3*on_u(i,j)*                              &
+     &                     (tl_h(i-1,j)+tl_h(i,j)+                      &
+     &                      tl_gzeta(i-1,j)+tl_gzeta(i,j))*             &
+     &                     (Pair(i-1,j)-Pair(i,j))
+#  else
+          tl_rhs_ubar(i,j)=tl_rhs_ubar(i,j)+                            &
+     &                     fac3*on_u(i,j)*                              &
+     &                     (tl_gzeta(i-1,j)+tl_gzeta(i,j))*             &
+     &                     (Pair(i-1,j)-Pair(i,j))
+#  endif
+# endif
 # ifdef DIAGNOSTICS_UV
 !!        DiaU2rhs(i,j,M2pgrd)=rhs_ubar(i,j)
 # endif
@@ -1494,6 +1576,26 @@
 # endif
      &                        (tl_gzeta2(i,j-1)-                        &
      &                         tl_gzeta2(i,j  )))
+# if defined ATM_PRESS && !defined SOLVE3D
+!>          rhs_vbar(i,j)=rhs_vbar(i,j)+                                &
+!>   &                    fac3*om_v(i,j)*                               &
+!>   &                    (h(i,j-1)+h(i,j)+                             &
+!>   &                     gzeta(i,j-1)+gzeta(i,j))*                    &
+!>   &                    (Pair(i,j-1)-Pair(i,j))
+!>
+#  if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+            tl_rhs_vbar(i,j)=tl_rhs_vbar(i,j)+                          &
+     &                       fac3*om_v(i,j)*                            &
+     &                       (tl_h(i,j-1)+tl_h(i,j)+                    &
+     &                        tl_gzeta(i,j-1)+tl_gzeta(i,j))*           &
+     &                       (Pair(i,j-1)-Pair(i,j))
+#  else
+            tl_rhs_vbar(i,j)=tl_rhs_vbar(i,j)+                          &
+     &                       fac3*om_v(i,j)*                            &
+     &                       (tl_gzeta(i,j-1)+tl_gzeta(i,j))*           &
+     &                       (Pair(i,j-1)-Pair(i,j))
+#  endif
+# endif
 # ifdef DIAGNOSTICS_UV
 !!          DiaV2rhs(i,j,M2pgrd)=rhs_vbar(i,j)
 # endif
@@ -1615,7 +1717,7 @@
 #   endif
      &                  vbar(i,j+1,krhs))+                              &
      &                 (DVom(i,j)+DVom(i,j+1))*                         &
-     &                 (tl_vbar(i,j  ,krhs)+ 
+     &                 (tl_vbar(i,j  ,krhs)+                            &
 #   ifdef NEARSHORE_MELLOR
      &                  tl_vbar_stokes(i,j  )+                          &
      &                  tl_vbar_stokes(i,j+1)+                          &
@@ -2690,14 +2792,14 @@
           DO i=IstrU-1,Iend
             tl_UFx(i,j)=tl_M2diff(ng)*pmon_r(i,j)*Drhs(i,j)*            &
      &                  (tl_ubar(i+1,j,krhs)-ubar(i+1,j,krhs)-          &
-     &                   tl_ubar(i  ,j,krhs)-ubar(i  ,j,krhs))
+     &                   tl_ubar(i  ,j,krhs)+ubar(i  ,j,krhs))
           END DO
         END DO
         DO j=Jstr,Jend+1
           DO i=IstrU,Iend
             tl_UFe(i,j)=tl_M2diff(ng)*pnom_p(i,j)*Drhs_p(i,j)*          &
      &                  (tl_ubar(i,j  ,krhs)-ubar(i,j  ,krhs)-          &
-     &                   tl_ubar(i,j-1,krhs)-ubar(i,j-1,krhs))
+     &                   tl_ubar(i,j-1,krhs)+ubar(i,j-1,krhs))
 #  ifdef MASKING
             tl_UFe(i,j)=tl_UFe(i,j)*pmask(i,j)
 #  endif
@@ -2707,7 +2809,7 @@
           DO i=Istr,Iend+1
             tl_VFx(i,j)=tl_M2diff(ng)*pmon_p(i,j)*Drhs_p(i,j)*          &
      &                  (tl_vbar(i  ,j,krhs)-vbar(i  ,j,krhs)-          &
-     &                   tl_vbar(i-1,j,krhs)-vbar(i-1,j,krhs))
+     &                   tl_vbar(i-1,j,krhs)+vbar(i-1,j,krhs))
 #  ifdef MASKING
             tl_VFx(i,j)=tl_VFx(i,j)*pmask(i,j)
 #  endif
@@ -2717,7 +2819,7 @@
           DO i=Istr,Iend
             tl_VFe(i,j)=tl_M2diff(ng)*pnom_r(i,j)*Drhs(i,j)*            &
      &                  (tl_vbar(i,j+1,krhs)-vbar(i,j+1,krhs)-          &
-     &                   tl_vbar(i,j  ,krhs)-vbar(i,j  ,krhs))
+     &                   tl_vbar(i,j  ,krhs)+vbar(i,j  ,krhs))
           END DO
         END DO
 !
@@ -3439,25 +3541,13 @@
             tl_ubar(i,j,knew)=tl_ubar(i,j,knew)*umask(i,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-            IF (umask_wet(i,j).eq.1.0_r8) THEN
-              IF (rmask_wet(i-1,j).eq.1.0_r8) THEN
-!>              ubar(i,j,knew)=MAX(ubar(i,j,knew),0.0_r8)
+!>          cff5=ABS(ABS(umask_wet(i,j))-1.0_r8)
+!>          cff6=0.5_r8+DSIGN(0.5_r8,ubar(i,j,knew))*umask_wet(i,j)
+!>          cff7=0.5_r8*umask_wet(i,j)*cff5+cff6*(1.0_r8-cff5)
+!>          ubar(i,j,knew)=ubar(i,j,knew)*cff7
 !>
-                tl_ubar(i,j,knew)=(0.5_r8+                              &
-     &                             SIGN(0.5_r8, ubar(i,j,knew)))*       &
-     &                            tl_ubar(i,j,knew)
-              ELSE
-!>              ubar(i,j,knew)=MIN(ubar(i,j,knew),0.0_r8)
+!>  HGA: TLM code needed here.
 !>
-                tl_ubar(i,j,knew)=(0.5_r8+                              &
-     &                             SIGN(0.5_r8,-ubar(i,j,knew)))*       &
-     &                            tl_ubar(i,j,knew)
-              END IF
-            ELSE
-!>            ubar(i,j,knew)=0.5_r8*ubar(i,j,knew)*umask_wet(i,j)
-!>
-              tl_ubar(i,j,knew)=0.5_r8*tl_ubar(i,j,knew)*umask_wet(i,j)
-            END IF
             fac1=cff2/cff
 !>          rhs_ubar(i,j)=(ubar(i,j,knew)*(Dnew(i,j)+Dnew(i-1,j))-      &
 !>   &                     ubar(i,j,kstp)*(Dstp(i,j)+Dstp(i-1,j)))*     &
@@ -3511,25 +3601,13 @@
             tl_vbar(i,j,knew)=tl_vbar(i,j,knew)*vmask(i,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-            IF (vmask_wet(i,j).eq.1.0_r8) THEN
-              IF (rmask_wet(i,j-1).eq.1.0_r8) THEN
-!>              vbar(i,j,knew)=MAX(vbar(i,j,knew),0.0_r8)
+!>          cff5=ABS(ABS(vmask_wet(i,j))-1.0_r8)
+!>          cff6=0.5_r8+DSIGN(0.5_r8,vbar(i,j,knew))*vmask_wet(i,j)
+!>          cff7=0.5_r8*vmask_wet(i,j)*cff5+cff6*(1.0_r8-cff5)
+!>          vbar(i,j,knew)=vbar(i,j,knew)*cff7
 !>
-                tl_vbar(i,j,knew)=(0.5_r8+                              &
-     &                             SIGN(0.5_r8, vbar(i,j,knew)))*       &
-     &                            tl_vbar(i,j,knew)
-              ELSE
-!>              vbar(i,j,knew)=MIN(vbar(i,j,knew),0.0_r8)
+!>  HGA: TLM code needed here.
 !>
-                tl_vbar(i,j,knew)=(0.5_r8+                              &
-     &                             SIGN(0.5_r8,-vbar(i,j,knew)))*       &
-     &                            tl_vbar(i,j,knew)
-              END IF
-            ELSE
-!>            vbar(i,j,knew)=0.5_r8*vbar(i,j,knew)*vmask_wet(i,j)
-!>
-              tl_vbar(i,j,knew)=0.5_r8*tl_vbar(i,j,knew)*vmask_wet(i,j)
-            END IF
             fac1=cff2/cff
 !>          rhs_vbar(i,j)=(vbar(i,j,knew)*(Dnew(i,j)+Dnew(i,j-1))-      &
 !>   &                     vbar(i,j,kstp)*(Dstp(i,j)+Dstp(i,j-1)))*     &
@@ -3588,25 +3666,13 @@
             tl_ubar(i,j,knew)=tl_ubar(i,j,knew)*umask(i,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-            IF (umask_wet(i,j).eq.1.0_r8) THEN
-              IF (rmask_wet(i-1,j).eq.1.0_r8) THEN
-!>              ubar(i,j,knew)=MAX(ubar(i,j,knew),0.0_r8)
+!>          cff5=ABS(ABS(umask_wet(i,j))-1.0_r8)
+!>          cff6=0.5_r8+DSIGN(0.5_r8,ubar(i,j,knew))*umask_wet(i,j)
+!>          cff7=0.5_r8*umask_wet(i,j)*cff5+cff6*(1.0_r8-cff5)
+!>          ubar(i,j,knew)=ubar(i,j,knew)*cff7
 !>
-                tl_ubar(i,j,knew)=(0.5_r8+                              &
-     &                             SIGN(0.5_r8, ubar(i,j,knew)))*       &
-     &                            tl_ubar(i,j,knew)
-              ELSE
-!>              ubar(i,j,knew)=MIN(ubar(i,j,knew),0.0_r8)
+!>  HGA: TLM code needed here.
 !>
-                tl_ubar(i,j,knew)=(0.5_r8+                              &
-     &                             SIGN(0.5_r8,-ubar(i,j,knew)))*       &
-     &                            tl_ubar(i,j,knew)
-              END IF
-            ELSE
-!>            ubar(i,j,knew)=0.5_r8*ubar(i,j,knew)*umask_wet(i,j)
-!>
-              tl_ubar(i,j,knew)=0.5_r8*tl_ubar(i,j,knew)*umask_wet(i,j)
-            END IF
             fac1=cff2/cff
 !>          rhs_ubar(i,j)=(ubar(i,j,knew)*(Dnew(i,j)+Dnew(i-1,j))-      &
 !>   &                     ubar(i,j,kstp)*(Dstp(i,j)+Dstp(i-1,j)))*     &
@@ -3660,25 +3726,13 @@
             tl_vbar(i,j,knew)=tl_vbar(i,j,knew)*vmask(i,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-            IF (vmask_wet(i,j).eq.1.0_r8) THEN
-              IF (rmask_wet(i,j-1).eq.1.0_r8) THEN
-!>              vbar(i,j,knew)=MAX(vbar(i,j,knew),0.0_r8)
+!>          cff5=ABS(ABS(vmask_wet(i,j))-1.0_r8)
+!>          cff6=0.5_r8+DSIGN(0.5_r8,vbar(i,j,knew))*vmask_wet(i,j)
+!>          cff7=0.5_r8*vmask_wet(i,j)*cff5+cff6*(1.0_r8-cff5)
+!>          vbar(i,j,knew)=vbar(i,j,knew)*cff7
 !>
-                tl_vbar(i,j,knew)=(0.5_r8+                              &
-     &                             SIGN(0.5_r8, vbar(i,j,knew)))*       &
-     &                            tl_vbar(i,j,knew)
-              ELSE
-!>              vbar(i,j,knew)=MIN(vbar(i,j,knew),0.0_r8)
+!>  HGA: TLM code needed here.
 !>
-                tl_vbar(i,j,knew)=(0.5_r8+                              &
-     &                             SIGN(0.5_r8,-vbar(i,j,knew)))*       &
-     &                            tl_vbar(i,j,knew)
-              END IF
-            ELSE
-!>            vbar(i,j,knew)=0.5_r8*vbar(i,j,knew)*vmask_wet(i,j)
-!>
-              tl_vbar(i,j,knew)=0.5_r8*tl_vbar(i,j,knew)*vmask_wet(i,j)
-            END IF
             fac1=cff2/cff
 !>          rhs_vbar(i,j)=(vbar(i,j,knew)*(Dnew(i,j)+Dnew(i,j-1))-      &
 !>   &                     vbar(i,j,kstp)*(Dstp(i,j)+Dstp(i,j-1)))*     &
@@ -3747,25 +3801,13 @@
             tl_ubar(i,j,knew)=tl_ubar(i,j,knew)*umask(i,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-            IF (umask_wet(i,j).eq.1.0_r8) THEN
-              IF (rmask_wet(i-1,j).eq.1.0_r8) THEN
-!>              ubar(i,j,knew)=MAX(ubar(i,j,knew),0.0_r8)
+!>          cff5=ABS(ABS(umask_wet(i,j))-1.0_r8)
+!>          cff6=0.5_r8+DSIGN(0.5_r8,ubar(i,j,knew))*umask_wet(i,j)
+!>          cff7=0.5_r8*umask_wet(i,j)*cff5+cff6*(1.0_r8-cff5)
+!>          ubar(i,j,knew)=ubar(i,j,knew)*cff7
 !>
-                tl_ubar(i,j,knew)=(0.5_r8+                              &
-     &                             SIGN(0.5_r8, ubar(i,j,knew)))*       &
-     &                            tl_ubar(i,j,knew)
-              ELSE
-!>              ubar(i,j,knew)=MIN(ubar(i,j,knew),0.0_r8)
+!>  HGA: TLM code needed here.
 !>
-                tl_ubar(i,j,knew)=(0.5_r8+                              &
-     &                             SIGN(0.5_r8,-ubar(i,j,knew)))*       &
-     &                            tl_ubar(i,j,knew)
-              END IF
-            ELSE
-!>            ubar(i,j,knew)=0.5_r8*ubar(i,j,knew)*umask_wet(i,j)
-!>
-              tl_ubar(i,j,knew)=0.5_r8*tl_ubar(i,j,knew)*umask_wet(i,j)
-            END IF
             fac1=1.0_r8/cff
 !>          rhs_ubar(i,j)=((ubar(i,j,knew)*(Dnew(i,j)+Dnew(i-1,j))-     &
 !>   &                      ubar(i,j,kstp)*(Dstp(i,j)+Dstp(i-1,j)))*    &
@@ -3831,25 +3873,13 @@
             tl_vbar(i,j,knew)=tl_vbar(i,j,knew)*vmask(i,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-            IF (vmask_wet(i,j).eq.1.0_r8) THEN
-              IF (rmask_wet(i,j-1).eq.1.0_r8) THEN
-!>              vbar(i,j,knew)=MAX(vbar(i,j,knew),0.0_r8)
+!>          cff5=ABS(ABS(vmask_wet(i,j))-1.0_r8)
+!>          cff6=0.5_r8+DSIGN(0.5_r8,vbar(i,j,knew))*vmask_wet(i,j)
+!>          cff7=0.5_r8*vmask_wet(i,j)*cff5+cff6*(1.0_r8-cff5)
+!>          vbar(i,j,knew)=vbar(i,j,knew)*cff7
 !>
-                tl_vbar(i,j,knew)=(0.5_r8+                              &
-     &                             SIGN(0.5_r8, vbar(i,j,knew)))*       &
-     &                            tl_vbar(i,j,knew)
-              ELSE
-!>              vbar(i,j,knew)=MIN(vbar(i,j,knew),0.0_r8)
+!>  HGA: TLM code needed here.
 !>
-                tl_vbar(i,j,knew)=(0.5_r8+                              &
-     &                             SIGN(0.5_r8,-vbar(i,j,knew)))*       &
-     &                            tl_vbar(i,j,knew)
-              END IF
-            ELSE
-!>            vbar(i,j,knew)=0.5_r8*vbar(i,j,knew)*vmask_wet(i,j)
-!>
-              tl_vbar(i,j,knew)=0.5_r8*tl_vbar(i,j,knew)*vmask_wet(i,j)
-            END IF
             fac1=1.0_r8/cff
 !>          rhs_vbar(i,j)=((vbar(i,j,knew)*(Dnew(i,j)+Dnew(i,j-1))-     &
 !>   &                      vbar(i,j,kstp)*(Dstp(i,j)+Dstp(i,j-1)))*    &
@@ -3878,72 +3908,6 @@
         END DO
       END IF
 
-# if defined WET_DRY_NOT_YET
-!
-!-----------------------------------------------------------------------
-! If wet/drying, compute new masks for cells with depth < Dcrit.
-!-----------------------------------------------------------------------
-!
-! HGA:  We need to think more about TLM of the wet/dry mask arrays
-!       since they are time-dependent.
-
-      DO j=JstrV-1,Jend
-        DO i=IstrU-1,Iend
-          wetdry(i,j)=1.0_r8
-          IF (zwrk(i,j).le.(Dcrit(ng)-h(i,j))) THEN
-            wetdry(i,j)=0.0_r8
-          END IF
-#  ifdef MASKING
-          wetdry(i,j)=wetdry(i,j)*rmask(i,j)
-#  endif
-        END DO
-      END DO
-      DO j=Jstr,Jend
-        DO i=Istr,Iend
-          rmask_wet(i,j)=wetdry(i,j)
-        END DO
-      END DO
-      DO j=Jstr,Jend
-        DO i=IstrU,Iend
-          umask_wet(i,j)=wetdry(i-1,j)+wetdry(i,j)
-        END DO
-      END DO
-      DO j=JstrV,Jend
-        DO i=Istr,Iend
-          vmask_wet(i,j)=wetdry(i,j-1)+wetdry(i,j)
-        END DO
-      END DO
-!
-!  Apply boundary conditions
-!
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  rmask_wet)
-      CALL bc_u2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  umask_wet)
-      CALL bc_v2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  vmask_wet)
-
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        rmask_wet)
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        umask_wet)
-      CALL exchange_v2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        vmask_wet)
-#  endif
-#  ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    rmask_wet, umask_wet, vmask_wet)
-#  endif
-# endif
 # ifdef DIAGNOSTICS_UV
 !!
 !!-----------------------------------------------------------------------
@@ -4172,55 +4136,37 @@
 !  Apply mass point sources.
 !-----------------------------------------------------------------------
 !
-      DO j=Jstr-1,Jend+1
-        DO i=Istr-1,Iend+1
-          Dnew(i,j)=zeta(i,j,knew)+h(i,j)
-          tl_Dnew(i,j)=tl_zeta(i,j,knew)+tl_h(i,j)
-        END DO
-      END DO
       DO is=1,Nsrc
         i=Isrc(is)
         j=Jsrc(is)
         IF (((IstrR.le.i).and.(i.le.IendR)).and.                        &
      &      ((JstrR.le.j).and.(j.le.JendR))) THEN
           IF (INT(Dsrc(is)).eq.0) THEN
-            cff=1.0_r8/(on_u(i,j)*0.5_r8*(Dnew(i-1,j)+Dnew(i,j)))
-            tl_cff=-cff*cff*on_u(i,j)*                                  &
-     &             0.5_r8*(tl_Dnew(i-1,j)+tl_Dnew(i,j))+                &
-# ifdef TL_IOMS
+            cff=1.0_r8/(on_u(i,j)*                                      &
+     &                  0.5_r8*(zeta(i-1,j,knew)+h(i-1,j)+              &
+     &                          zeta(i  ,j,knew)+h(i  ,j)))
+            tl_cff=-cff*cff*                                            &
+     &             on_u(i,j)*0.5_r8*(tl_zeta(i-1,j,knew)+tl_h(i-1,j)+   &
+     &                               tl_zeta(i  ,j,knew)+tl_h(i  ,j))+  &
+#  ifdef TL_IOMS
      &             2.0_r8*cff
-# endif
+#  endif
 !>          ubar(i,j,knew)=Qbar(is)*cff
 !>
             tl_ubar(i,j,knew)=Qbar(is)*tl_cff
-#  ifdef SOLVE3D
-!>          DU_avg1(i,j)=Qbar(is)
-!>
-#   ifdef TL_IOMS
-            tl_DU_avg1(i,j)=Qbar(is)
-#   else
-            tl_DU_avg1(i,j)=0.0_r8
-#   endif
-#  endif
           ELSE
-            cff=1.0_r8/(om_v(i,j)*0.5_r8*(Dnew(i,j-1)+Dnew(i,j)))
-            tl_cff=-cff*cff*om_v(i,j)*                                  &
-     &             0.5_r8*(tl_Dnew(i,j-1)+tl_Dnew(i,j))+                &
-# ifdef TL_IOMS
+            cff=1.0_r8/(om_v(i,j)*                                      &
+     &                  0.5_r8*(zeta(i,j-1,knew)+h(i,j-1)+              &
+     &                          zeta(i,j  ,knew)+h(i,j  )))
+            tl_cff=-cff*cff*                                            &
+     &             om_v(i,j)*0.5_r8*(tl_zeta(i,j-1,knew)+tl_h(i,j-1)+   &
+     &                               tl_zeta(i,j  ,knew)+tl_h(i,j  ))+  &
+#  ifdef TL_IOMS
      &             2.0_r8*cff
-# endif
+#  endif
 !>          vbar(i,j,knew)=Qbar(is)*cff
 !>
             tl_vbar(i,j,knew)=Qbar(is)*tl_cff
-#  ifdef SOLVE3D
-!>          DV_avg1(i,j)=Qbar(is)
-!>
-#   ifdef TL_IOMS
-            tl_DV_avg1(i,j)=Qbar(is)
-#   else
-            tl_DV_avg1(i,j)=0.0_r8
-#   endif
-#  endif
           END IF
         END IF
       END DO

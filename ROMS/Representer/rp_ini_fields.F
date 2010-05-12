@@ -2,9 +2,9 @@
       MODULE rp_ini_fields_mod
 #ifdef TL_IOMS
 !
-!svn $Id: rp_ini_fields.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: rp_ini_fields.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -34,6 +34,9 @@
       USE mod_coupling
 # endif
       USE mod_ocean
+# if defined SEDIMENT && defined SED_MORPH && defined SOLVE3D
+      USE mod_sedbed
+# endif
       USE mod_stepping
 !
 !  Imported variable declarations.
@@ -58,9 +61,9 @@
 # endif
 # ifdef SOLVE3D
 #  if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
-     &                         OCEAN(ng) %  tl_bed,                     &
-     &                         GRID(ng) % tl_bed_thick0,                &
-     &                         GRID(ng) % tl_bed_thick,                 &
+     &                         SEDBED(ng) % tl_bed,                     &
+     &                         SEDBED(ng) % tl_bed_thick0,              &
+     &                         SEDBED(ng) % tl_bed_thick,               &
 #  endif
      &                         GRID(ng) % Hz,                           &
      &                         GRID(ng) % tl_Hz,                        &
@@ -826,7 +829,7 @@
             tl_vbar(i,j,kstp)=tl_cff2
             tl_vbar(i,j,knew)=tl_cff2
           END DO
-        END IF   
+        END IF
       END DO
 #  ifndef OBC_M2RADIATION
 !

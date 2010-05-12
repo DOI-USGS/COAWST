@@ -2,9 +2,9 @@
 #ifdef TL_IOMS
       SUBROUTINE rp_initial (ng)
 !
-!svn $Id: rp_initial.F 594 2008-04-01 18:11:31Z arango $
+!svn $Id: rp_initial.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -19,7 +19,7 @@
       USE mod_bbl
 # endif
 # ifdef SOLVE3D
-      USE mod_coupling      
+      USE mod_coupling
 # endif
 # ifdef FOUR_DVAR
       USE mod_fourdvar
@@ -41,9 +41,10 @@
 # ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 # endif
-# if defined GRADIENT_CHECK || defined TLM_CHECK
+# ifdef TLM_CHECK
       USE ini_adjust_mod, ONLY : tl_ini_perturb
 # endif
+      USE ini_hmixcoef_mod, ONLY : ini_hmixcoef
       USE metrics_mod, ONLY : metrics
 # if !(defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET)
       USE rp_set_depth_mod, ONLY : rp_bath
@@ -91,7 +92,7 @@
 # if defined PERTURBATION
         WRITE (stdout,10) Nrun
  10     FORMAT (/,' <<<< Ensemble/Perturbation Run: ',i5.5,' >>>>',/)
-# elif defined W4DVAR
+# elif defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY
         WRITE (stdout,10) outer, inner
  10     FORMAT (/,' <<<< 4D Variational Data Assimilation, ',           &
      &          'Outer = ',i3.3, ', Inner = ',i3.3,' >>>>',/)
@@ -153,7 +154,7 @@
 !$OMP END PARALLEL DO
 # endif
 
-# if defined WEAK_CONSTRAINT || defined IOM
+# ifdef WEAK_CONSTRAINT
 !
 !-----------------------------------------------------------------------
 !  If weak constraint variational data assimilation, reset several IO
@@ -173,6 +174,12 @@
       END IF
       IniRec=tIRPindx(ng)
 
+# ifdef ADJUST_BOUNDARY
+!
+!  Initialize open boundary counter for storage arrays.
+!
+      OBCcount(ng)=0
+# endif
 #  if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
 !
 !  Initialize surface forcing counter for storage arrays.
@@ -241,24 +248,6 @@
         CALL set_weights (ng)
 # endif
 
-# if defined VISC_GRID || defined DIFF_GRID || defined SPONGE
-!
-!-----------------------------------------------------------------------
-!  Set horizontal mixing coefficients. Rescale according to the local
-!  grid size. If applicable, increases horizontal mixing in sponge
-!  areas.
-!-----------------------------------------------------------------------
-!
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1
-            CALL ana_hmixcoef (ng, TILE, iRPM)
-          END DO
-        END DO
-!$OMP END PARALLEL DO
-# endif
-
 # ifdef NUDGING_COFF
 !
 !-----------------------------------------------------------------------
@@ -275,6 +264,37 @@
 !$OMP END PARALLEL DO
 # endif
       END IF
+!
+!-----------------------------------------------------------------------
+!  Initialize horizontal mixing coefficients.
+!-----------------------------------------------------------------------
+!
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+      DO thread=0,numthreads-1
+        subs=NtileX(ng)*NtileE(ng)/numthreads
+        DO tile=subs*thread,subs*(thread+1)-1
+          CALL ini_hmixcoef (ng, TILE, iRPM)
+        END DO
+      END DO
+!$OMP END PARALLEL DO
+
+# if defined VISC_GRID || defined DIFF_GRID || defined SPONGE
+!
+!-----------------------------------------------------------------------
+!  Set horizontal mixing coefficients. Rescale according to the local
+!  grid size. If applicable, increases horizontal mixing in sponge
+!  areas.
+!-----------------------------------------------------------------------
+!
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+      DO thread=0,numthreads-1
+        subs=NtileX(ng)*NtileE(ng)/numthreads
+        DO tile=subs*thread,subs*(thread+1)-1
+          CALL ana_hmixcoef (ng, TILE, iRPM)
+        END DO
+      END DO
+!$OMP END PARALLEL DO
+# endif
 !
 !-----------------------------------------------------------------------
 !  Compute various metric term combinations.
@@ -298,7 +318,7 @@
 !  executed for each ensemble/perturbation/iteration pass.
 !=======================================================================
 
-# if defined PICARD_TEST || defined WEAK_CONSTRAINT || defined IOM
+# if defined PICARD_TEST || defined WEAK_CONSTRAINT
 !
 !  Clear nonlinear (background) and tangent linear state variables.
 !
@@ -312,7 +332,10 @@
           CALL initialize_coupling (ng, TILE, 0)
           CALL initialize_mixing (ng, TILE, iRPM)
 #  endif
-          CALL initialize_forces (ng, TILE, 0)
+          CALL initialize_forces (ng, TILE, iRPM)
+          CALL initialize_forces (ng, TILE, iTLM)
+          CALL initialize_forces (ng, TILE, iNLM)
+          CALL initialize_forces (ng, TILE, iADM)
         END DO
       END DO
 !$OMP END PARALLEL DO
@@ -506,23 +529,6 @@
 # endif
       CALL rp_get_data (ng)
       IF (exit_flag.ne.NoError) RETURN
-
-# if defined WEAK_CONSTRAINT_NOT || defined IOM_NOT
-!
-!-----------------------------------------------------------------------
-!  Read in convolved adjoint impulse forcing (first record) and its
-!  application time.
-!-----------------------------------------------------------------------
-!
-      IF (outer.ge.1) THEN
-        FrcRec(ng)=1
-        CALL get_state (ng, 7, 7, TLFname(ng), FrcRec(ng), 1)
-#  ifdef DISTRIBUTE
-        CALL mp_bcasti (ng, iTLM, exit_flag, 1)
-#  endif
-        IF (exit_flag.ne.NoError) RETURN
-      END IF
-# endif
 
 # ifdef SOLVE3D
 !-----------------------------------------------------------------------

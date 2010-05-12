@@ -2,16 +2,15 @@
 #if defined TL_IOMS && defined FOUR_DVAR
       SUBROUTINE rp_def_ini (ng)
 !
-!svn $Id: rp_def_ini.F 677 2008-08-05 20:17:30Z arango $
+!svn $Id: rp_def_ini.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
-!  This routine updates representer model initial NetCDF file used     !
-!  for weak constraint, 4DVAR data assimilation.  It defines new       !
-!  dimensions and variables.                                           !
+!  This routine open existing representer model initial conditions     !
+!  file and either define new new variables or inquire its contents.   !
 !                                                                      !
 !=======================================================================
 !
@@ -21,10 +20,8 @@
       USE mod_ncparam
       USE mod_netcdf
       USE mod_scalars
-# ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_bcasti
-# endif
+      USE def_var_mod, ONLY : def_var
 !
       implicit none
 !
@@ -34,33 +31,50 @@
 !
 !  Local variable declarations.
 !
+# ifdef ADJUST_BOUNDARY
+      logical :: got_IorJ, got_boundary, got_obc_adjust
+# endif
+# if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+      logical :: got_frc_adjust
+# endif
       logical :: got_var(NV)
 
-      integer, parameter :: Natt = 24
+      integer, parameter :: Natt = 25
 
       logical :: Ldefine = .FALSE.
 
-      integer :: i, j, nvd4
-      integer :: frecdim, status
-# ifdef SOLVE3D
-      integer :: itrc
+      integer :: i, j, ifield, itrc, status
+# ifdef ADJUST_BOUNDARY
+      integer :: IorJdim, brecdim
 # endif
-
-      integer :: DimIDs(31), t4dfrc(4), u4dfrc(4), v4dfrc(4)
-      integer :: Vsize(4)
-
-      integer :: def_dim, def_var
+# if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+      integer :: frecdim
+# endif
+      integer :: DimIDs(32), Vsize(4)
+# ifdef ADJUST_BOUNDARY
+      integer :: t2dobc(4)
+#  ifdef SOLVE3D
+      integer :: t3dobc(5)
+#  endif
+# endif
+# if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+      integer :: t4dfrc(4), u4dfrc(4), v4dfrc(4)
+# endif
+      integer :: def_dim
 
       real(r8) :: Aval(6)
 
-      character (len=80) :: Vinfo(Natt)
       character (len=80) :: ncname
+      character (len=120) :: Vinfo(Natt)
+!
+      SourceFile='rp_def_ini.F'
 
-# if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+# if defined ADJUST_BOUNDARY || \
+     defined ADJUST_STFLUX   || defined ADJUST_WSTRESS
 !
 !=======================================================================
 !  Open existing representer model initial conditions and define new
-!  new variables.
+!  variables.
 !=======================================================================
 !
       IF (exit_flag.ne.NoError) RETURN
@@ -68,12 +82,12 @@
 !
 !  Inquire about the dimensions and check for consistency.
 !
-      CALL netcdf_check_dim (ng, iNLM, ncname)
+      CALL netcdf_check_dim (ng, iRPM, ncname)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Inquire about the variables.
 !
-      CALL netcdf_inq_var (ng, iNLM, ncname)
+      CALL netcdf_inq_var (ng, iRPM, ncname)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Check if surface forcing variables have been already defined.
@@ -83,6 +97,40 @@
       END DO
 !
       DO i=1,n_var
+#  ifdef ADJUST_BOUNDARY
+        IF (TRIM(var_name(i)).eq.                                       &
+     &      TRIM(Vname(1,idSbry(isFsur)))) THEN
+          got_var(idSbry(isFsur))=.TRUE.
+          irpVid(idSbry(isFsur),ng)=var_id(i)
+        ELSE IF (TRIM(var_name(i)).eq.                                  &
+     &           TRIM(Vname(1,idSbry(isUbar)))) THEN
+          got_var(idSbry(isUbar))=.TRUE.
+          irpVid(idSbry(isUbar),ng)=var_id(i)
+        ELSE IF (TRIM(var_name(i)).eq.                                  &
+     &           TRIM(Vname(1,idSbry(isVbar)))) THEN
+          got_var(idSbry(isVbar))=.TRUE.
+          irpVid(idSbry(isVbar),ng)=var_id(i)
+#   ifdef SOLVE3D
+        ELSE IF (TRIM(var_name(i)).eq.                                  &
+     &           TRIM(Vname(1,idSbry(isUvel)))) THEN
+          got_var(idSbry(isUvel))=.TRUE.
+          irpVid(idSbry(isUvel),ng)=var_id(i)
+        ELSE IF (TRIM(var_name(i)).eq.                                  &
+     &           TRIM(Vname(1,idSbry(isVvel)))) THEN
+          got_var(idSbry(isVvel))=.TRUE.
+          irpVid(idSbry(isVvel),ng)=var_id(i)
+#   endif
+        END IF
+#   ifdef SOLVE3D
+        DO itrc=1,NT(ng)
+          IF (TRIM(var_name(i)).eq.                                     &
+     &        TRIM(Vname(1,idSbry(isTvar(itrc))))) THEN
+            got_var(idSbry(isTvar(itrc)))=.TRUE.
+            irpVid(idSbry(isTvar(itrc)),ng)=var_id(i)
+          END IF
+        END DO
+#   endif
+#  endif
 #  ifdef ADJUST_WSTRESS
         IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUsms))) THEN
           got_var(idUsms)=.TRUE.
@@ -94,46 +142,56 @@
 #  endif
 #  if defined ADJUST_STFLUX && defined SOLVE3D
         DO itrc=1,NT(ng)
-          IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTsur(itrc)))) THEN
-            got_var(idTsur(itrc))=.TRUE.
-            irpVid(idTsur(itrc),ng)=var_id(i)
+          IF (Lstflux(itrc,ng)) THEN
+            IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTsur(itrc)))) THEN
+              got_var(idTsur(itrc))=.TRUE.
+              irpVid(idTsur(itrc),ng)=var_id(i)
+            END IF
           END IF
         END DO
 #  endif
       END DO
-        
+
+#  ifdef ADJUST_BOUNDARY
+      IF (.not.got_var(idSbry(isFsur))) Ldefine=.TRUE.
+      IF (.not.got_var(idSbry(isUbar))) Ldefine=.TRUE.
+      IF (.not.got_var(idSbry(isVbar))) Ldefine=.TRUE.
+#   ifdef SOLVE3D
+      IF (.not.got_var(idSbry(isUvel))) Ldefine=.TRUE.
+      IF (.not.got_var(idSbry(isVvel))) Ldefine=.TRUE.
+      DO itrc=1,NT(ng)
+        IF (.not.got_var(idSbry(isTvar(itrc)))) Ldefine=.TRUE.
+      END DO
+#   endif
+#  endif
 #  ifdef ADJUST_WSTRESS
       IF (.not.got_var(idUsms)) Ldefine=.TRUE.
       IF (.not.got_var(idVsms)) Ldefine=.TRUE.
 #  endif
 #  if defined ADJUST_STFLUX && defined SOLVE3D
       DO itrc=1,NT(ng)
-        IF (.not.got_var(idTsur(itrc))) Ldefine=.TRUE.
+        IF (Lstflux(itrc,ng)) THEN
+          IF (.not.got_var(idTsur(itrc))) Ldefine=.TRUE.
+        END IF
       END DO
 #  endif
+!
+!  Open representer model initialization file for read/write.
+!
+      CALL netcdf_open (ng, iRPM, ncname, 1, ncIRPid(ng))
+      IF (exit_flag.ne.NoError) THEN
+        IF (Master) WRITE (stdout,10) TRIM(ncname)
+        RETURN
+      END IF
 !
 !  Put existing file into define mode so new variables can be added.
 !
       IF (Ldefine) THEN
-        IF (OutThread) THEN
-          status=nf90_open(TRIM(ncname), nf90_write, ncIRPid(ng))
-          IF (status.eq.nf90_noerr) THEN
-            status=nf90_redef(ncIRPid(ng))
-            IF (status.ne.nf90_noerr) THEN
-              WRITE (stdout,10) TRIM(ncname)
-              exit_flag=3
-              ioerror=status
-            END IF
-          ELSE
-            WRITE (stdout,20) TRIM(ncname)
-            exit_flag=3
-            ioerror=status
-          END IF
+        CALL netcdf_redef (ng, IRPM, ncname, ncIRPid(ng))
+        IF (exit_flag.ne.NoError) THEN
+          IF (Master) WRITE (stdout,20) TRIM(ncname)
+          RETURN
         END IF
-#  ifdef DISTRIBUTE
-        CALL mp_bcasti (ng, iRPM, exit_flag, 1)
-#  endif
-        IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !-----------------------------------------------------------------------
@@ -141,6 +199,15 @@
 !-----------------------------------------------------------------------
 !
       DEFINE: IF (Ldefine) THEN
+
+#  ifdef ADJUST_BOUNDARY
+        got_IorJ=.FALSE.
+        got_boundary=.FALSE.
+        got_obc_adjust=.FALSE.
+#  endif
+#  if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+        got_frc_adjust=.FALSE.
+#  endif
         DO i=1,n_dim
           SELECT CASE (TRIM(ADJUSTL(dim_name(i))))
             CASE ('xi_rho')
@@ -161,23 +228,77 @@
             CASE ('s_w')
               DimIDs(10)=dim_id(i)
 #  endif
+#  ifdef ADJUST_BOUNDARY
+            CASE ('boundary')
+              DimIDs(14)=dim_id(i)
+              got_boundary=.TRUE.
+            CASE ('IorJ')
+              IorJdim=dim_id(i)
+              got_IorJ=.TRUE.
+#  endif
+#  if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+            CASE ('frc_adjust')
+              frecdim=dim_id(i)
+              got_frc_adjust=.TRUE.
+#  endif
+#  ifdef ADJUST_BOUNDARY
+            CASE ('obc_adjust')
+              brecdim=dim_id(i)
+              got_obc_adjust=.TRUE.
+#  endif
           END SELECT
         END DO
+
         DimIDs(12)=rec_id
-        status=def_dim(ng, iRPM, ncIRPid(ng), ncname, 'Nadjust',        &
-     &                 Nfrec(ng), frecdim)
-        IF (exit_flag.ne.NoError) RETURN
-!
-!  Set number of dimensions for output variables.
-!
-        nvd4=4
+#  ifdef ADJUST_BOUNDARY
+        IF (.not.got_boundary) THEN
+          status=def_dim(ng, iRPM, ncIRPid(ng), ncname, 'boundary',     &
+     &                   4, DimIDs(14))
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+        IF (.not.got_IorJ) THEN
+          status=def_dim(ng, iRPM, ncIRPid(ng), ncname, 'IorJ',         &
+     &                   IOBOUNDS(ng)%IorJ, IorJdim)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+#  endif
+#  if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+        IF (.not.got_frc_adjust) THEN
+          status=def_dim(ng, iRPM, ncIRPid(ng), ncname, 'frc_adjust',   &
+     &                   Nfrec(ng), frecdim)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+#  endif
+#  ifdef ADJUST_BOUNDARY
+        IF (.not.got_obc_adjust) THEN
+          status=def_dim(ng, iRPM, ncIRPid(ng), ncname, 'obc_adjust',   &
+     &                   Nbrec(ng), brecdim)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+#  endif
 !
 !  Define dimension vectors for staggered tracer type variables.
 !
+#  ifdef ADJUST_BOUNDARY
+        t2dobc(1)=IorJdim
+        t2dobc(2)=DimIDs(14)
+        t2dobc(3)=brecdim
+        t2dobc(4)=DimIDs(12)
+#   ifdef SOLVE3D
+        t3dobc(1)=IorJdim
+        t3dobc(2)=DimIDs( 9)
+        t3dobc(3)=DimIDs(14)
+        t3dobc(4)=brecdim
+        t3dobc(5)=DimIDs(12)
+#   endif
+#  endif
+#  ifdef ADJUST_STFLUX
         t4dfrc(1)=DimIDs( 1)
         t4dfrc(2)=DimIDs( 5)
         t4dfrc(3)=frecdim
         t4dfrc(4)=DimIDs(12)
+#  endif
+#  ifdef ADJUST_WSTRESS
 !
 !  Define dimension vectors for staggered u-momemtum type variables.
 !
@@ -185,6 +306,8 @@
         u4dfrc(2)=DimIDs( 6)
         u4dfrc(3)=frecdim
         u4dfrc(4)=DimIDs(12)
+#  endif
+#  ifdef ADJUST_WSTRESS
 !
 !  Define dimension vectors for staggered v-momemtum type variables.
 !
@@ -192,6 +315,7 @@
         v4dfrc(2)=DimIDs( 7)
         v4dfrc(3)=frecdim
         v4dfrc(4)=DimIDs(12)
+#  endif
 !
 !  Initialize local information variable arrays.
 !
@@ -205,14 +329,117 @@
         END DO
 !
 !-----------------------------------------------------------------------
-!  Define surface forcing variables.
+!  Define additional variables. Notice that these variables have their
+!  own fixed time-dimension to allow 4DVAR adjustments at other times
+!  in addition to initialization time.
 !-----------------------------------------------------------------------
 
+#  ifdef ADJUST_BOUNDARY
+!
+!  Define free-surface open boundaries.
+!
+        IF (ANY(Lobc(:,isFsur,ng))) THEN
+          ifield=idSbry(isFsur)
+          Vinfo( 1)=Vname(1,ifield)
+          Vinfo( 2)=Vname(2,ifield)
+          Vinfo( 3)=Vname(3,ifield)
+          Vinfo(14)=Vname(4,ifield)
+          Vinfo(16)=Vname(1,idtime)
+          Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
+          status=def_var(ng, iRPM, ncIRPid(ng), irpVid(ifield,ng),      &
+     &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
+     &                   SetFillVal = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+!
+!  Define 2D U-momentum component open boundaries.
+!
+        IF (ANY(Lobc(:,isUbar,ng))) THEN
+          ifield=idSbry(isUbar)
+          Vinfo( 1)=Vname(1,ifield)
+          Vinfo( 2)=Vname(2,ifield)
+          Vinfo( 3)=Vname(3,ifield)
+          Vinfo(14)=Vname(4,ifield)
+          Vinfo(16)=Vname(1,idtime)
+          Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
+          status=def_var(ng, iRPM, ncIRPid(ng), irpVid(ifield,ng),      &
+     &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
+     &                   SetFillVal = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+!
+!  Define 2D V-momentum component open boundaries.
+!
+        IF (ANY(Lobc(:,isVbar,ng))) THEN
+          ifield=idSbry(isVbar)
+          Vinfo( 1)=Vname(1,ifield)
+          Vinfo( 2)=Vname(2,ifield)
+          Vinfo( 3)=Vname(3,ifield)
+          Vinfo(14)=Vname(4,ifield)
+          Vinfo(16)=Vname(1,idtime)
+          Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
+          status=def_var(ng, iRPM, ncIRPid(ng), irpVid(ifield,ng),      &
+     &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
+     &                   SetFillVal = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+
+#   ifdef SOLVE3D
+!
+!  Define 3D U-momentum component open boundaries.
+!
+        IF (ANY(Lobc(:,isUvel,ng))) THEN
+          ifield=idSbry(isUvel)
+          Vinfo( 1)=Vname(1,ifield)
+          Vinfo( 2)=Vname(2,ifield)
+          Vinfo( 3)=Vname(3,ifield)
+          Vinfo(14)=Vname(4,ifield)
+          Vinfo(16)=Vname(1,idtime)
+          Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
+          status=def_var(ng, iRPM, ncIRPid(ng), irpVid(ifield,ng),      &
+     &                   NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,       &
+     &                   SetFillVal = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+!
+!  Define 3D V-momentum component open boundaries.
+!
+        IF (ANY(Lobc(:,isVvel,ng))) THEN
+          ifield=idSbry(isVvel)
+          Vinfo( 1)=Vname(1,ifield)
+          Vinfo( 2)=Vname(2,ifield)
+          Vinfo( 3)=Vname(3,ifield)
+          Vinfo(14)=Vname(4,ifield)
+          Vinfo(16)=Vname(1,idtime)
+          Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
+          status=def_var(ng, iRPM, ncIRPid(ng), irpVid(ifield,ng),      &
+     &                   NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,       &
+     &                   SetFillVal = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+!
+!  Define tracer type variables open boundaries.
+!
+        DO itrc=1,NT(ng)
+          IF (ANY(Lobc(:,isTvar(itrc),ng))) THEN
+            ifield=idSbry(isTvar(itrc))
+            Vinfo( 1)=Vname(1,ifield)
+            Vinfo( 2)=Vname(2,ifield)
+            Vinfo( 3)=Vname(3,ifield)
+            Vinfo(14)=Vname(4,ifield)
+            Vinfo(16)=Vname(1,idtime)
+            Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
+            status=def_var(ng, iRPM, ncIRPid(ng), irpVid(ifield,ng),    &
+     &                     NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,     &
+     &                     SetFillVal = .FALSE.)
+            IF (exit_flag.ne.NoError) RETURN
+          END IF
+        END DO
+#   endif
+#  endif
 #  ifdef ADJUST_WSTRESS
 !
-!  Define surface U-momentum stress.  Notice that the stress has its
-!  own fixed time-dimension (of size Nfrec) to allow 4DVAR adjustments
-!  at other times in addition to initialization time.
+!  Define surface U-momentum stress.
 !
         IF (.not.got_var(idUsms)) THEN
           Vinfo( 1)=Vname(1,idUsms)
@@ -224,7 +451,7 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(u2dvar,r8)
           status=def_var(ng, iRPM, ncIRPid(ng), irpVid(idUsms,ng),      &
-     &                   NF_FOUT, nvd4, u4dfrc, Aval, Vinfo, ncname)
+     &                   NF_FOUT, 4, u4dfrc, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 !
@@ -240,18 +467,16 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(v2dvar,r8)
           status=def_var(ng, iRPM, ncIRPid(ng), irpVid(idVsms,ng),      &
-     &                   NF_FOUT, nvd4, v4dfrc, Aval, Vinfo, ncname)
+     &                   NF_FOUT, 4, v4dfrc, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #  endif
 #  if defined ADJUST_STFLUX && defined SOLVE3D
 !
-!  define surface tracer flux. Notice that additional tracer fluxes are
-!  written at their own fixed time-dimension (of size Nfrec) to allow
-!  4DVAR adjustments at other times in addition to initial time.
+!  Define surface tracer flux.
 !
         DO itrc=1,NT(ng)
-          IF (.not.got_var(idTsur(itrc))) THEN
+          IF (.not.got_var(idTsur(itrc)).and.Lstflux(itrc,ng)) THEN
             Vinfo( 1)=Vname(1,idTsur(itrc))
             Vinfo( 2)=TRIM(Vname(2,idTsur(itrc)))
             Vinfo( 3)=Vname(3,idTsur(itrc))
@@ -269,7 +494,7 @@
             Aval(5)=REAL(r2dvar,r8)
             status=def_var(ng, iRPM, ncIRPid(ng),                       &
      &                     irpVid(idTsur(itrc),ng), NF_FOUT,            &
-     &                     nvd4, t4dfrc, Aval, Vinfo, ncname)
+     &                     4, t4dfrc, Aval, Vinfo, ncname)
             IF (exit_flag.ne.NoError) RETURN
           END IF
         END DO
@@ -279,18 +504,9 @@
 !  Leave definition mode.
 !-----------------------------------------------------------------------
 !
-        IF (OutThread) THEN
-          status=nf90_enddef(ncIRPid(ng))
-          IF (status.ne.nf90_noerr) THEN
-            WRITE (stdout,30) TRIM(ncname)
-            exit_flag=3
-            ioerror=status
-          END IF
-        END IF
-#  ifdef DISTRIBUTE
-        CALL mp_bcasti (ng, iRPM, exit_flag, 1)
-#  endif
+        CALL netcdf_enddef (ng, iRPM, ncname, ncIRPid(ng))
         IF (exit_flag.ne.NoError) RETURN
+
       END IF DEFINE
 # endif
 !
@@ -316,18 +532,11 @@
 !
 !  Open representer model initialization file for read/write.
 !
-        IF (OutThread) THEN
-          status=nf90_open(TRIM(ncname), nf90_write, ncIRPid(ng))
-          IF (status.ne.nf90_noerr) THEN
-            WRITE (stdout,20) TRIM(ncname)
-            exit_flag=3
-            ioerror=status
-          END IF
+        CALL netcdf_open (ng, iRPM, TRIM(ncname), 1, ncIRPid(ng))
+        IF (exit_flag.ne.NoError) THEN
+          WRITE (stdout,10) TRIM(ncname)
+          RETURN
         END IF
-#  ifdef DISTRIBUTE
-        CALL mp_bcasti (ng, iRPM, exit_flag, 1)
-#  endif
-        IF (exit_flag.ne.NoError) RETURN
 !
 !  Initialize logical switches.
 !
@@ -387,45 +596,45 @@
 !  file.
 !
         IF (.not.got_var(idtime)) THEN
-          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idtime)),          &
+          IF (Master) WRITE (stdout,30) TRIM(Vname(1,idtime)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
         IF (.not.got_var(idFsur)) THEN
-          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idFsur)),          &
+          IF (Master) WRITE (stdout,30) TRIM(Vname(1,idFsur)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
         IF (.not.got_var(idUbar)) THEN
-          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idUbar)),          &
+          IF (Master) WRITE (stdout,30) TRIM(Vname(1,idUbar)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
         IF (.not.got_var(idVbar)) THEN
-          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idVbar)),          &
+          IF (Master) WRITE (stdout,30) TRIM(Vname(1,idVbar)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
 # ifdef SOLVE3D
         IF (.not.got_var(idUvel)) THEN
-          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idUvel)),          &
+          IF (Master) WRITE (stdout,30) TRIM(Vname(1,idUvel)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
         IF (.not.got_var(idVvel)) THEN
-          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idVvel)),          &
+          IF (Master) WRITE (stdout,30) TRIM(Vname(1,idVvel)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
         DO itrc=1,NT(ng)
           IF (.not.got_var(idTvar(itrc))) THEN
-            IF (Master) WRITE (stdout,40) TRIM(Vname(1,idTvar(itrc))),  &
+            IF (Master) WRITE (stdout,30) TRIM(Vname(1,idTvar(itrc))),  &
      &                                    TRIM(ncname)
             exit_flag=3
             RETURN
@@ -435,15 +644,13 @@
 !
 !  Set unlimited time record dimension to the appropriate value.
 !
-        tINIindx(ng)=rec_size
+        tIRPindx(ng)=rec_size
       END IF
 !
-  10  FORMAT (/,' RP_DEF_INI - unable to put in define mode initial',   &
+  10  FORMAT (/,' RP_DEF_INI - unable to open initial NetCDF file: ',a)
+  20  FORMAT (/,' RP_DEF_INI - unable to put in define mode initial',   &
      &        ' NetCDF file: ',a)
-  20  FORMAT (/,' RP_DEF_INI - unable to open initial NetCDF file: ',a)
-  30  FORMAT (/,' RP_DEF_INI - unable to leave definition mode for',    &
-     &        ' file: ', a)
-  40  FORMAT (/,' RP_DEF_INI - unable to find variable: ',a,2x,            &
+  30  FORMAT (/,' RP_DEF_INI - unable to find variable: ',a,2x,            &
      &        ' in file: ',a)
 
       RETURN

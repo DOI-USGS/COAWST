@@ -2,9 +2,9 @@
       MODULE rp_zetabc_mod
 #ifdef TL_IOMS
 !
-!svn $Id: rp_zetabc.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: rp_zetabc.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -116,14 +116,14 @@
 !
       IF (WESTERN_EDGE) THEN
 
-#  if defined WEST_FSRADIATION
+#  if defined WEST_FSRADIATION_NOT_YET
 !
 !  Western edge, implicit upstream radiation condition.
 !
         IF (iic(ng).ne.0) THEN
           DO j=Jstr,Jend+1
-!>          grad(Istr-1,j)=zeta(Istr-1,j  ,kstp)-                       &
-!>   &                     zeta(Istr-1,j-1,kstp)
+!>          grad(Istr-1,j)=zeta(Istr-1,j  ,know)-                       &
+!>   &                     zeta(Istr-1,j-1,know)
 !>
             tl_grad(Istr-1,j)=0.0_r8
           END DO
@@ -202,7 +202,7 @@
      &                                 Cx*tl_zeta(Istr,j,kout))-        &
 #   ifdef TL_IOMS
      &                           cff2*(zeta(Istr-1,j,know)+             &
-     &                                 Cx*zeta(Istr,j,kout))
+     &                                 2.0_r8*Cx*zeta(Istr,j,kout))
 #   endif
 #   ifdef MASKING
 !>        zeta(Istr-1,j,kout)=zeta(Istr-1,j,kout)*                      &
@@ -219,13 +219,12 @@
 !
         DO j=Jstr,Jend
 !>        zeta(Istr-1,j,kout)=BOUNDARY(ng)%zeta_west(j)
+!>
+          tl_zeta(Istr-1,j,kout)=BOUNDARY(ng)%tl_zeta_west(j)
 #   ifdef MASKING
 !>        zeta(Istr-1,j,kout)=zeta(Istr-1,j,kout)*                      &
 !>   &                        GRID(ng)%rmask(Istr-1,j)
-#   endif
 !>
-          tl_zeta(Istr-1,j,kout)=BOUNDARY(ng)%zeta_west(j)
-#   ifdef MASKING
           tl_zeta(Istr-1,j,kout)=tl_zeta(Istr-1,j,kout)*                &
      &                           GRID(ng)%rmask(Istr-1,j)
 #   endif
@@ -273,7 +272,7 @@
 !
       IF (EASTERN_EDGE) THEN
 
-#  if defined EAST_FSRADIATION
+#  if defined EAST_FSRADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -360,7 +359,7 @@
      &                                 Cx*tl_zeta(Iend,j,kout))-        &
 #   ifdef TL_IOMS
      &                           cff2*(zeta(Iend+1,j,know)+             &
-     &                                 Cx*zeta(Iend,j,kout))
+     &                                 2.0_r8*Cx*zeta(Iend,j,kout))
 #   endif
 #   ifdef MASKING
 !>        zeta(Iend+1,j,kout)=zeta(Iend+1,j,kout)*                      &
@@ -377,13 +376,12 @@
 !
         DO j=Jstr,Jend
 !>        zeta(Iend+1,j,kout)=BOUNDARY(ng)%zeta_east(j)
+!>
+          tl_zeta(Iend+1,j,kout)=BOUNDARY(ng)%tl_zeta_east(j)
 #   ifdef MASKING
 !>        zeta(Iend+1,j,kout)=zeta(Iend+1,j,kout)*                      &
 !>   &                        GRID(ng)%rmask(Iend+1,j)
-#   endif
 !>
-          tl_zeta(Iend+1,j,kout)=BOUNDARY(ng)%zeta_east(j)
-#   ifdef MASKING
           tl_zeta(Iend+1,j,kout)=tl_zeta(Iend+1,j,kout)*                &
      &                           GRID(ng)%rmask(Iend+1,j)
 #   endif
@@ -434,7 +432,7 @@
 !
       IF (SOUTHERN_EDGE) THEN
 
-#  if defined SOUTH_FSRADIATION
+#  if defined SOUTH_FSRADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -521,7 +519,7 @@
      &                                 Ce*tl_zeta(i,Jstr,kout))-        &
 #  ifdef TL_IOMS
      &                           cff2*(zeta(i,Jstr-1,know)+             &
-     &                                 Ce*zeta(i,Jstr,kout))
+     &                                 2.0_r8*Ce*zeta(i,Jstr,kout))
 #  endif
 #  ifdef MASKING
 !>        zeta(i,Jstr-1,kout)=zeta(i,Jstr-1,kout)*                      &
@@ -538,13 +536,12 @@
 !
         DO i=Istr,Iend
 !>        zeta(i,Jstr-1,kout)=BOUNDARY(ng)%zeta_south(i)
+!>
+          tl_zeta(i,Jstr-1,kout)=BOUNDARY(ng)%tl_zeta_south(i)
 #   ifdef MASKING
 !>        zeta(i,Jstr-1,kout)=zeta(i,Jstr-1,kout)*                      &
 !>   &                        GRID(ng)%rmask(i,Jstr-1)
-#   endif
 !>
-          tl_zeta(i,Jstr-1,kout)=BOUNDARY(ng)%zeta_south(i)
-#   ifdef MASKING
           tl_zeta(i,Jstr-1,kout)=tl_zeta(i,Jstr-1,kout)*                &
      &                           GRID(ng)%rmask(i,Jstr-1)
 #   endif
@@ -591,7 +588,7 @@
 !
       IF (NORTHERN_EDGE) THEN
 
-#  if defined NORTH_FSRADIATION
+#  if defined NORTH_FSRADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -678,7 +675,7 @@
      &                                 Ce*tl_zeta(i,Jend,kout))-        &
 #   ifdef TL_IOMS
      &                           cff2*(zeta(i,Jend+1,know)+             &
-     &                                 Ce*zeta(i,Jend,kout))
+     &                                 2.0_r8*Ce*zeta(i,Jend,kout))
 #   endif
 #   ifdef MASKING
 !>        zeta(i,Jend+1,kout)=zeta(i,Jend+1,kout)*                      &
@@ -695,13 +692,12 @@
 !
         DO i=Istr,Iend
 !>        zeta(i,Jend+1,kout)=BOUNDARY(ng)%zeta_north(i)
+!>
+          tl_zeta(i,Jend+1,kout)=BOUNDARY(ng)%tl_zeta_north(i)
 #   ifdef MASKING
 !>        zeta(i,Jend+1,kout)=zeta(i,Jend+1,kout)*                      &
 !>   &                        GRID(ng)%rmask(i,Jend+1)
-#   endif
 !>
-          tl_zeta(i,Jend+1,kout)=BOUNDARY(ng)%zeta_north(i)
-#   ifdef MASKING
           tl_zeta(i,Jend+1,kout)=tl_zeta(i,Jend+1,kout)*                &
      &                           GRID(ng)%rmask(i,Jend+1)
 #   endif

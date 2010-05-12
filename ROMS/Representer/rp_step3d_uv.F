@@ -2,9 +2,9 @@
       MODULE rp_step3d_uv_mod
 #if defined TL_IOMS && defined SOLVE3D
 !
-!svn $Id: rp_step3d_uv.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: rp_step3d_uv.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -61,7 +61,7 @@
      &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nrhs(ng), nstp(ng), nnew(ng),             &
 # ifdef UV_PSOURCE
-     &                        Nsrc(ng),                                 &
+     &                        Msrc(ng), Nsrc(ng),                       &
      &                        SOURCES(ng) % Isrc,                       &
      &                        SOURCES(ng) % Jsrc,                       &
      &                        SOURCES(ng) % Dsrc,                       &
@@ -135,7 +135,7 @@
      &                              IminS, ImaxS, JminS, JmaxS,         &
      &                              nrhs, nstp, nnew,                   &
 # ifdef UV_PSOURCE
-     &                              Nsrc,                               &
+     &                              Msrc, Nsrc,                         &
      &                              Isrc, Jsrc, Dsrc, Qsrc,             &
 # endif
 # ifdef MASKING
@@ -189,12 +189,15 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs, nstp, nnew
+# ifdef UV_PSOURCE
+      integer, intent(in) :: Msrc, Nsrc
+# endif
 !
 # ifdef ASSUMED_SHAPE
 #  ifdef UV_PSOURCE
-      integer, intent(in) :: Nsrc
       integer, intent(in) :: Isrc(:)
       integer, intent(in) :: Jsrc(:)
+
       real(r8), intent(in) :: Dsrc(:)
       real(r8), intent(in) :: Qsrc(:,:)
 #  endif
@@ -257,13 +260,15 @@
       real(r8), intent(out) :: tl_vbar(LBi:,LBj:,:)
       real(r8), intent(out) :: tl_Huon(LBi:,LBj:,:)
       real(r8), intent(out) :: tl_Hvom(LBi:,LBj:,:)
+
 # else
+
 #  ifdef UV_PSOURCE
-      integer, intent(in) :: Nsrc
-      integer, intent(in) :: Isrc(Nsrc)
-      integer, intent(in) :: Jsrc(Nsrc)
-      real(r8), intent(in) :: Dsrc(Nsrc)
-      real(r8), intent(in) :: Qsrc(Nsrc,N(ng))
+      integer, intent(in) :: Isrc(Msrc)
+      integer, intent(in) :: Jsrc(Msrc)
+
+      real(r8), intent(in) :: Dsrc(Msrc)
+      real(r8), intent(in) :: Qsrc(Msrc,N(ng))
 #  endif
 #  ifdef MASKING
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
@@ -423,7 +428,7 @@
           DC(i,0)=cff*(pm(i,j)+pm(i-1,j))*(pn(i,j)+pn(i-1,j))
         END DO
 !
-!  The BASIC STATE "u" used below must be in transport units, but "u" 
+!  The BASIC STATE "u" used below must be in transport units, but "u"
 !  retrived is in m/s so we multiply by "Hzk".
 !
         DO k=1,N(ng)
@@ -977,7 +982,7 @@
             DC(i,0)=cff*(pm(i,j)+pm(i,j-1))*(pn(i,j)+pn(i,j-1))
           END DO
 !
-!  The BASIC STATE "v" used below must be in transport units, but "v" 
+!  The BASIC STATE "v" used below must be in transport units, but "v"
 !  retrived is in m/s so we multiply by "Hzk".
 !
           DO k=1,N(ng)
@@ -1134,7 +1139,7 @@
             END DO
           END DO
 !
-!  Tangent linear backward substitution.  
+!  Tangent linear backward substitution.
 !
           DO i=Istr,Iend
             tl_DC(i,N(ng))=0.0_r8
@@ -1964,7 +1969,7 @@
 !         will not affect the nonlinear code.  However, the adjoint
 !         code is wrong because the interior solution is corrected
 !         twice.
-!  
+!
 # ifndef EW_PERIODIC
           IF (Istr.eq.1) THEN
             DO k=1,N(ng)
@@ -2018,7 +2023,7 @@
 #  endif
             END DO
           END IF
-# endif 
+# endif
 # ifndef NS_PERIODIC
           IF (j.eq.1) THEN
             DO k=1,N(ng)

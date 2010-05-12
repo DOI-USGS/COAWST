@@ -2,9 +2,9 @@
 #ifdef TL_IOMS
       SUBROUTINE rp_get_data (ng)
 !
-!svn $Id: rp_get_data.F 503 2008-01-10 00:11:51Z arango $
+!svn $Id: rp_get_data.F 451 2010-03-04 21:43:03Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -61,6 +61,10 @@
       integer :: LBi, UBi, LBj, UBj
       integer :: i
 
+# ifdef FORWARD_MIXING
+      real(r8) :: scale
+# endif
+
 # ifdef OBC
 !
 !  Lower and upper bounds for nontiled boundary arrays.
@@ -91,8 +95,8 @@
 !=======================================================================
 !  Read in forcing data from FORCING NetCDF file.
 !=======================================================================
-!
 # endif
+
 # if !defined ANA_PSOURCE && (defined UV_PSOURCE || \
                               defined TS_PSOURCE || defined Q_PSOURCE)
 !
@@ -116,7 +120,7 @@
 !  Tracer Sources/Sinks.
 !
       DO i=1,NT(ng)
-        IF (SOURCES(ng)%Ltracer(i)) THEN
+        IF (LtracerSrc(i,ng)) THEN
           CALL get_ngfld (ng, iRPM, idRtrc(i), ncFRCid(idRtrc(i),ng),   &
      &                    nFfiles(ng), FRCname(1,ng), update(1),        &
      &                    1, Nsrc(ng), N(ng), 2, 1, Nsrc(ng), N(ng),    &
@@ -126,7 +130,9 @@
 #  endif
 # endif
 
-# if !defined ANA_WINDS && (defined BULK_FLUXES || defined ECOSIM)
+# if !defined ANA_WINDS    && \
+     ((defined BULK_FLUXES && !defined NL_BULK_FLUXES) || \
+      defined ECOSIM)
 !
 !-----------------------------------------------------------------------
 !  Surface wind components.
@@ -149,7 +155,8 @@
 # endif
 
 # ifndef AIR_OCEAN
-#  if !defined ANA_SMFLUX && !defined BULK_FLUXES
+#  if !defined ANA_SMFLUX  && \
+      !defined BULK_FLUXES && !defined NL_BULK_FLUXES
 !
 !-----------------------------------------------------------------------
 !  Surface wind stress components.
@@ -170,6 +177,45 @@
 #   endif
      &                FORCES(ng) % svstrG(LBi,LBj,1))
 #  endif
+
+#  ifdef NL_BULK_FLUXES
+!
+!-----------------------------------------------------------------------
+!  Surface wind stress components from NLM bulk flux computation.
+!-----------------------------------------------------------------------
+!
+      CALL get_2dfld (ng, iRPM, idUsms, ncBLKid(ng), 1,                 &
+     &                BLKname(ng), update(1),                           &
+     &                LBi, UBi, LBj, UBj, 2, 1,                         &
+#   ifdef MASKING
+     &                GRID(ng) % umask(LBi,LBj),                        &
+#   endif
+     &                FORCES(ng) % sustrG(LBi,LBj,1))
+      CALL get_2dfld (ng, iRPM, idVsms, ncBLKid(ng), 1,                 &
+     &                BLKname(ng), update(1),                           &
+     &                LBi, UBi, LBj, UBj, 2, 1,                         &
+#   ifdef MASKING
+     &                GRID(ng) % vmask(LBi,LBj),                        &
+#   endif
+     &                FORCES(ng) % svstrG(LBi,LBj,1))
+#  endif
+# endif
+
+# if !defined ANA_PAIR && \
+     ((defined BULK_FLUXES && !defined NL_BULK_FLUXES) || \
+      defined ECOSIM       || defined ATM_PRESS)
+!
+!-----------------------------------------------------------------------
+!  Surface air pressure.
+!-----------------------------------------------------------------------
+!
+      CALL get_2dfld (ng, iRPM, idPair, ncFRCid(idPair,ng),             &
+     &                nFfiles(ng), FRCname(1,ng), update(1),            &
+     &                LBi, UBi, LBj, UBj, 2, 1,                         &
+#  ifdef MASKING
+     &                GRID(ng) % rmask(LBi,LBj),                        &
+#  endif
+     &                FORCES(ng) % PairG(LBi,LBj,1))
 # endif
 
 # if !defined ANA_WWAVE && defined WAVE_DATA
@@ -284,7 +330,8 @@
      &                FORCES(ng) % srflxG(LBi,LBj,1))
 #  endif
 
-#  if defined BULK_FLUXES && !defined LONGWAVE && !defined LONGWAVE_OUT
+#  if (defined BULK_FLUXES && !defined NL_BULK_FLUXES) && \
+      !defined LONGWAVE    && !defined LONGWAVE_OUT
 !
 !-----------------------------------------------------------------------
 !  Surface net longwave radiation.
@@ -299,7 +346,8 @@
      &                FORCES(ng) % lrflxG(LBi,LBj,1))
 #  endif
 
-#  if defined BULK_FLUXES && defined LONGWAVE_OUT
+#  if (defined BULK_FLUXES && !defined NL_BULK_FLUXES) && \
+      defined LONGWAVE_OUT
 !
 !-----------------------------------------------------------------------
 !  Surface downwelling longwave radiation.
@@ -314,25 +362,10 @@
      &                FORCES(ng) % lrflxG(LBi,LBj,1))
 #  endif
 
-#  if !defined ANA_PAIR && (defined BULK_FLUXES || defined ECOSIM || \
-                            defined ATM_PRESS)
-!
-!-----------------------------------------------------------------------
-!  Surface air pressure.
-!-----------------------------------------------------------------------
-!
-      CALL get_2dfld (ng, iRPM, idPair, ncFRCid(idPair,ng),             &
-     &                nFfiles(ng), FRCname(1,ng), update(1),            &
-     &                LBi, UBi, LBj, UBj, 2, 1,                         &
-#   ifdef MASKING
-     &                GRID(ng) % rmask(LBi,LBj),                        &
-#   endif
-     &                FORCES(ng) % PairG(LBi,LBj,1))
-#  endif
-
 #  if !defined ANA_TAIR && \
-     ( defined BULK_FLUXES || defined ECOSIM || \
-      (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO) )
+     ((defined BULK_FLUXES && !defined NL_BULK_FLUXES) || \
+      defined ECOSIM       || \
+      (defined SHORTWAVE   && defined ANA_SRFLUX && defined ALBEDO))
 !
 !-----------------------------------------------------------------------
 !  Surface air temperature.
@@ -347,7 +380,9 @@
      &                FORCES(ng) % TairG(LBi,LBj,1))
 #  endif
 
-#  if !defined ANA_HUMIDITY && (defined BULK_FLUXES || defined ECOSIM)
+#  if !defined ANA_HUMIDITY && \
+      ((defined BULK_FLUXES && !defined NL_BULK_FLUXES) || \
+       defined ECOSIM)
 !
 !-----------------------------------------------------------------------
 !  Surface air humidity.
@@ -362,7 +397,8 @@
      &                FORCES(ng) % HairG(LBi,LBj,1))
 #  endif
 
-#  if !defined ANA_RAIN && defined BULK_FLUXES
+#  if !defined ANA_RAIN    && \
+      (defined BULK_FLUXES && !defined NL_BULK_FLUXES)
 !
 !-----------------------------------------------------------------------
 !  Rain fall rate.
@@ -377,7 +413,8 @@
      &                FORCES(ng) % rainG(LBi,LBj,1))
 #  endif
 
-#  if !defined ANA_STFLUX && !defined BULK_FLUXES
+#  if !defined ANA_STFLUX  && \
+      !defined BULK_FLUXES && !defined NL_BULK_FLUXES
 !
 !-----------------------------------------------------------------------
 !  Surface net heat flux.
@@ -386,6 +423,21 @@
       CALL get_2dfld (ng, iRPM, idTsur(itemp),                          &
      &                ncFRCid(idTsur(itemp),ng),                        &
      &                nFfiles(ng), FRCname(1,ng), update(1),            &
+     &                LBi, UBi, LBj, UBj, 2, 1,                         &
+#   ifdef MASKING
+     &                GRID(ng) % rmask(LBi,LBj),                        &
+#   endif
+     &                FORCES(ng) % stflxG(LBi,LBj,1,itemp))
+#  endif
+
+#  ifdef NL_BULK_FLUXES
+!
+!-----------------------------------------------------------------------
+!  Surface net heat flux from NLM bulk flux computation.
+!-----------------------------------------------------------------------
+!
+      CALL get_2dfld (ng, iRPM, idTsur(itemp), ncBLKid(ng), 1,          &
+     &                BLKname(ng), update(1),                           &
      &                LBi, UBi, LBj, UBj, 2, 1,                         &
 #   ifdef MASKING
      &                GRID(ng) % rmask(LBi,LBj),                        &
@@ -441,6 +493,21 @@
 !
       CALL get_2dfld (ng, iRPM, idsfwf, ncFRCid(idsfwf,ng),             &
      &                nFfiles(ng), FRCname(1,ng), update(1),            &
+     &                LBi, UBi, LBj, UBj, 2, 1,                         &
+#    ifdef MASKING
+     &                GRID(ng) % rmask(LBi,LBj),                        &
+#    endif
+     &                FORCES(ng) % stflxG(LBi,LBj,1,isalt))
+#   endif
+
+#   if defined EMINUSP && defined NL_BULK_FLUXES
+!
+!-----------------------------------------------------------------------
+!  Surface net freshwater flux (E-P) from NLM bulk flux computation.
+!-----------------------------------------------------------------------
+!
+      CALL get_2dfld (ng, iRPM, idEmPf, ncBLKid(ng), 1,                 &
+     &                BLKname(ng), update(1),                           &
      &                LBi, UBi, LBj, UBj, 2, 1,                         &
 #    ifdef MASKING
      &                GRID(ng) % rmask(LBi,LBj),                        &
@@ -739,43 +806,26 @@
 !  Read in assimilation data from ASSIMILATION NetCDF files.
 !=======================================================================
 !
-#  if defined NUDGING_SSH || defined ASSIMILATION_SSH
+#  ifdef ASSIMILATION_SSH
 !
 !-----------------------------------------------------------------------
 !  Read in sea surface height observations and error variance.
 !-----------------------------------------------------------------------
 !
       IF (assi_SSH(ng)) THEN
-#   ifdef NUDGING_SSH
-        CALL get_2dfld (ng, iRPM, idSSHo, ncSSHid(ng), 1,               &
-     &                  SSHname(ng), update(1),                         &
-     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
-#    ifdef MASKING
-     &                  GRID(ng) % rmask(LBi,LBj),                      &
-#    endif
-     &                  OBS(ng) % SSHdat(LBi,LBj,1))
-        CALL get_2dfld (ng, iRPM, idSSHe, ncSSHid(ng), 1,               &
-     &                  SSHname(ng), update(2),                         &
-     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
-#    ifdef MASKING
-     &                  GRID(ng) % rmask(LBi,LBj),                      &
-#    endif
-     &                  OBS(ng) % EdatSSH(LBi,LBj,1))
-        IF (update(1).and.update(2)) update_SSH(ng)=.TRUE.
-#   else
         CALL get_2dfld (ng, iRPM, idSSHo, ncSSHid(ng), 1,               &
      &                  SSHname(ng), update(1),                         &
      &                  LBi, UBi, LBj, UBj, 1, 1,                       &
-#    ifdef MASKING
+#   ifdef MASKING
      &                  GRID(ng) % rmask(LBi,LBj),                      &
-#    endif
+#   endif
      &                  OBS(ng) % SSHobs(LBi,LBj))
         CALL get_2dfld (ng, iRPM, idSSHe, ncSSHid(ng), 1,               &
      &                  SSHname(ng), update(2),                         &
      &                  LBi, UBi, LBj, UBj, 1, 1,                       &
-#    ifdef MASKING
+#   ifdef MASKING
      &                  GRID(ng) % rmask(LBi,LBj),                      &
-#    endif
+#   endif
      &                  OBS(ng) % EobsSSH(LBi,LBj))
         IF (update(1).and.update(2)) THEN
           update_SSH(ng)=.TRUE.
@@ -786,7 +836,6 @@
           EobsSSHmin(ng)=Finfo(8,idSSHe,ng)
           EobsSSHmax(ng)=Finfo(9,idSSHe,ng)
         END IF
-#   endif
       END IF
 #  endif
 
@@ -1166,6 +1215,8 @@
 !  Read in vertical mixing variables.
 !
       DO i=1,NAT
+        scale=Fscale(idDiff(i),ng)                    ! save and rescale
+        Fscale(idDiff(i),ng)=tl_Akt_fac(i,ng)
         CALL get_3dfld (ng, iRPM, idDiff(i), ncFWDid(ng), 1,            &
      &                  FWDname(ng), update(1),                         &
      &                  LBi, UBi, LBj, UBj, 0, N(ng), 2, 1,             &
@@ -1173,7 +1224,11 @@
      &                  GRID(ng) % rmask(LBi,LBj),                      &
 #    endif
      &                  MIXING(ng) % AktG(LBi,LBj,0,1,i))
+        Fscale(idDiff(i),ng)=scale
       END DO
+
+      scale=Fscale(idVvis,ng)                         ! save and rescale
+      Fscale(idVvis,ng)=tl_Akv_fac(ng)
       CALL get_3dfld (ng, iRPM, idVvis, ncFWDid(ng), 1,                 &
      &                FWDname(ng), update(1),                           &
      &                LBi, UBi, LBj, UBj, 0, N(ng), 2, 1,               &
@@ -1181,6 +1236,7 @@
      &                GRID(ng) % rmask(LBi,LBj),                        &
 #    endif
      &                MIXING(ng) % AkvG(LBi,LBj,0,1))
+      Fscale(idVvis,ng)=scale
 #   endif
 
 #   if defined MY25_MIXING_NOT_YET || defined GLS_MIXING_NOT_YET
@@ -1276,6 +1332,74 @@
      &                  MIXING(ng) % ghatsG(LBi,LBj,0,i))
       END DO
 #   endif
+#  endif
+#  if defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY
+!
+!-----------------------------------------------------------------------
+!  Read frequent impulse forcing for weak constraint.
+!-----------------------------------------------------------------------
+!
+      IF (FrequentImpulse) THEN
+        CALL get_2dfld (ng, iRPM, idZtlf, ncTLFid(ng), 1,               &
+     &                  TLFname(ng), update(1),                         &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
+#   ifdef MASKING
+     &                  GRID(ng) % rmask(LBi,LBj),                      &
+#   endif
+     &                  OCEAN(ng) % f_zetaG(LBi,LBj,1))
+
+#   ifndef SOLVE3D
+!
+!  Read 2D momentum forcing.
+!
+        CALL get_2dfld (ng, iRPM, idUbtf, ncTLFid(ng), 1,               &
+     &                  TLFname(ng), update(1),                         &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
+#    ifdef MASKING
+     &                  GRID(ng) % umask(LBi,LBj),                      &
+#    endif
+     &                  OCEAN(ng) % f_ubarG(LBi,LBj,1))
+        CALL get_2dfld (ng, iRPM, idVbtf, ncTLFid(ng), 1,               &
+     &                  TLFname(ng), update(1),                         &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
+#    ifdef MASKING
+     &                  GRID(ng) % vmask(LBi,LBj),                      &
+#    endif
+     &                  OCEAN(ng) % f_vbarG(LBi,LBj,1))
+#   endif
+
+#   ifdef SOLVE3D
+!
+!  Read in 3D momentum forcing.
+!
+        CALL get_3dfld (ng, iRPM, idUtlf, ncTLFid(ng), 1,               &
+     &                  TLFname(ng), update(1),                         &
+     &                  LBi, UBi, LBj, UBj, 1, N(ng), 2, 1,             &
+#    ifdef MASKING
+     &                  GRID(ng) % umask(LBi,LBj),                      &
+#    endif
+     &                  OCEAN(ng) % f_uG(LBi,LBj,1,1))
+        CALL get_3dfld (ng, iRPM, idVtlf, ncTLFid(ng), 1,               &
+     &                  TLFname(ng), update(1),                         &
+     &                  LBi, UBi, LBj, UBj, 1, N(ng), 2, 1,             &
+#    ifdef MASKING
+     &                  GRID(ng) % vmask(LBi,LBj),                      &
+#    endif
+     &                  OCEAN(ng) % f_vG(LBi,LBj,1,1))
+!
+!  Read in 3D tracers forcing.
+!
+        DO i=1,NT(ng)
+          CALL get_3dfld (ng, iRPM, idTtlf(i), ncTLFid(ng), 1,          &
+     &                    TLFname(ng), update(1),                       &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng), 2, 1,           &
+#    ifdef MASKING
+     &                    GRID(ng) % rmask(LBi,LBj),                    &
+#    endif
+     &                    OCEAN(ng) % f_tG(LBi,LBj,1,1,i))
+        END DO
+#   endif
+      END IF
 #  endif
 # endif
 

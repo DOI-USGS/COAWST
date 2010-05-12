@@ -2,9 +2,9 @@
 #if defined TL_IOMS && defined SOLVE3D
       SUBROUTINE rp_main3d (ng)
 !
-!svn $Id: rp_main3d.F 672 2008-08-05 18:14:56Z arango $
+!svn $Id: rp_main3d.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -27,9 +27,6 @@
 # ifdef ANA_VMIX
       USE analytical_mod, ONLY : ana_vmix
 # endif
-# if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
-      USE frc_adjust_mod, ONLY : load_TLforcing
-# endif
 # ifdef AIR_OCEAN_NOT_YET
       USE ocean_coupler_mod, ONLY : atmos_coupling
 # endif
@@ -50,13 +47,16 @@
 # ifdef BBL_MODEL_NOT_YET
 !!    USE rp_bbl_mod, ONLY : rp_bblm
 # endif
-# ifdef BULK_FLUXES_NOT_YET
-!!    USE rp_bulk_flux_mod, ONLY : rp_bulk_flux
+# if defined BULK_FLUXES && !defined NL_BULK_FLUXES
+      USE rp_bulk_flux_mod, ONLY : rp_bulk_flux
 # endif
 # ifdef BVF_MIXING_NOT_YET
 !!    USE rp_bvf_mix_mod, ONLY : rp_bvf_mix
 # endif
       USE rp_diag_mod, ONLY : rp_diag
+# if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+      USE rp_frc_adjust_mod, ONLY : rp_frc_adjust
+# endif
 # ifdef GLS_MIXING_NOT_YET
 !!    USE rp_gls_corstep_mod, ONLY : rp_gls_corstep
 !!    USE rp_gls_prestep_mod, ONLY : rp_gls_prestep
@@ -68,6 +68,11 @@
 # ifdef MY25_MIXING
 !!    USE rp_my25_corstep_mod, ONLY : rp_my25_corstep
 !!    USE rp_my25_prestep_mod, ONLY : rp_my25_prestep
+# endif
+# ifdef ADJUST_BOUNDARY
+      USE rp_obc_adjust_mod, ONLY : rp_obc_adjust
+      USE rp_obc_adjust_mod, ONLY : rp_obc2d_adjust
+      USE rp_set_depth_mod, ONLY : rp_set_depth_bry
 # endif
       USE rp_omega_mod, ONLY : rp_omega
 # ifdef NEARSHORE_MELLOR_NOT_YET
@@ -83,14 +88,15 @@
 # ifdef AVERAGES
 !!    USE rp_set_avg_mod, ONLY : rp_set_avg
 # endif
+# ifdef MOVE_SET_DEPTH
+      USE rp_set_depth_mod, ONLY : rp_set_depth
+# endif
       USE rp_set_massflux_mod, ONLY : rp_set_massflux
 # if defined SSH_TIDES_NOT_YET || defined UV_TIDES_NOT_YET
 !!    USE rp_set_tides_mod, ONLY : rp_set_tides
 # endif
       USE rp_set_vbc_mod, ONLY : rp_set_vbc
-# ifdef SET_ZETA
       USE rp_set_zeta_mod, ONLY : rp_set_zeta
-# endif
       USE rp_step2d_mod, ONLY : rp_step2d
 # ifndef TS_FIXED
       USE rp_step3d_t_mod, ONLY : rp_step3d_t
@@ -99,7 +105,7 @@
 # ifdef FLOATS_NOT_YET
 !!    USE rp_step_floats_mod, ONLY : rp_step_floats
 # endif
-# if defined WEAK_CONSTRAINT || defined IOM
+# ifdef WEAK_CONSTRAINT
       USE tl_forcing_mod, ONLY : tl_forcing
 # endif
 !!    USE wvelocity_mod, ONLY : wvelocity
@@ -129,28 +135,6 @@
       time(ng)=time(ng)+dt(ng)
       tdays(ng)=time(ng)*sec2day
       CALL time_string (time(ng), time_code(ng))
-
-# if defined WEAK_CONSTRAINT || defined IOM
-!
-!-----------------------------------------------------------------------
-!  If appropriate, add convolved adjoint solution impulse forcing to
-!  the representer model solution. Notice that the forcing is only 
-!  needed after finishing all inner loops. The forcing is continuous.
-!  That is, it is time interpolated at every time-step from available
-!  snapshots (FrequentImpulse=TRUE).
-!-----------------------------------------------------------------------
-!
-      IF (FrequentImpulse) THEN
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
-            CALL tl_forcing (ng, TILE, kstp(ng), nstp(ng))
-          END DO
-        END DO
-!$OMP END PARALLEL DO
-      END IF
-# endif
 !
 !-----------------------------------------------------------------------
 !  Read in required data, if any, data from input NetCDF files.
@@ -191,6 +175,27 @@
         END DO
       END DO
 !$OMP END PARALLEL DO
+# endif
+# ifdef WEAK_CONSTRAINT
+!
+!-----------------------------------------------------------------------
+!  If appropriate, add convolved adjoint solution impulse forcing to
+!  the representer model solution. Notice that the forcing is only
+!  needed after finishing all inner loops. The forcing is continuous.
+!  That is, it is time interpolated at every time-step from available
+!  snapshots (FrequentImpulse=TRUE).
+!-----------------------------------------------------------------------
+!
+      IF (FrequentImpulse) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL tl_forcing (ng, TILE, kstp(ng), nstp(ng))
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+      END IF
 # endif
 !
 !-----------------------------------------------------------------------
@@ -311,7 +316,7 @@
       DO thread=0,numthreads-1
         subs=NtileX(ng)*NtileE(ng)/numthreads
         DO tile=subs*thread,subs*(thread+1)-1,+1
-# ifdef BULK_FLUXES_NOT_YET
+# if defined BULK_FLUXES && !defined NL_BULK_FLUXES
           CALL rp_bulk_flux (ng, TILE)
 # endif
 # ifdef BBL_MODEL_NOT_YET
@@ -324,6 +329,46 @@
         END DO
       END DO
 !$OMP END PARALLEL DO
+
+# ifdef ADJUST_BOUNDARY
+!
+!-----------------------------------------------------------------------
+!  Interpolate open boundary increments and adjust open boundaries.
+!  Skip the last output timestep.
+!-----------------------------------------------------------------------
+!
+      IF ((Nrun.ne.1).and.(iic(ng).lt.(ntend(ng)+1))) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL rp_obc_adjust (ng, TILE, Lbinp(ng))
+            CALL rp_set_depth_bry (ng, TILE)
+            CALL rp_obc2d_adjust (ng, TILE, Lbinp(ng))
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+      END IF
+# endif
+
+# if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+!
+!-----------------------------------------------------------------------
+!  Interpolate surface forcing increments and adjust surface forcing.
+!  Skip the last output timestep.
+!-----------------------------------------------------------------------
+!
+      IF (iic(ng).lt.(ntend(ng)+1)) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL rp_frc_adjust (ng, TILE, Lfinp(ng))
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+      END IF
+# endif
 !
 !-----------------------------------------------------------------------
 !  Compute tangent linear vertical mixing coefficients for momentum and
@@ -347,24 +392,6 @@
         END DO
       END DO
 !$OMP END PARALLEL DO
-
-# ifdef ADJUST_WSTRESS
-!
-!-----------------------------------------------------------------------
-!  Load surface forcing to storage arrays.
-!-----------------------------------------------------------------------
-!
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,Lfout,numthreads)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1,+1
-          CALL load_TLforcing (ng, TILE, Lfout(ng))
-        END DO
-      END DO
-!$OMP END PARALLEL DO
-# endif
-
-# ifdef SET_ZETA
 !
 !-----------------------------------------------------------------------
 !  Set free-surface to it time-averaged value.  If applicable,
@@ -377,8 +404,8 @@
       DO thread=0,numthreads-1
         subs=NtileX(ng)*NtileE(ng)/numthreads
         DO tile=subs*thread,subs*(thread+1)-1,+1     ! irreversible loop
-          CALL set_zeta (ng, TILE)
-#  if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
+          CALL rp_set_zeta (ng, TILE)
+#  ifdef DIAGNOSTICS
 !!        CALL rp_set_diags (ng, TILE)
 #  endif
 #  ifdef AVERAGES
@@ -415,44 +442,6 @@
         END DO
       END DO
 !$OMP END PARALLEL DO
-
-# else
-!
-!-----------------------------------------------------------------------
-!  Compute right-hand-side terms for 3D equations.  If applicable,
-!  accumulate time-averaged output data.
-!-----------------------------------------------------------------------
-!
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile)                             &
-!$OMP&         SHARED(ng,Lnew,numthreads)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1,+1
-#  if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
-!!        CALL rp_set_diags (ng, TILE)
-#  endif
-          CALL rp_rhs3d (ng, TILE)
-#  ifdef MY25_MIXING_NOT_YET
-          CALL rp_my25_prestep (ng, TILE)
-#  elif defined GLS_MIXING_NOT_YET
-          CALL rp_gls_prestep (ng, TILE)
-#  endif
-#  ifdef AVERAGES
-!!        CALL rp_set_avg (ng, TILE)
-#  endif
-        END DO
-      END DO
-!$OMP END PARALLEL DO
-!
-!-----------------------------------------------------------------------
-!  If appropriate, write out fields into output NetCDF files.  Notice
-!  that IO data is written in delayed and serial mode.  Exit if last
-!  time step.
-!-----------------------------------------------------------------------
-!
-      CALL rp_output (ng)
-      IF ((exit_flag.ne.NoError).or.(iic(ng).eq.(ntend(ng)+1))) RETURN
-# endif
 !
 !-----------------------------------------------------------------------
 !  Solve the vertically integrated primitive equations for the
@@ -517,6 +506,22 @@
 !$OMP END PARALLEL DO
         END IF
       END DO
+
+# ifdef MOVE_SET_DEPTH
+!
+!-----------------------------------------------------------------------
+!  Recompute depths and thicknesses using the new time filtered
+!  free-surface.  This call was moved from "rp_step2d" to here.
+!-----------------------------------------------------------------------
+!
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+      DO thread=0,numthreads-1
+        subs=NtileX(ng)*NtileE(ng)/numthreads
+        DO tile=subs*(thread+1)-1,subs*thread,-1
+          CALL rp_set_depth (ng, TILE)
+        END DO
+      END DO
+# endif
 !
 !-----------------------------------------------------------------------
 !  Time-step 3D momentum equations.
@@ -581,23 +586,25 @@
 !  Compute Lagrangian drifters trajectories.
 !-----------------------------------------------------------------------
 !
+      IF (Lfloats(Ng)) THEN
 !$OMP PARALLEL DO PRIVATE(thread,chunk_size,Lstr,Lend)                  &
 !$OMP&            SHARED(ng,numthreads,Nfloats)
-      DO thread=0,numthreads-1
-        chunk_size=(Nfloats(ng)+numthreads-1)/numthreads
-        Lstr=1+thread*chunk_size
-        Lend=MIN(Nfloats(ng),Lstr+chunk_size-1)
-        CALL rp_step_floats (ng, Lstr, Lend)
-      END DO
+        DO thread=0,numthreads-1
+          chunk_size=(Nfloats(ng)+numthreads-1)/numthreads
+          Lstr=1+thread*chunk_size
+          Lend=MIN(Nfloats(ng),Lstr+chunk_size-1)
+          CALL rp_step_floats (ng, Lstr, Lend)
+        END DO
 !$OMP END PARALLEL DO
 !
 !  Shift floats time indices.
 !
-      nfp1(ng)=MOD(nfp1(ng)+1,NFT+1)
-      nf(ng)  =MOD(nf(ng)  +1,NFT+1)
-      nfm1(ng)=MOD(nfm1(ng)+1,NFT+1)
-      nfm2(ng)=MOD(nfm2(ng)+1,NFT+1)
-      nfm3(ng)=MOD(nfm3(ng)+1,NFT+1)
+        nfp1(ng)=MOD(nfp1(ng)+1,NFT+1)
+        nf(ng)  =MOD(nf(ng)  +1,NFT+1)
+        nfm1(ng)=MOD(nfm1(ng)+1,NFT+1)
+        nfm2(ng)=MOD(nfm2(ng)+1,NFT+1)
+        nfm3(ng)=MOD(nfm3(ng)+1,NFT+1)
+      END IF
 # endif
 
       RETURN

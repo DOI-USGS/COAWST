@@ -2,9 +2,9 @@
       MODULE rp_rho_eos_mod
 #if defined TL_IOMS && defined SOLVE3D
 !
-!svn $Id: rp_rho_eos.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: rp_rho_eos.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -92,7 +92,7 @@
      &                     MIXING(ng) % tl_bvf,                         &
 # endif
 # if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-     defined BULK_FLUXES_NOT_YET
+     defined BULK_FLUXES
      &                     MIXING(ng) % alpha,                          &
      &                     MIXING(ng) % tl_alpha,                       &
      &                     MIXING(ng) % beta,                           &
@@ -136,7 +136,7 @@
      &                            tl_bvf,                               &
 #  endif
 #  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-      defined BULK_FLUXES_NOT_YET
+      defined BULK_FLUXES
      &                            alpha, tl_alpha,                      &
      &                            beta,  tl_beta,                       &
 #   ifdef LMD_DDMIX_NOT_YET
@@ -189,7 +189,7 @@
       real(r8), intent(in) :: tl_z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: tl_t(LBi:,LBj:,:,:,:)
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-       defined BULK_FLUXES_NOT_YET
+       defined BULK_FLUXES
       real(r8), intent(inout) :: alpha(LBi:,LBj:)
       real(r8), intent(inout) :: beta(LBi:,LBj:)
 #   endif
@@ -203,7 +203,7 @@
       real(r8), intent(out) :: tl_bvf(LBi:,LBj:,0:)
 #   endif
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-       defined BULK_FLUXES_NOT_YET
+       defined BULK_FLUXES
       real(r8), intent(out) :: tl_alpha(LBi:,LBj:)
       real(r8), intent(out) :: tl_beta(LBi:,LBj:)
 #    ifdef LMD_DDMIX_NOT_YET
@@ -232,7 +232,7 @@
       real(r8), intent(in) :: tl_z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: tl_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-       defined BULK_FLUXES_NOT_YET
+       defined BULK_FLUXES
       real(r8), intent(inout) :: alpha(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: beta(LBi:UBi,LBj:UBj)
 #   endif
@@ -246,7 +246,7 @@
       real(r8), intent(out) :: tl_bvf(LBi:UBi,LBj:UBj,0:N(ng))
 #   endif
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-       defined BULK_FLUXES_NOT_YET
+       defined BULK_FLUXES
       real(r8), intent(out) :: tl_alpha(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: tl_beta(LBi:UBi,LBj:UBj)
 #    ifdef LMD_DDMIX_NOT_YET
@@ -336,7 +336,7 @@
 !
 !  Check temperature and salinity lower values. Assign depth to the
 !  pressure.
-!  
+!
             Tt=MAX(-2.0_r8,t(i,j,k,nrhs,itemp))
             tl_Tt=(0.5_r8-SIGN(0.5_r8,-2.0_r8-t(i,j,k,nrhs,itemp)))*    &
      &            tl_t(i,j,k,nrhs,itemp)-                               &
@@ -382,7 +382,7 @@
      &                      Tt*5.0_r8*Q05)))
             dCdT(1)=U01+Tt*(2.0_r8*U02+Tt*(3.0_r8*U03+Tt*4.0_r8*U04))
             dCdT(2)=V01+Tt*2.0_r8*V02
-#  endif  
+#  endif
             tl_C(0)=tl_Tt*dCdT(0)+                                      &
 #  ifdef TL_IOMS
      &              Q00-Tt*Tt*(Q02+Tt*(2.0_r8*Q03+Tt*(3.0_r8*Q04+       &
@@ -532,7 +532,7 @@
 #  endif
 
 #  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-      defined BULK_FLUXES_NOT_YET
+      defined BULK_FLUXES
 !
 !  Compute d(bulk)/d(S) and d(bulk)/d(T) derivatives used
 !  in the computation of thermal expansion and saline contraction
@@ -823,7 +823,7 @@
 #  endif
 
 #  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-      defined BULK_FLUXES_NOT_YET
+      defined BULK_FLUXES
 !
 !-----------------------------------------------------------------------
 !  Compute thermal expansion (1/Celsius) and saline contraction
@@ -960,7 +960,7 @@
      &                        tl_pden)
 #    endif
 #    if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-        defined BULK_FLUXES_NOT_YET
+        defined BULK_FLUXES
 #     ifdef LMD_DDMIX_NOT_YET
 !>    CALL exchange_w3d_tile (ng, tile,                                 &
 !>   &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
@@ -982,7 +982,7 @@
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        tl_beta)
-#    endif    
+#    endif
 #    ifdef VAR_RHO_2D
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -1029,7 +1029,7 @@
      &                    tl_pden)
 #    endif
 #    if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-        defined BULK_FLUXES_NOT_YET
+        defined BULK_FLUXES
 #     ifdef LMD_DDMIX_NOT_YET
 !>    CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
 !>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
@@ -1049,7 +1049,7 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    tl_alpha, tl_beta)
-#    endif    
+#    endif
 #    ifdef VAR_RHO_2D
       CALL mp_exchange2d (ng, tile, iRPM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -1102,7 +1102,7 @@
      &                            tl_bvf,                               &
 #  endif
 #  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-      defined BULK_FLUXES_NOT_YET
+      defined BULK_FLUXES
      &                            alpha, tl_alpha,                      &
      &                            beta,  tl_beta,                       &
 #   ifdef LMD_DDMIX_NOT_YET
@@ -1153,7 +1153,7 @@
       real(r8), intent(in) :: tl_z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: tl_t(LBi:,LBj:,:,:,:)
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-       defined BULK_FLUXES_NOT_YET
+       defined BULK_FLUXES
       real(r8), intent(inout) :: alpha(LBi:,LBj:)
       real(r8), intent(inout) :: beta(LBi:,LBj:)
 #   endif
@@ -1167,7 +1167,7 @@
       real(r8), intent(out) :: tl_bvf(LBi:,LBj:,0:)
 #   endif
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-       defined BULK_FLUXES_NOT_YET
+       defined BULK_FLUXES
       real(r8), intent(out) :: tl_alpha(LBi:,LBj:)
       real(r8), intent(out) :: tl_beta(LBi:,LBj:)
 #    ifdef LMD_DDMIX_NOT_YET
@@ -1196,7 +1196,7 @@
       real(r8), intent(in) :: tl_z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: tl_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-       defined BULK_FLUXES_NOT_YET
+       defined BULK_FLUXES
       real(r8), intent(inout) :: alpha(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: beta(LBi:UBi,LBj:UBj)
 #   endif
@@ -1210,7 +1210,7 @@
       real(r8), intent(out) :: tl_bvf(LBi:UBi,LBj:UBj,0:N(ng))
 #   endif
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-       defined BULK_FLUXES_NOT_YET
+       defined BULK_FLUXES
       real(r8), intent(out) :: tl_alpha(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: tl_beta(LBi:UBi,LBj:UBj)
 #    ifdef LMD_DDMIX_NOT_YET
@@ -1399,14 +1399,14 @@
      &                    (cff*(tl_rho(i,j,k+1)-tl_rho(i,j,k))+         &
      &                     tl_cff*(rho(i,j,k+1)-rho(i,j,k)))+           &
 #   ifdef TL_IOMS
-     &                    gorho0*(rho(i,j,k+1)-rho(i,j,k))*cff           
+     &                    gorho0*(rho(i,j,k+1)-rho(i,j,k))*cff
 #   endif
           END DO
         END DO
 #  endif
 
 #  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-      defined BULK_FLUXES_NOT_YET
+      defined BULK_FLUXES
 !
 !-----------------------------------------------------------------------
 !  Compute thermal expansion (1/Celsius) and saline contraction
@@ -1422,10 +1422,10 @@
 #   endif
 #   ifdef SALINITY
           beta(i,j)=ABS(Scoef(ng))
-  
+
 #     ifdef TL_IOMS
           tl_beta(i,j)=ABS(Scoef(ng))
-#     else    
+#     else
           tl_beta(i,j)=0.0_r8
 #     endif
 #   else
@@ -1480,7 +1480,7 @@
      &                        tl_pden)
 #    endif
 #    if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-        defined BULK_FLUXES_NOT_YET
+        defined BULK_FLUXES
 #     ifdef LMD_DDMIX_NOT_YET
 !>    CALL exchange_w3d_tile (ng, tile,                                 &
 !>   &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
@@ -1502,7 +1502,7 @@
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        tl_beta)
-#    endif    
+#    endif
 #    ifdef VAR_RHO_2D
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -1549,7 +1549,7 @@
      &                    tl_pden)
 #    endif
 #    if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-        defined BULK_FLUXES_NOT_YET
+        defined BULK_FLUXES
 #     ifdef LMD_DDMIX_NOT_YET
 !>    CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
 !>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
@@ -1569,7 +1569,7 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    tl_alpha, tl_beta)
-#    endif    
+#    endif
 #    ifdef VAR_RHO_2D
       CALL mp_exchange2d (ng, tile, iRPM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &

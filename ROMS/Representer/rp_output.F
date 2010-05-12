@@ -2,9 +2,9 @@
 #ifdef TL_IOMS
       SUBROUTINE rp_output (ng)
 !
-!svn $Id: rp_output.F 584 2008-03-18 20:01:12Z arango $
+!svn $Id: rp_output.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -25,6 +25,11 @@
       USE mod_ncparam
       USE mod_netcdf
       USE mod_scalars
+
+# ifdef DISTRIBUTE
+!
+      USE distribute_mod, ONLY : mp_bcasts
+# endif
 !
       implicit none
 !
@@ -38,6 +43,8 @@
       logical :: Ldefine, NewFile
 
       integer :: ifile, lstr, status, tile
+!
+      SourceFile='rp_output.F'
 
 # ifdef PROFILE
 !
@@ -96,7 +103,12 @@
               WRITE (TLMname(ng),10) TLMbase(ng)(1:lstr-3),ifile
   10          FORMAT (a,'_',i4.4,'.nc')
             END IF
-            IF (ncTLMid(ng).ne.-1) status=nf90_close(ncTLMid(ng))
+# ifdef DISTRIBUTE
+            CALL mp_bcasts (ng, iRPM, TLMname(ng))
+# endif
+            IF (ncTLMid(ng).ne.-1) THEN
+              CALL netcdf_close (ng, iRPM, ncTLMid(ng))
+            END IF
             CALL tl_def_his (ng, NewFile)
             IF (exit_flag.ne.NoError) RETURN
           END IF
@@ -134,10 +146,10 @@
         END IF
       END IF
 # ifdef FOUR_DVAR
-#  if !(defined WEAK_CONSTRAINT || defined IOM)
+#  ifndef WEAK_CONSTRAINT
 !
 !-----------------------------------------------------------------------
-!  Create tangent linear model initial conditions file, if necessary. 
+!  Create tangent linear model initial conditions file, if necessary.
 !-----------------------------------------------------------------------
 !
 !  If start of descent algorithm iterations, create initial conditions
@@ -166,8 +178,8 @@
 #   endif
         CALL obs_read (ng, iRPM, .FALSE.)
         CALL obs_write (ng, tile, iRPM)
-#   if !(defined WEAK_CONSTRAINT || defined IOM)
-        CALL obs_cost (ng)
+#   if defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY
+        CALL obs_cost (ng, iRPM)
 #   endif
       ELSE
         ProcessObs(ng)=.FALSE.

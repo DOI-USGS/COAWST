@@ -2,9 +2,9 @@
       MODULE rp_t3dbc_mod
 #if defined TL_IOMS && defined SOLVE3D
 !
-!svn $Id: rp_t3dbc_im.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: rp_t3dbc_im.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -92,7 +92,7 @@
 !
       IF (WESTERN_EDGE) THEN
 
-#  if defined WEST_TRADIATION
+#  if defined WEST_TRADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -165,13 +165,12 @@
         DO k=1,N(ng)
           DO j=Jstr,Jend
 !>          t(Istr-1,j,k,nout,itrc)=BOUNDARY(ng)%t_west(j,k,itrc)
+!>
+            tl_t(Istr-1,j,k,nout,itrc)=BOUNDARY(ng)%tl_t_west(j,k,itrc)
 #   ifdef MASKING
 !>          t(Istr-1,j,k,nout,itrc)=t(Istr-1,j,k,nout,itrc)*            &
 !>   &                              GRID(ng)%rmask(Istr-1,j)
-#   endif
 !>
-            tl_t(Istr-1,j,k,nout,itrc)=BOUNDARY(ng)%t_west(j,k,itrc)
-#   ifdef MASKING
             tl_t(Istr-1,j,k,nout,itrc)=tl_t(Istr-1,j,k,nout,itrc)*      &
      &                                 GRID(ng)%rmask(Istr-1,j)
 #   endif
@@ -224,7 +223,7 @@
 !
       IF (EASTERN_EDGE) THEN
 
-#  if defined EAST_TRADIATION
+#  if defined EAST_TRADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -297,13 +296,12 @@
         DO k=1,N(ng)
           DO j=Jstr,Jend
 !>          t(Iend+1,j,k,nout,itrc)=BOUNDARY(ng)%t_east(j,k,itrc)
+!>
+            tl_t(Iend+1,j,k,nout,itrc)=BOUNDARY(ng)%tl_t_east(j,k,itrc)
 #   ifdef MASKING
 !>          t(Iend+1,j,k,nout,itrc)=t(Iend+1,j,k,nout,itrc)*            &
 !>   &                              GRID(ng)%rmask(Iend+1,j)
-#   endif
 !>
-            tl_t(Iend+1,j,k,nout,itrc)=BOUNDARY(ng)%t_east(j,k,itrc)
-#   ifdef MASKING
             tl_t(Iend+1,j,k,nout,itrc)=tl_t(Iend+1,j,k,nout,itrc)*      &
      &                                 GRID(ng)%rmask(Iend+1,j)
 #   endif
@@ -359,7 +357,7 @@
 !
       IF (SOUTHERN_EDGE) THEN
 
-#  if defined SOUTH_TRADIATION
+#  if defined SOUTH_TRADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -432,13 +430,12 @@
         DO k=1,N(ng)
           DO i=Istr,Iend
 !>          t(i,Jstr-1,k,nout,itrc)=BOUNDARY(ng)%t_south(i,k,itrc)
+!>
+            tl_t(i,Jstr-1,k,nout,itrc)=BOUNDARY(ng)%tl_t_south(i,k,itrc)
 #   ifdef MASKING
 !>          t(i,Jstr-1,k,nout,itrc)=t(i,Jstr-1,k,nout,itrc)*            &
 !>   &                              GRID(ng)%rmask(i,Jstr-1)
-#   endif
 !>
-            tl_t(i,Jstr-1,k,nout,itrc)=BOUNDARY(ng)%t_south(i,k,itrc)
-#   ifdef MASKING
             tl_t(i,Jstr-1,k,nout,itrc)=tl_t(i,Jstr-1,k,nout,itrc)*      &
      &                                 GRID(ng)%rmask(i,Jstr-1)
 #   endif
@@ -491,7 +488,7 @@
 !
       IF (NORTHERN_EDGE) THEN
 
-#  if defined NORTH_TRADIATION
+#  if defined NORTH_TRADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -539,7 +536,7 @@
      &                                   (cff+Ce)
 #   ifdef NORTH_TNUDGING
 !>            t(i,Jend+1,k,nout,itrc)=t(i,Jend+1,k,nout,itrc)+          &
-!>   &                                tau*                              & 
+!>   &                                tau*                              &
 !>   &                                (BOUNDARY(ng)%t_north(i,k,itrc)-  &
 !>   &                                 t(i,Jend+1,k,nstp,itrc))
 !>
@@ -564,13 +561,12 @@
         DO k=1,N(ng)
           DO i=Istr,Iend
 !>          t(i,Jend+1,k,nout,itrc)=BOUNDARY(ng)%t_north(i,k,itrc)
+!>
+            tl_t(i,Jend+1,k,nout,itrc)=BOUNDARY(ng)%tl_t_north(i,k,itrc)
 #   ifdef MASKING
 !>          t(i,Jend+1,k,nout,itrc)=t(i,Jend+1,k,nout,itrc)*            &
 !>   &                              GRID(ng)%rmask(i,Jend+1)
-#   endif
 !>
-            tl_t(i,Jend+1,k,nout,itrc)=BOUNDARY(ng)%t_north(i,k,itrc)
-#   ifdef MASKING
             tl_t(i,Jend+1,k,nout,itrc)=tl_t(i,Jend+1,k,nout,itrc)*      &
      &                                 GRID(ng)%rmask(i,Jend+1)
 #   endif

@@ -3,9 +3,9 @@
 
 #if defined TL_IOMS && defined RPM_RELAXATION && defined SOLVE3D
 !
-!svn $Id: rp_uv3drelax.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: rp_uv3drelax.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -162,7 +162,7 @@
               UFx(i,j)=tl_M3diff(ng)*pmon_r(i,j)*                       &
      &                 Hz(i,j,k)*                                       &
      &                 (tl_u(i+1,j,k,nrhs)-u(i+1,j,k,nrhs)-             &
-     &                  tl_u(i  ,j,k,nrhs)-u(i  ,j,k,nrhs))
+     &                  tl_u(i  ,j,k,nrhs)+u(i  ,j,k,nrhs))
             END DO
           END DO
           DO j=Jstr,Jend+1
@@ -171,7 +171,7 @@
      &                 0.25_r8*(Hz(i,j  ,k)+Hz(i-1,j  ,k)+              &
      &                          Hz(i,j-1,k)+Hz(i-1,j-1,k))*             &
      &                 (tl_u(i,j  ,k,nrhs)-u(i,j  ,k,nrhs)-             &
-     &                  tl_u(i,j-1,k,nrhs)-u(i,j-1,k,nrhs))
+     &                  tl_u(i,j-1,k,nrhs)+u(i,j-1,k,nrhs))
 # ifdef MASKING
               UFe(i,j)=UFe(i,j)*pmask(i,j)
 # endif
@@ -183,7 +183,7 @@
      &                 0.25_r8*(Hz(i,j  ,k)+Hz(i-1,j  ,k)+              &
      &                          Hz(i,j-1,k)+Hz(i-1,j-1,k))*             &
      &                 (tl_v(i  ,j,k,nrhs)-v(i  ,j,k,nrhs)-             &
-     &                  tl_v(i-1,j,k,nrhs)-v(i-1,j,k,nrhs))
+     &                  tl_v(i-1,j,k,nrhs)+v(i-1,j,k,nrhs))
 # ifdef MASKING
               VFx(i,j)=VFx(i,j)*pmask(i,j)
 # endif
@@ -194,12 +194,12 @@
               VFe(i,j)=tl_M3diff(ng)*pnom_r(i,j)*                       &
      &                 Hz(i,j,k)*                                       &
      &                 (tl_v(i,j+1,k,nrhs)-v(i,j+1,k,nrhs)-             &
-     &                  tl_v(i,j  ,k,nrhs)-v(i,j  ,k,nrhs))
+     &                  tl_v(i,j  ,k,nrhs)+v(i,j  ,k,nrhs))
             END DO
           END DO
 !
 ! Time-step diffusive relaxation term.  Notice that momentum at this
-! stage is HzU and HzV and has m2/s units. 
+! stage is HzU and HzV and has m2/s units.
 !
           cff=dt(ng)*0.25_r8
           DO j=Jstr,Jend

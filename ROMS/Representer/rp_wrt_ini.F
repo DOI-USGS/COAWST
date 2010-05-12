@@ -2,12 +2,12 @@
 #if (defined TANGENT || defined TL_IOMS) && defined FOUR_DVAR
       SUBROUTINE rp_wrt_ini (ng, Tindex, OutRec)
 !
-!svn $Id: rp_wrt_ini.F 677 2008-08-05 20:17:30Z arango $
+!svn $Id: rp_wrt_ini.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!======================================================================= 
+!=======================================================================
 !                                                                      !
 !  This routine writes representer model initial conditions into       !
 !  IRPname initial conditions NetCDF file.                             !
@@ -22,6 +22,9 @@
 !
       USE mod_param
       USE mod_parallel
+# ifdef ADJUST_BOUNDARY
+      USE mod_boundary
+# endif
 # if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
       USE mod_forces
 # endif
@@ -37,10 +40,16 @@
       USE mod_sediment
 # endif
       USE mod_stepping
-
-# ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_bcasti
+      USE nf_fwrite2d_mod, ONLY : nf_fwrite2d
+# ifdef ADJUST_BOUNDARY
+      USE nf_fwrite2d_bry_mod, ONLY : nf_fwrite2d_bry
+# endif
+# ifdef SOLVE3D
+      USE nf_fwrite3d_mod, ONLY : nf_fwrite3d
+#  ifdef ADJUST_BOUNDARY
+      USE nf_fwrite3d_bry_mod, ONLY : nf_fwrite3d_bry
+#  endif
 # endif
 !
       implicit none
@@ -52,12 +61,10 @@
 !  Local variable declarations.
 !
       integer :: LBi, UBi, LBj, UBj
-      integer :: gfactor, gtype, i, itrc, status, varid
-
-      integer :: nf_fwrite2d
-# ifdef SOLVE3D
-      integer :: nf_fwrite3d
+# ifdef ADJUST_BOUNDARY
+      integer :: LBij, UBij
 # endif
+      integer :: gfactor, gtype, i, itrc, status, varid
 
       real(r8) :: scale
 
@@ -67,6 +74,12 @@
       UBi=UBOUND(GRID(ng)%h,DIM=1)
       LBj=LBOUND(GRID(ng)%h,DIM=2)
       UBj=UBOUND(GRID(ng)%h,DIM=2)
+# ifdef ADJUST_BOUNDARY
+      LBij=BOUNDS(ng)%LBij
+      UBij=BOUNDS(ng)%UBij
+# endif
+!
+      SourceFile='rp_wrt_ini.F'
 !
 !-----------------------------------------------------------------------
 !  Write out tangent linear initial conditions.
@@ -100,9 +113,14 @@
      &                   OutRec, gtype,                                 &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 # ifdef MASKING
-     &                   GRID(ng) % rmask(LBi,LBj),                     &
+     &                   GRID(ng) % rmask,                              &
 # endif
-     &                   OCEAN(ng) % tl_zeta(LBi,LBj,Tindex))
+# ifdef WET_DRY
+     &                   OCEAN(ng) % tl_zeta(:,:,Tindex),               &
+     &                   SetFillVal = .FALSE.)
+# else
+     &                   OCEAN(ng) % tl_zeta(:,:,Tindex))
+# endif
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idFsur)), OutRec
@@ -111,8 +129,32 @@
         ioerror=status
         RETURN
       END IF
+
+# ifdef ADJUST_BOUNDARY
 !
-!  Write out 2D momentum component (m/s) in the XI-direction.
+!  Write out free-surface open boundaries.
+!
+      IF (ANY(Lobc(:,isFsur,ng))) THEN
+        scale=1.0_r8
+        status=nf_fwrite2d_bry (ng, iRPM, IRPname(ng), ncIRPid(ng),     &
+     &                          Vname(1,idSbry(isFsur)),                &
+     &                          irpVid(idSbry(isFsur),ng),              &
+     &                          OutRec, r2dvar,                         &
+     &                          LBij, UBij, Nbrec(ng), scale,           &
+     &                          BOUNDARY(ng) % tl_zeta_obc(LBij:,:,:,   &
+     &                                                     Tindex))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idSbry(isFsur))), OutRec
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+# endif
+!
+!  Write out 2D U-momentum component (m/s).
 !
       scale=1.0_r8
       gtype=gfactor*u2dvar
@@ -120,9 +162,9 @@
      &                   OutRec, gtype,                                 &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 # ifdef MASKING
-     &                   GRID(ng) % umask(LBi,LBj),                     &
+     &                   GRID(ng) % umask,                              &
 # endif
-     &                   OCEAN(ng) % tl_ubar(LBi,LBj,Tindex))
+     &                   OCEAN(ng) % tl_ubar(:,:,Tindex))
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUbar)), OutRec
@@ -131,8 +173,32 @@
         ioerror=status
         RETURN
       END IF
+
+# ifdef ADJUST_BOUNDARY
 !
-!  Write out 2D momentum component (m/s) in the ETA-direction.
+!  Write out 2D U-momentum component open boundaries.
+!
+      IF (ANY(Lobc(:,isUbar,ng))) THEN
+        scale=1.0_r8
+        status=nf_fwrite2d_bry (ng, iRPM, IRPname(ng), ncIRPid(ng),     &
+     &                          Vname(1,idSbry(isUbar)),                &
+     &                          irpVid(idSbry(isUbar),ng),              &
+     &                          OutRec, u2dvar,                         &
+     &                          LBij, UBij, Nbrec(ng), scale,           &
+     &                          BOUNDARY(ng) % tl_ubar_obc(LBij:,:,:,   &
+     &                                                     Tindex))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idSbry(isUbar))), OutRec
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+# endif
+!
+!  Write out 2D V-momentum component (m/s).
 !
       scale=1.0_r8
       gtype=gfactor*v2dvar
@@ -140,9 +206,9 @@
      &                   OutRec, gtype,                                 &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 # ifdef MASKING
-     &                   GRID(ng) % vmask(LBi,LBj),                     &
+     &                   GRID(ng) % vmask,                              &
 # endif
-     &                   OCEAN(ng) % tl_vbar(LBi,LBj,Tindex))
+     &                   OCEAN(ng) % tl_vbar(:,:,Tindex))
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVbar)), OutRec
@@ -151,6 +217,31 @@
         ioerror=status
         RETURN
       END IF
+
+# ifdef ADJUST_BOUNDARY
+!
+!  Write out 2D V-momentum component open boundaries.
+!
+      IF (ANY(Lobc(:,isVbar,ng))) THEN
+        scale=1.0_r8
+        status=nf_fwrite2d_bry (ng, iRPM, IRPname(ng), ncIRPid(ng),     &
+     &                          Vname(1,idSbry(isVbar)),                &
+     &                          irpVid(idSbry(isVbar),ng),              &
+     &                          OutRec, v2dvar,                         &
+     &                          LBij, UBij, Nbrec(ng), scale,           &
+     &                          BOUNDARY(ng) % tl_vbar_obc(LBij:,:,:,   &
+     &                                                     Tindex))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idSbry(isVbar))), OutRec
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+# endif
+
 # ifdef ADJUST_WSTRESS
 !
 !  Write out surface U-momentum stress.  Notice that the stress has its
@@ -164,9 +255,9 @@
      &                   OutRec, gtype,                                 &
      &                   LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,       &
 #  ifdef MASKING
-     &                   GRID(ng) % umask(LBi,LBj),                     &
+     &                   GRID(ng) % umask,                              &
 #  endif
-     &                   FORCES(ng) % tl_ustr(LBi,LBj,1,Tindex))
+     &                   FORCES(ng) % tl_ustr(:,:,:,Tindex))
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUsms)), OutRec
@@ -185,9 +276,9 @@
      &                   OutRec, gtype,                                 &
      &                   LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,       &
 #  ifdef MASKING
-     &                   GRID(ng) % vmask(LBi,LBj),                     &
+     &                   GRID(ng) % vmask,                              &
 #  endif
-     &                   FORCES(ng) % tl_vstr(LBi,LBj,1,Tindex))
+     &                   FORCES(ng) % tl_vstr(:,:,:,Tindex))
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVsms)), OutRec
@@ -197,9 +288,10 @@
         RETURN
       END IF
 # endif
+
 # ifdef SOLVE3D
 !
-!  Write out 3D momentum component (m/s) in the XI-direction.
+!  Write out 3D U-momentum component (m/s).
 !
       scale=1.0_r8
       gtype=gfactor*u3dvar
@@ -207,9 +299,9 @@
      &                   OutRec, gtype,                                 &
      &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
 #  ifdef MASKING
-     &                   GRID(ng) % umask(LBi,LBj),                     &
+     &                   GRID(ng) % umask,                              &
 #  endif
-     &                   OCEAN(ng) % tl_u(LBi,LBj,1,Tindex))
+     &                   OCEAN(ng) % tl_u(:,:,:,Tindex))
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUvel)), OutRec
@@ -218,8 +310,32 @@
         ioerror=status
         RETURN
       END IF
+
+#  ifdef ADJUST_BOUNDARY
 !
-!  Write out 3D momentum component (m/s) in the ETA-direction.
+!  Write out 3D U-momentum component open boundaries.
+!
+      IF (ANY(Lobc(:,isUvel,ng))) THEN
+        scale=1.0_r8
+        status=nf_fwrite3d_bry (ng, iRPM, IRPname(ng), ncIRPid(ng),     &
+     &                          Vname(1,idSbry(isUvel)),                &
+     &                          irpVid(idSbry(isUvel),ng),              &
+     &                          OutRec, u3dvar,                         &
+     &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
+     &                          BOUNDARY(ng) % tl_u_obc(LBij:,:,:,:,    &
+     &                                                  Tindex))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idSbry(isUvel))), OutRec
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+#  endif
+!
+!  Write out 3D V-momentum component (m/s).
 !
       scale=1.0_r8
       gtype=gfactor*v3dvar
@@ -227,9 +343,9 @@
      &                   OutRec, gtype,                                 &
      &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
 #  ifdef MASKING
-     &                   GRID(ng) % vmask(LBi,LBj),                     &
+     &                   GRID(ng) % vmask,                              &
 #  endif
-     &                   OCEAN(ng) % tl_v(LBi,LBj,1,Tindex))
+     &                   OCEAN(ng) % tl_v(:,:,:,Tindex))
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVvel)), OutRec
@@ -238,6 +354,30 @@
         ioerror=status
         RETURN
       END IF
+
+#  ifdef ADJUST_BOUNDARY
+!
+!  Write out 3D V-momentum component open boundaries.
+!
+      IF (ANY(Lobc(:,isVvel,ng))) THEN
+        scale=1.0_r8
+        status=nf_fwrite3d_bry (ng, iRPM, IRPname(ng), ncIRPid(ng),     &
+     &                          Vname(1,idSbry(isVvel)),                &
+     &                          irpVid(idSbry(isVvel),ng),              &
+     &                          OutRec, v3dvar,                         &
+     &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
+     &                          BOUNDARY(ng) % tl_v_obc(LBij:,:,:,:,    &
+     &                                                  Tindex))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idSbry(isVvel))), OutRec
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+#  endif
 !
 !  Write out tracer type variables.
 !
@@ -248,9 +388,9 @@
      &                     OutRec, gtype,                               &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                     GRID(ng) % rmask,                            &
 #  endif
-     &                     OCEAN(ng) % tl_t(LBi,LBj,1,Tindex,itrc))
+     &                     OCEAN(ng) % tl_t(:,:,:,Tindex,itrc))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))), OutRec
@@ -260,6 +400,35 @@
           RETURN
         END IF
       END DO
+
+#  ifdef ADJUST_BOUNDARY
+!
+!  Write out tracers open boundaries.
+!
+      DO itrc=1,NT(ng)
+        IF (ANY(Lobc(:,isTvar(itrc),ng))) THEN
+          scale=1.0_r8
+          status=nf_fwrite3d_bry (ng, iRPM, IRPname(ng), ncIRPid(ng),   &
+     &                            Vname(1,idSbry(isTvar(itrc))),        &
+     &                            irpVid(idSbry(isTvar(itrc)),ng),      &
+     &                            OutRec, r3dvar,                       &
+     &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
+     &                            scale,                                &
+     &                            BOUNDARY(ng) % tl_t_obc(LBij:,:,:,:,  &
+     &                                                    Tindex,itrc))
+          IF (status.ne.nf90_noerr) THEN
+            IF (Master) THEN
+              WRITE (stdout,10) TRIM(Vname(1,idSbry(isTvar(itrc)))),    &
+     &                          OutRec
+            END IF
+            exit_flag=3
+            ioerror=status
+            RETURN
+          END IF
+        END IF
+      END DO
+#  endif
+
 #  ifdef ADJUST_STFLUX
 !
 !  Write out surface net tracers fluxes. Notice that fluxes have their
@@ -267,25 +436,26 @@
 !  at other times in addition to initialization time.
 !
       DO itrc=1,NT(ng)
-!!      scale=rho0*Cp
-        scale=1.0_r8
-        gtype=gfactor*r3dvar
-        status=nf_fwrite3d(ng, iRPM, ncIRPid(ng),                       &
-     &                     irpVid(idTsur(itrc),ng),                     &
-     &                     OutRec, gtype,                               &
-     &                     LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,     &
+        IF (Lstflux(itrc,ng)) THEN
+          scale=1.0_r8
+          gtype=gfactor*r3dvar
+          status=nf_fwrite3d(ng, iRPM, ncIRPid(ng),                     &
+     &                       irpVid(idTsur(itrc),ng),                   &
+     &                       OutRec, gtype,                             &
+     &                       LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,   &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask(LBi,LBj),                   &
+     &                       GRID(ng) % rmask,                          &
 #   endif
-     &                     FORCES(ng) % tl_tflux(LBi,LBj,1,Tindex,itrc))
-        IF (status.ne.nf90_noerr) THEN
-          IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idTsur(itrc))),              &
-     &                        OutRec
+     &                       FORCES(ng) % tl_tflux(:,:,:,Tindex,itrc))
+          IF (status.ne.nf90_noerr) THEN
+            IF (Master) THEN
+              WRITE (stdout,10) TRIM(Vname(1,idTsur(itrc))),            &
+     &                          OutRec
+            END IF
+            exit_flag=3
+            ioerror=status
+            RETURN
           END IF
-          exit_flag=3
-          ioerror=status
-          RETURN
         END IF
       END DO
 #  endif
@@ -296,44 +466,32 @@
 !  processes to access data immediately after it is written.
 !-----------------------------------------------------------------------
 !
-      IF (OutThread) THEN
-        status=nf90_sync(ncIRPid(ng))
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,20) TRIM(IRPname(ng))
-          exit_flag=3
-          ioerror=status
-        END IF
-      END IF
-# ifdef DISTRIBUTE
-      CALL mp_bcasti (ng, iTLM, exit_flag, 1)
-# endif
+      CALL netcdf_sync (ng, iRPM, IRPname(ng), ncIRPid(ng))
+      IF (exit_flag.ne.NoError) RETURN
 
       IF (Master) THEN
         IF (OutRec.eq.2) THEN
           string='initial  fields'
         END IF
 # ifdef SOLVE3D
-        WRITE (stdout,30) string, Nrun, Tindex, Tindex, OutRec
+        WRITE (stdout,20) string, Nrun, Tindex, Tindex, OutRec
 # else
-        WRITE (stdout,30) string, Nrun, Tindex, OutRec
+        WRITE (stdout,20) string, Nrun, Tindex, OutRec
 # endif
       END IF
 !
   10  FORMAT (/,' RP_WRT_INI - error while writing variable: ',a,/,14x,    &
      &        'into tangent initial NetCDF file for time record: ',i4)
-  20  FORMAT (/,' RP_WRT_INI - unable to synchronize to disk ',            &
-     &        'representers model initial file:',/,14x,a)
 # ifdef SOLVE3D
-  30  FORMAT (3x,'RP_WRT_INI   - wrote ',a,' (Iter=',i4.4,', Index=',i1,   &
+  20  FORMAT (3x,'RP_WRT_INI   - wrote ',a,' (Iter=',i4.4,', Index=',i1,   &
      &        ',',i1,', Rec=',i4.4,')')
 # else
-  30  FORMAT (3x,'RP_WRT_INI   - wrote ',a,' (Iter=',i4.4,', Index=',i1,   &
+  20  FORMAT (3x,'RP_WRT_INI   - wrote ',a,' (Iter=',i4.4,', Index=',i1,   &
      &        ', Rec=',i4.4,')')
 # endif
-      RETURN
-      END SUBROUTINE rp_wrt_ini
+
 #else
       SUBROUTINE rp_wrt_ini
+#endif
       RETURN
       END SUBROUTINE rp_wrt_ini
-#endif

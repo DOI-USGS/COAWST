@@ -1,10 +1,10 @@
 #include "cppdefs.h"
       MODULE rp_bulk_flux_mod
-#if defined TL_IOMS && defined BULK_FLUXES_NOT_YET
+#if defined TL_IOMS && defined BULK_FLUXES
 !
-!svn $Id: rp_bulk_flux.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: rp_bulk_flux.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -74,7 +74,7 @@
 # endif
       CALL rp_bulk_flux_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        IminS, ImaxS  JminS, JmaxS,               &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nrhs(ng),                                 &
 # ifdef MASKING
      &                        GRID(ng) % rmask,                         &
@@ -128,7 +128,7 @@
 !***********************************************************************
       SUBROUTINE rp_bulk_flux_tile (ng, tile,                           &
      &                              LBi, UBi, LBj, UBj,                 &
-     &                              IminS, ImaxS, JminS, JmaxS          &
+     &                              IminS, ImaxS, JminS, JmaxS,         &
      &                              nrhs,                               &
 # ifdef MASKING
      &                              rmask, umask, vmask,                &
@@ -410,7 +410,7 @@
       real(r8), dimension(IminS:ImaxS) :: tl_ZoT
       real(r8), dimension(IminS:ImaxS) :: tl_ZoW
       real(r8), dimension(IminS:ImaxS) :: tl_ZWoL
-      
+
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tl_Hlv
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tl_LHeat
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tl_LRad
@@ -498,7 +498,7 @@
      &                  (cff1*(0.39_r8-0.05_r8*SQRT(vap_p))*            &
      &                        (1.0_r8-0.6823_r8*cloud(i,j)*cloud(i,j))- &
      &                   cff2*4.0_r8*TairK(i))
-#endif  
+#endif
 # elif defined LONGWAVE_OUT
 !
 !  Treat input longwave data as downwelling radiation only and add
@@ -512,7 +512,7 @@
 #ifdef TL_IOMS
      &         3.0_r8*emmiss*StefBo*TseaK(i)*TseaK(i)*TseaK(i)*TseaK(i)
 #endif
- 
+
 # else
           LRad(i,j)=lrflx(i,j)*Hscale
 #  ifdef TL_IOMS
@@ -533,7 +533,7 @@
 !                 Q(i) is the actual specific humidity
 !              Qsea(i) is the saturation specific humidity at Tsea
 !
-!          Saturation vapor pressure in mb is first computed and then 
+!          Saturation vapor pressure in mb is first computed and then
 !          converted to specific humidity in kg/kg
 !
 !          The saturation vapor pressure is computed from Teten formula
@@ -553,7 +553,7 @@
 !          Q = 0.622 E/(P + (0.622-1)e)
 !
 !          Q(kg/kg) = 0.62197_r8*(E(mb)/(PairM(mb)-0.378_r8*E(mb)))
-!          
+!
 !-----------------------------------------------------------------------
 !
 !  Compute air saturation vapor pressure (mb), using Teten formula.
@@ -603,7 +603,7 @@
      &               *(1.0_r8+0.378_r8*cff/((PairM-0.378_r8*cff)))-     &
 #ifdef TL_IOMS
      &                       0.378_r8*Qsea(i)*cff/(PairM-0.378_r8*cff)
-#endif  
+#endif
 !
 !-----------------------------------------------------------------------
 !  Compute Monin-Obukhov similarity parameters for wind (Wstar),
@@ -633,16 +633,16 @@
 !  gustiness.
 !
           Wgus(i)=0.5_r8
-#ifdef TL_IOMS                                                           
+#ifdef TL_IOMS
           tl_Wgus(i)=0.5_r8
 #else
           tl_Wgus(i)=0.0_r8
 #endif
-! 
+!
 !  Note Wgus is a constant at this point.
 !
           delW(i)=SQRT(Wmag(i)*Wmag(i)+Wgus(i)*Wgus(i))
-#ifdef TL_IOMS                                                           
+#ifdef TL_IOMS
           tl_delW(i)=SQRT(Wmag(i)*Wmag(i)+Wgus(i)*Wgus(i))
 #else
           tl_delW(i)=0.0_r8
@@ -661,7 +661,7 @@
 !  Neutral coefficients.
 !
           ZoW(i)=0.0001_r8
-#ifdef TL_IOMS                                                           
+#ifdef TL_IOMS
           tl_ZoW(i)=0.0001_r8
 #else
           tl_ZoW(i)=0.0_r8
@@ -691,13 +691,13 @@
           tl_Cd10(i)=-2.0_r8*tl_fac*Cd10(i)/fac+                        &
 #ifdef TL_IOMS
      &               3.0_r8*Cd10(i)
-#endif  
+#endif
           Ch10(i)=0.00115_r8
           Ct10(i)=Ch10(i)/sqrt(Cd10(i))
           tl_Ct10(i)=-0.5_r8*tl_Cd10(i)*Ct10(i)/Cd10(i)+                &
 #ifdef TL_IOMS
      &               1.5_r8*Ct10(i)
-#endif  
+#endif
           fac=vonKar/Ct10(i)
           tl_fac=-tl_Ct10(i)*fac/Ct10(i)+                               &
 #ifdef TL_IOMS
@@ -733,12 +733,12 @@
           tl_Ct(i)=-tl_fac*Ct(i)/fac+                                   &
 #ifdef TL_IOMS
      &               2.0_r8*Ct(i)
-#endif    
+#endif
           CC(i)=vonKar*Ct(i)/Cd
           tl_CC(i)=vonKar*tl_Ct(i)/Cd-tl_Cd*CC(i)/Cd+                   &
 #ifdef TL_IOMS
      &               CC(i)
-#endif                         
+#endif
           delTc(i)=0.0_r8
           tl_delTc(i)=0.0_r8
 # ifdef COOL_SKIN
@@ -771,32 +771,32 @@
                       Zetu(i)/(1.0_r8+Ri(i)/Ribcu(i))
 #endif
           ELSE
-	    fac=3.0_r8*Ri(i)/CC(i)
+            fac=3.0_r8*Ri(i)/CC(i)
             tl_fac=3.0_r8*tl_Ri(i)/CC(i)-tl_CC(i)*fac/CC(i)+            &
 #ifdef TL_IOMS
                       fac
-#endif  
-!>            Zetu(i)=CC(i)*Ri(i)/(1.0_r8+fac)                    ! Stable
+#endif
+!>          Zetu(i)=CC(i)*Ri(i)/(1.0_r8+fac)                  ! Stable
             Zetu(i)=CC(i)*Ri(i)/(1.0_r8+3.0_r8*Ri(i)/CC(i))   ! Stable
             tl_Zetu(i)=(tl_CC(i)*Ri(i)+CC(i)*tl_Ri(i))/(1.0_r8+fac)     &
      &                -tl_fac*Zetu(i)/(1.0_r8+fac)-                     &
 #ifdef TL_IOMS
                       Zetu(i)/(1.0_r8+fac)
-#endif  
+#endif
           END IF
           L10(i)=blk_ZW(ng)/Zetu(i)
           tl_L10(i)=-L10(i)*L10(i)*tl_Zetu(i)/blk_ZW(ng)+               &
 #ifdef TL_IOMS
      &                 2.0_r8*L10(i)
-#endif  
+#endif
 !
 !  First guesses for Monon-Obukhov similarity scales.
 !
-	  fac1=blk_ZW(ng)/L10(i)
+          fac1=blk_ZW(ng)/L10(i)
           tl_fac1=-tl_L10(i)*fac1/L10(i)+                               &
 #ifdef TL_IOMS
      &            2.0_r8*fac1
-#endif  
+#endif
           fac2=LOG(blk_ZW(ng)/Zo10(i))
           tl_fac2=-tl_Zo10(i)/Zo10(i)+                                  &
 #ifdef TL_IOMS
@@ -824,12 +824,12 @@
           tl_fac1=-tl_L10(i)*fac1/L10(i)+                               &
 #ifdef TL_IOMS
      &            2.0_r8*fac1
-#endif  
+#endif
           fac2=LOG(blk_ZT(ng)/ZoT10(i))
           tl_fac2=-tl_ZoT10(i)/ZoT10(i)+                                &
 #ifdef TL_IOMS
      &            fac2+1.0_r8
-#endif  
+#endif
           fac3=bulk_psit(fac1,pi)
 #ifdef TL_IOMS
 !          tl_fac3=rp_bulk_psit(tl_fac1,fac1,pi)
@@ -864,14 +864,14 @@
      &            fac2+1.0_r8
 #endif
           fac3=bulk_psit(fac1,pi)
-#ifdef TL_IOMS                                                           
+#ifdef TL_IOMS
 !          tl_fac3=rp_bulk_psit(tl_fac1,fac1,pi)
           tl_fac3=bulk_psit(fac1,pi)+                                   &
      &            tl_bulk_psit(tl_fac1,fac1,pi)-                        &
      &            tl_bulk_psit(fac1,fac1,pi)
 #else
           tl_fac3=tl_bulk_psit(tl_fac1,fac1,pi)
-#endif                       
+#endif
 !>          Qstar(i)=-(delQ(i)-delQc(i))*vonKar/                        &
 !>     &             (fac2-bulk_psit(fac1,pi))
 !>          Qstar(i)=-(delQ(i)-delQc(i))*vonKar/                        &
@@ -885,7 +885,7 @@
      &             (fac2-fac3)+                                         &
 #ifdef TL_IOMS
      &            Qstar(i)
-#endif  
+#endif
 !
 !  Modify Charnock for high wind speeds. The 0.125 factor below is for
 !  1.0/(18.0-10.0).
@@ -1007,7 +1007,7 @@
             tl_L(i)=-tl_ZoL(i)*L(i)/(ZoL(i)+eps)+                       &
 # ifdef TL_IOMS
      &           L(i)*(2.0_r8*ZoL(i)+eps)/(ZoL(i)+eps)
-# endif 
+# endif
 !
 !  Evaluate stability functions at Z/L.
 !
@@ -1024,7 +1024,7 @@
             tl_fac=-tl_L(i)*fac/L(i)+                                   &
 # ifdef TL_IOMS
      &              2.0_r8*fac
-# endif 
+# endif
 !>            Tpsi(i)=bulk_psit(fac,pi)
             Tpsi(i)=bulk_psit(blk_ZT(ng)/L(i),pi)
 !            tl_Tpsi(i)=rp_bulk_psit(tl_fac,fac,pi)
@@ -1039,7 +1039,7 @@
             tl_fac=-tl_L(i)*fac/L(i)+                                   &
 # ifdef TL_IOMS
      &              2.0_r8*fac
-# endif 
+# endif
 !>            Qpsi(i)=bulk_psit(fac,pi)
             Qpsi(i)=bulk_psit(blk_ZQ(ng)/L(i),pi)
 !            tl_Qpsi(i)=rp_bulk_psit(tl_fac,fac,pi)
@@ -1060,12 +1060,12 @@
      &              (blk_Rgas*TseaK(i)*TseaK(i))+                       &
 # ifdef TL_IOMS
      &              Cwet(i)
-# endif 
+# endif
             delQc(i)=Cwet(i)*delTc(i)
             tl_delQc(i)=tl_Cwet(i)*delTc(i)+Cwet(i)*tl_delTc(i)-        &
 #  ifdef TL_IOMS
      &               delQc(i)
-#  endif 
+#  endif
 # endif
 !
 !  Compute wind scaling parameters, Wstar.
@@ -1089,7 +1089,7 @@
 !>            Wstar(i)=MAX(eps,fac3)
             Wstar(i)=MAX(eps,delW(i)*vonKar/                            &
      &               (LOG(blk_ZW(ng)/ZoW(i))-Wpsi(i)))
-            
+
             tl_Wstar(i)=(0.5_r8-SIGN(0.5_r8,eps-fac3))*tl_fac3+         &
 #  ifdef TL_IOMS
      &                  (0.5_r8+SIGN(0.5_r8,eps-fac3))*eps
@@ -1098,12 +1098,12 @@
             tl_fac1=-tl_ZoT(i)*fac1/ZoT(i)+                             &
 #  ifdef TL_IOMS
      &               2.0_r8*fac1
-#  endif    
+#  endif
             fac2=LOG(fac1)
             tl_fac2=tl_fac1/fac1+                                       &
 #  ifdef TL_IOMS
      &               fac2-1.0_r8
-#  endif    
+#  endif
 !>            Tstar(i)=-(delT(i)-delTc(i))*vonKar/(fac2-Tpsi(i))
             Tstar(i)=-(delT(i)-delTc(i))*vonKar/                        &
      &               (LOG(blk_ZT(ng)/ZoT(i))-Tpsi(i))
@@ -1111,12 +1111,12 @@
      &           (tl_fac2-tl_Tpsi(i))*Tstar(i)/(fac2-Tpsi(i))+          &
 #  ifdef TL_IOMS
      &                   Tstar(i)
-#  endif    
+#  endif
             fac1=blk_ZQ(ng)/ZoQ(i)
             tl_fac1=-tl_ZoQ(i)*fac1/ZoQ(i)+                             &
 #  ifdef TL_IOMS
      &               2.0_r8*fac1
-#  endif    
+#  endif
             fac2=LOG(fac1)
             tl_fac2=tl_fac1/fac1+                                       &
 #  ifdef TL_IOMS
@@ -1129,7 +1129,7 @@
      &                    (tl_fac2-tl_Qpsi(i))*Qstar(i)/(fac2-Qpsi(i))+ &
 #  ifdef TL_IOMS
      &                   Qstar(i)
-#  endif    
+#  endif
 !
 !  Compute gustiness in wind speed.
 !
@@ -1180,9 +1180,9 @@
             tl_Clam=48.0_r8*g*blk_Cpw*tl_rhoSea(i)*blk_visw*            &
      &                             (rhoSea(i)*blk_visw)**2/             &
      &           (blk_tcw*blk_tcw*rhoAir(i)*rhoAir(i))-                 &
-#ifdef TL_IOMS                                                           
+#ifdef TL_IOMS
      &                    2.0_r8*Clam
-#endif                                           
+#endif
 !
 !  Set initial guesses for cool-skin layer thickness (Hcool).
 !
@@ -1193,16 +1193,16 @@
             Hsb=-rhoAir(i)*blk_Cpa*Wstar(i)*Tstar(i)
             tl_Hsb=-rhoAir(i)*blk_Cpa*(tl_Wstar(i)*Tstar(i)+            &
      &                                 Wstar(i)*tl_Tstar(i))-           &
-#ifdef TL_IOMS                                                           
+#ifdef TL_IOMS
      &                    Hsb
-#endif                                           
+#endif
             Hlb=-rhoAir(i)*Hlv(i,j)*Wstar(i)*Qstar(i)
             tl_Hlb=-rhoAir(i)*(tl_Hlv(i,j)*Wstar(i)*Qstar(i)+           &
      &                         Hlv(i,j)*(tl_Wstar(i)*Qstar(i)+          &
      &                                 Wstar(i)*tl_Qstar(i)))-          &
-#ifdef TL_IOMS                                                           
+#ifdef TL_IOMS
      &                    2.0_r8*Hlb
-#endif                                           
+#endif
 !
 !  Mean absoption in cool-skin layer.
 !
@@ -1215,36 +1215,36 @@
             tl_Qcool=tl_LRad(i,j)+tl_Hsb+tl_Hlb-                        &
 #ifdef TL_IOMS
      &                     SRad(i,j)*Fc
-#endif      
+#endif
             Qbouy=Tcff(i)*Qcool+Scff(i)*Hlb*blk_Cpw/Hlv(i,j)
             tl_Qbouy=tl_Tcff(i)*Qcool+Tcff(i)*tl_Qcool+                 &
      &                  (tl_Scff(i)*Hlb*blk_Cpw+                        &
      &                   Scff(i)*tl_Hlb*blk_Cpw)/Hlv(i,j)-              &
      &           tl_Hlv(i,j)*Scff(i)*Hlb*blk_Cpw/(Hlv(i,j)*Hlv(i,j))-   &
-#ifdef TL_IOMS                                                           
+#ifdef TL_IOMS
      &                    Tcff(i)*Qcool
-#endif                                           
+#endif
 !
 !  Compute temperature and moisture change.
 !
             IF ((Qcool.gt.0.0_r8).and.(Qbouy.gt.0.0_r8)) THEN
               fac1=(Wstar(i)+eps)**4
               tl_fac1=4.0_r8*tl_Wstar(i)*(Wstar(i)+eps)**3+             &
-#ifdef TL_IOMS                                                           
+#ifdef TL_IOMS
      &                (eps-3.0_r8*Wstar(i))*(Wstar(i)+eps)**3
-#endif                                           
+#endif
               fac2=Clam*Qbouy
               tl_fac2=tl_Clam*Qbouy+Clam*tl_Qbouy-                      &
-#ifdef TL_IOMS                                                           
+#ifdef TL_IOMS
      &                fac2
-#endif                                           
+#endif
               fac3=(fac2/fac1)**0.75_r8
               tl_fac3=0.75_r8*(fac2/fac1)**(-0.25_r8)*                  &
      &              (tl_fac2/fac1-tl_fac1*fac2/(fac1*fac1))+            &
-#ifdef TL_IOMS                                                           
+#ifdef TL_IOMS
      &                fac3
-#endif                                           
-!>              lambd=6.0_r8/(1.0_r8+fac3)**r3               
+#endif
+!>              lambd=6.0_r8/(1.0_r8+fac3)**r3
             lambd=6.0_r8/                                               &
      &              (1.0_r8+(Clam*Qbouy/(Wstar(i)+eps)**4)**0.75_r8)**r3
               tl_lambd=-r3*6.0_r8*tl_fac3/(1.0_r8+fac3)**(r3+1.0_r8)+   &
@@ -1264,19 +1264,19 @@
               tl_fac2=tl_fac1*Wstar(i)+fac1*tl_Wstar(i)-                &
 #ifdef TL_IOMS
      &                   fac1*Wstar(i)+eps
-#endif  
+#endif
 !>              Hcool=lambd*blk_visw/fac2
             Hcool=lambd*blk_visw/(SQRT(rhoAir(i)/rhoSea(i))*            &
    &                            Wstar(i)+eps)
               tl_Hcool=tl_lambd*blk_visw/fac2-tl_fac2*Hcool/fac2+       &
 #ifdef TL_IOMS
      &                   Hcool
-#endif  
+#endif
               delTc(i)=Qcool*Hcool/blk_tcw
               tl_delTc(i)=(tl_Qcool*Hcool+Qcool*tl_Hcool)/blk_tcw-      &
 #ifdef TL_IOMS
      &                   delTc(i)
-#endif  
+#endif
             ELSE
               delTc(i)=0.0_r8
               tl_delTc(i)=0.0_r8
@@ -1285,7 +1285,7 @@
             tl_delQc(i)=tl_Cwet(i)*delTc(i)+Cwet(i)*tl_delTc(i)-        &
 #ifdef TL_IOMS
      &                   delQc(i)
-#endif                        
+#endif
 # endif
           END DO
         END DO
@@ -1304,7 +1304,7 @@
             tl_Wspeed=tl_Wgus(i)*Wgus(i)/Wspeed+                        &
 #ifdef TL_IOMS
      &                   Wmag(i)*Wmag(i)/Wspeed
-#endif                        
+#endif
           ELSE
             tl_Wspeed=0.0_r8
           END IF
@@ -1354,7 +1354,7 @@
 #ifdef TL_IOMS
      &         rain(i,j)*wet_bulb*blk_Cpw*                              &
      &            (TseaC(i)+(2.0_r8*Qsea(i)-Q(i))*Hlv(i,j)/blk_Cpa)
-#endif  
+#endif
             SHeat(i,j)=(Hs+Hsr)
             tl_SHeat(i,j)=(tl_Hs+tl_Hsr)
 # ifdef MASKING
@@ -1407,12 +1407,12 @@
             tl_cff=rhoAir(i)*(tl_Cd*Wspeed+Cd*tl_Wspeed)-               &
 #ifdef TL_IOMS
      &                         cff
-#endif  
+#endif
             Taux(i,j)=(cff*Uwind(i,j)+Taur*SIGN(1.0_r8,Uwind(i,j)))
             tl_Taux(i,j)=tl_cff*Uwind(i,j)+                             &
 #ifdef TL_IOMS
      &                      Taur*SIGN(1.0_r8,Uwind(i,j))
-#endif      
+#endif
 # ifdef MASKING
             Taux(i,j)=Taux(i,j)*rmask(i,j)
             tl_Taux(i,j)=tl_Taux(i,j)*rmask(i,j)
@@ -1421,7 +1421,7 @@
             tl_Tauy(i,j)=tl_cff*Vwind(i,j)+                             &
 #ifdef TL_IOMS
      &                      Taur*SIGN(1.0_r8,Vwind(i,j))
-#endif      
+#endif
 # ifdef MASKING
             Tauy(i,j)=Tauy(i,j)*rmask(i,j)
             tl_Tauy(i,j)=tl_Tauy(i,j)*rmask(i,j)
@@ -1439,8 +1439,8 @@
 !  ocean.
 !
 !  For EMINUSP option,  EVAP = LHeat (W/m2) / Hlv (J/kg) = kg/m2/s
-!                       PREC = rain = kg/m2/s            
-!       
+!                       PREC = rain = kg/m2/s
+!
 !  To convert these rates to m/s divide by freshwater density, rhow.
 !
 !  Note that when the air is undersaturated in water vapor (Q < Qsea)
@@ -1482,9 +1482,9 @@
 #  endif
           stflx(i,j,isalt)=cff*(evap(i,j)-rain(i,j))
           tl_stflx(i,j,isalt)=cff*tl_evap(i,j)-                         &
-#  ifdef TL_IOMS                                        
+#  ifdef TL_IOMS
      &                       cff*rain(i,j)
-#  endif                               
+#  endif
 # endif
 # ifdef MASKING
           stflx(i,j,itemp)=stflx(i,j,itemp)*rmask(i,j)
