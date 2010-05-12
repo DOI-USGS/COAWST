@@ -2,9 +2,9 @@
 #ifdef ADJOINT
       SUBROUTINE ad_output (ng)
 !
-!svn $Id: ad_output.F 566 2008-02-27 19:58:30Z arango $
+!svn $Id: ad_output.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -22,6 +22,11 @@
       USE mod_ncparam
       USE mod_netcdf
       USE mod_scalars
+
+# ifdef DISTRIBUTE
+!
+      USE distribute_mod, ONLY : mp_bcasts
+# endif
 !
       implicit none
 !
@@ -34,6 +39,8 @@
       logical :: Ldefine, NewFile, wrtHIS
 
       integer :: ifile, lstr, status
+!
+      SourceFile='ad_output.F'
 
 # ifdef PROFILE
 !
@@ -92,7 +99,12 @@
               WRITE (ADJname(ng),10) ADJbase(ng)(1:lstr-3),ifile
   10          FORMAT (a,'_',i4.4,'.nc')
             END IF
-            IF (ncADJid(ng).ne.-1) status=nf90_close(ncADJid(ng))
+# ifdef DISTRIBUTE
+            CALL mp_bcasts (ng, iADM, ADJname(ng))
+# endif
+            IF (ncADJid(ng).ne.-1) THEN
+              CALL netcdf_close (ng, iADM, ncADJid(ng))
+            END IF
             CALL ad_def_his (ng, NewFile)
             IF (exit_flag.ne.NoError) RETURN
           END IF
@@ -121,11 +133,16 @@
             IF (exit_flag.ne.NoError) RETURN
           END IF
         ELSE
-          IF (nADJ(ng).eq.ntimes(ng)) THEN        ! avoid ntstart record
+          IF (nADJ(ng).eq.ntimes(ng)) THEN
             wrtHIS=(iic(ng).ne.ntstart(ng)).and.                        &
-     &             (MOD(iic(ng)-1,nADJ(ng)).eq.0)
-          ELSE                                    ! otherwise
-            wrtHIS=(MOD(iic(ng)-1,nADJ(ng)).eq.0)
+     &             (MOD(iic(ng)-1,nADJ(ng)).eq.0) ! avoid ntstart rec
+          ELSE
+# ifdef WEAK_CONSTRAINT
+            wrtHIS=(iic(ng).ne.ntstart(ng)).and.                        &
+     &             (MOD(iic(ng)-1,nADJ(ng)).eq.0) ! avoid ntstart-1 rec
+# else
+            wrtHIS=(MOD(iic(ng)-1,nADJ(ng)).eq.0) ! otherwise
+# endif
           END IF
           IF (wrtHIS) THEN
             CALL ad_wrt_his (ng)
@@ -184,7 +201,12 @@
               WRITE (AVGname(ng),20) AVGbase(ng)(1:lstr-3),ifile
   20          FORMAT (a,'_',i4.4,'.nc')
             END IF
-            IF (ncAVGid(ng).ne.-1) status=nf90_close(ncAVGid(ng))
+# ifdef DISTRIBUTE
+            CALL mp_bcasts (ng, iADM, AVGname(ng))
+# endif
+            IF (ncAVGid(ng).ne.-1) THEN
+              CALL netcdf_close (ng, iADM, ncAVGid(ng))
+            END IF
             CALL def_avg (ng, Newfile)
             IF (exit_flag.ne.NoError) RETURN
             LwrtAVG(ng)=.TRUE.

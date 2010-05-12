@@ -2,9 +2,9 @@
       MODULE ad_bc_2d_mod
 #ifdef ADJOINT
 !
-!svn $Id: ad_bc_2d.F 584 2008-03-18 20:01:12Z arango $
+!svn $Id: ad_bc_2d.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -226,7 +226,7 @@
       END IF
       IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
 !>      tl_A(Istr  ,Jend+1)=0.5_r8*(tl_A(Istr  ,Jend  )+                 &
-!>   &                              tl_A(Istr+1,Jend+1)) 
+!>   &                              tl_A(Istr+1,Jend+1))
 !>
         adfac=0.5_r8*ad_A(Istr,Jend+1)
         ad_A(Istr  ,Jend  )=ad_A(Istr  ,Jend  )+adfac

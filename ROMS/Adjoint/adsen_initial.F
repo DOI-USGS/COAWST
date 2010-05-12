@@ -2,12 +2,13 @@
       MODULE adsen_initial_mod
 
 #if defined ADJOINT          && \
-   (defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SO_SEMI)
+   (defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+    defined SO_SEMI)
 !
-!svn $Id: adsen_initial.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: adsen_initial.F 431 2009-12-26 20:36:20Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -198,7 +199,7 @@
             END DO
           END DO
         END DO
-      END IF    
+      END IF
 !
       IF (SCALARS(ng)%Lstate(isVvel)) THEN
         DO k=KstrS(ng),KendS(ng)

@@ -2,9 +2,9 @@
       MODULE ad_set_vbc_mod
 #ifdef ADJOINT
 !
-!svn $Id: ad_set_vbc.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_set_vbc.F 431 2009-12-26 20:36:20Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -55,7 +55,7 @@
      &                      GRID(ng) % Hz,                              &
      &                      GRID(ng) % ad_Hz,                           &
 #  endif
-#  if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF) 
+#  if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF)
      &                      GRID(ng) % z_r,                             &
      &                      GRID(ng) % ad_z_r,                          &
      &                      GRID(ng) % z_w,                             &
@@ -116,7 +116,7 @@
 #  if defined SCORRECTION || defined SRELAXATION
      &                            Hz, ad_Hz,                            &
 #  endif
-#  if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF) 
+#  if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF)
      &                            z_r, ad_z_r,                          &
      &                            z_w, ad_z_w,                          &
 #  endif
@@ -174,7 +174,7 @@
 #   if defined SCORRECTION || defined SRELAXATION
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
 #   endif
-#   if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF) 
+#   if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
 #   endif
@@ -184,7 +184,7 @@
 #   if defined QCORRECTION || defined SALINITY
       real(r8), intent(in) :: t(LBi:,LBj:,:,:,:)
 #   endif
-#   if !defined BBL_MODEL_NOT_YET || defined ICESHELF 
+#   if !defined BBL_MODEL_NOT_YET || defined ICESHELF
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
 #   endif
@@ -211,7 +211,7 @@
       real(r8), intent(inout) :: ad_u(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: ad_v(LBi:,LBj:,:,:)
 #   endif
-#   if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF) 
+#   if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF)
       real(r8), intent(inout) :: ad_z_r(LBi:,LBj:,:)
       real(r8), intent(inout) :: ad_z_w(LBi:,LBj:,0:)
 #   endif
@@ -240,7 +240,7 @@
 #   if defined SCORRECTION || defined SRELAXATION
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
 #   endif
-#   if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF) 
+#   if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF)
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
 #   endif
@@ -250,7 +250,7 @@
 #   if defined QCORRECTION || defined SALINITY
       real(r8), intent(in) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
 #   endif
-#   if !defined BBL_MODEL_NOT_YET || defined ICESHELF 
+#   if !defined BBL_MODEL_NOT_YET || defined ICESHELF
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
 #   endif
@@ -273,11 +273,11 @@
 #   if defined QCORRECTION || defined SALINITY
       real(r8), intent(inout) :: ad_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
 #   endif
-#   if !defined BBL_MODEL_NOT_YET || defined ICESHELF 
+#   if !defined BBL_MODEL_NOT_YET || defined ICESHELF
       real(r8), intent(inout) :: ad_u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(inout) :: ad_v(LBi:UBi,LBj:UBj,N(ng),2)
 #   endif
-#   if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF) 
+#   if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF)
       real(r8), intent(inout) :: ad_z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: ad_z_w(LBi:UBi,LBj:UBj,0:N(ng))
 #   endif
@@ -344,7 +344,7 @@
         DO i=IminS,ImaxS
           ad_wrk(i,j)=0.0_r8
         END DO
-      END DO     
+      END DO
 #  endif
 
 #  ifndef BBL_MODEL_NOT_YET
@@ -997,7 +997,7 @@
 !>
           ad_t(i,j,1,nrhs,isalt)=ad_t(i,j,1,nrhs,isalt)+                &
      &                           btflx(i,j,isalt)*ad_btflx(i,j,isalt)
-#   if !(defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
+#   if !(defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
          defined OPT_OBSERVATIONS || defined SO_SEMI)
           ad_btflx(i,j,isalt)=0.0_r8
 #   endif
@@ -1018,8 +1018,8 @@
           ad_t(i,j,N(ng),nrhs,isalt)=ad_t(i,j,N(ng),nrhs,isalt)+        &
      &                               stflx(i,j,isalt)*                  &
      &                               ad_stflx(i,j,isalt)
-#    if !(defined ADJUST_STFLUX   || defined AD_SENSITIVITY   || \
-          defined OBS_SENSITIVITY || defined OPT_OBSERVATIONS || \
+#    if !(defined ADJUST_STFLUX       || defined AD_SENSITIVITY   || \
+          defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS || \
           defined SO_SEMI)
           ad_stflx(i,j,isalt)=0.0_r8
 #    endif
@@ -1035,8 +1035,8 @@
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))*adfac
           ad_t(i,j,N(ng),nrhs,isalt)=ad_t(i,j,N(ng),nrhs,isalt)+        &
      &                               Hz(i,j,N(ng))*adfac
-#    if !(defined ADJUST_STFLUX   || defined AD_SENSITIVITY   || \
-          defined OBS_SENSITIVITY || defined OPT_OBSERVATIONS || \
+#    if !(defined ADJUST_STFLUX       || defined AD_SENSITIVITY   || \
+          defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS || \
           defined SO_SEMI)
           ad_stflx(i,j,isalt)=0.0_r8
 #    endif
@@ -1047,8 +1047,8 @@
           ad_t(i,j,N(ng),nrhs,isalt)=ad_t(i,j,N(ng),nrhs,isalt)+        &
      &                               stflx(i,j,isalt)*                  &
      &                               ad_stflx(i,j,isalt)
-#    if !(defined ADJUST_STFLUX   || defined AD_SENSITIVITY   || \
-          defined OBS_SENSITIVITY || defined OPT_OBSERVATIONS || \
+#    if !(defined ADJUST_STFLUX       || defined AD_SENSITIVITY   || \
+          defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS || \
           defined SO_SEMI)
           ad_stflx(i,j,isalt)=0.0_r8
 #    endif
@@ -1070,8 +1070,8 @@
 !>
           ad_t(i,j,N(ng),nrhs,itemp)=ad_t(i,j,N(ng),nrhs,itemp)+        &
      &                               dqdt(i,j)*ad_stflx(i,j,itemp)
-#   if !(defined ADJUST_STFLUX   || defined AD_SENSITIVITY   || \
-         defined OBS_SENSITIVITY || defined OPT_OBSERVATIONS || \
+#   if !(defined ADJUST_STFLUX       || defined AD_SENSITIVITY   || \
+         defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS || \
          defined SO_SEMI)
           ad_stflx(i,j,itemp)=0.0_r8
 #   endif

@@ -1,11 +1,10 @@
 #include "cppdefs.h"
       MODULE ad_htobs_mod
-#if defined ADJOINT && defined OBSERVATIONS && \
-    (defined WEAK_CONSTRAINT || defined IOM)
+#if defined ADJOINT && defined OBSERVATIONS && defined WEAK_CONSTRAINT
 !
-!svn $Id: ad_htobs.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_htobs.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -82,6 +81,10 @@
 !
 # ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_collect
+      USE mp_exchange_mod, ONLY : ad_mp_exchange2d
+#  ifdef SOLVE3D
+      USE mp_exchange_mod, ONLY : ad_mp_exchange3d
+#  endif
 # endif
       USE ad_extract_obs_mod, ONLY : ad_extract_obs2d
 # ifdef SOLVE3D
@@ -130,6 +133,18 @@
 !
 !  Local variable declarations.
 !
+# ifdef DISTRIBUTE
+#  ifdef EW_PERIODIC
+      logical :: EWperiodic=.TRUE.
+#  else
+      logical :: EWperiodic=.FALSE.
+#  endif
+#  ifdef NS_PERIODIC
+      logical :: NSperiodic=.TRUE.
+#  else
+      logical :: NSperiodic=.FALSE.
+#  endif
+# endif
       integer :: Mstr, Mend, ObsSum, ObsVoid
 # ifdef DISTRIBUTE
       integer :: Ncollect
@@ -148,6 +163,19 @@
 !  representer coefficients (or its approximation PSI) has been
 !  already loaded into vector ADmodVal in the conjugate gradient
 !  or read in.
+!
+# ifdef DISTRIBUTE
+!  The adjoint of this operator is tricky in parallel (tile partitions)
+!  because we need to avoid adding observation contributions to ghost
+!  points. In the case that an observation is located between neighbor
+!  tiles, both tiles need to process it and the contribution to f_var
+!  (an adjoint variable) is only done in the tile where (i,j) or
+!  (i,j,k) is not a ghost point.
+!
+!  Alternatively, only one tile process such observation and the
+!  ad_mp_exchange*d routine is used to add the contribution to the
+!  correct (i,j) or (i,j,k) point. This is the strategy used here.
+# endif
 !-----------------------------------------------------------------------
 !
       IF (ProcessObs(ng)) THEN
@@ -167,12 +195,12 @@
           END DO
         END DO
         IF (FOURDVAR(ng)%ObsCount(isFsur).gt.0) THEN
-          CALL ad_extract_obs2d (ng, IstrR, IendR, JstrR, JendR,        &
+          CALL ad_extract_obs2d (ng, 0, Lm(ng)+1, 0, Mm(ng)+1,          &
      &                           LBi, UBi, LBj, UBj,                    &
-     &                           rILB(ng), rIUB(ng),                    &
-     &                           rJLB(ng), rJUB(ng),                    &
      &                           isFsur,                                &
      &                           Mobs, Mstr, Mend,                      &
+     &                           rXmin(ng), rXmax(ng),                  &
+     &                           rYmin(ng), rYmax(ng),                  &
      &                           time(ng), dt(ng),                      &
      &                           ObsType, ObsScale,                     &
      &                           Tobs, Xobs, Yobs,                      &
@@ -181,6 +209,12 @@
      &                           rmask,                                 &
 # endif
      &                           ADmodVal)
+# ifdef DISTRIBUTE
+          CALL ad_mp_exchange2d (ng, tile, iADM, 1,                     &
+     &                           LBi, UBi, LBj, UBj,                    &
+     &                           NghostPoints, EWperiodic, NSperiodic,  &
+     &                           f_zeta)
+# endif
         END IF
 !
 !  2D u-momentum component.
@@ -191,12 +225,12 @@
           END DO
         END DO
         IF (FOURDVAR(ng)%ObsCount(isUbar).gt.0) THEN
-          CALL ad_extract_obs2d (ng, Istr, IendR, JstrR, JendR,         &
+          CALL ad_extract_obs2d (ng, 1, Lm(ng)+1, 0, Mm(ng)+1,          &
      &                           LBi, UBi, LBj, UBj,                    &
-     &                           uILB(ng), uIUB(ng),                    &
-     &                           uJLB(ng), uJUB(ng),                    &
      &                           isUbar,                                &
      &                           Mobs, Mstr, Mend,                      &
+     &                           uXmin(ng), uXmax(ng),                  &
+     &                           uYmin(ng), uYmax(ng),                  &
      &                           time(ng), dt(ng),                      &
      &                           ObsType, ObsScale,                     &
      &                           Tobs, Xobs, Yobs,                      &
@@ -205,6 +239,12 @@
      &                           umask,                                 &
 # endif
      &                           ADmodVal)
+# ifdef DISTRIBUTE
+          CALL ad_mp_exchange2d (ng, tile, iADM, 1,                     &
+     &                           LBi, UBi, LBj, UBj,                    &
+     &                           NghostPoints, EWperiodic, NSperiodic,  &
+     &                           f_ubar)
+# endif
         END IF
 !
 !  2D v-momentum component.
@@ -215,12 +255,12 @@
           END DO
         END DO
         IF (FOURDVAR(ng)%ObsCount(isVbar).gt.0) THEN
-          CALL ad_extract_obs2d (ng, IstrR, IendR, Jstr, JendR,         &
+          CALL ad_extract_obs2d (ng, 0, Lm(ng)+1, 1, Mm(ng)+1,          &
      &                           LBi, UBi, LBj, UBj,                    &
-     &                           vILB(ng), vIUB(ng),                    &
-     &                           vJLB(ng), vJUB(ng),                    &
      &                           isVbar,                                &
      &                           Mobs, Mstr, Mend,                      &
+     &                           vXmin(ng), vXmax(ng),                  &
+     &                           vYmin(ng), vYmax(ng),                  &
      &                           time(ng), dt(ng),                      &
      &                           ObsType, ObsScale,                     &
      &                           Tobs, Xobs, Yobs,                      &
@@ -229,6 +269,12 @@
      &                           vmask,                                 &
 # endif
      &                           ADmodVal)
+# ifdef DISTRIBUTE
+          CALL ad_mp_exchange2d (ng, tile, iADM, 1,                     &
+     &                           LBi, UBi, LBj, UBj,                    &
+     &                           NghostPoints, EWperiodic, NSperiodic,  &
+     &                           f_vbar)
+# endif
         END IF
 # ifdef SOLVE3D
 !
@@ -250,12 +296,12 @@
               END DO
             END DO
           END DO
-          CALL ad_extract_obs3d (ng, Istr, IendR, JstrR, JendR,         &
+          CALL ad_extract_obs3d (ng, 1, Lm(ng)+1, 0, Mm(ng)+1,          &
      &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
-     &                           uILB(ng), uIUB(ng),                    &
-     &                           uJLB(ng), uJUB(ng),                    &
      &                           isUvel,                                &
      &                           Mobs, Mstr, Mend,                      &
+     &                           uXmin(ng), uXmax(ng),                  &
+     &                           uYmin(ng), uYmax(ng),                  &
      &                           time(ng), dt(ng),                      &
      &                           ObsType, ObsScale,                     &
      &                           Tobs, Xobs, Yobs, Zobs,                &
@@ -264,6 +310,12 @@
      &                           umask,                                 &
 #  endif
      &                           ADmodVal)
+#  ifdef DISTRIBUTE
+          CALL ad_mp_exchange3d (ng, tile, iADM, 1,                     &
+     &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
+     &                           NghostPoints, EWperiodic, NSperiodic,  &
+     &                           f_u)
+#  endif
         END IF
 !
 !  3D v-momentum component.
@@ -284,12 +336,12 @@
               END DO
             END DO
           END DO
-          CALL ad_extract_obs3d (ng, IstrR, IendR, Jstr, JendR,         &
+          CALL ad_extract_obs3d (ng, 0, Lm(ng)+1, 1, Mm(ng)+1,          &
      &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
-     &                           vILB(ng), vIUB(ng),                    &
-     &                           vJLB(ng), vJUB(ng),                    &
      &                           isVvel,                                &
      &                           Mobs, Mstr, Mend,                      &
+     &                           vXmin(ng), vXmax(ng),                  &
+     &                           vYmin(ng), vYmax(ng),                  &
      &                           time(ng), dt(ng),                      &
      &                           ObsType, ObsScale,                     &
      &                           Tobs, Xobs, Yobs, Zobs,                &
@@ -298,6 +350,12 @@
      &                           vmask,                                 &
 #  endif
      &                           ADmodVal)
+#  ifdef DISTRIBUTE
+          CALL ad_mp_exchange3d (ng, tile, iADM, 1,                     &
+     &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
+     &                           NghostPoints, EWperiodic, NSperiodic,  &
+     &                           f_v)
+#  endif
         END IF
 !
 !  Tracer type variables.
@@ -311,12 +369,12 @@
             END DO
           END DO
           IF (FOURDVAR(ng)%ObsCount(isTvar(itrc)).gt.0) THEN
-            CALL ad_extract_obs3d (ng, IstrR, IendR, JstrR, JendR,      &
+            CALL ad_extract_obs3d (ng, 0, Lm(ng)+1, 0, Mm(ng)+1,        &
      &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
-     &                             rILB(ng), rIUB(ng),                  &
-     &                             rJLB(ng), rJUB(ng),                  &
      &                             isTvar(itrc),                        &
      &                             Mobs, Mstr, Mend,                    &
+     &                             rXmin(ng), rXmax(ng),                &
+     &                             rYmin(ng), rYmax(ng),                &
      &                             time(ng), dt(ng),                    &
      &                             ObsType, ObsScale,                   &
      &                             Tobs, Xobs, Yobs, Zobs,              &
@@ -325,6 +383,13 @@
      &                             rmask,                               &
 #  endif
      &                             ADmodVal)
+#  ifdef DISTRIBUTE
+            CALL ad_mp_exchange3d (ng, tile, iADM, 1,                   &
+     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
+     &                             NghostPoints, EWperiodic, NSperiodic,&
+     &                             f_t(:,:,:,itrc))
+#  endif
+
           END IF
         END DO
 # endif
@@ -414,7 +479,7 @@
      &              'records = ',i7.7,' - ',i7.7,', iic = ',i7.7,')')
           END IF
         END IF
-      END IF        
+      END IF
       RETURN
       END SUBROUTINE ad_htobs_tile
 #endif

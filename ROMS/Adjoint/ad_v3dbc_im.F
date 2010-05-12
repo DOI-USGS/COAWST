@@ -2,9 +2,9 @@
       MODULE ad_v3dbc_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_v3dbc_im.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_v3dbc_im.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -59,6 +59,7 @@
       USE mod_param
       USE mod_boundary
       USE mod_grid
+      USE mod_ncparam
       USE mod_scalars
 !
 !  Imported variable declarations.
@@ -106,7 +107,7 @@
           adfac=0.5_r8*ad_v(Iend+1,Jend+1,k,nout)
           ad_v(Iend+1,Jend  ,k,nout)=ad_v(Iend+1,Jend  ,k,nout)+adfac
           ad_v(Iend  ,Jend+1,k,nout)=ad_v(Iend  ,Jend+1,k,nout)+adfac
-          ad_v(Iend+1,Jend+1,k,nout)=0.0_r8 
+          ad_v(Iend+1,Jend+1,k,nout)=0.0_r8
         END DO
       END IF
       IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
@@ -155,7 +156,7 @@
 !
       IF (EASTERN_EDGE) THEN
 
-#  if defined EAST_M3RADIATION
+#  if defined EAST_M3RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -198,7 +199,7 @@
 !>   &                                  tl_grad(Iend+1,j-1)-            &
 !>   &                               MIN(Ce,0.0_r8)*                    &
 !>   &                                  tl_grad(Iend+1,j  ))/           &
-!>   &                              (cff+Cx) 
+!>   &                              (cff+Cx)
 !>
               adfac=ad_v(Iend+1,j,k,nout)/(cff+Cx)
               ad_grad(Iend+1,j-1)=ad_grad(Iend+1,j-1)-                  &
@@ -218,9 +219,30 @@
 !
         DO k=1,N(ng)
           DO j=JstrV,Jend
+#   ifdef MASKING
+!>          tl_v(Iend+1,j,k,nout)=tl_v(Iend+1,j,k,nout)*                &
+!>   &                            GRID(ng)%vmask(Iend+1,j)
+!>
+            ad_v(Iend+1,j,k,nout)=ad_v(Iend+1,j,k,nout)*                &
+     &                            GRID(ng)%vmask(Iend+1,j)
+#   endif
+#   ifdef ADJUST_BOUNDARY
+            IF (Lobc(ieast,isVvel,ng)) THEN
+!>            tl_v(Iend+1,j,k,nout)=BOUNDARY(ng)%tl_v_east(j,k)
+!>
+              BOUNDARY(ng)%ad_v_east(j,k)=BOUNDARY(ng)%ad_v_east(j,k)+  &
+     &                                    ad_v(Iend+1,j,k,nout)
+              ad_v(Iend+1,j,k,nout)=0.0_r8
+            ELSE
+!>            tl_v(Iend+1,j,k,nout)=0.0_r8
+!>
+              ad_v(Iend+1,j,k,nout)=0.0_r8
+            END IF
+#   else
 !>          tl_v(Iend+1,j,k,nout)=0.0_r8
 !>
             ad_v(Iend+1,j,k,nout)=0.0_r8
+#   endif
           END DO
         END DO
 
@@ -281,7 +303,7 @@
 !
       IF (WESTERN_EDGE) THEN
 
-#  if defined WEST_M3RADIATION
+#  if defined WEST_M3RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -324,7 +346,7 @@
 !>   &                                  tl_grad(Istr-1,j-1)-            &
 !>   &                               MIN(Ce,0.0_r8)*                    &
 !>   &                                  tl_grad(Istr-1,j  ))/           &
-!>   &                              (cff+Cx) 
+!>   &                              (cff+Cx)
 !>
               adfac=ad_v(Istr-1,j,k,nout)/(cff+Cx)
               ad_grad(Istr-1,j-1)=ad_grad(Istr-1,j-1)-                  &
@@ -344,9 +366,30 @@
 !
         DO k=1,N(ng)
           DO j=JstrV,Jend
+#   ifdef MASKING
+!>          tl_v(Istr-1,j,k,nout)=tl_v(Istr-1,j,k,nout)*                &
+!>   &                            GRID(ng)%vmask(Istr-1,j)
+!>
+            ad_v(Istr-1,j,k,nout)=ad_v(Istr-1,j,k,nout)*                &
+     &                            GRID(ng)%vmask(Istr-1,j)
+#   endif
+#   ifdef ADJUST_BOUNDARY
+            IF (Lobc(iwest,isVvel,ng)) THEN
+!>            tl_v(Istr-1,j,k,nout)=BOUNDARY(ng)%tl_v_west(j,k)
+!>
+              BOUNDARY(ng)%ad_v_west(j,k)=BOUNDARY(ng)%ad_v_west(j,k)+  &
+     &                                    ad_v(Istr-1,j,k,nout)
+              ad_v(Istr-1,j,k,nout)=0.0_r8
+            ELSE
+!>            tl_v(Istr-1,j,k,nout)=0.0_r8
+!>
+              ad_v(Istr-1,j,k,nout)=0.0_r8
+            END IF
+#   else
 !>          tl_v(Istr-1,j,k,nout)=0.0_r8
 !>
             ad_v(Istr-1,j,k,nout)=0.0_r8
+#   endif
           END DO
         END DO
 
@@ -410,7 +453,7 @@
 !
       IF (NORTHERN_EDGE) THEN
 
-#  if defined NORTH_M3RADIATION
+#  if defined NORTH_M3RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -453,7 +496,7 @@
 !>   &                                  tl_grad(i  ,Jend+1)-            &
 !>   &                               MIN(Cx,0.0_r8)*                    &
 !>   &                                  tl_grad(i+1,Jend+1))/           &
-!>   &                              (cff+Ce) 
+!>   &                              (cff+Ce)
 !>
               adfac=ad_v(i,Jend+1,k,nout)/(cff+Ce)
               ad_grad(i  ,Jend+1)=ad_grad(i  ,Jend+1)-                  &
@@ -473,9 +516,30 @@
 !
         DO k=1,N(ng)
           DO i=Istr,Iend
+#   ifdef MASKING
+!>          tl_v(i,Jend+1,k,nout)=tl_v(i,Jend+1,k,nout)*                &
+!>   &                            GRID(ng)%vmask(i,Jend+1)
+!>
+            ad_v(i,Jend+1,k,nout)=ad_v(i,Jend+1,k,nout)*                &
+     &                            GRID(ng)%vmask(i,Jend+1)
+#   endif
+#   ifdef ADJUST_BOUNDARY
+            IF (Lobc(inorth,isVvel,ng)) THEN
+!>            tl_v(i,Jend+1,k,nout)=BOUNDARY(ng)%tl_v_north(i,k)
+!>
+              BOUNDARY(ng)%ad_v_north(i,k)=BOUNDARY(ng)%ad_v_north(i,k)+&
+     &                                     ad_v(i,Jend+1,k,nout)
+              ad_v(i,Jend+1,k,nout)=0.0_r8
+            ELSE
+!>            tl_v(i,Jend+1,k,nout)=0.0_r8
+!>
+              ad_v(i,Jend+1,k,nout)=0.0_r8
+            END IF
+#   else
 !>          tl_v(i,Jend+1,k,nout)=0.0_r8
 !>
             ad_v(i,Jend+1,k,nout)=0.0_r8
+#   endif
           END DO
         END DO
 
@@ -520,7 +584,7 @@
 !
       IF (SOUTHERN_EDGE) THEN
 
-#  if defined SOUTH_M3RADIATION
+#  if defined SOUTH_M3RADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -583,9 +647,30 @@
 !
         DO k=1,N(ng)
           DO i=Istr,Iend
+#   ifdef MASKING
+!>          tl_v(i,Jstr,k,nout)=tl_v(i,Jstr,k,nout)*                    &
+!>   &                          GRID(ng)%vmask(i,Jstr)
+!>
+            ad_v(i,Jstr,k,nout)=ad_v(i,Jstr,k,nout)*                    &
+     &                          GRID(ng)%vmask(i,Jstr)
+#   endif
+#   ifdef ADJUST_BOUNDARY
+            IF (Lobc(isouth,isVvel,ng)) THEN
+!>            tl_v(i,Jstr,k,nout)=BOUNDARY(ng)%tl_v_south(i,k)
+!>
+              BOUNDARY(ng)%ad_v_south(i,k)=BOUNDARY(ng)%ad_v_south(i,k)+&
+     &                                     ad_v(i,Jstr,k,nout)
+              ad_v(i,Jstr,k,nout)=0.0_r8
+            ELSE
+!>            tl_v(i,Jstr,k,nout)=0.0_r8
+!>
+              ad_v(i,Jstr,k,nout)=0.0_r8
+            END IF
+#   else
 !>          tl_v(i,Jstr,k,nout)=0.0_r8
 !>
             ad_v(i,Jstr,k,nout)=0.0_r8
+#   endif
           END DO
         END DO
 

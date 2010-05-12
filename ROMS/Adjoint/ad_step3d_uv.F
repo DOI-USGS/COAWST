@@ -2,9 +2,9 @@
       MODULE ad_step3d_uv_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_step3d_uv.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_step3d_uv.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -61,7 +61,7 @@
      &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        knew(ng), nrhs(ng), nstp(ng), nnew(ng),   &
 # ifdef UV_PSOURCE
-     &                        Nsrc(ng),                                 &
+     &                        Msrc(ng), Nsrc(ng),                       &
      &                        SOURCES(ng) % Isrc,                       &
      &                        SOURCES(ng) % Jsrc,                       &
      &                        SOURCES(ng) % Dsrc,                       &
@@ -137,7 +137,7 @@
      &                              IminS, ImaxS, JminS, JmaxS,         &
      &                              knew, nrhs, nstp, nnew,             &
 # ifdef UV_PSOURCE
-     &                              Nsrc,                               &
+     &                              Msrc, Nsrc,                         &
      &                              Isrc, Jsrc, Dsrc, Qsrc,             &
 # endif
 # ifdef MASKING
@@ -148,7 +148,7 @@
      &                              z_r, ad_z_r,                        &
      &                              z_w, ad_z_w,                        &
      &                              Akv, ad_Akv,                        &
-     &                              DU_avg1, ad_DU_avg1,                & 
+     &                              DU_avg1, ad_DU_avg1,                &
      &                              DV_avg1, ad_DV_avg1,                &
      &                              DU_avg2, ad_DU_avg2,                &
      &                              DV_avg2, ad_DV_avg2,                &
@@ -175,6 +175,9 @@
 !
       USE mod_param
       USE mod_scalars
+# ifdef UV_PSOURCE
+      USE mod_sources
+# endif
 !
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE ad_exchange_2d_mod
@@ -193,10 +196,12 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: knew, nrhs, nstp, nnew
+# ifdef UV_PSOURCE
+      integer, intent(in) :: Msrc, Nsrc
+# endif
 !
 # ifdef ASSUMED_SHAPE
 #  ifdef UV_PSOURCE
-      integer, intent(in) :: Nsrc
       integer, intent(in) :: Isrc(:)
       integer, intent(in) :: Jsrc(:)
       real(r8), intent(in) :: Dsrc(:)
@@ -263,13 +268,14 @@
 
       real(r8), intent(out) :: ad_ubar_sol(LBi:,LBj:)
       real(r8), intent(out) :: ad_vbar_sol(LBi:,LBj:)
+
 # else
+
 #  ifdef UV_PSOURCE
-      integer, intent(in) :: Nsrc
-      integer, intent(in) :: Isrc(Nsrc)
-      integer, intent(in) :: Jsrc(Nsrc)
-      real(r8), intent(in) :: Dsrc(Nsrc)
-      real(r8), intent(in) :: Qsrc(Nsrc,N(ng))
+      integer, intent(in) :: Isrc(Msrc)
+      integer, intent(in) :: Jsrc(Msrc)
+      real(r8), intent(in) :: Dsrc(Msrc)
+      real(r8), intent(in) :: Qsrc(Msrc,N(ng))
 #  endif
 #  ifdef MASKING
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
@@ -1083,7 +1089,7 @@
 !>   &                              tl_CFs(Iend+1,0)
 !>
             ad_CFs(Iend+1,0)=ad_CFs(Iend+1,0)-ad_u_stokes(Iend+1,j,k)
-     &                              
+     &
 #  endif
 #  ifdef MASKING
 !>          tl_u(Iend+1,j,k,nnew)=tl_u(Iend+1,j,k,nnew)*                &
@@ -1262,8 +1268,6 @@
 !-----------------------------------------------------------------------
 !  Apply mass point sources.
 !-----------------------------------------------------------------------
-!
-!  ADJOINT NOT REQUIRED SINCE Qsrc is specified.  HGA?
 !
       DO is=1,Nsrc
         i=Isrc(is)
@@ -1473,7 +1477,7 @@
 !>   &                 (DC1(i,0)*om_v(i,j)-DV_avg1(i,j))*tl_cff1
 !>
             adfac=cff1*ad_DC(i,0)
-            ad_DV_avg1(i,j)=ad_DV_avg1(i,j)-adfac       
+            ad_DV_avg1(i,j)=ad_DV_avg1(i,j)-adfac
             ad_cff1=ad_cff1+                                            &
      &              (DC1(i,0)*om_v(i,j)-DV_avg1(i,j))*ad_DC(i,0)
             ad_DC(i,0)=om_v(i,j)*adfac
@@ -1637,8 +1641,8 @@
               ad_DC(i,k-1)=ad_DC(i,k-1)-adfac1
               ad_DC(i,k  )=ad_DC(i,k  )+adfac1
               ad_oHz(i,k)=ad_oHz(i,k)+(DC1(i,k)-DC1(i,k-1))*adfac
-              ad_cff=0.0_r8              
-!>            tl_DC(i,k)=tl_DC(i,k)*AK(i,k)+DC(i,k)*tl_AK(i,k)  
+              ad_cff=0.0_r8
+!>            tl_DC(i,k)=tl_DC(i,k)*AK(i,k)+DC(i,k)*tl_AK(i,k)
 !>                                                               use DC
               ad_AK(i,k)=ad_AK(i,k)+DC(i,k)*ad_DC(i,k)
               ad_DC(i,k)=AK(i,k)*ad_DC(i,k)
@@ -1928,7 +1932,7 @@
             DC(i,0)=cff*(pm(i,j)+pm(i,j-1))*(pn(i,j)+pn(i,j-1))
           END DO
 !
-!  The BASIC STATE "v" used below must be in transport units, but "v" 
+!  The BASIC STATE "v" used below must be in transport units, but "v"
 !  retrived is in m/s so we multiply by "Hzk".
 !
           DO k=1,N(ng)
@@ -2602,7 +2606,7 @@
           DC(i,0)=cff*(pm(i,j)+pm(i-1,j))*(pn(i,j)+pn(i-1,j))
         END DO
 !
-!  The BASIC STATE "u" used below must be in transport units, but "u" 
+!  The BASIC STATE "u" used below must be in transport units, but "u"
 !  retrived is in m/s so we multiply by "Hzk".
 !
         DO k=1,N(ng)

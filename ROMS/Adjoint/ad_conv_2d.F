@@ -4,9 +4,9 @@
 
 #if defined ADJOINT && defined FOUR_DVAR
 !
-!svn $Id: ad_conv_2d.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_conv_2d.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -40,7 +40,7 @@
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
-!     ad_A       Diffused 2D adjoint state variable.                   !      
+!     ad_A       Diffused 2D adjoint state variable.                   !
 !                                                                      !
 !  Routines:                                                           !
 !                                                                      !
@@ -188,7 +188,7 @@
 !>        tl_A(i,j)=tl_Awrk(i,j,Nold)
 !>
           ad_Awrk(i,j,Nold)=ad_Awrk(i,j,Nold)+ad_A(i,j)
-          ad_A(i,j)=0.0_r8          
+          ad_A(i,j)=0.0_r8
         END DO
       END DO
 !
@@ -445,7 +445,7 @@
 !>        tl_A(i,j)=tl_Awrk(i,j,Nold)
 !>
           ad_Awrk(i,j,Nold)=ad_Awrk(i,j,Nold)+ad_A(i,j)
-          ad_A(i,j)=0.0_r8          
+          ad_A(i,j)=0.0_r8
         END DO
       END DO
 !
@@ -623,7 +623,7 @@
 # endif
 !
 !  Local variable declarations.
-! 
+!
 # ifdef DISTRIBUTE
 #  ifdef EW_PERIODIC
       logical :: EWperiodic=.TRUE.
@@ -749,7 +749,7 @@
 !>
             adfac=Hfac(i,j)*ad_Awrk(i,j,Nnew)
             ad_FE(i,j-1)=ad_FE(i,j-1)-adfac
-            ad_FE(i,j  )=ad_FE(i,j  )+adfac            
+            ad_FE(i,j  )=ad_FE(i,j  )+adfac
             ad_FX(i  ,j)=ad_FX(i  ,j)-adfac
             ad_FX(i+1,j)=ad_FX(i+1,j)+adfac
             ad_Awrk(i,j,Nold)=ad_Awrk(i,j,Nold)+ad_Awrk(i,j,Nnew)

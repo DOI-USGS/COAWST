@@ -3,9 +3,9 @@
       MODULE ad_rho_eos_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_rho_eos.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_rho_eos.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -1027,7 +1027,7 @@
 !  Compute local nonlinear equation of state coefficients and their
 !  derivatives when appropriate.  These coefficients can be stored
 !  in slab (i,k) arrays to avoid recompute them twice. However, the
-!  equivalent of 50 slabs arrays are required. 
+!  equivalent of 50 slabs arrays are required.
 !
             C(0)=Q00+Tt*(Q01+Tt*(Q02+Tt*(Q03+Tt*(Q04+Tt*Q05))))
             C(1)=U00+Tt*(U01+Tt*(U02+Tt*(U03+Tt*U04)))
@@ -1337,7 +1337,7 @@
 !
 !  Check temperature and salinity minimum valid values. Assign depth
 !  to the pressure.
-!  
+!
 !>          tl_Tpr10=0.1_r8*tl_Tp
 !>
             ad_Tp=ad_Tp+0.1_r8*ad_Tpr10

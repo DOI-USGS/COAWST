@@ -2,9 +2,9 @@
 #ifdef ADJOINT
       SUBROUTINE ad_initial (ng)
 !
-!svn $Id: ad_initial.F 645 2008-07-16 19:26:48Z arango $
+!svn $Id: ad_initial.F 431 2009-12-26 20:36:20Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -17,6 +17,9 @@
       USE mod_parallel
 # ifdef BBL_MODEL_NOT_YET
       USE mod_bbl
+# endif
+# ifdef ADJUST_BOUNDARY
+      USE mod_boundary
 # endif
 # ifdef SOLVE3D
       USE mod_coupling
@@ -41,10 +44,12 @@
 # ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 # endif
-# if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-     defined OPT_OBSERVATIONS || defined SO_SEMI
+# if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+     defined SO_SEMI
       USE adsen_initial_mod, ONLY : adsen_initial
 # endif
+      USE ini_hmixcoef_mod, ONLY : ini_hmixcoef
       USE metrics_mod, ONLY : metrics
 # ifdef SOLVE3D
       USE set_depth_mod, ONLY : set_depth
@@ -84,15 +89,11 @@
 # if defined PERTURBATION
         WRITE (stdout,10) Nrun
  10     FORMAT (/,' <<<< Ensemble/Perturbation Run: ',i5.5,' >>>>',/)
-# elif defined IS4DVAR || defined IS4DVAR_OLD || defined W4DPSAS || \
-       defined W4DVAR
+# elif defined IS4DVAR || defined SENSITIVITY_4DVAR || \
+       defined W4DPSAS || defined W4DVAR
         WRITE (stdout,10) outer, inner
  10     FORMAT (/,' <<<< 4D Variational Data Assimilation, ',           &
      &          'Outer = ',i3.3, ', Inner = ',i3.3,' >>>>',/)
-# elif defined S4DVAR
-        WRITE (stdout,10) Nrun, Ipass
- 10     FORMAT (/,' <<<< 4D Variational Data Assimilation, ',           &
-     &          'Iteration = ',i5.5, ', Ipass = ',i1,' >>>>',/)
 # endif
         WRITE (stdout,20) 'AD_INITIAL: Configuring and ',               &
      &                    'initializing adjoint model ...'
@@ -158,8 +159,8 @@
 !$OMP END PARALLEL DO
 # endif
 
-# if defined FOUR_DVAR && \
-    !(defined OBS_SENSITIVITY || defined OPT_OBSERVATIONS)
+# if defined FOUR_DVAR            && \
+    !(defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS)
 !
 !-----------------------------------------------------------------------
 !  If variational data assimilation, reset several IO switches and
@@ -177,7 +178,7 @@
 !
       LwrtADJ(ng)=.TRUE.
 
-#  if !(defined WEAK_CONSTRAINT || defined IOM)
+#  ifndef WEAK_CONSTRAINT
 !
 !  Insure that forward and history file names are the same. In 4DVar,
 !  the forward solution is computed by the nonlinear model and stored
@@ -191,21 +192,26 @@
       ncFWDid(ng)=ncHISid(ng)
 #   endif
 #  endif
+#  ifdef ADJUST_BOUNDARY
+!
+!  Initialize open boundary counter for storage arrays.
+!
+      OBCcount(ng)=0
+#  endif
 #  if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
 !
 !  Initialize surface forcing counter for storage arrays.
 !
       SFcount(ng)=Nfrec(ng)+1
 #  endif
+#  ifdef OBSERVATIONS
 !
 !  Initialize various variables needed for processing observations
 !  backwards in time.
 !
       CALL obs_initial (ng, iADM, .TRUE.)
-#  ifdef DISTRIBUTE
-      CALL mp_bcasti (ng, iADM, exit_flag, 1)
-#  endif
       IF (exit_flag.ne.NoError) RETURN
+#  endif
 # endif
 !
 !=======================================================================
@@ -229,8 +235,9 @@
 #  ifdef MASKING
             CALL ana_mask (ng, TILE, iADM)
 #  endif
-#  if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-      defined OPT_OBSERVATIONS || defined SO_SEMI
+#  if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+      defined OPT_OBSERVATIONS || defined SO_SEMI             || \
+      defined SENSITIVITY_4DVAR
             CALL ana_scope (ng, TILE, iADM)
 #  endif
           END DO
@@ -239,7 +246,7 @@
 # else
         CALL get_grid (ng, iADM)
 #  ifdef DISTRIBUTE
-        CALL mp_bcasti (ng, iADM, exit_flag, 1)
+        CALL mp_bcasti (ng, iADM, exit_flag)
 #  endif
         IF (exit_flag.ne.NoError) RETURN
 # endif
@@ -279,24 +286,6 @@
         END DO
 !$OMP END PARALLEL DO
 
-# if defined VISC_GRID || defined DIFF_GRID || defined SPONGE
-!
-!-----------------------------------------------------------------------
-!  Set horizontal mixing coefficients. Rescale according to the local
-!  grid size. If applicable, increases horizontal mixing in sponge
-!  areas.
-!-----------------------------------------------------------------------
-!
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1
-            CALL ana_hmixcoef (ng, TILE, iADM)
-          END DO
-        END DO
-!$OMP END PARALLEL DO
-# endif
-
 # ifdef NUDGING_COFF
 !
 !-----------------------------------------------------------------------
@@ -314,12 +303,43 @@
 # endif
       END IF
 !
+!-----------------------------------------------------------------------
+!  Initialize horizontal mixing coefficients.
+!-----------------------------------------------------------------------
+!
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+      DO thread=0,numthreads-1
+        subs=NtileX(ng)*NtileE(ng)/numthreads
+        DO tile=subs*thread,subs*(thread+1)-1
+          CALL ini_hmixcoef (ng, TILE, iADM)
+        END DO
+      END DO
+!$OMP END PARALLEL DO
+
+# if defined VISC_GRID || defined DIFF_GRID || defined SPONGE
+!
+!-----------------------------------------------------------------------
+!  Set horizontal mixing coefficients. Rescale according to the local
+!  grid size. If applicable, increases horizontal mixing in sponge
+!  areas.
+!-----------------------------------------------------------------------
+!
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+      DO thread=0,numthreads-1
+        subs=NtileX(ng)*NtileE(ng)/numthreads
+        DO tile=subs*thread,subs*(thread+1)-1
+          CALL ana_hmixcoef (ng, TILE, iADM)
+        END DO
+      END DO
+!$OMP END PARALLEL DO
+# endif
+!
 !=======================================================================
 !  Initialize model state variables and forcing.  This part is
 !  executed for each ensemble/perturbation/iteration pass.
 !=======================================================================
 
-# if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
+# if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
      defined OPT_OBSERVATIONS || defined SO_SEMI
 !
 !-----------------------------------------------------------------------
@@ -333,15 +353,18 @@
           CALL initialize_ocean (ng, TILE, iADM)
 #  if defined SOLVE3D
           CALL initialize_coupling (ng, TILE, iADM)
-          CALL initialize_mixing (ng, TILE, iADM)  
+          CALL initialize_mixing (ng, TILE, iADM)
 #  endif
           CALL initialize_forces (ng, TILE, iADM)
           CALL initialize_grid (ng, TILE, iADM)
+#  ifdef ADJUST_BOUNDARY
+          CALL initialize_boundary (ng, TILE, iADM)
+#  endif
         END DO
       END DO
 !$OMF END PARALLEL DO
 
-# elif defined FOUR_DVAR && !defined OBS_SENSITIVITY
+# elif defined FOUR_DVAR && !defined IS4DVAR_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  Clear all adjoint variables.  In variational data assimilation the
@@ -357,10 +380,13 @@
           CALL initialize_ocean (ng, TILE, iADM)
 #  if defined SOLVE3D
           CALL initialize_coupling (ng, TILE, iADM)
-          CALL initialize_mixing (ng, TILE, iADM)  
+          CALL initialize_mixing (ng, TILE, iADM)
 #  endif
           CALL initialize_forces (ng, TILE, iADM)
           CALL initialize_grid (ng, TILE, iADM)
+#  ifdef ADJUST_BOUNDARY
+          CALL initialize_boundary (ng, TILE, iADM)
+#  endif
         END DO
       END DO
 !$OMF END PARALLEL DO
@@ -458,14 +484,14 @@
 #  ifdef INI_FILE
       CALL get_state (ng, iADM, 1, IADname(ng), IniRec, Tindex)
 #   ifdef DISTRIBUTE
-      CALL mp_bcasti (ng, iADM, exit_flag, 1)
+      CALL mp_bcasti (ng, iADM, exit_flag)
 #   endif
       IF (exit_flag.ne.NoError) RETURN
 #  else
       IF (nrrec(ng).ne.0) THEN
         CALL get_state (ng, iADM, 1, IADname(ng), IniRec, Tindex)
 #   ifdef DISTRIBUTE
-        CALL mp_bcasti (ng, iADM, exit_flag, 1)
+        CALL mp_bcasti (ng, iADM, exit_flag)
 #   endif
         IF (exit_flag.ne.NoError) RETURN
       END IF
@@ -547,26 +573,35 @@
 # endif
       CALL ad_get_data (ng)
 #  ifdef DISTRIBUTE
-      CALL mp_bcasti (ng, iADM, exit_flag, 1)
+      CALL mp_bcasti (ng, iADM, exit_flag)
 #  endif
       IF (exit_flag.ne.NoError) RETURN
 
-# if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-     defined OPT_OBSERVATIONS || defined SO_SEMI
+# if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+     defined SO_SEMI
 !
 !-----------------------------------------------------------------------
 !  Initialize adjoint state with the functional whose sensitivity is
 !  is required.
 !-----------------------------------------------------------------------
 !
+#  ifdef SENSITIVITY_4DVAR
+      IF (LsenPSAS(ng)) THEN
+#  endif
+#  if !defined AD_IMPULSE
 !$OMP PARALLEL DO PRIVATE(thread,subs,tile), SHARED(numthreads)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1
-          CALL adsen_initial (ng, TILE)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1
+            CALL adsen_initial (ng, TILE)
+          END DO
         END DO
-      END DO
 !$OMF END PARALLEL DO
+#  endif
+#  ifdef SENSITIVITY_4DVAR
+      END IF
+#  endif
 # endif
 !
 !-----------------------------------------------------------------------

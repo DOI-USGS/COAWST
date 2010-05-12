@@ -15,9 +15,9 @@
 
       SUBROUTINE ad_uv3dmix4 (ng, tile)
 !
-!svn $Id: ad_uv3dmix4_geo.h 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_uv3dmix4_geo.h 429 2009-12-20 17:30:26Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -3843,7 +3843,7 @@
               adfac2=adfac1*0.5_r8*pn_p
               adfac3=adfac*om_p(i,j)
               adfac4=adfac3*0.5_r8*pm_p
-              ad_dnVdx(i,j,k1)=ad_dnVdx(i,j,k1)+adfac1 
+              ad_dnVdx(i,j,k1)=ad_dnVdx(i,j,k1)+adfac1
               ad_cff1=ad_cff1-                                          &
      &                (dVdz(i-1,j,k1)+dVdz(i  ,j,k2))*adfac2
               ad_cff2=ad_cff2-                                          &
@@ -3852,7 +3852,7 @@
               ad_dVdz(i-1,j,k2)=ad_dVdz(i-1,j,k2)-cff2*adfac2
               ad_dVdz(i  ,j,k1)=ad_dVdz(i  ,j,k1)-cff2*adfac2
               ad_dVdz(i  ,j,k2)=ad_dVdz(i  ,j,k2)-cff1*adfac2
-              ad_dmUde(i,j,k1)=ad_dmUde(i,j,k1)+adfac3             
+              ad_dmUde(i,j,k1)=ad_dmUde(i,j,k1)+adfac3
               ad_cff3=ad_cff3-                                          &
      &                (dUdz(i,j-1,k1)+dUdz(i,j  ,k2))*adfac4
               ad_cff4=ad_cff4-                                          &
@@ -3976,7 +3976,7 @@
      &                          (0.5_r8+                                &
      &                           SIGN(0.5_r8,-dZde_r(i,j,k1)))*         &
      &                          ad_cff3
-              ad_cff3=0.0_r8 
+              ad_cff3=0.0_r8
 !>            tl_cff2=(0.5_r8+SIGN(0.5_r8, dZdx_r(i,j,k1)))*            &
 !>   &                tl_dZdx_r(i,j,k1)
 !>

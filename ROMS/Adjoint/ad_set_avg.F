@@ -2,9 +2,9 @@
       MODULE ad_set_avg_mod
 #if defined AVERAGES && defined ADJOINT
 !
-!svn $Id: ad_set_avg.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_set_avg.F 431 2009-12-26 20:36:20Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -148,7 +148,7 @@
      &                      AVERAGE(ng) % avgUT,                        &
      &                      AVERAGE(ng) % avgVT,                        &
      &                      AVERAGE(ng) % avgTT,                        &
-#  endif     
+#  endif
      &                      AVERAGE(ng) % avgU2,                        &
      &                      AVERAGE(ng) % avgV2,                        &
      &                      AVERAGE(ng) % avgZZ,                        &
@@ -243,7 +243,7 @@
 #  ifdef SOLVE3D
      &                            avgUU, avgUV, avgVV,                  &
      &                            avgUT, avgVT, avgTT,                  &
-#  endif     
+#  endif
      &                            avgU2, avgV2, avgZZ,                  &
 # endif
      &                            avgu2d, avgv2d, avgzeta)
@@ -361,7 +361,7 @@
       real(r8), intent(inout) :: avgUT(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: avgVT(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: avgTT(LBi:,LBj:,:,:)
-#   endif     
+#   endif
       real(r8), intent(inout) :: avgU2(LBi:,LBj:)
       real(r8), intent(inout) :: avgV2(LBi:,LBj:)
       real(r8), intent(inout) :: avgZZ(LBi:,LBj:)
@@ -469,7 +469,7 @@
       real(r8), intent(inout) :: avgUT(LBi:UBi,LBj:UBj,N(ng),NAT)
       real(r8), intent(inout) :: avgVT(LBi:UBi,LBj:UBj,N(ng),NAT)
       real(r8), intent(inout) :: avgTT(LBi:UBi,LBj:UBj,N(ng),NAT)
-#   endif     
+#   endif
       real(r8), intent(inout) :: avgU2(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: avgV2(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: avgZZ(LBi:UBi,LBj:UBj)
@@ -781,8 +781,9 @@
       IF ((iic(ng).lt.ntsAVG(ng)).and.                                  &
      &    (MOD(iic(ng)-1,nAVG(ng)).eq.0).and.                           &
      &    ((iic(ng).ne.ntstart(ng)).or.(nrrec(ng).eq.0))) THEN
-# if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-     defined OPT_OBSERVATIONS || defined SO_SEMI
+# if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+     defined SO_SEMI
         fac=1.0_r8
 # else
         fac=1.0_r8/REAL(nAVG(ng),r8)

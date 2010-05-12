@@ -2,9 +2,9 @@
 #if defined ADJOINT && defined SOLVE3D
       SUBROUTINE ad_main3d (ng)
 !
-!svn $Id: ad_main3d.F 672 2008-08-05 18:14:56Z arango $
+!svn $Id: ad_main3d.F 431 2009-12-26 20:36:20Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -30,8 +30,8 @@
       USE mod_storage
 # endif
 !
-# if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-     defined OPT_OBSERVATIONS
+# if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR
       USE adsen_force_mod, ONLY : adsen_force
 # endif
 # ifdef ANA_VMIX
@@ -43,15 +43,18 @@
 # ifdef BBL_MODEL_NOT_YET
 !!    USE ad_bbl_mod, ONLY : ad_bblm
 # endif
-# ifdef BULK_FLUXES_NOT_YET
+# if defined BULK_FLUXES_NOT_YET && !defined NL_BULK_FLUXES
 !!    USE ad_bulk_flux_mod, ONLY : ad_bulk_flux
 # endif
 # ifdef BVF_MIXING_NOT_YET
 !!    USE ad_bvf_mix_mod, ONLY : ad_bvf_mix
 # endif
       USE ad_diag_mod, ONLY : ad_diag
+# if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+      USE ad_frc_adjust_mod, ONLY : ad_frc_adjust
+# endif
       USE ad_ini_fields_mod, ONLY : ad_ini_fields, ad_ini_zeta
-# if defined WEAK_CONSTRAINT || defined IOM
+# ifdef WEAK_CONSTRAINT
       USE ad_forcing_mod, ONLY : ad_forcing
 # endif
 # ifdef GLS_MIXING_NOT_YET
@@ -62,7 +65,7 @@
 !!    USE ad_lmd_vmix_mod, ONLY : ad_lmd_vmix
 # endif
 # if defined FOUR_DVAR && defined OBSERVATIONS
-#  if defined WEAK_CONSTRAINT || defined IOM
+#  ifdef WEAK_CONSTRAINT
       USE ad_htobs_mod, ONLY : ad_htobs
 #  else
       USE ad_misfit_mod, ONLY : ad_misfit
@@ -71,6 +74,11 @@
 # ifdef MY25_MIXING
 !!    USE ad_my25_corstep_mod, ONLY : ad_my25_corstep
 !!    USE ad_my25_prestep_mod, ONLY : ad_my25_prestep
+# endif
+# ifdef ADJUST_BOUNDARY
+      USE ad_obc_adjust_mod, ONLY : ad_obc_adjust
+      USE ad_obc_adjust_mod, ONLY : ad_obc2d_adjust
+      USE ad_set_depth_mod, ONLY : ad_set_depth_bry
 # endif
       USE ad_omega_mod, ONLY : ad_omega
 # ifdef NEARSHORE_MELLOR_NOT_YET
@@ -86,11 +94,15 @@
 # ifdef AVERAGES
       USE ad_set_avg_mod, ONLY : ad_set_avg
 # endif
+# ifdef MOVE_SET_DEPTH
+      USE ad_set_depth_mod, ONLY : ad_set_depth
+# endif
       USE ad_set_massflux_mod, ONLY : ad_set_massflux
 # if defined SSH_TIDES_NOT_YET || defined UV_TIDES_NOT_YET
 !!    USE ad_set_tides_mod, ONLY : ad_set_tides
 # endif
       USE ad_set_vbc_mod, ONLY : ad_set_vbc
+      USE ad_set_zeta_mod, ONLY : ad_set_zeta
       USE ad_step2d_mod, ONLY : ad_step2d
 # ifndef TS_FIXED
       USE ad_step3d_t_mod, ONLY : ad_step3d_t
@@ -99,14 +111,14 @@
 # ifdef FLOATS_NOT_YET
 !!    USE ad_step_floats_mod, ONLY : ad_step_floats
 # endif
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES && !defined NL_BULK_FLUXES
       USE bulk_flux_mod, ONLY : bulk_flux
-# endif
-# if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
-      USE frc_adjust_mod, ONLY : frc_ADadjust
 # endif
 # ifdef AIR_OCEAN_NOT_YET
       USE ocean_coupler_mod, ONLY : atmos_coupling
+# endif
+# ifdef WEAK_CONSTRAINT
+      USE frc_weak_mod, ONLY : frc_ADgather, frc_clear
 # endif
 # ifdef WAVES_OCEAN_NOT_YET
       USE ocean_coupler_mod, ONLY : waves_coupling
@@ -192,7 +204,7 @@
         DO tile=subs*(thread+1)-1,subs*thread,-1
           CALL set_massflux (ng, TILE)
           CALL rho_eos (ng, TILE)
-#  ifdef BULK_FLUXES
+#  if defined BULK_FLUXES && !defined NL_BULK_FLUXES
           CALL bulk_flux (ng, TILE)
 #  endif
         END DO
@@ -212,21 +224,23 @@
 !
 !  Shift floats time indices.
 !
-        nfp1(ng)=MOD(nfp1(ng)+1,NFT+1)
-        nf(ng)  =MOD(nf(ng)  +1,NFT+1)
-        nfm1(ng)=MOD(nfm1(ng)+1,NFT+1)
-        nfm2(ng)=MOD(nfm2(ng)+1,NFT+1)
-        nfm3(ng)=MOD(nfm3(ng)+1,NFT+1)
+        IF (Lfloats(Ng)) THEN
+          nfp1(ng)=MOD(nfp1(ng)+1,NFT+1)
+          nf(ng)  =MOD(nf(ng)  +1,NFT+1)
+          nfm1(ng)=MOD(nfm1(ng)+1,NFT+1)
+          nfm2(ng)=MOD(nfm2(ng)+1,NFT+1)
+          nfm3(ng)=MOD(nfm3(ng)+1,NFT+1)
 !
 !$OMP PARALLEL DO PRIVATE(thread,chunk_size,Lstr,Lend)                  &
 !$OMP&            SHARED(ng,numthreads,Nfloats)
-        DO thread=0,numthreads-1
-          chunk_size=(Nfloats(ng)+numthreads-1)/numthreads
-          Lstr=1+thread*chunk_size
-          Lend=MIN(Nfloats(ng),Lstr+chunk_size-1)
-          CALL ad_step_floats (ng, Lstr, Lend)
-        END DO
+          DO thread=0,numthreads-1
+            chunk_size=(Nfloats(ng)+numthreads-1)/numthreads
+            Lstr=1+thread*chunk_size
+            Lend=MIN(Nfloats(ng),Lstr+chunk_size-1)
+            CALL ad_step_floats (ng, Lstr, Lend)
+          END DO
 !$OMP END PARALLEL DO
+        END IF
 # endif
 
 # ifndef TS_FIXED
@@ -306,6 +320,22 @@
           END DO
         END DO
 !$OMP END PARALLEL DO
+
+# ifdef MOVE_SET_DEPTH
+!
+!-----------------------------------------------------------------------
+!  Adjoint of recompute depths and thicknesses using the new time
+!  filtered free-surface. This call was moved from "ad_step2d" to here.
+!-----------------------------------------------------------------------
+!
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+      DO thread=0,numthreads-1
+        subs=NtileX(ng)*NtileE(ng)/numthreads
+        DO tile=subs*(thread+1)-1,subs*thread,-1
+          CALL ad_set_depth (ng, TILE)
+        END DO
+      END DO
+# endif
 !
 !-----------------------------------------------------------------------
 !  Solve adjoint vertically integrated primitive equations for the
@@ -383,7 +413,7 @@
         END DO LOOP_2D
       END IF
 
-# if (defined FOUR_DVAR && !defined OBS_SENSITIVITY) && \
+# if (defined FOUR_DVAR    && !defined IS4DVAR_SENSITIVITY) && \
       defined OBSERVATIONS
 !
 !-----------------------------------------------------------------------
@@ -391,31 +421,37 @@
 !  locations.  Then, compute adjoint forcing terms due to observations.
 !-----------------------------------------------------------------------
 !
-      HalfDT=0.5_r8*dt(ng)
-      IF (((time(ng)-HalfDT).le.ObsTime(ng)).and.                       &
-     &    (ObsTime(ng).lt.(time(ng)+HalfDT))) THEN
-        ProcessObs(ng)=.TRUE.
-        CALL obs_read (ng, iADM, backward)
-      ELSE
-        ProcessObs(ng)=.FALSE.
-      END IF
+#  ifdef SENSITIVITY_4DVAR
+      IF (.not.LsenPSAS(ng)) THEN
+#  endif
+        HalfDT=0.5_r8*dt(ng)
+        IF (((time(ng)-HalfDT).le.ObsTime(ng)).and.                       &
+     &      (ObsTime(ng).lt.(time(ng)+HalfDT))) THEN
+          ProcessObs(ng)=.TRUE.
+          CALL obs_read (ng, iADM, backward)
+        ELSE
+          ProcessObs(ng)=.FALSE.
+        END IF
 !
 !$OMP PARALLEL DO PRIVATE(thread,subs,tile), SHARED(ng,numthreads)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1,+1
-#  if defined WEAK_CONSTRAINT || defined IOM
-          CALL ad_htobs (ng, TILE, iADM)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+#  ifdef WEAK_CONSTRAINT
+            CALL ad_htobs (ng, TILE, iADM)
 #  else
-          CALL ad_misfit (ng, TILE, iADM)
+            CALL ad_misfit (ng, TILE, iADM)
 #  endif
+          END DO
         END DO
-      END DO
 !$OMP END PARALLEL DO
-      IF (exit_flag.ne.NoError) RETURN
+        IF (exit_flag.ne.NoError) RETURN
+#  ifdef SENSITIVITY_4DVAR
+      END IF
+#  endif
 # endif
 
-# if defined WEAK_CONSTRAINT || defined IOM
+# ifdef WEAK_CONSTRAINT
 !
 !-----------------------------------------------------------------------
 !  If appropriate, add representer coefficients (Beta hat) impulse
@@ -449,9 +485,22 @@
           CALL ad_gls_prestep (ng, TILE)
 # endif
           CALL ad_rhs3d (ng, TILE)
-# if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
-!!        CALL ad_set_diags (ng, TILE)
-# endif
+        END DO
+      END DO
+!$OMP END PARALLEL DO
+!
+!-----------------------------------------------------------------------
+!  Set adjoint free-surface to it time-averaged value.
+!-----------------------------------------------------------------------
+!
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+      DO thread=0,numthreads-1
+        subs=NtileX(ng)*NtileE(ng)/numthreads
+        DO tile=subs*thread,subs*(thread+1)-1,+1
+#  ifdef DIAGNOSTICS
+!!        CALL set_diags (ng, TILE)
+#  endif
+          CALL ad_set_zeta (ng, TILE)
         END DO
       END DO
 !$OMP END PARALLEL DO
@@ -518,7 +567,7 @@
 # ifdef BBL_MODEL_NOT_YET
           CALL ad_bblm (ng, TILE)
 # endif
-# ifdef BULK_FLUXES_NOT_YET
+# ifdef BULK_FLUXES_NOT_YET && !defined NL_BULK_FLUXES
           CALL ad_bulk_flux (ng, TILE)
 # endif
         END DO
@@ -673,17 +722,59 @@
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
 !
 !-----------------------------------------------------------------------
-!  Load surface forcing to storage arrays.
+!  Interpolate surface forcing increments and adjust surface forcing.
+!  Skip first timestep.
 !-----------------------------------------------------------------------
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,Lfout,numthreads)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1,+1
-          CALL frc_ADadjust (ng, TILE, Lfout(ng))
+      IF (iic(ng).ne.ntstart(ng)) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL ad_frc_adjust (ng, TILE, Lfout(ng))
+          END DO
         END DO
-      END DO
 !$OMP END PARALLEL DO
+      END IF
+# endif
+
+# ifdef ADJUST_BOUNDARY
+!
+!-----------------------------------------------------------------------
+!  Interpolate open boundary increments and adjust open boundaries.
+!  Skip first timestep.
+!-----------------------------------------------------------------------
+!
+      IF (iic(ng).ne.ntstart(ng)) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL ad_obc2d_adjust (ng, TILE, Lbout(ng))
+            CALL ad_set_depth_bry (ng, TILE)
+            CALL ad_obc_adjust (ng, TILE, Lbout(ng))
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+      END IF
+# endif
+
+# ifdef WEAK_CONSTRAINT
+!
+!-----------------------------------------------------------------------
+!  Gather weak constraint forcing to storage arrays.
+!-----------------------------------------------------------------------
+!
+      IF (iic(ng).ne.ntstart(ng)) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL frc_ADgather (ng, TILE)
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+      END IF
 # endif
 !
 !-----------------------------------------------------------------------
@@ -694,24 +785,52 @@
       CALL ad_output (ng)
       IF (exit_flag.ne.NoError) RETURN
 
-# if defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-     defined OPT_OBSERVATIONS
+# ifdef WEAK_CONSTRAINT
+!
+!-----------------------------------------------------------------------
+!  Copy storage arrays index 1 into index 2, and clear index 1.
+!-----------------------------------------------------------------------
+!
+      IF (MOD(iic(ng)-1,nADJ(ng)).eq.0) THEN
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL frc_clear (ng, TILE)
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+      END IF
+# endif
+
+# if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR
 !
 !-----------------------------------------------------------------------
 !  Add appropriate forcing terms to the adjoint model. The form of the
 !  forcing depends on the functional whose sensitivity is required.
 !-----------------------------------------------------------------------
 !
-      IF ((DendS(ng).ge.tdays(ng)).and.(tdays(ng).ge.DstrS(ng))) THEN
+#  ifdef SENSITIVITY_4DVAR
+      IF (LsenPSAS(ng)) THEN
+#  endif
+#  if !defined AD_IMPULSE
+        IF ((DendS(ng).ge.tdays(ng)).and.(tdays(ng).ge.DstrS(ng))) THEN
+#  endif
 !$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
-            CALL adsen_force (ng, TILE)
+          DO thread=0,numthreads-1
+            subs=NtileX(ng)*NtileE(ng)/numthreads
+            DO tile=subs*thread,subs*(thread+1)-1,+1
+              CALL adsen_force (ng, TILE)
+            END DO
           END DO
-        END DO
 !$OMP END PARALLEL DO
+#  if !defined AD_IMPULSE
+        END IF
+#  endif
+#  ifdef SENSITIVITY_4DVAR
       END IF
+#  endif
 # endif
 
       RETURN

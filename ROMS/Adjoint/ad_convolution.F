@@ -21,9 +21,9 @@
 #  define JV_RANGE Jstr,JendR
 # endif
 !
-!svn $Id: ad_convolution.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_convolution.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -72,7 +72,7 @@
 !            GRAD_v(J) = v + transpose{B^(1/2)} GRAD_x(J)              !
 !                                                                      !
 !  In incremental  4DVAR,  these spatial convolutions constitutes a    !
-!  smoothing action on the  correlation operator  and they are use!    !
+!  smoothing action on the  correlation operator  and they are used    !
 !  to transform between model space to minimization space and  vice    !
 !  versa:                                                              !
 !                                                                      !
@@ -99,20 +99,28 @@
       CONTAINS
 !
 !***********************************************************************
-      SUBROUTINE ad_convolution (ng, tile, Linp, ifac)
+      SUBROUTINE ad_convolution (ng, tile, Linp, Lweak, ifac)
 !***********************************************************************
 !
       USE mod_param
+# ifdef ADJUST_BOUNDARY
+      USE mod_boundary
+# endif
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
       USE mod_forces
 # endif
       USE mod_grid
       USE mod_mixing
       USE mod_ocean
+# if defined SEDIMENT && defined SED_MORPH && defined SOLVE3D
+      USE mod_sedbed
+# endif
       USE mod_stepping
 !
 !  Imported variable declarations.
 !
+      logical, intent(in) :: Lweak
+
       integer, intent(in) :: ng, tile, Linp, ifac
 !
 !  Local variable declarations.
@@ -120,9 +128,9 @@
 # include "tile.h"
 !
       CALL ad_convolution_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
+     &                          LBi, UBi, LBj, UBj, LBij, UBij,         &
      &                          IminS, ImaxS, JminS, JmaxS,             &
-     &                          nstp(ng), nnew(ng), Linp, ifac,         &
+     &                          nstp(ng), nnew(ng), Linp, Lweak, ifac,  &
      &                          GRID(ng) % pm,                          &
      &                          GRID(ng) % om_r,                        &
      &                          GRID(ng) % om_u,                        &
@@ -149,7 +157,7 @@
      &                          GRID(ng) % zice,                        &
 #  endif
 #  if defined SEDIMENT && defined SED_MORPH
-     &                          GRID(ng) % bed_thick,                   &
+     &                          SEDBED(ng) % bed_thick,                 &
 #  endif
      &                          GRID(ng) % Hz,                          &
      &                          GRID(ng) % z_r,                         &
@@ -158,31 +166,53 @@
      &                          MIXING(ng) % Kh,                        &
 # ifdef SOLVE3D
      &                          MIXING(ng) % Kv,                        &
-     &                          OCEAN(ng) % b_t,                        &
-     &                          OCEAN(ng) % b_u,                        &
-     &                          OCEAN(ng) % b_v,                        &
-#  ifdef ADJUST_STFLUX
-     &                          FORCES(ng) % b_stflx,                   &
+# endif
+# ifdef ADJUST_BOUNDARY
+#  ifdef SOLVE3D
+     &                          BOUNDARY(ng) % b_t_obc,                 &
+     &                          BOUNDARY(ng) % b_u_obc,                 &
+     &                          BOUNDARY(ng) % b_v_obc,                 &
 #  endif
+     &                          BOUNDARY(ng) % b_ubar_obc,              &
+     &                          BOUNDARY(ng) % b_vbar_obc,              &
+     &                          BOUNDARY(ng) % b_zeta_obc,              &
 # endif
 # ifdef ADJUST_WSTRESS
      &                          FORCES(ng) % b_sustr,                   &
      &                          FORCES(ng) % b_svstr,                   &
 # endif
+# if defined ADJUST_STFLUX && defined SOLVE3D
+     &                          FORCES(ng) % b_stflx,                   &
+# endif
+# ifdef SOLVE3D
+     &                          OCEAN(ng) % b_t,                        &
+     &                          OCEAN(ng) % b_u,                        &
+     &                          OCEAN(ng) % b_v,                        &
+# endif
      &                          OCEAN(ng) % b_zeta,                     &
      &                          OCEAN(ng) % b_ubar,                     &
      &                          OCEAN(ng) % b_vbar,                     &
-# ifdef SOLVE3D
-     &                          OCEAN(ng) % ad_t,                       &
-     &                          OCEAN(ng) % ad_u,                       &
-     &                          OCEAN(ng) % ad_v,                       &
-#  ifdef ADJUST_STFLUX
-     &                          FORCES(ng) % ad_tflux,                  &
+# ifdef ADJUST_BOUNDARY
+#  ifdef SOLVE3D
+     &                          BOUNDARY(ng) % ad_t_obc,                &
+     &                          BOUNDARY(ng) % ad_u_obc,                &
+     &                          BOUNDARY(ng) % ad_v_obc,                &
 #  endif
+     &                          BOUNDARY(ng) % ad_ubar_obc,             &
+     &                          BOUNDARY(ng) % ad_vbar_obc,             &
+     &                          BOUNDARY(ng) % ad_zeta_obc,             &
 # endif
 # ifdef ADJUST_WSTRESS
      &                          FORCES(ng) % ad_ustr,                   &
      &                          FORCES(ng) % ad_vstr,                   &
+# endif
+# if defined ADJUST_STFLUX && defined SOLVE3D
+     &                          FORCES(ng) % ad_tflux,                  &
+# endif
+# ifdef SOLVE3D
+     &                          OCEAN(ng) % ad_t,                       &
+     &                          OCEAN(ng) % ad_u,                       &
+     &                          OCEAN(ng) % ad_v,                       &
 # endif
      &                          OCEAN(ng) % ad_ubar,                    &
      &                          OCEAN(ng) % ad_vbar,                    &
@@ -192,9 +222,9 @@
 !
 !***********************************************************************
       SUBROUTINE ad_convolution_tile (ng, tile,                         &
-     &                                LBi, UBi, LBj, UBj,               &
+     &                                LBi, UBi, LBj, UBj, LBij, UBij,   &
      &                                IminS, ImaxS, JminS, JmaxS,       &
-     &                                nstp, nnew, Linp, ifac,           &
+     &                                nstp, nnew, Linp, Lweak, ifac,    &
      &                                pm, om_r, om_u, om_v,             &
      &                                pn, on_r, on_u, on_v,             &
      &                                pmon_p, pmon_r, pmon_u,           &
@@ -215,23 +245,38 @@
      &                                Kh,                               &
 # ifdef SOLVE3D
      &                                Kv,                               &
-     &                                VnormR, VnormU, VnormV,           &
-#  ifdef ADJUST_STFLUX
-     &                                HnormSTF,                         &
+# endif
+# ifdef ADJUST_BOUNDARY
+#  ifdef SOLVE3D
+     &                                VnormRobc, VnormUobc, VnormVobc,  &
 #  endif
+     &                                HnormRobc, HnormUobc, HnormVobc,  &
 # endif
 # ifdef ADJUST_WSTRESS
      &                                HnormSUS, HnormSVS,               &
 # endif
-     &                                HnormR, HnormU, HnormV,           &
+# if defined ADJUST_STFLUX && defined SOLVE3D
+     &                                HnormSTF,                         &
+# endif
 # ifdef SOLVE3D
-     &                                ad_t, ad_u, ad_v,                 &
-#  ifdef ADJUST_STFLUX
-     &                                ad_tflux,                         &
+     &                                VnormR, VnormU, VnormV,           &
+# endif
+     &                                HnormR, HnormU, HnormV,           &
+# ifdef ADJUST_BOUNDARY
+#  ifdef SOLVE3D
+     &                                ad_t_obc, ad_u_obc, ad_v_obc,     &
 #  endif
+     &                                ad_ubar_obc, ad_vbar_obc,         &
+     &                                ad_zeta_obc,                      &
 # endif
 # ifdef ADJUST_WSTRESS
      &                                ad_ustr, ad_vstr,                 &
+# endif
+# if defined ADJUST_STFLUX && defined SOLVE3D
+     &                                ad_tflux,                         &
+# endif
+# ifdef SOLVE3D
+     &                                ad_t, ad_u, ad_v,                 &
 # endif
      &                                ad_ubar, ad_vbar, ad_zeta)
 !***********************************************************************
@@ -245,6 +290,12 @@
 # ifdef SOLVE3D
       USE ad_conv_3d_mod
 # endif
+# ifdef ADJUST_BOUNDARY
+      USE ad_conv_bry2d_mod
+#  ifdef SOLVE3D
+      USE ad_conv_bry3d_mod
+#  endif
+# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod
 # endif
@@ -252,8 +303,10 @@
 !
 !  Imported variable declarations.
 !
+      logical, intent(in) :: Lweak
+
       integer, intent(in) :: ng, tile
-      integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: LBi, UBi, LBj, UBj, LBij, UBij
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nstp, nnew, Linp, ifac
 !
@@ -289,32 +342,52 @@
 #   endif
       real(r8), intent(inout) :: h(LBi:,LBj:)
 #  endif
-#  ifdef SOLVE3D
-      real(r8), intent(in) :: VnormR(LBi:,LBj:,:,:)
-      real(r8), intent(in) :: VnormU(LBi:,LBj:,:)
-      real(r8), intent(in) :: VnormV(LBi:,LBj:,:)
-#   ifdef ADJUST_STFLUX
-      real(r8), intent(in) :: HnormSTF(LBi:,LBj:,:)
+#  ifdef ADJUST_BOUNDARY
+#   ifdef SOLVE3D
+      real(r8), intent (in) :: VnormRobc(LBij:,:,:,:)
+      real(r8), intent (in) :: VnormUobc(LBij:,:,:)
+      real(r8), intent (in) :: VnormVobc(LBij:,:,:)
 #   endif
+      real(r8), intent (in) :: HnormRobc(LBij:,:)
+      real(r8), intent (in) :: HnormUobc(LBij:,:)
+      real(r8), intent (in) :: HnormVobc(LBij:,:)
 #  endif
 #  ifdef ADJUST_WSTRESS
       real(r8), intent(in) :: HnormSUS(LBi:,LBj:)
       real(r8), intent(in) :: HnormSVS(LBi:,LBj:)
 #  endif
-      real(r8), intent(in) :: HnormR(LBi:,LBj:)
-      real(r8), intent(in) :: HnormU(LBi:,LBj:)
-      real(r8), intent(in) :: HnormV(LBi:,LBj:)
+#  if defined ADJUST_STFLUX && defined SOLVE3D
+      real(r8), intent(in) :: HnormSTF(LBi:,LBj:,:)
+#  endif
 #  ifdef SOLVE3D
-      real(r8), intent(inout) :: ad_t(LBi:,LBj:,:,:,:)
-      real(r8), intent(inout) :: ad_u(LBi:,LBj:,:,:)
-      real(r8), intent(inout) :: ad_v(LBi:,LBj:,:,:)
-#   ifdef ADJUST_STFLUX
-      real(r8), intent(inout) :: ad_tflux(LBi:,LBj:,:,:,:)
+      real(r8), intent(in) :: VnormR(LBi:,LBj:,:,:,:)
+      real(r8), intent(in) :: VnormU(LBi:,LBj:,:,:)
+      real(r8), intent(in) :: VnormV(LBi:,LBj:,:,:)
+#  endif
+      real(r8), intent(in) :: HnormR(LBi:,LBj:,:)
+      real(r8), intent(in) :: HnormU(LBi:,LBj:,:)
+      real(r8), intent(in) :: HnormV(LBi:,LBj:,:)
+#  ifdef ADJUST_BOUNDARY
+#   ifdef SOLVE3D
+      real(r8), intent(inout) :: ad_t_obc(LBij:,:,:,:,:,:)
+      real(r8), intent(inout) :: ad_u_obc(LBij:,:,:,:,:)
+      real(r8), intent(inout) :: ad_v_obc(LBij:,:,:,:,:)
 #   endif
+      real(r8), intent(inout) :: ad_ubar_obc(LBij:,:,:,:)
+      real(r8), intent(inout) :: ad_vbar_obc(LBij:,:,:,:)
+      real(r8), intent(inout) :: ad_zeta_obc(LBij:,:,:,:)
 #  endif
 #  ifdef ADJUST_WSTRESS
       real(r8), intent(inout) :: ad_ustr(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: ad_vstr(LBi:,LBj:,:,:)
+#  endif
+#  if defined ADJUST_STFLUX && defined SOLVE3D
+      real(r8), intent(inout) :: ad_tflux(LBi:,LBj:,:,:,:)
+#  endif
+#  ifdef SOLVE3D
+      real(r8), intent(inout) :: ad_t(LBi:,LBj:,:,:,:)
+      real(r8), intent(inout) :: ad_u(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: ad_v(LBi:,LBj:,:,:)
 #  endif
       real(r8), intent(inout) :: ad_ubar(LBi:,LBj:,:)
       real(r8), intent(inout) :: ad_vbar(LBi:,LBj:,:)
@@ -356,33 +429,54 @@
 #   endif
       real(r8), intent(inout) :: h(LBi:UBi,LBj:UBj)
 #  endif
-#  ifdef SOLVE3D
-      real(r8), intent(in) :: VnormR(LBi:UBi,LBj:UBj,N(ng),NT(ng))
-      real(r8), intent(in) :: VnormU(LBi:UBi,LBj:UBj,N(ng))
-      real(r8), intent(in) :: VnormV(LBi:UBi,LBj:UBj,N(ng))
-#   ifdef ADJUST_STFLUX
-      real(r8), intent(in) :: HnormSTF(LBi:UBi,LBj:UBj,NT(ng))
+#  ifdef ADJUST_BOUNDARY
+#   ifdef SOLVE3D
+      real(r8), intent (in) :: VnormRobc(LBij:UBij,N(ng),4,NT(ng))
+      real(r8), intent (in) :: VnormUobc(LBij:UBij,N(ng),4)
+      real(r8), intent (in) :: VnormVobc(LBij:UBij,N(ng),4)
 #   endif
+      real(r8), intent (in) :: HnormRobc(LBij:UBij,4)
+      real(r8), intent (in) :: HnormUobc(LBij:UBij,4)
+      real(r8), intent (in) :: HnormVobc(LBij:UBij,4)
 #  endif
 #  ifdef ADJUST_WSTRESS
       real(r8), intent(in) :: HnormSUS(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: HnormSVS(LBi:UBi,LBj:UBj)
 #  endif
-      real(r8), intent(in) :: HnormR(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: HnormU(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: HnormV(LBi:UBi,LBj:UBj)
+#  if defined ADJUST_STFLUX && defined SOLVE3D
+      real(r8), intent(in) :: HnormSTF(LBi:UBi,LBj:UBj,NT(ng))
+#  endif
 #  ifdef SOLVE3D
-      real(r8), intent(inout) :: ad_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
-      real(r8), intent(inout) :: ad_u(LBi:UBi,LBj:UBj,N(ng),2)
-      real(r8), intent(inout) :: ad_v(LBi:UBi,LBj:UBj,N(ng),2)
-#   ifdef ADJUST_STFLUX
-      real(r8), intent(inout) :: ad_tflux(LBi:UBi,LBj:UBj,              &
-     &                                    Nfrec(ng),2,NT(ng))
+      real(r8), intent(in) :: VnormR(LBi:UBi,LBj:UBj,N(ng),NSA,NT(ng))
+      real(r8), intent(in) :: VnormU(LBi:UBi,LBj:UBj,NSA,N(ng))
+      real(r8), intent(in) :: VnormV(LBi:UBi,LBj:UBj,NSA,N(ng))
+#  endif
+      real(r8), intent(in) :: HnormR(LBi:UBi,LBj:UBj,NSA)
+      real(r8), intent(in) :: HnormU(LBi:UBi,LBj:UBj,NSA)
+      real(r8), intent(in) :: HnormV(LBi:UBi,LBj:UBj,NSA)
+#  ifdef ADJUST_BOUNDARY
+#   ifdef SOLVE3D
+      real(r8), intent(inout) :: ad_t_obc(LBij:UBij,N(ng),4,            &
+     &                                    Nbrec(ng),2,NT(ng))
+      real(r8), intent(inout) :: ad_u_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
+      real(r8), intent(inout) :: ad_v_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
 #   endif
+      real(r8), intent(inout) :: ad_ubar_obc(LBij:UBij,4,Nbrec(ng),2)
+      real(r8), intent(inout) :: ad_vbar_obc(LBij:UBij,4,Nbrec(ng),2)
+      real(r8), intent(inout) :: ad_zeta_obc(LBij:UBij,4,Nbrec(ng),2)
 #  endif
 #  ifdef ADJUST_WSTRESS
       real(r8), intent(inout) :: ad_ustr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
       real(r8), intent(inout) :: ad_vstr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
+#  endif
+#  if defined ADJUST_STFLUX && defined SOLVE3D
+      real(r8), intent(inout) :: ad_tflux(LBi:UBi,LBj:UBj,              &
+     &                                    Nfrec(ng),2,NT(ng))
+#  endif
+#  ifdef SOLVE3D
+      real(r8), intent(inout) :: ad_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
+      real(r8), intent(inout) :: ad_u(LBi:UBi,LBj:UBj,N(ng),2)
+      real(r8), intent(inout) :: ad_v(LBi:UBi,LBj:UBj,N(ng),2)
 #  endif
       real(r8), intent(inout) :: ad_ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(inout) :: ad_vbar(LBi:UBi,LBj:UBj,3)
@@ -408,10 +502,10 @@
       logical :: NSperiodic=.FALSE.
 #  endif
 # endif
-      integer :: i, is, j, k
-# ifdef SOLVE3D
-      integer :: itrc
+# ifdef ADJUST_BOUNDARY
+      logical, dimension(4) :: Lconvolve
 # endif
+      integer :: i, ib, ir, is, it, j, k, rec
       real(r8) :: cff
 # ifdef SOLVE3D
       real(r8) :: fac
@@ -421,6 +515,27 @@
 # endif
 !
 # include "set_bounds.h"
+!
+!-----------------------------------------------------------------------
+!  Determine error covariance normalization factors to use.
+!-----------------------------------------------------------------------
+!
+      IF (Lweak) THEN
+        rec=2                        ! weak constraint
+      ELSE
+        rec=1                        ! strong constraint
+      END IF
+
+# ifdef ADJUST_BOUNDARY
+!
+!  Set switch to convolve boundary segments by the appropriate
+!  tiles.
+!
+      Lconvolve(iwest )=WESTERN_EDGE
+      Lconvolve(ieast )=EASTERN_EDGE
+      Lconvolve(isouth)=SOUTHERN_EDGE
+      Lconvolve(inorth)=NORTHERN_EDGE
+# endif
 
 # ifdef SOLVE3D
 !
@@ -453,26 +568,6 @@
 !  Multiply adjoint state by its corresponding normalization factor.
 !-----------------------------------------------------------------------
 !
-!  Adjoint free-surface.
-!
-      DO j=JR_RANGE
-        DO i=IR_RANGE
-          ad_zeta(i,j,Linp)=ad_zeta(i,j,Linp)*HnormR(i,j)
-        END DO
-      END DO
-!
-!  Adjoint 2D momentum.
-!
-      DO j=JU_RANGE
-        DO i=IU_RANGE
-          ad_ubar(i,j,Linp)=ad_ubar(i,j,Linp)*HnormU(i,j)
-        END DO
-      END DO
-      DO j=JV_RANGE
-        DO i=IV_RANGE
-          ad_vbar(i,j,Linp)=ad_vbar(i,j,Linp)*HnormV(i,j)
-        END DO
-      END DO
 # ifdef DISTRIBUTE
       CALL ad_mp_exchange2d (ng, tile, iADM, 3,                         &
      &                       LBi, UBi, LBj, UBj,                        &
@@ -481,46 +576,31 @@
      &                       ad_ubar(:,:,Linp),                         &
      &                       ad_vbar(:,:,Linp))
 # endif
-# ifdef ADJUST_WSTRESS
 !
-!  Adjoint surface momentum stress.
+!  Adjoint free-surface.
 !
-      DO k=1,Nfrec(ng)
-        DO j=JU_RANGE
-          DO i=IU_RANGE
-            ad_ustr(i,j,k,Linp)=ad_ustr(i,j,k,Linp)*HnormSUS(i,j)
-          END DO
-        END DO
-        DO j=JV_RANGE
-          DO i=IV_RANGE
-            ad_vstr(i,j,k,Linp)=ad_vstr(i,j,k,Linp)*HnormSVS(i,j)
-          END DO
+      DO j=JR_RANGE
+        DO i=IR_RANGE
+          ad_zeta(i,j,Linp)=ad_zeta(i,j,Linp)*HnormR(i,j,rec)
         END DO
       END DO
-#  ifdef DISTRIBUTE
-      CALL ad_mp_exchange3d (ng, tile, iADM, 2,                         &
-     &                       LBi, UBi, LBj, UBj, 1, Nfrec(ng),          &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
-     &                       ad_ustr(:,:,:,Linp),                       &
-     &                       ad_vstr(:,:,:,Linp))
-#  endif
-# endif
+!
+!  Adjoint 2D momentum.
+!
+      DO j=JU_RANGE
+        DO i=IU_RANGE
+          ad_ubar(i,j,Linp)=ad_ubar(i,j,Linp)*HnormU(i,j,rec)
+        END DO
+      END DO
+      DO j=JV_RANGE
+        DO i=IV_RANGE
+          ad_vbar(i,j,Linp)=ad_vbar(i,j,Linp)*HnormV(i,j,rec)
+        END DO
+      END DO
 # ifdef SOLVE3D
 !
 !  Adjoint 3D momentum.
 !
-      DO k=1,N(ng)
-        DO j=JU_RANGE
-          DO i=IU_RANGE
-            ad_u(i,j,k,Linp)=ad_u(i,j,k,Linp)*VnormU(i,j,k)
-          END DO
-        END DO
-        DO j=JV_RANGE
-          DO i=IV_RANGE
-            ad_v(i,j,k,Linp)=ad_v(i,j,k,Linp)*VnormV(i,j,k)
-          END DO
-        END DO
-      END DO
 #  ifdef DISTRIBUTE
       CALL ad_mp_exchange3d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
@@ -528,52 +608,293 @@
      &                       ad_u(:,:,:,Linp),                          &
      &                       ad_v(:,:,:,Linp))
 #  endif
-!
-!  Adjoint tracers.
-!
-      DO itrc=1,NT(ng)
-        DO k=1,N(ng)
-          DO j=JR_RANGE
-            DO i=IR_RANGE
-              ad_t(i,j,k,Linp,itrc)=ad_t(i,j,k,Linp,itrc)*              &
-     &                              VnormR(i,j,k,itrc)
-            END DO
+      DO k=1,N(ng)
+        DO j=JU_RANGE
+          DO i=IU_RANGE
+            ad_u(i,j,k,Linp)=ad_u(i,j,k,Linp)*VnormU(i,j,k,rec)
+          END DO
+        END DO
+        DO j=JV_RANGE
+          DO i=IV_RANGE
+            ad_v(i,j,k,Linp)=ad_v(i,j,k,Linp)*VnormV(i,j,k,rec)
           END DO
         END DO
       END DO
+!
+!  Adjoint tracers.
+!
 #  ifdef DISTRIBUTE
       CALL ad_mp_exchange4d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),   &
      &                       NghostPoints, EWperiodic, NSperiodic,      &
      &                       ad_t(:,:,:,Linp,:))
 #  endif
-#  ifdef ADJUST_STFLUX
-!
-!  Adjoint surface tracers flux.
-!
-      DO itrc=1,NT(ng)
-        DO k=1,Nfrec(ng)
+      DO it=1,NT(ng)
+        DO k=1,N(ng)
           DO j=JR_RANGE
             DO i=IR_RANGE
-              ad_tflux(i,j,k,Linp,itrc)=ad_tflux(i,j,k,Linp,itrc)*      &
-     &                                  HnormSTF(i,j,itrc)
+              ad_t(i,j,k,Linp,it)=ad_t(i,j,k,Linp,it)*                  &
+     &                            VnormR(i,j,k,rec,it)
             END DO
           END DO
         END DO
       END DO
-#   ifdef DISTRIBUTE
-      CALL ad_mp_exchange4d (ng, tile, iADM, 1,                         &
-     &                       LBi, UBi, LBj, UBj, 1,Nfrec(ng), 1,NT(ng), &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
-     &                       ad_tflux(:,:,:,Linp,:))
-#   endif
+# endif
+
+# ifdef ADJUST_BOUNDARY
+!
+!  Adjoint free-surface open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isFsur,ng)) THEN
+#  ifdef DISTRIBUTE
+            CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,           &
+     &                                 LBij, UBij,                      &
+     &                                 NghostPoints,                    &
+     &                                 EWperiodic, NSperiodic,          &
+     &                                 ad_zeta_obc(:,ib,ir,Linp))
 #  endif
+            IF (Lconvolve(ib)) THEN
+              IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+                DO j=JR_RANGE
+                  ad_zeta_obc(j,ib,ir,Linp)=ad_zeta_obc(j,ib,ir,Linp)*  &
+     &                                      HnormRobc(j,ib)
+                END DO
+              ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+                DO i=IR_RANGE
+                  ad_zeta_obc(i,ib,ir,Linp)=ad_zeta_obc(i,ib,ir,Linp)*  &
+     &                                      HnormRobc(i,ib)
+                END DO
+              END IF
+            END IF
+          END IF
+        END DO
+      END DO
+!
+!  Tangent linear 2D U-momentum open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isUbar,ng)) THEN
+#  ifdef DISTRIBUTE
+            CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,           &
+     &                                 LBij, UBij,                      &
+     &                                 NghostPoints,                    &
+     &                                 EWperiodic, NSperiodic,          &
+     &                                 ad_ubar_obc(:,ib,ir,Linp))
+#  endif
+            IF (Lconvolve(ib)) THEN
+              IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+                DO j=JU_RANGE
+                  ad_ubar_obc(j,ib,ir,Linp)=ad_ubar_obc(j,ib,ir,Linp)*  &
+     &                                      HnormUobc(j,ib)
+                END DO
+              ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+                DO i=IU_RANGE
+                  ad_ubar_obc(i,ib,ir,Linp)=ad_ubar_obc(i,ib,ir,Linp)*  &
+     &                                      HnormUobc(i,ib)
+                END DO
+              END IF
+            END IF
+          END IF
+        END DO
+      END DO
+!
+!  Tangent linear 2D V-momentum open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isVbar,ng)) THEN
+#  ifdef DISTRIBUTE
+            CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,           &
+     &                                 LBij, UBij,                      &
+     &                                 NghostPoints,                    &
+     &                                 EWperiodic, NSperiodic,          &
+     &                                 ad_vbar_obc(:,ib,ir,Linp))
+#  endif
+            IF (Lconvolve(ib)) THEN
+              IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+                DO j=JV_RANGE
+                  ad_vbar_obc(j,ib,ir,Linp)=ad_vbar_obc(j,ib,ir,Linp)*  &
+     &                                      HnormVobc(j,ib)
+                END DO
+              ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+                DO i=IV_RANGE
+                  ad_vbar_obc(i,ib,ir,Linp)=ad_vbar_obc(i,ib,ir,Linp)*  &
+     &                                      HnormVobc(i,ib)
+                END DO
+              END IF
+            END IF
+          END IF
+        END DO
+      END DO
+
+#  ifdef SOLVE3D
+!
+!  Tangent linear 3D U-momentum open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isUvel,ng)) THEN
+#   ifdef DISTRIBUTE
+            CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,           &
+     &                                 LBij, UBij, 1, N(ng),            &
+     &                                 NghostPoints,                    &
+     &                                 EWperiodic, NSperiodic,          &
+     &                                 ad_u_obc(:,:,ib,ir,Linp))
+#   endif
+            IF (Lconvolve(ib)) THEN
+              IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+                DO k=1,N(ng)
+                  DO j=JU_RANGE
+                    ad_u_obc(j,k,ib,ir,Linp)=ad_u_obc(j,k,ib,ir,Linp)*  &
+     &                                       VnormUobc(j,k,ib)
+                  END DO
+                END DO
+              ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+                DO k=1,N(ng)
+                  DO i=IU_RANGE
+                    ad_u_obc(i,k,ib,ir,Linp)=ad_u_obc(i,k,ib,ir,Linp)*  &
+     &                                       VnormUobc(i,k,ib)
+                  END DO
+                END DO
+              END IF
+            END IF
+          END IF
+        END DO
+      END DO
+!
+!  Tangent linear 3D V-momentum open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isVvel,ng)) THEN
+#   ifdef DISTRIBUTE
+            CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,           &
+     &                                 LBij, UBij, 1, N(ng),            &
+     &                                 NghostPoints,                    &
+     &                                 EWperiodic, NSperiodic,          &
+     &                                 ad_v_obc(:,:,ib,ir,Linp))
+#   endif
+            IF (Lconvolve(ib)) THEN
+              IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+                DO k=1,N(ng)
+                  DO j=JV_RANGE
+                    ad_v_obc(j,k,ib,ir,Linp)=ad_v_obc(j,k,ib,ir,Linp)*  &
+     &                                       VnormVobc(j,k,ib)
+                  END DO
+                END DO
+              ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+                DO k=1,N(ng)
+                  DO i=IV_RANGE
+                    ad_v_obc(i,k,ib,ir,Linp)=ad_v_obc(i,k,ib,ir,Linp)*  &
+     &                                       VnormVobc(i,k,ib)
+                  END DO
+                END DO
+              END IF
+            END IF
+          END IF
+        END DO
+      END DO
+!
+!  Tangent linear tracers open boundaries.
+!
+      DO it=1,NT(ng)
+        DO ir=1,Nbrec(ng)
+          DO ib=1,4
+            IF (.not.Lweak.and.Lobc(ib,isTvar(it),ng)) THEN
+#   ifdef DISTRIBUTE
+              CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,         &
+     &                                   LBij, UBij, 1, N(ng),          &
+     &                                   NghostPoints,                  &
+     &                                   EWperiodic, NSperiodic,        &
+     &                                   ad_t_obc(:,:,ib,ir,Linp,it))
+#   endif
+              IF (Lconvolve(ib)) THEN
+                IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+                  DO k=1,N(ng)
+                    DO j=JR_RANGE
+                      ad_t_obc(j,k,ib,ir,Linp,it)=                      &
+     &                                   ad_t_obc(j,k,ib,ir,Linp,it)*   &
+     &                                   VnormRobc(j,k,ib,it)
+                    END DO
+                  END DO
+                ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+                  DO k=1,N(ng)
+                    DO i=IR_RANGE
+                      ad_t_obc(i,k,ib,ir,Linp,it)=                      &
+     &                                   ad_t_obc(i,k,ib,ir,Linp,it)*   &
+     &                                   VnormRobc(i,k,ib,it)
+                    END DO
+                  END DO
+                END IF
+              END IF
+            END IF
+          END DO
+        END DO
+      END DO
+#  endif
+# endif
+
+# ifdef ADJUST_WSTRESS
+!
+!  Adjoint surface momentum stress.
+!
+      IF (.not.Lweak) THEN
+#  ifdef DISTRIBUTE
+        CALL ad_mp_exchange3d (ng, tile, iADM, 2,                       &
+     &                         LBi, UBi, LBj, UBj, 1, Nfrec(ng),        &
+     &                         NghostPoints, EWperiodic, NSperiodic,    &
+     &                         ad_ustr(:,:,:,Linp),                     &
+     &                         ad_vstr(:,:,:,Linp))
+#  endif
+        DO k=1,Nfrec(ng)
+          DO j=JU_RANGE
+            DO i=IU_RANGE
+              ad_ustr(i,j,k,Linp)=ad_ustr(i,j,k,Linp)*HnormSUS(i,j)
+            END DO
+          END DO
+          DO j=JV_RANGE
+            DO i=IV_RANGE
+              ad_vstr(i,j,k,Linp)=ad_vstr(i,j,k,Linp)*HnormSVS(i,j)
+            END DO
+          END DO
+        END DO
+      END IF
+# endif
+# ifdef ADJUST_STFLUX
+!
+!  Adjoint surface tracers flux.
+!
+      IF (.not.Lweak) THEN
+        DO it=1,NT(ng)
+          IF (Lstflux(it,ng)) THEN
+#  ifdef DISTRIBUTE
+            CALL ad_mp_exchange3d (ng, tile, iADM, 1,                   &
+     &                             LBi, UBi, LBj, UBj, 1, Nfrec(ng),    &
+     &                             NghostPoints,                        &
+     &                             EWperiodic, NSperiodic,              &
+     &                             ad_tflux(:,:,:,Linp,it))
+#  endif
+            DO k=1,Nfrec(ng)
+              DO j=JR_RANGE
+                DO i=IR_RANGE
+                  ad_tflux(i,j,k,Linp,it)=ad_tflux(i,j,k,Linp,it)*      &
+     &                                    HnormSTF(i,j,it)
+                END DO
+              END DO
+            END DO
+          END IF
+        END DO
+      END IF
 # endif
 !
 !-----------------------------------------------------------------------
-!  Convolve adjoint state vector with a generalized adjoint diffusion
-!  equation to filter solution with specified horizontal scales.
-!  Convert from model space to minimization space (v-space).
+!  Initial conditions or model error covariance: Convolve adjoint state
+!  vector with a generalized adjoint diffusion equation to filter
+!  solution with specified horizontal scales. Convert from model space
+!  to minimization space (v-space).
 !-----------------------------------------------------------------------
 !
 !  Adjoint free-surface.
@@ -582,8 +903,8 @@
      &                       LBi, UBi, LBj, UBj,                        &
      &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       NghostPoints,                              &
-     &                       NHsteps(isFsur)/ifac,                      &
-     &                       DTsizeH(isFsur),                           &
+     &                       NHsteps(rec,isFsur)/ifac,                  &
+     &                       DTsizeH(rec,isFsur),                       &
      &                       Kh,                                        &
      &                       pm, pn, pmon_u, pnom_v,                    &
 # ifdef MASKING
@@ -597,8 +918,8 @@
      &                       LBi, UBi, LBj, UBj,                        &
      &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       NghostPoints,                              &
-     &                       NHsteps(isUbar)/ifac,                      &
-     &                       DTsizeH(isUbar),                           &
+     &                       NHsteps(rec,isUbar)/ifac,                  &
+     &                       DTsizeH(rec,isUbar),                       &
      &                       Kh,                                        &
      &                       pm, pn, pmon_r, pnom_p,                    &
 # ifdef MASKING
@@ -610,46 +931,14 @@
      &                       LBi, UBi, LBj, UBj,                        &
      &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       NghostPoints,                              &
-     &                       NHsteps(isVbar)/ifac,                      &
-     &                       DTsizeH(isVbar),                           &
+     &                       NHsteps(rec,isVbar)/ifac,                  &
+     &                       DTsizeH(rec,isVbar),                       &
      &                       Kh,                                        &
      &                       pm, pn, pmon_p, pnom_r,                    &
 # ifdef MASKING
      &                       vmask, pmask,                              &
 # endif
      &                       ad_vbar(:,:,Linp))
-# ifdef ADJUST_WSTRESS
-!
-!  Adjoint surface momentum stress.
-!
-      DO k=1,Nfrec(ng)
-        CALL ad_conv_u2d_tile (ng, tile, iADM,                          &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         IminS, ImaxS, JminS, JmaxS,              &
-     &                         NghostPoints,                            &
-     &                         NHsteps(isUstr)/ifac,                    &
-     &                         DTsizeH(isUstr),                         &
-     &                         Kh,                                      &
-     &                         pm, pn, pmon_r, pnom_p,                  &
-#  ifdef MASKING
-     &                         umask, pmask,                            &
-#  endif
-     &                         ad_ustr(:,:,k,Linp))
-
-        CALL ad_conv_v2d_tile (ng, tile, iADM,                          &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         IminS, ImaxS, JminS, JmaxS,              &
-     &                         NghostPoints,                            &
-     &                         NHsteps(isVstr)/ifac,                    &
-     &                         DTsizeH(isVstr),                         &
-     &                         Kh,                                      &
-     &                         pm, pn, pmon_p, pnom_r,                  &
-#  ifdef MASKING
-     &                         vmask, pmask,                            &
-#  endif
-     &                         ad_vstr(:,:,k,Linp))
-      END DO
-# endif
 # ifdef SOLVE3D
 !
 !  Adjoint 3D momentum.
@@ -658,10 +947,10 @@
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
      &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       NghostPoints,                              &
-     &                       NHsteps(isUvel)/ifac,                      &
-     &                       NVsteps(isUvel)/ifac,                      &
-     &                       DTsizeH(isUvel),                           &
-     &                       DTsizeV(isUvel),                           &
+     &                       NHsteps(rec,isUvel)/ifac,                  &
+     &                       NVsteps(rec,isUvel)/ifac,                  &
+     &                       DTsizeH(rec,isUvel),                       &
+     &                       DTsizeV(rec,isUvel),                       &
      &                       Kh, Kv,                                    &
      &                       pm, pn, pmon_r, pnom_p,                    &
 #  ifdef MASKING
@@ -674,10 +963,10 @@
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
      &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       NghostPoints,                              &
-     &                       NHsteps(isUvel)/ifac,                      &
-     &                       NVsteps(isUvel)/ifac,                      &
-     &                       DTsizeH(isUvel),                           &
-     &                       DTsizeV(isUvel),                           &
+     &                       NHsteps(rec,isUvel)/ifac,                  &
+     &                       NVsteps(rec,isUvel)/ifac,                  &
+     &                       DTsizeH(rec,isUvel),                       &
+     &                       DTsizeV(rec,isUvel),                       &
      &                       Kh, Kv,                                    &
      &                       pm, pn, pmon_p, pnom_r,                    &
 #  ifdef MASKING
@@ -688,45 +977,257 @@
 !
 !  Adjoint tracers.
 !
-      DO itrc=1,NT(ng)
-        is=isTvar(itrc)
+      DO it=1,NT(ng)
+        is=isTvar(it)
         CALL ad_conv_r3d_tile (ng, tile, iADM,                          &
      &                         LBi, UBi, LBj, UBj, 1, N(ng),            &
      &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         NghostPoints,                            &
-     &                         NHsteps(is)/ifac,                        &
-     &                         NVsteps(is)/ifac,                        &
-     &                         DTsizeH(is),                             &
-     &                         DTsizeV(is),                             &
+     &                         NHsteps(rec,is)/ifac,                    &
+     &                         NVsteps(rec,is)/ifac,                    &
+     &                         DTsizeH(rec,is),                         &
+     &                         DTsizeV(rec,is),                         &
      &                         Kh, Kv,                                  &
      &                         pm, pn, pmon_u, pnom_v,                  &
 #  ifdef MASKING
      &                         rmask, umask, vmask,                     &
 #  endif
      &                         Hz, z_r,                                 &
-     &                         ad_t(:,:,:,Linp,itrc))
+     &                         ad_t(:,:,:,Linp,it))
       END DO
-#  ifdef ADJUST_STFLUX
+# endif
+
+# ifdef ADJUST_BOUNDARY
 !
-!  Adjoint surface tracers flux.
+!-----------------------------------------------------------------------
+!  Open boundaries error convariance:  Convolve adjoint state boundary
+!  edges with a generalized adjoint diffusion equation to filter
+!  solution with specified horizontal scales. Convert from model space
+!  to minimization space (v-space).
+!-----------------------------------------------------------------------
 !
-      DO itrc=1,NT(ng)
-        is=isTsur(itrc)
+!  Adjoint free-surface open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isFsur,ng)) THEN
+            CALL ad_conv_r2d_bry_tile (ng, tile, iADM, ib,              &
+     &                                 BOUNDS(ng)%edge(:,r2dvar),       &
+     &                                 LBij, UBij,                      &
+     &                                 LBi, UBi, LBj, UBj,              &
+     &                                 IminS, ImaxS, JminS, JmaxS,      &
+     &                                 NghostPoints,                    &
+     &                                 NHstepsB(ib,isFsur)/ifac,        &
+     &                                 DTsizeHB(ib,isFsur),             &
+     &                                 Kh,                              &
+     &                                 pm, pn, pmon_u, pnom_v,          &
+#  ifdef MASKING
+     &                                 rmask, umask, vmask,             &
+#  endif
+     &                                 ad_zeta_obc(:,ib,ir,Linp))
+          END IF
+        END DO
+      END DO
+!
+!  Tangent linear 2D U-momentum open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isUbar,ng)) THEN
+            CALL ad_conv_u2d_bry_tile (ng, tile, iADM, ib,              &
+     &                                 BOUNDS(ng)%edge(:,u2dvar),       &
+     &                                 LBij, UBij,                      &
+     &                                 LBi, UBi, LBj, UBj,              &
+     &                                 IminS, ImaxS, JminS, JmaxS,      &
+     &                                 NghostPoints,                    &
+     &                                 NHstepsB(ib,isUbar)/ifac,        &
+     &                                 DTsizeHB(ib,isUbar),             &
+     &                                 Kh,                              &
+     &                                 pm, pn, pmon_r, pnom_p,          &
+#  ifdef MASKING
+     &                                 umask, pmask,                    &
+#  endif
+     &                                 ad_ubar_obc(:,ib,ir,Linp))
+          END IF
+        END DO
+      END DO
+!
+!  Tangent linear 2D V-momentum open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isVbar,ng)) THEN
+            CALL ad_conv_v2d_bry_tile (ng, tile, iADM, ib,              &
+     &                                 BOUNDS(ng)%edge(:,v2dvar),       &
+     &                                 LBij, UBij,                      &
+     &                                 LBi, UBi, LBj, UBj,              &
+     &                                 IminS, ImaxS, JminS, JmaxS,      &
+     &                                 NghostPoints,                    &
+     &                                 NHstepsB(ib,isVbar)/ifac,        &
+     &                                 DTsizeHB(ib,isVbar),             &
+     &                                 Kh,                              &
+     &                                 pm, pn, pmon_p, pnom_r,          &
+#  ifdef MASKING
+     &                                 vmask, pmask,                    &
+#  endif
+     &                                 ad_vbar_obc(:,ib,ir,Linp))
+          END IF
+        END DO
+      END DO
+
+#  ifdef SOLVE3D
+!
+!  Tangent linear 3D U-momentum open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isUvel,ng)) THEN
+            CALL ad_conv_u3d_bry_tile (ng, tile, iADM, ib,              &
+     &                                 BOUNDS(ng)%edge(:,u2dvar),       &
+     &                                 LBij, UBij,                      &
+     &                                 LBi, UBi, LBj, UBj, 1, N(ng),    &
+     &                                 IminS, ImaxS, JminS, JmaxS,      &
+     &                                 NghostPoints,                    &
+     &                                 NHstepsB(ib,isUvel)/ifac,        &
+     &                                 NVstepsB(ib,isUvel)/ifac,        &
+     &                                 DTsizeHB(ib,isUvel),             &
+     &                                 DTsizeVB(ib,isUvel),             &
+     &                                 Kh, Kv,                          &
+     &                                 pm, pn, pmon_r, pnom_p,          &
+#   ifdef MASKING
+     &                                 umask, pmask,                    &
+#   endif
+     &                                 Hz, z_r,                         &
+     &                                 ad_u_obc(:,:,ib,ir,Linp))
+          END IF
+        END DO
+      END DO
+!
+!  Tangent linear 3D V-momentum open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isVvel,ng)) THEN
+            CALL ad_conv_v3d_bry_tile (ng, tile, iADM, ib,              &
+     &                                 BOUNDS(ng)%edge(:,v2dvar),       &
+     &                                 LBij, UBij,                      &
+     &                                 LBi, UBi, LBj, UBj, 1, N(ng),    &
+     &                                 IminS, ImaxS, JminS, JmaxS,      &
+     &                                 NghostPoints,                    &
+     &                                 NHstepsB(ib,isVvel)/ifac,        &
+     &                                 NVstepsB(ib,isVvel)/ifac,        &
+     &                                 DTsizeHB(ib,isVvel),             &
+     &                                 DTsizeVB(ib,isVvel),             &
+     &                                 Kh, Kv,                          &
+     &                                 pm, pn, pmon_p, pnom_r,          &
+#   ifdef MASKING
+     &                                 vmask, pmask,                    &
+#   endif
+     &                                 Hz, z_r,                         &
+     &                                 ad_v_obc(:,:,ib,ir,Linp))
+          END IF
+        END DO
+      END DO
+!
+!  Tangent linear tracers open boundaries.
+!
+      DO it=1,NT(ng)
+        is=isTvar(it)
+        DO ir=1,Nbrec(ng)
+          DO ib=1,4
+            IF (.not.Lweak.and.Lobc(ib,is,ng)) THEN
+              CALL ad_conv_r3d_bry_tile (ng, tile, iADM, ib,            &
+     &                                   BOUNDS(ng)%edge(:,r2dvar),     &
+     &                                   LBij, UBij,                    &
+     &                                   LBi, UBi, LBj, UBj, 1, N(ng),  &
+     &                                   IminS, ImaxS, JminS, JmaxS,    &
+     &                                   NghostPoints,                  &
+     &                                   NHstepsB(ib,is)/ifac,          &
+     &                                   NVstepsB(ib,is)/ifac,          &
+     &                                   DTsizeHB(ib,is),               &
+     &                                   DTsizeVB(ib,is),               &
+     &                                   Kh, Kv,                        &
+     &                                   pm, pn, pmon_u, pnom_v,        &
+#   ifdef MASKING
+     &                                   rmask, umask, vmask,           &
+#   endif
+     &                                   Hz, z_r,                       &
+     &                                   ad_t_obc(:,:,ib,ir,Linp,it))
+            END IF
+          END DO
+        END DO
+      END DO
+#  endif
+# endif
+
+# if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
+!
+!-----------------------------------------------------------------------
+!  Surface forcing error covariance: Convolve adjoint state vector with
+!  a generalized adjoint diffusion equation to filter solution with
+!  specified horizontal scales. Convert from model spaceto minimization
+!  space (v-space).
+!-----------------------------------------------------------------------
+
+#  ifdef ADJUST_WSTRESS
+!
+!  Adjoint surface momentum stress.
+!
+      IF (.not.Lweak) THEN
         DO k=1,Nfrec(ng)
-          CALL ad_conv_r2d_tile (ng, tile, iADM,                        &
+          CALL ad_conv_u2d_tile (ng, tile, iADM,                        &
      &                           LBi, UBi, LBj, UBj,                    &
      &                           IminS, ImaxS, JminS, JmaxS,            &
      &                           NghostPoints,                          &
-     &                           NHsteps(is)/ifac,                      &
-     &                           DTsizeH(is),                           &
+     &                           NHsteps(rec,isUstr)/ifac,              &
+     &                           DTsizeH(rec,isUstr),                   &
      &                           Kh,                                    &
-     &                           pm, pn, pmon_u, pnom_v,                &
+     &                           pm, pn, pmon_r, pnom_p,                &
 #   ifdef MASKING
-     &                           rmask, umask, vmask,                   &
+     &                           umask, pmask,                          &
 #   endif
-     &                           ad_tflux(:,:,k,Linp,itrc))
+     &                           ad_ustr(:,:,k,Linp))
+
+          CALL ad_conv_v2d_tile (ng, tile, iADM,                        &
+     &                           LBi, UBi, LBj, UBj,                    &
+     &                           IminS, ImaxS, JminS, JmaxS,            &
+     &                           NghostPoints,                          &
+     &                           NHsteps(rec,isVstr)/ifac,              &
+     &                           DTsizeH(rec,isVstr),                   &
+     &                           Kh,                                    &
+     &                           pm, pn, pmon_p, pnom_r,                &
+#   ifdef MASKING
+     &                           vmask, pmask,                          &
+#   endif
+     &                           ad_vstr(:,:,k,Linp))
         END DO
-      END DO
+      END IF
+#  endif
+#  if defined ADJUST_STFLUX && defined SOLVE3D
+!
+!  Adjoint surface tracers flux.
+!
+      IF (.not.Lweak) THEN
+        DO it=1,NT(ng)
+          IF (Lstflux(it,ng)) THEN
+            is=isTsur(it)
+            DO k=1,Nfrec(ng)
+              CALL ad_conv_r2d_tile (ng, tile, iADM,                    &
+     &                               LBi, UBi, LBj, UBj,                &
+     &                               IminS, ImaxS, JminS, JmaxS,        &
+     &                               NghostPoints,                      &
+     &                               NHsteps(rec,is)/ifac,              &
+     &                               DTsizeH(rec,is),                   &
+     &                               Kh,                                &
+     &                               pm, pn, pmon_u, pnom_v,            &
+#   ifdef MASKING
+     &                               rmask, umask, vmask,               &
+#   endif
+     &                               ad_tflux(:,:,k,Linp,it))
+            END DO
+          END IF
+        END DO
+      END IF
 #  endif
 # endif
 !
@@ -737,6 +1238,14 @@
 !
 !  Adjoint free-surface.
 !
+# ifdef DISTRIBUTE
+      CALL ad_mp_exchange2d (ng, tile, iADM, 3,                         &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       ad_zeta(:,:,Linp),                         &
+     &                       ad_ubar(:,:,Linp),                         &
+     &                       ad_vbar(:,:,Linp))
+# endif
       DO j=JR_RANGE
         DO i=IR_RANGE
           ad_zeta(i,j,Linp)=ad_zeta(i,j,Linp)/                          &
@@ -758,44 +1267,17 @@
      &                      SQRT(om_v(i,j)*on_v(i,j))
         END DO
       END DO
-# ifdef DISTRIBUTE
-      CALL ad_mp_exchange2d (ng, tile, iADM, 3,                         &
-     &                       LBi, UBi, LBj, UBj,                        &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
-     &                       ad_zeta(:,:,Linp),                         &
-     &                       ad_ubar(:,:,Linp),                         &
-     &                       ad_vbar(:,:,Linp))
-# endif
-# ifdef ADJUST_WSTRESS
-!
-!  Adjoint surface momentum stress.
-!
-      DO k=1,Nfrec(ng)
-        DO j=JU_RANGE
-          DO i=IU_RANGE
-            ad_ustr(i,j,k,Linp)=ad_ustr(i,j,k,Linp)/                    &
-     &                          SQRT(om_u(i,j)*on_u(i,j))
-          END DO
-        END DO
-        DO j=JV_RANGE
-          DO i=IV_RANGE
-            ad_vstr(i,j,k,Linp)=ad_vstr(i,j,k,Linp)/                    &
-     &                          SQRT(om_v(i,j)*on_v(i,j))
-          END DO
-        END DO
-      END DO
-#  ifdef DISTRIBUTE
-      CALL ad_mp_exchange3d (ng, tile, iADM, 2,                         &
-     &                       LBi, UBi, LBj, UBj, 1, Nfrec(ng),          &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
-     &                       ad_ustr(:,:,:,Linp),                       &
-     &                       ad_vstr(:,:,:,Linp))
-#  endif
-# endif
 # ifdef SOLVE3D
 !
 !  Adjoint 3D momentum.
 !
+#  ifdef DISTRIBUTE
+      CALL ad_mp_exchange3d (ng, tile, iADM, 2,                         &
+     &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
+     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       ad_u(:,:,:,Linp),                          &
+     &                       ad_v(:,:,:,Linp))
+#  endif
       DO j=JU_RANGE
         DO i=IU_RANGE
           cff=om_u(i,j)*on_u(i,j)*0.5_r8
@@ -814,55 +1296,310 @@
           END DO
         END DO
       END DO
-#  ifdef DISTRIBUTE
-      CALL ad_mp_exchange3d (ng, tile, iADM, 2,                         &
-     &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
-     &                       ad_u(:,:,:,Linp),                          &
-     &                       ad_v(:,:,:,Linp))
-#  endif
 !
 !  Adjoint tracers.
 !
-      DO j=JR_RANGE
-        DO i=IR_RANGE
-          cff=om_r(i,j)*on_r(i,j)
-          DO k=1,N(ng)
-            fac=1.0_r8/SQRT(cff*Hz(i,j,k))
-            DO itrc=1,NT(ng)
-              ad_t(i,j,k,Linp,itrc)=fac*ad_t(i,j,k,Linp,itrc)
-            END DO
-          END DO
-        END DO
-      END DO
 #  ifdef DISTRIBUTE
       CALL ad_mp_exchange4d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),   &
      &                       NghostPoints, EWperiodic, NSperiodic,      &
      &                       ad_t(:,:,:,Linp,:))
 #  endif
-#  ifdef ADJUST_STFLUX
-!
-!  Adjoint surface tracers flux.
-!
       DO j=JR_RANGE
         DO i=IR_RANGE
-          fac=1.0_r8/SQRT(om_r(i,j)*on_r(i,j))
-          DO itrc=1,NT(ng)
-            DO k=1,Nfrec(ng)
-              ad_tflux(i,j,k,Linp,itrc)=fac*ad_tflux(i,j,k,Linp,itrc)
+          cff=om_r(i,j)*on_r(i,j)
+          DO k=1,N(ng)
+            fac=1.0_r8/SQRT(cff*Hz(i,j,k))
+            DO it=1,NT(ng)
+              ad_t(i,j,k,Linp,it)=fac*ad_t(i,j,k,Linp,it)
             END DO
           END DO
         END DO
       END DO
+# endif
+
+# ifdef ADJUST_BOUNDARY
+!
+!  Adjoint free-surface open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isFsur,ng)) THEN
+#  ifdef DISTRIBUTE
+            CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,           &
+     &                                 LBij, UBij,                      &
+     &                                 NghostPoints,                    &
+     &                                 EWperiodic, NSperiodic,          &
+     &                                 ad_zeta_obc(:,ib,ir,Linp))
+#  endif
+            IF (Lconvolve(ib)) THEN
+              IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+                i=BOUNDS(ng)%edge(ib,r2dvar)
+                DO j=JR_RANGE
+                  ad_zeta_obc(j,ib,ir,Linp)=ad_zeta_obc(j,ib,ir,Linp)/  &
+     &                                      SQRT(om_r(i,j)*on_r(i,j))
+                END DO
+              ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+                j=BOUNDS(ng)%edge(ib,r2dvar)
+                DO i=IR_RANGE
+                  ad_zeta_obc(i,ib,ir,Linp)=ad_zeta_obc(i,ib,ir,Linp)/  &
+     &                                      SQRT(om_r(i,j)*on_r(i,j))
+                END DO
+              END IF
+            END IF
+          END IF
+        END DO
+      END DO
+!
+!  Tangent linear 2D U-momentum open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isUbar,ng)) THEN
+#  ifdef DISTRIBUTE
+            CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,           &
+     &                                 LBij, UBij,                      &
+     &                                 NghostPoints,                    &
+     &                                 EWperiodic, NSperiodic,          &
+     &                                 ad_ubar_obc(:,ib,ir,Linp))
+#  endif
+            IF (Lconvolve(ib)) THEN
+              IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+                i=BOUNDS(ng)%edge(ib,u2dvar)
+                DO j=JU_RANGE
+                  ad_ubar_obc(j,ib,ir,Linp)=ad_ubar_obc(j,ib,ir,Linp)/  &
+     &                                      SQRT(om_u(i,j)*on_u(i,j))
+                END DO
+              ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+                j=BOUNDS(ng)%edge(ib,u2dvar)
+                DO i=IU_RANGE
+                  ad_ubar_obc(i,ib,ir,Linp)=ad_ubar_obc(i,ib,ir,Linp)/  &
+     &                                      SQRT(om_u(i,j)*on_u(i,j))
+                END DO
+              END IF
+            END IF
+          END IF
+        END DO
+      END DO
+!
+!  Tangent linear 2D V-momentum open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isVbar,ng)) THEN
+#  ifdef DISTRIBUTE
+            CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,           &
+     &                                 LBij, UBij,                      &
+     &                                 NghostPoints,                    &
+     &                                 EWperiodic, NSperiodic,          &
+     &                                 ad_vbar_obc(:,ib,ir,Linp))
+#  endif
+            IF (Lconvolve(ib)) THEN
+              IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+                i=BOUNDS(ng)%edge(ib,v2dvar)
+                DO j=JV_RANGE
+                  ad_vbar_obc(j,ib,ir,Linp)=ad_vbar_obc(j,ib,ir,Linp)/  &
+     &                                      SQRT(om_v(i,j)*on_v(i,j))
+                END DO
+              ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+                j=BOUNDS(ng)%edge(ib,v2dvar)
+                DO i=IV_RANGE
+                  ad_vbar_obc(i,ib,ir,Linp)=ad_vbar_obc(i,ib,ir,Linp)/  &
+     &                                      SQRT(om_v(i,j)*on_v(i,j))
+                END DO
+              END IF
+            END IF
+          END IF
+        END DO
+      END DO
+
+#  ifdef SOLVE3D
+!
+!  Tangent linear 3D U-momentum open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isUvel,ng)) THEN
 #   ifdef DISTRIBUTE
-      CALL ad_mp_exchange4d (ng, tile, iADM, 1,                         &
-     &                       LBi, UBi, LBj, UBj, 1,Nfrec(ng), 1,NT(ng), &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
-     &                       ad_tflux(:,:,:,Linp,:))
+            CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,           &
+     &                                 LBij, UBij, 1, N(ng),            &
+     &                                 NghostPoints,                    &
+     &                                 EWperiodic, NSperiodic,          &
+     &                                 ad_u_obc(:,:,ib,ir,Linp))
 #   endif
+            IF (Lconvolve(ib)) THEN
+              IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+                i=BOUNDS(ng)%edge(ib,u2dvar)
+                DO j=JU_RANGE
+                  cff=om_u(i,j)*on_u(i,j)*0.5_r8
+                  DO k=1,N(ng)
+                    ad_u_obc(j,k,ib,ir,Linp)=ad_u_obc(j,k,ib,ir,Linp)/  &
+     &                                       SQRT(cff*                  &
+     &                                            (Hz(i-1,j,k)+         &
+     &                                             Hz(i  ,j,k)))
+                  END DO
+                END DO
+              ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+                j=BOUNDS(ng)%edge(ib,u2dvar)
+                DO i=IU_RANGE
+                  cff=om_u(i,j)*on_u(i,j)*0.5_r8
+                  DO k=1,N(ng)
+                    ad_u_obc(i,k,ib,ir,Linp)=ad_u_obc(i,k,ib,ir,Linp)/  &
+     &                                       SQRT(cff*                  &
+     &                                            (Hz(i-1,j,k)+         &
+     &                                             Hz(i  ,j,k)))
+                  END DO
+                END DO
+              END IF
+            END IF
+          END IF
+        END DO
+      END DO
+!
+!  Tangent linear 3D V-momentum open boundaries.
+!
+      DO ir=1,Nbrec(ng)
+        DO ib=1,4
+          IF (.not.Lweak.and.Lobc(ib,isVvel,ng)) THEN
+#   ifdef DISTRIBUTE
+            CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,           &
+     &                                 LBij, UBij, 1, N(ng),            &
+     &                                 NghostPoints,                    &
+     &                                 EWperiodic, NSperiodic,          &
+     &                                 ad_v_obc(:,:,ib,ir,Linp))
+#   endif
+            IF (Lconvolve(ib)) THEN
+              IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+                i=BOUNDS(ng)%edge(ib,v2dvar)
+                DO j=JV_RANGE
+                  cff=om_v(i,j)*on_v(i,j)*0.5_r8
+                  DO k=1,N(ng)
+                    ad_v_obc(j,k,ib,ir,Linp)=ad_v_obc(j,k,ib,ir,Linp)/  &
+     &                                       SQRT(cff*                  &
+     &                                            (Hz(i,j-1,k)+         &
+     &                                             Hz(i,j  ,k)))
+                  END DO
+                END DO
+              ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+                j=BOUNDS(ng)%edge(ib,v2dvar)
+                DO i=IV_RANGE
+                  cff=om_v(i,j)*on_v(i,j)*0.5_r8
+                  DO k=1,N(ng)
+                    ad_v_obc(i,k,ib,ir,Linp)=ad_v_obc(i,k,ib,ir,Linp)/  &
+     &                                       SQRT(cff*                  &
+     &                                            (Hz(i,j-1,k)+         &
+     &                                             Hz(i,j  ,k)))
+                  END DO
+                END DO
+              END IF
+            END IF
+          END IF
+        END DO
+      END DO
+!
+!  Tangent linear tracers open boundaries.
+!
+      DO it=1,NT(ng)
+        DO ir=1,Nbrec(ng)
+          DO ib=1,4
+            IF (.not.Lweak.and.Lobc(ib,isTvar(it),ng)) THEN
+#   ifdef DISTRIBUTE
+              CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,         &
+     &                                   LBij, UBij, 1, N(ng),          &
+     &                                   NghostPoints,                  &
+     &                                   EWperiodic, NSperiodic,        &
+     &                                   ad_t_obc(:,:,ib,ir,Linp,it))
+#   endif
+              IF (Lconvolve(ib)) THEN
+                IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
+                  i=BOUNDS(ng)%edge(ib,r2dvar)
+                  DO j=JR_RANGE
+                    cff=om_r(i,j)*on_r(i,j)
+                    DO k=1,N(ng)
+                      ad_t_obc(j,k,ib,ir,Linp,it)=                      &
+     &                                   ad_t_obc(j,k,ib,ir,Linp,it)/   &
+     &                                   SQRT(cff*Hz(i,j,k))
+                    END DO
+                  END DO
+                ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
+                  j=BOUNDS(ng)%edge(ib,r2dvar)
+                  DO i=IR_RANGE
+                    cff=om_r(i,j)*on_r(i,j)
+                    DO k=1,N(ng)
+                      ad_t_obc(i,k,ib,ir,Linp,it)=                      &
+     &                                   ad_t_obc(i,k,ib,ir,Linp,it)/   &
+     &                                   SQRT(cff*Hz(i,j,k))
+                    END DO
+                  END DO
+                END IF
+              END IF
+            END IF
+          END DO
+        END DO
+      END DO
 #  endif
 # endif
+
+# ifdef ADJUST_WSTRESS
+!
+!  Adjoint surface momentum stress.
+!
+      IF (.not.Lweak) THEN
+#  ifdef DISTRIBUTE
+        CALL ad_mp_exchange3d (ng, tile, iADM, 2,                       &
+     &                         LBi, UBi, LBj, UBj, 1, Nfrec(ng),        &
+     &                         NghostPoints, EWperiodic, NSperiodic,    &
+     &                         ad_ustr(:,:,:,Linp),                     &
+     &                         ad_vstr(:,:,:,Linp))
+#  endif
+        DO k=1,Nfrec(ng)
+          DO j=JU_RANGE
+            DO i=IU_RANGE
+              ad_ustr(i,j,k,Linp)=ad_ustr(i,j,k,Linp)/                  &
+     &                            SQRT(om_u(i,j)*on_u(i,j))
+            END DO
+          END DO
+          DO j=JV_RANGE
+            DO i=IV_RANGE
+              ad_vstr(i,j,k,Linp)=ad_vstr(i,j,k,Linp)/                  &
+     &                            SQRT(om_v(i,j)*on_v(i,j))
+            END DO
+          END DO
+        END DO
+      END IF
+# endif
+
+# if defined ADJUST_STFLUX && defined SOLVE3D
+!
+!  Adjoint surface tracers flux.
+!
+      IF (.not.Lweak) THEN
+#  ifdef DISTRIBUTE
+        DO it=1,NT(ng)
+          IF (Lstflux(it,ng)) THEN
+            CALL ad_mp_exchange3d (ng, tile, iADM, 1,                   &
+     &                             LBi, UBi, LBj, UBj, 1, Nfrec(ng),    &
+     &                             NghostPoints,                        &
+     &                             EWperiodic, NSperiodic,              &
+     &                             ad_tflux(:,:,:,Linp,it))
+          END IF
+        END DO
+#  endif
+        DO j=JR_RANGE
+          DO i=IR_RANGE
+            fac=1.0_r8/SQRT(om_r(i,j)*on_r(i,j))
+            DO it=1,NT(ng)
+              IF (Lstflux(it,ng)) THEN
+                DO k=1,Nfrec(ng)
+                  ad_tflux(i,j,k,Linp,it)=fac*ad_tflux(i,j,k,Linp,it)
+                END DO
+              END IF
+            END DO
+          END DO
+        END DO
+      END IF
+# endif
+
 # undef IR_RANGE
 # undef IU_RANGE
 # undef IV_RANGE

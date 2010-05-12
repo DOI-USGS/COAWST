@@ -2,9 +2,9 @@
       MODULE ad_t3dbc_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_t3dbc_im.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_t3dbc_im.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -59,6 +59,7 @@
       USE mod_param
       USE mod_boundary
       USE mod_grid
+      USE mod_ncparam
       USE mod_scalars
 !
 !  Imported variable declarations.
@@ -163,7 +164,7 @@
 !
       IF (NORTHERN_EDGE) THEN
 
-#  if defined NORTH_TRADIATION
+#  if defined NORTH_TRADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -230,9 +231,32 @@
 !
         DO k=1,N(ng)
           DO i=Istr,Iend
+#   ifdef MASKING
+!>          tl_t(i,Jend+1,k,nout,itrc)=tl_t(i,Jend+1,k,nout,itrc)*      &
+!>   &                                 GRID(ng)%rmask(i,Jend+1)
+!>
+            ad_t(i,Jend+1,k,nout,itrc)=ad_t(i,Jend+1,k,nout,itrc)*      &
+     &                                 GRID(ng)%rmask(i,Jend+1)
+#   endif
+#   ifdef ADJUST_BOUNDARY
+            IF (Lobc(inorth,isTvar(itrc),ng)) THEN
+!>            tl_t(i,Jend+1,k,nout,itrc)=                               &
+!>   &                             BOUNDARY(ng)%tl_t_north(i,k,itrc)
+!>
+              BOUNDARY(ng)%ad_t_north(i,k,itrc)=                        &
+     &                             BOUNDARY(ng)%ad_t_north(i,k,itrc)+   &
+     &                             ad_t(i,Jend+1,k,nout,itrc)
+              ad_t(i,Jend+1,k,nout,itrc)=0.0_r8
+            ELSE
+!>            tl_t(i,Jend+1,k,nout,itrc)=0.0_r8
+!>
+              ad_t(i,Jend+1,k,nout,itrc)=0.0_r8
+            END IF
+#   else
 !>          tl_t(i,Jend+1,k,nout,itrc)=0.0_r8
 !>
             ad_t(i,Jend+1,k,nout,itrc)=0.0_r8
+#   endif
           END DO
         END DO
 
@@ -286,7 +310,7 @@
 !
       IF (SOUTHERN_EDGE) THEN
 
-#  if defined SOUTH_TRADIATION
+#  if defined SOUTH_TRADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -353,9 +377,32 @@
 !
         DO k=1,N(ng)
           DO i=Istr,Iend
+#   ifdef MASKING
+!>          tl_t(i,Jstr-1,k,nout,itrc)=tl_t(i,Jstr-1,k,nout,itrc)*      &
+!>   &                                 GRID(ng)%rmask(i,Jstr-1)
+!>
+            ad_t(i,Jstr-1,k,nout,itrc)=ad_t(i,Jstr-1,k,nout,itrc)*      &
+     &                                 GRID(ng)%rmask(i,Jstr-1)
+#   endif
+#   ifdef ADJUST_BOUNDARY
+            IF (Lobc(isouth,isTvar(itrc),ng)) THEN
+!>            tl_t(i,Jstr-1,k,nout,itrc)=                               &
+!>   &                             BOUNDARY(ng)%tl_t_south(i,k,itrc)
+!>
+              BOUNDARY(ng)%ad_t_south(i,k,itrc)=                        &
+     &                             BOUNDARY(ng)%ad_t_south(i,k,itrc)+   &
+     &                             ad_t(i,Jstr-1,k,nout,itrc)
+              ad_t(i,Jstr-1,k,nout,itrc)=0.0_r8
+            ELSE
+!>            tl_t(i,Jstr-1,k,nout,itrc)=0.0_r8
+!>
+              ad_t(i,Jstr-1,k,nout,itrc)=0.0_r8
+            END IF
+#   else
 !>          tl_t(i,Jstr-1,k,nout,itrc)=0.0_r8
 !>
             ad_t(i,Jstr-1,k,nout,itrc)=0.0_r8
+#   endif
           END DO
         END DO
 
@@ -412,7 +459,7 @@
 !
       IF (EASTERN_EDGE) THEN
 
-#  if defined EAST_TRADIATION
+#  if defined EAST_TRADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -479,9 +526,32 @@
 !
         DO k=1,N(ng)
           DO j=Jstr,Jend
+#   ifdef MASKING
+!>          tl_t(Iend+1,j,k,nout,itrc)=tl_t(Iend+1,j,k,nout,itrc)*      &
+!>   &                                 GRID(ng)%rmask(Iend+1,j)
+!>
+            ad_t(Iend+1,j,k,nout,itrc)=ad_t(Iend+1,j,k,nout,itrc)*      &
+     &                                 GRID(ng)%rmask(Iend+1,j)
+#   endif
+#   ifdef ADJUST_BOUNDARY
+            IF (Lobc(ieast,isTvar(itrc),ng)) THEN
+!>            tl_t(Iend+1,j,k,nout,itrc)=                               &
+!>   &                             BOUNDARY(ng)%tl_t_east(j,k,itrc)
+!>
+              BOUNDARY(ng)%ad_t_east(j,k,itrc)=                         &
+     &                             BOUNDARY(ng)%ad_t_east(j,k,itrc)+    &
+     &                             ad_t(Iend+1,j,k,nout,itrc)
+              ad_t(Iend+1,j,k,nout,itrc)=0.0_r8
+            ELSE
+!>            tl_t(Iend+1,j,k,nout,itrc)=0.0_r8
+!>
+              ad_t(Iend+1,j,k,nout,itrc)=0.0_r8
+            END IF
+#   else
 !>          tl_t(Iend+1,j,k,nout,itrc)=0.0_r8
 !>
             ad_t(Iend+1,j,k,nout,itrc)=0.0_r8
+#   endif
           END DO
         END DO
 
@@ -535,7 +605,7 @@
 !
       IF (WESTERN_EDGE) THEN
 
-#  if defined WEST_TRADIATION
+#  if defined WEST_TRADIATION_NOT_YET
 
         IF (iic(ng).ne.0) THEN
 !
@@ -602,9 +672,32 @@
 !
         DO k=1,N(ng)
           DO j=Jstr,Jend
+#   ifdef MASKING
+!>          tl_t(Istr-1,j,k,nout,itrc)=tl_t(Istr-1,j,k,nout,itrc)*      &
+!>   &                                 GRID(ng)%rmask(Istr-1,j)
+!>
+            ad_t(Istr-1,j,k,nout,itrc)=ad_t(Istr-1,j,k,nout,itrc)*      &
+     &                                 GRID(ng)%rmask(Istr-1,j)
+#   endif
+#   ifdef ADJUST_BOUNDARY
+            IF (Lobc(iwest,isTvar(itrc),ng)) THEN
+!>            tl_t(Istr-1,j,k,nout,itrc)=                               &
+!>   &                             BOUNDARY(ng)%tl_t_west(j,k,itrc)
+!>
+              BOUNDARY(ng)%ad_t_west(j,k,itrc)=                         &
+     &                             BOUNDARY(ng)%ad_t_west(j,k,itrc)+    &
+     &                             ad_t(Istr-1,j,k,nout,itrc)
+              ad_t(Istr-1,j,k,nout,itrc)=0.0_r8
+            ELSE
+!>            tl_t(Istr-1,j,k,nout,itrc)=0.0_r8
+!>
+              ad_t(Istr-1,j,k,nout,itrc)=0.0_r8
+            END IF
+#   else
 !>          tl_t(Istr-1,j,k,nout,itrc)=0.0_r8
 !>
             ad_t(Istr-1,j,k,nout,itrc)=0.0_r8
+#   endif
           END DO
         END DO
 

@@ -2,9 +2,9 @@
       MODULE ad_bc_3d_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_bc_3d.F 584 2008-03-18 20:01:12Z arango $
+!svn $Id: ad_bc_3d.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -476,7 +476,7 @@
           adfac=0.5_r8*ad_A(Iend+1,Jstr  ,k)
           ad_A(Iend  ,Jstr  ,k)=ad_A(Iend  ,Jstr  ,k)+adfac
           ad_A(Iend+1,Jstr+1,k)=ad_A(Iend+1,Jstr+1,k)+adfac
-          ad_A(Iend+1,Jstr  ,k)=0.0_r8         
+          ad_A(Iend+1,Jstr  ,k)=0.0_r8
         END DO
       END IF
       IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN

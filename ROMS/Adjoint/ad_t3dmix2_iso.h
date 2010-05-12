@@ -1,8 +1,8 @@
       SUBROUTINE ad_t3dmix2 (ng, tile)
 !
-!svn $Id: ad_t3dmix2_iso.h 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_t3dmix2_iso.h 429 2009-12-20 17:30:26Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -15,6 +15,9 @@
 !***********************************************************************
 !
       USE mod_param
+#ifdef CLIMA_TS_MIX
+      USE mod_clima
+#endif
 #ifdef DIAGNOSTICS_TS
 !!    USE mod_diags
 #endif
@@ -53,6 +56,9 @@
      &                      MIXING(ng) % diff2,                         &
      &                      OCEAN(ng) % rho,                            &
      &                      OCEAN(ng) % ad_rho,                         &
+#ifdef CLIMA_TS_MIX
+     &                      CLIMA(ng) % tclm,                           &
+#endif
 #ifdef DIAGNOSTICS_TS
 !!   &                      DIAGS(ng) % DiaTwrk,                        &
 #endif
@@ -77,6 +83,9 @@
      &                            z_r, ad_z_r,                          &
      &                            diff2,                                &
      &                            rho, ad_rho,                          &
+#ifdef CLIMA_TS_MIX
+     &                            tclm,                                 &
+#endif
 #ifdef DIAGNOSTICS_TS
 !!   &                            DiaTwrk,                              &
 #endif
@@ -107,6 +116,9 @@
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
       real(r8), intent(in) :: t(LBi:,LBj:,:,:,:)
+# ifdef CLIMA_TS_MIX
+      real(r8), intent(in) :: tclm(LBi:,LBj:,:,:)
+# endif
 # ifdef DIAGNOSTICS_TS
       real(r8), intent(inout) :: DiaTwrk(LBi:,LBj:,:,:,:)
 # endif
@@ -128,6 +140,9 @@
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
+# ifdef CLIMA_TS_MIX
+      real(r8), intent(in) :: tclm(LBi:UBi,LBj:UBj,N(ng),NT(ng))
+# endif
 # ifdef DIAGNOSTICS_TS
 !!    real(r8), intent(inout) :: DiaTwrk(LBi:UBi,LBj:UBj,N(ng),NT(ng),  &
 !!   &                                   NDT)
@@ -238,13 +253,20 @@
               DO j=Jstr,Jend
                 DO i=Istr,Iend+1
                   cff=0.5_r8*(pm(i,j)+pm(i-1,j))
-# ifdef MASKING
+#ifdef MASKING
                   cff=cff*umask(i,j)
-# endif
+#endif
                   dRdx(i,j,k2b)=cff*(rho(i  ,j,kk+1)-                   &
      &                               rho(i-1,j,kk+1))
+#ifdef CLIMA_TS_MIX
+                  dTdx(i,j,k2b)=cff*((t(i  ,j,k+1,nrhs,itrc)-           &
+     &                                tclm(i  ,j,k+1,itrc))-            &
+     &                               (t(i-1,j,k+1,nrhs,itrc)-           &
+     &                                tclm(i-1,j,k+1,itrc)))
+#else
                   dTdx(i,j,k2b)=cff*(t(i  ,j,kk+1,nrhs,itrc)-           &
      &                               t(i-1,j,kk+1,nrhs,itrc))
+#endif
                 END DO
               END DO
               IF (kk.eq.0) THEN
@@ -258,13 +280,20 @@
               DO j=Jstr,Jend+1
                 DO i=Istr,Iend
                   cff=0.5_r8*(pn(i,j)+pn(i,j-1))
-# ifdef MASKING
+#ifdef MASKING
                   cff=cff*vmask(i,j)
-# endif
+#endif
                   dRde(i,j,k2b)=cff*(rho(i,j  ,kk+1)-                   &
      &                               rho(i,j-1,kk+1))
+#ifdef CLIMA_TS_MIX
+                  dTde(i,j,k2b)=cff*((t(i,j  ,k+1,nrhs,itrc)-           &
+     &                                tclm(i,j  ,k+1,itrc))-            &
+     &                               (t(i,j-1,k+1,nrhs,itrc)-           &
+     &                                tclm(i,j-1,k+1,itrc)))
+#else
                   dTde(i,j,k2b)=cff*(t(i,j  ,kk+1,nrhs,itrc)-           &
      &                               t(i,j-1,kk+1,nrhs,itrc))
+#endif
                 END DO
               END DO
               IF (kk.eq.0) THEN
@@ -312,8 +341,15 @@
                   cff1=MAX(rho(i,j,kk)-rho(i,j,kk+1),eps)
                   cff=-1.0_r8/cff1
 #endif
+#ifdef CLIMA_TS_MIX
+                  dTdr(i,j,k2b)=cff*((t(i,j,k+1,nrhs,itrc)-             &
+     &                                tclm(i,j,k+1,itrc))-              &
+     &                               (t(i,j,k  ,nrhs,itrc)-             &
+     &                                tclm(i,j,k  ,itrc)))
+#else
                   dTdr(i,j,k2b)=cff*(t(i,j,kk+1,nrhs,itrc)-             &
      &                               t(i,j,kk  ,nrhs,itrc))
+#endif
                   FS(i,j,k2b)=cff*(z_r(i,j,kk+1)-z_r(i,j,kk))
                 END DO
               END DO
@@ -709,16 +745,32 @@
                 ad_cff=ad_cff+(z_r(i,j,k+1)-                            &
      &                         z_r(i,j,k  ))*ad_FS(i,j,k2)
                 ad_FS(i,j,k2)=0.0_r8
+#ifdef CLIMA_TS_MIX
+!>              tl_dTdr(i,j,k2)=tl_cff*((t(i,j,k+1,nrhs,itrc)-          &
+!>   &                                   tclm(i,j,k+1,itrc))-           &
+!>   &                                  (t(i,j,k  ,nrhs,itrc)-          &
+!>   &                                   tclm(i,j,k  ,itrc)))+          &
+!>   &                          cff*(tl_t(i,j,k+1,nrhs,itrc)-           &
+!>   &                               tl_t(i,j,k  ,nrhs,itrc))
+#else
 !>              tl_dTdr(i,j,k2)=tl_cff*(t(i,j,k+1,nrhs,itrc)-           &
 !>   &                                  t(i,j,k  ,nrhs,itrc))+          &
 !>   &                          cff*(tl_t(i,j,k+1,nrhs,itrc)-           &
 !>   &                               tl_t(i,j,k  ,nrhs,itrc))
+#endif
 !>
                 adfac=cff*ad_dTdr(i,j,k2)
                 ad_t(i,j,k  ,nrhs,itrc)=ad_t(i,j,k  ,nrhs,itrc)-adfac
                 ad_t(i,j,k+1,nrhs,itrc)=ad_t(i,j,k+1,nrhs,itrc)+adfac
+#ifdef CLIMA_TS_MIX
+                ad_cff=ad_cff+((t(i,j,k+1,nrhs,itrc)-                   &
+     &                          tclm(i,j,k+1,itrc))-                    &
+     &                         (t(i,j,k  ,nrhs,itrc)-                   &
+     &                          tclm(i,j,k  ,itrc)))*ad_dTdr(i,j,k2)
+#else
                 ad_cff=ad_cff+(t(i,j,k+1,nrhs,itrc)-                    &
      &                         t(i,j,k  ,nrhs,itrc))*ad_dTdr(i,j,k2)
+#endif
                 ad_dTdr(i,j,k2)=0.0_r8
 #if defined MAX_SLOPE
 !>              tl_cff=cff*cff*tl_cff4

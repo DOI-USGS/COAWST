@@ -3,12 +3,12 @@
 
 #if defined TANGENT && defined BALANCE_OPERATOR
 !
-!svn $Id: ad_balance.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_balance.F 437 2010-01-06 03:22:10Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!======================================================================= 
+!=======================================================================
 !                                                                      !
 !  These routines impose a multivariate balance operator to constraint !
 !  the  background/model  error  covariance matrix,  B,  such that the !
@@ -37,9 +37,10 @@
 !                                                                      !
 !  Reference:                                                          !
 !                                                                      !
-!    Weaver, A.T., C. Deltel, E. Machu, S. Ricci, and N. Daget, 2006:  !
+!    Weaver, A.T., C. Deltel, E. Machu, S. Ricci, and N. Daget, 2005:  !
 !      A multivariate balance operator for variational data assimila-  !
-!      tion, Q. J. R. Meteorol. Soc., submitted.                       !
+!      tion, Q. J. R. Meteorol. Soc., 131, 3605-3625.                  !
+!                                                                      !
 !      (See also, ECMWR Technical Memorandum # 491, April 2006)        !
 !                                                                      !
 !=======================================================================
@@ -63,6 +64,9 @@
       USE mod_coupling
       USE mod_mixing
 # endif
+# ifdef ZETA_ELLIPTIC
+      USE mod_fourdvar
+# endif
       USE mod_ocean
       USE mod_stepping
 # ifdef SOLVE3D
@@ -84,20 +88,25 @@
 !  Compute background state thickness, depth arrays, thermal expansion,
 !  and saline contraction coefficients.
 !
-      COUPLING(ng) % Zt_avg1 = OCEAN(ng) % zeta(:,:,Lbck)
+      COUPLING(ng) % Zt_avg1 =0.0_r8
 
       CALL set_depth (ng, tile)
       nrhs(ng)=Lbck
-      CALL rho_eos (ng, tile)     
+      CALL rho_eos (ng, tile)
 !
 # endif
       CALL ad_balance_tile (ng, tile,                                   &
-     &                      LBi, UBi, LBj, UBj,                         &
+     &                      LBi, UBi, LBj, UBj, LBij, UBij,             &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      Lbck, Linp,                                 &
      &                      GRID(ng) % f,                               &
      &                      GRID(ng) % pm,                              &
      &                      GRID(ng) % pn,                              &
+# ifdef ZETA_ELLIPTIC
+     &                      GRID(ng) % pmon_u,                          &
+     &                      GRID(ng) % pnom_v,                          &
+     &                      GRID(ng) % h,                               &
+# endif
 # ifdef SOLVE3D
      &                      GRID(ng) % Hz,                              &
      &                      GRID(ng) % z_r,                             &
@@ -113,6 +122,20 @@
      &                      MIXING(ng) % beta,                          &
      &                      OCEAN(ng) % t,                              &
 # endif
+# ifdef ZETA_ELLIPTIC
+     &                      FOURDVAR(ng) % ad_zeta_ref,                 &
+     &                      FOURDVAR(ng) % ad_rhs_r2d,                  &
+     &                      FOURDVAR(ng) % pc_r2d,                      &
+     &                      FOURDVAR(ng) % r_r2d,                       &
+     &                      FOURDVAR(ng) % br_r2d,                      &
+     &                      FOURDVAR(ng) % p_r2d,                       &
+     &                      FOURDVAR(ng) % bp_r2d,                      &
+     &                      FOURDVAR(ng) % zdf1,                        &
+     &                      FOURDVAR(ng) % zdf2,                        &
+     &                      FOURDVAR(ng) % zdf3,                        &
+     &                      FOURDVAR(ng) % bc_ak,                       &
+     &                      FOURDVAR(ng) % bc_bk,                       &
+# endif
 # ifdef SOLVE3D
      &                      OCEAN(ng) % ad_rho,                         &
      &                      OCEAN(ng) % ad_t,                           &
@@ -126,10 +149,13 @@
 !
 !***********************************************************************
       SUBROUTINE ad_balance_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj,                   &
+     &                            LBi, UBi, LBj, UBj, LBij, UBij,       &
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            Lbck, Linp,                           &
      &                            f, pm, pn,                            &
+# ifdef ZETA_ELLIPTIC
+     &                            pmon_u, pnom_v, h,                    &
+# endif
 # ifdef SOLVE3D
      &                            Hz, z_r, z_w,                         &
 # endif
@@ -139,6 +165,12 @@
 # ifdef SOLVE3D
      &                            alpha, beta, t,                       &
 # endif
+# ifdef ZETA_ELLIPTIC
+     &                            ad_zeta_ref, ad_rhs_r2d,              &
+     &                            pc_r2d, r_r2d, br_r2d,                &
+     &                            p_r2d, bp_r2d,                        &
+     &                            zdf1, zdf2, zdf3, bc_ak, bc_bk,       &
+# endif
 # ifdef SOLVE3D
      &                            ad_rho, ad_t, ad_u, ad_v,             &
 # endif
@@ -146,20 +178,26 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
 !
-#  if defined EW_PERIODIC || defined NS_PERIODIC
+      USE ad_bc_2d_mod
+# if defined EW_PERIODIC || defined NS_PERIODIC
       USE ad_exchange_2d_mod
       USE ad_exchange_3d_mod
-#  endif
-#  ifdef DISTRIBUTE
+# endif
+# ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : ad_mp_exchange2d, ad_mp_exchange3d
-#  endif
+# endif
+# ifdef ZETA_ELLIPTIC
+      USE zeta_balance_mod, ONLY: ad_r2d_bc, u2d_bc, v2d_bc
+      USE zeta_balance_mod, ONLY: ad_biconj_tile
+# endif
 !
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile
-      integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: LBi, UBi, LBj, UBj, LBij, UBij
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: Lbck, Linp
 !
@@ -167,6 +205,11 @@
       real(r8), intent(in) :: f(LBi:,LBj:)
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
+#  ifdef ZETA_ELLIPTIC
+      real(r8), intent(in) :: h(LBi:,LBj:)
+      real(r8), intent(in) :: pmon_u(LBi:,LBj:)
+      real(r8), intent(in) :: pnom_v(LBi:,LBj:)
+#  endif
 #  ifdef SOLVE3D
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
@@ -189,12 +232,31 @@
 #  ifdef SOLVE3D
       real(r8), intent(out) :: ad_rho(LBi:,LBj:,:)
 #  endif
+#  ifdef ZETA_ELLIPTIC
+      real(r8), intent(in) :: bc_ak(:)
+      real(r8), intent(in) :: bc_bk(:)
+      real(r8), intent(in) :: zdf1(:)
+      real(r8), intent(in) :: zdf2(:)
+      real(r8), intent(in) :: zdf3(:)
+      real(r8), intent(inout) :: pc_r2d(LBi:,LBj:)
+      real(r8), intent(inout) :: r_r2d(LBi:,LBj:,:)
+      real(r8), intent(inout) :: br_r2d(LBi:,LBj:,:)
+      real(r8), intent(inout) :: p_r2d(LBi:,LBj:,:)
+      real(r8), intent(inout) :: bp_r2d(LBi:,LBj:,:)
+      real(r8), intent(inout) :: ad_rhs_r2d(LBi:,LBj:)
+      real(r8), intent(inout) :: ad_zeta_ref(LBi:,LBj:)
+#  endif
 
 # else
 
       real(r8), intent(in) :: f(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
+#  ifdef ZETA_ELLIPTIC
+      real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: pmon_u(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: pnom_v(LBi:UBi,LBj:UBj)
+#  endif
 #  ifdef SOLVE3D
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
@@ -216,6 +278,20 @@
       real(r8), intent(inout) :: ad_zeta(LBi:UBi,LBj:UBj,3)
 #  ifdef SOLVE3D
       real(r8), intent(out) :: ad_rho(LBi:UBi,LBj:UBj,N(ng))
+#  endif
+#  ifdef ZETA_ELLIPTIC
+      real(r8), intent(in) :: bc_ak(Nbico(ng))
+      real(r8), intent(in) :: bc_bk(Nbico(ng))
+      real(r8), intent(in) :: zdf1(Nbico(ng))
+      real(r8), intent(in) :: zdf2(Nbico(ng))
+      real(r8), intent(in) :: zdf3(Nbico(ng))
+      real(r8), intent(inout) :: pc_r2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: r_r2d(LBi:UBi,LBj:UBj,Nbico(ng))
+      real(r8), intent(inout) :: br_r2d(LBi:UBi,LBj:UBj,Nbico(ng))
+      real(r8), intent(inout) :: p_r2d(LBi:UBi,LBj:UBj,Nbico(ng))
+      real(r8), intent(inout) :: bp_r2d(LBi:UBi,LBj:UBj,Nbico(ng))
+      real(r8), intent(inout) :: ad_rhs_r2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: ad_zeta_ref(LBi:UBi,LBj:UBj)
 #  endif
 
 # endif
@@ -240,11 +316,8 @@
 
       real(r8) :: fac, fac1, fac2, fac3, gamma
       real(r8) :: cff, cff1, cff2, cff3, cff4
-      real(r8) :: ad_cff1, ad_cff2, adfac, adfac1, adfac2
-      real(r8) :: dzdT, ml_depth
-
-      real(r8) :: dTdz_min = 0.001_r8
-      real(r8) :: ml_depth = 100.0_r8       ! hack value for now
+      real(r8) :: ad_cff, ad_cff1, ad_cff2, adfac, adfac1, adfac2
+      real(r8) :: dzdT, zphi, zphi1, zwbot, zwtop
 
       real(r8), dimension(20) ::  filter_coef =                         &
      &   (/ 2.500000E-1_r8,    6.250000E-2_r8,     1.562500E-2_r8,      &
@@ -267,13 +340,22 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: dSdz
 # endif
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: ad_gradP
-      
+
+# ifdef ZETA_ELLIPTIC
+      real(r8), dimension(IminS:ImaxS,N(ng)) :: ad_phi
+
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ad_gradPx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ad_gradPy
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ad_r2d_rhs
+# endif
+
 # include "set_bounds.h"
 !
 !-----------------------------------------------------------------------
 !  Initialize adjoint private variables.
 !-----------------------------------------------------------------------
 !
+      ad_cff=0.0_r8
       ad_cff1=0.0_r8
       ad_cff2=0.0_r8
       DO i=IminS,ImaxS
@@ -292,260 +374,559 @@
           END DO
         END DO
       END DO
+# ifdef ZETA_ELLIPTIC
+      DO k=1,N(ng)
+        DO i=IminS,ImaxS
+          ad_phi(i,k)=0.0_r8
+        END DO
+      END DO
+      DO j=JminS,JmaxS
+        DO i=IminS,ImaxS
+          ad_gradPx(i,j)=0.0_r8
+          ad_gradPy(i,j)=0.0_r8
+        END DO
+      END DO
+# endif
 !
 !-----------------------------------------------------------------------
 !  Add balanced free-surface contribution to unbalanced free-surface
-!  increment.  For simpliciyt, integrate hydrostatic equation from
-!  surface to bottom. A more rigorous approach involves the solution
-!  of an elliptic equation (Fukumori et al., 1998).
+!  increment.
 !-----------------------------------------------------------------------
 !
+      IF (balance(isFsur)) THEN
+
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, iTLM, 1,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
-!>   &                    tl_zeta(:,:,Linp))
+!>      CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
+!>   &                      LBi, UBi, LBj, UBj,                         &
+!>   &                      NghostPoints, EWperiodic, NSperiodic,       &
+!>   &                      tl_zeta(:,:,Linp))
 !>
-      CALL ad_mp_exchange2d (ng, tile, iADM, 1,                         &
-     &                       LBi, UBi, LBj, UBj,                        &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
-     &                       ad_zeta(:,:,Linp))
+        CALL ad_mp_exchange2d (ng, tile, iADM, 1,                       &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         NghostPoints, EWperiodic, NSperiodic,    &
+     &                         ad_zeta(:,:,Linp))
+
 # endif
 # if defined EW_PERIODIC || defined NS_PERIODIC
-!>    CALL exchange_u2d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        tl_zeta(:,:,Linp))
+!>      CALL exchange_r2d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj,                     &
+!>   &                          tl_zeta(:,:,Linp))
 !>
-      CALL ad_exchange_u2d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj,                    &
-     &                           ad_zeta(:,:,Linp))
+        CALL ad_exchange_r2d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj,                  &
+     &                             ad_zeta(:,:,Linp))
 # endif
-
-      cff1=1.0_r8/rho0
-      DO j=Jstr,Jend
-# ifdef MASKING
-        DO i=Istr,Iend
-!>        tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)*rmask(i,j)
-!>
-          ad_zeta(i,j,Linp)=ad_zeta(i,j,Linp)*rmask(i,j)
-        END DO
-# endif
-        DO k=1,N(ng)-1
+# ifdef ZETA_ELLIPTIC
+!
+!  Adjoint balanced free-surface contribution to unbalanced free-surface
+!  increment: Solve elliptic equation (Fukumori et al., 1998).
+!
+        DO j=Jstr,Jend
           DO i=Istr,Iend
-!>          tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)+tl_cff2
+!>          tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)+tl_zeta_ref(i,j)
 !>
-            ad_cff2=ad_zeta(i,j,Linp)
-!>          tl_cff2=-cff1*tl_rho(i,j,k)*Hz(i,j,k)
-!>
-            ad_rho(i,j,k)=ad_rho(i,j,k)-cff1*Hz(i,j,k)*ad_cff2
-            ad_cff2=0.0_r8
+            ad_zeta_ref(i,j)=ad_zeta(i,j,Linp)
           END DO
         END DO
-        DO i=Istr,Iend
-!>        tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)+tl_cff2
+!
+!  Call the adjoint biconjugate gradient solver.
+!
+!>      CALL tl_biconj_tile (ng, tile, iTLM,                            &
+!>   &                       LBi, UBi, LBj, UBj,                        &
+!>   &                       IminS, ImaxS, JminS, JmaxS,                &
+!>   &                       Lbck,                                      &
+!>   &                       h, pmon_u, pnom_v, pm, pn,                 &
+#  ifdef MASKING
+!>   &                       umask, vmask, rmask,                       &
+#  endif
+!>   &                       bc_ak, bc_bk, zdf1, zdf2, zdf3,            &
+!>   &                       pc_r2d, r_r2d, br_r2d, p_r2d, bp_r2d,      &
+!>   &                       tl_zeta_ref, tl_rhs_r2d)
 !>
-          ad_cff2=ad_zeta(i,j,Linp)
-!>        tl_cff2=-cff1*tl_rho(i,j,N(ng))*Hz(i,j,N(ng))
+        CALL ad_biconj_tile (ng, tile, iADM,                            &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
+     &                       Lbck,                                      &
+     &                       h, pmon_u, pnom_v, pm, pn,                 &
+#  ifdef MASKING
+     &                       umask, vmask, rmask,                       &
+#  endif
+     &                       bc_ak, bc_bk, zdf1, zdf2, zdf3,            &
+     &                       pc_r2d, r_r2d, br_r2d, p_r2d, bp_r2d,      &
+     &                       ad_zeta_ref, ad_rhs_r2d)
+!
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+!>          tl_zeta_ref(i,j)=0.0_r8
 !>
-          ad_rho(i,j,N(ng))=ad_rho(i,j,N(ng))-cff1*Hz(i,j,N(ng))*ad_cff2
-          ad_cff2=0.0_r8
+            ad_zeta_ref(i,j)=0.0_r8
+          END DO
         END DO
-      END DO
+
+#  ifdef DISTRIBUTE
+!>      CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
+!>   &                      LBi, UBi, LBj, UBj,                         &
+!>   &                      NghostPoints, EWperiodic, NSperiodic,       &
+!>   &                      tl_rhs_r2d)
+!>
+        CALL ad_mp_exchange2d (ng, tile, iADM, 1,                       &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         NghostPoints, EWperiodic, NSperiodic,    &
+     &                         ad_rhs_r2d)
+#  endif
+!>      CALL r2d_bc (ng, tile,                                          &
+!>   &               LBi, UBi, LBj, UBj,                                &
+!>   &               tl_rhs_r2d)
+!>
+        CALL ad_r2d_bc (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  ad_rhs_r2d)
+!
+!   Adjoint of compute the RHS term for the biconjugate gradient solver.
+!
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+#  ifdef MASKING
+!>          tl_rhs_r2d(i,j)=tl_rhs_r2d(i,j)*rmask(i,j)
+!>
+            ad_rhs_r2d(i,j)=ad_rhs_r2d(i,j)*rmask(i,j)
+#  endif
+!>          tl_rhs_r2d(i,j)=-pm(i,j)*pn(i,j)*                           &
+!>   &                      (pmon_u(i+1,j)*tl_gradPx(i+1,j)-            &
+!>   &                       pmon_u(i  ,j)*tl_gradPx(i  ,j)+            &
+!>   &                       pnom_v(i,j+1)*tl_gradPy(i,j+1)-            &
+!>   &                       pnom_v(i,j  )*tl_gradPy(i,j  ))
+!>
+            adfac=-pm(i,j)*pn(i,j)*ad_rhs_r2d(i,j)
+            ad_gradPx(i  ,j)=ad_gradPx(i  ,j)-pmon_u(i  ,j)*adfac
+            ad_gradPx(i+1,j)=ad_gradPx(i+1,j)+pmon_u(i+1,j)*adfac
+            ad_gradPy(i,j  )=ad_gradPy(i,j  )-pnom_v(i,j  )*adfac
+            ad_gradPy(i,j+1)=ad_gradPy(i,j+1)+pnom_v(i,j+1)*adfac
+            ad_rhs_r2d(i,j)=0.0_r8
+          END DO
+        END DO
+!
+!  Use forward boundary routines here since they are self-adjoint.
+!
+!>      CALL v2d_bc (ng, tile,                                          &
+!>   &               IminS, ImaxS, JminS, JmaxS,                        &
+!>   &               tl_gradPy)
+!>
+        CALL v2d_bc (ng, tile,                                          &
+     &               IminS, ImaxS, JminS, JmaxS,                        &
+     &               ad_gradPy)
+!>      CALL u2d_bc (ng, tile,                                          &
+!>   &               IminS, ImaxS, JminS, JmaxS,                        &
+!>   &               tl_gradPx)
+!>
+        CALL u2d_bc (ng, tile,                                          &
+     &               IminS, ImaxS, JminS, JmaxS,                        &
+     &               ad_gradPx)
+
+# else
+!
+!  Integrate hydrostatic equation from bottom to surface.
+!
+        IF (LNM_flag.eq.0) THEN
+          cff1=1.0_r8/rho0
+          DO k=1,N(ng)
+            DO j=Jstr,Jend
+              DO i=Istr,Iend
+!>              tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)+tl_cff
+!>
+                ad_cff=ad_cff+ad_zeta(i,j,Linp)
+#  ifdef MASKING
+!>              tl_cff=tl_cff*rmask(i,j)
+!>
+                ad_cff=ad_cff*rmask(i,j)
+#  endif
+!>              tl_cff=-cff1*tl_rho(i,j,k)*Hz(i,j,k)
+!>
+                ad_rho(i,j,k)=ad_rho(i,j,k)-                            &
+     &                        cff1*Hz(i,j,k)*ad_cff
+                ad_cff=0.0_r8
+              END DO
+            END DO
+          END DO
+!
+!  Integrate from level of no motion (LNM_depth) to surface or
+!  integrate from local bottom if shallower than LNM_depth.
+!  Notice that the level of motion depth is tested against the
+!  bottom of the grid cell (at W-points) and bracketed between
+!  W-points during the interpolation. Also positive depths are
+!  used for clarity.
+!
+        ELSE IF (LNM_flag.eq.1) THEN
+          cff1=1.0_r8/rho0
+          DO j=Jstr,Jend
+            DO i=Istr,Iend
+              DO k=1,N(ng)
+                zwtop=ABS(z_w(i,j,k  ))
+                zwbot=ABS(z_w(i,j,k-1))
+                IF (zwbot.lt.LNM_depth(ng)) THEN
+!>                tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)+tl_cff
+!>
+                  ad_cff=ad_cff+ad_zeta(i,j,Linp)
+#  ifdef MASKING
+!>                tl_cff=tl_cff*rmask(i,j)
+!>
+                  ad_cff=ad_cff*rmask(i,j)
+#  endif
+!>                tl_cff=-cff1*tl_rho(i,j,k)*Hz(i,j,k)
+!>
+                  ad_rho(i,j,k)=ad_rho(i,j,k)-                          &
+     &                          cff1*Hz(i,j,k)*ad_cff
+                  ad_cff=0.0_r8
+                ELSE IF ((Zwbot.gt.LNM_depth(ng)).and.                  &
+     &                   (LNM_depth(ng).ge.Zwtop)) THEN    ! interpolate
+!>                tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)+tl_cff
+!>
+                  ad_cff=ad_cff+ad_zeta(i,j,Linp)
+#  ifdef MASKING
+!>                tl_cff=tl_cff*rmask(i,j)
+!>
+                  ad_cff=ad_cff*rmask(i,j)
+#  endif
+                  zphi=ABS(z_r(i,j,k))
+                  IF (zphi.ge.LNM_depth(ng)) THEN    ! above cell center
+                    IF (k.eq.N(ng)) THEN
+!>                    tl_cff=-cff1*tl_rho(i,j,k)*Hz(i,j,k)
+!>
+                      ad_rho(i,j,k)=ad_rho(i,j,k)-                      &
+     &                              cff1*Hz(i,j,k)*ad_cff
+                      ad_cff=0.0_r8
+                    ELSE
+                      zphi1=ABS(z_r(i,j,k+1))
+                      fac=(LNM_depth(ng)-zphi1)/(zphi-zphi1)
+!>                    tl_cff=-cff1*                                     &
+!>   &                       (tl_rho(i,j,k+1)+                          &
+!>   &                        fac*(tl_rho(i,j,k)-tl_rho(i,j,k+1)))*     &
+!>   &                       (LNM_depth(ng)-zwtop)
+!>
+                      adfac=cff1*(LNM_depth(ng)-zwtop)*ad_cff
+                      adfac1=fac*adfac
+                      ad_rho(i,j,k  )=ad_rho(i,j,k  )-adfac1
+                      ad_rho(i,j,k+1)=ad_rho(i,j,k+1)-adfac+adfac1
+                      ad_cff=0.0_r8
+                    END IF
+                  ELSE                               ! below cell center
+                    IF (k.eq.1) THEN
+!>                    tl_cff=-cff1*tl_rho(i,j,k)*Hz(i,j,k)
+!>
+                      ad_rho(i,j,k)=ad_rho(i,j,k)-                      &
+     &                              cff1*Hz(i,j,k)*ad_cff
+                      ad_cff=0.0_r8
+                    ELSE
+                      zphi1=ABS(z_r(i,j,k-1))
+                      fac=(LNM_depth(ng)-zphi)/(zphi1-zphi)
+!>                    tl_cff=-cff1*                                     &
+!>   &                       (tl_rho(i,j,k)+                            &
+!>   &                        fac*(tl_rho(i,j,k-1)-tl_rho(i,j,k)))*     &
+!>   &                       (zwbot-LNM_depth(ng))
+!>
+                      adfac=cff1*(zwbot-LNM_depth(ng))*ad_cff
+                      adfac1=fac*adfac
+                      ad_rho(i,j,k-1)=ad_rho(i,j,k-1)-adfac1
+                      ad_rho(i,j,k  )=ad_rho(i,j,k  )-adfac+adfac1
+                      ad_cff=0.0_r8
+                    END IF
+                  END IF
+                END IF
+              END DO
+            END DO
+          END DO
+        END IF
+# endif
+      END IF
 !
 !-----------------------------------------------------------------------
-!  Add balanced velocity contributions to unbalances velocity
+!  Add balanced velocity contributions to unbalanced velocity
 !  increments. Use linear pressure gradient formulation based
 !  to that found in routine "prsgrd31.h".
 !-----------------------------------------------------------------------
 !
+      IF (balance(isVvel)) THEN
+!
+!  Compute 3D V-velocity error covariance constraint.
+!
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange3d (ng, tile, iTLM, 2,                            &
-!>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
-!>   &                    tl_u(:,:,:,Linp), tl_v(:,:,:,Linp))
+!>      CALL mp_exchange3d (ng, tile, iTLM, 2,                          &
+!>   &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
+!>   &                      NghostPoints, EWperiodic, NSperiodic,       &
+!>   &                      tl_u(:,:,:,Linp), tl_v(:,:,:,Linp))
 !>
-      CALL ad_mp_exchange3d (ng, tile, iADM, 2,                         &
-     &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
-     &                       ad_u(:,:,:,Linp), ad_v(:,:,:,Linp))
+        CALL ad_mp_exchange3d (ng, tile, iADM, 2,                       &
+     &                         LBi, UBi, LBj, UBj, 1, N(ng),            &
+     &                         NghostPoints, EWperiodic, NSperiodic,    &
+     &                         ad_u(:,:,:,Linp), ad_v(:,:,:,Linp))
 # endif
 # if defined EW_PERIODIC || defined NS_PERIODIC
-!>    CALL exchange_v3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-!>   &                        tl_v(:,:,:,Linp))
+!>      CALL exchange_v3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!>   &                          tl_v(:,:,:,Linp))
 !>
-      CALL ad_exchange_v3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
-     &                           ad_v(:,:,:,Linp))
-!>    CALL exchange_u3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-!>   &                        tl_u(:,:,:,Linp))
+        CALL ad_exchange_v3d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
+     &                             ad_v(:,:,:,Linp))
+!>      CALL exchange_u3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!>   &                          tl_u(:,:,:,Linp))
 !>
-      CALL ad_exchange_u3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
-     &                           ad_u(:,:,:,Linp))
+        CALL ad_exchange_u3d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
+     &                             ad_u(:,:,:,Linp))
+# endif
+        DO k=1,N(ng)
+          DO j=JstrV,Jend
+            DO i=Istr,Iend
+# ifdef MASKING
+!>            tl_v(i,j,k,Linp)=tl_v(i,j,k,Linp)*vmask(i,j)
+!>
+              ad_v(i,j,k,Linp)=ad_v(i,j,k,Linp)*vmask(i,j)
+# endif
+!>            tl_v(i,j,k,Linp)=tl_v(i,j,k,Linp)+                        &
+!>   &                         0.25_r8*(tl_gradP(i  ,j-1,k)+            &
+!>   &                                  tl_gradP(i+1,j-1,k)+            &
+!>   &                                  tl_gradP(i  ,j  ,k)+            &
+!>   &                                  tl_gradP(i+1,j  ,k))
+!>
+              adfac=0.25_r8*ad_v(i,j,k,Linp)
+              ad_gradP(i  ,j-1,k)=ad_gradP(i  ,j-1,k)+adfac
+              ad_gradP(i+1,j-1,k)=ad_gradP(i+1,j-1,k)+adfac
+              ad_gradP(i  ,j  ,k)=ad_gradP(i  ,j  ,k)+adfac
+              ad_gradP(i+1,j  ,k)=ad_gradP(i+1,j  ,k)+adfac
+            END DO
+          END DO
+        END DO
+      END IF
+!
+!  NOTE: fac2=0 because the balanced component should consist of the
+!  baroclinic pressure gradient only.
+!
+      fac1=0.5_r8*g/rho0
+!!    fac2=g
+      fac2=0.0_r8
+      fac3=0.25_r8*g/rho0
+!
+      IF (balance(isFsur).or.balance(isVvel)) THEN
+        DO j=Jstr-1,Jend
+
+# ifdef ZETA_ELLIPTIC
+!
+!  Compute right-hand-side term used in the elliptic equation for
+!  unbalanced free-surface.  Integrate from bottom to surface.
+!
+          IF (balance(isFsur)) THEN
+            DO k=1,N(ng)
+              DO i=Istr,Iend+1
+!>              tl_gradPx(i,j)=tl_gradPx(i,j)+tl_cff
+!>
+                ad_cff=ad_cff+ad_gradPx(i,j)
+#  ifdef MASKING
+!>              tl_cff=tl_cff*umask(i,j)
+!>
+                ad_cff=ad_cff*umask(i,j)
+#  endif
+!>              tl_cff=0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))*tl_phi(i,k)
+!>
+                ad_phi(i,k)=ad_phi(i,k)+                                &
+     &                      0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))*ad_cff
+                ad_cff=0.0_r8
+              END DO
+            END DO
+          END IF
 # endif
 !
 !  Compute balanced, interior V-momemtum from baroclinic pressure
 !  gradient (differentiate and then vertically integrate).
 !
-      fac1=0.5_r8*g/rho0
-      fac2=g
-      fac3=0.25_r8*g/rho0
+!>        DO k=N(ng)-1,1,-1
+!>
+          DO k=1,N(ng)-1
+            DO i=Istr,Iend+1
+              cff1=1.0_r8/((z_r(i  ,j,k+1)-z_r(i  ,j,k))*               &
+     &                     (z_r(i-1,j,k+1)-z_r(i-1,j,k)))
+              cff2=z_r(i  ,j,k  )-z_r(i-1,j,k  )+                       &
+     &             z_r(i  ,j,k+1)-z_r(i-1,j,k+1)
+              cff3=z_r(i  ,j,k+1)-z_r(i  ,j,k  )-                       &
+     &             z_r(i-1,j,k+1)+z_r(i-1,j,k  )
+              gamma=0.125_r8*cff1*cff2*cff3
 !
-      DO k=1,N(ng)
-        DO j=JstrV,Jend
-          DO i=Istr,Iend
-# ifdef MASKING
-!>          tl_v(i,j,k,Linp)=tl_v(i,j,k,Linp)*vmask(i,j)
-!>
-            ad_v(i,j,k,Linp)=ad_v(i,j,k,Linp)*vmask(i,j)
-# endif
-!>          tl_v(i,j,k,Linp)=tl_v(i,j,k,Linp)+                          &
-!>   &                       0.25_r8*(tl_gradP(i  ,j-1,k)+              &
-!>   &                                tl_gradP(i+1,j-1,k)+              &
-!>   &                                tl_gradP(i  ,j  ,k)+              &
-!>   &                                tl_gradP(i+1,j  ,k))
-!>
-            adfac=0.25_r8*ad_v(i,j,k,Linp)
-            ad_gradP(i  ,j-1,k)=ad_gradP(i  ,j-1,k)+adfac
-            ad_gradP(i+1,j-1,k)=ad_gradP(i+1,j-1,k)+adfac
-            ad_gradP(i  ,j  ,k)=ad_gradP(i  ,j  ,k)+adfac
-            ad_gradP(i+1,j  ,k)=ad_gradP(i+1,j  ,k)+adfac
-          END DO
-        END DO
-      END DO
+              cff3=z_r(i,j,k+1)+z_r(i-1,j,k+1)-                         &
+     &             z_r(i,j,k  )-z_r(i-1,j,k  )
+              cff4=(1.0_r8+gamma)*(z_r(i,j,k+1)-z_r(i-1,j,k+1))+        &
+     &             (1.0_r8-gamma)*(z_r(i,j,k  )-z_r(i-1,j,k  ))
 
-      DO j=Jstr-1,Jend
-!>      DO k=1,N(ng)-1
+# ifdef ZETA_ELLIPTIC
+!>            tl_phi(i,k)=tl_phix(i)
 !>
-        DO k=N(ng)-1,1,-1
-          DO i=Istr,Iend+1
-            cff1=1.0_r8/((z_r(i  ,j,k+1)-z_r(i  ,j,k))*                 &
-     &                   (z_r(i-1,j,k+1)-z_r(i-1,j,k)))
-            cff2=z_r(i  ,j,k  )-z_r(i-1,j,k  )+                         &
-     &           z_r(i  ,j,k+1)-z_r(i-1,j,k+1)
-            cff3=z_r(i  ,j,k+1)-z_r(i  ,j,k  )-                         &
-     &           z_r(i-1,j,k+1)+z_r(i-1,j,k  )
-            gamma=0.125_r8*cff1*cff2*cff3
-!
-            cff3=z_r(i,j,k+1)+z_r(i-1,j,k+1)-                           &
-     &           z_r(i,j,k  )-z_r(i-1,j,k  )
-            cff4=(1.0_r8+gamma)*(z_r(i,j,k+1)-z_r(i-1,j,k+1))+          &
-     &           (1.0_r8-gamma)*(z_r(i,j,k  )-z_r(i-1,j,k  ))
-!>          tl_gradP(i,j,k)=tl_phix(i)*(pm(i-1,j)+pm(i,j))/             &
-!>   &                      (f(i-1,j)+f(i,j))
+              ad_phix(i)=ad_phix(i)+ad_phi(i,k)
+              ad_phi(i,k)=0.0_r8
+# endif
+!>            tl_gradP(i,j,k)=0.5_r8*tl_phix(i)*(pm(i-1,j)+pm(i,j))/    &
+!>   &                        (f(i-1,j)+f(i,j))
 !>
-            ad_phix(i)=ad_phix(i)+                                      &
-     &                 ad_gradP(i,j,k)*(pm(i-1,j)+pm(i,j))/             &
-     &                 (f(i-1,j)+f(i,j))
-            ad_gradP(i,j,k)=0.0_r8
-!>          tl_phix(i)=tl_phix(i)+                                      &
-!>   &                 fac3*(tl_cff1*cff3-tl_cff2*cff4)
+              ad_phix(i)=ad_phix(i)+                                    &
+     &                   ad_gradP(i,j,k)*0.5_r8*(pm(i-1,j)+pm(i,j))/    &
+     &                   (f(i-1,j)+f(i,j))
+              ad_gradP(i,j,k)=0.0_r8
+!>            tl_phix(i)=tl_phix(i)+                                    &
+!>   &                   fac3*(tl_cff1*cff3-tl_cff2*cff4)
 !>
-            ad_cff1=fac3*cff3*ad_phix(i)
-            ad_cff2=-fac3*cff4*ad_phix(i)
-!>          tl_cff2=tl_rho(i,j,k+1)+tl_rho(i-1,j,k+1)-                  &
-!>   &              tl_rho(i,j,k  )-tl_rho(i-1,j,k  )
-!>          tl_cff1=(1.0_r8+gamma)*(tl_rho(i,j,k+1)-tl_rho(i-1,j,k+1))+ &
-!>   &              (1.0_r8-gamma)*(tl_rho(i,j,k  )-tl_rho(i-1,j,k  ))
+              ad_cff1=fac3*cff3*ad_phix(i)
+              ad_cff2=-fac3*cff4*ad_phix(i)
+!>            tl_cff2=tl_rho(i,j,k+1)+tl_rho(i-1,j,k+1)-                &
+!>   &                tl_rho(i,j,k  )-tl_rho(i-1,j,k  )
+!>            tl_cff1=(1.0_r8+gamma)*(tl_rho(i  ,j,k+1)-                &
+!>   &                                tl_rho(i-1,j,k+1))+               &
+!>   &                (1.0_r8-gamma)*(tl_rho(i  ,j,k  )-                &
+!>   &                                tl_rho(i-1,j,k  ))
 !>
-            adfac1=(1.0_r8+gamma)*ad_cff1
-            adfac2=(1.0_r8-gamma)*ad_cff1
-            ad_rho(i-1,j,k  )=ad_rho(i-1,j,k  )-adfac2-ad_cff2
-            ad_rho(i  ,j,k  )=ad_rho(i  ,j,k  )+adfac2-ad_cff2
-            ad_rho(i-1,j,k+1)=ad_rho(i-1,j,k+1)-adfac1+ad_cff2
-            ad_rho(i  ,j,k+1)=ad_rho(i  ,j,k+1)+adfac1+ad_cff2
-            ad_cff1=0.0_r8
-            ad_cff2=0.0_r8
+              adfac1=(1.0_r8+gamma)*ad_cff1
+              adfac2=(1.0_r8-gamma)*ad_cff1
+              ad_rho(i-1,j,k  )=ad_rho(i-1,j,k  )-adfac2-ad_cff2
+              ad_rho(i  ,j,k  )=ad_rho(i  ,j,k  )+adfac2-ad_cff2
+              ad_rho(i-1,j,k+1)=ad_rho(i-1,j,k+1)-adfac1+ad_cff2
+              ad_rho(i  ,j,k+1)=ad_rho(i  ,j,k+1)+adfac1+ad_cff2
+              ad_cff1=0.0_r8
+              ad_cff2=0.0_r8
+            END DO
           END DO
-        END DO
 !
 !  Compute balanced, surface V-momentum from baroclinic and barotropic
 !  surface pressure gradient.
 !
-        DO i=Istr,Iend+1
-          cff1=z_w(i  ,j,N(ng))-z_r(i  ,j,N(ng))+                        &
-     &         z_w(i-1,j,N(ng))-z_r(i-1,j,N(ng))
-!>        tl_gradP(i,j,N(ng))=tl_phix(i)*(pm(i-1,j)+pm(i,j))/            &
-!>   &                        (f(i-1,j)+f(i,j))
+          DO i=Istr,Iend+1
+            cff1=z_w(i  ,j,N(ng))-z_r(i  ,j,N(ng))+                      &
+     &           z_w(i-1,j,N(ng))-z_r(i-1,j,N(ng))
+# ifdef ZETA_ELLIPTIC
+!>          tl_phi(i,N(ng))=tl_phix(i)
 !>
-          ad_phix(i)=ad_phix(i)+                                         &
-     &               ad_gradP(i,j,N(ng))*(pm(i-1,j)+pm(i,j))/            &
-     &               (f(i-1,j)+f(i,j))
-          ad_gradP(i,j,N(ng))=0.0_r8
-!>        tl_phix(i)=fac1*(tl_rho(i,j,N(ng))-tl_rho(i-1,j,N(ng)))*cff1+  &
-!>   &               fac2*(tl_zeta(i,j,Linp)-tl_zeta(i-1,j,Linp))
-!>
-          adfac1=fac1*cff1*ad_phix(i)
-          adfac2=fac2*ad_phix(i)
-          ad_rho(i,j,N(ng))=ad_rho(i,j,N(ng))+adfac1
-          ad_rho(i-1,j,N(ng))=ad_rho(i-1,j,N(ng))-adfac1
-          ad_zeta(i,j,Linp)=ad_zeta(i,j,Linp)+adfac2
-          ad_zeta(i-1,j,Linp)=ad_zeta(i-1,j,Linp)-adfac2
-          ad_phix(i)=0.0_r8
-        END DO
-      END DO
-!
-!  Compute balanced, interior U-momemtum from baroclinic pressure
-!  gradient (differentiate and then vertically integrate).
-!
-      DO k=1,N(ng)
-        DO j=Jstr,Jend
-          DO i=IstrU,Iend
-# ifdef MASKING
-!>          tl_u(i,j,k,Linp)=tl_u(i,j,k,Linp)*umask(i,j)
-!>
-            ad_u(i,j,k,Linp)=ad_u(i,j,k,Linp)*umask(i,j)
+            ad_phix(i)=ad_phix(i)+ad_phi(i,N(ng))
+            ad_phi(i,N(ng))=0.0_r8
 # endif
-!>          tl_u(i,j,k,Linp)=tl_u(i,j,k,Linp)-                          &
+!>          tl_gradP(i,j,N(ng))=0.5_r8*tl_phix(i)*(pm(i-1,j)+pm(i,j))/   &
+!>   &                          (f(i-1,j)+f(i,j))
+!>
+            ad_phix(i)=ad_phix(i)+                                       &
+     &                 ad_gradP(i,j,N(ng))*0.5_r8*(pm(i-1,j)+pm(i,j))/   &
+     &                 (f(i-1,j)+f(i,j))
+            ad_gradP(i,j,N(ng))=0.0_r8
+!>          tl_phix(i)=fac1*(tl_rho(i  ,j,N(ng))-                        &
+!>                           tl_rho(i-1,j,N(ng)))*cff1+                  &
+!>   &                 fac2*(tl_zeta(i  ,j,Linp)-                        &
+!>                           tl_zeta(i-1,j,Linp))
+!>
+            adfac1=fac1*cff1*ad_phix(i)
+            adfac2=fac2*ad_phix(i)
+            ad_rho(i-1,j,N(ng))=ad_rho(i-1,j,N(ng))-adfac1
+            ad_rho(i  ,j,N(ng))=ad_rho(i  ,j,N(ng))+adfac1
+            ad_zeta(i-1,j,Linp)=ad_zeta(i-1,j,Linp)-adfac2
+            ad_zeta(i  ,j,Linp)=ad_zeta(i  ,j,Linp)+adfac2
+            ad_phix(i)=0.0_r8
+          END DO
+        END DO
+      END IF
+!
+!  Compute 3D U-velocity error covariance constraint.
+!
+      IF (balance(isUvel)) THEN
+        DO k=1,N(ng)
+          DO j=Jstr,Jend
+            DO i=IstrU,Iend
+# ifdef MASKING
+!>            tl_u(i,j,k,Linp)=tl_u(i,j,k,Linp)*umask(i,j)
+!>
+              ad_u(i,j,k,Linp)=ad_u(i,j,k,Linp)*umask(i,j)
+# endif
+!>            tl_u(i,j,k,Linp)=tl_u(i,j,k,Linp)-                        &
 !>   &                       0.25_r8*(tl_gradP(i-1,j  ,k)+              &
 !>   &                                tl_gradP(i  ,j  ,k)+              &
 !>   &                                tl_gradP(i-1,j+1,k)+              &
 !>   &                                tl_gradP(i  ,j+1,k))
 !>
-            adfac=0.25_r8*ad_u(i,j,k,Linp)
-            ad_gradP(i-1,j  ,k)=ad_gradP(i-1,j  ,k)-adfac
-            ad_gradP(i  ,j  ,k)=ad_gradP(i  ,j  ,k)-adfac
-            ad_gradP(i-1,j+1,k)=ad_gradP(i-1,j+1,k)-adfac
-            ad_gradP(i  ,j+1,k)=ad_gradP(i  ,j+1,k)-adfac
+              adfac=0.25_r8*ad_u(i,j,k,Linp)
+              ad_gradP(i-1,j  ,k)=ad_gradP(i-1,j  ,k)-adfac
+              ad_gradP(i  ,j  ,k)=ad_gradP(i  ,j  ,k)-adfac
+              ad_gradP(i-1,j+1,k)=ad_gradP(i-1,j+1,k)-adfac
+              ad_gradP(i  ,j+1,k)=ad_gradP(i  ,j+1,k)-adfac
+            END DO
           END DO
         END DO
-      END DO
-
-      DO j=Jstr,Jend+1
-!>      DO k=1,N(ng)-1
-!>
-        DO k=N(ng)-1,1,-1
-          DO i=Istr-1,Iend
-            cff1=1.0_r8/((z_r(i,j  ,k+1)-z_r(i,j  ,k))*                 &
-     &                   (z_r(i,j-1,k+1)-z_r(i,j-1,k)))
-            cff2=z_r(i,j  ,k  )-z_r(i,j-1,k  )+                         &
-     &           z_r(i,j  ,k+1)-z_r(i,j-1,k+1)
-            cff3=z_r(i,j  ,k+1)-z_r(i,j  ,k  )-                         &
-     &           z_r(i,j-1,k+1)+z_r(i,j-1,k  )
-            gamma=0.125_r8*cff1*cff2*cff3
+      END IF
 !
-            cff3=z_r(i,j,k+1)+z_r(i,j-1,k+1)-                           &
-     &           z_r(i,j,k  )-z_r(i,j-1,k  )
-            cff4=(1.0_r8+gamma)*(z_r(i,j,k+1)-z_r(i,j-1,k+1))+          &
-     &           (1.0_r8-gamma)*(z_r(i,j,k  )-z_r(i,j-1,k  ))
-!>          tl_gradP(i,j,k)=tl_phie(i)*(pn(i,j-1)+pn(i,j))/             &
-!>   &                      (f(i,j-1)+f(i,j))
+      IF (balance(isFsur).or.balance(isUvel)) THEN
+        DO j=Jstr,Jend+1
+
+# ifdef ZETA_ELLIPTIC
+!
+!  Compute right-hand-side term used in the elliptic equation for
+!  unbalanced free-surface.  Integrate from bottom to surface.
+!
+          IF (balance(isFsur)) THEN
+            DO k=1,N(ng)
+              DO i=Istr-1,Iend
+!>              tl_gradPy(i,j)=tl_gradPy(i,j)+tl_cff
 !>
-            ad_phie(i)=ad_phie(i)+                                      &
-     &                 ad_gradP(i,j,k)*(pn(i,j-1)+pn(i,j))/             &
-     &                 (f(i,j-1)+f(i,j))
-            ad_gradP(i,j,k)=0.0_r8            
-!>          tl_phie(i)=tl_phie(i)+                                      &
-!>   &                 fac3*(tl_cff1*cff3-tl_cff2*cff4)
+                ad_cff=ad_cff+ad_gradPy(i,j)
+#  ifdef MASKING
+!>              tl_cff=tl_cff*vmask(i,j)
 !>
-            ad_cff1=fac3*cff3*ad_phie(i)
-            ad_cff2=-fac3*cff4*ad_phie(i)
-!>          tl_cff2=tl_rho(i,j,k+1)+tl_rho(i,j-1,k+1)-                  &
-!>   &              tl_rho(i,j,k  )-tl_rho(i,j-1,k  )
-!>          tl_cff1=(1.0_r8+gamma)*(tl_rho(i,j,k+1)-tl_rho(i,j-1,k+1))+ &
-!>   &              (1.0_r8-gamma)*(tl_rho(i,j,k  )-tl_rho(i,j-1,k  ))
+                ad_cff=ad_cff*vmask(i,j)
+#  endif
+!>              tl_cff=0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))*tl_phi(i,k)
+!>
+                ad_phi(i,k)=ad_phi(i,k)+                                &
+     &                      0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))*ad_cff
+                ad_cff=0.0_r8
+              END DO
+            END DO
+          END IF
+# endif
+!
+!  Compute balanced, interior U-momemtum from baroclinic pressure
+!  gradient (differentiate and then vertically integrate).
+!
+!>        DO k=N(ng)-1,1,-1
+!>
+          DO k=1,N(ng)-1
+            DO i=Istr-1,Iend
+              cff1=1.0_r8/((z_r(i,j  ,k+1)-z_r(i,j  ,k))*               &
+     &                     (z_r(i,j-1,k+1)-z_r(i,j-1,k)))
+              cff2=z_r(i,j  ,k  )-z_r(i,j-1,k  )+                       &
+     &             z_r(i,j  ,k+1)-z_r(i,j-1,k+1)
+              cff3=z_r(i,j  ,k+1)-z_r(i,j  ,k  )-                       &
+     &             z_r(i,j-1,k+1)+z_r(i,j-1,k  )
+              gamma=0.125_r8*cff1*cff2*cff3
+!
+              cff3=z_r(i,j,k+1)+z_r(i,j-1,k+1)-                         &
+     &             z_r(i,j,k  )-z_r(i,j-1,k  )
+              cff4=(1.0_r8+gamma)*(z_r(i,j,k+1)-z_r(i,j-1,k+1))+        &
+     &             (1.0_r8-gamma)*(z_r(i,j,k  )-z_r(i,j-1,k  ))
+# ifdef ZETA_ELLIPTIC
+!>            tl_phi(i,k)=tl_phie(i)
+!>
+              ad_phie(i)=ad_phie(i)+ad_phi(i,k)
+              ad_phi(i,k)=0.0_r8
+# endif
+!>            tl_gradP(i,j,k)=0.5_r8*tl_phie(i)*(pn(i,j-1)+pn(i,j))/    &
+!>   &                        (f(i,j-1)+f(i,j))
+!>
+              ad_phie(i)=ad_phie(i)+                                    &
+     &                   ad_gradP(i,j,k)*0.5_r8*(pn(i,j-1)+pn(i,j))/    &
+     &                   (f(i,j-1)+f(i,j))
+              ad_gradP(i,j,k)=0.0_r8
+!>            tl_phie(i)=tl_phie(i)+                                    &
+!>   &                   fac3*(tl_cff1*cff3-tl_cff2*cff4)
+!>
+              ad_cff1=fac3*cff3*ad_phie(i)
+              ad_cff2=-fac3*cff4*ad_phie(i)
+!>            tl_cff2=tl_rho(i,j,k+1)+tl_rho(i,j-1,k+1)-                &
+!>   &                tl_rho(i,j,k  )-tl_rho(i,j-1,k  )
+!>            tl_cff1=(1.0_r8+gamma)*(tl_rho(i,j  ,k+1)-                &
+!>   &                                tl_rho(i,j-1,k+1))+               &
+!>   &                (1.0_r8-gamma)*(tl_rho(i,j  ,k  )-                &
+!>   &                                tl_rho(i,j-1,k  ))
 !>
               adfac1=(1.0_r8+gamma)*ad_cff1
               adfac2=(1.0_r8-gamma)*ad_cff1
@@ -555,34 +936,59 @@
               ad_rho(i,j  ,k+1)=ad_rho(i,j  ,k+1)+adfac1+ad_cff2
               ad_cff1=0.0_r8
               ad_cff2=0.0_r8
+            END DO
           END DO
-        END DO
 !
 !  Compute balanced, surface U-momentum from baroclinic and barotropic
 !  surface pressure gradient.
 !
-        DO i=Istr-1,Iend
-          cff1=z_w(i,j  ,N(ng))-z_r(i,j  ,N(ng))+                       &
-     &         z_w(i,j-1,N(ng))-z_r(i,j-1,N(ng))
-!>        tl_gradP(i,j,N(ng))=tl_phie(i)*(pn(i,j-1)+pn(i,j))/           &
-!>   &                        (f(i,j-1)+f(i,j))
+          DO i=Istr-1,Iend
+            cff1=z_w(i,j  ,N(ng))-z_r(i,j  ,N(ng))+                     &
+       &         z_w(i,j-1,N(ng))-z_r(i,j-1,N(ng))
+# ifdef ZETA_ELLIPTIC
+!>          tl_phi(i,N(ng))=tl_phie(i)
 !>
-          ad_phie(i)=ad_phie(i)+                                        &
-     &               ad_gradP(i,j,N(ng))*(pn(i,j-1)+pn(i,j))/           &
-     &               (f(i,j-1)+f(i,j))
-          ad_gradP(i,j,N(ng))=0.0_r8
-!>        tl_phie(i)=fac1*(tl_rho(i,j,N(ng))-tl_rho(i,j-1,N(ng)))*cff1+ &
-!>   &               fac2*(tl_zeta(i,j,Linp)-tl_zeta(i,j-1,Linp))
+            ad_phie(i)=ad_phie(i)+ad_phi(i,N(ng))
+            ad_phi(i,N(ng))=0.0_r8
+# endif
+!>          tl_gradP(i,j,N(ng))=0.5_r8*tl_phie(i)*(pn(i,j-1)+pn(i,j))/  &
+!>   &                          (f(i,j-1)+f(i,j))
 !>
-          adfac1=fac1*cff1*ad_phie(i)
-          adfac2=fac2*ad_phie(i)
-          ad_rho(i,j,N(ng))=ad_rho(i,j,N(ng))+adfac1
-          ad_rho(i,j-1,N(ng))=ad_rho(i,j-1,N(ng))-adfac1
-          ad_zeta(i,j,Linp)=ad_zeta(i,j,Linp)+adfac2
-          ad_zeta(i,j-1,Linp)=ad_zeta(i,j-1,Linp)-adfac2
-          ad_phie(i)=0.0_r8
+            ad_phie(i)=ad_phie(i)+                                      &
+     &                 ad_gradP(i,j,N(ng))*0.5_r8*(pn(i,j-1)+pn(i,j))/  &
+     &                 (f(i,j-1)+f(i,j))
+            ad_gradP(i,j,N(ng))=0.0_r8
+!>          tl_phie(i)=fac1*(tl_rho(i,j  ,N(ng))-                       &
+!>   &                       tl_rho(i,j-1,N(ng)))*cff1+                 &
+!>   &                 fac2*(tl_zeta(i,j  ,Linp)-                       &
+!>   &                       tl_zeta(i,j-1,Linp))
+!>
+            adfac1=fac1*cff1*ad_phie(i)
+            adfac2=fac2*ad_phie(i)
+            ad_rho(i,j-1,N(ng))=ad_rho(i,j-1,N(ng))-adfac1
+            ad_rho(i,j  ,N(ng))=ad_rho(i,j  ,N(ng))+adfac1
+            ad_zeta(i,j-1,Linp)=ad_zeta(i,j-1,Linp)-adfac2
+            ad_zeta(i,j  ,Linp)=ad_zeta(i,j  ,Linp)+adfac2
+            ad_phie(i)=0.0_r8
+          END DO
         END DO
-      END DO
+
+# ifdef ZETA_ELLIPTIC
+!
+!  Initialize vertical intergal local variables.
+!
+        DO j=JminS,JmaxS
+          DO i=IminS,ImaxS
+!>          tl_gradPy(i,j)=0.0_r8
+!>
+            ad_gradPy(i,j)=0.0_r8
+!>          tl_gradPx(i,j)=0.0_r8
+!>
+            ad_gradPx(i,j)=0.0_r8
+          END DO
+        END DO
+# endif
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Compute balanced density anomaly increment using linearized equation
@@ -590,50 +996,53 @@
 !  are computed from the background state.
 !-----------------------------------------------------------------------
 !
+      IF (balance(isFsur).or.balance(isVvel)) THEN
+
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
-!>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
-!>   &                    tl_rho)
+!>      CALL mp_exchange3d (ng, tile, iTLM, 1,                          &
+!>   &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
+!>   &                      NghostPoints, EWperiodic, NSperiodic,       &
+!>   &                      tl_rho)
 !>
-      CALL ad_mp_exchange3d (ng, tile, iADM, 1,                         &
-     &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
-     &                       ad_rho)
+        CALL ad_mp_exchange3d (ng, tile, iADM, 1,                       &
+     &                         LBi, UBi, LBj, UBj, 1, N(ng),            &
+     &                         NghostPoints, EWperiodic, NSperiodic,    &
+     &                         ad_rho)
 # endif
 # if defined EW_PERIODIC || defined NS_PERIODIC
-!>    CALL exchange_r3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-!>   &                        tl_rho)
+!>      CALL exchange_r3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!>   &                          tl_rho)
 !>
-      CALL ad_exchange_r3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
-     &                           ad_rho)
+        CALL ad_exchange_r3d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
+     &                             ad_rho)
 # endif
 
-      DO j=JstrR,JendR
-        DO k=1,N(ng)
-          DO i=IstrR,IendR
+        DO j=JstrR,JendR
+          DO k=1,N(ng)
+            DO i=IstrR,IendR
 # ifdef MASKING
-!>          tl_rho(i,j,k)=tl_rho(i,j,k)*rmask(i,j)
+!>            tl_rho(i,j,k)=tl_rho(i,j,k)*rmask(i,j)
 !>
-            ad_rho(i,j,k)=ad_rho(i,j,k)*rmask(i,j)
+              ad_rho(i,j,k)=ad_rho(i,j,k)*rmask(i,j)
 # endif
 # ifdef SALINITY
-!>          tl_rho(i,j,k)=tl_rho(i,j,k)+                                &
-!>   &                    rho0*beta(i,j)*tl_t(i,j,k,Linp,isalt)
+!>            tl_rho(i,j,k)=tl_rho(i,j,k)+                              &
+!>   &                      rho0*beta(i,j)*tl_t(i,j,k,Linp,isalt)
 !>
-            ad_t(i,j,k,Linp,isalt)=ad_t(i,j,k,Linp,isalt)+              & 
-     &                             rho0*beta(i,j)*ad_rho(i,j,k)
+              ad_t(i,j,k,Linp,isalt)=ad_t(i,j,k,Linp,isalt)+            &
+     &                               rho0*beta(i,j)*ad_rho(i,j,k)
 # endif
-!>          tl_rho(i,j,k)=-rho0*alpha(i,j)*tl_t(i,j,k,Linp,itemp)
+!>            tl_rho(i,j,k)=-rho0*alpha(i,j)*tl_t(i,j,k,Linp,itemp)
 !>
-            ad_t(i,j,k,Linp,itemp)=ad_t(i,j,k,Linp,itemp)-              &
-     &                             rho0*alpha(i,j)*ad_rho(i,j,k)
-            ad_rho(i,j,k)=0.0
+              ad_t(i,j,k,Linp,itemp)=ad_t(i,j,k,Linp,itemp)-            &
+     &                               rho0*alpha(i,j)*ad_rho(i,j,k)
+              ad_rho(i,j,k)=0.0
+            END DO
           END DO
         END DO
-      END DO
+      END IF
 
 # ifdef SALINITY
 !
@@ -641,51 +1050,61 @@
 !  Compute balance salinity contribution.
 !-----------------------------------------------------------------------
 !
+      IF (balance(isTvar(isalt))) THEN
+
+#  ifdef DISTRIBUTE
+!>      CALL mp_exchange3d (ng, tile, iTLM, 1,                          &
+!>   &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
+!>   &                      NghostPoints, EWperiodic, NSperiodic,       &
+!>   &                      tl_t(:,:,:,Linp,isalt))
+!>
+        CALL ad_mp_exchange3d (ng, tile, iADM, 1,                       &
+     &                         LBi, UBi, LBj, UBj, 1, N(ng),            &
+     &                         NghostPoints, EWperiodic, NSperiodic,    &
+     &                         ad_t(:,:,:,Linp,isalt))
+#  endif
+#  if defined EW_PERIODIC || defined NS_PERIODIC
+!>      CALL exchange_r3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!>   &                          tl_t(:,:,:,Linp,isalt)
+!>
+        CALL ad_exchange_r3d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
+     &                             ad_t(:,:,:,Linp,isalt)
+#  endif
+!
 !  Compute temperature (dTdz) and salinity (dSdz) shears.
 !
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          FC(i,0)=0.0_r8
-          dTdz(i,j,0)=0.0_r8
-          dSdz(i,j,0)=0.0_r8
-        END DO
-        DO k=1,N(ng)-1
+        DO j=JstrR,JendR
           DO i=IstrR,IendR
-            cff=1.0_r8/(2.0_r8*Hz(i,j,k+1)+                             &
-     &                  Hz(i,j,k)*(2.0_r8-FC(i,k-1)))
-            FC(i,k)=cff*Hz(i,j,k+1)
-            dTdz(i,j,k)=cff*(6.0_r8*(t(i,j,k+1,Lbck,itemp)-             &
-     &                               t(i,j,k  ,Lbck,itemp))-            &
-     &                       Hz(i,j,k)*dTdz(i,j,k-1))
-            dSdz(i,j,k)=cff*(6.0_r8*(t(i,j,k+1,Lbck,isalt)-             &
-     &                               t(i,j,k  ,Lbck,isalt))-            &
-     &                       Hz(i,j,k)*dSdz(i,j,k-1))
+            FC(i,0)=0.0_r8
+            dTdz(i,j,0)=0.0_r8
+            dSdz(i,j,0)=0.0_r8
+          END DO
+          DO k=1,N(ng)-1
+            DO i=IstrR,IendR
+              cff=1.0_r8/(2.0_r8*Hz(i,j,k+1)+                           &
+     &                    Hz(i,j,k)*(2.0_r8-FC(i,k-1)))
+              FC(i,k)=cff*Hz(i,j,k+1)
+              dTdz(i,j,k)=cff*(6.0_r8*(t(i,j,k+1,Lbck,itemp)-           &
+     &                                 t(i,j,k  ,Lbck,itemp))-          &
+     &                         Hz(i,j,k)*dTdz(i,j,k-1))
+              dSdz(i,j,k)=cff*(6.0_r8*(t(i,j,k+1,Lbck,isalt)-           &
+     &                                 t(i,j,k  ,Lbck,isalt))-          &
+     &                         Hz(i,j,k)*dSdz(i,j,k-1))
+            END DO
+          END DO
+          DO i=IstrR,IendR
+            dTdz(i,j,N(ng))=0.0_r8
+            dSdz(i,j,N(ng))=0.0_r8
+          END DO
+          DO k=N(ng)-1,1,-1
+            DO i=IstrR,IendR
+              dTdz(i,j,k)=dTdz(i,j,k)-FC(i,k)*dTdz(i,j,k+1)
+              dSdz(i,j,k)=dSdz(i,j,k)-FC(i,k)*dSdz(i,j,k+1)
+            END DO
           END DO
         END DO
-        DO i=IstrR,IendR
-          dTdz(i,j,N(ng))=0.0_r8
-          dSdz(i,j,N(ng))=0.0_r8
-        END DO
-        DO k=N(ng)-1,1,-1
-          DO i=IstrR,IendR
-            dTdz(i,j,k)=dTdz(i,j,k)-FC(i,k)*dTdz(i,j,k+1)
-            dSdz(i,j,k)=dSdz(i,j,k)-FC(i,k)*dSdz(i,j,k+1)
-          END DO
-        END DO
-!!
-!! Compute depth of the mixed layer from temperature shear.
-!!
-!!      DO i=IstrR,IendR
-!!        dTdz_min=dTdz(i,j,N(ng))
-!!        DO k=N(ng)-1,1,-1
-!!          IF (ABS(dTdz(i,j,)).lt.dTdz_min) THEN
-!!            dTdz_min=dTdz(i,j,k)
-!!            ml_depth=ABS(z_w(i,j,k))
-!!            EXIT
-!!          END IF
-!!        END DO
-!!      END DO
-      END DO
 !
 !  Add balanced salinity (deltaS_b) contribution to unbalanced salinity
 !  increment. The unbalanced salinity increment is related related to
@@ -700,78 +1119,57 @@
 !  the coefficient is smoothly reduced to zero at the surface and below
 !  the mixed layer.
 !
-#  ifdef DISTRIBUTE
-!>    CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
-!>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
-!>   &                    tl_t(:,:,:,Linp,isalt))
-!>
-      CALL ad_mp_exchange3d (ng, tile, iADM, 1,                         &
-     &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
-     &                       ad_t(:,:,:,Linp,isalt))
-#  endif
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-!>    CALL exchange_r3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-!>   &                        tl_t(:,:,:,Linp,isalt)
-!>
-      CALL ad_exchange_r3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
-     &                           ad_t(:,:,:,Linp,isalt)
-#  endif
-!
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          DO k=1,N(ng)
-            IF (ABS(dTdz(i,j,k)).lt.dTdz_min) THEN
-              dzdT=0.0_r8
-            ELSE
-              dzdT=1.0_r8/(0.5_r8*(dTdz(i,j,k-1)+                       &
-     &                             dTdz(i,j,k  )))
-            END IF
-            dSdT(k)=(0.5_r8*(dSdz(i,j,k-1)+                             &
-     &                       dSdz(i,j,k  )))*dzdT
-          END DO
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            DO k=1,N(ng)
+              cff=0.5_r8*(dTdz(i,j,k-1)+dTdz(i,j,k))
+              IF (ABS(cff).lt.dTdz_min(ng)) THEN
+                dzdT=0.0_r8
+              ELSE
+                dzdT=1.0_r8/cff
+              END IF
+              dSdT(k)=(0.5_r8*(dSdz(i,j,k-1)+                           &
+     &                         dSdz(i,j,k  )))*dzdT
+            END DO
 !
 !  Shapiro filter.
 !
-          DO order=1,Norder/2
-            IF (order.ne.Norder/2) THEN
-              dSdT_filter(1)=2.0_r8*(dSdT(1)-dSdT(2))
-              dSdT_filter(N(ng))=2.0_r8*(dSdT(N(ng))-dSdT(N(ng)-1))
-            ELSE
-              dSdT_filter(1)=0.0_r8
-              dSdT_filter(N(ng))=0.0_r8
-            END IF
-            DO k=2,N(ng)-1
-              dSdT_filter(k)=2.0_r8*dSdT(k)-dSdT(k-1)-dSdT(k+1)
+            DO order=1,Norder/2
+              IF (order.ne.Norder/2) THEN
+                dSdT_filter(1)=2.0_r8*(dSdT(1)-dSdT(2))
+                dSdT_filter(N(ng))=2.0_r8*(dSdT(N(ng))-dSdT(N(ng)-1))
+              ELSE
+                dSdT_filter(1)=0.0_r8
+                dSdT_filter(N(ng))=0.0_r8
+              END IF
+              DO k=2,N(ng)-1
+                dSdT_filter(k)=2.0_r8*dSdT(k)-dSdT(k-1)-dSdT(k+1)
+              END DO
+              DO k=1,N(ng)
+                dSdT(k)=dSdT(k)-filter_coef(Norder/2)*dSdT_filter(k)
+              END DO
             END DO
-            DO k=1,N(ng)
-              dSdT(k)=dSdT(k)-filter_coef(Norder/2)*dSdT_filter(k)
-            END DO
-          END DO
 
-          DO k=1,N(ng)
-            cff=(1.0_r8-EXP(z_r(i,j,k)/ml_depth))*dSdT(k)
+            DO k=1,N(ng)
+              cff=(1.0_r8-EXP(z_r(i,j,k)/ml_depth(ng)))*dSdT(k)
 #  ifdef MASKING
-!>          tl_t(i,j,k,Linp,isalt)=tl_t(i,j,k,Linp,isalt)*rmask(i,j)
+!>            tl_t(i,j,k,Linp,isalt)=tl_t(i,j,k,Linp,isalt)*rmask(i,j)
 !>
-            ad_t(i,j,k,Linp,isalt)=ad_t(i,j,k,Linp,isalt)*rmask(i,j)
+              ad_t(i,j,k,Linp,isalt)=ad_t(i,j,k,Linp,isalt)*rmask(i,j)
 #  endif
-!>          tl_t(i,j,k,Linp,isalt)=tl_t(i,j,k,Linp,isalt)+              &
-!>   &                             cff*tl_t(i,j,k,Linp,itemp)
+!>            tl_t(i,j,k,Linp,isalt)=tl_t(i,j,k,Linp,isalt)+            &
+!>   &                               cff*tl_t(i,j,k,Linp,itemp)
 !>
-            ad_t(i,j,k,Linp,itemp)=ad_t(i,j,k,Linp,itemp)+              &
-     &                             cff*ad_t(i,j,k,Linp,isalt)
+              ad_t(i,j,k,Linp,itemp)=ad_t(i,j,k,Linp,itemp)+            &
+     &                               cff*ad_t(i,j,k,Linp,isalt)
+            END DO
           END DO
         END DO
-      END DO
 # endif
+      END IF
 
       RETURN
       END SUBROUTINE ad_balance_tile
 
 #endif
       END MODULE ad_balance_mod
-

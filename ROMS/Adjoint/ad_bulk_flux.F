@@ -2,9 +2,9 @@
       MODULE ad_bulk_flux_mod
 #if defined ADJOINT && defined BULK_FLUXES_NOT_YET
 !
-!svn $Id: ad_bulk_flux.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_bulk_flux.F 431 2009-12-26 20:36:20Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -609,7 +609,7 @@
 !
 !  For EMINUSP option,  EVAP = LHeat (W/m2) / Hlv (J/kg) = kg/m2/s
 !                       PREC = rain = kg/m2/s
-!       
+!
 !  To convert these rates to m/s divide by freshwater density, rhow.
 !
 !  Note that when the air is undersaturated in water vapor (Q < Qsea)
@@ -636,13 +636,13 @@
 # ifdef MASKING
 !>        tl_sustr(i,j)=tl_sustr(i,j)*umask(i,j)
           ad_sustr(i,j)=ad_sustr(i,j)*umask(i,j)
-# endif 
+# endif
 !>        tl_sustr(i,j)=cff*(tl_Taux(i-1,j)+tl_Taux(i,j))
           adfac=cff*ad_sustr(i,j)
           ad_Taux(i-1,j)=ad_Taux(i-1,j)+adfac
           ad_Taux(i  ,j)=ad_Taux(i  ,j)+adfac
-# if !(defined AD_SENSITIVITY  || defined ADJUST_WSTRESS   || \
-       defined OBS_SENSITIVITY || defined OPT_OBSERVATIONS || \
+# if !(defined AD_SENSITIVITY      || defined ADJUST_WSTRESS   || \
+       defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS || \
        defined SO_SEMI)
           ad_sustr(i,j)=0.0_r8
 # endif
@@ -653,13 +653,13 @@
 # ifdef MASKING
 !>        tl_svstr(i,j)=tl_svstr(i,j)*vmask(i,j)
           ad_svstr(i,j)=ad_svstr(i,j)*vmask(i,j)
-# endif 
+# endif
 !>        tl_svstr(i,j)=cff*(tl_Tauy(i,j-1)+tl_Tauy(i,j))
           adfac=cff*ad_svstr(i,j)
           ad_Tauy(i,j-1)=ad_Tauy(i,j-1)+adfac
           ad_Tauy(i,j  )=ad_Tauy(i,j  )+adfac
-# if !(defined AD_SENSITIVITY  || defined ADJUST_WSTRESS   || \
-       defined OBS_SENSITIVITY || defined OPT_OBSERVATIONS || \
+# if !(defined AD_SENSITIVITY      || defined ADJUST_WSTRESS   || \
+       defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS || \
        defined SO_SEMI)
           ad_svstr(i,j)=0.0_r8
 # endif
@@ -690,11 +690,11 @@
 !>        tl_stflx(i,j,itemp)=tl_stflx(i,j,itemp)*rmask(i,j)
           ad_stflx(i,j,itemp)=ad_stflx(i,j,itemp)*rmask(i,j)
 # endif
-# ifdef EMINUSP 
+# ifdef EMINUSP
 !>        tl_stflx(i,j,isalt)=cff*tl_evap(i,j)
           ad_evap(i,j)=ad_evap(i,j)+cff*ad_stflx(i,j,isalt)
-#  if !(defined AD_SENSITIVITY  || defined ADJUST_STFLUX    || \
-        defined OBS_SENSITIVITY || defined OPT_OBSERVATIONS || \
+#  if !(defined AD_SENSITIVITY      || defined ADJUST_STFLUX    || \
+        defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS || \
         defined SO_SEMI)
           ad_stflx(i,j,isalt)=0.0_r8
 #  endif
@@ -703,29 +703,29 @@
           adfac=ad_evap(i,j)/Hlv(i,j)
           ad_LHeat(i,j)=ad_LHeat(i,j)+adfac
           ad_Hlv(i,j)=ad_Hlv(i,j)-adfac*evap(i,j)
-#  if !(defined AD_SENSITIVITY   || defind OBS_SENSITIVITY || \
+#  if !(defined AD_SENSITIVITY   || defind IS4DVAR_SENSITIVITY || \
         defined OPT_OBSERVATIONS || defined SO_SEMI)
           ad_evap(i,j)=0.0_r8
 #  endif
-# endif 
+# endif
 !>        tl_stflx(i,j,itemp)=(tl_lrflx(i,j)+                           &
 !>   &                      tl_lhflx(i,j)+tl_shflx(i,j))
           ad_lrflx(i,j)=ad_lrflx(i,j)+ad_stflx(i,j,itemp)
           ad_lhflx(i,j)=ad_lhflx(i,j)+ad_stflx(i,j,itemp)
           ad_shflx(i,j)=ad_shflx(i,j)+ad_stflx(i,j,itemp)
-# if !(defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
+# if !(defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
        defined OPT_OBSERVATIONS || defined SO_SEMI)
           ad_stflx(i,j,itemp)=0.0_r8
 # endif
 !>        tl_shflx(i,j)=-tl_SHeat(i,j)*Hscale
           ad_SHeat(i,j)=ad_SHeat(i,j)-ad_shflx(i,j)*Hscale
-# if !(defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
+# if !(defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
        defined OPT_OBSERVATIONS || defined SO_SEMI)
           ad_shflx(i,j)=0.0_r8
 # endif
 !>        tl_lhflx(i,j)=-tl_LHeat(i,j)*Hscale
           ad_LHeat(i,j)=ad_LHeat(i,j)-ad_lhflx(i,j)*Hscale
-# if !(defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
+# if !(defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
        defined OPT_OBSERVATIONS || defined SO_SEMI)
           ad_lhflx(i,j)=0.0_r8
 # endif
@@ -801,7 +801,7 @@
 !
           LRad(i,j)=lrflx(i,j)*Hscale-                                  &
      &              emmiss*StefBo*TseaK(i)*TseaK(i)*TseaK(i)*TseaK(i)
- 
+
 # else
           LRad(i,j)=lrflx(i,j)*Hscale
 # endif
@@ -816,7 +816,7 @@
 !                 Q(i) is the actual specific humidity
 !              Qsea(i) is the saturation specific humidity at Tsea
 !
-!          Saturation vapor pressure in mb is first computed and then 
+!          Saturation vapor pressure in mb is first computed and then
 !          converted to specific humidity in kg/kg
 !
 !          The saturation vapor pressure is computed from Teten formula
@@ -836,7 +836,7 @@
 !          Q = 0.622 E/(P + (0.622-1)e)
 !
 !          Q(kg/kg) = 0.62197_r8*(E(mb)/(PairM(mb)-0.378_r8*E(mb)))
-!          
+!
 !-----------------------------------------------------------------------
 !
 !  Compute air saturation vapor pressure (mb), using Teten formula.
@@ -1098,7 +1098,7 @@
             SHeat(i,j)=(Hs+Hsr)
 # ifdef MASKING
             SHeat(i,j)=SHeat(i,j)*rmask(i,j)
-# endif 
+# endif
 !
 !  Compute turbulent latent heat flux (W/m2), Hl.
 !
@@ -1112,7 +1112,7 @@
             LHeat(i,j)=(Hl+Hlw)
 # ifdef MASKING
             LHeat(i,j)=LHeat(i,j)*rmask(i,j)
-# endif 
+# endif
 !
 !  Adjoint wind stress components (N/m2), Tau.
 !
@@ -1145,7 +1145,7 @@
 # ifdef MASKING
 !>          tl_LHeat(i,j)=tl_LHeat(i,j)*rmask(i,j)
             ad_LHeat(i,j)=ad_LHeat(i,j)*rmask(i,j)
-# endif 
+# endif
 !>          tl_LHeat(i,j)=(tl_Hl+tl_Hlw)
             ad_Hl=ad_Hl+ad_LHeat(i,j)
             ad_Hlw=ad_Hlw+ad_LHeat(i,j)
@@ -1185,7 +1185,7 @@
 # ifdef MASKING
 !>          tl_SHeat(i,j)=tl_SHeat(i,j)*rmask(i,j)
             ad_SHeat(i,j)=ad_SHeat(i,j)*rmask(i,j)
-# endif 
+# endif
 
 !>          tl_SHeat(i,j)=(tl_Hs+tl_Hsr)
             ad_Hs=ad_Hs+ad_SHeat(i,j)
@@ -1315,7 +1315,7 @@
 !
           LRad(i,j)=lrflx(i,j)*Hscale-                                  &
      &              emmiss*StefBo*TseaK(i)*TseaK(i)*TseaK(i)*TseaK(i)
- 
+
 # else
           LRad(i,j)=lrflx(i,j)*Hscale
 # endif
@@ -1330,7 +1330,7 @@
 !                 Q(i) is the actual specific humidity
 !              Qsea(i) is the saturation specific humidity at Tsea
 !
-!          Saturation vapor pressure in mb is first computed and then 
+!          Saturation vapor pressure in mb is first computed and then
 !          converted to specific humidity in kg/kg
 !
 !          The saturation vapor pressure is computed from Teten formula
@@ -1350,7 +1350,7 @@
 !          Q = 0.622 E/(P + (0.622-1)e)
 !
 !          Q(kg/kg) = 0.62197_r8*(E(mb)/(PairM(mb)-0.378_r8*E(mb)))
-!          
+!
 !-----------------------------------------------------------------------
 !
 !  Compute air saturation vapor pressure (mb), using Teten formula.
@@ -1954,7 +1954,7 @@
 !>   &              (blk_Rgas*TseaK(i)*TseaK(i))-                       &
 !>   &               2.0_r8*blk_Rgas*tl_TseaK(i)*TseaK(i)*Cwet(i)/      &
 !>   &              (blk_Rgas*TseaK(i)*TseaK(i))
-            
+
             adfac=ad_Cwet(i)/(blk_Rgas*TseaK(i)*TseaK(i))
             adfac1=2.0_r8*blk_Rgas*TseaK(i)*Cwet(i)*adfac
             adfac2=0.622_r8*adfac
@@ -2006,8 +2006,8 @@
 !>   &             (1.0_r8+0.61_r8*Q(i))*ZoL(i)/                        &
 !>   &             (TairK(i)*Wstar(i)*Wstar(i)*                         &
 !>   &             (1.0_r8+0.61_r8*Q(i))+eps) )
-            adfac=vonKar*g*blk_ZW(ng)*ad_ZoL(i)/                        & 
-     &             (TairK(i)*Wstar(i)*Wstar(i)*                         & 
+            adfac=vonKar*g*blk_ZW(ng)*ad_ZoL(i)/                        &
+     &             (TairK(i)*Wstar(i)*Wstar(i)*                         &
      &             (1.0_r8+0.61_r8*Q(i))+eps)
             ad_Tstar(i)=ad_Tstar(i)+(1.0_r8+0.61_r8*Q(i))*adfac
             ad_Qstar(i)=ad_Qstar(i)+0.61_r8*TairK(i)*adfac
@@ -2062,7 +2062,7 @@
      &              0.11_r8*VisAir(i)*ad_ZoW(i)/                        &
      &                           ((Wstar(i)+eps)*(Wstar(i)+eps))
             ad_ZoW(i)=0.0_r8
-        
+
 # endif
           END DO
         END DO
@@ -2126,7 +2126,7 @@
 !
           LRad(i,j)=lrflx(i,j)*Hscale-                                  &
      &              emmiss*StefBo*TseaK(i)*TseaK(i)*TseaK(i)*TseaK(i)
- 
+
 # else
           LRad(i,j)=lrflx(i,j)*Hscale
 # endif
@@ -2141,7 +2141,7 @@
 !                 Q(i) is the actual specific humidity
 !              Qsea(i) is the saturation specific humidity at Tsea
 !
-!          Saturation vapor pressure in mb is first computed and then 
+!          Saturation vapor pressure in mb is first computed and then
 !          converted to specific humidity in kg/kg
 !
 !          The saturation vapor pressure is computed from Teten formula
@@ -2161,7 +2161,7 @@
 !          Q = 0.622 E/(P + (0.622-1)e)
 !
 !          Q(kg/kg) = 0.62197_r8*(E(mb)/(PairM(mb)-0.378_r8*E(mb)))
-!          
+!
 !-----------------------------------------------------------------------
 !
 !  Compute air saturation vapor pressure (mb), using Teten formula.
@@ -2490,7 +2490,7 @@
 !>        tl_ZoW(i)=0.0_r8
           ad_ZoW(i)=0.0_r8
 
-         
+
 !
 !  Adjoint wind is measured relative to sea surface and include
 !  gustiness.
@@ -2700,7 +2700,7 @@
         cff=SQRT(3.0_r8)
         y=(1.0_r8-10.15_r8*ZoL)**r3
         tl_y=-r3*10.15_r8*tl_ZoL*(1.0_r8-10.15_r8*ZoL)**(r3-1.0_r8)
-	fac=(1.0_r8+2.0_r8*y)/cff
+        fac=(1.0_r8+2.0_r8*y)/cff
         tl_fac=2.0_r8*tl_y/cff
         psic=1.5_r8*LOG(r3*(1.0_r8+y+y*y))-                             &
      &       cff*ATAN(fac)+pi/cff

@@ -2,9 +2,9 @@
       MODULE ad_omega_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_omega.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_omega.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -33,6 +33,9 @@
       USE mod_param
       USE mod_grid
       USE mod_ocean
+# if defined SEDIMENT && defined SED_MORPH
+      USE mod_sedbed
+# endif
 # ifdef Q_PSOURCE
       USE mod_sources
 # endif
@@ -58,7 +61,7 @@
      &                    nstp(ng), nnew(ng),                           &
 # endif
 # ifdef Q_PSOURCE
-     &                    Nsrc(ng),                                     &
+     &                    Msrc(ng), Nsrc(ng),                           &
      &                    SOURCES(ng) % Isrc,                           &
      &                    SOURCES(ng) % Jsrc,                           &
      &                    SOURCES(ng) % Dsrc,                           &
@@ -66,8 +69,8 @@
 # endif
 # if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
      &                    GRID(ng) % omn,                               &
-     &                    GRID(ng) % bed_thick,                         &
-     &                    GRID(ng) % ad_bed_thick,                      &
+     &                    SEDBED(ng) % bed_thick,                       &
+     &                    SEDBED(ng) % ad_bed_thick,                    &
 # endif
      &                    GRID(ng) % Huon,                              &
      &                    GRID(ng) % Hvom,                              &
@@ -91,7 +94,8 @@
      &                          nstp, nnew,                             &
 # endif
 # ifdef Q_PSOURCE
-     &                          Nsrc, Isrc, Jsrc, Dsrc, Qsrc,           &
+     &                          Msrc, Nsrc,                             &
+     &                          Isrc, Jsrc, Dsrc, Qsrc,                 &
 # endif
 # if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
      &                          omn,
@@ -121,13 +125,14 @@
       integer, intent(in) :: nstp, nnew
 # endif
 # ifdef Q_PSOURCE
-      integer, intent(in) :: Nsrc
+      integer, intent(in) :: Msrc, Nsrc
 # endif
 !
 # ifdef ASSUMED_SHAPE
 #  ifdef Q_PSOURCE
       integer, intent(in) :: Isrc(:)
       integer, intent(in) :: Jsrc(:)
+
       real(r8), intent(in) :: Dsrc(:)
       real(r8), intent(in) :: Qsrc(:,:)
 #  endif
@@ -145,12 +150,15 @@
       real(r8), intent(inout) :: ad_W(LBi:,LBj:,0:)
 
       real(r8), intent(out) :: W(LBi:,LBj:,0:)
+
 # else
+
 #  ifdef Q_PSOURCE
-      integer, intent(in) :: Isrc(Nsrc)
-      integer, intent(in) :: Jsrc(Nsrc)
-      real(r8), intent(in) :: Dsrc(Nsrc)
-      real(r8), intent(in) :: Qsrc(Nsrc,N(ng))
+      integer, intent(in) :: Isrc(Msrc)
+      integer, intent(in) :: Jsrc(Msrc)
+
+      real(r8), intent(in) :: Dsrc(Msrc)
+      real(r8), intent(in) :: Qsrc(Msrc,N(ng))
 #  endif
       real(r8), intent(in) :: Huon(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: Hvom(LBi:UBi,LBj:UBj,N(ng))
@@ -201,10 +209,10 @@
 !-----------------------------------------------------------------------
 !
       ad_cff=0.0_r8
-      DO i=IminS,ImaxS    
+      DO i=IminS,ImaxS
         ad_wrk(i)=0.0_r8
       END DO
-!  
+!
 !-----------------------------------------------------------------------
 !  Vertically integrage horizontal mass flux divergence.
 !-----------------------------------------------------------------------
@@ -307,7 +315,7 @@
           cff=1.0_r8/(z_w(i,j,N(ng))-z_w(i,j,0))
 !>        tl_wrk(i)=tl_cff*W(i,j,N(ng))+cff*tl_W(i,j,N(ng))
 !>
-          ad_W(i,j,N(ng))=ad_W(i,j,N(ng))+cff*ad_wrk(i)          
+          ad_W(i,j,N(ng))=ad_W(i,j,N(ng))+cff*ad_wrk(i)
           ad_cff=ad_cff+W(i,j,N(ng))*ad_wrk(i)
           ad_wrk(i)=0.0_r8
 !>        tl_cff=-cff*cff*(tl_z_w(i,j,N(ng))-tl_z_w(i,j,0))

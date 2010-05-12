@@ -1,8 +1,8 @@
       SUBROUTINE ad_uv3dmix2 (ng, tile)
 !
-!svn $Id: ad_uv3dmix2_s.h 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_uv3dmix2_s.h 429 2009-12-20 17:30:26Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************

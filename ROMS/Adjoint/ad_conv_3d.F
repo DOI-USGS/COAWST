@@ -4,9 +4,9 @@
 
 #if defined ADJOINT && defined FOUR_DVAR && defined SOLVE3D
 !
-!svn $Id: ad_conv_3d.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_conv_3d.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -56,7 +56,7 @@
 !=======================================================================
 !
       implicit none
- 
+
       PUBLIC
 
       CONTAINS
@@ -321,7 +321,7 @@
               ad_DC(i,k)=ad_DC(i,k)*Kv(i,j,k)
             END DO
           END DO
-          DO k=N(ng)-1,1,-1
+          DO k=1,N(ng)-1
             DO i=Istr,Iend
 !>            tl_DC(i,k)=tl_DC(i,k)-CF(i,k)*tl_DC(i,k+1)
 !>
@@ -336,7 +336,7 @@
 !
 !  Adjoint LU decomposition and forward substitution.
 !
-          DO k=1,N(ng)-1
+          DO k=N(ng)-1,1,-1
             DO i=Istr,Iend
               cff=1.0_r8/(BC(i,k)-FC(i,k)*CF(i,k-1))
 !>            tl_DC(i,k)=cff*(tl_Awrk(i,j,k+1,Nold)-                    &
@@ -754,7 +754,7 @@
 #  ifndef SPLINES_VCONV
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: FC
 #  endif
-#  if !def IMPLICIT_VCONV || defined SPLINES_VCONV
+#  if !defined IMPLICIT_VCONV || defined SPLINES_VCONV
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: oHz
 #  endif
 #  if defined IMPLICIT_VCONV || defined SPLINES_VCONV
@@ -929,7 +929,7 @@
               ad_DC(i,k)=ad_DC(i,k)*Kv(i,j,k)
             END DO
           END DO
-          DO k=N(ng)-1,1,-1
+          DO k=1,N(ng)-1
             DO i=IstrU,Iend
 !>            tl_DC(i,k)=tl_DC(i,k)-CF(i,k)*tl_DC(i,k+1)
 !>
@@ -944,7 +944,7 @@
 !
 !  Adjoint LU decomposition and forward substitution.
 !
-          DO k=1,N(ng)-1
+          DO k=N(ng)-1,1,-1
             DO i=IstrU,Iend
               cff=1.0_r8/(BC(i,k)-FC(i,k)*CF(i,k-1))
 !>            tl_DC(i,k)=cff*(tl_Awrk(i,j,k+1,Nold)-                    &
@@ -1358,7 +1358,7 @@
 #  ifndef SPLINES_VCONV
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: FC
 #  endif
-#  if !def IMPLICIT_VCONV || defined SPLINES_VCONV
+#  if !defined IMPLICIT_VCONV || defined SPLINES_VCONV
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: oHz
 #  endif
 #  if defined IMPLICIT_VCONV || defined SPLINES_VCONV
@@ -1534,7 +1534,7 @@
               ad_DC(i,k)=ad_DC(i,k)*Kv(i,j,k)
             END DO
           END DO
-          DO k=N(ng)-1,1,-1
+          DO k=1,N(ng)-1
             DO i=Istr,Iend
 !>            tl_DC(i,k)=tl_DC(i,k)-CF(i,k)*tl_DC(i,k+1)
 !>
@@ -1549,7 +1549,7 @@
 !
 !  Adjoint LU decomposition and forward substitution.
 !
-          DO k=1,N(ng)-1
+          DO k=N(ng)-1,1,-1
             DO i=Istr,Iend
               cff=1.0_r8/(BC(i,k)-FC(i,k)*CF(i,k-1))
 !>            tl_DC(i,k)=cff*(tl_Awrk(i,j,k+1,Nold)-                    &

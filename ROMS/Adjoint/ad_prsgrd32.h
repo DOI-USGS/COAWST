@@ -1,8 +1,8 @@
       SUBROUTINE ad_prsgrd (ng, tile)
 !
-!svn $Id: ad_prsgrd32.h 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_prsgrd32.h 429 2009-12-20 17:30:26Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -32,6 +32,9 @@
       USE mod_param
 #ifdef DIAGNOSTICS
 !!    USE mod_diags
+#endif
+#ifdef ATM_PRESS
+      USE mod_forces
 #endif
       USE mod_grid
       USE mod_ocean
@@ -66,6 +69,9 @@
      &                     GRID(ng) % ad_z_w,                           &
      &                     OCEAN(ng) % rho,                             &
      &                     OCEAN(ng) % ad_rho,                          &
+#ifdef ATM_PRESS
+     &                     FORCES(ng) % Pair,                           &
+#endif
 #ifdef DIAGNOSTICS_UV
 !!   &                     DIAGS(ng) % DiaRU,                           &
 !!   &                     DIAGS(ng) % DiaRV,                           &
@@ -91,6 +97,9 @@
      &                           z_r, ad_z_r,                           &
      &                           z_w, ad_z_w,                           &
      &                           rho, ad_rho,                           &
+#ifdef ATM_PRESS
+     &                           Pair,                                  &
+#endif
 #ifdef DIAGNOSTICS_UV
 !!   &                           DiaRU, DiaRV,                          &
 #endif
@@ -118,6 +127,9 @@
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
+# ifdef ATM_PRESS
+      real(r8), intent(in) :: Pair(LBi:,LBj:)
+# endif
 # ifdef DIAGNOSTICS_UV
 !!    real(r8), intent(inout) :: DiaRU(LBi:,LBj:,:,:,:)
 !!    real(r8), intent(inout) :: DiaRV(LBi:,LBj:,:,:,:)
@@ -139,6 +151,9 @@
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
+# ifdef ATM_PRESS
+      real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
+# endif
 # ifdef DIAGNOSTICS_UV
 !!    real(r8), intent(inout) :: DiaRU(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
 !!    real(r8), intent(inout) :: DiaRV(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
@@ -161,6 +176,9 @@
 
       real(r8) :: GRho, GRho0, HalfGRho
       real(r8) :: cff, cff1, cff2
+#ifdef ATM_PRESS
+      real(r8) :: OneAtm, fac
+#endif
       real(r8) :: ad_cff, ad_cff1, ad_cff2, adfac
       real(r8) :: adfac1, adfac2, adfac3, adfac4, adfac5, adfac6
       real(r8) :: adfac7, adfac8, adfac9, adfac10, adfac11, adfac12
@@ -208,7 +226,7 @@
             ad_P(i,j,k)=0.0_r8
           END DO
         END DO
-      END DO          
+      END DO
       DO k=0,N(ng)
         DO i=IminS,ImaxS
           ad_dR(i,k)=0.0_r8
@@ -225,6 +243,10 @@
       GRho=g/rho0
       GRho0=1000.0_r8*GRho
       HalfGRho=0.5_r8*GRho
+#ifdef ATM_PRESS
+      OneAtm=1013.25_r8                  ! 1 atm = 1013.25 mb
+      fac=100.0_r8/rho0
+#endif
 !
       DO j=JstrV-1,Jend
         DO k=1,N(ng)-1
@@ -255,6 +277,9 @@
           cff2=0.5_r8*(rho(i,j,N(ng))-rho(i,j,N(ng)-1))*                &
      &         (z_w(i,j,N(ng))-z_r(i,j,N(ng)))*cff1
           P(i,j,N(ng))=GRho0*z_w(i,j,N(ng))+                            &
+#ifdef ATM_PRESS
+     &                 fac*(Pair(i,j)-OneAtm)+                          &
+#endif
      &                 GRho*(rho(i,j,N(ng))+cff2)*                      &
      &                 (z_w(i,j,N(ng))-z_r(i,j,N(ng)))
         END DO
@@ -689,7 +714,7 @@
 !>
             ad_aux(i,j)=ad_aux(i,j)*umask(i,j)
 #endif
-!>          tl_aux(i,j)=tl_z_r(i,j,k)-tl_z_r(i-1,j,k)            
+!>          tl_aux(i,j)=tl_z_r(i,j,k)-tl_z_r(i-1,j,k)
 !>
             ad_z_r(i-1,j,k)=ad_z_r(i-1,j,k)-ad_aux(i,j)
             ad_z_r(i  ,j,k)=ad_z_r(i  ,j,k)+ad_aux(i,j)
@@ -737,7 +762,7 @@
           DO i=IstrU-1,Iend
 !>          tl_P(i,j,k)=tl_P(i,j,k+1)+tl_cff
 !>
- 	    ad_cff=ad_cff+ad_P(i,j,k)
+            ad_cff=ad_cff+ad_P(i,j,k)
 !>          tl_cff=HalfGRho*((tl_rho(i,j,k+1)+tl_rho(i,j,k))*           &
 !>   &                       (z_r(i,j,k+1)-z_r(i,j,k))+                 &
 !>   &                       (rho(i,j,k+1)+rho(i,j,k))*                 &

@@ -2,12 +2,12 @@
       MODULE adsen_force_mod
 
 #if defined ADJOINT          && \
-   (defined AD_SENSITIVITY   || defined OBS_SENSITIVITY || \
-    defined OPT_OBSERVATIONS)
+   (defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR)
 !
-!svn $Id: adsen_force.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: adsen_force.F 431 2009-12-26 20:36:20Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -50,7 +50,7 @@
      &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       knew(ng),                                  &
 # ifdef SOLVE3D
-     &                       nnew(ng),                                  &
+     &                       nnew(ng), nstp(ng),                        &
 # endif
      &                       GRID(ng) % Rscope,                         &
      &                       GRID(ng) % Uscope,                         &
@@ -83,7 +83,7 @@
      &                             IminS, ImaxS, JminS, JmaxS,          &
      &                             knew,                                &
 # ifdef SOLVE3D
-     &                             nnew,                                &
+     &                             nnew, nstp,                          &
 # endif
      &                             Rscope, Uscope, Vscope,              &
 # ifdef SOLVE3D
@@ -100,6 +100,8 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_parallel
+      USE mod_iounits
       USE mod_ncparam
       USE mod_scalars
 !
@@ -110,7 +112,7 @@
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: knew
 # ifdef SOLVE3D
-      integer, intent(in) :: nnew
+      integer, intent(in) :: nnew, nstp
 # endif
 !
 # ifdef ASSUMED_SHAPE
@@ -161,7 +163,9 @@
 !
 !  Local variable declarations.
 !
-      integer :: Kfrc, i, itrc, j, k
+      integer :: Kfrc, Nfrc, i, itrc, j, k
+
+      real(r8) :: adFac
 
 # include "set_bounds.h"
 !
@@ -173,9 +177,38 @@
 !
       IF (iic(ng).eq.ntend(ng)) THEN
         Kfrc=knew
+        Nfrc=nstp
       ELSE
         Kfrc=1
+        Nfrc=nnew
       END IF
+
+# ifdef AD_IMPULSE
+!
+!  Impose the forcing in the adjoint model as impulses in a manner that
+!  is consistent with the definition of the sensitivity functional.
+!  Notice that nTLM is used to control the forcing since nADJ is
+!  used to control strong versus weak constraint so cannot be
+!  arbitrarily defined.
+!
+      adFac=0.0_r8
+#  ifdef IS4DVAR_SENSITIVITY
+      IF ((mod(iic(ng)-1,nHIS(ng)).eq.0).and.                           &
+     &    (DendS(ng).ge.tdays(ng)).and.(tdays(ng).ge.DstrS(ng))) THEN
+#  else
+      IF ((mod(iic(ng)-1,nTLM(ng)).eq.0).and.                           &
+     &    (DendS(ng).ge.tdays(ng)).and.(tdays(ng).ge.DstrS(ng))) THEN
+#  endif
+          adFac=1.0_r8
+          IF (Master) THEN
+            WRITE (stdout,10) iic(ng)-1
+ 10         FORMAT ('ADSEN_FORCE: Forcing Adjoint model at TimeStep: ', &
+     &              i8.8)
+          END IF
+      END IF
+# else
+      adFac=1.0_r8
+# endif
 !
 !  Free-surface.
 !
@@ -184,14 +217,14 @@
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             ad_Zt_avg1(i,j)=ad_Zt_avg1(i,j)+                            &
-     &                      zeta_ads(i,j)*Rscope(i,j)
+     &                      adFac*zeta_ads(i,j)*Rscope(i,j)
           END DO
         END DO
 # else
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             ad_zeta(i,j,Kfrc)=ad_zeta(i,j,Kfrc)+                        &
-     &                        zeta_ads(i,j)*Rscope(i,j)
+     &                        adFac*zeta_ads(i,j)*Rscope(i,j)
           END DO
         END DO
 # endif
@@ -203,7 +236,7 @@
         DO j=JstrR,JendR
           DO i=Istr,IendR
             ad_ubar(i,j,Kfrc)=ad_ubar(i,j,Kfrc)+                        &
-     &                        ubar_ads(i,j)*Uscope(i,j)
+     &                        adFac*ubar_ads(i,j)*Uscope(i,j)
           END DO
         END DO
       END IF
@@ -212,7 +245,7 @@
         DO j=Jstr,JendR
           DO i=IstrR,IendR
             ad_vbar(i,j,Kfrc)=ad_vbar(i,j,Kfrc)+                        &
-     &                        vbar_ads(i,j)*Vscope(i,j)
+     &                        adFac*vbar_ads(i,j)*Vscope(i,j)
           END DO
         END DO
       END IF
@@ -224,19 +257,19 @@
         DO k=KstrS(ng),KendS(ng)
           DO j=JstrR,JendR
             DO i=Istr,IendR
-              ad_u(i,j,k,nnew)=ad_u(i,j,k,nnew)+                        &
-     &                         u_ads(i,j,k)*Uscope(i,j)
+              ad_u(i,j,k,Nfrc)=ad_u(i,j,k,Nfrc)+                        &
+     &                         adFac*u_ads(i,j,k)*Uscope(i,j)
             END DO
           END DO
         END DO
-      END IF    
+      END IF
 !
       IF (SCALARS(ng)%Lstate(isVvel)) THEN
         DO k=KstrS(ng),KendS(ng)
           DO j=Jstr,JendR
             DO i=IstrR,IendR
-              ad_v(i,j,k,nnew)=ad_v(i,j,k,nnew)+                        &
-     &                         v_ads(i,j,k)*Vscope(i,j)
+              ad_v(i,j,k,Nfrc)=ad_v(i,j,k,Nfrc)+                        &
+     &                         adFac*v_ads(i,j,k)*Vscope(i,j)
             END DO
           END DO
         END DO
@@ -249,8 +282,9 @@
           DO k=KstrS(ng),KendS(ng)
             DO j=JstrR,JendR
               DO i=IstrR,IendR
-                ad_t(i,j,k,nnew,itrc)=ad_t(i,j,k,nnew,itrc)+            &
-     &                                t_ads(i,j,k,itrc)*Rscope(i,j)
+                ad_t(i,j,k,Nfrc,itrc)=ad_t(i,j,k,Nfrc,itrc)+            &
+     &                                adFac*t_ads(i,j,k,itrc)*          &
+     &                                Rscope(i,j)
               END DO
             END DO
           END DO

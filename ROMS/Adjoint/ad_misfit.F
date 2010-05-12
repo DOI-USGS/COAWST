@@ -1,11 +1,11 @@
 #include "cppdefs.h"
       MODULE ad_misfit_mod
 #if  defined ADJOINT && defined FOUR_DVAR  && defined OBSERVATIONS && \
-   !(defined WEAK_CONSTRAINT || defined IOM)
+    !defined WEAK_CONSTRAINT
 !
-!svn $Id: ad_misfit.F 694 2008-08-08 18:33:05Z arango $
+!svn $Id: ad_misfit.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -86,7 +86,7 @@
       USE mod_ncparam
       USE mod_scalars
 !
-# if defined DISTRIBUTE && !defined S4DVAR
+# ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_collect
 # endif
       USE ad_extract_obs_mod, ONLY : ad_extract_obs2d
@@ -142,7 +142,6 @@
 !
       integer :: ObsSum, ObsVoid
       integer :: i, ie, iobs, is, kfrc
-
 # ifdef SOLVE3D
       integer :: itrc, j, k, nfrc
 # endif
@@ -152,6 +151,12 @@
 !
 !-----------------------------------------------------------------------
 !  Compute model minus observations adjoint misfit forcing.
+# ifdef DISTRIBUTE
+!  Notice that ad_mp_exchange*d calls are not required here
+!  (see weak constraint routine ad_htobs.F) because we are
+!  using the adjoint state arrays directly which will be
+!  exchanged during the initialization step.
+# endif
 !-----------------------------------------------------------------------
 !
       IF (ProcessObs(ng)) THEN
@@ -162,28 +167,15 @@
 !  If normalizing, the scale is terms of screenning and some specified
 !  norm. In incremental 4DVAR only screenning is carried out.
 !
-# ifdef S4DVAR
-        CALL obs_scale (ng, model)
-# else
         DO iobs=1,Mobs
           ObsScale(iobs)=IniVal
         END DO
-# endif
 !
 !  Compute adjoint forcing terms at observation locations.
 !
         DO iobs=1,Nobs(ng)
-# if defined S4DVAR
-          ADmodVal(iobs)=ObsScale(iobs)*ObsErr(iobs)*                   &
-     &                   (NLmodVal(iobs,Ipass)-ObsVal(iobs))
-# elif defined IS4DVAR
           ADmodVal(iobs)=ObsErr(iobs)*                                  &
      &                   (NLmodVal(iobs)+TLmodVal(iobs)-ObsVal(iobs))
-# elif defined IS4DVAR_OLD
-          ADmodVal(iobs)=ObsErr(iobs)*                                  &
-     &                   (NLmodVal(iobs)+TLmodVal(iobs,Ipass)-          &
-     &                    ObsVal(iobs))
-# endif
         END DO
 !
 !  Set adjoint time index to update.
@@ -200,12 +192,12 @@
 !  Free-surface.
 !
         IF (FOURDVAR(ng)%ObsCount(isFsur).gt.0) THEN
-          CALL ad_extract_obs2d (ng, IstrR, IendR, JstrR, JendR,        &
+          CALL ad_extract_obs2d (ng, 0, Lm(ng)+1, 0, Mm(ng)+1,          &
      &                           LBi, UBi, LBj, UBj,                    &
-     &                           rILB(ng), rIUB(ng),                    &
-     &                           rJLB(ng), rJUB(ng),                    &
      &                           isFsur,                                &
      &                           Mobs, 1, Nobs(ng),                     &
+     &                           rXmin(ng), rXmax(ng),                  &
+     &                           rYmin(ng), rYmax(ng),                  &
      &                           time(ng), dt(ng),                      &
      &                           ObsType, ObsScale,                     &
      &                           Tobs, Xobs, Yobs,                      &
@@ -219,12 +211,12 @@
 !  2D u-momentum component.
 !
         IF (FOURDVAR(ng)%ObsCount(isUbar).gt.0) THEN
-          CALL ad_extract_obs2d (ng, Istr, IendR, JstrR, JendR,         &
+          CALL ad_extract_obs2d (ng, 1, Lm(ng)+1, 0, Mm(ng)+1,          &
      &                           LBi, UBi, LBj, UBj,                    &
-     &                           uILB(ng), uIUB(ng),                    &
-     &                           uJLB(ng), uJUB(ng),                    &
      &                           isUbar,                                &
      &                           Mobs, 1, Nobs(ng),                     &
+     &                           uXmin(ng), uXmax(ng),                  &
+     &                           uYmin(ng), uYmax(ng),                  &
      &                           time(ng), dt(ng),                      &
      &                           ObsType, ObsScale,                     &
      &                           Tobs, Xobs, Yobs,                      &
@@ -238,12 +230,12 @@
 !  2D v-momentum component.
 !
         IF (FOURDVAR(ng)%ObsCount(isVbar).gt.0) THEN
-          CALL ad_extract_obs2d (ng, IstrR, IendR, Jstr, JendR,         &
+          CALL ad_extract_obs2d (ng, 0, Lm(ng)+1, 1, Mm(ng)+1,          &
      &                           LBi, UBi, LBj, UBj,                    &
-     &                           vILB(ng), vIUB(ng),                    &
-     &                           vJLB(ng), vJUB(ng),                    &
      &                           isVbar,                                &
      &                           Mobs, 1, Nobs(ng),                     &
+     &                           vXmin(ng), vXmax(ng),                  &
+     &                           vYmin(ng), vYmax(ng),                  &
      &                           time(ng), dt(ng),                      &
      &                           ObsType, ObsScale,                     &
      &                           Tobs, Xobs, Yobs,                      &
@@ -266,12 +258,12 @@
               END DO
             END DO
           END DO
-          CALL ad_extract_obs3d (ng, Istr, IendR, JstrR, JendR,         &
+          CALL ad_extract_obs3d (ng, 1, Lm(ng)+1, 0, Mm(ng)+1,          &
      &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
-     &                           uILB(ng), uIUB(ng),                    &
-     &                           uJLB(ng), uJUB(ng),                    &
      &                           isUvel,                                &
      &                           Mobs, 1, Nobs(ng),                     &
+     &                           uXmin(ng), uXmax(ng),                  &
+     &                           uYmin(ng), uYmax(ng),                  &
      &                           time(ng), dt(ng),                      &
      &                           ObsType, ObsScale,                     &
      &                           Tobs, Xobs, Yobs, Zobs,                &
@@ -294,12 +286,12 @@
               END DO
             END DO
           END DO
-          CALL ad_extract_obs3d (ng, IstrR, IendR, Jstr, JendR,         &
+          CALL ad_extract_obs3d (ng, 0, Lm(ng)+1, 1, Mm(ng)+1,          &
      &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
-     &                           vILB(ng), vIUB(ng),                    &
-     &                           vJLB(ng), vJUB(ng),                    &
      &                           isVvel,                                &
      &                           Mobs, 1, Nobs(ng),                     &
+     &                           vXmin(ng), vXmax(ng),                  &
+     &                           vYmin(ng), vYmax(ng),                  &
      &                           time(ng), dt(ng),                      &
      &                           ObsType, ObsScale,                     &
      &                           Tobs, Xobs, Yobs, Zobs,                &
@@ -315,12 +307,12 @@
 !
         DO itrc=1,NT(ng)
           IF (FOURDVAR(ng)%ObsCount(isTvar(itrc)).gt.0) THEN
-            CALL ad_extract_obs3d (ng, IstrR, IendR, JstrR, JendR,      &
+            CALL ad_extract_obs3d (ng, 0, Lm(ng)+1, 0, Mm(ng)+1,        &
      &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
-     &                             rILB(ng), rIUB(ng),                  &
-     &                             rJLB(ng), rJUB(ng),                  &
      &                             isTvar(itrc),                        &
      &                             Mobs, 1, Nobs(ng),                   &
+     &                             rXmin(ng), rXmax(ng),                &
+     &                             rYmin(ng), rYmax(ng),                &
      &                             time(ng), dt(ng),                    &
      &                             ObsType, ObsScale,                   &
      &                             Tobs, Xobs, Yobs, Zobs,              &
@@ -333,7 +325,7 @@
           END IF
         END DO
 # endif
-# if defined DISTRIBUTE && !defined S4DVAR
+# ifdef DISTRIBUTE
 !
 !-----------------------------------------------------------------------
 !  Collect all observations scaling factors.
@@ -417,7 +409,7 @@
      &              'records = ',i7.7,' - ',i7.7,', iic = ',i7.7,')')
           END IF
         END IF
-      END IF        
+      END IF
       RETURN
       END SUBROUTINE ad_misfit_tile
 #endif
