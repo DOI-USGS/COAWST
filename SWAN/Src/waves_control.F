@@ -45,7 +45,9 @@
       USE SWCOMM3
       USE TIMECOMM
       USE M_MPI
+#ifdef REFINED_GRID
       USE INTERP_SWAN_MOD, ONLY: swan_ref_init
+#endif
 !
 !  Imported variable declarations.
 !
@@ -92,8 +94,6 @@
 !
 !  The call to run here does not do a time step, it fills the bc arrays,
 !  fill AC2 array of bound spec data for child grids, and enters into MCT.
-!
-!  AC2_child_G(ng) needs to be the same size as AC2_parent2_G(ngp).
 !
       DO ng=1,Ngrids
         CALL SWSYNC

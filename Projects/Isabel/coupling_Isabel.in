@@ -59,14 +59,12 @@
  OCN_name = Projects/Isabel/ocean_isabel.in          ! ocean model
 
 ! Sparse matrix interpolation weights files.
-
- W2ONAME == wav2ocn_weights.nc
- W2ANAME == Projects/Isabel/wav2atm_weights_Is120.nc
- A2ONAME == Projects/Isabel/atm2ocn_weights_Is120.nc
- A2WNAME == Projects/Isabel/atm2wav_weights_Is120.nc
- O2ANAME == Projects/Isabel/ocn2atm_weights_Is120.nc
- O2WNAME == ocn2wav_weights.nc
-
+ W2ONAME == ../forcings/wav2ocn_weights.nc
+ W2ANAME == ../forcings/wav2atm_weights_Is126.nc
+ A2ONAME == ../forcings/atm2ocn_weights_Is126.nc
+ A2WNAME == ../forcings/atm2wav_weights_Is126.nc
+ O2ANAME == ../forcings/ocn2atm_weights_Is126.nc
+ O2WNAME == ../forcings/ocn2wav_weights.nc
 !
 !  GLOSSARY:
 !  =========

@@ -320,6 +320,11 @@ else
   echo "."
   echo " "
 
+  setenv MY_HEADER_DIR "${MY_HEADER_DIR}"
+  set HEADPRE = '$(shell echo ${ROMS_APPLICATION} | tr [A-Z] [a-z])'
+  setenv HEADER "${HEADPRE}.h"
+  setenv MY_SRC_DIR "${MY_ROMS_SRC}"
+
   if ( ! $?WRF_SRC_ROOT_DIR ) setenv WRF_SRC_ROOT_DIR `pwd`
   make $arglist A2DCASE="$A2DCASE" WRF_SRC_ROOT_DIR="$WRF_SRC_ROOT_DIR"
 

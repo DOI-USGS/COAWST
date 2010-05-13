@@ -56,7 +56,9 @@ LIB             =    $(LIB_BUNDLED) $(LIB_EXTERNAL) $(LIB_LOCAL)
 LIB             +=   -L$(MCT_LIBDIR) -lmct -lmpeu
 LDFLAGS         =    $(OMP) $(FCFLAGS) $(LDFLAGS_LOCAL) CONFIGURE_LDFLAGS
 ENVCOMPDEFS     =    CONFIGURE_COMPILEFLAGS
-CPPFLAGS        =    $(ARCHFLAGS) $(ENVCOMPDEFS) -I$(LIBINCLUDE) $(TRADFLAG) CONFIGURE_COMMS_INCLUDE
+CPPFLAGS        =    -D'PROJECT_HEADER="$(MY_HEADER_DIR)/$(HEADER)"'
+CPPFLAGS       +=    -D'ROMS_GLOBAL_DEFS="$(MY_SRC_DIR)/ROMS/Include/globaldefs.h"'
+CPPFLAGS       +=    $(ARCHFLAGS) $(ENVCOMPDEFS) -I$(LIBINCLUDE) $(TRADFLAG) CONFIGURE_COMMS_INCLUDE
 NETCDFPATH      =    CONFIGURE_NETCDF_PATH
 PNETCDFPATH     =    CONFIGURE_PNETCDF_PATH
 
@@ -136,7 +138,7 @@ $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
 LN	=	ln -sf
 MAKE	=	make -i -r
 RM	= 	rm -f
-
+CPPCLEAN  := $(WRF_SRC_ROOT_DIR)/inc/cpp_clean
 
 # These sub-directory builds are identical across all architectures
 
@@ -160,6 +162,7 @@ wrfio_esmf :
 .F.o:
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
+#	$(CLEAN) $*.bb
 	$(SED_FTN) $*.bb | $(CPP) > $*.f90
 	$(RM) $*.b $*.bb
 	if $(FGREP) '!$$OMP' $*.f90 ; then \
@@ -175,6 +178,7 @@ wrfio_esmf :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.b  > $@
+#	$(CLEAN) $*.f90
 	$(RM) $*.b
 
 .f90.o:

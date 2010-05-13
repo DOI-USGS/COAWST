@@ -32,7 +32,7 @@
 #    -j [N]       Compile in parallel using N CPUs                      :::
 #                  omit argument for all available CPUs                 :::
 #    -noclean     Do not clean already compiled roms objects            :::
-#    -noclean_wrf Do not clean already compiled wrf objects             :::
+#    -nocleanwrf  Do not clean already compiled wrf objects             :::
 #                                                                       :::
 # Notice that sometimes the parallel compilation fail to find MPI       :::
 # include file "mpif.h".                                                :::
@@ -41,7 +41,7 @@
 
 parallel=0
 clean=1
-clean_wrf=1
+cleanwrf=1
 
 while [ $# -gt 0 ]
 do
@@ -63,9 +63,9 @@ do
       clean=0
       ;;
 
-    -noclean_wrf )
+    -nocleanwrf )
       shift
-      clean_wrf=0
+      cleanwrf=0
       ;;
 
     * )
@@ -77,7 +77,7 @@ do
       echo "-j [N]      Compile in parallel using N CPUs"
       echo "              omit argument for all avaliable CPUs"
       echo "-noclean       Do not clean already compiled objects"
-      echo "-noclean_wrf   Do not clean already compiled wrf objects"
+      echo "-nocleanwrf    Do not clean already compiled wrf objects"
       echo ""
       exit 1
       ;;
@@ -403,7 +403,7 @@ fi
 
 # Compile (the binary will go to BINDIR set above).
 
-if [ $clean_wrf -eq 1 ]; then
+if [ $cleanwrf -eq 1 ]; then
   export WRF_DIR=${MY_ROMS_SRC}/WRF
   make wrf
   cd ${MY_ROMS_SRC}

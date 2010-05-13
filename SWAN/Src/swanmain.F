@@ -5846,6 +5846,7 @@
              END IF
            END DO
         END IF
+# ifdef REFINED_GRID
       ELSE
 !
 !     Obtain 2dspec array AC2 from parent grid.
@@ -5877,6 +5878,7 @@
 !              AC2(ID,IS,:) = AC2LOC(:)                                   40.31
 !           END DO                                                        40.31
 !        END DO                                                           40.31
+# endif
       END IF
 #else
       IF (INODE.EQ.MASTER) THEN                                           40.30

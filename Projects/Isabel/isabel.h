@@ -17,15 +17,13 @@
 !# define AVERAGES
 
 
-#define SWAN_COUPLING
-#undef  UV_CONST
+#define ROMS_MODEL
+#define WRF_MODEL
+#define SWAN_MODEL
 #define MCT_INTERP_WV2AT
 #define MCT_INTERP_OC2AT
 #undef  MCT_INTERP_OC2WV
-#define WRF_COUPLING
-#if defined SWAN_COUPLING || defined WRF_COUPLING
-# define MCT_LIB
-#endif
+#define MCT_LIB
 #define WET_DRY
 #define ATM_PRESS
 #undef  NEARSHORE_MELLOR
