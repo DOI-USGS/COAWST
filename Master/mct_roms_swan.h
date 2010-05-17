@@ -831,19 +831,6 @@
         ENDDO
 # endif  
 #endif 
-      ij=0
-      DO j=JstrT,JendT
-        DO i=IstrT,IendT
-          ij=ij+1
-#ifdef UV_CONST
-          A(ij)=0.0_r8
-#else
-          A(ij)=ubar_rho(i,j)
-#endif
-        END DO
-      END DO
-      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VELX",     &
-     &                           A, Asize)
 !
 !  V-velocity at RHO-points.
 !
@@ -910,7 +897,29 @@
 #ifdef UV_CONST
           A(ij)=0.0_r8
 #else
-          A(ij)=vbar_rho(i,j)
+!
+! Rotate velocity to be East positive.
+!
+          cff1=ubar_rho(i,j)*CosAngler(i,j)-vbar_rho(i,j)*SinAngler(i,j)
+          A(ij)=cff1
+#endif
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VELX",     &
+     &                           A, Asize)
+!
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+#ifdef UV_CONST
+          A(ij)=0.0_r8
+#else
+!
+! Rotate velocity to be North positive.
+!
+          cff1=ubar_rho(i,j)*SinAngler(i,j)+vbar_rho(i,j)*CosAngler(i,j)
+          A(ij)=cff1
 #endif
         END DO
       END DO
