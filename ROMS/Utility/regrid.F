@@ -85,6 +85,7 @@
       logical :: rectangular
       integer :: i, j
       integer :: Istr, Iend, Jstr, Jend
+      integer :: Xmn, Xmx, Ymn, Ymx
 #ifdef DISTRIBUTE
       integer :: Cgrid, ghost
 #endif
@@ -186,7 +187,7 @@
 #endif
 !
 !  Find fractional indices (Iout,Jout) of the grid cells in Ainp
-!  containing positions to intepolate.
+!  containing positions to intepolate. Reuse Imin, Imax, Jmin, Jmax.
 !
       CALL hindices (ng, 1, Nx, 1, Ny, 1, Nx, 1, Ny,                    &
      &               angle, Xinp, Yinp,                                 &
@@ -194,8 +195,8 @@
      &               Istr, Iend, Jstr, Jend,                            &
      &               Xout, Yout,                                        &
      &               Iout, Jout,                                        &
-     &               IJspv, rectangular)
-
+     &               IJspv, rectangular,                                &
+     &               Xmn, Xmx, Ymn, Ymx)
       IF (iflag.eq.linear) THEN
         CALL linterp2d (ng, 1, Nx, 1, Ny,                               &
      &                  Xinp, Yinp, Ainp,                               &

@@ -1139,7 +1139,7 @@
       real(r8), intent(out) :: Ipos(LBm:UBm,LBn:UBn)
       real(r8), intent(out) :: Jpos(LBm:UBm,LBn:UBn)
 
-      integer, intent(out), optional :: Xmin, Xmax, Ymin, Ymax
+      integer, intent(out) :: Xmin, Xmax, Ymin, Ymax
 !
 !  Local variable declarations.
 !

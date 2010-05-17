@@ -38,6 +38,7 @@
       integer :: IstrR, Iend, JstrR, Jend
       integer :: LBi, UBi, LBj, UBj
       integer :: i, j, k, l, mc
+      integer :: Xmin, Xmax, Ymin, Ymax
 
       real(r8), parameter :: spv = 0.0_r8
 
@@ -101,7 +102,8 @@
      &                     1, mc, 1, 1,                                 &
      &                     FLT(ng)%Flon,                                &
      &                     FLT(ng)%Flat,                                &
-     &                     Iflt, Jflt, spv, .FALSE.)
+     &                     Iflt, Jflt, spv, .FALSE.,                    &
+     &                     Xmin, Xmax, Ymin, Ymax)
 #  ifdef DISTRIBUTE
             CALL mp_collect (ng, model, mc, spv, Iflt)
             CALL mp_collect (ng, model, mc, spv, Jflt)
@@ -217,7 +219,8 @@
      &                   1, mc, 1, 1,                                   &
      &                   Slon, Slat,                                    &
      &                   Ista, Jsta,                                    &
-     &                   spv, .FALSE.)
+     &                   spv, .FALSE.,                                  &
+     &                   Xmin, Xmax, Ymin, Ymax)
 #  ifdef DISTRIBUTE
           CALL mp_collect (ng, model, mc, spv, Ista)
           CALL mp_collect (ng, model, mc, spv, Jsta)

@@ -4314,6 +4314,29 @@
            VOQ(IP,VOQR(IVTYPE)+1) = SINCQ*SX + COSCQ*SY
         ENDIF
 !
+!       peak wave length  WLENP
+!
+!        IVTYPE = 12
+!        IF (OQPROC(IVTYPE)) THEN
+!           EMAX = 0.
+!           ISIGM = -1
+!           DO IS = 1, MSC
+!              ETD = 0.
+!              DO ID = 1, MDC
+!                ETD = ETD + WK(IS)*ACLOC(ID,IS)*DDIR
+!              ENDDO
+!              IF (ETD.GT.EMAX) THEN
+!                EMAX  = ETD
+!                ISIGM = IS
+!              ENDIF
+!           ENDDO
+!           IF (ISIGM.GT.0) THEN
+!             VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SPCSIG(ISIGM)
+!           ELSE
+!             VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
+!           ENDIF
+!        ENDIF
+!
 !       average wave length
 !
         IVTYPE = 17

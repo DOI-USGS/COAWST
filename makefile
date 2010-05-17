@@ -515,7 +515,7 @@ wrf:
 ifdef USE_WRF
 	cd $(WRF_DIR); ls; ./clean -a;                            \
 	echo " "; echo " ";                                       \
-	echo "Compiling wrf, please wait. this may take 20 min."; \
+	echo "Compiling wrf";                                     \
 	./compile em_real;                                        \
 	echo "";                                                  \
 	echo "-------- Finished compiling WRF ------------"

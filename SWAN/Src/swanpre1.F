@@ -409,7 +409,7 @@
       INTEGER IVOTP(NVOTP), INDX(1)                                       40.87
       DATA IVOTP /10, 11, 13, 15, 16, 17, 18, 19,                         40.87
      &            28, 32, 33, 42, 43, 47, 48    /                         40.87
-#if defined AIR_WAVES
+#if defined SWAN_MODEL
       REAL, ALLOCATABLE :: TARR(:)                                        40.31
 #endif
 #ifdef SWAN_MODEL
@@ -1203,7 +1203,7 @@
           IGRD = 5
           IGR2 = 6                                                          10.26
           PSNAME = 'WXGRID  '
-#if defined AIR_WAVES
+#if defined SWAN_MODEL
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
           LWINDR = 2                                                        30.10
           IWIND  = LWINDM                                                   30.10
