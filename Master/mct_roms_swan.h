@@ -900,7 +900,11 @@
 !
 ! Rotate velocity to be East positive.
 !
+# ifdef CURVGRID
           cff1=ubar_rho(i,j)*CosAngler(i,j)-vbar_rho(i,j)*SinAngler(i,j)
+# else
+          cff1=ubar_rho(i,j)
+# endif
           A(ij)=cff1
 #endif
         END DO
@@ -918,7 +922,11 @@
 !
 ! Rotate velocity to be North positive.
 !
+# ifdef CURVGRID
           cff1=ubar_rho(i,j)*SinAngler(i,j)+vbar_rho(i,j)*CosAngler(i,j)
+# else
+          cff1=vbar_rho(i,j)
+# endif
           A(ij)=cff1
 #endif
         END DO
