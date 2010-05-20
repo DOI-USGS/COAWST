@@ -13,6 +13,7 @@
 **                     sediment_shoreface.h
 */
 
+#define ROMS_MODEL
 #undef  NEARSHORE_MELLOR
 #define NEARSHORE_WEC
 #ifdef  NEARSHORE_WEC

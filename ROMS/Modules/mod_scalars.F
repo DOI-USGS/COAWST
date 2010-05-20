@@ -96,7 +96,7 @@
         integer :: M2hadv          ! 2D momentum, horizontal advection
         integer :: M2xadv          ! 2D momentum, horizontal X-advection
         integer :: M2yadv          ! 2D momentum, horizontal Y-advection
-#  ifdef NEARSHORE_MELLOR
+#  ifdef NEARSHORE
         integer :: M2hrad          ! 2D momentum, horizontal stresses
 #  endif
         integer :: M2pgrd          ! 2D momentum, pressure gradient
@@ -112,7 +112,7 @@
         integer :: M3hadv          ! 3D momentum, horizontal advection
         integer :: M3xadv          ! 3D momentum, horizontal X-advection
         integer :: M3yadv          ! 3D momentum, horizontal Y-advection
-#   ifdef NEARSHORE_MELLOR
+#   ifdef NEARSHORE
         integer :: M3hrad          ! 3D momentum, horizontal stresses
         integer :: M3vrad          ! 3D momentum, vertical stresses
 #   endif
@@ -1893,7 +1893,7 @@
       M2yadv=ic+3
       ic=ic+3
 #  endif
-#  if defined NEARSHORE_MELLOR
+#  if defined NEARSHORE
       M2hrad=ic+1
       ic=ic+1
 #  endif
@@ -1927,7 +1927,7 @@
       M3yadv=ic+4
       ic=ic+4
 #   endif
-#   if defined NEARSHORE_MELLOR
+#   if defined NEARSHORE
       M3hrad=ic+1
       M3vrad=ic+2
       ic=ic+2

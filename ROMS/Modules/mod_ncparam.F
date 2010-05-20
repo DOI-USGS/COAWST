@@ -1652,7 +1652,7 @@
               CASE ('idDv2d(M2hadv)')
                 idDv2d(M2hadv)=varid
 # endif
-# ifdef NEARSHORE_MELLOR
+# ifdef NEARSHORE
               CASE ('idDu2d(M2hrad)')
                 idDu2d(M2hrad)=varid
               CASE ('idDv2d(M2hrad)')
@@ -1709,7 +1709,7 @@
               CASE ('idDv3d(M3vadv)')
                 idDv3d(M3vadv)=varid
 #  endif
-#  ifdef NEARSHORE_MELLOR
+#  ifdef NEARSHORE
               CASE ('idDu3d(M3hrad)')
                 idDu3d(M3hrad)=varid
               CASE ('idDv3d(M3hrad)')

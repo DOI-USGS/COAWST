@@ -473,7 +473,7 @@
 #   ifdef UV_ADV
         NDM2d=NDM2d+3  ! Horizontal total-, X-, and Y-advection
 #   endif
-#   ifdef NEARSHORE_MELLOR
+#   ifdef NEARSHORE
         NDM2d=NDM2d+1  ! Horizontal radiation stresses
 #   endif
 #   ifdef UV_COR
@@ -492,7 +492,7 @@
         NDM3d=NDM3d+4  ! Horizontal (total, X, Y) and vertical advection
         NDrhs=NDrhs+4
 #   endif
-#   ifdef NEARSHORE_MELLOR
+#   ifdef NEARSHORE
         NDM3d=NDM3d+2  ! Horizontal and vertical radiation stresses
         NDrhs=NDrhs+2
 #   endif

@@ -969,7 +969,7 @@
 #endif
 
 #if defined COARE_TAYLOR_YELLAND   || defined COARE_OOST || \
-    defined DRENNAN || defined WAVES_OCEAN
+    defined DRENNAN || defined WAVES_OCEAN || defined NEARSHORE_WEC
 # define WAVES_TOP_PERIOD
 #endif
 

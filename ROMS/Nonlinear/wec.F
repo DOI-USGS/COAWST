@@ -1,5 +1,4 @@
 #include "cppdefs.h"
-#define GEO_ROTATION 
       MODULE wec_mod
 #ifdef NEARSHORE_WEC
 !
@@ -377,7 +376,6 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: vstvy
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: BBX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: BBY      
-      
 #  ifdef CURVGRID
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFx
 #  endif
@@ -404,20 +402,17 @@
           waveAA(i,j)=cff*cff
           sigma(i,j)=SQRT(g*waven(i,j)*TANH(waven(i,j)*Dstp(i,j)))
           osigma(i,j)=1.0_r8/sigma(i,j)
-          waveE(i,j)=0.5_r8*g*waveAA(i,j)
-
+          waveE(i,j)=0.0625_r8*g*Hwave(i,j)*Hwave(i,j)
 !
-!Compute wave celerity and nonlinear water depth
+!  Compute wave celerity and nonlinear water depth
 !
           kD(i,j)=MIN(waven(i,j)*Dstp(i,j)+eps,kDmax)
-          wavec(i,j)=SQRT(g*owaven(i,j)*TANH(kD(i,j)))
-          
+          wavec(i,j)=SQRT(g*owaven(i,j)*TANH(kD(i,j)))          
 !
 !  Compute quasi static sea surface elevation, Eq(7).
 !
           zetaw(i,j)=-fac2*Pair(i,j)-(0.5_r8*waveAA(i,j)*waven(i,j)/    &
      &               SINH(2.0_r8*kD(i,j)))
-
 !
 !  Compute metrics for vertical roller distribution.
 !
@@ -430,27 +425,18 @@
      &                COSH(2.0_r8*pi*cff2)
           END DO
           oroller(i,j)=1.0_r8/(oroller(i,j)+eps)
-
-
 !
-!Calculate Wave dissipation using empirical parameters-Church Thornton-1993
+!  Calculate wave dissipation using empirical parameters of
+!  Church Thornton 1993.
 ! 
           RB1= 1.0_r8+tanh(8.0_r8*((0.707_r8*Hwave(i,j)/                &
      &          (gammaw*Dstp(i,j)))-1.0_r8))
-
           RB2= 1.0_r8-(1.0_r8+(0.707_r8*Hwave(i,j)/                     &
      &          (gammaw*Dstp(i,j)))**2.0_r8)**(-2.5_r8) 
-
           sigmat(i,j)=MIN(1.0_r8/Pwave_top(i,j),1.0_r8)
           WD(i,j)=(3.0_r8*sqrt(pi)/16.0_r8)*g*sigmat(i,j)*              &
      &                (0.64_r8**3.0_r8/Dstp(i,j))*                      &
      &                 (0.707_r8*Hwave(i,j))**3.0_r8*RB1*RB2
-          
-!          IF (j.EQ.5.0_r8) THEN
-!           write(*,'(I4,7(1x,f10.5))') i, waven(i,j), waveAA(i,j),      &
-!     &       sigma(i,j), waveE(i,j), sigmat(i,j), WD(i,j), zetaW (i,j)
-!          END IF
-
 !
 !  Initialize depth independent arrays for summation
 !
@@ -462,9 +448,7 @@
             w_stokes(i,j,0)=0.0_r8
           END DO
         END IF
-      END DO  
-
-
+      END DO
 !
 !  Solve roller evolution equation
 !
@@ -501,9 +485,9 @@
            rollAA(i,j)=rollAA(i,j)-cff1
           END DO
         END DO
-
+!
 ! Roller source / sink term.
-
+!
         DO j=Jstr,Jend
           DO i=Istr,Iend
             cff=dt(ng)/REAL(numits,r8)
@@ -526,25 +510,21 @@
           EER(Iend+1,j)=EER(Iend,j)
         END DO
         DO i=Istr-1,Iend+1       
-           rollA(i,Jstr-1)=rollA(i,Jstr)
-           waveRE(i,Jstr-1)=waveRE(i,Jstr)
-           EER(i,Jstr-1)=EER(i,Jstr)
-           rollA(i,Jend+1)=rollA(i,Jend)
-           waveRE(i,Jend+1)=waveRE(i,Jend)
-           EER(i,Jend+1)=EER(i,Jend)
+          rollA(i,Jstr-1)=rollA(i,Jstr)
+          waveRE(i,Jstr-1)=waveRE(i,Jstr)
+          EER(i,Jstr-1)=EER(i,Jstr)
+          rollA(i,Jend+1)=rollA(i,Jend)
+          waveRE(i,Jend+1)=waveRE(i,Jend)
+          EER(i,Jend+1)=EER(i,Jend)
         END DO
       END DO
-  
-
 !
 !  Compute Bernoulli's Head (BH)
 !  BH has been represented as the symbol cursive K in the U10 (see Eqn. 5)
 !
 !  Use splines method to calculate shear of velocity
 !
-
 #  ifdef SPLINES_Notyet
-
       DO j=Jstr-1,Jend+1
         DO i=Istr-1,Iend+1
           CF(i,0)=0.0_r8
@@ -739,11 +719,9 @@
       END DO
 
 #  else      
-
-!------------------------------------------------------------------
+!
 !  Compute Bernoulli head, Eq 5.
-!------------------------------------------------------------------
-
+!
       DO k=1,N(ng)-1
         DO j=Jstr,Jend
           DO i=Istr,Iend
@@ -809,66 +787,71 @@
       END DO
 !
 ! Compute second derivative.
-!	  
+!
       DO k=0,N(ng)-1
         DO j=Jstr,Jend
           DO i=Istr,Iend
             cff=0.5_r8/(z_w(i,j,k+1)-z_w(i,j,k))
 !
-!Calculates d(k_x*u)^2/dz^2+d(k_y*v)^2/dz^2 (i.e. (1/Hz)*(d/ds)*(1/Hz*d(k_x*u)/ds+1/Hz*d(k_y*v)/ds)
+! Calculates d(k_x*u)^2/dz^2+d(k_y*v)^2/dz^2 
+! in the form  (1/Hz)*(d/ds)*(1/Hz*d(k_x*u)/ds+1/Hz*d(k_y*v)/ds)
 !
+!           at k=0 shear2=0 because shear1(1)=shear1(0).
             shear2(i,j,k)=(cff*(shear1(i,j,k+1)-shear1(i,j,k)))
           END DO
         END DO
       END DO
-#  endif
-
-
-!	  
-!  Perform integration on the shear2 term calcuated above 
-!   
-
+!
+! Applying boundary conditions here.
+!
       DO j=Jstr,Jend
         DO i=Istr,Iend
-           cff=Hz(i,j,0)
-           fac2=(1.0_r8+SCALARS(ng)%Cs_r(N(ng)))-                       &
-                (1.0_r8+SCALARS(ng)%Cs_r(0))
-           vi1=cff*shear2(i,j,0)*SINH(2*kD(i,j)*fac2)                   
-     
+          shear2(i,j,N(ng))=shear2(i,j,N(ng)-1)
+        END DO
+      END DO
+#  endif
+!
+!  Perform integration on the shear2 term calcuated above.
+!
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+! there is no Hz(,,0)
+!           cff=Hz(i,j,0)
+!           fac2=(1.0_r8+SCALARS(ng)%Cs_r(N(ng)))-                       &
+!                (1.0_r8+SCALARS(ng)%Cs_r(0))
+!           vi1=cff*shear2(i,j,0)*SINH(2*kD(i,j)*fac2)                   
+           vi1=0.0_r8
+!
           DO k=1,N(ng)
              fac2=(1.0_r8+SCALARS(ng)%Cs_r(N(ng)))-                     &
      &            (1.0_r8+SCALARS(ng)%Cs_r(k))
              cff=Hz(i,j,k)
              vi1=vi1+cff*shear2(i,j,k)*SINH(2*kD(i,j)*fac2)             
           END DO
-
-!------------------------------------------------------------------------
+!
 !  Calculate Bernoulli's Head at the surface
-!------------------------------------------------------------------------
+!
           bh(i,j)=0.25_r8*vi1*sigma(i,j)*waveAA(i,j)/                   & 
      &                    (waven(i,j)*(SINH(kD(i,j)))**2)
 
         END DO
       END DO
 
-
-!------------------------------------------------------------------------
+!
 ! Compute quasi-static components of pressure terms (i.e. Cursive P)
 ! as in Eqn. 9 in U10
-!------------------------------------------------------------------------
-
+!
       DO j=Jstr,Jend
         DO i=Istr,Iend
-           fac2=1.0_r8+SCALARS(ng)%Cs_r(0)
-           cff=Hz(i,j,0)
-           vi2=cff*shear2(i,j,0)*COSH(2*kD(i,j)*fac2)
-
+!          fac2=1.0_r8+SCALARS(ng)%Cs_r(0)
+!          cff=Hz(i,j,0)
+!          vi2=cff*shear2(i,j,0)*COSH(2*kD(i,j)*fac2)
+          vi2=0.0_r8
           DO k=1,N(ng)
              fac2=1.0_r8+SCALARS(ng)%Cs_r(k)
              cff=Hz(i,j,k)
              vi2=vi2+cff*shear2(i,j,k)*COSH(2*kD(i,j))*fac2	  
           END DO
-
           cff1=0.5_r8*waveAA(i,j)*osigma(i,j)
           cff2=TANH(kD(i,j))/SINH(2*kD(i,j))
           qsp(i,j)=cff1*(cff2*(shear1(i,j,N(ng))+                       &
@@ -876,15 +859,11 @@
      &                         vi2)-                                    &
      &                   2*waven(i,j)*TANH(kD(i,j))*                    &
      &                   (ku(i,j,N(ng))+kv(i,j,N(ng))))
-          
-    
         END DO
       END DO
-
 !
 ! Compute Vertical Vortex Force terms (denoted as K in Eqn. 5, U10):
 !
-
       DO k=1,N(ng)-1
         DO j=Jstr,Jend
           DO i=Istr,Iend
@@ -895,7 +874,7 @@
           END DO
         END DO
       END DO
-
+!
       DO k=1,N(ng)-1
         DO j=Jstr,Jend
           vfvert(Istr-1,j,k)=vfvert(Istr,j,k)
@@ -905,34 +884,30 @@
           vfvert(i,Jstr-1,k)=vfvert(i,Jstr,k)
         END DO
       END DO		
-
+!
       DO k=1,N(ng)-1
         DO j=Jstr,Jend
           DO i=Istr,Iend
-          rustr3d(i,j,k)= 0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))*                & 
-     &                  (vfvert(i,j,k)*Hz(i,j,k)-                        &
-     &                   vfvert(i-1,j,k)*Hz(i-1,j,k))*on_u(i,j)
-
-          rvstr3d(i,j,k)= 0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))*                & 
-     &                  (vfvert(i,j,k)*Hz(i,j,k)-                        &
-     &                   vfvert(i,j-1,k)*Hz(i,j-1,k))*on_v(i,j)       
+          rustr3d(i,j,k)=0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))*                & 
+     &                   (vfvert(i  ,j,k)*Hz(i  ,j,k)-                  &
+     &                    vfvert(i-1,j,k)*Hz(i-1,j,k))*on_u(i,j)
+          rvstr3d(i,j,k)=0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))*                & 
+     &                   (vfvert(i,j  ,k)*Hz(i,j  ,k)-                  &
+     &                    vfvert(i,j-1,k)*Hz(i,j-1,k))*on_v(i,j)       
           END DO
         END DO
       END DO 
- 
-
 !
 !---------------------------------------------------------------------------
 ! Evaluate geopotential function (Eqn. 33, Uchiyama et al., 2010)
 !---------------------------------------------------------------------------
-! 
+!
       DO j=Jstr,Jend
         DO i=Istr,Iend
           zetat(i,j)=Dstp(i,j)*                                         &
      &                      (-g*zetaw(i,j)-(g*qsp(i,j)-bh(i,j)))
         END DO
-      END DO		
-
+      END DO
 !
 !------------------------------------------------------------------------
 ! Compute non conservative wave acceleration terms here
@@ -942,18 +917,16 @@
         fac2=1.0_r8+SCALARS(ng)%Cs_r(k)
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
-             cff2=fac2*gamr(i,j)
-             cff3=COSH(2.0_r8*pi*cff2)
-             cff4=(((1-alphaR)*WD(i,j)+EER(i,j))/sigma(i,j))
-             BBXL(i,j)=cff3*cff4*wavenx(i,j)*oroller(i,j)
-             BBYL(i,j)=cff3*cff4*waveny(i,j)*oroller(i,j) 
-          END DO 
-
+            cff2=fac2*gamr(i,j)
+            cff3=COSH(2.0_r8*pi*cff2)
+            cff4=(((1-alphaR)*WD(i,j)+EER(i,j))/sigma(i,j))
+            BBXL(i,j)=cff3*cff4*wavenx(i,j)*oroller(i,j)
+            BBYL(i,j)=cff3*cff4*waveny(i,j)*oroller(i,j) 
+          END DO
 !
-! Compute depth integrated terms and copy stress terms for local arrays
-! to state variables
+! Compute depth integrated terms and copy stress terms from local arrays
+! to state variables.
 !
-          
           IF ((j.ge.Jstr) .and. (j.le.Jend)) THEN
             DO i=Istr,Iend
                BBX(i,j,k)=BBXL(i,j)
@@ -963,48 +936,40 @@
             END DO
           END IF
         END DO 
-
 !
 ! Compute contribution to U-momentum
 ! 
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-             cff=(BBXL(i,j)*Hz(i,j,k)-                                  &
-     &           BBXL(i-1,j)*Hz(i-1,j,k))*on_u(i,j)
+             cff=(BBXL(i  ,j)*Hz(i  ,j,k)-                              &
+     &            BBXL(i-1,j)*Hz(i-1,j,k))*on_u(i,j)
              rustr3d(i,j,k)=rustr3d(i,j,k)+cff
-
 # ifdef DIAGNOSTICS_UV
              DiaRU(i,j,k,nrhs,M3hrad)=-cff
 # endif
           END DO
-        END DO     
-
+        END DO
 !
 ! Compute contribution to V-momentum
 !
         DO j=JstrV,Jend
           DO i=Istr,Iend
-             cff=(BBYL(i,j)*Hz(i,j,k)-                                  &
-     &           BBYL(i,j-1)*Hz(i,j-1,k))*om_v(i,j)
+             cff=(BBYL(i,j  )*Hz(i,j  ,k)-                              &
+     &            BBYL(i,j-1)*Hz(i,j-1,k))*om_v(i,j)
              rvstr3d(i,j,k)=rvstr3d(i,j,k)+cff
-
 # ifdef DIAGNOSTICS_UV
              DiaRV(i,j,k,nrhs,M3hrad)=-cff
-# endif   
+# endif
           END DO
-        END DO 
-!
+        END DO
 !	  
-! Compute stokes velocities
-! Compute U-stokes velocity
-! See Eqn. 2 in U10
+! Compute u-stokes velocities. See Eqn. 2 in U10
 !
-!
-
+        fac2=1.0_r8+SCALARS(ng)%Cs_r(k)
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-	     fac2=1.0_r8+SCALARS(ng)%Cs_r(k)
              cff2=(waveE(i-1,j)+waveE(i,j))
+!  NEED to ADD BBR ?? to wave E for here and vstokes
              cff3=(kD(i-1,j)+kD(i,j))
              u_stokes(i,j,k)=cff2*                                      &
      &                      (wavenx(i-1,j)+wavenx(i,j))/                &
@@ -1014,18 +979,14 @@
 #  ifdef MASKING
              u_stokes(i,j,k)=u_stokes(i,j,k)*umask(i,j)
 #  endif
-
 #  ifdef WET_DRY
              u_stokes(i,j,k)=u_stokes(i,j,k)*umask_wet(i,j)
 #  endif
           END DO
         END DO
-
 !
+!  Compute v-stokes velocity.
 !
-!  Compute V-stokes velocity.
-!
-! 
         DO j=JstrV,Jend
           DO i=Istr,Iend
              cff2=(waveE(i,j-1)+waveE(i,j))
@@ -1034,7 +995,6 @@
      &                      (waveny(i-1,j)+waveny(i,j))/                &
      &                      (wavec (i,j-1)+wavec (i,j))*                &
      &                      COSH(cff3*fac2)/SINH(cff3)
-
 #  ifdef MASKING
              v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
 #  endif
@@ -1043,7 +1003,6 @@
 #  endif
           END DO
         END DO
-     
 !	  
 !  Calculate vertical stokes velocity terms.
 !
@@ -1053,14 +1012,12 @@
      &                  u_stokes(i,j,k)*on_u(i,j)
           END DO
         END DO
-       
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
              Hvoms(i,j)=0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))*                 &
-     &                 v_stokes(i,j,k)*om_v(i,j)
+     &                  v_stokes(i,j,k)*om_v(i,j)
           END DO
         END DO
-        
         DO j=Jstr,Jend
           DO i=Istr,Iend
              w_stokes(i,j,k)=w_stokes(i,j,k-1)-                         &
@@ -1069,16 +1026,14 @@
      &                       pm(i,j)*pn(i,j)
           END DO
         END DO
-        END DO K_LOOP
-
-
+      END DO K_LOOP
 !
 ! Applying boundary condition for w_stokes
 !
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
-            wrk(i)=w_stokes(i,j,N(ng))/(z_w(i,j,N(ng))-z_w(i,j,0))
-          END DO
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          wrk(i)=w_stokes(i,j,N(ng))/(z_w(i,j,N(ng))-z_w(i,j,0))
+        END DO
 !
 !  In order to insure zero vertical velocity at the free-surface,
 !  subtract the vertical velocities of the moving S-coordinates
@@ -1089,144 +1044,58 @@
 !
         DO k=N(ng)-1,1,-1
           DO i=Istr,Iend
-             w_stokes(i,j,k)=w_stokes(i,j,k)-                           &
-     &                     wrk(i)*(z_w(i,j,k)-z_w(i,j,0))
+            w_stokes(i,j,k)=w_stokes(i,j,k)-                            &
+     &                      wrk(i)*(z_w(i,j,k)-z_w(i,j,0))
           END DO
         END DO
-
-          DO i=Istr,Iend
-            w_stokes(i,j,N(ng))=0.0_r8
-          END DO
+        DO i=Istr,Iend
+          w_stokes(i,j,N(ng))=0.0_r8
         END DO
-!	  
+      END DO
 !
 ! Contribution of a term corresponding to product of Stokes and Eulerian Velocity
 ! Eqn. 26 and 27, Uchiyama et al. (2010)
 !
-       DO k=1,N(ng)      
-         DO j=Jstr,Jend
-           DO i=IstrU,Iend
-              cff=0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
-              ustux(i,j,k)=0.5_r8*                                      & 
-     &                     (u_stokes(i,j,k)+u_stokes(i-1,j,k))*         &
-     &			   (u(i+1,j,k,nrhs)-u(i,j,k,nrhs))*on_u(i,j)
-
-              ustuy(i,j,k)=0.5_r8*                                      &               
+      DO k=1,N(ng)      
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff=0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
+            ustux(i,j,k)=0.5_r8*                                        &
+     &                   (u_stokes(i,j,k)+u_stokes(i-1,j,k))*           &
+     &		         (u(i+1,j,k,nrhs)-u(i,j,k,nrhs))*on_u(i,j)
+            ustuy(i,j,k)=0.5_r8*                                        &
                            (u_stokes(i,j,k)+u_stokes(i,j-1,k))*         &
      &			   (u(i,j+1,k,nrhs)-u(i,j,k,nrhs))*om_v(i,j)
-           END DO
-         END DO
-
-         DO i=Istr,Iend
-           DO j=JstrV,Jend
-              cff=0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))
-              vstvx(i,j,k)=0.5_r8*                                      &
-     &                     (v_stokes(i,j,k)+v_stokes(i,j-1,k))*         &
-     &			   (v(i,j+1,k,nrhs)-v(i,j,k,nrhs))*on_u(i,j)
-
-              vstvy(i,j,k)=0.5_r8*                                      &
-     &                     (v_stokes(i,j,k)+v_stokes(i,j-1,k))*         &
-     &			   (v(i,j+1,k,nrhs)-v(i,j,k,nrhs))*om_v(i,j)
-           END DO
-         END DO		
-       END DO
-
-
-      DO k=1,N(ng)		
-         DO j=Jstr,Jend
-           DO i=IstrU,Iend
-              cff=(vstvx(i,j,k)*Hz(i,j,k)-                              &
-     &             vstvx(i-1,j,k)*Hz(i-1,j,k))*on_u(i,j)  
-              rustr3d(i,j,k)=rustr3d(i,j,k)+cff
-           END DO
-         END DO  
-  
-         DO i=Istr,Iend
-           DO j=JstrV,Jend 
-              cff=(vstvy(i,j,k)*Hz(i,j,k)-                              &
-     &             vstvx(i,j-1,k)*Hz(i,j-1,k))*om_v(i,j)
-              rvstr3d(i,j,k)=rvstr3d(i,j,k)+cff
-           END DO
-         END DO
-       END DO     
-
-# if defined GEO_ROTATION
-!
-!------------------------------------------------------------------------
-! Add in vertical rotation along geopotential terms
-!------------------------------------------------------------------------
-!
-      DO k=1,N(ng)
-        DO j=Jstr,Jend+1
-          DO i=Istr,Iend+1
-             z_psi(i,j,k)=0.25_r8*(z_r(i  ,j-1,k)+z_r(i ,j,k)+          &
-     &                             z_r(i-1,j-1,k)+z_r(i-1,j,k))
           END DO
         END DO
+        DO i=Istr,Iend
+          DO j=JstrV,Jend
+            cff=0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))
+            vstvx(i,j,k)=0.5_r8*                                        &
+     &                   (v_stokes(i,j,k)+v_stokes(i,j-1,k))*           &
+     &	                 (v(i,j+1,k,nrhs)-v(i,j,k,nrhs))*on_u(i,j)
+            vstvy(i,j,k)=0.5_r8*                                        &
+     &                     (v_stokes(i,j,k)+v_stokes(i,j-1,k))*         &
+     &	                   (v(i,j+1,k,nrhs)-v(i,j,k,nrhs))*om_v(i,j)
+          END DO
+        END DO		
       END DO
-      
-      DO j=Jstr,Jend
-        DO i=IstrU,Iend
-          DO k=0,N(ng)
-             cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
-             cff3=COSH(pi*cff2*(gamr(i-1,j)+gamr(i,j)))
-             cff4=(((1-alphaR)*0.5_r8*(WD(i,j)+WD(i-1,j))+              &
-     &            0.5_r8*(EER(i,j)+EER(i-1,j)))/                        &
-     &            (0.5_r8*(sigma(i,j)+sigma(i-1,j))))
-
-             FCC(i,k)=0.25_r8*cff4*cff3*(wavenx(i,j)+wavenx(i-1,j))*    &
-     &                (oroller(i,j)+oroller(i-1,j))
-          END DO 
-        END DO
-  
-        DO i=IstrU,Iend
-          DO k=1,N(ng)
-             cff5=(z_r(i,j,k)-z_r(i-1,j,k))*                            &
-     &            on_u(i,j)*(FCC(i,k)-FCC(i,k-1))
-             rustr3d(i,j,k)=rustr3d(i,j,k)-cff5
-
-# ifdef DIAGNOSTICS_UV
-             DiaRU(i,j,k,nrhs,M3hrad)=DiaRU(i,j,k,nrhs,M3hrad)+cff5
-# endif 
-             cff1=0.25_r8*(pm(i,j)+pm(i-1,j))*(pn(i,j)+pn(i-1,j))
-             rustr3d(i,j,k)=rustr3d(i,j,k)*cff1    
+      DO k=1,N(ng)		
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff=(vstvx(i,j,k)*Hz(i,j,k)-                                &
+     &           vstvx(i-1,j,k)*Hz(i-1,j,k))*on_u(i,j)  
+            rustr3d(i,j,k)=rustr3d(i,j,k)+cff
           END DO
         END DO
-
-      IF (j .ge. JstrV) THEN 
         DO i=Istr,Iend
-          DO k=0,N(ng)
-             cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
-             cff3=COSH(pi*cff2*(gamr(i,j)+gamr(i,j-1)))
-             cff4=(((1-alphaR)*0.5_r8*(WD(i,j)+WD(i,j-1))+              &
-     &            0.5_r8*(EER(i,j)+EER(i,j-1)))/                        &
-     &            (0.5_r8*(sigma(i,j)+sigma(i,j-1))))
-
-             FCC(i,k)=0.25_r8*cff4*cff3*(waveny(i,j)+waveny(i,j-1))*    &
-     &                (oroller(i,j)+oroller(i,j-1))
-          END DO 
-        END DO
-  
-        DO i=Istr,Iend
-          DO k=1,N(ng)
-             cff5=(z_r(i,j,k)-z_r(i,j-1,k))*                            &
-     &            om_v(i,j)*(FCC(i,k)-FCC(i,k-1)) 
-             rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff5
-
-# ifdef DIAGNOSTICS_UV
-             DiaRV(i,j,k,nrhs,M3hrad)=DiaRV(i,j,k,nrhs,M3hrad)+cff5
-# endif
-             cff1=0.25_r8*(pm(i,j)+pm(i,j-1))*(pn(i,j)+pn(i,j-1))
-             rvstr3d(i,j,k)=rvstr3d(i,j,k)*cff1    
-         
+          DO j=JstrV,Jend 
+            cff=(vstvy(i,j,k)*Hz(i,j,k)-                                &
+     &           vstvx(i,j-1,k)*Hz(i,j-1,k))*om_v(i,j)
+            rvstr3d(i,j,k)=rvstr3d(i,j,k)+cff
           END DO
         END DO
-       END IF
-      END DO  
-# endif
-
-
-
+      END DO     
 !
 !  For a 3D application, compute associated 2D fields by taking the
 !  vertical integral of 3D fields.
@@ -1242,10 +1111,6 @@
           cff3=0.25_r8*(pm(i,j)+pm(i-1,j))*(pn(i,j)+pn(i-1,j))
           cff4=2.0_r8/(Dstp(i-1,j)+Dstp(i,j))
           ubar_stokes(i,j)=ubar_stokes(i,j)*cff4
-!          IF (j.EQ.5.0_r8) THEN
-!            write(*,*) i, ubar_stokes(i,j)
-!          ENDIF 
-
         END DO
       END DO
       DO i=Istr,Iend
@@ -1279,6 +1144,9 @@
       CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  rvstr2d)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  zetat)
 # ifdef SOLVE3D
       CALL bc_u3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
@@ -1301,10 +1169,10 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rustr2d, rvstr2d, rulag2d, rvlag2d)
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    ubar_stokes, vbar_stokes)
+     &                    zetat, ubar_stokes, vbar_stokes)
 #  ifdef SOLVE3D
       CALL mp_exchange3d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
