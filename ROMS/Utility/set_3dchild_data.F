@@ -251,8 +251,8 @@
 !
 ! get tracer
 !
-            CALL mp_gather (ngc, model, LBic, UBic, LBjc, UBjc,         &
-     &                      1, N(ngc), gtype, 1.0_r8,                   &
+            CALL mp_gather3d (ngc, model, LBic, UBic, LBjc, UBjc,       &
+     &                      1, N(ngc), 0, gtype, 1.0_r8,                &
 # ifdef MASKING
      &                      GRID(ngc) % rmask(LBic:UBic,LBjc:UBjc),     &
 # endif
@@ -355,8 +355,8 @@
 ! get u
 !
           Npts=MySize
-          CALL mp_gather (ngc, model, LBic, UBic, LBjc, UBjc, 1, N(ngc),&
-     &                    gtype, 1.0_r8,                                &
+          CALL mp_gather3d (ngc, model, LBic, UBic, LBjc, UBjc,         &
+     &                      1, N(ngc), 0, gtype, 1.0_r8,                &
 # ifdef MASKING
      &                    GRID(ngc) % umask(LBic:UBic,LBjc:UBjc),       &
 # endif
@@ -456,8 +456,8 @@
 ! get v
 !
           Npts=MySize
-          CALL mp_gather (ngc, model, LBic, UBic, LBjc, UBjc, 1, N(ngc),&
-     &                    gtype, 1.0_r8,                                &
+          CALL mp_gather3d (ngc, model, LBic, UBic, LBjc, UBjc,         &
+     &                      1, N(ngc), 0, gtype, 1.0_r8,                &
 # ifdef MASKING
      &                    GRID(ngc) % vmask(LBic:UBic,LBjc:UBjc),       &
 # endif
