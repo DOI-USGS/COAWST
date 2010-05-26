@@ -1,6 +1,7 @@
 #include "swancpp.h"
 
       MODULE interp_swan_mod
+#ifdef REFINED_GRID
 !
 !svn $Id: interp_swan_mod.F 771 2008-09-30 02:30:00Z jcwarner $
 !=======================================================================
@@ -664,4 +665,5 @@
       RETURN
       END FUNCTION sinside
 
+#endif
       END MODULE interp_swan_mod
