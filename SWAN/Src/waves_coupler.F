@@ -199,11 +199,11 @@
       END DO
       WAVid=wavids(ng)
       OCNid=ocnids(ng)
-      CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, WAV_COMM_WORLD,  &
-     &                    WAVid, wavids)
+      CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                  &
+     &                    WAV_COMM_WORLD, myids=wavids)
 # else
-      CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, WAV_COMM_WORLD,  &
-     &                    WAVid)
+      CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                  &
+     &                    WAV_COMM_WORLD, WAVid)
 # endif
 # ifdef MCT_INTERP_WV2AT
 !

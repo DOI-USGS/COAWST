@@ -604,17 +604,17 @@
 ! 13. Source text
 !
 
-!jcw
       INTEGER, INTENT(IN) :: ng, ngc
       REAL, INTENT(INOUT) :: AC2_parent(MSC*MDC*Numspec(ngc))
       REAL, INTENT(INOUT) :: AC2_parent2(MSC*MDC*Numspec(ngc))
-      INTEGER :: spcount
+      INTEGER :: spcount, offset
       REAL :: IX, IY
       INTEGER, ALLOCATABLE :: CROSS(:)
       REAL, ALLOCATABLE :: ACL(:,:)
       REAL, ALLOCATABLE :: AC_EXCH(:)
       LOGICAL EXCPT
-      INTEGER MyRank, MySize, MyError, MyTag, MyStatus, MyHandle
+      INTEGER MySize, MyError, MyTag
+      INTEGER ISTAT(MPI_STATUS_SIZE)
       INTEGER IS, ID, ISIGM
 
       INTEGER KGRPNT(MXC,MYC),IERR
@@ -630,8 +630,6 @@
       DATA IENT /0/
       CALL STRACE (IENT, 'SWOUTR')
 
-
-!jcw
       ALLOCATE(ACL(MDC,MSC))
       DO ID = 1, MDC
         DO ISIGM = 1, MSC
@@ -688,7 +686,7 @@
           MyTag=IS+1
           ID=IS
           CALL MPI_RECV(AC_EXCH,ac2size(ngc),SWREAL,ID,             &
-     &                  MyTag,WAV_COMM_WORLD,MyStatus,MyError)
+     &                  MyTag,WAV_COMM_WORLD,ISTAT,MyError)
           DO ID=1,ac2size(ngc)
             AC2_parent2(ID)=AC2_parent2(ID)+AC_EXCH(ID)
           END DO
@@ -857,7 +855,6 @@
       INTEGER :: MXK, MYK, MIP
       LOGICAL cplout, userout
       INTEGER offset
-      INTEGER MyRank, MySize, MyError, MyTag, MyStatus, MyHandle
       REAL    CouplingTime
 !
 !     AC2     real arr input  action density in all computational points

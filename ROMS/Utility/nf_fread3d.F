@@ -544,6 +544,10 @@
 
 # if defined INLINE_2DIO && defined DISTRIBUTE
       real(r8), dimension(2+(Lm(ng)+2)*(Mm(ng)+2)) :: wrk
+# elif defined COMPOSED_GRID
+      real(r8), dimension((Lm(ng)+7)*(Mm(ng)+7)*(UBk-LBk+1)) :: wrk
+# elif defined REFINED_GRID
+      real(r8), allocatable :: wrk(:)
 # else
       real(r8), dimension(2+(Lm(ng)+2)*(Mm(ng)+2)*(UBk-LBk+1)) :: wrk
 # endif
@@ -712,6 +716,11 @@
 !  Initialize local array to avoid denormalized numbers. This
 !  facilitates processing and debugging.
 !
+# ifdef REFINED_GRID
+      IF (.not.allocated(wrk)) THEN
+        allocate (wrk(Npts+2))
+      END IF
+# endif
       wrk=0.0_r8
 !
 !-----------------------------------------------------------------------
@@ -805,9 +814,12 @@
 #  endif
       END IF
 # endif
-
       nf_fread3d=status
-
+# ifdef REFINED_GRID
+      IF (allocated(wrk)) THEN
+        deallocate (wrk)
+      END IF
+# endif
       RETURN
       END FUNCTION nf_fread3d
 #endif

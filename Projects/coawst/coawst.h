@@ -10,6 +10,10 @@
 **
 */
 
+#define ROMS_MODEL
+#define SWAN_MODEL
+#define MCT_LIB
+
 !# define INLINE_2DIO
 !# define PERFECT_RESTART
 !# define UV_SADVECTION
@@ -19,14 +23,10 @@
 !#define UV_KIRBY
 #define NOSED_OBC
 #define AKLIMIT
-#define SWAN_COUPLING
 #undef MCT_INTERP_OC2WV
 #undef MCT_INTERP_OC2AT
 #undef MCT_INTERP_WV2AT
 #undef WRF_COUPLING
-!#if defined SWAN_COUPLING || defined WRF_COUPLING
-# define MCT_LIB
-!#endif
 #define  WET_DRY
 #define ATM_PRESS
 #undef  NEARSHORE_MELLOR
@@ -128,10 +128,7 @@
 #undef ADD_FSOBC
 #define UV_TIDES
 #undef ADD_M2OBC
-#define RAMP_TIDES
-
-#define UV_CONST
-#define ZETA_CONST
+#undef RAMP_TIDES
 
 #define ANA_FSOBC
 #define ANA_M2OBC
@@ -151,5 +148,8 @@
 #define SOUTH_TNUDGING
 #define SOUTH_M3NUDGING
 
+/* Activate Refined Grid */
+#define REFINED_GRID
+#define REFINED_GRID_BC
 
 
