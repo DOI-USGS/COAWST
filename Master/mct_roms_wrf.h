@@ -105,7 +105,9 @@
         ALLOCATE(GlobalSegMap_G(Ngrids))
         ALLOCATE(AttrVect_G(Ngrids))
         ALLOCATE(Router_G(Ngrids))
+# ifdef MCT_INTERP_OC2AT
         ALLOCATE(SMPlus_G(Ngrids))
+# endif
       END IF
 !
 !  Initialize MCT coupled model registry.
@@ -282,13 +284,13 @@
       ioff=0
       joff=0
       ieff=0
-#ifdef REFINED_GRID
+#  ifdef REFINED_GRID
       IF (ng.gt.1) THEN
         ioff=5
         joff=3
         ieff=3
       END IF
-#endif
+#  endif
       DO j=JstrT,JendT
         jc=jc+1
         start (jc)=(j+joff)*(Lm(ng)+2+ioff)+(IstrT+ieff)+1
