@@ -581,16 +581,13 @@
 # ifdef REFINED_GRID
 !
 !     AC2_parent is the action density array filled for each parent
-!     tile. They are globally summed and put into AC2_parent2.
+!     tile. 
 !
       IF (first.eq.0) THEN
         ALLOCATE (PARALL2_MOD(ng)%AC2_parent_G(MSC*MDC*Numspec(ngc)))
-        ALLOCATE (PARALL2_MOD(ng)%AC2_parent2_G(MSC*MDC*Numspec(ngc)))
         AC2_parent=0.
-        AC2_parent2=0.
       END IF
       AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
-      AC2_parent2=>PARALL2_MOD(ng)%AC2_parent2_G
 
 # endif
 !     LORQ=>LORQ_G(ng)
@@ -625,7 +622,7 @@
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
      &                    UYB   , WXI   , WYI   , ng, ngp, IT_in,
-     &                    PARALL2_MOD(ngp)%AC2_parent2_G)
+     &                    PARALL2_MOD(ngp)%AC2_parent_G)
             CALL SWTSTO(7)                                                40.23
             IF (STPNOW()) RETURN                                          34.01
 !
@@ -704,7 +701,7 @@
 # ifdef REFINED_GRID
             IF (ng.lt.Ngrids) THEN
               CALL SWOUTR ( AC2   , COMPDA,
-     &                      KGRPNT, ng, ngc, AC2_parent, AC2_parent2)
+     &                      KGRPNT, ng, ngc, AC2_parent)
             END IF
 # endif
             CALL SWTSTO(9)                                                40.30
@@ -804,7 +801,6 @@
       COMPDA=>PARALL2_MOD(ng)%COMPDA_G
       OURQT=> PARALL2_MOD(ng)%OURQT_G
       AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
-      AC2_parent2=>PARALL2_MOD(ng)%AC2_parent2_G
 !
           IF (LEVERR.GT.MAXERR) GOTO 900                                  40.30
 !

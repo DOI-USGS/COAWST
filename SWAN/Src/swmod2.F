@@ -1257,7 +1257,6 @@
         REAL, POINTER :: COMPDA_G(:,:)
         REAL, POINTER :: OURQT_G(:)
         REAL, POINTER :: AC2_parent_G(:)
-        REAL, POINTER :: AC2_parent2_G(:)
         REAL, POINTER :: AC2_child_G(:)
       END TYPE T_PARALL2_MOD
       TYPE (T_PARALL2_MOD), ALLOCATABLE :: PARALL2_MOD(:)
@@ -1269,7 +1268,6 @@
       REAL, POINTER :: COMPDA(:,:)
       REAL, POINTER :: OURQT(:)
       REAL, POINTER :: AC2_parent(:)
-      REAL, POINTER :: AC2_parent2(:)
       REAL, POINTER :: AC2_child(:)
 #else
       REAL, SAVE,    ALLOCATABLE :: BSPECS(:,:,:,:)

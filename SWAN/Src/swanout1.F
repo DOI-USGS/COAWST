@@ -487,7 +487,7 @@
 !
       SUBROUTINE SWOUTR (AC2             ,   COMPDA          ,
      &                   KGRPNT          ,   ng              , ngc,  
-     &                   AC2_parent      ,   AC2_parent2)
+     &                   AC2_parent)
 !                                                                      *
 !***********************************************************************
 !
@@ -547,89 +547,27 @@
 !
 !  4. Argument variables
 !
-! i   SPCDIR: (*,1); spectral directions (radians)                        30.82
-!             (*,2); cosine of spectral directions                        30.82
-!             (*,3); sine of spectral directions                          30.82
-!             (*,4); cosine^2 of spectral directions                      30.82
-!             (*,5); cosine*sine of spectral directions                   30.82
-!             (*,6); sine^2 of spectral directions                        30.82
-! i   SPCSIG: Relative frequencies in computational domain in sigma-space 30.72
-! i   XCGRID: Coordinates of computational grid in x-direction            30.72
-! i   YCGRID: Coordinates of computational grid in y-direction            30.72
-!
-      REAL    OURQT(MAX_OUTP_REQ)                                         40.51 40.30
-      REAL    SPCDIR(MDC,6)                                               30.82
-      REAL    SPCSIG(MSC)                                                 30.72
-      REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.72
-!
-!     AC2     real arr input  action density in all computational points
-!     SPCDIR  real arr input  spectral directions, cosines and sines
-!     UX2     real arr input  current velocity x-comp.
-!     UY2     real arr input  current velocity y-comp.
-!     UBOT    real arr input  orbital velocities at bottom
-!     WX2     real arr input  wind velocity x-comp.
-!     WY2     real arr input  wind velocity y-comp.
-!
-!  8. Subroutines used
-!
-!     SWBLOK
-!     SWTABP
-!     SWSPEC
-!     FOR
-!
-      LOGICAL STPNOW                                                      34.01
-!
-!  9. Subroutines calling
-!
-!     MAIN program
-!
-! 10. Error messages
-!
-!     If an output request is of an unknown type, an error message
-!     is printed.
-!
-! 11. Remarks
-!
-!     Data:
-!
-!
-!     Procedure:
-!
-!     After the coordinates of all output locations have been determined,
-!
-! 12. Structure
-!
-!         Call SWOEXF (compute wave-driven force)
-!
-! 13. Source text
-!
 
+      REAL, INTENT(IN) :: AC2(MDC,MSC,MCGRD), COMPDA(MCGRD,MCMVAR)
+      INTEGER, INTENT(IN) :: KGRPNT(MXC,MYC)
       INTEGER, INTENT(IN) :: ng, ngc
       REAL, INTENT(INOUT) :: AC2_parent(MSC*MDC*Numspec(ngc))
-      REAL, INTENT(INOUT) :: AC2_parent2(MSC*MDC*Numspec(ngc))
+!
       INTEGER :: spcount, offset
-      REAL :: IX, IY
-      INTEGER, ALLOCATABLE :: CROSS(:)
-      REAL, ALLOCATABLE :: ACL(:,:)
-      REAL, ALLOCATABLE :: AC_EXCH(:)
-      LOGICAL EXCPT
       INTEGER MySize, MyError, MyTag
       INTEGER ISTAT(MPI_STATUS_SIZE)
       INTEGER IS, ID, ISIGM
-
-      INTEGER KGRPNT(MXC,MYC),IERR
+      REAL :: IX, IY
+      LOGICAL EXCPT
+      INTEGER, ALLOCATABLE :: CROSS(:)
+      REAL, ALLOCATABLE :: ACL(:,:)
+      REAL, ALLOCATABLE :: AC_EXCH(:)
 !
-      REAL      AC2(MDC,MSC,MCGRD), 
-     &          COMPDA(MCGRD,MCMVAR)
-!
-      INTEGER, ALLOCATABLE :: IONOD(:)                                    40.51
-      REAL, ALLOCATABLE :: ACLOC(:), AUX1(:), VOQ(:)                      40.31
-      REAL, ALLOCATABLE :: FORCE(:,:)                                     40.80
-!
-      SAVE IENT
-      DATA IENT /0/
-      CALL STRACE (IENT, 'SWOUTR')
-
+      BOUNDHINDX =>REFINED_MOD(ngc)%BOUNDHINDX_G
+      BOUNDHINDY =>REFINED_MOD(ngc)%BOUNDHINDY_G
+      BOUNDHINDPF =>REFINED_MOD(ngc)%BOUNDHINDPF_G
+      ALLOCATE(CROSS(4))
+      ALLOCATE(AC_EXCH(MSC*MDC*Numspec(ngc)))
       ALLOCATE(ACL(MDC,MSC))
       DO ID = 1, MDC
         DO ISIGM = 1, MSC
@@ -637,13 +575,6 @@
         END DO
       END DO
       AC2_parent=0.
-      AC2_parent2=0.
-!
-      ALLOCATE(CROSS(4))
-      ALLOCATE ( AC_EXCH(MSC*MDC*Numspec(ngc)))
-      BOUNDHINDX =>REFINED_MOD(ngc)%BOUNDHINDX_G
-      BOUNDHINDY =>REFINED_MOD(ngc)%BOUNDHINDY_G
-      BOUNDHINDPF =>REFINED_MOD(ngc)%BOUNDHINDPF_G
 !
 ! Set no cross obstacles.
 !
@@ -674,9 +605,6 @@
 !       Exchange 2d spectra in array AC2 from parent to child grid.
 !
       IF (INODE.EQ.MASTER) THEN
-        DO ID=1,ac2size(ngc)
-          AC2_parent2(ID)=AC2_parent(ID)
-        END DO
 !
 ! Gather all the ac2_parent arrays from all processors and add them up. 
 ! If a processor did not contribute, then its value is zero.
@@ -688,7 +616,7 @@
           CALL MPI_RECV(AC_EXCH,ac2size(ngc),SWREAL,ID,             &
      &                  MyTag,WAV_COMM_WORLD,ISTAT,MyError)
           DO ID=1,ac2size(ngc)
-            AC2_parent2(ID)=AC2_parent2(ID)+AC_EXCH(ID)
+            AC2_parent(ID)=AC2_parent(ID)+AC_EXCH(ID)
           END DO
         END DO
       ELSE
@@ -706,14 +634,14 @@
       CALL SWSYNC
       IF (INODE.EQ.MASTER) THEN
         DO ID=1,ac2size(ngc)
-          AC_EXCH(ID)=AC2_parent2(ID)
+          AC_EXCH(ID)=AC2_parent(ID)
         END DO
       ENDIF
       CALL MPI_BCAST(AC_EXCH,ac2size(ngc),SWREAL,0,                   &
      &               WAV_COMM_WORLD,MyError)
       DO ID=1,ac2size(ngc)
 !       PARALL2_MOD(ngc)%AC2_parent2_G(ID)=AC_EXCH(ID)
-        AC2_parent2(ID)=AC_EXCH(ID)
+        AC2_parent(ID)=AC_EXCH(ID)
       END DO
 
       DEALLOCATE(ACL, CROSS, AC_EXCH)
