@@ -16,9 +16,6 @@
 #define ROMS_MODEL
 #undef  NEARSHORE_MELLOR
 #define NEARSHORE_WEC
-#ifdef  NEARSHORE_WEC
-# define ANA_PAIR
-#endif
 
 #define UV_VIS2
 #define MIX_S_UV
@@ -29,7 +26,9 @@
 #define WET_DRY
 #define OUT_DOUBLE
 #define UV_ADV
-#define TS_MPDATA
+#define UV_C2ADVECTION
+#undef  TS_MPDATA
+#define TS_U3HADVECTION
 #define DJ_GRADPS
 #undef  SALINITY
 #define SOLVE3D
@@ -58,7 +57,7 @@
 #  undef  SSW_LOGINT
 # endif
 
-# define SEDIMENT
+# undef SEDIMENT
 # ifdef SEDIMENT
 #  undef  SED_MORPH
 #  define SUSPLOAD

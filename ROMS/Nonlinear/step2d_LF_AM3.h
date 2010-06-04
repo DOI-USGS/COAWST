@@ -21,7 +21,7 @@
 # endif
       USE mod_forces
       USE mod_grid
-# if defined UV_VIS2 || defined UV_VIS4 || defined NEARSHORE_MELLOR
+# if defined UV_VIS2 || defined UV_VIS4 || defined NEARSHORE
       USE mod_mixing
 # endif
       USE mod_ocean
@@ -98,7 +98,7 @@
      &                  MIXING(ng) % visc4_p,   MIXING(ng) % visc4_r,   &
 #  endif
 # endif
-# ifdef NEARSHORE_MELLOR
+# ifdef NEARSHORE
      &                  MIXING(ng) % rustr2d,   MIXING(ng) % rvstr2d,   &
      &                  OCEAN(ng) % rulag2d,    OCEAN(ng) % rvlag2d,    &
      &                  OCEAN(ng) % ubar_stokes,                        &
@@ -193,7 +193,7 @@
      &                        visc4_p, visc4_r,                         &
 #  endif
 # endif
-# ifdef NEARSHORE_MELLOR
+# ifdef NEARSHORE
      &                        rustr2d, rvstr2d,                         &
      &                        rulag2d, rvlag2d,                         &
      &                        ubar_stokes, vbar_stokes,                 &
@@ -323,7 +323,7 @@
       real(r8), intent(in) :: visc4_r(LBi:,LBj:)
 #   endif
 #  endif
-#  ifdef NEARSHORE_MELLOR
+#  ifdef NEARSHORE
       real(r8), intent(in) :: rustr2d(LBi:,LBj:)
       real(r8), intent(in) :: rvstr2d(LBi:,LBj:)
       real(r8), intent(in) :: rulag2d(LBi:,LBj:)
@@ -453,7 +453,7 @@
       real(r8), intent(in) :: visc4_r(LBi:UBi,LBj:UBj)
 #   endif
 #  endif
-#  ifdef NEARSHORE_MELLOR
+#  ifdef NEARSHORE
       real(r8), intent(in) :: rustr2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rvstr2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rulag2d(LBi:UBi,LBj:UBj)
@@ -564,7 +564,7 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dstp
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: DUon
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: DVom
-# ifdef NEARSHORE_MELLOR
+# ifdef NEARSHORE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: DUSon
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: DVSom
 # endif
@@ -684,7 +684,7 @@
           cff=0.5_r8*on_u(i,j)
           cff1=cff*(Drhs(i,j)+Drhs(i-1,j))
           DUon(i,j)=ubar(i,j,krhs)*cff1
-# ifdef NEARSHORE_MELLOR
+# ifdef NEARSHORE
           DUSon(i,j)=ubar_stokes(i,j)*cff1
           DUon(i,j)=DUon(i,j)+DUSon(i,j)
 # endif
@@ -695,7 +695,7 @@
           cff=0.5_r8*om_v(i,j)
           cff1=cff*(Drhs(i,j)+Drhs(i,j-1))
           DVom(i,j)=vbar(i,j,krhs)*cff1
-# ifdef NEARSHORE_MELLOR
+# ifdef NEARSHORE
           DVSom(i,j)=vbar_stokes(i,j)*cff1
           DVom(i,j)=DVom(i,j)+DVSom(i,j)
 # endif
@@ -783,7 +783,7 @@
             END DO
             DO i=Istr,IendR
               DU_avg1(i,j)=DU_avg1(i,j)+cff1*DUon(i,j)
-#  ifdef NEARSHORE_MELLOR
+#  ifdef NEARSHORE
               DU_avg1(i,j)=DU_avg1(i,j)-cff1*DUSon(i,j)
 #  endif
               DU_avg2(i,j)=DU_avg2(i,j)+cff2*DUon(i,j)
@@ -792,7 +792,7 @@
           DO j=Jstr,JendR
             DO i=IstrR,IendR
               DV_avg1(i,j)=DV_avg1(i,j)+cff1*DVom(i,j)
-#  ifdef NEARSHORE_MELLOR
+#  ifdef NEARSHORE
               DV_avg1(i,j)=DV_avg1(i,j)-cff1*DVSom(i,j)
 #  endif
               DV_avg2(i,j)=DV_avg2(i,j)+cff2*DVom(i,j)
@@ -1475,13 +1475,13 @@
         DO i=IstrU-1,Iend
           cff=0.5_r8*Drhs(i,j)*fomn(i,j)
           UFx(i,j)=cff*(vbar(i,j  ,krhs)+                               &
-#  ifdef NEARSHORE_MELLOR
+#  ifdef NEARSHORE
      &                  vbar_stokes(i,j  )+                             &
      &                  vbar_stokes(i,j+1)+                             &
 #  endif
      &                  vbar(i,j+1,krhs))
           VFe(i,j)=cff*(ubar(i  ,j,krhs)+                               &
-#  ifdef NEARSHORE_MELLOR
+#  ifdef NEARSHORE
      &                  ubar_stokes(i  ,j)+                             &
      &                  ubar_stokes(i+1,j)+                             &
 #  endif
@@ -1516,22 +1516,34 @@
       DO j=JstrV-1,Jend
         DO i=IstrU-1,Iend
           cff1=0.5_r8*(vbar(i,j  ,krhs)+                                &
-#  ifdef NEARSHORE_MELLOR
+#  ifdef NEARSHORE
      &                 vbar_stokes(i,j  )+                              &
      &                 vbar_stokes(i,j+1)+                              &
 #  endif
      &                 vbar(i,j+1,krhs))
           cff2=0.5_r8*(ubar(i  ,j,krhs)+                                &
-#  ifdef NEARSHORE_MELLOR
+#  ifdef NEARSHORE
      &                 ubar_stokes(i  ,j)+                              &
      &                 ubar_stokes(i+1,j)+                              &
 #  endif
      &                 ubar(i+1,j,krhs))
           cff3=cff1*dndx(i,j)
           cff4=cff2*dmde(i,j)
+#  ifdef NEARSHORE_WEC
+          cff5=0.5_r8*(vbar_stokes(i,j  )+                             &
+     &                 vbar_stokes(i,j+1))
+          cff6=0.5_r8*(ubar_stokes(i  ,j)+                             &
+     &                 ubar_stokes(i+1,j))
+          cff7=cff5*dndx(i,j)
+          cff8=cff6*dmde(i,j)
+#  endif
           cff=Drhs(i,j)*(cff3-cff4)
           UFx(i,j)=cff*cff1
           VFe(i,j)=cff*cff2
+#  ifdef NEARSHORE_WEC
+          UFx(i,j)=UFx(i,j)-(cff5*Drhs(i,j)*(cff7-cff8))
+          VFe(i,j)=VFe(i,j)-(cff6*Drhs(i,j)*(cff7-cff8))
+#  endif
 #  if defined DIAGNOSTICS_UV
           cff=Drhs(i,j)*cff4
           Uwrk(i,j)=-cff*cff1                  ! ubar equation, ETA-term
@@ -1926,7 +1938,7 @@
         END DO
       END DO
 # endif
-# if defined NEARSHORE_MELLOR && \
+# if defined NEARSHORE && \
     (!defined SOLVE3D         || defined DIAGNOSTICS_UV)
 !
 !-----------------------------------------------------------------------

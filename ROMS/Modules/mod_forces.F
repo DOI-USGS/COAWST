@@ -171,8 +171,7 @@
           real(r8), pointer :: bustr(:,:)
           real(r8), pointer :: bvstr(:,:)
 
-#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
-    defined NEARSHORE_WEC
+#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
           real(r8), pointer :: Pair(:,:)
 # ifndef ANA_PAIR
           real(r8), pointer :: PairG(:,:,:)
@@ -233,6 +232,10 @@
 # ifndef ANA_WWAVE
           real(r8), pointer :: wave_breakG(:,:,:)
 # endif
+#endif
+
+#if defined NEARSHORE_WEC
+          real(r8), pointer :: rollA(:,:)
 #endif
 
 #ifdef SOLVE3D
@@ -472,8 +475,7 @@
       allocate ( FORCES(ng) % bustr(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % bvstr(LBi:UBi,LBj:UBj) )
 
-#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
-    defined NEARSHORE_WEC
+#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
       allocate ( FORCES(ng) % Pair(LBi:UBi,LBj:UBj) )
 # ifndef ANA_PAIR
       allocate ( FORCES(ng) % PairG(LBi:UBi,LBj:UBj,2) )
@@ -534,6 +536,10 @@
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Wave_breakG(LBi:UBi,LBj:UBj,2) )
 # endif
+#endif
+
+#if defined NEARSHORE_WEC
+      allocate ( FORCES(ng) % rollA(LBi:UBi,LBj:UBj) )
 #endif
 
 #ifdef SOLVE3D
@@ -839,8 +845,7 @@
 #endif
             FORCES(ng) % bustr(i,j) = IniVal
             FORCES(ng) % bvstr(i,j) = IniVal
-#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
-    defined NEARSHORE_WEC
+#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
             FORCES(ng) % Pair(i,j) = IniVal
 # ifndef ANA_PAIR
             FORCES(ng) % PairG(i,j,1) = IniVal
@@ -902,6 +907,9 @@
             FORCES(ng) % Wave_breakG(i,j,1) = IniVal
             FORCES(ng) % Wave_breakG(i,j,2) = IniVal
 # endif
+#endif
+#if defined NEARSHORE_WEC
+            FORCES(ng) % rollA(i,j) = IniVal
 #endif
 
 #ifdef SOLVE3D

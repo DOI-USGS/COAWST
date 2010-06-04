@@ -2299,6 +2299,32 @@
           RETURN
         END IF
       END IF
+!
+!  Write out 3D W-momentum stokes velocity.
+!
+      IF (Hout(idW3Sd,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*w3dvar
+        status=nf_fwrite3d(ng, iNLM, ncHISid(ng),hisVid(idW3Sd,ng),     &
+     &                     tHISindx(ng), gtype,                         &
+     &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
+#  ifdef MASKING
+#   ifdef WET_DRY
+     &                     GRID(ng) % rmask_full,                       &
+#   else
+     &                     GRID(ng) % rmask,                            &
+#   endif
+#  endif
+     &                     OCEAN(ng) % w_stokes)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idW3Sd)), tHISindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
 # endif
 #endif
 #ifdef WAVES_HEIGHT

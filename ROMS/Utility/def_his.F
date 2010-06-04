@@ -2010,9 +2010,9 @@
           Vinfo( 3)=Vname(3,idW3xx)
           Vinfo(14)=Vname(4,idW3xx)
           Vinfo(16)=Vname(1,idtime)
-# if defined WRITE_WATER && defined MASKING
+#  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-# endif
+#  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r3dvar,r8)
           status=def_var(ng, iNLM, ncHISid(ng), hisVid(idW3xx,ng),      &
@@ -2028,9 +2028,9 @@
           Vinfo( 3)=Vname(3,idW3xy)
           Vinfo(14)=Vname(4,idW3xy)
           Vinfo(16)=Vname(1,idtime)
-# if defined WRITE_WATER && defined MASKING
+#  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-# endif
+#  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r3dvar,r8)
           status=def_var(ng, iNLM, ncHISid(ng), hisVid(idW3xy,ng),      &
@@ -2046,9 +2046,9 @@
           Vinfo( 3)=Vname(3,idW3yy)
           Vinfo(14)=Vname(4,idW3yy)
           Vinfo(16)=Vname(1,idtime)
-# if defined WRITE_WATER && defined MASKING
+#  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-# endif
+#  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r3dvar,r8)
           status=def_var(ng, iNLM, ncHISid(ng), hisVid(idW3yy,ng),      &
@@ -2064,9 +2064,9 @@
           Vinfo( 3)=Vname(3,idW3zx)
           Vinfo(14)=Vname(4,idW3zx)
           Vinfo(16)=Vname(1,idtime)
-# if defined WRITE_WATER && defined MASKING
+#  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-# endif
+#  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r3dvar,r8)
           status=def_var(ng, iNLM, ncHISid(ng), hisVid(idW3zx,ng),      &
@@ -2082,9 +2082,9 @@
           Vinfo( 3)=Vname(3,idW3zy)
           Vinfo(14)=Vname(4,idW3zy)
           Vinfo(16)=Vname(1,idtime)
-# if defined WRITE_WATER && defined MASKING
+#  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-# endif
+#  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r3dvar,r8)
           status=def_var(ng, iNLM, ncHISid(ng), hisVid(idW3zy,ng),      &
@@ -2177,9 +2177,9 @@
           Vinfo( 3)=Vname(3,idU3rs)
           Vinfo(14)=Vname(4,idU3rs)
           Vinfo(16)=Vname(1,idtime)
-# if defined WRITE_WATER && defined MASKING
+#  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_u'
-# endif
+#  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(u3dvar,r8)
           status=def_var(ng, iNLM, ncHISid(ng), hisVid(idU3rs,ng),      &
@@ -2195,9 +2195,9 @@
           Vinfo( 3)=Vname(3,idV3rs)
           Vinfo(14)=Vname(4,idV3rs)
           Vinfo(16)=Vname(1,idtime)
-# if defined WRITE_WATER && defined MASKING
+#  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_v'
-# endif
+#  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(v3dvar,r8)
           status=def_var(ng, iNLM, ncHISid(ng), hisVid(idV3rs,ng),      &
@@ -2238,6 +2238,24 @@
           Aval(5)=REAL(Iinfo(1,idV3Sd,ng),r8)
           status=def_var(ng, iNLM, ncHISid(ng), hisVid(idV3Sd,ng),      &
      &                   NF_FOUT, nvd4, v3dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+!
+!  Define 3D w-Stokes velocity.
+!
+        IF (Hout(idW3Sd,ng)) THEN
+          Vinfo( 1)=Vname(1,idW3Sd)
+          Vinfo( 2)=Vname(2,idW3Sd)
+          Vinfo( 3)=Vname(3,idW3Sd)
+          Vinfo(14)=Vname(4,idW3Sd)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_r'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idW3Sd,ng),r8)
+          status=def_var(ng, iNLM, ncHISid(ng), hisVid(idW3Sd,ng),      &
+     &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 # endif

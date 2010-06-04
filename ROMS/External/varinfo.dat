@@ -1530,6 +1530,15 @@
   'v3dvar'
   1.0d0
 
+'w_stokes'                                         ! Output
+  'w-Stokes drift velocity'
+  'meter second-1'                                 ! [m/s]
+  'w_stokes, scalar, series'
+  'ocean_time'
+  'idW3Sd'
+  'w3dvar'
+  1.0d0
+
 !
 !------------------------------------------------------------------------------
 !  Tidal forcing variables.

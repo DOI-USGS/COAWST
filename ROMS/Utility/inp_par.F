@@ -1863,6 +1863,13 @@
               RETURN
             END IF
             Npts=load_l(Nval, Cval, Ngrids, Hout(idV3Sd,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idW3Sd)') THEN
+            IF (idW3Sd.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idW3Sd'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idW3Sd,1:Ngrids))
           ELSE IF (TRIM(KeyWord).eq.'Hout(idWamp)') THEN
             IF (idWamp.eq.0) THEN
               IF (Master) WRITE (out,280) 'idWamp'

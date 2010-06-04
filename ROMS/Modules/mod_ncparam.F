@@ -321,6 +321,7 @@
         integer  :: idW3yy        ! 3D radiation stress, Syy-component
         integer  :: idW3zx        ! 3D radiation stress, Szx-component
         integer  :: idW3zy        ! 3D radiation stress, Szy-component
+        integer  :: idW3Sd        ! 3D W-Stokes drift velocity
         integer  :: idWamp        ! wind-induced wave amplitude
         integer  :: idWbrk        ! wind-induced wave breaking
         integer  :: idWdis        ! wind-induced wave dissipation
@@ -1366,6 +1367,8 @@
                 idU3Sd=varid
               CASE ('idV3Sd')
                 idV3Sd=varid
+              CASE ('idW3Sd')
+                idW3Sd=varid
               CASE ('idTper')
                 idTper=varid
               CASE ('idTzam')
