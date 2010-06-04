@@ -253,10 +253,10 @@
 !
 !  Initialize free-surface.
 !
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
 # if !defined REFINED_GRID
       DO ng=1,Ngrids
 # endif
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
         IF (iic(ng).eq.ntstart(ng)) THEN
           DO thread=0,numthreads-1
             subs=NtileX(ng)*NtileE(ng)/numthreads
@@ -264,30 +264,30 @@
               CALL ini_zeta (ng, TILE, iNLM)
             END DO
           END DO
-!$OMP END PARALLEL DO
         END IF
 # if !defined REFINED_GRID
       END DO
 # endif
+!$OMP END PARALLEL DO
 !
 !  Initialize other state variables.
 !
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
 # if !defined REFINED_GRID
       DO ng=1,Ngrids
 # endif
         IF (iic(ng).eq.ntstart(ng)) THEN
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
           DO thread=0,numthreads-1
             subs=NtileX(ng)*NtileE(ng)/numthreads
             DO tile=subs*(thread+1)-1,subs*thread,-1
               CALL ini_fields (ng, TILE, iNLM)
             END DO
           END DO
-!$OMP END PARALLEL DO
         END IF
 # if !defined REFINED_GRID
       END DO
 # endif
+!$OMP END PARALLEL DO
 !
 !-----------------------------------------------------------------------
 !  Compute horizontal mass fluxes (Hz*u/n and Hz*v/m), density related
