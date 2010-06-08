@@ -88,7 +88,7 @@ done
 # determine the name of the ".h" header file with the application
 # CPP definitions.
 
-export   ROMS_APPLICATION=ESTUARY_TEST
+export   ROMS_APPLICATION=SHOREFACE
 
 # Set number of nested/composed/mosaic grids.  Currently, only one grid
 # is supported.

@@ -18,7 +18,7 @@
 !  Uchiyama, Y., McWilliams, J.C., and Shchepetkin, A.F. (2010).       !
 !  Wave current interacation in an oceanic circulation model with a    !
 !  vortex-force formalism: Applications to surf zone, Ocean Modeling,  !
-!  xx, xx-yy.
+!  34, 16-35.
 !=======================================================================
 !
       implicit none
@@ -367,6 +367,14 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ustuy
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: vstvx
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: vstvy
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: VFx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFe
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: VFe
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Huston
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Hvston
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Hustom
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Hvstom
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: BBX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: BBY      
 # endif
@@ -507,7 +515,7 @@
         DO j=Jstr,Jend
           DO i=Istr,Iend
             cff=dt(ng)/REAL(numits,r8)
-             rollA(i,j)=rollA(i,j)-cff*osigma(i,j)*(EBAR(i,j)+EER(i,j))
+            rollA(i,j)=rollA(i,j)-cff*osigma(i,j)*(EBAR(i,j)+EER(i,j))
           END DO
         END DO
 !
@@ -634,7 +642,8 @@
         DO j=Jstr,Jend
           DO i=IstrU,Iend
              cff2=(waveE(i-1,j)+waveE(i,j))
-!  NEED to ADD BBR ?? to wave E for here and vstokes
+             cff2=cff2+(rollA(i-1,j)*sigma(i-1,j)+                      &
+     &                  rollA(i,j)*sigma(i,j))
              cff3=(kD(i-1,j)+kD(i,j))
              u_stokes(i,j,k)=cff2*                                      &
      &                      (wavenx(i-1,j)+wavenx(i,j))/                &
@@ -654,6 +663,8 @@
         DO j=JstrV,Jend
           DO i=Istr,Iend
              cff2=(waveE(i,j-1)+waveE(i,j))
+             cff2=cff2+(rollA(i,j-1)*sigma(i,j-1)+                      &
+     &                  rollA(i,j)*sigma(i,j))
              cff3=(kD(i,j-1)+kD(i,j))
              v_stokes(i,j,k)=cff2*                                      &
      &                      (waveny(i-1,j)+waveny(i,j))/                &
@@ -812,33 +823,46 @@
 !
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-            cff=0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))
-            ustux(i,j)=u_stokes(i,j,k)*cff*                             &
-     &                 (u(i,j,k,nrhs)-u(i-1,j,k,nrhs))*on_u(i,j)
-            vstvx(i,j)=0.25_r8*cff*                                     &
-     &                   (v_stokes(i  ,j,k)+v_stokes(i  ,j+1,k)+        &
-     &                    v_stokes(i-1,j,k)+v_stokes(i-1,j+1,k))*       &
-     &	                 (v(i,j  ,k,nrhs)-v(i-1,j  ,k,nrhs)+            &
-     &	                  v(i,j+1,k,nrhs)-v(i-1,j+1,k,nrhs))*           &
-     &                    0.5_r8*on_u(i,j)
+            cff=0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
+            Huston(i,j)=cff*on_u(i,j)*u_stokes(i,j,k)
+            Hvston(i,j)=0.25_r8*cff*on_u(i,j)*                          &
+     &                  (v_stokes(i  ,j  ,k)+                           &
+     &                   v_stokes(i  ,j+1,k)+                           &
+     &                   v_stokes(i-1,j  ,k)+                           &
+     &                   v_stokes(i-1,j+1,k))
+          END DO
+          DO i=IstrU-1,Iend
+            UFx(i,j)=0.5_r8*(u(i  ,j  ,k,nrhs)+                         &
+                             u(i+1,j  ,k,nrhs))
+            VFx(i,j)=0.5_r8*(v(i  ,j  ,k,nrhs)+                         &
+     &                       v(i  ,j+1,k,nrhs))           
           END DO
         END DO
-        DO i=Istr,Iend
-          DO j=JstrV,Jend
-            cff=0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))
-            ustuy(i,j)=0.25_r8*cff*                                     &
-     &                   (u_stokes(i,j  ,k)+u_stokes(i+1,j  ,k)+        &
-     &                    u_stokes(i,j-1,k)+u_stokes(i+1,j-1,k))*       &
-     &	                 (u(i  ,j,k,nrhs)-u(i  ,j-1,k,nrhs)+            &
-     &	                  u(i+1,j,k,nrhs)-u(i+1,j-1,k,nrhs))*           &
-     &                    0.5_r8*om_v(i,j)
-            vstvy(i,j)=v_stokes(i,j,k)*cff*                             &
-     &                 (v(i,j,k,nrhs)-v(i,j-1,k,nrhs))*om_v(i,j)
+        DO j=JstrV,Jend
+          DO i=Istr,Iend
+            cff=0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))
+            Hustom(i,j)=cff*0.25_r8*om_v(i,j)*                          &
+     &                  (u_stokes(i  ,j  ,k)+                           &
+     &                   u_stokes(i+1,j  ,k)+                           &
+     &                   u_stokes(i  ,j-1,k)+                           &
+     &                   u_stokes(i+1,j-1,k))
+            Hvstom(i,j)=cff*om_v(i,j)*v_stokes(i,j,k)
+          END DO
+        END DO
+        DO j=JstrV-1,Jend
+          DO i=Istr,Iend
+            cff=0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))
+            UFe(i,j)=0.5_r8*(u(i+1,j  ,k,nrhs)+                         &
+     &                       u(i  ,j  ,k,nrhs))
+            VFe(i,j)=0.5_r8*(v(i  ,j  ,k,nrhs)+                         &
+     &                       v(i  ,j+1,k,nrhs))
           END DO
         END DO
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-            cff=(ustux(i,j)+vstvx(i,j))
+            cff1=UFx(i,j)-UFx(i-1,j)
+            cff2=VFx(i,j)-VFx(i-1,j)
+            cff=Huston(i,j)*cff1+Hvston(i,j)*cff2
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
 !
 !  Conversion to m2/s2.
@@ -849,7 +873,9 @@
         END DO
         DO i=Istr,Iend
           DO j=JstrV,Jend 
-            cff=(ustuy(i,j)+vstvy(i,j))
+            cff1=UFe(i,j)-UFe(i,j-1)
+            cff2=VFe(i,j)-VFe(i,j-1)
+            cff=Hustom(i,j)*cff1+Hvstom(i,j)*cff2 
             rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
 !
 !  Conversion to m2/s2.
