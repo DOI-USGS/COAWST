@@ -500,6 +500,7 @@
       USE SWCOMM4                                                         40.41
       USE OUTP_DATA                                                       40.31
       USE M_PARALL                                                        40.31
+      USE M_MPI
 !
 !
 !
