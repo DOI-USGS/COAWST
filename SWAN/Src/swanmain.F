@@ -269,6 +269,11 @@
       ALLOCATE (M_GENARR_MOD(ng)%WYI_G(1))
       ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(1))
       ALLOCATE (M_GENARR_MOD(ng)%ASTDF_G(1))
+      ALLOCATE (COMPT_MOD(ng)%NCOMPT_G)
+      NCOMPT=>COMPT_MOD(ng)%NCOMPT_G
+      ALLOCATE (COMPT_MOD(ng)%RCOMPT_G(50,5))
+      RCOMPT=>COMPT_MOD(ng)%RCOMPT_G
+      RCOMPT=0.
 !
 !  Allocate pointers
 !
@@ -578,6 +583,12 @@
       AC1=>   PARALL2_MOD(ng)%AC1_G
       COMPDA=>PARALL2_MOD(ng)%COMPDA_G
       OURQT=> PARALL2_MOD(ng)%OURQT_G
+!
+! SWANCOMM3
+!
+      NCOMPT=>COMPT_MOD(ng)%NCOMPT_G
+      RCOMPT=>COMPT_MOD(ng)%RCOMPT_G
+
 # ifdef REFINED_GRID
 !
 !     AC2_parent is the action density array filled for each parent
@@ -668,11 +679,6 @@
               ITEST = SAVITE                                              30.21
 
             ENDIF
-!
-            IF ( IT.EQ.IT0 ) THEN                                         40.51 40.31
-               ALLOCATE (OURQT(MAX_OUTP_REQ))                             40.51 40.30
-               OURQT = -9999.                                             40.51 40.30
-            ENDIF                                                         40.00
 !
             SAVITE = ITEST                                                30.21
             IF (IOUTES .GT. ITEST) ITEST = IOUTES
@@ -802,6 +808,11 @@
       OURQT=> PARALL2_MOD(ng)%OURQT_G
       AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
 !
+! SWANCOMM3
+!
+      NCOMPT=>COMPT_MOD(ng)%NCOMPT_G
+      RCOMPT=>COMPT_MOD(ng)%RCOMPT_G
+!
           IF (LEVERR.GT.MAXERR) GOTO 900                                  40.30
 !
  900  CONTINUE
@@ -833,6 +844,8 @@
          END IF                                                           40.30
       END IF                                                              40.30
       CALL SWTSTO(9)                                                      40.30
+      CALL SWSYNC                                                         40.30
+
 !
       CALL SWPRTI                                                         40.23
 !
@@ -842,32 +855,19 @@
 !     --- deallocate all allocated arrays                                 40.31
 
       CALL DEALLOCATE_SWAN_ARRAYS (ng, Numgrids)
-      DEALLOCATE(AC1   )                           
-      DEALLOCATE(BGRIDP)                           
-      DEALLOCATE(BSPECS)                           
-      DEALLOCATE(COMPDA)                           
-      DEALLOCATE(CROSS )                           
-      DEALLOCATE(OURQT )                           
-      DEALLOCATE(BLKND )                           
-!      IF (ALLOCATED(AC1   )) DEALLOCATE(AC1   )                           40.31
-!      IF (ALLOCATED(BGRIDP)) DEALLOCATE(BGRIDP)                           40.31
-!      IF (ALLOCATED(BSPECS)) DEALLOCATE(BSPECS)                           40.31
-!      IF (ALLOCATED(COMPDA)) DEALLOCATE(COMPDA)                           40.31
-!      IF (ALLOCATED(CROSS )) DEALLOCATE(CROSS )                           40.31
-!      IF (ALLOCATED(OURQT )) DEALLOCATE(OURQT )                           40.51 40.30
-!      IF (ALLOCATED(BLKND )) DEALLOCATE(BLKND )                           40.41
-      CALL SWCLME                                                         40.31
-!
-      CALL SWEXITMPI                                                      40.30
+
 # ifdef MODEL_COUPLING
 !
 !  Terminate MCT coupling.
 !
-      CALL finalize_wav2ocn_coupling(ng)
-!#  ifdef WRF_COUPLING
-!      CALL finalize_wav2atm_coupling
-!#  endif
+       CALL finalize_wav2ocn_coupling(ng)
+#  ifdef WRF_COUPLING
+       CALL finalize_wav2atm_coupling
+#  endif
 # endif
+!
+        CALL SWCLME                                                         40.31
+!       CALL SWEXITMPI                                                      40.30
       RETURN                                                              30.82
 !     end of subroutine SWAN_FINALIZE
       END

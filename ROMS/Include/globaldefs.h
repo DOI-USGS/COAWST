@@ -910,7 +910,7 @@
 #if defined ROMS_MODEL && (defined SWAN_MODEL || defined WRF_MODEL)
 # define ROMS_COUPLING
 #endif
-#if defined SWAN_MODEL && (defined SWAN_MODEL || defined WRF_MODEL)
+#if defined SWAN_MODEL && (defined ROMS_MODEL || defined WRF_MODEL)
 # define SWAN_COUPLING
 #endif
 #if defined WRF_MODEL && (defined SWAN_MODEL || defined ROMS_MODEL)

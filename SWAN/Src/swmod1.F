@@ -2495,7 +2495,7 @@
       INTEGER             ITERMX,      ITFRE,       ITRIAD
       INTEGER             IWCAP,       IWIND,       LSETUP
       INTEGER             MXITST,      MXITNS,                   NCOR
-      INTEGER             NSTATC,      NSTATM,      NUMOBS,      NCOMPT   40.41
+      INTEGER             NSTATC,      NSTATM,      NUMOBS
       INTEGER             IDIFFR                                          40.21
       INTEGER             IFRSRF                                          41.06
       REAL                DEPMIN,      PBOT(MBOT),  PNUMS(MNUMS)
@@ -2506,13 +2506,25 @@
       REAL                SPPARM(MSPPAR),SY0,       U10
       REAL                WDIC,          WDIP,      HSRERR
       REAL                PQUAD(MQUAD)
-      REAL                RCOMPT(50,5)
       REAL                PDIFFR(MDIFFR)                                  40.21
       LOGICAL             ACUPDA
       LOGICAL             BNDCHK,      BNAUT,       ONED,        BRESCL
       LOGICAL             OFFSRC                                          40.80
       LOGICAL             LADDS                                           40.85
       LOGICAL             CSETUP
+#ifdef SWAN_MODEL
+      TYPE COMPT
+        INTEGER, POINTER :: NCOMPT_G
+        REAL, POINTER :: RCOMPT_G(:,:)
+      END TYPE COMPT
+      TYPE (COMPT), ALLOCATABLE :: COMPT_MOD(:)
+      INTEGER, POINTER :: NCOMPT
+      REAL, POINTER :: RCOMPT(:,:)
+#else
+      INTEGER             NCOMPT
+      REAL                RCOMPT(50,5)
+#endif
+
 !$OMP THREADPRIVATE(ICMAX,CSETUP)
 !
 !  8. Subroutines and functions used

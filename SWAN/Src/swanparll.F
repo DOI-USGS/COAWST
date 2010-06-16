@@ -3750,7 +3750,8 @@
 
 !        --- if it is not open or already open thru another request
 
-         IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN+NREOQ ) THEN
+!jcw     IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN+NREOQ ) THEN
+         IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN ) THEN
 
 !           --- open generic output file or reset reference number
 
@@ -4071,7 +4072,8 @@
 
 !        --- if it is not open or already open thru another request
 
-         IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN+NREOQ ) THEN
+!jcw     IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN+NREOQ ) THEN
+         IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN ) THEN
 
 !           --- open generic output file or reset reference number
 
@@ -4429,7 +4431,8 @@
 
 !        --- if it is not open or already open thru another request
 
-         IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN+NREOQ ) THEN
+!jcw     IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN+NREOQ ) THEN
+         IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN ) THEN
 
 !           --- open generic output file or reset reference number
 

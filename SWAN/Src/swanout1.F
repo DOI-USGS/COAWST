@@ -926,7 +926,6 @@
 
       RTYPE = 'BLKP'
       SNAME = 'COMPGRID'
-      OURQT = -9999.
 !
 !     Repeat for all couple requests:
 !

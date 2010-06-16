@@ -62,7 +62,7 @@
         ALLOCATE (BGPDATZ_MOD(Numgrids))
         ALLOCATE (OPSDATZ_MOD(Numgrids))
         ALLOCATE (ORQDATZ_MOD(Numgrids))
-
+        ALLOCATE (COMPT_MOD(Numgrids))
 # ifdef REFINED_GRID
         ALLOCATE (REFINED_MOD(Numgrids))
 # endif
@@ -380,6 +380,7 @@
         DEALLOCATE (BGPDATZ_MOD)
         DEALLOCATE (OPSDATZ_MOD)
         DEALLOCATE (ORQDATZ_MOD)
+        DEALLOCATE (COMPT_MOD)
 # ifdef REFINED_GRID
         DEALLOCATE (REFINED_MOD)
 # endif

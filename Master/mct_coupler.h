@@ -54,6 +54,7 @@
 
       integer :: MyColor, MyCOMM, MyError, MyKey, Nnodes
       integer :: ng, pelast
+      integer :: Ocncolor, Wavcolor, Atmcolor
 
       integer, dimension(Ngrids) :: Tstr   ! starting ROMS time-step
       integer, dimension(Ngrids) :: Tend   ! ending   ROMS time-step
@@ -139,18 +140,21 @@
 !  Split the communicator into SWAN, WRF, and ROMS subgroups based 
 !  on color and key.
 !
+      Atmcolor=ATMid
+      Ocncolor=OCNid
+      Wavcolor=WAVid
       MyKey=0
       IF ((peOCN_frst.le.MyRank).and.(MyRank.le.peOCN_last)) THEN
-        MyColor=OCNid
+        MyColor=OCNcolor
       END IF
 #ifdef WAVES_OCEAN
       IF ((peWAV_frst.le.MyRank).and.(MyRank.le.peWAV_last)) THEN
-        MyColor=WAVid
+        MyColor=WAVcolor
       END IF
 #endif
 #ifdef AIR_OCEAN
       IF ((peATM_frst.le.MyRank).and.(MyRank.le.peATM_last)) THEN
-        MyColor=ATMid
+        MyColor=ATMcolor
       END IF
 #endif
       CALL mpi_comm_split (MPI_COMM_WORLD, MyColor, MyKey, MyCOMM,      &
@@ -161,13 +165,13 @@
 !-----------------------------------------------------------------------
 !
 #if defined SWAN_COUPLING
-      IF (MyColor.eq.WAVid) THEN
+      IF (MyColor.eq.WAVcolor) THEN
         CALL SWAN_driver_init (MyCOMM, REAL(TI_WAV_OCN))
         CALL SWAN_driver_run (REAL(TI_WAV_OCN))
         CALL SWAN_driver_finalize
       END IF
 #elif defined REFDIF_COUPLING
-      IF (MyColor.eq.WAVid) THEN
+      IF (MyColor.eq.WAVcolor) THEN
         CouplingTime=REAL(TimeInterval(Iocean,Iwaves))
         CALL refdif_initialize (MyCOMM)
         CALL refdif_run (CouplingTime, INPname(Iwaves))
@@ -175,7 +179,7 @@
       END IF
 #endif
 #ifdef WRF_COUPLING
-      IF (MyColor.eq.ATMid) THEN
+      IF (MyColor.eq.ATMcolor) THEN
 !!      CALL module_wrf_top_mp_wrf_init (MyCOMM)
 !!      CALL module_wrf_top_mp_wrf_run (REAL(TI_ATM_OCN))
 !!      CALL module_wrf_top_mp_wrf_finalize
@@ -184,7 +188,7 @@
         CALL module_wrf_top_wrf_finalize
       END IF
 #endif
-      IF (MyColor.eq.OCNid) THEN
+      IF (MyColor.eq.OCNcolor) THEN
         first=.TRUE.
         Nrun=1
         IF (exit_flag.eq.NoError) THEN
@@ -210,7 +214,7 @@
 !  Terminates all the mpi-processing and coupling.
 !-----------------------------------------------------------------------
 !
-      CALL mpi_barrier (MPI_COMM_WORLD)
+      CALL mpi_barrier (MPI_COMM_WORLD, MyError)
       CALL MCTWorld_clean ()
       CALL mpi_finalize (MyError)
 
