@@ -861,12 +861,12 @@
 !  Terminate MCT coupling.
 !
        CALL finalize_wav2ocn_coupling(ng)
-#  ifdef WRF_COUPLING
-       CALL finalize_wav2atm_coupling
-#  endif
+!#  ifdef WRF_COUPLING
+!       CALL finalize_wav2atm_coupling
+!#  endif
 # endif
 !
-        CALL SWCLME                                                         40.31
+!       CALL SWCLME                                                         40.31
 !       CALL SWEXITMPI                                                      40.30
       RETURN                                                              30.82
 !     end of subroutine SWAN_FINALIZE

@@ -64,7 +64,7 @@ ROMS_APPLICATION ?= SHOREFACE
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
 
-MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/ROMS/Include
+MY_HEADER_DIR ?=
 
 #  If your application requires analytical expressions and they are
 #  not located in "ROMS/Functionals", provide an alternate directory.
@@ -74,7 +74,7 @@ MY_HEADER_DIR ?= /cygdrive/d/data/models/COAWST/ROMS/Include
 #  If applicable, also used this directory to place your customized
 #  biology model header file (like fennel.h, nemuro.h, ecosim.h, etc).
 
-MY_ANALYTICAL_DIR ?= /cygdrive/d/data/models/COAWST/ROMS/Functionals
+MY_ANALYTICAL_DIR ?=
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying
@@ -145,8 +145,7 @@ MY_CPP_FLAGS ?=
 #  NetCDF and so on.
 #--------------------------------------------------------------------------
 
-        FORT ?= ifort
-#       FORT ?= pgi
+        FORT ?= pgi
 
 #--------------------------------------------------------------------------
 #  Set directory for executable.
@@ -557,7 +556,7 @@ endif
 
 tarfile:
 #		tar --exclude=".svn" --exclude Output -cvf coawst_v1.1.tar *
-		tar --exclude=".svn" -cvf coawst_v3.0.tar *.bash run_* *.TBL RRTM* makefile ROMS/ SWAN/ WRF/ Master/ Tools/ Compilers/ Data/ Projects/JOE_TCs Projects/JOE_TCd Projects/Rip_current Projects/wetdry Projects/Visser Projects/Hole7 Projects/Griz_Bay Projects/Dogbone Projects/Inlet_test Projects/coawst
+		tar --exclude=".svn" -cvf coawst_v3.0.tar *.bash run_* *.TBL RRTM* makefile ROMS/ SWAN/ WRF/ Master/ Tools/ Compilers/ Data/ Projects/JOE_TCs Projects/JOE_TCd Projects/Rip_current Projects/wetdry Projects/Visser Projects/Griz_Bay Projects/Dogbone Projects/Inlet_test Projects/coawst
 
 .PHONY: zipfile
 
