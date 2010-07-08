@@ -55,10 +55,10 @@
 ! Sparse matrix interpolation weights files.
 
    W2ONAME == Projects/JOE_TCd/wav2ocn_weights.nc
-   W2ANAME == Projects/JOE_TCd/wav2atm_weights.nc
-   A2ONAME == Projects/JOE_TCd/atm2ocn_weights.nc
-   A2WNAME == Projects/JOE_TCd/atm2wav_weights.nc
-   O2ANAME == Projects/JOE_TCd/ocn2atm_weights.nc
+   W2ANAME == Projects/JOE_TCd/wav2atm_weights_consv.nc
+   A2ONAME == Projects/JOE_TCd/atm2ocn_weights_consv.nc
+   A2WNAME == Projects/JOE_TCd/atm2wav_weights_consv.nc
+   O2ANAME == Projects/JOE_TCd/ocn2atm_weights_consv.nc
    O2WNAME == Projects/JOE_TCd/ocn2wav_weights.nc
 
 !
