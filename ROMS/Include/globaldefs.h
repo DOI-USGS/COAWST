@@ -1012,7 +1012,8 @@
 # if !defined ANA_BTFLUX   || \
     (!defined AIR_OCEAN    && \
      !defined BULK_FLUXES  && !defined ANA_SMFLUX)   || \
-    (!defined BULK_FLUXES  && !defined ANA_STFLUX)   || \
+    (!defined AIR_OCEAN    && \
+     !defined BULK_FLUXES  && !defined ANA_STFLUX)   || \
     ( defined SALINITY     && !defined ANA_SSFLUX)   || \
     ( defined BULK_FLUXES  && !defined LONGWAVE  && !defined AIR_OCEAN)      || \
     ( defined BULK_FLUXES  && (!defined ANA_PAIR && !defined AIR_OCEAN))     || \
@@ -1078,7 +1079,8 @@
 */
 
 #if defined LMD_SKPP     || defined SOLAR_SOURCE   || \
-    defined BULK_FLUXES  || defined BIOLOGY
+    defined BULK_FLUXES  || defined BIOLOGY        || \
+    defined ATM2OCN_FLUXES
 # define SHORTWAVE
 #endif
 #if !defined SHORTWAVE   && defined ANA_SRFLUX

@@ -6,7 +6,7 @@ DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -fopenmp
 SFC             =       gfortran
-SCC             =       gcc
+SCC            ?=       gcc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -45,7 +45,7 @@ DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
 OMP             =       # not supported
 SFC             =       g95
-SCC             =       gcc
+SCC            ?=       gcc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -84,7 +84,7 @@ DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp
 SFC             =       pgf90
-SCC             =       gcc
+SCC            ?=       gcc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -123,7 +123,7 @@ DMPARALLEL      =       # 1
 OMPCPP		=	# -D_OPENMP
 OMP		=	# -mp
 SFC		=       pgf90
-SCC		=       gcc
+SCC            ?=       gcc
 DM_FC		=	mpif90 -f90=$(SFC)
 DM_CC		=       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -189,7 +189,7 @@ DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
 SFC             =       ifort
-SCC             =       icc
+SCC            ?=       icc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -263,7 +263,7 @@ DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
 SFC             =       ifort
-SCC             =       icc
+SCC            ?=       icc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -341,7 +341,7 @@ DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
 SFC             =       ifort
-SCC             =       icc
+SCC            ?=       icc
 DM_FC           =       $(SFC)
 DM_CC           =       $(SCC)
 FC              =       CONFIGURE_FC
@@ -382,7 +382,7 @@ DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
 OMP             =       # not supported
 SFC             =       pathf90
-SCC             =       pathcc
+SCC            ?=       pathcc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -421,7 +421,7 @@ DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -fopenmp
 SFC             =       gfortran
-SCC             =       gcc
+SCC            ?=       gcc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -460,7 +460,7 @@ DMPARALLEL      =       # 1
 OMPCPP		=	# -D_OPENMP
 OMP		=	# -mp
 SFC		=       pgf90
-SCC		=       pgcc
+SCC            ?=       pgcc
 DM_FC		=	mpif90 -f90=$(SFC)
 DM_CC		=       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -499,7 +499,7 @@ DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
 SFC             =       ifort
-SCC             =       icc
+SCC            ?=       icc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -540,7 +540,7 @@ DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
 SFC             =       ifort
-SCC             =       cc
+SCC            ?=       cc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -581,7 +581,7 @@ DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
 OMP             =       # not supported
 SFC             =       g95
-SCC             =       gcc
+SCC            ?=       gcc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -621,7 +621,7 @@ DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
 OMP             =       # not supported
 SFC             =       xlf90_r
-SCC             =       cc
+SCC            ?=       cc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC

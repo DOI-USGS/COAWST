@@ -40,6 +40,9 @@
 # ifdef BULK_FLUXES
       USE bulk_flux_mod, ONLY : bulk_flux
 # endif
+# ifdef ATM2OCN_FLUXES
+      USE atm2ocn_flux_mod, ONLY : atm2ocn_flux
+# endif
 # ifdef BVF_MIXING
       USE bvf_mix_mod, ONLY : bvf_mix
 # endif
@@ -424,6 +427,8 @@
             CALL bulk_flux (ng, TILE)
 #  endif
 
+# elif defined ATM2OCN_FLUXES
+            CALL atm2ocn_flux (ng, TILE)
 # endif
 # ifdef BBL_MODEL
             CALL bblm (ng, TILE)

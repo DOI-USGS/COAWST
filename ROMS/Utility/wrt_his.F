@@ -1073,7 +1073,7 @@
         END IF
       END DO
 
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES
 !
 !  Write out u-wind component.
 !
@@ -1118,6 +1118,8 @@
           RETURN
         END IF
       END IF
+# endif
+# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
 !
 !  Write out latent heat flux.
 !

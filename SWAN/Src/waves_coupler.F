@@ -269,13 +269,6 @@
 !
 ! Zero out the destination cells with masking.
 !
-        ic=1
-        DO i=1,nRows
-          DO ic=i*4-3,i*4
-            sparse_weights(ic)=sparse_weights(ic)*                      &
-     &                         REAL(dst_grid_imask(i),r8)
-          END DO
-        END DO
 # ifdef REFINED_GRID
       END IF
 # endif

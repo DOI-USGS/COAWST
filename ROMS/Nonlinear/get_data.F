@@ -397,7 +397,8 @@
      &                FORCES(ng) % rainG(LBi,LBj,1))
 # endif
 
-# if !defined ANA_STFLUX && !defined BULK_FLUXES
+# if !defined ANA_STFLUX && !defined BULK_FLUXES && \
+     !defined ATM2OCN_FLUXES
 !
 !-----------------------------------------------------------------------
 !  Surface net heat flux.

@@ -311,7 +311,7 @@
 #   endif
 #  endif
 
-#  ifndef BULK_FLUXES
+#  if !defined BULK_FLUXES && !defined ATM2OCN_FLUXES
 !
 !-----------------------------------------------------------------------
 !  Set kinematic surface net heat flux (degC m/s).

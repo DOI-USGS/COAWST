@@ -452,6 +452,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' ASSUMED_SHAPE,'
 #endif
+#ifdef ATM2OCN_FLUXES
+      IF (Master) WRITE (stdout,20) 'ATM2OCN_FLUXES',                   &
+     &   'Surface fluxes from ATM Model.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+13)=' ATM2OCN_FLUXES,'
+#endif
 #ifdef AVERAGES
       IF (Master) WRITE (stdout,20) 'AVERAGES',                         &
      &   'Writing out time-averaged fields.'
@@ -3064,6 +3070,14 @@
       IF (Master) THEN
         WRITE (stdout,130)
  130    FORMAT (/,' CHECKDEFS - More than one coupling library',        &
+     &            ' selected.')
+        exit_flag=5
+      END IF
+#endif
+#if defined BULK_FLUXES && defined ATM2OCN_FLUXES
+      IF (Master) THEN
+        WRITE (stdout,130)
+ 130    FORMAT (/,' CHECKDEFS - More than one surface flux method ',    &
      &            ' selected.')
         exit_flag=5
       END IF

@@ -40,7 +40,7 @@
       integer :: IstrT, IendT, JstrT, JendT
       integer :: IstrR, IendR, JstrR, JendR, IstrU, JstrV
       integer :: Asize, Isize, Jsize, MyError
-      integer :: i, ic, j, jc, nprocs
+      integer :: i, ic, j, jc, nprocs, cid, cad
       integer :: nRows, nCols, num_sparse_elems
       integer :: ioff, joff, ieff
 
@@ -51,8 +51,9 @@
       integer, dimension(:), pointer :: wavids
 #endif
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
-      character (len=70)    :: nc_name
-      character (len=70)   :: avstring
+      character (len=70) :: nc_name
+      character (len=20) :: to_add
+      character (len=120) :: avstring
 !
 !-----------------------------------------------------------------------
 !  Compute lower and upper bounds over a particular domain partition or
@@ -175,8 +176,8 @@
 !!!!!!!!!!!!!!!!!!!!!!
 !
       IF (Myrank.eq.MyMaster) THEN
-       nc_name=A2Oname(ng)
-       call get_sparse_matrix (ng, nc_name, num_sparse_elems,           &
+        nc_name=A2Oname(ng)
+        call get_sparse_matrix (ng, nc_name, num_sparse_elems,          &
      &                          src_grid_dims, dst_grid_dims)
 !
 ! Init the sparse matrix.
@@ -229,13 +230,6 @@
 !
 ! Zero out the destination cells with masking.
 !
-        ic=1
-        DO i=1,nRows
-          DO ic=i*4-3,i*4
-            sparse_weights(ic)=sparse_weights(ic)*                      &
-     &                         REAL(dst_grid_imask(i),r8)
-          END DO
-        END DO
 # ifdef REFINED_GRID
       END IF
 # endif
@@ -360,20 +354,98 @@
 !  Initialize attribute vector holding the export data code strings of
 !  the atmosphere model.
 !
-      avstring(1:4)='PSFC'
-      avstring(5:9)=':RELH'
-      avstring(10:12)=':T2'
-      avstring(13:16)=':U10'
-      avstring(17:20)=':V10'
-      avstring(21:27)=':CLDFRA'
-      avstring(28:32)=':RAIN'
-      avstring(33:39)=':SWDOWN'
-      avstring(40:43)=':GLW'
-      avstring(44:51)=':USTRESS'
-      avstring(52:59)=':VSTRESS'
-      avstring(60:62)=':LH'
-      avstring(63:66)=':HFX'
-      avstring(67:70)=':GSW'
+      cad=LEN(avstring)
+      DO i=1,cad
+        avstring(i:i)=''
+      END DO
+      cid=1
+!
+      to_add='GSW'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':GLW'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+!
+#ifdef ATM2OCN_FLUXES
+      to_add=':LH'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':HFX'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':USTRESS'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VSTRESS'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+#endif
+!
+#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+      to_add=':PSFC'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+#endif
+!
+#if defined BULK_FLUXES || defined ECOSIM || \
+   (defined SHORTWAVE && defined ANA_SRFLUX)
+      to_add=':RELH'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':T2'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+#endif
+!
+#if defined BULK_FLUXES || defined ECOSIM
+      to_add=':U10'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':V10'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+#endif
+!
+#ifdef CLOUDS
+      to_add=':CLDFRA'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+#endif
+!
+#if !defined ANA_RAIN && defined EMINUSP
+      to_add=':RAIN'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+#endif
+!
+#if defined EMINUSP
+      to_add=':EVAP'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+#endif
+      cad=LEN_TRIM(avstring)
+      avstring=avstring(1:cad)
 !
 #ifdef MCT_INTERP_OC2AT
 # ifdef REFINED_GRID
@@ -460,6 +532,12 @@
 !                                                                      !
 !  Fields imported WRF model:                                          !
 !                                                                      !
+!     * GSW     Net shortwave radiation (Watts/m2), [Celsius m/s]      !
+!     * GLW     Long wave raditaion (Watts/m2), [Celsius m/s]          !
+!     * LH      Latent heat flux (Watts/m2), [Celsius m/s]             !
+!     * HFX     Sensible heat flux (Watts/m2), [Celsius m/s]           !
+!     * USTRESS Surface U-wind stress (Pa), [m2/s2]                    !
+!     * VSTRESS Surface V-wind stress (Pa), [m2/s2]                    !
 !     * PSFC    Surface atmospheric pressure (Pa), [mb]                !
 !     * RELH    Surface air relative humidity (percent), [fraction]    !
 !     * T2      Surface (2 m) air temperature (Celsius), [Celsius]     !
@@ -467,13 +545,7 @@
 !     * V10     Surface (10 m) V-wind speed (m/s), [m/s]               !
 !     * CLDFRA  Cloud fraction (percent/100), [percent/100]            !
 !     * RAIN    Precipitation (m/s), [kg/m2/s]                         !
-!     * SWDOWN  Shortwave radiation (Watts/m2), [Celsius m/s]          !
-!     * GSW     Net shortwave radiation (Watts/m2), [Celsius m/s]      !
-!     * GLW     Long wave raditaion (Watts/m2), [Celsius m/s]          !
-!     * USTRESS Surface U-wind stress (Pa), [m2/s2]                    !
-!     * VSTRESS Surface V-wind stress (Pa), [m2/s2]                    !
-!     * LH      Latent heat flux (Watts/m2), [Celsius m/s]             !
-!     * HFX     Sensible heat flux (Watts/m2), [Celsius m/s]           !
+!     * EVAP    Evaporation (m/s), [kg/m2/s]                           !
 !                                                                      !
 !  Fields exported to WRF model:                                       !
 !                                                                      !
@@ -497,7 +569,8 @@
       CALL wclock_on (ng, iNLM, 48)
 #endif
       CALL ocn2atm_coupling_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj)
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            IminS, ImaxS, JminS, JmaxS)
 #ifdef PROFILE
       CALL wclock_off (ng, iNLM, 48)
 #endif
@@ -507,7 +580,8 @@
 !
 !***********************************************************************
       SUBROUTINE ocn2atm_coupling_tile (ng, tile,                       &
-     &                                  LBi, UBi, LBj, UBj)
+     &                                  LBi, UBi, LBj, UBj,             &
+     &                                  IminS, ImaxS, JminS, JmaxS)
 !***********************************************************************
 !
       USE mod_param
@@ -518,7 +592,7 @@
       USE mod_scalars
       USE mod_stepping
       USE mod_iounits
-#ifdef CURVGRID
+#if defined CURVGRID || defined MASKING
       USE mod_grid
 #endif
 #if defined EW_PERIODIC || defined NS_PERIODIC
@@ -548,6 +622,7 @@
 #endif
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 !  Local variable declarations.
 !
@@ -557,12 +632,11 @@
       integer :: Asize, Iimport, Iexport, MyError
       integer :: gtype, i, id, ifield, j, ij,  status
 
-      real(r8) :: add_offset, cff, scale, ramp
+      real(r8) :: add_offset, cff, scale
       real(r8) :: RecvTime, SendTime, buffer(2), wtime(2)
 
       real(r8), pointer :: A(:)
       real(r8) :: BBR, cff1, cff2
-
       character (len=3 ), dimension(2) :: op_handle
       character (len=40) :: code
 !
@@ -646,13 +720,106 @@
         END IF
       END IF
 !
-!  Set ramp coefficient.
-!
-!!    ramp=MIN((tdays(ng)-dstart)*4.0_r8,1.0_r8)
-      ramp=1.0_r8
-!
 !  Receive fields from atmosphere model.
 !
+!  Short wave radiation          (from W/m^2 to Celsius m/s)
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "GSW",      &
+     &                           A, Asize)
+      cff=1.0_r8/(rho0*Cp)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          FORCES(ng)%srflx(i,j)=A(ij)*cff
+        END DO
+      END DO
+!
+!  Long wave radiation          (from W/m^2 to Celsius m/s)
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "GLW",      &
+     &                           A, Asize)
+      cff=1.0_r8/(rho0*Cp)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          BBR=OCEAN(ng)%t(i,j,N(ng),nstp(ng),itemp)+273.16_r8
+          BBR=BBR*BBR*BBR*BBR
+          BBR=0.97_r8*5.67E-8_r8*BBR
+          A(ij)=A(ij)-BBR
+          FORCES(ng)%lrflx(i,j)=A(ij)*cff
+        END DO
+      END DO
+#ifdef ATM2OCN_FLUXES
+!
+!  Latent heat flux            (from W/m^2 to Celsius m/s)
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "LH",       &
+     &                           A, Asize)
+      cff=-1.0_r8/(rho0*Cp)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          FORCES(ng)%lhflx(i,j)=A(ij)*cff
+        END DO
+      END DO
+!
+!  Sensible heat flux            (from W/m^2 to Celsius m/s)
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "HFX",      &
+     &                           A, Asize)
+      cff=-1.0_r8/(rho0*Cp)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          FORCES(ng)%shflx(i,j)=A(ij)*cff
+        END DO
+      END DO
+!
+!  Surface u-stress              (m2/s2)
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "USTRESS", &
+     &                           A, Asize)
+      cff=1.0_r8/rho0
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          FORCES(ng)%Taux(i,j)=A(ij)*cff
+        END DO
+      END DO
+!
+!  Surface v-stress              (m2/s2)
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "VSTRESS",  &
+     &                           A, Asize)
+      cff=1.0_r8/rho0
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          FORCES(ng)%Tauy(i,j)=A(ij)*cff
+        END DO
+      END DO
+# ifdef CURVGRID
+!
+!  Rotate to curvilinear grid.
+!
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          cff1=FORCES(ng)%Taux(i,j)*GRID(ng)%CosAngler(i,j)+            &
+     &         FORCES(ng)%Tauy(i,j)*GRID(ng)%SinAngler(i,j)
+          cff2=FORCES(ng)%Tauy(i,j)*GRID(ng)%CosAngler(i,j)-            &
+     &         FORCES(ng)%Taux(i,j)*GRID(ng)%SinAngler(i,j)
+          FORCES(ng)%Taux(i,j)=cff1
+          FORCES(ng)%Tauy(i,j)=cff2
+        END DO
+      END DO
+# endif
+#endif
 #if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
 !
 !  Surface atmospheric pressure  (mb).
@@ -725,8 +892,7 @@
       END DO
 # ifdef CURVGRID
 !
-!  If input point surface winds or interpolated from coarse data, rotate
-!  to curvilinear grid.
+!  Rotate to curvilinear grid.
 !
         DO j=JstrT,JendT
           DO i=IstrT,IendT
@@ -754,9 +920,9 @@
         END DO
       END DO
 #endif
-#ifdef BULK_FLUXES
+#if !defined ANA_RAIN && defined EMINUSP
 !
-!  Precipitation                 (kg/m2/s)
+!  Precipitation                 (convert to kg/m2/s)
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "RAIN",     &
      &                           A, Asize)
@@ -768,106 +934,22 @@
           FORCES(ng)%rain(i,j)=A(ij)*cff
         END DO
       END DO
-!
-!  Short wave radiation          (Celsius m/s)
-!
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "GSW",      &
-     &                           A, Asize)
-      cff=1.0_r8/(rho0*Cp)
-      ij=0
-      DO j=JstrT,JendT
-        DO i=IstrT,IendT
-          ij=ij+1
-          FORCES(ng)%srflx(i,j)=A(ij)*cff
-        END DO
-      END DO
-!
-!  Long wave radiation          (Celsius m/s)
-!
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "GLW",      &
-     &                           A, Asize)
-      cff=1.0_r8/(rho0*Cp)
-      ij=0
-      DO j=JstrT,JendT
-        DO i=IstrT,IendT
-          ij=ij+1
-          BBR=OCEAN(ng)%t(i,j,N(ng),nstp(ng),itemp)+273.16_r8
-          BBR=BBR*BBR*BBR*BBR
-          BBR=0.97_r8*5.67E-8_r8*BBR
-          A(ij)=A(ij)-BBR
-          FORCES(ng)%lrflx(i,j)=A(ij)*cff
-        END DO
-      END DO
-# ifdef RUOYING_CASE1
-!
-!  Latent heat flux            (W/m^2)
-!
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "LH",       &
-     &                           A, Asize)
-      ij=0
-      DO j=JstrT,JendT
-        DO i=IstrT,IendT
-          ij=ij+1
-          FORCES(ng)%lhflx(i,j)=A(ij)
-        END DO
-      END DO
-!
-!  Sensible heat flux            (W/m^2)
-!
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "HFX",      &
-     &                           A, Asize)
-      ij=0
-      DO j=JstrT,JendT
-        DO i=IstrT,IendT
-          ij=ij+1
-          FORCES(ng)%shflx(i,j)=A(ij)
-        END DO
-      END DO
-# endif
 #endif
-!#ifdef SHORTWAVE
+#if defined EMINUSP
 !
-!  Short wave radiation          (Celsius m/s)
+!  Evaporation                 (convert to kg/m2/s)
 !
-!      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "SWDOWN",   &
-!     &                           A, Asize)
-!      cff=1.0_r8/(rho0*Cp)
-!      ij=0
-!      DO j=JstrT,JendT
-!        DO i=IstrT,IendT
-!          ij=ij+1
-!          FORCES(ng)%srflx(i,j)=A(ij)*cff
-!        END DO
-!      END DO
-!#endif
-!
-!  Surface u-stress              (m2/s2)
-!
-! THIS NEEDS TO BE AVERAGED TO U POINTS
-
-!      CALL AttrVect_exportRAttr (atm2ocn_AV, "USTRESS", A, Asize)
-!      cff=1.0_r8/rho0
-!      ij=0
-!      DO j=JstrT,JendT
-!        DO i=IstrU,IendR
-!          ij=ij+1
-!          sustr(i,j)=A(ij)*cff
-!        END DO
-!      END DO
-!
-!  Surface v-stress              (m2/s2)
-!
-! THIS NEEDS TO BE AVERAGED TO V POINTS
-
-!      CALL AttrVect_exportRAttr (atm2ocn_AV, "VSTRESS", A, Asize)
-!      cff=1.0_r8/rho0
-!      ij=0
-!      DO j=JstrV,JendR
-!        DO i=IstrT,IendT
-!          ij=ij+1
-!          svstr(i,j)=A(ij)*cff
-!        END DO
-!      END DO
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "EVAP",     &
+     &                           A, Asize)
+      cff=rho0
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          FORCES(ng)%evap(i,j)=A(ij)*cff
+        END DO
+      END DO
+#endif
 !
 !  Apply boundary conditions.
 !
@@ -877,6 +959,26 @@
 !  Apply periodic boundary conditions.
 !-----------------------------------------------------------------------
 !
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%srflx)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%lrflx)
+# ifdef ATM2OCN_FLUXES
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%lhflx)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%shflx)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%Taux)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%Tauy)
+# endif
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -904,33 +1006,16 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%cloud)
 # endif
-# ifdef BULK_FLUXES
+# if !defined ANA_RAIN && defined EMINUSP
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%rain)
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        FORCES(ng)%lrflx)
-#  ifdef RUOYING_CASE1
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        FORCES(ng)%lhflx)
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        FORCES(ng)%shflx)
-#  endif
 # endif
-# ifdef SHORTWAVE
+# ifdef defined EMINUSP
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        FORCES(ng)%srflx)
+     &                        FORCES(ng)%evap)
 # endif
-!      CALL exchange_u2d_tile (ng, tile,                                &
-!     &                        LBi, UBi, LBj, UBj,                      &
-!     &                        sustr)
-!      CALL exchange_v2d_tile (ng, tile,                                &
-!     &                        LBi, UBi, LBj, UBj,                      &
-!     &                        svstr)
 #endif
 #ifdef DISTRIBUTE
 !
@@ -938,6 +1023,20 @@
 !  Exchange tile boundaries.
 !-----------------------------------------------------------------------
 !
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    FORCES(ng)%srflx, FORCES(ng)%lrflx)
+# if defined ATM2OCN_FLUXES
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    FORCES(ng)%lhflx, FORCES(ng)%shflx)
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                           &
+     &                    LBi, UBi, LBj, UBj,                          &
+     &                    NghostPoints, EWperiodic, NSperiodic,        &
+     &                    FORCES(ng)%Taux, FORCES(ng)%Tauy)
+# endif
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -963,28 +1062,18 @@
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    FORCES(ng)%cloud)
 # endif
-# ifdef BULK_FLUXES
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    FORCES(ng)%rain, FORCES(ng)%lrflx)
-#  ifdef RUOYING_CASE1
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    FORCES(ng)%lhflx, FORCES(ng)%shflx)
-#  endif
-# endif
-# ifdef SHORTWAVE
+# if !defined ANA_RAIN && defined EMINUSP
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    FORCES(ng)%srflx)
+     &                    FORCES(ng)%rain)
 # endif
-!      CALL mp_exchange2d (ng, tile, iNLM, 2,                           &
-!     &                    LBi, UBi, LBj, UBj,                          &
-!     &                    NghostPoints, EWperiodic, NSperiodic,        &
-!     &                    sustr, svstr)
+# if defined EMINUSP
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    FORCES(ng)%evap)
+# endif
 #endif
 !
 !-----------------------------------------------------------------------

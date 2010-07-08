@@ -508,11 +508,20 @@ libraries: $(libraries)
 #  Build WRF.
 #--------------------------------------------------------------------------
 
+.PHONY: wrfclean
+
+wrfclean:
+ifdef USE_WRF
+	cd $(WRF_DIR); ls; ./clean -a;                            \
+	echo " "; echo " ";                                       \
+	echo "cleaned wrf";
+endif
+
 .PHONY: wrf
 
 wrf:
 ifdef USE_WRF
-	cd $(WRF_DIR); ls; ./clean -a;                            \
+	cd $(WRF_DIR); ls;                                        \
 	echo " "; echo " ";                                       \
 	echo "Compiling wrf";                                     \
 	./compile em_real;                                        \

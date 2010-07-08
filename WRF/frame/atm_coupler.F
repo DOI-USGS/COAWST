@@ -107,10 +107,10 @@
       integer :: MyError, MyRank
       integer :: npoints, gsmsize, nprocs, localsize
       integer :: j, jc, Isize, Jsize
-      integer :: is, ie, js, je
+      integer :: is, ie, js, je, cid, cad
 
       integer, pointer :: start(:), length(:)
-      character (len=70)  :: avstring
+      character (len=120)  :: to_add, avstring
 
 !-----------------------------------------------------------------------
 !  Begin initialization phase.
@@ -159,21 +159,99 @@
 !
 !  Initialize attribute vector holding the export data code strings of
 !  the atmosphere model.
-      avstring(1:4)='PSFC'
-      avstring(5:9)=':RELH'
-      avstring(10:12)=':T2'
-      avstring(13:16)=':U10'
-      avstring(17:20)=':V10'
-      avstring(21:27)=':CLDFRA'
-      avstring(28:32)=':RAIN'
-      avstring(33:39)=':SWDOWN'
-      avstring(40:43)=':GLW'
-      avstring(44:51)=':USTRESS'
-      avstring(52:59)=':VSTRESS'
-      avstring(60:62)=':LH'
-      avstring(63:66)=':HFX'
-      avstring(67:70)=':GSW'
-
+      cad=LEN(avstring)
+      DO j=1,cad
+        avstring(j:j)=''
+      END DO
+      cid=1
+!
+      to_add='GSW'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':GLW'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+!
+# ifdef ATM2OCN_FLUXES
+      to_add=':LH'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':HFX'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':USTRESS'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VSTRESS'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+# endif
+!
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+      to_add=':PSFC'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+# endif
+!
+# if defined BULK_FLUXES || defined ECOSIM || \
+   (defined SHORTWAVE && defined ANA_SRFLUX)
+      to_add=':RELH'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':T2'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+# endif
+!
+# if defined BULK_FLUXES || defined ECOSIM
+      to_add=':U10'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':V10'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+# endif
+!
+# ifdef CLOUDS
+      to_add=':CLDFRA'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+# endif
+!
+# if !defined ANA_RAIN && defined EMINUSP
+      to_add=':RAIN'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+# endif
+!
+# if defined EMINUSP
+      to_add=':EVAP'
+      cad=LEN_TRIM(to_add)
+      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      cid=cid+cad
+# endif
+      cad=LEN_TRIM(avstring)
+      avstring=avstring(1:cad)
+!
       CALL AttrVect_init (atm2ocn_AV,rlist=TRIM(avstring),lsize=gsmsize)
       CALL AttrVect_zero (atm2ocn_AV)
 !
@@ -214,14 +292,17 @@
 !
 !=======================================================================
 !                                                                      !
-!  This subroutine reads and writes the coupling data streams between  !
-!  ocean and wave models. Currently, the following data streams are    !
-!  processed:                                                          !
+!  This subroutine reads and writes the coupled data streams.          !
+!  Currently, the following data streams are processed:                !
 !                                                                      !
-!  Fields imported from the OCEAN Model:                               !
+!  Possible fields exported to the OCEAN Model:                        !
 !                                                                      !
-!     * Sea surface potential temperature (Celsius)                    !
-!                                                                      !
+!     * GSW        Short wave raditaion  (Watts/m2)                    !
+!     * GLW        Long wave raditaion  (Watts/m2)                     !
+!     * LH         Latent heat flux     (Watts/m2)                     !
+!     * HFX        Sensible heat flux   (Watts/m2)                     !
+!     * USTRESS    Surface U-wind stress (Pa)                          !
+!     * VSTRESS    Surface v-stress      (Pa)                          !
 !     * PSFC       Surface atmospheric pressure (Pa)                   !
 !     * RELH       Surface air relative humidity (percent)             !
 !     * T2         Surface 2m air temperature (Celsius)                !
@@ -229,13 +310,14 @@
 !     * V10        V-Wind speed at 10 m (m/s)                          !
 !     * CLDFRA     Cloud fraction       (percent/100)                  !
 !     * RAIN       Precipitation        (m/s)                          !
-!     * SWDOWN     Short wave radiation (Watts/m2)                     !
-!     * GLW        Long wave raditaion  (Watts/m2)                     !
-!     * USTRESS    Surface U-wind stress (Pa)                          !
-!     * VSTRESS    Surface v-stress      (Pa)                          !
-!     * LH         Latent heat flux     (Watts/m2)                     !
-!     * HFX        Sensible heat flux   (Watts/m2)                     !
-!     *            Net surface heat flux (Watts/m2)                    !
+!     * EVAP       Evaporation          (m/s)                          !
+!                                                                      !
+!  Fields exported to the WAVE Model:                                  !
+!     * U10        U-Wind speed at 10 m (m/s)                          !
+!     * V10        V-Wind speed at 10 m (m/s)                          !
+!                                                                      !
+!  Fields acquired from the WAVE Model:                                !
+!                                                                      !
 !     * HISGN      Significant wave heigth (m)                         !
 !     * WLEN       Wave length (m)                                     !
 !                                                                      !
@@ -293,6 +375,83 @@
 !-----------------------------------------------------------------------
 !  Export fields from atmosphere (WRF) to ocean (ROMS) model.
 !-----------------------------------------------------------------------
+!     GSW        Short wave raditaion (W m-2).
+!
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+          AA(ij)=grid%GSW(i,j)
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (atm2ocn_AV, "GSW", AA, Asize)
+!-----------------------------------------------------------------------
+!     GLW        Long wave raditaion (W m-2).
+!
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+          AA(ij)=grid%GLW(i,j)
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (atm2ocn_AV, "GLW", AA, Asize)
+# ifdef ATM2OCN_FLUXES
+!-----------------------------------------------------------------------
+!     LH     Latent heat flux (W m-2).
+!
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+          AA(ij)=grid%LH(i,j)
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (atm2ocn_AV, "LH", AA, Asize)
+!-----------------------------------------------------------------------
+!     HFX     Sensible heat flux (W m-2).
+!
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+          AA(ij)=grid%HFX(i,j)
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (atm2ocn_AV, "HFX", AA, Asize)
+!-----------------------------------------------------------------------
+!     USTRESS    Surface u-stress (m2 s-2).
+!
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          cff1=1.0/(grid%alt(i,1,j)+eps)
+          cff2=2.0/(((grid%u_2(i,1,j)+grid%u_2(i+1,1,j))**2+            &
+     &               (grid%v_2(i,1,j)+grid%v_2(i,1,j+1))**2)**0.5+eps)
+          ij=ij+1
+          AA(ij)=cff1*cff2*(grid%UST(i,j)**2)*                          &
+     &           0.5*(grid%u_2(i,1,j)+grid%u_2(i+1,1,j))
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (atm2ocn_AV, "USTRESS", AA, Asize)
+!-----------------------------------------------------------------------
+!     VSTRESS    Surface v-stress (m2 s-2).
+!
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          cff1=1.0/(grid%alt(i,1,j)+eps)
+          cff2=2.0/(((grid%u_2(i,1,j)+grid%u_2(i+1,1,j))**2+            &
+     &               (grid%v_2(i,1,j)+grid%v_2(i,1,j+1))**2)**0.5+eps)
+          ij=ij+1
+          AA(ij)=cff1*cff2*(grid%UST(i,j)**2)*                          &
+     &           0.5*(grid%v_2(i,1,j)+grid%v_2(i,1,j+1))
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (atm2ocn_AV, "VSTRESS", AA, Asize)
+# endif
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+!-----------------------------------------------------------------------
 !     PSFC       Surface atmospheric pressure (Pa).
 !
       ij=0
@@ -303,7 +462,9 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "PSFC", AA, Asize)
-!
+# endif
+# if defined BULK_FLUXES || defined ECOSIM || \
+   (defined SHORTWAVE && defined ANA_SRFLUX)
 !-----------------------------------------------------------------------
 !     RELH       Surface air relative humidity (-).
 !
@@ -344,6 +505,8 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "T2", AA, Asize)
+# endif
+# if defined BULK_FLUXES || defined ECOSIM
 !-----------------------------------------------------------------------
 !     U10        U-Wind speed at 10 m (m s-1).
 !
@@ -355,9 +518,9 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "U10", AA, Asize)
-# if defined SWAN_COUPLING
+#  if defined SWAN_COUPLING
       CALL AttrVect_importRAttr (atm2wav_AV, "U10", AA, Asize)
-# endif
+#  endif
 !-----------------------------------------------------------------------
 !     V10        V-Wind speed at 10 m (m s-1).
 !
@@ -369,9 +532,11 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "V10", AA, Asize) 
-# if defined SWAN_COUPLING
+#  if defined SWAN_COUPLING
       CALL AttrVect_importRAttr (atm2wav_AV, "V10", AA, Asize)
+#  endif
 # endif
+# ifdef CLOUDS
 !-----------------------------------------------------------------------
 !     CLDFRA     Cloud fraction (--, 0-1.0).
 !
@@ -383,6 +548,8 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "CLDFRA", AA, Asize)
+# endif
+# if !defined ANA_RAIN && defined EMINUSP
 !-----------------------------------------------------------------------
 !     RAIN       Precipitation (Convert to m s-1).
 !
@@ -394,91 +561,20 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "RAIN", AA, Asize)
+# endif
+# if defined EMINUSP
 !-----------------------------------------------------------------------
-!     SWDOWN     Short wave radiation (W m-2).
+!     EVAP      Evaporation (kg/m2 to Convert to m s-1).
 !
       ij=0
       DO j=js,je
         DO i=is,ie
           ij=ij+1
-          AA(ij)=grid%SWDOWN(i,j)
+          AA(ij)=0.001*(grid%SFCEVP(i,j))/grid%dt
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "SWDOWN", AA, Asize)
-!-----------------------------------------------------------------------
-!     GLW        Long wave raditaion (W m-2).
-!
-      ij=0
-      DO j=js,je
-        DO i=is,ie
-          ij=ij+1
-          AA(ij)=grid%GLW(i,j)
-        END DO
-      END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "GLW", AA, Asize)
-!-----------------------------------------------------------------------
-!     GSW        Long wave raditaion (W m-2).
-!
-      ij=0
-      DO j=js,je
-        DO i=is,ie
-          ij=ij+1
-          AA(ij)=grid%GSW(i,j)
-        END DO
-      END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "GSW", AA, Asize)
-!-----------------------------------------------------------------------
-!     USTRESS    Surface u-stress (N m-2).
-!
-      ij=0
-      DO j=js,je
-        DO i=is,ie
-!          cff1=1.0/(grid%em_alt(i,1,j)+eps)
-!          cff2=1.0/((grid%em_u_2(i,1,j)**2+grid%em_v_2(i,1,j)**2)**0.5+ &
-!     &               eps)
-!          ij=ij+1
-!          AA(ij)=cff1*cff2*(grid%UST(i,j)**2)*(grid%em_u_2(i,1,j))
-          AA(ij)=0.
-        END DO
-      END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "USTRESS", AA, Asize)
-!-----------------------------------------------------------------------
-!     VSTRESS    Surface v-stress (N m-2).
-!
-      ij=0
-      DO j=js,je
-        DO i=is,ie
-!          cff1=1.0/(grid%em_alt(i,1,j)+eps)
-!          cff2=1.0/((grid%em_u_2(i,1,j)**2+grid%em_v_2(i,1,j)**2)**0.5+ &
-!     &               eps)
-!          ij=ij+1
-!          AA(ij)=cff1*cff2*(grid%UST(i,j)**2)*(grid%em_v_2(i,1,j))
-          AA(ij)=0.
-        END DO
-      END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "VSTRESS", AA, Asize)
-!-----------------------------------------------------------------------
-!     LH     Latent heat flux (W m-2).
-!
-      ij=0
-      DO j=js,je
-        DO i=is,ie
-          ij=ij+1
-          AA(ij)=grid%LH(i,j)
-        END DO
-      END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "LH", AA, Asize)
-!-----------------------------------------------------------------------
-!     HFX     Sensible heat flux (W m-2).
-!
-      ij=0
-      DO j=js,je
-        DO i=is,ie
-          ij=ij+1
-          AA(ij)=grid%HFX(i,j)
-        END DO
-      END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "HFX", AA, Asize)
+      CALL AttrVect_importRAttr (atm2ocn_AV, "EVAP", AA, Asize)
+# endif
 !-----------------------------------------------------------------------
 !  Send fields to ocean model.
 !
@@ -509,7 +605,8 @@
       DO j=js,je
         DO i=is,ie
           ij=ij+1
-          IF (AA(ij).gt.0.10) THEN
+!         IF (AA(ij).gt.0.10) THEN
+          IF (AA(ij).ne.0.0) THEN
               grid%sst(i,j)=(AA(ij)+273.15)*(1-grid%landmask(i,j))+     &
      &                       grid%sst(i,j)*grid%landmask(i,j)
           END IF

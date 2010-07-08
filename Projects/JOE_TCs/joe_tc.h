@@ -107,7 +107,8 @@
 # define MCT_LIB
 #endif
 #ifdef WRF_MODEL
-# define BULK_FLUXES
+# undef  BULK_FLUXES
+# define ATM2OCN_FLUXES
 # define ANA_SSFLUX
 # undef LONGWAVE_OUT
 #else

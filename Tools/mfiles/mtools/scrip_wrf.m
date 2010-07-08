@@ -20,11 +20,16 @@ nc=netcdf(grid_file);
 lon_rho=nc{'XLONG'}(:);
 lat_rho=nc{'XLAT'}(:);
 
+XLONGI=interp2(lon_rho,'bilinear');
+XLATI=interp2(lat_rho,'bilinear');
+lon_psi=XLONGI(2:2:end,2:2:end);
+lat_psi=XLATI(2:2:end,2:2:end);
+
 [MP,LP]=size(lon_rho);
 gridsize=LP*MP;
 
 %create a full set of psi points
-[x_full_grid,y_full_grid]=create_extra_rho_grid(lon_rho,lat_rho);
+[x_full_grid,y_full_grid]=create_extra_rho_grid(lon_psi,lat_psi);
 
 %create the srcip netcdf grid file
 
@@ -53,16 +58,16 @@ nc{'grid_imask'} = ncshort('grid_size');
 nc{'grid_imask'}.units = ncchar('---');
 
 nc{'grid_center_lat'} = ncdouble('grid_size');
-nc{'grid_center_lat'}.units = ncchar('meters');
+nc{'grid_center_lat'}.units = ncchar('radians');
 
 nc{'grid_center_lon'} = ncdouble('grid_size');
-nc{'grid_center_lon'}.units = ncchar('meters');
+nc{'grid_center_lon'}.units = ncchar('radians');
 
 nc{'grid_corner_lat'} = ncdouble('grid_size', 'grid_corners');
-nc{'grid_corner_lat'}.units = ncchar('meters');
+nc{'grid_corner_lat'}.units = ncchar('radians');
 
 nc{'grid_corner_lon'} = ncdouble('grid_size', 'grid_corners');
-nc{'grid_corner_lon'}.units = ncchar('meters');
+nc{'grid_corner_lon'}.units = ncchar('radians');
 
 ncclose
 
@@ -71,7 +76,7 @@ eval(['nc=netcdf(''',out_file,''',''w'');'])
 
 nc{'grid_dims'}(:) = [MP, LP];
 nc{'grid_imask'}(:) = ones(1,MP*LP);
-
+scale=pi/180;
 disp('step 1/4, filling grid lat centers')
 %get grid centers
 count=0;
@@ -81,7 +86,7 @@ for jj=1:MP
     ztemp(count)=lat_rho(jj,ii);
   end
 end
-nc{'grid_center_lat'}(:) = ztemp(:)*pi/180;
+nc{'grid_center_lat'}(:) = ztemp(:)*scale;
 clear ztemp
 
 disp('step 2/4, filling grid lon centers')
@@ -92,31 +97,31 @@ for jj=1:MP
     ztemp(count)=lon_rho(jj,ii);
   end
 end
-nc{'grid_center_lon'}(:) = ztemp(:)*pi/180;
+nc{'grid_center_lon'}(:) = ztemp(:)*scale;
 clear ztemp
 
 disp('step 3/4, filling grid lat corners')
 %get grid corners, counterclockwise
 count=0;
-for jj=2:MP+1
-  for ii=2:LP+1
+for jj=1:MP
+  for ii=1:LP
     count=count+1;
-    ztemp(count,:)=[y_full_grid(jj-1,ii) y_full_grid(jj,ii+1) ...
-                    y_full_grid(jj+1,ii) y_full_grid(jj,ii-1)];
+    ztemp(count,:)=[y_full_grid(jj,  ii) y_full_grid(jj  ,ii+1) ...
+                    y_full_grid(jj+1,ii+1) y_full_grid(jj+1,ii)];
   end
 end
-nc{'grid_corner_lat'}(:) = ztemp(:)*pi/180;
+nc{'grid_corner_lat'}(:) = ztemp(:)*scale;
 
 disp('step 4/4, filling grid lon corners')
 count=0;
-for jj=2:MP+1
-  for ii=2:LP+1
+for jj=1:MP
+  for ii=1:LP
     count=count+1;
-    ztemp(count,:)=[x_full_grid(jj-1,ii) x_full_grid(jj,ii+1) ...
-                    x_full_grid(jj+1,ii) x_full_grid(jj,ii-1)];
+    ztemp(count,:)=[x_full_grid(jj  ,ii) x_full_grid(jj  ,ii+1) ...
+                    x_full_grid(jj+1,ii+1) x_full_grid(jj+1,ii)];
   end
 end
-nc{'grid_corner_lon'}(:) = ztemp(:)*pi/180;
+nc{'grid_corner_lon'}(:) = ztemp(:)*scale;
 
 %close the file.
 if ~isempty(close(nc))

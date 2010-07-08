@@ -1233,7 +1233,7 @@
           END IF
         END DO
 
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
 !
 !  Define surface u-wind component.
 !
@@ -2615,7 +2615,7 @@
             got_var(idMtls)=.TRUE.
             hisVid(idMtls,ng)=var_id(i)
 # endif
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idLhea))) THEN
             got_var(idLhea)=.TRUE.
             hisVid(idLhea,ng)=var_id(i)
@@ -3014,7 +3014,7 @@
           RETURN
         END IF
 # endif
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
         IF (.not.got_var(idLhea).and.Hout(idLhea,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idLhea)),          &
      &                                  TRIM(ncname)

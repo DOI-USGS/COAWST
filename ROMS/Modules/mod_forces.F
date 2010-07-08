@@ -18,6 +18,10 @@
 !                 the ETA-direction (m2/s2) at horizontal V-points.    !
 !  svstrG       Latest two-time snapshots of input "svstr" grided      !
 !                 data used for interpolation.                         !
+!  Taux         Surface stress in the XI-direction at rho points       !
+!                 from atm model.                                      !
+!  Tauy         Surface stress in the ETA-direction at rho points      !
+!                 from atm model.                                      !
 !                                                                      !
 !  Bottom momentum stresses.                                           !
 !                                                                      !
@@ -164,6 +168,10 @@
           real(r8), pointer :: sustrG(:,:,:)
           real(r8), pointer :: svstrG(:,:,:)
 #endif
+#ifdef ATM2OCN_FLUXES
+          real(r8), pointer :: Taux(:,:)
+          real(r8), pointer :: Tauy(:,:)
+#endif
 #ifdef ADJUST_WSTRESS
           real(r8), pointer :: ustr(:,:,:,:)
           real(r8), pointer :: vstr(:,:,:,:)
@@ -253,12 +261,17 @@
           real(r8), pointer :: cloudG(:,:,:)
 #  endif
 # endif
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES
           real(r8), pointer :: lhflx(:,:)
           real(r8), pointer :: lrflx(:,:)
 #  ifndef LONGWAVE
           real(r8), pointer :: lrflxG(:,:,:)
 #  endif
+          real(r8), pointer :: shflx(:,:)
+# endif
+# if defined ATM2OCN_FLUXES
+          real(r8), pointer :: lhflx(:,:)
+          real(r8), pointer :: lrflx(:,:)
           real(r8), pointer :: shflx(:,:)
 # endif
 
@@ -283,7 +296,7 @@
 #  endif
 # endif
 
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
           real(r8), pointer :: rain(:,:)
 #  ifndef ANA_RAIN
           real(r8), pointer :: rainG(:,:,:)
@@ -462,7 +475,10 @@
 !
       allocate ( FORCES(ng) % sustr(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % svstr(LBi:UBi,LBj:UBj) )
-
+#ifdef ATM2OCN_FLUXES
+      allocate ( FORCES(ng) % Taux(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % Tauy(LBi:UBi,LBj:UBj) )
+#endif
 #if !defined ANA_SMFLUX     && !defined BULK_FLUXES || \
      defined NL_BULK_FLUXES
       allocate ( FORCES(ng) % sustrG(LBi:UBi,LBj:UBj,2) )
@@ -570,6 +586,11 @@
 
       allocate ( FORCES(ng) % shflx(LBi:UBi,LBj:UBj) )
 # endif
+# ifdef ATM2OCN_FLUXES
+      allocate ( FORCES(ng) % lhflx(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % lrflx(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % shflx(LBi:UBi,LBj:UBj) )
+# endif
 
 # if defined BULK_FLUXES || defined ECOSIM || \
     (defined SHORTWAVE && defined ANA_SRFLUX)
@@ -596,7 +617,7 @@
 #  endif
 # endif
 
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
       allocate ( FORCES(ng) % rain(LBi:UBi,LBj:UBj) )
 
 #  ifndef ANA_RAIN
@@ -836,6 +857,10 @@
 #endif
             FORCES(ng) % sustr(i,j) = IniVal
             FORCES(ng) % svstr(i,j) = IniVal
+#ifdef ATM2OCN_FLUXES
+            FORCES(ng) % Taux(i,j) = IniVal
+            FORCES(ng) % Tauy(i,j) = IniVal
+#endif
 #if !defined ANA_SMFLUX     && !defined BULK_FLUXES || \
      defined NL_BULK_FLUXES
             FORCES(ng) % sustrG(i,j,1) = IniVal
@@ -927,7 +952,7 @@
             FORCES(ng) % cloudG(i,j,2) = IniVal
 #  endif
 # endif
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
             FORCES(ng) % lhflx(i,j) = IniVal
             FORCES(ng) % lrflx(i,j) = IniVal
             FORCES(ng) % shflx(i,j) = IniVal
@@ -941,7 +966,7 @@
             FORCES(ng) % Uwind(i,j) = IniVal
             FORCES(ng) % Vwind(i,j) = IniVal
 # endif
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
             FORCES(ng) % rain(i,j) = IniVal
 #  ifdef EMINUSP
             FORCES(ng) % EminusP(i,j) = IniVal

@@ -396,11 +396,12 @@ fi
 
 # Compile (the binary will go to BINDIR set above).
 
-if [ $cleanwrf -eq 1 ]; then
   export WRF_DIR=${MY_ROMS_SRC}/WRF
-  make wrf
+if [ $cleanwrf -eq 1 ]; then
+  make wrfclean
   cd ${MY_ROMS_SRC}
 fi
+make wrf
 
 if [ $parallel -eq 1 ]; then
   make $NCPUS
