@@ -331,7 +331,9 @@ ifndef FORT
 endif
 
 ifneq "$(MAKECMDGOALS)" "clean"
+ ifneq "$(MAKECMDGOALS)" "tarfile"
   include $(COMPILERS)/$(OS)-$(strip $(FORT)).mk
+ endif
 endif
 
 ifdef USE_MPI
