@@ -78,7 +78,7 @@ CONTAINS
      &                 ,U10,V10,T02,TH02,TSHLTR,TH10,Q02,QSHLTR,Q10,PSHLTR          &
      &                 ,P1000mb                                        &
 #ifdef SWAN_COUPLING
-     &                 ,HWAVE, LWAVEP, PWAVE,                          &
+     &                 ,HWAVE, LWAVEP, PWAVE                           &
 #endif
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &

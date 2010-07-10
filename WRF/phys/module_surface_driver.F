@@ -10,7 +10,7 @@ CONTAINS
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
 #ifdef SWAN_COUPLING
-     &          ,hwave, lwavep, pwave,                                &
+     &          ,hwave, lwavep, pwave                                 &
 #endif
      &          ,fractional_seaice                                    &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &

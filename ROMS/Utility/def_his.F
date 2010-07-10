@@ -2319,7 +2319,6 @@
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
-# endif
 #endif
 #ifdef WAVES_DIR
 !
