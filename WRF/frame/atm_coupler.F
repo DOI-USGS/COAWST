@@ -274,7 +274,8 @@
 !
 !  Initialize attribute vector for data from SWAN.
 !
-      CALL AttrVect_init (wav2atm_AV, rList="HSIGN:WLEN", lsize=gsmsize)
+      CALL AttrVect_init (wav2atm_AV, rList="HSIGN:WLENP:RTP",         &
+     &                    lsize=gsmsize)
       CALL AttrVect_zero (wav2atm_AV)
 !
 ! Initialize a router to the SWAN component.
@@ -319,7 +320,8 @@
 !  Fields acquired from the WAVE Model:                                !
 !                                                                      !
 !     * HISGN      Significant wave heigth (m)                         !
-!     * WLEN       Wave length (m)                                     !
+!     * WLENP      Peak wave length (m)                                !
+!     * RTP        Peak wave period (s)                                !
 !                                                                      !
 !  Fields acquired from the OCEAN Model:                               !
 !                                                                      !
@@ -506,7 +508,6 @@
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "T2", AA, Asize)
 # endif
-# if defined BULK_FLUXES || defined ECOSIM
 !-----------------------------------------------------------------------
 !     U10        U-Wind speed at 10 m (m s-1).
 !
@@ -517,10 +518,12 @@
           AA(ij)=grid%U10(i,j)
         END DO
       END DO
+# if defined BULK_FLUXES || defined ECOSIM
       CALL AttrVect_importRAttr (atm2ocn_AV, "U10", AA, Asize)
-#  if defined SWAN_COUPLING
+# endif
+# if defined SWAN_COUPLING
       CALL AttrVect_importRAttr (atm2wav_AV, "U10", AA, Asize)
-#  endif
+# endif
 !-----------------------------------------------------------------------
 !     V10        V-Wind speed at 10 m (m s-1).
 !
@@ -531,10 +534,11 @@
           AA(ij)=grid%V10(i,j)
         END DO
       END DO
+# if defined BULK_FLUXES || defined ECOSIM
       CALL AttrVect_importRAttr (atm2ocn_AV, "V10", AA, Asize) 
-#  if defined SWAN_COUPLING
+# endif
+# if defined SWAN_COUPLING
       CALL AttrVect_importRAttr (atm2wav_AV, "V10", AA, Asize)
-#  endif
 # endif
 # ifdef CLOUDS
 !-----------------------------------------------------------------------
@@ -642,12 +646,23 @@
 !
 !  Lwave.
 !
-      CALL AttrVect_exportRAttr (wav2atm_AV, "WLEN", AA, Asize)
+      CALL AttrVect_exportRAttr (wav2atm_AV, "WLENP", AA, Asize)
       ij=0
       DO j=js,je
         DO i=is,ie
           ij=ij+1
-          grid%lwave(i,j)=AA(ij)*(1-grid%landmask(i,j))
+          grid%lwavep(i,j)=AA(ij)*(1-grid%landmask(i,j))
+        END DO
+      END DO
+!
+!  Pwave_top.
+!
+      CALL AttrVect_exportRAttr (wav2atm_AV, "RTP", AA, Asize)
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+          grid%pwave(i,j)=MAX(1.0,AA(ij)*(1-grid%landmask(i,j)))
         END DO
       END DO
 !

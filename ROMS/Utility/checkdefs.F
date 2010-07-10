@@ -493,6 +493,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' AVERAGES_FLUXES,'
 # endif
+# ifdef AVERAGES_UV_KIRBY
+      IF (Master) WRITE (stdout,20) 'AVERAGES_UV_KIRBY',                &
+     &   'Writing out time-averaged uwave and vwave Kirby velocities.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' AVERAGES_UV_KIRBY,'
+# endif
 # ifdef AVERAGES_NEARSHORE
       IF (Master) WRITE (stdout,20) 'AVERAGES_NEARSHORE',               &
      &   'Writing out time-averaged nearshore radiation fields.'
@@ -2495,6 +2501,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' UV_C4VADVECTION,'
       ivelVadv=ivelVadv+1
+#  endif
+#  ifdef UV_KIRBY
+      IF (Master) WRITE (stdout,20) 'UV_KIRBY',                         &
+     &   'Compute uwave and vwave Kirby avg velocities.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+15)=' UV_KIRBY,'
 #  endif
 #  ifdef UV_SADVECTION
       IF (Master) WRITE (stdout,20) 'UV_SADVECTION',                    &

@@ -1354,6 +1354,44 @@
           END IF
         END DO
 # endif
+# ifdef AVERAGES_UV_KIRBY
+!
+!  Define coupling U-current given by Kirby and Chen (1989).
+!
+        IF (Hout(idUwav,ng)) THEN
+          Vinfo( 1)=Vname(1,idUwav)
+          Vinfo( 2)=Vname(2,idUwav)
+          Vinfo( 3)=Vname(3,idUwav)
+          Vinfo(14)=Vname(4,idUwav)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_r'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idUwav,ng),r8)
+          status=def_var(ng,model,ncAVGid(ng),avgVid(idUwav,ng),        &
+     &                   NF_FOUT,nvd3,t2dgrd,Aval,Vinfo,ncname)
+        END IF
+!
+!  Define coupling V-current given by Kirby and Chen (1989).
+!
+        IF (Hout(idVwav,ng)) THEN
+          Vinfo( 1)=Vname(1,idVwav)
+          Vinfo( 2)=Vname(2,idVwav)
+          Vinfo( 3)=Vname(3,idVwav)
+          Vinfo(14)=Vname(4,idVwav)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_r'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idVwav,ng),r8)
+          status=def_var(ng,model,ncAVGid(ng),avgVid(idVwav,ng),        &
+     &                   NF_FOUT,nvd3,t2dgrd,Aval,Vinfo,ncname)
+        END IF
+
+# endif
+
 # ifdef AVERAGES_NEARSHORE
 !
 !  Define 2D radiation stress Sxx.

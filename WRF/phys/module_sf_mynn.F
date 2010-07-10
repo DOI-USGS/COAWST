@@ -54,7 +54,7 @@ CONTAINS
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
 #ifdef SWAN_COUPLING
-                     HWAVE, LWAVE,                                 &
+                     HWAVE, LWAVEP, PWAVE,                         &
 #endif
                      &itimestep,ch,th3d,pi3d,qc3d,&
                      &tsq,qsq,cov,qcg,&
@@ -116,7 +116,9 @@ CONTAINS
 !-- STBOLT      Stefan-Boltzmann constant (W/m^2/K^4)
 #ifdef SWAN_COUPLING
 !-- HWAVE       Significant wave height (m)
-!-- LWAVE       Wave lengh (m)
+!-- LWAVEP      Peak wave lengh (m)
+!-- PWAVE       Peak wave period (s)
+
 #endif
 !-- ids         start index for i in domain
 !-- ide         end index for i in domain
@@ -218,7 +220,7 @@ CONTAINS
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
 
 #ifdef SWAN_COUPLING
-       REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: HWAVE, LWAVE
+       REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: HWAVE, LWAVEP, PWAVE
 #endif
 
 ! LOCAL VARS
@@ -297,7 +299,7 @@ CONTAINS
                 SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,EOMEG,STBOLT,  &
                 ch(ims,j),vt1,vq1,qc1d,qcg(ims,j),                 &
 #ifdef SWAN_COUPLING
-                HWAVE(ims,j), LWAVE(ims,j),                        &
+                HWAVE(ims,j), LWAVEP(ims,j), PWAVE(ims,j),         &
 #endif
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
@@ -319,7 +321,7 @@ CONTAINS
                      KARMAN,EOMEG,STBOLT,                          &
                      ch,vt1,vq1,qc1d,qcg,                          &
 #ifdef SWAN_COUPLING
-                     HWAVE, LWAVE,                                 &
+                     HWAVE, LWAVEP, PWAVE,                         &
 #endif
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
@@ -406,7 +408,7 @@ CONTAINS
        REAL, DIMENSION( its:ite ), INTENT(IN) :: vt1,vq1
 
 #ifdef SWAN_COUPLING
-       REAL, DIMENSION( ims:ime ), INTENT(IN) :: HWAVE, LWAVE
+       REAL, DIMENSION( ims:ime ), INTENT(IN) :: HWAVE, LWAVEP, PWAVE
 #endif
 
 ! LOCAL VARS
@@ -444,6 +446,9 @@ CONTAINS
       REAL    ::  ZL,TSKV,DTHVDZ,DTHVM,VCONV,RZOL,RZOL2,RZOL10,ZOL2,ZOL10
       REAL    ::  DTG,PSIX,USTM,DTTHX,PSIX10,PSIT,PSIT2,PSIQ,PSIQ2
       REAL    ::  FLUXC,VSGD
+#ifdef SWAN_COUPLING
+      REAL    ::  CWAVE
+#endif
       real :: restar
 
 
@@ -837,10 +842,20 @@ CONTAINS
                                                                                  
       DO 360 I=its,ite
         IF((XLAND(I)-1.5).GE.0)THEN
-#if defined SWAN_COUPLING && defined COARE_TAYLOR_YELLAND
+#if defined SWAN_COUPLING 
+# if defined COARE_TAYLOR_YELLAND
           ZNT(I)=MAX(1200.0*HWAVE(I)*                                   &
-     &           (HWAVE(I)/LWAVE(I))**4.5+                              &
+     &           (HWAVE(I)/LWAVEP(I))**4.5+                             &
      &            0.11*VISC/(UST(I)+0.001),1.59E-5)
+# elif defined DRENNAN
+          CWAVE=LWAVEP(I)/PWAVE(I)
+          ZNT(I)=MAX(3.35*HWAVE(I)*(MIN((UST(I))/CWAVE,0.1))**3.4+      &
+     &           0.11*VISC/(UST(I)+0.001),1.59E-5)
+# elif defined COARE_OOST
+          CWAVE=LWAVEP(I)/PWAVE(I)
+          ZNT(I)=MAX(25.0/pi*LWAVEP(I)*(UST(I)/CWAVE)**4.5+            &
+     &           0.11*VISC/(UST(I)+0.001),1.59E-5)
+# endif
 #else
           ZNT(I)=CZO*UST(I)*UST(I)/G+bvisc/ust(i)                                   
 #endif

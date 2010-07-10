@@ -641,6 +641,13 @@
      &                     FORCES(ng)%Lwave,                            &
      &                     update)
 #   endif
+#   ifdef WAVES_LENGTHP
+      CALL set_2dfld_tile (ng, tile, iNLM, idWlep,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%LwavepG,                          &
+     &                     FORCES(ng)%Lwavep,                           &
+     &                     update)
+#   endif
 #   ifdef WAVES_TOP_PERIOD
       CALL set_2dfld_tile (ng, tile, iNLM, idWptp,                      &
      &                     LBi, UBi, LBj, UBj,                          &

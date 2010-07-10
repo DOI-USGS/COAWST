@@ -3064,6 +3064,18 @@
       OVHEXP(IVTYPE) = 0.1
       OVEXCV(IVTYPE) = -9.
 !
+      IVTYPE = 70
+      OVKEYW(IVTYPE) = 'WLENP'                                             40.00
+      OVSNAM(IVTYPE) = 'Wlenp'
+      OVLNAM(IVTYPE) = 'Peak wave length'
+      OVUNIT(IVTYPE) = UL
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 200.
+      OVEXCV(IVTYPE) = -9.
+!
 !     various parameters for computation of output quantities             40.00
 !
 !     reference time for TSEC

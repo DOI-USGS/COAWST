@@ -351,6 +351,7 @@ Hout(idV3Sd) == F F                        ! 3D V-Stokes velocity
 
 Hout(idWamp) == T T                        ! wave height
 Hout(idWlen) == T T                        ! wave length
+Hout(idWlep) == T T                        ! wave length
 Hout(idWdir) == T T                        ! wave direction
 Hout(idWptp) == T T                        ! wave peak surface period
 Hout(idWpbt) == T T                        ! wave mean bottom period

@@ -629,11 +629,11 @@
 !
 !  6. Parameter variables
 !
-!     NMOVAR [  69]  maximum number of output variables                   40.85 40.64 40.61 40.51 40.21 40.41
+!     NMOVAR [  70]  maximum number of output variables                   40.85 40.64 40.61 40.51 40.21 40.41
 !     MOUTPA [  50]  number of output parameters                          40.87
 !
       INTEGER NMOVAR, MOUTPA
-      PARAMETER (NMOVAR = 69, MOUTPA=50)                                  40.85 40.87 40.64 40.61 40.51 40.21 40.41
+      PARAMETER (NMOVAR = 70, MOUTPA=50)                                  40.85 40.87 40.64 40.61 40.51 40.21 40.41
 !
 !  7. Local variables
 !
@@ -705,6 +705,7 @@
 !  (67) [ 'PROPT']
 !  (68) [ 'PROPS']
 !  (69) [  'RADS']
+!  (70) [ 'WLENP']
 ! OVSNAM(NMOVAR)   short name of output quantity
 !  ( 1) [    'Xp']
 !  ( 2) [    'Yp']
@@ -769,6 +770,7 @@
 !  (67) ['Propth']
 !  (68) ['Propsi']
 !  (69) ['Radstr']
+!  (70) ['WLENP']
 ! OVLNAM(NMOVAR)   long name of output quantity
 !  ( 1) [                        'X user coordinate']
 !  ( 2) [                        'Y user coordinate']
@@ -833,6 +835,7 @@
 !  (67) [                        'theta-propagation']
 !  (68) [                        'sigma-propagation']
 !  (69) [                         'Radiation stress']
+!  (70) [                         'Peak wave length']
 ! OVUNIT(NMOVAR)   unit of of output quantity
 !  ( 1) [CALCULAT] =UL
 !  ( 2) [CALCULAT] =UL
@@ -897,6 +900,7 @@
 !  (67) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (68) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (69) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (70) [CALCULAT] =UL
 ! SNAME [        ] name of output point set
 ! UAP   [  'W/m2'] unit of dissipation
 ! UD    [        ] not used
@@ -1018,6 +1022,7 @@
 !  (67)  [  1]   Propth
 !  (68)  [  1]   Propsi
 !  (69)  [  1]   Radstr
+!  (70)  [  1]   Wlenp
 ! OVEXCV(NMOVAR)   exception value for output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -1080,6 +1085,7 @@
 !  (67)  [    -9.] Propth
 !  (68)  [    -9.] Propsi
 !  (69)  [    -9.] Radstr
+!  (70)  [   -10.] Wlenp
 ! OVLEXP(NMOVAR)   lower expected limit of output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -1142,6 +1148,7 @@
 !  (67)  [     0.] Propth
 !  (68)  [     0.] Propsi
 !  (69)  [     0.] Radstr
+!  (70)  [     0.] Wlenp
 ! OVLLIM(NMOVAR)   lower limit of validity of output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -1204,6 +1211,7 @@
 !  (67)  [     0.] Propth
 !  (68)  [     0.] Propsi
 !  (69)  [     0.] Radstr
+!  (70)  [     0.] Wlenp
 ! OVHEXP(NMOVAR)   upper expected limit of output quantity
 !  ( 1)  [  1.E10] Xp
 !  ( 2)  [  1.E10] Yp
@@ -1266,6 +1274,7 @@
 !  (67)  [    0.1] Propth
 !  (68)  [    0.1] Propsi
 !  (69)  [    0.1] Radstr
+!  (70)  [   200.] Wlenp
 ! OVULIM(NMOVAR)   upper limit of validity
 !  ( 1)  [  1.E10] Xp
 !  ( 2)  [  1.E10] Yp
@@ -1328,6 +1337,7 @@
 !  (67)  [  1000.] Propth
 !  (68)  [  1000.] Propsi
 !  (69)  [  1000.] Radstr
+!  (70)  [  1000.] Wlenp
 ! SINCQ  [       ] sin of ALCQ
 ! SINPQ  [       ] sin of ALPQ
 ! SPCPOW [      1] power in expression for computation of average frequency

@@ -78,7 +78,7 @@ CONTAINS
      &                 ,U10,V10,T02,TH02,TSHLTR,TH10,Q02,QSHLTR,Q10,PSHLTR          &
      &                 ,P1000mb                                        &
 #ifdef SWAN_COUPLING
-     &                 ,HWAVE, LWAVE                                   &
+     &                 ,HWAVE, LWAVEP, PWAVE,                          &
 #endif
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
@@ -128,7 +128,7 @@ CONTAINS
       REAL,INTENT(IN) :: P1000mb
 
 #ifdef SWAN_COUPLING
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: HWAVE, LWAVE
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: HWAVE, LWAVEP, PWAVE
 #endif
 
 !----------------------------------------------------------------------
@@ -155,7 +155,7 @@ CONTAINS
 !
       REAL,DIMENSION(ITS:ITE,KTS:KTE+1,JTS:JTE) :: ZINT
 #ifdef SWAN_COUPLING
-      REAL :: HWAVEP, LWAVEP
+      REAL :: HWAVE_L, LWAVEP_L, PWAVE_L
 #endif
 !
 !----------------------------------------------------------------------
@@ -318,8 +318,9 @@ CONTAINS
        endif
 !
 #ifdef SWAN_COUPLING
-          HWAVEP=HWAVE(i,j)
-          LWAVEP=LWAVE(i,j)
+          HWAVE_L=HWAVE(i,j)
+          LWAVEP_L=LWAVEP(i,j)
+          PWAVE_L=PWAVE(i,j)
 #endif
           CALL SFCDIF(NTSD,SEAMASK,THSK(I,J),QSFC(I,J),PSFC            &
      &               ,UZ0(I,J),VZ0(I,J),TZ0,TSK(I,J),THZ0(I,J),QZ0(I,J)         &
@@ -336,7 +337,7 @@ CONTAINS
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
 #ifdef SWAN_COUPLING
      &               ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZHK(LMH+1)           &
-     &               ,HWAVEP, LWAVEP)
+     &               ,HWAVE_L, LWAVEP_L, PWAVE_L)
 #else
      &               ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZHK(LMH+1))
 #endif
@@ -388,8 +389,8 @@ CONTAINS
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
 #ifdef SWAN_COUPLING
-     &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZSFC, HWAVEP       &
-     &                 ,LWAVEP)
+     &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZSFC, HWAVE        &
+     &                 ,LWAVEP, PWAVE)
 #else
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZSFC)
 #endif
@@ -413,8 +414,7 @@ CONTAINS
      &                  ,THELOW,THLOW,THS,TSK,TLOW,TZ0,ULOW,VLOW,WETM,ZSL  &
      &                  ,Z0BASE
 #ifdef SWAN_COUPLING
-      REAL, INTENT(IN) :: HWAVEP
-      REAL, INTENT(IN) :: LWAVEP
+      REAL, INTENT(IN) :: HWAVE, LWAVEP, PWAVE
 #endif
 !
       REAL,INTENT(OUT) :: CHS,CHS2,CPM,CQS2,CT,FLHC,FLQC,FLX_LH,HFX    &
@@ -434,7 +434,10 @@ CONTAINS
      &       ,RLOGT,RLOGU,RWGH,RZ,RZST,RZSU,SIMH,SIMM,TEM,THM          &
      &       ,UMFLX,USTARK,VMFLX,WGHT,WGHTT,WGHTQ,WSTAR2               &
      &       ,X,XLT,XLT4,XLU,XLU4,XT,XT4,XU,XU4,ZETALT,ZETALU          &
-     &       ,ZETAT,ZETAU,ZQ,ZSLT,ZSLU,ZT,ZU,TOPOTERM,ZZIL
+     &       ,ZETAT,ZETAU,ZQ,ZSLT,ZSLU,ZT,ZU,TOPOTERM,ZZIL,CP
+#ifdef SWAN_COUPLING
+      REAL :: CWAVE
+#endif
 !
 !***  DIAGNOSTICS
 !
@@ -471,10 +474,20 @@ CONTAINS
         DO ITR=1,ITRMX
 !----------------------------------------------------------------------
 
-#if defined SWAN_COUPLING && defined COARE_TAYLOR_YELLAND
-          Z0=MAX(1200.0*HWAVEP*                                         &
-     &                (HWAVEP/LWAVEP)**4.5+                             &
-     &                0.11*VISC/(USTAR+0.001),1.59E-5)
+#if defined SWAN_COUPLING
+# if defined COARE_TAYLOR_YELLAND
+          Z0=MAX(1200.0*HWAVE*                                         &
+     &                 (HWAVE/LWAVEP)**4.5+                            &
+     &                  0.11*VISC/(USTAR+0.001),1.59E-5)
+# elif defined DRENNAN
+          CWAVE=LWAVEP/PWAVE
+          Z0=MAX(3.35*HWAVE*(MIN(USTAR/CWAVE,0.1))**3.4+               &
+     &           0.11*VISC/(USTAR+0.001),1.59E-5)
+# elif defined COARE_OOST
+          CWAVE=LWAVEP/PWAVE
+          ZNT(I)=MAX(25.0/pi*LWAVEP*(USTAR/CWAVE)**4.5+                &
+     &           0.11*VISC/(USTAR+0.001),1.59E-5)
+# endif
 #else
           Z0=MAX(USTFC*USTAR*USTAR,1.59E-5)
 #endif

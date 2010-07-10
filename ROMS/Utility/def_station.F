@@ -1176,6 +1176,22 @@
           IF (exit_flag.ne.NoError) RETURN
         END IF
 # endif
+# ifdef WAVES_LENGTHP
+!
+!  Define wind-induced mean wavelenght.
+!
+        IF (Sout(idWlep,ng)) THEN
+          Vinfo( 1)=Vname(1,idWlep)
+          Vinfo( 2)=Vname(2,idWlep)
+          Vinfo( 3)=Vname(3,idWlep)
+          Vinfo(14)=Vname(4,idWlep)
+          Vinfo(16)=Vname(1,idtime)
+          status=def_var(ng, iNLM, ncSTAid(ng), staVid(idWlep,ng),      &
+     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
+     &                   SetParAccess = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+# endif
 # ifdef WAVES_DIR
 !
 !  Define wind-induced wave direction.
@@ -1509,6 +1525,11 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWlen))) THEN
             got_var(idWlen)=.TRUE.
             staVid(idWlen,ng)=var_id(i)
+# endif
+# ifdef WAVES_LENGTHP
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWlep))) THEN
+            got_var(idWlep)=.TRUE.
+            staVid(idWlep,ng)=var_id(i)
 # endif
 # ifdef WAVES_DIR
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdir))) THEN
@@ -1939,6 +1960,14 @@
 # ifdef WAVES_LENGTH
         IF (.not.got_var(idWlen).and.Sout(idWlen,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWlen)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+# endif
+# ifdef WAVES_LENGTHP
+        IF (.not.got_var(idWlep).and.Sout(idWlep,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWlep)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

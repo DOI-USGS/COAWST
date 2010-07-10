@@ -10,7 +10,7 @@ CONTAINS
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
 #ifdef SWAN_COUPLING
-     &          ,hwave, lwave                                         &
+     &          ,hwave, lwavep, pwave,                                &
 #endif
      &          ,fractional_seaice                                    &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
@@ -263,7 +263,8 @@ CONTAINS
 !-- DT            time step (second)
 !-- PSFC          pressure at the surface (Pa)
 !-- HWAVE         significant wave height (m)
-!-- LWAVE         mean wave length (m)
+!-- LWAVEP        peak wave length (m)
+!-- PWAVE         peak wave period (s)
 !-- SST           sea-surface temperature (K)
 !-- SSTSK         skin sea-surface temperature (K)
 !-- DTW           warm layer temp diff (K)
@@ -362,7 +363,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   RAINCV
 #ifdef SWAN_COUPLING
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   HWAVE
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   LWAVE
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   LWAVEP
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   PWAVE
+
 #endif
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   SST
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   SSTSK
@@ -1027,10 +1030,10 @@ CONTAINS
                 akhs,akms,                                           &
                 br,                                                 &
                 chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
-                u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
+                u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,     &
                 p1000mb,                                             &
 #ifdef SWAN_COUPLING
-                hwave, lwave,                                        &
+                hwave, lwavep, pwave,                                &
 #endif
                 ids,ide, jds,jde, kds,kde,                           &
                 ims,ime, jms,jme, kms,kme,                           &
@@ -1038,19 +1041,19 @@ CONTAINS
         ELSE
             CALL MYJSFC(itimestep,ht,dz8w,                         &
               p_phy,p8w,th_phy,t_phy,                              &
-              qv_curr,qc_curr,                                      &
+              qv_curr,qc_curr,                                     &
               u_phy,v_phy,tke_myj,                                 &
               tsk,qsfc,thz0,qz0,uz0,vz0,                           &
               lowlyr,                                              &
               xland,                                               &
               ust,znt,z0,pblh,mavail,rmol,                         &
               akhs,akms,                                           &
-              br,                                                 &
+              br,                                                  &
               chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
-              u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
+              u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,     &
               p1000mb,                                             &
 #ifdef SWAN_COUPLING
-              hwave, lwave,                                        &
+              hwave, lwavep, pwave,                                &
 #endif
               ids,ide, jds,jde, kds,kde,                           &
               ims,ime, jms,jme, kms,kme,                           &
@@ -1145,7 +1148,7 @@ CONTAINS
                gz1oz0,wspd,br,isfflx,dx,                           &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
 #ifdef SWAN_COUPLING
-               HWAVE, LWAVE,                                       &
+               HWAVE, LWAVEP, PWAVE,                               &
 #endif
                &itimestep,ch,th_phy,pi_phy,qc_curr,&
                &tsq,qsq,cov,qcg,&
@@ -1757,7 +1760,7 @@ CONTAINS
         &     U10,V10,T02,TH02,TSHLTR,TH10,Q02,QSHLTR,Q10,PSHLTR,          &
         &     P1000,                                        &
 #ifdef SWAN_COUPLING
-        &     HWAVE, LWAVE,                               &
+        &     HWAVE, LWAVEP, PWAVE,                         &
 #endif
         &     IDS,IDE,JDS,JDE,KDS,KDE,                        &
         &     IMS,IME,JMS,JME,KMS,KME,                        &
@@ -1838,7 +1841,9 @@ CONTAINS
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: PSHLTR
 #ifdef SWAN_COUPLING
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)   :: HWAVE
-     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)   :: LWAVE
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)   :: LWAVEP
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)   :: PWAVE
+
 #endif
      REAL,                                   INTENT(IN)    :: P1000
      REAL,                                   INTENT(IN)    :: XICE_THRESHOLD
@@ -2028,7 +2033,7 @@ CONTAINS
           &        QSHLTR, Q10, PSHLTR,                            &  ! 0,0,0,
           &        P1000,                                        &  ! I
 #ifdef SWAN_COUPLING
-          &        HWAVE, LWAVE,                                   &
+          &        HWAVE, LWAVEP, PWAVE,                         &
 #endif
           &        ids,ide, jds,jde, kds,kde,                      &
           &        ims,ime, jms,jme, kms,kme,                      &
@@ -2085,7 +2090,7 @@ CONTAINS
           &        TSHLTR_SEA, TH10_SEA, Q02_SEA, QSHLTR_SEA, Q10_SEA, PSHLTR_SEA,             & ! 0,0,0,0,0,0,
           &        p1000,                                                                    & ! I
 #ifdef SWAN_COUPLING
-          &        HWAVE, LWAVE,                                                               &
+          &        HWAVE, LWAVEP, PWAVE,                                                     &
 #endif
           &        ids,ide, jds,jde, kds,kde,                                                  &
           &        ims,ime, jms,jme, kms,kme,                                                  &

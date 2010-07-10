@@ -52,6 +52,10 @@
 !  avgU2      Quadratic term <ubar*ubar> for 2D momentum at U-points.  !
 !  avgV2      Quadratic term <vbar*vbar> for 2D momentum at V-points.  !
 !  avgZZ      Quadratic term <zeta*zeta> for free-surface.             !
+# if defined AVERAGES_UV_KIRBY
+!  avguWave   Kirby and Chen velocity in the XI-direction.             !
+!  avgvWave   Kirby and Chen velocity in the ETA- direction.           !
+# endif
 !  avgu3d     3D velocity component (m/s) in the XI-direction.         !
 !  avgv3d     3D velocity component (m/s) in the ETA-direction.        !
 !  avgw3d     S-coordinate [omega*Hz/mn] vertical velocity (m3/s).     !
@@ -96,6 +100,10 @@
 
           real(r8), pointer :: avgu2d(:,:)
           real(r8), pointer :: avgv2d(:,:)
+# ifdef AVERAGES_UV_KIRBY
+          real(r8), pointer :: avguWave(:,:)
+          real(r8), pointer :: avgvWave(:,:)
+# endif
 # ifdef AVERAGES_NEARSHORE
           real(r8), pointer :: avgu2Sd(:,:)
           real(r8), pointer :: avgv2Sd(:,:)
@@ -218,6 +226,10 @@
       allocate ( AVERAGE(ng) % avgu2d(LBi:UBi,LBj:UBj) )
       allocate ( AVERAGE(ng) % avgv2d(LBi:UBi,LBj:UBj) )
       allocate ( AVERAGE(ng) % avgzeta(LBi:UBi,LBj:UBj) )
+# ifdef AVERAGES_UV_KIRBY
+      allocate ( AVERAGE(ng) % avguWave(LBi:UBi,LBj:UBj) )
+      allocate ( AVERAGE(ng) % avgvWave(LBi:UBi,LBj:UBj) )
+# endif
 # ifdef AVERAGES_NEARSHORE
       allocate ( AVERAGE(ng) % avgu2Sd(LBi:UBi,LBj:UBj) )
       allocate ( AVERAGE(ng) % avgv2Sd(LBi:UBi,LBj:UBj) )
@@ -380,6 +392,10 @@
           AVERAGE(ng) % avgu2d(i,j) = IniVal
           AVERAGE(ng) % avgv2d(i,j) = IniVal
           AVERAGE(ng) % avgzeta(i,j) = IniVal
+# ifdef AVERAGES_UV_KIRBY
+          AVERAGE(ng) % avguWave(i,j) = IniVal
+          AVERAGE(ng) % avgvWave(i,j) = IniVal
+# endif
 # ifdef AVERAGES_NEARSHORE
           AVERAGE(ng) % avgu2Sd(i,j) = IniVal
           AVERAGE(ng) % avgv2Sd(i,j) = IniVal

@@ -1884,6 +1884,13 @@
               RETURN
             END IF
             Npts=load_l(Nval, Cval, Ngrids, Hout(idWlen,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWlep)') THEN
+            IF (idWlep.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idWlep'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWlep,1:Ngrids))
           ELSE IF (TRIM(KeyWord).eq.'Hout(idWdir)') THEN
             IF (idWdir.eq.0) THEN
               IF (Master) WRITE (out,280) 'idWdir'
@@ -3159,7 +3166,12 @@
 #ifdef WAVES_LENGTH
           IF (Hout(idWlen,ng)) WRITE (out,170) Hout(idWlen,ng),         &
      &       'Hout(idWlen)',                                            &
-     &       'Write out wavelength.'
+     &       'Write out mean wavelength.'
+#endif
+#ifdef WAVES_LENGTHP
+          IF (Hout(idWlep,ng)) WRITE (out,170) Hout(idWlep,ng),         &
+     &       'Hout(idWlep)',                                            &
+     &       'Write out peak wavelength.'
 #endif
 #ifdef WAVES_DIR
           IF (Hout(idWdir,ng)) WRITE (out,170) Hout(idWdir,ng),         &
@@ -5443,6 +5455,8 @@
             Npts=load_l(Nval, Cval, Ngrids, Sout(idWamp,:))
           ELSE IF (TRIM(KeyWord).eq.'Sout(idWlen)') THEN
             Npts=load_l(Nval, Cval, Ngrids, Sout(idWlen,:))
+          ELSE IF (TRIM(Keyword).eq.'Sout(idWlep)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWlep,:))
           ELSE IF (TRIM(KeyWord).eq.'Sout(idWdir)') THEN
             Npts=load_l(Nval, Cval, Ngrids, Sout(idWdir,:))
 # ifdef WAVES_TOP_PERIOD
@@ -5698,6 +5712,11 @@
             IF (Sout(idWlen,ng)) WRITE (out,80) Sout(idWlen,ng),        &
      &         'Sout(idWlen)',                                          &
      &         'Write out wave length.'
+# endif
+# ifdef WAVES_LENGTHP
+            IF (Sout(idWlep,ng)) WRITE (out,80) Sout(idWlep,ng),        &
+     &         'Sout(idWlep)',                                          &
+     &         'Write out peak wave length.'
 # endif
 # ifdef WAVES_DIR
             IF (Sout(idWdir,ng)) WRITE (out,80) Sout(idWdir,ng),        &

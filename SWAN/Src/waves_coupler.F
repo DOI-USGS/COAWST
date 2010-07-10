@@ -394,7 +394,7 @@
 !  the wave model.
 !
       CALL AttrVect_init (AttrVect_G(ng)%wav2ocn_AV,                    &
-     &  rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:QB",                &
+     &  rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:WLENP:QB",          &
      &  lsize=gsmsize)
       CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
 !
@@ -425,7 +425,8 @@
 !
 ! Initialize atribute vector holding wave data.
 !
-      CALL AttrVect_init(AttrVect_G(ng)%wav2atm_AV, rList="HSIGN:WLEN", &
+      CALL AttrVect_init(AttrVect_G(ng)%wav2atm_AV,                     &
+     &                   rList="HSIGN:WLENP:RTP",                       &
      &                   lsize=Asize)
       CALL AttrVect_zero(AttrVect_G(ng)%wav2atm_AV)
 !
@@ -456,7 +457,8 @@
 !  the wave model.
 !
       Asize=GlobalSegMap_lsize(GSmapWRF, WAV_COMM_WORLD)
-      CALL AttrVect_init(wav2atm_AV2, rList="HSIGN:WLEN", lsize=Asize)
+      CALL AttrVect_init(wav2atm_AV2, rList="HSIGN:WLENP:RTP",          &
+     &                   lsize=Asize)
       CALL AttrVect_zero(wav2atm_AV2)
 #  endif
 # endif
@@ -583,6 +585,10 @@
       ELSE IF (IVTYPE.eq.12) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "RTP",avdata)
+# ifdef AIR_WAVES
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2atm_AV,           &
+     &                             "RTP",avdata)
+# endif
       ELSE IF (IVTYPE.eq.50) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "TMBOT",avdata)
@@ -595,9 +601,12 @@
       ELSE IF (IVTYPE.eq.17) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "WLEN",avdata)
+      ELSE IF (IVTYPE.eq.70) THEN
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "WLENP",avdata)
 # ifdef AIR_WAVES
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2atm_AV,           &
-     &                             "WLEN",avdata)
+     &                             "WLENP",avdata)
 # endif
       ELSE IF (IVTYPE.eq.8) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
@@ -610,7 +619,7 @@
 !  Create a restart file.
 !-----------------------------------------------------------------------
 !
-        CALL BACKUP (AC2, SPCSIG, SPCDIR, KGRPNT, XCGRID, YCGRID, ng)
+!jcw    CALL BACKUP (AC2, SPCSIG, SPCDIR, KGRPNT, XCGRID, YCGRID, ng)
 !
 !-----------------------------------------------------------------------
 !  Send wave fields bundle to ocean model, ROMS.

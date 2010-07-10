@@ -961,11 +961,15 @@
 # define WAVES_HEIGHT
 #endif
 
+#if defined NEARSHORE || defined BEDLOAD_SOULSBY || \
+    defined WAVES_OCEAN
+# define WAVES_LENGTH
+#endif
+
 #if (!defined DEEPWATER_WAVES      && \
      (defined COARE_TAYLOR_YELLAND || defined COARE_OOST)) || \
-      defined DRENNAN || defined NEARSHORE                 || \
-      defined BEDLOAD_SOULSBY      || defined WAVES_OCEAN
-# define WAVES_LENGTH
+      defined DRENNAN
+# define WAVES_LENGTHP
 #endif
 
 #if defined COARE_TAYLOR_YELLAND   || defined COARE_OOST || \
@@ -983,7 +987,7 @@
      defined SVENDSEN_ROLLER || defined TKE_WAVEDISS          || \
      defined WAVES_DIR       || defined WAVES_BOT_PERIOD      || \
      defined WAVES_HEIGHT    || defined WAVES_TOP_PERIOD      || \
-     defined WAVES_LENGTH)
+     defined WAVES_LENGTH    || defined WAVES_LENGTHP)
 # define WAVE_DATA
 #endif
 

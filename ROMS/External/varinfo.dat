@@ -1341,6 +1341,15 @@
   'r2dvar'
   1.0
 
+'Lwavep'                                           ! Input
+  'wind-induced peak wavelength'
+  'meter'                                          ! [m]
+  'Lwavep, scalar, series'
+  'wave_time'
+  'idWlep'
+  'r2dvar'
+  1.0
+
 'Pwave_top'                                        ! Input
   'wind-induced surface wave Period'
   'second'                                         ! [s]

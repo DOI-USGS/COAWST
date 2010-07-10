@@ -1188,7 +1188,7 @@
 # endif
 # ifdef WAVES_LENGTH
 !
-!  Write out wind-induced wave length.
+!  Write out wind-induced mean wave length.
 !
       IF (Sout(idWlen,ng)) THEN
         scale=1.0_r8
@@ -1201,6 +1201,24 @@
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
      &                        ncid = ncSTAid(ng),                       &
      &                        varid = staVid(idWlen,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+# endif
+# ifdef WAVES_LENGTHP
+!
+!  Write out wind-induced peak wave length.
+!
+      IF (Sout(idWlep,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idWlep, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng) % Lwavep,                 &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idWlep)), psta,              &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idWlep,ng))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 # endif

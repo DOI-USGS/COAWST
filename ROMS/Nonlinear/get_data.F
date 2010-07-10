@@ -223,6 +223,15 @@
 #  endif
      &                FORCES(ng) % LwaveG(LBi,LBj,1))
 # endif
+# ifdef WAVES_LENGTHP
+      CALL get_2dfld (ng, iNLM, idWlen, ncFRCid(idWlep,ng),             &
+     &                nFfiles(ng), FRCname(1,ng), update(1),            &
+     &                LBi, UBi, LBj, UBj, 2, 1,                         &
+#  ifdef MASKING
+     &                GRID(ng) % rmask(LBi,LBj),                        &
+#  endif
+     &                FORCES(ng) % LwavepG(LBi,LBj,1))
+# endif
 # ifdef WAVES_TOP_PERIOD
       CALL get_2dfld (ng, iNLM, idWptp, ncFRCid(idWptp,ng),             &
      &                nFfiles(ng), FRCname(1,ng), update(1),            &

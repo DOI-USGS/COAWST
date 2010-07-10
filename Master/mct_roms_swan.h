@@ -306,14 +306,14 @@
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapSWAN,            &
      &      OCN_COMM_WORLD)
       CALL AttrVect_init(wav2ocn_AV2,                                   &
-     &     rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:QB",             &
+     &     rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:WLENP:QB",       &
      &     lsize=Asize)
       CALL AttrVect_zero (wav2ocn_AV2)
 !
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
      &      OCN_COMM_WORLD)
       CALL AttrVect_init(AttrVect_G(ng)%wav2ocn_AV,                     &
-     &     rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:QB",             &
+     &     rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:WLENP:QB",       &
      &     lsize=Asize)
       CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
 !
@@ -347,7 +347,7 @@
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
      &                         OCN_COMM_WORLD)
       CALL AttrVect_init(AttrVect_G(ng)%wav2ocn_AV,                     &
-     &  rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:QB",                &
+     &  rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:WLENP:QB",          &
      &  lsize=Asize)
       CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
 !
@@ -668,6 +668,19 @@
           FORCES(ng)%Lwave(i,j)=MIN(Lwave_max,MAX(1.0_r8,A(ij)))
         END DO
       END DO
+!
+!  Wave length (m).
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WLENP",    &
+     &                           A, Asize)
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          FORCES(ng)%Lwavep(i,j)=MIN(Lwave_max,MAX(1.0_r8,A(ij)))
+        END DO
+      END DO
+!
 #ifdef SVENDSEN_ROLLER
 !
 !  Percent wave breaking.
@@ -709,6 +722,10 @@
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Lwave)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%Lwavep)
+
 # ifdef SVENDSEN_ROLLER
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -725,12 +742,12 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    FORCES(ng)%Wave_dissip, FORCES(ng)%Hwave,     &
-     &                    FORCES(ng)%Dwave, FORCES(ng)%Lwave)
-      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
+     &                    FORCES(ng)%Pwave_top, FORCES(ng)%Pwave_bot)
+      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    FORCES(ng)%Pwave_top, FORCES(ng)%Pwave_bot,   &
-     &                    FORCES(ng)%Ub_swan)
+     &                    FORCES(ng)%Ub_swan, FORCES(ng)%Dwave,         &
+     &                    FORCES(ng)%Lwave, FORCES(ng)%Lwavep)
 # ifdef SVENDSEN_ROLLER
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &

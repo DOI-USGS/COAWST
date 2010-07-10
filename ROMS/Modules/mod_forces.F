@@ -41,6 +41,9 @@
 !  Lwave        Mean surface wavelength read in from swan output       !
 !  LwaveG       Latest two-time snapshots of input "Lwave" grided      !
 !                 data used for interpolation.                         !
+!  Lwavep       Peak surface wavelength read in from swan output       !
+!  LwavepG      Latest two-time snapshots of input "Lwavep" grided     !
+!                 data used for interpolation.                         !
 !  Pwave_top    Wind induced surface wave period (s).                  !
 !  Pwave_topG   Latest two-time snapshots of input "Pwave_top" grided  !
 !                 data used for interpolation.                         !
@@ -204,6 +207,13 @@
           real(r8), pointer :: Lwave(:,:)
 # ifndef ANA_WWAVE
           real(r8), pointer :: LwaveG(:,:,:)
+# endif
+#endif
+
+#ifdef WAVES_LENGTHP
+          real(r8), pointer :: Lwavep(:,:)
+# ifndef ANA_WWAVE
+          real(r8), pointer :: LwavepG(:,:,:)
 # endif
 #endif
 
@@ -516,6 +526,13 @@
       allocate ( FORCES(ng) % Lwave(LBi:UBi,LBj:UBj) )
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % LwaveG(LBi:UBi,LBj:UBj,2) )
+# endif
+#endif
+
+#ifdef WAVES_LENGTHP
+      allocate ( FORCES(ng) % Lwavep(LBi:UBi,LBj:UBj) )
+# ifndef ANA_WWAVE
+      allocate ( FORCES(ng) % LwavepG(LBi:UBi,LBj:UBj,2) )
 # endif
 #endif
 
@@ -896,6 +913,13 @@
 # ifndef ANA_WWAVE
             FORCES(ng) % LwaveG(i,j,1) = IniVal
             FORCES(ng) % LwaveG(i,j,2) = IniVal
+# endif
+#endif
+#ifdef WAVES_LENGTHP
+            FORCES(ng) % Lwavep(i,j) = IniVal
+# ifndef ANA_WWAVE
+            FORCES(ng) % LwavepG(i,j,1) = IniVal
+            FORCES(ng) % LwavepG(i,j,2) = IniVal
 # endif
 #endif
 #ifdef WAVES_TOP_PERIOD

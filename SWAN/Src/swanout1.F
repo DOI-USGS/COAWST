@@ -906,7 +906,7 @@
       DATA IENT /0/
       CALL STRACE (IENT, 'SWOUTP')
 
-      Numcouple=8
+      Numcouple=9
       ALLOCATE (Cpltype(Numcouple))
       Cpltype(1)=55                      ! DISSIP  SWOEXD
       Cpltype(2)=50                      ! TMBOT   SWOEXD
@@ -916,6 +916,7 @@
       Cpltype(6)=12                      ! RTP     SWOEXA
       Cpltype(7)=13                      ! DIR     SWOEXA
       Cpltype(8)=17                      ! WLEN    SWOEXA
+      Cpltype(9)=70                      ! WLENP   SWOEXA
 !
       ALLOCATE (OQI(4))
       OQI(1) = 0
@@ -1295,7 +1296,7 @@
          IF (IVTYPE.EQ.15 .OR. IVTYPE.EQ.17 .OR. IVTYPE.EQ.18 .OR.
      &       IVTYPE.EQ.19 .OR. IVTYPE.EQ.20 .OR. IVTYPE.EQ.28 .OR.        10.10
      &       IVTYPE.EQ.32 .OR. IVTYPE.EQ.33 .OR. IVTYPE.EQ.42 .OR.
-     &       IVTYPE.EQ.47 .OR. IVTYPE.EQ.59                        )      40.64 40.41 40.00
+     &       IVTYPE.EQ.47 .OR. IVTYPE.EQ.59 .OR. IVTYPE.EQ.70      )      40.64 40.41 40.00
      &   BKC = 2
 !
          IF (IVTYPE.EQ.11 .AND. ICUR.GT.0) BKC = 2                        20.36
@@ -3414,7 +3415,7 @@
 !
 ! 13. Source text
 !
-      PARAMETER  (NVOTP=21)                                               40.64 40.51 40.41 40.00
+      PARAMETER  (NVOTP=22)                                               40.64 40.51 40.41 40.00
       REAL       XC(MIP)        ,YC(MIP)       ,AC2(MDC,MSC,MCGRD),
      &           VOQ(MIP,*)     ,
      &           WK(*)          ,
@@ -3430,7 +3431,7 @@
       SAVE IENT, IVOTP
       DATA IENT /0/
       DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 32, 33,     20.61
-     &            42, 43, 44, 47, 48, 53, 58, 59/                         40.64 40.51 40.41 40.00
+     &            42, 43, 44, 47, 48, 53, 58, 59, 70 /                    40.64 40.51 40.41 40.00
       CALL STRACE (IENT, 'SWOEXA')
 !
 !     loop over all output points
@@ -4241,26 +4242,26 @@
 !
 !       peak wave length  WLENP
 !
-!        IVTYPE = 12
-!        IF (OQPROC(IVTYPE)) THEN
-!           EMAX = 0.
-!           ISIGM = -1
-!           DO IS = 1, MSC
-!              ETD = 0.
-!              DO ID = 1, MDC
-!                ETD = ETD + WK(IS)*ACLOC(ID,IS)*DDIR
-!              ENDDO
-!              IF (ETD.GT.EMAX) THEN
-!                EMAX  = ETD
-!                ISIGM = IS
-!              ENDIF
-!           ENDDO
-!           IF (ISIGM.GT.0) THEN
-!             VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SPCSIG(ISIGM)
-!           ELSE
-!             VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
-!           ENDIF
-!        ENDIF
+        IVTYPE = 70
+        IF (OQPROC(IVTYPE)) THEN
+           EMAX = 0.
+           ISIGM = -1
+           DO IS = 1, MSC
+              ETD = 0.
+              DO ID = 1, MDC
+                ETD = ETD + WK(IS)*ACLOC(ID,IS)*DDIR
+              ENDDO
+              IF (ETD.GT.EMAX) THEN
+                EMAX  = ETD
+                ISIGM = IS
+              ENDIF
+           ENDDO
+           IF (ISIGM.GT.0) THEN
+             VOQ(IP,VOQR(IVTYPE)) = 2.*PI/WK(ISIGM)
+           ELSE
+             VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
+           ENDIF
+        ENDIF
 !
 !       average wave length
 !

@@ -81,6 +81,10 @@
      &                   OCEAN(ng) % wvel,                              &
      &                   OCEAN(ng) % t,                                 &
      &                   OCEAN(ng) % rho,                               &
+#  ifdef AVERAGES_UV_KIRBY
+     &                   OCEAN(ng) % uwave,                             &
+     &                   OCEAN(ng) % vwave,                             &
+#  endif
 #  ifdef AVERAGES_NEARSHORE
      &                   OCEAN(ng) % u_stokes,                          &
      &                   OCEAN(ng) % v_stokes,                          &
@@ -170,6 +174,10 @@
      &                   AVERAGE(ng) % avgwvel,                         &
      &                   AVERAGE(ng) % avgt,                            &
      &                   AVERAGE(ng) % avgrho,                          &
+#  ifdef AVERAGES_UV_KIRBY
+     &                   AVERAGE(ng) % avguWave,                        &
+     &                   AVERAGE(ng) % avgvWave,                        &
+#  endif
 #  ifdef AVERAGES_NEARSHORE
      &                   AVERAGE(ng) % avgu3Sd,                         &
      &                   AVERAGE(ng) % avgv3Sd,                         &
@@ -275,6 +283,9 @@
 #  endif
      &                         u, v,                                    &
      &                         W, wvel, t, rho,                         &
+#  ifdef AVERAGES_UV_KIRBY
+     &                         uwave, vwave,                            &
+#  endif
 #  ifdef AVERAGES_NEARSHORE
      &                         u_stokes, v_stokes,                      &
      &                         rustr3d, rvstr3d,                        &
@@ -336,6 +347,9 @@
      &                         avgu3d, avgv3d,                          &
      &                         avgw3d, avgwvel,                         &
      &                         avgt, avgrho,                            &
+#  ifdef AVERAGES_UV_KIRBY
+     &                         avguWave, avgvWave,                      &
+#  endif
 #  ifdef AVERAGES_NEARSHORE
      &                         avgu3Sd, avgv3Sd,                        &
      &                         avgu3RS, avgv3RS,                        &
@@ -429,6 +443,10 @@
       real(r8), intent(in) :: wvel(LBi:,LBj:,0:)
       real(r8), intent(in) :: t(LBi:,LBj:,:,:,:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
+#   ifdef AVERAGES_UV_KIRBY
+      real(r8), intent(in) :: uwave(LBi:,LBj:)
+      real(r8), intent(in) :: vwave(LBi:,LBj:)
+#   endif
 #   ifdef AVERAGES_NEARSHORE
       real(r8), intent(in) :: u_stokes(LBi:,LBj:,:)
       real(r8), intent(in) :: v_stokes(LBi:,LBj:,:)
@@ -522,6 +540,10 @@
       real(r8), intent(inout) :: avgwvel(LBi:,LBj:,0:)
       real(r8), intent(inout) :: avgt(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: avgrho(LBi:,LBj:,:)
+#   ifdef AVERAGES_UV_KIRBY
+      real(r8), intent(inout) :: avgvWave(LBi:,LBj:)
+      real(r8), intent(inout) :: avguWave(LBi:,LBj:)
+#   endif
 #   ifdef AVERAGES_NEARSHORE
       real(r8), intent(inout) :: avgu3Sd(LBi:,LBj:,:)
       real(r8), intent(inout) :: avgv3Sd(LBi:,LBj:,:)
@@ -889,6 +911,10 @@
             avgDV_avg1(i,j)=DV_avg1(i,j)
             avgDV_avg2(i,j)=DV_avg2(i,j)
 # endif
+# if defined AVERAGES_UV_KIRBY
+            avguWave(i,j)=uwave(i,j)
+            avgvWave(i,j)=vwave(i,j)
+# endif
 # ifdef AVERAGES_NEARSHORE
             avgu2Sd(i,j)=ubar_stokes(i,j)
             avgv2Sd(i,j)=vbar_stokes(i,j)
@@ -1103,6 +1129,11 @@
             avgDV_avg1(i,j)=avgDV_avg1(i,j)+DV_avg1(i,j)
             avgDV_avg2(i,j)=avgDV_avg2(i,j)+DV_avg2(i,j)
 # endif
+# if defined AVERAGES_UV_KIRBY
+            avguWave(i,j)=avguWave(i,j)+uwave(i,j)
+            avgvWave(i,j)=avgvWave(i,j)+vwave(i,j)
+# endif
+
 # ifdef AVERAGES_NEARSHORE
             avgu2Sd(i,j)=avgu2Sd(i,j)+ubar_stokes(i,j)
             avgv2Sd(i,j)=avgv2Sd(i,j)+vbar_stokes(i,j)
@@ -1401,6 +1432,10 @@
             avgDU_avg2(i,j)=fac*avgDU_avg2(i,j)
             avgDV_avg1(i,j)=fac*avgDV_avg1(i,j)
             avgDV_avg2(i,j)=fac*avgDV_avg2(i,j)
+# endif
+# if defined AVERAGES_UV_KIRBY
+            avguWave(i,j)=fac*avguWave(i,j)
+            avgvWave(i,j)=fac*avgvWave(i,j)
 # endif
 # ifdef AVERAGES_NEARSHORE
             avgu2Sd(i,j)=fac*avgu2Sd(i,j)

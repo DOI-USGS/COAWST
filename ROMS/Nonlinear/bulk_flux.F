@@ -112,7 +112,7 @@
 # if !defined DEEPWATER_WAVES      && \
      (defined COARE_TAYLOR_YELLAND || defined COARE_OOST || \
       defined DRENNAN)
-     &                     FORCES(ng) % Lwave,                          &
+     &                     FORCES(ng) % Lwavep,                         &
 # endif
      &                     FORCES(ng) % rain,                           &
      &                     FORCES(ng) % lhflx,                          &
@@ -145,15 +145,17 @@
 # ifdef CLOUDS
      &                           cloud,                                 &
 # endif
-# ifdef COARE_TAYLOR_YELLAND
+# if defined COARE_TAYLOR_YELLAND || defined DRENNAN
      &                           Hwave,                                 &
 # endif
-# if defined COARE_TAYLOR_YELLAND || defined COARE_OOST
+# if defined COARE_TAYLOR_YELLAND || defined COARE_OOST || \
+     defined DRENNAN
      &                           Pwave_top,                             &
 # endif
 # if !defined DEEPWATER_WAVES      && \
-     (defined COARE_TAYLOR_YELLAND || defined COARE_OOST)
-     &                           Lwave,                                 &
+     (defined COARE_TAYLOR_YELLAND || defined COARE_OOST || \
+      defined DRENNAN)
+     &                           Lwavep,                                &
 # endif
      &                           rain, lhflx, lrflx, shflx,             &
      &                           srflx, stflx,                          &
@@ -198,15 +200,17 @@
 #  ifdef CLOUDS
       real(r8), intent(in) :: cloud(LBi:,LBj:)
 #  endif
-# ifdef COARE_TAYLOR_YELLAND
+# if defined COARE_TAYLOR_YELLAND || defined DRENNAN
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
 # endif
-# if defined COARE_TAYLOR_YELLAND || defined COARE_OOST
+# if defined COARE_TAYLOR_YELLAND || defined COARE_OOST || \
+      defined DRENNAN
       real(r8), intent(in) :: Pwave_top(LBi:,LBj:)
 # endif
 # if !defined DEEPWATER_WAVES      && \
-     (defined COARE_TAYLOR_YELLAND || defined COARE_OOST)
-      real(r8), intent(in) :: Lwave(LBi:,LBj:)
+     (defined COARE_TAYLOR_YELLAND || defined COARE_OOST || \
+      defined DRENNAN)
+      real(r8), intent(in) :: Lwavep(LBi:,LBj:)
 # endif
       real(r8), intent(in) :: rain(LBi:,LBj:)
 
@@ -240,15 +244,18 @@
 #  ifdef CLOUDS
       real(r8), intent(in) :: cloud(LBi:UBi,LBj:UBj)
 #  endif
-# ifdef COARE_TAYLOR_YELLAND
+# if defined COARE_TAYLOR_YELLAND || \
+      defined DRENNAN
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
 # endif
-# if defined COARE_TAYLOR_YELLAND || defined COARE_OOST
+# if defined COARE_TAYLOR_YELLAND || defined COARE_OOST || \
+      defined DRENNAN
       real(r8), intent(in) :: Pwave_top(LBi:UBi,LBj:UBj)
 # endif
 # if !defined DEEPWATER_WAVES      && \
-     (defined COARE_TAYLOR_YELLAND || defined COARE_OOST)
-      real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
+     (defined COARE_TAYLOR_YELLAND || defined COARE_OOST || \
+      defined DRENNAN)
+      real(r8), intent(in) :: Lwavep(LBi:UBi,LBj:UBj)
 # endif
       real(r8), intent(in) :: rain(LBi:UBi,LBj:UBj)
 
@@ -578,8 +585,8 @@
           Cwave(i)=g*MAX(Pwave_top(i,j),eps)*twopi_inv
           WaveLength(i)=Cwave(i)*MAX(Pwave_top(i,j),eps)
 #  else
-          Cwave(i)=Lwave(i,j)/MAX(Pwave_top(i,j),eps)
-          WaveLength(i)=Lwave(i,j)
+          Cwave(i)=Lwavep(i,j)/MAX(Pwave_top(i,j),eps)
+          WaveLength(i)=Lwavep(i,j)
 #  endif
 # endif
         END DO
@@ -601,7 +608,7 @@
      &             0.11_r8*VisAir(i)/(Wstar(i)+eps)
 # elif defined DRENNAN
             ZoW(i)=(3.35_r8)*Hwave(i,j)*                                &
-     &             (Wstar(i)/Cwave(i))**3.4_r8+                         &
+     &             MIN((Wstar(i)/Cwave(i)),0.1_r8)**3.4_r8+             &
      &             0.11_r8*VisAir(i)/(Wstar(i)+eps)
 # else
             ZoW(i)=charn(i)*Wstar(i)*Wstar(i)/g+                        &

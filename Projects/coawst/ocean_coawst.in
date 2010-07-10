@@ -360,13 +360,17 @@ Hout(idV3rs) == F F                         ! 3D V-radiation stress
 Hout(idU3Sd) == F F                         ! 3D U-Stokes velocity
 Hout(idV3Sd) == F F                         ! 3D V-Stokes velocity
 
-Hout(idWamp) == T T                         ! wave height
-Hout(idWlen) == T T                         ! wave length
-Hout(idWdir) == T T                         ! wave direction
-Hout(idWptp) == T T                         ! wave surface period
-Hout(idWpbt) == T T                         ! wave bottom period
-Hout(idWorb) == T T                         ! wave bottom orbital velocity
-Hout(idWdis) == T T                         ! wave dissipation
+Hout(idWamp) == T T                        ! wave height
+Hout(idWlen) == T T                        ! wave length, mean
+Hout(idWlep) == T T                        ! wave length, peak
+Hout(idWdir) == T T                        ! wave direction
+Hout(idWptp) == T T                        ! wave surface period
+Hout(idWpbt) == T T                        ! wave bottom period
+Hout(idWorb) == T T                        ! wave bottom orbital velocity
+Hout(idWdis) == T T                        ! wave dissipation
+Hout(idWbrk) == T T                        ! wave breaking (percent)
+Hout(idUwav) == T T                        ! wave-depth avgeraged U-velocity
+Hout(idVwav) == T T                        ! wave-depth avgeraged V-velocity
 
 Hout(idTsur) == T F                         ! surface net heat and salt flux
 Hout(idLhea) == T F                         ! latent heat flux

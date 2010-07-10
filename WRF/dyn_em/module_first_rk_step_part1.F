@@ -353,7 +353,7 @@ BENCH_START(surf_driver_tim)
      &        ,FLQC=grid%flqc          ,GLW=grid%glw            ,GRDFLX=grid%grdflx      &
      &        ,GSW=grid%gsw    ,SWDOWN=grid%swdown        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx              &
 #ifdef SWAN_COUPLING
-     &        ,HWAVE=grid%hwave, LWAVE=grid%lwave                                        &
+     &        ,HWAVE=grid%hwave, LWAVEP=grid%lwavep, PWAVE=grid%pwave   &
 #endif
      &        ,HT=grid%ht              ,IFSNOW=config_flags%ifsnow      ,ISFFLX=config_flags%isfflx      &
      &        ,FRACTIONAL_SEAICE=config_flags%fractional_seaice           &
