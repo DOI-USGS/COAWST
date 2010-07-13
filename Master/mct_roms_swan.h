@@ -668,6 +668,7 @@
           FORCES(ng)%Lwave(i,j)=MIN(Lwave_max,MAX(1.0_r8,A(ij)))
         END DO
       END DO
+#ifdef WAVES_LENGTHP
 !
 !  Wave length (m).
 !
@@ -680,6 +681,7 @@
           FORCES(ng)%Lwavep(i,j)=MIN(Lwave_max,MAX(1.0_r8,A(ij)))
         END DO
       END DO
+#endif
 !
 #ifdef SVENDSEN_ROLLER
 !
@@ -722,10 +724,11 @@
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Lwave)
+# ifdef WAVES_LENGTHP
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Lwavep)
-
+# endif
 # ifdef SVENDSEN_ROLLER
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -743,11 +746,19 @@
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    FORCES(ng)%Wave_dissip, FORCES(ng)%Hwave,     &
      &                    FORCES(ng)%Pwave_top, FORCES(ng)%Pwave_bot)
+# ifdef WAVES_LENGTHP
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    FORCES(ng)%Ub_swan, FORCES(ng)%Dwave,         &
      &                    FORCES(ng)%Lwave, FORCES(ng)%Lwavep)
+# else
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    FORCES(ng)%Ub_swan, FORCES(ng)%Dwave,         &
+     &                    FORCES(ng)%Lwave)
+# endif
 # ifdef SVENDSEN_ROLLER
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
