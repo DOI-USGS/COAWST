@@ -161,7 +161,7 @@
       integer :: nRows, nCols, num_sparse_elems
 
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
-      integer, pointer :: start(:), length(:)
+      integer, allocatable :: start(:), length(:)
       integer :: MyMasterswan
 # ifdef REFINED_GRID
       integer, dimension(:), pointer :: ocnids

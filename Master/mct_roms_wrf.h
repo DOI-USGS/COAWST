@@ -362,40 +362,40 @@
 !
       to_add='GSW'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
       to_add=':GLW'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
 #ifdef ATM2OCN_FLUXES
       to_add=':LH'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
       to_add=':HFX'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
       to_add=':USTRESS'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
       to_add=':VSTRESS'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 #endif
 !
 #if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
       to_add=':PSFC'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 #endif
 !
@@ -403,12 +403,12 @@
    (defined SHORTWAVE && defined ANA_SRFLUX)
       to_add=':RELH'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
       to_add=':T2'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 #endif
 !
@@ -420,28 +420,28 @@
 !
       to_add=':V10'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 #endif
 !
 #ifdef CLOUDS
       to_add=':CLDFRA'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 #endif
 !
 #if !defined ANA_RAIN && defined EMINUSP
       to_add=':RAIN'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 #endif
 !
 #if defined EMINUSP
       to_add=':EVAP'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 #endif
       cad=LEN_TRIM(avstring)

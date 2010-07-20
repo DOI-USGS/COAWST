@@ -87,53 +87,37 @@ for jj=1:MP
 end
 nc{'grid_imask'}(:) = ztemp(:);
 clear ztemp
-
 scale=pi/180;
-disp('step 1/4, filling grid lat centers')
+
 %get grid centers
-count=0;
-for jj=1:MP
-  for ii=1:LP
-    count=count+1;
-    ztemp(count)=lat_rho(jj,ii);
-  end
-end
+disp('step 1/4, filling grid lat centers')
+ztemp=reshape(lat_rho',1,MP*LP);
 nc{'grid_center_lat'}(:) = ztemp(:)*scale;
 clear ztemp
 
 disp('step 2/4, filling grid lon centers')
-count=0;
-for jj=1:MP
-  for ii=1:LP
-    count=count+1;
-    ztemp(count)=lon_rho(jj,ii);
-  end
-end
-nc{'grid_center_lon'}(:) = ztemp(:)*scale
+ztemp=reshape(lon_rho',1,MP*LP);
+nc{'grid_center_lon'}(:) = ztemp(:)*scale;
 clear ztemp
 
-disp('step 3/4, filling grid lat corners')
 %get grid corners, counterclockwise
-count=0;
-for jj=1:MP
-  for ii=1:LP
-    count=count+1;
-    ztemp(count,:)=[y_full_grid(jj  ,ii) y_full_grid(jj  ,ii+1) ...
-                    y_full_grid(jj+1,ii+1) y_full_grid(jj+1,ii)];
-  end
-end
+disp('step 3/4, filling grid lat corners')
+c1=reshape(y_full_grid(1:MP,1:LP)',MP*LP,1);
+c2=reshape(y_full_grid(1:MP,2:LP+1)',MP*LP,1);
+c3=reshape(y_full_grid(2:MP+1,2:LP+1)',MP*LP,1);
+c4=reshape(y_full_grid(2:MP+1,1:LP)',MP*LP,1);
+ztemp(:,:)=[c1 c2 c3 c4];
 nc{'grid_corner_lat'}(:) = ztemp(:)*scale;
+clear ztemp
 
 disp('step 4/4, filling grid lon corners')
-count=0;
-for jj=1:MP
-  for ii=1:LP
-    count=count+1;
-    ztemp(count,:)=[x_full_grid(jj  ,ii) x_full_grid(jj  ,ii+1) ...
-                    x_full_grid(jj+1,ii+1) x_full_grid(jj+1,ii)];
-  end
-end
+c1=reshape(x_full_grid(1:MP,1:LP)',MP*LP,1);
+c2=reshape(x_full_grid(1:MP,2:LP+1)',MP*LP,1);
+c3=reshape(x_full_grid(2:MP+1,2:LP+1)',MP*LP,1);
+c4=reshape(x_full_grid(2:MP+1,1:LP)',MP*LP,1);
+ztemp(:,:)=[c1 c2 c3 c4];
 nc{'grid_corner_lon'}(:) = ztemp(:)*scale;
+clear ztemp
 
 %close the file.
 if ~isempty(close(nc))
