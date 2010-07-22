@@ -1258,6 +1258,7 @@
           ENDIF
           ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(MXG(IGR1)*MYG(IGR1)))        40.31
           WLEVL=>M_GENARR_MOD(ng)%WLEVL_G
+          WLEVL=0.
 #endif
 !       note: 8 and 9 are for coordinates                                 40.03
         ELSE IF (KEYWIS ('ASTD')) THEN                                    40.03

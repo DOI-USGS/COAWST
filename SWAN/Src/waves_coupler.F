@@ -1023,13 +1023,19 @@
 ! active (wet points) using array KGRPNT.
 !
 ! Insert depth into SWAN array.
+! Here the depth is really the bottom level. 
+! When the user requests depth for output, that value is written
+! as COMPDA(INDX,JWLV2) which is DEPTH (really botlev) + watlev.
 !
         IP=0
         DO IY=1,MYC
           DO IX=1,MXC
             IP=IP+1
             OFFSET=(MXF-1)+IX+(IY-1)*MXCGL
-            DEPTH(OFFSET)=TEMPMCT(IP,1)
+            INB=TEMPMCT(IP,1)
+            IF (INB.gt.0.) THEN
+              DEPTH(OFFSET)=TEMPMCT(IP,1)
+            END IF
           END DO
         END DO
 !
@@ -1050,33 +1056,27 @@
 # endif
         END DO
 !
-! Insert water level, velx, and vely into SWAN arrays.
+! Insert bot level, water level, velx, vely, fric, and winds 
+! into SWAN arrays.
 !
         IP=0
         DO IY=1,MYC
           DO IX=1,MXC
             IP=IP+1
             INDX = KGRPNT(IX,IY)
+            INB=TEMPMCT(IP,1)
             IF (INDX.GT.1) THEN
-              COMPDA(INDX,JWLV2)=TEMPMCT(IP,2)
-
+              COMPDA(INDX,JFRC2)=MAX(REAL(TEMPMCT(IP,5)), 0.001)
+              IF (INB.gt.0.) THEN
+                COMPDA(INDX,JBOTLV)=TEMPMCT(IP,1)
+                COMPDA(INDX,JWLV2)=TEMPMCT(IP,2)
+                COMPDA(INDX,JVX2)=TEMPMCT(IP,3)
+                COMPDA(INDX,JVY2)=TEMPMCT(IP,4)
 # ifdef WRF_COUPLING
-!!  old -->
-              COMPDA(INDX,JWX2)=TEMPMCT(IP,6)
-              COMPDA(INDX,JWY2)=TEMPMCT(IP,7)
-!!  new -->
-!!  Need to read in the grid angle.
-!!
-!              COSWC = COS(GRID_ANGLE(I,J))
-!              SINWC = SIN(GRID_ANGLE(I,J))
-!              COMPDA(INDX,JWX2) =  TEMPMCT(IP,6)*COSWC +                &
-!     &                             TEMPMCT(IP,7)*SINWC
-!              COMPDA(INDX,JWY2) = -TEMPMCT(IP,6)*SINWC +                &
-!     &                             TEMPMCT(IP,7)*COSWC
+                COMPDA(INDX,JWX2)=TEMPMCT(IP,6)
+                COMPDA(INDX,JWY2)=TEMPMCT(IP,7)
 # endif
-              COMPDA(INDX,JVX2)=TEMPMCT(IP,3)
-              COMPDA(INDX,JVY2)=TEMPMCT(IP,4)
-              COMPDA(INDX,JFRC2)=REAL(TEMPMCT(IP,5))
+              END IF
             END IF
           END DO
         END DO
