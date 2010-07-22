@@ -45,8 +45,8 @@ clear ncid varargin
 
 %Replace the land positions with the flag for land (defined in the SWAN
 %input file)
-%land_values = find(mask_rho == 0);
-%h(land_values) = 9999;
+land_values = find(mask_rho == 0);
+h(land_values) = 9999;
 
 %Print the depths to the bathy file
 [m,n] = size(h);
@@ -55,7 +55,7 @@ fid = fopen('roms_bathy.bot','w');
 for index = 1:m;
     for index2 = 1:n;
         fprintf(fid,'   ');
-       fprintf(fid,'%12.8f',h(index,index2));
+       fprintf(fid,'%12.4f',h(index,index2));
     end
     fprintf(fid,'\n');
 end

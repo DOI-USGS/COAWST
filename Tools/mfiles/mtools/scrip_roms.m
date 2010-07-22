@@ -9,10 +9,12 @@
 %%%%%%%%%% BEGIN user input   %%%%%%%%%%%%
 %
 %1) Enter name of roms netcdf grid file.
-grid_file = 'joe_tc_coarse_grd.nc';
+%grid_file = 'joe_tc_coarse_grd.nc';
+grid_file = 'Projects\Inlet_test\DiffGrid\inlet_test_grid.nc';
 
 %2) Enter name of netcdf output file to use by scrip.
-out_file = 'joe_tc_coarse_roms_scrip.nc';
+%out_file = 'joe_tc_coarse_roms_scrip.nc';
+out_file = 'Projects\Inlet_test\DiffGrid\inlet_test_roms_scrip.nc';
 
 %%%%%%%%%% END of user input   %%%%%%%%%%%%
 
@@ -25,6 +27,8 @@ gridsize=LP*MP;
 %if ((spherical=='F')||(spherical=='f'))
 %  lon_rho=x_rho;
 %  lat_rho=y_rho;
+%  lon_psi=x_psi;
+%  lat_psi=y_psi;
 %end
 
 %create a full set of psi points
