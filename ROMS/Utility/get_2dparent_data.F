@@ -227,7 +227,16 @@
 !
 ! get zeta
 !
-          CALL mp_gather2d (ngp, model, LBip, UBip, LBjp, UBjp, 0,      &
+          IF (iic(1).eq.0) THEN
+            CALL mp_gather2d (ngp, model, LBip, UBip, LBjp, UBjp, 0,    &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ngp) % rmask(LBip:UBip,LBjp:UBjp),       &
+# endif
+     &                    OCEAN(ngp) % zeta(LBip:UBip,LBjp:UBjp,KOUTP), &
+     &                    Npts, Aout)
+          ELSE
+            CALL mp_gather2d (ngp, model, LBip, UBip, LBjp, UBjp, 0,    &
      &                    gtype, 1.0_r8,                                &
 # ifdef MASKING
      &                    GRID(ngp) % rmask(LBip:UBip,LBjp:UBjp),       &
@@ -238,6 +247,7 @@
      &                    OCEAN(ngp) % zeta(LBip:UBip,LBjp:UBjp,KOUTP), &
 # endif
      &                    Npts, Aout)
+          END IF
 !
 ! distribute the Aout (1D packed) field to all the nodes.
           CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,             &

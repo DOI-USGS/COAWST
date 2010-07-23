@@ -683,7 +683,7 @@
       IF (.not.PerfectRST(ng)) THEN
 #  ifdef REFINED_GRID
         DO j=JstrTV,JendT
-          DO i=IstrT,IendT
+          DO i=IstrTU+1,IendT
 #  else
         DO j=Jstr,Jend
           DO i=IstrU,Iend
@@ -722,7 +722,7 @@
 !
 #  ifdef REFINED_GRID
           IF (j.ge.JstrTV+1) THEN
-            DO i=IstrT,IendT
+            DO i=IstrTU,IendT
 #  else
           IF (j.ge.Jstr) THEN
             DO i=Istr,Iend
