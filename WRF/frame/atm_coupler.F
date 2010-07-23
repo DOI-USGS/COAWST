@@ -574,7 +574,8 @@
       DO j=js,je
         DO i=is,ie
           ij=ij+1
-          AA(ij)=0.001*(grid%SFCEVP(i,j))/grid%dt
+!         AA(ij)=0.001*(grid%SFCEVP(i,j))/grid%dt
+          AA(ij)=0.001*(grid%QFX(i,j))
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "EVAP", AA, Asize)
