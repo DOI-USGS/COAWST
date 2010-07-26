@@ -60,7 +60,7 @@
    A2ONAME == atm2ocn_weights.nc
    A2WNAME == atm2wav_weights.nc
    O2ANAME == ocn2atm_weights.nc
-   O2WNAME == Projects/Inlet_test/DiffGrid/wav2ocn_weights_consv.nc
+   O2WNAME == Projects/Inlet_test/DiffGrid/ocn2wav_weights_consv.nc
 
 !
 !  GLOSSARY:

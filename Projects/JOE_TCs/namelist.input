@@ -17,7 +17,7 @@
  end_second                          = 00,   00,   00,
  interval_seconds                    = 86400
  input_from_file                     = .true.,.false.,.false.,
- history_interval                    = 180,  60,   60,
+ history_interval                    = 360,  60,   60,
  frames_per_outfile                  = 10000000, 1000, 1000,
  restart                             = .false.,
  restart_interval                    = 10000000,

@@ -50,8 +50,8 @@
 ! The Wav program needs multiple input files, one for each grid.
 
    ATM_name = atmos.in
-   WAV_name = Projects/Inlet_test/Refined/swan_it.in \
-              Projects/Inlet_test/Refined/swan_it_ref5.in
+   WAV_name = Projects/Inlet_test/Refined/swan_inlet_test.in \
+              Projects/Inlet_test/Refined/swan_inlet_test_ref5.in
    OCN_name = Projects/Inlet_test/Refined/ocean_inlet_test_ref5.in
 
 ! Sparse matrix interpolation weights files.
