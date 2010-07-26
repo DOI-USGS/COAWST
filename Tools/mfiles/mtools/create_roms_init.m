@@ -114,7 +114,7 @@
 % Don't change this either.  This is from set_scoord.F
 % Go to step 6 now.
 %
-   hmin=0;
+   hmin=min(h(:));
    hc=min([hmin,Tcline]);
    if (theta_s~=0.0)
      cff1=1.0/sinh(theta_s);
