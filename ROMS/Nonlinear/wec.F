@@ -94,6 +94,9 @@
 #  endif
      &                            MIXING(ng) % rustr3d,                 &
      &                            MIXING(ng) % rvstr3d,                 &
+#  ifdef WAVE_INDUCED_MIXING
+     &                            MIXING(ng) % Akv,                     &
+#  endif
      &                            OCEAN(ng) % rulag3d,                  &
      &                            OCEAN(ng) % rvlag3d,                  &
      &                            OCEAN(ng) % u,                        &
@@ -148,6 +151,9 @@
      &                                  DiaRU, DiaRV,                   &
 #  endif
      &                                  rustr3d,  rvstr3d,              &
+#  ifdef WAVE_INDUCED_MIXING
+     &                                  Akv,                            &
+#  endif
      &                                  rulag3d, rvlag3d,               &
      &                                  u, v,                           &
      &                                  u_stokes, v_stokes,w_stokes,    &
@@ -222,6 +228,9 @@
 #   endif
       real(r8), intent(inout) :: rustr3d(LBi:,LBj:,:)
       real(r8), intent(inout) :: rvstr3d(LBi:,LBj:,:)
+#   ifdef WAVE_INDUCED_MIXING
+      real(r8), intent(inout) :: Akv(LBi:,LBj:,0:)
+#   endif
       real(r8), intent(inout) :: rulag3d(LBi:,LBj:,:)
       real(r8), intent(inout) :: rvlag3d(LBi:,LBj:,:)
       real(r8), intent(inout) :: u(LBi:,LBj:,:,:)
@@ -262,7 +271,7 @@
 #  endif
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
-      real(r8), intent(in) :: zetat(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: zetat(LBi:UBi,LBj:UBj)
 #  ifdef SOLVE3D
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,UBk)
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,UBk)
@@ -283,6 +292,9 @@
 #   endif
       real(r8), intent(inout) :: rustr3d(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: rvstr3d(LBi:UBi,LBj:UBj,N(ng))
+#   ifdef WAVE_INDUCED_MIXING
+      real(r8), intent(inout) :: Akv(LBi:UBi,LBj:UBj,0:N(ng))
+#   endif
       real(r8), intent(inout) :: rulag3d(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: rvlag3d(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: u(LBi:UBi,LBj:UBj,N(ng),2)
@@ -320,8 +332,16 @@
       real(r8) :: fac1, fac2, RB1, RB2
       real(r8), parameter :: alphaR=0.0_r8
       real(r8), parameter :: sinb=0.1_r8
-!     real(r8), parameter :: gammaw=0.31_r8
-      real(r8), parameter :: gammaw=0.4_r8
+      real(r8), parameter :: gammaw=0.31_r8
+!     real(r8), parameter :: gammaw=0.4_r8
+# ifdef BOTTOM_STREAMING 
+      real(r8), parameter :: ks=0.03
+      real(r8), parameter :: awd=3.0_r8
+      real(r8), parameter :: KWDmax=200.0_r8
+# endif
+# ifdef WAVE_INDUCED_MIXING
+      real(r8), parameter :: Cb=0.07_r8
+# endif
       real(r8), parameter :: eps = 1.0E-14_r8
       real(r8), parameter :: kDmax = 5.0_r8
       real(r8), parameter :: Lwave_min = 1.0_r8
@@ -335,6 +355,11 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: waveAA
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: waveE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: WD
+#  ifdef BOTTOM_STREAMING
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: KWD
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: owd
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: EWD
+#  endif
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: sigma
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: sigmat
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: osigma
@@ -350,6 +375,10 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: oroller
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: BBXL
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: BBYL
+#  ifdef BOTTOM_STREAMING
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: BWDXL
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: BWDYL
+#  endif
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Huons
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Hvoms
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: bh
@@ -359,8 +388,6 @@
       real(r8), dimension(IminS:ImaxS,N(ng)) :: ku
       real(r8), dimension(IminS:ImaxS,N(ng)) :: kv
       real(r8), dimension(IminS:ImaxS,N(ng)) :: VF
-      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: shearu
-      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: shearv
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: shear1
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: shear2
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ustux
@@ -377,6 +404,7 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Hvstom
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: BBX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: BBY      
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: shearuv
 # endif
 # include "set_bounds.h"
       fac1=1.0_r8/dt(ng)
@@ -454,6 +482,33 @@
      &            (0.64_r8**3.0_r8/Dstp(i,j))*                          &
      &            (cff1**3.0_r8)*RB1*RB2
 # endif
+
+# ifdef BOTTOM_STREAMING
+!
+!  Compute metrics for vertical bottom streaming distribution
+!          
+          owd(i,j)=0.0_r8
+!  Bottom Orbital Velocity
+          cff=0.25_r8*SQRT(2.0_r8)*sigma(i,j)*Hwave(i,j)/               &
+     &                (SINH(kD(i,j))+eps)
+          cff1=awd*0.09_r8*ks*(cff/                                     &
+     &             (ks*sigma(i,j)))**0.82_r8
+          KWD(i,j)=MIN(Dstp(i,j)/(cff1+eps),KWDmax)
+          DO k=1,N(ng)
+            cff2=(1.0_r8+SCALARS(ng)%Cs_r(N(ng)))-                      &
+     &           (1.0_r8+SCALARS(ng)%Cs_r(k))   
+            owd(i,j)=owd(i,j)+Hz(i,j,k)*                                &
+     &               COSH(KWD(i,j)*cff2)
+          END DO
+          owd(i,j)=1.0_r8/(owd(i,j)+eps)
+!  Wave friction factor (Soulsby, 1997)
+          cff3=MIN(1.39_r8*(sigma(i,j)*(ks/30.0_r8)/                    &
+     &               cff)**0.52_r8,0.2_r8)
+!
+!  Wave dissipation rate due to wave bottom drag Reniers et al. (2004b)
+!
+          EWD(i,j)=(0.5_r8/sqrt(pi))*cff3*(cff**3.0_r8) 
+# endif       
 !
 !  Initialize depth independent arrays for summation
 !
@@ -715,46 +770,42 @@
 ! Compute Vertical Vortex Force terms, denoted as K in Eqn. 5.
 !---------------------------------------------------------------------------
 !
-      J_LOOP : DO j=Jstr,Jend
-!
-!  Compute shear du/dz at u face pts.
-!
-        DO i=IstrU,Iend
+      DO j=Jstr-1,Jend+1
+        DO i=Istr-1,Iend+1
           DO k=1,N(ng)-1
-            cff=2.0_r8/(z_r(i  ,j,k+1)-z_r(i  ,j,k)+                    &
-     &                  z_r(i-1,j,k+1)-z_r(i-1,j,k))
-            shearu(i,k)=cff*(u(i,j,k+1,nrhs)-u(i,j,k,nrhs))
+!            cff=0.5_r8/(z_r(i,j,k+1)-z_r(i,j,k))
+            cff=1.0_r8
+            cff1=0.5_r8*(u_stokes(i,j,k+1)+u_stokes(i,j,k))
+            cff2=0.5_r8*(u_stokes(i+1,j,k+1)+u_stokes(i+1,j,k))
+            cff3=0.5_r8*(v_stokes(i,j,k+1)+v_stokes(i,j,k))
+            cff4=0.5_r8*(v_stokes(i,j+1,k+1)+v_stokes(i,j+1,k))
+            shearuv(i,j,k)=cff*                                         &
+     &                      (cff1*(u(i  ,j,k+1,nrhs)-u(i  ,j,k,nrhs))+  &
+     &                       cff2*(u(i+1,j,k+1,nrhs)-u(i+1,j,k,nrhs)))+ &
+     &                     cff*                                         &
+     &                      (cff3*(v(i,j  ,k+1,nrhs)-v(i,j  ,k,nrhs))+  &
+     &                       cff4*(v(i,j+1,k+1,nrhs)-v(i,j+1,k,nrhs)))
           END DO
-          shearu(i,N(ng))=shearu(i,N(ng)-1)
-          shearu(i,0)=shearu(i,1)
+          shearuv(i,j,0)=shearuv(i,j,1)
+          shearuv(i,j,N(ng))=shearuv(i,j,N(ng)-1)
         END DO
+      END DO
+      J_LOOP : DO j=Jstr,Jend
         DO k=1,N(ng)
           DO i=IstrU,Iend
-            VF(i,k)=0.5_r8*u_stokes(i,j,k)*                             &
-     &              (shearu(i,k)+shearu(i,k-1))
             cff=0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))
-            rustr3d(i,j,k)=-cff*VF(i,k)*on_u(i,j)
+            VF(i,k)=0.5_r8*((shearuv(i  ,j,k)+shearuv(i  ,j,k-1))-      &
+     &                      (shearuv(i-1,j,k)+shearuv(i-1,j,k-1)))
+            rustr3d(i,j,k)=cff*VF(i,k)*on_u(i,j)
           END DO
         END DO
         IF (j.ge.JstrV) THEN
-!
-!  Compute shear dv/dz at v face pts.
-!
-          DO i=Istr,Iend
-            DO k=1,N(ng)-1
-              cff=2.0_r8/(z_r(i,j  ,k+1)-z_r(i,j  ,k)+                  &
-     &                    z_r(i,j-1,k+1)-z_r(i,j-1,k))
-              shearv(i,k)=cff*(v(i,j,k+1,nrhs)-v(i,j,k,nrhs))
-            END DO
-            shearv(i,N(ng))=shearv(i,N(ng)-1)
-            shearv(i,0)=shearv(i,1)
-          END DO
           DO k=1,N(ng)
             DO i=Istr,Iend
-              VF(i,k)=0.5_r8*v_stokes(i,j,k)*                           &
-     &                (shearv(i,k)+shearv(i,k-1))
               cff=0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))
-              rvstr3d(i,j,k)=-cff*VF(i,k)*om_v(i,j)
+              VF(i,k)=0.5_r8*((shearuv(i,j  ,k)+shearuv(i,j  ,k-1))-    &
+     &                        (shearuv(i,j-1,k)+shearuv(i,j-1,k-1)))
+              rvstr3d(i,j,k)=cff*VF(i,k)*om_v(i,j)
             END DO
           END DO
         END IF
@@ -815,7 +866,66 @@
 # endif
           END DO
         END DO
+
+# ifdef BOTTOM_STREAMING
 !
+! Compute bottom streaming based acceleration terms
+!
+        fac2=SCALARS(ng)%Cs_r(N(ng))-                                   &
+     &       SCALARS(ng)%Cs_r(k)
+        DO j=Jstr-1,Jend+1
+          DO i=Istr-1,Iend+1
+            cff2=COSH(fac2*KWD(i,j))
+            cff3=EWD(i,j)*osigma(i,j)
+            BWDXL(i,j)=cff2*cff3*wavenx(i,j)*owd(i,j)
+            BWDYL(i,j)=cff2*cff3*waveny(i,j)*owd(i,j) 
+          END DO
+        END DO
+!
+! Compute contribution to U-momentum
+! 
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff=0.5_r8*(BWDXL(i  ,j)*Hz(i  ,j,k)+                       &
+     &                  BWDXL(i-1,j)*Hz(i-1,j,k))*                      &
+     &                  om_u(i,j)*on_u(i,j)
+            rustr3d(i,j,k)=rustr3d(i,j,k)-cff
+# ifdef DIAGNOSTICS_UV
+!             DiaRU(i,j,k,nrhs,M3hrad)=cff
+# endif
+          END DO
+        END DO
+!
+! Compute contribution to V-momentum
+!
+        DO j=JstrV,Jend
+          DO i=Istr,Iend
+            cff=0.5_r8*(BWDYL(i,j  )*Hz(i,j  ,k)+                       &
+     &                  BWDYL(i,j-1)*Hz(i,j-1,k))*                      &
+     &                  om_v(i,j)*on_v(i,j)
+            rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
+# ifdef DIAGNOSTICS_UV
+!           DiaRV(i,j,k,nrhs,M3hrad)=cff
+# endif
+          END DO
+        END DO
+# endif       
+# ifdef WAVE_INDUCED_MIXING
+! 
+! Compute contribution of wave breaking induced mixing to Akv
+!
+        fac2=1.0_r8+SCALARS(ng)%Cs_r(k)
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+            cff2=fac2*gamr(i,j)
+            cff3=COSH(2.0_r8*pi*cff2)
+            cff4=(EER(i,j)*sigma(i,j))**(1.0_r8/3.0_r8)
+            Akv(i,j,k)=Akv(i,j,k)+                                      &
+     &                 Cb*cff4*SQRT(2.0_r8)*Hwave(i,j)*Dstp(i,j)*       &
+     &                 cff3*oroller(i,j)
+          END DO
+        END DO   
+# endif
 !---------------------------------------------------------------------------
 ! Contribution of a term corresponding to product of 
 ! Stokes and Eulerian Velocity Eqn. 26 and 27.
@@ -952,6 +1062,13 @@
       CALL bc_v3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  rvstr3d)
+#  ifdef WAVE_INDUCED_MIXING
+#   if defined EW_PERIODIC || defined NS_PERIODIC
+      CALL exchange_w3d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
+     &                        Akv)
+#   endif
+#  endif
 # endif
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
@@ -975,6 +1092,12 @@
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    w_stokes)
+#   ifdef WAVE_INDUCED_MIXING
+      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    Akv)
+#   endif
 #  endif
 # endif
       RETURN
