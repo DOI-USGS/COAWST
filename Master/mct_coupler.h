@@ -116,7 +116,7 @@
 #endif
       IF (pelast.ne.Nnodes-1) THEN
         IF (MyRank.eq.0) THEN
-          WRITE (stdout,10) pelast, Nnodes
+          WRITE (stdout,10) pelast+1, Nnodes
  10       FORMAT (/,' mct_coupler - Number assigned processors: '       &
      &            ,i3.3,/,15x,'not equal to spawned MPI nodes: ',i3.3)
         END IF
