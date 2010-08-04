@@ -919,10 +919,10 @@
           DO i=Istr,Iend
             cff2=fac2*gamr(i,j)
             cff3=COSH(2.0_r8*pi*cff2)
-            cff4=(EER(i,j)*sigma(i,j))**(1.0_r8/3.0_r8)
+            cff4=((1-alphaR)*WD(i,j)+EER(i,j))**(1.0_r8/3.0_r8)
             Akv(i,j,k)=Akv(i,j,k)+                                      &
-     &                 Cb*cff4*SQRT(2.0_r8)*Hwave(i,j)*Dstp(i,j)*       &
-     &                 cff3*oroller(i,j)
+     &                 Cb*cff4*0.5_r8*SQRT(2.0_r8)*Hwave(i,j)*          &
+     &                 Dstp(i,j)*cff3*oroller(i,j)
           END DO
         END DO   
 # endif
