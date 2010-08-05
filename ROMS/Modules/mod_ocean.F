@@ -64,6 +64,7 @@
           real(r8), pointer :: zeta(:,:,:)
 #if defined NEARSHORE_WEC
           real(r8), pointer :: zetat(:,:)
+          real(r8), pointer :: zetaw(:,:)
 #endif
 #if defined NEARSHORE
           real(r8), pointer :: rulag2d(:,:)
@@ -330,6 +331,7 @@
       allocate ( OCEAN(ng) % zeta(LBi:UBi,LBj:UBj,3) )
 #if defined NEARSHORE_WEC
       allocate ( OCEAN(ng) % zetat(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % zetaw(LBi:UBi,LBj:UBj) )
 #endif
 #if defined NEARSHORE
       allocate ( OCEAN(ng) % rulag2d(LBi:UBi,LBj:UBj) )
@@ -702,6 +704,7 @@
             OCEAN(ng) % zeta(i,j,3) = IniVal
 #if defined NEARSHORE_WEC
             OCEAN(ng) % zetat(i,j) = IniVal
+            OCEAN(ng) % zetaw(i,j) = IniVal
 #endif
 #if defined NEARSHORE
             OCEAN(ng) % rulag2d(i,j) = IniVal

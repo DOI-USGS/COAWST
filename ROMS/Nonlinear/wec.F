@@ -74,6 +74,7 @@
      &                            GRID(ng) % h,                         &
      &                            OCEAN(ng) % zeta,                     &
      &                            OCEAN(ng) % zetat,                    &
+     &                            OCEAN(ng) % zetaw,                    &
 # ifdef SOLVE3D
      &                            GRID(ng) % Hz,                        &
      &                            GRID(ng) % z_r,                       &
@@ -137,7 +138,7 @@
 # if defined CURVGRID
      &                                  dndx, dmde,                     &
 # endif
-     &                                  h, zeta, zetat,                 &
+     &                                  h, zeta, zetat, zetaw,          &
 # ifdef SOLVE3D
      &                                  Hz, z_r, z_w,                   &
 # endif
@@ -208,6 +209,7 @@
       real(r8), intent(in) :: h(LBi:,LBj:)
       real(r8), intent(in) :: zeta(LBi:,LBj:,:)
       real(r8), intent(inout) :: zetat(LBi:,LBj:)
+      real(r8), intent(inout) :: zetaw(LBi:,LBj:)
 #  ifdef SOLVE3D
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
@@ -272,6 +274,7 @@
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
       real(r8), intent(inout) :: zetat(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: zetaw(LBi:UBi,LBj:UBj)
 #  ifdef SOLVE3D
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,UBk)
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,UBk)
@@ -332,8 +335,8 @@
       real(r8) :: fac1, fac2, RB1, RB2
       real(r8), parameter :: alphaR=0.0_r8
       real(r8), parameter :: sinb=0.1_r8
-      real(r8), parameter :: gammaw=0.31_r8
-!     real(r8), parameter :: gammaw=0.4_r8
+!     real(r8), parameter :: gammaw=0.31_r8
+      real(r8), parameter :: gammaw=0.4_r8
 # ifdef BOTTOM_STREAMING 
       real(r8), parameter :: ks=0.03
       real(r8), parameter :: awd=3.0_r8
@@ -363,7 +366,6 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: sigma
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: sigmat
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: osigma
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zetaw
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: gamr
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: EER
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: EBAR
@@ -609,7 +611,7 @@
 !
         DO k=1,N(ng)-1
           DO i=Istr,Iend
-            cff=0.5_r8/(z_r(i,j,k+1)-z_r(i,j,k))
+            cff=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
             shear1(i,k)=cff*((ku(i,k+1)-ku(i,k))+                       &
      &                       (kv(i,k+1)-kv(i,k)))
           END DO
@@ -626,7 +628,7 @@
 !
         DO k=1,N(ng)
           DO i=Istr,Iend
-            cff=0.5_r8/(z_w(i,j,k)-z_w(i,j,k-1))
+            cff=1.0_r8/(z_w(i,j,k)-z_w(i,j,k-1))
             shear2(i,k)=cff*(shear1(i,k)-shear1(i,k-1))
           END DO
         END DO
@@ -1052,6 +1054,9 @@
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  zetat)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  zetaw)
 # ifdef SOLVE3D
       CALL bc_w3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 0, N(ng),                   &
@@ -1075,10 +1080,10 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rustr2d, rvstr2d, rulag2d, rvlag2d)
-      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    zetat, ubar_stokes, vbar_stokes)
+     &                    zetat, zetaw, ubar_stokes, vbar_stokes)
 #  ifdef SOLVE3D
       CALL mp_exchange3d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &

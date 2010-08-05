@@ -105,7 +105,7 @@
      &                  OCEAN(ng) % vbar_stokes,                        &
 # endif
 # ifdef NEARSHORE_WEC
-     &                  OCEAN(ng) % zetat,                              &
+     &                  OCEAN(ng) % zetat, OCEAN(ng) % zetaw,           &
 # endif
 # ifdef M2CLIMATOLOGY
      &                  CLIMA(ng) % ubarclm,    CLIMA(ng) % vbarclm,    &
@@ -199,7 +199,7 @@
      &                        ubar_stokes, vbar_stokes,                 &
 # endif
 # ifdef NEARSHORE_WEC
-     &                        zetat,                                    &
+     &                        zetat, zetaw,                             &
 # endif
 # ifdef M2CLIMATOLOGY
      &                        ubarclm, vbarclm,                         &
@@ -333,6 +333,7 @@
 #  endif
 #  ifdef NEARSHORE_WEC
       real(r8), intent(in) :: zetat(LBi:,LBj:)
+      real(r8), intent(in) :: zetaw(LBi:,LBj:)
 #  endif
 #  ifdef M2CLIMATOLOGY
       real(r8), intent(in) :: ubarclm(LBi:,LBj:)
@@ -463,6 +464,7 @@
 #  endif
 #  ifdef NEARSHORE_WEC
       real(r8), intent(in) :: zetat(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: zetaw(LBi:UBi,LBj:UBj)
 #  endif
 #  ifdef M2CLIMATOLOGY
       real(r8), intent(in) :: ubarclm(LBi:UBi,LBj:UBj)
@@ -901,6 +903,11 @@
      &                    (DVom(i,j)-DVom(i,j+1))
             zeta_new(i,j)=zeta(i,j,kstp)+                               &
      &                    pm(i,j)*pn(i,j)*cff1*rhs_zeta(i,j)
+# ifdef NEARSHORE_WEC
+            IF (FIRST_2D_STEP.and.PREDICTOR_2D_STEP(ng)) THEN
+              zeta_new(i,j)=zeta_new(i,j)+zetaw(i,j)
+            END IF
+# endif
 # ifdef MASKING
             zeta_new(i,j)=zeta_new(i,j)*rmask(i,j)
 # endif
