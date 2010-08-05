@@ -358,11 +358,11 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: waveAA
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: waveE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: WD
-#  ifdef BOTTOM_STREAMING
+# ifdef BOTTOM_STREAMING
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: KWD
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: owd
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: EWD
-#  endif
+# endif
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: sigma
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: sigmat
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: osigma
@@ -410,9 +410,6 @@
 # endif
 # include "set_bounds.h"
       fac1=1.0_r8/dt(ng)
-# ifdef ATM_PRESS
-      fac2=1.0_r8/(g*rho0)
-# endif
 # ifdef SOLVE3D
       DO j=Jstr-1,Jend+1
         DO i=Istr-1,Iend+1
@@ -439,14 +436,6 @@
           kD(i,j)=MIN(waven(i,j)*Dstp(i,j)+eps,kDmax)
           wavec(i,j)=SQRT(g*owaven(i,j)*TANH(kD(i,j)))          
 !
-!  Compute quasi static sea surface elevation, Eq(7).
-!
-          zetaw(i,j)=-(0.5_r8*waveAA(i,j)*waven(i,j)/                   &
-     &               SINH(2.0_r8*kD(i,j)))
-# ifdef ATM_PRESS
-          zetaw(i,j)=zetaw(i,j)-fac2*Pair(i,j)
-# endif
-!
 !  Compute metrics for vertical roller distribution.
 !
           oroller(i,j)=0.0_r8
@@ -459,7 +448,7 @@
           END DO
           oroller(i,j)=1.0_r8/(oroller(i,j)+eps)
 
-# ifdef WD_THORGUZA
+#  ifdef WD_THORGUZA
 !
 !  Calcualate wave dissipation using empirical parameters of 
 !  Thornton and Guza, 1986
@@ -469,8 +458,8 @@
           WD(i,j)=(3.0_r8*sqrt(pi)/16.0_r8)*g*sigmat(i,j)*              &
      &            (0.64_r8**3.0_r8/Dstp(i,j))*                          &
      &            (cff1**7.0_r8)*cff2    
-# endif
-# ifdef WD_THORCHUR
+#  endif
+#  ifdef WD_THORCHUR
 !
 !  Calculate wave dissipation using empirical parameters of
 !  Church and Thornton, 1993.
@@ -483,9 +472,9 @@
           WD(i,j)=(3.0_r8*sqrt(pi)/16.0_r8)*g*sigmat(i,j)*              &
      &            (0.64_r8**3.0_r8/Dstp(i,j))*                          &
      &            (cff1**3.0_r8)*RB1*RB2
-# endif
+#  endif
 
-# ifdef BOTTOM_STREAMING
+#  ifdef BOTTOM_STREAMING
 !
 !  Compute metrics for vertical bottom streaming distribution
 !          
@@ -510,7 +499,7 @@
 !  Wave dissipation rate due to wave bottom drag Reniers et al. (2004b)
 !
           EWD(i,j)=(0.5_r8/sqrt(pi))*cff3*(cff**3.0_r8) 
-# endif       
+#  endif       
 !
 !  Initialize depth independent arrays for summation
 !
@@ -581,12 +570,12 @@
         CALL bc_r2d_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    rollA)
-# ifdef DISTRIBUTE
+#  ifdef DISTRIBUTE
         CALL mp_exchange2d (ng, tile, iNLM, 2,                          &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      NghostPoints, EWperiodic, NSperiodic,       &
      &                      rollA)
-# endif
+#  endif
       END DO
 !
 !---------------------------------------------------------------------------
@@ -681,8 +670,19 @@
 ! Evaluate geopotential function (Eqn. 33, Uchiyama et al., 2010)
 !---------------------------------------------------------------------------
 !
+#  ifdef ATM_PRESS
+      fac2=1.0_r8/(g*rho0)
+#  endif
       DO j=Jstr,Jend
         DO i=Istr,Iend
+!
+!  Compute quasi static sea surface elevation, Eq(7).
+!
+          zetaw(i,j)=-(0.5_r8*waveAA(i,j)*waven(i,j)/                   &
+     &               SINH(2.0_r8*kD(i,j)))
+#  ifdef ATM_PRESS
+          zetaw(i,j)=zetaw(i,j)-fac2*Pair(i,j)
+#  endif
           zetat(i,j)=-Dstp(i,j)*                                        &
      &                      (-g*zetaw(i,j)-(g*qsp(i,j)-bh(i,j)))
         END DO
@@ -743,6 +743,12 @@
       CALL bc_v3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  v_stokes)
+#  ifdef DISTRIBUTE
+      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    u_stokes, v_stokes)
+#  endif
 !	  
 !  Compute vertical stokes velocity, Eqn. 31.
 !
@@ -849,9 +855,9 @@
      &                  BBXL(i-1,j)*Hz(i-1,j,k))*                       &
      &                  om_u(i,j)*on_u(i,j)
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
-# ifdef DIAGNOSTICS_UV
+#  ifdef DIAGNOSTICS_UV
 !             DiaRU(i,j,k,nrhs,M3hrad)=cff
-# endif
+#  endif
           END DO
         END DO
 !
@@ -863,13 +869,13 @@
      &                  BBYL(i,j-1)*Hz(i,j-1,k))*                       &
      &                  om_v(i,j)*on_v(i,j)
             rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
-# ifdef DIAGNOSTICS_UV
+#  ifdef DIAGNOSTICS_UV
 !           DiaRV(i,j,k,nrhs,M3hrad)=cff
-# endif
+#  endif
           END DO
         END DO
 
-# ifdef BOTTOM_STREAMING
+#  ifdef BOTTOM_STREAMING
 !
 ! Compute bottom streaming based acceleration terms
 !
@@ -892,9 +898,9 @@
      &                  BWDXL(i-1,j)*Hz(i-1,j,k))*                      &
      &                  om_u(i,j)*on_u(i,j)
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
-# ifdef DIAGNOSTICS_UV
+#   ifdef DIAGNOSTICS_UV
 !             DiaRU(i,j,k,nrhs,M3hrad)=cff
-# endif
+#   endif
           END DO
         END DO
 !
@@ -906,13 +912,13 @@
      &                  BWDYL(i,j-1)*Hz(i,j-1,k))*                      &
      &                  om_v(i,j)*on_v(i,j)
             rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
-# ifdef DIAGNOSTICS_UV
+#   ifdef DIAGNOSTICS_UV
 !           DiaRV(i,j,k,nrhs,M3hrad)=cff
-# endif
+#   endif
           END DO
         END DO
-# endif       
-# ifdef WAVE_INDUCED_MIXING
+#  endif       
+#  ifdef WAVE_INDUCED_MIXING
 ! 
 ! Compute contribution of wave breaking induced mixing to Akv
 !
@@ -927,7 +933,7 @@
      &                 Dstp(i,j)*cff3*oroller(i,j)
           END DO
         END DO   
-# endif
+#  endif
 !---------------------------------------------------------------------------
 ! Contribution of a term corresponding to product of 
 ! Stokes and Eulerian Velocity Eqn. 26 and 27.
@@ -1033,9 +1039,9 @@
           rvstr2d(i,j)=rvstr2d(i,j)*cff3*cff4
         END DO
       END DO
-#else
+# else
 !PUT IN BAROTROPIC MOMENTUM BALANCE HERE
-#endif
+# endif
 !
 !  Apply boundary conditions.
 !
@@ -1089,10 +1095,6 @@
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rustr3d,  rvstr3d, rulag3d,  rvlag3d)
-      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
-     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    u_stokes, v_stokes)
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &

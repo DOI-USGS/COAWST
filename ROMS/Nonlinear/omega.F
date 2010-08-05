@@ -224,7 +224,7 @@
             W(i,j,k)=W(i,j,k-1)-                                        &
      &               (Huon(i+1,j,k)-Huon(i,j,k)+                        &
 # if defined NEARSHORE_WEC
-     &                w_stokes(i,j,k)-w_stokes(i,j,k-1)+                &
+!     &                w_stokes(i,j,k)-w_stokes(i,j,k-1)+                &
 # endif
      &                Hvom(i,j+1,k)-Hvom(i,j,k))
           END DO
