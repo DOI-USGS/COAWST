@@ -903,11 +903,6 @@
      &                    (DVom(i,j)-DVom(i,j+1))
             zeta_new(i,j)=zeta(i,j,kstp)+                               &
      &                    pm(i,j)*pn(i,j)*cff1*rhs_zeta(i,j)
-# ifdef NEARSHORE_WEC
-            IF (FIRST_2D_STEP.and.PREDICTOR_2D_STEP(ng)) THEN
-              zeta_new(i,j)=zeta_new(i,j)+zetaw(i,j)
-            END IF
-# endif
 # ifdef MASKING
             zeta_new(i,j)=zeta_new(i,j)*rmask(i,j)
 # endif
@@ -1104,10 +1099,6 @@
      &                   gzeta(i-1,j)+gzeta(i,j))*                      &
      &                  (Pair(i-1,j)-Pair(i,j))
 # endif
-# if defined NEARSHORE_WEC
-          rhs_ubar(i,j)=rhs_ubar(i,j)+on_u(i,j)*                        &
-     &                  (zetat(i,j)-zetat(i-1,j))
-# endif
 # ifdef DIAGNOSTICS_UV
           DiaU2rhs(i,j,M2pgrd)=rhs_ubar(i,j)
 # endif
@@ -1137,10 +1128,6 @@
      &                    (h(i,j-1)+h(i,j)+                             &
      &                     gzeta(i,j-1)+gzeta(i,j))*                    &
      &                    (Pair(i,j-1)-Pair(i,j))
-# endif
-# if defined NEARSHORE_WEC
-          rhs_vbar(i,j)=rhs_vbar(i,j)+om_v(i,j)*                        &
-     &                  (zetat(i,j)-zetat(i,j-1))
 # endif
 # ifdef DIAGNOSTICS_UV
             DiaV2rhs(i,j,M2pgrd)=rhs_vbar(i,j)

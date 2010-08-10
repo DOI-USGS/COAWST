@@ -670,9 +670,6 @@
 ! Evaluate geopotential function (Eqn. 33, Uchiyama et al., 2010)
 !---------------------------------------------------------------------------
 !
-#  ifdef ATM_PRESS
-      fac2=1.0_r8/(g*rho0)
-#  endif
       DO j=Jstr,Jend
         DO i=Istr,Iend
 !
@@ -680,11 +677,10 @@
 !
           zetaw(i,j)=-(0.5_r8*waveAA(i,j)*waven(i,j)/                   &
      &               SINH(2.0_r8*kD(i,j)))
-#  ifdef ATM_PRESS
-          zetaw(i,j)=zetaw(i,j)-fac2*Pair(i,j)
-#  endif
-          zetat(i,j)=-Dstp(i,j)*                                        &
-     &                      (-g*zetaw(i,j)-(g*qsp(i,j)-bh(i,j)))
+!
+!  Compute barotropic component of geopotential function, without zeta_c.
+!
+          zetat(i,j)=-g*zetaw(i,j)-(g*qsp(i,j)-bh(i,j))
         END DO
       END DO
 !

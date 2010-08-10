@@ -65,6 +65,9 @@
      &                  GRID(ng) % z_r,                                 &
      &                  GRID(ng) % z_w,                                 &
      &                  OCEAN(ng) % rho,                                &
+#ifdef NEARSHORE_WEC
+     &                  OCEAN(ng) % zetat,                              &
+#endif
 #ifdef ATM_PRESS
      &                  FORCES(ng) % Pair,                              &
 #endif
@@ -91,6 +94,9 @@
      &                        om_v, on_u,                               &
      &                        Hz, z_r, z_w,                             &
      &                        rho,                                      &
+#ifdef NEARSHORE_WEC
+     &                        zetat,                                    &
+#endif
 #ifdef ATM_PRESS
      &                        Pair,                                     &
 #endif
@@ -121,6 +127,9 @@
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
+#ifdef NEARSHORE_WEC
+      real(r8), intent(in) :: zetat(LBi:,LBj:)
+#endif
 # ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:,LBj:)
 # endif
@@ -141,6 +150,9 @@
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
+#ifdef NEARSHORE_WEC
+      real(r8), intent(in) :: zetat(LBi:UBi,LBj:UBj)
+#endif
 # ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
 # endif
@@ -218,6 +230,9 @@
           cff2=0.5_r8*(rho(i,j,N(ng))-rho(i,j,N(ng)-1))*                &
      &         (z_w(i,j,N(ng))-z_r(i,j,N(ng)))*cff1
           P(i,j,N(ng))=GRho0*z_w(i,j,N(ng))+                            &
+#ifdef NEARSHORE_WEC
+     &                 zetat(i,j)+                                      &
+#endif
 #ifdef ATM_PRESS
      &                 fac*(Pair(i,j)-OneAtm)+                          &
 #endif
