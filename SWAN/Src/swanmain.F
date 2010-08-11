@@ -813,12 +813,10 @@
       NCOMPT=>COMPT_MOD(ng)%NCOMPT_G
       RCOMPT=>COMPT_MOD(ng)%RCOMPT_G
 !
-          IF (LEVERR.GT.MAXERR) GOTO 900                                  40.30
-!
- 900  CONTINUE
-!
       CALL SWTSTO(1)                                                      40.23
 !
+      CALL BACKUP( AC2, SPCSIG, SPCDIR, KGRPNT, XCGRID, YCGRID, ng )
+
       DO IUNIT=1,HIOPEN                                                   34.01
         INQUIRE(UNIT=IUNIT,OPENED=LOPEN)                                  34.01
         IF (LOPEN.AND.IUNIT.NE.PRINTF) CLOSE(IUNIT)                       40.30
@@ -839,13 +837,12 @@
          CALL SWCOLLECT ( BLKNDC, BLKND, .TRUE. )                         40.51 40.41
          IF (STPNOW()) RETURN                                             40.41
          IF ( INODE.EQ.MASTER ) THEN                                      40.30
-            CALL SWCOLOUT ( OURQT, BLKNDC, ng )                               40.51 40.41 40.30
+            CALL SWCOLOUT ( OURQT, BLKNDC, ng )                           40.51 40.41 40.30
             DEALLOCATE(BLKNDC)                                            40.41 40.30
          END IF                                                           40.30
       END IF                                                              40.30
       CALL SWTSTO(9)                                                      40.30
       CALL SWSYNC                                                         40.30
-
 !
       CALL SWPRTI                                                         40.23
 !
