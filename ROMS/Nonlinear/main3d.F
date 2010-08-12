@@ -146,6 +146,10 @@
 # ifdef FLOATS
       integer :: Lend, Lstr, chunk_size
 # endif
+# if defined REFINED_GRID
+      integer :: ngp
+      ngp=myparent(ng)
+# endif
 !
 !=======================================================================
 !  Time-step nonlinear 3D primitive equations.
@@ -208,13 +212,13 @@
 ! get data from parent grid at time of parent. Only need to 
 ! do this once per child loop.
         IF (ng.gt.1) THEN
-          IF ((MOD(iic(ng)-ntstart(ng),nrefined(ng))).eq.0) THEN
+          IF (time(ng).eq.time(ngp)) THEN
             CALL get_2dparent_data (ng, TILE)
             CALL get_3dparent_data (ng, TILE)
           END IF
         END IF
 ! put child data back to parent 
-        IF ((ng.eq.1).and.(iic(ng).gt.1)) THEN
+        IF ((ng.gt.Ngrids).and.(iic(ng).gt.1)) THEN
 !          CALL set_2dchild_data (ng, TILE)
 !          CALL set_3dchild_data (ng, TILE)
         END IF

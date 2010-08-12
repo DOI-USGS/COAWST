@@ -95,6 +95,10 @@
 # if defined W4DPSAS || defined NLM_OUTER
       real(r8) :: HalfDT
 # endif
+# if defined REFINED_GRID
+      integer :: ngp
+      ngp=myparent(ng)
+# endif
 !
 !=======================================================================
 !  Time-step vertically integrated equations.
@@ -183,14 +187,14 @@
 ! get data from parent grid at time of parent. Only need to 
 ! do this once per child loop.
         IF (ng.gt.1) THEN
-          IF ((MOD(iic(ng)-ntstart(ng),nrefined(ng))).eq.0) THEN
+          IF (time(ng).eq.time(ngp)) THEN
             CALL get_2dparent_data (ng, TILE)
           END IF
         END IF
 # endif
 # ifdef REFINED_GRID
 ! put child data back to parent 
-        IF ((ng.eq.1).and.(iic(ng).gt.1)) THEN
+        IF ((ng.gt.Ngrids).and.(iic(ng).gt.1)) THEN
           CALL set_2dchild_data (ng, TILE)
         END IF
 # endif

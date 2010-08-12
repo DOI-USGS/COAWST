@@ -1,7 +1,4 @@
 #include "cppdefs.h"
-#undef get_DUon
-#undef get_DVom
-
       MODULE set_2dparent_data_mod
 #ifdef REFINED_GRID
 !
@@ -143,8 +140,6 @@
       fac=1.0_r8/(fac1+fac2)
       fac1=fac*fac1
       fac2=fac*fac2
-!     fac1=0.0_r8
-!     fac2=1.0_r8
       IF (iic(1).eq.ntstart(1)) THEN
         t1=1
         t2=2
@@ -171,9 +166,6 @@
         ENDIF
       END IF
 # endif
-
-!scale fac for DUon and DVom
-      fac3=1.0_r8/nrefined(ng)
 
 !       IF (myrank.eq.mymaster) then
 !       write(*,*) 'set2dp ',t1,t2,fac1,fac2,time(ngp),time(ng),dt(ngp)
@@ -283,24 +275,12 @@
       IF (WESTERN_EDGE) THEN
         DO j=JstrT,JendT
           DO i=IstrT+1,Istr
-!         DO i=IstrT+1,Istr-1
             ic=i+Nghostpoints
             my_valu=fac1*REFINED(ng)%ubarR_west(ic,j,t1)+               &
      &              fac2*REFINED(ng)%ubarR_west(ic,j,t2)
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
-!            my_valh1=fac1*BOUNDARY(ng)%hR_west(ic,j,t1)+                &
-!     &               fac2*BOUNDARY(ng)%hR_west(ic,j,t2)+                &
-!     &               fac1*BOUNDARY(ng)%zetaR_west(ic,j,t1)+             &
-!     &               fac2*BOUNDARY(ng)%zetaR_west(ic,j,t2)
-!            my_valh2=fac1*BOUNDARY(ng)%hR_west(ic+1,j,t1)+              &
-!     &               fac2*BOUNDARY(ng)%hR_west(ic+1,j,t2)+              &
-!     &               fac1*BOUNDARY(ng)%zetaR_west(ic+1,j,t1)+           &
-!     &               fac2*BOUNDARY(ng)%zetaR_west(ic+1,j,t2)
-!            cff1=0.5_r8*(GRID(ng)%h(i-1,j)+OCEAN(ng)%zeta(i-1,j,1)+     &
-!     &                   GRID(ng)%h(i  ,j)+OCEAN(ng)%zeta(i  ,j,1))
-!            my_val=my_valu*0.5_r8*(my_valh1+my_valh2)/cff1
             OCEAN(ng)%ubar(i,j,1)=my_valu
             OCEAN(ng)%ubar(i,j,2)=my_valu
             OCEAN(ng)%ubar(i,j,3)=my_valu
@@ -314,37 +294,20 @@
       IF (EASTERN_EDGE) THEN
         DO j=JstrT,JendT
           DO i=Iend+1,IendT
-!         DO i=Iend+2,IendT
             ic=i-Iend
             my_valu=fac1*REFINED(ng)%ubarR_east(ic,j,t1)+               &
      &              fac2*REFINED(ng)%ubarR_east(ic,j,t2)
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
-!            my_valh1=fac1*BOUNDARY(ng)%hR_east(ic,j,t1)+                &
-!     &               fac2*BOUNDARY(ng)%hR_east(ic,j,t2)+                &
-!     &               fac1*BOUNDARY(ng)%zetaR_east(ic,j,t1)+             &
-!     &               fac2*BOUNDARY(ng)%zetaR_east(ic,j,t2)
-!            my_valh2=fac1*BOUNDARY(ng)%hR_east(ic+1,j,t1)+              &
-!     &               fac2*BOUNDARY(ng)%hR_east(ic+1,j,t2)+              &
-!     &               fac1*BOUNDARY(ng)%zetaR_east(ic+1,j,t1)+           &
-!     &               fac2*BOUNDARY(ng)%zetaR_east(ic+1,j,t2)
-!            cff1=0.5_r8*(GRID(ng)%h(i-1,j)+OCEAN(ng)%zeta(i-1,j,1)+     &
-!     &                   GRID(ng)%h(i  ,j)+OCEAN(ng)%zeta(i  ,j,1))
-!            my_val=my_valu*0.5_r8*(my_valh1+my_valh2)/cff1
             OCEAN(ng)%ubar(i,j,1)=my_valu
             OCEAN(ng)%ubar(i,j,2)=my_valu
             OCEAN(ng)%ubar(i,j,3)=my_valu
-# ifdef SOLVE3D
-!            COUPLING(ng)%DU_avg1(i,j)=my_val
-!            COUPLING(ng)%DU_avg2(i,j)=my_val
-# endif
           END DO
         END DO
       END IF
       IF (SOUTHERN_EDGE) THEN
         DO j=JstrT,Jstr-1
-!       DO j=JstrT,Jstr-2
           DO i=IstrTU+1,IendT
             jc=j+Nghostpoints+1
             my_valu=fac1*REFINED(ng)%ubarR_south(i,jc,t1)+              &
@@ -352,30 +315,14 @@
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
-!            my_valh1=fac1*BOUNDARY(ng)%hR_south(i,jc,t1)+               &
-!     &               fac2*BOUNDARY(ng)%hR_south(i,jc,t2)+               &
-!     &               fac1*BOUNDARY(ng)%zetaR_south(i,jc,t1)+            &
-!     &               fac2*BOUNDARY(ng)%zetaR_south(i,jc,t2)
-!            my_valh2=fac1*BOUNDARY(ng)%hR_south(i-1,jc,t1)+             &
-!     &               fac2*BOUNDARY(ng)%hR_south(i-1,jc,t2)+             &
-!     &               fac1*BOUNDARY(ng)%zetaR_south(i-1,jc,t1)+          &
-!     &               fac2*BOUNDARY(ng)%zetaR_south(i-1,jc,t2)
-!            cff1=0.5_r8*(GRID(ng)%h(i-1,j)+OCEAN(ng)%zeta(i-1,j,1)+     &
-!     &                   GRID(ng)%h(i  ,j)+OCEAN(ng)%zeta(i  ,j,1))
-!            my_val=my_valu*0.5_r8*(my_valh1+my_valh2)/cff1
             OCEAN(ng)%ubar(i,j,1)=my_valu
             OCEAN(ng)%ubar(i,j,2)=my_valu
             OCEAN(ng)%ubar(i,j,3)=my_valu
-# ifdef SOLVE3D
-!            COUPLING(ng)%DU_avg1(i,j)=my_val
-!            COUPLING(ng)%DU_avg2(i,j)=my_val
-# endif
           END DO
         END DO
       END IF
       IF (NORTHERN_EDGE) THEN
         DO j=Jend+1,JendT
-!       DO j=Jend+2,JendT
           DO i=IstrTU+1,IendT
             jc=j-Jend
             my_valu=fac1*REFINED(ng)%ubarR_north(i,jc,t1)+              &
@@ -383,157 +330,47 @@
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
-!            my_valh1=fac1*BOUNDARY(ng)%hR_north(i,jc+1,t1)+             &
-!     &               fac2*BOUNDARY(ng)%hR_north(i,jc+1,t2)+             &
-!     &               fac1*BOUNDARY(ng)%zetaR_north(i,jc+1,t1)+          &
-!     &               fac2*BOUNDARY(ng)%zetaR_north(i,jc+1,t2)
-!            my_valh2=fac1*BOUNDARY(ng)%hR_north(i-1,jc+1,t1)+           &
-!     &               fac2*BOUNDARY(ng)%hR_north(i-1,jc+1,t2)+           &
-!     &               fac1*BOUNDARY(ng)%zetaR_north(i-1,jc+1,t1)+        &
-!     &               fac2*BOUNDARY(ng)%zetaR_north(i-1,jc+1,t2)
-!            cff1=0.5_r8*(GRID(ng)%h(i-1,j)+OCEAN(ng)%zeta(i-1,j,1)+     &
-!     &                   GRID(ng)%h(i  ,j)+OCEAN(ng)%zeta(i  ,j,1))
-!            my_val=my_valu*0.5_r8*(my_valh1+my_valh2)/cff1
             OCEAN(ng)%ubar(i,j,1)=my_valu
             OCEAN(ng)%ubar(i,j,2)=my_valu
             OCEAN(ng)%ubar(i,j,3)=my_valu
-# ifdef SOLVE3D
-!            COUPLING(ng)%DU_avg1(i,j)=my_val
-!            COUPLING(ng)%DU_avg2(i,j)=my_val
-# endif
           END DO
         END DO
       END IF
-
-!
-! DUon
-!
-# ifdef get_DUon
-      IF (WESTERN_EDGE) THEN
-        DO j=JstrT,JendT
-          DO i=IstrT+1,Istr
-            ic=i+Nghostpoints
-            my_val=fac1*REFINED(ng)%DUonR_west(ic,j,t1)+                &
-     &             fac2*REFINED(ng)%DUonR_west(ic,j,t2)
-            my_val=my_val*fac3
-#  ifdef MASKING
-            my_val=my_val*GRID(ng)%umask(i,j)
-#  endif
-!            OCEAN(ng)%DUon(i,j)=my_val
-          END DO
-        END DO
-      END IF
-      IF (EASTERN_EDGE) THEN
-        DO j=JstrT,JendT
-          DO i=Iend+1,IendT
-            ic=i-Iend
-            my_val=fac1*REFINED(ng)%DUonR_east(ic,j,t1)+                &
-     &             fac2*REFINED(ng)%DUonR_east(ic,j,t2)
-            my_val=my_val*fac3
-#  ifdef MASKING
-            my_val=my_val*GRID(ng)%umask(i,j)
-#  endif
-!            OCEAN(ng)%DUon(i,j)=my_val
-          END DO
-        END DO
-      END IF
-      IF (SOUTHERN_EDGE) THEN
-        DO j=JstrT,Jstr-1
-          DO i=IstrT,IendT
-            jc=j+Nghostpoints+1
-            my_val=fac1*REFINED(ng)%DUonR_south(i,jc,t1)+               &
-     &             fac2*REFINED(ng)%DUonR_south(i,jc,t2)
-            my_val=my_val*fac3
-#  ifdef MASKING
-            my_val=my_val*GRID(ng)%umask(i,j)
-#  endif
-!            OCEAN(ng)%DUon(i,j)=my_val
-          END DO
-        END DO
-      END IF
-      IF (NORTHERN_EDGE) THEN
-        DO j=Jend+1,JendT
-          DO i=IstrT,IendT
-            jc=j-Jend
-            my_val=fac1*REFINED(ng)%DUonR_north(i,jc,t1)+               &
-     &             fac2*REFINED(ng)%DUonR_north(i,jc,t2)
-            my_val=my_val*fac3
-#  ifdef MASKING
-            my_val=my_val*GRID(ng)%umask(i,j)
-#  endif
-!            OCEAN(ng)%DUon(i,j)=my_val
-          END DO
-        END DO
-      END IF
-# endif
 !
 ! vbar
 !
       IF (WESTERN_EDGE) THEN
         DO j=JstrTV+1,JendT
           DO i=IstrT,Istr-1
-!         DO i=IstrT,Istr-2
             ic=i+Nghostpoints+1
             my_valv=fac1*REFINED(ng)%vbarR_west(ic,j,t1)+               &
      &              fac2*REFINED(ng)%vbarR_west(ic,j,t2)
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
-!            my_valh1=fac1*BOUNDARY(ng)%hR_west(ic,j,t1)+                &
-!     &               fac2*BOUNDARY(ng)%hR_west(ic,j,t2)+                &
-!     &               fac1*BOUNDARY(ng)%zetaR_west(ic,j,t1)+             &
-!     &               fac2*BOUNDARY(ng)%zetaR_west(ic,j,t2)
-!            my_valh2=fac1*BOUNDARY(ng)%hR_west(ic,j-1,t1)+              &
-!     &               fac2*BOUNDARY(ng)%hR_west(ic,j-1,t2)+              &
-!     &               fac1*BOUNDARY(ng)%zetaR_west(ic,j-1,t1)+           &
-!     &               fac2*BOUNDARY(ng)%zetaR_west(ic,j-1,t2)
-!            cff1=0.5_r8*(GRID(ng)%h(i,j  )+OCEAN(ng)%zeta(i,j  ,1)+     &
-!     &                   GRID(ng)%h(i,j-1)+OCEAN(ng)%zeta(i,j  ,1))
-!            my_val=my_valv*0.5_r8*(my_valh1+my_valh2)/cff1
             OCEAN(ng)%vbar(i,j,1)=my_valv
             OCEAN(ng)%vbar(i,j,2)=my_valv
             OCEAN(ng)%vbar(i,j,3)=my_valv
-# ifdef SOLVE3D
-!            COUPLING(ng)%DV_avg1(i,j)=my_val
-!            COUPLING(ng)%DV_avg2(i,j)=my_val
-# endif
           END DO
         END DO
       END IF
       IF (EASTERN_EDGE) THEN
         DO j=JstrTV+1,JendT
           DO i=Iend+1,IendT
-!         DO i=Iend+2,IendT
             ic=i-Iend
             my_valv=fac1*REFINED(ng)%vbarR_east(ic,j,t1)+               &
      &              fac2*REFINED(ng)%vbarR_east(ic,j,t2)
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
-!            my_valh1=fac1*BOUNDARY(ng)%hR_east(ic+1,j,t1)+              &
-!     &               fac2*BOUNDARY(ng)%hR_east(ic+1,j,t2)+              &
-!     &               fac1*BOUNDARY(ng)%zetaR_east(ic+1,j,t1)+           &
-!     &               fac2*BOUNDARY(ng)%zetaR_east(ic+1,j,t2)
-!            my_valh2=fac1*BOUNDARY(ng)%hR_east(ic+1,j-1,t1)+            &
-!     &               fac2*BOUNDARY(ng)%hR_east(ic+1,j-1,t2)+            &
-!     &               fac1*BOUNDARY(ng)%zetaR_east(ic+1,j-1,t1)+         &
-!     &               fac2*BOUNDARY(ng)%zetaR_east(ic+1,j-1,t2)
-!            cff1=0.5_r8*(GRID(ng)%h(i,j  )+OCEAN(ng)%zeta(i,j  ,1)+     &
-!     &                   GRID(ng)%h(i,j-1)+OCEAN(ng)%zeta(i,j  ,1))
-!            my_val=my_valv*0.5_r8*(my_valh1+my_valh2)/cff1
             OCEAN(ng)%vbar(i,j,1)=my_valv
             OCEAN(ng)%vbar(i,j,2)=my_valv
             OCEAN(ng)%vbar(i,j,3)=my_valv
-# ifdef SOLVE3D
-!            COUPLING(ng)%DV_avg1(i,j)=my_val
-!            COUPLING(ng)%DV_avg2(i,j)=my_val
-# endif
           END DO
         END DO
       END IF
       IF (SOUTHERN_EDGE) THEN
         DO j=JstrT+1,Jstr
-!       DO j=JstrT+1,Jstr-1
           DO i=IstrT,IendT
             jc=j+Nghostpoints
             my_valv=fac1*REFINED(ng)%vbarR_south(i,jc,t1)+              &
@@ -541,30 +378,14 @@
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
-!            my_valh1=fac1*BOUNDARY(ng)%hR_south(i,jc,t1)+                &
-!     &               fac2*BOUNDARY(ng)%hR_south(i,jc,t2)+                &
-!     &               fac1*BOUNDARY(ng)%zetaR_south(i,jc,t1)+             &
-!     &               fac2*BOUNDARY(ng)%zetaR_south(i,jc,t2)
-!            my_valh2=fac1*BOUNDARY(ng)%hR_south(i,jc+1,t1)+              &
-!     &               fac2*BOUNDARY(ng)%hR_south(i,jc+1,t2)+              &
-!     &               fac1*BOUNDARY(ng)%zetaR_south(i,jc+1,t1)+           &
-!     &               fac2*BOUNDARY(ng)%zetaR_south(i,jc+1,t2)
-!            cff1=0.5_r8*(GRID(ng)%h(i,j-1)+OCEAN(ng)%zeta(i,j-1,1)+      &
-!     &                   GRID(ng)%h(i,j  )+OCEAN(ng)%zeta(i,j  ,1))
-!            my_val=my_valv*0.5_r8*(my_valh1+my_valh2)/cff1
             OCEAN(ng)%vbar(i,j,1)=my_valv
             OCEAN(ng)%vbar(i,j,2)=my_valv
             OCEAN(ng)%vbar(i,j,3)=my_valv
-# ifdef SOLVE3D
-!            COUPLING(ng)%DV_avg1(i,j)=my_val
-!            COUPLING(ng)%DV_avg2(i,j)=my_val
-# endif
           END DO
         END DO
       END IF
       IF (NORTHERN_EDGE) THEN
         DO j=Jend+1,JendT
-!       DO j=Jend+2,JendT
           DO i=IstrT,IendT
             jc=j-Jend
             my_valv=fac1*REFINED(ng)%vbarR_north(i,jc,t1)+              &
@@ -572,89 +393,13 @@
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
-!            my_valh1=fac1*BOUNDARY(ng)%hR_north(i,jc,t1)+               &
-!     &               fac2*BOUNDARY(ng)%hR_north(i,jc,t2)+               &
-!     &               fac1*BOUNDARY(ng)%zetaR_north(i,jc,t1)+            &
-!     &               fac2*BOUNDARY(ng)%zetaR_north(i,jc,t2)
-!            my_valh2=fac1*BOUNDARY(ng)%hR_north(i,jc+1,t1)+             &
-!     &               fac2*BOUNDARY(ng)%hR_north(i,jc+1,t2)+             &
-!     &               fac1*BOUNDARY(ng)%zetaR_north(i,jc+1,t1)+          &
-!     &               fac2*BOUNDARY(ng)%zetaR_north(i,jc+1,t2)
-!            cff1=0.5_r8*(GRID(ng)%h(i,j-1)+OCEAN(ng)%zeta(i,j-1,1)+     &
-!     &                   GRID(ng)%h(i,j  )+OCEAN(ng)%zeta(i,j  ,1))
-!            my_val=my_valv*0.5_r8*(my_valh1+my_valh2)/cff1
             OCEAN(ng)%vbar(i,j,1)=my_valv
             OCEAN(ng)%vbar(i,j,2)=my_valv
             OCEAN(ng)%vbar(i,j,3)=my_valv
-# ifdef SOLVE3D
-!            COUPLING(ng)%DV_avg1(i,j)=my_val
-!            COUPLING(ng)%DV_avg2(i,j)=my_val
-# endif
           END DO
         END DO
       END IF
 
-# ifdef get_DVom
-!
-! DVom
-!
-      IF (WESTERN_EDGE) THEN
-        DO j=JstrT,JendT
-          DO i=IstrT,Istr-1
-            ic=i+Nghostpoints+1
-            my_val=fac1*REFINED(ng)%DVomR_west(ic,j,t1)+                &
-     &             fac2*REFINED(ng)%DVomR_west(ic,j,t2)
-            my_val=my_val*fac3
-#  ifdef MASKING
-            my_val=my_val*GRID(ng)%vmask(i,j)
-#  endif
-!            OCEAN(ng)%DVom(i,j)=my_val
-          END DO
-        END DO
-      END IF
-      IF (EASTERN_EDGE) THEN
-        DO j=JstrT,JendT
-          DO i=Iend+1,IendT
-            ic=i-Iend
-            my_val=fac1*REFINED(ng)%DVomR_east(ic,j,t1)+                &
-     &             fac2*REFINED(ng)%DVomR_east(ic,j,t2)
-            my_val=my_val*fac3
-#  ifdef MASKING
-            my_val=my_val*GRID(ng)%vmask(i,j)
-#  endif
-!            OCEAN(ng)%DVom(i,j)=my_val
-          END DO
-        END DO
-      END IF
-      IF (SOUTHERN_EDGE) THEN
-        DO j=JstrT+1,Jstr
-          DO i=IstrT,IendT
-            jc=j+Nghostpoints
-            my_val=fac1*REFINED(ng)%DVomR_south(i,jc,t1)+               &
-     &             fac2*REFINED(ng)%DVomR_south(i,jc,t2)
-            my_val=my_val*fac3
-#  ifdef MASKING
-            my_val=my_val*GRID(ng)%vmask(i,j)
-#  endif
-!            OCEAN(ng)%DVom(i,j)=my_val
-          END DO
-        END DO
-      END IF
-      IF (NORTHERN_EDGE) THEN
-        DO j=Jend+1,JendT
-          DO i=IstrT,IendT
-            jc=j-Jend
-            my_val=fac1*REFINED(ng)%DVomR_north(i,jc,t1)+               &
-     &             fac2*REFINED(ng)%DVomR_north(i,jc,t2)
-            my_val=my_val*fac3
-#  ifdef MASKING
-            my_val=my_val*GRID(ng)%vmask(i,j)
-#  endif
-!            OCEAN(ng)%DVom(i,j)=my_val
-          END DO
-        END DO
-      END IF
-# endif
 !
 # if defined EW_PERIODIC || defined NS_PERIODIC
 !

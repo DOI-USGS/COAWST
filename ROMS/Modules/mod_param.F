@@ -244,7 +244,6 @@
         integer, dimension(Ngrids) :: N
 !
 # ifdef REFINED_GRID
-        integer, dimension(Ngrids) :: nrefined
         integer, dimension(Ngrids) :: myparent
         integer, dimension(Ngrids) :: mychild
 # endif
@@ -547,11 +546,9 @@
 !
 !  Set refined grid parameters.
 !
-      nrefined(1)=1
       myparent(1)=1  !0
       mychild(1)=2
       DO ng=2,Ngrids
-        nrefined(ng)=5
         myparent(ng)=ng-1
         mychild(ng)=ng+1
       END DO
