@@ -392,6 +392,7 @@
           blowup=exit_flag
           exit_flag=NoError
           CALL wrt_rst (ng)
+          exit_flag=1
         END IF
       END DO
 !
