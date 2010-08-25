@@ -849,11 +849,12 @@ CONTAINS
      &            0.11*VISC/(UST(I)+0.001),1.59E-5)
 # elif defined DRENNAN
           CWAVE=LWAVEP(I)/PWAVE(I)
-          ZNT(I)=MAX(3.35*HWAVE(I)*(MIN((UST(I))/CWAVE,0.1))**3.4+      &
+          ZNT(I)=MAX(3.35*HWAVE(I)*(MIN(UST(I)/CWAVE,0.1))**3.4+        &
      &           0.11*VISC/(UST(I)+0.001),1.59E-5)
 # elif defined COARE_OOST
           CWAVE=LWAVEP(I)/PWAVE(I)
-          ZNT(I)=MAX(25.0/pi*LWAVEP(I)*(UST(I)/CWAVE)**4.5+            &
+          ZNT(I)=MAX(25.0/3.141593*LWAVEP(I)*                           &
+     &           (MIN(UST(I)/CWAVE,0.1))**4.5+                          &
      &           0.11*VISC/(UST(I)+0.001),1.59E-5)
 # endif
 #else

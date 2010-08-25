@@ -485,7 +485,7 @@ CONTAINS
      &           0.11*VISC/(USTAR+0.001),1.59E-5)
 # elif defined COARE_OOST
           CWAVE=LWAVEP/PWAVE
-          Z0=MAX(25.0/pi*LWAVEP*(USTAR/CWAVE)**4.5+                     &
+          Z0=MAX(25.0/3.141593*LWAVEP*(MIN(USTAR/CWAVE,0.1))**4.5+      &
      &           0.11*VISC/(USTAR+0.001),1.59E-5)
 # endif
 #else
