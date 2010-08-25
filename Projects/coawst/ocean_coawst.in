@@ -52,32 +52,34 @@
 ! Grid dimension parameters. See notes below in the Glossary for how to set
 ! these parameters correctly.
 
-!         Lm == 894        ! Number of I-direction INTERIOR RHO-points
-!         Mm == 334        ! Number of J-direction INTERIOR RHO-points
-          Lm == 894        ! Number of I-direction INTERIOR RHO-points
-          Mm == 334        ! Number of J-direction INTERIOR RHO-points
-           N == 16          ! Number of vertical levels
+!         Lm == 894 305       ! Number of I-direction INTERIOR RHO-points
+!         Mm == 334 250       ! Number of J-direction INTERIOR RHO-points
+          Lm == 894 305       ! Number of I-direction INTERIOR RHO-points
+          Mm == 334 250       ! Number of J-direction INTERIOR RHO-points
+           N == 16  16        ! Number of vertical levels
 
-        Nbed =  1            ! Number of sediment bed layers
+        Nbed =  1   1         ! Number of sediment bed layers
 
-         NAT =  2            ! Number of active tracers (usually, 2)
-         NPT =  0            ! Number of inactive passive tracers
-         NCS =  0            ! Number of cohesive (mud) sediment tracers
-         NNS =  6 !1         ! Number of non-cohesive (sand) sediment tracers
+         NAT =  2   2         ! Number of active tracers (usually, 2)
+         NPT =  0   0         ! Number of inactive passive tracers
+         NCS =  0   0         ! Number of cohesive (mud) sediment tracers
+         NNS =  6   6         ! Number of non-cohesive (sand) sediment tracers
 
 ! Domain decomposition parameters for serial, distributed-memory or
 ! shared-memory configurations used to determine tile horizontal range
 ! indices (Istr,Iend) and (Jstr,Jend), [1:Ngrids].
 
-      NtileI == 2                              ! I-direction partition
-      NtileJ == 8                             ! J-direction partition
+      NtileI == 6   6                          ! I-direction partition
+      NtileJ == 4   4                          ! J-direction partition
 
 ! Time-Stepping parameters.
 
-!      NTIMES == 3240     !9 days
-      NTIMES == 720     !1 days
-       DT == 120.0d0 !240.0d0
-     NDTFAST == 30
+!      NTIMES == 3240    16200           !9 days
+!      NTIMES == 750     3750            !1 days 1hrs
+!      NTIMES == 8     45            !15 min
+       NTIMES == 720    3600          !1 day
+      DT == 120.0d0 24.0d0  !240.0d0
+     NDTFAST == 30 30
 
 ! Model iteration loops parameters.
 
@@ -96,24 +98,24 @@
 
 ! Input/Output parameters.
 
-       NRREC == 0  
-   LcycleRST == T  
-        NRST == 30
-        NSTA == 1  
-        NFLT == 1  
-       NINFO == 1  
+       NRREC == -1  -1
+   LcycleRST == T  T
+        NRST == 30 150
+        NSTA == 1  1
+        NFLT == 1  1
+       NINFO == 1  1
 
 ! Output history, average, diagnostic files parameters.
 
-     LDEFOUT == T
-        NHIS == 30
-     NDEFHIS == 360 !180 !30 
-      NTSAVG == 1
-        NAVG == 72
-     NDEFAVG == 0   
-      NTSDIA == 1   
-        NDIA == 72  
-     NDEFDIA == 0   
+     LDEFOUT == T   T
+        NHIS == 30 150 !4 !30  150
+     NDEFHIS == 360 1800 
+      NTSAVG == 1   1
+        NAVG == 72  72
+     NDEFAVG == 0   0
+      NTSDIA == 1   1
+        NDIA == 72  72
+     NDEFDIA == 0   0
 
 ! Output tangent linear and adjoint models parameters.
 
@@ -123,6 +125,8 @@
    LcycleADJ == F
         NADJ == 72
      NDEFADJ == 0
+        NSFF == 720
+        NOBC == 720
 
 ! Output check pointing GST restart parameters.
 
@@ -139,18 +143,28 @@
         TNU2 == 20.0d0  20.0d0 20.0d0  20.0d0   ! m2/s
         TNU4 == 2*0.0d0                         ! m4/s
 
+     ad_TNU2 == 0.0d0  0.0d0                    ! m2/s
+     ad_TNU4 == 0.0d0  0.0d0                    ! m4/s
+
 ! Harmononic/biharmonic, horizontal viscosity coefficient: [Ngrids].
 
-       VISC2 == 100.0d0 100.0d0                 ! m2/s
+       VISC2 == 10.0d0 10.0d0                   ! m2/s
        VISC4 == 0.0d0                           ! m4/s
+
+    ad_VISC2 == 0.0d0                           ! m2/s
+    ad_VISC4 == 0.0d0                           ! m4/s
 
 ! Vertical mixing coefficients for active tracers: [1:NAT+NPT,Ngrids]
 
      AKT_BAK == 1.0d-6 1.0d-6 1.0d-6 1.0d-6     ! m2/s
 
+  ad_AKT_fac == 1.0d0  1.0d0                    ! nondimensional
+
 ! Vertical mixing coefficient for momentum: [Ngrids].
 
      AKV_BAK == 1.0d-5 1.0d-5                   ! m2/s
+
+  ad_AKV_fac == 1.0d0                           ! nondimensional
 
 ! Turbulent closure parameters.
 
@@ -177,10 +191,10 @@
 
 ! Constants used in surface turbulent kinetic energy flux computation.
 
-  CHARNOK_ALPHA == 1400.0d0         ! Charnok surface roughness
- ZOS_HSIG_ALPHA == 0.5d0            ! roughness from wave amplitude
-       SZ_ALPHA == 0.25d0           ! roughness from wave dissipation
-      CRGBAN_CW == 100.0d0          ! Craig and Banner wave breaking
+  CHARNOK_ALPHA == 1400.0d0 1400.0d0  ! Charnok surface roughness
+ ZOS_HSIG_ALPHA == 0.5d0    0.5d0     ! roughness from wave amplitude
+       SZ_ALPHA == 0.25d0   0.25d0    ! roughness from wave dissipation
+      CRGBAN_CW == 100.0d0  100.0d0   ! Craig and Banner wave breaking
 
 ! Constants used in momentum stress computation.
 
@@ -191,19 +205,25 @@
 
 ! Height (m) of atmospheric measurements for Bulk fluxes parameterization.
 
-      BLK_ZQ == 10.0d0                     ! air humidity
-      BLK_ZT == 10.0d0                     ! air temperature
-      BLK_ZW == 10.0d0                     ! winds
+      BLK_ZQ == 2.0d0 2.0d0              ! air humidity
+      BLK_ZT == 2.0d0 2.0d0              ! air temperature
+      BLK_ZW == 10.0d0 10.0d0              ! winds
 
 ! Minimum depth for wetting and drying.
 
-       DCRIT == 0.10d0                     ! m
+       DCRIT == 0.10d0 0.10d0              ! m
 
 ! Various parameters.
 
        WTYPE == 1
      LEVSFRC == 15
      LEVBFRC == 1
+
+! Set vertical, terrain-following coordinates transformation equation and
+! stretching function (see below for details), [1:Ngrids].
+
+  Vtransform == 1 1                         ! transformation equation
+ Vstretching == 1 1                         ! stretching function
 
 ! Vertical S-coordinates parameters, [1:Ngrids].
 
@@ -228,14 +248,14 @@
 !     DSTART =  47906.0d0                  ! days  1990/01/15
 !     DSTART =  52866.0d0                  ! days  2003/08/15
 !     DSTART =  52883.0d0                  ! days  2003/09/01
-      DSTART =  55200.0d0                  ! days 2010/01/04 
-    TIDE_START =  52866.0d0   52866.0d0    ! days  2003/08/15
+      DSTART =  55425.0d0   55425.0d0        ! days 2010/08/17 
+     TIDE_START =  52866.0d0   52866.0d0    ! days  2003/08/15
     TIME_REF =  18581117.0  18581117.0     ! yyyymmdd.dd
 
 ! Nudging/relaxation time scales, inverse scales will be computed
 ! internally, [1:Ngrids].
 
-       TNUDG == 2*20.0d0 2*20.0d0                   ! days
+       TNUDG == 2*4.0d0 2*4.0d0                   ! days
        ZNUDG == 0.0d0    0.0d0                      ! days
       M2NUDG == 0.0d0    0.0d0                      ! days
       M3NUDG == 20.0d0  20.0d0                      ! days
@@ -257,6 +277,11 @@
 ! Slipperiness parameter: 1.0 (free slip) or -1.0 (no slip)
 
       GAMMA2 == 1.0d0 1.0d0
+! Logical switches (TRUE/FALSE) to specify which variables to consider on
+! tracers point Sources/Sinks (like river runoff): [1:NAT+NPT,Ngrids].
+! See glossary below for details.
+
+  LtracerSrc == T T                        ! temperature, salinity, inert
 
 ! Starting (DstrS) and ending (DendS) day for adjoint sensitivity forcing.
 ! DstrS must be less or equal to DendS. If both values are zero, their
@@ -320,7 +345,7 @@ Hout(idVbar) == T T                         ! 2D V-velocity
 Hout(idFsur) == T T                         ! free-surface
 Hout(idBath) == F F                         ! time-dependent bathymetry
 
-Hout(idTvar) == T T T T                     ! temperature and salinity
+Hout(idTvar) == T T T T                      ! temperature and salinity
 
 Hout(idUair) == T F                         ! surface U-wind
 Hout(idVair) == T F                         ! surface V-wind
@@ -333,8 +358,8 @@ Hout(idUbrs) == F F                         ! bottom U-current stress
 Hout(idVbrs) == F F                         ! bottom V-current stress
 Hout(idUbws) == F F                         ! bottom U-wave stress
 Hout(idVbws) == F F                         ! bottom V-wave stress
-Hout(idUbcs) == T T                         ! bottom max wave-current U-stress
-Hout(idVbcs) == T T                         ! bottom max wave-current V-stress
+Hout(idUbcs) == F F                         ! bottom max wave-current U-stress
+Hout(idVbcs) == F F                         ! bottom max wave-current V-stress
 Hout(idUVwc) == T T                         ! bottom max wave-current stress magnitude
 
 Hout(idUbot) == F F                         ! bed wave orbital U-velocity
@@ -360,30 +385,31 @@ Hout(idV3rs) == F F                         ! 3D V-radiation stress
 Hout(idU3Sd) == F F                         ! 3D U-Stokes velocity
 Hout(idV3Sd) == F F                         ! 3D V-Stokes velocity
 
-Hout(idWamp) == T T                        ! wave height
-Hout(idWlen) == T T                        ! wave length, mean
-Hout(idWlep) == T T                        ! wave length, peak
-Hout(idWdir) == T T                        ! wave direction
-Hout(idWptp) == T T                        ! wave surface period
-Hout(idWpbt) == T T                        ! wave bottom period
-Hout(idWorb) == T T                        ! wave bottom orbital velocity
-Hout(idWdis) == T T                        ! wave dissipation
-Hout(idWbrk) == T T                        ! wave breaking (percent)
-Hout(idUwav) == T T                        ! wave-depth avgeraged U-velocity
-Hout(idVwav) == T T                        ! wave-depth avgeraged V-velocity
+Hout(idWamp) == T T                         ! wave height
+Hout(idWlen) == T T                         ! wave length
+Hout(idWlep) == T T                         ! wave length, peak
+Hout(idWdir) == T T                         ! wave direction
+Hout(idWptp) == T T                         ! wave surface period
+Hout(idWpbt) == T T                         ! wave bottom period
+Hout(idWorb) == T T                         ! wave bottom orbital velocity
+Hour(idWdis) == T T                         ! wave dissipation
+Hout(idWbrk) == F F                         ! wave breaking (percent)
+Hout(idUwav) == F F                         ! U component of the current affecting waves
+Hout(idVwav) == F F                         ! V component of the current affecting waves
 
 Hout(idTsur) == T F                         ! surface net heat and salt flux
 Hout(idLhea) == T F                         ! latent heat flux
 Hout(idShea) == T F                         ! sensible heat flux
 Hout(idLrad) == T F                         ! longwave radiation flux
 Hout(idSrad) == T F                         ! shortwave radiation flux
+Hout(idEmPf) == F F                         ! E-P flux
 Hout(idevap) == T F                         ! evaporation rate
 Hout(idrain) == T F                         ! precipitation rate
 
-Hout(idDano) == F F                         ! density anomaly
-Hout(idVvis) == F F                         ! vertical viscosity
-Hout(idTdif) == F F                         ! vertical T-diffusion
-Hout(idSdif) == F F                         ! vertical Salinity diffusion
+Hout(idDano) == T T                         ! density anomaly
+Hout(idVvis) == T T                         ! vertical viscosity
+Hout(idTdif) == T T                         ! vertical T-diffusion
+Hout(idSdif) == T T                         ! vertical Salinity diffusion
 Hout(idHsbl) == F F                         ! depth of surface boundary layer
 Hout(idHbbl) == F F                         ! depth of bottom boundary layer
 Hout(idMtke) == F F                         ! turbulent kinetic energy
@@ -422,22 +448,32 @@ Hout(idMtls) == F F                         ! turbulent length scale
 !                                 1 1 1 1 1 1 1
 !               1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
 
-Hout(idBott) == T T T T T T T T T F F F F F F F
+Hout(idBott) == T T T T T T T T T F F F F F F F \
+                T T T T T T T T T F F F F F F F
 
 ! Generic User parameters, [1:NUSER].
 
        NUSER =  0
         USER =  0.d0
+! NetCDF-4/HDF5 compression parameters for output files.
 
+  NC_SHUFFLE =  1                 ! if non-zero, turn on shuffle filter
+  NC_DEFLATE =  1                 ! if non-zero, turn on deflate filter
+   NC_DLEVEL =  1                 ! deflate level [0-9]
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == ./grids/USeast_grd16.nc 
-     ININAME == ./forcings/USE_coawst_ini.nc   !./Output/ocean_rst.nc
+     GRDNAME == /raid1/share/forcings/Isabel/USeast_grd17.nc \
+                /raid1/share/forcings/outerbanks_grd9_min5.nc 
+!                ./grids/outerbanks_grd8_min5.nc 
+     ININAME == ./restart/ocean_use_rst.nc \
+                ./restart/ocean_outbnks_rst.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
-     CLMNAME == ./forcings/USE_coawst_clm.nc
-     BRYNAME == ./forcings/USE_coawst_bdy.nc
+     CLMNAME == ./forcings/USE_coawst_clm.nc \
+                ./forcings/USE_coawst_clm.nc
+     BRYNAME == ./forcings/USE_coawst_bdy.nc \
+                ./forcings/USE_coawst_bdy.nc
      FWDNAME == ocean_fwd.nc
      ADSNAME == ocean_ads.nc
 !     SP1NAME == Data/ROMS/Grid/swan2roms_weights.nc   !wav2ocn
@@ -466,13 +502,27 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
                 ./forcings/Tair_coawst.nc  \
                 ./forcings/lwrad_coawst.nc \
                 ./forcings/Big_grd2_coawstwind.nc \
-                ./grids/tide_forc_USeast_grd2.nc
+                ./grids/tide_forc_USeast_grd2.nc \
+                ./forcings/cloud_coawst.nc \
+                ./forcings/Pair_coawst.nc  \
+                ./forcings/Qair_coawst.nc  \
+                ./forcings/rain_coawst.nc  \
+                ./forcings/swrad_coawst.nc \
+                ./forcings/Tair_coawst.nc  \
+                ./forcings/lwrad_coawst.nc \
+                ./forcings/Big_grd2_coawstwind.nc \
+                ./grids/tide_forc_USeast_grd16_osu.nc \
+
+                
 
 ! Output NetCDF file names, [1:Ngrids].
 
      GSTNAME == ocean_gst.nc
-     RSTNAME == ./Output/ocean_rst.nc
-     HISNAME == ./Output/coawst_2_his.nc
+     RSTNAME == ./Output/ocean_use_rst.nc \
+                ./Output/ocean_outbnks_rst.nc
+
+     HISNAME == ./Output/coawst_2_use_his.nc \
+                ./Output/coawst_2_outbnks_his.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc

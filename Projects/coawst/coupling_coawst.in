@@ -37,19 +37,20 @@
 ! Their sum must be equal to the total number of processors.
 
   NnodesATM =  0                     ! atmospheric model
-  NnodesWAV =  32                     ! wave model
-  NnodesOCN =  16                     ! ocean model
+  NnodesWAV =  40                     ! wave model
+  NnodesOCN =  24                     ! ocean model
 
 ! Time interval (seconds) between coupling of models.
 
  TI_ATM_WAV =     0.0d0              ! atmosphere-wave coupling interval
  TI_ATM_OCN =     0.0d0              ! atmosphere-ocean coupling interval
- TI_WAV_OCN =   3600.0d0              ! wave-ocean coupling interval
+ TI_WAV_OCN =  3600.0d0              ! wave-ocean coupling interval
 
 ! Coupled model standard input file name.
 
    ATM_name = atmos.in                                    ! atmospheric model, not used yet
-   WAV_name = Projects/coawst/INPUT      ! wave model
+   WAV_name = Projects/coawst/INPUT_coawst_USE      \
+              Projects/coawst/INPUT_coawst_ob        ! wave model
 !  For the larger swan grid, use inlet_test2.
 !  WAV_name = Projects/Inlet_test/swan_inlet_test2.in
    OCN_name = Projects/coawst/ocean_coawst.in     ! ocean model

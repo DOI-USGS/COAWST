@@ -192,7 +192,7 @@
             OCEAN(ng)%zeta(i,j,2)=my_val
             OCEAN(ng)%zeta(i,j,3)=my_val
 # ifdef SOLVE3D
-            COUPLING(ng)%Zt_avg1(i,j)=my_val
+!            COUPLING(ng)%Zt_avg1(i,j)=my_val
 # endif
           END DO
         END DO
@@ -216,7 +216,7 @@
             OCEAN(ng)%zeta(i,j,2)=my_val
             OCEAN(ng)%zeta(i,j,3)=my_val
 # ifdef SOLVE3D
-            COUPLING(ng)%Zt_avg1(i,j)=my_val
+!            COUPLING(ng)%Zt_avg1(i,j)=my_val
 # endif
           END DO
         END DO
@@ -240,7 +240,7 @@
             OCEAN(ng)%zeta(i,j,2)=my_val
             OCEAN(ng)%zeta(i,j,3)=my_val
 # ifdef SOLVE3D
-            COUPLING(ng)%Zt_avg1(i,j)=my_val
+!            COUPLING(ng)%Zt_avg1(i,j)=my_val
 # endif
           END DO
         END DO
@@ -264,7 +264,7 @@
             OCEAN(ng)%zeta(i,j,2)=my_val
             OCEAN(ng)%zeta(i,j,3)=my_val
 # ifdef SOLVE3D
-            COUPLING(ng)%Zt_avg1(i,j)=my_val
+!           COUPLING(ng)%Zt_avg1(i,j)=my_val
 # endif
           END DO
         END DO
@@ -426,13 +426,13 @@
         CALL exchange_v2d_tile (ng, tile,                               &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(ng)%vbar(:,:,3))
-        CALL exchange_v2d_tile (ng, tile,                               &
+        CALL exchange_r2d_tile (ng, tile,                               &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(ng)%zeta(:,:,1))
-        CALL exchange_v2d_tile (ng, tile,                               &
+        CALL exchange_r2d_tile (ng, tile,                               &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(ng)%zeta(:,:,2))
-        CALL exchange_v2d_tile (ng, tile,                               &
+        CALL exchange_r2d_tile (ng, tile,                               &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(ng)%zeta(:,:,3))
       END IF

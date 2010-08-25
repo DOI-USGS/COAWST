@@ -218,7 +218,7 @@
       integer :: i, itrc, j, k
 
 #ifdef AKLIMIT
-      real(r8), parameter :: Ak_max = 1000.0_r8
+      real(r8), parameter :: Ak_max = 10.0_r8
 #endif
       real(r8), parameter :: Gadv = 1.0_r8/3.0_r8
       real(r8), parameter :: eps = 1.0E-10_r8

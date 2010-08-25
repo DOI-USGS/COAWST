@@ -2160,7 +2160,12 @@
       JHSIBC = 25                                                         40.00
       JHS    = 26                                                         40.13
       JURSEL = 27                                                         40.13
+#ifdef SWAN_MODEL
+      JPBOT = 28
+      MCMVAR = 28
+#else
       MCMVAR = 27                                                         40.65 40.61 40.51 40.13
+#endif
 !     subarray sequence number 1 is used only for unused subarrays        40.13
       JFRC2 = 1                                                           40.00
       JFRC3 = 1                                                           40.00
@@ -2179,7 +2184,9 @@
 !
 !     --- added for output purposes                                       40.65
 !
+#if !defined SWAN_MODEL
       JPBOT  = 1                                                          40.65 40.51
+#endif
       JBOTLV = 1                                                          40.65
       JDSXB  = 1                                                          40.65 40.61
       JDSXS  = 1                                                          40.65 40.61

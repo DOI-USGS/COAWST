@@ -43,7 +43,7 @@
 ! Switch is used to control sediment model computation within nested and/or
 ! multiple connected grids, [1:Ngrids].
 
-   Lsediment == T
+   Lsediment == T T
 
 !------------------------------------------------------------------------------
 !  General sediment bed model controls.
@@ -52,11 +52,11 @@
 ! Depositional bed layer thickness criteria to create a new layer (m). If
 ! deposition exceeds this value, then a new layer is created, [1:Ngrids].
 
-    NEWLAYER_THICK == 0.01d0
+    NEWLAYER_THICK == 0.01d0 0.01d0
 
 ! Bed load transport rate coefficient. [1:Ngrids].
 
-    BEDLOAD_COEFF == 1.0d0
+    BEDLOAD_COEFF == 1.0d0 1.0d0
 
 !------------------------------------------------------------------------------
 ! Suspended Cohesive Sediment Parameters, [1:NCS,1:Ngrids] values expected.
@@ -64,60 +64,73 @@
 
 ! Median sediment grain diameter (mm).
 
-    MUD_SD50 == 0.1d0  0.06d0  0.10d0
+    MUD_SD50 == 0.1d0  0.06d0  0.10d0 \
+                0.1d0  0.06d0  0.10d0
 
 ! Sediment concentration (kg/m3).
 
-    MUD_CSED == 0.0d0  0.0d0  0.0d0
+    MUD_CSED == 0.0d0  0.0d0  0.0d0 \
+                0.0d0  0.0d0  0.0d0
 
 ! Sediment grain density (kg/m3).
 
-    MUD_SRHO == 2650.0d0  2650.0d0  2650.0d0
+    MUD_SRHO == 2650.0d0  2650.0d0  2650.0d0 \
+                2650.0d0  2650.0d0  2650.0d0
 
 ! Particle settling velocity (mm/s).
 
-    MUD_WSED == 10.0d0  1.0d0  2.0d0
+    MUD_WSED == 10.0d0  1.0d0  2.0d0 \
+                10.0d0  1.0d0  2.0d0
 
 ! Surface erosion rate (kg/m2/s).
 
-   MUD_ERATE == 5.0d-3  5.0d-5  5.0d-5
+   MUD_ERATE == 5.0d-3  5.0d-5  5.0d-5 \
+                5.0d-3  5.0d-5  5.0d-5
 
 ! Critical shear for erosion and deposition (N/m2).
 
-  MUD_TAU_CE == 0.1d0  0.05d0  0.05d0
-  MUD_TAU_CD == 0.01d0 0.01d0  0.01d0
+  MUD_TAU_CE == 0.1d0  0.05d0  0.05d0 \
+                0.1d0  0.05d0  0.05d0 
+  MUD_TAU_CD == 0.01d0 0.01d0  0.01d0 \
+                0.01d0 0.01d0  0.01d0
 
 ! Porosity (nondimensional: 0.0-1.0):  Vwater/(Vwater+Vsed).
 
-   MUD_POROS == 0.0d0  0.0d0  0.0d0
+   MUD_POROS == 0.0d0  0.0d0  0.0d0 \
+                0.0d0  0.0d0  0.0d0 
 
 ! Lateral, harmonic and biharmonic, constant, diffusion coefficient.
 
-    MUD_TNU2 == 0.0d0  0.0d0  0.0d0             ! m2/s
-    MUD_TNU4 == 0.0d0  0.0d0  0.0d0             ! m4/s
+    MUD_TNU2 == 0.0d0  0.0d0  0.0d0 \
+                0.0d0  0.0d0  0.0d0             ! m2/s
+    MUD_TNU4 == 0.0d0  0.0d0  0.0d0 \
+                0.0d0  0.0d0  0.0d0             ! m4/s
 
 ! Vertical diffusion coefficients.
 
- MUD_AKT_BAK == 5.0d-6  5.0d-6  5.0d-6          ! m2/s
+ MUD_AKT_BAK == 5.0d-6  5.0d-6  5.0d-6 \
+                5.0d-6  5.0d-6  5.0d-6          ! m2/s
 
 ! Nudging/relaxation time scales, inverse scales will be computed
 ! internally.
 
-   MUD_TNUDG == 0.0d0 0.0d0 0.0d0               ! days
+   MUD_TNUDG == 0.0d0 0.0d0 0.0d0 \
+                0.0d0 0.0d0 0.0d0               ! days
 
 ! Morphological time scale factor (greater than or equal to 1.0). A 
 ! value of 1.0 has no scale effect.
 
-   MUD_MORPH_FAC == 10.0d0 1.0d0 1.0d0              ! nondimensional
+   MUD_MORPH_FAC == 10.0d0 1.0d0 1.0d0 \
+                    10.0d0 1.0d0 1.0d0             ! nondimensional
 
 ! Logical switch (TRUE/FALSE) to activate writing of cohesive sediment
 ! into HISTORY output file.
 
-Hout(idmud)  == T                               ! suspended concentration
-Hout(iMfrac) == T                               ! bed layer fraction
-Hout(iMmass) == T                               ! bed layer mass
-Hout(iMUbld) == T                               ! bed load at U-points
-Hout(iMVbld) == T                               ! bed load at V-points
+Hout(idmud)  == T T                             ! suspended concentration
+Hout(iMfrac) == T T                             ! bed layer fraction
+Hout(iMmass) == T T                             ! bed layer mass
+Hout(iMUbld) == T T                             ! bed load at U-points
+Hout(iMVbld) == T T                             ! bed load at V-points
 
 !------------------------------------------------------------------------------
 ! Non-cohesive Sediment Parameters, [1:NNS,1:Ngrids] values expected.
@@ -125,69 +138,82 @@ Hout(iMVbld) == T                               ! bed load at V-points
 
 ! Median sediment grain diameter (mm).
 
-   SAND_SD50 == 1.0d0 0.50d0 0.250d0 0.1250d0 0.06250d0 0.031250d0 
+   SAND_SD50 == 1.0d0 0.50d0 0.250d0 0.1250d0 0.06250d0 0.031250d0 \
+                1.0d0 0.50d0 0.250d0 0.1250d0 0.06250d0 0.031250d0
 
 ! Sediment concentration (kg/m3).
 
-   SAND_CSED == 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0
+   SAND_CSED == 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 \
+                0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0
 
 ! Sediment grain density (kg/m3).
 
-   SAND_SRHO == 2650.0d0 2650.0d0 2650.00d0 2650.0d0 2650.0d0 2650.0d0
+   SAND_SRHO == 2650.0d0 2650.0d0 2650.00d0 2650.0d0 2650.0d0 2650.0d0 \
+                2650.0d0 2650.0d0 2650.00d0 2650.0d0 2650.0d0 2650.0d0
 
 ! Particle settling velocity (mm/s).
 
-   SAND_WSED == 140.0d0 57.0d0 27.0d0 8.70d0 2.40d0 0.620d0
+   SAND_WSED == 140.0d0 57.0d0 27.0d0 8.70d0 2.40d0 0.620d0 \
+                140.0d0 57.0d0 27.0d0 8.70d0 2.40d0 0.620d0
 
 ! Surface erosion rate (kg/m2/s).
 
-  SAND_ERATE == 1.0d-4 1.0d-4 1.0d-4 1.0d-4 1.0d-4 1.0d-4
+  SAND_ERATE == 1.0d-4 1.0d-4 1.0d-4 1.0d-4 1.0d-4 1.0d-4 \
+                1.0d-4 1.0d-4 1.0d-4 1.0d-4 1.0d-4 1.0d-4
 
 ! Critical shear for erosion and deposition (N/m2).
 
- SAND_TAU_CE == 0.19d0 0.19d0 0.19d0 0.19d0 0.19d0 0.19d0
- SAND_TAU_CD == 0.02d0 0.02d0 0.02d0 0.02d0 0.02d0 0.02d0
+ SAND_TAU_CE == 0.19d0 0.19d0 0.19d0 0.19d0 0.19d0 0.19d0 \
+                0.19d0 0.19d0 0.19d0 0.19d0 0.19d0 0.19d0
+ SAND_TAU_CD == 0.02d0 0.02d0 0.02d0 0.02d0 0.02d0 0.02d0 \
+                0.02d0 0.02d0 0.02d0 0.02d0 0.02d0 0.02d0
 
 ! Porosity (nondimensional: 0.0-1.0):  Vwater/(Vwater+Vsed).
 
-  SAND_POROS == 0.7d0 0.7d0 0.7d0 0.7d0 0.7d0 0.7d0
+  SAND_POROS == 0.7d0 0.7d0 0.7d0 0.7d0 0.7d0 0.7d0 \
+                0.7d0 0.7d0 0.7d0 0.7d0 0.7d0 0.7d0
 
 ! Lateral, harmonic and biharmonic, constant, diffusion coefficient.
 
-   SAND_TNU2 == 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0              ! m2/s
-   SAND_TNU4 == 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0              ! m4/s
+   SAND_TNU2 == 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 \
+                0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0             ! m2/s
+   SAND_TNU4 == 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 \
+                0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0              ! m4/s
 
 ! Vertical diffusion coefficients.
 
-SAND_AKT_BAK == 5.0d-6 5.0d-6 5.0d-6 5.0d-6 5.0d-6 5.0d-6        ! m2/s
+SAND_AKT_BAK == 5.0d-6 5.0d-6 5.0d-6 5.0d-6 5.0d-6 5.0d-6 \
+                5.0d-6 5.0d-6 5.0d-6 5.0d-6 5.0d-6 5.0d-6       ! m2/s
 
 ! Nudging/relaxation time scales, inverse scales will be computed
 ! internally.
 
-  SAND_TNUDG == 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0              ! days
+  SAND_TNUDG == 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 \
+                0.0d0 0.0d0 0.0d0 0.0d0 0.0d0 0.0d0             ! days
 
 ! Morphological time scale factor (greater than or equal to 1.0). A
 ! value of 1.0 has no scale effect.
 
-SAND_MORPH_FAC == 1.0d0 1.0d0 1.0d0 1.0d0 1.0d0 1.0d0          ! nondimensional
+SAND_MORPH_FAC == 1.0d0 1.0d0 1.0d0 1.0d0 1.0d0 1.0d0 \
+                  1.0d0 1.0d0 1.0d0 1.0d0 1.0d0 1.0d0         ! nondimensional
 
 ! Logical switches (TRUE/FALSE) to activate writing of non-cohesive
 ! sediment into HISTORY output file.
 
-Hout(idsand) == T                               ! suspended concentration
-Hout(iSfrac) == T                               ! bed layer fraction
-Hout(iSmass) == T                               ! bed layer mass
-Hout(iSUbld) == T                               ! bed load at U-points
-Hout(iSVbld) == T                               ! bed load at V-points
+Hout(idsand) == T T                              ! suspended concentration
+Hout(iSfrac) == T T                              ! bed layer fraction
+Hout(iSmass) == T T                              ! bed layer mass
+Hout(iSUbld) == T T                              ! bed load at U-points
+Hout(iSVbld) == T T                              ! bed load at V-points
 
 !------------------------------------------------------------------------------
 ! Bed layer and bottom sediment parameters, [1:Ngrids] values expected.
 !------------------------------------------------------------------------------
 
- Hout(ithck) == T                               ! sediment layer thickness
- Hout(iaged) == T                               ! sediment layer age
- Hout(iporo) == T                               ! sediment layer porosity
- Hout(idiff) == F                               ! biodiffusivity
+ Hout(ithck) == T T                              ! sediment layer thickness
+ Hout(iaged) == T T                              ! sediment layer age
+ Hout(iporo) == T T                              ! sediment layer porosity
+ Hout(idiff) == F F                              ! biodiffusivity
 
 !
 !  GLOSSARY:

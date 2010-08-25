@@ -163,8 +163,9 @@
                 my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
                 OCEAN(ng)%t(i,j,k,3,itrc)=my_val
-                OCEAN(ng)%t(i,j,k,nnew(ng),itrc)=my_val
-              END DO
+                OCEAN(ng)%t(i,j,k,2,itrc)=my_val
+                OCEAN(ng)%t(i,j,k,1,itrc)=my_val
+               END DO
             END DO
           END DO
         END DO
@@ -181,7 +182,8 @@
                 my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
                 OCEAN(ng)%t(i,j,k,3,itrc)=my_val
-                OCEAN(ng)%t(i,j,k,nnew(ng),itrc)=my_val
+                OCEAN(ng)%t(i,j,k,2,itrc)=my_val
+                OCEAN(ng)%t(i,j,k,1,itrc)=my_val
               END DO
             END DO
           END DO
@@ -199,7 +201,8 @@
                 my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
                 OCEAN(ng)%t(i,j,k,3,itrc)=my_val
-                OCEAN(ng)%t(i,j,k,nnew(ng),itrc)=my_val
+                OCEAN(ng)%t(i,j,k,2,itrc)=my_val
+                OCEAN(ng)%t(i,j,k,1,itrc)=my_val
               END DO
             END DO
           END DO
@@ -217,7 +220,8 @@
                 my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
                 OCEAN(ng)%t(i,j,k,3,itrc)=my_val
-                OCEAN(ng)%t(i,j,k,nnew(ng),itrc)=my_val
+                OCEAN(ng)%t(i,j,k,2,itrc)=my_val
+                OCEAN(ng)%t(i,j,k,1,itrc)=my_val
               END DO
             END DO
           END DO
@@ -363,7 +367,11 @@
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    OCEAN(ng)%t(:,:,:,knew(ng),:))
+     &                    OCEAN(ng)%t(:,:,:,1,:))
+      CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    OCEAN(ng)%t(:,:,:,2,:))
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
      &                    NghostPoints, EWperiodic, NSperiodic,         &

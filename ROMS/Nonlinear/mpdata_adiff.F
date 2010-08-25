@@ -39,12 +39,12 @@
      &                              LBi, UBi, LBj, UBj,                 &
      &                              IminS, ImaxS, JminS, JmaxS,         &
      &                              nrhs,                               &
-#ifdef MASKING
+# ifdef MASKING
      &                              rmask, umask, vmask,                &
-#endif
-#ifdef WET_DRY
+# endif
+# ifdef WET_DRY
      &                              rmask_wet, umask_wet, vmask_wet,    &
-#endif
+# endif
      &                              pm, pn, omn, om_u, on_v,            &
      &                              z_r, oHz,                           &
      &                              Huon, Hvom, w, t,                   &
@@ -125,6 +125,7 @@
 !
       integer :: i, is, j, k
 
+      real(r8), parameter :: Large = 1.0E+20_r8
       real(r8), parameter :: eps = 1.0E-14_r8
 
       real(r8) :: A, B, Tmax, Tmin, Um, Vm, X, Y, Z
@@ -139,7 +140,9 @@
       real(r8), dimension(IminS:ImaxS,N(ng)) :: C
       real(r8), dimension(IminS:ImaxS,N(ng)) :: Wm
 
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: Tadv
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: mask_dn
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: mask_up
+
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: beta_dn
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: beta_up
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: odz
@@ -261,6 +264,18 @@
 #  define J_RANGE MAX(Jstr-1,1),MIN(Jend+1,Mm(ng))
 # endif
       DO j=J_RANGE
+        k=1
+        DO i=I_RANGE
+          C(i,k)=0.25_r8*                                               &
+     &           ((Ta(i  ,j,k+1)-Ta(i  ,j,k  ))*odz(i  ,j,k  )+         &
+     &            (Ta(i-1,j,k+1)-Ta(i-1,j,k  ))*odz(i-1,j,k  ))*        &
+     &           (z_r(i  ,j,k+1)-z_r(i  ,j,k)+                          &
+     &            z_r(i-1,j,k+1)-z_r(i-1,j,k))/                         &
+     &           (Ta(i-1,j,k)+Ta(i,j,k)+eps)
+          Wm(i,k)=0.25_r8*dt(ng)*                                       &
+     &            (w(i-1,j,k  )*odz(i-1,j,k)*pm(i-1,j)*pn(i-1,j)+       &
+     &             w(i  ,j,k  )*odz(i  ,j,k)*pm(i  ,j)*pn(i  ,j))
+        END DO
         DO k=2,N(ng)-1
           DO i=I_RANGE
             C(i,k)=0.0625_r8*                                           &
@@ -277,18 +292,6 @@
      &               (w(i  ,j,k  )*odz(i  ,j,k  )+                      &
      &                w(i  ,j,k-1)*odz(i  ,j,k-1))*pm(i  ,j)*pn(i  ,j))
           END DO
-        END DO
-        k=1
-        DO i=I_RANGE
-          C(i,k)=0.25_r8*                                               &
-     &           ((Ta(i  ,j,k+1)-Ta(i  ,j,k  ))*odz(i  ,j,k  )+         &
-     &            (Ta(i-1,j,k+1)-Ta(i-1,j,k  ))*odz(i-1,j,k  ))*        &
-     &           (z_r(i  ,j,k+1)-z_r(i  ,j,k)+                          &
-     &            z_r(i-1,j,k+1)-z_r(i-1,j,k))/                         &
-     &           (Ta(i-1,j,k)+Ta(i,j,k)+eps)
-          Wm(i,k)=0.25_r8*dt(ng)*                                       &
-     &            (w(i-1,j,k  )*odz(i-1,j,k)*pm(i-1,j)*pn(i-1,j)+       &
-     &             w(i  ,j,k  )*odz(i  ,j,k)*pm(i  ,j)*pn(i  ,j))
         END DO
         k=N(ng)
         DO i=I_RANGE
@@ -471,8 +474,20 @@
 #  define J_RANGE MAX(Jstr-1,2),MIN(Jend+2,Mm(ng))
 # endif
       DO j=J_RANGE
+        k=1
         DO i=I_RANGE
-          DO k=2,N(ng)-1
+          C(i,k)=0.25_r8*                                               &
+     &           ((Ta(i,j  ,k+1)-Ta(i,j  ,k  ))*odz(i,j  ,k  )+         &
+     &            (Ta(i,j-1,k+1)-Ta(i,j-1,k  ))*odz(i,j-1,k  ))*        &
+     &           (z_r(i,j  ,k+1)-z_r(i,j  ,k)+                          &
+     &            z_r(i,j-1,k+1)-z_r(i,j-1,k))/                         &
+     &           (Ta(i,j-1,k)+Ta(i,j,k)+eps)
+          Wm(i,k)=0.25_r8*dt(ng)*                                       &
+     &            (w(i,j-1,k  )*odz(i,j-1,k  )*pm(i,j-1)*pn(i,j-1)+     &
+     &             w(i,j  ,k  )*odz(i,j  ,k  )*pm(i,j  )*pn(i,j  ))
+        END DO
+        DO k=2,N(ng)-1
+          DO i=I_RANGE
             C(i,k)=0.0625_r8*                                           &
      &             ((Ta(i,j  ,k+1)-Ta(i,j  ,k  ))*odz(i,j  ,k  )+       &
      &              (Ta(i,j  ,k  )-Ta(i,j  ,k-1))*odz(i,j  ,k-1)+       &
@@ -487,17 +502,9 @@
      &               (w(i,j  ,k  )*odz(i,j  ,k  )+                      &
      &                w(i,j  ,k-1)*odz(i,j  ,k-1))*pm(i,j  )*pn(i,j  ))
           END DO
-          k=1
-          C(i,k)=0.25_r8*                                               &
-     &           ((Ta(i,j  ,k+1)-Ta(i,j  ,k  ))*odz(i,j  ,k  )+         &
-     &            (Ta(i,j-1,k+1)-Ta(i,j-1,k  ))*odz(i,j-1,k  ))*        &
-     &           (z_r(i,j  ,k+1)-z_r(i,j  ,k)+                          &
-     &            z_r(i,j-1,k+1)-z_r(i,j-1,k))/                         &
-     &           (Ta(i,j-1,k)+Ta(i,j,k)+eps)
-          Wm(i,k)=0.25_r8*dt(ng)*                                       &
-     &            (w(i,j-1,k  )*odz(i,j-1,k  )*pm(i,j-1)*pn(i,j-1)+     &
-     &             w(i,j  ,k  )*odz(i,j  ,k  )*pm(i,j  )*pn(i,j  ))
-          k=N(ng)
+        END DO
+        k=N(ng)
+        DO i=I_RANGE
           C(i,k)=0.25_r8*                                               &
      &           ((Ta(i,j  ,k  )-Ta(i,j  ,k-1))*odz(i,j  ,k-1)+         &
      &            (Ta(i,j-1,k  )-Ta(i,j-1,k-1))*odz(i,j-1,k-1))*        &
@@ -678,8 +685,8 @@
 #  define J_RANGE MAX(Jstr-1,1),MIN(Jend+1,Mm(ng))
 # endif
       DO j=J_RANGE
-        DO i=I_RANGE
-          DO k=1,N(ng)-1
+        DO k=1,N(ng)-1
+          DO i=I_RANGE
             IF ((Ta(i,j,k  ).le.0.0_r8).or.                             &
      &          (Ta(i,j,k+1).le.0.0_r8)) THEN
               Wa(i,j,k)=0.0_r8
@@ -833,6 +840,8 @@
 #  endif
             END IF
           END DO
+        END DO
+        DO i=I_RANGE
           Wa(i,j,0)=0.0_r8
           Wa(i,j,N(ng))=0.0_r8
         END DO
@@ -857,13 +866,20 @@
 #  define J_RANGE MAX(Jstr-1,1),MIN(Jend+1,Mm(ng))
 # endif
 !
-!  Scale advected tracer to Tunits.
+!  Build special mask array used to limit the UP and DOWN beta-ratios
+!  to avoid including land/sea masking when computing limiting Tmin
+!  and Tmax values. Notice that a zero Tmin due to land mask is not
+!  considered.
 !
-      DO k=1,N(ng)
-        DO j=-1+J_RANGE+1
-          DO i=-1+I_RANGE+1
-            Tadv(i,j,k)=t(i,j,k)
-          END DO
+      DO j=-1+J_RANGE+1
+        DO i=-1+I_RANGE+1
+# ifdef MASKING
+          mask_up(i,j)=rmask(i,j)
+          mask_dn(i,j)=MAX(1.0_r8,MIN(Large,(1.0_r8-rmask(i,j))*Large))
+# else
+          mask_up(i,j)=1.0_r8
+          mask_dn(i,j)=1.0_r8
+# endif
         END DO
       END DO
 !
@@ -872,12 +888,18 @@
       DO j=J_RANGE
         k=1
         DO i=I_RANGE
-          Tmax=MAX(Ta(i-1,j  ,k  ),Tadv(i-1,j  ,k  ),                   &
-     &             Ta(i  ,j  ,k  ),Tadv(i  ,j  ,k  ),                   &
-     &             Ta(i+1,j  ,k  ),Tadv(i+1,j  ,k  ),                   &
-     &             Ta(i  ,j-1,k  ),Tadv(i  ,j-1,k  ),                   &
-     &             Ta(i  ,j+1,k  ),Tadv(i  ,j+1,k  ),                   &
-     &             Ta(i  ,j  ,k+1),Tadv(i  ,j  ,k+1))
+          Tmax=MAX(Ta(i-1,j  ,k  )*mask_up(i-1,j  ),                    &
+     &             t (i-1,j  ,k  )*mask_up(i-1,j  ),                    &
+     &             Ta(i  ,j  ,k  )*mask_up(i  ,j  ),                    &
+     &             t (i  ,j  ,k  )*mask_up(i  ,j  ),                    &
+     &             Ta(i+1,j  ,k  )*mask_up(i+1,j  ),                    &
+     &             t (i+1,j  ,k  )*mask_up(i+1,j  ),                    &
+     &             Ta(i  ,j-1,k  )*mask_up(i  ,j-1),                    &
+     &             t (i  ,j-1,k  )*mask_up(i  ,j-1),                    &
+     &             Ta(i  ,j+1,k  )*mask_up(i  ,j+1),                    &
+     &             t (i  ,j+1,k  )*mask_up(i  ,j+1),                    &
+     &             Ta(i  ,j  ,k+1)*mask_up(i  ,j  ),                    &
+     &             t (i  ,j  ,k+1)*mask_up(i  ,j  ))
           cff1=Ta(i-1,j  ,k  )*MAX(0.0_r8,Ua(i  ,j  ,k  ))-             &
      &         Ta(i+1,j  ,k  )*MIN(0.0_r8,Ua(i+1,j  ,k  ))+             &
      &         Ta(i  ,j-1,k  )*MAX(0.0_r8,Va(i  ,j  ,k  ))-             &
@@ -885,12 +907,18 @@
      &         Ta(i  ,j  ,k+1)*MIN(0.0_r8,Wa(i  ,j  ,k  ))
           beta_up(i,j,k)=(Tmax-Ta(i,j,k))/(cff1+eps)
 !
-          Tmin=MIN(Ta(i-1,j  ,k  ),Tadv(i-1,j  ,k  ),                   &
-     &             Ta(i  ,j  ,k  ),Tadv(i  ,j  ,k  ),                   &
-     &             Ta(i+1,j  ,k  ),Tadv(i+1,j  ,k  ),                   &
-     &             Ta(i  ,j-1,k  ),Tadv(i  ,j-1,k  ),                   &
-     &             Ta(i  ,j+1,k  ),Tadv(i  ,j+1,k  ),                   &
-     &             Ta(i  ,j  ,k+1),Tadv(i  ,j  ,k+1))
+          Tmin=MIN(Ta(i-1,j  ,k  )*mask_dn(i-1,j  ),                    &
+     &             t (i-1,j  ,k  )*mask_dn(i-1,j  ),                    &
+     &             Ta(i  ,j  ,k  )*mask_dn(i  ,j  ),                    &
+     &             t (i  ,j  ,k  )*mask_dn(i  ,j  ),                    &
+     &             Ta(i+1,j  ,k  )*mask_dn(i+1,j  ),                    &
+     &             t (i+1,j  ,k  )*mask_dn(i+1,j  ),                    &
+     &             Ta(i  ,j-1,k  )*mask_dn(i  ,j-1),                    &
+     &             t (i  ,j-1,k  )*mask_dn(i  ,j-1),                    &
+     &             Ta(i  ,j+1,k  )*mask_dn(i  ,j+1),                    &
+     &             t (i  ,j+1,k  )*mask_dn(i  ,j+1),                    &
+     &             Ta(i  ,j  ,k+1)*mask_dn(i  ,j  ),                    &
+     &             t (i  ,j  ,k+1)*mask_dn(i  ,j  ))
           cff2=Ta(i  ,j  ,k  )*MAX(0.0_r8,Ua(i+1,j  ,k  ))-             &
      &         Ta(i  ,j  ,k  )*MIN(0.0_r8,Ua(i  ,j  ,k  ))+             &
      &         Ta(i  ,j  ,k  )*MAX(0.0_r8,Va(i  ,j+1,k  ))-             &
@@ -900,13 +928,20 @@
         END DO
         DO k=2,N(ng)-1
           DO i=I_RANGE
-            Tmax=MAX(Ta(i-1,j  ,k  ),Tadv(i-1,j  ,k  ),                 &
-     &               Ta(i  ,j  ,k  ),Tadv(i  ,j  ,k  ),                 &
-     &               Ta(i+1,j  ,k  ),Tadv(i+1,j  ,k  ),                 &
-     &               Ta(i  ,j-1,k  ),Tadv(i  ,j-1,k  ),                 &
-     &               Ta(i  ,j+1,k  ),Tadv(i  ,j+1,k  ),                 &
-     &               Ta(i  ,j  ,k-1),Tadv(i  ,j  ,k-1),                 &
-     &               Ta(i  ,j  ,k+1),Tadv(i  ,j  ,k+1))
+            Tmax=MAX(Ta(i-1,j  ,k  )*mask_up(i-1,j  ),                  &
+     &               t (i-1,j  ,k  )*mask_up(i-1,j  ),                  &
+     &               Ta(i  ,j  ,k  )*mask_up(i  ,j  ),                  &
+     &               t (i  ,j  ,k  )*mask_up(i  ,j  ),                  &
+     &               Ta(i+1,j  ,k  )*mask_up(i+1,j  ),                  &
+     &               t (i+1,j  ,k  )*mask_up(i+1,j  ),                  &
+     &               Ta(i  ,j-1,k  )*mask_up(i  ,j-1),                  &
+     &               t (i  ,j-1,k  )*mask_up(i  ,j-1),                  &
+     &               Ta(i  ,j+1,k  )*mask_up(i  ,j+1),                  &
+     &               t (i  ,j+1,k  )*mask_up(i  ,j+1),                  &
+     &               Ta(i  ,j  ,k-1)*mask_up(i  ,j  ),                  &
+     &               t (i  ,j  ,k-1)*mask_up(i  ,j  ),                  &
+     &               Ta(i  ,j  ,k+1)*mask_up(i  ,j  ),                  &
+     &               t (i  ,j  ,k+1)*mask_up(i  ,j  ))
             cff1=Ta(i-1,j  ,k  )*MAX(0.0_r8,Ua(i  ,j  ,k  ))-           &
      &           Ta(i+1,j  ,k  )*MIN(0.0_r8,Ua(i+1,j  ,k  ))+           &
      &           Ta(i  ,j-1,k  )*MAX(0.0_r8,Va(i  ,j  ,k  ))-           &
@@ -915,13 +950,20 @@
      &           Ta(i  ,j  ,k+1)*MIN(0.0_r8,Wa(i  ,j  ,k  ))
             beta_up(i,j,k)=(Tmax-Ta(i,j,k))/(cff1+eps)
 !
-            Tmin=MIN(Ta(i-1,j  ,k  ),Tadv(i-1,j  ,k  ),                 &
-     &               Ta(i  ,j  ,k  ),Tadv(i  ,j  ,k  ),                 &
-     &               Ta(i+1,j  ,k  ),Tadv(i+1,j  ,k  ),                 &
-     &               Ta(i  ,j-1,k  ),Tadv(i  ,j-1,k  ),                 &
-     &               Ta(i  ,j+1,k  ),Tadv(i  ,j+1,k  ),                 &
-     &               Ta(i  ,j  ,k-1),Tadv(i  ,j  ,k-1),                 &
-     &               Ta(i  ,j  ,k+1),Tadv(i  ,j  ,k+1))
+            Tmin=MIN(Ta(i-1,j  ,k  )*mask_dn(i-1,j  ),                  &
+     &               t (i-1,j  ,k  )*mask_dn(i-1,j  ),                  &
+     &               Ta(i  ,j  ,k  )*mask_dn(i  ,j  ),                  &
+     &               t (i  ,j  ,k  )*mask_dn(i  ,j  ),                  &
+     &               Ta(i+1,j  ,k  )*mask_dn(i+1,j  ),                  &
+     &               t (i+1,j  ,k  )*mask_dn(i+1,j  ),                  &
+     &               Ta(i  ,j-1,k  )*mask_dn(i  ,j-1),                  &
+     &               t (i  ,j-1,k  )*mask_dn(i  ,j-1),                  &
+     &               Ta(i  ,j+1,k  )*mask_dn(i  ,j+1),                  &
+     &               t (i  ,j+1,k  )*mask_dn(i  ,j+1),                  &
+     &               Ta(i  ,j  ,k-1)*mask_dn(i  ,j  ),                  &
+     &               t (i  ,j  ,k-1)*mask_dn(i  ,j  ),                  &
+     &               Ta(i  ,j  ,k+1)*mask_dn(i  ,j  ),                  &
+     &               t (i  ,j  ,k+1)*mask_dn(i  ,j  ))
             cff2=Ta(i  ,j  ,k  )*MAX(0.0_r8,Ua(i+1,j  ,k  ))-           &
      &           Ta(i  ,j  ,k  )*MIN(0.0_r8,Ua(i  ,j  ,k  ))+           &
      &           Ta(i  ,j  ,k  )*MAX(0.0_r8,Va(i  ,j+1,k  ))-           &
@@ -933,12 +975,18 @@
         END DO
         k=N(ng)
         DO i=I_RANGE
-          Tmax=MAX(Ta(i-1,j  ,k  ),Tadv(i-1,j  ,k  ),                   &
-     &             Ta(i  ,j  ,k  ),Tadv(i  ,j  ,k  ),                   &
-     &             Ta(i+1,j  ,k  ),Tadv(i+1,j  ,k  ),                   &
-     &             Ta(i  ,j-1,k  ),Tadv(i  ,j-1,k  ),                   &
-     &             Ta(i  ,j+1,k  ),Tadv(i  ,j+1,k  ),                   &
-     &             Ta(i  ,j  ,k-1),Tadv(i  ,j  ,k-1))
+          Tmax=MAX(Ta(i-1,j  ,k  )*mask_up(i-1,j  ),                    &
+     &             t (i-1,j  ,k  )*mask_up(i-1,j  ),                    &
+     &             Ta(i  ,j  ,k  )*mask_up(i  ,j  ),                    &
+     &             t (i  ,j  ,k  )*mask_up(i  ,j  ),                    &
+     &             Ta(i+1,j  ,k  )*mask_up(i+1,j  ),                    &
+     &             t (i+1,j  ,k  )*mask_up(i+1,j  ),                    &
+     &             Ta(i  ,j-1,k  )*mask_up(i  ,j-1),                    &
+     &             t (i  ,j-1,k  )*mask_up(i  ,j-1),                    &
+     &             Ta(i  ,j+1,k  )*mask_up(i  ,j+1),                    &
+     &             t (i  ,j+1,k  )*mask_up(i  ,j+1),                    &
+     &             Ta(i  ,j  ,k-1)*mask_up(i  ,j  ),                    &
+     &             t (i  ,j  ,k-1)*mask_up(i  ,j  ))
           cff1=Ta(i-1,j  ,k  )*MAX(0.0_r8,Ua(i  ,j  ,k  ))-             &
      &         Ta(i+1,j  ,k  )*MIN(0.0_r8,Ua(i+1,j  ,k  ))+             &
      &         Ta(i  ,j-1,k  )*MAX(0.0_r8,Va(i  ,j  ,k  ))-             &
@@ -946,18 +994,34 @@
      &         Ta(i  ,j  ,k-1)*MAX(0.0_r8,Wa(i  ,j  ,k-1))
           beta_up(i,j,k)=(Tmax-Ta(i,j,k))/(cff1+eps)
 !
-          Tmin=MIN(Ta(i-1,j  ,k  ),Tadv(i-1,j  ,k  ),                   &
-     &             Ta(i  ,j  ,k  ),Tadv(i  ,j  ,k  ),                   &
-     &             Ta(i+1,j  ,k  ),Tadv(i+1,j  ,k  ),                   &
-     &             Ta(i  ,j-1,k  ),Tadv(i  ,j-1,k  ),                   &
-     &             Ta(i  ,j+1,k  ),Tadv(i  ,j+1,k  ),                   &
-     &             Ta(i  ,j  ,k-1),Tadv(i  ,j  ,k-1))
+          Tmin=MIN(Ta(i-1,j  ,k  )*mask_dn(i-1,j  ),                    &
+     &             t (i-1,j  ,k  )*mask_dn(i-1,j  ),                    &
+     &             Ta(i  ,j  ,k  )*mask_dn(i  ,j  ),                    &
+     &             t (i  ,j  ,k  )*mask_dn(i  ,j  ),                    &
+     &             Ta(i+1,j  ,k  )*mask_dn(i+1,j  ),                    &
+     &             t (i+1,j  ,k  )*mask_dn(i+1,j  ),                    &
+     &             Ta(i  ,j-1,k  )*mask_dn(i  ,j-1),                    &
+     &             t (i  ,j-1,k  )*mask_dn(i  ,j-1),                    &
+     &             Ta(i  ,j+1,k  )*mask_dn(i  ,j+1),                    &
+     &             t (i  ,j+1,k  )*mask_dn(i  ,j+1),                    &
+     &             Ta(i  ,j  ,k-1)*mask_dn(i  ,j  ),                    &
+     &             t (i  ,j  ,k-1)*mask_dn(i  ,j  ))
           cff2=Ta(i  ,j  ,k  )*MAX(0.0_r8,Ua(i+1,j  ,k  ))-             &
      &         Ta(i  ,j  ,k  )*MIN(0.0_r8,Ua(i  ,j  ,k  ))+             &
      &         Ta(i  ,j  ,k  )*MAX(0.0_r8,Va(i  ,j+1,k  ))-             &
      &         Ta(i  ,j  ,k  )*MIN(0.0_r8,Va(i  ,j  ,k  ))-             &
      &         Ta(i  ,j  ,k  )*MIN(0.0_r8,Wa(i  ,j  ,k-1))
           beta_dn(i,j,k)=(Ta(i,j,k)-Tmin)/(cff2+eps)
+        END DO
+      END DO
+      DO k=1,N(ng)
+        DO j=J_RANGE
+          DO i=I_RANGE
+            IF (mask_up(i,j).eq.0.0_r8) THEN
+              beta_up(i,j,k)=2.0_r8
+              beta_dn(i,j,k)=2.0_r8
+            END IF
+          END DO
         END DO
       END DO
 # undef I_RANGE

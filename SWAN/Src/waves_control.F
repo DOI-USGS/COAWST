@@ -175,8 +175,8 @@
             count(ng)=count(ng)+1
             CALL SWAN_RUN (CouplingTime, count(ng), ng, ngc, ngp,       &
      &                     1, Ngrids)
+            run_grid(ng)=.FALSE.
           END IF
-          run_grid(ng)=.FALSE.
         END DO
 !
 !  Advance the time counter by the smallest dt.

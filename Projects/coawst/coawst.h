@@ -14,24 +14,16 @@
 #define SWAN_MODEL
 #define MCT_LIB
 
-!# define INLINE_2DIO
-!# define PERFECT_RESTART
-!# define UV_SADVECTION
-!# define TS_FIXED
-!# define AVERAGES
+#define REFINED_GRID
+#define REFINED_GRID_BC
 
-!#define UV_KIRBY
+#undef  PERFECT_RESTART
+
+#define UV_KIRBY
 #define NOSED_OBC
-#define AKLIMIT
-#undef MCT_INTERP_OC2WV
-#undef MCT_INTERP_OC2AT
-#undef MCT_INTERP_WV2AT
-#undef WRF_COUPLING
-#define  WET_DRY
+#undef  WET_DRY
 #define ATM_PRESS
 #undef  NEARSHORE_MELLOR
-#undef REFINED_GRID
-#undef REFINED_GRID_BC
 
 #define UV_ADV
 #define DJ_GRADPS
@@ -40,11 +32,12 @@
 #undef  UV_LOGDRAG
 #define UV_VIS2
 #define MIX_S_UV
+#define UV_SADVECTION
 #undef  TS_U3HADVECTION
 #undef  TS_SVADVECTION
-#define TS_MPDATA
-#define TS_DIF2
-#define MIX_GEO_TS
+#define  TS_MPDATA
+#undef  TS_DIF2
+#undef  MIX_GEO_TS
 
 #define CURVGRID
 #define MASKING
@@ -148,8 +141,6 @@
 #define SOUTH_TNUDGING
 #define SOUTH_M3NUDGING
 
-/* Activate Refined Grid */
-#define REFINED_GRID
-#define REFINED_GRID_BC
+
 
 
