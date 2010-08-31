@@ -23,6 +23,7 @@
 
       CONTAINS
 
+#ifdef WRF_COUPLING
       SUBROUTINE compute_angler (ng)
 !
 !=======================================================================
@@ -119,6 +120,7 @@
       DEALLOCATE(xlon, ylat, xlonb, ylatb)
       RETURN
       END SUBROUTINE compute_angler
+#endif
 
 #ifdef REFINED_GRID
       SUBROUTINE swan_ref_init (ng, ngp)
