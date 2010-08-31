@@ -499,13 +499,13 @@
 !                                                                      !
 !=======================================================================
 !
+      USE SWCOMM1
       USE SWCOMM3
       USE SWCOMM4
       USE OUTP_DATA
       USE M_PARALL
       USE M_GENARR
       USE M_MPI
-      USE SWCOMM1
       USE OCPCOMM4
       USE mod_coupler
 !
@@ -532,7 +532,9 @@
       integer, pointer :: points(:)
 
       real :: cff, COSWC, SINWC
-
+# ifdef WRF_COUPLING
+      real :: cff1, cff2
+# endif
       real(r8), pointer :: avdata(:)
 
       real, pointer :: TEMPMCT(:,:)
@@ -1073,8 +1075,12 @@
                 COMPDA(INDX,JVX2)=TEMPMCT(IP,3)
                 COMPDA(INDX,JVY2)=TEMPMCT(IP,4)
 # ifdef WRF_COUPLING
-                COMPDA(INDX,JWX2)=TEMPMCT(IP,6)
-                COMPDA(INDX,JWY2)=TEMPMCT(IP,7)
+                cff1=TEMPMCT(IP,6)*CosAngler(INDX)+                     &
+     &               TEMPMCT(IP,7)*SinAngler(INDX)
+                cff2=TEMPMCT(IP,7)*CosAngler(INDX)-                     &
+     &               TEMPMCT(IP,6)*SinAngler(INDX)
+                COMPDA(INDX,JWX2)=cff1
+                COMPDA(INDX,JWY2)=cff2
 # endif
               END IF
             END IF

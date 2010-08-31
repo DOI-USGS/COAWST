@@ -47,6 +47,9 @@
       USE M_PARALL2
       USE WAVES_COUPLER_MOD, ONLY: INITIALIZE_WAV2OCN_COUPLING
 # endif
+# ifdef WRF_COUPLING
+      USE INTERP_SWAN_MOD, ONLY: compute_angler
+# endif
       USE SWPOINT_MOD, ONLY: INIT_POINTERS, ALLOCATE_SWAN_ARRAYS
       USE M_BNDSPEC
       USE M_COUPLING
@@ -422,8 +425,6 @@
               DEALLOCATE(PARALL2_MOD(ng)%AC1_G)
               ALLOCATE (PARALL2_MOD(ng)%AC1_G(MDC,MSC,MCGRD),STAT=ISTAT)
               AC1=>PARALL2_MOD(ng)%AC1_G
-
-
            END IF                                                         40.41
            IF ( ISTAT.NE.0 ) THEN                                         40.41
               CHARS(1) = NUMSTR(ISTAT,RNAN,'(I6)')                        40.41
@@ -438,8 +439,6 @@
         ELSE                                                              40.31
            ALLOCATE (PARALL2_MOD(ng)%AC1_G(MDC,MSC,MCGRD),STAT=ISTAT)
            AC1=>PARALL2_MOD(ng)%AC1_G
-
-
         ENDIF
 
         IF (LEVERR.GT.MAXERR) THEN                                        40.00
@@ -484,7 +483,9 @@
           ELSE
             IT0 = 1
           ENDIF
-
+# ifdef WRF_COUPLING
+          CALL compute_angler(ng)
+# endif
           IT=0
           IF ( IT.EQ.IT0) THEN
              ALLOCATE (PARALL2_MOD(ng)%OURQT_G(MAX_OUTP_REQ))
@@ -566,6 +567,10 @@
       WYI=>   M_GENARR_MOD(ng)%WYI_G
       WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
       ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
+# ifdef WRF_COUPLING
+      CosAngler=>M_GENARR_MOD(ng)%CosAngler_G
+      SinAngler=>M_GENARR_MOD(ng)%SinAngler_G
+# endif
 !
 !  Module M_PARALL
 !
@@ -725,8 +730,6 @@
  222          FORMAT(' Time of computation ->  ',A,' in sec:', F12.0)     40.00
             ENDIF                                                         40.00
 
-
-
       RETURN
       END SUBROUTINE SWAN_RUN
 
@@ -789,6 +792,10 @@
       WYI=>   M_GENARR_MOD(ng)%WYI_G
       WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
       ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
+# ifdef WRF_COUPLING
+      CosAngler=>M_GENARR_MOD(ng)%CosAngler_G
+      SinAngler=>M_GENARR_MOD(ng)%SinAngler_G
+# endif
 !
 !  Module M_PARALL
 !
@@ -7977,6 +7984,10 @@
       DEALLOCATE(WYI   )
       DEALLOCATE(WLEVL )
       DEALLOCATE(ASTDF )
+# ifdef WRF_COUPLING
+      DEALLOCATE(CosAngler)
+      DEALLOCATE(SinAngler)
+# endif
       DEALLOCATE(IBLKAD)
       DEALLOCATE(XGRDGL)
       DEALLOCATE(YGRDGL)

@@ -850,6 +850,10 @@
         REAL, POINTER :: WYI_G(:)
         REAL, POINTER :: WLEVL_G(:)
         REAL, POINTER :: ASTDF_G(:)
+# ifdef WRF_COUPLING
+        REAL, POINTER :: CosAngler_G(:)
+        REAL, POINTER :: SinAngler_G(:)
+# endif
       END TYPE T_M_GENARR_MOD
       TYPE (T_M_GENARR_MOD), ALLOCATABLE :: M_GENARR_MOD(:)
 
@@ -869,6 +873,10 @@
       REAL   , POINTER :: WYI(:)
       REAL   , POINTER :: WLEVL(:)
       REAL   , POINTER :: ASTDF(:)
+# ifdef WRF_COUPLING
+      REAL  , POINTER :: CosAngler(:)
+      REAL  , POINTER :: SinAngler(:)
+# endif
 #else
       INTEGER, SAVE, ALLOCATABLE :: KGRPNT(:,:), KGRBND(:)
       INTEGER, SAVE, ALLOCATABLE :: XYTST(:)

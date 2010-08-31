@@ -1,21 +1,15 @@
 #include "swancpp.h"
 
       MODULE interp_swan_mod
-#ifdef REFINED_GRID
 !
-!svn $Id: interp_swan_mod.F 771 2008-09-30 02:30:00Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
-!    Licensed under a MIT/X style license                              !
-!    See License_ROMS.txt                           Hernan G. Arango   !
-!========================================== Alexander F. Shchepetkin ===
-!                                                     John C. Warner   !
-!                                                                      !
-!  This module was modified from a ROMS subroutine interpolate.F and   !
+!  This module contains some original functions as well as             !
+!  some routines modified from a ROMS subroutine interpolate.F and     !
 !  contains several all purpuse generic routines:                      !
 !                                                                      !
 !  Routines:                                                           !
 !                                                                      !
+!    compute_angle  computes swan grid angle.
 !    swan_ref_init  Initialize swan refinement.                        !
 !    shindices      Finds model grid cell for any datum.               !
 !    stry_range     Binary search of model grid cell for any datum.    !
@@ -29,6 +23,104 @@
 
       CONTAINS
 
+      SUBROUTINE compute_angler (ng)
+!
+!=======================================================================
+!                                                                      !
+!  This routine computes the anlge of the swan grid.                   !
+!                                                                      !
+!=======================================================================
+!
+      USE M_GENARR
+      USE M_PARALL
+      USE SWCOMM2
+      USE SWCOMM4
+!
+! Imported.
+!
+      integer, intent(in) :: ng
+!
+! Locals.
+!
+      integer :: i, j, count
+      real, allocatable :: xlon(:,:), ylat(:,:)
+      real, allocatable :: xlonb(:,:), ylatb(:,:)
+      real :: cff1, cff2, cff3, angler, DEG2RAD
+! 
+! Compute SWAN grid angles for rotation of winds from WRF.
+!
+      ALLOCATE(M_GENARR_MOD(ng)%CosAngler_G(MXCGL*MYCGL))
+      CosAngler=>M_GENARR_MOD(ng)%CosAngler_G
+      ALLOCATE(M_GENARR_MOD(ng)%SinAngler_G(MXCGL*MYCGL))
+      SinAngler=>M_GENARR_MOD(ng)%SinAngler_G
+      ALLOCATE(xlon(MXCGL,MYCGL))
+      ALLOCATE(ylat(MXCGL,MYCGL))
+      ALLOCATE(xlonb(MXCGL+1,MYCGL))
+      ALLOCATE(ylatb(MXCGL+1,MYCGL))
+!
+! xlon and xlat are the locations at the center points.
+! xlonb and ylatb are offset by 1 and used to compute the angle
+! at the center points.
+!
+      DO j=1,MYCGL
+        DO i=1,MXCGL
+          cff1=XOFFS_G(ng)
+          cff2=PARALL_MOD(ng)%XGRDGL_G(i,j)
+          xlon(i,j)=cff1+cff2
+          cff1=YOFFS_G(ng)
+          cff2=PARALL_MOD(ng)%YGRDGL_G(i,j)
+          ylat(i,j)=cff1+cff2
+        END DO
+      END DO
+!
+      DO i=2,MXCGL
+        DO j=1,MYCGL
+          xlonb(i,j)=0.5*(xlon(i-1,j)+xlon(i,j))
+          ylatb(i,j)=0.5*(ylat(i-1,j)+ylat(i,j))
+        END DO
+      END DO
+      DO j=1,MYCGL
+        xlonb(1,j)=xlonb(2,j)
+        xlonb(MXCGL+1,j)=xlonb(MXCGL,j)
+        ylatb(1,j)=ylatb(2,j)
+        ylatb(MXCGL+1,j)=ylatb(MXCGL,j)
+      END DO
+!
+! Now compute the angles.
+!
+      IF (KSPHER.eq.0) THEN ! Cartesian
+        DEG2RAD=1.
+      ELSE
+        DEG2RAD=3.14159/180.
+      END IF
+      count=0
+      DO j=1,MYCGL
+        DO i=1,MXCGL
+          count=count+1
+          cff1=(xlonb(i+1,j)-xlonb(i,j))*DEG2RAD
+          cff2=(ylatb(i+1,j)-ylatb(i,j))*DEG2RAD
+          cff3=COS(ylat(i,j)*DEG2RAD)
+          IF (KSPHER.eq.0) THEN ! Cartesian
+            angler=ATAN2(cff2,cff1)
+          ELSE
+            angler=ATAN2(cff2,cff1*cff3)
+          END IF
+          CosAngler(count)=COS(angler)
+          SinAngler(count)=SIN(angler)
+
+!          if ((i.eq.28).and.(j.eq.3)) then
+!          write(*,*) 'angle is ', i,j, cff1,cff2,cff3,kspher,angler
+          write(*,*) 'angle is ', i,j, angler
+!           end if
+
+        END DO
+      END DO
+!
+      DEALLOCATE(xlon, ylat, xlonb, ylatb)
+      RETURN
+      END SUBROUTINE compute_angler
+
+#ifdef REFINED_GRID
       SUBROUTINE swan_ref_init (ng, ngp)
 !
 !=======================================================================
