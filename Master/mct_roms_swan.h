@@ -925,7 +925,16 @@
 #ifdef UV_CONST
           A(ij)=0.0_r8
 #else
-          A(ij)=ubar_rho(i,j)
+# ifdef CURVGRID
+!
+! Rotate velocity to be East positive.
+!
+          cff1=ubar_rho(i,j)*GRID(ng)%CosAngler(i,j)-                   &
+     &         vbar_rho(i,j)*GRID(ng)%SinAngler(i,j)
+# else
+          cff1=ubar_rho(i,j)
+# endif
+          A(ij)=cff1
 #endif
         END DO
       END DO
@@ -939,7 +948,16 @@
 #ifdef UV_CONST
           A(ij)=0.0_r8
 #else
-          A(ij)=vbar_rho(i,j)
+# ifdef CURVGRID
+!
+! Rotate velocity to be North positive.
+!
+          cff1=ubar_rho(i,j)*GRID(ng)%SinAngler(i,j)+                   &
+     &         vbar_rho(i,j)*GRID(ng)%CosAngler(i,j)
+# else
+          cff1=vbar_rho(i,j)
+# endif
+          A(ij)=cff1
 #endif
         END DO
       END DO

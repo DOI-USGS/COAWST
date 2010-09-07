@@ -1075,12 +1075,14 @@
                 COMPDA(INDX,JVX2)=TEMPMCT(IP,3)
                 COMPDA(INDX,JVY2)=TEMPMCT(IP,4)
 # ifdef WRF_COUPLING
-                cff1=TEMPMCT(IP,6)*CosAngler(INDX)+                     &
-     &               TEMPMCT(IP,7)*SinAngler(INDX)
-                cff2=TEMPMCT(IP,7)*CosAngler(INDX)-                     &
-     &               TEMPMCT(IP,6)*SinAngler(INDX)
-                COMPDA(INDX,JWX2)=cff1
-                COMPDA(INDX,JWY2)=cff2
+!                cff1=TEMPMCT(IP,6)*CosAngler(INDX)+                     &
+!     &               TEMPMCT(IP,7)*SinAngler(INDX)
+!                cff2=TEMPMCT(IP,7)*CosAngler(INDX)-                     &
+!     &               TEMPMCT(IP,6)*SinAngler(INDX)
+!                COMPDA(INDX,JWX2)=cff1
+!                COMPDA(INDX,JWY2)=cff2
+                COMPDA(INDX,JWX2)=TEMPMCT(IP,6)
+                COMPDA(INDX,JWY2)=TEMPMCT(IP,7)
 # endif
               END IF
             END IF
