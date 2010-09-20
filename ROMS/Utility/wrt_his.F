@@ -72,8 +72,14 @@
 #endif
       real(r8) :: scale
 
+#ifdef BULK_FLUXES
+      real(r8), allocatable :: uwrk(:,:)
+      real(r8), allocatable :: vwrk(:,:)
+#endif
 #ifdef SOLVE3D
       real(r8), allocatable :: wrk(:,:,:)
+#endif
+#ifdef BBL_MODEL
       real(r8), allocatable :: wrk2(:,:)
 #endif
 !
@@ -1072,8 +1078,29 @@
           END IF
         END IF
       END DO
-
 # if defined BULK_FLUXES
+#  ifdef CURVGRID
+!
+!  If input point surface winds or interpolated from coarse data, rotate
+!  back from curvilinear grid to N-E.
+!
+        IF (.not.allocated(uwrk)) THEN
+          allocate (uwrk(LBi:UBi,LBj:UBj))
+          uwrk(LBi:UBi,LBj:UBj)=0.0_r8
+        END IF
+        IF (.not.allocated(vwrk)) THEN
+          allocate (vwrk(LBi:UBi,LBj:UBj))
+          vwrk(LBi:UBi,LBj:UBj)=0.0_r8
+        END IF
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            uwrk=FORCES(ng)%Uwind(i,j)*GRID(ng)%CosAngler(i,j)-         &
+     &           FORCES(ng)%Vwind(i,j)*GRID(ng)%SinAngler(i,j)
+            vwrk=FORCES(ng)%Vwind(i,j)*GRID(ng)%CosAngler(i,j)+         &
+     &           FORCES(ng)%Uwind(i,j)*GRID(ng)%SinAngler(i,j)
+          END DO
+        END DO
+#  endif
 !
 !  Write out u-wind component.
 !
@@ -1086,7 +1113,11 @@
 #  ifdef MASKING
      &                     GRID(ng) % rmask,                            &
 #  endif
-     &                     FORCES(ng) % UWind)
+#  ifdef CURVGRID
+     &                     uwrk)
+#  else
+     &                     FORCES(ng)%Uwind)
+#  endif
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUair)), tHISindx(ng)
@@ -1108,7 +1139,11 @@
 #  ifdef MASKING
      &                     GRID(ng) % rmask,                            &
 #  endif
-     &                     FORCES(ng) % VWind)
+#  ifdef CURVGRID
+     &                     vwrk)
+#  else
+     &                     FORCES(ng)%Vwind)
+#  endif
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVair)), tHISindx(ng)
@@ -1118,6 +1153,10 @@
           RETURN
         END IF
       END IF
+#  ifdef CURVGRID
+      deallocate (uwrk)
+      deallocate (vwrk)
+#  endif
 # endif
 # if defined BULK_FLUXES || defined ATM2OCN_FLUXES
 !
