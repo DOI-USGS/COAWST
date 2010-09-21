@@ -1771,7 +1771,7 @@
 !  no slip) boundary conditions.
 !
 #  if !defined EW_PERIODIC && !defined COMPOSED_GRID
-      IF (WESTERN_EDGE_REf) THEN
+      IF (WESTERN_EDGE_REF) THEN
         DO j=JU_RANGE
 #   ifdef WESTERN_WALL
           LapU(IstrU-1,j)=0.0_r8
