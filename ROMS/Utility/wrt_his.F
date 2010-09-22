@@ -48,6 +48,9 @@
       USE nf_fwrite3d_bry_mod, ONLY : nf_fwrite3d_bry
 # endif
       USE omega_mod, ONLY : scale_omega
+# ifdef BULK_FLUXES
+      USE bulk_flux_mod, ONLY : rotate_wind
+# endif
 #endif
 #ifdef INWAVE_COUPLING
       USE mod_inwave_params
@@ -1084,6 +1087,7 @@
 !  If input point surface winds or interpolated from coarse data, rotate
 !  back from curvilinear grid to N-E.
 !
+      IF (Hout(idUair,ng).or.Hout(idVair,ng)) THEN
         IF (.not.allocated(uwrk)) THEN
           allocate (uwrk(LBi:UBi,LBj:UBj))
           uwrk(LBi:UBi,LBj:UBj)=0.0_r8
@@ -1092,14 +1096,15 @@
           allocate (vwrk(LBi:UBi,LBj:UBj))
           vwrk(LBi:UBi,LBj:UBj)=0.0_r8
         END IF
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
-            uwrk=FORCES(ng)%Uwind(i,j)*GRID(ng)%CosAngler(i,j)-         &
-     &           FORCES(ng)%Vwind(i,j)*GRID(ng)%SinAngler(i,j)
-            vwrk=FORCES(ng)%Vwind(i,j)*GRID(ng)%CosAngler(i,j)+         &
-     &           FORCES(ng)%Uwind(i,j)*GRID(ng)%SinAngler(i,j)
-          END DO
+        DO tile=0,NtileX(ng)*NtileE(ng)-1
+          CALL rotate_wind (ng, TILE, LBi, UBi, LBj, UBj,               &
+     &                      FORCES(ng)%Uwind,                           &
+     &                      FORCES(ng)%Vwind,                           &
+     &                      GRID(ng)%CosAngler,                         &
+     &                      GRID(ng)%SinAngler,                         &
+     &                      uwrk, vwrk)
         END DO
+      END IF
 #  endif
 !
 !  Write out u-wind component.
@@ -1126,6 +1131,9 @@
           ioerror=status
           RETURN
         END IF
+#  ifdef CURVGRID
+        deallocate (uwrk)
+#  endif
       END IF
 !
 !  Write out v-wind component.
@@ -1152,11 +1160,10 @@
           ioerror=status
           RETURN
         END IF
-      END IF
 #  ifdef CURVGRID
-      deallocate (uwrk)
-      deallocate (vwrk)
+        deallocate (vwrk)
 #  endif
+      END IF
 # endif
 # if defined BULK_FLUXES || defined ATM2OCN_FLUXES
 !

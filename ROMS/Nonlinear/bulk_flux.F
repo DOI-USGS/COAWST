@@ -55,7 +55,7 @@
       implicit none
 
       PRIVATE
-      PUBLIC  :: bulk_flux, bulk_psiu, bulk_psit
+      PUBLIC  :: bulk_flux, bulk_psiu, bulk_psit, rotate_wind
 
       CONTAINS
 !
@@ -900,6 +900,56 @@
 
       RETURN
       END SUBROUTINE bulk_flux_tile
+!
+!***********************************************************************
+      SUBROUTINE rotate_wind (ng, tile, LBi, UBi, LBj, UBj,             &
+     &                        Uwind, Vwind, CosAngler, SinAngler,       &
+     &                        uwrk, vwrk)
+!***********************************************************************
+!
+      USE mod_param
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile
+      integer, intent(in) :: LBi, UBi, LBj, UBj
+!
+# ifdef ASSUMED_SHAPE
+      real(r8), intent(in) :: Uwind(LBi:,LBj:)
+      real(r8), intent(in) :: Vwind(LBi:,LBj:)
+      real(r8), intent(in) :: CosAngler(LBi:,LBj:)
+      real(r8), intent(in) :: SinAngler(LBi:,LBj:)
+      real(r8), intent(out) :: uwrk(LBi:,LBj:)
+      real(r8), intent(out) :: vwrk(LBi:,LBj:)
+# else
+      real(r8), intent(in) :: Uwind(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Vwind(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: CosAngler(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: SinAngler(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: uwrk(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: vwrk(LBi:UBi,LBj:UBj)
+# endif
+!
+!  Local variable declarations.
+!
+      integer :: i, j
+
+# include "set_bounds.h"
+!
+!  If input point surface winds or interpolated from coarse data, rotate
+!  back from curvilinear grid to N-E.
+!
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          uwrk(i,j)=Uwind(i,j)*CosAngler(i,j)-                          &
+     &              Vwind(i,j)*SinAngler(i,j)
+          vwrk(i,j)=Vwind(i,j)*CosAngler(i,j)+                          &
+     &              Uwind(i,j)*SinAngler(i,j)
+        END DO
+      END DO
+
+      RETURN
+      END SUBROUTINE rotate_wind
 
       FUNCTION bulk_psiu (ZoL, pi)
 !

@@ -3062,6 +3062,12 @@
      &          'Write out tracer ', itrc, TRIM(Vname(1,idTvar(itrc)))
           END DO
 #endif
+          IF (Hout(idUair,ng)) WRITE (out,170) Hout(idUair,ng),         &
+     &       'Hout(idUair)',                                            &
+     &       'Write out surface U-wind.'
+          IF (Hout(idVair,ng)) WRITE (out,170) Hout(idVair,ng),         &
+     &       'Hout(idVair)',                                            &
+     &       'Write out surface V-wind.'
           IF (Hout(idUsms,ng)) WRITE (out,170) Hout(idUsms,ng),         &
      &       'Hout(idUsms)',                                            &
      &       'Write out surface U-momentum stress.'
