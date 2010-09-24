@@ -908,7 +908,7 @@
 
       Numcouple=9
       ALLOCATE (Cpltype(Numcouple))
-      Cpltype(1)=55                      ! DISSIP  SWOEXD
+      Cpltype(1)=7                       ! DISSIP  SWOEXD
       Cpltype(2)=50                      ! TMBOT   SWOEXD
       Cpltype(3)=6                       ! UBOT    SWOEXD
       Cpltype(4)=8                       ! QB      SWOEXD

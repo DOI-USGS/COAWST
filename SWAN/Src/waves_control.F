@@ -62,6 +62,7 @@
 !
 ! Allocate some arrays for refinement.
 !
+      CALL initialize_param
       IF (.not.allocated(Numspec)) allocate (Numspec(Ngrids))
       IF (.not.allocated(ac2size)) allocate (ac2size(Ngrids))
 #endif

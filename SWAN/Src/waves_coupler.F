@@ -189,8 +189,6 @@
       END IF
 !
 # ifdef REFINED_GRID
-      CALL initialize_param
-
       allocate ( wavids(Ngrids) )
       allocate ( ocnids(Ngrids) )
       DO j=1,Ngrids
@@ -574,7 +572,7 @@
         avdata(IP)=REAL( VOQ(points(IP),VOQR(IVTYPE)),r8 )
       END DO
 !
-      IF (IVTYPE.eq.55) THEN
+      IF (IVTYPE.eq.7) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DISSIP",avdata)
       ELSE IF (IVTYPE.eq.10) THEN
