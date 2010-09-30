@@ -133,7 +133,7 @@
       IF (iic(1).eq.ntstart(1)) THEN
         t1=2
       ELSE
-        t1=nnew(ng)
+        t1=nnew(ngp)
       END IF
 
 !      write(*,*) 'get3dp ',t1
