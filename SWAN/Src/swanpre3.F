@@ -1,6 +1,7 @@
 #include "swancpp.h"
 
       MODULE interp_swan_mod
+#if defined WRF_COUPLING || defined REFINED_GRID
 !
 !=======================================================================
 !  This module contains some original functions as well as             !
@@ -23,7 +24,7 @@
 
       CONTAINS
 
-#ifdef WRF_COUPLING
+# ifdef WRF_COUPLING
       SUBROUTINE compute_angler (ng)
 !
 !=======================================================================
@@ -120,9 +121,9 @@
       DEALLOCATE(xlon, ylat, xlonb, ylatb)
       RETURN
       END SUBROUTINE compute_angler
-#endif
+# endif
 
-#ifdef REFINED_GRID
+# ifdef REFINED_GRID
       SUBROUTINE swan_ref_init (ng, ngp)
 !
 !=======================================================================
@@ -544,13 +545,13 @@
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
       integer, intent(in) :: Imin, Imax, Jmin, Jmax
 
-#ifdef ASSUMED_SHAPE
+#  ifdef ASSUMED_SHAPE
       real, intent(in) :: Xgrd(LBi:,LBj:)
       real, intent(in) :: Ygrd(LBi:,LBj:)
-#else
+#  else
       real, intent(in) :: Xgrd(LBi:UBi,LBj:UBj)
       real, intent(in) :: Ygrd(LBi:UBi,LBj:UBj)
-#endif
+#  endif
 
       real, intent(in) :: Xo, Yo
 !
@@ -682,11 +683,11 @@
 
       real, intent(in) :: Xo, Yo
 
-#ifdef ASSUMED_SHAPE
+#  ifdef ASSUMED_SHAPE
       real, intent(inout) :: Xb(:), Yb(:)
-#else
+#  else
       real, intent(inout) :: Xb(Nb+1), Yb(Nb+1)
-#endif
+#  endif
 !
 !  Local variable declarations.
 !
@@ -758,6 +759,6 @@
       END IF
       RETURN
       END FUNCTION sinside
-
+# endif
 #endif
       END MODULE interp_swan_mod
