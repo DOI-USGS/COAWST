@@ -849,12 +849,13 @@
      &                        GRID(ng)%h(i,Jstr  )+                     &
      &                        zeta(i,Jstr  ,know)))
           Ce=SQRT(g*cff)
-          my_val=fac1*REFINED(ng)%zetaR_south(i,4,t1)+                  &
-     &           fac2*REFINED(ng)%zetaR_south(i,4,t2)
+          my_val=0.5_r8*fac1*(REFINED(ng)%zetaR_south(i,4,t1)+          &
+     &                        REFINED(ng)%zetaR_south(i,5,t1))+         &
+     &           0.5_r8*fac2*(REFINED(ng)%zetaR_south(i,4,t2)+          &
+     &                        REFINED(ng)%zetaR_south(i,5,t2))
 # ifdef MASKING
-          my_val=my_val*GRID(ng)%rmask(i,Jstr-1)
+          my_val=my_val*GRID(ng)%vmask(i,Jstr)
 # endif
-!         my_val=OCEAN(ng)%zeta(i,Jstr-1,know)
           vbar(i,Jstr,kout)=bry_val-                                    &
      &                      Ce*(0.5_r8*(zeta(i,Jstr-1,know)+            &
      &                                  zeta(i,Jstr  ,know))-           &
@@ -875,16 +876,18 @@
 # ifdef MASKING
           bry_val=bry_val*GRID(ng)%vmask(i,Jend+1)
 # endif
-!         bry_val=OCEAN(ng)%vbar(i,Jend+1,kout)
           cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jend  )+                     &
      &                        zeta(i,Jend  ,know)+                      &
      &                        GRID(ng)%h(i,Jend+1)+                     &
      &                        zeta(i,Jend+1,know)))
           Ce=SQRT(g*cff)
-          my_val=fac1*REFINED(ng)%zetaR_north(i,1,t1)+                  &
-     &           fac2*REFINED(ng)%zetaR_north(i,1,t2)
+          my_val=0.5_r8*fac1*(REFINED(ng)%zetaR_north(i,1,t1)+          &
+     &                        REFINED(ng)%zetaR_north(i,2,t1))+         &
+     &           0.5_r8*fac2*(REFINED(ng)%zetaR_north(i,1,t2)+          &
+     &                        REFINED(ng)%zetaR_north(i,2,t2))
+
 # ifdef MASKING
-          my_val=my_val*GRID(ng)%rmask(i,Jend+1)
+          my_val=my_val*GRID(ng)%vmask(i,Jend+1)
 # endif
 !         my_val=OCEAN(ng)%zeta(i,Jend+1,know)
           vbar(i,Jend+1,kout)=bry_val+                                  &

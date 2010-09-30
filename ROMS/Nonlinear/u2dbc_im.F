@@ -848,12 +848,13 @@
      &                        GRID(ng)%h(Istr  ,j)+                     &
      &                        zeta(Istr  ,j,know)))
           Cx=SQRT(g*cff)
-          my_val=fac1*REFINED(ng)%zetaR_west(4,j,t1)+                   &
-     &           fac2*REFINED(ng)%zetaR_west(4,j,t2)
+          my_val=0.5_r8*fac1*(REFINED(ng)%zetaR_west(4,j,t1)+           &
+     &                        REFINED(ng)%zetaR_west(5,j,t1))+          &
+     &           0.5_r8*fac2*(REFINED(ng)%zetaR_west(4,j,t2)+           &
+     &                        REFINED(ng)%zetaR_west(5,j,t2))
 # ifdef MASKING
-          my_val=my_val*GRID(ng)%rmask(Istr-1,j)
+          my_val=my_val*GRID(ng)%umask(Istr,j)
 # endif
-!         my_val=OCEAN(ng)%zeta(Istr-1,j,know)
           ubar(Istr,j,kout)=bry_val-                                    &
      &                      Cx*(0.5_r8*(zeta(Istr-1,j,know)+            &
      &                                  zeta(Istr  ,j,know))-           &
@@ -880,10 +881,12 @@
      &                        GRID(ng)%h(Iend+1,j)+                     &
      &                        zeta(Iend+1,j,know)))
           Cx=SQRT(g*cff)
-          my_val=fac1*REFINED(ng)%zetaR_east(1,j,t1)+                   &
-     &           fac2*REFINED(ng)%zetaR_east(1,j,t2)
+          my_val=0.5_r8*fac1*(REFINED(ng)%zetaR_east(1,j,t1)+           &
+     &                        REFINED(ng)%zetaR_east(2,j,t1))+          &
+     &           0.5_r8*fac2*(REFINED(ng)%zetaR_east(1,j,t2)+           &
+     &                        REFINED(ng)%zetaR_east(2,j,t2))
 # ifdef MASKING
-          my_val=my_val*GRID(ng)%rmask(Iend+1,j)
+          my_val=my_val*GRID(ng)%umask(Iend+1,j)
 # endif
 !         my_val=OCEAN(ng)%zeta(Iend+1,j,know)
           ubar(Iend+1,j,kout)=bry_val+                                  &
