@@ -822,8 +822,7 @@
 #endif
 #if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
 !
-!  Surface atmospheric pressure  (mb).
-!  Need to scale MSLP in Pa to mb.
+!  Mean seal level pressure, convert from Pa to mb.
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "MSLP",     &
      &                           A, Asize)
