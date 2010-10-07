@@ -84,9 +84,9 @@ DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp
 SFC             =       pgf90
-SCC            ?=       gcc
-DM_FC           =       mpif90 -f90=$(SFC)
-DM_CC           =       mpicc -cc=$(SCC)
+SCC            ?=       pgcc
+DM_FC           =       mpif90 #-f90=$(SFC)
+DM_CC           =       mpicc -DMPI2_SUPPORT #-cc=$(SCC)
 FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)

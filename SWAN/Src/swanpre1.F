@@ -1171,8 +1171,10 @@
           ENDIF
           ALLOCATE (M_GENARR_MOD(ng)%UXB_G(MXG(IGR1)*MYG(IGR1)))
           UXB=>M_GENARR_MOD(ng)%UXB_G
+          UXB=0.
           ALLOCATE (M_GENARR_MOD(ng)%UYB_G(MXG(IGR2)*MYG(IGR2)))
           UYB=>M_GENARR_MOD(ng)%UYB_G
+          UYB=0.
 #endif
         ELSE IF (KEYWIS ('VX')) THEN
           IGRD = 2
@@ -1198,6 +1200,7 @@
           JFRC3  = MCMVAR                                                   40.00
           ALLOCATE (M_GENARR_MOD(ng)%FRIC_G(MXG(IGR1)*MYG(IGR1)))           40.31
           FRIC=>M_GENARR_MOD(ng)%FRIC_G
+          FRIC=0.0001
 #endif
         ELSE IF (KEYWIS ('WI')) THEN
           IGRD = 5

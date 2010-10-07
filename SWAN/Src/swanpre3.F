@@ -109,12 +109,6 @@
           END IF
           CosAngler(count)=COS(angler)
           SinAngler(count)=SIN(angler)
-
-!          if ((i.eq.28).and.(j.eq.3)) then
-!          write(*,*) 'angle is ', i,j, cff1,cff2,cff3,kspher,angler
-          write(*,*) 'angle is ', i,j, angler
-!           end if
-
         END DO
       END DO
 !

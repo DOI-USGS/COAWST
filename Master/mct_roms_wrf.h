@@ -393,7 +393,7 @@
 #endif
 !
 #if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
-      to_add=':PSFC'
+      to_add=':MSLP'
       cad=LEN_TRIM(to_add)
       write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -538,7 +538,7 @@
 !     * HFX     Sensible heat flux (Watts/m2), [Celsius m/s]           !
 !     * USTRESS Surface U-wind stress (Pa), [m2/s2]                    !
 !     * VSTRESS Surface V-wind stress (Pa), [m2/s2]                    !
-!     * PSFC    Surface atmospheric pressure (Pa), [mb]                !
+!     * MSLP    Mean Sea Level Pressure (Pa), [mb]                     !
 !     * RELH    Surface air relative humidity (percent), [fraction]    !
 !     * T2      Surface (2 m) air temperature (Celsius), [Celsius]     !
 !     * U10     Surface (10 m) U-wind speed (m/s), [m/s]               !
@@ -823,9 +823,9 @@
 #if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
 !
 !  Surface atmospheric pressure  (mb).
-!  Need to scale PSFC in Pa to mb.
+!  Need to scale MSLP in Pa to mb.
 !
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "PSFC",     &
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "MSLP",     &
      &                           A, Asize)
       ij=0
       cff=0.01_r8

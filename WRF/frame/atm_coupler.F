@@ -198,7 +198,7 @@
 # endif
 !
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
-      to_add=':PSFC'
+      to_add=':MSLP'
       cad=LEN_TRIM(to_add)
       write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -304,7 +304,7 @@
 !     * HFX        Sensible heat flux   (Watts/m2)                     !
 !     * USTRESS    Surface U-wind stress (Pa)                          !
 !     * VSTRESS    Surface v-stress      (Pa)                          !
-!     * PSFC       Surface atmospheric pressure (Pa)                   !
+!     * MSLP       Mean Sea Level Pressure (Pa)                        !
 !     * RELH       Surface air relative humidity (percent)             !
 !     * T2         Surface 2m air temperature (Celsius)                !
 !     * U10        U-Wind speed at 10 m (m/s)                          !
@@ -454,16 +454,18 @@
 # endif
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
 !-----------------------------------------------------------------------
-!     PSFC       Surface atmospheric pressure (Pa).
+!     MSLP       Surface atmospheric pressure (Pa).
 !
       ij=0
       DO j=js,je
         DO i=is,ie
           ij=ij+1
-          AA(ij)=grid%PSFC(i,j)
+          AA(ij)=grid%PSFC(i,j)*                                        &
+     &           exp((9.81*grid%ht(i,j))/                               &
+     &           (287.0*grid%T2(i,j)*(1.0+0.61*grid%Q2(i,j))))
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "PSFC", AA, Asize)
+      CALL AttrVect_importRAttr (atm2ocn_AV, "MSLP", AA, Asize)
 # endif
 # if defined BULK_FLUXES || defined ECOSIM || \
    (defined SHORTWAVE && defined ANA_SRFLUX)

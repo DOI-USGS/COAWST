@@ -634,11 +634,22 @@
 !           --- update boundary conditions and input fields
 !
             CALL SWTSTA(7)                                                40.23
+!
+!  This needs revisiting when i do the 2-way.
+!
+# ifdef REFINED_GRID
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
      &                    UYB   , WXI   , WYI   , ng, ngp, IT_in,
      &                    PARALL2_MOD(ngp)%AC2_parent_G)
+# else
+            CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
+     &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
+     &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
+     &                    UYB   , WXI   , WYI   , ng, ngp, IT_in,
+     &                    1.)
+# endif
             CALL SWTSTO(7)                                                40.23
             IF (STPNOW()) RETURN                                          34.01
 !
@@ -5713,6 +5724,8 @@
 # ifdef REFINED_GRID
       REAL, INTENT(IN) :: AC2_child(MSC*MDC*Numspec(ng))
       REAL        AC2LOC(MCGRD)                                           40.31
+# else
+      REAL, INTENT(IN) :: AC2_child
 # endif
 #endif
       INTEGER  BGRIDP(*), XYTST(*), KGRPNT(MXC,MYC)
