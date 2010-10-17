@@ -415,7 +415,7 @@
 #if defined BULK_FLUXES || defined ECOSIM
       to_add=':U10'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
       to_add=':V10'

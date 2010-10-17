@@ -225,7 +225,7 @@
 !
       to_add=':V10'
       cad=LEN_TRIM(to_add)
-      write(avstring(cid:cid+cad-1),('a')) to_add(1:cad)
+      write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 # endif
 !
