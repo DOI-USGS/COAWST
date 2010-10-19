@@ -1319,7 +1319,7 @@
           RETURN
         END IF
       END IF
-#   ifdef BULK_FLUXES
+#   if defined BULK_FLUXES || defined ATM2OCN_FLUXES
 !
 !  Write out latent heat flux.
 !

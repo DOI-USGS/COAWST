@@ -170,7 +170,7 @@
 #  ifdef AVERAGES_FLUXES
           real(r8), pointer :: avgstf(:,:)
           real(r8), pointer :: avgswf(:,:)
-#   ifdef BULK_FLUXES
+#   if defined BULK_FLUXES || defined ATM2OCN_FLUXES
           real(r8), pointer :: avglhf(:,:)
           real(r8), pointer :: avglrf(:,:)
           real(r8), pointer :: avgshf(:,:)
@@ -292,7 +292,7 @@
 #  ifdef AVERAGES_FLUXES
       allocate ( AVERAGE(ng) % avgstf(LBi:UBi,LBj:UBj) )
       allocate ( AVERAGE(ng) % avgswf(LBi:UBi,LBj:UBj) )
-#   ifdef BULK_FLUXES
+#   if defined BULK_FLUXES || defined ATM2OCN_FLUXES
       allocate ( AVERAGE(ng) % avglhf(LBi:UBi,LBj:UBj) )
       allocate ( AVERAGE(ng) % avglrf(LBi:UBi,LBj:UBj) )
       allocate ( AVERAGE(ng) % avgshf(LBi:UBi,LBj:UBj) )
@@ -426,7 +426,7 @@
 #  ifdef AVERAGES_FLUXES
           AVERAGE(ng) % avgstf(i,j) = IniVal
           AVERAGE(ng) % avgswf(i,j) = IniVal
-#   ifdef BULK_FLUXES
+#   if defined BULK_FLUXES || defined ATM2OCN_FLUXES
           AVERAGE(ng) % avglhf(i,j) = IniVal
           AVERAGE(ng) % avglrf(i,j) = IniVal
           AVERAGE(ng) % avgshf(i,j) = IniVal

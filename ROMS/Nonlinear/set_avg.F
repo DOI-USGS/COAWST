@@ -110,7 +110,7 @@
 #  endif
 #  ifdef AVERAGES_FLUXES
      &                   FORCES(ng) % stflx,                            &
-#   ifdef BULK_FLUXES
+#   if defined BULK_FLUXES || defined ATM2OCN_FLUXES
      &                   FORCES(ng) % lhflx,                            &
      &                   FORCES(ng) % shflx,                            &
      &                   FORCES(ng) % lrflx,                            &
@@ -207,7 +207,7 @@
 #  ifdef AVERAGES_FLUXES
      &                   AVERAGE(ng) % avgstf,                          &
      &                   AVERAGE(ng) % avgswf,                          &
-#   ifdef BULK_FLUXES
+#   if defined BULK_FLUXES || defined ATM2OCN_FLUXES
      &                   AVERAGE(ng) % avglhf,                          &
      &                   AVERAGE(ng) % avgshf,                          &
      &                   AVERAGE(ng) % avglrf,                          &
@@ -305,7 +305,7 @@
 #  endif
 #  ifdef AVERAGES_FLUXES
      &                         stflx,                                   &
-#   ifdef BULK_FLUXES
+#   if defined BULK_FLUXES || defined ATM2OCN_FLUXES
      &                         lhflx, shflx, lrflx,                     &
 #    ifdef EMINUSP
      &                         evap, rain,                              &
@@ -373,7 +373,7 @@
 #  endif
 #  ifdef AVERAGES_FLUXES
      &                         avgstf, avgswf,                          &
-#   ifdef BULK_FLUXES
+#   if defined BULK_FLUXES || defined ATM2OCN_FLUXES
      &                         avglhf, avgshf, avglrf,                  &
 #    ifdef EMINUSP
      &                         avgevap, avgrain,                        &
@@ -472,7 +472,7 @@
 #   endif
 #   ifdef AVERAGES_FLUXES
       real(r8), intent(in) :: stflx(LBi:,LBj:,:)
-#    ifdef BULK_FLUXES
+#    if defined BULK_FLUXES || defined ATM2OCN_FLUXES
       real(r8), intent(in) :: lhflx(LBi:,LBj:)
       real(r8), intent(in) :: shflx(LBi:,LBj:)
       real(r8), intent(in) :: lrflx(LBi:,LBj:)
@@ -573,7 +573,7 @@
 #   ifdef AVERAGES_FLUXES
       real(r8), intent(inout) :: avgstf(LBi:,LBj:)
       real(r8), intent(inout) :: avgswf(LBi:,LBj:)
-#    ifdef BULK_FLUXES
+#    if defined BULK_FLUXES || defined ATM2OCN_FLUXES
       real(r8), intent(inout) :: avglhf(LBi:,LBj:)
       real(r8), intent(inout) :: avgshf(LBi:,LBj:)
       real(r8), intent(inout) :: avglrf(LBi:,LBj:)
@@ -669,7 +669,7 @@
 #   endif
 #   ifdef AVERAGES_FLUXES
       real(r8), intent(in) :: stflx(LBi:UBi,LBj:UBj,NT(ng))
-#    ifdef BULK_FLUXES
+#    if defined BULK_FLUXES || defined ATM2OCN_FLUXES
       real(r8), intent(in) :: lhflx(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: shflx(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: lrflx(LBi:UBi,LBj:UBj)
@@ -766,7 +766,7 @@
 #   ifdef AVERAGES_FLUXES
       real(r8), intent(inout) :: avgstf(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: avgswf(LBi:UBi,LBj:UBj)
-#    ifdef BULK_FLUXES
+#    if defined BULK_FLUXES || defined ATM2OCN_FLUXES
       real(r8), intent(inout) :: avglhf(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: avgshf(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: avglrf(LBi:UBi,LBj:UBj)
@@ -939,7 +939,7 @@
 #  ifdef AVERAGES_FLUXES
             avgstf(i,j)=stflx(i,j,itemp)
             avgswf(i,j)=stflx(i,j,isalt)
-#   ifdef BULK_FLUXES
+#   if defined BULK_FLUXES || defined ATM2OCN_FLUXES
             avglhf(i,j)=lhflx(i,j)
             avgshf(i,j)=shflx(i,j)
             avglrf(i,j)=lrflx(i,j)
@@ -1158,7 +1158,7 @@
 #  ifdef AVERAGES_FLUXES
             avgstf(i,j)=avgstf(i,j)+stflx(i,j,itemp)
             avgswf(i,j)=avgswf(i,j)+stflx(i,j,isalt)
-#   ifdef BULK_FLUXES
+#   if defined BULK_FLUXES || defined ATM2OCN_FLUXES
             avglhf(i,j)=avglhf(i,j)+lhflx(i,j)
             avgshf(i,j)=avgshf(i,j)+shflx(i,j)
             avglrf(i,j)=avglrf(i,j)+lrflx(i,j)
@@ -1461,7 +1461,7 @@
 #  ifdef AVERAGES_FLUXES
             avgstf(i,j)=fac*avgstf(i,j)
             avgswf(i,j)=fac*avgswf(i,j)
-#   ifdef BULK_FLUXES
+#   if defined BULK_FLUXES || defined ATM2OCN_FLUXES
             avglhf(i,j)=fac*avglhf(i,j)
             avgshf(i,j)=fac*avgshf(i,j)
             avglrf(i,j)=fac*avglrf(i,j)
