@@ -455,7 +455,7 @@
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
 !-----------------------------------------------------------------------
 !     MSLP       Surface atmospheric pressure (Pa).
-!     Use the hypsometorc equation to reduce 
+!     Use the hypsometric equation to reduce 
 !     surface pressure to mean sea level pressure.
 !
       ij=0
