@@ -1135,7 +1135,7 @@
       END DO
       DO j=Jstr,Jend+1
         DO i=Istr,Iend+1
-          Sxy_psi(i,j)=0.25_r8*(Sxyl(i-1,j-1)+Sxyl(i,j-1)+              &
+          Sxyl_psi(i,j)=0.25_r8*(Sxyl(i-1,j-1)+Sxyl(i,j-1)+             &
      &                          Sxyl(i-1,j  )+Sxyl(i,j  ))
         END DO
       END DO
@@ -1147,8 +1147,8 @@
         DO i=IstrU,Iend
           cff=(Sxxl(i  ,j)-                                             &
      &         Sxxl(i-1,j))*on_u(i,j)+                                  &
-     &        (Sxy_psi(i,j+1)-                                          &
-     &         Sxy_psi(i,j  ))*om_u(i,j)
+     &        (Sxyl_psi(i,j+1)-                                         &
+     &         Sxyl_psi(i,j  ))*om_u(i,j)
           rustr2d(i,j)=cff
 !
 !  Convert units to m2/s2 for output purposes.
@@ -1202,8 +1202,8 @@
         DO i=Istr,Iend
           cff=(Syyl(i,j  )-                                             &
      &         Syyl(i,j-1))*on_v(i,j)+                                  &
-     &        (Sxy_psi(i+1,j)-                                          &
-     &         Sxy_psi(i  ,j))*on_u(i,j)
+     &        (Sxyl_psi(i+1,j)-                                         &
+     &         Sxyl_psi(i  ,j))*on_u(i,j)
           rvstr2d(i,j)=cff
 !
 !  Convert units to m2/s2 for output purposes.
