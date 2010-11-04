@@ -179,7 +179,7 @@
       INTEGER, INTENT(in) :: ng, ngc, ngp, Numgrids, MyCOMM
       INTEGER   IUNIT                                                     34.01
       INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN                             40.30
-      INTEGER   INERR                                                     40.31
+      INTEGER   INERR, IFLD                                               40.31
       INTEGER   ISTAT, IF1, IL1                                           40.41
       CHARACTER PTYPE, PNAME *8, COMPUT *4, DTTIWR*18                     40.00
       CHARACTER*20 NUMSTR, CHARS(1)                                       40.41
@@ -302,6 +302,9 @@
       XCSAVE_G(ng)=0.0
       YCSAVE_G(ng)=0.0
       MXITNR_G(ng)=0
+      DO IFLD=1,NUMGRD
+        IFLNDS(IFLD)=0
+      END DO
 !
       CALL SWINITMPI (MyComm)
       INPFIL = WNAME
