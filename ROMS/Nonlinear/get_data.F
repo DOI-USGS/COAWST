@@ -807,9 +807,6 @@
 # endif
 # ifdef SOLVE3D
 #  if !defined ANA_TCLIMA && defined TCLIMATOLOGY
-#   ifdef REFINED_GRID
-      IF (ng.eq.1) THEN
-#   endif
       DO i=1,NAT
         CALL get_3dfld (ng, iNLM, idTclm(i), ncCLMid(ng), 1,            &
      &                  CLMname(ng), update(1),                         &
@@ -819,10 +816,6 @@
 #   endif
      &                  CLIMA(ng) % tclmG(LBi,LBj,1,1,i))
       END DO
-
-#   ifdef REFINED_GRID
-      END IF
-#   endif
 #  endif
 #  if !defined ANA_M3CLIMA && defined M3CLIMATOLOGY
       CALL get_3dfld (ng, iNLM, idUclm, ncCLMid(ng), 1,                 &

@@ -1069,9 +1069,6 @@
 # endif
 
 # if defined SOLVE3D && defined TCLIMATOLOGY
-#  if defined REFINED_GRID
-      IF (ng.eq.1) THEN
-#  endif
 !
 !-----------------------------------------------------------------------
 !  Set tracer climatology.
@@ -1087,9 +1084,6 @@
      &                       CLIMA(ng)%tclm (:,:,:,itrc),               &
      &                       update)
       END DO
-#  endif
-#  if defined REFINED_GRID
-      END IF
 #  endif
 # endif
 

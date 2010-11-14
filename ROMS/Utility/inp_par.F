@@ -2217,7 +2217,7 @@
           ELSE IF (TRIM(KeyWord).eq.'FRCNAME') THEN
             DO ng=1,Ngrids
               DO i=1,nFfiles(ng)
-                IF (Nval.eq.(i+(Ngrids-1)*nFfiles(ng))) THEN
+                IF (Nval.eq.(i+(ng-1)*nFfiles(ng))) THEN
                   FRCname(i,ng)=TRIM(ADJUSTL(Cval(Nval)))
                 END IF
               END DO

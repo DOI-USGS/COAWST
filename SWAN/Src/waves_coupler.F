@@ -1031,9 +1031,13 @@
         DO IY=1,MYC
           DO IX=1,MXC
             IP=IP+1
-            OFFSET=(MXF-1)+IX+(IY-1)*MXCGL
-            INB=TEMPMCT(IP,1)
-            IF (INB.gt.0.) THEN
+            IF (MXCGL.gt.MYCGL) THEN
+              OFFSET=(MXF-1)+(IY-1)*MXCGL+IX
+            ELSE
+              OFFSET=(MYF-1)*MXCGL+(IY-1)*MXCGL+IX
+            END IF
+            cff=TEMPMCT(IP,1)
+            IF (cff.gt.0.) THEN
               DEPTH(OFFSET)=TEMPMCT(IP,1)
             END IF
           END DO
@@ -1064,10 +1068,10 @@
           DO IX=1,MXC
             IP=IP+1
             INDX = KGRPNT(IX,IY)
-            INB=TEMPMCT(IP,1)
+            cff=TEMPMCT(IP,1)
             IF (INDX.GT.1) THEN
               COMPDA(INDX,JFRC2)=MAX(REAL(TEMPMCT(IP,5)), 0.001)
-              IF (INB.gt.0.) THEN
+              IF (cff.gt.0.) THEN
                 COMPDA(INDX,JBOTLV)=TEMPMCT(IP,1)
                 COMPDA(INDX,JWLV2)=TEMPMCT(IP,2)
                 COMPDA(INDX,JVX2)=TEMPMCT(IP,3)
