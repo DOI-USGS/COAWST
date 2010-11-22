@@ -34,9 +34,9 @@
 # endif
 !
       USE nf_fread3d_mod, ONLY : nf_fread3d
-#ifdef SOLVE3D
+# ifdef SOLVE3D
       USE nf_fread4d_mod, ONLY : nf_fread4d
-#endif
+# endif
 !
       implicit none
 !
@@ -69,6 +69,19 @@
       LBj=LBOUND(GRID(ng)%h,DIM=2)
       UBj=UBOUND(GRID(ng)%h,DIM=2)
 
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on input data time wall clock.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, iNLM, 3)
+# endif
+
+# ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+# endif
+
 # if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
 !
 !  Set Vsize to zero to deactivate interpolation of input data to model
@@ -77,15 +90,6 @@
       DO is=1,4
         Vsize(is)=0
       END DO
-# endif
-
-# ifdef PROFILE
-!
-!-----------------------------------------------------------------------
-!  Turn on input data time wall clock.
-!-----------------------------------------------------------------------
-!
-      CALL wclock_on (ng, iNLM, 3)
 # endif
 
 # if defined SSH_TIDES || defined UV_TIDES
@@ -397,6 +401,10 @@
             WRITE (stdout,30) TRIM(Vname(2,idv3dH)), Fmin, Fmax
           END IF
         END IF
+      END IF
+# endif
+
+# ifdef REFINED_GRID
       END IF
 # endif
 

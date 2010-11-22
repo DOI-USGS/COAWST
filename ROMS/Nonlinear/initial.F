@@ -590,14 +590,7 @@
 !  If applicable, read in input data.
 !
 # ifdef TIMELESS_DATA
-!
-#  ifdef REFINED_GRID
-      IF (ng.eq.1) THEN
-#  endif
       CALL get_idata (ng)
-#  ifdef REFINED_GRID
-      END IF
-#  endif
 # endif
       CALL get_data (ng)
 # ifdef DISTRIBUTE
