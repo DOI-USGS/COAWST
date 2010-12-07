@@ -73,7 +73,7 @@
 # ifdef MB_CALC_UB
      &                FORCES(ng) % Hwave,                               &
 # else
-     &                FORCES(ng) % Ub_swan,                             &
+     &                FORCES(ng) % Uwave_rms,                           &
 # endif
      &                FORCES(ng) % Dwave,                               &
      &                FORCES(ng) % Pwave_bot,                           &
@@ -108,7 +108,7 @@
 # ifdef MB_CALC_UB
      &                      Hwave,                                      &
 # else
-     &                      Ub_swan,                                    &
+     &                      Uwave_rms,                                  &
 # endif
      &                      Dwave, Pwave_bot,                           &
      &                      rho, u, v, bottom,                          &
@@ -143,7 +143,7 @@
 #  ifdef MB_CALC_UB
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
 #  else
-      real(r8), intent(in) :: Ub_swan(LBi:,LBj:)
+      real(r8), intent(in) :: Uwave_rms(LBi:,LBj:)
 #  endif
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Pwave_bot(LBi:,LBj:)
@@ -173,7 +173,7 @@
 #  ifdef MB_CALC_UB
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
 #  else
-      real(r8), intent(in) :: Ub_swan(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Uwave_rms(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Pwave_bot(LBi:UBi,LBj:UBj)
@@ -315,7 +315,7 @@
           Ab=0.5_r8*Hwave(i,j)/SINH(Kbh)+eps
           Ub(i,j)=Fwave_bot*Ab
 # else
-          Ub(i,j)=Ub_swan(i,j)
+          Ub(i,j)=Uwave_rms(i,j)
           Ab=Ub(i,j)/Fwave_bot+eps
 # endif
 !

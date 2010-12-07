@@ -2532,7 +2532,7 @@
 # ifdef MASKING
      &                     GRID(ng) % rmask,                            &
 # endif
-     &                     FORCES(ng) % Ub_swan)
+     &                     FORCES(ng) % Uwave_rms)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWorb)), tHISindx(ng)

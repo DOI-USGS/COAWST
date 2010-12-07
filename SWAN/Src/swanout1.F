@@ -910,7 +910,7 @@
       ALLOCATE (Cpltype(Numcouple))
       Cpltype(1)=7                       ! DISSIP  SWOEXD
       Cpltype(2)=50                      ! TMBOT   SWOEXD
-      Cpltype(3)=6                       ! UBOT    SWOEXD
+      Cpltype(3)=34                      ! URMS    SWOEXD
       Cpltype(4)=8                       ! QB      SWOEXD
       Cpltype(5)=10                      ! HSIGN   SWOEXA
       Cpltype(6)=12                      ! RTP     SWOEXA

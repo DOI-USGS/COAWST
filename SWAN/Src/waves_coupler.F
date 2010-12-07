@@ -392,7 +392,7 @@
 !  the wave model.
 !
       CALL AttrVect_init (AttrVect_G(ng)%wav2ocn_AV,                    &
-     &  rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:WLENP:QB",          &
+     &  rList="DISSIP:HSIGN:RTP:TMBOT:URMS:DIR:WLEN:WLENP:QB",          &
      &  lsize=gsmsize)
       CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
 !
@@ -529,9 +529,9 @@
       integer, dimension(MPI_STATUS_SIZE,4) :: status
       integer, pointer :: points(:)
 
-      real :: cff, COSWC, SINWC
+      real :: cff, cff2, COSWC, SINWC
 # ifdef WRF_COUPLING
-      real :: cff1, cff2
+      real :: cff1
 # endif
       real(r8), pointer :: avdata(:)
 
@@ -592,9 +592,9 @@
       ELSE IF (IVTYPE.eq.50) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "TMBOT",avdata)
-      ELSE IF (IVTYPE.eq.6) THEN
+      ELSE IF (IVTYPE.eq.34) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
-     &                             "UBOT",avdata)
+     &                             "URMS",avdata)
       ELSE IF (IVTYPE.eq.13) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DIR",avdata)
@@ -1063,6 +1063,19 @@
 ! Insert bot level, water level, velx, vely, fric, and winds 
 ! into SWAN arrays.
 !
+! If not using a BBL model, then determine the non-spatially 
+! varying friction coeff to enter into the JFRC2 array.
+!
+# if !defined BBL_MODEL
+        cff2=0.05_r8                  ! default
+        IF (IBOT.EQ.1) THEN           ! Jonswap
+          cff2=PBOT(3)
+        ELSE IF (IBOT.EQ.2) THEN      ! Collins
+          cff2=PBOT(2)
+        ELSE IF (IBOT.EQ.3) THEN      ! Madsen
+          cff2=PBOT(5)
+        END IF
+# endif
         IP=0
         DO IY=1,MYC
           DO IX=1,MXC
@@ -1070,19 +1083,23 @@
             INDX = KGRPNT(IX,IY)
             cff=TEMPMCT(IP,1)
             IF (INDX.GT.1) THEN
-              COMPDA(INDX,JFRC2)=MAX(REAL(TEMPMCT(IP,5)), 0.001)
+# ifdef BBL_MODEL
+              COMPDA(INDX,JFRC2)=MAX(REAL(TEMPMCT(IP,5)), 0.0001)
+# else
+              COMPDA(INDX,JFRC2)=cff2
+# endif
               IF (cff.gt.0.) THEN
                 COMPDA(INDX,JBOTLV)=TEMPMCT(IP,1)
                 COMPDA(INDX,JWLV2)=TEMPMCT(IP,2)
                 COMPDA(INDX,JVX2)=TEMPMCT(IP,3)
                 COMPDA(INDX,JVY2)=TEMPMCT(IP,4)
 # ifdef WRF_COUPLING
-!                cff1=TEMPMCT(IP,6)*CosAngler(INDX)+                     &
-!     &               TEMPMCT(IP,7)*SinAngler(INDX)
-!                cff2=TEMPMCT(IP,7)*CosAngler(INDX)-                     &
-!     &               TEMPMCT(IP,6)*SinAngler(INDX)
-!                COMPDA(INDX,JWX2)=cff1
-!                COMPDA(INDX,JWY2)=cff2
+!               cff1=TEMPMCT(IP,6)*CosAngler(INDX)+                      &
+!     &              TEMPMCT(IP,7)*SinAngler(INDX)
+!               cff2=TEMPMCT(IP,7)*CosAngler(INDX)-                      &
+!     &              TEMPMCT(IP,6)*SinAngler(INDX)
+!               COMPDA(INDX,JWX2)=cff1
+!               COMPDA(INDX,JWY2)=cff2
                 COMPDA(INDX,JWX2)=TEMPMCT(IP,6)
                 COMPDA(INDX,JWY2)=TEMPMCT(IP,7)
 # endif

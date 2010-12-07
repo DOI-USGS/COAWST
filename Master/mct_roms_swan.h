@@ -306,14 +306,14 @@
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapSWAN,            &
      &      OCN_COMM_WORLD)
       CALL AttrVect_init(wav2ocn_AV2,                                   &
-     &     rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:WLENP:QB",       &
+     &     rList="DISSIP:HSIGN:RTP:TMBOT:URMS:DIR:WLEN:WLENP:QB",       &
      &     lsize=Asize)
       CALL AttrVect_zero (wav2ocn_AV2)
 !
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
      &      OCN_COMM_WORLD)
       CALL AttrVect_init(AttrVect_G(ng)%wav2ocn_AV,                     &
-     &     rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:WLENP:QB",       &
+     &     rList="DISSIP:HSIGN:RTP:TMBOT:URMS:DIR:WLEN:WLENP:QB",       &
      &     lsize=Asize)
       CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
 !
@@ -347,7 +347,7 @@
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
      &                         OCN_COMM_WORLD)
       CALL AttrVect_init(AttrVect_G(ng)%wav2ocn_AV,                     &
-     &  rList="DISSIP:HSIGN:RTP:TMBOT:UBOT:DIR:WLEN:WLENP:QB",          &
+     &  rList="DISSIP:HSIGN:RTP:TMBOT:URMS:DIR:WLEN:WLENP:QB",          &
      &  lsize=Asize)
       CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
 !
@@ -635,13 +635,13 @@
 !
 !  Bottom orbital velocity (m/s).
 !
-      CALL AttrVect_exportRAttr(AttrVect_G(ng)%wav2ocn_AV, "UBOT",      &
+      CALL AttrVect_exportRAttr(AttrVect_G(ng)%wav2ocn_AV, "URMS",      &
      &                          A, Asize)
       ij=0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          FORCES(ng)%Ub_swan(i,j)=MAX(0.0_r8,A(ij)*ramp)
+          FORCES(ng)%Uwave_rms(i,j)=MAX(0.0_r8,A(ij)*ramp)
         END DO
       END DO
 !
@@ -717,7 +717,7 @@
      &                        FORCES(ng)%Pwave_bot)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        FORCES(ng)%Ub_swan)
+     &                        FORCES(ng)%Uwave_rms)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Dwave)
@@ -750,13 +750,13 @@
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    FORCES(ng)%Ub_swan, FORCES(ng)%Dwave,         &
+     &                    FORCES(ng)%Uwave_rms, FORCES(ng)%Dwave,       &
      &                    FORCES(ng)%Lwave, FORCES(ng)%Lwavep)
 # else
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    FORCES(ng)%Ub_swan, FORCES(ng)%Dwave,         &
+     &                    FORCES(ng)%Uwave_rms, FORCES(ng)%Dwave,       &
      &                    FORCES(ng)%Lwave)
 # endif
 # ifdef SVENDSEN_ROLLER
@@ -974,7 +974,9 @@
                 A(ij)=MAX(0.0001_r8,                                    &
      &                    SEDBED(ng)%bottom(i,j,izNik)*30.0_r8)
 #else
-                A(ij)=MAX(0.0001_r8,rdrg2(ng))
+!               This value will be replaced by the value entered in the 
+!               SWAN INPUT file. See SWAN/Src/waves_coupler.F.
+                A(ij)=0.05_r8
 #endif
         END DO
       END DO

@@ -257,7 +257,7 @@
 #  ifdef MASKING
      &                GRID(ng) % rmask(LBi,LBj),                        &
 #  endif
-     &                FORCES(ng) % Ub_swanG(LBi,LBj,1))
+     &                FORCES(ng) % Uwave_rmsG(LBi,LBj,1))
 # endif
 # if defined TKE_WAVEDISS
       CALL get_2dfld (ng, iNLM, idWdis, ncFRCid(idWdis,ng),             &

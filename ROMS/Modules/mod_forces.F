@@ -50,8 +50,8 @@
 !  Pwave_bot    Wind induced bottom wave period (s).                   !
 !  Pwave_botG   Latest two-time snapshots of input "Pwave_bot" grided  !
 !                 data used for interpolation.                         !
-!  Ub_swan      Bottom orbital velocity read in from swan output       !
-!  Ub_swanG     Latest two-time snapshots of input "Ub_swan" grided    !
+!  Uwave_rms    Bottom orbital velocity read in from swan output       !
+!  Uwave_rmsG   Latest two-time snapshots of input "Uwave_rms" grided  !
 !                 data used for interpolation.                         !
 !  wave_dissip  Wave dissipation                                       !
 !  wave_dissipG Latest two-time snapshots of input "wave_dissip"       !
@@ -232,9 +232,9 @@
 #endif
 
 #if defined BBL_MODEL || defined WAVES_OCEAN
-          real(r8), pointer :: Ub_swan(:,:)
+          real(r8), pointer :: Uwave_rms(:,:)
 # ifndef ANA_WWAVE
-          real(r8), pointer :: Ub_swanG(:,:,:)
+          real(r8), pointer :: Uwave_rmsG(:,:,:)
 # endif
 #endif
 
@@ -551,9 +551,9 @@
 #endif
 
 #if defined BBL_MODEL || defined WAVES_OCEAN
-      allocate ( FORCES(ng) % Ub_swan(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % Uwave_rms(LBi:UBi,LBj:UBj) )
 # ifndef ANA_WWAVE
-      allocate ( FORCES(ng) % Ub_swanG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % Uwave_rmsG(LBi:UBi,LBj:UBj,2) )
 # endif
 #endif
 
@@ -937,10 +937,10 @@
 # endif
 #endif
 #if defined BBL_MODEL || defined WAVES_OCEAN
-            FORCES(ng) % Ub_swan(i,j) = IniVal
+            FORCES(ng) % Uwave_rms(i,j) = IniVal
 # ifndef ANA_WWAVE
-            FORCES(ng) % Ub_swanG(i,j,1) = IniVal
-            FORCES(ng) % Ub_swanG(i,j,2) = IniVal
+            FORCES(ng) % Uwave_rmsG(i,j,1) = IniVal
+            FORCES(ng) % Uwave_rmsG(i,j,2) = IniVal
 # endif
 #endif
 #if defined TKE_WAVEDISS || defined WAVES_OCEAN

@@ -1284,7 +1284,7 @@
         scale=rad2deg
         CALL extract_sta2d (ng, iNLM, Cgrid, idWorb, r2dvar,            &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, FORCES(ng) % Ub_swan,                &
+     &                      scale, FORCES(ng) % Uwave_rms,              &
      &                      Nstation(ng), Xpos, Ypos, psta)
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idWorb)), psta,              &

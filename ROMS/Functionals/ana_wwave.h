@@ -45,7 +45,7 @@
      &                     FORCES(ng) % Pwave_bot,                      &
 #endif
 #ifdef WAVES_UB
-     &                     FORCES(ng) % Ub_swan,                        &
+     &                     FORCES(ng) % Uwave_rms,                      &
 #endif
 #ifdef TKE_WAVEDISS
      &                     FORCES(ng) % wave_dissip,                    &
@@ -89,7 +89,7 @@
      &                           Pwave_bot,                             &
 #endif
 #ifdef WAVES_UB
-     &                           Ub_swan,                               &
+     &                           Uwave_rms,                             &
 #endif
 #ifdef TKE_WAVEDISS
      &                           wave_dissip,                           &
@@ -135,7 +135,7 @@
       real(r8), intent(inout) :: Pwave_bot(LBi:,LBj:)
 # endif
 # ifdef WAVES_UB
-      real(r8), intent(inout) :: Ub_swan(LBi:,LBj:)
+      real(r8), intent(inout) :: Uwave_rms(LBi:,LBj:)
 # endif
 # ifdef TKE_WAVEDISS
       real(r8), intent(inout) :: wave_dissip(LBi:,LBj:)
@@ -164,7 +164,7 @@
       real(r8), intent(inout) :: Pwave_bot(LBi:UBi,LBj:UBj)
 # endif
 # ifdef WAVES_UB
-      real(r8), intent(inout) :: Ub_swan(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: Uwave_rms(LBi:UBi,LBj:UBj)
 # endif
 # ifdef TKE_WAVEDISS
       real(r8), intent(inout) :: wave_dissip(LBi:UBi,LBj:UBj)
@@ -321,12 +321,12 @@
 # ifdef WAVES_UB
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        Ub_swan)
+     &                        Uwave_rms)
 #  ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    Ub_swan)
+     &                    Uwave_rms)
 #  endif
 # endif
 # ifdef TKE_WAVEDISS

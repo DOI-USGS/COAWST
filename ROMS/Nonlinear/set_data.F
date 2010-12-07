@@ -665,8 +665,8 @@
 #   if defined WAVES_UB
       CALL set_2dfld_tile (ng, tile, iNLM, idWorb,                      &
      &                     LBi, UBi, LBj, UBj,                          &
-     &                     FORCES(ng)%Ub_swanG,                         &
-     &                     FORCES(ng)%Ub_swan,                          &
+     &                     FORCES(ng)%Uwave_rmsG,                       &
+     &                     FORCES(ng)%Uwave_rms,                        &
      &                     update)
 #   endif
 #   if defined TKE_WAVEDISS

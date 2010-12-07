@@ -198,10 +198,10 @@ if(write_tmbot)
    nc{'Pwave_bot'}.field = ncchar('Pwave_bot, scalar, series');
 end
 if(write_ubot)
-   nc{'Ub_swan'} = ncfloat('wave_time', 'eta_rho', 'xi_rho');
-   nc{'Ub_swan'}.long_name = ncchar('Ub_swan');
-   nc{'Ub_swan'}.units = ncchar('meter second-1');
-   nc{'Ub_swan'}.field = ncchar('Ub_swan, scalar, series');
+   nc{'Uwave_rms'} = ncfloat('wave_time', 'eta_rho', 'xi_rho');
+   nc{'Uwave_rms'}.long_name = ncchar('Uwave_rms');
+   nc{'Uwave_rms'}.units = ncchar('meter second-1');
+   nc{'Uwave_rms'}.field = ncchar('Uwave_rms, scalar, series');
 end
 if(write_vel)
    nc{'velx'} = ncfloat('wave_time', 'eta_rho', 'xi_rho');
@@ -386,17 +386,17 @@ if(write_tmbot)
    clear F vname K 
 end
 if(write_ubot)
-   disp('   ubot -> Ub_swan')
+   disp('   ubot -> Uwave_rms')
 %   F=load('ubot.mat');
    F=load(ubot_file);
    vname=fieldnames(F);
    for K=1:length(vname)
-        disp(sprintf('%g/%g ''Ub_swan'' saved',K,length(vname)))
+        disp(sprintf('%g/%g ''Uwave_rms'' saved',K,length(vname)))
         
        Ubot=getfield(F,char(vname(K)));
        Ubot(find(Ubot == -10)) = 0.0001;    % flag
        Ubot(find(isnan(Ubot))) = 0.0;       % land
-       nc{'Ub_swan'}(K,:,:) = squeeze(Ubot);
+       nc{'Uwave_rms'}(K,:,:) = squeeze(Ubot);
        clear Ubot;
    end
    clear F vname K 
@@ -548,7 +548,7 @@ if plot_key >= 1;
       Wave_setup=squeeze(nc{'Wave_setup'}(tidx,:,:));
       Pwave_top=squeeze(nc{'Pwave_top'}(tidx,:,:));
       Pwave_bot=squeeze(nc{'Pwave_bot'}(tidx,:,:));
-      Ub_swan=squeeze(nc{'Ub_swan'}(tidx,:,:));
+      Uwave_rms=squeeze(nc{'Uwave_rms'}(tidx,:,:));
       velx=squeeze(nc{'velx'}(tidx,:,:));
       vely=squeeze(nc{'vely'}(tidx,:,:));
       Dwave=squeeze(nc{'Dwave'}(tidx,:,:));
@@ -578,8 +578,8 @@ if plot_key >= 1;
    
    if write_ubot
    figure;
-   %    Ub_swan(find(Ub_swan == 0.001)) = NaN;
-   pcolor(xp,yp,squeeze(Ub_swan(:,:))); shading interp; colorbar;
+   %    Uwave_rms(find(Uwave_rms == 0.001)) = NaN;
+   pcolor(xp,yp,squeeze(Uwave_rms(:,:))); shading interp; colorbar;
    title('Ub Output of Swan');
    end
    

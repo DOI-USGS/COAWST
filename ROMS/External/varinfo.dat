@@ -1368,10 +1368,10 @@
   'r2dvar'
   1.0d0
 
-'Ub_swan'                                          ! Input
+'Uwave_rms'                                        ! Input
   'wind-induced bottom orbital velocity'
   'meter second-1'                                 ! [m/s]
-  'Ub_swan, scalar, series'
+  'Uwave_rms, scalar, series'
   'wave_time'
   'idWorb'
   'r2dvar'

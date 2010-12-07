@@ -50,7 +50,7 @@
 # if defined SG_CALC_UB
      &                FORCES(ng) % Hwave,                               &
 # else
-     &                FORCES(ng) % Ub_swan,                             &
+     &                FORCES(ng) % Uwave_rms,                           &
 # endif
      &                FORCES(ng) % Dwave,                               &
      &                FORCES(ng) % Pwave_bot,                           &
@@ -86,7 +86,7 @@
 # if defined SG_CALC_UB
      &                      Hwave,                                      &
 # else
-     &                      Ub_swan,                                    &
+     &                      Uwave_rms,                                  &
 # endif
      &                      Dwave, Pwave_bot,                           &
      &                      rho, u, v,                                  &
@@ -125,7 +125,7 @@
 #  if defined SG_CALC_UB
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
 #  else
-      real(r8), intent(in) :: Ub_swan(LBi:,LBj:)
+      real(r8), intent(in) :: Uwave_rms(LBi:,LBj:)
 #  endif
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Pwave_bot(LBi:,LBj:)
@@ -157,7 +157,7 @@
 #  if defined SG_CALC_UB
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
 #  else
-      real(r8), intent(in) :: UB_swan(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Uwave_rms(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Pwave_bot(LBi:UBi,LBj:UBj)
@@ -325,7 +325,7 @@
           Ab(i,j)=0.5_r8*Hwave(i,j)/SINH(Kb*h(i,j))+eps
           Ub(i,j)=Fwave_bot*Ab(i,j)+eps
 # else
-          Ub(i,j)=ABS(Ub_swan(i,j))+eps
+          Ub(i,j)=ABS(Uwave_rms(i,j))+eps
           Ab(i,j)=Ub(i,j)/Fwave_bot+eps
 # endif
 !
