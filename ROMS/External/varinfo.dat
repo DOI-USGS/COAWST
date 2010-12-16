@@ -121,7 +121,7 @@
   'uWave-velocity, scalar, series'
   'ocean_time'
   'idUwav'
-  't2dvar'
+  'r2dvar'
   1.0d0
 
 'vWave'                                            ! Input/Output
@@ -130,7 +130,7 @@
   'vWave-velocity, scalar, series'
   'ocean_time'
   'idVwav'
-  't2dvar'
+  'r2dvar'
   1.0d0
 
 'u'                                                ! Input/Output

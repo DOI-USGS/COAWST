@@ -58,7 +58,10 @@ else
     NETCDF_INCDIR ?= /opt/pgisoft/netcdf/include
     NETCDF_LIBDIR ?= /opt/pgisoft/netcdf/lib
 endif
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf -L/opt/mx/lib64 -lcurl -lgssapi_krb5
+#            LIBS := -L$(NETCDF_LIBDIR) -lnetcdf -L/opt/mx/lib64 -lcurl -lgssapi_krb5
+             LIBS := -L/share/apps/netcdf-4.1.1_pgi-10.9/lib -lnetcdf
+             LIBS += -L/share/apps/hdf5-1.8.5-patch1_pgi-10.9//lib -lhdf5_hl -lhdf5 -lz -lm 
+             LIBS += -L/share/apps/szip-2.1_pgi-10.9//lib -lsz -lcurl
 ifdef USE_NETCDF4
              LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
 endif

@@ -413,8 +413,8 @@
 !  (Eqn. 11 in Harris & Wiberg, 2001)
 !  (d50 is in m, but this formula needs cm)
 !
-             coef_st=0.0204_r8*LOG(100.0_r8*d50)**2+                    &
-     &               0.0220_r8*LOG(100.0_r8*d50)+0.0709_r8
+             coef_st=0.0204_r8*LOG(100.0_r8*d50+eps)**2+                &
+     &               0.0220_r8*LOG(100.0_r8*d50+eps)+0.0709_r8
              zoST(i,j)=0.056_r8*d50*0.68_r8*tstar/                      &
      &                 (1.0_r8+coef_st*tstar)
              IF (zoST(i,j).lt.0.0_r8) THEN
