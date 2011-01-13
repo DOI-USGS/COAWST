@@ -720,7 +720,7 @@
      &                  rollA(i,j)*sigma(i,j))
              cff3=(kD(i,j-1)+kD(i,j))
              v_stokes(i,j,k)=cff2*                                      &
-     &                      (waveny(i-1,j)+waveny(i,j))/                &
+     &                      (waveny(i,j-1)+waveny(i,j))/                &
      &                      (wavec (i,j-1)+wavec (i,j))*                &
      &                      COSH(cff3*fac2)/SINH(cff3)
 #  ifdef MASKING
