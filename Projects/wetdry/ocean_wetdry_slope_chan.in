@@ -226,8 +226,8 @@
 
 ! Vertical S-coordinates parameters, [1:Ngrids].
 
-     THETA_S == 1.0d0                      ! surface stretching parameter
-     THETA_B == 1.0d0                      ! bottom  stretching parameter
+     THETA_S == 0.0d0                      ! surface stretching parameter
+     THETA_B == 0.0d0                      ! bottom  stretching parameter
       TCLINE == 0.0d0                      ! critical depth (m)
 
 ! Mean Density and Brunt-Vaisala frequency.

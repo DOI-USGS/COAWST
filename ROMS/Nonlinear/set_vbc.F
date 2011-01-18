@@ -444,6 +444,11 @@
           cff2=SQRT(u(i,j,1,nrhs)*u(i,j,1,nrhs)+cff1*cff1)
           bustr(i,j)=0.5_r8*(wrk(i-1,j)+wrk(i,j))*                      &
      &               u(i,j,1,nrhs)*cff2
+#  ifdef WET_DRY
+          cff2=0.75_r8*0.5_r8*(Hz(i-1,j,1)+Hz(i,j,1))
+          bustr(i,j)=SIGN(1.0_r8,bustr(i,j))*MIN(ABS(bustr(i,j)),       &
+     &               ABS(u(i,j,1,nrhs))*cff2/dt(ng))
+#  endif
         END DO
       END DO
       DO j=JstrV,Jend
@@ -455,6 +460,11 @@
           cff2=SQRT(cff1*cff1+v(i,j,1,nrhs)*v(i,j,1,nrhs))
           bvstr(i,j)=0.5_r8*(wrk(i,j-1)+wrk(i,j))*                      &
      &               v(i,j,1,nrhs)*cff2
+#  ifdef WET_DRY
+          cff2=0.75_r8*0.5_r8*(Hz(i,j-1,1)+Hz(i,j,1))
+          bvstr(i,j)=SIGN(1.0_r8,bvstr(i,j))*MIN(ABS(bvstr(i,j)),       &
+     &               ABS(v(i,j,1,nrhs))*cff2/dt(ng))
+#  endif
         END DO
       END DO
 #   elif defined UV_QDRAG

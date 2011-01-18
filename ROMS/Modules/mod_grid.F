@@ -60,6 +60,7 @@
 !               associated with the differential distances in XI.      !
 !  pmask      Slipperiness mask at PSI-points:                         !
 !               (0=Land, 1=Sea, 1-gamma2=boundary).                    !
+!  pmask_wet  Slipperiness mask at PSI-points for wetdry.              !
 !  pmon_p     Compound term, pm/pn at PSI-points.                      !
 !  pmon_r     Compound term, pm/pn at RHO-points.                      !
 !  pmon_u     Compound term, pm/pn at U-points.                        !
@@ -183,6 +184,7 @@
 # ifdef SOLVE3D
           real(r8), pointer :: rmask_wet_avg(:,:)
 # endif
+          real(r8), pointer :: pmask_wet(:,:)
           real(r8), pointer :: rmask_full(:,:)
           real(r8), pointer :: rmask_wet(:,:)
           real(r8), pointer :: umask_full(:,:)
@@ -347,6 +349,7 @@
 # ifdef SOLVE3D
       allocate ( GRID(ng) % rmask_wet_avg(LBi:UBi,LBj:UBj) )
 # endif
+      allocate ( GRID(ng) % pmask_wet(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % rmask_full(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % rmask_wet(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % umask_full(LBi:UBi,LBj:UBj) )
@@ -545,6 +548,7 @@
 # ifdef SOLVE3D
             GRID(ng) % rmask_wet_avg(i,j) = IniVal
 # endif
+            GRID(ng) % pmask_wet(i,j) = IniVal
             GRID(ng) % rmask_full(i,j) = 1.0_r8
             GRID(ng) % rmask_wet(i,j) = IniVal
             GRID(ng) % umask_full(i,j) = 1.0_r8

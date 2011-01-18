@@ -59,6 +59,9 @@
 #ifdef MASKING
      &                    GRID(ng) % pmask,                             &
 #endif
+#ifdef WET_DRY
+     &                    GRID(ng) % pmask_wet,                         &
+#endif
      &                    GRID(ng) % Hz,                                &
      &                    GRID(ng) % om_p,                              &
      &                    GRID(ng) % om_r,                              &
@@ -100,6 +103,9 @@
 #ifdef MASKING
      &                          pmask,                                  &
 #endif
+#ifdef WET_DRY
+     &                          pmask_wet,                              &
+#endif
      &                          Hz,                                     &
      &                          om_p, om_r, on_p, on_r,                 &
      &                          pm, pmon_p, pmon_r,                     &
@@ -129,6 +135,9 @@
 #ifdef ASSUMED_SHAPE
 # ifdef MASKING
       real(r8), intent(in) :: pmask(LBi:,LBj:)
+# endif
+# ifdef WET_DRY
+      real(r8), intent(in) :: pmask_wet(LBi:,LBj:)
 # endif
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: om_p(LBi:,LBj:)
@@ -160,6 +169,9 @@
 #else
 # ifdef MASKING
       real(r8), intent(in) :: pmask(LBi:UBi,LBj:UBj)
+# endif
+# ifdef WET_DRY
+      real(r8), intent(in) :: pmask_wet(LBi:UBi,LBj:UBj)
 # endif
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: om_p(LBi:UBi,LBj:UBj)
@@ -244,6 +256,9 @@
      &            (pm(i-1,j-1)+pm(i,j-1))*u(i,j-1,k,nrhs)))
 #ifdef MASKING
             cff=cff*pmask(i,j)
+#endif
+#ifdef WET_DRY
+            cff=cff*pmask_wet(i,j)
 #endif
 #ifdef VISC_3DCOEF
             visc_p=0.25_r8*(visc3d_r(i-1,j-1,k)+visc3d_r(i-1,j,k)+      &

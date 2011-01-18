@@ -1043,7 +1043,7 @@
         cff1=ABS(ABS(GRID(ng)%umask_wet(Iend+1,Jend+1))-1.0_r8)
         cff2=0.5_r8+DSIGN(0.5_r8,ubar(Iend+1,Jend+1,kout))*             &
      &              GRID(ng)%umask_wet(Iend+1,Jend+1)
-        cff=0.5_r8*GRID(ng)%umask_wet(Iend+1,Jend+1)+cff1+              &
+        cff=0.5_r8*GRID(ng)%umask_wet(Iend+1,Jend+1)*cff1+              &
      &      cff2*(1.0_r8-cff1)
         ubar(Iend+1,Jend+1,kout)=ubar(Iend+1,Jend+1,kout)*cff
       END IF

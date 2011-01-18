@@ -16,7 +16,7 @@
 #define UV_ADV
 #define TS_U3HADVECTION
 #define DJ_GRADPS
-#define SOLVE3D
+#undef  SOLVE3D
 #define SPLINES
 
 #define WESTERN_WALL

@@ -539,8 +539,8 @@
 ! 
       cff1=1.0_r8       ! computation of off-diagonal nonlinear terms 
       cff2=2.0_r8
-      DO j=JstrT+1,JendT-1
-        DO i=IstrT+1,IendT-1
+      DO j=Jstr,JendR
+        DO i=Istr,IendR
           IF ((rmask(i-1,j  ).gt.0.5_r8).and.                           &
      &        (rmask(i  ,j  ).gt.0.5_r8).and.                           &
      &        (rmask(i-1,j-1).gt.0.5_r8).and.                           &
