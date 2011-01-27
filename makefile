@@ -404,6 +404,7 @@ endif
  modules  +=	ROMS/Nonlinear \
 		ROMS/Nonlinear/Biology \
 		ROMS/Nonlinear/Sediment \
+		ROMS/Nonlinear/Wec \
 		ROMS/Functionals \
 		ROMS/Utility \
 		ROMS/Modules
@@ -430,6 +431,7 @@ endif
  includes +=	ROMS/Nonlinear \
 		ROMS/Nonlinear/Biology \
 		ROMS/Nonlinear/Sediment \
+		ROMS/Nonlinear/Wec \
 		ROMS/Utility \
 		ROMS/Drivers \
         ROMS/Functionals

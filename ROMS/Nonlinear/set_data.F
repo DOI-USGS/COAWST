@@ -669,11 +669,16 @@
      &                     FORCES(ng)%Uwave_rms,                        &
      &                     update)
 #   endif
-#   if defined TKE_WAVEDISS
-      CALL set_2dfld_tile (ng, tile, iNLM, idWdis,                      &
+#   if defined WAVES_DISS
+      CALL set_2dfld_tile (ng, tile, iNLM, idWdib,                      &
      &                     LBi, UBi, LBj, UBj,                          &
-     &                     FORCES(ng)%Wave_dissipG,                     &
-     &                     FORCES(ng)%Wave_dissip,                      &
+     &                     FORCES(ng)%Dissip_breakG,                    &
+     &                     FORCES(ng)%Dissip_break,                     &
+     &                     update)
+      CALL set_2dfld_tile (ng, tile, iNLM, idWdiw,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%Dissip_wcapG,                     &
+     &                     FORCES(ng)%Dissip_wcap,                      &
      &                     update)
 #   endif
 #   if defined SVENDSEN_ROLLER

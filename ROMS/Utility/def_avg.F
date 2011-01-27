@@ -1391,8 +1391,8 @@
         END IF
 
 # endif
-
-# ifdef AVERAGES_NEARSHORE
+# ifdef AVERAGES_WEC
+#  ifdef WEC_MELLOR
 !
 !  Define 2D radiation stress Sxx.
 !
@@ -1402,9 +1402,9 @@
           Vinfo( 3)=Vname(3,idW2xx)
           Vinfo(14)=Vname(4,idW2xx)
           Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
+#   if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#  endif
+#   endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r2dvar,r8)
           status=def_var(ng, model, ncAVGid(ng), avgVid(idW2xx,ng),     &
@@ -1420,9 +1420,9 @@
           Vinfo( 3)=Vname(3,idW2xy)
           Vinfo(14)=Vname(4,idW2xy)
           Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
+#   if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#  endif
+#   endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r2dvar,r8)
           status=def_var(ng, model, ncAVGid(ng), avgVid(idW2xy,ng),     &
@@ -1438,9 +1438,9 @@
           Vinfo( 3)=Vname(3,idW2yy)
           Vinfo(14)=Vname(4,idW2yy)
           Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
+#   if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#  endif
+#   endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r2dvar,r8)
           status=def_var(ng, model, ncAVGid(ng), avgVid(idW2yy,ng),     &
@@ -1456,9 +1456,9 @@
           Vinfo( 3)=Vname(3,idU2rs)
           Vinfo(14)=Vname(4,idU2rs)
           Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
+#   if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_u'
-#  endif
+#   endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(u2dvar,r8)
           status=def_var(ng, model, ncAVGid(ng), avgVid(idU2rs,ng),     &
@@ -1474,15 +1474,16 @@
           Vinfo( 3)=Vname(3,idV2rs)
           Vinfo(14)=Vname(4,idV2rs)
           Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
+#   if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_v'
-#  endif
+#   endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(v2dvar,r8)
           status=def_var(ng, model, ncAVGid(ng), avgVid(idV2rs,ng),     &
      &                   NF_FOUT, nvd3, v2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
+#  endif
 !
 !  Define 2D u-stokes velocity.
 !
@@ -1520,6 +1521,7 @@
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #  ifdef SOLVE3D
+#   ifdef WEC_MELLOR
 !
 !  Define 3D radiation stress Sxx.
 !
@@ -1529,9 +1531,9 @@
           Vinfo( 3)=Vname(3,idW3xx)
           Vinfo(14)=Vname(4,idW3xx)
           Vinfo(16)=Vname(1,idtime)
-#   if defined WRITE_WATER && defined MASKING
+#    if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#   endif
+#    endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(u3dvar,r8)
           status=def_var(ng, model, ncAVGid(ng), avgVid(idW3xx,ng),     &
@@ -1547,9 +1549,9 @@
           Vinfo( 3)=Vname(3,idW3xy)
           Vinfo(14)=Vname(4,idW3xy)
           Vinfo(16)=Vname(1,idtime)
-#   if defined WRITE_WATER && defined MASKING
+#    if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#   endif
+#    endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(u3dvar,r8)
           status=def_var(ng, model, ncAVGid(ng), avgVid(idW3xy,ng),     &
@@ -1565,9 +1567,9 @@
           Vinfo( 3)=Vname(3,idW3yy)
           Vinfo(14)=Vname(4,idW3yy)
           Vinfo(16)=Vname(1,idtime)
-#   if defined WRITE_WATER && defined MASKING
+#    if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#   endif
+#    endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(u3dvar,r8)
           status=def_var(ng, model, ncAVGid(ng), avgVid(idW3yy,ng),     &
@@ -1583,9 +1585,9 @@
           Vinfo( 3)=Vname(3,idW3zx)
           Vinfo(14)=Vname(4,idW3zx)
           Vinfo(16)=Vname(1,idtime)
-#   if defined WRITE_WATER && defined MASKING
+#    if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#   endif
+#    endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(u3dvar,r8)
           status=def_var(ng, model, ncAVGid(ng), avgVid(idW3zx,ng),     &
@@ -1601,9 +1603,9 @@
           Vinfo( 3)=Vname(3,idW3zy)
           Vinfo(14)=Vname(4,idW3zy)
           Vinfo(16)=Vname(1,idtime)
-#   if defined WRITE_WATER && defined MASKING
+#    if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#   endif
+#    endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(u3dvar,r8)
           status=def_var(ng, model, ncAVGid(ng), avgVid(idW3zy,ng),     &
@@ -1619,9 +1621,9 @@
           Vinfo( 3)=Vname(3,idU3rs)
           Vinfo(14)=Vname(4,idU3rs)
           Vinfo(16)=Vname(1,idtime)
-#   if defined WRITE_WATER && defined MASKING
+#    if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_u'
-#   endif
+#    endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(u3dvar,r8)
           status=def_var(ng, model, ncAVGid(ng), avgVid(idU3rs,ng),     &
@@ -1637,15 +1639,16 @@
           Vinfo( 3)=Vname(3,idV3rs)
           Vinfo(14)=Vname(4,idV3rs)
           Vinfo(16)=Vname(1,idtime)
-#   if defined WRITE_WATER && defined MASKING
+#    if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_v'
-#   endif
+#    endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(v3dvar,r8)
           status=def_var(ng, model, ncAVGid(ng), avgVid(idV3rs,ng),     &
      &                   NF_FOUT, nvd4, v3dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
+#   endif
 !
 !  Define 3D u-stokes velocity.
 !
@@ -1680,6 +1683,24 @@
           Aval(5)=REAL(Iinfo(1,idV3Sd,ng),r8)
           status=def_var(ng, model, ncAVGid(ng), avgVid(idV3Sd,ng),     &
      &                   NF_FOUT, nvd4, v3dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+!
+!  Define 3D w-stokes velocity.
+!
+        IF (Hout(idW3Sd,ng)) THEN
+          Vinfo( 1)=Vname(1,idW3Sd)
+          Vinfo( 2)=Vname(2,idW3Sd)
+          Vinfo( 3)=Vname(3,idW3Sd)
+          Vinfo(14)=Vname(4,idW3Sd)
+          Vinfo(16)=Vname(1,idtime)
+#   if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#   endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idW3Sd,ng),r8)
+          status=def_var(ng, model, ncAVGid(ng), avgVid(idW3Sd,ng),     &
+     &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #  endif
@@ -1904,7 +1925,8 @@
             got_var(idVbms)=.TRUE.
             avgVid(idVbms,ng)=var_id(i)
 # endif
-# ifdef AVERAGES_NEARSHORE
+# ifdef AVERAGES_WEC
+#  ifdef WEC_MELLOR
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW2xx))) THEN
             got_var(idW2xx)=.TRUE.
             avgVid(idW2xx,ng)=var_id(i)
@@ -1920,6 +1942,7 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idV2rs))) THEN
             got_var(idV2rs)=.TRUE.
             avgVid(idV2rs,ng)=var_id(i)
+#  endif
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idU2Sd))) THEN
             got_var(idU2Sd)=.TRUE.
             avgVid(idU2Sd,ng)=var_id(i)
@@ -1927,6 +1950,7 @@
             got_var(idV2Sd)=.TRUE.
             avgVid(idV2Sd,ng)=var_id(i)
 #  ifdef SOLVE3D
+#   ifdef WEC_MELLOR
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW3xx))) THEN
             got_var(idW3xx)=.TRUE.
             avgVid(idW3xx,ng)=var_id(i)
@@ -1948,12 +1972,16 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idV3rs))) THEN
             got_var(idV3rs)=.TRUE.
             avgVid(idV3rs,ng)=var_id(i)
+#   endif
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idU3Sd))) THEN
             got_var(idU3Sd)=.TRUE.
             avgVid(idU3Sd,ng)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idV3Sd))) THEN
             got_var(idV3Sd)=.TRUE.
             avgVid(idV3Sd,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW3Sd))) THEN
+            got_var(idW3Sd)=.TRUE.
+            avgVid(idW3Sd,ng)=var_id(i)
 #  endif
 # endif
           END IF
@@ -2299,7 +2327,8 @@
           RETURN
         END IF
 # endif
-# ifdef AVERAGES_NEARSHORE
+# ifdef AVERAGES_WEC
+#  ifdef WEC_MELLOR
         IF (.not.got_var(idW2xx).and.Hout(idW2xx,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idW2xx)),          &
      &                                  TRIM(ncname)
@@ -2330,6 +2359,7 @@
           exit_flag=3
           RETURN
         END IF
+#  endif
         IF (.not.got_var(idU2Sd).and.Hout(idU2Sd,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idU2Sd)),          &
      &                                  TRIM(ncname)
@@ -2343,6 +2373,7 @@
           RETURN
         END IF
 #  ifdef SOLVE3D
+#   ifdef WEC_MELLOR
         IF (.not.got_var(idW3xx).and.Hout(idW3xx,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idW3xx)),          &
      &                                  TRIM(ncname)
@@ -2385,6 +2416,7 @@
           exit_flag=3
           RETURN
         END IF
+#   endif
         IF (.not.got_var(idU3Sd).and.Hout(idU3Sd,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idU3Sd)),          &
      &                                  TRIM(ncname)
@@ -2393,6 +2425,12 @@
         END IF
         IF (.not.got_var(idV3Sd).and.Hout(idV3Sd,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idV3Sd)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idW3Sd).and.Hout(idW3Sd,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idW3Sd)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

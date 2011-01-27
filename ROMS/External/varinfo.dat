@@ -1377,12 +1377,30 @@
   'r2dvar'
   1.0d0
 
-'Wave_dissip'                                      ! Input
-  'wave dissipation'
+'Dissip_fric'                                      ! Input
+  'wave dissipation due to bottom friction'
   'Watts meter-2'                                  ! [W/m2]
-  'Wave_dissip, scalar, series'
+  'Dissip_fric, scalar, series'
   'wave_time'
-  'idWdis'
+  'idWdif'
+  'r2dvar'
+  0.00097561                                       !1/rho0
+
+'Dissip_break'                                     ! Input
+  'wave dissipation due to surface breaking'
+  'Watts meter-2'                                  ! [W/m2]
+  'Dissip_break, scalar, series'
+  'wave_time'
+  'idWdib'
+  'r2dvar'
+  0.00097561                                       !1/rho0
+
+'Dissip_wcap'                                      ! Input
+  'wave dissipation due to white capping'
+  'Watts meter-2'                                  ! [W/m2]
+  'Dissip_wcap, scalar, series'
+  'wave_time'
+  'idWdiw'
   'r2dvar'
   0.00097561                                       !1/rho0
 
@@ -1467,10 +1485,10 @@
   'r3dvar'
   1.0d0
 
-'ubar_Rstress'                                     ! Output
-  'vertically-integrated u-radiation stress'
+'ubar_WECstress'                                   ! Output
+  'vertically-integrated WEC u-stress'
   'newton meter-2'                                 ! [N/m2]
-  'ubar_Rstress, scalar, series'
+  'ubar_WECstress, scalar, series'
   'ocean_time'
   'idU2rs'
   'u2dvar'
@@ -1485,10 +1503,10 @@
   'u2dvar'
   1.0d0
 
-'vbar_Rstress'                                      ! Output
-  'vertically-integrated v-radiation stress'
+'vbar_WECstress'                                    ! Output
+  'vertically-integrated WEC v-stress'
   'newton meter-2'                                  ! [N/m2]
-  'ubar_Rstress, scalar, series'
+  'vbar_WECstress, scalar, series'
   'ocean_time'
   'idV2rs'
   'v2dvar'
@@ -1503,10 +1521,10 @@
   'v2dvar'
   1.0d0
 
-'u_Rstress'                                         ! Output
-  'u-radiation stress'
+'u_WECstress'                                       ! Output
+  'WEC u-stress'
   'newton meter-2'                                  ! [N/m2]
-  'u_Rstress, scalar, series'
+  'u_WECstress, scalar, series'
   'ocean_time'
   'idU3rs'
   'u3dvar'
@@ -1521,10 +1539,10 @@
   'u3dvar'
   1.0d0
 
-'v_Rstress'                                         ! Output
-  'v-radiation stress'
+'v_WECstress'                                       ! Output
+  'WEC v-stress'
   'newton meter-2'                                  ! [N/m2]
-  'v_Rstress, scalar, series'
+  'v_WECstress, scalar, series'
   'ocean_time'
   'idV3rs'
   'v3dvar'

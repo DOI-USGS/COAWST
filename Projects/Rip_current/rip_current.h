@@ -16,10 +16,10 @@
 #define MIX_S_UV
 #define DIAGNOSTICS_UV
 #define AVERAGES
-#define AVERAGES_NEARSHORE
-#define NEARSHORE_MELLOR
-#undef  SVENDSEN_ROLLER
-#undef  MONO_ROLLER
+#define AVERAGES_WEC
+#define WEC_VF
+#undef  ROLLER_SVENDSEN
+#undef  ROLLER_MONO
 #define REFDIF_COUPLING
 #define UV_ADV
 #define TS_U3HADVECTION

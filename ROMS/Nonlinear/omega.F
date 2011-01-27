@@ -79,7 +79,7 @@
      &                 GRID(ng) % Huon,                                 &
      &                 GRID(ng) % Hvom,                                 &
      &                 GRID(ng) % z_w,                                  &
-# if defined NEARSHORE_WEC
+# if defined WEC_VF
      &                 OCEAN(ng) % w_stokes,                            &
 # endif
      &                 OCEAN(ng) % W)
@@ -105,7 +105,7 @@
 # endif
      &                       Huon, Hvom,                                &
      &                       z_w,                                       &
-# if defined NEARSHORE_WEC
+# if defined WEC_VF
      &                       w_stokes,                                  &
 # endif
      &                       W)
@@ -146,7 +146,7 @@
       real(r8), intent(in) :: Huon(LBi:,LBj:,:)
       real(r8), intent(in) :: Hvom(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
-#  if defined NEARSHORE_WEC
+#  if defined WEC_VF
       real(r8), intent(in) :: w_stokes(LBi:,LBj:,0:)
 #  endif
       real(r8), intent(out) :: W(LBi:,LBj:,0:)
@@ -167,7 +167,7 @@
       real(r8), intent(in) :: Huon(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: Hvom(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
-#  if defined NEARSHORE_WEC
+#  if defined WEC_VF
       real(r8), intent(in) :: w_stokes(LBi:UBi,LBj:UBj,0:N(ng))
 #  endif
       real(r8), intent(out) :: W(LBi:UBi,LBj:UBj,0:N(ng))
@@ -223,7 +223,7 @@
           DO i=I_RANGE
             W(i,j,k)=W(i,j,k-1)-                                        &
      &               (Huon(i+1,j,k)-Huon(i,j,k)+                        &
-# if defined NEARSHORE_WEC
+# if defined WEC_VF
 !     &                w_stokes(i,j,k)-w_stokes(i,j,k-1)+                &
 # endif
      &                Hvom(i,j+1,k)-Hvom(i,j,k))

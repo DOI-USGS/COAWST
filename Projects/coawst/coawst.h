@@ -23,7 +23,7 @@
 #define NOSED_OBC
 #undef  WET_DRY
 #define ATM_PRESS
-#undef  NEARSHORE_MELLOR
+#undef  WEC_VF
 
 #define UV_ADV
 #define DJ_GRADPS

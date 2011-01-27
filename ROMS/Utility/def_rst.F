@@ -1363,7 +1363,7 @@
         END DO
 # endif
 #endif
-#ifdef NEARSHORE_MELLOR
+#ifdef WEC
 !
 !  Define 2D u-stokes velocity.
 !
@@ -1449,6 +1449,27 @@
         Aval(5)=REAL(Iinfo(1,idV3Sd,ng),r8)
         status=def_var(ng, iNLM, ncRSTid(ng), rstVid(idV3Sd,ng),        &
      &                 NF_FRST, nvd4, sv3dgrd, Aval, Vinfo, ncname)
+        IF (exit_flag.ne.NoError) RETURN
+!
+!  Define 3D w-stokes velocity.
+!
+        Vinfo( 1)=Vname(1,idW3Sd)
+        Vinfo( 2)=Vname(2,idW3Sd)
+        Vinfo( 3)=Vname(3,idW3Sd)
+        Vinfo(14)=Vname(4,idW3Sd)
+        Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+#   if defined PERFECT_RESTART
+        Vinfo(24)='_FillValue'
+        Aval(6)=spval
+#   else
+        Vinfo(20)='mask_rho'
+#   endif
+#  endif
+        Vinfo(22)='coordinates'
+        Aval(5)=REAL(Iinfo(1,idW3Sd,ng),r8)
+        status=def_var(ng, iNLM, ncRSTid(ng), rstVid(idW3Sd,ng),        &
+     &                 NF_FRST, nvd4, w3dgrd, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 # endif
 #endif
@@ -1608,7 +1629,7 @@
 #  endif
 # endif
 #endif
-#if defined NEARSHORE_MELLOR
+#if defined WEC
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idU2Sd))) THEN
             got_var(idU2Sd)=.TRUE.
             rstVid(idU2Sd,ng)=var_id(i)
@@ -1622,6 +1643,9 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idV3Sd))) THEN
             got_var(idV3Sd)=.TRUE.
             rstVid(idV3Sd,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW3Sd))) THEN
+            got_var(idW3Sd)=.TRUE.
+            rstVid(idW3Sd,ng)=var_id(i)
 # endif
 #endif
           END IF
@@ -1822,7 +1846,7 @@
 #  endif
 # endif
 #endif
-#if defined NEARSHORE_MELLOR
+#if defined WEC
         IF (.not.got_var(idU2Sd)) THEN
           IF (Master) WRITE (stdout,40) TRIM(Vname(1,idU2Sd)),          &
      &                                  TRIM(ncname)
@@ -1844,6 +1868,12 @@
         END IF
         IF (.not.got_var(idV3Sd)) THEN
           IF (Master) WRITE (stdout,40) TRIM(Vname(1,idV3Sd)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idW3Sd)) THEN
+          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idW3Sd)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

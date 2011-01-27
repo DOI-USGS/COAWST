@@ -1925,7 +1925,7 @@
 !      END IF
 
 #endif
-#ifdef NEARSHORE_MELLOR
+#ifdef WEC_MELLOR
 !
 !  Write out 2D radiation stress, Sxx-component.
 !
@@ -2137,9 +2137,9 @@
       END IF
 # endif
 #endif
-#ifdef NEARSHORE
+#ifdef WEC
 !
-!  Write out total 2D U-radiation stress.
+!  Write out total 2D WEC u-stress.
 !
       IF (Hout(idU2rs,ng)) THEN
         scale=rho0
@@ -2165,7 +2165,7 @@
         END IF
       END IF
 !
-!  Write out total 2D V-radiation stress.
+!  Write out total 2D WEC v-stress.
 !
       IF (Hout(idV2rs,ng)) THEN
         scale=rho0
@@ -2244,7 +2244,7 @@
       END IF
 # ifdef SOLVE3D
 !
-!  Write out 3D total U-radiation stress.
+!  Write out 3D total WEC u-stress.
 !
       IF (Hout(idU3rs,ng)) THEN
         scale=rho0
@@ -2270,7 +2270,7 @@
         END IF
       END IF
 !
-!  Write out 3D total V-radiation stress.
+!  Write out 3D total WEC v-stress.
 !
       IF (Hout(idV3rs,ng)) THEN
         scale=rho0
@@ -2543,23 +2543,70 @@
         END IF
       END IF
 #endif
-#if defined TKE_WAVEDISS || defined WAVES_OCEAN
+#ifdef WAVES_OCEAN
 !
-!  Write out wave dissipation.
+!  Write out wave dissipation due to bottom friction.
 !
-      IF (Hout(idWdis,ng)) THEN
+      IF (Hout(idWdif,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r2dvar
-        status=nf_fwrite2d(ng, iNLM, ncHISid(ng), hisVid(idWdis,ng),    &
+        status=nf_fwrite2d(ng, iNLM, ncHISid(ng), hisVid(idWdif,ng),    &
      &                     tHISindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
      &                     GRID(ng) % rmask,                            &
 # endif
-     &                     FORCES(ng) % wave_dissip)
+     &                     FORCES(ng) % Dissip_fric)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idWdis)), tHISindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idWdif)), tHISindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+#endif
+#if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+!
+!  Write out wave dissipation due to breaking.
+!
+      IF (Hout(idWdib,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, ncHISid(ng), hisVid(idWdib,ng),    &
+     &                     tHISindx(ng), gtype,                         &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     FORCES(ng) % Dissip_break)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idWdib)), tHISindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out wave dissipation due to white capping.
+!
+      IF (Hout(idWdiw,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, ncHISid(ng), hisVid(idWdiw,ng),    &
+     &                     tHISindx(ng), gtype,                         &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     FORCES(ng) % Dissip_wcap)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idWdiw)), tHISindx(ng)
           END IF
           exit_flag=3
           ioerror=status

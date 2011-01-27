@@ -157,12 +157,15 @@
       integer :: MyError, MyRank
       integer :: npoints, gsmsize, nprocs, localsize
       integer :: i, j, Isize, Jsize, jc, Asize, ic
-      character (len=70)    :: nc_name
       integer :: nRows, nCols, num_sparse_elems
+      integer :: cid, cad
+      character (len=70)  :: nc_name
+      character (len=20)  :: to_add
+      character (len=120) :: wostring
+      character (len=120) :: owstring
 
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       integer, allocatable :: start(:), length(:)
-      integer :: MyMasterswan
 # ifdef REFINED_GRID
       integer, dimension(:), pointer :: ocnids
       integer, dimension(:), pointer :: wavids
@@ -189,6 +192,7 @@
       END IF
 !
 # ifdef REFINED_GRID
+      CALL initialize_param
       allocate ( wavids(Ngrids) )
       allocate ( ocnids(Ngrids) )
       DO j=1,Ngrids
@@ -391,17 +395,126 @@
 !  Initialize attribute vector holding the export data code strings of
 !  the wave model.
 !
-      CALL AttrVect_init (AttrVect_G(ng)%wav2ocn_AV,                    &
-     &  rList="DISSIP:HSIGN:RTP:TMBOT:URMS:DIR:WLEN:WLENP:QB",          &
-     &  lsize=gsmsize)
-      CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
+      cad=LEN(wostring)
+      DO i=1,cad
+        wostring(i:i)=''
+      END DO
+      cid=1
+!
+      to_add='DISBOT'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DISSURF'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DISWCAP'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':HSIGN'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':RTP'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':TMBOT'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':URMS'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DIR'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':WLEN'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':WLENP'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':QB'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+!  Finalize and remove trailing spaces from the wostring
+!  for the rlist.
+!
+      cad=LEN_TRIM(wostring)
+      wostring=wostring(1:cad)
+!
+      CALL AttrVect_init(AttrVect_G(ng)%wav2ocn_AV,                     &
+     &                   rList=TRIM(wostring),lsize=gsmsize)
+      CALL AttrVect_zero(AttrVect_G(ng)%wav2ocn_AV)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
+      cad=LEN(owstring)
+      DO i=1,cad
+        owstring(i:i)=''
+      END DO
+      cid=1
+!
+      to_add='DEPTH'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':WLEV'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VELX'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VELY'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':ZO'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+#ifdef ICE_MODEL
+!
+      to_add=':SEAICE'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+#endif
+!
+!  Finalize and remove trailing spaces from the owstring
+!  for the rlist.
+!
+      cad=LEN_TRIM(owstring)
+      owstring=owstring(1:cad)
+!
       CALL AttrVect_init (AttrVect_G(ng)%ocn2wav_AV,                    &
-     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
-     &                    lsize=gsmsize)
+     &                    rList=TRIM(owstring),lsize=gsmsize)
       CALL AttrVect_zero (AttrVect_G(ng)%ocn2wav_AV)
 !
 !  Initialize a router to the waves model component.
@@ -519,19 +632,21 @@
 !
 !  Local variable declarations.
 !
-      integer :: MyStatus, i, id, j, gsmsize, ierr, MyRank
-      integer :: MyError, MySize, indx, Istr, Iend, Jstr, Jend
+      integer :: MyStatus, MyError, MySize, MyRank
+      integer :: i, id, j, gsmsize, ierr, indx
+      integer :: Istr, Iend, Jstr, Jend
       integer :: Isize, Jsize, INDXG, NPROCS, OFFSET
       integer :: NUMTRANSFER, NNEIGH, HALOSIZE, NUMSENT, INB
       integer :: WHICHWAY, GDEST, GSRC, TAGT, TAGB, TAGR, TAGL
       integer :: TREQUEST,BREQUEST,RREQUEST,LREQUEST,MSIZE
-
+      integer :: iddep, idwlv, idvlx, idvly
+      integer :: idruf, idice, idu10, idv10
       integer, dimension(MPI_STATUS_SIZE,4) :: status
       integer, pointer :: points(:)
 
-      real :: cff, cff2, COSWC, SINWC
+      real :: cff, COSWC, SINWC
 # ifdef WRF_COUPLING
-      real :: cff1
+      real :: cff1, cff2
 # endif
       real(r8), pointer :: avdata(:)
 
@@ -572,9 +687,15 @@
         avdata(IP)=REAL( VOQ(points(IP),VOQR(IVTYPE)),r8 )
       END DO
 !
-      IF (IVTYPE.eq.7) THEN
+      IF (IVTYPE.eq.54) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
-     &                             "DISSIP",avdata)
+     &                             "DISBOT",avdata)
+      ELSE IF (IVTYPE.eq.55) THEN
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "DISSURF",avdata)
+      ELSE IF (IVTYPE.eq.56) THEN
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "DISWCAP",avdata)
       ELSE IF (IVTYPE.eq.10) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "HSIGN",avdata)
@@ -681,7 +802,6 @@
 !
 !  Receive fields from atmosphere model.
 !
-        NUMTRANSFER=7
 #  ifdef MCT_INTERP_WV2AT
 #   ifdef REFINED_GRID
         IF (ng.eq.1) THEN
@@ -702,8 +822,6 @@
           WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
           CALL FINALIZE_WAV2OCN_COUPLING(ng)
         END IF
-# else
-        NUMTRANSFER=5
 # endif
 !
 ! Pass the non-halo data from MCT into tempmct array.
@@ -740,6 +858,41 @@
           END IF
         END IF
 !
+!  Determine the amount of fields and assign id numbers.
+!
+# ifdef WAVES_OCEAN
+        IP=0
+!
+        IP=IP+1
+        iddep=IP
+!
+        IP=IP+1
+        idwlv=IP
+!
+        IP=IP+1
+        idvlx=IP
+!
+        IP=IP+1
+        idvly=IP
+!
+        IP=IP+1
+        idruf=IP
+#  ifdef ICE_MODEL
+!
+        IP=IP+1
+        idice=IP
+#  endif
+# endif
+# ifdef AIR_WAVES
+!
+        IP=IP+1
+        idu10=IP
+!
+        IP=IP+1
+        idv10=IP
+# endif
+        NUMTRANSFER=IP
+!
         allocate ( TEMPMCT(MXC*MYC,NUMTRANSFER),stat=ierr )
         TEMPMCT=0.0
 !
@@ -752,7 +905,7 @@
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
-            TEMPMCT(INDXG,1)=avdata(IP)
+            TEMPMCT(INDXG,iddep)=avdata(IP)
           END DO
         END DO
 !
@@ -765,7 +918,7 @@
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
-            TEMPMCT(INDXG,2)=avdata(IP)
+            TEMPMCT(INDXG,idwlv)=avdata(IP)
           END DO
         END DO
 !
@@ -778,36 +931,50 @@
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
-            TEMPMCT(INDXG,3)=avdata(IP)
+            TEMPMCT(INDXG,idvlx)=avdata(IP)
           END DO
         END DO
 !
 !  Depth-integrated v-velocity.
 !
         CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,           &
-     &                             "VELY",avdata,gsmsize)
+     &                            "VELY",avdata,gsmsize)
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
-            TEMPMCT(INDXG,4)=avdata(IP)
+            TEMPMCT(INDXG,idvly)=avdata(IP)
           END DO
         END DO
 !
 !  Bottom roughness.
 !
         CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,           &
-     &                             "ZO",avdata,gsmsize)
+     &                            "ZO",avdata,gsmsize)
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
-            TEMPMCT(INDXG,5)=avdata(IP)
+            TEMPMCT(INDXG,idruf)=avdata(IP)
           END DO
         END DO
-
+# ifdef ICE_MODEL
+!
+!  sea ice fraction.
+!
+        CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,           &
+     &                            "SEAICE",avdata,gsmsize)
+        IP=0
+        DO IY=Jstr,Jend
+          DO IX=Istr,Iend
+            IP=IP+1
+            INDXG=(IY-1)*MXC+IX
+            TEMPMCT(INDXG,idice)=avdata(IP)
+          END DO
+        END DO
+# endif
 # ifdef AIR_WAVES
 !
 !  U-wind.
@@ -819,7 +986,7 @@
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
-            TEMPMCT(INDXG,6)=avdata(IP)
+            TEMPMCT(INDXG,idu10)=avdata(IP)
           END DO
         END DO
 !
@@ -832,7 +999,7 @@
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
-            TEMPMCT(INDXG,7)=avdata(IP)
+            TEMPMCT(INDXG,idv10)=avdata(IP)
           END DO
         END DO
 # endif
@@ -1081,18 +1248,18 @@
           DO IX=1,MXC
             IP=IP+1
             INDX = KGRPNT(IX,IY)
-            cff=TEMPMCT(IP,1)
+            cff=TEMPMCT(IP,iddep)
             IF (INDX.GT.1) THEN
 # ifdef BBL_MODEL
-              COMPDA(INDX,JFRC2)=MAX(REAL(TEMPMCT(IP,5)), 0.0001)
+              COMPDA(INDX,JFRC2)=MAX(REAL(TEMPMCT(IP,idruf)), 0.0001)
 # else
               COMPDA(INDX,JFRC2)=cff2
 # endif
               IF (cff.gt.0.) THEN
-                COMPDA(INDX,JBOTLV)=TEMPMCT(IP,1)
-                COMPDA(INDX,JWLV2)=TEMPMCT(IP,2)
-                COMPDA(INDX,JVX2)=TEMPMCT(IP,3)
-                COMPDA(INDX,JVY2)=TEMPMCT(IP,4)
+                COMPDA(INDX,JBOTLV)=TEMPMCT(IP,iddep)
+                COMPDA(INDX,JWLV2)=TEMPMCT(IP,idwlv)
+                COMPDA(INDX,JVX2)=TEMPMCT(IP,idvlx)
+                COMPDA(INDX,JVY2)=TEMPMCT(IP,idvly)
 # ifdef WRF_COUPLING
 !               cff1=TEMPMCT(IP,6)*CosAngler(INDX)+                      &
 !     &              TEMPMCT(IP,7)*SinAngler(INDX)
@@ -1100,8 +1267,8 @@
 !     &              TEMPMCT(IP,6)*SinAngler(INDX)
 !               COMPDA(INDX,JWX2)=cff1
 !               COMPDA(INDX,JWY2)=cff2
-                COMPDA(INDX,JWX2)=TEMPMCT(IP,6)
-                COMPDA(INDX,JWY2)=TEMPMCT(IP,7)
+                COMPDA(INDX,JWX2)=TEMPMCT(IP,idu10)
+                COMPDA(INDX,JWY2)=TEMPMCT(IP,idv10)
 # endif
               END IF
             END IF

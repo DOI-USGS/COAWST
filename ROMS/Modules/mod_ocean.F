@@ -32,8 +32,8 @@
 !                                                                      !
 !  pH           Surface concentration of hydrogen ions.                !
 !                                                                      !
-#ifdef NEARSHORE
-!  Nearshore radiation stresses:                                       !
+#ifdef WEC
+!  Stokes velocities:                                                  !
 !                                                                      !
 !  rulag2d      2D U-Stokes tendency term (m4/s2).                     !
 !  rvlag2d      2D V-Stokes tendency term (m4/s2).                     !
@@ -62,11 +62,11 @@
           real(r8), pointer :: ubar(:,:,:)
           real(r8), pointer :: vbar(:,:,:)
           real(r8), pointer :: zeta(:,:,:)
-#if defined NEARSHORE_WEC
+#if defined WEC_VF
           real(r8), pointer :: zetat(:,:)
           real(r8), pointer :: zetaw(:,:)
 #endif
-#if defined NEARSHORE
+#if defined WEC
           real(r8), pointer :: rulag2d(:,:)
           real(r8), pointer :: rvlag2d(:,:)
           real(r8), pointer :: ubar_stokes(:,:)
@@ -82,7 +82,7 @@
           real(r8), pointer :: v(:,:,:,:)
           real(r8), pointer :: W(:,:,:)
           real(r8), pointer :: wvel(:,:,:)
-# if defined NEARSHORE
+# if defined WEC
           real(r8), pointer :: rulag3d(:,:,:)
           real(r8), pointer :: rvlag3d(:,:,:)
           real(r8), pointer :: u_stokes(:,:,:)
@@ -153,7 +153,7 @@
           real(r8), pointer :: tl_ubar(:,:,:)
           real(r8), pointer :: tl_vbar(:,:,:)
           real(r8), pointer :: tl_zeta(:,:,:)
-# if defined NEARSHORE_MELLOR
+# if defined WEC
           real(r8), pointer :: tl_rulag2d(:,:)
           real(r8), pointer :: tl_rvlag2d(:,:)
           real(r8), pointer :: tl_ubar_stokes(:,:)
@@ -168,7 +168,7 @@
           real(r8), pointer :: tl_u(:,:,:,:)
           real(r8), pointer :: tl_v(:,:,:,:)
           real(r8), pointer :: tl_W(:,:,:)
-#  if defined NEARSHORE_MELLOR
+#  if defined WEC
           real(r8), pointer :: tl_rulag3d(:,:,:)
           real(r8), pointer :: tl_rvlag3d(:,:,:)
           real(r8), pointer :: tl_u_stokes(:,:,:)
@@ -190,7 +190,7 @@
           real(r8), pointer :: ad_ubar_sol(:,:)
           real(r8), pointer :: ad_vbar_sol(:,:)
           real(r8), pointer :: ad_zeta_sol(:,:)
-# if defined NEARSHORE_MELLOR
+# if defined WEC
           real(r8), pointer :: ad_rulag2d(:,:)
           real(r8), pointer :: ad_rvlag2d(:,:)
           real(r8), pointer :: ad_ubar_stokes(:,:)
@@ -205,7 +205,7 @@
           real(r8), pointer :: ad_u(:,:,:,:)
           real(r8), pointer :: ad_v(:,:,:,:)
           real(r8), pointer :: ad_W(:,:,:)
-#  if defined NEARSHORE_MELLOR
+#  if defined WEC
           real(r8), pointer :: ad_rulag3d(:,:,:)
           real(r8), pointer :: ad_rvlag3d(:,:,:)
           real(r8), pointer :: ad_u_stokes(:,:,:)
@@ -329,11 +329,11 @@
       allocate ( OCEAN(ng) % ubar(LBi:UBi,LBj:UBj,3) )
       allocate ( OCEAN(ng) % vbar(LBi:UBi,LBj:UBj,3) )
       allocate ( OCEAN(ng) % zeta(LBi:UBi,LBj:UBj,3) )
-#if defined NEARSHORE_WEC
+#if defined WEC_VF
       allocate ( OCEAN(ng) % zetat(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % zetaw(LBi:UBi,LBj:UBj) )
 #endif
-#if defined NEARSHORE
+#if defined WEC
       allocate ( OCEAN(ng) % rulag2d(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % rvlag2d(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % ubar_stokes(LBi:UBi,LBj:UBj) )
@@ -353,7 +353,7 @@
       allocate ( OCEAN(ng) % W(LBi:UBi,LBj:UBj,0:N(ng)) )
       allocate ( OCEAN(ng) % wvel(LBi:UBi,LBj:UBj,0:N(ng)) )
 
-# if defined NEARSHORE
+# if defined WEC
       allocate ( OCEAN(ng) % rulag3d(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % rvlag3d(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % u_stokes(LBi:UBi,LBj:UBj,N(ng)) )
@@ -428,7 +428,7 @@
       allocate ( OCEAN(ng) % tl_vbar(LBi:UBi,LBj:UBj,3) )
       allocate ( OCEAN(ng) % tl_zeta(LBi:UBi,LBj:UBj,3) )
 
-# if defined NEARSHORE_MELLOR
+# if defined WEC
       allocate ( OCEAN(ng) % tl_rulag2d(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % tl_rvlag2d(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % tl_ubar_stokes(LBi:UBi,LBj:UBj) )
@@ -447,7 +447,7 @@
       allocate ( OCEAN(ng) % tl_v(LBi:UBi,LBj:UBj,N(ng),2) )
       allocate ( OCEAN(ng) % tl_W(LBi:UBi,LBj:UBj,0:N(ng)) )
 
-#  if defined NEARSHORE_MELLOR
+#  if defined WEC
       allocate ( OCEAN(ng) % tl_rulag3d(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % tl_rvlag3d(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % tl_u_stokes(LBi:UBi,LBj:UBj,N(ng)) )
@@ -472,7 +472,7 @@
       allocate ( OCEAN(ng) % ad_vbar_sol(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % ad_zeta_sol(LBi:UBi,LBj:UBj) )
 
-# if defined NEARSHORE_MELLOR
+# if defined WEC
       allocate ( OCEAN(ng) % ad_rulag2d(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % ad_rvlag2d(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % ad_ubar_stokes(LBi:UBi,LBj:UBj) )
@@ -491,7 +491,7 @@
       allocate ( OCEAN(ng) % ad_v(LBi:UBi,LBj:UBj,N(ng),2) )
       allocate ( OCEAN(ng) % ad_W(LBi:UBi,LBj:UBj,0:N(ng)) )
 
-#  if defined NEARSHORE_MELLOR
+#  if defined WEC
       allocate ( OCEAN(ng) % ad_rulag3d(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % ad_rvlag3d(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % ad_u_stokes(LBi:UBi,LBj:UBj,N(ng)) )
@@ -702,11 +702,11 @@
             OCEAN(ng) % zeta(i,j,1) = IniVal
             OCEAN(ng) % zeta(i,j,2) = IniVal
             OCEAN(ng) % zeta(i,j,3) = IniVal
-#if defined NEARSHORE_WEC
+#if defined WEC_VF
             OCEAN(ng) % zetat(i,j) = IniVal
             OCEAN(ng) % zetaw(i,j) = IniVal
 #endif
-#if defined NEARSHORE
+#if defined WEC
             OCEAN(ng) % rulag2d(i,j) = IniVal
             OCEAN(ng) % rvlag2d(i,j) = IniVal
             OCEAN(ng) % ubar_stokes(i,j) = IniVal
@@ -730,7 +730,7 @@
               OCEAN(ng) % u(i,j,k,2) = IniVal
               OCEAN(ng) % v(i,j,k,1) = IniVal
               OCEAN(ng) % v(i,j,k,2) = IniVal
-# if defined NEARSHORE
+# if defined WEC
               OCEAN(ng) % rulag3d(i,j,k) = IniVal
               OCEAN(ng) % rvlag3d(i,j,k) = IniVal
               OCEAN(ng) % u_stokes(i,j,k) = IniVal
@@ -747,7 +747,7 @@
 
               OCEAN(ng) % W(i,j,k) = IniVal
               OCEAN(ng) % wvel(i,j,k) = IniVal
-# if defined NEARSHORE
+# if defined WEC
               OCEAN(ng) % w_stokes(i,j,k) = IniVal
 # endif
             END DO
@@ -827,7 +827,7 @@
             OCEAN(ng) % tl_zeta(i,j,1) = IniVal
             OCEAN(ng) % tl_zeta(i,j,2) = IniVal
             OCEAN(ng) % tl_zeta(i,j,3) = IniVal
-# if defined NEARSHORE_MELLOR
+# if defined WEC
             OCEAN(ng) % tl_rulag2d(i,j) = IniVal
             OCEAN(ng) % tl_rvlag2d(i,j) = IniVal
             OCEAN(ng) % tl_ubar_stokes(i,j) = IniVal
@@ -844,7 +844,7 @@
               OCEAN(ng) % tl_u(i,j,k,2) = IniVal
               OCEAN(ng) % tl_v(i,j,k,1) = IniVal
               OCEAN(ng) % tl_v(i,j,k,2) = IniVal
-#  if defined NEARSHORE_MELLOR
+#  if defined WEC
               OCEAN(ng) % tl_rulag3d(i,j,k) = IniVal
               OCEAN(ng) % tl_rvlag3d(i,j,k) = IniVal
               OCEAN(ng) % tl_u_stokes(i,j,k) = IniVal
@@ -903,7 +903,7 @@
             OCEAN(ng) % ad_ubar_sol(i,j) = IniVal
             OCEAN(ng) % ad_vbar_sol(i,j) = IniVal
             OCEAN(ng) % ad_zeta_sol(i,j) = IniVal
-# if defined NEARSHORE_MELLOR
+# if defined WEC
             OCEAN(ng) % ad_rulag2d(i,j) = IniVal
             OCEAN(ng) % ad_rvlag2d(i,j) = IniVal
             OCEAN(ng) % ad_ubar_stokes(i,j) = IniVal
@@ -920,7 +920,7 @@
               OCEAN(ng) % ad_u(i,j,k,2) = IniVal
               OCEAN(ng) % ad_v(i,j,k,1) = IniVal
               OCEAN(ng) % ad_v(i,j,k,2) = IniVal
-#  if defined NEARSHORE_MELLOR
+#  if defined WEC
               OCEAN(ng) % ad_rulag3d(i,j,k) = IniVal
               OCEAN(ng) % ad_rvlag3d(i,j,k) = IniVal
               OCEAN(ng) % ad_u_stokes(i,j,k) = IniVal

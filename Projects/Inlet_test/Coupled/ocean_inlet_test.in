@@ -195,6 +195,7 @@
  ZOS_HSIG_ALPHA == 0.5d0                        ! roughness from wave amplitude
        SZ_ALPHA == 0.25d0                       ! roughness from wave dissipation
       CRGBAN_CW == 100.0d0                      ! Craig and Banner wave breaking
+      WEC_ALPHA == 0.0d0            ! 0: all wave dissip goes to break and none to roller.
 
 ! Constants used in momentum stress computation.
 
@@ -373,8 +374,9 @@ Hout(idW3zx) == F                          ! 3D radiation stress, Szx component
 Hout(idW3zy) == F                          ! 3D radiation stress, Szy component
 Hout(idU3rs) == F                          ! 3D U-radiation stress
 Hout(idV3rs) == F                          ! 3D V-radiation stress
-Hout(idU3Sd) == F                          ! 3D U-Stokes velocity
-Hout(idV3Sd) == F                          ! 3D V-Stokes velocity
+Hout(idU3Sd) == T                          ! 3D U-Stokes velocity
+Hout(idV3Sd) == T                          ! 3D V-Stokes velocity
+Hout(idW3Sd) == T                          ! 3D W-Stokes velocity
 
 Hout(idWamp) == T                          ! wave height
 Hout(idWlen) == T                          ! wave length, mean
@@ -383,10 +385,12 @@ Hout(idWdir) == T                          ! wave direction
 Hout(idWptp) == T                          ! wave peak surface period
 Hout(idWpbt) == T                          ! wave mean bottom period
 Hout(idWorb) == T                          ! wave bottom orbital velocity
-Hout(idWdis) == T                          ! wave energy dissipation
 Hout(idWbrk) == T                          ! wave breaking (percent)
 Hout(idUwav) == T                          ! U component of the current affecting waves
 Hout(idVwav) == T                          ! V component of the current affecting waves
+Hout(idWdif) == T                          ! wave dissipation due to bottom friction
+Hout(idWdib) == T                          ! wave dissipation due to breaking
+Hout(idWdiw) == T                          ! wave dissipation due to white capping
 
 Hout(idTsur) == F F                        ! surface net heat and salt flux
 Hout(idLhea) == F                          ! latent heat flux

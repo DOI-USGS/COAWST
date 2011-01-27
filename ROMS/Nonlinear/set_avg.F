@@ -85,7 +85,7 @@
      &                   OCEAN(ng) % uwave,                             &
      &                   OCEAN(ng) % vwave,                             &
 #  endif
-#  ifdef AVERAGES_NEARSHORE
+#  ifdef AVERAGES_WEC
      &                   OCEAN(ng) % u_stokes,                          &
      &                   OCEAN(ng) % v_stokes,                          &
      &                   MIXING(ng) % rustr3d,                          &
@@ -133,7 +133,7 @@
      &                   OCEAN(ng) % ubar,                              &
      &                   OCEAN(ng) % vbar,                              &
      &                   OCEAN(ng) % zeta,                              &
-# ifdef AVERAGES_NEARSHORE
+# ifdef AVERAGES_WEC
      &                   OCEAN(ng) % ubar_stokes,                       &
      &                   OCEAN(ng) % vbar_stokes,                       &
      &                   MIXING(ng) % rustr2d,                          &
@@ -178,7 +178,7 @@
      &                   AVERAGE(ng) % avguWave,                        &
      &                   AVERAGE(ng) % avgvWave,                        &
 #  endif
-#  ifdef AVERAGES_NEARSHORE
+#  ifdef AVERAGES_WEC
      &                   AVERAGE(ng) % avgu3Sd,                         &
      &                   AVERAGE(ng) % avgv3Sd,                         &
      &                   AVERAGE(ng) % avgu3RS,                         &
@@ -244,7 +244,7 @@
      &                   AVERAGE(ng) % avgV2,                           &
      &                   AVERAGE(ng) % avgZZ,                           &
 # endif
-# ifdef AVERAGES_NEARSHORE
+# ifdef AVERAGES_WEC
      &                   AVERAGE(ng) % avgu2Sd,                         &
      &                   AVERAGE(ng) % avgv2Sd,                         &
      &                   AVERAGE(ng) % avgu2RS,                         &
@@ -286,7 +286,7 @@
 #  ifdef AVERAGES_UV_KIRBY
      &                         uwave, vwave,                            &
 #  endif
-#  ifdef AVERAGES_NEARSHORE
+#  ifdef AVERAGES_WEC
      &                         u_stokes, v_stokes,                      &
      &                         rustr3d, rvstr3d,                        &
      &                         Sxx, Sxy, Syy, Szx, Szy,                 &
@@ -321,7 +321,7 @@
 # endif
      &                         ubar, vbar,                              &
      &                         zeta,                                    &
-# ifdef AVERAGES_NEARSHORE
+# ifdef AVERAGES_WEC
      &                         ubar_stokes, vbar_stokes,                &
      &                         rustr2d, rvstr2d,                        &
      &                         Sxx_bar, Sxy_bar, Syy_bar,               &
@@ -350,7 +350,7 @@
 #  ifdef AVERAGES_UV_KIRBY
      &                         avguWave, avgvWave,                      &
 #  endif
-#  ifdef AVERAGES_NEARSHORE
+#  ifdef AVERAGES_WEC
      &                         avgu3Sd, avgv3Sd,                        &
      &                         avgu3RS, avgv3RS,                        &
      &                         avgSxx3d, avgSxy3d, avgSyy3d,            &
@@ -396,7 +396,7 @@
 #  endif
      &                         avgU2, avgV2, avgZZ,                     &
 # endif
-# ifdef AVERAGES_NEARSHORE
+# ifdef AVERAGES_WEC
      &                         avgu2Sd, avgv2Sd,                        &
      &                         avgu2RS, avgv2RS,                        &
      &                         avgSxx2d, avgSxy2d, avgSyy2d,            &
@@ -447,7 +447,7 @@
       real(r8), intent(in) :: uwave(LBi:,LBj:)
       real(r8), intent(in) :: vwave(LBi:,LBj:)
 #   endif
-#   ifdef AVERAGES_NEARSHORE
+#   ifdef AVERAGES_WEC
       real(r8), intent(in) :: u_stokes(LBi:,LBj:,:)
       real(r8), intent(in) :: v_stokes(LBi:,LBj:,:)
       real(r8), intent(in) :: rustr3d(LBi:,LBj:,:)
@@ -495,7 +495,7 @@
       real(r8), intent(in) :: ubar(LBi:,LBj:,:)
       real(r8), intent(in) :: vbar(LBi:,LBj:,:)
       real(r8), intent(in) :: zeta(LBi:,LBj:,:)
-#  ifdef AVERAGES_NEARSHORE
+#  ifdef AVERAGES_WEC
       real(r8), intent(in) :: ubar_stokes(LBi:,LBj:)
       real(r8), intent(in) :: vbar_stokes(LBi:,LBj:)
       real(r8), intent(in) :: rustr2d(LBi:,LBj:)
@@ -544,7 +544,7 @@
       real(r8), intent(inout) :: avgvWave(LBi:,LBj:)
       real(r8), intent(inout) :: avguWave(LBi:,LBj:)
 #   endif
-#   ifdef AVERAGES_NEARSHORE
+#   ifdef AVERAGES_WEC
       real(r8), intent(inout) :: avgu3Sd(LBi:,LBj:,:)
       real(r8), intent(inout) :: avgv3Sd(LBi:,LBj:,:)
       real(r8), intent(inout) :: avgu3RS(LBi:,LBj:,:)
@@ -610,7 +610,7 @@
       real(r8), intent(inout) :: avgV2(LBi:,LBj:)
       real(r8), intent(inout) :: avgZZ(LBi:,LBj:)
 #  endif
-#  ifdef AVERAGES_NEARSHORE
+#  ifdef AVERAGES_WEC
       real(r8), intent(inout) :: avgu2Sd(LBi:,LBj:)
       real(r8), intent(inout) :: avgv2Sd(LBi:,LBj:)
       real(r8), intent(inout) :: avgu2RS(LBi:,LBj:)
@@ -644,7 +644,7 @@
       real(r8), intent(in) :: wvel(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
-#   ifdef AVERAGES_NEARSHORE
+#   ifdef AVERAGES_WEC
       real(r8), intent(in) :: u_stokes(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: v_stokes(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: rustr3d(LBi:UBi,LBj:UBj,N(ng))
@@ -692,7 +692,7 @@
       real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
-#  ifdef AVERAGES_NEARSHORE
+#  ifdef AVERAGES_WEC
       real(r8), intent(in) :: ubar_stokes(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vbar_stokes(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rustr2d(LBi:UBi,LBj:UBj)
@@ -737,7 +737,7 @@
       real(r8), intent(inout) :: avgwvel(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(inout) :: avgt(LBi:UBi,LBj:UBj,N(ng),NT(ng))
       real(r8), intent(inout) :: avgrho(LBi:UBi,LBj:UBj,N(ng))
-#   ifdef AVERAGES_NEARSHORE
+#   ifdef AVERAGES_WEC
       real(r8), intent(inout) :: avgu3Sd(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: avgv3Sd(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: avgu3RS(LBi:UBi,LBj:UBj,N(ng))
@@ -803,7 +803,7 @@
       real(r8), intent(inout) :: avgV2(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: avgZZ(LBi:UBi,LBj:UBj)
 #  endif
-#  ifdef AVERAGES_NEARSHORE
+#  ifdef AVERAGES_WEC
       real(r8), intent(inout) :: avgu2Sd(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: avgv2Sd(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: avgu2RS(LBi:UBi,LBj:UBj)
@@ -915,7 +915,7 @@
             avguWave(i,j)=uwave(i,j)
             avgvWave(i,j)=vwave(i,j)
 # endif
-# ifdef AVERAGES_NEARSHORE
+# ifdef AVERAGES_WEC
             avgu2Sd(i,j)=ubar_stokes(i,j)
             avgv2Sd(i,j)=vbar_stokes(i,j)
             avgu2RS(i,j)=rustr2d(i,j)
@@ -980,7 +980,7 @@
               avgu3d(i,j,k)=u(i,j,k,Nout)
               avgv3d(i,j,k)=v(i,j,k,Nout)
               avgrho(i,j,k)=rho(i,j,k)
-#  ifdef AVERAGES_NEARSHORE
+#  ifdef AVERAGES_WEC
               avgu3Sd(i,j,k)=u_stokes(i,j,k)
               avgv3Sd(i,j,k)=v_stokes(i,j,k)
               avgu3RS(i,j,k)=rustr3d(i,j,k)
@@ -1134,7 +1134,7 @@
             avgvWave(i,j)=avgvWave(i,j)+vwave(i,j)
 # endif
 
-# ifdef AVERAGES_NEARSHORE
+# ifdef AVERAGES_WEC
             avgu2Sd(i,j)=avgu2Sd(i,j)+ubar_stokes(i,j)
             avgv2Sd(i,j)=avgv2Sd(i,j)+vbar_stokes(i,j)
             avgu2RS(i,j)=avgu2RS(i,j)+rustr2d(i,j)
@@ -1199,7 +1199,7 @@
               avgu3d(i,j,k)=avgu3d(i,j,k)+u(i,j,k,Nout)
               avgv3d(i,j,k)=avgv3d(i,j,k)+v(i,j,k,Nout)
               avgrho(i,j,k)=avgrho(i,j,k)+rho(i,j,k)
-#  ifdef AVERAGES_NEARSHORE
+#  ifdef AVERAGES_WEC
               avgu3Sd(i,j,k)=avgu3Sd(i,j,k)+u_stokes(i,j,k)
               avgv3Sd(i,j,k)=avgv3Sd(i,j,k)+v_stokes(i,j,k)
               avgu3RS(i,j,k)=avgu3RS(i,j,k)+rustr3d(i,j,k)
@@ -1437,7 +1437,7 @@
             avguWave(i,j)=fac*avguWave(i,j)
             avgvWave(i,j)=fac*avgvWave(i,j)
 # endif
-# ifdef AVERAGES_NEARSHORE
+# ifdef AVERAGES_WEC
             avgu2Sd(i,j)=fac*avgu2Sd(i,j)
             avgv2Sd(i,j)=fac*avgv2Sd(i,j)
             avgu2RS(i,j)=fac*avgu2RS(i,j)
@@ -1520,7 +1520,7 @@
               avgv3d(i,j,k)=fac*avgv3d(i,j,k)
 #  endif
               avgrho(i,j,k)=fac*avgrho(i,j,k)
-#  ifdef AVERAGES_NEARSHORE
+#  ifdef AVERAGES_WEC
               avgu3Sd(i,j,k)=fac*avgu3Sd(i,j,k)
               avgv3Sd(i,j,k)=fac*avgv3Sd(i,j,k)
               avgu3RS(i,j,k)=fac*avgu3RS(i,j,k)

@@ -1570,6 +1570,14 @@
       IF (exit_flag.ne.NoError) RETURN
 
 #endif
+#ifdef WEC
+      Vinfo( 1)='wec_alpha'
+      Vinfo( 2)='coefficient for roller/breaking wave dissipation'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+#endif
 !
 !  Nudging inverse time scales used in various tasks.
 !

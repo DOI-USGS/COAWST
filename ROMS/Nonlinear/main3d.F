@@ -85,11 +85,24 @@
       USE oi_update_mod, ONLY : oi_update
 # endif
       USE omega_mod, ONLY : omega
-# ifdef NEARSHORE_MELLOR
+# ifdef WEC_MELLOR
       USE radiation_stress_mod, ONLY : radiation_stress
 # endif
-# ifdef NEARSHORE_WEC
-      USE wec_mod, ONLY : wec
+# ifdef WEC_VF
+      USE wec_vf_mod, ONLY : wec_vf
+#  if defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+      USE wec_dissip_mod, ONLY : wec_dissip
+#  endif
+#  ifdef WEC_ROLLER
+      USE wec_roller_mod, ONLY : wec_roller
+#  endif
+      USE wec_stokes_mod, ONLY : wec_stokes
+#  ifdef BOTTOM_STREAMING
+      USE wec_streaming_mod, ONLY : wec_streaming
+#  endif
+#  ifdef WAVE_MIXING
+      USE wec_wave_mix_mod, ONLY : wec_wave_mix
+#  endif
 # endif
 # ifndef TS_FIXED
       USE rho_eos_mod, ONLY : rho_eos
@@ -382,8 +395,7 @@
       END DO
 #  endif
 # endif
-
-# ifdef NEARSHORE
+# ifdef WEC_VF
 !
 !-----------------------------------------------------------------------
 !  Compute radiation stress terms.
@@ -396,11 +408,44 @@
         DO thread=0,numthreads-1
           subs=NtileX(ng)*NtileE(ng)/numthreads
           DO tile=subs*(thread+1)-1,subs*thread,-1
-#  ifdef NEARSHORE_MELLOR
-            CALL radiation_stress (ng, TILE)
-#  elif defined NEARSHORE_WEC
-            CALL wec (ng, TILE)
+#  if defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+            CALL wec_dissip (ng, TILE)
 #  endif
+#  ifdef WEC_ROLLER
+            CALL wec_roller (ng, TILE)
+#  endif
+            CALL wec_stokes (ng, TILE)
+            CALL wec_vf (ng, TILE)
+#  ifdef BOTTOM_STREAMING
+            CALL wec_streaming (ng, TILE)
+#  endif
+#  ifdef WAVE_MIXING
+            CALL wec_wave_mix (ng, TILE)
+#  endif
+          END DO
+        END DO
+#  if !defined REFINED_GRID
+      END DO
+#  endif
+!$OMP END PARALLEL DO
+#  ifdef COMPOSED_GRID
+      CALL nesting (8)
+#  endif
+# endif
+# ifdef WEC_MELLOR
+!
+!-----------------------------------------------------------------------
+!  Compute radiation stress terms.
+!-----------------------------------------------------------------------
+!
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+#  if !defined REFINED_GRID
+      DO ng=1,Ngrids
+#  endif
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*(thread+1)-1,subs*thread,-1
+            CALL radiation_stress (ng, TILE)
           END DO
         END DO
 #  if !defined REFINED_GRID

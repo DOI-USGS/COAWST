@@ -194,6 +194,8 @@
  ZOS_HSIG_ALPHA == 0.5d0            ! roughness from wave amplitude
        SZ_ALPHA == 0.25d0           ! roughness from wave dissipation
       CRGBAN_CW == 100.0d0          ! Craig and Banner wave breaking
+      WEC_ALPHA == 0.0d0            ! 0: all wave dissip goes to break and none to roller.
+                                    ! 1: all wave dissip goes to roller and none to breaking.
 
 ! Constants used in momentum stress computation.
 
@@ -359,8 +361,8 @@ Hout(idVbvr) == T                          ! bottom V-velocity above bed
 Hout(idW2xx) == T                          ! 2D radiation stress, Sxx component
 Hout(idW2xy) == T                          ! 2D radiation stress, Sxy component
 Hout(idW2yy) == T                          ! 2D radiation stress, Syy component
-Hout(idU2rs) == T                          ! 2D radiation U-stress
-Hout(idV2rs) == T                          ! 2D radiation V-stress
+Hout(idU2rs) == T                          ! 2D WEC U-stress
+Hout(idV2rs) == T                          ! 2D WEC V-stress
 Hout(idU2Sd) == T                          ! 2D U-Stokes velocity
 Hout(idV2Sd) == T                          ! 2D V-Stokes velocity
 
@@ -369,8 +371,8 @@ Hout(idW3xy) == T                          ! 3D radiation stress, Sxy component
 Hout(idW3yy) == T                          ! 3D radiation stress, Syy component
 Hout(idW3zx) == T                          ! 3D radiation stress, Szx component
 Hout(idW3zy) == T                          ! 3D radiation stress, Szy component
-Hout(idU3rs) == T                          ! 3D U-radiation stress
-Hout(idV3rs) == T                          ! 3D V-radiation stress
+Hout(idU3rs) == T                          ! 3D WEC U-stress
+Hout(idV3rs) == T                          ! 3D WEC V-stress
 Hout(idU3Sd) == T                          ! 3D U-Stokes velocity
 Hout(idV3Sd) == T                          ! 3D V-Stokes velocity
 Hout(idW3Sd) == T                          ! 3D W-Stokes velocity
@@ -382,10 +384,12 @@ Hout(idWdir) == T                          ! wave direction
 Hout(idWptp) == T                          ! wave surface period
 Hout(idWpbt) == T                          ! wave bottom period
 Hout(idWorb) == T                          ! wave bottom orbital velocity
-Hout(idWdis) == T                          ! wave dissipation
 Hout(idWbrk) == T                          ! wave breaking (percent)
 Hout(idUwav) == T                          ! wave-depth avgeraged U-velocity
 Hout(idVwav) == T                          ! wave-depth avgeraged V-velocity
+Hout(idWdif) == T                          ! wave dissipation due to bottom friction
+Hout(idWdib) == T                          ! wave dissipation due to breaking
+Hout(idWdiw) == T                          ! wave dissipation due to white capping
 
 Hout(idTsur) == F F                        ! surface net heat and salt flux
 Hout(idLhea) == F                          ! latent heat flux
@@ -1004,6 +1008,13 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 !
 !  CRGBAN_CW       Surface flux due to Craig and Banner wave breaking,
 !                    flux:  dt * crgban_cw * u_star**3
+!
+!------------------------------------------------------------------------------
+! Constants used in the wave effects on currents formulations.
+!------------------------------------------------------------------------------
+!
+!      WEC_ALPHA    If set to 0 then all wave dissip goes to break and none to roller.
+!                   If set to 1 then all wave dissip goes to roller and none to breaking.
 !
 !------------------------------------------------------------------------------
 ! Constants used in the computation of momentum stress.

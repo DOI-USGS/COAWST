@@ -580,6 +580,12 @@
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 #endif
+#ifdef WEC
+      CALL netcdf_put_fvar (ng, model, ncname, 'wec_alpha',             &
+     &                      wec_alpha(ng), (/0/), (/0/),                &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+#endif
 !
 !  Nudging inverse time scales used in various tasks.
 !

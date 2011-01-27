@@ -444,6 +444,10 @@
       write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 #endif
+!
+!  Finalize and remove trailing spaces from the avstring
+!  for the rlist.
+!
       cad=LEN_TRIM(avstring)
       avstring=avstring(1:cad)
 !

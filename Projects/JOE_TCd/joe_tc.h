@@ -61,7 +61,7 @@
 # define WRF_MODEL
 # define SWAN_MODEL
 # define COARE_TAYLOR_YELLAND
-# define NEARSHORE_MELLOR
+# define WEC_VF
 # define SSW_BBL
 #endif
 
@@ -69,7 +69,7 @@
 # define WRF_MODEL
 # define SWAN_MODEL
 # define COARE_TAYLOR_YELLAND
-# define NEARSHORE_MELLOR
+# define WEC_VF
 # define SSW_BBL
 # define MCT_INTERP_WV2AT
 # define MCT_INTERP_OC2AT

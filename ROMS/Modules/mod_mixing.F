@@ -105,7 +105,7 @@
 !  kbbl         Index of grid level above bottom  boundary layer.      !
 !  ksbl         Index of grid level below surface boundary layer.      !
 !                                                                      !
-#ifdef NEARSHORE_MELLOR
+#ifdef WEC_MELLOR
 !  Nearshore radiation stresses.                                       !
 !                                                                      !
 !  Sxx_bar      2D nearshore radiation stress, xx-component.           !
@@ -117,12 +117,12 @@
 !  Szx          3D Nearshore vertical radiation stress, xx-component.  !
 !  Szy          3D Nearshore vertical radiation stress, xx-component.  !
 #endif
-#ifdef NEARSHORE
-!  rustr2d      2D radiation stress tensor in Xi-direction.            !
-!  rvstr2d      2D radiation stress tensor in ETA-direction.           !
-!  rustr3d      3D radiation stress tensor in Xi-direction.            !
-!  rvstr3d      3D radiation stress tensor in ETA-direction.           !
-!                                                                      !
+#ifdef WEC
+!  rustr2d      2D wave-current stress tensor in Xi-direction.            !
+!  rvstr2d      2D wave-current stress tensor in ETA-direction.           !
+!  rustr3d      3D wave-current stress tensor in Xi-direction.            !
+!  rvstr3d      3D wave-current stress tensor in ETA-direction.           !
+!                                                                        !
 #endif
 !=======================================================================
 !
@@ -167,24 +167,24 @@
           real(r8), pointer :: visc3d_r(:,:,:)
 # endif
 #endif
-#ifdef NEARSHORE_MELLOR
+#ifdef WEC_MELLOR
           real(r8), pointer :: Sxx_bar(:,:)
           real(r8), pointer :: Sxy_bar(:,:)
           real(r8), pointer :: Syy_bar(:,:)
 #endif
-#ifdef NEARSHORE
+#ifdef WEC
           real(r8), pointer :: rustr2d(:,:)
           real(r8), pointer :: rvstr2d(:,:)
 #endif
 #ifdef SOLVE3D
-# ifdef NEARSHORE_MELLOR
+# ifdef WEC_MELLOR
           real(r8), pointer :: Sxx(:,:,:)
           real(r8), pointer :: Sxy(:,:,:)
           real(r8), pointer :: Syy(:,:,:)
           real(r8), pointer :: Szx(:,:,:)
           real(r8), pointer :: Szy(:,:,:)
 # endif
-# ifdef NEARSHORE
+# ifdef WEC
           real(r8), pointer :: rustr3d(:,:,:)
           real(r8), pointer :: rvstr3d(:,:,:)
 # endif
@@ -416,24 +416,24 @@
 #  endif
 # endif
 
-#ifdef NEARSHORE_MELLOR
+#ifdef WEC_MELLOR
       allocate ( MIXING(ng) % Sxx_bar(LBi:UBi,LBj:UBj) )
       allocate ( MIXING(ng) % Sxy_bar(LBi:UBi,LBj:UBj) )
       allocate ( MIXING(ng) % Syy_bar(LBi:UBi,LBj:UBj) )
 #endif
-#ifdef NEARSHORE
+#ifdef WEC
       allocate ( MIXING(ng) % rustr2d(LBi:UBi,LBj:UBj) )
       allocate ( MIXING(ng) % rvstr2d(LBi:UBi,LBj:UBj) )
 #endif
 #ifdef SOLVE3D
-# ifdef NEARSHORE_MELLOR
+# ifdef WEC_MELLOR
       allocate ( MIXING(ng) % Sxx(LBi:UBi,LBj:UBj,1:N(ng)) )
       allocate ( MIXING(ng) % Sxy(LBi:UBi,LBj:UBj,1:N(ng)) )
       allocate ( MIXING(ng) % Syy(LBi:UBi,LBj:UBj,1:N(ng)) )
       allocate ( MIXING(ng) % Szx(LBi:UBi,LBj:UBj,1:N(ng)) )
       allocate ( MIXING(ng) % Szy(LBi:UBi,LBj:UBj,1:N(ng)) )
 # endif
-# ifdef NEARSHORE
+# ifdef WEC
       allocate ( MIXING(ng) % rustr3d(LBi:UBi,LBj:UBj,1:N(ng)) )
       allocate ( MIXING(ng) % rvstr3d(LBi:UBi,LBj:UBj,1:N(ng)) )
 # endif
@@ -749,9 +749,9 @@
           END DO
 # endif
 #endif
-#ifdef NEARSHORE
+#ifdef WEC
           DO i=Imin,Imax
-# ifdef NEARSHORE_MELLOR
+# ifdef WEC_MELLOR
             MIXING(ng) % Sxx_bar(i,j) = IniVal
             MIXING(ng) % Sxy_bar(i,j) = IniVal
             MIXING(ng) % Syy_bar(i,j) = IniVal
@@ -760,7 +760,7 @@
             MIXING(ng) % rvstr2d(i,j) = IniVal
 # ifdef SOLVE3D
             DO k=1,N(ng)
-#  ifdef NEARSHORE_MELLOR
+#  ifdef WEC_MELLOR
               MIXING(ng) % Sxx(i,j,k) = IniVal
               MIXING(ng) % Sxy(i,j,k) = IniVal
               MIXING(ng) % Syy(i,j,k) = IniVal

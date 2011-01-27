@@ -499,11 +499,11 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' AVERAGES_UV_KIRBY,'
 # endif
-# ifdef AVERAGES_NEARSHORE
-      IF (Master) WRITE (stdout,20) 'AVERAGES_NEARSHORE',               &
+# ifdef AVERAGES_WEC
+      IF (Master) WRITE (stdout,20) 'AVERAGES_WEC',                     &
      &   'Writing out time-averaged nearshore radiation fields.'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+20)=' AVERAGES_NEARSHORE,'
+      Coptions(is:is+20)=' AVERAGES_WEC,'
 # endif
 # ifdef AVERAGES_QUADRATIC
       IF (Master) WRITE (stdout,20) 'AVERAGES_QUADRATIC',               &
@@ -1286,11 +1286,65 @@
       Coptions(is:is+13)=' MY25_MIXING,'
       ivmix=ivmix+1
 #endif
-#ifdef NEARSHORE_MELLOR
-      IF (Master) WRITE (stdout,20) 'NEARSHORE_MELLOR',                 &
-     &   'Nearshore RAdiation Stress Terms.'
+#ifdef WEC_MELLOR
+      IF (Master) WRITE (stdout,20) 'WEC_MELLOR',                       &
+     &   'Mellore wave current interaction terms.'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+18)=' NEARSHORE_MELLOR,'
+      Coptions(is:is+12)=' WEC_MELLOR,'
+#endif
+#ifdef WEC_VF
+      IF (Master) WRITE (stdout,20) 'WEC_VF',                           &
+     &   'Vortex Force wave current interaction terms.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+8)=' WEC_VF,'
+#endif
+#ifdef BOTTOM_STREAMING
+      IF (Master) WRITE (stdout,20) 'BOTTOM_STREAMING',                 &
+     &   'Wave current streaming term.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' BOTTOM_STREAMING,'
+#endif
+#ifdef WAVE_MIXING
+      IF (Master) WRITE (stdout,20) 'WAVE_MIXING',                      &
+     &   'Enhanced veritcal mixing from waves term.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' WEC_WAVE_MIX,'
+#endif
+#ifdef WDISS_THORGUZA
+      IF (Master) WRITE (stdout,20) 'WDISS_THORGUZA',                   &
+     &   'Wave energy dissipation computed from Thorton/Guza 1986.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' WDISS_THORGUZA,'
+#endif
+#ifdef WDISS_CHURTHOR
+      IF (Master) WRITE (stdout,20) 'WDISS_CHURTHOR',                   &
+     &   'Wave energy dissipation computed from Church/Thorton 1986.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' WDISS_CHURTHOR,'
+#endif
+#ifdef WDISS_WAVEMOD
+      IF (Master) WRITE (stdout,20) 'WDISS_WAVEMOD',                    &
+     &   'Wave energy dissipation acquired from coupled wave model.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+15)=' WDISS_WAVEMOD,'
+#endif
+#ifdef ROLLER_SVENDSEN
+      IF (Master) WRITE (stdout,20) 'ROLLER_SVENDSEN',                  &
+     &   'Wave energy roller based on Svendsen 1984.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' ROLLER_SVENDSEN,'
+#endif
+#ifdef ROLLER_MONO
+      IF (Master) WRITE (stdout,20) 'ROLLER_MONO',                      &
+     &   'Wave energy roller from monochromatic waves.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+13)=' ROLLER_MONO,'
+#endif
+#ifdef ROLLER_RENIERS
+      IF (Master) WRITE (stdout,20) 'ROLLER_RENIERS',                   &
+     &   'Wave energy roller based on Reniers 2004.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' ROLLER_RENIERS,'
 #endif
 #ifdef NEMURO
       IF (Master) WRITE (stdout,20) 'NEMURO',                           &
@@ -3030,6 +3084,16 @@
         WRITE (stdout,80) 'TKE fields','southern edge'
         exit_flag=5
       END IF
+# endif
+# if defined WEC_VF && (!defined WDISS_THORGUZA && \
+    !defined WDISS_CHURTHOR && !defined WDISS_WAVEMOD)
+      IF (Master) THEN
+        WRITE (stdout,85)
+        exit_flag=5
+      END IF
+  85  FORMAT (/,' CHECKDEFS - For WEC need to define at least one of: ',&
+     &        /,13x,'WDISS_THORGUZA',/,13x,'WDISS_CHURTHOR',            &
+     &        /,13x,'WDISS_WAVEMOD')
 # endif
 #endif
 #ifndef SOLVE3D

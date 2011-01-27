@@ -906,17 +906,19 @@
       DATA IENT /0/
       CALL STRACE (IENT, 'SWOUTP')
 
-      Numcouple=9
+      Numcouple=11
       ALLOCATE (Cpltype(Numcouple))
-      Cpltype(1)=7                       ! DISSIP  SWOEXD
-      Cpltype(2)=50                      ! TMBOT   SWOEXD
-      Cpltype(3)=34                      ! URMS    SWOEXD
-      Cpltype(4)=8                       ! QB      SWOEXD
-      Cpltype(5)=10                      ! HSIGN   SWOEXA
-      Cpltype(6)=12                      ! RTP     SWOEXA
-      Cpltype(7)=13                      ! DIR     SWOEXA
-      Cpltype(8)=17                      ! WLEN    SWOEXA
-      Cpltype(9)=70                      ! WLENP   SWOEXA
+      Cpltype(1)=54                      ! DISBOT  SWOEXD
+      Cpltype(2)=55                      ! DISSURF SWOEXD
+      Cpltype(3)=56                      ! DISWCAP SWOEXD
+      Cpltype(4)=50                      ! TMBOT   SWOEXD
+      Cpltype(5)=34                      ! URMS    SWOEXD
+      Cpltype(6)=8                       ! QB      SWOEXD
+      Cpltype(7)=10                      ! HSIGN   SWOEXA
+      Cpltype(8)=12                      ! RTP     SWOEXA
+      Cpltype(9)=13                      ! DIR     SWOEXA
+      Cpltype(10)=17                     ! WLEN    SWOEXA
+      Cpltype(11)=70                     ! WLENP   SWOEXA
 !
       ALLOCATE (OQI(4))
       OQI(1) = 0

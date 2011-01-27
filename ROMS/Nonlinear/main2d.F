@@ -56,7 +56,7 @@
 # ifdef ASSIMILATION
       USE oi_update_mod, ONLY : oi_update
 # endif
-# ifdef NEARSHORE_MELLOR
+# ifdef WEC_MELLOR
       USE radiation_stress_mod, ONLY : radiation_stress
 # endif
 # if defined AVERAGES && !defined ADJOINT
@@ -357,7 +357,7 @@
 #  endif
 # endif
 
-# ifdef NEARSHORE_MELLOR
+# ifdef WEC_MELLOR
 !
 !-----------------------------------------------------------------------
 !  Compute radiation stress terms.

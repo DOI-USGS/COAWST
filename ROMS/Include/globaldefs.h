@@ -686,6 +686,15 @@
 #endif
 
 /*
+** Activate internal switch for activating a roller.
+*/
+
+#if defined ROLLER_SVENDSEN_ROLLER || defined ROLLER_MONO || \
+    defined ROLLER_RENIERS
+# define WEC_ROLLER
+#endif
+
+/*
 ** Activate internal switch to set-up nudging coefficients.
 */
 
@@ -887,8 +896,9 @@
 #  endif
 # endif
 #endif
-#if defined AVERAGES_NEARSHORE && !defined NEARSHORE_MELLOR
-# undef AVERAGES_NEARSHORE
+#if defined AVERAGES_WEC && (!defined WEC_MELLOR || \
+                             !defined WEC_VF)
+# undef AVERAGES_WEC
 #endif
 
 /*
@@ -938,11 +948,11 @@
 ** Define internal option to process wave data.
 */
 
-#if defined NEARSHORE_MELLOR || defined NEARSHORE_WEC
-#   define NEARSHORE
+#if defined WEC_MELLOR || defined WEC_VF
+#   define WEC
 #endif
 
-#if defined BBL_MODEL   || defined NEARSHORE || \
+#if defined BBL_MODEL   || defined WEC || \
     defined WAVES_OCEAN
 # define WAVES_DIR
 #endif
@@ -954,14 +964,14 @@
 #endif
 
 #if (defined BBL_MODEL        && !defined WAVES_UB) ||  \
-     defined NEARSHORE        || \
+     defined WEC              || \
      defined ZOS_HSIG         || defined COARE_TAYLOR_YELLAND || \
      defined BEDLOAD_SOULSBY  || defined WAVES_OCEAN || \
      defined DRENNAN
 # define WAVES_HEIGHT
 #endif
 
-#if defined NEARSHORE || defined BEDLOAD_SOULSBY || \
+#if defined WEC || defined BEDLOAD_SOULSBY || \
     defined WAVES_OCEAN
 # define WAVES_LENGTH
 #endif
@@ -973,7 +983,7 @@
 #endif
 
 #if defined COARE_TAYLOR_YELLAND   || defined COARE_OOST || \
-    defined DRENNAN || defined WAVES_OCEAN || defined NEARSHORE_WEC
+    defined DRENNAN || defined WAVES_OCEAN || defined WEC_VF
 # define WAVES_TOP_PERIOD
 #endif
 
@@ -981,10 +991,16 @@
 # define WAVES_BOT_PERIOD
 #endif
 
+#if (defined TKE_WAVEDISS || defined WEC_VF) && \
+  (!defined WDISS_THORGUZA && \
+   !defined WDISS_CHURTHOR && !defined WDISS_WAVEMOD)
+# define WAVES_DISS
+#endif
+
 #if !defined WAVES_OCEAN     && \
    ((defined BULK_FLUXES     && defined COARE_TAYLOR_YELLAND) || \
     (defined BULK_FLUXES     && defined COARE_OOST)           || \
-     defined SVENDSEN_ROLLER || defined TKE_WAVEDISS          || \
+     defined SVENDSEN_ROLLER || defined WAVES_DISS            || \
      defined WAVES_DIR       || defined WAVES_BOT_PERIOD      || \
      defined WAVES_HEIGHT    || defined WAVES_TOP_PERIOD      || \
      defined WAVES_LENGTH    || defined WAVES_LENGTHP)

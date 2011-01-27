@@ -68,19 +68,19 @@
 !  avgDV_avg2 time-averaged v-flux for 3D momentum coupling.           !
 !                                                                      !
 # endif
-# ifdef AVERAGES_NEARSHORE
+# ifdef AVERAGES_WEC
 !  Time-averaged radiation stresses.                                   !
 !                                                                      !
 !  avgu2Sd    2D stokes velocity component (m/s) in the XI-direction.  !
 !  avgv2Sd    2D stokes velocity component (m/s) in the ETA-direction. !
+!  avgu3Sd    3D stokes velocity component (m/s) in the XI-direction.  !
+!  avgv3Sd    3D stokes velocity component (m/s) in the ETA-direction. !
+#  ifdef WEC_MELLOR
 !  avgu2RS    2D radiation stress tensor in the XI-direction.          !
 !  avgv2RS    2D radiation stress tensor in the ETA-direction.         !
 !  avgSxx2d   2D radiation stress, xx-component.                       !
 !  avgSxy2d   2D radiation stress, xy-component.                       !
 !  avgSyy2d   2D radiation stress, yy-component.                       !
-!                                                                      !
-!  avgu3Sd    3D stokes velocity component (m/s) in the XI-direction.  !
-!  avgv3Sd    3D stokes velocity component (m/s) in the ETA-direction. !
 !  avgu3RS    3D radiation stress tensor in the XI-direction.          !
 !  avgv3RS    3D radiation stress tensor in the ETA-direction.         !
 !  avgSxx3d   3D radiation stress, xx-component.                       !
@@ -88,6 +88,7 @@
 !  avgSyy3d   3D radiation stress, yy-component.                       !
 !  avgSzx3d   3D radiation stress, zx-component.                       !
 !  avgSzy3d   3D radiation stress, zy-component.                       !
+#  endif
 !                                                                      !
 # endif
 !=======================================================================
@@ -104,14 +105,16 @@
           real(r8), pointer :: avguWave(:,:)
           real(r8), pointer :: avgvWave(:,:)
 # endif
-# ifdef AVERAGES_NEARSHORE
+# ifdef AVERAGES_WEC
           real(r8), pointer :: avgu2Sd(:,:)
           real(r8), pointer :: avgv2Sd(:,:)
+#  ifdef WEC_MELLOR
           real(r8), pointer :: avgu2RS(:,:)
           real(r8), pointer :: avgv2RS(:,:)
           real(r8), pointer :: avgSxx2d(:,:)
           real(r8), pointer :: avgSxy2d(:,:)
           real(r8), pointer :: avgSyy2d(:,:)
+#  endif
 # endif
           real(r8), pointer :: avgzeta(:,:)
 # ifdef AVERAGES_QUADRATIC
@@ -132,9 +135,10 @@
           real(r8), pointer :: avgDV_avg1(:,:)
           real(r8), pointer :: avgDV_avg2(:,:)
 #  endif
-#  ifdef AVERAGES_NEARSHORE
+#  ifdef AVERAGES_WEC
           real(r8), pointer :: avgu3Sd(:,:,:)
           real(r8), pointer :: avgv3Sd(:,:,:)
+#   ifdef WEC_MELLOR
           real(r8), pointer :: avgu3RS(:,:,:)
           real(r8), pointer :: avgv3RS(:,:,:)
           real(r8), pointer :: avgSxx3d(:,:,:)
@@ -142,6 +146,7 @@
           real(r8), pointer :: avgSyy3d(:,:,:)
           real(r8), pointer :: avgSzx3d(:,:,:)
           real(r8), pointer :: avgSzy3d(:,:,:)
+#   endif
 #  endif
 #  ifdef AVERAGES_QUADRATIC
 #   ifdef SALINITY
@@ -230,14 +235,16 @@
       allocate ( AVERAGE(ng) % avguWave(LBi:UBi,LBj:UBj) )
       allocate ( AVERAGE(ng) % avgvWave(LBi:UBi,LBj:UBj) )
 # endif
-# ifdef AVERAGES_NEARSHORE
+# ifdef AVERAGES_WEC
       allocate ( AVERAGE(ng) % avgu2Sd(LBi:UBi,LBj:UBj) )
       allocate ( AVERAGE(ng) % avgv2Sd(LBi:UBi,LBj:UBj) )
+#  ifdef WEC_MELLOR
       allocate ( AVERAGE(ng) % avgu2RS(LBi:UBi,LBj:UBj) )
       allocate ( AVERAGE(ng) % avgv2RS(LBi:UBi,LBj:UBj) )
       allocate ( AVERAGE(ng) % avgSxx2d(LBi:UBi,LBj:UBj) )
       allocate ( AVERAGE(ng) % avgSxy2d(LBi:UBi,LBj:UBj) )
       allocate ( AVERAGE(ng) % avgSyy2d(LBi:UBi,LBj:UBj) )
+#  endif
 # endif
 # ifdef AVERAGES_QUADRATIC
       allocate ( AVERAGE(ng) % avgU2(LBi:UBi,LBj:UBj) )
@@ -255,9 +262,10 @@
       allocate ( AVERAGE(ng) % avgDV_avg1(LBi:UBi,LBj:UBj) )
       allocate ( AVERAGE(ng) % avgDV_avg2(LBi:UBi,LBj:UBj) )
 #  endif
-#  ifdef AVERAGES_NEARSHORE
+#  ifdef AVERAGES_WEC
       allocate ( AVERAGE(ng) % avgu3Sd(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( AVERAGE(ng) % avgv3Sd(LBi:UBi,LBj:UBj,N(ng)) )
+#   ifdef WEC_MELLOR
       allocate ( AVERAGE(ng) % avgu3RS(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( AVERAGE(ng) % avgv3RS(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( AVERAGE(ng) % avgSxx3d(LBi:UBi,LBj:UBj,N(ng)) )
@@ -265,6 +273,7 @@
       allocate ( AVERAGE(ng) % avgSyy3d(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( AVERAGE(ng) % avgSzx3d(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( AVERAGE(ng) % avgSzy3d(LBi:UBi,LBj:UBj,N(ng)) )
+#   endif
 #  endif
       allocate ( AVERAGE(ng) % avgw3d(LBi:UBi,LBj:UBj,0:N(ng)) )
       allocate ( AVERAGE(ng) % avgwvel(LBi:UBi,LBj:UBj,0:N(ng)) )
@@ -396,14 +405,16 @@
           AVERAGE(ng) % avguWave(i,j) = IniVal
           AVERAGE(ng) % avgvWave(i,j) = IniVal
 # endif
-# ifdef AVERAGES_NEARSHORE
+# ifdef AVERAGES_WEC
           AVERAGE(ng) % avgu2Sd(i,j) = IniVal
           AVERAGE(ng) % avgv2Sd(i,j) = IniVal
+#  ifdef WEC_MELLOR
           AVERAGE(ng) % avgu2RS(i,j) = IniVal
           AVERAGE(ng) % avgv2RS(i,j) = IniVal
           AVERAGE(ng) % avgSxx2d(i,j) = IniVal
           AVERAGE(ng) % avgSxy2d(i,j) = IniVal
           AVERAGE(ng) % avgSyy2d(i,j) = IniVal
+#  endif
 # endif
 # ifdef AVERAGES_QUADRATIC
           AVERAGE(ng) % avgU2(i,j) = IniVal
@@ -453,9 +464,10 @@
             AVERAGE(ng) % avgrho(i,j,k) = IniVal
             AVERAGE(ng) % avgu3d(i,j,k) = IniVal
             AVERAGE(ng) % avgv3d(i,j,k) = IniVal
-#  ifdef AVERAGES_NEARSHORE
+#  ifdef AVERAGES_WEC
             AVERAGE(ng) % avgu3Sd(i,j,k) = IniVal
             AVERAGE(ng) % avgv3Sd(i,j,k) = IniVal
+#   ifdef WEC_MELLOR
             AVERAGE(ng) % avgu3RS(i,j,k) = IniVal
             AVERAGE(ng) % avgv3RS(i,j,k) = IniVal
             AVERAGE(ng) % avgSxx3d(i,j,k) = IniVal
@@ -463,6 +475,7 @@
             AVERAGE(ng) % avgSyy3d(i,j,k) = IniVal
             AVERAGE(ng) % avgSzx3d(i,j,k) = IniVal
             AVERAGE(ng) % avgSzy3d(i,j,k) = IniVal
+#   endif
 #  endif
 #  ifdef AVERAGES_QUADRATIC
             AVERAGE(ng) % avgHuon(i,j,k) = IniVal

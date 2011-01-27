@@ -898,7 +898,7 @@
       END DO
 #  endif
 # endif
-# ifdef NEARSHORE_MELLOR
+# ifdef WEC_MELLOR
 !
 !  Write out 2D radiation stress, Sxx-component.
 !
@@ -979,39 +979,6 @@
      &                        varid = staVid(idV2rs,ng))
         IF (exit_flag.ne.NoError) RETURN
       END IF
-!
-!  Write out 2D U-momentum Stokes drift velocity.
-!
-      IF (Sout(idU2Sd,ng)) THEN
-        scale=1.0_r8
-        CALL extract_sta2d (ng, iNLM, Cgrid, idU2Sd, u2dvar,            &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, OCEAN(ng) % ubar_stokes,             &
-     &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
-     &                        TRIM(Vname(1,idU2Sd)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idU2Sd,ng))
-        IF (exit_flag.ne.NoError) RETURN
-      END IF
-!
-!  Write out 2D V-momentum Stokes drift velocity.
-!
-      IF (Sout(idV2Sd,ng)) THEN
-        scale=1.0_r8
-        CALL extract_sta2d (ng, iNLM, Cgrid, idV2Sd, v2dvar,            &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, OCEAN(ng) % ubar_stokes,             &
-     &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
-     &                        TRIM(Vname(1,idV2Sd)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idV2Sd,ng))
-        IF (exit_flag.ne.NoError) RETURN
-      END IF
-
 #  ifdef SOLVE3D
 !
 !  Write out 3D radiation stress, Sxx-horizontal component.
@@ -1132,6 +1099,41 @@
      &                        varid = staVid(idV3rs,ng))
         IF (exit_flag.ne.NoError) RETURN
       END IF
+#  endif
+# endif
+# ifdef WEC
+!
+!  Write out 2D U-momentum Stokes drift velocity.
+!
+      IF (Sout(idU2Sd,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idU2Sd, u2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, OCEAN(ng) % ubar_stokes,             &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idU2Sd)), psta,              &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idU2Sd,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out 2D V-momentum Stokes drift velocity.
+!
+      IF (Sout(idV2Sd,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idV2Sd, v2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, OCEAN(ng) % ubar_stokes,             &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idV2Sd)), psta,              &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idV2Sd,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
 !
 !  Write out 3D U-momentum Stokes drift velocity.
 !
@@ -1166,7 +1168,6 @@
      &                        varid = staVid(idV3Sd,ng))
         IF (exit_flag.ne.NoError) RETURN
       END IF
-#  endif
 # endif
 # ifdef WAVES_HEIGHT
 !
@@ -1294,21 +1295,56 @@
         IF (exit_flag.ne.NoError) RETURN
       END IF
 # endif
-# if defined TKE_WAVEDISS || defined WAVES_OCEAN
+# ifdef WAVES_OCEAN
 !
-!  Write out wave dissipation.
+!  Write out wave dissipation due to bottom friction.
 !
-      IF (Sout(idWdis,ng)) THEN
+      IF (Sout(idWdif,ng)) THEN
         scale=rad2deg
-        CALL extract_sta2d (ng, iNLM, Cgrid, idWdis, r2dvar,            &
+        CALL extract_sta2d (ng, iNLM, Cgrid, idWdif, r2dvar,            &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, FORCES(ng) % wave_dissip,            &
+     &                      scale, FORCES(ng) % Dissip_fric,            &
      &                      Nstation(ng), Xpos, Ypos, psta)
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
-     &                        TRIM(Vname(1,idWdis)), psta,              &
+     &                        TRIM(Vname(1,idWdif)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
      &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idWdis,ng))
+     &                        varid = staVid(idWdif,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+# endif
+# if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
+     defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+!
+!  Write out wave dissipation due to breaking.
+!
+      IF (Sout(idWdib,ng)) THEN
+        scale=rad2deg
+        CALL extract_sta2d (ng, iNLM, Cgrid, idWdib, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng) % Dissip_break,           &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idWdib)), psta,              &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idWdib,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out wave dissipation due to white capping.
+!
+      IF (Sout(idWdiw,ng)) THEN
+        scale=rad2deg
+        CALL extract_sta2d (ng, iNLM, Cgrid, idWdiw, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng) % Dissip_wcap,            &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idWdiw)), psta,              &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idWdiw,ng))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 # endif

@@ -2183,7 +2183,10 @@
       JURSEL = 27                                                         40.13
 #ifdef SWAN_MODEL
       JPBOT = 28
-      MCMVAR = 28
+      JDSXB = 29
+      JDSXS = 30
+      JDSXW = 31
+      MCMVAR = 31
 #else
       MCMVAR = 27                                                         40.65 40.61 40.51 40.13
 #endif
@@ -2207,11 +2210,11 @@
 !
 #if !defined SWAN_MODEL
       JPBOT  = 1                                                          40.65 40.51
-#endif
-      JBOTLV = 1                                                          40.65
       JDSXB  = 1                                                          40.65 40.61
       JDSXS  = 1                                                          40.65 40.61
       JDSXW  = 1                                                          40.65 40.61
+#endif
+      JBOTLV = 1                                                          40.65
       JGENR  = 1                                                          40.85
       JGSXW  = 1                                                          40.85
       JREDS  = 1                                                          40.85

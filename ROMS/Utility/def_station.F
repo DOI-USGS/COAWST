@@ -915,7 +915,7 @@
         END DO
 #  endif
 # endif
-# ifdef NEARSHORE_MELLOR
+# ifdef WEC_MELLOR
 !
 !  Define 2D radiation stress, Sxx-component.
 !
@@ -982,34 +982,6 @@
           Vinfo(14)=Vname(4,idV2rs)
           Vinfo(16)=Vname(1,idtime)
           status=def_var(ng, iNLM, ncSTAid(ng), staVid(idV2rs,ng),      &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetParAccess = .FALSE.)
-          IF (exit_flag.ne.NoError) RETURN
-        END IF
-!
-!  Define 2D u-Stokes drift velocity.
-!
-        IF (Sout(idU2Sd,ng)) THEN
-          Vinfo( 1)=Vname(1,idU2Sd)
-          Vinfo( 2)=Vname(2,idU2Sd)
-          Vinfo( 3)=Vname(3,idU2Sd)
-          Vinfo(14)=Vname(4,idU2Sd)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, ncSTAid(ng), staVid(idU2Sd,ng),      &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetParAccess = .FALSE.)
-          IF (exit_flag.ne.NoError) RETURN
-        END IF
-!
-!  Define 2D v-Stokes drift velocity.
-!
-        IF (Sout(idV2Sd,ng)) THEN
-          Vinfo( 1)=Vname(1,idV2Sd)
-          Vinfo( 2)=Vname(2,idV2Sd)
-          Vinfo( 3)=Vname(3,idV2Sd)
-          Vinfo(14)=Vname(4,idV2Sd)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, ncSTAid(ng), staVid(idV2Sd,ng),      &
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetParAccess = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -1114,6 +1086,37 @@
      &                   SetParAccess = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
         END IF
+#  endif
+# endif
+# ifdef WEC
+!
+!  Define 2D u-Stokes drift velocity.
+!
+        IF (Sout(idU2Sd,ng)) THEN
+          Vinfo( 1)=Vname(1,idU2Sd)
+          Vinfo( 2)=Vname(2,idU2Sd)
+          Vinfo( 3)=Vname(3,idU2Sd)
+          Vinfo(14)=Vname(4,idU2Sd)
+          Vinfo(16)=Vname(1,idtime)
+          status=def_var(ng, iNLM, ncSTAid(ng), staVid(idU2Sd,ng),      &
+     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
+     &                   SetParAccess = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+!
+!  Define 2D v-Stokes drift velocity.
+!
+        IF (Sout(idV2Sd,ng)) THEN
+          Vinfo( 1)=Vname(1,idV2Sd)
+          Vinfo( 2)=Vname(2,idV2Sd)
+          Vinfo( 3)=Vname(3,idV2Sd)
+          Vinfo(14)=Vname(4,idV2Sd)
+          Vinfo(16)=Vname(1,idtime)
+          status=def_var(ng, iNLM, ncSTAid(ng), staVid(idV2Sd,ng),      &
+     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
+     &                   SetParAccess = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
 !
 !  Define 3D u-Stokes velocity.
 !
@@ -1142,7 +1145,6 @@
      &                   SetParAccess = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
         END IF
-#  endif
 # endif
 # ifdef WAVES_HEIGHT
 !
@@ -1258,17 +1260,48 @@
           IF (exit_flag.ne.NoError) RETURN
         END IF
 # endif
-# if defined TKE_WAVEDISS || defined WAVES_OCEAN
+# ifdef defined WAVES_OCEAN
 !
-!  Define wave dissipation.
+!  Define wave dissipation due to bottom friction.
 !
-        IF (Sout(idWdis,ng)) THEN
-          Vinfo( 1)=Vname(1,idWdis)
-          Vinfo( 2)=Vname(2,idWdis)
-          Vinfo( 3)=Vname(3,idWdis)
-          Vinfo(14)=Vname(4,idWdis)
+        IF (Sout(idWdif,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdif)
+          Vinfo( 2)=Vname(2,idWdif)
+          Vinfo( 3)=Vname(3,idWdif)
+          Vinfo(14)=Vname(4,idWdif)
           Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, ncSTAid(ng), staVid(idWdis,ng),      &
+          status=def_var(ng, iNLM, ncSTAid(ng), staVid(idWdif,ng),      &
+     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
+     &                   SetParAccess = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+# endif
+# if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
+     defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+!
+!  Define wave dissipation due to breaking.
+!
+        IF (Sout(idWdib,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdib)
+          Vinfo( 2)=Vname(2,idWdib)
+          Vinfo( 3)=Vname(3,idWdib)
+          Vinfo(14)=Vname(4,idWdib)
+          Vinfo(16)=Vname(1,idtime)
+          status=def_var(ng, iNLM, ncSTAid(ng), staVid(idWdib,ng),      &
+     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
+     &                   SetParAccess = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+!
+!  Define wave dissipation due to white capping.
+!
+        IF (Sout(idWdiw,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdiw)
+          Vinfo( 2)=Vname(2,idWdiw)
+          Vinfo( 3)=Vname(3,idWdiw)
+          Vinfo(14)=Vname(4,idWdiw)
+          Vinfo(16)=Vname(1,idtime)
+          status=def_var(ng, iNLM, ncSTAid(ng), staVid(idWdiw,ng),      &
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetParAccess = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -1464,7 +1497,7 @@
             staVid(idVbvr,ng)=var_id(i)
 #  endif
 # endif
-# ifdef NEARSHORE_MELLOR
+# ifdef WEC_MELLOR
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW2xx))) THEN
             got_var(idW2xx)=.TRUE.
             staVid(idW2xx,ng)=var_id(i)
@@ -1480,12 +1513,6 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idV2rs))) THEN
             got_var(idV2rs)=.TRUE.
             staVid(idV2rs,ng)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idU2Sd))) THEN
-            got_var(idU2Sd)=.TRUE.
-            staVid(idU2Sd,ng)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idV2Sd))) THEN
-            got_var(idV2Sd)=.TRUE.
-            staVid(idV2Sd,ng)=var_id(i)
 #  ifdef SOLVE3D
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW3xx))) THEN
             got_var(idW3xx)=.TRUE.
@@ -1508,13 +1535,21 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idV3rs))) THEN
             got_var(idV3rs)=.TRUE.
             staVid(idV3rs,ng)=var_id(i)
+#  endif
+# endif
+# ifdef WEC
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idU2Sd))) THEN
+            got_var(idU2Sd)=.TRUE.
+            staVid(idU2Sd,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idV2Sd))) THEN
+            got_var(idV2Sd)=.TRUE.
+            staVid(idV2Sd,ng)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idU3Sd))) THEN
             got_var(idU3Sd)=.TRUE.
             staVid(idU3Sd,ng)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idV3Sd))) THEN
             got_var(idV3Sd)=.TRUE.
             staVid(idV3Sd,ng)=var_id(i)
-#  endif
 # endif
 # ifdef WAVES_HEIGHT
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWamp))) THEN
@@ -1551,10 +1586,19 @@
             got_var(idWorb)=.TRUE.
             staVid(idWorb,ng)=var_id(i)
 # endif
-# if defined TKE_WAVEDISS || defined WAVES_OCEAN
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdis))) THEN
-            got_var(idWdis)=.TRUE.
-            staVid(idWdis,ng)=var_id(i)
+# ifdef WAVES_OCEAN
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdif))) THEN
+            got_var(idWdif)=.TRUE.
+            staVid(idWdif,ng)=var_id(i)
+# endif
+# if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
+     defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdib))) THEN
+            got_var(idWdib)=.TRUE.
+            staVid(idWdib,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdiw))) THEN
+            got_var(idWdiw)=.TRUE.
+            staVid(idWdiw,ng)=var_id(i)
 # endif
           END IF
 # ifdef SOLVE3D
@@ -1849,7 +1893,7 @@
         END IF
 #  endif
 # endif
-# ifdef NEARSHORE_MELLOR
+# ifdef WEC_MELLOR
         IF (.not.got_var(idW2xx).and.Sout(idW2xx,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idW2xx)),          &
      &                                  TRIM(ncname)
@@ -1876,18 +1920,6 @@
         END IF
         IF (.not.got_var(idV2rs).and.Sout(idV2rs,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idV2rs)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idU2Sd).and.Sout(idU2Sd,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idU2Sd)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idV2Sd).and.Sout(idV2Sd,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idV2Sd)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
@@ -1935,6 +1967,21 @@
           exit_flag=3
           RETURN
         END IF
+#  endif
+# endif
+# ifdef WEC
+        IF (.not.got_var(idU2Sd).and.Sout(idU2Sd,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idU2Sd)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idV2Sd).and.Sout(idV2Sd,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idV2Sd)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
         IF (.not.got_var(idU3Sd).and.Sout(idU3Sd,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idU3Sd)),          &
      &                                  TRIM(ncname)
@@ -1947,7 +1994,6 @@
           exit_flag=3
           RETURN
         END IF
-#  endif
 # endif
 # ifdef WAVES_HEIGHT
         IF (.not.got_var(idWamp).and.Sout(idWamp,ng)) THEN
@@ -2005,9 +2051,24 @@
           RETURN
         END IF
 # endif
-# if defined TKE_WAVEDISS || defined WAVES_OCEAN
-        IF (.not.got_var(idWdis).and.Sout(idWdis,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWdis)),          &
+# ifdef WAVES_OCEAN
+        IF (.not.got_var(idWdis).and.Sout(idWdif,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWdif)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+# endif
+# if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
+     defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+        IF (.not.got_var(idWdib).and.Sout(idWdib,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWdib)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWdiw).and.Sout(idWdiw,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWdiw)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

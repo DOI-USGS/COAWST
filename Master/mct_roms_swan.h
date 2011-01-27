@@ -6,12 +6,11 @@
 **   See License_ROMS.txt                                             **
 ************************************************************************
 **                                                                    **
-** These routines are use couple ROMS/TOMS to SWAN wave model using   **
+** These routines couple ROMS/TOMS to the SWAN wave model using       **
 ** the Model Coupling Toolkit (MCT).                                  **
 **                                                                    **
 ************************************************************************
 */
-
       SUBROUTINE initialize_ocn2wav_coupling (ng, tile)
 !
 !=======================================================================
@@ -43,7 +42,7 @@
       integer :: i, ic, j, jc, nprocs
       integer :: nRows, nCols, num_sparse_elems
 !     integer, dimension(:), pointer :: points
-      integer :: ioff, joff, ieff
+	integer :: ioff, joff, ieff, cid, cad
 #ifdef REFINED_GRID
       integer, dimension(:), pointer :: ocnids
       integer, dimension(:), pointer :: wavids
@@ -52,6 +51,9 @@
       integer, allocatable :: start(:)
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       character (len=70)    :: nc_name
+      character (len=20)    :: to_add
+      character (len=120)   :: wostring
+      character (len=120)   :: owstring
 !
 !-----------------------------------------------------------------------
 !  Compute lower and upper bounds over a particular domain partition or
@@ -91,7 +93,7 @@
       END IF
 !
 !-----------------------------------------------------------------------
-!  Begin initialization phase.
+!  Establish MCT communicator.
 !-----------------------------------------------------------------------
 !
 !  Get communicator local rank and size.
@@ -125,14 +127,50 @@
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                &
      &                    OCN_COMM_WORLD, OCNid)
 #endif
-#ifdef MCT_INTERP_OC2WV
 !
+!  Determine the part of the grid we are working on and develop
+!  local segment of the global map.
+!
+      Jsize=JendT-JstrT+1
+      IF (.not.allocated(start)) THEN
+        allocate ( start(Jsize) )
+      END IF
+      IF (.not.allocated(length)) THEN
+        allocate ( length(Jsize) )
+      END IF
+      jc=0
+      ioff=0
+      joff=0
+      ieff=0
+#ifdef REFINED_GRID
+      IF (ng.gt.1) THEN
+        ioff=5
+        joff=3
+        ieff=3
+      END IF
+#endif
+      DO j=JstrT,JendT
+        jc=jc+1
+        start (jc)=(j+joff)*(Lm(ng)+2+ioff)+(IstrT+ieff)+1
+        length(jc)=(IendT-IstrT+1)
+      END DO
+      CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapROMS,             &
+     &                        start, length, 0, OCN_COMM_WORLD, OCNid)
+!
+!  Deallocate working arrays.
+!
+      IF (allocated(start)) THEN
+        deallocate (start)
+      END IF
+      IF (allocated(length)) THEN
+        deallocate (length)
+      END IF
+!
+#ifdef MCT_INTERP_OC2WV
 !  If ocean grid and wave grids are different sizes, then
 !  develop sparse matrices for interpolation.
 !
-!!!!!!!!!!!!!!!!!!!!!!
-! First work on waves to ocean.
-!!!!!!!!!!!!!!!!!!!!!!
+!  Prepare sparse matrices. First work on waves to ocean.
 !
       IF (Myrank.eq.MyMaster) THEN
         nc_name=W2Oname(ng)
@@ -169,10 +207,8 @@
           deallocate ( dst_grid_imask )
 !        END IF
       END IF
-
-!!!!!!!!!!!!!!!!!!!!!!
-! Second work on ocean to waves.
-!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Prepare sparse matrices. Second work on ocean to waves.
 !
       IF (Myrank.eq.MyMaster) THEN
         nc_name=O2Wname(ng)
@@ -209,45 +245,6 @@
           deallocate ( dst_grid_imask )
 !        END IF
       END IF
-#endif
-!
-!  Determine start and lengths for roms domain decomposition.
-!
-      Jsize=JendT-JstrT+1
-      IF (.not.allocated(start)) THEN
-        allocate ( start(Jsize) )
-      END IF
-      IF (.not.allocated(length)) THEN
-        allocate ( length(Jsize) )
-      END IF
-      jc=0
-      ioff=0
-      joff=0
-      ieff=0
-#ifdef REFINED_GRID
-      IF (ng.gt.1) THEN
-        ioff=5
-        joff=3
-        ieff=3
-      END IF
-#endif
-      DO j=JstrT,JendT
-        jc=jc+1
-        start (jc)=(j+joff)*(Lm(ng)+2+ioff)+(IstrT+ieff)+1
-        length(jc)=(IendT-IstrT+1)
-      END DO
-      CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapROMS,             &
-     &                        start, length, 0, OCN_COMM_WORLD, OCNid)
-!
-!  Deallocate working arrays.
-!
-      IF (allocated(start)) THEN
-        deallocate (start)
-      END IF
-      IF (allocated(length)) THEN
-        deallocate (length)
-      END IF
-#ifdef MCT_INTERP_OC2WV
 !
 !  Determine start and lengths for domain decomposition
 !  of the wave model.
@@ -265,7 +262,7 @@
         start (jc)=j*dst_grid_dims(2)+1
         length(jc)=dst_grid_dims(2)
       END DO
-
+!
       CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapSWAN,             &
      &                        start, length, 0, OCN_COMM_WORLD, OCNid)
 !
@@ -296,68 +293,159 @@
      &                              Xonly,MyMaster,OCN_COMM_WORLD,OCNid)
         call SparseMatrix_clean(sMatO)
 #endif
-#ifdef MCT_INTERP_OC2WV
 !
-!  Initialize attribute vector holding the export data code strings of
-!  the wave model. The Asize is the number of grid point on this
+!  Initialize the list of fields from the wave model.
+!
+      cad=LEN(wostring)
+      DO i=1,cad
+        wostring(i:i)=''
+      END DO
+      cid=1
+!
+      to_add='DISBOT'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DISSURF'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DISWCAP'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':HSIGN'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':RTP'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':TMBOT'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':URMS'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DIR'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':WLEN'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':WLENP'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':QB'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+!  Finalize and remove trailing spaces from the wostring
+!  for the rlist.
+!
+      cad=LEN_TRIM(wostring)
+      wostring=wostring(1:cad)
+!
+!  Initialize attribute vector holding the export data of
+!  the wav model. The Asize is the number of grid point on this
 !  processor.
 !
-!     call GlobalSegMap_Ordpnts(xPrimeGSMap,MyRank,points)
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
+     &                         OCN_COMM_WORLD)
+      CALL AttrVect_init(AttrVect_G(ng)%wav2ocn_AV,                     &
+     &                   rList=TRIM(wostring),lsize=Asize)
+      CALL AttrVect_zero(AttrVect_G(ng)%wav2ocn_AV)
+!
+!  Initialize attribute vector that contain the data strings from
+!  the ocean model.
+!
+      cad=LEN(owstring)
+      DO i=1,cad
+        owstring(i:i)=''
+      END DO
+      cid=1
+!
+      to_add='DEPTH'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':WLEV'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VELX'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VELY'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':ZO'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+#ifdef ICE_MODEL
+!
+      to_add=':SEAICE'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+#endif
+!
+!  Finalize and remove trailing spaces from the owstring
+!  for the rlist.
+!
+      cad=LEN_TRIM(owstring)
+      owstring=owstring(1:cad)
+!
+      CALL AttrVect_init(AttrVect_G(ng)%ocn2wav_AV,                     &
+     &                   rList=TRIM(owstring),lsize=Asize)
+      CALL AttrVect_zero(AttrVect_G(ng)%ocn2wav_AV)
+!
+#ifdef MCT_INTERP_OC2WV
+!
+!  Initialize attribute vectors that are used for the sparse 
+!  interpolation. These vectors are _AV2 and are the same vales 
+!  as _AV but different size grids.
+!
       Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapSWAN,            &
      &      OCN_COMM_WORLD)
-      CALL AttrVect_init(wav2ocn_AV2,                                   &
-     &     rList="DISSIP:HSIGN:RTP:TMBOT:URMS:DIR:WLEN:WLENP:QB",       &
-     &     lsize=Asize)
-      CALL AttrVect_zero (wav2ocn_AV2)
-!
-      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
-     &      OCN_COMM_WORLD)
-      CALL AttrVect_init(AttrVect_G(ng)%wav2ocn_AV,                     &
-     &     rList="DISSIP:HSIGN:RTP:TMBOT:URMS:DIR:WLEN:WLENP:QB",       &
-     &     lsize=Asize)
-      CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
+      CALL AttrVect_init(wav2ocn_AV2,rList=TRIM(wostring),lsize=Asize)
+      CALL AttrVect_zero(wav2ocn_AV2)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
 !
-      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapSWAN,            &
-     &      OCN_COMM_WORLD)
-      CALL AttrVect_init (ocn2wav_AV2,                                  &
-     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
-     &                    lsize=Asize)
-      CALL AttrVect_zero (ocn2wav_AV2)
-!
-      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
-     &      OCN_COMM_WORLD)
-      CALL AttrVect_init (AttrVect_G(ng)%ocn2wav_AV,                    &
-     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
-     &                    lsize=Asize)
-      CALL AttrVect_zero (AttrVect_G(ng)%ocn2wav_AV)
+      CALL AttrVect_init(ocn2wav_AV2,rList=TRIM(owstring),lsize=Asize)
+      CALL AttrVect_zero(ocn2wav_AV2)
 !
 !  Initialize a router to the wave model component.
 !
       CALL Router_init (WAVid, GlobalSegMap_G(ng)%GSMapSWAN,            &
      &                  OCN_COMM_WORLD, Router_G(ng)%ROMStoSWAN)
 #else
-!
-!  Initialize attribute vector holding the export data code strings of
-!  the wave model. The Asize is the number of grid point on this
-!  processor.
-!
-      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ng)%GSMapROMS,            &
-     &                         OCN_COMM_WORLD)
-      CALL AttrVect_init(AttrVect_G(ng)%wav2ocn_AV,                     &
-     &  rList="DISSIP:HSIGN:RTP:TMBOT:URMS:DIR:WLEN:WLENP:QB",          &
-     &  lsize=Asize)
-      CALL AttrVect_zero (AttrVect_G(ng)%wav2ocn_AV)
-!
-!  Initialize attribute vector holding the export data code string of
-!  the ocean model.
-!
-      CALL AttrVect_init (AttrVect_G(ng)%ocn2wav_AV,                    &
-     &                    rList="DEPTH:WLEV:VELX:VELY:ZO",              &
-     &                    lsize=Asize)
-      CALL AttrVect_zero (AttrVect_G(ng)%ocn2wav_AV)
 !
 !  Initialize a router to the wave model component.
 !
@@ -584,16 +672,42 @@
 !
 !  Receive fields from wave model.
 !
-!  Wave dissipation.
+!  Wave dissipation due to bottom friction.
 !
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISSIP",   &
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISBOT",   &
      &                           A, Asize)
       ij=0
       cff=1.0_r8/rho0
       DO j=JstrT,JendT
         DO i=IstrT,IendT
           ij=ij+1
-          FORCES(ng)%Wave_dissip(i,j)=MAX(0.0_r8,A(ij)*ramp)*cff
+          FORCES(ng)%Dissip_fric(i,j)=MAX(0.0_r8,A(ij)*ramp)*cff
+        END DO
+      END DO
+!
+!  Wave dissipation due to surface breaking.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISSURF",  &
+     &                           A, Asize)
+      ij=0
+      cff=1.0_r8/rho0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          FORCES(ng)%Dissip_break(i,j)=MAX(0.0_r8,A(ij)*ramp)*cff
+        END DO
+      END DO
+!
+!  Wave dissipation due to white capping.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISWCAP",  &
+     &                           A, Asize)
+      ij=0
+      cff=1.0_r8/rho0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          FORCES(ng)%Dissip_wcap(i,j)=MAX(0.0_r8,A(ij)*ramp)*cff
         END DO
       END DO
 !
@@ -705,7 +819,13 @@
 !
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        FORCES(ng)%Wave_dissip)
+     &                        FORCES(ng)%Dissip_break)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%Dissip_fric)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%Dissip_wcap)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Hwave)
@@ -741,11 +861,17 @@
 !  Exchange tile boundaries.
 !-----------------------------------------------------------------------
 !
-      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    FORCES(ng)%Wave_dissip, FORCES(ng)%Hwave,     &
-     &                    FORCES(ng)%Pwave_top, FORCES(ng)%Pwave_bot)
+     &                    FORCES(ng)%Dissip_break,                      &
+     &                    FORCES(ng)%Dissip_fric,                       &
+     &                    FORCES(ng)%Dissip_wcap)
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    FORCES(ng)%Hwave, FORCES(ng)%Pwave_top,       &
+     &                    FORCES(ng)%Pwave_bot)
 # ifdef WAVES_LENGTHP
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -982,6 +1108,21 @@
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "ZO",       &
      &                           A, Asize)
+#ifdef ICE_MODEL
+!
+!  sea ice.
+!
+      ij=0
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ij=ij+1
+          A(ij)=0.0_r8
+	! A(ij)=MAX(ICE(ng)%sfw(i,j,1) ! NEED TO PROVIDE CORRECT VAR
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "SEAICE",   &
+     &                           A, Asize)
+#endif
 !
 !  Send ocean fields to wave model.
 !

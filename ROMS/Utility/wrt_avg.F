@@ -297,7 +297,7 @@
         RETURN
       END IF
 # endif
-# ifdef AVERAGES_NEARSHORE
+# if defined AVERAGES_WEC && defined WEC_MELLOR
 !
 !  Write out 2D radiation stress, Sxx-component.
 !
@@ -408,6 +408,8 @@
           RETURN
         END IF
       END IF
+# endif
+# ifdef AVERAGES_WEC
 !
 !  Write out 2D stokes momentum component (m/s) in the XI-direction.
 !
@@ -590,7 +592,7 @@
         END IF
       END IF
 #  endif
-#  ifdef AVERAGES_NEARSHORE
+#  if defined AVERAGES_WEC && defined WEC_MELLOR
 !
 !  Write out 3D radiation stress, Sxx-component.
 !
@@ -745,6 +747,8 @@
           RETURN
         END IF
       END IF
+#  endif
+#  ifdef AVERAGES_WEC
 !
 !  Write out 3D stokes momentum component (m/s) in the XI-direction.
 !

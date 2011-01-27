@@ -259,14 +259,21 @@
 #  endif
      &                FORCES(ng) % Uwave_rmsG(LBi,LBj,1))
 # endif
-# if defined TKE_WAVEDISS
-      CALL get_2dfld (ng, iNLM, idWdis, ncFRCid(idWdis,ng),             &
+# if defined WAVES_DISS
+      CALL get_2dfld (ng, iNLM, idWdib, ncFRCid(idWdib,ng),             &
      &                nFfiles(ng), FRCname(1,ng), update(1),            &
      &                LBi, UBi, LBj, UBj, 2, 1,                         &
 #  ifdef MASKING
      &                GRID(ng) % rmask(LBi,LBj),                        &
 #  endif
-     &                FORCES(ng) % Wave_dissipG(LBi,LBj,1))
+     &                FORCES(ng) % Dissip_breakG(LBi,LBj,1))
+      CALL get_2dfld (ng, iNLM, idWdiw, ncFRCid(idWdiw,ng),             &
+     &                nFfiles(ng), FRCname(1,ng), update(1),            &
+     &                LBi, UBi, LBj, UBj, 2, 1,                         &
+#  ifdef MASKING
+     &                GRID(ng) % rmask(LBi,LBj),                        &
+#  endif
+     &                FORCES(ng) % Dissip_wcapG(LBi,LBj,1))
 # endif
 # if defined SVENDSEN_ROLLER
       CALL get_2dfld (ng, iNLM, idWbrk, ncFRCid(idWbrk,ng),             &

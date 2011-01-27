@@ -14,14 +14,16 @@
 */
 
 #define ROMS_MODEL
-#undef  NEARSHORE_MELLOR
-#define NEARSHORE_WEC
+#define WEC_VF
+#undef  WDISS_THORGUZA
+#define WDISS_CHURTHOR
+#undef  WEC_MELLOR
 
 #define UV_VIS2
 #define MIX_S_UV
 #define DIAGNOSTICS_UV
 #define AVERAGES
-#define AVERAGES_NEARSHORE
+#define AVERAGES_WEC
 #define AVERAGES_BEDLOAD
 #define WET_DRY
 #define OUT_DOUBLE

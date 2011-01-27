@@ -21,7 +21,7 @@
 # endif
       USE mod_forces
       USE mod_grid
-# if defined UV_VIS2 || defined UV_VIS4 || defined NEARSHORE
+# if defined UV_VIS2 || defined UV_VIS4 || defined WEC
       USE mod_mixing
 # endif
       USE mod_ocean
@@ -99,14 +99,11 @@
      &                  MIXING(ng) % visc4_p,   MIXING(ng) % visc4_r,   &
 #  endif
 # endif
-# ifdef NEARSHORE
+# ifdef WEC
      &                  MIXING(ng) % rustr2d,   MIXING(ng) % rvstr2d,   &
      &                  OCEAN(ng) % rulag2d,    OCEAN(ng) % rvlag2d,    &
      &                  OCEAN(ng) % ubar_stokes,                        &
      &                  OCEAN(ng) % vbar_stokes,                        &
-# endif
-# ifdef NEARSHORE_WEC
-     &                  OCEAN(ng) % zetat, OCEAN(ng) % zetaw,           &
 # endif
 # ifdef M2CLIMATOLOGY
      &                  CLIMA(ng) % ubarclm,    CLIMA(ng) % vbarclm,    &
@@ -195,13 +192,10 @@
      &                        visc4_p, visc4_r,                         &
 #  endif
 # endif
-# ifdef NEARSHORE
+# ifdef WEC
      &                        rustr2d, rvstr2d,                         &
      &                        rulag2d, rvlag2d,                         &
      &                        ubar_stokes, vbar_stokes,                 &
-# endif
-# ifdef NEARSHORE_WEC
-     &                        zetat, zetaw,                             &
 # endif
 # ifdef M2CLIMATOLOGY
      &                        ubarclm, vbarclm,                         &
@@ -325,17 +319,13 @@
       real(r8), intent(in) :: visc4_r(LBi:,LBj:)
 #   endif
 #  endif
-#  ifdef NEARSHORE
+#  ifdef WEC
       real(r8), intent(in) :: rustr2d(LBi:,LBj:)
       real(r8), intent(in) :: rvstr2d(LBi:,LBj:)
       real(r8), intent(in) :: rulag2d(LBi:,LBj:)
       real(r8), intent(in) :: rvlag2d(LBi:,LBj:)
       real(r8), intent(in) :: ubar_stokes(LBi:,LBj:)
       real(r8), intent(in) :: vbar_stokes(LBi:,LBj:)
-#  endif
-#  ifdef NEARSHORE_WEC
-      real(r8), intent(in) :: zetat(LBi:,LBj:)
-      real(r8), intent(in) :: zetaw(LBi:,LBj:)
 #  endif
 #  ifdef M2CLIMATOLOGY
       real(r8), intent(in) :: ubarclm(LBi:,LBj:)
@@ -457,17 +447,13 @@
       real(r8), intent(in) :: visc4_r(LBi:UBi,LBj:UBj)
 #   endif
 #  endif
-#  ifdef NEARSHORE
+#  ifdef WEC
       real(r8), intent(in) :: rustr2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rvstr2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rulag2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rvlag2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: ubar_stokes(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vbar_stokes(LBi:UBi,LBj:UBj)
-#  endif
-#  ifdef NEARSHORE_WEC
-      real(r8), intent(in) :: zetat(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: zetaw(LBi:UBi,LBj:UBj)
 #  endif
 #  ifdef M2CLIMATOLOGY
       real(r8), intent(in) :: ubarclm(LBi:UBi,LBj:UBj)
@@ -560,7 +546,8 @@
       integer :: idiag
 # endif
 
-      real(r8) :: cff, cff1, cff2, cff3, cff4, cff5, cff6, cff7
+      real(r8) :: cff, cff1, cff2, cff3, cff4
+      real(r8) :: cff5, cff6, cff7, cff8
       real(r8) :: fac, fac1, fac2, fac3
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dgrad
@@ -570,7 +557,7 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dstp
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: DUon
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: DVom
-# ifdef NEARSHORE
+# ifdef WEC
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: DUSon
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: DVSom
 # endif
@@ -690,7 +677,7 @@
           cff=0.5_r8*on_u(i,j)
           cff1=cff*(Drhs(i,j)+Drhs(i-1,j))
           DUon(i,j)=ubar(i,j,krhs)*cff1
-# ifdef NEARSHORE
+# ifdef WEC
           DUSon(i,j)=ubar_stokes(i,j)*cff1
           DUon(i,j)=DUon(i,j)+DUSon(i,j)
 # endif
@@ -701,7 +688,7 @@
           cff=0.5_r8*om_v(i,j)
           cff1=cff*(Drhs(i,j)+Drhs(i,j-1))
           DVom(i,j)=vbar(i,j,krhs)*cff1
-# ifdef NEARSHORE
+# ifdef WEC
           DVSom(i,j)=vbar_stokes(i,j)*cff1
           DVom(i,j)=DVom(i,j)+DVSom(i,j)
 # endif
@@ -789,7 +776,7 @@
             END DO
             DO i=Istr,IendR
               DU_avg1(i,j)=DU_avg1(i,j)+cff1*DUon(i,j)
-#  ifdef NEARSHORE
+#  ifdef WEC
               DU_avg1(i,j)=DU_avg1(i,j)-cff1*DUSon(i,j)
 #  endif
               DU_avg2(i,j)=DU_avg2(i,j)+cff2*DUon(i,j)
@@ -798,7 +785,7 @@
           DO j=Jstr,JendR
             DO i=IstrR,IendR
               DV_avg1(i,j)=DV_avg1(i,j)+cff1*DVom(i,j)
-#  ifdef NEARSHORE
+#  ifdef WEC
               DV_avg1(i,j)=DV_avg1(i,j)-cff1*DVSom(i,j)
 #  endif
               DV_avg2(i,j)=DV_avg2(i,j)+cff2*DVom(i,j)
@@ -1154,7 +1141,7 @@
         DO i=IstrU-1,Iend
           UFx(i,j)=0.25_r8*(DUon(i,j)+DUon(i+1,j))*                     &
      &                     (ubar(i  ,j,krhs)+                           &
-#   ifdef NEARSHORE_MELLOR
+#   ifdef WEC_MELLOR
      &                      ubar_stokes(i  ,j)+                         &
      &                      ubar_stokes(i+1,j)+                         &
 #   endif
@@ -1165,7 +1152,7 @@
         DO i=IstrU,Iend
           UFe(i,j)=0.25_r8*(DVom(i,j)+DVom(i-1,j))*                     &
      &                     (ubar(i,j  ,krhs)+                           &
-#   ifdef NEARSHORE_MELLOR
+#   ifdef WEC_MELLOR
      &                      ubar_stokes(i,j  )+                         &
      &                      ubar_stokes(i,j-1)+                         &
 #   endif
@@ -1176,7 +1163,7 @@
         DO i=Istr,Iend+1
           VFx(i,j)=0.25_r8*(DUon(i,j)+DUon(i,j-1))*                     &
      &                     (vbar(i  ,j,krhs)+                           &
-#   ifdef NEARSHORE_MELLOR
+#   ifdef WEC_MELLOR
      &                      vbar_stokes(i  ,j)+                         &
      &                      vbar_stokes(i-1,j)+                         &
 #   endif
@@ -1187,7 +1174,7 @@
         DO i=Istr,Iend
           VFe(i,j)=0.25_r8*(DVom(i,j)+DVom(i,j+1))*                     &
      &                     (vbar(i,j  ,krhs)+                           &
-#   ifdef NEARSHORE_MELLOR
+#   ifdef WEC_MELLOR
      &                      vbar_stokes(i,j  )+                         &
      &                      vbar_stokes(i,j+1)+                         &
 #   endif
@@ -1224,7 +1211,7 @@
       DO j=Jstr,Jend
         DO i=IU_RANGE
           grad (i,j)=ubar(i-1,j,krhs)-2.0_r8*ubar(i,j,krhs)+            &
-#    ifdef NEARSHORE_MELLOR
+#    ifdef WEC_MELLOR
      &               ubar_stokes(i-1,j)-2.0_r8*ubar_stokes(i,j)+        &
      &               ubar_stokes(i+1,j)+                                &
 #    endif
@@ -1251,7 +1238,7 @@
       DO j=Jstr,Jend
         DO i=IstrU-1,Iend
           UFx(i,j)=0.25_r8*(ubar(i  ,j,krhs)+                           &
-#   ifdef NEARSHORE_MELLOR
+#   ifdef WEC_MELLOR
      &                      ubar_stokes(i  ,j)+                         &
      &                      ubar_stokes(i+1,j)+                         &
 #   endif
@@ -1278,7 +1265,7 @@
       DO j=JU_RANGE
         DO i=IstrU,Iend
           grad(i,j)=ubar(i,j-1,krhs)-2.0_r8*ubar(i,j,krhs)+             &
-#   ifdef NEARSHORE_MELLOR
+#   ifdef WEC_MELLOR
      &              ubar_stokes(i,j-1)-2.0_r8*ubar_stokes(i,j)+         &
      &              ubar_stokes(i,j+1)+                                 &
 #   endif
@@ -1307,7 +1294,7 @@
       DO j=Jstr,Jend+1
         DO i=IstrU,Iend
           UFe(i,j)=0.25_r8*(ubar(i,j  ,krhs)+                           &
-#   ifdef NEARSHORE_MELLOR
+#   ifdef WEC_MELLOR
      &                      ubar_stokes(i,j  )+                         &
      &                      ubar_stokes(i,j-1)+                         &
 #   endif
@@ -1343,7 +1330,7 @@
       DO j=JstrV,Jend
         DO i=IV_RANGE
           grad(i,j)=vbar(i-1,j,krhs)-2.0_r8*vbar(i,j,krhs)+             &
-#   ifdef NEARSHORE_MELLOR
+#   ifdef WEC_MELLOR
      &              vbar_stokes(i-1,j)-2.0_r8*vbar_stokes(i,j)+         &
      &              vbar_stokes(i+1,j)+                                 &
 #   endif
@@ -1372,7 +1359,7 @@
       DO j=JstrV,Jend
         DO i=Istr,Iend+1
           VFx(i,j)=0.25_r8*(vbar(i  ,j,krhs)+                           &
-#   ifdef NEARSHORE_MELLOR
+#   ifdef WEC_MELLOR
      &                      vbar_stokes(i  ,j)+                         &
      &                      vbar_stokes(i-1,j)+                         &
 #   endif
@@ -1399,7 +1386,7 @@
       DO j=JV_RANGE
         DO i=Istr,Iend
           grad(i,j)=vbar(i,j-1,krhs)-2.0_r8*vbar(i,j,krhs)+             &
-#   ifdef NEARSHORE_MELLOR
+#   ifdef WEC_MELLOR
      &              vbar_stokes(i,j-1)-2.0_r8*vbar_stokes(i,j)+         &
      &              vbar_stokes(i,j+1)+                                 &
 #   endif
@@ -1426,7 +1413,7 @@
       DO j=JstrV-1,Jend
         DO i=Istr,Iend
           VFe(i,j)=0.25_r8*(vbar(i,j  ,krhs)+                           &
-#   ifdef NEARSHORE_MELLOR
+#   ifdef WEC_MELLOR
      &                      vbar_stokes(i,j  )+                         &
      &                      vbar_stokes(i,j+1)+                         &
 #   endif
@@ -1474,13 +1461,13 @@
         DO i=IstrU-1,Iend
           cff=0.5_r8*Drhs(i,j)*fomn(i,j)
           UFx(i,j)=cff*(vbar(i,j  ,krhs)+                               &
-#  ifdef NEARSHORE
+#  ifdef WEC
      &                  vbar_stokes(i,j  )+                             &
      &                  vbar_stokes(i,j+1)+                             &
 #  endif
      &                  vbar(i,j+1,krhs))
           VFe(i,j)=cff*(ubar(i  ,j,krhs)+                               &
-#  ifdef NEARSHORE
+#  ifdef WEC
      &                  ubar_stokes(i  ,j)+                             &
      &                  ubar_stokes(i+1,j)+                             &
 #  endif
@@ -1515,20 +1502,20 @@
       DO j=JstrV-1,Jend
         DO i=IstrU-1,Iend
           cff1=0.5_r8*(vbar(i,j  ,krhs)+                                &
-#  ifdef NEARSHORE
+#  ifdef WEC
      &                 vbar_stokes(i,j  )+                              &
      &                 vbar_stokes(i,j+1)+                              &
 #  endif
      &                 vbar(i,j+1,krhs))
           cff2=0.5_r8*(ubar(i  ,j,krhs)+                                &
-#  ifdef NEARSHORE
+#  ifdef WEC
      &                 ubar_stokes(i  ,j)+                              &
      &                 ubar_stokes(i+1,j)+                              &
 #  endif
      &                 ubar(i+1,j,krhs))
           cff3=cff1*dndx(i,j)
           cff4=cff2*dmde(i,j)
-#  ifdef NEARSHORE_WEC
+#  ifdef WEC_VF
           cff5=0.5_r8*(vbar_stokes(i,j  )+                             &
      &                 vbar_stokes(i,j+1))
           cff6=0.5_r8*(ubar_stokes(i  ,j)+                             &
@@ -1539,7 +1526,7 @@
           cff=Drhs(i,j)*(cff3-cff4)
           UFx(i,j)=cff*cff1
           VFe(i,j)=cff*cff2
-#  ifdef NEARSHORE_WEC
+#  ifdef WEC_VF
           UFx(i,j)=UFx(i,j)-(cff5*Drhs(i,j)*(cff7-cff8))
           VFe(i,j)=VFe(i,j)-(cff6*Drhs(i,j)*(cff7-cff8))
 #  endif
@@ -1946,8 +1933,8 @@
         END DO
       END DO
 # endif
-# if defined NEARSHORE && \
-    (!defined SOLVE3D         || defined DIAGNOSTICS_UV)
+# if defined WEC && \
+    (!defined SOLVE3D || defined DIAGNOSTICS_UV)
 !
 !-----------------------------------------------------------------------
 !  Add in radiation stress terms.
@@ -1960,8 +1947,8 @@
 #  ifndef SOLVE3D
           rhs_ubar(i,j)=rhs_ubar(i,j)-cff1-cff2
 #  endif
-#  ifdef DIAGNOSTICS_UV
-          DiaU2rhs(i,j,M2hrad)=-cff1
+#  if defined DIAGNOSTICS_UV && defined WEC
+!          DiaU2rhs(i,j,M2hrad)=-cff1
 #  endif
         END DO
       END DO
@@ -1972,8 +1959,8 @@
 #  ifndef SOLVE3D
           rhs_vbar(i,j)=rhs_vbar(i,j)-cff1-cff2
 #  endif
-#  ifdef DIAGNOSTICS_UV
-          DiaV2rhs(i,j,M2hrad)=-cff1
+#  if defined DIAGNOSTICS_UV && defined WEC
+!          DiaV2rhs(i,j,M2hrad)=-cff1
 #  endif
         END DO
       END DO

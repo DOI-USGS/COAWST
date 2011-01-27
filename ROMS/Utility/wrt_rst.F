@@ -908,7 +908,7 @@
       END DO
 # endif
 #endif
-#ifdef NEARSHORE_MELLOR
+#ifdef WEC
 !
 !  Write out 2D U-momentum stokes velocity.
 !

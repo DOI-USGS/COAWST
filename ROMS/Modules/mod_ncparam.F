@@ -322,15 +322,17 @@
         integer  :: idW3zx        ! 3D radiation stress, Szx-component
         integer  :: idW3zy        ! 3D radiation stress, Szy-component
         integer  :: idW3Sd        ! 3D W-Stokes drift velocity
-        integer  :: idWamp        ! wind-induced wave amplitude
-        integer  :: idWbrk        ! wind-induced wave breaking
-        integer  :: idWdis        ! wind-induced wave dissipation
-        integer  :: idWdir        ! wind-induced wave direction
-        integer  :: idWlen        ! wind-induced wave length
-        integer  :: idWlep        ! wind-induced peak wave length
-        integer  :: idWptp        ! wind-induced surface wave period
-        integer  :: idWpbt        ! wind-induced bottom wave period
-        integer  :: idWorb        ! wind-induced wave orbital velocity
+        integer  :: idWamp        ! wave amplitude
+        integer  :: idWbrk        ! percent wave breaking
+        integer  :: idWdif        ! bottom friction wave dissipation
+        integer  :: idWdib        ! surface breaking wave dissipation
+        integer  :: idWdiw        ! white capping wave dissipation
+        integer  :: idWdir        ! wave direction
+        integer  :: idWlen        ! mean wave length
+        integer  :: idWlep        ! peak wave length
+        integer  :: idWptp        ! surface wave period
+        integer  :: idWpbt        ! bottom wave period
+        integer  :: idWorb        ! wave orbital velocity
         integer  :: idWvel        ! true vertical velocity
         integer  :: idZads        ! Free-surface adjoint sensitivity
         integer  :: idZavg        ! avg of free-surface
@@ -1324,8 +1326,12 @@
                 idWamp=varid
               CASE ('idWbrk')
                 idWbrk=varid
-              CASE ('idWdis')
-                idWdis=varid
+              CASE ('idWdif')
+                idWdif=varid
+              CASE ('idWdib')
+                idWdib=varid
+              CASE ('idWdiw')
+                idWdiw=varid
               CASE ('idWdir')
                 idWdir=varid
               CASE ('idWlen')
@@ -1658,7 +1664,7 @@
               CASE ('idDv2d(M2hadv)')
                 idDv2d(M2hadv)=varid
 # endif
-# ifdef NEARSHORE
+# ifdef WEC_MELLOR
               CASE ('idDu2d(M2hrad)')
                 idDu2d(M2hrad)=varid
               CASE ('idDv2d(M2hrad)')
@@ -1715,7 +1721,7 @@
               CASE ('idDv3d(M3vadv)')
                 idDv3d(M3vadv)=varid
 #  endif
-#  ifdef NEARSHORE
+#  ifdef WEC_MELLOR
               CASE ('idDu3d(M3hrad)')
                 idDu3d(M3hrad)=varid
               CASE ('idDv3d(M3hrad)')

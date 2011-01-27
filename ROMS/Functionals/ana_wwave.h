@@ -26,7 +26,7 @@
       CALL ana_wwave_tile (ng, tile, model,                             &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     IminS, ImaxS, JminS, JmaxS,                  &
-#if defined BBL_MODEL || defined NEARSHORE_MELLOR
+#if defined BBL_MODEL || defined WEC
      &                     FORCES(ng) % Dwave,                          &
 #endif
 #ifdef WAVES_HEIGHT
@@ -70,7 +70,7 @@
       SUBROUTINE ana_wwave_tile (ng, tile, model,                       &
      &                           LBi, UBi, LBj, UBj,                    &
      &                           IminS, ImaxS, JminS, JmaxS,            &
-#if defined BBL_MODEL || defined NEARSHORE_MELLOR
+#if defined BBL_MODEL || defined WEC
      &                           Dwave,                                 &
 #endif
 #ifdef WAVES_HEIGHT
@@ -116,7 +116,7 @@
 #ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: angler(LBi:,LBj:)
       real(r8), intent(in) :: h(LBi:,LBj:)
-# if defined BBL_MODEL || defined NEARSHORE_MELLOR
+# if defined BBL_MODEL || defined WEC
       real(r8), intent(inout) :: Dwave(LBi:,LBj:)
 # endif
 # ifdef WAVES_HEIGHT
@@ -145,7 +145,7 @@
 
       real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
-# if defined BBL_MODEL || defined NEARSHORE_MELLOR
+# if defined BBL_MODEL || defined WEC
       real(r8), intent(inout) :: Dwave(LBi:UBi,LBj:UBj)
 # endif
 # ifdef WAVES_HEIGHT

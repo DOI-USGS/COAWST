@@ -1299,6 +1299,8 @@
             Npts=load_r(Nval, Rval, Ngrids, sz_alpha)
           ELSE IF (TRIM(KeyWord).eq.'CRGBAN_CW') THEN
             Npts=load_r(Nval, Rval, Ngrids, crgban_cw)
+          ELSE IF (TRIM(KeyWord).eq.'WEC_ALPHA') THEN
+            Npts=load_r(Nval, Rval, Ngrids, wec_alpha)
           ELSE IF (TRIM(KeyWord).eq.'RDRG') THEN
             Npts=load_r(Nval, Rval, Ngrids, rdrg)
           ELSE IF (TRIM(KeyWord).eq.'RDRG2') THEN
@@ -1925,14 +1927,31 @@
             END IF
             Npts=load_l(Nval, Cval, Ngrids, Hout(idWorb,1:Ngrids))
 #endif
-#if defined TKE_WAVEDISS || defined WAVES_OCEAN
-          ELSE IF (TRIM(KeyWord).eq.'Hout(idWdis)') THEN
-            IF (idWdis.eq.0) THEN
-              IF (Master) WRITE (out,280) 'idWdis'
+#ifdef WAVES_OCEAN
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWdif)') THEN
+            IF (idWdif.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idWdif'
               exit_flag=5
               RETURN
             END IF
-            Npts=load_l(Nval, Cval, Ngrids, Hout(idWdis,1:Ngrids))
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWdif,1:Ngrids))
+#endif
+#if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWdib)') THEN
+            IF (idWdib.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idWdib'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWdib,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWdiw)') THEN
+            IF (idWdiw.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idWdiw'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWdiw,1:Ngrids))
 #endif
           ELSE IF (TRIM(KeyWord).eq.'Hout(idWbrk)') THEN
             IF (idWbrk.eq.0) THEN
@@ -2738,6 +2757,10 @@
           WRITE (out,140) crgban_cw(ng), 'crgban_cw',                   &
      &          'Factor for Craig/Banner surface tke flux.'
 # endif
+# ifdef WEC
+          WRITE (out,140) wec_alpha(ng), 'wec_alpha',                   &
+     &          'Factor for WEC roller/breaking dissipation.'
+# endif
 # ifdef FORWARD_MIXING
           DO itrc=1,NAT+NPT
 #  ifdef ADJOINT
@@ -3112,7 +3135,7 @@
      &       'Hout(idVbvr)',                                            &
      &       'Write out bottom V-momentum above bed.'
 #endif
-#if defined NEARSHORE_MELLOR
+#if defined WEC_MELLOR
           IF (Hout(idW2xx,ng)) WRITE (out,170) Hout(idW2xx,ng),         &
      &       'Hout(idW2xx)',                                            &
      &       'Write out 2D radiation stress, Sxx.'
@@ -3128,12 +3151,6 @@
           IF (Hout(idV2rs,ng)) WRITE (out,170) Hout(idV2rs,ng),         &
      &       'Hout(idV2rs)',                                            &
      &       'Write out total 2D v-radiation stress.'
-          IF (Hout(idU2Sd,ng)) WRITE (out,170) Hout(idU2Sd,ng),         &
-     &       'Hout(idU2Sd)',                                            &
-     &       'Write out 2D u-momentum stokes velocity.'
-          IF (Hout(idV2Sd,ng)) WRITE (out,170) Hout(idV2Sd,ng),         &
-     &       'Hout(idV2Sd)',                                            &
-     &       'Write out 2D v-momentum stokes velocity.'
 # ifdef SOLVE3D
           IF (Hout(idW3xx,ng)) WRITE (out,170) Hout(idW3xx,ng),         &
      &       'Hout(idW3xx)',                                            &
@@ -3156,13 +3173,21 @@
           IF (Hout(idV3rs,ng)) WRITE (out,170) Hout(idV3rs,ng),         &
      &       'Hout(idV3rs)',                                            &
      &       'Write out total 3D v-radiation stress.'
+# endif
+#endif
+#ifdef WEC
+          IF (Hout(idU2Sd,ng)) WRITE (out,170) Hout(idU2Sd,ng),         &
+     &       'Hout(idU2Sd)',                                            &
+     &       'Write out 2D u-momentum stokes velocity.'
+          IF (Hout(idV2Sd,ng)) WRITE (out,170) Hout(idV2Sd,ng),         &
+     &       'Hout(idV2Sd)',                                            &
+     &       'Write out 2D v-momentum stokes velocity.'
           IF (Hout(idU3Sd,ng)) WRITE (out,170) Hout(idU3Sd,ng),         &
      &       'Hout(idU3Sd)',                                            &
      &       'Write out 3D u-momentum stokes velocity.'
           IF (Hout(idV3Sd,ng)) WRITE (out,170) Hout(idV3Sd,ng),         &
      &       'Hout(idV3Sd)',                                            &
      &       'Write out 3D v-momentum stokes velocity.'
-# endif
 #endif
 #ifdef WAVES_HEIGHT
           IF (Hout(idWamp,ng)) WRITE (out,170) Hout(idWamp,ng),         &
@@ -3199,10 +3224,19 @@
      &       'Hout(idWorb)',                                            &
      &       'Write out wave bottom orbital velocity.'
 #endif
-#if defined TKE_WAVEDISS || defined WAVES_OCEAN
-          IF (Hout(idWdis,ng)) WRITE (out,170) Hout(idWdis,ng),         &
-     &       'Hout(idWdis)',                                            &
-     &       'Write out wave dissipation.'
+#ifdef WAVES_OCEAN
+          IF (Hout(idWdif,ng)) WRITE (out,170) Hout(idWdif,ng),         &
+     &       'Hout(idWdif)',                                            &
+     &       'Write out wave dissipation due to bottom friction.'
+#endif
+#if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+          IF (Hout(idWdib,ng)) WRITE (out,170) Hout(idWdib,ng),         &
+     &       'Hout(idWdib)',                                            &
+     &       'Write out wave dissipation due to breaking.'
+          IF (Hout(idWdiw,ng)) WRITE (out,170) Hout(idWdiw,ng),         &
+     &       'Hout(idWdiw)',                                            &
+     &       'Write out wave dissipation due to white capping.'
 #endif
 #if defined SOLVE3D && defined T_PASSIVE
           DO itrc=1,NPT
@@ -5477,9 +5511,16 @@
           ELSE IF (TRIM(KeyWord).eq.'Sout(idWorb)') THEN
             Npts=load_l(Nval, Cval, Ngrids, Sout(idWorb,:))
 # endif
-# if defined TKE_WAVEDISS || defined WAVES_OCEAN
-          ELSE IF (TRIM(KeyWord).eq.'Sout(idWdis)') THEN
-            Npts=load_l(Nval, Cval, Ngrids, Sout(idWdis,:))
+# ifdef WAVES_OCEAN
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWdif)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWdif,:))
+# endif
+#if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWdib)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWdib,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWdiw)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWdiw,:))
 # endif
           ELSE IF (TRIM(KeyWord).eq.'Sout(idTsur)') THEN
             Npts=load_l(Nval, Cval, NAT*Ngrids, Lsta)
@@ -5657,7 +5698,7 @@
      &          'Sout(idVbvr)',                                         &
      &          'Write out bottom V-velocity above bed.'
 # endif
-# if defined NEARSHORE_MELLOR
+# if defined WEC_MELLOR
             IF (Sout(idW2xx,ng)) WRITE (out,80) Sout(idW2xx,ng),        &
      &         'Sout(idW2xx)',                                          &
      &         'Write out 2D radiation stress, Sxx.'
@@ -5673,12 +5714,6 @@
             IF (Sout(idV2rs,ng)) WRITE (out,80) Sout(idV2rs,ng),        &
      &         'Sout(idV2rs)',                                          &
      &         'Write out total 2D v-radiation stress.'
-            IF (Sout(idU2Sd,ng)) WRITE (out,80) Sout(idU2Sd,ng),        &
-     &         'Sout(idU2Sd)',                                          &
-     &         'Write out 2D u-momentum stokes velocity.'
-            IF (Sout(idV2Sd,ng)) WRITE (out,80) Sout(idV2Sd,ng),        &
-     &         'Sout(idV2Sd)',                                          &
-     &         'Write out 2D v-momentum stokes velocity.'
 #  ifdef SOLVE3D
             IF (Sout(idW3xx,ng)) WRITE (out,80) Sout(idW3xx,ng),        &
      &         'Sout(idW3xx)',                                          &
@@ -5701,13 +5736,21 @@
             IF (Sout(idV3rs,ng)) WRITE (out,80) Sout(idV3rs,ng),        &
      &         'Sout(idV3rs)',                                          &
      &         'Write out total 3D v-radiation stress.'
+#  endif
+# endif
+# ifdef WEC
+            IF (Sout(idU2Sd,ng)) WRITE (out,80) Sout(idU2Sd,ng),        &
+     &         'Sout(idU2Sd)',                                          &
+     &         'Write out 2D u-momentum stokes velocity.'
+            IF (Sout(idV2Sd,ng)) WRITE (out,80) Sout(idV2Sd,ng),        &
+     &         'Sout(idV2Sd)',                                          &
+     &         'Write out 2D v-momentum stokes velocity.'
             IF (Sout(idU3Sd,ng)) WRITE (out,80) Sout(idU3Sd,ng),        &
      &         'Sout(idU3Sd)',                                          &
      &         'Write out 3D u-momentum stokes velocity.'
             IF (Sout(idV3Sd,ng)) WRITE (out,80) Sout(idV3Sd,ng),        &
      &         'Sout(idV3Sd)',                                          &
      &         'Write out 3D v-momentum stokes velocity.'
-#  endif
 # endif
 # ifdef WAVES_HEIGHT
             IF (Sout(idWamp,ng)) WRITE (out,80) Sout(idWamp,ng),        &
@@ -5744,10 +5787,19 @@
      &         'Sout(idWorb)',                                          &
      &         'Write out wave bottom orbital velocity.'
 # endif
-# if defined TKE_WAVEDISS || defined WAVES_OCEAN
-            IF (Sout(idWdis,ng)) WRITE (out,80) Sout(idWdis,ng),        &
-     &         'Sout(idWdis)',                                          &
-     &         'Write out wave dissipation.'
+# ifdef WAVES_OCEAN
+            IF (Sout(idWdif,ng)) WRITE (out,80) Sout(idWdif,ng),        &
+     &         'Sout(idWdif)',                                          &
+     &         'Write out wave dissipation due to bottom friction.'
+# endif
+#if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+            IF (Sout(idWdib,ng)) WRITE (out,80) Sout(idWdib,ng),        &
+     &         'Sout(idWdib)',                                          &
+     &         'Write out wave dissipation due to breaking.'
+            IF (Sout(idWdiw,ng)) WRITE (out,80) Sout(idWdiw,ng),        &
+     &         'Sout(idWdiw)',                                          &
+     &         'Write out wave dissipation due to white capping.'
 # endif
 # if defined SOLVE3D && (defined BBL_MODEL || defined SEDIMENT)
             DO itrc=1,MBOTP

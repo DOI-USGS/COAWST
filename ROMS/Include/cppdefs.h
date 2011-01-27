@@ -183,7 +183,7 @@
 ** AVERAGES_AKS        use if writing out time-averaged AKs                  **
 ** AVERAGES_DETIDE     use if writing out time-averaged detided fields       **
 ** AVERAGES_FLUXES     use if writing out time-averaged fluxes               **
-** AVERAGES_NEARSHORE  use if writing out time-averaged nearshore stresses   **
+** AVERAGES_WEC        use if writing out time-averaged wave-current stresses**
 ** AVERAGES_QUADRATIC  use if writing out quadratic terms                    **
 ** AVERAGES_BEDLOAD    use if writing out time-averaged bed load             **
 ** DIAGNOSTICS_BIO     use if writing out biological diagnostics             **
@@ -642,10 +642,20 @@
 ** SWAN_COUPLING       use if coupling to SWAN wave model                    **
 ** WRF_COUPLING        use if coupling to WRF atmospheric model              **
 **                                                                           **
-** Nearshore and shallow water model OPTIONS:                                **
+** Wave effoct on currents (WEC) and shallow water OPTIONS:                  **
 **                                                                           **
-** WET_DRY             use to activate wetting and drying                    **
-** NEARSHORE_MELLOR    use to activate radiation stress terms.               **
+** WET_DRY             activate wetting and drying                           **
+** WEC_MELLOR          activate radiation stress terms from Mellor 08.       **
+** WEC_VF              activate wave-current stresses from Uchiyama et al.   **
+**   If you define WEC_VF, you must define one of these WDISS_* options:     **
+** WDISS_THORGUZA      activate wave dissipation from Thorton/Guza.          **
+** WDISS_CHURTHOR      activate wave dissipation from Church/Thorton.        **
+** WDISS_WAVEMOD       activate wave dissipation from a wave model           **
+** ROLLER_SVENDSEN     activate wave roller based on Svendsen                **
+** ROLLER_MONO         activate wave roller for monchromatic waves           **
+** ROLLER_RENIERS      activate wave roller based on Reniers                 **
+** BOTTOM_STREAMING    activate wave enhances bottom streaming               **
+** WAVE_MIXING         activate enhanced vertical viscosity mixing from waves**
 **                                                                           **
 ** NetCDF input/output OPTIONS:                                              **
 **                                                                           **

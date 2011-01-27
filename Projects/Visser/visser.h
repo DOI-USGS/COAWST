@@ -16,9 +16,9 @@
 #define UV_VIS2
 #define MIX_GEO_UV
 #define SPONGE
-#define NEARSHORE_MELLOR
-#define SVENDSEN_ROLLER
-#define MONO_ROLLER
+#define WEC_VF
+#define ROLLER_SVENDSEN
+#define ROLLER_MONO
 #define UV_ADV
 #define TS_U3HADVECTION
 #define DJ_GRADPS

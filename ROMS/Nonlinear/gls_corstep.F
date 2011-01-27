@@ -75,7 +75,8 @@
      &                       FORCES(ng) % Hwave,                        &
 # endif
 # ifdef TKE_WAVEDISS
-     &                       FORCES(ng) % Wave_dissip,                  &
+     &                       FORCES(ng) % Dissip_break,                 &
+     &                       FORCES(ng) % Dissip_wcap,                  &
 # endif
      &                       MIXING(ng) % Akt,                          &
      &                       MIXING(ng) % Akv,                          &
@@ -106,7 +107,7 @@
      &                             Hwave,                               &
 # endif
 # ifdef TKE_WAVEDISS
-     &                             Wave_dissip,                         &
+     &                             Dissip_break, Dissip_wcap,           &
 # endif
      &                             Akt, Akv, bvf,                       &
      &                             Akk, Akp, Lscale, gls, tke)
@@ -153,7 +154,8 @@
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
 #  endif
 #  ifdef TKE_WAVEDISS
-      real(r8), intent(in) :: Wave_dissip(LBi:,LBj:)
+      real(r8), intent(in) :: Dissip_break(LBi:,LBj:)
+      real(r8), intent(in) :: Dissip_wcap(LBi:,LBj:)
 #  endif
       real(r8), intent(in) :: bvf(LBi:,LBj:,0:)
 
@@ -187,7 +189,8 @@
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
 #  endif
 #  ifdef TKE_WAVEDISS
-      real(r8), intent(in) :: Wave_dissip(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Dissip_break(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Dissip_wcap(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: bvf(LBi:UBi,LBj:UBj,0:N(ng))
 
@@ -915,8 +918,8 @@
      &                            gls_Kmin(ng))
 # elif defined TKE_WAVEDISS
           tke(i,j,N(ng),nnew)=MAX(cmu_fac4*(sz_alpha(ng)*               &
-     &                            Wave_dissip(i,j))**                   &
-     &                            (2.0_r8/3.0_r8), gls_Kmin(ng))
+     &                        (Dissip_break(i,j)+Dissip_wcap(i,j)))**   &
+     &                        (2.0_r8/3.0_r8), gls_Kmin(ng))
 # else
           tke(i,j,N(ng),nnew)=MAX(cmu_fac3*0.5_r8*                      &
      &                            SQRT((sustr(i,j)+sustr(i+1,j))**2+    &
@@ -958,7 +961,8 @@
      &                       (svstr(i,j)+svstr(i,j+1))**2))**1.5_r8
 #  endif
 # elif defined TKE_WAVEDISS
-          tke_fluxt(i)=dt(ng)*sz_alpha(ng)*Wave_dissip(i,j)
+          tke_fluxt(i)=dt(ng)*sz_alpha(ng)*(Dissip_break(i,j)+          &
+     &                                      Dissip_wcap(i,j))
 # else
           tke_fluxt(i)=0.0_r8
 # endif
@@ -1012,7 +1016,7 @@
      &                 ((Zos_eff(i)+0.5_r8*Hz(i,j,N(ng)))*L_sft)**      &
      &                 gls_n(ng)*                                       &
      &                 gls_sigk(ng)*ogls_sigp*sz_alpha(ng)*             &
-     &                 Wave_dissip(i,j)
+     &                 (Dissip_break(i,j)+Dissip_wcap(i,j))
 # endif
           cff=0.5_r8*(tke(i,j,0,nnew)+tke(i,j,1,nnew))
           gls_fluxb(i)=dt(ng)*gls_fac2*(cff**gls_m(ng))*                &

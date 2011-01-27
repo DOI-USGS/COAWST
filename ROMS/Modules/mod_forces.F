@@ -231,17 +231,23 @@
 # endif
 #endif
 
-#if defined BBL_MODEL || defined WAVES_OCEAN
+#if defined BBL_MODEL
           real(r8), pointer :: Uwave_rms(:,:)
 # ifndef ANA_WWAVE
           real(r8), pointer :: Uwave_rmsG(:,:,:)
 # endif
 #endif
 
-#if defined TKE_WAVEDISS || defined WAVES_OCEAN
-          real(r8), pointer :: wave_dissip(:,:)
+#if defined TKE_WAVEDISS || defined WEC
+          real(r8), pointer :: Dissip_break(:,:)
+          real(r8), pointer :: Dissip_wcap(:,:)
+          real(r8), pointer :: Dissip_fric(:,:)
+          real(r8), pointer :: Dissip_roller(:,:)
 # ifndef ANA_WWAVE
-          real(r8), pointer :: wave_dissipG(:,:,:)
+          real(r8), pointer :: Dissip_breakG(:,:,:)
+          real(r8), pointer :: Dissip_wcapG(:,:,:)
+          real(r8), pointer :: Dissip_fricG(:,:,:)
+          real(r8), pointer :: Dissip_rollerG(:,:,:)
 # endif
 #endif
 
@@ -252,7 +258,7 @@
 # endif
 #endif
 
-#if defined NEARSHORE_WEC
+#if defined WEC
           real(r8), pointer :: rollA(:,:)
 #endif
 
@@ -550,17 +556,23 @@
 # endif
 #endif
 
-#if defined BBL_MODEL || defined WAVES_OCEAN
+#if defined BBL_MODEL
       allocate ( FORCES(ng) % Uwave_rms(LBi:UBi,LBj:UBj) )
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Uwave_rmsG(LBi:UBi,LBj:UBj,2) )
 # endif
 #endif
 
-#if defined TKE_WAVEDISS || defined WAVES_OCEAN
-      allocate ( FORCES(ng) % wave_dissip(LBi:UBi,LBj:UBj) )
+#if defined TKE_WAVEDISS || defined WEC
+      allocate ( FORCES(ng) % Dissip_break(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % Dissip_wcap(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % Dissip_fric(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % Dissip_roller(LBi:UBi,LBj:UBj) )
 # ifndef ANA_WWAVE
-      allocate ( FORCES(ng) % Wave_dissipG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % Dissip_breakG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % Dissip_wcapG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % Dissip_fricG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % Dissip_rollerG(LBi:UBi,LBj:UBj,2) )
 # endif
 #endif
 
@@ -571,7 +583,7 @@
 # endif
 #endif
 
-#if defined NEARSHORE_WEC
+#if defined WEC
       allocate ( FORCES(ng) % rollA(LBi:UBi,LBj:UBj) )
 #endif
 
@@ -936,18 +948,27 @@
             FORCES(ng) % Pwave_botG(i,j,2) = IniVal
 # endif
 #endif
-#if defined BBL_MODEL || defined WAVES_OCEAN
+#if defined BBL_MODEL
             FORCES(ng) % Uwave_rms(i,j) = IniVal
 # ifndef ANA_WWAVE
             FORCES(ng) % Uwave_rmsG(i,j,1) = IniVal
             FORCES(ng) % Uwave_rmsG(i,j,2) = IniVal
 # endif
 #endif
-#if defined TKE_WAVEDISS || defined WAVES_OCEAN
-            FORCES(ng) % Wave_dissip(i,j) = IniVal
+#if defined TKE_WAVEDISS || defined WEC
+            FORCES(ng) % Dissip_break(i,j) = IniVal
+            FORCES(ng) % Dissip_wcap(i,j) = IniVal
+            FORCES(ng) % Dissip_fric(i,j) = IniVal
+            FORCES(ng) % Dissip_roller(i,j) = IniVal
 # ifndef ANA_WWAVE
-            FORCES(ng) % Wave_dissipG(i,j,1) = IniVal
-            FORCES(ng) % Wave_dissipG(i,j,2) = IniVal
+            FORCES(ng) % Dissip_breakG(i,j,1) = IniVal
+            FORCES(ng) % Dissip_breakG(i,j,2) = IniVal
+            FORCES(ng) % Dissip_wcapG(i,j,1) = IniVal
+            FORCES(ng) % Dissip_wcapG(i,j,2) = IniVal
+            FORCES(ng) % Dissip_fricG(i,j,1) = IniVal
+            FORCES(ng) % Dissip_fricG(i,j,2) = IniVal
+            FORCES(ng) % Dissip_rollerG(i,j,1) = IniVal
+            FORCES(ng) % Dissip_rollerG(i,j,2) = IniVal
 # endif
 #endif
 #if defined SVENDSEN_ROLLER
@@ -957,7 +978,7 @@
             FORCES(ng) % Wave_breakG(i,j,2) = IniVal
 # endif
 #endif
-#if defined NEARSHORE_WEC
+#if defined WEC
             FORCES(ng) % rollA(i,j) = IniVal
 #endif
 

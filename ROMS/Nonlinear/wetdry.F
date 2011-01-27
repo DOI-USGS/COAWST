@@ -186,9 +186,14 @@
 !
       ELSE
         cff=1.0_r8/REAL(2*nfast(ng),r8)
+        DO j=Jstr-1,JendR
+          DO i=Istr-1,IendR
+            wetdry(i,j)=AINT(rmask_wet_avg(i,j)*cff)
+          END DO
+        END DO
         DO j=JstrR,JendR
           DO i=IstrR,IendR
-            rmask_wet(i,j)=AINT(rmask_wet_avg(i,j)*cff)
+            rmask_wet(i,j)=wetdry(i,j)
             rmask_full(i,j)=rmask_wet(i,j)*rmask(i,j)
           END DO
         END DO
@@ -197,9 +202,9 @@
 !
         DO j=JstrR,JendR
           DO i=Istr,IendR
-            cff1=rmask_wet(i-1,j)+rmask_wet(i,j)
+            cff1=wetdry(i-1,j)+wetdry(i,j)
             IF (cff1.eq.1.0_r8) THEN
-              cff1=rmask_wet(i-1,j)-rmask_wet(i,j)
+              cff1=wetdry(i-1,j)-wetdry(i,j)
             END IF
             cff5=ABS(ABS(cff1)-1.0_r8)
             cff6=0.5_r8+DSIGN(0.5_r8,DU_avg1(i,j))*cff1
@@ -212,9 +217,9 @@
 !
         DO j=Jstr,JendR
           DO i=IstrR,IendR
-            cff1=rmask_wet(i,j-1)+rmask_wet(i,j)
+            cff1=wetdry(i,j-1)+wetdry(i,j)
             IF (cff1.eq.1.0_r8) THEN
-              cff1=rmask_wet(i,j-1)-rmask_wet(i,j)
+              cff1=wetdry(i,j-1)-wetdry(i,j)
             END IF
             cff5=ABS(ABS(cff1)-1.0_r8)
             cff6=0.5_r8+DSIGN(0.5_r8,DV_avg1(i,j))*cff1

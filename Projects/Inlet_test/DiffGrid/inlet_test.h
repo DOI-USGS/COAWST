@@ -41,7 +41,8 @@
 
 #define SOLVE3D
 #define SPLINES
-#define NEARSHORE_MELLOR
+#undef  WEC_MELLOR
+#define WEC_VF
 #define UV_KIRBY
 #define ANA_INITIAL
 #define ANA_SMFLUX
