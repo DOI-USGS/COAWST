@@ -107,6 +107,9 @@
      &                    OCEAN(ng) % v,                                &
 # endif
      &                    OCEAN(ng) % W,                                &
+# ifdef WEC_VF
+     &                    OCEAN(ng) % w_stokes,                         &
+# endif
 # if defined FLOATS && defined FLOAT_VWALK
      &                    MIXING(ng) % dAktdz,                          &
 # endif
@@ -158,6 +161,9 @@
      &                          u, v,                                   &
 # endif
      &                          W,                                      &
+# ifdef WEC_VF
+     &                          w_stokes,                               &
+# endif
 # if defined FLOATS && defined FLOAT_VWALK
      &                          dAktdz,                                 &
 # endif
@@ -249,6 +255,9 @@
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
 #  endif
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
+#  ifdef WEC_VF
+      real(r8), intent(in) :: w_stokes(LBi:,LBj:,0:)
+#  endif
 #  ifdef DIAGNOSTICS_TS
       real(r8), intent(inout) :: DiaTwrk(LBi:,LBj:,:,:,:)
 #  endif
@@ -312,7 +321,9 @@
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
 #  endif
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
-
+#  ifdef WEC_VF
+      real(r8), intent(in) :: w_stokes(LBi:UBi,LBj:UBj,0:N(ng))
+#  endif
 #  ifdef DIAGNOSTICS_TS
       real(r8), intent(inout) :: DiaTwrk(LBi:UBi,LBj:UBj,N(ng),NT(ng),  &
      &                                   NDT)
@@ -350,7 +361,9 @@
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: BC
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
-
+# ifdef WEC_VF
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FCs
+# endif
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curv
@@ -800,6 +813,9 @@
               cff4=Hz(i,j,k)+                                           &
      &             cff*(Huon(i+1,j,k)-Huon(i,j,k)+                      &
      &                  Hvom(i,j+1,k)-Hvom(i,j,k)+                      &
+#   ifdef WEC_VF
+     &                  (w_stokes(i,j,k)-w_stokes(i,j,k-1))+            &
+#   endif
      &                  (W(i,j,k)-W(i,j,k-1)))                 ! Hz_old
               Ta(i,j,k,itrc)=t(i,j,k,3,itrc)*cff4-cff3
 #  else
@@ -866,7 +882,6 @@
             FC(i,N(ng))=0.0_r8
             FC(i,0)=0.0_r8
           END DO
-
 # elif defined TS_A4VADVECTION
 !
 !  Fourth-order, Akima vertical advective flux.
@@ -927,7 +942,8 @@
 #  endif
             FC(i,N(ng))=0.0_r8
           END DO
-# elif defined TS_MPDATA
+# elif defined TS_MPDATA 
+#  if !defined WEC_VF
 !
 !  First_order, upstream differences vertical advective flux.
 !
@@ -945,6 +961,7 @@
 #  endif
             FC(i,N(ng))=0.0_r8
           END DO
+#  endif
 # else
 !
 !  Fourth-order, central differences vertical advective flux.
@@ -980,6 +997,150 @@
             FC(i,N(ng))=0.0_r8
           END DO
 # endif
+# if defined WEC_VF
+!
+!  Compute the w_stokes advection separately.
+!
+#  if defined TS_SVADVECTION
+!
+!  Build conservative parabolic splines for the vertical derivatives
+!  "FC" of the tracer.  Then, the interfacial "FC" values are
+!  converted to vertical advective flux.
+!
+          DO i=Istr,Iend
+#   ifdef NEUMANN
+            FCs(i,0)=1.5_r8*t(i,j,1,3,itrc)
+            CF(i,1)=0.5_r8
+#   else
+            FCs(i,0)=2.0_r8*t(i,j,1,3,itrc)
+            CF(i,1)=1.0_r8
+#   endif
+          END DO
+          DO k=1,N(ng)-1
+            DO i=Istr,Iend
+              cff=1.0_r8/(2.0_r8*Hz(i,j,k)+                             &
+     &                    Hz(i,j,k+1)*(2.0_r8-CF(i,k)))
+              CF(i,k+1)=cff*Hz(i,j,k)
+              FCs(i,k)=cff*(3.0_r8*(Hz(i,j,k  )*t(i,j,k+1,3,itrc)+      &
+     &                             Hz(i,j,k+1)*t(i,j,k  ,3,itrc))-      &
+     &                             Hz(i,j,k+1)*FCs(i,k-1))
+            END DO
+          END DO
+          DO i=Istr,Iend
+#   ifdef NEUMANN
+            FCs(i,N(ng))=(3.0_r8*t(i,j,N(ng),3,itrc)-FCs(i,N(ng)-1))/   &
+     &                  (2.0_r8-CF(i,N(ng)))
+#   else
+            FCs(i,N(ng))=(2.0_r8*t(i,j,N(ng),3,itrc)-FCs(i,N(ng)-1))/   &
+     &                  (1.0_r8-CF(i,N(ng)))
+#   endif
+          END DO
+          DO k=N(ng)-1,0,-1
+            DO i=Istr,Iend
+              FCs(i,k)=FCs(i,k)-CF(i,k+1)*FCs(i,k+1)
+              FCs(i,k+1)=w_stokes(i,j,k+1)*FCs(i,k+1)
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FCs(i,N(ng))=0.0_r8
+            FCs(i,0)=0.0_r8
+          END DO
+#  elif defined TS_A4VADVECTION
+!
+!  Fourth-order, Akima vertical advective flux.
+!
+          DO k=1,N(ng)-1
+            DO i=Istr,Iend
+              FCs(i,k)=t(i,j,k+1,3,itrc)-                               &
+     &                t(i,j,k  ,3,itrc)
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FCs(i,0)=FCs(i,1)
+            FCs(i,N(ng))=FCs(i,N(ng)-1)
+          END DO
+          DO k=1,N(ng)
+            DO i=Istr,Iend
+              cff=2.0_r8*FCs(i,k)*FCs(i,k-1)
+              IF (cff.gt.eps) THEN
+                CF(i,k)=cff/(FCs(i,k)+FCs(i,k-1))
+              ELSE
+                CF(i,k)=0.0_r8
+              END IF
+            END DO
+          END DO
+          cff1=1.0_r8/3.0_r8
+          DO k=1,N(ng)-1
+            DO i=Istr,Iend
+              FCs(i,k)=w_stokes(i,j,k)*                                 &
+     &                0.5_r8*(t(i,j,k  ,3,itrc)+                        &
+     &                        t(i,j,k+1,3,itrc)-                        &
+     &                        cff1*(CF(i,k+1)-CF(i,k)))
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FCs(i,0)=0.0_r8
+            FCs(i,N(ng))=0.0_r8
+          END DO
+#  elif defined TS_C2VADVECTION
+!
+!  Second-order, central differences vertical advective flux.
+!
+          DO k=1,N(ng)-1
+            DO i=Istr,Iend
+              FCs(i,k)=w_stokes(i,j,k)*                                 &
+     &                0.5_r8*(t(i,j,k  ,3,itrc)+                        &
+     &                        t(i,j,k+1,3,itrc))
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FCs(i,0)=0.0_r8
+            FCs(i,N(ng))=0.0_r8
+          END DO
+#  elif defined TS_MPDATA
+!
+!  First_order, upstream differences vertical advective flux.
+!
+          DO i=I_RANGE
+            DO k=1,N(ng)-1
+              cff1=MAX(W(i,j,k)+w_stokes(i,j,k),0.0_r8)
+              cff2=MIN(W(i,j,k)+w_stokes(i,j,k),0.0_r8)
+              FCs(i,k)=cff1*t(i,j,k  ,3,itrc)+                          &
+     &                 cff2*t(i,j,k+1,3,itrc)
+            END DO
+            FCs(i,0)=0.0_r8
+            FCs(i,N(ng))=0.0_r8
+          END DO
+#  else
+!
+!  Fourth-order, central differences vertical advective flux.
+!
+          cff1=0.5_r8
+          cff2=7.0_r8/12.0_r8
+          cff3=1.0_r8/12.0_r8
+          DO k=2,N(ng)-2
+            DO i=Istr,Iend
+              FCs(i,k)=w_stokes(i,j,k)*                                 &
+     &                (cff2*(t(i,j,k  ,3,itrc)+                         &
+     &                       t(i,j,k+1,3,itrc))-                        &
+     &                 cff3*(t(i,j,k-1,3,itrc)+                         &
+     &                       t(i,j,k+2,3,itrc)))
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FCs(i,0)=0.0_r8
+            FCs(i,1)=w_stokes(i,j,1)*                                   &
+     &              (cff1*t(i,j,1,3,itrc)+                              &
+     &               cff2*t(i,j,2,3,itrc)-                              &
+     &               cff3*t(i,j,3,3,itrc))
+            FCs(i,N(ng)-1)=w_stokes(i,j,N(ng)-1)*                       &
+     &                    (cff1*t(i,j,N(ng)  ,3,itrc)+                  &
+     &                     cff2*t(i,j,N(ng)-1,3,itrc)-                  &
+     &                     cff3*t(i,j,N(ng)-2,3,itrc))
+            FCs(i,N(ng))=0.0_r8
+          END DO
+#  endif
+# endif
 !
 !  Time-step vertical advection term.
 # ifdef DIAGNOSTICS_TS
@@ -1010,11 +1171,11 @@
           DO k=1,N(ng)
             DO i=I_RANGE
               cff1=CF(i,0)*(FC(i,k)-FC(i,k-1))
-# ifdef TS_MPDATA
+# if defined TS_MPDATA && !defined WEC_VF
               Ta(i,j,k,itrc)=(Ta(i,j,k,itrc)-cff1)*oHz(i,j,k)
-#  ifdef DIAGNOSTICS_TS
+#   ifdef DIAGNOSTICS_TS
               DiaTwrk(i,j,k,itrc,iTvadv)=-cff1
-#  endif
+#   endif
 # else
               t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1
 #  ifdef SPLINES
@@ -1030,6 +1191,32 @@
 # endif
             END DO
           END DO
+# ifdef WEC_VF
+          DO k=1,N(ng)
+            DO i=I_RANGE
+              cff1=CF(i,0)*(FCs(i,k)-FCs(i,k-1))
+#  ifdef TS_MPDATA
+              Ta(i,j,k,itrc)=(Ta(i,j,k,itrc)-cff1)*oHz(i,j,k)
+#   ifdef DIAGNOSTICS_TS
+!              DiaTwrk(i,j,k,itrc,iTvadv)=-cff1
+#   endif
+#  else
+#   ifdef SPLINES
+              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1*oHz(i,j,k)
+#   else
+              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1
+#   endif
+#   ifdef DIAGNOSTICS_TS
+!              DiaTwrk(i,j,k,itrc,iTvadv)=-cff1
+!              DO idiag=1,NDT
+!                DiaTwrk(i,j,k,itrc,idiag)=DiaTwrk(i,j,k,itrc,idiag)*    &
+!     &                                    oHz(i,j,k)
+!              END DO
+#   endif
+#  endif
+            END DO
+          END DO
+# endif
         END DO
 # ifdef TS_MPDATA
       END DO
@@ -1053,6 +1240,9 @@
      &                          pm, pn, omn, om_u, on_v,                &
      &                          z_r, oHz,                               &
      &                          Huon, Hvom, W,                          &
+#  ifdef WEC_VF
+     &                          w_stokes,                               &
+#  endif
      &                          t(:,:,:,3,itrc),                        &
      &                          Ta(:,:,:,itrc),  Ua, Va, Wa)
 !

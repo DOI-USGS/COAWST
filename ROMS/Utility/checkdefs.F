@@ -3085,16 +3085,6 @@
         exit_flag=5
       END IF
 # endif
-# if defined WEC_VF && (!defined WDISS_THORGUZA && \
-    !defined WDISS_CHURTHOR && !defined WDISS_WAVEMOD)
-      IF (Master) THEN
-        WRITE (stdout,85)
-        exit_flag=5
-      END IF
-  85  FORMAT (/,' CHECKDEFS - For WEC need to define at least one of: ',&
-     &        /,13x,'WDISS_THORGUZA',/,13x,'WDISS_CHURTHOR',            &
-     &        /,13x,'WDISS_WAVEMOD')
-# endif
 #endif
 #ifndef SOLVE3D
 !

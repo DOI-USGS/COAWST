@@ -78,7 +78,6 @@
      &                            FORCES(ng) % Hwave,                   &
      &                            FORCES(ng) % Dwave,                   &
      &                            FORCES(ng) % Lwave,                   &
-     &                            FORCES(ng) % Pwave_top,               &
      &                            FORCES(ng) % Dissip_break,            &
      &                            FORCES(ng) % Dissip_roller,           &
      &                            FORCES(ng) % Dissip_wcap,             &
@@ -131,7 +130,6 @@
      &                                  Hz, z_r, z_w,                   &
 # endif
      &                                  Hwave, Dwave, Lwave,            &
-     &                                  Pwave_top,                      &
      &                                  Dissip_break, Dissip_roller,    &
      &                                  Dissip_wcap,                    &
      &                                  zeta,                           &
@@ -200,7 +198,6 @@
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
-      real(r8), intent(in) :: Pwave_top(LBi:,LBj:)
       real(r8), intent(in) :: Dissip_break(LBi:,LBj:)
       real(r8), intent(in) :: Dissip_roller(LBi:,LBj:)
       real(r8), intent(in) :: Dissip_wcap(LBi:,LBj:)
@@ -255,7 +252,6 @@
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: Pwave_top(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dissip_break(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dissip_roller(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dissip_wcap(LBi:UBi,LBj:UBj)

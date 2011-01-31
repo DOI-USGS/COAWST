@@ -47,8 +47,11 @@
 # endif
      &                              pm, pn, omn, om_u, on_v,            &
      &                              z_r, oHz,                           &
-     &                              Huon, Hvom, w, t,                   &
-     &                              Ta, Ua, Va, Wa)
+     &                              Huon, Hvom, w,                      &
+# ifdef WEC_VF
+     &                              w_stokes,                           &
+# endif
+     &                              t, Ta, Ua, Va, Wa)
 !***********************************************************************
 !
       USE mod_param
@@ -85,9 +88,10 @@
       real(r8), intent(in) :: Hvom(LBi:,LBj:,:)
       real(r8), intent(in) :: t(LBi:,LBj:,:)
       real(r8), intent(in) :: w(LBi:,LBj:,0:)
-
+#  ifdef WEC_VF
+      real(r8), intent(in) :: w_stokes(LBi:,LBj:,0:)
+#  endif
       real(r8), intent(inout) :: Ta(IminS:,JminS:,:)
-
       real(r8), intent(out) :: Ua(IminS:,JminS:,:)
       real(r8), intent(out) :: Va(IminS:,JminS:,:)
       real(r8), intent(out) :: Wa(IminS:,JminS:,0:)
@@ -113,9 +117,10 @@
       real(r8), intent(in) :: Hvom(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: t(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: w(LBi:UBi,LBj:UBj,0:N(ng))
-
+#  ifdef WEC_VF
+      real(r8), intent(in) :: w_stokes(LBi:UBi,LBj:UBj,0:N(ng))
+#  endif
       real(r8), intent(inout) :: Ta(IminS:ImaxS,JminS:JmaxS,N(ng))
-
       real(r8), intent(out) :: Ua(IminS:ImaxS,JminS:JmaxS,N(ng))
       real(r8), intent(out) :: Va(IminS:ImaxS,JminS:JmaxS,N(ng))
       real(r8), intent(out) :: Wa(IminS:ImaxS,JminS:JmaxS,0:N(ng))
@@ -275,6 +280,12 @@
           Wm(i,k)=0.25_r8*dt(ng)*                                       &
      &            (w(i-1,j,k  )*odz(i-1,j,k)*pm(i-1,j)*pn(i-1,j)+       &
      &             w(i  ,j,k  )*odz(i  ,j,k)*pm(i  ,j)*pn(i  ,j))
+# ifdef WEC_VF
+          Wm(i,k)=Wm(i,k)+                                              &
+     &            0.25_r8*dt(ng)*                                       &
+     &            (w_stokes(i-1,j,k  )*odz(i-1,j,k)*pm(i-1,j)*pn(i-1,j)+&
+     &             w_stokes(i  ,j,k  )*odz(i  ,j,k)*pm(i  ,j)*pn(i  ,j))
+# endif
         END DO
         DO k=2,N(ng)-1
           DO i=I_RANGE
@@ -291,6 +302,16 @@
      &                w(i-1,j,k  )*odz(i-1,j,k  ))*pm(i-1,j)*pn(i-1,j)+ &
      &               (w(i  ,j,k  )*odz(i  ,j,k  )+                      &
      &                w(i  ,j,k-1)*odz(i  ,j,k-1))*pm(i  ,j)*pn(i  ,j))
+# ifdef WEC_VF
+            Wm(i,k)=Wm(i,k)+                                            &
+     &              0.25_r8*dt(ng)*                                     &
+     &              ((w_stokes(i-1,j,k-1)*odz(i-1,j,k-1)+               &
+     &                w_stokes(i-1,j,k  )*odz(i-1,j,k  ))*              &
+     &                                    pm(i-1,j)*pn(i-1,j)+          &
+     &               (w_stokes(i  ,j,k  )*odz(i  ,j,k  )+               &
+     &                w_stokes(i  ,j,k-1)*odz(i  ,j,k-1))*              &
+     &                                    pm(i  ,j)*pn(i  ,j))
+# endif
           END DO
         END DO
         k=N(ng)
@@ -304,6 +325,14 @@
           Wm(i,k)=0.25_r8*dt(ng)*                                       &
      &            (w(i-1,j,k-1)*odz(i-1,j,k-1)*pm(i-1,j)*pn(i-1,j)+     &
      &             w(i  ,j,k-1)*odz(i  ,j,k-1)*pm(i  ,j)*pn(i  ,j))
+# ifdef WEC_VF
+            Wm(i,k)=Wm(i,k)+                                            &
+     &              0.25_r8*dt(ng)*                                     &
+     &              (w_stokes(i-1,j,k-1)*odz(i-1,j,k-1)*                &
+     &                                   pm(i-1,j)*pn(i-1,j)+           &
+     &               w_stokes(i  ,j,k-1)*odz(i  ,j,k-1)*                &
+     &                                   pm(i  ,j)*pn(i  ,j))
+# endif
         END DO
         DO k=1,N(ng)
           DO i=I_RANGE
@@ -485,6 +514,12 @@
           Wm(i,k)=0.25_r8*dt(ng)*                                       &
      &            (w(i,j-1,k  )*odz(i,j-1,k  )*pm(i,j-1)*pn(i,j-1)+     &
      &             w(i,j  ,k  )*odz(i,j  ,k  )*pm(i,j  )*pn(i,j  ))
+# ifdef WEC_VF
+          Wm(i,k)=Wm(i,k)+                                              &
+     &            0.25_r8*dt(ng)*                                       &
+     &            (w_stokes(i,j-1,k )*odz(i,j-1,k )*pm(i,j-1)*pn(i,j-1)+&
+     &             w_stokes(i,j  ,k )*odz(i,j  ,k )*pm(i,j  )*pn(i,j  ))
+# endif
         END DO
         DO k=2,N(ng)-1
           DO i=I_RANGE
@@ -501,6 +536,16 @@
      &                w(i,j-1,k  )*odz(i,j-1,k  ))*pm(i,j-1)*pn(i,j-1)+ &
      &               (w(i,j  ,k  )*odz(i,j  ,k  )+                      &
      &                w(i,j  ,k-1)*odz(i,j  ,k-1))*pm(i,j  )*pn(i,j  ))
+# ifdef WEC_VF
+          Wm(i,k)=Wm(i,k)+                                              &
+     &            0.25_r8*dt(ng)*                                       &
+     &              ((w_stokes(i,j-1,k-1)*odz(i,j-1,k-1)+               &
+     &                w_stokes(i,j-1,k  )*odz(i,j-1,k  ))*              &
+     &                                    pm(i,j-1)*pn(i,j-1)+          &
+     &               (w_stokes(i,j  ,k  )*odz(i,j  ,k  )+               &
+     &                w_stokes(i,j  ,k-1)*odz(i,j  ,k-1))*              &
+     &                                    pm(i,j  )*pn(i,j  ))
+# endif
           END DO
         END DO
         k=N(ng)
@@ -514,6 +559,14 @@
           Wm(i,k)=0.25_r8*dt(ng)*                                       &
      &            (w(i,j-1,k-1)*odz(i,j-1,k-1)*pm(i,j-1)*pn(i,j-1)+     &
      &             w(i,j  ,k-1)*odz(i,j  ,k-1)*pm(i,j  )*pn(i,j  ))
+# ifdef WEC_VF
+          Wm(i,k)=Wm(i,k)+                                              &
+     &            0.25_r8*dt(ng)*                                       &
+     &            (w_stokes(i,j-1,k-1)*odz(i,j-1,k-1)*                  &
+     &                                 pm(i,j-1)*pn(i,j-1)+             &
+     &             w_stokes(i,j  ,k-1)*odz(i,j  ,k-1)*                  &
+     &                                 pm(i,j  )*pn(i,j  ))
+# endif
         END DO
         DO k=1,N(ng)
           DO i=I_RANGE
@@ -765,6 +818,10 @@
      &                             (oHz(i,j,k+1)+oHz(i,j+1,k+1)))
 
               Wm(i,k)=w(i,j,k)*odz(i,j,k)*pm(i,j)*pn(i,j)*dt(ng)
+# ifdef WEC_VF
+              Wm(i,k)=Wm(i,k)+w_stokes(i,j,k)*odz(i,j,k)*               &
+     &                pm(i,j)*pn(i,j)*dt(ng)
+# endif
 !
               X=(ABS(Um)-Um*Um)*A-B*Um*Vm-C(i,k)*Um*Wm(i,k)
               Y=(ABS(Vm)-Vm*Vm)*B-A*Um*Vm-C(i,k)*Vm*Wm(i,k)

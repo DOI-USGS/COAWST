@@ -1695,6 +1695,307 @@
             END DO
           END DO
         END IF
+#  ifdef WEC_VF
+!
+!-----------------------------------------------------------------------
+!  Add in vertical advection from w_stokes.
+!-----------------------------------------------------------------------
+!
+#   ifdef UV_SADVECTION
+!
+!  Construct conservative parabolic splines for the vertical
+!  derivatives "CF" of u-momentum.
+!
+        cff1=9.0_r8/16.0_r8
+        cff2=1.0_r8/16.0_r8
+        DO k=1,N(ng)
+          DO i=IstrU,Iend
+            DC(i,k)=cff1*(Hz(i  ,j,k)+                                  &
+     &                    Hz(i-1,j,k))-                                 &
+     &              cff2*(Hz(i+1,j,k)+                                  &
+     &                    Hz(i-2,j,k))
+          END DO
+        END DO
+        DO i=IstrU,Iend
+          FC(i,0)=0.0_r8
+          CF(i,0)=0.0_r8
+        END DO
+        DO k=1,N(ng)-1
+          DO i=IstrU,Iend
+            cff=1.0_r8/(2.0_r8*DC(i,k+1)+DC(i,k)*(2.0_r8-FC(i,k-1)))
+            FC(i,k)=cff*DC(i,k+1)
+            CF(i,k)=cff*(6.0_r8*(u(i,j,k+1,nrhs)-                       &
+     &                           u(i,j,k  ,nrhs))-                      &
+     &                   DC(i,k)*CF(i,k-1))
+          END DO
+        END DO
+        DO i=IstrU,Iend
+          CF(i,N(ng))=0.0_r8
+        END DO
+        DO k=N(ng)-1,1,-1
+          DO i=IstrU,Iend
+            CF(i,k)=CF(i,k)-FC(i,k)*CF(i,k+1)
+          END DO
+        END DO
+!
+! Compute spline-interpolated, vertical advective u-momentum flux.
+!
+        cff3=1.0_r8/3.0_r8
+        cff4=1.0_r8/6.0_r8
+        DO k=1,N(ng)-1
+          DO i=IstrU,Iend
+            FC(i,k)=(cff1*(w_stokes(i  ,j,k)+                           &
+     &                     w_stokes(i-1,j,k))-                          &
+     &               cff2*(w_stokes(i+1,j,k)+                           &
+     &                     w_stokes(i-2,j,k)))*                         &
+     &              (u(i,j,k,nrhs)+                                     &
+     &               DC(i,k)*(cff3*CF(i,k  )+                           &
+     &                        cff4*CF(i,k-1)))
+          END DO
+        END DO
+        DO i=IstrU,Iend
+          FC(i,N(ng))=0.0_r8
+          FC(i,0)=0.0_r8
+        END DO
+#   elif defined UV_C2ADVECTION
+        DO k=1,N(ng)-1
+          DO i=IstrU,Iend
+            FC(i,k)=0.25_r8*(u(i,j,k  ,nrhs)+                           &
+     &                       u(i,j,k+1,nrhs))*                          &
+     &              (w_stokes(i  ,j,k)+                                 &
+     &               w_stokes(i-1,j,k))
+          END DO
+        END DO
+        DO i=IstrU,Iend
+          FC(i,0)=0.0_r8
+          FC(i,N(ng))=0.0_r8
+        END DO
+#   elif defined UV_C4ADVECTION
+        cff1=9.0_r8/32.0_r8
+        cff2=1.0_r8/32.0_r8
+        DO k=2,N(ng)-2
+          DO i=IstrU,Iend
+            FC(i,k)=(cff1*(u(i,j,k  ,nrhs)+                             &
+     &                     u(i,j,k+1,nrhs))-                            &
+     &               cff2*(u(i,j,k-1,nrhs)+                             &
+     &                     u(i,j,k+2,nrhs)))*                           &
+     &              (w_stokes(i  ,j,k)+                                 &
+     &               w_stokes(i-1,j,k))
+          END DO
+        END DO
+        DO i=IstrU,Iend
+          FC(i,N(ng))=0.0_r8
+          FC(i,N(ng)-1)=(cff1*(u(i,j,N(ng)-1,nrhs)+                     &
+     &                         u(i,j,N(ng)  ,nrhs))-                    &
+     &                   cff2*(u(i,j,N(ng)-2,nrhs)+                     &
+     &                         u(i,j,N(ng)  ,nrhs)))*                   &
+     &                  (w_stokes(i  ,j,N(ng)-1)+                       &
+     &                   w_stokes(i-1,j,N(ng)-1))
+          FC(i,1)=(cff1*(u(i,j,1,nrhs)+                                 &
+     &                   u(i,j,2,nrhs))-                                &
+     &             cff2*(u(i,j,1,nrhs)+                                 &
+     &                   u(i,j,3,nrhs)))*                               &
+     &            (w_stokes(i  ,j,1)+                                   &
+     &             w_stokes(i-1,j,1))
+          FC(i,0)=0.0_r8
+        END DO
+#   else
+        cff1=9.0_r8/16.0_r8
+        cff2=1.0_r8/16.0_r8
+        DO k=2,N(ng)-2
+          DO i=IstrU,Iend
+            FC(i,k)=(cff1*(u(i,j,k  ,nrhs)+                             &
+     &                     u(i,j,k+1,nrhs))-                            &
+     &               cff2*(u(i,j,k-1,nrhs)+                             &
+     &                     u(i,j,k+2,nrhs)))*                           &
+     &              (cff1*(w_stokes(i  ,j,k)+                           &
+     &                     w_stokes(i-1,j,k))-                          &
+     &               cff2*(w_stokes(i+1,j,k)+                           &
+     &                     w_stokes(i-2,j,k)))
+          END DO
+        END DO
+        DO i=IstrU,Iend
+          FC(i,N(ng))=0.0_r8
+          FC(i,N(ng)-1)=(cff1*(u(i,j,N(ng)-1,nrhs)+                     &
+     &                         u(i,j,N(ng)  ,nrhs))-                    &
+     &                   cff2*(u(i,j,N(ng)-2,nrhs)+                     &
+     &                         u(i,j,N(ng)  ,nrhs)))*                   &
+     &                  (cff1*(w_stokes(i  ,j,N(ng)-1)+                 &
+     &                         w_stokes(i-1,j,N(ng)-1))-                &
+     &                   cff2*(w_stokes(i+1,j,N(ng)-1)+                 &
+     &                         w_stokes(i-2,j,N(ng)-1)))
+          FC(i,1)=(cff1*(u(i,j,1,nrhs)+                                 &
+     &                   u(i,j,2,nrhs))-                                &
+     &             cff2*(u(i,j,1,nrhs)+                                 &
+     &                   u(i,j,3,nrhs)))*                               &
+     &            (cff1*(w_stokes(i  ,j,1)+                             &
+     &                   w_stokes(i-1,j,1))-                            &
+     &             cff2*(w_stokes(i+1,j,1)+                             &
+     &                   w_stokes(i-2,j,1)))
+          FC(i,0)=0.0_r8
+        END DO
+#   endif
+        DO k=1,N(ng)
+          DO i=IstrU,Iend
+            cff=FC(i,k)-FC(i,k-1)
+            ru(i,j,k,nrhs)=ru(i,j,k,nrhs)-cff
+#   ifdef DIAGNOSTICS_UV
+!            DiaRU(i,j,k,nrhs,M3vadv)=-cff
+#   endif
+          END DO
+        END DO
+        IF (j.ge.JstrV) THEN
+#   ifdef UV_SADVECTION
+!
+!  Construct conservative parabolic splines for the vertical
+!  derivatives "CF" of v-momentum.
+!
+          cff1=9.0_r8/16.0_r8
+          cff2=1.0_r8/16.0_r8
+          DO k=1,N(ng)
+            DO i=Istr,Iend
+              DC(i,k)=(cff1*(Hz(i,j  ,k)+                               &
+     &                       Hz(i,j-1,k))-                              &
+     &                 cff2*(Hz(i,j+1,k)+                               &
+     &                       Hz(i,j-2,k)))
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FC(i,0)=0.0_r8
+            CF(i,0)=0.0_r8
+          END DO
+          DO k=1,N(ng)-1
+            DO i=Istr,Iend
+              cff=1.0_r8/(2.0_r8*DC(i,k+1)+DC(i,k)*(2.0_r8-FC(i,k-1)))
+              FC(i,k)=cff*DC(i,k+1)
+              CF(i,k)=cff*(6.0_r8*(v(i,j,k+1,nrhs)-                     &
+     &                             v(i,j,k  ,nrhs))-                    &
+     &                     DC(i,k)*CF(i,k-1))
+            END DO
+          END DO
+          DO i=Istr,Iend
+            CF(i,N(ng))=0.0_r8
+          END DO
+          DO k=N(ng)-1,1,-1
+            DO i=Istr,Iend
+              CF(i,k)=CF(i,k)-FC(i,k)*CF(i,k+1)
+            END DO
+          END DO
+!
+! Compute spline-interpolated, vertical advective v-momentum flux.
+!
+          cff3=1.0_r8/3.0_r8
+          cff4=1.0_r8/6.0_r8
+          DO k=1,N(ng)-1
+            DO i=Istr,Iend
+              FC(i,k)=(cff1*(w_stokes(i,j  ,k)+                         &
+     &                       w_stokes(i,j-1,k))-                        &
+     &                 cff2*(w_stokes(i,j+1,k)+                         &
+     &                       w_stokes(i,j-2,k)))*                       &
+     &                (v(i,j,k,nrhs)+                                   &
+     &                 DC(i,k)*(cff3*CF(i,k  )+                         &
+     &                          cff4*CF(i,k-1)))
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FC(i,N(ng))=0.0_r8
+            FC(i,0)=0.0_r8
+          END DO
+#   elif defined UV_C2ADVECTION
+!
+!  Second-order, centered differences vertical advection.
+!
+          DO k=1,N(ng)-1
+            DO i=Istr,Iend
+              FC(i,k)=0.25_r8*(v(i,j,k  ,nrhs)+                         &
+     &                         v(i,j,k+1,nrhs))*                        &
+     &                (w_stokes(i,j  ,k)+                               &
+     &                 w_stokes(i,j-1,k))
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FC(i,0)=0.0_r8
+            FC(i,N(ng))=0.0_r8
+          END DO
+#   elif defined UV_C4ADVECTION
+!
+!  Forth-order, centered differences vertical advection.
+!
+          cff1=9.0_r8/32.0_r8
+          cff2=1.0_r8/32.0_r8
+          DO k=2,N(ng)-2
+            DO i=Istr,Iend
+              FC(i,k)=(cff1*(v(i,j,k  ,nrhs)+                           &
+     &                       v(i,j,k+1,nrhs))-                          &
+     &                 cff2*(v(i,j,k-1,nrhs)+                           &
+     &                       v(i,j,k+2,nrhs)))*                         &
+     &                (w_stokes(i,j  ,k)+                               &
+     &                 w_stokes(i,j-1,k))
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FC(i,N(ng))=0.0_r8
+            FC(i,N(ng)-1)=(cff1*(v(i,j,N(ng)-1,nrhs)+                   &
+     &                           v(i,j,N(ng)  ,nrhs))-                  &
+     &                     cff2*(v(i,j,N(ng)-2,nrhs)+                   &
+     &                           v(i,j,N(ng)  ,nrhs)))*                 &
+     &                    (w_stokes(i,j  ,N(ng)-1)+                     &
+     &                     w_stokes(i,j-1,N(ng)-1))
+            FC(i,1)=(cff1*(v(i,j,1,nrhs)+                               &
+     &                     v(i,j,2,nrhs))-                              &
+     &               cff2*(v(i,j,1,nrhs)+                               &
+     &                     v(i,j,3,nrhs)))*                             &
+     &              (w_stokes(i,j  ,1)+                                 &
+     &               w_stokes(i,j-1,1))
+            FC(i,0)=0.0_r8
+          END DO
+#   else
+          cff1=9.0_r8/16.0_r8
+          cff2=1.0_r8/16.0_r8
+          DO k=2,N(ng)-2
+            DO i=Istr,Iend
+              FC(i,k)=(cff1*(v(i,j,k  ,nrhs)+                           &
+     &                       v(i,j,k+1,nrhs))-                          &
+     &                 cff2*(v(i,j,k-1,nrhs)+                           &
+     &                       v(i,j,k+2,nrhs)))*                         &
+     &                (cff1*(w_stokes(i,j  ,k)+                         &
+     &                       w_stokes(i,j-1,k))-                        &
+     &                 cff2*(w_stokes(i,j+1,k)+                         &
+     &                       w_stokes(i,j-2,k)))
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FC(i,N(ng))=0.0_r8
+            FC(i,N(ng)-1)=(cff1*(v(i,j,N(ng)-1,nrhs)+                   &
+     &                           v(i,j,N(ng)  ,nrhs))-                  &
+     &                     cff2*(v(i,j,N(ng)-2,nrhs)+                   &
+     &                           v(i,j,N(ng)  ,nrhs)))*                 &
+     &                    (cff1*(w_stokes(i,j  ,N(ng)-1)+               &
+     &                           w_stokes(i,j-1,N(ng)-1))-              &
+     &                     cff2*(w_stokes(i,j+1,N(ng)-1)+               &
+     &                           w_stokes(i,j-2,N(ng)-1)))
+            FC(i,1)=(cff1*(v(i,j,1,nrhs)+                               &
+     &                     v(i,j,2,nrhs))-                              &
+     &               cff2*(v(i,j,1,nrhs)+                               &
+     &                     v(i,j,3,nrhs)))*                             &
+     &              (cff1*(w_stokes(i,j  ,1)+                           &
+     &                     w_stokes(i,j-1,1))-                          &
+     &               cff2*(w_stokes(i,j+1,1)+                           &
+     &                     w_stokes(i,j-2,1)))
+            FC(i,0)=0.0_r8
+          END DO
+#   endif
+          DO k=1,N(ng)
+            DO i=Istr,Iend
+              cff=FC(i,k)-FC(i,k-1)
+              rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff
+#   ifdef DIAGNOSTICS_UV
+!              DiaRV(i,j,k,nrhs,M3vadv)=-cff
+#   endif
+            END DO
+          END DO
+        END IF
+#  endif
 # endif
 !
 !-----------------------------------------------------------------------

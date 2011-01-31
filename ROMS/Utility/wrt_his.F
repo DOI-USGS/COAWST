@@ -2351,19 +2351,30 @@
 !  Write out 3D W-momentum stokes velocity.
 !
       IF (Hout(idW3Sd,ng)) THEN
+        IF (.not.allocated(wrk)) THEN
+          allocate (wrk(LBi:UBi,LBj:UBj,0:N(ng)))
+          wrk(LBi:UBi,LBj:UBj,0:N(ng))=0.0_r8
+        END IF
         scale=1.0_r8
         gtype=gfactor*w3dvar
+        DO tile=0,NtileX(ng)*NtileE(ng)-1
+          CALL scale_omega (ng, TILE, LBi, UBi, LBj, UBj, 0, N(ng),     &
+     &                      GRID(ng) % pm,                              &
+     &                      GRID(ng) % pn,                              &
+     &                      OCEAN(ng) % w_stokes,                       &
+     &                      wrk)
+        END DO
         status=nf_fwrite3d(ng, iNLM, ncHISid(ng),hisVid(idW3Sd,ng),     &
      &                     tHISindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
-#  ifdef MASKING
-#   ifdef WET_DRY
+# ifdef MASKING
+#  ifdef WET_DRY
      &                     GRID(ng) % rmask_full,                       &
-#   else
+#  else
      &                     GRID(ng) % rmask,                            &
-#   endif
 #  endif
-     &                     OCEAN(ng) % w_stokes)
+# endif
+     &                     wrk)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW3Sd)), tHISindx(ng)

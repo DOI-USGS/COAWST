@@ -52,6 +52,7 @@
      &                            GRID(ng) % om_u,                      &
      &                            GRID(ng) % om_v,                      &
      &                            GRID(ng) % Hz,                        &
+     &                            GRID(ng) % z_w,                       &
      &                            FORCES(ng) % Hwave,                   &
      &                            FORCES(ng) % Dwave,                   &
      &                            FORCES(ng) % Lwave,                   &
@@ -83,7 +84,7 @@
      &                                  umask_wet, vmask_wet,           &
 # endif
      &                                  on_u, on_v, om_u, om_v,         &
-     &                                  Hz,                             &
+     &                                  Hz, z_w,                        &
      &                                  Hwave, Dwave, Lwave, rollA,     &
      &                                  zeta,                           &
      &                                  rulag2d, rvlag2d,               &
@@ -126,6 +127,7 @@
       real(r8), intent(in) :: om_u(LBi:,LBj:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
+      real(r8), intent(in) :: z_w(LBi:,LBj:,:)
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
@@ -156,6 +158,7 @@
       real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,UBk)
+      real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,UBk)
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
@@ -193,6 +196,7 @@
       real(r8), parameter :: eps = 1.0E-14_r8
       real(r8), parameter :: kDmax = 5.0_r8
       real(r8), parameter :: Lwave_min = 1.0_r8
+      real(r8), dimension(IminS:ImaxS) :: wrk
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dstp
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: kD
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wavec
@@ -313,7 +317,7 @@
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    u_stokes, v_stokes)
 #  endif
-!	  
+!
 !  Compute vertical stokes velocity, Eqn. 31.
 !
       DO k=1,N(ng)
@@ -335,6 +339,21 @@
      &                      (Huons(i+1,j)-Huons(i,j)+                   &
      &                       Hvoms(i,j+1)-Hvoms(i,j))
           END DO
+        END DO
+      END DO
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          wrk(i)=w_stokes(i,j,N(ng))/(z_w(i,j,N(ng))-z_w(i,j,0))
+        END DO
+!
+        DO k=N(ng)-1,1,-1
+          DO i=Istr,Iend
+            w_stokes(i,j,k)=w_stokes(i,j,k)-                            &
+     &                      wrk(i)*(z_w(i,j,k)-z_w(i,j,0))
+          END DO
+        END DO
+        DO i=Istr,Iend
+          w_stokes(i,j,N(ng))=0.0_r8
         END DO
       END DO
 !

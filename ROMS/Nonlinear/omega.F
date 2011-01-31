@@ -223,9 +223,6 @@
           DO i=I_RANGE
             W(i,j,k)=W(i,j,k-1)-                                        &
      &               (Huon(i+1,j,k)-Huon(i,j,k)+                        &
-# if defined WEC_VF
-!     &                w_stokes(i,j,k)-w_stokes(i,j,k-1)+                &
-# endif
      &                Hvom(i,j+1,k)-Hvom(i,j,k))
           END DO
         END DO
@@ -260,6 +257,9 @@
         DO k=N(ng)-1,1,-1
           DO i=I_RANGE
             W(i,j,k)=W(i,j,k)-                                          &
+# if defined WEC_VF
+     &               w_stokes(i,j,k)-                                   &
+# endif
      &               wrk(i)*(z_w(i,j,k)-z_w(i,j,0))
           END DO
         END DO
@@ -291,6 +291,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE bc_3d_mod, ONLY : bc_w3d_tile
 !
 !  Imported variable declarations.
 !
@@ -326,6 +327,12 @@
           END DO
         END DO
       END DO
+!
+!  Set lateral boundary conditions.
+!
+      CALL bc_w3d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, 0, N(ng),                   &
+     &                  Wscl)
 
       RETURN
       END SUBROUTINE scale_omega

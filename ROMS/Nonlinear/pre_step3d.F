@@ -101,6 +101,9 @@
      &                      MIXING(ng) % ghats,                         &
 # endif
      &                      OCEAN(ng) % W,                              &
+# ifdef WEC_VF
+     &                      OCEAN(ng) % w_stokes,                       &
+# endif
      &                      OCEAN(ng) % ru,                             &
      &                      OCEAN(ng) % rv,                             &
 # ifdef DIAGNOSTICS_TS
@@ -147,6 +150,9 @@
      &                            ghats,                                &
 # endif
      &                            W,                                    &
+# ifdef WEC_VF
+     &                            w_stokes,                             &
+# endif
      &                            ru, rv,                               &
 # ifdef DIAGNOSTICS_TS
      &                            DiaTwrk,                              &
@@ -218,6 +224,9 @@
       real(r8), intent(in) :: ghats(LBi:,LBj:,0:,:)
 #  endif
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
+#  ifdef WEC_VF
+      real(r8), intent(in) :: w_stokes(LBi:,LBj:,0:)
+#  endif
       real(r8), intent(in) :: ru(LBi:,LBj:,0:,:)
       real(r8), intent(in) :: rv(LBi:,LBj:,0:,:)
 #  ifdef DIAGNOSTICS_TS
@@ -273,6 +282,9 @@
       real(r8), intent(in) :: ghats(LBi:UBi,LBj:UBj,0:N(ng),NAT)
 #  endif
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
+#  ifdef WEC_VF
+      real(r8), intent(in) :: w_stokes(LBi:UBi,LBj:UBj,0:N(ng))
+#  endif
       real(r8), intent(in) :: ru(LBi:UBi,LBj:UBj,0:N(ng),2)
       real(r8), intent(in) :: rv(LBi:UBi,LBj:UBj,0:N(ng),2)
 #  ifdef DIAGNOSTICS_TS
@@ -316,6 +328,9 @@
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
+# ifdef WEC_VF
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FCs
+# endif
 
 # ifdef SOLAR_SOURCE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: swdk
@@ -601,6 +616,9 @@
      &                      cff*pm(i,j)*pn(i,j)*                        &
      &                      (Huon(i+1,j,k)-Huon(i,j,k)+                 &
      &                       Hvom(i,j+1,k)-Hvom(i,j,k)+                 &
+#   ifdef WEC_VF
+     &                      (w_stokes(i,j,k)-w_stokes(i,j,k-1))+        &
+#   endif
      &                      (W(i,j,k)-W(i,j,k-1))))
           END DO
         END DO
@@ -752,6 +770,137 @@
           END DO
 #   endif
 !
+#   ifdef WEC_VF
+!
+!  Add contribution for vertical stokes velocity advection.
+!
+#    ifdef TS_SVADVECTION
+!
+!  Build conservative parabolic splines for the vertical derivatives
+!  "FC" of the tracer.  Then, the interfacial "FC" values are
+!  converted to vertical advective flux.
+!
+          DO i=Istr,Iend
+#     ifdef NEUMANN
+            FCs(i,0)=1.5_r8*t(i,j,1,nstp,itrc)
+            CF(i,1)=0.5_r8
+#     else
+            FCs(i,0)=2.0_r8*t(i,j,1,nstp,itrc)
+            CF(i,1)=1.0_r8
+#     endif
+          END DO
+          DO k=1,N(ng)-1
+            DO i=Istr,Iend
+              cff=1.0_r8/(2.0_r8*Hz(i,j,k)+                             &
+     &                    Hz(i,j,k+1)*(2.0_r8-CF(i,k)))
+              CF(i,k+1)=cff*Hz(i,j,k)
+              FCs(i,k)=cff*(3.0_r8*(Hz(i,j,k  )*t(i,j,k+1,nstp,itrc)+   &
+     &                             Hz(i,j,k+1)*t(i,j,k  ,nstp,itrc))-   &
+     &                     Hz(i,j,k+1)*FCs(i,k-1))
+            END DO
+          END DO
+          DO i=Istr,Iend
+#     ifdef NEUMANN
+            FCs(i,N(ng))=(3.0_r8*t(i,j,N(ng),nstp,itrc)-                &
+     &                   FCs(i,N(ng)-1))/(2.0_r8-CF(i,N(ng)))
+#     else
+            FCs(i,N(ng))=(2.0_r8*t(i,j,N(ng),nstp,itrc)-                &
+     &                   FCs(i,N(ng)-1))/(1.0_r8-CF(i,N(ng)))
+#     endif
+          END DO
+          DO k=N(ng)-1,0,-1
+            DO i=Istr,Iend
+              FCs(i,k)=FCs(i,k)-CF(i,k+1)*FCs(i,k+1)
+              FCs(i,k+1)=w_stokes(i,j,k+1)*FCs(i,k+1)
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FCs(i,N(ng))=0.0_r8
+            FCs(i,0)=0.0_r8
+          END DO
+#    elif defined TS_A4VADVECTION
+!
+!  Fourth-order, Akima vertical advective flux.
+!
+          DO k=1,N(ng)-1
+            DO i=Istr,Iend
+              FCs(i,k)=t(i,j,k+1,nstp,itrc)-                            &
+     &                t(i,j,k  ,nstp,itrc)
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FCs(i,0)=FCs(i,1)
+            FCs(i,N(ng))=FCs(i,N(ng)-1)
+          END DO
+          DO k=1,N(ng)
+            DO i=Istr,Iend
+              cff=2.0_r8*FCs(i,k)*FCs(i,k-1)
+              IF (cff.gt.eps) THEN
+                CF(i,k)=cff/(FCs(i,k)+FCs(i,k-1))
+              ELSE
+                CF(i,k)=0.0_r8
+              END IF
+            END DO
+          END DO
+          cff1=1.0_r8/3.0_r8
+          DO k=1,N(ng)-1
+            DO i=Istr,Iend
+              FCs(i,k)=w_stokes(i,j,k)*                                 &
+     &                0.5_r8*(t(i,j,k  ,nstp,itrc)+                     &
+     &                        t(i,j,k+1,nstp,itrc)-                     &
+     &                        cff1*(CF(i,k+1)-CF(i,k)))
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FCs(i,0)=0.0_r8
+            FCs(i,N(ng))=0.0_r8
+          END DO
+#    elif defined TS_C2VADVECTION
+!
+!  Second-order, central differences vertical advective flux.
+!
+          DO k=1,N(ng)-1
+            DO i=Istr,Iend
+              FCs(i,k)=w_stokes(i,j,k)*                                 &
+     &                0.5_r8*(t(i,j,k  ,nstp,itrc)+                     &
+     &                        t(i,j,k+1,nstp,itrc))
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FCs(i,0)=0.0_r8
+            FCs(i,N(ng))=0.0_r8
+          END DO
+#    else
+!
+!  Fourth-order, central differences vertical advective flux.
+!
+          cff1=0.5_r8
+          cff2=7.0_r8/12.0_r8
+          cff3=1.0_r8/12.0_r8
+          DO k=2,N(ng)-2
+            DO i=Istr,Iend
+              FCs(i,k)=w_stokes(i,j,k)*                                 &
+     &                (cff2*(t(i,j,k  ,nstp,itrc)+                      &
+     &                       t(i,j,k+1,nstp,itrc))-                     &
+     &                 cff3*(t(i,j,k-1,nstp,itrc)+                      &
+     &                       t(i,j,k+2,nstp,itrc)))
+            END DO
+          END DO
+          DO i=Istr,Iend
+            FCs(i,0)=0.0_r8
+            FCs(i,1)=w_stokes(i,j,1)*                                   &
+     &              (cff1*t(i,j,1,nstp,itrc)+                           &
+     &               cff2*t(i,j,2,nstp,itrc)-                           &
+     &               cff3*t(i,j,3,nstp,itrc))
+            FCs(i,N(ng)-1)=w_stokes(i,j,N(ng)-1)*                       &
+     &                    (cff1*t(i,j,N(ng)  ,nstp,itrc)+               &
+     &                     cff2*t(i,j,N(ng)-1,nstp,itrc)-               &
+     &                     cff3*t(i,j,N(ng)-2,nstp,itrc))
+            FCs(i,N(ng))=0.0_r8
+          END DO
+#    endif
+#   endif
+!
 ! Time-step vertical advection of tracers (Tunits).
 !
           IF (iic(ng).eq.ntfirst(ng)) THEN
@@ -764,6 +913,9 @@
               cff1=cff*pm(i,j)*pn(i,j)
               t(i,j,k,3,itrc)=DC(i,k)*                                  &
      &                        (t(i,j,k,3,itrc)-                         &
+#   ifdef WEC_VF
+     &                         cff1*(FCs(i,k)-FCs(i,k-1))-              &
+#   endif
      &                         cff1*(FC(i,k)-FC(i,k-1)))
             END DO
           END DO

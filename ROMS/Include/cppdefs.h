@@ -647,7 +647,6 @@
 ** WET_DRY             activate wetting and drying                           **
 ** WEC_MELLOR          activate radiation stress terms from Mellor 08.       **
 ** WEC_VF              activate wave-current stresses from Uchiyama et al.   **
-**   If you define WEC_VF, you must define one of these WDISS_* options:     **
 ** WDISS_THORGUZA      activate wave dissipation from Thorton/Guza.          **
 ** WDISS_CHURTHOR      activate wave dissipation from Church/Thorton.        **
 ** WDISS_WAVEMOD       activate wave dissipation from a wave model           **
