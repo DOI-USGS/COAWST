@@ -100,8 +100,21 @@
 #  endif
 # endif
 # ifdef WEC
+#  ifdef WEC_VF
+     &                  MIXING(ng) % rurol2d,                           &
+     &                  MIXING(ng) % rvrol2d,                           &
+     &                  MIXING(ng) % rubrk2d,                           &
+     &                  MIXING(ng) % rvbrk2d,                           &
+     &                  MIXING(ng) % rukvf2d,                           &
+     &                  MIXING(ng) % rvkvf2d,                           &
+     &                  OCEAN(ng) % bh,                                 &
+     &                  OCEAN(ng) % qsp,                                &
+     &                  OCEAN(ng) % zetaw,                              &
+#  endif
+#  ifdef WEC_MELLOR
      &                  MIXING(ng) % rustr2d,   MIXING(ng) % rvstr2d,   &
      &                  OCEAN(ng) % rulag2d,    OCEAN(ng) % rvlag2d,    &
+#  endif
      &                  OCEAN(ng) % ubar_stokes,                        &
      &                  OCEAN(ng) % vbar_stokes,                        &
 # endif
@@ -193,8 +206,16 @@
 #  endif
 # endif
 # ifdef WEC
+#  ifdef WEC_VF
+     &                        rurol2d, rvrol2d,                         &
+     &                        rubrk2d, rvbrk2d,                         &
+     &                        rukvf2d, rvkvf2d,                         &
+     &                        bh, qsp, zetaw,                           &
+#  endif
+#  ifdef WEC_MELLOR
      &                        rustr2d, rvstr2d,                         &
      &                        rulag2d, rvlag2d,                         &
+#  endif
      &                        ubar_stokes, vbar_stokes,                 &
 # endif
 # ifdef M2CLIMATOLOGY
@@ -320,10 +341,23 @@
 #   endif
 #  endif
 #  ifdef WEC
+#   ifdef WEC_VF
+      real(r8), intent(in) :: rurol2d(LBi:,LBj:)
+      real(r8), intent(in) :: rvrol2d(LBi:,LBj:)
+      real(r8), intent(in) :: rubrk2d(LBi:,LBj:)
+      real(r8), intent(in) :: rvbrk2d(LBi:,LBj:)
+      real(r8), intent(in) :: rukvf2d(LBi:,LBj:)
+      real(r8), intent(in) :: rvkvf2d(LBi:,LBj:)
+      real(r8), intent(in) :: bh(LBi:,LBj:)
+      real(r8), intent(in) :: qsp(LBi:,LBj:)
+      real(r8), intent(in) :: zetaw(LBi:,LBj:)
+#   endif
+#   ifdef WEC_MELLOR
       real(r8), intent(in) :: rustr2d(LBi:,LBj:)
       real(r8), intent(in) :: rvstr2d(LBi:,LBj:)
       real(r8), intent(in) :: rulag2d(LBi:,LBj:)
       real(r8), intent(in) :: rvlag2d(LBi:,LBj:)
+#   endif
       real(r8), intent(in) :: ubar_stokes(LBi:,LBj:)
       real(r8), intent(in) :: vbar_stokes(LBi:,LBj:)
 #  endif
@@ -448,10 +482,23 @@
 #   endif
 #  endif
 #  ifdef WEC
+#   ifdef WEC_VF
+      real(r8), intent(in) :: rurol2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: rvrol2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: rubrk2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: rvbrk2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: rukvf2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: rvkvf2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: bh(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: qsp(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: zetaw(LBi:UBi,LBj:UBj)
+#   endif
+#   ifdef WEC_MELLOR
       real(r8), intent(in) :: rustr2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rvstr2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rulag2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rvlag2d(LBi:UBi,LBj:UBj)
+#   endif
       real(r8), intent(in) :: ubar_stokes(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vbar_stokes(LBi:UBi,LBj:UBj)
 #  endif
@@ -560,6 +607,10 @@
 # ifdef WEC
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: DUSon
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: DVSom
+# endif
+# ifdef WEC_VF
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: DUSom
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: DVSon
 # endif
 # ifdef UV_VIS4
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: LapU
@@ -1094,6 +1145,22 @@
 # ifdef DIAGNOSTICS_UV
           DiaU2rhs(i,j,M2pgrd)=rhs_ubar(i,j)
 # endif
+# if defined WEC_VF
+          cff3=         on_u(i,j)*                                      &
+     &                  (h(i-1,j)+h(i,j)+                               &
+     &                   gzeta(i-1,j)+gzeta(i,j))
+          cff4=cff3*g*(zetaw(i-1,j)-zetaw(i,j))
+          cff5=cff3*g*(qsp(i-1,j)-qsp(i,j))
+          cff6=cff3*(bh(i-1,j)-bh(i,j))
+          cff7=cff3*(rukvf2d(i-1,j)-rukvf2d(i,j))
+          rhs_ubar(i,j)=rhs_ubar(i,j)-cff4-cff5+cff6-cff7
+#  ifdef DIAGNOSTICS_UV
+          DiaU2rhs(i,j,M2zetw)=-cff4
+          DiaU2rhs(i,j,M2zqsp)=-cff5
+          DiaU2rhs(i,j,M2zbeh)=cff6
+          DiaU2rhs(i,j,M2kvrf)=-cff7
+#  endif
+# endif
         END DO
         IF (j.ge.JstrV) THEN
           DO i=Istr,Iend
@@ -1123,6 +1190,22 @@
 # endif
 # ifdef DIAGNOSTICS_UV
             DiaV2rhs(i,j,M2pgrd)=rhs_vbar(i,j)
+# endif
+# if defined WEC_VF
+            cff3=         om_v(i,j)*                                    &
+     &                    (h(i,j-1)+h(i,j)+                             &
+     &                     gzeta(i,j-1)+gzeta(i,j))
+            cff4=cff1*g*(zetaw(i-1,j)-zetaw(i,j))
+            cff5=cff1*g*(qsp(i-1,j)-qsp(i,j))
+            cff6=cff1*(bh(i-1,j)-bh(i,j))
+            cff7=cff3*(rvkvf2d(i-1,j)-rvkvf2d(i,j))
+            rhs_vbar(i,j)=rhs_vbar(i,j)-cff4-cff5+cff6-cff7
+#  ifdef DIAGNOSTICS_UV
+            DiaV2rhs(i,j,M2zetw)=-cff4
+            DiaV2rhs(i,j,M2zqsp)=-cff5
+            DiaV2rhs(i,j,M2zbeh)=cff6
+            DiaV2rhs(i,j,M2kvrf)=-cff7
+#  endif
 # endif
           END DO
         END IF
@@ -1461,16 +1544,8 @@
         DO i=IstrU-1,Iend
           cff=0.5_r8*Drhs(i,j)*fomn(i,j)
           UFx(i,j)=cff*(vbar(i,j  ,krhs)+                               &
-#  ifdef WEC
-     &                  vbar_stokes(i,j  )+                             &
-     &                  vbar_stokes(i,j+1)+                             &
-#  endif
      &                  vbar(i,j+1,krhs))
           VFe(i,j)=cff*(ubar(i  ,j,krhs)+                               &
-#  ifdef WEC
-     &                  ubar_stokes(i  ,j)+                             &
-     &                  ubar_stokes(i+1,j)+                             &
-#  endif
      &                  ubar(i+1,j,krhs))
         END DO
       END DO
@@ -1492,6 +1567,36 @@
 #  endif
         END DO
       END DO
+!
+#  ifdef WEC
+      DO j=JstrV-1,Jend
+        DO i=IstrU-1,Iend
+          cff=0.5_r8*Drhs(i,j)*fomn(i,j)
+          UFx(i,j)=cff*(vbar_stokes(i,j  )+                             &
+     &                  vbar_stokes(i,j+1))
+          VFe(i,j)=cff*(ubar_stokes(i  ,j)+                             &
+     &                  ubar_stokes(i+1,j))
+        END DO
+      END DO
+      DO j=Jstr,Jend
+        DO i=IstrU,Iend
+          fac1=0.5_r8*(UFx(i,j)+UFx(i-1,j))
+          rhs_ubar(i,j)=rhs_ubar(i,j)+fac1
+#   if defined DIAGNOSTICS_UV
+          DiaU2rhs(i,j,M2fsco)=fac1
+#   endif
+        END DO
+      END DO
+      DO j=JstrV,Jend
+        DO i=Istr,Iend
+          fac1=0.5_r8*(VFe(i,j)+VFe(i,j-1))
+          rhs_vbar(i,j)=rhs_vbar(i,j)-fac1
+#   if defined DIAGNOSTICS_UV
+          DiaV2rhs(i,j,M2fsco)=-fac1
+#   endif
+        END DO
+      END DO
+#  endif
 # endif
 # if defined CURVGRID && defined UV_ADV
 !
@@ -1534,6 +1639,10 @@
           cff=Drhs(i,j)*cff4
           Uwrk(i,j)=-cff*cff1                  ! ubar equation, ETA-term
           Vwrk(i,j)=-cff*cff2                  ! vbar equation, ETA-term
+#   ifdef WEC_VF
+            Uwrk(i,j)=Uwrk(i,j)+Drhs(i,j)*cff5*cff8
+            Vwrk(i,j)=Vwrk(i,j)-Drhs(i,j)*cff6*cff8
+#   endif
 #  endif
         END DO
       END DO
@@ -1933,7 +2042,7 @@
         END DO
       END DO
 # endif
-# if defined WEC && \
+# if defined WEC_MELLOR && \
     (!defined SOLVE3D || defined DIAGNOSTICS_UV)
 !
 !-----------------------------------------------------------------------
@@ -1947,8 +2056,8 @@
 #  ifndef SOLVE3D
           rhs_ubar(i,j)=rhs_ubar(i,j)-cff1-cff2
 #  endif
-#  if defined DIAGNOSTICS_UV && defined WEC
-!          DiaU2rhs(i,j,M2hrad)=-cff1
+#  if defined DIAGNOSTICS_UV
+          DiaU2rhs(i,j,M2hrad)=-cff1
 #  endif
         END DO
       END DO
@@ -1959,11 +2068,172 @@
 #  ifndef SOLVE3D
           rhs_vbar(i,j)=rhs_vbar(i,j)-cff1-cff2
 #  endif
-#  if defined DIAGNOSTICS_UV && defined WEC
-!          DiaV2rhs(i,j,M2hrad)=-cff1
+#  if defined DIAGNOSTICS_UV
+          DiaV2rhs(i,j,M2hrad)=-cff1
 #  endif
         END DO
       END DO
+# endif
+# if defined WEC_VF && defined SOLVE3D
+!
+!-----------------------------------------------------------------------
+!  Add in non-conservative roller terms.
+!-----------------------------------------------------------------------
+!
+      DO j=Jstr,Jend
+        DO i=IstrU,Iend
+          cff3=         on_u(i,j)*                                      &
+     &                  (h(i-1,j)+h(i,j)+                               &
+     &                   gzeta(i-1,j)+gzeta(i,j))
+          cff4=cff3*rurol2d(i,j)
+          cff5=cff3*rubrk2d(i,j)
+          rhs_ubar(i,j)=rhs_ubar(i,j)+cff4+cff5
+#  ifdef DIAGNOSTICS_UV
+          DiaU2rhs(i,j,M2wrol)=cff4
+          DiaU2rhs(i,j,M2wbrk)=cff5
+#  endif
+        END DO
+        IF (j.ge.JstrV) THEN
+          DO i=Istr,Iend
+            cff3=         om_v(i,j)*                                    &
+     &                    (h(i,j-1)+h(i,j)+                             &
+     &                     gzeta(i,j-1)+gzeta(i,j))
+            cff4=cff3*rvrol2d(i,j)
+            cff5=cff3*rvbrk2d(i,j)
+            rhs_vbar(i,j)=rhs_vbar(i,j)+cff4+cff5
+#  ifdef DIAGNOSTICS_UV
+            DiaV2rhs(i,j,M2wrol)=cff4
+            DiaV2rhs(i,j,M2wbrk)=cff5
+#  endif
+          END DO
+        END IF
+      END DO
+#  ifdef DIAGNOSTICS_UV
+!
+!---------------------------------------------------------------------------
+!  To obtain the full horizotal 'J' vortex force term: 
+!  Compute term for diagnostics only.  Subtract from hadv and add to vorf.
+!---------------------------------------------------------------------------
+!
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff=0.5_r8*(Drhs(i-1,j)+Drhs(i,j))
+            DVSom(i,j)=0.25_r8*cff*om_u(i,j)*                           &
+     &                  (vbar_stokes(i  ,j  )+                          &
+     &                   vbar_stokes(i  ,j+1)+                          &
+     &                   vbar_stokes(i-1,j  )+                          &
+     &                   vbar_stokes(i-1,j+1))
+          END DO
+        END DO
+        DO j=Jstr,Jend+1
+          DO i=IstrU,Iend
+            UFx(i,j)=0.5_r8*(ubar(i  ,j-1,krhs)+                        &
+                             ubar(i  ,j  ,krhs))
+          END DO
+        END DO
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff1=UFx(i,j+1)-UFx(i,j)
+            cff=cff1*DVSom(i,j)
+            DiaU2rhs(i,j,M2xadv)=DiaU2rhs(i,j,M2xadv)-cff
+            DiaU2rhs(i,j,M2hadv)=DiaU2rhs(i,j,M2hadv)-cff
+            DiaU2rhs(i,j,M2jvrf)=DiaU2rhs(i,j,M2jvrf)+cff
+          END DO
+        END DO
+        DO j=JstrV,Jend
+          DO i=Istr,Iend
+            cff=0.5_r8*(Drhs(i,j)+Drhs(i,j-1))
+            DUSon(i,j)=cff*0.25_r8*on_v(i,j)*                           &
+     &                  (ubar_stokes(i  ,j  )+                          &
+     &                   ubar_stokes(i+1,j  )+                          &
+     &                   ubar_stokes(i  ,j-1)+                          &
+     &                   ubar_stokes(i+1,j-1))
+          END DO
+        END DO
+        DO j=JstrV,Jend
+          DO i=Istr,Iend+1
+            VFe(i,j)=0.5_r8*(vbar(i-1,j  ,krhs)+                        &
+     &                       vbar(i  ,j  ,krhs))
+          END DO
+        END DO
+        DO i=Istr,Iend
+          DO j=JstrV,Jend 
+            cff2=VFe(i+1,j)-VFe(i,j)
+            cff=cff2*DUSon(i,j)
+            DiaV2rhs(i,j,M2yadv)=DiaV2rhs(i,j,M2yadv)-cff
+            DiaV2rhs(i,j,M2hadv)=DiaV2rhs(i,j,M2hadv)-cff
+            DiaV2rhs(i,j,M2jvrf)=DiaV2rhs(i,j,M2jvrf)+cff
+          END DO
+        END DO
+#  endif
+!
+!---------------------------------------------------------------------------
+! Contribution of a term corresponding to product of 
+! Stokes and Eulerian Velocity Eqn. 26 and 27.
+! This removes terms that were unneccessarily added in flux form.
+!---------------------------------------------------------------------------
+!
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff=0.5_r8*(Drhs(i-1,j)+Drhs(i,j))
+            DUSon(i,j)=cff*on_u(i,j)*ubar_stokes(i,j)
+            DVSon(i,j)=0.25_r8*cff*on_u(i,j)*                           &
+     &                  (vbar_stokes(i  ,j  )+                          &
+     &                   vbar_stokes(i  ,j+1)+                          &
+     &                   vbar_stokes(i-1,j  )+                          &
+     &                   vbar_stokes(i-1,j+1))
+          END DO
+          DO i=IstrU-1,Iend
+            UFx(i,j)=0.5_r8*(ubar(i  ,j  ,krhs)+                        &
+                             ubar(i+1,j  ,krhs))
+            VFx(i,j)=0.5_r8*(vbar(i  ,j  ,krhs)+                        &
+     &                       vbar(i  ,j+1,krhs))           
+          END DO
+        END DO
+        DO j=JstrV,Jend
+          DO i=Istr,Iend
+            cff=0.5_r8*(Drhs(i,j)+Drhs(i,j-1))
+            DUSom(i,j)=cff*0.25_r8*om_v(i,j)*                           &
+     &                  (ubar_stokes(i  ,j  )+                          &
+     &                   ubar_stokes(i+1,j  )+                          &
+     &                   ubar_stokes(i  ,j-1)+                          &
+     &                   ubar_stokes(i+1,j-1))
+            DVSom(i,j)=cff*om_v(i,j)*vbar_stokes(i,j)
+          END DO
+        END DO
+        DO j=JstrV-1,Jend
+          DO i=Istr,Iend
+            cff=0.5_r8*(Drhs(i,j)+Drhs(i,j-1))
+            UFe(i,j)=0.5_r8*(ubar(i+1,j  ,krhs)+                        &
+     &                       ubar(i  ,j  ,krhs))
+            VFe(i,j)=0.5_r8*(vbar(i  ,j  ,krhs)+                        &
+     &                       vbar(i  ,j+1,krhs))
+          END DO
+        END DO
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff1=UFx(i,j)-UFx(i-1,j)
+            cff2=VFx(i,j)-VFx(i-1,j)
+            cff=DUSon(i,j)*cff1+DVSon(i,j)*cff2
+!           rustr2d(i,j)=rustr2d(i,j)-cff
+#  ifdef DIAGNOSTICS_UV
+            DiaU2rhs(i,j,M2xadv)=DiaU2rhs(i,j,M2xadv)+cff
+            DiaU2rhs(i,j,M2hadv)=DiaU2rhs(i,j,M2hadv)+cff
+#  endif
+          END DO
+        END DO
+        DO i=Istr,Iend
+          DO j=JstrV,Jend 
+            cff1=UFe(i,j)-UFe(i,j-1)
+            cff2=VFe(i,j)-VFe(i,j-1)
+            cff=DUSom(i,j)*cff1+DVSom(i,j)*cff2
+!           rvstr3d(i,j)=rvstr3d(i,j,k)-cff
+#  ifdef DIAGNOSTICS_UV
+            DiaV2rhs(i,j,M2yadv)=DiaV2rhs(i,j,M2yadv)+cff
+            DiaV2rhs(i,j,M2hadv)=DiaV2rhs(i,j,M2hadv)+cff
+#  endif
+          END DO
+        END DO
 # endif
 # ifndef SOLVE3D
 !

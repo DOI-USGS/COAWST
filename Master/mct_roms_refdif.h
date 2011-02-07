@@ -266,7 +266,7 @@
      &                          FORCES(ng) % Dwave,                     &
      &                          FORCES(ng) % Hwave,                     &
      &                          FORCES(ng) % Lwave,                     &
-#ifdef SVENDSEN_ROLLER
+#ifdef ROLLER_SVENDSEN
      &                          FORCES(ng) % Wave_break,                &
 #endif
      &                          FORCES(ng) % Wave_dissip)
@@ -283,7 +283,7 @@
      &                                knew, h, xr, yr,                  &
      &                                ubar, vbar, zeta,                 &
      &                                Dwave, Hwave, Lwave,              &
-#ifdef SVENDSEN_ROLLER
+#ifdef ROLLER_SVENDSEN
      &                                Wave_break,                       &
 #endif
      &                                Wave_dissip)
@@ -321,7 +321,7 @@
       real(r8), intent(inout) :: Dwave(LBi:,LBj:)
       real(r8), intent(inout) :: Hwave(LBi:,LBj:)
       real(r8), intent(inout) :: Lwave(LBi:,LBj:)
-# ifdef SVENDSEN_ROLLER
+# ifdef ROLLER_SVENDSEN
       real(r8), intent(inout) :: Wave_break(LBi:,LBj:)
 # endif
       real(r8), intent(inout) :: Wave_dissip(LBi:,LBj:)
@@ -337,7 +337,7 @@
       real(r8), intent(inout) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Lwave(LBi:UBi,LBj:UBj)
-# ifdef SVENDSEN_ROLLER
+# ifdef ROLLER_SVENDSEN
       real(r8), intent(inout) :: Wave_break(LBi:UBi,LBj:UBj)
 # endif
       real(r8), intent(inout) :: Wave_dissip(LBi:UBi,LBj:UBj)
@@ -488,7 +488,7 @@
       CALL bc_r2d_tile (ng, Istr, Iend, Jstr, Jend,                     &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Lwave)
-#ifdef SVENDSEN_ROLLER
+#ifdef ROLLER_SVENDSEN
 !
 !  Percent wave breaking.
 !  
@@ -550,7 +550,7 @@
       CALL exchange_r2d_tile (ng, Istr, Iend, Jstr, Jend,               &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Wave_dissip)
-# ifdef SVENDSEN_ROLLER
+# ifdef ROLLER_SVENDSEN
       CALL exchange_r2d_tile (ng, Istr, Iend, Jstr, Jend,               &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Wave_break)
@@ -566,7 +566,7 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    Dwave, Hwave, Lwave)
-# ifdef SVENDSEN_ROLLER
+# ifdef ROLLER_SVENDSEN
       CALL mp_exchange2d (ng, iNLM, 1, Istr, Iend, Jstr, Jend,          &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &

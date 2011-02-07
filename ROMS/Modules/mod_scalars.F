@@ -99,6 +99,17 @@
 #  ifdef WEC_MELLOR
         integer :: M2hrad          ! 2D momentum, horizontal stresses
 #  endif
+#  ifdef WEC_VF
+        integer :: M2jvrf          ! 2D momentum, J vortex force
+        integer :: M2kvrf          ! 2D momentum, K vortex force
+        integer :: M2fsco          ! 2D momentum, coriolis-stokes
+        integer :: M2bstm          ! 2D momentum, bottom streaming
+        integer :: M2wrol          ! 2D momentum, wave roller accel
+        integer :: M2wbrk          ! 2D momentum, wave breaking
+        integer :: M2zetw          ! 2D momentum, quasi-static sea level adjustment
+        integer :: M2zqsp          ! 2D momentum, quasi-static pressure
+        integer :: M2zbeh          ! 2D momentum, Bernoulli head
+#  endif
         integer :: M2pgrd          ! 2D momentum, pressure gradient
         integer :: M2hvis          ! 2D momentum, horizontal viscosity
         integer :: M2xvis          ! 2D momentum, horizontal X-viscosity
@@ -115,6 +126,17 @@
 #   ifdef WEC_MELLOR
         integer :: M3hrad          ! 3D momentum, horizontal stresses
         integer :: M3vrad          ! 3D momentum, vertical stresses
+#   endif
+#   ifdef WEC_VF
+        integer :: M3jvrf          ! 3D momentum, J vortex force
+        integer :: M3kvrf          ! 3D momentum, K vortex force
+        integer :: M3fsco          ! 3D momentum, coriolis-stokes
+        integer :: M3bstm          ! 3D momentum, bottom streaming
+        integer :: M3wrol          ! 3D momentum, wave roller accel
+        integer :: M3wbrk          ! 3D momentum, wave breaking
+        integer :: M3zetw          ! 3D momentum, quasi-static sea level adjustment
+        integer :: M3zqsp          ! 3D momentum, quasi-static pressure
+        integer :: M3zbeh          ! 3D momentum, Bernoulli head
 #   endif
         integer :: M3pgrd          ! 3D momentum, pressure gradient
         integer :: M3vvis          ! 3D momentum, vertical viscosity
@@ -1898,6 +1920,18 @@
       M2hrad=ic+1
       ic=ic+1
 #  endif
+#  if defined WEC_VF
+      M2jvrf=ic+1
+      M2kvrf=ic+2
+      M2fsco=ic+3
+      M2bstm=ic+4
+      M2wrol=ic+5
+      M2wbrk=ic+6
+      M2zetw=ic+7
+      M2zqsp=ic+8
+      M2zbeh=ic+9
+      ic=ic+9
+#  endif
 #  if defined UV_VIS2 || defined UV_VIS4
       M2hvis=ic+1
       M2xvis=ic+2
@@ -1932,6 +1966,18 @@
       M3hrad=ic+1
       M3vrad=ic+2
       ic=ic+2
+#   endif
+#   if defined WEC_VF
+      M3jvrf=ic+1
+      M3kvrf=ic+2
+      M3fsco=ic+3
+      M3bstm=ic+4
+      M3wrol=ic+5
+      M3wbrk=ic+6
+      M3zetw=ic+7
+      M3zqsp=ic+8
+      M3zbeh=ic+9
+      ic=ic+9
 #   endif
       M3pgrd=ic+1             ! needs to be here, indices below
       M3vvis=ic+2             ! require special treatment

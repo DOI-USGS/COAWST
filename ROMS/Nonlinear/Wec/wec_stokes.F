@@ -58,10 +58,12 @@
      &                            FORCES(ng) % Lwave,                   &
      &                            FORCES(ng) % rollA,                   &
      &                            OCEAN(ng) % zeta,                     &
+# ifdef WEC_MELLOR
      &                            OCEAN(ng) % rulag2d,                  &
      &                            OCEAN(ng) % rvlag2d,                  &
      &                            OCEAN(ng) % rulag3d,                  &
      &                            OCEAN(ng) % rvlag3d,                  &
+# endif
      &                            OCEAN(ng) % ubar_stokes,              &
      &                            OCEAN(ng) % vbar_stokes,              &
      &                            OCEAN(ng) % u_stokes,                 &
@@ -87,8 +89,10 @@
      &                                  Hz, z_w,                        &
      &                                  Hwave, Dwave, Lwave, rollA,     &
      &                                  zeta,                           &
+# ifdef WEC_MELLOR
      &                                  rulag2d, rvlag2d,               &
      &                                  rulag3d, rvlag3d,               &
+# endif
      &                                  ubar_stokes, vbar_stokes,       &
      &                                  u_stokes, v_stokes, w_stokes)
 !***********************************************************************
@@ -133,10 +137,12 @@
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
       real(r8), intent(in) :: rollA(LBi:,LBj:)
       real(r8), intent(in) :: zeta(LBi:,LBj:,:)
+#  ifdef WEC_MELLOR
       real(r8), intent(inout) :: rulag2d(LBi:,LBj:)
       real(r8), intent(inout) :: rvlag2d(LBi:,LBj:)
       real(r8), intent(inout) :: rulag3d(LBi:,LBj:,:)
       real(r8), intent(inout) :: rvlag3d(LBi:,LBj:,:)
+#  endif
       real(r8), intent(inout) :: ubar_stokes(LBi:,LBj:)
       real(r8), intent(inout) :: vbar_stokes(LBi:,LBj:)
       real(r8), intent(inout) :: u_stokes(LBi:,LBj:,:)
@@ -164,10 +170,12 @@
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rollA(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
+#  ifdef WEC_MELLOR
       real(r8), intent(inout) :: rulag2d(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: rvlag2d(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: rulag3d(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: rvlag3d(LBi:UBi,LBj:UBj,N(ng))
+#  endif
       real(r8), intent(inout) :: ubar_stokes(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: vbar_stokes(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: u_stokes(LBi:UBi,LBj:UBj,N(ng))
@@ -249,26 +257,31 @@
              cff2=cff2+(rollA(i-1,j)*sigma(i-1,j)+                      &
      &                  rollA(i,j)*sigma(i,j))
              cff3=(kD(i-1,j)+kD(i,j))
+# ifdef WEC_MELLOR
+
 !
 !  Store old value to compute tendency term.
 !
              rulag3d(i,j,k)=u_stokes(i,j,k)
+# endif
              u_stokes(i,j,k)=cff2*                                      &
      &                      (wavenx(i-1,j)+wavenx(i,j))/                &
      &                      (wavec (i-1,j)+wavec (i,j))*                & 
      &                      COSH(cff3*fac2)/SINH(cff3)
-#  ifdef MASKING
+# ifdef MASKING
              u_stokes(i,j,k)=u_stokes(i,j,k)*umask(i,j)
-#  endif
-#  ifdef WET_DRY
+# endif
+# ifdef WET_DRY
              u_stokes(i,j,k)=u_stokes(i,j,k)*umask_wet(i,j)
-#  endif
+# endif
+# ifdef WEC_MELLOR
 !
 !  Finalize computation of stokes tendency term.
 !
             rulag3d(i,j,k)=0.5_r8*cff*                                  &
      &                     (Hz(i,j,k)+Hz(i-1,j,k))*                     &
      &                     (u_stokes(i,j,k)-rulag3d(i,j,k))
+# endif
           END DO
         END DO
 !
@@ -281,26 +294,30 @@
              cff2=cff2+(rollA(i,j-1)*sigma(i,j-1)+                      &
      &                  rollA(i,j)*sigma(i,j))
              cff3=(kD(i,j-1)+kD(i,j))
+# ifdef WEC_MELLOR
 !
 !  Store old value to compute tendency term.
 !
              rvlag3d(i,j,k)=v_stokes(i,j,k)
+# endif
              v_stokes(i,j,k)=cff2*                                      &
      &                      (waveny(i,j-1)+waveny(i,j))/                &
      &                      (wavec (i,j-1)+wavec (i,j))*                &
      &                      COSH(cff3*fac2)/SINH(cff3)
-#  ifdef MASKING
+# ifdef MASKING
              v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
-#  endif
-#  ifdef WET_DRY
+# endif
+# ifdef WET_DRY
              v_stokes(i,j,k)=v_stokes(i,j,k)*vmask_wet(i,j)
-#  endif
+# endif
+# ifdef WEC_MELLOR
 !
 !  Finalize computation of stokes tendency term.
 !
               rvlag3d(i,j,k)=0.5_r8*cff*                                &
      &                       (Hz(i,j,k)+Hz(i,j-1,k))*                   &
      &                       (v_stokes(i,j,k)-rvlag3d(i,j,k))
+# endif
           END DO
         END DO
       END DO
@@ -311,12 +328,12 @@
       CALL bc_v3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  v_stokes)
-#  ifdef DISTRIBUTE
+# ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    u_stokes, v_stokes)
-#  endif
+# endif
 !
 !  Compute vertical stokes velocity, Eqn. 31.
 !
@@ -364,30 +381,42 @@
         DO i=IstrU,Iend
           cff5=0.5_r8*(Hz(i-1,j,1)+Hz(i,j,1))
           ubar_stokes(i,j)=cff5*u_stokes(i,j,1)
+# ifdef WEC_MELLOR
           rulag2d(i,j)=cff5*rulag3d(i,j,1)
+# endif
           DO k=2,N(ng)
             cff5=0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
             ubar_stokes(i,j)=ubar_stokes(i,j)+cff5*u_stokes(i,j,k)
+# ifdef WEC_MELLOR
             rulag2d(i,j)=rulag2d(i,j)+cff5*rulag3d(i,j,k)
+# endif
           END DO
           cff4=2.0_r8/(Dstp(i-1,j)+Dstp(i,j))
           ubar_stokes(i,j)=ubar_stokes(i,j)*cff4
+# ifdef WEC_MELLOR
           rulag2d(i,j)=rulag2d(i,j)*cff4
+# endif
         END DO
       END DO
       DO i=Istr,Iend
         DO j=JstrV,Jend
           cff5=0.5_r8*(Hz(i,j-1,1)+Hz(i,j,1))
           vbar_stokes(i,j)=cff5*v_stokes(i,j,1)
+# ifdef WEC_MELLOR
           rvlag2d(i,j)=cff5*rvlag3d(i,j,1)
+# endif
           DO k=2,N(ng)
             cff5=0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))
             vbar_stokes(i,j)=vbar_stokes(i,j)+cff5*v_stokes(i,j,k)
+# ifdef WEC_MELLOR
             rvlag2d(i,j)=rvlag2d(i,j)+cff5*rvlag3d(i,j,k)
+# endif
           END DO
           cff4=2.0_r8/(Dstp(i,j-1)+Dstp(i,j))
           vbar_stokes(i,j)=vbar_stokes(i,j)*cff4
+# ifdef WEC_MELLOR
           rvlag2d(i,j)=rvlag2d(i,j)*cff4
+# endif
         END DO
       END DO
 !
@@ -402,6 +431,7 @@
       CALL bc_w3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 0, N(ng),                   &
      &                  w_stokes)
+# ifdef WEC_MELLOR
       CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  rulag2d)
@@ -414,15 +444,22 @@
       CALL bc_v3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  rvlag3d)
+# endif
 # ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    ubar_stokes, vbar_stokes, rulag2d, rvlag2d)
+     &                    ubar_stokes, vbar_stokes)
+#  ifdef WEC_MELLOR
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    rulag2d, rvlag2d)
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rulag3d,  rvlag3d)
+#  endif
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &

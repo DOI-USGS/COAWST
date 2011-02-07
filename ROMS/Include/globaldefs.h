@@ -681,15 +681,15 @@
 ** monochromatic wave driver.
 */
 
-#if defined REFDIF_COUPLING && defined SVENDSEN_ROLLER
-# define MONO_ROLLER
+#if defined REFDIF_COUPLING && defined ROLLER_SVENDSEN
+# define ROLLER_MONO
 #endif
 
 /*
 ** Activate internal switch for activating a roller.
 */
 
-#if defined ROLLER_SVENDSEN_ROLLER || defined ROLLER_MONO || \
+#if defined ROLLER_SVENDSEN || defined ROLLER_MONO || \
     defined ROLLER_RENIERS
 # define WEC_ROLLER
 #endif
@@ -1000,7 +1000,7 @@
 #if !defined WAVES_OCEAN     && \
    ((defined BULK_FLUXES     && defined COARE_TAYLOR_YELLAND) || \
     (defined BULK_FLUXES     && defined COARE_OOST)           || \
-     defined SVENDSEN_ROLLER || defined WAVES_DISS            || \
+     defined WEC_ROLLER      || defined WAVES_DISS            || \
      defined WAVES_DIR       || defined WAVES_BOT_PERIOD      || \
      defined WAVES_HEIGHT    || defined WAVES_TOP_PERIOD      || \
      defined WAVES_LENGTH    || defined WAVES_LENGTHP)

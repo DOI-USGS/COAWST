@@ -48,14 +48,21 @@
       CALL wec_roller_tile (ng, tile,    LBi, UBi, LBj, UBj, N(ng),     &
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            nrhs(ng),                             &
+     &                            GRID(ng) % angler,                    &
      &                            GRID(ng) % h,                         &
-     &                            OCEAN(ng) % zeta,                     &
      &                            GRID(ng) % Hz,                        &
+# ifdef ROLLER_RENIERS
+     &                            GRID(ng) % on_u,                      &
+     &                            GRID(ng) % om_v,                      &
+     &                            GRID(ng) % pm,                        &
+     &                            GRID(ng) % pn,                        &
+# endif
+     &                            OCEAN(ng) % ubar,                     &
+     &                            OCEAN(ng) % vbar,                     &
+     &                            OCEAN(ng) % zeta,                     &
      &                            FORCES(ng) % Hwave,                   &
      &                            FORCES(ng) % Dwave,                   &
      &                            FORCES(ng) % Lwave,                   &
-     &                            OCEAN(ng) % ubar,                     &
-     &                            OCEAN(ng) % vbar,                     &
      &                            FORCES(ng) % Dissip_break,            &
 # ifdef ROLLER_SVENDSEN || ROLLER_MONO
      &                            FORCES(ng) % Wave_break,              &
@@ -72,10 +79,12 @@
       SUBROUTINE wec_roller_tile (ng, tile, LBi, UBi, LBj, UBj, UBk,    &
      &                                  IminS, ImaxS, JminS, JmaxS,     &
      &                                  nrhs,                           &
-     &                                  h, zeta,                        &
-     &                                  Hz,                             &
+     &                                  angler, h, Hz,                  &
+# ifdef ROLLER_RENIERS
+     &                                  on_u, om_v, pm, pn,             &
+# endif
+     &                                  ubar, vbar, zeta,               &
      &                                  Hwave, Dwave, Lwave,            &
-     &                                  ubar, vbar,                     &
      &                                  Dissip_break,                   &
 # ifdef ROLLER_SVENDSEN || ROLLER_MONO
      &                                  Wave_break,                     &
@@ -101,14 +110,21 @@
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
 # ifdef ASSUMED_SHAPE
+      real(r8), intent(in) :: angler(LBi:,LBj:)
       real(r8), intent(in) :: h(LBi:,LBj:)
-      real(r8), intent(in) :: zeta(LBi:,LBj:,:)
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
+#  ifdef ROLLER_RENIERS
+      real(r8), intent(in) :: on_u(LBi:,LBj:)
+      real(r8), intent(in) :: om_v(LBi:,LBj:)
+      real(r8), intent(in) :: pm(LBi:,LBj:)
+      real(r8), intent(in) :: pn(LBi:,LBj:)
+#  endif
+      real(r8), intent(in) :: ubar(LBi:,LBj:,:)
+      real(r8), intent(in) :: vbar(LBi:,LBj:,:)
+      real(r8), intent(in) :: zeta(LBi:,LBj:,:)
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
-      real(r8), intent(in) :: ubar(LBi:,LBj:,:)
-      real(r8), intent(in) :: vbar(LBi:,LBj:,:)
       real(r8), intent(in) :: Dissip_break(LBi:,LBj:)
 #  ifdef ROLLER_SVENDSEN || ROLLER_MONO
       real(r8), intent(in) :: Wave_break(LBi:,LBj:)
@@ -116,14 +132,21 @@
       real(r8), intent(inout) :: Dissip_roller(LBi:,LBj:)
       real(r8), intent(inout) :: rollA(LBi:,LBj:)
 # else
+      real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,UBk)
+#  ifdef ROLLER_RENIERS
+      real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
+#  endif
+      real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj,3)
-      real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: Dissip_break(LBi:UBi,LBj:UBj)
 #  ifdef ROLLER_SVENDSEN || ROLLER_MONO
       real(r8), intent(in) :: Wave_break(LBi:UBi,LBj:UBj)
@@ -220,20 +243,8 @@
       numits=30
       DO it=1,numits
 !
-!  Computer roller breaking source term and roller disspation sink term:
-!  Roller breaking source (Eqn 40) and dissipation terms (Eqn 41).
-!
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
-            Dissip_roller(i,j)=g*sinb*rollA(i,j)*sigma(i,j)/wavec(i,j) 
-          END DO
-        END DO
-!
-!  Time step roller action density.
-!
-!  Should the u/vbars be u/v kirbys? jcw
-!  Should add a time level to rollA so that we do not need to exch in
-!  the itt loop ?? jcw
+!  Compute roller breaking source term (Eqn 40) and 
+!  roller disspation sink term (Eqn 41).
 !
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
@@ -258,6 +269,12 @@
             cff=dt(ng)*pm(i,j)*pn(i,j)/REAL(numits,r8)
             cff1=cff*(FX(i+1,j)-FX(i,j)+FE(i,j+1)-FE(i,j))
             rollA(i,j)=rollA(i,j)-cff1
+          END DO
+        END DO
+!
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+            Dissip_roller(i,j)=g*sinb*rollA(i,j)*sigma(i,j)/wavec(i,j) 
           END DO
         END DO
 !

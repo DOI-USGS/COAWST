@@ -56,6 +56,9 @@
      &                  GRID(ng) % z_r,                                 &
      &                  GRID(ng) % z_w,                                 &
      &                  OCEAN(ng) % rho,                                &
+#ifdef WEC_VF
+     &                  OCEAN(ng) % zetat,                              &
+#endif
 #ifdef ATM_PRESS
      &                  FORCES(ng) % Pair,                              &
 #endif
@@ -78,6 +81,9 @@
      &                        nrhs,                                     &
      &                        Hz, om_v, on_u, z_r, z_w,                 &
      &                        rho,                                      &
+#ifdef WEC_VF
+     &                        zetat,                                    &
+#endif
 #ifdef ATM_PRESS
      &                        Pair,                                     &
 #endif
@@ -104,6 +110,9 @@
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
+# ifdef WEC_VF
+      real(r8), intent(in) :: zetat(LBi:,LBj:)
+# endif
 # ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:,LBj:)
 # endif
@@ -120,6 +129,9 @@
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
+# ifdef WEC_VF
+      real(r8), intent(in) :: zetat(LBi:UBi,LBj:UBj)
+# endif
 # ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
 # endif
@@ -163,6 +175,9 @@
           cff1=z_w(i  ,j,N(ng))-z_r(i  ,j,N(ng))+                       &
      &         z_w(i-1,j,N(ng))-z_r(i-1,j,N(ng))
           phix(i)=fac1*(rho(i,j,N(ng))-rho(i-1,j,N(ng)))*cff1
+#ifdef WEC_VF
+          phix(i)=phix(i)+zetat(i,j)-zetat(i-1,j)
+#endif
 #ifdef ATM_PRESS
           phix(i)=phix(i)+fac*(Pair(i,j)-Pair(i-1,j))
 #endif
@@ -233,6 +248,9 @@
             cff1=z_w(i,j  ,N(ng))-z_r(i,j  ,N(ng))+                     &
      &           z_w(i,j-1,N(ng))-z_r(i,j-1,N(ng))
             phie(i)=fac1*(rho(i,j,N(ng))-rho(i,j-1,N(ng)))*cff1
+#ifdef WEC_VF
+            phie(i)=phie(i)+zetat(i,j)-zetat(i,j-1)
+#endif
 #ifdef ATM_PRESS
             phie(i)=phie(i)+fac*(Pair(i,j)-Pair(i,j-1))
 #endif

@@ -115,24 +115,6 @@
   'v2dvar'
   1.0d0
 
-'uWave'                                            ! Input/Ouput
-  'coupling vertically integrated u-momentum component'
-  'meter second-1'                                 ! [m/s]
-  'uWave-velocity, scalar, series'
-  'ocean_time'
-  'idUwav'
-  'r2dvar'
-  1.0d0
-
-'vWave'                                            ! Input/Output
-  'coupling vertically integrated v-momentum component'
-  'meter second-1'                                 ! [m/s]
-  'vWave-velocity, scalar, series'
-  'ocean_time'
-  'idVwav'
-  'r2dvar'
-  1.0d0
-
 'u'                                                ! Input/Output
   'u-momentum component'
   'meter second-1'                                 ! [m/s]
@@ -1314,6 +1296,24 @@
   'r2dvar'
   1.0d0
 
+'uWave'                                            ! Input/Ouput
+  'coupling vertically integrated u-momentum component'
+  'meter second-1'                                 ! [m/s]
+  'uWave-velocity, scalar, series'
+  'ocean_time'
+  'idUwav'
+  'r2dvar'
+  1.0d0
+
+'vWave'                                            ! Input/Output
+  'coupling vertically integrated v-momentum component'
+  'meter second-1'                                 ! [m/s]
+  'vWave-velocity, scalar, series'
+  'ocean_time'
+  'idVwav'
+  'r2dvar'
+  1.0d0
+
 'Dwave'                                            ! Input
   'wind-induced wave direction'
   'degrees'                                        ! [radians]
@@ -1404,12 +1404,57 @@
   'r2dvar'
   0.00097561                                       !1/rho0
 
+'Dissip_roller'                                    ! Input
+  'wave roller dissipation'
+  'Watts meter-2'                                  ! [W/m2]
+  'Dissip_roller, scalar, series'
+  'wave_time'
+  'idWdis'
+  'r2dvar'
+  0.00097561                                       !1/rho0
+
+'rollA'                                            ! Input
+  'wave roller action density'
+  'meter3 second-1'                                ! [m3/s]
+  'Dissip_wcap, scalar, series'
+  'wave_time'
+  'idWrol'
+  'r2dvar'
+  1.0d0
+
 'Wave_break'                                       ! Input
   'percent wave breaking'
   'nondimensionsal'                                ! []
   'Wave_break, scalar, series'
   'wave_time'
   'idWbrk'
+  'r2dvar'
+  1.0d0
+
+'zetaw'                                            ! Input
+  'WEC quasi-static sea level adjustment'
+  'meter'                                          ! []
+  'zetaw, scalar, series'
+  'wave_time'
+  'idWztw'
+  'r2dvar'
+  1.0d0
+
+'qsp'                                              ! Input
+  'WEC quasi-static sea pressure'
+  'meter'                                          ! []
+  'qsp, scalar, series'
+  'wave_time'
+  'idWqsp'
+  'r2dvar'
+  1.0d0
+
+'bh'                                               ! Input
+  'WEC Bernoulli head'
+  'meter2 second-2'                                ! []
+  'bh, scalar, series'
+  'wave_time'
+  'idWbeh'
   'r2dvar'
   1.0d0
 
@@ -4730,6 +4775,168 @@
   'v2dvar'
   1.0d0
 
+'ubar_jvrf'                                        ! Input/Output
+  '2D u-momentum, J vortex force term'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_jvrf, scalar, series'
+  'ocean_time'
+  'idDu2d(M2jvrf)'
+  'u2dvar'
+  1.0d0
+
+'vbar_jvrf'                                        ! Input/Output
+  '2D v-momentum, J vortex force term'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_jvrf, scalar, series'
+  'ocean_time'
+  'idDv2d(M2jvrf)'
+  'v2dvar'
+  1.0d0
+
+'ubar_kvrf'                                        ! Input/Output
+  '2D u-momentum, K vortex force term'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_kvrf, scalar, series'
+  'ocean_time'
+  'idDu2d(M2kvrf)'
+  'u2dvar'
+  1.0d0
+
+'vbar_kvrf'                                        ! Input/Output
+  '2D v-momentum, K vortex force term'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_kvrf, scalar, series'
+  'ocean_time'
+  'idDv2d(M2kvrf)'
+  'v2dvar'
+  1.0d0
+
+'ubar_fsco'                                        ! Input/Output
+  '2D u-momentum, Coriolis-stokes term'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_fsco, scalar, series'
+  'ocean_time'
+  'idDu2d(M2fsco)'
+  'u2dvar'
+  1.0d0
+
+'vbar_fsco'                                        ! Input/Output
+  '2D v-momentum, Coriolis-stokes term'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_fsco, scalar, series'
+  'ocean_time'
+  'idDv2d(M2fsco)'
+  'v2dvar'
+  1.0d0
+
+'ubar_bstm'                                        ! Input/Output
+  '2D u-momentum, bottom sreaming term'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_bstm, scalar, series'
+  'ocean_time'
+  'idDu2d(M2bstm)'
+  'u2dvar'
+  1.0d0
+
+'vbar_bstm'                                        ! Input/Output
+  '2D v-momentum, bottom sreaming term'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_bstm, scalar, series'
+  'ocean_time'
+  'idDv2d(M2bstm)'
+  'v2dvar'
+  1.0d0
+
+'ubar_wrol'                                        ! Input/Output
+  '2D u-momentum, wave roller acceleration term'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_wrol, scalar, series'
+  'ocean_time'
+  'idDu2d(M2wrol)'
+  'u2dvar'
+  1.0d0
+
+'vbar_wrol'                                        ! Input/Output
+  '2D v-momentum, wave roller acceleration term'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_wrol, scalar, series'
+  'ocean_time'
+  'idDv2d(M2wrol)'
+  'v2dvar'
+  1.0d0
+
+'ubar_wbrk'                                        ! Input/Output
+  '2D u-momentum, wave breaking term'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_wbrk, scalar, series'
+  'ocean_time'
+  'idDu2d(M2wbrk)'
+  'u2dvar'
+  1.0d0
+
+'vbar_wbrk'                                        ! Input/Output
+  '2D v-momentum, wave breaking term'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_wbrk, scalar, series'
+  'ocean_time'
+  'idDv2d(M2wbrk)'
+  'v2dvar'
+  1.0d0
+
+'ubar_zetw'                                        ! Input/Output
+  '2D u-momentum, quasi-static sea level adjustment'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_zetw, scalar, series'
+  'ocean_time'
+  'idDu2d(M2zetw)'
+  'u2dvar'
+  1.0d0
+
+'vbar_zetw'                                        ! Input/Output
+  '2D v-momentum, quasi-static sea level adjustment'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_zetw, scalar, series'
+  'ocean_time'
+  'idDv2d(M2zetw)'
+  'v2dvar'
+  1.0d0
+
+'ubar_zqsp'                                        ! Input/Output
+  '2D u-momentum, quasi-static pressure'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_zqsp, scalar, series'
+  'ocean_time'
+  'idDu2d(M2zqsp)'
+  'u2dvar'
+  1.0d0
+
+'vbar_zqsp'                                        ! Input/Output
+  '2D v-momentum, quasi-static pressure'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_zqsp, scalar, series'
+  'ocean_time'
+  'idDv2d(M2zqsp)'
+  'v2dvar'
+  1.0d0
+
+'ubar_zbeh'                                        ! Input/Output
+  '2D u-momentum, Bernoulli head'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_zbeh, scalar, series'
+  'ocean_time'
+  'idDu2d(M2zbeh)'
+  'u2dvar'
+  1.0d0
+
+'vbar_zbeh'                                        ! Input/Output
+  '2D v-momentum, Bernoulli head'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_zbeh, scalar, series'
+  'ocean_time'
+  'idDv2d(M2zbeh)'
+  'v2dvar'
+  1.0d0
+
 'ubar_hvisc'                                       ! Input/Output
   '2D u-momentum, horizontal viscosity term'
   'meter second-2'                                 ! [m/s2]
@@ -5001,6 +5208,168 @@
   'v_vrad, scalar, series'
   'ocean_time'
   'idDv3d(M3vrad)'
+  'v3dvar'
+  1.0d0
+
+'u_jvrf'                                           ! Input/Output
+  '3D u-momentum, J vortex force term'
+  'meter second-2'                                 ! [m/s2]
+  'u_jvrf, scalar, series'
+  'ocean_time'
+  'idDu3d(M3jvrf)'
+  'u2dvar'
+  1.0d0
+
+'v_jvrf'                                           ! Input/Output
+  '3D v-momentum, J vortex force term'
+  'meter second-2'                                 ! [m/s2]
+  'v_jvrf, scalar, series'
+  'ocean_time'
+  'idDv3d(M3jvrf)'
+  'v3dvar'
+  1.0d0
+
+'u_kvrf'                                           ! Input/Output
+  '3D u-momentum, K vortex force term'
+  'meter second-2'                                 ! [m/s2]
+  'u_kvrf, scalar, series'
+  'ocean_time'
+  'idDu3d(M3kvrf)'
+  'u32dvar'
+  1.0d0
+
+'v_kvrf'                                           ! Input/Output
+  '3D v-momentum, K vortex force term'
+  'meter second-2'                                 ! [m/s2]
+  'v_kvrf, scalar, series'
+  'ocean_time'
+  'idDv3d(M3kvrf)'
+  'v3dvar'
+  1.0d0
+
+'u_fsco'                                           ! Input/Output
+  '3D u-momentum, Coriolis-stokes term'
+  'meter second-2'                                 ! [m/s2]
+  'u_fsco, scalar, series'
+  'ocean_time'
+  'idDu3d(M3fsco)'
+  'u32dvar'
+  1.0d0
+
+'v_fsco'                                           ! Input/Output
+  '3D v-momentum, Coriolis-stokes term'
+  'meter second-2'                                 ! [m/s2]
+  'v_fsco, scalar, series'
+  'ocean_time'
+  'idDv3d(M3fsco)'
+  'v3dvar'
+  1.0d0
+
+'u_bstm'                                           ! Input/Output
+  '3D u-momentum, bottom sreaming term'
+  'meter second-2'                                 ! [m/s2]
+  'u_bstm, scalar, series'
+  'ocean_time'
+  'idDu3d(M3bstm)'
+  'u3dvar'
+  1.0d0
+
+'v_bstm   '                                        ! Input/Output
+  '3D v-momentum, bottom sreaming term'
+  'meter second-2'                                 ! [m/s2]
+  'v_bstm, scalar, series'
+  'ocean_time'
+  'idDv3d(M3bstm)'
+  'v3dvar'
+  1.0d0
+
+'u_wrol'                                           ! Input/Output
+  '3D u-momentum, wave roller acceleration term'
+  'meter second-2'                                 ! [m/s2]
+  'u_wrol, scalar, series'
+  'ocean_time'
+  'idDu3d(M3wrol)'
+  'u3dvar'
+  1.0d0
+
+'v_wrol'                                           ! Input/Output
+  '3D v-momentum, wave roller acceleration term'
+  'meter second-2'                                 ! [m/s2]
+  'v_wrol, scalar, series'
+  'ocean_time'
+  'idDv3d(M3wrol)'
+  'v3dvar'
+  1.0d0
+
+'u_wbrk'                                           ! Input/Output
+  '3D u-momentum, wave breaking term'
+  'meter second-2'                                 ! [m/s2]
+  'u_wbrk, scalar, series'
+  'ocean_time'
+  'idDu3d(M3wbrk)'
+  'u3dvar'
+  1.0d0
+
+'v_wbrk'                                           ! Input/Output
+  '3D v-momentum, wave breaking term'
+  'meter second-2'                                 ! [m/s2]
+  'v_wbrk, scalar, series'
+  'ocean_time'
+  'idDv3d(M3wbrk)'
+  'v3dvar'
+  1.0d0
+
+'u_zetw'                                           ! Input/Output
+  '3D u-momentum, quasi-static sea level adjustment'
+  'meter second-2'                                 ! [m/s2]
+  'u_zetw, scalar, series'
+  'ocean_time'
+  'idDu3d(M3zetw)'
+  'u3dvar'
+  1.0d0
+
+'v_zetw'                                           ! Input/Output
+  '3D v-momentum, quasi-static sea level adjustment'
+  'meter second-2'                                 ! [m/s2]
+  'v_zetw, scalar, series'
+  'ocean_time'
+  'idDv3d(M3zetw)'
+  'v3dvar'
+  1.0d0
+
+'u_zqsp'                                           ! Input/Output
+  '3D u-momentum, quasi-static pressure'
+  'meter second-2'                                 ! [m/s2]
+  'u_zqsp, scalar, series'
+  'ocean_time'
+  'idDu3d(M3zqsp)'
+  'u3dvar'
+  1.0d0
+
+'v_zqsp'                                           ! Input/Output
+  '3D v-momentum, quasi-static pressure'
+  'meter second-2'                                 ! [m/s2]
+  'v_zqsp, scalar, series'
+  'ocean_time'
+  'idDv3d(M3zqsp)'
+  'v3dvar'
+  1.0d0
+
+'u_zbeh'                                           ! Input/Output
+  '3D u-momentum, Bernoulli head'
+  'meter second-2'                                 ! [m/s2]
+  'u_zbeh, scalar, series'
+  'ocean_time'
+  'idDu3d(M3zbeh)'
+  'u3dvar'
+  1.0d0
+
+'v_zbeh'                                           ! Input/Output
+  '3D v-momentum, Bernoulli head'
+  'meter second-2'                                 ! [m/s2]
+  'v_zbeh, scalar, series'
+  'ocean_time'
+  'idDv3d(M3zbeh)'
   'v3dvar'
   1.0d0
 

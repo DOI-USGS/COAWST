@@ -63,6 +63,9 @@
      &                  GRID(ng) % on_u,                                &
      &                  GRID(ng) % z_w,                                 &
      &                  OCEAN(ng) % rho,                                &
+#ifdef WEC_VF
+     &                  OCEAN(ng) % zetat,                              &
+#endif
 # ifdef ATM_PRESS
      &                  FORCES(ng) % Pair,                              &
 # endif
@@ -88,6 +91,9 @@
 # endif
      &                        Hz, om_v, on_u, z_w,                      &
      &                        rho,                                      &
+#ifdef WEC_VF
+     &                        zetat,                                    &
+#endif
 # ifdef ATM_PRESS
      &                        Pair,                                     &
 # endif
@@ -117,6 +123,9 @@
       real(r8), intent(in) :: on_u(LBi:,LBj:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
+#  ifdef WEC_VF
+      real(r8), intent(in) :: zetat(LBi:,LBj:)
+#  endif
 #  ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:,LBj:)
 #  endif
@@ -136,6 +145,9 @@
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
+#  ifdef WEC_VF
+      real(r8), intent(in) :: zetat(LBi:UBi,LBj:UBj)
+#  endif
 #  ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
 #  endif
@@ -251,10 +263,12 @@
 !  pressure at the free-surface as zero
 !
         DO i=IstrU-2,Iend+1
-#ifdef ATM_PRESS
-          P(i,j,N(ng))=fac*(Pair(i,j)-OneAtm)
-#else
           P(i,j,N(ng))=0.0_r8
+#ifdef WEC_VF
+          P(i,j,N(ng))=P(i,j,N(ng))+zetat(i,j)
+#endif
+#ifdef ATM_PRESS
+          P(i,j,N(ng))=P(i,j,N(ng))+fac*(Pair(i,j)-OneAtm)
 #endif
         END DO
         DO k=N(ng),1,-1

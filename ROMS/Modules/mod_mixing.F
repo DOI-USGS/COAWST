@@ -105,9 +105,16 @@
 !  kbbl         Index of grid level above bottom  boundary layer.      !
 !  ksbl         Index of grid level below surface boundary layer.      !
 !                                                                      !
+#ifdef WEC
+!                                                                      !
+!  rustr2d      2D wave-current stress tensor in XI-direction.         !
+!  rvstr2d      2D wave-current stress tensor in ETA-direction.        !
+!  rustr3d      3D wave-current stress tensor in XI-direction.         !
+!  rvstr3d      3D wave-current stress tensor in ETA-direction.        !
+#endif
+!                                                                      !
 #ifdef WEC_MELLOR
 !  Nearshore radiation stresses.                                       !
-!                                                                      !
 !  Sxx_bar      2D nearshore radiation stress, xx-component.           !
 !  Sxy_bar      2D nearshore radiation stress, xy-component.           !
 !  Syy_bar      2D nearshore radiation stress, yy-component.           !
@@ -117,12 +124,15 @@
 !  Szx          3D Nearshore vertical radiation stress, xx-component.  !
 !  Szy          3D Nearshore vertical radiation stress, xx-component.  !
 #endif
-#ifdef WEC
-!  rustr2d      2D wave-current stress tensor in Xi-direction.            !
-!  rvstr2d      2D wave-current stress tensor in ETA-direction.           !
-!  rustr3d      3D wave-current stress tensor in Xi-direction.            !
-!  rvstr3d      3D wave-current stress tensor in ETA-direction.           !
-!                                                                        !
+!                                                                      !
+#ifdef WEC_VF
+!                                                                      !
+!  rurol2d      2D WEC roller stress in XI-direction.                  !
+!  rvrol2d      2D WEC roller stress in ETA-direction.                 !
+!  rubrk2d      2D WEC breaking stress in XI-direction.                !
+!  rvbrk2d      2D WEC breaking stress in ETA-direction.               !
+!  rukvf2d      2D WEC K-stress in XI-direction.                       !
+!  rvkvf2d      2D WEC K-stress in ETA-direction.                      !
 #endif
 !=======================================================================
 !
@@ -167,26 +177,34 @@
           real(r8), pointer :: visc3d_r(:,:,:)
 # endif
 #endif
+#ifdef WEC
+          real(r8), pointer :: rustr2d(:,:)
+          real(r8), pointer :: rvstr2d(:,:)
+#endif
 #ifdef WEC_MELLOR
           real(r8), pointer :: Sxx_bar(:,:)
           real(r8), pointer :: Sxy_bar(:,:)
           real(r8), pointer :: Syy_bar(:,:)
 #endif
-#ifdef WEC
-          real(r8), pointer :: rustr2d(:,:)
-          real(r8), pointer :: rvstr2d(:,:)
+#ifdef WEC_VF
+          real(r8), pointer :: rurol2d(:,:)
+          real(r8), pointer :: rvrol2d(:,:)
+          real(r8), pointer :: rubrk2d(:,:)
+          real(r8), pointer :: rvbrk2d(:,:)
+          real(r8), pointer :: rukvf2d(:,:)
+          real(r8), pointer :: rvkvf2d(:,:)
 #endif
 #ifdef SOLVE3D
+# ifdef WEC
+          real(r8), pointer :: rustr3d(:,:,:)
+          real(r8), pointer :: rvstr3d(:,:,:)
+# endif
 # ifdef WEC_MELLOR
           real(r8), pointer :: Sxx(:,:,:)
           real(r8), pointer :: Sxy(:,:,:)
           real(r8), pointer :: Syy(:,:,:)
           real(r8), pointer :: Szx(:,:,:)
           real(r8), pointer :: Szy(:,:,:)
-# endif
-# ifdef WEC
-          real(r8), pointer :: rustr3d(:,:,:)
-          real(r8), pointer :: rvstr3d(:,:,:)
 # endif
 #endif
 #ifdef SOLVE3D
@@ -416,14 +434,22 @@
 #  endif
 # endif
 
+#ifdef WEC
+      allocate ( MIXING(ng) % rustr2d(LBi:UBi,LBj:UBj) )
+      allocate ( MIXING(ng) % rvstr2d(LBi:UBi,LBj:UBj) )
+#endif
 #ifdef WEC_MELLOR
       allocate ( MIXING(ng) % Sxx_bar(LBi:UBi,LBj:UBj) )
       allocate ( MIXING(ng) % Sxy_bar(LBi:UBi,LBj:UBj) )
       allocate ( MIXING(ng) % Syy_bar(LBi:UBi,LBj:UBj) )
 #endif
-#ifdef WEC
-      allocate ( MIXING(ng) % rustr2d(LBi:UBi,LBj:UBj) )
-      allocate ( MIXING(ng) % rvstr2d(LBi:UBi,LBj:UBj) )
+#ifdef WEC_VF
+      allocate ( MIXING(ng) % rurol2d(LBi:UBi,LBj:UBj) )
+      allocate ( MIXING(ng) % rvrol2d(LBi:UBi,LBj:UBj) )
+      allocate ( MIXING(ng) % rubrk2d(LBi:UBi,LBj:UBj) )
+      allocate ( MIXING(ng) % rvbrk2d(LBi:UBi,LBj:UBj) )
+      allocate ( MIXING(ng) % rukvf2d(LBi:UBi,LBj:UBj) )
+      allocate ( MIXING(ng) % rvkvf2d(LBi:UBi,LBj:UBj) )
 #endif
 #ifdef SOLVE3D
 # ifdef WEC_MELLOR
@@ -751,13 +777,21 @@
 #endif
 #ifdef WEC
           DO i=Imin,Imax
+            MIXING(ng) % rustr2d(i,j) = IniVal
+            MIXING(ng) % rvstr2d(i,j) = IniVal
 # ifdef WEC_MELLOR
             MIXING(ng) % Sxx_bar(i,j) = IniVal
             MIXING(ng) % Sxy_bar(i,j) = IniVal
             MIXING(ng) % Syy_bar(i,j) = IniVal
 # endif
-            MIXING(ng) % rustr2d(i,j) = IniVal
-            MIXING(ng) % rvstr2d(i,j) = IniVal
+# ifdef WEC_VF
+            MIXING(ng) % rurol2d(i,j) = IniVal
+            MIXING(ng) % rvrol2d(i,j) = IniVal
+            MIXING(ng) % rubrk2d(i,j) = IniVal
+            MIXING(ng) % rvbrk2d(i,j) = IniVal
+            MIXING(ng) % rukvf2d(i,j) = IniVal
+            MIXING(ng) % rvkvf2d(i,j) = IniVal
+# endif
 # ifdef SOLVE3D
             DO k=1,N(ng)
 #  ifdef WEC_MELLOR

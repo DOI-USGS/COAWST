@@ -291,7 +291,9 @@
 !***********************************************************************
 !
       USE mod_param
-      USE bc_3d_mod, ONLY : bc_w3d_tile
+# if defined EW_PERIODIC || defined NS_PERIODIC
+      USE exchange_3d_mod, ONLY : exchange_w3d_tile
+# endif
 !
 !  Imported variable declarations.
 !
@@ -328,12 +330,14 @@
         END DO
       END DO
 !
-!  Set lateral boundary conditions.
+# if defined EW_PERIODIC || defined NS_PERIODIC
 !
-      CALL bc_w3d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, 0, N(ng),                   &
-     &                  Wscl)
-
+!  Exchange boundary data.
+!
+      CALL exchange_w3d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj, LBk, UBk,             &
+     &                        Wscl)
+# endif
       RETURN
       END SUBROUTINE scale_omega
 #endif

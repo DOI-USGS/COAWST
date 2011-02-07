@@ -118,9 +118,6 @@
      &                 GRID(ng) % dmde,                                 &
      &                 GRID(ng) % dndx,                                 &
 # endif
-# if defined WEC_VF
-     &                 GRID(ng) % h,                                    &
-# endif
      &                 GRID(ng) % fomn,                                 &
      &                 GRID(ng) % om_u,                                 &
      &                 GRID(ng) % om_v,                                 &
@@ -145,16 +142,14 @@
      &                 OCEAN(ng) % u,                                   &
      &                 OCEAN(ng) % v,                                   &
      &                 OCEAN(ng) % W,                                   &
-# ifdef WEC_VF
-     &                 OCEAN(ng) % zeta,                                &
-     &                 OCEAN(ng) % zetat,                               &
-# endif
 # ifdef WEC
      &                 OCEAN(ng) % u_stokes,                            &
      &                 OCEAN(ng) % v_stokes,                            &
      &                 OCEAN(ng) % w_stokes,                            &
+#  ifdef WEC_MELLOR
      &                 OCEAN(ng) % rulag3d,                             &
      &                 OCEAN(ng) % rvlag3d,                             &
+#  endif
      &                 MIXING(ng) % rustr3d,                            &
      &                 MIXING(ng) % rvstr3d,                            &
 # endif
@@ -199,9 +194,6 @@
 # if defined CURVGRID && defined UV_ADV
      &                       dmde, dndx,                                &
 # endif
-# if defined WEC_VF
-     &                       h,                                         &
-# endif
      &                       fomn,                                      &
      &                       om_u, om_v, on_u, on_v, pm, pn,            &
      &                       bustr, bvstr,                              &
@@ -213,12 +205,11 @@
      &                       EobsUV, Uobs, Vobs,                        &
 # endif
      &                       u, v, W,                                   &
-# ifdef WEC_VF
-     &                       zeta, zetat,                               &
-# endif
 # ifdef WEC
      &                       u_stokes, v_stokes, w_stokes,              &
+#  ifdef WEC_MELLOR
      &                       rulag3d, rvlag3d,                          &
+#  endif
      &                       rustr3d, rvstr3d,                          &
 # endif
      &                       rufrc, rvfrc,                              &
@@ -247,9 +238,6 @@
       real(r8), intent(in) :: dmde(LBi:,LBj:)
       real(r8), intent(in) :: dndx(LBi:,LBj:)
 #  endif
-#  if defined WEC_VF
-      real(r8), intent(in) :: h(LBi:,LBj:)
-#  endif
       real(r8), intent(in) :: fomn(LBi:,LBj:)
       real(r8), intent(in) :: om_u(LBi:,LBj:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
@@ -274,16 +262,14 @@
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
-#  ifdef WEC_VF
-      real(r8), intent(in) :: zeta(LBi:,LBj:,:)
-      real(r8), intent(in) :: zetat(LBi:,LBj:)
-#  endif
 #  ifdef WEC
       real(r8), intent(in) :: u_stokes(LBi:,LBj:,:)
       real(r8), intent(in) :: v_stokes(LBi:,LBj:,:)
       real(r8), intent(in) :: w_stokes(LBi:,LBj:,0:)
+#   ifdef WEC_MELLOR
       real(r8), intent(in) :: rulag3d(LBi:,LBj:,:)
       real(r8), intent(in) :: rvlag3d(LBi:,LBj:,:)
+#   endif
       real(r8), intent(in) :: rustr3d(LBi:,LBj:,:)
       real(r8), intent(in) :: rvstr3d(LBi:,LBj:,:)
 #  endif
@@ -305,9 +291,6 @@
 #  if defined CURVGRID && defined UV_ADV
       real(r8), intent(in) :: dmde(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: dndx(LBi:UBi,LBj:UBj)
-#  endif
-#  ifdef WEC_VF
-      real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: fomn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
@@ -333,16 +316,14 @@
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
-#  ifdef WEC_VF
-      real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
-      real(r8), intent(in) :: zetat(LBi:UBi,LBj:UBj)
-#  endif
 #  ifdef WEC
       real(r8), intent(in) :: u_stokes(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: v_stokes(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: w_stokes(LBi:UBi,LBj:UBj,0:N(ng))
+#   ifdef WEC_MELLOR
       real(r8), intent(in) :: rulag3d(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: rvlag3d(LBi:UBi,LBj:UBj,N(ng))
+#   endif
       real(r8), intent(in) :: rustr3d(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: rvstr3d(LBi:UBi,LBj:UBj,N(ng))
 #  endif
@@ -554,16 +535,8 @@
           DO i=IstrU-1,Iend
             cff=0.5_r8*Hz(i,j,k)*fomn(i,j)
             UFx(i,j)=cff*(v(i,j  ,k,nrhs)+                              &
-#  ifdef WEC
-     &                    v_stokes(i,j  ,k)+                            &
-     &                    v_stokes(i,j+1,k)+                            &
-#  endif
      &                    v(i,j+1,k,nrhs))
             VFe(i,j)=cff*(u(i  ,j,k,nrhs)+                              &
-#  ifdef WEC
-     &                    u_stokes(i  ,j,k)+                            &
-     &                    u_stokes(i+1,j,k)+                            &
-#  endif
      &                    u(i+1,j,k,nrhs))
           END DO
         END DO
@@ -585,6 +558,36 @@
 #  endif
           END DO
         END DO
+!
+#  ifdef WEC
+        DO j=JstrV-1,Jend
+          DO i=IstrU-1,Iend
+            cff=0.5_r8*Hz(i,j,k)*fomn(i,j)
+            UFx(i,j)=cff*(v_stokes(i,j  ,k)+                            &
+     &                    v_stokes(i,j+1,k))
+            VFe(i,j)=cff*(u_stokes(i  ,j,k)+                            &
+     &                    u_stokes(i+1,j,k))
+          END DO
+        END DO
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff1=0.5_r8*(UFx(i,j)+UFx(i-1,j))
+            ru(i,j,k,nrhs)=ru(i,j,k,nrhs)+cff1
+#  ifdef DIAGNOSTICS_UV
+            DiaRU(i,j,k,nrhs,M3fsco)=cff1
+#  endif
+          END DO
+        END DO
+        DO j=JstrV,Jend
+          DO i=Istr,Iend
+            cff1=0.5_r8*(VFe(i,j)+VFe(i,j-1))
+            rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff1
+#  ifdef DIAGNOSTICS_UV
+            DiaRV(i,j,k,nrhs,M3fsco)=-cff1
+#  endif
+          END DO
+        END DO
+#  endif
 # endif
 # if defined CURVGRID && defined UV_ADV
 !
@@ -627,6 +630,10 @@
             cff=Hz(i,j,k)*cff4
             Uwrk(i,j)=-cff*cff1                ! u equation, ETA-term
             Vwrk(i,j)=-cff*cff2                ! v equation, ETA-term
+#   ifdef WEC_VF
+            Uwrk(i,j)=Uwrk(i,j)+Hz(i,j,k)*cff5*cff8
+            Vwrk(i,j)=Vwrk(i,j)-Hz(i,j,k)*cff6*cff8
+#   endif
 #  endif
           END DO
         END DO
@@ -1158,26 +1165,29 @@
 # ifdef WEC
 !
 !-----------------------------------------------------------------------
-!  Add in radiation stress or Vertical Vortex Force terms.
+!  Add in radiation stress or Vortex Force terms.
 !  Convert stresses to m4/s2.
 !-----------------------------------------------------------------------
 !
         DO j=Jstr,Jend
           DO i=IstrU,Iend
             ru(i,j,k,nrhs)=ru(i,j,k,nrhs)-                              &
-     &                     rustr3d(i,j,k)*om_u(i,j)*on_u(i,j)-          &
-     &                     rulag3d(i,j,k)
+     &                     rustr3d(i,j,k)*om_u(i,j)*on_u(i,j)
+#  ifdef WEC_MELLOR
+            ru(i,j,k,nrhs)=ru(i,j,k,nrhs)-rulag3d(i,j,k)
+#  endif
           END DO
         END DO
         DO j=JstrV,Jend
           DO i=Istr,Iend
             rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-                              &
-     &                     rvstr3d(i,j,k)*om_v(i,j)*on_v(i,j)-          &
-     &                     rvlag3d(i,j,k)
+     &                     rvstr3d(i,j,k)*om_v(i,j)*on_v(i,j)
+#  ifdef WEC_MELLOR
+            rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-rvlag3d(i,j,k)
+#  endif
           END DO
         END DO
 # endif
-
       END DO K_LOOP
 !
       J_LOOP : DO j=Jstr,Jend
@@ -1840,7 +1850,7 @@
             cff=FC(i,k)-FC(i,k-1)
             ru(i,j,k,nrhs)=ru(i,j,k,nrhs)-cff
 #   ifdef DIAGNOSTICS_UV
-!            DiaRU(i,j,k,nrhs,M3vadv)=-cff
+            DiaRU(i,j,k,nrhs,M3jvrf)=-cff
 #   endif
           END DO
         END DO
@@ -1990,7 +2000,7 @@
               cff=FC(i,k)-FC(i,k-1)
               rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff
 #   ifdef DIAGNOSTICS_UV
-!              DiaRV(i,j,k,nrhs,M3vadv)=-cff
+              DiaRV(i,j,k,nrhs,M3jvrf)=-cff
 #   endif
             END DO
           END DO
@@ -2020,6 +2030,14 @@
 #  endif
 #  ifdef WEC_MELLOR
           DiaRUfrc(i,j,3,M2hrad)=DiaRU(i,j,1,nrhs,M3hrad)
+#  endif
+#  ifdef WEC_VF
+          DiaRUfrc(i,j,3,M2jvrf)=DiaRU(i,j,1,nrhs,M3jvrf)
+          DiaRUfrc(i,j,3,M2kvrf)=DiaRU(i,j,1,nrhs,M3kvrf)
+          DiaRUfrc(i,j,3,M2fsco)=DiaRU(i,j,1,nrhs,M3fsco)
+          DiaRUfrc(i,j,3,M2bstm)=DiaRU(i,j,1,nrhs,M3bstm)
+          DiaRUfrc(i,j,3,M2wrol)=DiaRU(i,j,1,nrhs,M3wrol)
+          DiaRUfrc(i,j,3,M2wbrk)=DiaRU(i,j,1,nrhs,M3wbrk)
 #  endif
 #  if defined UV_VIS2 || defined UV_VIS4
           DiaRUfrc(i,j,3,M2xvis)=0.0_r8
@@ -2052,6 +2070,20 @@
 #  ifdef WEC_MELLOR
             DiaRUfrc(i,j,3,M2hrad)=DiaRUfrc(i,j,3,M2hrad)+              &
      &                             DiaRU(i,j,k,nrhs,M3hrad)
+#  endif
+#  ifdef WEC_VF
+            DiaRUfrc(i,j,3,M2jvrf)=DiaRUfrc(i,j,3,M2jvrf)+              &
+     &                             DiaRU(i,j,k,nrhs,M3jvrf)
+            DiaRUfrc(i,j,3,M2kvrf)=DiaRUfrc(i,j,3,M2kvrf)+              &
+     &                             DiaRU(i,j,k,nrhs,M3kvrf)
+            DiaRUfrc(i,j,3,M2fsco)=DiaRUfrc(i,j,3,M2fsco)+              &
+     &                             DiaRU(i,j,k,nrhs,M3fsco)
+            DiaRUfrc(i,j,3,M2bstm)=DiaRUfrc(i,j,3,M2bstm)+              &
+     &                             DiaRU(i,j,k,nrhs,M3bstm)
+            DiaRUfrc(i,j,3,M2wrol)=DiaRUfrc(i,j,3,M2wrol)+              &
+     &                             DiaRU(i,j,k,nrhs,M3wrol)
+            DiaRUfrc(i,j,3,M2wbrk)=DiaRUfrc(i,j,3,M2wbrk)+              &
+     &                             DiaRU(i,j,k,nrhs,M3wbrk)
 #  endif
 #  ifdef BODYFORCE
 !!          DiaRUfrc(i,j,3,M2strs)=DiaRUfrc(i,j,3,M2strs)+              &
@@ -2088,6 +2120,14 @@
 #  ifdef WEC_MELLOR
             DiaRVfrc(i,j,3,M2hrad)=DiaRV(i,j,1,nrhs,M3hrad)
 #  endif
+#  ifdef WEC_VF
+            DiaRVfrc(i,j,3,M2jvrf)=DiaRV(i,j,1,nrhs,M3jvrf)
+            DiaRVfrc(i,j,3,M2kvrf)=DiaRV(i,j,1,nrhs,M3kvrf)
+            DiaRVfrc(i,j,3,M2fsco)=DiaRV(i,j,1,nrhs,M3fsco)
+            DiaRVfrc(i,j,3,M2bstm)=DiaRV(i,j,1,nrhs,M3bstm)
+            DiaRVfrc(i,j,3,M2wrol)=DiaRV(i,j,1,nrhs,M3wrol)
+            DiaRVfrc(i,j,3,M2wbrk)=DiaRV(i,j,1,nrhs,M3wbrk)
+#  endif
 #  if defined UV_VIS2 || defined UV_VIS4
             DiaRVfrc(i,j,3,M2hvis)=0.0_r8
             DiaRVfrc(i,j,3,M2xvis)=0.0_r8
@@ -2120,6 +2160,20 @@
               DiaRVfrc(i,j,3,M2hrad)=DiaRVfrc(i,j,3,M2hrad)+            &
      &                               DiaRV(i,j,k,nrhs,M3hrad)
 #  endif
+#  ifdef WEC_VF
+              DiaRVfrc(i,j,3,M2jvrf)=DiaRVfrc(i,j,3,M2jvrf)+            &
+     &                             DiaRV(i,j,k,nrhs,M3jvrf)
+              DiaRVfrc(i,j,3,M2kvrf)=DiaRVfrc(i,j,3,M2kvrf)+            &
+     &                             DiaRV(i,j,k,nrhs,M3kvrf)
+              DiaRVfrc(i,j,3,M2fsco)=DiaRVfrc(i,j,3,M2fsco)+            &
+     &                             DiaRV(i,j,k,nrhs,M3fsco)
+              DiaRVfrc(i,j,3,M2bstm)=DiaRVfrc(i,j,3,M2bstm)+            &
+     &                             DiaRV(i,j,k,nrhs,M3bstm)
+              DiaRVfrc(i,j,3,M2wrol)=DiaRVfrc(i,j,3,M2wrol)+            &
+     &                             DiaRV(i,j,k,nrhs,M3wrol)
+              DiaRVfrc(i,j,3,M2wbrk)=DiaRVfrc(i,j,3,M2wbrk)+            &
+     &                             DiaRV(i,j,k,nrhs,M3wbrk)
+#  endif
 #  ifdef BODYFORCE
 !!            DiaRVfrc(i,j,3,M2strs)=DiaRVfrc(i,j,3,M2strs)+            &
 !!   &                               DiaRV(i,j,k,nrhs,M3vvis)
@@ -2141,29 +2195,6 @@
 # endif
         END IF
       END DO J_LOOP
-# if defined WEC_VF
-!
-!  Include pressure terms for barotropic forcing.
-!
-      DO j=Jstr,Jend
-        DO i=IstrU,Iend
-          rufrc(i,j)=rufrc(i,j)+                                        &
-     &                  0.5_r8*on_u(i,j)*                               &
-     &                  (h(i-1,j)+h(i,j)+                               &
-     &                   zeta(i-1,j,1)+zeta(i,j,1))*                    &
-     &                  (zetat(i-1,j)-zetat(i,j))
-        END DO
-        IF (j.ge.JstrV) THEN
-          DO i=Istr,Iend
-          rvfrc(i,j)=rvfrc(i,j)+                                        &
-     &                  0.5_r8*om_v(i,j)*                               &
-     &                  (h(i,j-1)+h(i,j)+                               &
-     &                   zeta(i,j-1,1)+zeta(i,j,1))*                    &
-     &                  (zetat(i,j-1)-zetat(i,j))
-          END DO
-        END IF
-      END DO
-# endif
       RETURN
       END SUBROUTINE rhs3d_tile
 #endif

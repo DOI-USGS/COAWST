@@ -681,7 +681,7 @@
      &                     FORCES(ng)%Dissip_wcap,                      &
      &                     update)
 #   endif
-#   if defined SVENDSEN_ROLLER
+#   if defined ROLLER_SVENDSEN
       CALL set_2dfld_tile (ng, tile, iNLM, idWbrk,                      &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     FORCES(ng)%Wave_breakG,                      &

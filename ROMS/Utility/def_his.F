@@ -2401,7 +2401,7 @@
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #endif
-#if defined WAVES_OCEAN
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
 !
 !  Define wave dissipation due to bottom friction.
 !
@@ -2460,9 +2460,9 @@
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #endif
-#if defined SVENDSEN_ROLLER
+#if defined ROLLER_SVENDSEN
 !
-!  Define Wave_break.
+!  Define percent wave breaking.
 !
         IF (Hout(idWbrk,ng)) THEN
           Vinfo( 1)=Vname(1,idWbrk)
@@ -2476,6 +2476,102 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idWbrk,ng),r8)
           status=def_var(ng, iNLM, ncHISid(ng), hisVid(idWbrk,ng),      &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+#endif
+#if defined WEC_ROLLER
+!
+!  Define Roller dissipation.
+!
+        IF (Hout(idWdis,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdis)
+          Vinfo( 2)=Vname(2,idWdis)
+          Vinfo( 3)=Vname(3,idWdis)
+          Vinfo(14)=Vname(4,idWdis)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWdis,ng),r8)
+          status=def_var(ng, iNLM, ncHISid(ng), hisVid(idWdis,ng),      &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+#endif
+#if defined ROLLER_RENIERS
+!
+!  Define roller action density.
+!
+        IF (Hout(idWrol,ng)) THEN
+          Vinfo( 1)=Vname(1,idWrol)
+          Vinfo( 2)=Vname(2,idWrol)
+          Vinfo( 3)=Vname(3,idWrol)
+          Vinfo(14)=Vname(4,idWrol)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWrol,ng),r8)
+          status=def_var(ng, iNLM, ncHISid(ng), hisVid(idWrol,ng),      &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+#endif
+#if defined WEC_VF
+!
+!  Define WEC quasi-static sea level adjustment.
+!
+        IF (Hout(idWztw,ng)) THEN
+          Vinfo( 1)=Vname(1,idWztw)
+          Vinfo( 2)=Vname(2,idWztw)
+          Vinfo( 3)=Vname(3,idWztw)
+          Vinfo(14)=Vname(4,idWztw)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWztw,ng),r8)
+          status=def_var(ng, iNLM, ncHISid(ng), hisVid(idWztw,ng),      &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+!
+!  Define WEC quasi-static pressure.
+!
+        IF (Hout(idWqsp,ng)) THEN
+          Vinfo( 1)=Vname(1,idWqsp)
+          Vinfo( 2)=Vname(2,idWqsp)
+          Vinfo( 3)=Vname(3,idWqsp)
+          Vinfo(14)=Vname(4,idWqsp)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWqsp,ng),r8)
+          status=def_var(ng, iNLM, ncHISid(ng), hisVid(idWqsp,ng),      &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+!
+!  Define WEC Bernoulli head.
+!
+        IF (Hout(idWbeh,ng)) THEN
+          Vinfo( 1)=Vname(1,idWbeh)
+          Vinfo( 2)=Vname(2,idWbeh)
+          Vinfo( 3)=Vname(3,idWbeh)
+          Vinfo(14)=Vname(4,idWbeh)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWbeh,ng),r8)
+          status=def_var(ng, iNLM, ncHISid(ng), hisVid(idWbeh,ng),      &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -2760,12 +2856,6 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW2yy))) THEN
             got_var(idW2yy)=.TRUE.
             hisVid(idW2yy,ng)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idU2rs))) THEN
-            got_var(idU2rs)=.TRUE.
-            hisVid(idU2rs,ng)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idV2rs))) THEN
-            got_var(idV2rs)=.TRUE.
-            hisVid(idV2rs,ng)=var_id(i)
 # ifdef SOLVE3D
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW3xx))) THEN
             got_var(idW3xx)=.TRUE.
@@ -2782,21 +2872,28 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW3zy))) THEN
             got_var(idW3zy)=.TRUE.
             hisVid(idW3zy,ng)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idU3rs))) THEN
-            got_var(idU3rs)=.TRUE.
-            hisVid(idU3rs,ng)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idV3rs))) THEN
-            got_var(idV3rs)=.TRUE.
-            hisVid(idV3rs,ng)=var_id(i)
 # endif
 #endif
 #ifdef WEC
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idU2rs))) THEN
+            got_var(idU2rs)=.TRUE.
+            hisVid(idU2rs,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idV2rs))) THEN
+            got_var(idV2rs)=.TRUE.
+            hisVid(idV2rs,ng)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idU2Sd))) THEN
             got_var(idU2Sd)=.TRUE.
             hisVid(idU2Sd,ng)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idV2Sd))) THEN
             got_var(idV2Sd)=.TRUE.
             hisVid(idV2Sd,ng)=var_id(i)
+# ifdef SOLVE3D
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idU3rs))) THEN
+            got_var(idU3rs)=.TRUE.
+            hisVid(idU3rs,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idV3rs))) THEN
+            got_var(idV3rs)=.TRUE.
+            hisVid(idV3rs,ng)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idU3Sd))) THEN
             got_var(idU3Sd)=.TRUE.
             hisVid(idU3Sd,ng)=var_id(i)
@@ -2806,6 +2903,7 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW3Sd))) THEN
             got_var(idW3Sd)=.TRUE.
             hisVid(idW3Sd,ng)=var_id(i)
+# endif
 #endif
 #ifdef WAVES_HEIGHT
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWamp))) THEN
@@ -2842,7 +2940,7 @@
             got_var(idWorb)=.TRUE.
             hisVid(idWorb,ng)=var_id(i)
 #endif
-#ifdef WAVES_OCEAN
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdif))) THEN
             got_var(idWdif)=.TRUE.
             hisVid(idWdif,ng)=var_id(i)
@@ -2855,6 +2953,32 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdiw))) THEN
             got_var(idWdiw)=.TRUE.
             hisVid(idWdiw,ng)=var_id(i)
+#endif
+#ifdef ROLLER_SVENDSEN
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWbrk))) THEN
+            got_var(idWbrk)=.TRUE.
+            hisVid(idWbrk,ng)=var_id(i)
+#endif
+#ifdef WEC_ROLLER
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdis))) THEN
+            got_var(idWdis)=.TRUE.
+            hisVid(idWdis,ng)=var_id(i)
+#endif
+#ifdef ROLLER_RENIERS
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWrol))) THEN
+            got_var(idWrol)=.TRUE.
+            hisVid(idWrol,ng)=var_id(i)
+#endif
+#ifdef WEC_VF
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWztw))) THEN
+            got_var(idWztw)=.TRUE.
+            hisVid(idWztw,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWqsp))) THEN
+            got_var(idWqsp)=.TRUE.
+            hisVid(idWqsp,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWbeh))) THEN
+            got_var(idWbeh)=.TRUE.
+            hisVid(idWbeh,ng)=var_id(i)
 #endif
           END IF
 #ifdef SOLVE3D
@@ -3253,18 +3377,6 @@
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idU2rs).and.Hout(idU2rs,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idU2rs)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idV2rs).and.Hout(idV2rs,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idV2rs)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
 # ifdef SOLVE3D
         IF (.not.got_var(idW3xx).and.Hout(idW3xx,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idW3xx)),          &
@@ -3296,18 +3408,6 @@
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idU3Sd).and.Hout(idU3rs,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idU3rs)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idV3rs).and.Hout(idV3rs,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idV3rs)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
 # endif
 #endif
 #ifdef WEC
@@ -3319,6 +3419,31 @@
         END IF
         IF (.not.got_var(idV2Sd).and.Hout(idV2Sd,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idV2Sd)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idU2rs).and.Hout(idU2rs,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idU2rs)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idV2rs).and.Hout(idV2rs,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idV2rs)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+# ifdef SOLVE3D
+        IF (.not.got_var(idU3Sd).and.Hout(idU3rs,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idU3rs)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idV3rs).and.Hout(idV3rs,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idV3rs)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
@@ -3341,6 +3466,7 @@
           exit_flag=3
           RETURN
         END IF
+# endif
 #endif
 #ifdef WAVES_HEIGHT
         IF (.not.got_var(idWamp).and.Hout(idWamp,ng)) THEN
@@ -3398,7 +3524,7 @@
           RETURN
         END IF
 #endif
-#ifdef WAVES_OCEAN
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
         IF (.not.got_var(idWdif).and.Hout(idWdif,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWdif)),          &
      &                                  TRIM(ncname)
@@ -3416,6 +3542,50 @@
         END IF
         IF (.not.got_var(idWdiw).and.Hout(idWdiw,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWdiw)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+#endif
+#ifdef ROLLER_SVENDSEN
+        IF (.not.got_var(idWbrk).and.Hout(idWbrk,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWbrk)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+#endif
+#ifdef WEC_ROLLER
+        IF (.not.got_var(idWdis).and.Hout(idWdis,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWdis)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+#endif
+#ifdef ROLLER_RENIERS
+        IF (.not.got_var(idWrol).and.Hout(idWrol,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWrol)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+#endif
+#ifdef WEC_VF
+        IF (.not.got_var(idWztw).and.Hout(idWztw,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWztw)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWqsp).and.Hout(idWqsp,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWqsp)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWbeh).and.Hout(idWbeh,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWbeh)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

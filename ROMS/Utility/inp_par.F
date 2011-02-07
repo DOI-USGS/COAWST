@@ -1927,7 +1927,7 @@
             END IF
             Npts=load_l(Nval, Cval, Ngrids, Hout(idWorb,1:Ngrids))
 #endif
-#ifdef WAVES_OCEAN
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
           ELSE IF (TRIM(KeyWord).eq.'Hout(idWdif)') THEN
             IF (idWdif.eq.0) THEN
               IF (Master) WRITE (out,280) 'idWdif'
@@ -1953,6 +1953,7 @@
             END IF
             Npts=load_l(Nval, Cval, Ngrids, Hout(idWdiw,1:Ngrids))
 #endif
+#ifdef ROLLER_SVENDSEN
           ELSE IF (TRIM(KeyWord).eq.'Hout(idWbrk)') THEN
             IF (idWbrk.eq.0) THEN
               IF (Master) WRITE (out,280) 'idWbrk'
@@ -1960,6 +1961,48 @@
               RETURN
             END IF
             Npts=load_l(Nval, Cval, Ngrids, Hout(idWbrk,1:Ngrids))
+#endif
+#ifdef WEC_ROLLER
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWdis)') THEN
+            IF (idWdis.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idWdis'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWdis,1:Ngrids))
+#endif
+#ifdef ROLLER_RENIERS
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWrol)') THEN
+            IF (idWrol.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idWrol'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWrol,1:Ngrids))
+#endif
+#ifdef WEC_VF
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWztw)') THEN
+            IF (idWztw.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idWztw'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWztw,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWqsp)') THEN
+            IF (idWqsp.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idWqsp'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWqsp,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWbeh)') THEN
+            IF (idWbeh.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idWbeh'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWbeh,1:Ngrids))
+#endif
 #if defined UV_KIRBY
           ELSE IF (TRIM(KeyWord).eq.'Hout(idUwav)') THEN
             IF (idUwav.eq.0) THEN
@@ -3224,7 +3267,7 @@
      &       'Hout(idWorb)',                                            &
      &       'Write out wave bottom orbital velocity.'
 #endif
-#ifdef WAVES_OCEAN
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
           IF (Hout(idWdif,ng)) WRITE (out,170) Hout(idWdif,ng),         &
      &       'Hout(idWdif)',                                            &
      &       'Write out wave dissipation due to bottom friction.'
@@ -3237,6 +3280,32 @@
           IF (Hout(idWdiw,ng)) WRITE (out,170) Hout(idWdiw,ng),         &
      &       'Hout(idWdiw)',                                            &
      &       'Write out wave dissipation due to white capping.'
+#endif
+#ifdef ROLLER_SVENDSEN
+          IF (Hout(idWbrk,ng)) WRITE (out,170) Hout(idWbrk,ng),         &
+     &       'Hout(idWbrk)',                                            &
+     &       'Write out percent wave breaking.'
+#endif
+#ifdef WEC_ROLLER
+          IF (Hout(idWdis,ng)) WRITE (out,170) Hout(idWdis,ng),         &
+     &       'Hout(idWdis)',                                            &
+     &       'Write out wave roller dissipation.'
+#endif
+#ifdef ROLLER_RENIERS
+          IF (Hout(idWrol,ng)) WRITE (out,170) Hout(idWrol,ng),         &
+     &       'Hout(idWrol)',                                            &
+     &       'Write out wave roller action density.'
+#endif
+#ifdef WEC_VF
+          IF (Hout(idWztw,ng)) WRITE (out,170) Hout(idWztw,ng),         &
+     &       'Hout(idWztw)',                                            &
+     &       'Write out WEC quasi-static sea level adjustment.'
+          IF (Hout(idWqsp,ng)) WRITE (out,170) Hout(idWqsp,ng),         &
+     &       'Hout(idWqsp)',                                            &
+     &       'Write out WEC quasi-static pressure.'
+          IF (Hout(idWbeh,ng)) WRITE (out,170) Hout(idWbeh,ng),         &
+     &       'Hout(idWbeh)',                                            &
+     &       'Write out WEC Bernoulli head.'
 #endif
 #if defined SOLVE3D && defined T_PASSIVE
           DO itrc=1,NPT
@@ -5511,7 +5580,7 @@
           ELSE IF (TRIM(KeyWord).eq.'Sout(idWorb)') THEN
             Npts=load_l(Nval, Cval, Ngrids, Sout(idWorb,:))
 # endif
-# ifdef WAVES_OCEAN
+# if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
           ELSE IF (TRIM(KeyWord).eq.'Sout(idWdif)') THEN
             Npts=load_l(Nval, Cval, Ngrids, Sout(idWdif,:))
 # endif
@@ -5521,6 +5590,26 @@
             Npts=load_l(Nval, Cval, Ngrids, Sout(idWdib,:))
           ELSE IF (TRIM(KeyWord).eq.'Sout(idWdiw)') THEN
             Npts=load_l(Nval, Cval, Ngrids, Sout(idWdiw,:))
+# endif
+#ifdef ROLLER_SVENDSEN
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWbrk)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWbrk,:))
+# endif
+#ifdef WEC_ROLLER
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWdis)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWdis,:))
+# endif
+#ifdef ROLLER_RENIERS
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWrol)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWrol,:))
+# endif
+#ifdef WEC_VF
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWztw)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWztw,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWqsp)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWqsp,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWbeh)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWbeh,:))
 # endif
           ELSE IF (TRIM(KeyWord).eq.'Sout(idTsur)') THEN
             Npts=load_l(Nval, Cval, NAT*Ngrids, Lsta)
@@ -5787,7 +5876,7 @@
      &         'Sout(idWorb)',                                          &
      &         'Write out wave bottom orbital velocity.'
 # endif
-# ifdef WAVES_OCEAN
+# if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
             IF (Sout(idWdif,ng)) WRITE (out,80) Sout(idWdif,ng),        &
      &         'Sout(idWdif)',                                          &
      &         'Write out wave dissipation due to bottom friction.'
@@ -5800,6 +5889,32 @@
             IF (Sout(idWdiw,ng)) WRITE (out,80) Sout(idWdiw,ng),        &
      &         'Sout(idWdiw)',                                          &
      &         'Write out wave dissipation due to white capping.'
+# endif
+#ifdef ROLLER_SVENDSEN
+            IF (Sout(idWbrk,ng)) WRITE (out,80) Sout(idWbrk,ng),        &
+     &         'Sout(idWbrk)',                                          &
+     &         'Write out percent wave breaking.'
+# endif
+#ifdef WEC_ROLLER
+            IF (Sout(idWdis,ng)) WRITE (out,80) Sout(idWdis,ng),        &
+     &         'Sout(idWdis)',                                          &
+     &         'Write out wave roller dissipation.'
+# endif
+#ifdef ROLLER_RENIERS
+            IF (Sout(idWrol,ng)) WRITE (out,80) Sout(idWrol,ng),        &
+     &         'Sout(idWrol)',                                          &
+     &         'Write out wave roller action density.'
+# endif
+#ifdef WEC_VF
+            IF (Sout(idWztw,ng)) WRITE (out,80) Sout(idWztw,ng),        &
+     &         'Sout(idWztw)',                                          &
+     &         'Write out WEC quasi-static sea level adjustment.'
+            IF (Sout(idWqsp,ng)) WRITE (out,80) Sout(idWqsp,ng),        &
+     &         'Sout(idWqsp)',                                          &
+     &         'Write out WEC quasi-static pressure.'
+            IF (Sout(idWbeh,ng)) WRITE (out,80) Sout(idWbeh,ng),        &
+     &         'Sout(idWbeh)',                                          &
+     &         'Write out WEC Bernoulli head.'
 # endif
 # if defined SOLVE3D && (defined BBL_MODEL || defined SEDIMENT)
             DO itrc=1,MBOTP

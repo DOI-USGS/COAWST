@@ -323,17 +323,22 @@
         integer  :: idW3zy        ! 3D radiation stress, Szy-component
         integer  :: idW3Sd        ! 3D W-Stokes drift velocity
         integer  :: idWamp        ! wave amplitude
+        integer  :: idWbeh        ! WEC Bernoulli head
         integer  :: idWbrk        ! percent wave breaking
-        integer  :: idWdif        ! bottom friction wave dissipation
-        integer  :: idWdib        ! surface breaking wave dissipation
-        integer  :: idWdiw        ! white capping wave dissipation
+        integer  :: idWdif        ! wave dissipation from bottom friction 
+        integer  :: idWdib        ! wave dissipation from surface breaking
+        integer  :: idWdiw        ! wave dissipation from white capping
         integer  :: idWdir        ! wave direction
+        integer  :: idWdis        ! wave roller dissipation
         integer  :: idWlen        ! mean wave length
         integer  :: idWlep        ! peak wave length
+        integer  :: idWorb        ! wave orbital velocity
         integer  :: idWptp        ! surface wave period
         integer  :: idWpbt        ! bottom wave period
-        integer  :: idWorb        ! wave orbital velocity
+        integer  :: idWqsp        ! WEC quasi-static pressure
+        integer  :: idWrol        ! wave roller action density
         integer  :: idWvel        ! true vertical velocity
+        integer  :: idWztw        ! WEC quasi-static sea level adjustment
         integer  :: idZads        ! Free-surface adjoint sensitivity
         integer  :: idZavg        ! avg of free-surface
         integer  :: idZtlf        ! Free-surface impulse forcing
@@ -1324,6 +1329,8 @@
                 idVair=varid
               CASE ('idWamp')
                 idWamp=varid
+              CASE ('idWbeh')
+                idWbeh=varid
               CASE ('idWbrk')
                 idWbrk=varid
               CASE ('idWdif')
@@ -1334,6 +1341,8 @@
                 idWdiw=varid
               CASE ('idWdir')
                 idWdir=varid
+              CASE ('idWdis')
+                idWdis=varid
               CASE ('idWlen')
                 idWlen=varid
               CASE('idWlep')
@@ -1342,8 +1351,12 @@
                 idWptp=varid
               CASE ('idWpbt')
                 idWpbt=varid
+              CASE ('idWqsp')
+                idWqsp=varid
               CASE ('idWorb')
                 idWorb=varid
+              CASE ('idWrol')
+                idWrol=varid
               CASE ('idW2xx')
                 idW2xx=varid
               CASE ('idW2xy')
@@ -1360,6 +1373,8 @@
                 idW3zx=varid
               CASE ('idW3zy')
                 idW3zy=varid
+              CASE ('idWztw')
+                idWztw=varid
               CASE ('idU2rs')
                 idU2rs=varid
               CASE ('idV2rs')
@@ -1670,6 +1685,44 @@
               CASE ('idDv2d(M2hrad)')
                 idDv2d(M2hrad)=varid
 # endif
+# ifdef WEC_VF
+              CASE ('idDu2d(M2jvrf)')
+                idDu2d(M2jvrf)=varid
+              CASE ('idDv2d(M2jvrf)')
+                idDv2d(M2jvrf)=varid
+              CASE ('idDu2d(M2kvrf)')
+                idDu2d(M2kvrf)=varid
+              CASE ('idDv2d(M2kvrf)')
+                idDv2d(M2kvrf)=varid
+              CASE ('idDu2d(M2fsco)')
+                idDu2d(M2fsco)=varid
+              CASE ('idDv2d(M2fsco)')
+                idDv2d(M2fsco)=varid
+              CASE ('idDu2d(M2bstm)')
+                idDu2d(M2bstm)=varid
+              CASE ('idDv2d(M2bstm)')
+                idDv2d(M2bstm)=varid
+              CASE ('idDu2d(M2wrol)')
+                idDu2d(M2wrol)=varid
+              CASE ('idDv2d(M2wrol)')
+                idDv2d(M2wrol)=varid
+              CASE ('idDu2d(M2wbrk)')
+                idDu2d(M2wbrk)=varid
+              CASE ('idDv2d(M2wbrk)')
+                idDv2d(M2wbrk)=varid
+              CASE ('idDu2d(M2zetw)')
+                idDu2d(M2zetw)=varid
+              CASE ('idDv2d(M2zetw)')
+                idDv2d(M2zetw)=varid
+              CASE ('idDu2d(M2zqsp)')
+                idDu2d(M2zqsp)=varid
+              CASE ('idDv2d(M2zqsp)')
+                idDv2d(M2zqsp)=varid
+              CASE ('idDu2d(M2zbeh)')
+                idDu2d(M2zbeh)=varid
+              CASE ('idDv2d(M2zbeh)')
+                idDv2d(M2zbeh)=varid
+# endif
 # ifdef UV_COR
               CASE ('idDu2d(M2fcor)')
                 idDu2d(M2fcor)=varid
@@ -1730,6 +1783,44 @@
                 idDu3d(M3vrad)=varid
               CASE ('idDv3d(M3vrad)')
                 idDv3d(M3vrad)=varid
+#  endif
+#  ifdef WEC_VF
+              CASE ('idDu3d(M3jvrf)')
+                idDu3d(M3jvrf)=varid
+              CASE ('idDv3d(M3jvrf)')
+                idDv3d(M3jvrf)=varid
+              CASE ('idDu3d(M3kvrf)')
+                idDu3d(M3kvrf)=varid
+              CASE ('idDv3d(M3kvrf)')
+                idDv3d(M3kvrf)=varid
+              CASE ('idDu3d(M3fsco)')
+                idDu3d(M3fsco)=varid
+              CASE ('idDv3d(M3fsco)')
+                idDv3d(M3fsco)=varid
+              CASE ('idDu3d(M3bstm)')
+                idDu3d(M3bstm)=varid
+              CASE ('idDv3d(M3bstm)')
+                idDv3d(M3bstm)=varid
+              CASE ('idDu3d(M3wrol)')
+                idDu3d(M3wrol)=varid
+              CASE ('idDv3d(M3wrol)')
+                idDv3d(M3wrol)=varid
+              CASE ('idDu3d(M3wbrk)')
+                idDu3d(M3wbrk)=varid
+              CASE ('idDv3d(M3wbrk)')
+                idDv3d(M3wbrk)=varid
+              CASE ('idDu3d(M3zetw)')
+                idDu3d(M3zetw)=varid
+              CASE ('idDv3d(M3zetw)')
+                idDv3d(M3zetw)=varid
+              CASE ('idDu3d(M3zqsp)')
+                idDu3d(M3zqsp)=varid
+              CASE ('idDv3d(M3zqsp)')
+                idDv3d(M3zqsp)=varid
+              CASE ('idDu3d(M3zbeh)')
+                idDu3d(M3zbeh)=varid
+              CASE ('idDv3d(M3zbeh)')
+                idDv3d(M3zbeh)=varid
 #  endif
 #  ifdef UV_COR
               CASE ('idDu3d(M3fcor)')

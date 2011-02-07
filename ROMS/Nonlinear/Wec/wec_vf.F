@@ -93,14 +93,20 @@
      &                            DIAGS(ng) % DiaRV,                    &
 #  endif
 # endif
-     &                            OCEAN(ng) % zetat,                    &
+     &                            OCEAN(ng) % bh,                       &
+     &                            OCEAN(ng) % qsp,                      &
      &                            OCEAN(ng) % zetaw,                    &
+     &                            OCEAN(ng) % zetat,                    &
 # ifdef SOLVE3D
      &                            MIXING(ng) % rustr3d,                 &
      &                            MIXING(ng) % rvstr3d,                 &
 # endif
-     &                            MIXING(ng) % rustr2d,                 &
-     &                            MIXING(ng) % rvstr2d)
+     &                            MIXING(ng) % rurol2d,                 &
+     &                            MIXING(ng) % rvrol2d,                 &
+     &                            MIXING(ng) % rubrk2d,                 &
+     &                            MIXING(ng) % rvbrk2d,                 &
+     &                            MIXING(ng) % rukvf2d,                 &
+     &                            MIXING(ng) % rvkvf2d)
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 21)
 # endif
@@ -140,11 +146,13 @@
      &                                  DiaRU, DiaRV,                   &
 #  endif
 # endif
-     &                                  zetat, zetaw,                   &
+     &                                  bh, qsp, zetaw, zetat,          &
 # ifdef SOLVE3D
      &                                  rustr3d,  rvstr3d,              &
 # endif
-     &                                  rustr2d, rvstr2d)
+     &                                  rurol2d, rvrol2d,               &
+     &                                  rubrk2d, rvbrk2d,               &
+     &                                  rukvf2d, rvkvf2d)
 !***********************************************************************
 !
       USE mod_param
@@ -213,14 +221,20 @@
       real(r8), intent(inout) :: DiaRV(LBi:,LBj:,:,:,:)
 #   endif
 #  endif
-      real(r8), intent(inout) :: zetat(LBi:,LBj:)
+      real(r8), intent(inout) :: bh(LBi:,LBj:)
+      real(r8), intent(inout) :: qsp(LBi:,LBj:)
       real(r8), intent(inout) :: zetaw(LBi:,LBj:)
+      real(r8), intent(inout) :: zetat(LBi:,LBj:)
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: rustr3d(LBi:,LBj:,:)
       real(r8), intent(inout) :: rvstr3d(LBi:,LBj:,:)
 #  endif
-      real(r8), intent(inout) :: rustr2d(LBi:,LBj:)
-      real(r8), intent(inout) :: rvstr2d(LBi:,LBj:)
+      real(r8), intent(inout) :: rurol2d(LBi:,LBj:)
+      real(r8), intent(inout) :: rvrol2d(LBi:,LBj:)
+      real(r8), intent(inout) :: rubrk2d(LBi:,LBj:)
+      real(r8), intent(inout) :: rvbrk2d(LBi:,LBj:)
+      real(r8), intent(inout) :: rukvf2d(LBi:,LBj:)
+      real(r8), intent(inout) :: rvkvf2d(LBi:,LBj:)
 # else
 #  ifdef MASKING
       real(r8), intent(in) :: pmask(LBi:UBi,LBj:UBj)
@@ -267,14 +281,20 @@
       real(r8), intent(inout) :: DiaRV(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
 #   endif
 #  endif
-      real(r8), intent(inout) :: zetat(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: bh(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: qsp(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: zetaw(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: zetat(LBi:UBi,LBj:UBj)
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: rustr3d(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: rvstr3d(LBi:UBi,LBj:UBj,N(ng))
 #  endif
-      real(r8), intent(inout) :: rustr2d(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: rvstr2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: rurol2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: rvrol2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: rubrk2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: rvbrk2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: rukvf2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: rvkvf2d(LBi:UBi,LBj:UBj)
 # endif
 !
 !  Local variable declarations.
@@ -294,10 +314,11 @@
       integer :: i, j, k
       real(r8) :: cff, cff1, cff2, cff3, cff4, cff5, cff6
       real(r8) :: fac1, fac2, RB1, RB2
-      real(r8) :: vi1, vi2
+      real(r8) :: vi1, vi2, VF
       real(r8), parameter :: eps = 1.0E-14_r8
       real(r8), parameter :: kDmax = 5.0_r8
       real(r8), parameter :: Lwave_min = 1.0_r8
+      real(r8), dimension(IminS:ImaxS) :: CF
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dstp
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: kD
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wavec
@@ -312,17 +333,17 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: osigma
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: gamr
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: odiss
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: BBX
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: BBY
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: bh
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: qsp
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: BBXbrk
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: BBYbrk
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: BBXrol
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: BBYrol
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,N(ng)) :: ku
       real(r8), dimension(IminS:ImaxS,N(ng)) :: kv
-      real(r8), dimension(IminS:ImaxS,N(ng)) :: VF
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: shear1
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: shear2
+      real(r8), dimension(IminS:ImaxS,N(ng)) :: Hzk
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ustux
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ustuy
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: vstvx
@@ -441,7 +462,7 @@
 !  Calculate Bernoulli's Head at the surface
 !
           bh(i,j)=0.25_r8*vi1*sigma(i,j)*waveAA(i,j)/                   & 
-     &                    (waven(i,j)*(SINH(kD(i,j)))**2)
+     &                    (waven(i,j)*(SINH(kD(i,j)))**2.0_r8)
         END DO
 !
 !---------------------------------------------------------------------------
@@ -481,6 +502,9 @@
      &               SINH(2.0_r8*kD(i,j)))
 !
 !  Compute barotropic component of geopotential function, without zeta_c.
+!  This gets sent to prsgrd functions.  The zeta_c is already included in
+!  those algoritms. Also send individual zetaw, qsp, and bh to step2d for
+!  computation of total pressure gradient.
 !
           zetat(i,j)=-g*zetaw(i,j)-(g*qsp(i,j)-bh(i,j))
         END DO
@@ -488,45 +512,78 @@
 !
 !---------------------------------------------------------------------------
 ! Compute Vertical Vortex Force terms, denoted as K in Eqn. 5.
+! This next section needs to be re-written for piped J.
 !---------------------------------------------------------------------------
 !
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          rukvf2d(i,j)=0.0_r8
+          rvkvf2d(i,j)=0.0_r8
+        END DO
+      END DO
       DO j=Jstr-1,Jend+1
         DO i=Istr-1,Iend+1
           DO k=1,N(ng)-1
-!            cff=0.5_r8/(z_r(i,j,k+1)-z_r(i,j,k))
-            cff=1.0_r8
             cff1=0.5_r8*(u_stokes(i,j,k+1)+u_stokes(i,j,k))
             cff2=0.5_r8*(u_stokes(i+1,j,k+1)+u_stokes(i+1,j,k))
             cff3=0.5_r8*(v_stokes(i,j,k+1)+v_stokes(i,j,k))
             cff4=0.5_r8*(v_stokes(i,j+1,k+1)+v_stokes(i,j+1,k))
-            shearuv(i,j,k)=cff*                                         &
-     &                      (cff1*(u(i  ,j,k+1,nrhs)-u(i  ,j,k,nrhs))+  &
-     &                       cff2*(u(i+1,j,k+1,nrhs)-u(i+1,j,k,nrhs)))+ &
-     &                     cff*                                         &
-     &                      (cff3*(v(i,j  ,k+1,nrhs)-v(i,j  ,k,nrhs))+  &
-     &                       cff4*(v(i,j+1,k+1,nrhs)-v(i,j+1,k,nrhs)))
+            shearuv(i,j,k)=(cff1*(u(i  ,j,k+1,nrhs)-u(i  ,j  ,k,nrhs))+ &
+     &                      cff2*(u(i+1,j,k+1,nrhs)-u(i+1,j  ,k,nrhs)))+&
+     &                     (cff3*(v(i,j  ,k+1,nrhs)-v(i  ,j  ,k,nrhs))+ &
+     &                      cff4*(v(i,j+1,k+1,nrhs)-v(i  ,j+1,k,nrhs)))
           END DO
           shearuv(i,j,0)=shearuv(i,j,1)
           shearuv(i,j,N(ng))=shearuv(i,j,N(ng)-1)
         END DO
       END DO
       J_LOOP : DO j=Jstr,Jend
-        DO k=1,N(ng)
-          DO i=IstrU,Iend
-            cff=0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))
-            VF(i,k)=0.5_r8*((shearuv(i  ,j,k)+shearuv(i  ,j,k-1))-      &
-     &                      (shearuv(i-1,j,k)+shearuv(i-1,j,k-1)))
-            rustr3d(i,j,k)=cff*VF(i,k)*on_u(i,j)
+        DO i=IstrU,Iend
+          CF(i)=0.0_r8
+          DO k=1,N(ng)
+            Hzk(i,k)=0.5_r8*(Hz(i-1,j,k)+                               &
+     &                       Hz(i  ,j,k))
+            CF(i)=CF(i)+Hzk(i,k)
           END DO
         END DO
+        DO k=1,N(ng)
+          DO i=IstrU,Iend
+            cff=0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))*on_u(i,j)
+            VF=0.5_r8*cff*((shearuv(i  ,j,k)+shearuv(i  ,j,k-1))-      &
+     &                      (shearuv(i-1,j,k)+shearuv(i-1,j,k-1)))
+            rustr3d(i,j,k)=VF
+            rukvf2d(i,j)=rukvf2d(i,j)+VF*Hzk(i,k)
+# ifdef DIAGNOSTICS_UV
+            DiaRU(i,j,k,nrhs,M3kvrf)=VF
+# endif
+          END DO
+        END DO
+        DO i=IstrU,Iend
+          rukvf2d(i,j)=rukvf2d(i,j)/CF(i)
+        END DO
         IF (j.ge.JstrV) THEN
+          DO i=Istr,Iend
+            CF(i)=0.0_r8
+            DO k=1,N(ng)
+              Hzk(i,k)=0.5_r8*(Hz(i,j  ,k)+                             &
+     &                         Hz(i,j-1,k))
+              CF(i)=CF(i)+Hzk(i,k)
+            END DO
+          END DO
           DO k=1,N(ng)
             DO i=Istr,Iend
-              cff=0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))
-              VF(i,k)=0.5_r8*((shearuv(i,j  ,k)+shearuv(i,j  ,k-1))-    &
+              cff=0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))*om_v(i,j)
+              VF=0.5_r8*cff*((shearuv(i,j  ,k)+shearuv(i,j  ,k-1))-    &
      &                        (shearuv(i,j-1,k)+shearuv(i,j-1,k-1)))
-              rvstr3d(i,j,k)=cff*VF(i,k)*om_v(i,j)
+              rvstr3d(i,j,k)=VF
+              rvkvf2d(i,j)=rvkvf2d(i,j)+VF*Hz(i,j,k)
+# ifdef DIAGNOSTICS_UV
+              DiaRV(i,j,k,nrhs,M3kvrf)=VF
+# endif
             END DO
+          END DO
+          DO i=Istr,Iend
+            rvkvf2d(i,j)=rvkvf2d(i,j)/CF(i)
           END DO
         END IF
       END DO J_LOOP
@@ -535,48 +592,161 @@
 ! Compute non conservative wave acceleration terms here
 !------------------------------------------------------------------------
 !
-      K_LOOP : DO k=1,N(ng)
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          rubrk2d(i,j)=0.0_r8
+          rvbrk2d(i,j)=0.0_r8
+          rurol2d(i,j)=0.0_r8
+          rvrol2d(i,j)=0.0_r8
+        END DO
+      END DO
+      DO k=1,N(ng)
         fac2=1.0_r8+SCALARS(ng)%Cs_r(k)
-        DO j=Jstr-1,Jend+1
-          DO i=Istr-1,Iend+1
+        DO j=JstrV-1,Jend
+          DO i=IstrU-1,Iend
             cff2=fac2*gamr(i,j)
-            cff3=COSH(2.0_r8*pi*cff2)
+            cff3=COSH(2.0_r8*pi*cff2)*odiss(i,j)
             cff1=Dissip_wcap(i,j)+Dissip_break(i,j)
-            cff4=((1.0_r8-wec_alpha(ng))*cff1+Dissip_roller(i,j))*      &
-     &           osigma(i,j)
-            BBX(i,j)=cff3*cff4*wavenx(i,j)*odiss(i,j)
-            BBY(i,j)=cff3*cff4*waveny(i,j)*odiss(i,j) 
+            cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)
+            cff5=Dissip_roller(i,j)*osigma(i,j)
+            BBXbrk(i,j)=cff3*cff4*wavenx(i,j)
+            BBYbrk(i,j)=cff3*cff4*waveny(i,j)
+            BBXrol(i,j)=cff3*cff5*wavenx(i,j)
+            BBYrol(i,j)=cff3*cff5*waveny(i,j)
           END DO
         END DO
 !
 ! Compute contribution to U-momentum
-! 
+!
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-            cff=0.5_r8*(BBX(i  ,j)*Hz(i  ,j,k)+                         &
-     &                  BBX(i-1,j)*Hz(i-1,j,k))*                        &
+            Hzk(i,k)=0.5_r8*(Hz(i-1,j,k)+                               &
+     &                       Hz(i  ,j,k))
+            cff=0.5_r8*(BBXbrk(i  ,j)*Hz(i  ,j,k)+                      &
+     &                  BBXbrk(i-1,j)*Hz(i-1,j,k))*                     &
      &                  om_u(i,j)*on_u(i,j)
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
+            rubrk2d(i,j)=rubrk2d(i,j)-cff*Hzk(i,k)
 # ifdef DIAGNOSTICS_UV
-!             DiaRU(i,j,k,nrhs,M3hrad)=cff
+            DiaRU(i,j,k,nrhs,M3wbrk)=cff
+# endif
+            cff=0.5_r8*(BBXrol(i  ,j)*Hz(i  ,j,k)+                      &
+     &                  BBXrol(i-1,j)*Hz(i-1,j,k))*                     &
+     &                  om_u(i,j)*on_u(i,j)
+            rustr3d(i,j,k)=rustr3d(i,j,k)-cff
+            rurol2d(i,j)=rubrk2d(i,j)-cff*Hzk(i,k)
+# ifdef DIAGNOSTICS_UV
+            DiaRU(i,j,k,nrhs,M3wrol)=cff
 # endif
           END DO
-        END DO
+          IF (j.ge.JstrV) THEN
 !
 ! Compute contribution to V-momentum
 !
-        DO j=JstrV,Jend
-          DO i=Istr,Iend
-            cff=0.5_r8*(BBY(i,j  )*Hz(i,j  ,k)+                        &
-     &                  BBY(i,j-1)*Hz(i,j-1,k))*                       &
-     &                  om_v(i,j)*on_v(i,j)
-            rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
+            DO i=Istr,Iend
+              Hzk(i,k)=0.5_r8*(Hz(i,j-1,k)+                             &
+     &                         Hz(i  ,j,k))
+              cff=0.5_r8*(BBYbrk(i,j  )*Hz(i,j  ,k)+                    &
+     &                    BBYbrk(i,j-1)*Hz(i,j-1,k))*                   &
+     &                    om_v(i,j)*on_v(i,j)
+              rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
+              rvrol2d(i,j)=rvrol2d(i,j)-cff*Hzk(i,k)
 # ifdef DIAGNOSTICS_UV
-!           DiaRV(i,j,k,nrhs,M3hrad)=cff
+              DiaRV(i,j,k,nrhs,M3wbrk)=cff
 # endif
+              cff=0.5_r8*(BBYrol(i,j  )*Hz(i,j  ,k)+                    &
+     &                    BBYrol(i,j-1)*Hz(i,j-1,k))*                   &
+     &                    om_v(i,j)*on_v(i,j)
+              rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
+              rvbrk2d(i,j)=rvbrk2d(i,j)-cff*Hzk(i,k)
+# ifdef DIAGNOSTICS_UV
+              DiaRV(i,j,k,nrhs,M3wrol)=cff
+# endif
+            END DO
+          END IF
+        END DO
+      END DO
+      DO j=JstrV,Jend
+        DO i=IstrU,Iend
+          CF(i)=0.0_r8
+          DO k=1,N(ng)
+            Hzk(i,k)=0.5_r8*(Hz(i-1,j,k)+                               &
+     &                       Hz(i  ,j,k))
+            CF(i)=CF(i)+Hzk(i,k)
+          END DO
+          rurol2d(i,j)=rurol2d(i,j)/CF(i)
+          rubrk2d(i,j)=rubrk2d(i,j)/CF(i)
+!
+          CF(i)=0.0_r8
+          DO k=1,N(ng)
+            Hzk(i,k)=0.5_r8*(Hz(i,j  ,k)+                               &
+     &                       Hz(i,j-1,k))
+            CF(i)=CF(i)+Hzk(i,k)
+          END DO
+          rvrol2d(i,j)=rvrol2d(i,j)/CF(i)
+          rvbrk2d(i,j)=rvbrk2d(i,j)/CF(i)
+        END DO
+      END DO
+      K_LOOP : DO k=1,N(ng)
+# ifdef DIAGNOSTICS_UV
+!
+!---------------------------------------------------------------------------
+!  To obtain the full horizotal 'J' vortex force term: 
+!  Compute term for diagnostics only.  Subtract from hadv and add to vorf.
+!---------------------------------------------------------------------------
+!
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff=0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
+            Hvstom(i,j)=0.25_r8*cff*om_u(i,j)*                          &
+     &                  (v_stokes(i  ,j  ,k)+                           &
+     &                   v_stokes(i  ,j+1,k)+                           &
+     &                   v_stokes(i-1,j  ,k)+                           &
+     &                   v_stokes(i-1,j+1,k))
           END DO
         END DO
-
+        DO j=Jstr,Jend+1
+          DO i=IstrU,Iend
+            UFx(i,j)=0.5_r8*(u(i  ,j-1,k,nrhs)+                         &
+                             u(i  ,j  ,k,nrhs))
+          END DO
+        END DO
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff1=UFx(i,j+1)-UFx(i,j)
+            cff=cff1*Hvstom(i,j)
+            DiaRU(i,j,k,nrhs,M3xadv)=DiaRU(i,j,k,nrhs,M3xadv)-cff
+            DiaRU(i,j,k,nrhs,M3hadv)=DiaRU(i,j,k,nrhs,M3hadv)-cff
+            DiaRU(i,j,k,nrhs,M3jvrf)=DiaRU(i,j,k,nrhs,M3jvrf)+cff
+          END DO
+        END DO
+        DO j=JstrV,Jend
+          DO i=Istr,Iend
+            cff=0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))
+            Huston(i,j)=cff*0.25_r8*on_v(i,j)*                          &
+     &                  (u_stokes(i  ,j  ,k)+                           &
+     &                   u_stokes(i+1,j  ,k)+                           &
+     &                   u_stokes(i  ,j-1,k)+                           &
+     &                   u_stokes(i+1,j-1,k))
+          END DO
+        END DO
+        DO j=JstrV,Jend
+          DO i=Istr,Iend+1
+            VFe(i,j)=0.5_r8*(v(i-1,j  ,k,nrhs)+                         &
+     &                       v(i  ,j  ,k,nrhs))
+          END DO
+        END DO
+        DO i=Istr,Iend
+          DO j=JstrV,Jend 
+            cff2=VFe(i+1,j)-VFe(i,j)
+            cff=cff2*Huston(i,j)
+            DiaRV(i,j,k,nrhs,M3yadv)=DiaRV(i,j,k,nrhs,M3yadv)-cff
+            DiaRV(i,j,k,nrhs,M3hadv)=DiaRV(i,j,k,nrhs,M3hadv)-cff
+            DiaRV(i,j,k,nrhs,M3jvrf)=DiaRV(i,j,k,nrhs,M3jvrf)+cff
+          END DO
+        END DO
+# endif
+!
 !---------------------------------------------------------------------------
 ! Contribution of a term corresponding to product of 
 ! Stokes and Eulerian Velocity Eqn. 26 and 27.
@@ -626,6 +796,10 @@
             cff2=VFx(i,j)-VFx(i-1,j)
             cff=Huston(i,j)*cff1+Hvston(i,j)*cff2
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
+# ifdef DIAGNOSTICS_UV
+            DiaRU(i,j,k,nrhs,M3xadv)=DiaRU(i,j,k,nrhs,M3xadv)+cff
+            DiaRU(i,j,k,nrhs,M3hadv)=DiaRU(i,j,k,nrhs,M3hadv)+cff
+# endif
 !
 !  Conversion to m2/s2.
 !
@@ -639,6 +813,10 @@
             cff2=VFe(i,j)-VFe(i,j-1)
             cff=Hustom(i,j)*cff1+Hvstom(i,j)*cff2 
             rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
+# ifdef DIAGNOSTICS_UV
+            DiaRV(i,j,k,nrhs,M3yadv)=DiaRV(i,j,k,nrhs,M3yadv)+cff
+            DiaRV(i,j,k,nrhs,M3hadv)=DiaRV(i,j,k,nrhs,M3hadv)+cff
+# endif
 !
 !  Conversion to m2/s2.
 !
@@ -648,44 +826,32 @@
         END DO
       END DO K_LOOP
 !
-!  For a 3D application, compute associated 2D fields by taking the
-!  vertical integral of 3D fields.
-!
-      DO j=Jstr,Jend
-        DO i=IstrU,Iend
-          cff5=0.5_r8*(Hz(i-1,j,1)+Hz(i,j,1))
-          rustr2d(i,j)=cff5*rustr3d(i,j,1)
-          DO k=2,N(ng)
-            cff5=0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
-            rustr2d(i,j)=rustr2d(i,j)+cff5*rustr3d(i,j,k)
-          END DO
-          cff3=0.25_r8*(pm(i,j)+pm(i-1,j))*(pn(i,j)+pn(i-1,j))
-          cff4=2.0_r8/(Dstp(i-1,j)+Dstp(i,j))
-          rustr2d(i,j)=rustr2d(i,j)*cff3*cff4
-        END DO
-      END DO
-      DO i=Istr,Iend
-        DO j=JstrV,Jend
-          cff5=0.5_r8*(Hz(i,j-1,1)+Hz(i,j,1))
-          rvstr2d(i,j)=cff5*rvstr3d(i,j,1)
-          DO k=2,N(ng)
-            cff5=0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))
-            rvstr2d(i,j)=rvstr2d(i,j)+cff5*rvstr3d(i,j,k)
-          END DO
-          cff3=0.25_r8*(pm(i,j-1)+pm(i,j))*(pn(i,j-1)+pn(i,j))
-          cff4=2.0_r8/(Dstp(i,j-1)+Dstp(i,j))
-          rvstr2d(i,j)=rvstr2d(i,j)*cff3*cff4
-        END DO
-      END DO
-!
 !  Apply boundary conditions.
 !
       CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
-     &                  rustr2d)
+     &                  rurol2d)
       CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
-     &                  rvstr2d)
+     &                  rvrol2d)
+      CALL bc_u2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  rubrk2d)
+      CALL bc_v2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  rvbrk2d)
+      CALL bc_u2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  rukvf2d)
+      CALL bc_v2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  rvkvf2d)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  bh)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  qsp)
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  zetat)
@@ -699,14 +865,18 @@
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  rvstr3d)
 # ifdef DISTRIBUTE
+      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    rurol2d, rvrol2d, rubrk2d, rvbrk2d)
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    rustr2d, rvstr2d)
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    rukvf2d, rvkvf2d)
+      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    zetat, zetaw)
+     &                    bh, qsp, zetat, zetaw)
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &

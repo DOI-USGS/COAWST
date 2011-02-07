@@ -238,20 +238,30 @@
 # endif
 #endif
 
-#if defined TKE_WAVEDISS || defined WEC
+#if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
           real(r8), pointer :: Dissip_break(:,:)
           real(r8), pointer :: Dissip_wcap(:,:)
-          real(r8), pointer :: Dissip_fric(:,:)
-          real(r8), pointer :: Dissip_roller(:,:)
 # ifndef ANA_WWAVE
           real(r8), pointer :: Dissip_breakG(:,:,:)
           real(r8), pointer :: Dissip_wcapG(:,:,:)
+# endif
+#endif
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
+          real(r8), pointer :: Dissip_fric(:,:)
+# ifndef ANA_WWAVE
           real(r8), pointer :: Dissip_fricG(:,:,:)
+# endif
+#endif
+
+#if defined WEC_ROLLER
+          real(r8), pointer :: Dissip_roller(:,:)
+# ifndef ANA_WWAVE
           real(r8), pointer :: Dissip_rollerG(:,:,:)
 # endif
 #endif
 
-#if defined SVENDSEN_ROLLER
+#if defined ROLLER_SVENDSEN
           real(r8), pointer :: wave_break(:,:)
 # ifndef ANA_WWAVE
           real(r8), pointer :: wave_breakG(:,:,:)
@@ -563,20 +573,31 @@
 # endif
 #endif
 
-#if defined TKE_WAVEDISS || defined WEC
+#if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
       allocate ( FORCES(ng) % Dissip_break(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % Dissip_wcap(LBi:UBi,LBj:UBj) )
-      allocate ( FORCES(ng) % Dissip_fric(LBi:UBi,LBj:UBj) )
-      allocate ( FORCES(ng) % Dissip_roller(LBi:UBi,LBj:UBj) )
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Dissip_breakG(LBi:UBi,LBj:UBj,2) )
       allocate ( FORCES(ng) % Dissip_wcapG(LBi:UBi,LBj:UBj,2) )
+# endif
+#endif
+
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
+      allocate ( FORCES(ng) % Dissip_fric(LBi:UBi,LBj:UBj) )
+# ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Dissip_fricG(LBi:UBi,LBj:UBj,2) )
+# endif
+#endif
+
+#if defined WEC_ROLLER
+      allocate ( FORCES(ng) % Dissip_roller(LBi:UBi,LBj:UBj) )
+# ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Dissip_rollerG(LBi:UBi,LBj:UBj,2) )
 # endif
 #endif
 
-#if defined SVENDSEN_ROLLER
+#if defined ROLLER_SVENDSEN
       allocate ( FORCES(ng) % wave_break(LBi:UBi,LBj:UBj) )
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Wave_breakG(LBi:UBi,LBj:UBj,2) )
@@ -955,23 +976,35 @@
             FORCES(ng) % Uwave_rmsG(i,j,2) = IniVal
 # endif
 #endif
-#if defined TKE_WAVEDISS || defined WEC
+
+#if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
             FORCES(ng) % Dissip_break(i,j) = IniVal
             FORCES(ng) % Dissip_wcap(i,j) = IniVal
-            FORCES(ng) % Dissip_fric(i,j) = IniVal
-            FORCES(ng) % Dissip_roller(i,j) = IniVal
 # ifndef ANA_WWAVE
             FORCES(ng) % Dissip_breakG(i,j,1) = IniVal
             FORCES(ng) % Dissip_breakG(i,j,2) = IniVal
             FORCES(ng) % Dissip_wcapG(i,j,1) = IniVal
             FORCES(ng) % Dissip_wcapG(i,j,2) = IniVal
+# endif
+#endif
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
+            FORCES(ng) % Dissip_fric(i,j) = IniVal
+# ifndef ANA_WWAVE
             FORCES(ng) % Dissip_fricG(i,j,1) = IniVal
             FORCES(ng) % Dissip_fricG(i,j,2) = IniVal
+# endif
+#endif
+
+#if defined WEC_ROLLER
+            FORCES(ng) % Dissip_roller(i,j) = IniVal
+# ifndef ANA_WWAVE
             FORCES(ng) % Dissip_rollerG(i,j,1) = IniVal
             FORCES(ng) % Dissip_rollerG(i,j,2) = IniVal
 # endif
 #endif
-#if defined SVENDSEN_ROLLER
+
+#if defined ROLLER_SVENDSEN
             FORCES(ng) % Wave_break(i,j) = IniVal
 # ifndef ANA_WWAVE
             FORCES(ng) % Wave_breakG(i,j,1) = IniVal

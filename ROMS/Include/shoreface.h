@@ -14,17 +14,17 @@
 */
 
 #define ROMS_MODEL
+#undef  WEC_MELLOR
 #define WEC_VF
 #undef  WDISS_THORGUZA
 #define WDISS_CHURTHOR
-#undef  WEC_MELLOR
+#undef  ROLLER_RENIERS
 
 #define UV_VIS2
 #define MIX_S_UV
 #define DIAGNOSTICS_UV
 #define AVERAGES
 #define AVERAGES_WEC
-#define AVERAGES_BEDLOAD
 #define WET_DRY
 #define OUT_DOUBLE
 #define UV_ADV
@@ -65,6 +65,7 @@
 #  define SUSPLOAD
 #  define BEDLOAD_MPM
 #  undef  BEDLOAD_SOULSBY
+#  define AVERAGES_BEDLOAD
 # endif
 # if defined SEDIMENT || defined SG_BBL || defined MB_BBL || defined SSW_BBL
 #  define ANA_SEDIMENT

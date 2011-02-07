@@ -53,6 +53,9 @@
      &                  GRID(ng) % Hz,                                  &
      &                  GRID(ng) % z_w,                                 &
      &                  OCEAN(ng) % rho,                                &
+#ifdef WEC_VF
+     &                  OCEAN(ng) % zetat,                              &
+#endif
 #ifdef ATM_PRESS
      &                  FORCES(ng) % Pair,                              &
 #endif
@@ -76,6 +79,9 @@
      &                        om_v, on_u,                               &
      &                        Hz, z_w,                                  &
      &                        rho,                                      &
+#ifdef WEC_VF
+     &                        zetat,                                    &
+#endif
 #ifdef ATM_PRESS
      &                        Pair,                                     &
 #endif
@@ -101,6 +107,9 @@
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
+# ifdef WEC_VF
+      real(r8), intent(in) :: zetat(LBi:,LBj:)
+# endif
 # ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:,LBj:)
 # endif
@@ -116,6 +125,9 @@
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
+# ifdef WEC_VF
+      real(r8), intent(in) :: zetat(LBi:UBi,LBj:UBj)
+# endif
 # ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
 # endif
@@ -132,6 +144,9 @@
       integer :: i, j, k
 
       real(r8) :: cff, cff1, dh
+#ifdef WEC_VF
+      real(r8) :: fac1
+#endif
 #ifdef ATM_PRESS
       real(r8) :: OneAtm, fac
 #endif
@@ -150,16 +165,21 @@
 !  Compute pressure and its vertical integral.  Initialize pressure at
 !  the free-surface as zero.
 !
+#ifdef WEC_VF
+      fac1=rho0/g
+#endif
 #ifdef ATM_PRESS
       OneAtm=1013.25_r8                  ! 1 atm = 1013.25 mb
       fac=100.0_r8/g
 #endif
       J_LOOP : DO j=JstrV-1,Jend
         DO i=IstrU-1,Iend
-#ifdef ATM_PRESS
-          P(i,j,N(ng))=fac*(Pair(i,j)-OneAtm)
-#else
           P(i,j,N(ng))=0.0_r8
+#ifdef WEC_VF
+          P(i,j,N(ng))=P(i,j,N(ng))+fac1*zetat(i,j)
+#endif
+#ifdef ATM_PRESS
+          P(i,j,N(ng))=P(i,j,N(ng))+fac*(Pair(i,j)-OneAtm)
 #endif
         END DO
         DO k=N(ng),1,-1

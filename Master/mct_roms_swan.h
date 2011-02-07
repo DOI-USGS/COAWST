@@ -671,6 +671,7 @@
       ramp=1.0_r8
 !
 !  Receive fields from wave model.
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
 !
 !  Wave dissipation due to bottom friction.
 !
@@ -684,6 +685,9 @@
           FORCES(ng)%Dissip_fric(i,j)=MAX(0.0_r8,A(ij)*ramp)*cff
         END DO
       END DO
+#endif
+#if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
 !
 !  Wave dissipation due to surface breaking.
 !
@@ -710,6 +714,7 @@
           FORCES(ng)%Dissip_wcap(i,j)=MAX(0.0_r8,A(ij)*ramp)*cff
         END DO
       END DO
+#endif
 !
 !  Wave height.
 !
@@ -797,7 +802,7 @@
       END DO
 #endif
 !
-#ifdef SVENDSEN_ROLLER
+#ifdef ROLLER_SVENDSEN
 !
 !  Percent wave breaking.
 !  
@@ -849,7 +854,7 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Lwavep)
 # endif
-# ifdef SVENDSEN_ROLLER
+# ifdef ROLLER_SVENDSEN
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Wave_break)
@@ -885,7 +890,7 @@
      &                    FORCES(ng)%Uwave_rms, FORCES(ng)%Dwave,       &
      &                    FORCES(ng)%Lwave)
 # endif
-# ifdef SVENDSEN_ROLLER
+# ifdef ROLLER_SVENDSEN
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &

@@ -33,14 +33,23 @@
 !  pH           Surface concentration of hydrogen ions.                !
 !                                                                      !
 #ifdef WEC
+!  Wave effect on currents variables                                   !
+!
+!  zetat        zeta total = zetaw + qsp + bh                          !
+!  zetaw        WEC quasi-static sea level adjustment                  !
+!  qsp          WEC quasi-static pressure                              !
+!  bh           WEC Bernoulli head                                     !
+!                                                                      !
 !  Stokes velocities:                                                  !
 !                                                                      !
+# ifdef WEC_MELLOR
 !  rulag2d      2D U-Stokes tendency term (m4/s2).                     !
 !  rvlag2d      2D V-Stokes tendency term (m4/s2).                     !
-!  ubar_stokes  2D U-Stokes drift velocity (m/s).                      !
-!  vbar_stokes  2D V-Stokes drift velocity (m/s).                      !
 !  rulag3d      3D U-Stokes tendency term (m4/s2).                     !
 !  rvlag3d      3D V-Stokes tendency term (m4/s2).                     !
+# endif
+!  ubar_stokes  2D U-Stokes drift velocity (m/s).                      !
+!  vbar_stokes  2D V-Stokes drift velocity (m/s).                      !
 !  u_stokes     3D U-Stokes drift velocity (m/s).                      !
 !  v_stokes     3D V-Stokes drift velocity (m/s).                      !
 !  w_stokes     3D W-Stokes drift velocity (m/s).                      !
@@ -65,10 +74,14 @@
 #if defined WEC_VF
           real(r8), pointer :: zetat(:,:)
           real(r8), pointer :: zetaw(:,:)
+          real(r8), pointer :: qsp(:,:)
+          real(r8), pointer :: bh(:,:)
 #endif
 #if defined WEC
+# ifdef WEC_MELLOR
           real(r8), pointer :: rulag2d(:,:)
           real(r8), pointer :: rvlag2d(:,:)
+# endif
           real(r8), pointer :: ubar_stokes(:,:)
           real(r8), pointer :: vbar_stokes(:,:)
 #endif
@@ -83,8 +96,10 @@
           real(r8), pointer :: W(:,:,:)
           real(r8), pointer :: wvel(:,:,:)
 # if defined WEC
+#  ifdef WEC_MELLOR
           real(r8), pointer :: rulag3d(:,:,:)
           real(r8), pointer :: rvlag3d(:,:,:)
+#  endif
           real(r8), pointer :: u_stokes(:,:,:)
           real(r8), pointer :: v_stokes(:,:,:)
           real(r8), pointer :: w_stokes(:,:,:)
@@ -332,10 +347,14 @@
 #if defined WEC_VF
       allocate ( OCEAN(ng) % zetat(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % zetaw(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % qsp(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % bh(LBi:UBi,LBj:UBj) )
 #endif
 #if defined WEC
+# ifdef WEC_MELLOR
       allocate ( OCEAN(ng) % rulag2d(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % rvlag2d(LBi:UBi,LBj:UBj) )
+# endif
       allocate ( OCEAN(ng) % ubar_stokes(LBi:UBi,LBj:UBj) )
       allocate ( OCEAN(ng) % vbar_stokes(LBi:UBi,LBj:UBj) )
 #endif
@@ -354,8 +373,10 @@
       allocate ( OCEAN(ng) % wvel(LBi:UBi,LBj:UBj,0:N(ng)) )
 
 # if defined WEC
+#  ifdef WEC_MELLOR
       allocate ( OCEAN(ng) % rulag3d(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % rvlag3d(LBi:UBi,LBj:UBj,N(ng)) )
+#  endif
       allocate ( OCEAN(ng) % u_stokes(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % v_stokes(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % w_stokes(LBi:UBi,LBj:UBj,0:N(ng)) )
@@ -705,10 +726,14 @@
 #if defined WEC_VF
             OCEAN(ng) % zetat(i,j) = IniVal
             OCEAN(ng) % zetaw(i,j) = IniVal
+            OCEAN(ng) % qsp(i,j) = IniVal
+            OCEAN(ng) % bh(i,j) = IniVal
 #endif
 #if defined WEC
+# ifdef WEC_MELLOR
             OCEAN(ng) % rulag2d(i,j) = IniVal
             OCEAN(ng) % rvlag2d(i,j) = IniVal
+# endif
             OCEAN(ng) % ubar_stokes(i,j) = IniVal
             OCEAN(ng) % vbar_stokes(i,j) = IniVal
 #endif
@@ -731,8 +756,10 @@
               OCEAN(ng) % v(i,j,k,1) = IniVal
               OCEAN(ng) % v(i,j,k,2) = IniVal
 # if defined WEC
+#  ifdef WEC_MELLOR
               OCEAN(ng) % rulag3d(i,j,k) = IniVal
               OCEAN(ng) % rvlag3d(i,j,k) = IniVal
+#  endif
               OCEAN(ng) % u_stokes(i,j,k) = IniVal
               OCEAN(ng) % v_stokes(i,j,k) = IniVal
 # endif

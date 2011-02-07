@@ -57,6 +57,10 @@
      &                         FORCES(ng) % Hwave,                      &
      &                         FORCES(ng) % Dwave,                      &
      &                         FORCES(ng) % Lwave,                      &
+# ifdef DIAGNOSTICS_UV
+     &                         DIAGS(ng) % DiaRU,                       &
+     &                         DIAGS(ng) % DiaRV,                       &
+# endif
 # ifdef BOTTOM_STREAMING_XU_BOWEN
      &                         MIXING(ng) % visc2_r,                    &
 # endif
@@ -80,6 +84,9 @@
 # endif
      &                               zeta,                              &
      &                               Hwave, Dwave, Lwave,               &
+# ifdef DIAGNOSTICS_UV
+     &                               DiaRU, DiaRV,                      &
+# endif
 # ifdef BOTTOM_STREAMING_XU_BOWEN
      &                               visc2_r,                           &
 # endif
@@ -115,6 +122,10 @@
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
+#  ifdef DIAGNOSTICS_UV
+      real(r8), intent(inout) :: DiaRU(LBi:,LBj:,:,:,:)
+      real(r8), intent(inout) :: DiaRV(LBi:,LBj:,:,:,:)
+#  endif
 #  ifdef BOTTOM_STREAMING_XU_BOWEN
       real(r8), intent(in) :: visc2_r(LBi:,LBj:)
 #  endif
@@ -132,6 +143,10 @@
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
+#   ifdef DIAGNOSTICS_UV
+      real(r8), intent(inout) :: DiaRU(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
+      real(r8), intent(inout) :: DiaRV(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
+#   endif
 #  ifdef BOTTOM_STREAMING_XU_BOWEN
       real(r8), intent(in) :: visc2_r(LBi:UBi,LBj:UBj)
 #  endif
@@ -292,7 +307,7 @@
      &                  om_u(i,j)*on_u(i,j)
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
 # ifdef DIAGNOSTICS_UV
-!             DiaRU(i,j,k,nrhs,M3hrad)=cff
+            DiaRU(i,j,k,nrhs,M3bstm)=cff
 # endif
           END DO
         END DO
@@ -306,7 +321,7 @@
      &                  om_v(i,j)*on_v(i,j)
             rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
 # ifdef DIAGNOSTICS_UV
-!           DiaRV(i,j,k,nrhs,M3hrad)=cff
+            DiaRV(i,j,k,nrhs,M3bstm)=cff
 # endif
           END DO
         END DO
@@ -337,7 +352,7 @@
      &                  om_u(i,j)*on_u(i,j)
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
 #  ifdef DIAGNOSTICS_UV
-!             DiaRU(i,j,k,nrhs,M3hrad)=cff
+            DiaRU(i,j,k,nrhs,M3sstm)=cff
 #  endif
           END DO
         END DO
@@ -351,7 +366,7 @@
      &                  om_v(i,j)*on_v(i,j)
             rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
 #  ifdef DIAGNOSTICS_UV
-!           DiaRV(i,j,k,nrhs,M3hrad)=cff
+            DiaRV(i,j,k,nrhs,M3sstm)=cff
 #  endif
           END DO
         END DO

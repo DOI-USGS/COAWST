@@ -441,7 +441,7 @@
 !
 !  Compute metrics for vertical roller stress distribution.
 !
-#  ifdef SVENDSEN_ROLLER
+#  ifdef ROLLER_SVENDSEN
           oroller(i,j)=0.0_r8
           gamw(i,j)=MIN(Dstp(i,j)/(Hwave(i,j)+eps),5.0_r8)
           DO k=1,N(ng)
@@ -492,7 +492,7 @@
             FSCr=SINH(kD(i,j)*fac2)*ocosh(i,j)
             FSSr=SINH(kD(i,j)*fac2)*osinh(i,j)
             waveEr(i,j)=cff1*FCSr*FCCr
-#  ifdef SVENDSEN_ROLLER
+#  ifdef ROLLER_SVENDSEN
 !! tanh s^4 functional
             cff3=(1.0_r8-TANH((2.0_r8*(fac2-1.0_r8)*gamw(i,j))**4))
 !! s^4 functional
@@ -588,7 +588,7 @@
             cff2=(waveE(i-1,j)+waveE(i,j))
             cff3=(kD(i-1,j)+kD(i,j))
 
-#  if defined SVENDSEN_ROLLER
+#  if defined ROLLER_SVENDSEN
 #   ifdef MONO_ROLLER
 !
 !  Here Wave_break is really wave_area.
@@ -659,7 +659,7 @@
             cff=fac1*om_v(i,j)*on_v(i,j)
             cff2=(waveE(i,j-1)+waveE(i,j))
             cff3=(kD(i,j-1)+kD(i,j))
-#  if defined SVENDSEN_ROLLER
+#  if defined ROLLER_SVENDSEN
 #   ifdef MONO_ROLLER
 !
 !  Here Wave_break is really wave_area.
@@ -764,7 +764,7 @@
             FSCr=SINH(UFe(i,j)*cff2)*ocosh(i,j)
             FSSr=SINH(UFe(i,j)*cff2)*osinh(i,j)
             waveEr(i,j)=cff1*FCSr*FCCr
-#   ifdef SVENDSEN_ROLLER
+#   ifdef ROLLER_SVENDSEN
             cff3=SCALARS(ng)%Cs_w(k)
             waveEr(i,j)=waveEr(i,j)+1.25_r8*(rollA(i,j)+rollA(i-1,j))* &
      &                  (1.0_r8-cff3**4)/(Dstp(i,j)+Dstp(i-1,j)+eps)
@@ -815,7 +815,7 @@
               FSCr=SINH(UFe(i,j)*cff2)*ocosh(i,j)
               FSSr=SINH(UFe(i,j)*cff2)*osinh(i,j)
               waveEr(i,j)=cff1*FCSr*FCCr
-#   ifdef SVENDSEN_ROLLER
+#   ifdef ROLLER_SVENDSEN
               cff3=SCALARS(ng)%Cs_w(k)
               waveEr(i,j)=waveEr(i,j)+1.25_r8*(rollA(i,j)+rollA(i,j-1))*&
      &                    (1.0_r8-cff3**4)/(Dstp(i,j)+Dstp(i,j-1)+eps)
@@ -1113,7 +1113,7 @@
      &                              1.0_r8)-                            &
      &               0.5_r8)
 
-#  if defined SVENDSEN_ROLLER
+#  if defined ROLLER_SVENDSEN
 !
 !  Add roller contribution.
 !
@@ -1177,7 +1177,7 @@
           rulag2d(i,j)=ubar_stokes(i,j)
           ubar_stokes(i,j)=cff3*cff5*(waveE(i-1,j)+waveE(i,j))
 
-#  if defined SVENDSEN_ROLLER
+#  if defined ROLLER_SVENDSEN
 #   ifdef MONO_ROLLER
 !
 !  Here Wave_break is really wave_area.
@@ -1232,7 +1232,7 @@
           rvlag2d(i,j)=vbar_stokes(i,j)
           vbar_stokes(i,j)=cff3*cff5*(waveE(i,j-1)+waveE(i,j))
 
-#  if defined SVENDSEN_ROLLER
+#  if defined ROLLER_SVENDSEN
 #   ifdef MONO_ROLLER
 !
 !  Here Wave_break is really wave_area.

@@ -275,7 +275,7 @@
 #  endif
      &                FORCES(ng) % Dissip_wcapG(LBi,LBj,1))
 # endif
-# if defined SVENDSEN_ROLLER
+# if defined ROLLER_SVENDSEN
       CALL get_2dfld (ng, iNLM, idWbrk, ncFRCid(idWbrk,ng),             &
      &                nFfiles(ng), FRCname(1,ng), update(1),            &
      &                LBi, UBi, LBj, UBj, 2, 1,                         &
