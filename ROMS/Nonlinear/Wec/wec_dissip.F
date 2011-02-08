@@ -132,7 +132,7 @@
           cff1=0.707_r8*Hwave(i,j)
           sigmat=MIN(1.0_r8/(Pwave_top(i,j)+eps),1.0_r8)
 !
-#  ifdef WDISS_THORGUZA
+# ifdef WDISS_THORGUZA
 !
 !  Calcualate wave dissipation using empirical parameters of 
 !  Thornton and Guza, 1986
@@ -142,7 +142,7 @@
      &                     (cff1**7.0_r8)*cff2
           Dissip_wcap(i,j)=0.0_r8
 !
-#  elif defined WDISS_CHURTHOR
+# elif defined WDISS_CHURTHOR
 !
 !  Calculate wave dissipation using empirical parameters of
 !  Church and Thornton, 1993.

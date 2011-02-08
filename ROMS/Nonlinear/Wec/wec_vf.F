@@ -549,9 +549,9 @@
         DO k=1,N(ng)
           DO i=IstrU,Iend
             cff=0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))*on_u(i,j)
-            VF=0.5_r8*cff*((shearuv(i  ,j,k)+shearuv(i  ,j,k-1))-      &
-     &                      (shearuv(i-1,j,k)+shearuv(i-1,j,k-1)))
-            rustr3d(i,j,k)=VF
+            VF=0.5_r8*cff*((shearuv(i,j,k)+shearuv(i,j,k-1))-           &
+     &                     (shearuv(i-1,j,k)+shearuv(i-1,j,k-1)))
+            rustr3d(i,j,k)=-VF
             rukvf2d(i,j)=rukvf2d(i,j)+VF*Hzk(i,k)
 # ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3kvrf)=VF
@@ -573,9 +573,9 @@
           DO k=1,N(ng)
             DO i=Istr,Iend
               cff=0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))*om_v(i,j)
-              VF=0.5_r8*cff*((shearuv(i,j  ,k)+shearuv(i,j  ,k-1))-    &
-     &                        (shearuv(i,j-1,k)+shearuv(i,j-1,k-1)))
-              rvstr3d(i,j,k)=VF
+              VF=0.5_r8*cff*((shearuv(i,j,k)+shearuv(i,j,k-1))-         &
+     &                       (shearuv(i,j-1,k)+shearuv(i,j-1,k-1)))
+              rvstr3d(i,j,k)=-VF
               rvkvf2d(i,j)=rvkvf2d(i,j)+VF*Hz(i,j,k)
 # ifdef DIAGNOSTICS_UV
               DiaRV(i,j,k,nrhs,M3kvrf)=VF
@@ -626,7 +626,7 @@
      &                  BBXbrk(i-1,j)*Hz(i-1,j,k))*                     &
      &                  om_u(i,j)*on_u(i,j)
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
-            rubrk2d(i,j)=rubrk2d(i,j)-cff*Hzk(i,k)
+            rubrk2d(i,j)=rubrk2d(i,j)+cff*Hzk(i,k)
 # ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3wbrk)=cff
 # endif
@@ -634,7 +634,7 @@
      &                  BBXrol(i-1,j)*Hz(i-1,j,k))*                     &
      &                  om_u(i,j)*on_u(i,j)
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
-            rurol2d(i,j)=rubrk2d(i,j)-cff*Hzk(i,k)
+            rurol2d(i,j)=rurol2d(i,j)+cff*Hzk(i,k)
 # ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3wrol)=cff
 # endif
@@ -650,7 +650,7 @@
      &                    BBYbrk(i,j-1)*Hz(i,j-1,k))*                   &
      &                    om_v(i,j)*on_v(i,j)
               rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
-              rvrol2d(i,j)=rvrol2d(i,j)-cff*Hzk(i,k)
+              rvrol2d(i,j)=rvrol2d(i,j)+cff*Hzk(i,k)
 # ifdef DIAGNOSTICS_UV
               DiaRV(i,j,k,nrhs,M3wbrk)=cff
 # endif
@@ -658,7 +658,7 @@
      &                    BBYrol(i,j-1)*Hz(i,j-1,k))*                   &
      &                    om_v(i,j)*on_v(i,j)
               rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
-              rvbrk2d(i,j)=rvbrk2d(i,j)-cff*Hzk(i,k)
+              rvbrk2d(i,j)=rvbrk2d(i,j)+cff*Hzk(i,k)
 # ifdef DIAGNOSTICS_UV
               DiaRV(i,j,k,nrhs,M3wrol)=cff
 # endif
@@ -715,9 +715,9 @@
           DO i=IstrU,Iend
             cff1=UFx(i,j+1)-UFx(i,j)
             cff=cff1*Hvstom(i,j)
-            DiaRU(i,j,k,nrhs,M3xadv)=DiaRU(i,j,k,nrhs,M3xadv)-cff
-            DiaRU(i,j,k,nrhs,M3hadv)=DiaRU(i,j,k,nrhs,M3hadv)-cff
-            DiaRU(i,j,k,nrhs,M3jvrf)=DiaRU(i,j,k,nrhs,M3jvrf)+cff
+            DiaRU(i,j,k,nrhs,M3xadv)=DiaRU(i,j,k,nrhs,M3xadv)+cff
+            DiaRU(i,j,k,nrhs,M3hadv)=DiaRU(i,j,k,nrhs,M3hadv)+cff
+            DiaRU(i,j,k,nrhs,M3jvrf)=DiaRU(i,j,k,nrhs,M3jvrf)-cff
           END DO
         END DO
         DO j=JstrV,Jend
@@ -740,9 +740,9 @@
           DO j=JstrV,Jend 
             cff2=VFe(i+1,j)-VFe(i,j)
             cff=cff2*Huston(i,j)
-            DiaRV(i,j,k,nrhs,M3yadv)=DiaRV(i,j,k,nrhs,M3yadv)-cff
-            DiaRV(i,j,k,nrhs,M3hadv)=DiaRV(i,j,k,nrhs,M3hadv)-cff
-            DiaRV(i,j,k,nrhs,M3jvrf)=DiaRV(i,j,k,nrhs,M3jvrf)+cff
+            DiaRV(i,j,k,nrhs,M3yadv)=DiaRV(i,j,k,nrhs,M3yadv)+cff
+            DiaRV(i,j,k,nrhs,M3hadv)=DiaRV(i,j,k,nrhs,M3hadv)+cff
+            DiaRV(i,j,k,nrhs,M3jvrf)=DiaRV(i,j,k,nrhs,M3jvrf)-cff
           END DO
         END DO
 # endif
@@ -794,11 +794,13 @@
           DO i=IstrU,Iend
             cff1=UFx(i,j)-UFx(i-1,j)
             cff2=VFx(i,j)-VFx(i-1,j)
-            cff=Huston(i,j)*cff1+Hvston(i,j)*cff2
-            rustr3d(i,j,k)=rustr3d(i,j,k)-cff
+            cff3=Huston(i,j)*cff1
+            cff4=Hvston(i,j)*cff2
+            rustr3d(i,j,k)=rustr3d(i,j,k)-cff3-cff4
 # ifdef DIAGNOSTICS_UV
-            DiaRU(i,j,k,nrhs,M3xadv)=DiaRU(i,j,k,nrhs,M3xadv)+cff
-            DiaRU(i,j,k,nrhs,M3hadv)=DiaRU(i,j,k,nrhs,M3hadv)+cff
+            DiaRU(i,j,k,nrhs,M3xadv)=DiaRU(i,j,k,nrhs,M3xadv)+cff3
+            DiaRU(i,j,k,nrhs,M3hadv)=DiaRU(i,j,k,nrhs,M3hadv)+cff3
+            DiaRU(i,j,k,nrhs,M3jvrf)=DiaRU(i,j,k,nrhs,M3jvrf)+cff4
 # endif
 !
 !  Conversion to m2/s2.
@@ -811,11 +813,13 @@
           DO j=JstrV,Jend 
             cff1=UFe(i,j)-UFe(i,j-1)
             cff2=VFe(i,j)-VFe(i,j-1)
-            cff=Hustom(i,j)*cff1+Hvstom(i,j)*cff2 
-            rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
+            cff3=Hustom(i,j)*cff1
+            cff4=Hvstom(i,j)*cff2 
+            rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff3-cff4
 # ifdef DIAGNOSTICS_UV
-            DiaRV(i,j,k,nrhs,M3yadv)=DiaRV(i,j,k,nrhs,M3yadv)+cff
-            DiaRV(i,j,k,nrhs,M3hadv)=DiaRV(i,j,k,nrhs,M3hadv)+cff
+            DiaRV(i,j,k,nrhs,M3yadv)=DiaRV(i,j,k,nrhs,M3yadv)+cff4
+            DiaRV(i,j,k,nrhs,M3hadv)=DiaRV(i,j,k,nrhs,M3hadv)+cff4
+            DiaRV(i,j,k,nrhs,M3jvrf)=DiaRV(i,j,k,nrhs,M3jvrf)+cff3
 # endif
 !
 !  Conversion to m2/s2.

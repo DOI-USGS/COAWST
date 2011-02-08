@@ -18,7 +18,7 @@
 #define WEC_VF
 #undef  WDISS_THORGUZA
 #define WDISS_CHURTHOR
-#undef  ROLLER_RENIERS
+#define ROLLER_RENIERS
 
 #define UV_VIS2
 #define MIX_S_UV

@@ -529,6 +529,14 @@
 #  ifdef WEC_MELLOR
           Dwrk(i,M2hrad)=DiaU3wrk(i,j,1,M3hrad)*Hzk(i,1)
 #  endif
+#  ifdef WEC_VF
+          Dwrk(i,M2jvrf)=DiaU3wrk(i,j,1,M3jvrf)*Hzk(i,1)
+          Dwrk(i,M2kvrf)=DiaU3wrk(i,j,1,M3kvrf)*Hzk(i,1)
+          Dwrk(i,M2fsco)=DiaU3wrk(i,j,1,M3fsco)*Hzk(i,1)
+          Dwrk(i,M2bstm)=DiaU3wrk(i,j,1,M3bstm)*Hzk(i,1)
+          Dwrk(i,M2wrol)=DiaU3wrk(i,j,1,M3wrol)*Hzk(i,1)
+          Dwrk(i,M2wbrk)=DiaU3wrk(i,j,1,M3wbrk)*Hzk(i,1)
+#  endif
 # endif
         END DO
         DO k=2,N(ng)
@@ -566,6 +574,20 @@
 #  ifdef WEC_MELLOR
             Dwrk(i,M2hrad)=Dwrk(i,M2hrad)+                              &
      &                     DiaU3wrk(i,j,k,M3hrad)*Hzk(i,k)
+#  endif
+#  ifdef WEC_VF
+            Dwrk(i,M2jvrf)=Dwrk(i,M2jvrf)+                              &
+     &                     DiaU3wrk(i,j,k,M3jvrf)*Hzk(i,k)
+            Dwrk(i,M2kvrf)=Dwrk(i,M2kvrf)+                              &
+     &                     DiaU3wrk(i,j,k,M3kvrf)*Hzk(i,k)
+            Dwrk(i,M2fsco)=Dwrk(i,M2fsco)+                              &
+     &                     DiaU3wrk(i,j,k,M3fsco)*Hzk(i,k)
+            Dwrk(i,M2bstm)=Dwrk(i,M2bstm)+                              &
+     &                     DiaU3wrk(i,j,k,M3bstm)*Hzk(i,k)
+            Dwrk(i,M2wrol)=Dwrk(i,M2wrol)+                              &
+     &                     DiaU3wrk(i,j,k,M3wrol)*Hzk(i,k)
+            Dwrk(i,M2wbrk)=Dwrk(i,M2wbrk)+                              &
+     &                     DiaU3wrk(i,j,k,M3wbrk)*Hzk(i,k)
 #  endif
 # endif
           END DO
@@ -637,6 +659,21 @@
 #  ifdef WEC_MELLOR
             DiaU3wrk(i,j,k,M3hrad)=DiaU3wrk(i,j,k,M3hrad)-              &
      &                             Dwrk(i,M2hrad)
+#  endif
+#  ifdef WEC_VF
+            DiaU3wrk(i,j,k,M3jvrf)=DiaU3wrk(i,j,k,M3jvrf)-              &
+     &                             Dwrk(i,M2jvrf)
+            DiaU3wrk(i,j,k,M3kvrf)=DiaU3wrk(i,j,k,M3kvrf)-              &
+     &                             Dwrk(i,M2kvrf)
+            DiaU3wrk(i,j,k,M3fsco)=DiaU3wrk(i,j,k,M3fsco)-              &
+     &                             Dwrk(i,M2fsco)
+            DiaU3wrk(i,j,k,M3bstm)=DiaU3wrk(i,j,k,M3bstm)-              &
+     &                             Dwrk(i,M2bstm)
+            DiaU3wrk(i,j,k,M3wrol)=DiaU3wrk(i,j,k,M3wrol)-              &
+     &                             Dwrk(i,M2wrol)
+            DiaU3wrk(i,j,k,M3wbrk)=DiaU3wrk(i,j,k,M3wbrk)-              &
+     &                             Dwrk(i,M2wbrk)
+
 #  endif
 # endif
           END DO
@@ -862,6 +899,14 @@
 #  ifdef WEC_MELLOR
             Dwrk(i,M2hrad)=DiaV3wrk(i,j,1,M3hrad)*Hzk(i,1)
 #  endif
+#  ifdef WEC_VF
+            Dwrk(i,M2jvrf)=DiaV3wrk(i,j,1,M3jvrf)*Hzk(i,1)
+            Dwrk(i,M2kvrf)=DiaV3wrk(i,j,1,M3kvrf)*Hzk(i,1)
+            Dwrk(i,M2fsco)=DiaV3wrk(i,j,1,M3fsco)*Hzk(i,1)
+            Dwrk(i,M2bstm)=DiaV3wrk(i,j,1,M3bstm)*Hzk(i,1)
+            Dwrk(i,M2wrol)=DiaV3wrk(i,j,1,M3wrol)*Hzk(i,1)
+            Dwrk(i,M2wbrk)=DiaV3wrk(i,j,1,M3wbrk)*Hzk(i,1)
+#  endif
 # endif
           END DO
           DO k=2,N(ng)
@@ -899,6 +944,20 @@
 #  ifdef WEC_MELLOR
               Dwrk(i,M2hrad)=Dwrk(i,M2hrad)+                            &
      &                       DiaV3wrk(i,j,k,M3hrad)*Hzk(i,k)
+#  endif
+#  ifdef WEC_VF
+              Dwrk(i,M2jvrf)=Dwrk(i,M2jvrf)+                            &
+     &                       DiaV3wrk(i,j,k,M3jvrf)*Hzk(i,k)
+              Dwrk(i,M2kvrf)=Dwrk(i,M2kvrf)+                            &
+     &                       DiaV3wrk(i,j,k,M3kvrf)*Hzk(i,k)
+              Dwrk(i,M2fsco)=Dwrk(i,M2fsco)+                            &
+     &                       DiaV3wrk(i,j,k,M3fsco)*Hzk(i,k)
+              Dwrk(i,M2bstm)=Dwrk(i,M2bstm)+                            &
+     &                       DiaV3wrk(i,j,k,M3bstm)*Hzk(i,k)
+              Dwrk(i,M2wrol)=Dwrk(i,M2wrol)+                            &
+     &                       DiaV3wrk(i,j,k,M3wrol)*Hzk(i,k)
+              Dwrk(i,M2wbrk)=Dwrk(i,M2wbrk)+                            &
+     &                       DiaV3wrk(i,j,k,M3wbrk)*Hzk(i,k)
 #  endif
 # endif
             END DO
@@ -970,6 +1029,20 @@
 #  ifdef WEC_MELLOR
               DiaV3wrk(i,j,k,M3hrad)=DiaV3wrk(i,j,k,M3hrad)-            &
      &                               Dwrk(i,M2hrad)
+#  endif
+#  ifdef WEC_VF
+              DiaV3wrk(i,j,k,M3jvrf)=DiaV3wrk(i,j,k,M3jvrf)-            &
+     &                               Dwrk(i,M2jvrf)
+              DiaV3wrk(i,j,k,M3kvrf)=DiaV3wrk(i,j,k,M3kvrf)-            &
+     &                               Dwrk(i,M2kvrf)
+              DiaV3wrk(i,j,k,M3fsco)=DiaV3wrk(i,j,k,M3fsco)-            &
+     &                               Dwrk(i,M2fsco)
+              DiaV3wrk(i,j,k,M3bstm)=DiaV3wrk(i,j,k,M3bstm)-            &
+     &                               Dwrk(i,M2bstm)
+              DiaV3wrk(i,j,k,M3wrol)=DiaV3wrk(i,j,k,M3wrol)-            &
+     &                               Dwrk(i,M2wrol)
+              DiaV3wrk(i,j,k,M3wbrk)=DiaV3wrk(i,j,k,M3wbrk)-            &
+     &                               Dwrk(i,M2wbrk)
 #  endif
 # endif
             END DO

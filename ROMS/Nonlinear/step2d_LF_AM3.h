@@ -1106,6 +1106,16 @@
 !=======================================================================
 !  Compute right-hand-side for the 2D momentum equations.
 !=======================================================================
+# ifdef DIAGNOSTICS_UV
+       DO j=JstrR,JendR
+         DO i=IstrR,IendR
+           DO idiag=1,M2pgrd
+             DiaU2rhs(i,j,idiag)=0.0_r8
+             DiaV2rhs(i,j,idiag)=0.0_r8
+           END DO
+         END DO
+       END DO
+# endif
 !
 !-----------------------------------------------------------------------
 !  Compute pressure gradient terms.
@@ -1152,13 +1162,14 @@
           cff4=cff3*g*(zetaw(i-1,j)-zetaw(i,j))
           cff5=cff3*g*(qsp(i-1,j)-qsp(i,j))
           cff6=cff3*(bh(i-1,j)-bh(i,j))
-          cff7=cff3*(rukvf2d(i-1,j)-rukvf2d(i,j))
-          rhs_ubar(i,j)=rhs_ubar(i,j)-cff4-cff5+cff6-cff7
+          cff7=rukvf2d(i,j)
+          rhs_ubar(i,j)=rhs_ubar(i,j)-cff4-cff5+cff6+cff7
 #  ifdef DIAGNOSTICS_UV
-          DiaU2rhs(i,j,M2zetw)=-cff4
-          DiaU2rhs(i,j,M2zqsp)=-cff5
-          DiaU2rhs(i,j,M2zbeh)=cff6
-          DiaU2rhs(i,j,M2kvrf)=-cff7
+          DiaU2rhs(i,j,M2pgrd)=DiaU2rhs(i,j,M2pgrd)-cff4-cff5+cff6
+!          DiaU2rhs(i,j,M2zetw)=-cff4
+!          DiaU2rhs(i,j,M2zqsp)=-cff5
+!          DiaU2rhs(i,j,M2zbeh)=cff6
+          DiaU2rhs(i,j,M2kvrf)=cff7
 #  endif
 # endif
         END DO
@@ -1195,16 +1206,17 @@
             cff3=         om_v(i,j)*                                    &
      &                    (h(i,j-1)+h(i,j)+                             &
      &                     gzeta(i,j-1)+gzeta(i,j))
-            cff4=cff1*g*(zetaw(i-1,j)-zetaw(i,j))
-            cff5=cff1*g*(qsp(i-1,j)-qsp(i,j))
-            cff6=cff1*(bh(i-1,j)-bh(i,j))
-            cff7=cff3*(rvkvf2d(i-1,j)-rvkvf2d(i,j))
-            rhs_vbar(i,j)=rhs_vbar(i,j)-cff4-cff5+cff6-cff7
+            cff4=cff1*g*(zetaw(i,j-1)-zetaw(i,j))
+            cff5=cff1*g*(qsp(i,j-1)-qsp(i,j))
+            cff6=cff1*(bh(i,j-1)-bh(i,j))
+            cff7=rvkvf2d(i,j)
+            rhs_vbar(i,j)=rhs_vbar(i,j)-cff4-cff5+cff6+cff7
 #  ifdef DIAGNOSTICS_UV
-            DiaV2rhs(i,j,M2zetw)=-cff4
-            DiaV2rhs(i,j,M2zqsp)=-cff5
-            DiaV2rhs(i,j,M2zbeh)=cff6
-            DiaV2rhs(i,j,M2kvrf)=-cff7
+            DiaV2rhs(i,j,M2pgrd)=DiaV2rhs(i,j,M2pgrd)-cff4-cff5+cff6
+!            DiaV2rhs(i,j,M2zetw)=-cff4
+!            DiaV2rhs(i,j,M2zqsp)=-cff5
+!            DiaV2rhs(i,j,M2zbeh)=cff6
+            DiaV2rhs(i,j,M2kvrf)=cff7
 #  endif
 # endif
           END DO
@@ -2082,11 +2094,8 @@
 !
       DO j=Jstr,Jend
         DO i=IstrU,Iend
-          cff3=         on_u(i,j)*                                      &
-     &                  (h(i-1,j)+h(i,j)+                               &
-     &                   gzeta(i-1,j)+gzeta(i,j))
-          cff4=cff3*rurol2d(i,j)
-          cff5=cff3*rubrk2d(i,j)
+          cff4=rurol2d(i,j)
+          cff5=rubrk2d(i,j)
           rhs_ubar(i,j)=rhs_ubar(i,j)+cff4+cff5
 #  ifdef DIAGNOSTICS_UV
           DiaU2rhs(i,j,M2wrol)=cff4
@@ -2095,11 +2104,8 @@
         END DO
         IF (j.ge.JstrV) THEN
           DO i=Istr,Iend
-            cff3=         om_v(i,j)*                                    &
-     &                    (h(i,j-1)+h(i,j)+                             &
-     &                     gzeta(i,j-1)+gzeta(i,j))
-            cff4=cff3*rvrol2d(i,j)
-            cff5=cff3*rvbrk2d(i,j)
+            cff4=rvrol2d(i,j)
+            cff5=rvbrk2d(i,j)
             rhs_vbar(i,j)=rhs_vbar(i,j)+cff4+cff5
 #  ifdef DIAGNOSTICS_UV
             DiaV2rhs(i,j,M2wrol)=cff4
@@ -2135,9 +2141,9 @@
           DO i=IstrU,Iend
             cff1=UFx(i,j+1)-UFx(i,j)
             cff=cff1*DVSom(i,j)
-            DiaU2rhs(i,j,M2xadv)=DiaU2rhs(i,j,M2xadv)-cff
-            DiaU2rhs(i,j,M2hadv)=DiaU2rhs(i,j,M2hadv)-cff
-            DiaU2rhs(i,j,M2jvrf)=DiaU2rhs(i,j,M2jvrf)+cff
+            DiaU2rhs(i,j,M2xadv)=DiaU2rhs(i,j,M2xadv)+cff
+            DiaU2rhs(i,j,M2hadv)=DiaU2rhs(i,j,M2hadv)+cff
+            DiaU2rhs(i,j,M2jvrf)=DiaU2rhs(i,j,M2jvrf)-cff
           END DO
         END DO
         DO j=JstrV,Jend
@@ -2160,9 +2166,9 @@
           DO j=JstrV,Jend 
             cff2=VFe(i+1,j)-VFe(i,j)
             cff=cff2*DUSon(i,j)
-            DiaV2rhs(i,j,M2yadv)=DiaV2rhs(i,j,M2yadv)-cff
-            DiaV2rhs(i,j,M2hadv)=DiaV2rhs(i,j,M2hadv)-cff
-            DiaV2rhs(i,j,M2jvrf)=DiaV2rhs(i,j,M2jvrf)+cff
+            DiaV2rhs(i,j,M2yadv)=DiaV2rhs(i,j,M2yadv)+cff
+            DiaV2rhs(i,j,M2hadv)=DiaV2rhs(i,j,M2hadv)+cff
+            DiaV2rhs(i,j,M2jvrf)=DiaV2rhs(i,j,M2jvrf)-cff
           END DO
         END DO
 #  endif
@@ -2214,11 +2220,14 @@
           DO i=IstrU,Iend
             cff1=UFx(i,j)-UFx(i-1,j)
             cff2=VFx(i,j)-VFx(i-1,j)
-            cff=DUSon(i,j)*cff1+DVSon(i,j)*cff2
-!           rustr2d(i,j)=rustr2d(i,j)-cff
+            cff3=DUSon(i,j)*cff1
+            cff4=DVSon(i,j)*cff2
+            rhs_ubar(i,j)=rhs_ubar(i,j)+cff3+cff4
+!           rustr2d(i,j)=rustr2d(i,j)-cff3-cff4
 #  ifdef DIAGNOSTICS_UV
-            DiaU2rhs(i,j,M2xadv)=DiaU2rhs(i,j,M2xadv)+cff
-            DiaU2rhs(i,j,M2hadv)=DiaU2rhs(i,j,M2hadv)+cff
+            DiaU2rhs(i,j,M2xadv)=DiaU2rhs(i,j,M2xadv)+cff3
+            DiaU2rhs(i,j,M2hadv)=DiaU2rhs(i,j,M2hadv)+cff3
+            DiaU2rhs(i,j,M2jvrf)=DiaU2rhs(i,j,M2jvrf)+cff4
 #  endif
           END DO
         END DO
@@ -2226,11 +2235,14 @@
           DO j=JstrV,Jend 
             cff1=UFe(i,j)-UFe(i,j-1)
             cff2=VFe(i,j)-VFe(i,j-1)
-            cff=DUSom(i,j)*cff1+DVSom(i,j)*cff2
-!           rvstr3d(i,j)=rvstr3d(i,j,k)-cff
+            cff3=DUSom(i,j)*cff1
+            cff4=DVSom(i,j)*cff2
+            rhs_vbar(i,j)=rhs_vbar(i,j)+cff3+cff4
+!           rvstr3d(i,j)=rvstr3d(i,j,k)-cff3-cff4
 #  ifdef DIAGNOSTICS_UV
-            DiaV2rhs(i,j,M2yadv)=DiaV2rhs(i,j,M2yadv)+cff
-            DiaV2rhs(i,j,M2hadv)=DiaV2rhs(i,j,M2hadv)+cff
+            DiaV2rhs(i,j,M2yadv)=DiaV2rhs(i,j,M2yadv)+cff4
+            DiaV2rhs(i,j,M2hadv)=DiaV2rhs(i,j,M2hadv)+cff4
+            DiaV2rhs(i,j,M2jvrf)=DiaV2rhs(i,j,M2jvrf)+cff3
 #  endif
           END DO
         END DO

@@ -2162,17 +2162,17 @@
 #  endif
 #  ifdef WEC_VF
               DiaRVfrc(i,j,3,M2jvrf)=DiaRVfrc(i,j,3,M2jvrf)+            &
-     &                             DiaRV(i,j,k,nrhs,M3jvrf)
+     &                               DiaRV(i,j,k,nrhs,M3jvrf)
               DiaRVfrc(i,j,3,M2kvrf)=DiaRVfrc(i,j,3,M2kvrf)+            &
-     &                             DiaRV(i,j,k,nrhs,M3kvrf)
+     &                               DiaRV(i,j,k,nrhs,M3kvrf)
               DiaRVfrc(i,j,3,M2fsco)=DiaRVfrc(i,j,3,M2fsco)+            &
-     &                             DiaRV(i,j,k,nrhs,M3fsco)
+     &                               DiaRV(i,j,k,nrhs,M3fsco)
               DiaRVfrc(i,j,3,M2bstm)=DiaRVfrc(i,j,3,M2bstm)+            &
-     &                             DiaRV(i,j,k,nrhs,M3bstm)
+     &                               DiaRV(i,j,k,nrhs,M3bstm)
               DiaRVfrc(i,j,3,M2wrol)=DiaRVfrc(i,j,3,M2wrol)+            &
-     &                             DiaRV(i,j,k,nrhs,M3wrol)
+     &                               DiaRV(i,j,k,nrhs,M3wrol)
               DiaRVfrc(i,j,3,M2wbrk)=DiaRVfrc(i,j,3,M2wbrk)+            &
-     &                             DiaRV(i,j,k,nrhs,M3wbrk)
+     &                               DiaRV(i,j,k,nrhs,M3wbrk)
 #  endif
 #  ifdef BODYFORCE
 !!            DiaRVfrc(i,j,3,M2strs)=DiaRVfrc(i,j,3,M2strs)+            &
