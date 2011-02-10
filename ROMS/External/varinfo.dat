@@ -1351,7 +1351,7 @@
   1.0
 
 'Pwave_top'                                        ! Input
-  'wind-induced surface wave Period'
+  'wind-induced peak surface wave Period'
   'second'                                         ! [s]
   'Pwave_top, scalar, series'
   'wave_time'
@@ -4775,21 +4775,21 @@
   'v2dvar'
   1.0d0
 
-'ubar_jvrf'                                        ! Input/Output
+'ubar_hjvf'                                        ! Input/Output
   '2D u-momentum, J vortex force term'
   'meter second-2'                                 ! [m/s2]
-  'ubar_jvrf, scalar, series'
+  'ubar_hjvf, scalar, series'
   'ocean_time'
-  'idDu2d(M2jvrf)'
+  'idDu2d(M2hjvf)'
   'u2dvar'
   1.0d0
 
-'vbar_jvrf'                                        ! Input/Output
+'vbar_hjvf'                                        ! Input/Output
   '2D v-momentum, J vortex force term'
   'meter second-2'                                 ! [m/s2]
-  'vbar_jvrf, scalar, series'
+  'vbar_hjvf, scalar, series'
   'ocean_time'
-  'idDv2d(M2jvrf)'
+  'idDv2d(M2hjvf)'
   'v2dvar'
   1.0d0
 
@@ -5211,21 +5211,39 @@
   'v3dvar'
   1.0d0
 
-'u_jvrf'                                           ! Input/Output
-  '3D u-momentum, J vortex force term'
+'u_vjvf'                                           ! Input/Output
+  '3D u-momentum, vertical J vortex force term'
   'meter second-2'                                 ! [m/s2]
-  'u_jvrf, scalar, series'
+  'u_vjvf, scalar, series'
   'ocean_time'
-  'idDu3d(M3jvrf)'
-  'u2dvar'
+  'idDu3d(M3vjvf)'
+  'u3dvar'
   1.0d0
 
-'v_jvrf'                                           ! Input/Output
+'v_vjvf'                                           ! Input/Output
+  '3D v-momentum, vertical J vortex force term'
+  'meter second-2'                                 ! [m/s2]
+  'v_vjvf, scalar, series'
+  'ocean_time'
+  'idDv3d(M3vjvf)'
+  'v3dvar'
+  1.0d0
+
+'u_hjvf'                                           ! Input/Output
+  '3D u-momentum, J vortex force term'
+  'meter second-2'                                 ! [m/s2]
+  'u_hjvf, scalar, series'
+  'ocean_time'
+  'idDu3d(M3hjvf)'
+  'u3dvar'
+  1.0d0
+
+'v_hjvf'                                           ! Input/Output
   '3D v-momentum, J vortex force term'
   'meter second-2'                                 ! [m/s2]
-  'v_jvrf, scalar, series'
+  'v_hjvf, scalar, series'
   'ocean_time'
-  'idDv3d(M3jvrf)'
+  'idDv3d(M3hjvf)'
   'v3dvar'
   1.0d0
 

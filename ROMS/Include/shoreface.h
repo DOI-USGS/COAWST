@@ -16,9 +16,7 @@
 #define ROMS_MODEL
 #undef  WEC_MELLOR
 #define WEC_VF
-#undef  WDISS_THORGUZA
 #define WDISS_CHURTHOR
-#define ROLLER_RENIERS
 
 #define UV_VIS2
 #define MIX_S_UV

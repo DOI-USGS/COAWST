@@ -48,6 +48,9 @@
      &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        FORCES(ng) % Dissip_break,                &
      &                        FORCES(ng) % Dissip_wcap,                 &
+# ifdef WEC_ROLLER
+     &                        FORCES(ng) % Dissip_roller,               &
+# endif
      &                        FORCES(ng) % Hwave,                       &
      &                        GRID(ng) % h,                             &
      &                        GRID(ng) % Hz,                            &
@@ -64,6 +67,9 @@
      &                              IminS, ImaxS, JminS, JmaxS,         &
      &                              Dissip_break,                       &
      &                              Dissip_wcap,                        &
+# ifdef WEC_ROLLER
+     &                              Dissip_roller,                      &
+# endif
      &                              Hwave,                              &
      &                              h, Hz,                              &
      &                              zeta,                               &
@@ -88,6 +94,9 @@
 # ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: Dissip_break(LBi:,LBj:,:)
       real(r8), intent(in) :: Dissip_wcap(LBi:,LBj:,:)
+#  ifdef WEC_ROLLER
+      real(r8), intent(in) :: Dissip_roller(LBi:,LBj:,:)
+#  endif
       real(r8), intent(in) :: Hwave(LBi:,LBj:,:)
       real(r8), intent(in) :: h(LBi:,LBj:)
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
@@ -96,6 +105,9 @@
 # else
       real(r8), intent(in) :: Dissip_break(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dissip_wcap(LBi:UBi,LBj:UBj)
+#  ifdef WEC_ROLLER
+      real(r8), intent(in) :: Dissip_roller(LBi:UBi,LBj:UBj)
+#  endif
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,UBk)
@@ -156,8 +168,10 @@
             cff2=fac2*gamr(i,j)
             cff3=COSH(2.0_r8*pi*cff2)
             cff1=Dissp_wcap(i,j)+Dissip_break(i,j)
-            cff4=((1.0_r8-wec_alpha(ng))*cff1+                          &
-     &            Dissip_roller(i,j))**(1.0_r8/3.0_r8)
+            cff4=((1.0_r8-wec_alpha(ng))*cff1)**(1.0_r8/3.0_r8)
+# ifdef WEC_ROLLER
+            cff4=cff4+(Dissip_roller(i,j))**(1.0_r8/3.0_r8)
+# endif
             Akv(i,j,k)=Akv(i,j,k)+                                      &
      &                 Cb*cff4*fac1*Hwave(i,j)*                         &
      &                 Dstp(i,j)*cff3*oroller(i,j)

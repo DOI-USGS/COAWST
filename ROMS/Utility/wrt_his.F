@@ -2673,7 +2673,7 @@
         END IF
       END IF
 #endif
-#if defined ROLLER_RENIERS
+#if defined WEC_ROLLER
 !
 !  Write out roller wave action density.
 !

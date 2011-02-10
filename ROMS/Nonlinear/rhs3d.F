@@ -365,6 +365,9 @@
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
+# ifdef WEC_VF
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FCs
+# endif
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Huee
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Huxx
@@ -643,9 +646,15 @@
             ru(i,j,k,nrhs)=ru(i,j,k,nrhs)+cff1
 #  ifdef DIAGNOSTICS_UV
             cff2=0.5_r8*(Uwrk(i,j)+Uwrk(i-1,j))
+#   ifdef WEC_VF
+            DiaRU(i,j,k,nrhs,M3xadv)=DiaRU(i,j,k,nrhs,M3xadv)+cff1-cff2
+            DiaRU(i,j,k,nrhs,M3yadv)=DiaRU(i,j,k,nrhs,M3yadv)+cff2
+            DiaRU(i,j,k,nrhs,M3hadv)=DiaRU(i,j,k,nrhs,M3hadv)+cff1
+#   else
             DiaRU(i,j,k,nrhs,M3xadv)=cff1-cff2
             DiaRU(i,j,k,nrhs,M3yadv)=cff2
             DiaRU(i,j,k,nrhs,M3hadv)=cff1
+#   endif
 #  endif
           END DO
         END DO
@@ -655,9 +664,15 @@
             rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff1
 #  ifdef DIAGNOSTICS_UV
             cff2=0.5_r8*(Vwrk(i,j)+Vwrk(i,j-1))
+#   ifdef WEC_VF
+            DiaRV(i,j,k,nrhs,M3xadv)=DiaRV(i,j,k,nrhs,M3xadv)-cff1+cff2
+            DiaRV(i,j,k,nrhs,M3yadv)=DiaRV(i,j,k,nrhs,M3yadv)-cff2
+            DiaRV(i,j,k,nrhs,M3hadv)=DiaRV(i,j,k,nrhs,M3hadv)-cff1
+#   else
             DiaRV(i,j,k,nrhs,M3xadv)=-cff1+cff2
             DiaRV(i,j,k,nrhs,M3yadv)=-cff2
             DiaRV(i,j,k,nrhs,M3hadv)=-cff1
+#   endif
 #  endif
           END DO
         END DO
@@ -1130,7 +1145,7 @@
             cff=cff1+cff2
             ru(i,j,k,nrhs)=ru(i,j,k,nrhs)-cff
 #  ifdef DIAGNOSTICS_UV
-#   ifdef CURVGRID
+#   if defined CURVGRID || defined WEC_VF
             DiaRU(i,j,k,nrhs,M3xadv)=DiaRU(i,j,k,nrhs,M3xadv)-cff1
             DiaRU(i,j,k,nrhs,M3yadv)=DiaRU(i,j,k,nrhs,M3yadv)-cff2
             DiaRU(i,j,k,nrhs,M3hadv)=DiaRU(i,j,k,nrhs,M3hadv)-cff
@@ -1149,7 +1164,7 @@
             cff=cff1+cff2
             rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff
 #  ifdef DIAGNOSTICS_UV
-#   ifdef CURVGRID
+#   if defined CURVGRID || defined WEC_VF
             DiaRV(i,j,k,nrhs,M3xadv)=DiaRV(i,j,k,nrhs,M3xadv)-cff1
             DiaRV(i,j,k,nrhs,M3yadv)=DiaRV(i,j,k,nrhs,M3yadv)-cff2
             DiaRV(i,j,k,nrhs,M3hadv)=DiaRV(i,j,k,nrhs,M3hadv)-cff
@@ -1761,11 +1776,17 @@
      &              (u(i,j,k,nrhs)+                                     &
      &               DC(i,k)*(cff3*CF(i,k  )+                           &
      &                        cff4*CF(i,k-1)))
+            FCs(i,k)=(cff1*(w_stokes(i  ,j,k)+                          &
+     &                      w_stokes(i-1,j,k))-                         &
+     &                cff2*(w_stokes(i+1,j,k)+                          &
+     &                      w_stokes(i-2,j,k)))
           END DO
         END DO
         DO i=IstrU,Iend
           FC(i,N(ng))=0.0_r8
           FC(i,0)=0.0_r8
+          FCs(i,N(ng))=0.0_r8
+          FCs(i,0)=0.0_r8
         END DO
 #   elif defined UV_C2ADVECTION
         DO k=1,N(ng)-1
@@ -1774,11 +1795,15 @@
      &                       u(i,j,k+1,nrhs))*                          &
      &              (w_stokes(i  ,j,k)+                                 &
      &               w_stokes(i-1,j,k))
+            FCs(i,k)=0.5_r8*(w_stokes(i  ,j,k)+                         &
+     &                       w_stokes(i-1,j,k))
           END DO
         END DO
         DO i=IstrU,Iend
           FC(i,0)=0.0_r8
           FC(i,N(ng))=0.0_r8
+          FCs(i,0)=0.0_r8
+          FCs(i,N(ng))=0.0_r8
         END DO
 #   elif defined UV_C4ADVECTION
         cff1=9.0_r8/32.0_r8
@@ -1791,23 +1816,31 @@
      &                     u(i,j,k+2,nrhs)))*                           &
      &              (w_stokes(i  ,j,k)+                                 &
      &               w_stokes(i-1,j,k))
+            FCs(i,k)=0.5_r8*(w_stokes(i  ,j,k)+                         &
+     &                       w_stokes(i-1,j,k))
           END DO
         END DO
         DO i=IstrU,Iend
           FC(i,N(ng))=0.0_r8
+          FCs(i,N(ng))=0.0_r8
           FC(i,N(ng)-1)=(cff1*(u(i,j,N(ng)-1,nrhs)+                     &
      &                         u(i,j,N(ng)  ,nrhs))-                    &
      &                   cff2*(u(i,j,N(ng)-2,nrhs)+                     &
      &                         u(i,j,N(ng)  ,nrhs)))*                   &
      &                  (w_stokes(i  ,j,N(ng)-1)+                       &
      &                   w_stokes(i-1,j,N(ng)-1))
+          FCs(i,N(ng)-1)=0.5_r8*(w_stokes(i  ,j,N(ng)-1)+               &
+     &                           w_stokes(i-1,j,N(ng)-1))
           FC(i,1)=(cff1*(u(i,j,1,nrhs)+                                 &
      &                   u(i,j,2,nrhs))-                                &
      &             cff2*(u(i,j,1,nrhs)+                                 &
      &                   u(i,j,3,nrhs)))*                               &
      &            (w_stokes(i  ,j,1)+                                   &
      &             w_stokes(i-1,j,1))
+          FCs(i,1)=0.5_r8*(w_stokes(i  ,j,1)+                           &
+     &                     w_stokes(i-1,j,1))
           FC(i,0)=0.0_r8
+          FCs(i,0)=0.0_r8
         END DO
 #   else
         cff1=9.0_r8/16.0_r8
@@ -1822,10 +1855,15 @@
      &                     w_stokes(i-1,j,k))-                          &
      &               cff2*(w_stokes(i+1,j,k)+                           &
      &                     w_stokes(i-2,j,k)))
+            FCs(i,k)=cff1*(w_stokes(i  ,j,k)+                           &
+     &                     w_stokes(i-1,j,k))-                          &
+     &               cff2*(w_stokes(i+1,j,k)+                           &
+     &                     w_stokes(i-2,j,k))
           END DO
         END DO
         DO i=IstrU,Iend
           FC(i,N(ng))=0.0_r8
+          FCs(i,N(ng))=0.0_r8
           FC(i,N(ng)-1)=(cff1*(u(i,j,N(ng)-1,nrhs)+                     &
      &                         u(i,j,N(ng)  ,nrhs))-                    &
      &                   cff2*(u(i,j,N(ng)-2,nrhs)+                     &
@@ -1834,6 +1872,10 @@
      &                         w_stokes(i-1,j,N(ng)-1))-                &
      &                   cff2*(w_stokes(i+1,j,N(ng)-1)+                 &
      &                         w_stokes(i-2,j,N(ng)-1)))
+          FCs(i,N(ng)-1)=(cff1*(w_stokes(i  ,j,N(ng)-1)+                &
+     &                          w_stokes(i-1,j,N(ng)-1))-               &
+     &                    cff2*(w_stokes(i+1,j,N(ng)-1)+                &
+     &                          w_stokes(i-2,j,N(ng)-1)))
           FC(i,1)=(cff1*(u(i,j,1,nrhs)+                                 &
      &                   u(i,j,2,nrhs))-                                &
      &             cff2*(u(i,j,1,nrhs)+                                 &
@@ -1842,15 +1884,22 @@
      &                   w_stokes(i-1,j,1))-                            &
      &             cff2*(w_stokes(i+1,j,1)+                             &
      &                   w_stokes(i-2,j,1)))
+          FCs(i,1)=(cff1*(w_stokes(i  ,j,1)+                            &
+     &                    w_stokes(i-1,j,1))-                           &
+     &              cff2*(w_stokes(i+1,j,1)+                            &
+     &                    w_stokes(i-2,j,1)))
           FC(i,0)=0.0_r8
+          FCs(i,0)=0.0_r8
         END DO
 #   endif
         DO k=1,N(ng)
           DO i=IstrU,Iend
             cff=FC(i,k)-FC(i,k-1)
+            cff1=u(i,j,k,nrhs)*(FCs(i,k)-FCs(i,k-1))
             ru(i,j,k,nrhs)=ru(i,j,k,nrhs)-cff
 #   ifdef DIAGNOSTICS_UV
-            DiaRU(i,j,k,nrhs,M3jvrf)=-cff
+            DiaRU(i,j,k,nrhs,M3vadv)=DiaRU(i,j,k,nrhs,M3vadv)-cff1
+            DiaRU(i,j,k,nrhs,M3vjvf)=-(cff-cff1)
 #   endif
           END DO
         END DO
@@ -1905,11 +1954,17 @@
      &                (v(i,j,k,nrhs)+                                   &
      &                 DC(i,k)*(cff3*CF(i,k  )+                         &
      &                          cff4*CF(i,k-1)))
+              FCs(i,k)=(cff1*(w_stokes(i,j  ,k)+                        &
+     &                        w_stokes(i,j-1,k))-                       &
+     &                  cff2*(w_stokes(i,j+1,k)+                        &
+     &                        w_stokes(i,j-2,k)))
             END DO
           END DO
           DO i=Istr,Iend
             FC(i,N(ng))=0.0_r8
             FC(i,0)=0.0_r8
+            FCs(i,N(ng))=0.0_r8
+            FCs(i,0)=0.0_r8
           END DO
 #   elif defined UV_C2ADVECTION
 !
@@ -1921,11 +1976,15 @@
      &                         v(i,j,k+1,nrhs))*                        &
      &                (w_stokes(i,j  ,k)+                               &
      &                 w_stokes(i,j-1,k))
+              FCs(i,k)=0.5_r8*(w_stokes(i,j  ,k)+                       &
+     &                         w_stokes(i,j-1,k))
             END DO
           END DO
           DO i=Istr,Iend
             FC(i,0)=0.0_r8
             FC(i,N(ng))=0.0_r8
+            FCs(i,0)=0.0_r8
+            FCs(i,N(ng))=0.0_r8
           END DO
 #   elif defined UV_C4ADVECTION
 !
@@ -1941,23 +2000,31 @@
      &                       v(i,j,k+2,nrhs)))*                         &
      &                (w_stokes(i,j  ,k)+                               &
      &                 w_stokes(i,j-1,k))
+              FCs(i,k)=0.5_r8*(w_stokes(i,j  ,k)+                       &
+     &                         w_stokes(i,j-1,k))
             END DO
           END DO
           DO i=Istr,Iend
             FC(i,N(ng))=0.0_r8
+            FCs(i,N(ng))=0.0_r8
             FC(i,N(ng)-1)=(cff1*(v(i,j,N(ng)-1,nrhs)+                   &
      &                           v(i,j,N(ng)  ,nrhs))-                  &
      &                     cff2*(v(i,j,N(ng)-2,nrhs)+                   &
      &                           v(i,j,N(ng)  ,nrhs)))*                 &
      &                    (w_stokes(i,j  ,N(ng)-1)+                     &
      &                     w_stokes(i,j-1,N(ng)-1))
+            FCs(i,N(ng)-1)=0.5_r8*(w_stokes(i,j  ,N(ng)-1)+             &
+     &                             w_stokes(i,j-1,N(ng)-1))
             FC(i,1)=(cff1*(v(i,j,1,nrhs)+                               &
      &                     v(i,j,2,nrhs))-                              &
      &               cff2*(v(i,j,1,nrhs)+                               &
      &                     v(i,j,3,nrhs)))*                             &
      &              (w_stokes(i,j  ,1)+                                 &
      &               w_stokes(i,j-1,1))
+            FCs(i,1)=0.5_r8*(w_stokes(i,j  ,1)+                         &
+     &                       w_stokes(i,j-1,1))
             FC(i,0)=0.0_r8
+            FCs(i,0)=0.0_r8
           END DO
 #   else
           cff1=9.0_r8/16.0_r8
@@ -1972,10 +2039,15 @@
      &                       w_stokes(i,j-1,k))-                        &
      &                 cff2*(w_stokes(i,j+1,k)+                         &
      &                       w_stokes(i,j-2,k)))
+              FCs(i,k)=(cff1*(w_stokes(i,j  ,k)+                        &
+     &                        w_stokes(i,j-1,k))-                       &
+     &                  cff2*(w_stokes(i,j+1,k)+                        &
+     &                        w_stokes(i,j-2,k)))
             END DO
           END DO
           DO i=Istr,Iend
             FC(i,N(ng))=0.0_r8
+            FCs(i,N(ng))=0.0_r8
             FC(i,N(ng)-1)=(cff1*(v(i,j,N(ng)-1,nrhs)+                   &
      &                           v(i,j,N(ng)  ,nrhs))-                  &
      &                     cff2*(v(i,j,N(ng)-2,nrhs)+                   &
@@ -1984,6 +2056,10 @@
      &                           w_stokes(i,j-1,N(ng)-1))-              &
      &                     cff2*(w_stokes(i,j+1,N(ng)-1)+               &
      &                           w_stokes(i,j-2,N(ng)-1)))
+            FCs(i,N(ng)-1)=(cff1*(w_stokes(i,j  ,N(ng)-1)+              &
+     &                            w_stokes(i,j-1,N(ng)-1))-             &
+     &                      cff2*(w_stokes(i,j+1,N(ng)-1)+              &
+     &                            w_stokes(i,j-2,N(ng)-1)))
             FC(i,1)=(cff1*(v(i,j,1,nrhs)+                               &
      &                     v(i,j,2,nrhs))-                              &
      &               cff2*(v(i,j,1,nrhs)+                               &
@@ -1992,15 +2068,22 @@
      &                     w_stokes(i,j-1,1))-                          &
      &               cff2*(w_stokes(i,j+1,1)+                           &
      &                     w_stokes(i,j-2,1)))
+            FCs(i,1)=(cff1*(w_stokes(i,j  ,1)+                          &
+     &                      w_stokes(i,j-1,1))-                         &
+     &                cff2*(w_stokes(i,j+1,1)+                          &
+     &                      w_stokes(i,j-2,1)))
             FC(i,0)=0.0_r8
+            FCs(i,0)=0.0_r8
           END DO
 #   endif
           DO k=1,N(ng)
             DO i=Istr,Iend
               cff=FC(i,k)-FC(i,k-1)
+              cff1=v(i,j,k,nrhs)*(FCs(i,k)-FCs(i,k-1))
               rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff
 #   ifdef DIAGNOSTICS_UV
-              DiaRV(i,j,k,nrhs,M3jvrf)=-cff
+              DiaRV(i,j,k,nrhs,M3vadv)=DiaRV(i,j,k,nrhs,M3vadv)-cff1
+              DiaRV(i,j,k,nrhs,M3vjvf)=-(cff-cff1)
 #   endif
             END DO
           END DO
@@ -2032,7 +2115,7 @@
           DiaRUfrc(i,j,3,M2hrad)=DiaRU(i,j,1,nrhs,M3hrad)
 #  endif
 #  ifdef WEC_VF
-          DiaRUfrc(i,j,3,M2jvrf)=DiaRU(i,j,1,nrhs,M3jvrf)
+          DiaRUfrc(i,j,3,M2hjvf)=DiaRU(i,j,1,nrhs,M3hjvf)
           DiaRUfrc(i,j,3,M2kvrf)=DiaRU(i,j,1,nrhs,M3kvrf)
           DiaRUfrc(i,j,3,M2fsco)=DiaRU(i,j,1,nrhs,M3fsco)
           DiaRUfrc(i,j,3,M2bstm)=DiaRU(i,j,1,nrhs,M3bstm)
@@ -2072,8 +2155,8 @@
      &                             DiaRU(i,j,k,nrhs,M3hrad)
 #  endif
 #  ifdef WEC_VF
-            DiaRUfrc(i,j,3,M2jvrf)=DiaRUfrc(i,j,3,M2jvrf)+              &
-     &                             DiaRU(i,j,k,nrhs,M3jvrf)
+            DiaRUfrc(i,j,3,M2hjvf)=DiaRUfrc(i,j,3,M2hjvf)+              &
+     &                             DiaRU(i,j,k,nrhs,M3hjvf)
             DiaRUfrc(i,j,3,M2kvrf)=DiaRUfrc(i,j,3,M2kvrf)+              &
      &                             DiaRU(i,j,k,nrhs,M3kvrf)
             DiaRUfrc(i,j,3,M2fsco)=DiaRUfrc(i,j,3,M2fsco)+              &
@@ -2121,7 +2204,7 @@
             DiaRVfrc(i,j,3,M2hrad)=DiaRV(i,j,1,nrhs,M3hrad)
 #  endif
 #  ifdef WEC_VF
-            DiaRVfrc(i,j,3,M2jvrf)=DiaRV(i,j,1,nrhs,M3jvrf)
+            DiaRVfrc(i,j,3,M2hjvf)=DiaRV(i,j,1,nrhs,M3hjvf)
             DiaRVfrc(i,j,3,M2kvrf)=DiaRV(i,j,1,nrhs,M3kvrf)
             DiaRVfrc(i,j,3,M2fsco)=DiaRV(i,j,1,nrhs,M3fsco)
             DiaRVfrc(i,j,3,M2bstm)=DiaRV(i,j,1,nrhs,M3bstm)
@@ -2161,8 +2244,8 @@
      &                               DiaRV(i,j,k,nrhs,M3hrad)
 #  endif
 #  ifdef WEC_VF
-              DiaRVfrc(i,j,3,M2jvrf)=DiaRVfrc(i,j,3,M2jvrf)+            &
-     &                               DiaRV(i,j,k,nrhs,M3jvrf)
+              DiaRVfrc(i,j,3,M2hjvf)=DiaRVfrc(i,j,3,M2hjvf)+            &
+     &                               DiaRV(i,j,k,nrhs,M3hjvf)
               DiaRVfrc(i,j,3,M2kvrf)=DiaRVfrc(i,j,3,M2kvrf)+            &
      &                               DiaRV(i,j,k,nrhs,M3kvrf)
               DiaRVfrc(i,j,3,M2fsco)=DiaRVfrc(i,j,3,M2fsco)+            &

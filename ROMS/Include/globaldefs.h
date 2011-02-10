@@ -689,8 +689,8 @@
 ** Activate internal switch for activating a roller.
 */
 
-#if defined ROLLER_SVENDSEN || defined ROLLER_MONO || \
-    defined ROLLER_RENIERS
+#if (defined ROLLER_SVENDSEN || defined ROLLER_MONO ||	\
+     defined ROLLER_RENIERS) && defined WEC
 # define WEC_ROLLER
 #endif
 

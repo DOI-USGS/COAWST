@@ -499,8 +499,8 @@
         NDrhs=NDrhs+2
 #   endif
 #   ifdef WEC_VF
-        NDM3d=NDM3d+9  !
-        NDrhs=NDrhs+9
+        NDM3d=NDM3d+10  !
+        NDrhs=NDrhs+10
 #   endif
 #   ifdef UV_COR
         NDM3d=NDM3d+1  ! Coriolis

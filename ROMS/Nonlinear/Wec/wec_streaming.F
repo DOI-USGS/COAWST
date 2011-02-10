@@ -57,6 +57,9 @@
      &                         FORCES(ng) % Hwave,                      &
      &                         FORCES(ng) % Dwave,                      &
      &                         FORCES(ng) % Lwave,                      &
+# ifdef WAVES_OCEAN
+     &                         FORCES(ng) % Dissip_fric,                &
+# endif
 # ifdef DIAGNOSTICS_UV
      &                         DIAGS(ng) % DiaRU,                       &
      &                         DIAGS(ng) % DiaRV,                       &
@@ -84,6 +87,9 @@
 # endif
      &                               zeta,                              &
      &                               Hwave, Dwave, Lwave,               &
+# ifdef WAVES_OCEAN
+     &                               Dissip_fric,                       &
+# endif
 # ifdef DIAGNOSTICS_UV
      &                               DiaRU, DiaRV,                      &
 # endif
@@ -122,6 +128,9 @@
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
+#  ifdef WAVES_OCEAN
+      real(r8), intent(in) :: Dissip_fric(LBi:,LBj:)
+#  endif
 #  ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: DiaRV(LBi:,LBj:,:,:,:)
@@ -143,10 +152,13 @@
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
-#   ifdef DIAGNOSTICS_UV
+#  ifdef WAVES_OCEAN
+      real(r8), intent(in) :: Dissip_fric(LBi:UBi,LBj:UBj)
+#  endif
+#  ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
       real(r8), intent(inout) :: DiaRV(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
-#   endif
+#  endif
 #  ifdef BOTTOM_STREAMING_XU_BOWEN
       real(r8), intent(in) :: visc2_r(LBi:UBi,LBj:UBj)
 #  endif
@@ -243,12 +255,18 @@
           END DO
           owd(i,j)=1.0_r8/(owd(i,j)+eps)
 !  Wave friction factor (Soulsby, 1997)
+!  Hold this constant for now.  Need to add logic for 
+!  zo if no bbl on, or zo_apparent if use a bbl.
           cff3=MIN(1.39_r8*(sigma(i,j)*(ks/30.0_r8)/                    &
      &               cff)**0.52_r8,0.2_r8)
 !
 !  Wave dissipation rate due to wave bottom drag Reniers et al. (2004b)
 !
-          EWD(i,j)=(0.5_r8/sqrt(pi))*cff3*(cff**3.0_r8) 
+#  ifdef WAVES_OCEAN
+          EWD(i,j)=Dissip_fric(i,j)
+#  else
+          EWD(i,j)=(0.5_r8/sqrt(pi))*cff3*(cff**3.0_r8)
+#  endif
 # endif
 # ifdef BOTTOM_STREAMING_XU_BOWEN
           Kobeta(i,j)=waven(i,j)/((SQRT(0.5_r8*sigma(i,j)/              &

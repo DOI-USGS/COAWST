@@ -100,7 +100,7 @@
         integer :: M2hrad          ! 2D momentum, horizontal stresses
 #  endif
 #  ifdef WEC_VF
-        integer :: M2jvrf          ! 2D momentum, J vortex force
+        integer :: M2hjvf          ! 2D momentum, horizontal J vortex force
         integer :: M2kvrf          ! 2D momentum, K vortex force
         integer :: M2fsco          ! 2D momentum, coriolis-stokes
         integer :: M2bstm          ! 2D momentum, bottom streaming
@@ -128,7 +128,8 @@
         integer :: M3vrad          ! 3D momentum, vertical stresses
 #   endif
 #   ifdef WEC_VF
-        integer :: M3jvrf          ! 3D momentum, J vortex force
+        integer :: M3vjvf          ! 3D momentum, vertical J vortex force
+        integer :: M3hjvf          ! 3D momentum, horizontal J vortex force
         integer :: M3kvrf          ! 3D momentum, K vortex force
         integer :: M3fsco          ! 3D momentum, coriolis-stokes
         integer :: M3bstm          ! 3D momentum, bottom streaming
@@ -1921,7 +1922,7 @@
       ic=ic+1
 #  endif
 #  if defined WEC_VF
-      M2jvrf=ic+1
+      M2hjvf=ic+1
       M2kvrf=ic+2
       M2fsco=ic+3
       M2bstm=ic+4
@@ -1968,16 +1969,17 @@
       ic=ic+2
 #   endif
 #   if defined WEC_VF
-      M3jvrf=ic+1
-      M3kvrf=ic+2
-      M3fsco=ic+3
-      M3bstm=ic+4
-      M3wrol=ic+5
-      M3wbrk=ic+6
-      M3zetw=ic+7
-      M3zqsp=ic+8
-      M3zbeh=ic+9
-      ic=ic+9
+      M3vjvf=ic+1
+      M3hjvf=ic+2
+      M3kvrf=ic+3
+      M3fsco=ic+4
+      M3bstm=ic+5
+      M3wrol=ic+6
+      M3wbrk=ic+7
+      M3zetw=ic+8
+      M3zqsp=ic+9
+      M3zbeh=ic+10
+      ic=ic+10
 #   endif
       M3pgrd=ic+1             ! needs to be here, indices below
       M3vvis=ic+2             ! require special treatment

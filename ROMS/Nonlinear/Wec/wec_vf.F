@@ -79,7 +79,9 @@
      &                            FORCES(ng) % Dwave,                   &
      &                            FORCES(ng) % Lwave,                   &
      &                            FORCES(ng) % Dissip_break,            &
+# ifdef WEC_ROLLER
      &                            FORCES(ng) % Dissip_roller,           &
+# endif
      &                            FORCES(ng) % Dissip_wcap,             &
      &                            OCEAN(ng) % zeta,                     &
 # ifdef SOLVE3D
@@ -101,8 +103,10 @@
      &                            MIXING(ng) % rustr3d,                 &
      &                            MIXING(ng) % rvstr3d,                 &
 # endif
+# ifdef WEC_ROLLER
      &                            MIXING(ng) % rurol2d,                 &
      &                            MIXING(ng) % rvrol2d,                 &
+# endif
      &                            MIXING(ng) % rubrk2d,                 &
      &                            MIXING(ng) % rvbrk2d,                 &
      &                            MIXING(ng) % rukvf2d,                 &
@@ -136,7 +140,10 @@
      &                                  Hz, z_r, z_w,                   &
 # endif
      &                                  Hwave, Dwave, Lwave,            &
-     &                                  Dissip_break, Dissip_roller,    &
+     &                                  Dissip_break,                   &
+# ifdef WEC_ROLLER
+     &                                  Dissip_roller,                  &
+# endif
      &                                  Dissip_wcap,                    &
      &                                  zeta,                           &
 # ifdef SOLVE3D
@@ -150,7 +157,9 @@
 # ifdef SOLVE3D
      &                                  rustr3d,  rvstr3d,              &
 # endif
+# ifdef WEC_ROLLER
      &                                  rurol2d, rvrol2d,               &
+# endif
      &                                  rubrk2d, rvbrk2d,               &
      &                                  rukvf2d, rvkvf2d)
 !***********************************************************************
@@ -207,7 +216,9 @@
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
       real(r8), intent(in) :: Dissip_break(LBi:,LBj:)
+#  ifdef WEC_ROLLER
       real(r8), intent(in) :: Dissip_roller(LBi:,LBj:)
+#  endif
       real(r8), intent(in) :: Dissip_wcap(LBi:,LBj:)
       real(r8), intent(in) :: zeta(LBi:,LBj:,:)
 #  ifdef SOLVE3D
@@ -229,8 +240,10 @@
       real(r8), intent(inout) :: rustr3d(LBi:,LBj:,:)
       real(r8), intent(inout) :: rvstr3d(LBi:,LBj:,:)
 #  endif
+#  ifdef WEC_ROLLER
       real(r8), intent(inout) :: rurol2d(LBi:,LBj:)
       real(r8), intent(inout) :: rvrol2d(LBi:,LBj:)
+#  endif
       real(r8), intent(inout) :: rubrk2d(LBi:,LBj:)
       real(r8), intent(inout) :: rvbrk2d(LBi:,LBj:)
       real(r8), intent(inout) :: rukvf2d(LBi:,LBj:)
@@ -267,7 +280,9 @@
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dissip_break(LBi:UBi,LBj:UBj)
+#  ifdef WEC_ROLLER
       real(r8), intent(in) :: Dissip_roller(LBi:UBi,LBj:UBj)
+#  endif
       real(r8), intent(in) :: Dissip_wcap(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
 #  ifdef SOLVE3D
@@ -289,8 +304,10 @@
       real(r8), intent(inout) :: rustr3d(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: rvstr3d(LBi:UBi,LBj:UBj,N(ng))
 #  endif
+#  ifdef WEC_ROLLER
       real(r8), intent(inout) :: rurol2d(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: rvrol2d(LBi:UBi,LBj:UBj)
+#  endif
       real(r8), intent(inout) :: rubrk2d(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: rvbrk2d(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: rukvf2d(LBi:UBi,LBj:UBj)
@@ -335,8 +352,10 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: odiss
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: BBXbrk
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: BBYbrk
+# ifdef WEC_ROLLER
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: BBXrol
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: BBYrol
+# endif
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,N(ng)) :: ku
@@ -477,7 +496,7 @@
           DO k=2,N(ng)
              fac2=1.0_r8+SCALARS(ng)%Cs_r(k)
              cff=Hz(i,j,k)
-             vi2=vi2+cff*shear2(i,k)*COSH(2.0_r8*kD(i,j))*fac2	  
+             vi2=vi2+cff*shear2(i,k)*COSH(2.0_r8*kD(i,j)*fac2)
           END DO
           cff1=0.5_r8*waveAA(i,j)*osigma(i,j)
           cff2=TANH(kD(i,j))/SINH(2.0_r8*kD(i,j))
@@ -596,8 +615,10 @@
         DO i=Istr,Iend
           rubrk2d(i,j)=0.0_r8
           rvbrk2d(i,j)=0.0_r8
+# ifdef WEC_ROLLER
           rurol2d(i,j)=0.0_r8
           rvrol2d(i,j)=0.0_r8
+# endif
         END DO
       END DO
       DO k=1,N(ng)
@@ -608,11 +629,13 @@
             cff3=COSH(2.0_r8*pi*cff2)*odiss(i,j)
             cff1=Dissip_wcap(i,j)+Dissip_break(i,j)
             cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)
-            cff5=Dissip_roller(i,j)*osigma(i,j)
             BBXbrk(i,j)=cff3*cff4*wavenx(i,j)
             BBYbrk(i,j)=cff3*cff4*waveny(i,j)
+# ifdef WEC_ROLLER
+            cff5=Dissip_roller(i,j)*osigma(i,j)
             BBXrol(i,j)=cff3*cff5*wavenx(i,j)
             BBYrol(i,j)=cff3*cff5*waveny(i,j)
+# endif
           END DO
         END DO
 !
@@ -630,13 +653,15 @@
 # ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3wbrk)=cff
 # endif
+# ifdef WEC_ROLLER
             cff=0.5_r8*(BBXrol(i  ,j)*Hz(i  ,j,k)+                      &
      &                  BBXrol(i-1,j)*Hz(i-1,j,k))*                     &
      &                  om_u(i,j)*on_u(i,j)
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
             rurol2d(i,j)=rurol2d(i,j)+cff*Hzk(i,k)
-# ifdef DIAGNOSTICS_UV
+#  ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3wrol)=cff
+#  endif
 # endif
           END DO
           IF (j.ge.JstrV) THEN
@@ -650,17 +675,19 @@
      &                    BBYbrk(i,j-1)*Hz(i,j-1,k))*                   &
      &                    om_v(i,j)*on_v(i,j)
               rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
-              rvrol2d(i,j)=rvrol2d(i,j)+cff*Hzk(i,k)
+              rvbrk2d(i,j)=rvbrk2d(i,j)+cff*Hzk(i,k)
 # ifdef DIAGNOSTICS_UV
               DiaRV(i,j,k,nrhs,M3wbrk)=cff
 # endif
+# ifdef WEC_ROLLER
               cff=0.5_r8*(BBYrol(i,j  )*Hz(i,j  ,k)+                    &
      &                    BBYrol(i,j-1)*Hz(i,j-1,k))*                   &
      &                    om_v(i,j)*on_v(i,j)
               rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
-              rvbrk2d(i,j)=rvbrk2d(i,j)+cff*Hzk(i,k)
-# ifdef DIAGNOSTICS_UV
+              rvrol2d(i,j)=rvrol2d(i,j)+cff*Hzk(i,k)
+#  ifdef DIAGNOSTICS_UV
               DiaRV(i,j,k,nrhs,M3wrol)=cff
+#  endif
 # endif
             END DO
           END IF
@@ -674,8 +701,10 @@
      &                       Hz(i  ,j,k))
             CF(i)=CF(i)+Hzk(i,k)
           END DO
-          rurol2d(i,j)=rurol2d(i,j)/CF(i)
           rubrk2d(i,j)=rubrk2d(i,j)/CF(i)
+# ifdef WEC_ROLLER
+          rurol2d(i,j)=rurol2d(i,j)/CF(i)
+# endif
 !
           CF(i)=0.0_r8
           DO k=1,N(ng)
@@ -683,8 +712,10 @@
      &                       Hz(i,j-1,k))
             CF(i)=CF(i)+Hzk(i,k)
           END DO
-          rvrol2d(i,j)=rvrol2d(i,j)/CF(i)
           rvbrk2d(i,j)=rvbrk2d(i,j)/CF(i)
+# ifdef WEC_ROLLER
+          rvrol2d(i,j)=rvrol2d(i,j)/CF(i)
+# endif
         END DO
       END DO
       K_LOOP : DO k=1,N(ng)
@@ -715,9 +746,10 @@
           DO i=IstrU,Iend
             cff1=UFx(i,j+1)-UFx(i,j)
             cff=cff1*Hvstom(i,j)
-            DiaRU(i,j,k,nrhs,M3xadv)=DiaRU(i,j,k,nrhs,M3xadv)+cff
-            DiaRU(i,j,k,nrhs,M3hadv)=DiaRU(i,j,k,nrhs,M3hadv)+cff
-            DiaRU(i,j,k,nrhs,M3jvrf)=DiaRU(i,j,k,nrhs,M3jvrf)-cff
+            DiaRU(i,j,k,nrhs,M3xadv)=cff
+            DiaRU(i,j,k,nrhs,M3yadv)=0.0_r8
+            DiaRU(i,j,k,nrhs,M3hadv)=cff
+            DiaRU(i,j,k,nrhs,M3hjvf)=-cff
           END DO
         END DO
         DO j=JstrV,Jend
@@ -740,9 +772,10 @@
           DO j=JstrV,Jend 
             cff2=VFe(i+1,j)-VFe(i,j)
             cff=cff2*Huston(i,j)
-            DiaRV(i,j,k,nrhs,M3yadv)=DiaRV(i,j,k,nrhs,M3yadv)+cff
-            DiaRV(i,j,k,nrhs,M3hadv)=DiaRV(i,j,k,nrhs,M3hadv)+cff
-            DiaRV(i,j,k,nrhs,M3jvrf)=DiaRV(i,j,k,nrhs,M3jvrf)-cff
+            DiaRV(i,j,k,nrhs,M3xadv)=0.0_r8
+            DiaRV(i,j,k,nrhs,M3yadv)=cff
+            DiaRV(i,j,k,nrhs,M3hadv)=cff
+            DiaRV(i,j,k,nrhs,M3hjvf)=-cff
           END DO
         END DO
 # endif
@@ -800,7 +833,7 @@
 # ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3xadv)=DiaRU(i,j,k,nrhs,M3xadv)+cff3
             DiaRU(i,j,k,nrhs,M3hadv)=DiaRU(i,j,k,nrhs,M3hadv)+cff3
-            DiaRU(i,j,k,nrhs,M3jvrf)=DiaRU(i,j,k,nrhs,M3jvrf)+cff4
+            DiaRU(i,j,k,nrhs,M3hjvf)=DiaRU(i,j,k,nrhs,M3hjvf)+cff4
 # endif
 !
 !  Conversion to m2/s2.
@@ -819,7 +852,7 @@
 # ifdef DIAGNOSTICS_UV
             DiaRV(i,j,k,nrhs,M3yadv)=DiaRV(i,j,k,nrhs,M3yadv)+cff4
             DiaRV(i,j,k,nrhs,M3hadv)=DiaRV(i,j,k,nrhs,M3hadv)+cff4
-            DiaRV(i,j,k,nrhs,M3jvrf)=DiaRV(i,j,k,nrhs,M3jvrf)+cff3
+            DiaRV(i,j,k,nrhs,M3hjvf)=DiaRV(i,j,k,nrhs,M3hjvf)+cff3
 # endif
 !
 !  Conversion to m2/s2.
@@ -834,16 +867,18 @@
 !
       CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
-     &                  rurol2d)
-      CALL bc_v2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  rvrol2d)
-      CALL bc_u2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
      &                  rubrk2d)
       CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  rvbrk2d)
+# ifdef WEC_ROLLER
+      CALL bc_u2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  rurol2d)
+      CALL bc_v2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  rvrol2d)
+# endif
       CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  rukvf2d)
@@ -869,10 +904,16 @@
      &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
      &                  rvstr3d)
 # ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    rurol2d, rvrol2d, rubrk2d, rvbrk2d)
+     &                    rubrk2d, rvbrk2d)
+# ifdef WEC_ROLLER
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    rurol2d, rvrol2d)
+# endif
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &

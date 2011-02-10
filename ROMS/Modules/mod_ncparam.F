@@ -1686,10 +1686,10 @@
                 idDv2d(M2hrad)=varid
 # endif
 # ifdef WEC_VF
-              CASE ('idDu2d(M2jvrf)')
-                idDu2d(M2jvrf)=varid
-              CASE ('idDv2d(M2jvrf)')
-                idDv2d(M2jvrf)=varid
+              CASE ('idDu2d(M2hjvf)')
+                idDu2d(M2hjvf)=varid
+              CASE ('idDv2d(M2hjvf)')
+                idDv2d(M2hjvf)=varid
               CASE ('idDu2d(M2kvrf)')
                 idDu2d(M2kvrf)=varid
               CASE ('idDv2d(M2kvrf)')
@@ -1785,10 +1785,14 @@
                 idDv3d(M3vrad)=varid
 #  endif
 #  ifdef WEC_VF
-              CASE ('idDu3d(M3jvrf)')
-                idDu3d(M3jvrf)=varid
-              CASE ('idDv3d(M3jvrf)')
-                idDv3d(M3jvrf)=varid
+              CASE ('idDu3d(M3vjvf)')
+                idDu3d(M3vjvf)=varid
+              CASE ('idDv3d(M3vjvf)')
+                idDv3d(M3vjvf)=varid
+              CASE ('idDu3d(M3hjvf)')
+                idDu3d(M3hjvf)=varid
+              CASE ('idDv3d(M3hjvf)')
+                idDv3d(M3hjvf)=varid
               CASE ('idDu3d(M3kvrf)')
                 idDu3d(M3kvrf)=varid
               CASE ('idDv3d(M3kvrf)')

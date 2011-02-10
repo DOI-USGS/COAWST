@@ -56,7 +56,9 @@
      &                            FORCES(ng) % Hwave,                   &
      &                            FORCES(ng) % Dwave,                   &
      &                            FORCES(ng) % Lwave,                   &
+# if defined WEC_ROLLER
      &                            FORCES(ng) % rollA,                   &
+# endif
      &                            OCEAN(ng) % zeta,                     &
 # ifdef WEC_MELLOR
      &                            OCEAN(ng) % rulag2d,                  &
@@ -87,7 +89,10 @@
 # endif
      &                                  on_u, on_v, om_u, om_v,         &
      &                                  Hz, z_w,                        &
-     &                                  Hwave, Dwave, Lwave, rollA,     &
+     &                                  Hwave, Dwave, Lwave,            &
+# if defined WEC_ROLLER
+     &                                  rollA,                          &
+# endif
      &                                  zeta,                           &
 # ifdef WEC_MELLOR
      &                                  rulag2d, rvlag2d,               &
@@ -135,7 +140,9 @@
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
+#  if defined WEC_ROLLER
       real(r8), intent(in) :: rollA(LBi:,LBj:)
+#  endif
       real(r8), intent(in) :: zeta(LBi:,LBj:,:)
 #  ifdef WEC_MELLOR
       real(r8), intent(inout) :: rulag2d(LBi:,LBj:)
@@ -168,7 +175,9 @@
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
+#  if defined WEC_ROLLER
       real(r8), intent(in) :: rollA(LBi:UBi,LBj:UBj)
+#  endif
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
 #  ifdef WEC_MELLOR
       real(r8), intent(inout) :: rulag2d(LBi:UBi,LBj:UBj)
@@ -254,8 +263,10 @@
           DO i=IstrU,Iend
              cff=fac1*om_u(i,j)*on_u(i,j)
              cff2=(waveE(i-1,j)+waveE(i,j))
+# if defined WEC_ROLLER
              cff2=cff2+(rollA(i-1,j)*sigma(i-1,j)+                      &
      &                  rollA(i,j)*sigma(i,j))
+# endif
              cff3=(kD(i-1,j)+kD(i,j))
 # ifdef WEC_MELLOR
 
@@ -291,8 +302,10 @@
           DO i=Istr,Iend
              cff=fac1*om_v(i,j)*on_v(i,j)
              cff2=(waveE(i,j-1)+waveE(i,j))
+# if defined WEC_ROLLER
              cff2=cff2+(rollA(i,j-1)*sigma(i,j-1)+                      &
      &                  rollA(i,j)*sigma(i,j))
+# endif
              cff3=(kD(i,j-1)+kD(i,j))
 # ifdef WEC_MELLOR
 !

@@ -101,8 +101,10 @@
 # endif
 # ifdef WEC
 #  ifdef WEC_VF
+#   ifdef WEC_ROLLER
      &                  MIXING(ng) % rurol2d,                           &
      &                  MIXING(ng) % rvrol2d,                           &
+#   endif
      &                  MIXING(ng) % rubrk2d,                           &
      &                  MIXING(ng) % rvbrk2d,                           &
      &                  MIXING(ng) % rukvf2d,                           &
@@ -207,7 +209,9 @@
 # endif
 # ifdef WEC
 #  ifdef WEC_VF
+#   ifdef WEC_ROLLER
      &                        rurol2d, rvrol2d,                         &
+#   endif
      &                        rubrk2d, rvbrk2d,                         &
      &                        rukvf2d, rvkvf2d,                         &
      &                        bh, qsp, zetaw,                           &
@@ -342,8 +346,10 @@
 #  endif
 #  ifdef WEC
 #   ifdef WEC_VF
+#    ifdef WEC_ROLLER
       real(r8), intent(in) :: rurol2d(LBi:,LBj:)
       real(r8), intent(in) :: rvrol2d(LBi:,LBj:)
+#    endif
       real(r8), intent(in) :: rubrk2d(LBi:,LBj:)
       real(r8), intent(in) :: rvbrk2d(LBi:,LBj:)
       real(r8), intent(in) :: rukvf2d(LBi:,LBj:)
@@ -483,8 +489,10 @@
 #  endif
 #  ifdef WEC
 #   ifdef WEC_VF
+#   ifdef WEC_ROLLER
       real(r8), intent(in) :: rurol2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rvrol2d(LBi:UBi,LBj:UBj)
+#   endif
       real(r8), intent(in) :: rubrk2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rvbrk2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rukvf2d(LBi:UBi,LBj:UBj)
@@ -2094,22 +2102,32 @@
 !
       DO j=Jstr,Jend
         DO i=IstrU,Iend
-          cff4=rurol2d(i,j)
-          cff5=rubrk2d(i,j)
-          rhs_ubar(i,j)=rhs_ubar(i,j)+cff4+cff5
+          cff1=rubrk2d(i,j)
+          rhs_ubar(i,j)=rhs_ubar(i,j)+cff1
 #  ifdef DIAGNOSTICS_UV
-          DiaU2rhs(i,j,M2wrol)=cff4
-          DiaU2rhs(i,j,M2wbrk)=cff5
+          DiaU2rhs(i,j,M2wbrk)=cff1
+#  endif
+#  ifdef WEC_ROLLER
+          cff1=rurol2d(i,j)
+          rhs_ubar(i,j)=rhs_ubar(i,j)+cff1
+#   ifdef DIAGNOSTICS_UV
+          DiaU2rhs(i,j,M2wrol)=cff1
+#   endif
 #  endif
         END DO
         IF (j.ge.JstrV) THEN
           DO i=Istr,Iend
-            cff4=rvrol2d(i,j)
-            cff5=rvbrk2d(i,j)
-            rhs_vbar(i,j)=rhs_vbar(i,j)+cff4+cff5
+            cff1=rvbrk2d(i,j)
+            rhs_vbar(i,j)=rhs_vbar(i,j)+cff1
 #  ifdef DIAGNOSTICS_UV
-            DiaV2rhs(i,j,M2wrol)=cff4
-            DiaV2rhs(i,j,M2wbrk)=cff5
+            DiaV2rhs(i,j,M2wbrk)=cff1
+#  endif
+#  ifdef WEC_ROLLER
+            cff1=rvrol2d(i,j)
+            rhs_vbar(i,j)=rhs_vbar(i,j)+cff1
+#   ifdef DIAGNOSTICS_UV
+            DiaV2rhs(i,j,M2wrol)=cff1
+#   endif
 #  endif
           END DO
         END IF
@@ -2143,7 +2161,7 @@
             cff=cff1*DVSom(i,j)
             DiaU2rhs(i,j,M2xadv)=DiaU2rhs(i,j,M2xadv)+cff
             DiaU2rhs(i,j,M2hadv)=DiaU2rhs(i,j,M2hadv)+cff
-            DiaU2rhs(i,j,M2jvrf)=DiaU2rhs(i,j,M2jvrf)-cff
+            DiaU2rhs(i,j,M2hjvf)=DiaU2rhs(i,j,M2hjvf)-cff
           END DO
         END DO
         DO j=JstrV,Jend
@@ -2168,7 +2186,7 @@
             cff=cff2*DUSon(i,j)
             DiaV2rhs(i,j,M2yadv)=DiaV2rhs(i,j,M2yadv)+cff
             DiaV2rhs(i,j,M2hadv)=DiaV2rhs(i,j,M2hadv)+cff
-            DiaV2rhs(i,j,M2jvrf)=DiaV2rhs(i,j,M2jvrf)-cff
+            DiaV2rhs(i,j,M2hjvf)=DiaV2rhs(i,j,M2hjvf)-cff
           END DO
         END DO
 #  endif
@@ -2227,7 +2245,7 @@
 #  ifdef DIAGNOSTICS_UV
             DiaU2rhs(i,j,M2xadv)=DiaU2rhs(i,j,M2xadv)+cff3
             DiaU2rhs(i,j,M2hadv)=DiaU2rhs(i,j,M2hadv)+cff3
-            DiaU2rhs(i,j,M2jvrf)=DiaU2rhs(i,j,M2jvrf)+cff4
+            DiaU2rhs(i,j,M2hjvf)=DiaU2rhs(i,j,M2hjvf)+cff4
 #  endif
           END DO
         END DO
@@ -2238,11 +2256,11 @@
             cff3=DUSom(i,j)*cff1
             cff4=DVSom(i,j)*cff2
             rhs_vbar(i,j)=rhs_vbar(i,j)+cff3+cff4
-!           rvstr3d(i,j)=rvstr3d(i,j,k)-cff3-cff4
+!           rvstr2d(i,j)=rvstr2d(i,j,k)-cff3-cff4
 #  ifdef DIAGNOSTICS_UV
             DiaV2rhs(i,j,M2yadv)=DiaV2rhs(i,j,M2yadv)+cff4
             DiaV2rhs(i,j,M2hadv)=DiaV2rhs(i,j,M2hadv)+cff4
-            DiaV2rhs(i,j,M2jvrf)=DiaV2rhs(i,j,M2jvrf)+cff3
+            DiaV2rhs(i,j,M2hjvf)=DiaV2rhs(i,j,M2hjvf)+cff3
 #  endif
           END DO
         END DO
