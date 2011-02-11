@@ -52,6 +52,7 @@
      &                            GRID(ng) % om_u,                      &
      &                            GRID(ng) % om_v,                      &
      &                            GRID(ng) % Hz,                        &
+     &                            GRID(ng) % z_r,                       &
      &                            GRID(ng) % z_w,                       &
      &                            FORCES(ng) % Hwave,                   &
      &                            FORCES(ng) % Dwave,                   &
@@ -88,7 +89,7 @@
      &                                  umask_wet, vmask_wet,           &
 # endif
      &                                  on_u, on_v, om_u, om_v,         &
-     &                                  Hz, z_w,                        &
+     &                                  Hz, z_r, z_w,                   &
      &                                  Hwave, Dwave, Lwave,            &
 # if defined WEC_ROLLER
      &                                  rollA,                          &
@@ -136,7 +137,8 @@
       real(r8), intent(in) :: om_u(LBi:,LBj:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
-      real(r8), intent(in) :: z_w(LBi:,LBj:,:)
+      real(r8), intent(in) :: z_r(LBi:,LBj:,:)
+      real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
@@ -171,7 +173,8 @@
       real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,UBk)
-      real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,UBk)
+      real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,UBk)
+      real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:UBk)
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
@@ -232,7 +235,7 @@
 !
 !  Compute total depth
 !
-          Dstp(i,j)=zeta(i,j,1)+h(i,j)
+          Dstp(i,j)=z_w(i,j,N(ng))-z_w(i,j,0)
 !
 !  Compute wave amplitude (0.5*Hrms), wave number, intrinsic frequency.
 !
@@ -258,9 +261,9 @@
 !
 !  Compute u-stokes velocities, Eqn. 2.
 !
-        fac2=1.0_r8+SCALARS(ng)%Cs_r(k)
         DO j=Jstr,Jend
           DO i=IstrU,Iend
+             fac2=(z_r(i,j,k)-z_w(i,j,0))/Dstp(i,j)
              cff=fac1*om_u(i,j)*on_u(i,j)
              cff2=(waveE(i-1,j)+waveE(i,j))
 # if defined WEC_ROLLER

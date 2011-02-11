@@ -645,8 +645,8 @@
       integer, pointer :: points(:)
 
       real :: cff, COSWC, SINWC
-# ifdef WRF_COUPLING
-      real :: cff1, cff2
+# if !defined BBL_MODEL
+      real :: cff2
 # endif
       real(r8), pointer :: avdata(:)
 

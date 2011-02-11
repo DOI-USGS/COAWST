@@ -2187,6 +2187,7 @@
       JDSXS = 30
       JDSXW = 31
       MCMVAR = 31
+      LADDS = .TRUE.
 #else
       MCMVAR = 27                                                         40.65 40.61 40.51 40.13
 #endif

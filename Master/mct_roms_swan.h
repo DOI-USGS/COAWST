@@ -751,6 +751,7 @@
           FORCES(ng)%Pwave_bot(i,j)=MAX(0.0_r8,A(ij))
         END DO
       END DO
+#if defined BBL_MODEL
 !
 !  Bottom orbital velocity (m/s).
 !
@@ -763,6 +764,7 @@
           FORCES(ng)%Uwave_rms(i,j)=MAX(0.0_r8,A(ij)*ramp)
         END DO
       END DO
+#endif
 !
 !  Wave direction (radians).
 !

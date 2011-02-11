@@ -337,6 +337,7 @@
       real(r8), parameter :: Lwave_min = 1.0_r8
       real(r8), dimension(IminS:ImaxS) :: CF
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dstp
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: oDstp
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: kD
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wavec
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: waven
@@ -383,7 +384,8 @@
 !
 !  Compute total depth
 !
-          Dstp(i,j)=zeta(i,j,1)+h(i,j)
+          Dstp(i,j)=z_w(i,j,N(ng))-z_w(i,j,0)
+          oDstp(i,j)=1.0_r8/Dstp(i,j)
 !
 !  Compute wave amplitude (0.5*Hrms), wave number, intrinsic frequency.
 !
@@ -409,7 +411,7 @@
           gamr(i,j)=MIN(0.707_r8*Dstp(i,j)/                             &
      &              (1.25_r8*Hwave(i,j)+eps),1.0_r8)
           DO k=1,N(ng)
-            cff2=(1.0_r8+SCALARS(ng)%Cs_r(k))*gamr(i,j)
+            cff2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)*gamr(i,j)
             odiss(i,j)=odiss(i,j)+Hz(i,j,k)*                            &
      &                   COSH(2.0_r8*pi*cff2)
           END DO
@@ -468,13 +470,11 @@
 !
         DO i=Istr,Iend
           cff=Hz(i,j,1)
-          fac2=(1.0_r8+SCALARS(ng)%Cs_r(N(ng)))-                        &
-     &         (1.0_r8+SCALARS(ng)%Cs_r(1))
+          fac2=(z_r(i,j,N(ng))-z_r(i,j,1))*oDstp(i,j)
           vi1=cff*shear2(i,1)*SINH(2.0_r8*kD(i,j)*fac2)
           DO k=2,N(ng)
             cff=Hz(i,j,k)
-            fac2=(1.0_r8+SCALARS(ng)%Cs_r(N(ng)))-                      &
-     &           (1.0_r8+SCALARS(ng)%Cs_r(k))
+            fac2=(z_r(i,j,N(ng))-z_r(i,j,k))*oDstp(i,j)
             vi1=vi1+cff*shear2(i,k)*SINH(2.0_r8*kD(i,j)*fac2)             
           END DO
 !
@@ -490,11 +490,11 @@
 !---------------------------------------------------------------------------
 !
         DO i=Istr,Iend
-          fac2=1.0_r8+SCALARS(ng)%Cs_r(1)
+          fac2=(z_r(i,j,1)-z_w(i,j,0))*oDstp(i,j)
           cff=Hz(i,j,1)
           vi2=cff*shear2(i,1)*COSH(2.0_r8*kD(i,j)*fac2)
           DO k=2,N(ng)
-             fac2=1.0_r8+SCALARS(ng)%Cs_r(k)
+             fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
              cff=Hz(i,j,k)
              vi2=vi2+cff*shear2(i,k)*COSH(2.0_r8*kD(i,j)*fac2)
           END DO
@@ -622,7 +622,7 @@
         END DO
       END DO
       DO k=1,N(ng)
-        fac2=1.0_r8+SCALARS(ng)%Cs_r(k)
+        fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
         DO j=JstrV-1,Jend
           DO i=IstrU-1,Iend
             cff2=fac2*gamr(i,j)
