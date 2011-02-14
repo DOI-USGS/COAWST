@@ -842,9 +842,11 @@
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Pwave_bot)
+# if defined BBL_MODEL
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Uwave_rms)
+# endif
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Dwave)
@@ -879,24 +881,27 @@
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    FORCES(ng)%Hwave, FORCES(ng)%Pwave_top,       &
      &                    FORCES(ng)%Pwave_bot)
+# if defined BBL_MODEL
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    FORCES(ng)%Uwave_rms)
+# endif
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    FORCES(ng)%Dwave, FORCES(ng)%Lwave)
 # ifdef WAVES_LENGTHP
-      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    FORCES(ng)%Uwave_rms, FORCES(ng)%Dwave,       &
-     &                    FORCES(ng)%Lwave, FORCES(ng)%Lwavep)
-# else
-      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    FORCES(ng)%Uwave_rms, FORCES(ng)%Dwave,       &
-     &                    FORCES(ng)%Lwave)
+     &                    FORCES(ng)%Lwavep)
 # endif
 # ifdef ROLLER_SVENDSEN
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    FORCES(ng)%wave_break)
+     &                    FORCES(ng)%Wave_break)
 # endif
 #endif
 !
