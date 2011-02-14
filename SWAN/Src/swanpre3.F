@@ -245,7 +245,7 @@
 !  BOUNDHINDPR = which processor is able to read this data to fill its AC2 array.
 !
       DO i=1,Numspec(ng)
-        IF (MXCGL.gt.MYCGL) THEN
+        IF (MXCGL_G(ngp).gt.MYCGL_G(ngp)) THEN
           DO j=0,NPROC-1
             IF (BOUNDHINDPF(i).eq.0) THEN
               IF ((BOUNDHINDX(i).ge.IARRC(1,j)).and.                  &
@@ -254,10 +254,6 @@
               ENDIF
             ENDIF
           END DO
-          IF ((BOUNDHINDIX(i).ge.MXF).and.                               &
-     &        (BOUNDHINDIX(i).le.MXL)) THEN
-            BOUNDHINDPR(i)=INODE
-          ENDIF
         ELSE
           DO j=0,NPROC-1
             IF (BOUNDHINDPF(i).eq.0) THEN
@@ -267,6 +263,13 @@
               ENDIF
             ENDIF
           END DO
+        ENDIF
+        IF (MXCGL.gt.MYCGL) THEN
+          IF ((BOUNDHINDIX(i).ge.MXF).and.                               &
+     &        (BOUNDHINDIX(i).le.MXL)) THEN
+            BOUNDHINDPR(i)=INODE
+          ENDIF
+        ELSE
           IF ((BOUNDHINDIY(i).ge.MYF).and.                               &
      &        (BOUNDHINDIY(i).le.MYL)) THEN
             BOUNDHINDPR(i)=INODE
