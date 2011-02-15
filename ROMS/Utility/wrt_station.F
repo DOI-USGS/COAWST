@@ -1296,7 +1296,7 @@
         IF (exit_flag.ne.NoError) RETURN
       END IF
 # endif
-# ifdef WAVES_UB
+#if defined BBL_MODEL
 !
 !  Write out wind-induced wave bottom orbital velocity.
 !

@@ -2530,7 +2530,7 @@
         END IF
       END IF
 #endif
-#if defined BBL_MODEL || defined WAVES_OCEAN
+#if defined BBL_MODEL
 !
 !  Write out wind-induced wave bottom orbital velocity.
 !
