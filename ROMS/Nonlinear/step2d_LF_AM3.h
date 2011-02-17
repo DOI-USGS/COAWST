@@ -1114,16 +1114,6 @@
 !=======================================================================
 !  Compute right-hand-side for the 2D momentum equations.
 !=======================================================================
-# ifdef DIAGNOSTICS_UV
-       DO j=JstrR,JendR
-         DO i=IstrR,IendR
-           DO idiag=1,M2pgrd
-             DiaU2rhs(i,j,idiag)=0.0_r8
-             DiaV2rhs(i,j,idiag)=0.0_r8
-           END DO
-         END DO
-       END DO
-# endif
 !
 !-----------------------------------------------------------------------
 !  Compute pressure gradient terms.
@@ -1164,19 +1154,20 @@
           DiaU2rhs(i,j,M2pgrd)=rhs_ubar(i,j)
 # endif
 # if defined WEC_VF
-          cff3=         on_u(i,j)*                                      &
-     &                  (h(i-1,j)+h(i,j)+                               &
-     &                   gzeta(i-1,j)+gzeta(i,j))
+          cff3=0.5_r8*on_u(i,j)*                                        &
+     &         (h(i-1,j)+h(i,j)+                                        &
+     &         gzeta(i-1,j)+gzeta(i,j))
           cff4=cff3*g*(zetaw(i-1,j)-zetaw(i,j))
           cff5=cff3*g*(qsp(i-1,j)-qsp(i,j))
           cff6=cff3*(bh(i-1,j)-bh(i,j))
           cff7=rukvf2d(i,j)
           rhs_ubar(i,j)=rhs_ubar(i,j)-cff4-cff5+cff6+cff7
 #  ifdef DIAGNOSTICS_UV
+          DiaU2rhs(i,j,M2zeta)=DiaU2rhs(i,j,M2pgrd)
           DiaU2rhs(i,j,M2pgrd)=DiaU2rhs(i,j,M2pgrd)-cff4-cff5+cff6
-!          DiaU2rhs(i,j,M2zetw)=-cff4
-!          DiaU2rhs(i,j,M2zqsp)=-cff5
-!          DiaU2rhs(i,j,M2zbeh)=cff6
+          DiaU2rhs(i,j,M2zetw)=-cff4
+          DiaU2rhs(i,j,M2zqsp)=-cff5
+          DiaU2rhs(i,j,M2zbeh)=cff6
           DiaU2rhs(i,j,M2kvrf)=cff7
 #  endif
 # endif
@@ -1211,19 +1202,20 @@
             DiaV2rhs(i,j,M2pgrd)=rhs_vbar(i,j)
 # endif
 # if defined WEC_VF
-            cff3=         om_v(i,j)*                                    &
-     &                    (h(i,j-1)+h(i,j)+                             &
-     &                     gzeta(i,j-1)+gzeta(i,j))
-            cff4=cff1*g*(zetaw(i,j-1)-zetaw(i,j))
-            cff5=cff1*g*(qsp(i,j-1)-qsp(i,j))
-            cff6=cff1*(bh(i,j-1)-bh(i,j))
+            cff3=0.5_r8*om_v(i,j)*                                      &
+     &           (h(i,j-1)+h(i,j)+                                      &
+     &           gzeta(i,j-1)+gzeta(i,j))
+            cff4=cff3*g*(zetaw(i,j-1)-zetaw(i,j))
+            cff5=cff3*g*(qsp(i,j-1)-qsp(i,j))
+            cff6=cff3*(bh(i,j-1)-bh(i,j))
             cff7=rvkvf2d(i,j)
             rhs_vbar(i,j)=rhs_vbar(i,j)-cff4-cff5+cff6+cff7
 #  ifdef DIAGNOSTICS_UV
+            DiaV2rhs(i,j,M2zeta)=DiaV2rhs(i,j,M2pgrd)
             DiaV2rhs(i,j,M2pgrd)=DiaV2rhs(i,j,M2pgrd)-cff4-cff5+cff6
-!            DiaV2rhs(i,j,M2zetw)=-cff4
-!            DiaV2rhs(i,j,M2zqsp)=-cff5
-!            DiaV2rhs(i,j,M2zbeh)=cff6
+            DiaV2rhs(i,j,M2zetw)=-cff4
+            DiaV2rhs(i,j,M2zqsp)=-cff5
+            DiaV2rhs(i,j,M2zbeh)=cff6
             DiaV2rhs(i,j,M2kvrf)=cff7
 #  endif
 # endif
@@ -2105,6 +2097,7 @@
           cff1=rubrk2d(i,j)
           rhs_ubar(i,j)=rhs_ubar(i,j)+cff1
 #  ifdef DIAGNOSTICS_UV
+          DiaU2rhs(i,j,M2bstm)=0.0_r8   ! add this in later
           DiaU2rhs(i,j,M2wbrk)=cff1
 #  endif
 #  ifdef WEC_ROLLER
@@ -2113,6 +2106,10 @@
 #   ifdef DIAGNOSTICS_UV
           DiaU2rhs(i,j,M2wrol)=cff1
 #   endif
+#  else
+#   ifdef DIAGNOSTICS_UV
+          DiaU2rhs(i,j,M2wrol)=0.0_r8
+#   endif
 #  endif
         END DO
         IF (j.ge.JstrV) THEN
@@ -2120,6 +2117,7 @@
             cff1=rvbrk2d(i,j)
             rhs_vbar(i,j)=rhs_vbar(i,j)+cff1
 #  ifdef DIAGNOSTICS_UV
+            DiaV2rhs(i,j,M2bstm)=0.0_r8   ! add this in later
             DiaV2rhs(i,j,M2wbrk)=cff1
 #  endif
 #  ifdef WEC_ROLLER
@@ -2127,6 +2125,10 @@
             rhs_vbar(i,j)=rhs_vbar(i,j)+cff1
 #   ifdef DIAGNOSTICS_UV
             DiaV2rhs(i,j,M2wrol)=cff1
+#   endif
+#  else
+#   ifdef DIAGNOSTICS_UV
+          DiaV2rhs(i,j,M2wrol)=0.0_r8
 #   endif
 #  endif
           END DO
@@ -2161,7 +2163,7 @@
             cff=cff1*DVSom(i,j)
             DiaU2rhs(i,j,M2xadv)=DiaU2rhs(i,j,M2xadv)+cff
             DiaU2rhs(i,j,M2hadv)=DiaU2rhs(i,j,M2hadv)+cff
-            DiaU2rhs(i,j,M2hjvf)=DiaU2rhs(i,j,M2hjvf)-cff
+            DiaU2rhs(i,j,M2hjvf)=-cff
           END DO
         END DO
         DO j=JstrV,Jend
@@ -2186,7 +2188,7 @@
             cff=cff2*DUSon(i,j)
             DiaV2rhs(i,j,M2yadv)=DiaV2rhs(i,j,M2yadv)+cff
             DiaV2rhs(i,j,M2hadv)=DiaV2rhs(i,j,M2hadv)+cff
-            DiaV2rhs(i,j,M2hjvf)=DiaV2rhs(i,j,M2hjvf)-cff
+            DiaV2rhs(i,j,M2hjvf)=-cff
           END DO
         END DO
 #  endif
@@ -2369,6 +2371,10 @@
               DiaRUfrc(i,j,nstp,M2sstr)=DiaRUfrc(i,j,3,M2sstr)
               DiaU2rhs(i,j,M2bstr)=DiaRUfrc(i,j,3,M2bstr)
               DiaRUfrc(i,j,nstp,M2bstr)=DiaRUfrc(i,j,3,M2bstr)
+#   ifdef WEC_VF
+              DiaU2rhs(i,j,M2zeta)=DiaU2rhs(i,j,M2zeta)+                &
+     &                             DiaRUfrc(i,j,3,M2pgrd)
+#   endif
 #  endif
             END DO
           END DO
@@ -2389,6 +2395,10 @@
               DiaRVfrc(i,j,nstp,M2sstr)=DiaRVfrc(i,j,3,M2sstr)
               DiaV2rhs(i,j,M2bstr)=DiaRVfrc(i,j,3,M2bstr)
               DiaRVfrc(i,j,nstp,M2bstr)=DiaRVfrc(i,j,3,M2bstr)
+#   ifdef WEC_VF
+              DiaV2rhs(i,j,M2zeta)=DiaV2rhs(i,j,M2zeta)+                &
+     &                             DiaRVfrc(i,j,3,M2pgrd)
+#   endif
 #  endif
             END DO
           END DO
@@ -2414,6 +2424,11 @@
               DiaU2rhs(i,j,M2bstr)=1.5_r8*DiaRUfrc(i,j,3,M2bstr)-       &
      &                             0.5_r8*DiaRUfrc(i,j,nnew,M2bstr)
               DiaRUfrc(i,j,nstp,M2bstr)=DiaRUfrc(i,j,3,M2bstr)
+#   ifdef WEC_VF
+              DiaU2rhs(i,j,M2zeta)=DiaU2rhs(i,j,M2zeta)+                &
+     &                             1.5_r8*DiaRUfrc(i,j,3,M2pgrd)-       &
+     &                             0.5_r8*DiaRUfrc(i,j,nnew,M2pgrd)
+#   endif
 #  endif
             END DO
           END DO
@@ -2438,6 +2453,11 @@
               DiaV2rhs(i,j,M2bstr)=1.5_r8*DiaRVfrc(i,j,3,M2bstr)-       &
      &                             0.5_r8*DiaRVfrc(i,j,nnew,M2bstr)
               DiaRVfrc(i,j,nstp,M2bstr)=DiaRVfrc(i,j,3,M2bstr)
+#   ifdef WEC_VF
+              DiaV2rhs(i,j,M2zeta)=DiaV2rhs(i,j,M2zeta)+                &
+     &                             1.5_r8*DiaRVfrc(i,j,3,M2pgrd)-       &
+     &                             0.5_r8*DiaRVfrc(i,j,nnew,M2pgrd)
+#   endif
 #  endif
             END DO
           END DO
@@ -2471,6 +2491,12 @@
      &                             cff2*DiaRUfrc(i,j,nnew,M2bstr)+      &
      &                             cff3*DiaRUfrc(i,j,nstp,M2bstr)
               DiaRUfrc(i,j,nstp,M2bstr)=DiaRUfrc(i,j,3,M2bstr)
+#   ifdef WEC_VF
+              DiaU2rhs(i,j,M2zeta)=DiaU2rhs(i,j,M2zeta)+                &
+     &                             cff1*DiaRUfrc(i,j,3,M2pgrd)-         &
+     &                             cff2*DiaRUfrc(i,j,nnew,M2pgrd)+      &
+     &                             cff3*DiaRUfrc(i,j,nstp,M2pgrd)
+#   endif
 #  endif
             END DO
           END DO
@@ -2500,6 +2526,12 @@
      &                             cff2*DiaRVfrc(i,j,nnew,M2bstr)+      &
      &                             cff3*DiaRVfrc(i,j,nstp,M2bstr)
               DiaRVfrc(i,j,nstp,M2bstr)=DiaRVfrc(i,j,3,M2bstr)
+#   ifdef WEC_VF
+              DiaV2rhs(i,j,M2zeta)=DiaV2rhs(i,j,M2zeta)+                &
+     &                             cff1*DiaRVfrc(i,j,3,M2pgrd)-         &
+     &                             cff2*DiaRVfrc(i,j,nnew,M2pgrd)+      &
+     &                             cff3*DiaRVfrc(i,j,nstp,M2pgrd)
+#   endif
 #  endif
             END DO
           END DO
@@ -2515,6 +2547,10 @@
             END DO
             DiaU2rhs(i,j,M2sstr)=DiaRUfrc(i,j,3,M2sstr)
             DiaU2rhs(i,j,M2bstr)=DiaRUfrc(i,j,3,M2bstr)
+#   ifdef WEC_VF
+            DiaU2rhs(i,j,M2zeta)=DiaU2rhs(i,j,M2zeta)+                  &
+     &                           DiaRUfrc(i,j,3,M2pgrd)
+#   endif
 #  endif
           END DO
         END DO
@@ -2528,6 +2564,10 @@
             END DO
             DiaV2rhs(i,j,M2sstr)=DiaRVfrc(i,j,3,M2sstr)
             DiaV2rhs(i,j,M2bstr)=DiaRVfrc(i,j,3,M2bstr)
+#   ifdef WEC_VF
+            DiaV2rhs(i,j,M2zeta)=DiaV2rhs(i,j,M2zeta)+                  &
+     &                           DiaRVfrc(i,j,3,M2pgrd)
+#   endif
 #  endif
           END DO
         END DO

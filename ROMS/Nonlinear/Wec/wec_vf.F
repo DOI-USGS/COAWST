@@ -540,8 +540,8 @@
           rvkvf2d(i,j)=0.0_r8
         END DO
       END DO
-      DO j=Jstr-1,Jend+1
-        DO i=Istr-1,Iend+1
+      DO j=Jstr-1,Jend
+        DO i=Istr-1,Iend
           DO k=1,N(ng)-1
             cff1=0.5_r8*(u_stokes(i,j,k+1)+u_stokes(i,j,k))
             cff2=0.5_r8*(u_stokes(i+1,j,k+1)+u_stokes(i+1,j,k))

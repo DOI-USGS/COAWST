@@ -263,7 +263,9 @@
 !
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-             fac2=(z_r(i,j,k)-z_w(i,j,0))/Dstp(i,j)
+             fac2=((z_r(i-1,j,k)+z_r(i,j,k))-                           &
+     &             (z_w(i-1,j,0)+z_w(i,j,0)))/                          &
+     &            (Dstp(i-1,j)+Dstp(i,j))
              cff=fac1*om_u(i,j)*on_u(i,j)
              cff2=(waveE(i-1,j)+waveE(i,j))
 # if defined WEC_ROLLER
@@ -303,6 +305,9 @@
 !
         DO j=JstrV,Jend
           DO i=Istr,Iend
+             fac2=((z_r(i,j-1,k)+z_r(i,j,k))-                           &
+     &             (z_w(i,j-1,0)+z_w(i,j,0)))/                          &
+     &            (Dstp(i,j-1)+Dstp(i,j))
              cff=fac1*om_v(i,j)*on_v(i,j)
              cff2=(waveE(i,j-1)+waveE(i,j))
 # if defined WEC_ROLLER

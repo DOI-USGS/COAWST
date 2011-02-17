@@ -1694,10 +1694,12 @@
                 idDu2d(M2kvrf)=varid
               CASE ('idDv2d(M2kvrf)')
                 idDv2d(M2kvrf)=varid
+#  ifdef UV_COR
               CASE ('idDu2d(M2fsco)')
                 idDu2d(M2fsco)=varid
               CASE ('idDv2d(M2fsco)')
                 idDv2d(M2fsco)=varid
+#  endif
               CASE ('idDu2d(M2bstm)')
                 idDu2d(M2bstm)=varid
               CASE ('idDv2d(M2bstm)')
@@ -1710,6 +1712,10 @@
                 idDu2d(M2wbrk)=varid
               CASE ('idDv2d(M2wbrk)')
                 idDv2d(M2wbrk)=varid
+              CASE ('idDu2d(M2zeta)')
+                idDu2d(M2zeta)=varid
+              CASE ('idDv2d(M2zeta)')
+                idDv2d(M2zeta)=varid
               CASE ('idDu2d(M2zetw)')
                 idDu2d(M2zetw)=varid
               CASE ('idDv2d(M2zetw)')
@@ -1797,10 +1803,12 @@
                 idDu3d(M3kvrf)=varid
               CASE ('idDv3d(M3kvrf)')
                 idDv3d(M3kvrf)=varid
+#   ifdef UV_COR
               CASE ('idDu3d(M3fsco)')
                 idDu3d(M3fsco)=varid
               CASE ('idDv3d(M3fsco)')
                 idDv3d(M3fsco)=varid
+#   endif
               CASE ('idDu3d(M3bstm)')
                 idDu3d(M3bstm)=varid
               CASE ('idDv3d(M3bstm)')
@@ -1813,18 +1821,6 @@
                 idDu3d(M3wbrk)=varid
               CASE ('idDv3d(M3wbrk)')
                 idDv3d(M3wbrk)=varid
-              CASE ('idDu3d(M3zetw)')
-                idDu3d(M3zetw)=varid
-              CASE ('idDv3d(M3zetw)')
-                idDv3d(M3zetw)=varid
-              CASE ('idDu3d(M3zqsp)')
-                idDu3d(M3zqsp)=varid
-              CASE ('idDv3d(M3zqsp)')
-                idDv3d(M3zqsp)=varid
-              CASE ('idDu3d(M3zbeh)')
-                idDu3d(M3zbeh)=varid
-              CASE ('idDv3d(M3zbeh)')
-                idDv3d(M3zbeh)=varid
 #  endif
 #  ifdef UV_COR
               CASE ('idDu3d(M3fcor)')

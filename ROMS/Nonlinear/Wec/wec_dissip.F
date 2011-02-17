@@ -118,7 +118,7 @@
 # if defined WDISS_CHURTHOR
       real(r8) :: RB1, RB2
 # endif
-      real(r8), parameter :: gammaw=0.4_r8
+      real(r8), parameter :: gammaw=0.31_r8
       real(r8), parameter :: eps = 1.0E-14_r8
 # include "set_bounds.h"
 !
@@ -147,10 +147,10 @@
 !  Calculate wave dissipation using empirical parameters of
 !  Church and Thornton, 1993.
 ! 
-          cff2=1.0_r8/(gammaw*(Dstp**2.0_r8))
+          cff2=1.0_r8/(gammaw*Dstp)
           RB1=1.0_r8+tanh(8.0_r8*((cff1*cff2)-1.0_r8))
           RB2=1.0_r8-(1.0_r8+(cff1*cff2)**2.0_r8)**(-2.5_r8) 
-          Dissip_break(i,j)=0.2621_r8*fac1*sigmat*                      &
+          Dissip_break(i,j)=(0.2621_r8/Dstp)*fac1*sigmat*               &
      &                      (cff1**3.0_r8)*RB1*RB2
           Dissip_wcap(i,j)=0.0_r8
 # endif

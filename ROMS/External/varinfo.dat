@@ -4883,6 +4883,24 @@
   'v2dvar'
   1.0d0
 
+'ubar_zeta'                                        ! Input/Output
+  '2D u-momentum, Eulerian sea level adjustment'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_zeta, scalar, series'
+  'ocean_time'
+  'idDu2d(M2zeta)'
+  'u2dvar'
+  1.0d0
+
+'vbar_zeta'                                        ! Input/Output
+  '2D v-momentum, Eulerian sea level adjustment'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_zeta, scalar, series'
+  'ocean_time'
+  'idDv2d(M2zeta)'
+  'v2dvar'
+  1.0d0
+
 'ubar_zetw'                                        ! Input/Output
   '2D u-momentum, quasi-static sea level adjustment'
   'meter second-2'                                 ! [m/s2]
@@ -5334,60 +5352,6 @@
   'v_wbrk, scalar, series'
   'ocean_time'
   'idDv3d(M3wbrk)'
-  'v3dvar'
-  1.0d0
-
-'u_zetw'                                           ! Input/Output
-  '3D u-momentum, quasi-static sea level adjustment'
-  'meter second-2'                                 ! [m/s2]
-  'u_zetw, scalar, series'
-  'ocean_time'
-  'idDu3d(M3zetw)'
-  'u3dvar'
-  1.0d0
-
-'v_zetw'                                           ! Input/Output
-  '3D v-momentum, quasi-static sea level adjustment'
-  'meter second-2'                                 ! [m/s2]
-  'v_zetw, scalar, series'
-  'ocean_time'
-  'idDv3d(M3zetw)'
-  'v3dvar'
-  1.0d0
-
-'u_zqsp'                                           ! Input/Output
-  '3D u-momentum, quasi-static pressure'
-  'meter second-2'                                 ! [m/s2]
-  'u_zqsp, scalar, series'
-  'ocean_time'
-  'idDu3d(M3zqsp)'
-  'u3dvar'
-  1.0d0
-
-'v_zqsp'                                           ! Input/Output
-  '3D v-momentum, quasi-static pressure'
-  'meter second-2'                                 ! [m/s2]
-  'v_zqsp, scalar, series'
-  'ocean_time'
-  'idDv3d(M3zqsp)'
-  'v3dvar'
-  1.0d0
-
-'u_zbeh'                                           ! Input/Output
-  '3D u-momentum, Bernoulli head'
-  'meter second-2'                                 ! [m/s2]
-  'u_zbeh, scalar, series'
-  'ocean_time'
-  'idDu3d(M3zbeh)'
-  'u3dvar'
-  1.0d0
-
-'v_zbeh'                                           ! Input/Output
-  '3D v-momentum, Bernoulli head'
-  'meter second-2'                                 ! [m/s2]
-  'v_zbeh, scalar, series'
-  'ocean_time'
-  'idDv3d(M3zbeh)'
   'v3dvar'
   1.0d0
 

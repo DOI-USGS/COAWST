@@ -106,6 +106,7 @@
         integer :: M2bstm          ! 2D momentum, bottom streaming
         integer :: M2wrol          ! 2D momentum, wave roller accel
         integer :: M2wbrk          ! 2D momentum, wave breaking
+        integer :: M2zeta          ! 2D momentum, Eulerian sea level adjustment
         integer :: M2zetw          ! 2D momentum, quasi-static sea level adjustment
         integer :: M2zqsp          ! 2D momentum, quasi-static pressure
         integer :: M2zbeh          ! 2D momentum, Bernoulli head
@@ -135,9 +136,6 @@
         integer :: M3bstm          ! 3D momentum, bottom streaming
         integer :: M3wrol          ! 3D momentum, wave roller accel
         integer :: M3wbrk          ! 3D momentum, wave breaking
-        integer :: M3zetw          ! 3D momentum, quasi-static sea level adjustment
-        integer :: M3zqsp          ! 3D momentum, quasi-static pressure
-        integer :: M3zbeh          ! 3D momentum, Bernoulli head
 #   endif
         integer :: M3pgrd          ! 3D momentum, pressure gradient
         integer :: M3vvis          ! 3D momentum, vertical viscosity
@@ -1922,16 +1920,16 @@
       ic=ic+1
 #  endif
 #  if defined WEC_VF
+#   if defined UV_COR
+      M2fsco=ic+1
+      ic=ic+1
+#   endif
       M2hjvf=ic+1
       M2kvrf=ic+2
-      M2fsco=ic+3
-      M2bstm=ic+4
-      M2wrol=ic+5
-      M2wbrk=ic+6
-      M2zetw=ic+7
-      M2zqsp=ic+8
-      M2zbeh=ic+9
-      ic=ic+9
+      M2bstm=ic+3
+      M2wrol=ic+4
+      M2wbrk=ic+5
+      ic=ic+5
 #  endif
 #  if defined UV_VIS2 || defined UV_VIS4
       M2hvis=ic+1
@@ -1942,6 +1940,12 @@
       M2pgrd=ic+1
       M2sstr=ic+2             ! These indices need to be
       M2bstr=ic+3             ! specified last to allow a
+#  if defined WEC_VF
+      M2zeta=ic+4
+      M2zetw=ic+5
+      M2zqsp=ic+6
+      M2zbeh=ic+7
+#  endif
       M2rate=NDM2d            ! compact DO-loop structure
 #  ifdef SOLVE3D
 !
@@ -1969,17 +1973,17 @@
       ic=ic+2
 #   endif
 #   if defined WEC_VF
+#    if defined UV_COR
+      M3fsco=ic+1
+      ic=ic+1
+#    endif
       M3vjvf=ic+1
       M3hjvf=ic+2
       M3kvrf=ic+3
-      M3fsco=ic+4
-      M3bstm=ic+5
-      M3wrol=ic+6
-      M3wbrk=ic+7
-      M3zetw=ic+8
-      M3zqsp=ic+9
-      M3zbeh=ic+10
-      ic=ic+10
+      M3bstm=ic+4
+      M3wrol=ic+5
+      M3wbrk=ic+6
+      ic=ic+6
 #   endif
       M3pgrd=ic+1             ! needs to be here, indices below
       M3vvis=ic+2             ! require special treatment

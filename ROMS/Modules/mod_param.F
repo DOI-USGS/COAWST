@@ -476,6 +476,9 @@
         NDM2d=NDM2d+1  ! Horizontal radiation stresses
 #   endif
 #   ifdef WEC_VF
+#    ifdef UV_COR
+        NDM2d=NDM2d+1  !
+#    endif
         NDM2d=NDM2d+9  !
 #   endif
 #   ifdef UV_COR
@@ -499,8 +502,12 @@
         NDrhs=NDrhs+2
 #   endif
 #   ifdef WEC_VF
-        NDM3d=NDM3d+10  !
-        NDrhs=NDrhs+10
+#    ifdef UV_COR
+        NDM3d=NDM3d+1  !
+        NDrhs=NDrhs+1
+#    endif
+        NDM3d=NDM3d+6  !
+        NDrhs=NDrhs+6
 #   endif
 #   ifdef UV_COR
         NDM3d=NDM3d+1  ! Coriolis

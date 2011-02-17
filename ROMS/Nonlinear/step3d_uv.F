@@ -532,7 +532,9 @@
 #  ifdef WEC_VF
           Dwrk(i,M2hjvf)=DiaU3wrk(i,j,1,M3hjvf)*Hzk(i,1)
           Dwrk(i,M2kvrf)=DiaU3wrk(i,j,1,M3kvrf)*Hzk(i,1)
+#   ifdef UV_COR
           Dwrk(i,M2fsco)=DiaU3wrk(i,j,1,M3fsco)*Hzk(i,1)
+#   endif
           Dwrk(i,M2bstm)=DiaU3wrk(i,j,1,M3bstm)*Hzk(i,1)
           Dwrk(i,M2wrol)=DiaU3wrk(i,j,1,M3wrol)*Hzk(i,1)
           Dwrk(i,M2wbrk)=DiaU3wrk(i,j,1,M3wbrk)*Hzk(i,1)
@@ -580,8 +582,10 @@
      &                     DiaU3wrk(i,j,k,M3hjvf)*Hzk(i,k)
             Dwrk(i,M2kvrf)=Dwrk(i,M2kvrf)+                              &
      &                     DiaU3wrk(i,j,k,M3kvrf)*Hzk(i,k)
+#   ifdef UV_COR
             Dwrk(i,M2fsco)=Dwrk(i,M2fsco)+                              &
      &                     DiaU3wrk(i,j,k,M3fsco)*Hzk(i,k)
+#   endif
             Dwrk(i,M2bstm)=Dwrk(i,M2bstm)+                              &
      &                     DiaU3wrk(i,j,k,M3bstm)*Hzk(i,k)
             Dwrk(i,M2wrol)=Dwrk(i,M2wrol)+                              &
@@ -665,8 +669,10 @@
      &                             Dwrk(i,M2hjvf)
             DiaU3wrk(i,j,k,M3kvrf)=DiaU3wrk(i,j,k,M3kvrf)-              &
      &                             Dwrk(i,M2kvrf)
+#   ifdef UV_COR
             DiaU3wrk(i,j,k,M3fsco)=DiaU3wrk(i,j,k,M3fsco)-              &
      &                             Dwrk(i,M2fsco)
+#   endif
             DiaU3wrk(i,j,k,M3bstm)=DiaU3wrk(i,j,k,M3bstm)-              &
      &                             Dwrk(i,M2bstm)
             DiaU3wrk(i,j,k,M3wrol)=DiaU3wrk(i,j,k,M3wrol)-              &
@@ -902,7 +908,9 @@
 #  ifdef WEC_VF
             Dwrk(i,M2hjvf)=DiaV3wrk(i,j,1,M3hjvf)*Hzk(i,1)
             Dwrk(i,M2kvrf)=DiaV3wrk(i,j,1,M3kvrf)*Hzk(i,1)
+#   ifdef UV_COR
             Dwrk(i,M2fsco)=DiaV3wrk(i,j,1,M3fsco)*Hzk(i,1)
+#   endif
             Dwrk(i,M2bstm)=DiaV3wrk(i,j,1,M3bstm)*Hzk(i,1)
             Dwrk(i,M2wrol)=DiaV3wrk(i,j,1,M3wrol)*Hzk(i,1)
             Dwrk(i,M2wbrk)=DiaV3wrk(i,j,1,M3wbrk)*Hzk(i,1)
@@ -950,8 +958,10 @@
      &                       DiaV3wrk(i,j,k,M3hjvf)*Hzk(i,k)
               Dwrk(i,M2kvrf)=Dwrk(i,M2kvrf)+                            &
      &                       DiaV3wrk(i,j,k,M3kvrf)*Hzk(i,k)
+#   ifdef UV_COR
               Dwrk(i,M2fsco)=Dwrk(i,M2fsco)+                            &
      &                       DiaV3wrk(i,j,k,M3fsco)*Hzk(i,k)
+#   endif
               Dwrk(i,M2bstm)=Dwrk(i,M2bstm)+                            &
      &                       DiaV3wrk(i,j,k,M3bstm)*Hzk(i,k)
               Dwrk(i,M2wrol)=Dwrk(i,M2wrol)+                            &
@@ -1035,8 +1045,10 @@
      &                               Dwrk(i,M2hjvf)
               DiaV3wrk(i,j,k,M3kvrf)=DiaV3wrk(i,j,k,M3kvrf)-            &
      &                               Dwrk(i,M2kvrf)
+#   ifdef UV_COR
               DiaV3wrk(i,j,k,M3fsco)=DiaV3wrk(i,j,k,M3fsco)-            &
      &                               Dwrk(i,M2fsco)
+#   endif
               DiaV3wrk(i,j,k,M3bstm)=DiaV3wrk(i,j,k,M3bstm)-            &
      &                               Dwrk(i,M2bstm)
               DiaV3wrk(i,j,k,M3wrol)=DiaV3wrk(i,j,k,M3wrol)-            &

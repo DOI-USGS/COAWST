@@ -2117,7 +2117,9 @@
 #  ifdef WEC_VF
           DiaRUfrc(i,j,3,M2hjvf)=DiaRU(i,j,1,nrhs,M3hjvf)
           DiaRUfrc(i,j,3,M2kvrf)=DiaRU(i,j,1,nrhs,M3kvrf)
+#   ifdef UV_COR
           DiaRUfrc(i,j,3,M2fsco)=DiaRU(i,j,1,nrhs,M3fsco)
+#   endif
           DiaRUfrc(i,j,3,M2bstm)=DiaRU(i,j,1,nrhs,M3bstm)
           DiaRUfrc(i,j,3,M2wrol)=DiaRU(i,j,1,nrhs,M3wrol)
           DiaRUfrc(i,j,3,M2wbrk)=DiaRU(i,j,1,nrhs,M3wbrk)
@@ -2159,8 +2161,10 @@
      &                             DiaRU(i,j,k,nrhs,M3hjvf)
             DiaRUfrc(i,j,3,M2kvrf)=DiaRUfrc(i,j,3,M2kvrf)+              &
      &                             DiaRU(i,j,k,nrhs,M3kvrf)
+#   ifdef UV_COR
             DiaRUfrc(i,j,3,M2fsco)=DiaRUfrc(i,j,3,M2fsco)+              &
      &                             DiaRU(i,j,k,nrhs,M3fsco)
+#   endif
             DiaRUfrc(i,j,3,M2bstm)=DiaRUfrc(i,j,3,M2bstm)+              &
      &                             DiaRU(i,j,k,nrhs,M3bstm)
             DiaRUfrc(i,j,3,M2wrol)=DiaRUfrc(i,j,3,M2wrol)+              &
@@ -2206,7 +2210,9 @@
 #  ifdef WEC_VF
             DiaRVfrc(i,j,3,M2hjvf)=DiaRV(i,j,1,nrhs,M3hjvf)
             DiaRVfrc(i,j,3,M2kvrf)=DiaRV(i,j,1,nrhs,M3kvrf)
+#   ifdef UV_COR
             DiaRVfrc(i,j,3,M2fsco)=DiaRV(i,j,1,nrhs,M3fsco)
+#   endif
             DiaRVfrc(i,j,3,M2bstm)=DiaRV(i,j,1,nrhs,M3bstm)
             DiaRVfrc(i,j,3,M2wrol)=DiaRV(i,j,1,nrhs,M3wrol)
             DiaRVfrc(i,j,3,M2wbrk)=DiaRV(i,j,1,nrhs,M3wbrk)
@@ -2248,8 +2254,10 @@
      &                               DiaRV(i,j,k,nrhs,M3hjvf)
               DiaRVfrc(i,j,3,M2kvrf)=DiaRVfrc(i,j,3,M2kvrf)+            &
      &                               DiaRV(i,j,k,nrhs,M3kvrf)
+#   ifdef UV_COR
               DiaRVfrc(i,j,3,M2fsco)=DiaRVfrc(i,j,3,M2fsco)+            &
      &                               DiaRV(i,j,k,nrhs,M3fsco)
+#   endif
               DiaRVfrc(i,j,3,M2bstm)=DiaRVfrc(i,j,3,M2bstm)+            &
      &                               DiaRV(i,j,k,nrhs,M3bstm)
               DiaRVfrc(i,j,3,M2wrol)=DiaRVfrc(i,j,3,M2wrol)+            &

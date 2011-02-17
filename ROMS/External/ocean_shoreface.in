@@ -341,17 +341,20 @@ Hout(idBath) == T                          ! bath        time-dependent bathymet
 
 Hout(idTvar) == T T                        ! temp, salt  temperature and salinity
 
+Hout(idUair) == F                          ! Uwind       surface U-wind
+Hout(idVair) == F                          ! Vwind       surface V-wind
 Hout(idUsms) == F                          ! sustr       surface U-stress
 Hout(idVsms) == F                          ! svstr       surface V-stress
 Hout(idUbms) == T                          ! bustr       bottom U-stress
 Hout(idVbms) == T                          ! bvstr       bottom V-stress
 
 Hout(idUbrs) == T                          ! bustrc      bottom U-current stress
-Hout(idVbrs) == T                          ! bvstr       bottom V-current stress
+Hout(idVbrs) == T                          ! bvstrc      bottom V-current stress
 Hout(idUbws) == T                          ! bustrw      bottom U-wave stress
 Hout(idVbws) == T                          ! bvstrw      bottom V-wave stress
 Hout(idUbcs) == T                          ! bustrcwmax  bottom max wave-current U-stress
 Hout(idVbcs) == T                          ! bvstrcwmax  bottom max wave-current V-stress
+Hout(idUVwc) == F                          ! bstrcwmax   bottom max wave-current stress magnitude
 
 Hout(idUbot) == T                          ! Ubot        bed wave orbital U-velocity
 Hout(idVbot) == T                          ! Vbot        bed wave orbital V-velocity
@@ -1019,8 +1022,8 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 ! Constants used in the wave effects on currents formulations.
 !------------------------------------------------------------------------------
 !
-!      WEC_ALPHA    If set to 0 then all wave dissip goes to break and none to roller.
-!                   If set to 1 then all wave dissip goes to roller and none to breaking.
+!  WEC_ALPHA       If set to 0 then all wave dissip goes to break and none to roller.
+!                  If set to 1 then all wave dissip goes to roller and none to breaking.
 !
 !------------------------------------------------------------------------------
 ! Constants used in the computation of momentum stress.
@@ -1411,20 +1414,22 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 !  Hout(idW2xx)  Write out 2D radiation stress, Sxx component.
 !  Hout(idW2xy)  Write out 2D radiation stress, Sxy component.
 !  Hout(idW2yy)  Write out 2D radiation stress, Syy component.
-!  Hout(idU2rs)  Write out 2D U-radiation stress.
-!  Hout(idV2rs)  Write out 2D V-radiation stress.
-!  Hout(idU2Sd)  Write out 2D U-Stokes velocity.
-!  Hout(idV2Sd)  Write out 2D V-Stokes velocity.
-!
 !  Hout(idW3xx)  Write out 3D radiation stress, Sxx component.
 !  Hout(idW3xy)  Write out 3D radiation stress, Sxy component.
 !  Hout(idW3yy)  Write out 3D radiation stress, Syy component.
 !  Hout(idW3zx)  Write out 3D radiation stress, Szx component.
 !  Hout(idW3zy)  Write out 3D radiation stress, Szy component.
-!  Hout(idU3rs)  Write out 3D U-radiation stress.
-!  Hout(idV3rs)  Write out 3D V-radiation stress.
+!
+!  Hout(idU2rs)  Write out 2D WEC U-stress.
+!  Hout(idV2rs)  Write out 2D WEC V-stress.
+!  Hout(idU3rs)  Write out 3D WEC U-stress.
+!  Hout(idV3rs)  Write out 3D WEC V-stress.
+!
+!  Hout(idU2Sd)  Write out 2D U-Stokes velocity.
+!  Hout(idV2Sd)  Write out 2D V-Stokes velocity.
 !  Hout(idU3Sd)  Write out 3D U-Stokes velocity.
 !  Hout(idV3Sd)  Write out 3D V-Stokes velocity.
+!  Hout(idW3Sd)  Write out 3D W-Stokes velocity.
 !
 !  Hout(idWamp)  Write out wave height.
 !  Hout(idWlen)  Write out wave length.
@@ -1432,7 +1437,17 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 !  Hout(idWptp)  Write out wave surface period.
 !  Hout(idWpbt)  Write out wave bottom period.
 !  Hout(idWorb)  Write out wave bottom orbital velocity.
-!  Hout(idWdis)  Write out wave dissipation.
+!  Hout(idWbrk)  Write out wave breaking (percent).
+!  Hout(idUwav)  Write out wave-depth avgeraged U-velocity.
+!  Hout(idVwav)  Write out wave-depth avgeraged V-velocity.
+!  Hout(idWdif)  Write out wave dissipation due to bottom friction.
+!  Hout(idWdib)  Write out wave dissipation due to breaking.
+!  Hout(idWdiw)  Write out wave dissipation due to white capping.
+!  Hout(idWdis)  Write out wave roller dissipation.
+!  Hout(idWrol)  Write out wave roller action density.
+!  Hout(idWztw)  Write out WEC quasi-static sea level adjustment.
+!  Hout(idWqsp)  Write out WEC quasi-static pressure.
+!  Hout(idWbeh)  Write out WEC Bernoulli head.
 !
 !  Hout(idTsur)  Write out surface net heat and salt flux
 !  Hout(idLhea)  Write out latent heat flux.
