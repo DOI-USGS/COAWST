@@ -1,5 +1,6 @@
 #include "cppdefs.h"
       MODULE us2dbc_mod
+#ifdef WEC
 !
 !svn $Id: u2sdbc_im.F 779 2008-10-04 23:15:47Z jcwarner $
 !=======================================================================
@@ -69,11 +70,11 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 
-#ifdef ASSUMED_SHAPE
+# ifdef ASSUMED_SHAPE
       real(r8), intent(inout) :: ubar_stokes(LBi:,LBj:)
-#else
+# else
       real(r8), intent(inout) :: ubar_stokes(LBi:UBi,LBj:UBj)
-#endif
+# endif
 !
 !  Local variable declarations.
 !
@@ -85,10 +86,10 @@
       real(r8) :: bry_pgr, bry_cor, bry_str, bry_val
       real(r8) :: cff, cff1, cff2, dUde, dUdt, dUdx, tau
 
-#ifdef REFINED_GRID
+# ifdef REFINED_GRID
       integer :: t1, t2, ngp
       real(r8) :: fac, fac1, fac2, my_val
-#endif
+# endif
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
 
 #include "set_bounds.h"
@@ -98,7 +99,7 @@
 !      IF (ng.eq.1) THEN
 !#endif
 
-#if !defined EW_PERIODIC && !defined COMPOSED_GRID
+# if !defined EW_PERIODIC && !defined COMPOSED_GRID
 !
 !-----------------------------------------------------------------------
 !  Lateral boundary conditions at the western edge.
@@ -106,7 +107,7 @@
 !
       IF (WESTERN_EDGE) THEN
 
-# if defined WEST_M2SRADIATION
+#  if defined WEST_M2SRADIATION
 !
 !  Western edge, implicit upstream radiation condition.
 !
@@ -127,40 +128,40 @@
           END IF
           cff=MAX(dUdx*dUdx+dUde*dUde,eps)
           Cx=dUdt*dUdx
-#  ifdef RADIATION_2D
+#   ifdef RADIATION_2D
           Ce=MIN(cff,MAX(dUdt*dUde,-cff))
-#  else
+#   else
           Ce=0.0_r8
-#  endif
+#   endif
           ubar_stokes(Istr,j)=(cff*ubar_stokes(Istr  ,j)+               &
      &                        Cx *ubar_stokes(Istr+1,j)-                &
      &                        MAX(Ce,0.0_r8)*grad(Istr,j  )-            &
      &                        MIN(Ce,0.0_r8)*grad(Istr,j+1))/           &
      &                       (cff+Cx)
-#  ifdef MASKING
+#   ifdef MASKING
           ubar_stokes(Istr,j)=ubar_stokes(Istr,j)*                      &
      &                        GRID(ng)%umask(Istr,j)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           ubar_stokes(Istr,j)=ubar_stokes(Istr,j)*                      &
      &                        GRID(ng)%umask_wet(Istr,j)
-#  endif
+#   endif
         END DO
 
-# elif defined WEST_M2SCLAMPED
+#  elif defined WEST_M2SCLAMPED
 !
 !  Western edge, clamped boundary condition.
 !
         DO j=Jstr,Jend
           ubar_stokes(Istr,j)=BOUNDARY(ng)%ubarstokes_west(j)
-#  ifdef MASKING
+#   ifdef MASKING
           ubar_stokes(Istr,j)=ubar_stokes(Istr,j)*                      &
      &                        GRID(ng)%umask(Istr,j)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           ubar_stokes(Istr,j)=ubar_stokes(Istr,j)*                      &
      &                        GRID(ng)%umask_wet(Istr,j)
-#  endif
+#   endif
         END DO
 
 # elif defined WEST_M2SGRADIENT
@@ -169,24 +170,24 @@
 !
         DO j=Jstr,Jend
           ubar_stokes(Istr,j)=ubar_stokes(Istr+1,j)
-#  ifdef MASKING
+#   ifdef MASKING
           ubar_stokes(Istr,j)=ubar_stokes(Istr,j)*                      &
      &                        GRID(ng)%umask(Istr,j)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           ubar_stokes(Istr,j)=ubar_stokes(Istr,j)*                      &
      &                        GRID(ng)%umask_wet(Istr,j)
-#  endif
+#   endif
         END DO
 
-# else
+#  else
 !
 !  Western edge, closed boundary condition.
 !
         DO j=Jstr,Jend
           ubar_stokes(Istr,j)=0.0_r8
         END DO
-# endif
+#  endif
       END IF
 !
 !-----------------------------------------------------------------------
@@ -195,7 +196,7 @@
 !
       IF (EASTERN_EDGE) THEN
 
-# if defined EAST_M2SRADIATION
+#  if defined EAST_M2SRADIATION
 !
 !  Eastern edge, implicit upstream radiation condition.
 !
@@ -216,69 +217,69 @@
           END IF
           cff=MAX(dUdx*dUdx+dUde*dUde,eps)
           Cx=dUdt*dUdx
-#  ifdef RADIATION_2D
+#   ifdef RADIATION_2D
           Ce=MIN(cff,MAX(dUdt*dUde,-cff))
-#  else
+#   else
           Ce=0.0_r8
-#  endif
+#   endif
           ubar_stokes(Iend+1,j)=(cff*ubar_stokes(Iend+1,j)+             &
      &                          Cx *ubar_stokes(Iend  ,j)-              &
      &                          MAX(Ce,0.0_r8)*grad(Iend+1,j  )-        &
      &                          MIN(Ce,0.0_r8)*grad(Iend+1,j+1))/       &
      &                         (cff+Cx)
-#  ifdef MASKING
+#   ifdef MASKING
           ubar_stokes(Iend+1,j)=ubar_stokes(Iend+1,j)*                  &
      &                          GRID(ng)%umask(Iend+1,j)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           ubar_stokes(Iend+1,j)=ubar_stokes(Iend+1,j)*                  &
      &                          GRID(ng)%umask_wet(Iend+1,j)
-#  endif
+#   endif
         END DO
 
-# elif defined EAST_M2SCLAMPED
+#  elif defined EAST_M2SCLAMPED
 !
 !  Eastern edge, clamped boundary condition.
 !
         DO j=Jstr,Jend
           ubar_stokes(Iend+1,j)=BOUNDARY(ng)%ubarstokes_east(j)
-#  ifdef MASKING
+#   ifdef MASKING
           ubar_stokes(Iend+1,j)=ubar_stokes(Iend+1,j)*                  &
      &                          GRID(ng)%umask(Iend+1,j)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           ubar_stokes(Iend+1,j)=ubar_stokes(Iend+1,j)*                  &
      &                          GRID(ng)%umask_wet(Iend+1,j)
-#  endif
+#   endif
         END DO
 
-# elif defined EAST_M2SGRADIENT
+#  elif defined EAST_M2SGRADIENT
 !
 !  Eastern edge, gradient boundary condition.
 !
         DO j=Jstr,Jend
           ubar_stokes(Iend+1,j)=ubar_stokes(Iend,j)
-#  ifdef MASKING
+#   ifdef MASKING
           ubar_stokes(Iend+1,j)=ubar_stokes(Iend+1,j)*                  &
      &                          GRID(ng)%umask(Iend+1,j)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           ubar_stokes(Iend+1,j)=ubar_stokes(Iend+1,j)*                  &
      &                          GRID(ng)%umask_wet(Iend+1,j)
-#  endif
+#   endif
         END DO
 
-# else
+#  else
 !
 !  Eastern edge, closed boundary condition.
 !
         DO j=Jstr,Jend
           ubar_stokes(Iend+1,j)=0.0_r8
         END DO
-# endif
+#  endif
       END IF
-#endif
-#if !defined NS_PERIODIC && !defined COMPOSED_GRID
+# endif
+# if !defined NS_PERIODIC && !defined COMPOSED_GRID
 !
 !-----------------------------------------------------------------------
 !  Lateral boundary conditions at the southern edge.
@@ -286,7 +287,7 @@
 !
       IF (SOUTHERN_EDGE) THEN
 
-# if defined SOUTH_M2SRADIATION
+#  if defined SOUTH_M2SRADIATION
 !
 !  Southern edge, implicit upstream radiation condition.
 !
@@ -306,82 +307,82 @@
             dUdx=grad(i  ,Jstr)
           END IF
           cff=MAX(dUdx*dUdx+dUde*dUde,eps)
-#  ifdef RADIATION_2D
+#   ifdef RADIATION_2D
           Cx=MIN(cff,MAX(dUdt*dUdx,-cff))
-#  else
+#   else
           Cx=0.0_r8
-#  endif
+#   endif
           Ce=dUdt*dUde
           ubar_stokes(i,Jstr-1)=(cff*ubar_stokes(i,Jstr-1)+             &
      &                          Ce *ubar_stokes(i,Jstr  )-              &
      &                          MAX(Cx,0.0_r8)*grad(i-1,Jstr-1)-        &
      &                          MIN(Cx,0.0_r8)*grad(i  ,Jstr-1))/       &
      &                          (cff+Ce)
-#  ifdef MASKING
+#   ifdef MASKING
           ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr-1)*                  &
      &                          GRID(ng)%umask(i,Jstr-1)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr-1)*                  &
      &                          GRID(ng)%umask_wet(i,Jstr-1)
 #  endif
         END DO
 
-# elif defined SOUTH_M2SCLAMPED
+#  elif defined SOUTH_M2SCLAMPED
 !
 !  Southern edge, clamped boundary condition.
 !
         DO i=IstrU,Iend
           ubar_stokes(i,Jstr-1)=BOUNDARY(ng)%ubarstokes_south(i)
-#  ifdef MASKING
+#   ifdef MASKING
           ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr-1)*                  &
      &                          GRID(ng)%umask(i,Jstr-1)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr-1)*                  &
      &                          GRID(ng)%umask_wet(i,Jstr-1)
-#  endif
+#   endif
         END DO
 
-# elif defined SOUTH_M2SGRADIENT
+#  elif defined SOUTH_M2SGRADIENT
 !
 !  Southern edge, gradient boundary condition.
 !
         DO i=IstrU,Iend
           ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr)
-#  ifdef MASKING
+#   ifdef MASKING
           ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr-1)*                  &
      &                          GRID(ng)%umask(i,Jstr-1)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr-1)*                  &
      &                          GRID(ng)%umask_wet(i,Jstr-1)
-#  endif
+#   endif
         END DO
 
-# else
+#  else
 !
 !  Southern edge, closed boundary condition: free slip (gamma2=1)  or
 !                                            no   slip (gamma2=-1).
 !
-#  ifdef EW_PERIODIC
-#   define I_RANGE IstrU,Iend
-#  else
-#   define I_RANGE Istr,IendR
-#  endif
+#   ifdef EW_PERIODIC
+#    define I_RANGE IstrU,Iend
+#   else
+#    define I_RANGE Istr,IendR
+#   endif
         DO i=I_RANGE
           ubar_stokes(i,Jstr-1)=gamma2(ng)*ubar_stokes(i,Jstr)
-#  ifdef MASKING
+#   ifdef MASKING
           ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr-1)*                  &
      &                          GRID(ng)%umask(i,Jstr-1)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr-1)*                  &
      &                          GRID(ng)%umask_wet(i,Jstr-1)
-#  endif
+#   endif
         END DO
-#  undef I_RANGE
-# endif
+#   undef I_RANGE
+#  endif
       END IF
 !
 !-----------------------------------------------------------------------
@@ -390,7 +391,7 @@
 !
       IF (NORTHERN_EDGE) THEN
 
-# if defined NORTH_M2RADIATION
+#  if defined NORTH_M2RADIATION
 !
 !  Northern edge, implicit upstream radiation condition.
 !
@@ -410,86 +411,86 @@
             dUdx=grad(i  ,Jend)
           END IF
           cff=MAX(dUdx*dUdx+dUde*dUde,eps)
-#  ifdef RADIATION_2D
+#   ifdef RADIATION_2D
           Cx=MIN(cff,MAX(dUdt*dUdx,-cff))
-#  else
+#   else
           Cx=0.0_r8
-#  endif
+#   endif
           Ce=dUdt*dUde
           ubar_stokes(i,Jend+1)=(cff*ubar_stokes(i,Jend+1)+             &
      &                          Ce *ubar_stokes(i,Jend  )-              &
      &                          MAX(Cx,0.0_r8)*grad(i-1,Jend+1)-        &
      &                          MIN(Cx,0.0_r8)*grad(i  ,Jend+1))/       &
      &                          (cff+Ce)
-#  ifdef MASKING
+#   ifdef MASKING
           ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend+1)*                  &
      &                          GRID(ng)%umask(i,Jend+1)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend+1)*                  &
      &                          GRID(ng)%umask_wet(i,Jend+1)
-#  endif
+#   endif
         END DO
 
-# elif defined NORTH_M2SCLAMPED
+#  elif defined NORTH_M2SCLAMPED
 !
 !  Northern edge, clamped boundary condition.
 !
         DO i=IstrU,Iend
           ubar_stokes(i,Jend+1)=BOUNDARY(ng)%ubarstokes_north(i)
-#  ifdef MASKING
+#   ifdef MASKING
           ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend+1)*                  &
      &                          GRID(ng)%umask(i,Jend+1)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend+1)*                  &
      &                          GRID(ng)%umask_wet(i,Jend+1)
-#  endif
+#   endif
         END DO
 
-# elif defined NORTH_M2SGRADIENT
+#  elif defined NORTH_M2SGRADIENT
 !
 !  Northern edge, gradient boundary condition.
 !
         DO i=IstrU,Iend
           ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend)
-#  ifdef MASKING
+#   ifdef MASKING
           ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend+1)*                  &
      &                          GRID(ng)%umask(i,Jend+1)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend+1)*                  &
      &                          GRID(ng)%umask_wet(i,Jend+1)
-#  endif
+#   endif
         END DO
 
-# else
+#  else
 !
 !  Northern edge, closed boundary condition: free slip (gamma2=1)  or
 !                                            no   slip (gamma2=-1).
 !
-#  ifdef EW_PERIODIC
-#   define I_RANGE IstrU,Iend
-#  else
-#   define I_RANGE Istr,IendR
-#  endif
+#   ifdef EW_PERIODIC
+#    define I_RANGE IstrU,Iend
+#   else
+#    define I_RANGE Istr,IendR
+#   endif
         DO i=I_RANGE
           ubar_stokes(i,Jend+1)=gamma2(ng)*ubar_stokes(i,Jend)
-#  ifdef MASKING
+#   ifdef MASKING
           ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend+1)*                  &
      &                          GRID(ng)%umask(i,Jend+1)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend+1)*                  &
      &                          GRID(ng)%umask_wet(i,Jend+1)
-#  endif
+#   endif
         END DO
-#  undef I_RANGE
-# endif
+#   undef I_RANGE
+#  endif
       END IF
-#endif
+# endif
 
-#if !defined EW_PERIODIC && !defined NS_PERIODIC && !defined COMPOSED_GRID
+# if !defined EW_PERIODIC && !defined NS_PERIODIC && !defined COMPOSED_GRID
 !
 !-----------------------------------------------------------------------
 !  Boundary corners.
@@ -511,7 +512,7 @@
         ubar_stokes(Iend+1,Jend+1)=0.5_r8*(ubar_stokes(Iend+1,Jend  )+  &
      &                                     ubar_stokes(Iend  ,Jend+1))
       END IF
-#endif
+# endif
 
 !#ifdef REFINED_GRID
 !set this for Parent Grid ONLY
@@ -520,4 +521,5 @@
 !
       RETURN
       END SUBROUTINE us2dbc_tile
+#endif
       END MODULE us2dbc_mod

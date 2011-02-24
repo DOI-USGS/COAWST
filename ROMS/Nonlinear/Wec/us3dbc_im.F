@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       MODULE us3dbc_mod
-#ifdef SOLVE3D
+#if defined WEC && defined SOLVE3D
 !
 !svn $Id: us3dbc_im.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
