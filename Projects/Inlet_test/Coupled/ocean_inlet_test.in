@@ -333,14 +333,14 @@ SO_sdev(isTsur) == 1.0d0 1.0d0             ! NT surface tracer flux
 
 Hout(idUvel) == T                          ! u           3D U-velocity
 Hout(idVvel) == T                          ! v           3D V-velocity
-Hout(idWvel) == T                          ! w           3D W-velocity
+Hout(idWvel) == F                          ! w           3D W-velocity
 Hout(idOvel) == T                          ! omega       omega vertical velocity
 Hout(idUbar) == T                          ! ubar        2D U-velocity
 Hout(idVbar) == T                          ! vbar        2D V-velocity
 Hout(idFsur) == T                          ! zeta        free-surface
-Hout(idBath) == F                          ! bath        time-dependent bathymetry
+Hout(idBath) == T                          ! bath        time-dependent bathymetry
 
-Hout(idTvar) == T T                        ! temp, salt  temperature and salinity
+Hout(idTvar) == T F                        ! temp, salt  temperature and salinity
 
 Hout(idUair) == F                          ! Uwind       surface U-wind
 Hout(idVair) == F                          ! Vwind       surface V-wind
@@ -357,10 +357,10 @@ Hout(idUbcs) == T                          ! bustrcwmax  bottom max wave-current
 Hout(idVbcs) == T                          ! bvstrcwmax  bottom max wave-current V-stress
 Hout(idUVwc) == T                          ! bottom max wave-current stress magnitude
 
-Hout(idUbot) == F                          ! Ubot        bed wave orbital U-velocity
-Hout(idVbot) == F                          ! Vbot        bed wave orbital V-velocity
-Hout(idUbur) == F                          ! Ucur        bottom U-velocity above bed
-Hout(idVbvr) == F                          ! Vcur        bottom V-velocity above bed
+Hout(idUbot) == T                          ! Ubot        bed wave orbital U-velocity
+Hout(idVbot) == T                          ! Vbot        bed wave orbital V-velocity
+Hout(idUbur) == T                          ! Ucur        bottom U-velocity above bed
+Hout(idVbvr) == T                          ! Vcur        bottom V-velocity above bed
 
 Hout(idW2xx) == T                          ! Sxx_bar     2D radiation stress, Sxx component
 Hout(idW2xy) == T                          ! Sxy_bar     2D radiation stress, Sxy component
@@ -392,14 +392,14 @@ Hout(idWorb) == T                          ! Uwave_rms       wave bottom orbital
 Hout(idWbrk) == T                          ! Wave_break      wave breaking (percent)
 Hout(idUwav) == T                          ! uWave           wave-depth avgeraged U-velocity
 Hout(idVwav) == T                          ! vWave           wave-depth avgeraged V-velocity
-Hout(idWdif) == F                          ! Dissip_fric     wave dissipation due to bottom friction
-Hout(idWdib) == F                          ! Dissip_break    wave dissipation due to breaking
-Hout(idWdiw) == F                          ! Dissip_wcap     wave dissipation due to white capping
-Hout(idWdis) == F                          ! Dissip_roller   wave roller dissipation
-Hout(idWrol) == F                          ! rollA           wave roller action density
-Hout(idWztw) == F                          ! zetaw           WEC quasi-static sea level adjustment
-Hout(idWqsp) == F                          ! qsp             WEC quasi-static pressure
-Hout(idWbeh) == F                          ! bh              WEC Bernoulli head
+Hout(idWdif) == T                          ! Dissip_fric     wave dissipation due to bottom friction
+Hout(idWdib) == T                          ! Dissip_break    wave dissipation due to breaking
+Hout(idWdiw) == T                          ! Dissip_wcap     wave dissipation due to white capping
+Hout(idWdis) == T                          ! Dissip_roller   wave roller dissipation
+Hout(idWrol) == T                          ! rollA           wave roller action density
+Hout(idWztw) == T                          ! zetaw           WEC quasi-static sea level adjustment
+Hout(idWqsp) == T                          ! qsp             WEC quasi-static pressure
+Hout(idWbeh) == T                          ! bh              WEC Bernoulli head
 
 Hout(idTsur) == F                          ! shflux          surface net heat and salt flux
 Hout(idLhea) == F                          ! latent          latent heat flux

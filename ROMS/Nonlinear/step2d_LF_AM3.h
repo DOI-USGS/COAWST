@@ -737,6 +737,12 @@
           cff1=cff*(Drhs(i,j)+Drhs(i-1,j))
           DUon(i,j)=ubar(i,j,krhs)*cff1
 # ifdef WEC
+#  ifdef WET_DRY
+          cff5=ABS(ABS(umask_wet(i,j))-1.0_r8)
+          cff6=0.5_r8+DSIGN(0.5_r8,ubar_stokes(i,j))*umask_wet(i,j)
+          cff7=0.5_r8*umask_wet(i,j)*cff5+cff6*(1.0_r8-cff5)
+          cff1=cff1*cff7
+#  endif
           DUSon(i,j)=ubar_stokes(i,j)*cff1
           DUon(i,j)=DUon(i,j)+DUSon(i,j)
 # endif
@@ -748,6 +754,12 @@
           cff1=cff*(Drhs(i,j)+Drhs(i,j-1))
           DVom(i,j)=vbar(i,j,krhs)*cff1
 # ifdef WEC
+#  ifdef WET_DRY
+          cff5=ABS(ABS(vmask_wet(i,j))-1.0_r8)
+          cff6=0.5_r8+DSIGN(0.5_r8,vbar_stokes(i,j))*vmask_wet(i,j)
+          cff7=0.5_r8*vmask_wet(i,j)*cff5+cff6*(1.0_r8-cff5)
+          cff1=cff1*cff7
+#  endif
           DVSom(i,j)=vbar_stokes(i,j)*cff1
           DVom(i,j)=DVom(i,j)+DVSom(i,j)
 # endif
@@ -2636,9 +2648,6 @@
             ubar(i,j,knew)=ubar(i,j,knew)*cff7
             rhs_ubar(i,j)=rhs_ubar(i,j)*cff7
 #  ifdef SOLVE3D
-!!              rufrc(i,j)=rufrc(i,j)-rhs_ubar(i,j)
-!!              rhs_ubar(i,j)=rhs_ubar(i,j)+rufrc(i,j)
-!!              ru(i,j,0,nstp)=rufrc(i,j)
             IF (PREDICTOR_2D_STEP(ng)) THEN
               rufrc(i,j)=rufrc(i,j)*cff7
               ru(i,j,0,nstp)=rufrc(i,j)

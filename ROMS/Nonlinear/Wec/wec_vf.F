@@ -55,6 +55,7 @@
      &                            GRID(ng) % vmask,                     &
 # endif
 # ifdef WET_DRY
+     &                            GRID(ng) % rmask_wet,                 &
      &                            GRID(ng) % umask_wet,                 &
      &                            GRID(ng) % vmask_wet,                 &
 # endif
@@ -127,7 +128,7 @@
      &                                  pmask, rmask, umask, vmask,     &
 # endif
 # ifdef WET_DRY
-     &                                  umask_wet, vmask_wet,           &
+     &                                  rmask_wet, umask_wet, vmask_wet,&
 # endif
      &                                  om_u, om_v, on_u, on_v,         &
      &                                  pm, pn,                         &
@@ -192,6 +193,7 @@
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
 #  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
       real(r8), intent(in) :: umask_wet(LBi:,LBj:)
       real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
 #  endif
@@ -256,6 +258,7 @@
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 #  endif
 #  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 #  endif
@@ -345,7 +348,6 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wavenx
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: waveny
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: waveAA
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: waveE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: sigma
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: sigmat
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: osigma
@@ -396,9 +398,14 @@
           waveny(i,j)=waven(i,j)*SIN(cff)
           cff=0.25_r8*SQRT(2.0_r8)*Hwave(i,j)
           waveAA(i,j)=cff*cff
+# ifdef MASKING
+          waveAA(i,j)=waveAA(i,j)*rmask(i,j)
+# endif
+# ifdef WET_DRY
+          waveAA(i,j)=waveAA(i,j)*rmask_wet(i,j)
+# endif
           sigma(i,j)=SQRT(g*waven(i,j)*TANH(waven(i,j)*Dstp(i,j)))
           osigma(i,j)=1.0_r8/sigma(i,j)
-          waveE(i,j)=0.0625_r8*g*Hwave(i,j)*Hwave(i,j)
 !
 !  Compute wave celerity and nonlinear water depth
 !
@@ -648,6 +655,12 @@
             cff=0.5_r8*(BBXbrk(i  ,j)*Hz(i  ,j,k)+                      &
      &                  BBXbrk(i-1,j)*Hz(i-1,j,k))*                     &
      &                  om_u(i,j)*on_u(i,j)
+# ifdef MASKING
+            cff=cff*umask(i,j)
+# endif
+# ifdef WET_DRY
+            cff=cff*umask_wet(i,j)
+# endif
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
             rubrk2d(i,j)=rubrk2d(i,j)+cff*Hzk(i,k)
 # ifdef DIAGNOSTICS_UV
@@ -657,6 +670,12 @@
             cff=0.5_r8*(BBXrol(i  ,j)*Hz(i  ,j,k)+                      &
      &                  BBXrol(i-1,j)*Hz(i-1,j,k))*                     &
      &                  om_u(i,j)*on_u(i,j)
+# ifdef MASKING
+            cff=cff*umask(i,j)
+# endif
+# ifdef WET_DRY
+            cff=cff*umask_wet(i,j)
+# endif
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
             rurol2d(i,j)=rurol2d(i,j)+cff*Hzk(i,k)
 #  ifdef DIAGNOSTICS_UV
@@ -674,6 +693,12 @@
               cff=0.5_r8*(BBYbrk(i,j  )*Hz(i,j  ,k)+                    &
      &                    BBYbrk(i,j-1)*Hz(i,j-1,k))*                   &
      &                    om_v(i,j)*on_v(i,j)
+# ifdef MASKING
+              cff=cff*vmask(i,j)
+# endif
+# ifdef WET_DRY
+              cff=cff*vmask_wet(i,j)
+# endif
               rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
               rvbrk2d(i,j)=rvbrk2d(i,j)+cff*Hzk(i,k)
 # ifdef DIAGNOSTICS_UV
@@ -683,6 +708,12 @@
               cff=0.5_r8*(BBYrol(i,j  )*Hz(i,j  ,k)+                    &
      &                    BBYrol(i,j-1)*Hz(i,j-1,k))*                   &
      &                    om_v(i,j)*on_v(i,j)
+# ifdef MASKING
+              cff=cff*vmask(i,j)
+# endif
+# ifdef WET_DRY
+              cff=cff*vmask_wet(i,j)
+# endif
               rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
               rvrol2d(i,j)=rvrol2d(i,j)+cff*Hzk(i,k)
 #  ifdef DIAGNOSTICS_UV

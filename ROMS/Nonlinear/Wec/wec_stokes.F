@@ -114,6 +114,12 @@
 # endif
       USE bc_2d_mod
       USE bc_3d_mod
+      USE us2dbc_mod, ONLY : us2dbc_tile
+      USE vs2dbc_mod, ONLY : vs2dbc_tile
+# ifdef SOLVE3D
+      USE us3dbc_mod, ONLY : us3dbc_tile
+      USE vs3dbc_mod, ONLY : vs3dbc_tile
+# endif
 !
 !  Imported variable declarations.
 !
@@ -263,32 +269,32 @@
 !
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-             fac2=((z_r(i-1,j,k)+z_r(i,j,k))-                           &
-     &             (z_w(i-1,j,0)+z_w(i,j,0)))/                          &
-     &            (Dstp(i-1,j)+Dstp(i,j))
-             cff=fac1*om_u(i,j)*on_u(i,j)
-             cff2=(waveE(i-1,j)+waveE(i,j))
+            fac2=((z_r(i-1,j,k)+z_r(i,j,k))-                            &
+     &            (z_w(i-1,j,0)+z_w(i,j,0)))/                           &
+     &           (Dstp(i-1,j)+Dstp(i,j))
+            cff=fac1*om_u(i,j)*on_u(i,j)
+            cff2=(waveE(i-1,j)+waveE(i,j))
 # if defined WEC_ROLLER
-             cff2=cff2+(rollA(i-1,j)*sigma(i-1,j)+                      &
-     &                  rollA(i,j)*sigma(i,j))
+            cff2=cff2+(rollA(i-1,j)*sigma(i-1,j)+                       &
+     &                 rollA(i,j)*sigma(i,j))
 # endif
-             cff3=(kD(i-1,j)+kD(i,j))
+            cff3=(kD(i-1,j)+kD(i,j))
 # ifdef WEC_MELLOR
 
 !
 !  Store old value to compute tendency term.
 !
-             rulag3d(i,j,k)=u_stokes(i,j,k)
+            rulag3d(i,j,k)=u_stokes(i,j,k)
 # endif
-             u_stokes(i,j,k)=cff2*                                      &
-     &                      (wavenx(i-1,j)+wavenx(i,j))/                &
-     &                      (wavec (i-1,j)+wavec (i,j))*                & 
-     &                      COSH(cff3*fac2)/SINH(cff3)
+            u_stokes(i,j,k)=cff2*                                       &
+     &                     (wavenx(i-1,j)+wavenx(i,j))/                 &
+     &                     (wavec (i-1,j)+wavec (i,j))*                 & 
+     &                     COSH(cff3*fac2)/SINH(cff3)
 # ifdef MASKING
-             u_stokes(i,j,k)=u_stokes(i,j,k)*umask(i,j)
+            u_stokes(i,j,k)=u_stokes(i,j,k)*umask(i,j)
 # endif
 # ifdef WET_DRY
-             u_stokes(i,j,k)=u_stokes(i,j,k)*umask_wet(i,j)
+            u_stokes(i,j,k)=u_stokes(i,j,k)*umask_wet(i,j)
 # endif
 # ifdef WEC_MELLOR
 !
@@ -305,50 +311,65 @@
 !
         DO j=JstrV,Jend
           DO i=Istr,Iend
-             fac2=((z_r(i,j-1,k)+z_r(i,j,k))-                           &
-     &             (z_w(i,j-1,0)+z_w(i,j,0)))/                          &
-     &            (Dstp(i,j-1)+Dstp(i,j))
-             cff=fac1*om_v(i,j)*on_v(i,j)
-             cff2=(waveE(i,j-1)+waveE(i,j))
+            fac2=((z_r(i,j-1,k)+z_r(i,j,k))-                            &
+     &            (z_w(i,j-1,0)+z_w(i,j,0)))/                           &
+     &           (Dstp(i,j-1)+Dstp(i,j))
+            cff=fac1*om_v(i,j)*on_v(i,j)
+            cff2=(waveE(i,j-1)+waveE(i,j))
 # if defined WEC_ROLLER
-             cff2=cff2+(rollA(i,j-1)*sigma(i,j-1)+                      &
+            cff2=cff2+(rollA(i,j-1)*sigma(i,j-1)+                       &
      &                  rollA(i,j)*sigma(i,j))
 # endif
-             cff3=(kD(i,j-1)+kD(i,j))
+            cff3=(kD(i,j-1)+kD(i,j))
 # ifdef WEC_MELLOR
 !
 !  Store old value to compute tendency term.
 !
-             rvlag3d(i,j,k)=v_stokes(i,j,k)
+            rvlag3d(i,j,k)=v_stokes(i,j,k)
 # endif
-             v_stokes(i,j,k)=cff2*                                      &
+            v_stokes(i,j,k)=cff2*                                       &
      &                      (waveny(i,j-1)+waveny(i,j))/                &
      &                      (wavec (i,j-1)+wavec (i,j))*                &
      &                      COSH(cff3*fac2)/SINH(cff3)
 # ifdef MASKING
-             v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
+            v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
 # endif
 # ifdef WET_DRY
-             v_stokes(i,j,k)=v_stokes(i,j,k)*vmask_wet(i,j)
+            v_stokes(i,j,k)=v_stokes(i,j,k)*vmask_wet(i,j)
 # endif
 # ifdef WEC_MELLOR
 !
 !  Finalize computation of stokes tendency term.
 !
-              rvlag3d(i,j,k)=0.5_r8*cff*                                &
-     &                       (Hz(i,j,k)+Hz(i,j-1,k))*                   &
-     &                       (v_stokes(i,j,k)-rvlag3d(i,j,k))
+            rvlag3d(i,j,k)=0.5_r8*cff*                                  &
+     &                     (Hz(i,j,k)+Hz(i,j-1,k))*                     &
+     &                     (v_stokes(i,j,k)-rvlag3d(i,j,k))
 # endif
           END DO
         END DO
       END DO
 !
-      CALL bc_u3d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
+!-----------------------------------------------------------------------
+! Set lateral boundary conditions.
+!-----------------------------------------------------------------------
+!
+      CALL us3dbc_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, N(ng),                      &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  u_stokes)
-      CALL bc_v3d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
+      CALL vs3dbc_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, N(ng),                      &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  v_stokes)
+#  if defined EW_PERIODIC || defined NS_PERIODIC
+!
+      CALL exchange_u3d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        u_stokes(:,:,:))
+      CALL exchange_v3d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        v_stokes(:,:,:))
+#  endif
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
@@ -443,12 +464,23 @@
 !
 !  Apply boundary conditions.
 !
-      CALL bc_u2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  ubar_stokes)
-      CALL bc_v2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  vbar_stokes)
+        CALL us2dbc_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
+     &                    ubar_stokes)
+        CALL vs2dbc_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
+     &                    vbar_stokes)
+#  if defined EW_PERIODIC || defined NS_PERIODIC
+!
+      CALL exchange_u2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        ubar_stokes(:,:))
+      CALL exchange_v2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        vbar_stokes(:,:))
+#  endif
       CALL bc_w3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 0, N(ng),                   &
      &                  w_stokes)

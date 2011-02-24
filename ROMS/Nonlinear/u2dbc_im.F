@@ -805,164 +805,164 @@
 #endif
 
 #ifdef REFINED_GRID_BC
+!
+! For child grid, impose bc's to reduce noise reflections of a 
+! clamped condition.
+!
       IF (ng.ge.2) THEN
-      ngp=myparent(ng)
-      fac1=time(ngp)+dt(ngp)-time(ng)-dt(ng)
-      fac2=time(ng)-time(ngp)+dt(ng)
-      fac=1.0_r8/(fac1+fac2)
-      fac1=fac*fac1
-      fac2=fac*fac2
-      IF (iic(1).eq.ntstart(1)) THEN
-        t1=1
-        t2=2
-      ELSE
-# ifdef SOLVE3D
-        t1=nstp(ngp)
-        t2=nnew(ngp)
-# else
-        IF (MOD(iic(1)*3,2).eq.0) THEN
-          t1=2
-          t2=1
-        ELSE
+        ngp=myparent(ng)
+        fac1=time(ngp)+dt(ngp)-time(ng)-dt(ng)
+        fac2=time(ng)-time(ngp)+dt(ng)
+        fac=1.0_r8/(fac1+fac2)
+        fac1=fac*fac1
+        fac2=fac*fac2
+        IF (iic(1).eq.ntstart(1)) THEN
           t1=1
           t2=2
-        ENDIF
+        ELSE
+# ifdef SOLVE3D
+          t1=nstp(ngp)
+          t2=nnew(ngp)
+# else
+          IF (MOD(iic(1)*3,2).eq.0) THEN
+            t1=2
+            t2=1
+          ELSE
+            t1=1
+            t2=2
+          ENDIF
 # endif
-      END IF
-!!!!!!!!!!!!!!!!!!!!!!!
-! bc's for refined grid
-!!!!!!!!!!!!!!!!!!!!!!!
-      IF (WESTERN_EDGE) THEN
+        END IF
+        IF (WESTERN_EDGE) THEN
 !
 !  Western edge, Flather boundary condition.
 !
-        DO j=Jstr,Jend
-          bry_val=fac1*REFINED(ng)%ubarR_west(4,j,t1)+                  &
-     &            fac2*REFINED(ng)%ubarR_west(4,j,t2)
+          DO j=Jstr,Jend
+            bry_val=fac1*REFINED(ng)%ubarR_west(4,j,t1)+                &
+     &              fac2*REFINED(ng)%ubarR_west(4,j,t2)
 # ifdef MASKING
-          bry_val=bry_val*GRID(ng)%umask(Istr,j)
+            bry_val=bry_val*GRID(ng)%umask(Istr,j)
 # endif
-!         bry_val=OCEAN(ng)%ubar(Istr,j,kout)
-          cff=1.0_r8/(0.5_r8*(GRID(ng)%h(Istr-1,j)+                     &
-     &                        zeta(Istr-1,j,know)+                      &
-     &                        GRID(ng)%h(Istr  ,j)+                     &
-     &                        zeta(Istr  ,j,know)))
-          Cx=SQRT(g*cff)
-          my_val=0.5_r8*fac1*(REFINED(ng)%zetaR_west(4,j,t1)+           &
-     &                        REFINED(ng)%zetaR_west(5,j,t1))+          &
-     &           0.5_r8*fac2*(REFINED(ng)%zetaR_west(4,j,t2)+           &
-     &                        REFINED(ng)%zetaR_west(5,j,t2))
+!           bry_val=OCEAN(ng)%ubar(Istr,j,kout)
+            cff=1.0_r8/(0.5_r8*(GRID(ng)%h(Istr-1,j)+                   &
+     &                          zeta(Istr-1,j,know)+                    &
+     &                          GRID(ng)%h(Istr  ,j)+                   &
+     &                          zeta(Istr  ,j,know)))
+            Cx=SQRT(g*cff)
+            my_val=0.5_r8*fac1*(REFINED(ng)%zetaR_west(4,j,t1)+         &
+     &                          REFINED(ng)%zetaR_west(5,j,t1))+        &
+     &             0.5_r8*fac2*(REFINED(ng)%zetaR_west(4,j,t2)+         &
+     &                          REFINED(ng)%zetaR_west(5,j,t2))
 # ifdef MASKING
-          my_val=my_val*GRID(ng)%umask(Istr,j)
+            my_val=my_val*GRID(ng)%umask(Istr,j)
 # endif
-          ubar(Istr,j,kout)=bry_val-                                    &
-     &                      Cx*(0.5_r8*(zeta(Istr-1,j,know)+            &
-     &                                  zeta(Istr  ,j,know))-           &
-     &                          my_val)
+            ubar(Istr,j,kout)=bry_val-                                  &
+     &                        Cx*(0.5_r8*(zeta(Istr-1,j,know)+          &
+     &                                    zeta(Istr  ,j,know))-         &
+     &                            my_val)
 #  ifdef MASKING
-          ubar(Istr,j,kout)=ubar(Istr,j,kout)*                          &
-     &                      GRID(ng)%umask(Istr,j)
+            ubar(Istr,j,kout)=ubar(Istr,j,kout)*                        &
+     &                        GRID(ng)%umask(Istr,j)
 #  endif
-        END DO
-      END IF
-      IF (EASTERN_EDGE) THEN
+          END DO
+        END IF
+        IF (EASTERN_EDGE) THEN
 !
 !  Eastern edge, Flather boundary condition.
 !
-        DO j=Jstr,Jend
-          bry_val=fac1*REFINED(ng)%ubarR_east(1,j,t1)+                  &
-     &            fac2*REFINED(ng)%ubarR_east(1,j,t2)
+          DO j=Jstr,Jend
+            bry_val=fac1*REFINED(ng)%ubarR_east(1,j,t1)+                &
+     &              fac2*REFINED(ng)%ubarR_east(1,j,t2)
 # ifdef MASKING
-          bry_val=bry_val*GRID(ng)%umask(Iend+1,j)
+            bry_val=bry_val*GRID(ng)%umask(Iend+1,j)
 # endif
-!         bry_val=OCEAN(ng)%ubar(Iend+1,j,kout)
-          cff=1.0_r8/(0.5_r8*(GRID(ng)%h(Iend  ,j)+                     &
-     &                        zeta(Iend  ,j,know)+                      &
-     &                        GRID(ng)%h(Iend+1,j)+                     &
-     &                        zeta(Iend+1,j,know)))
-          Cx=SQRT(g*cff)
-          my_val=0.5_r8*fac1*(REFINED(ng)%zetaR_east(1,j,t1)+           &
-     &                        REFINED(ng)%zetaR_east(2,j,t1))+          &
-     &           0.5_r8*fac2*(REFINED(ng)%zetaR_east(1,j,t2)+           &
-     &                        REFINED(ng)%zetaR_east(2,j,t2))
+!           bry_val=OCEAN(ng)%ubar(Iend+1,j,kout)
+            cff=1.0_r8/(0.5_r8*(GRID(ng)%h(Iend  ,j)+                   &
+     &                          zeta(Iend  ,j,know)+                    &
+     &                          GRID(ng)%h(Iend+1,j)+                   &
+     &                          zeta(Iend+1,j,know)))
+            Cx=SQRT(g*cff)
+            my_val=0.5_r8*fac1*(REFINED(ng)%zetaR_east(1,j,t1)+         &
+     &                          REFINED(ng)%zetaR_east(2,j,t1))+        &
+     &             0.5_r8*fac2*(REFINED(ng)%zetaR_east(1,j,t2)+         &
+     &                          REFINED(ng)%zetaR_east(2,j,t2))
 # ifdef MASKING
-          my_val=my_val*GRID(ng)%umask(Iend+1,j)
+            my_val=my_val*GRID(ng)%umask(Iend+1,j)
 # endif
-!         my_val=OCEAN(ng)%zeta(Iend+1,j,know)
-          ubar(Iend+1,j,kout)=bry_val+                                  &
-     &                        Cx*(0.5_r8*(zeta(Iend  ,j,know)+          &
-     &                                    zeta(Iend+1,j,know))-         &
-     &                            my_val)
+!           my_val=OCEAN(ng)%zeta(Iend+1,j,know)
+            ubar(Iend+1,j,kout)=bry_val+                                &
+     &                          Cx*(0.5_r8*(zeta(Iend  ,j,know)+        &
+     &                                      zeta(Iend+1,j,know))-       &
+     &                          my_val)
 #  ifdef MASKING
-          ubar(Iend+1,j,kout)=ubar(Iend+1,j,kout)*                      &
-     &                        GRID(ng)%umask(Iend+1,j)
+            ubar(Iend+1,j,kout)=ubar(Iend+1,j,kout)*                    &
+     &                          GRID(ng)%umask(Iend+1,j)
 #  endif
-        END DO 
-      END IF
-      IF (SOUTHERN_EDGE) THEN
+          END DO 
+        END IF
+        IF (SOUTHERN_EDGE) THEN
 !
 !  Southern edge, Chapman boundary condition.
 !
-        DO i=IstrU,Iend
-          cff=dt2d*0.5_r8*(GRID(ng)%pn(i-1,Jstr)+                       &
-     &                     GRID(ng)%pn(i  ,Jstr))
-          cff1=SQRT(g*0.5_r8*(GRID(ng)%h(i-1,Jstr)+                     &
-     &                        zeta(i-1,Jstr,know)+                      &
-     &                        GRID(ng)%h(i  ,Jstr)+                     &
-     &                        zeta(i  ,Jstr,know)))
-          Ce=cff*cff1
-          cff2=1.0_r8/(1.0_r8+Ce)
-          ubar(i,Jstr-1,kout)=cff2*(ubar(i,Jstr-1,know)+                &
-     &                              Ce*ubar(i,Jstr,kout))
+          DO i=IstrU,Iend
+            cff=dt2d*0.5_r8*(GRID(ng)%pn(i-1,Jstr)+                     &
+     &                       GRID(ng)%pn(i  ,Jstr))
+            cff1=SQRT(g*0.5_r8*(GRID(ng)%h(i-1,Jstr)+                   &
+     &                          zeta(i-1,Jstr,know)+                    &
+     &                          GRID(ng)%h(i  ,Jstr)+                   &
+     &                          zeta(i  ,Jstr,know)))
+            Ce=cff*cff1
+            cff2=1.0_r8/(1.0_r8+Ce)
+            ubar(i,Jstr-1,kout)=cff2*(ubar(i,Jstr-1,know)+              &
+     &                                Ce*ubar(i,Jstr,kout))
 #  ifdef MASKING
-          ubar(i,Jstr-1,kout)=ubar(i,Jstr-1,kout)*                      &
-     &                        GRID(ng)%umask(i,Jstr-1)
+            ubar(i,Jstr-1,kout)=ubar(i,Jstr-1,kout)*                    &
+     &                          GRID(ng)%umask(i,Jstr-1)
 #  endif
-        END DO
-      END IF
-      IF (NORTHERN_EDGE) THEN
+          END DO
+        END IF
+        IF (NORTHERN_EDGE) THEN
 !
 !  Northern edge, Chapman boundary condition.
 !
-        DO i=IstrU,Iend
-          cff=dt2d*0.5_r8*(GRID(ng)%pn(i-1,Jend)+                       &
-     &                     GRID(ng)%pn(i  ,Jend))
-          cff1=SQRT(g*0.5_r8*(GRID(ng)%h(i-1,Jend)+                     &
-     &                        zeta(i-1,Jend,know)+                      &
-     &                        GRID(ng)%h(i  ,Jend)+                     &
-     &                        zeta(i  ,Jend,know)))
-          Ce=cff*cff1
-          cff2=1.0_r8/(1.0_r8+Ce)
-          ubar(i,Jend+1,kout)=cff2*(ubar(i,Jend+1,know)+                &
-     &                              Ce*ubar(i,Jend,kout))
+          DO i=IstrU,Iend
+            cff=dt2d*0.5_r8*(GRID(ng)%pn(i-1,Jend)+                     &
+     &                       GRID(ng)%pn(i  ,Jend))
+            cff1=SQRT(g*0.5_r8*(GRID(ng)%h(i-1,Jend)+                   &
+     &                          zeta(i-1,Jend,know)+                    &
+     &                          GRID(ng)%h(i  ,Jend)+                   &
+     &                          zeta(i  ,Jend,know)))
+            Ce=cff*cff1
+            cff2=1.0_r8/(1.0_r8+Ce)
+            ubar(i,Jend+1,kout)=cff2*(ubar(i,Jend+1,know)+              &
+     &                                Ce*ubar(i,Jend,kout))
 #  ifdef MASKING
-          ubar(i,Jend+1,kout)=ubar(i,Jend+1,kout)*                      &
-     &                        GRID(ng)%umask(i,Jend+1)
+            ubar(i,Jend+1,kout)=ubar(i,Jend+1,kout)*                    &
+     &                          GRID(ng)%umask(i,Jend+1)
 #  endif
-        END DO
-      END IF
+          END DO
+        END IF
 !
 ! Corners
 !
-      IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-        ubar(Istr,Jstr-1,kout)=0.5_r8*(ubar(Istr+1,Jstr-1,kout)+        &
-     &                                 ubar(Istr  ,Jstr  ,kout))
+        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+          ubar(Istr,Jstr-1,kout)=0.5_r8*(ubar(Istr+1,Jstr-1,kout)+      &
+     &                                   ubar(Istr  ,Jstr  ,kout))
+        END IF
+        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+          ubar(Iend+1,Jstr-1,kout)=0.5_r8*(ubar(Iend  ,Jstr-1,kout)+    &
+     &                                     ubar(Iend+1,Jstr  ,kout))
+        END IF
+        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+          ubar(Istr,Jend+1,kout)=0.5_r8*(ubar(Istr  ,Jend  ,kout)+      &
+     &                                   ubar(Istr+1,Jend+1,kout))
+        END IF
+        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+          ubar(Iend+1,Jend+1,kout)=0.5_r8*(ubar(Iend+1,Jend  ,kout)+    &
+     &                                     ubar(Iend  ,Jend+1,kout))
+        END IF
       END IF
-      IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-        ubar(Iend+1,Jstr-1,kout)=0.5_r8*(ubar(Iend  ,Jstr-1,kout)+      &
-     &                                   ubar(Iend+1,Jstr  ,kout))
-      END IF
-      IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-        ubar(Istr,Jend+1,kout)=0.5_r8*(ubar(Istr  ,Jend  ,kout)+        &
-     &                                 ubar(Istr+1,Jend+1,kout))
-      END IF
-      IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-        ubar(Iend+1,Jend+1,kout)=0.5_r8*(ubar(Iend+1,Jend  ,kout)+      &
-     &                                   ubar(Iend  ,Jend+1,kout))
-      END IF
-
-      END IF
-#endif   !ref grid bcs
+#endif
 !
 #if defined WET_DRY
 !

@@ -311,9 +311,9 @@ Hout(idOvel) == T T                        ! omega       omega vertical velocity
 Hout(idUbar) == T T                        ! ubar        2D U-velocity
 Hout(idVbar) == T T                        ! vbar        2D V-velocity
 Hout(idFsur) == T T                        ! zeta        free-surface
-Hout(idBath) == F F                        ! bath        time-dependent bathymetry
+Hout(idBath) == T T                        ! bath        time-dependent bathymetry
 
-Hout(idTvar) == T T T T                    ! temp, salt  temperature and salinity
+Hout(idTvar) == T F T F                    ! temp, salt  temperature and salinity
 
 Hout(idUair) == F F                        ! Uwind       surface U-wind
 Hout(idVair) == F F                        ! Vwind       surface V-wind
@@ -330,10 +330,10 @@ Hout(idUbcs) == T T                        ! bustrcwmax  bottom max wave-current
 Hout(idVbcs) == T T                        ! bvstrcwmax  bottom max wave-current V-stress
 Hout(idUVwc) == T T                        ! bottom max wave-current stress magnitude
 
-Hout(idUbot) == F F                        ! Ubot        bed wave orbital U-velocity
-Hout(idVbot) == F F                        ! Vbot        bed wave orbital V-velocity
-Hout(idUbur) == F F                        ! Ucur        bottom U-velocity above bed
-Hout(idVbvr) == F F                        ! Vcur        bottom V-velocity above bed
+Hout(idUbot) == T T                        ! Ubot        bed wave orbital U-velocity
+Hout(idVbot) == T T                        ! Vbot        bed wave orbital V-velocity
+Hout(idUbur) == T T                        ! Ucur        bottom U-velocity above bed
+Hout(idVbvr) == T T                        ! Vcur        bottom V-velocity above bed
 
 Hout(idW2xx) == T T                        ! Sxx_bar     2D radiation stress, Sxx component
 Hout(idW2xy) == T T                        ! Sxy_bar     2D radiation stress, Sxy component
@@ -365,14 +365,14 @@ Hout(idWorb) == T T                        ! Uwave_rms       wave bottom orbital
 Hout(idWbrk) == T T                        ! Wave_break      wave breaking (percent)
 Hout(idUwav) == T T                        ! uWave           wave-depth avgeraged U-velocity
 Hout(idVwav) == T T                        ! vWave           wave-depth avgeraged V-velocity
-Hout(idWdif) == F F                        ! Dissip_fric     wave dissipation due to bottom friction
-Hout(idWdib) == F F                        ! Dissip_break    wave dissipation due to breaking
-Hout(idWdiw) == F F                        ! Dissip_wcap     wave dissipation due to white capping
-Hout(idWdis) == F F                        ! Dissip_roller   wave roller dissipation
-Hout(idWrol) == F F                        ! rollA           wave roller action density
-Hout(idWztw) == F F                        ! zetaw           WEC quasi-static sea level adjustment
-Hout(idWqsp) == F F                        ! qsp             WEC quasi-static pressure
-Hout(idWbeh) == F F                        ! bh              WEC Bernoulli head
+Hout(idWdif) == T T                        ! Dissip_fric     wave dissipation due to bottom friction
+Hout(idWdib) == T T                        ! Dissip_break    wave dissipation due to breaking
+Hout(idWdiw) == T T                        ! Dissip_wcap     wave dissipation due to white capping
+Hout(idWdis) == T T                        ! Dissip_roller   wave roller dissipation
+Hout(idWrol) == T T                        ! rollA           wave roller action density
+Hout(idWztw) == T T                        ! zetaw           WEC quasi-static sea level adjustment
+Hout(idWqsp) == T T                        ! qsp             WEC quasi-static pressure
+Hout(idWbeh) == T T                        ! bh              WEC Bernoulli head
 
 Hout(idTsur) == F F                        ! shflux          surface net heat and salt flux
 Hout(idLhea) == F F                        ! latent          latent heat flux

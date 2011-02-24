@@ -475,6 +475,48 @@
 ** SOUTH_TNUDGING      use if tracers passive/active nudging term            **
 ** SOUTH_TCLAMPED      use if tracers clamped condition                      **
 **                                                                           **
+** OPTIONS for stokes velocities at open boundaries:                         **
+**                                                                           **
+** Western edge open boundary conditions OPTIONS:                            **
+**                                                                           **
+** WEST_M2SRADIATION    use if 2D stokes radiation condition                 **
+** WEST_M2SCLAMPED      use if 2D stokes clamped condition                   **
+** WEST_M2SGRADIENT     use if 2D stokes gradient condition                  **
+** WEST_M3SRADIATION    use if 3D stokes radiation condition                 **
+** WEST_M3SCLAMPED      use if 3D stokes clamped condition                   **
+** WEST_M3SGRADIENT     use if 3D stokes gradient condition                  **
+** -NO_OPTION_DEFINED-  DEFALUT is closed                                    **
+**                                                                           **
+** Western edge open boundary conditions OPTIONS:                            **
+**                                                                           **
+** EAST_M2SRADIATION    use if 2D stokes radiation condition                 **
+** EAST_M2SCLAMPED      use if 2D stokes clamped condition                   **
+** EAST_M2SGRADIENT     use if 2D stokes gradient condition                  **
+** EAST_M3SRADIATION    use if 3D stokes radiation condition                 **
+** EAST_M3SCLAMPED      use if 3D stokes clamped condition                   **
+** EAST_M3SGRADIENT     use if 3D stokes gradient condition                  **
+** -NO_OPTION_DEFINED-  DEFALUT is closed                                    **
+**                                                                           **
+** Western edge open boundary conditions OPTIONS:                            **
+**                                                                           **
+** SOUTH_M2SRADIATION    use if 2D stokes radiation condition                **
+** SOUTH_M2SCLAMPED      use if 2D stokes clamped condition                  **
+** SOUTH_M2SGRADIENT     use if 2D stokes gradient condition                 **
+** SOUTH_M3SRADIATION    use if 3D stokes radiation condition                **
+** SOUTH_M3SCLAMPED      use if 3D stokes clamped condition                  **
+** SOUTH_M3SGRADIENT     use if 3D stokes gradient condition                 **
+** -NO_OPTION_DEFINED-   DEFALUT is closed                                   **
+**                                                                           **
+** Western edge open boundary conditions OPTIONS:                            **
+**                                                                           **
+** NORTH_M2SRADIATION    use if 2D stokes radiation condition                **
+** NORTH_M2SCLAMPED      use if 2D stokes clamped condition                  **
+** NORTH_M2SGRADIENT     use if 2D stokes gradient condition                 **
+** NORTH_M3SRADIATION    use if 3D stokes radiation condition                **
+** NORTH_M3SCLAMPED      use if 3D stokes clamped condition                  **
+** NORTH_M3SGRADIENT     use if 3D stokes gradient condition                 **
+** -NO_OPTION_DEFINED-   DEFALUT is closed                                   **
+**                                                                           **
 ** OPTIONS for tidal forcing at open boundaries:                             **
 **                                                                           **
 **   The tidal data is processed in terms of tidal components, classified by **

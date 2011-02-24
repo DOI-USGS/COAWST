@@ -211,14 +211,13 @@
 #ifndef SWAN_MODEL
         INPFIL = 'INPUT'
 #endif
-#ifdef SWAN_MODEL
         OUTFIL = 'PRINT'
+#ifdef SWAN_MODEL
         WRITE(OUTFIL(6:7),181) ng
  181    FORMAT(I2.2)
         PRINTF = 500+ng
 #else
         PRINTF = 4
-        OUTFIL = 'PRINT'
 #endif
 !       unit ref. numbers for output to screen and to separate
 !       test print file:

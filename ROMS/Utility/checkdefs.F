@@ -35,6 +35,14 @@
       integer :: M3_west = 0
       integer :: M3_north = 0
       integer :: M3_south = 0
+      integer :: M2s_east = 0
+      integer :: M2s_west = 0
+      integer :: M2s_north = 0
+      integer :: M2s_south = 0
+      integer :: M3s_east = 0
+      integer :: M3s_west = 0
+      integer :: M3s_north = 0
+      integer :: M3s_south = 0
       integer :: K_east = 0
       integer :: K_west = 0
       integer :: K_north = 0
@@ -830,6 +838,48 @@
       Coptions(is:is+18)=' EAST_M3RADIATION,'
       M3_east=M3_east+1
 #endif
+#ifdef EAST_M2SCLAMPED
+      IF (Master) WRITE (stdout,20) 'EAST_M2SCLAMPED',                  &
+     &   'Eastern edge, 2D stokes, Clamped condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' EAST_M2SCLAMPED,'
+      M2s_east=M2s_east+1
+#endif
+#ifdef EAST_M2SGRADIENT
+      IF (Master) WRITE (stdout,20) 'EAST_M2SGRADIENT',                 &
+     &   'Eastern edge, 2D stokes, gradient condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' EAST_M2SGRADIENT,'
+      M2s_east=M2s_east+1
+#endif
+#ifdef EAST_M2SRADIATION
+      IF (Master) WRITE (stdout,20) 'EAST_M2SRADIATION',                &
+     &   'Eastern edge, 2D stokes, radiation condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+19)=' EAST_M2SRADIATION,'
+      M2s_east=M2s_east+1
+#endif
+#ifdef EAST_M3SCLAMPED
+      IF (Master) WRITE (stdout,20) 'EAST_M3SCLAMPED',                  &
+     &   'Eastern edge, 3D stokes, Clamped condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' EAST_M3SCLAMPED,'
+      M3s_east=M3s_east+1
+#endif
+#ifdef EAST_M3SGRADIENT
+      IF (Master) WRITE (stdout,20) 'EAST_M3SGRADIENT',                 &
+     &   'Eastern edge, 3D stokes, gradient condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' EAST_M3SGRADIENT,'
+      M3s_east=M3s_east+1
+#endif
+#ifdef EAST_M3SRADIATION
+      IF (Master) WRITE (stdout,20) 'EAST_M3SRADIATION',                 &
+     &   'Eastern edge, 3D stokes, radiation condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+19)=' EAST_M3SRADIATION,'
+      M3s_east=M3s_east+1
+#endif
 #if defined GLS_MIXING || defined MY25_MIXING
 # ifdef EAST_KGRADIENT
       IF (Master) WRITE (stdout,20) 'EAST_KGRADIENT',                   &
@@ -1504,6 +1554,48 @@
       Coptions(is:is+19)=' NORTH_M3RADIATION,'
       M3_north=M3_north+1
 #endif
+#ifdef NORTH_M2SCLAMPED
+      IF (Master) WRITE (stdout,20) 'NORTH_M2SCLAMPED',                 &
+     &   'Northern edge, 2D stokes, Clamped condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' NORTH_M2SCLAMPED,'
+      M2s_north=M2s_north+1
+#endif
+#ifdef NORTH_M2SGRADIENT
+      IF (Master) WRITE (stdout,20) 'NORTH_M2SGRADIENT',                &
+     &   'Northern edge, 2D stokes, gradient condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+19)=' NORTH_M2SGRADIENT,'
+      M2s_north=M2s_north+1
+#endif
+#ifdef NORTH_M2SRADIATION
+      IF (Master) WRITE (stdout,20) 'NORTH_M2SRADIATION',               &
+     &   'Northern edge, 2D stokes, radiation condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' NORTH_M2SRADIATION,'
+      M2s_north=M2s_north+1
+#endif
+#ifdef NORTH_M3SCLAMPED
+      IF (Master) WRITE (stdout,20) 'NORTH_M3SCLAMPED',                 &
+     &   'Northern edge, 3D stokes, Clamped condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' NORTH_M3SCLAMPED,'
+      M3s_north=M3s_north+1
+#endif
+#ifdef NORTH_M3SGRADIENT
+      IF (Master) WRITE (stdout,20) 'NORTH_M3SGRADIENT',                &
+     &   'Northern edge, 3D stokes, gradient condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+19)=' NORTH_M3SGRADIENT,'
+      M3s_north=M3s_north+1
+#endif
+#ifdef NORTH_M3SRADIATION
+      IF (Master) WRITE (stdout,20) 'NORTH_M3SRADIATION',                 &
+     &   'Northern edge, 3D stokes, radiation condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' NORTH_M3SRADIATION,'
+      M3s_north=M3s_north+1
+#endif
 #if defined GLS_MIXING || defined MY25_MIXING
 # ifdef NORTH_KGRADIENT
       IF (Master) WRITE (stdout,20) 'NORTH_KGRADIENT',                  &
@@ -2066,6 +2158,48 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+19)=' SOUTH_M3RADIATION,'
       M3_south=M3_south+1
+#endif
+#ifdef SOUTH_M2SCLAMPED
+      IF (Master) WRITE (stdout,20) 'SOUTH_M2SCLAMPED',                 &
+     &   'Southern edge, 2D stokes, Clamped condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' SOUTH_M2SCLAMPED,'
+      M2s_south=M2s_south+1
+#endif
+#ifdef SOUTH_M2SGRADIENT
+      IF (Master) WRITE (stdout,20) 'SOUTH_M2SGRADIENT',                &
+     &   'Southern edge, 2D stokes, gradient condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+19)=' SOUTH_M2SGRADIENT,'
+      M2s_south=M2s_south+1
+#endif
+#ifdef SOUTH_M2SRADIATION
+      IF (Master) WRITE (stdout,20) 'SOUTH_M2SRADIATION',               &
+     &   'Southern edge, 2D stokes, radiation condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' SOUTH_M2SRADIATION,'
+      M2s_south=M2s_south+1
+#endif
+#ifdef SOUTH_M3SCLAMPED
+      IF (Master) WRITE (stdout,20) 'SOUTH_M3SCLAMPED',                 &
+     &   'Southern edge, 3D stokes, Clamped condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' SOUTH_M3SCLAMPED,'
+      M3s_south=M3s_south+1
+#endif
+#ifdef SOUTH_M3SGRADIENT
+      IF (Master) WRITE (stdout,20) 'SOUTH_M3SGRADIENT',                &
+     &   'Southern edge, 3D stokes, gradient condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+19)=' SOUTH_M3SGRADIENT,'
+      M3s_south=M3s_south+1
+#endif
+#ifdef SOUTH_M3SRADIATION
+      IF (Master) WRITE (stdout,20) 'SOUTH_M3SRADIATION',               &
+     &   'Southern edge, 3D stokes, radiation condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' SOUTH_M3SRADIATION,'
+      M3s_south=M3s_south+1
 #endif
 #if defined GLS_MIXING || defined MY25_MIXING
 # ifdef SOUTH_KGRADIENT
@@ -2821,6 +2955,48 @@
       Coptions(is:is+18)=' WEST_M3RADIATION,'
       M3_west=M3_west+1
 #endif
+#ifdef WEST_M2SCLAMPED
+      IF (Master) WRITE (stdout,20) 'WEST_M2SCLAMPED',                  &
+     &   'Westtern edge, 2D stokes, Clamped condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' WEST_M2SCLAMPED,'
+      M2s_west=M2s_west+1
+#endif
+#ifdef WEST_M2SGRADIENT
+      IF (Master) WRITE (stdout,20) 'WEST_M2SGRADIENT',                 &
+     &   'Western edge, 2D stokes, gradient condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' WEST_M2SGRADIENT,'
+      M2s_west=M2s_west+1
+#endif
+#ifdef WEST_M2SRADIATION
+      IF (Master) WRITE (stdout,20) 'WEST_M2SRADIATION',                &
+     &   'Western edge, 2D stokes, radiation condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+19)=' WEST_M2SRADIATION,'
+      M2s_west=M2s_west+1
+#endif
+#ifdef WEST_M3SCLAMPED
+      IF (Master) WRITE (stdout,20) 'WEST_M3SCLAMPED',                  &
+     &   'Western edge, 3D stokes, Clamped condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' WEST_M3SCLAMPED,'
+      M3s_west=M3s_west+1
+#endif
+#ifdef WEST_M3SGRADIENT
+      IF (Master) WRITE (stdout,20) 'WEST_M3SGRADIENT',                 &
+     &   'Western edge, 3D stokes, gradient condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' WEST_M3SGRADIENT,'
+      M3s_west=M3s_west+1
+#endif
+#ifdef WEST_M3SRADIATION
+      IF (Master) WRITE (stdout,20) 'WEST_M3SRADIATION',                 &
+     &   'Western edge, 3D stokes, radiation condition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+19)=' WEST_M3SRADIATION,'
+      M3s_west=M3s_west+1
+#endif
 #if defined GLS_MIXING || defined MY25_MIXING
 # ifdef WEST_KGRADIENT
       IF (Master) WRITE (stdout,20) 'WEST_KGRADIENT',                   &
@@ -3022,6 +3198,50 @@
         WRITE (stdout,80) '2D momentum','southern edge'
         exit_flag=5
       END IF
+!
+!  Stop if more than one boundary conditions option for 2D stokes
+!  is selected at each boundary edge.
+!
+      IF (Master.and.(M2s_east.gt.1)) THEN
+        WRITE (stdout,80) '2D stokes','eastern edge'
+        exit_flag=5
+      END IF
+      IF (Master.and.(M2s_west.gt.1)) THEN
+        WRITE (stdout,80) '2D stokes','western edge'
+        exit_flag=5
+      END IF
+      IF (Master.and.(M2s_north.gt.1)) THEN
+        WRITE (stdout,80) '2D stokes','northern edge'
+        exit_flag=5
+      END IF
+      IF (Master.and.(M2s_south.gt.1)) THEN
+        WRITE (stdout,80) '2D stokes','southern edge'
+        exit_flag=5
+      END IF
+      IF (Master.and.(M2s_east.eq.0)) THEN
+        WRITE (stdout,20) 'EAST_M2SCLOSED',                             &
+     &  'Eastern edge, 2D stokes, Closed condition.'
+        is=LEN_TRIM(Coptions)+1
+        Coptions(is:is+28)=' EAST_M2SCLOSED - DEFAULT -,'
+      END IF
+      IF (Master.and.(M2s_west.eq.0)) THEN
+        WRITE (stdout,20) 'WEST_M2SCLOSED',                             &
+     &  'Western edge, 2D stokes, Closed condition.'
+        is=LEN_TRIM(Coptions)+1
+        Coptions(is:is+28)=' WEST_M2SCLOSED - DEFAULT -,'
+      END IF
+      IF (Master.and.(M2s_north.eq.0)) THEN
+        WRITE (stdout,20) 'NORTH_M2SCLOSED',                            &
+     &  'Northern edge, 3D stokes, Closed condition.'
+        is=LEN_TRIM(Coptions)+1
+        Coptions(is:is+29)=' NORTH_M2SCLOSED - DEFAULT -,'
+      END IF
+      IF (Master.and.(M2s_south.eq.0)) THEN
+        WRITE (stdout,20) 'SOUTH_M2SCLOSED',                            &
+     &  'Southern edge, 2D stokes, Closed condition.'
+        is=LEN_TRIM(Coptions)+1
+        Coptions(is:is+29)=' SOUTH_M2SCLOSED - DEFAULT -,'
+      END IF
 #ifdef SOLVE3D
 !
 !  Stop if more than one boundary conditions option for 3D momentum
@@ -3042,6 +3262,50 @@
       IF (Master.and.(M3_south.gt.1)) THEN
         WRITE (stdout,80) '3D momentum','southern edge'
         exit_flag=5
+      END IF
+!
+!  Stop if more than one boundary conditions option for 3D stokes
+!  is selected at each boundary edge.
+!
+      IF (Master.and.(M3s_east.gt.1)) THEN
+        WRITE (stdout,80) '3D stokes','eastern edge'
+        exit_flag=5
+      END IF
+      IF (Master.and.(M3s_west.gt.1)) THEN
+        WRITE (stdout,80) '3D stokes','western edge'
+        exit_flag=5
+      END IF
+      IF (Master.and.(M3s_north.gt.1)) THEN
+        WRITE (stdout,80) '3D stokes','northern edge'
+        exit_flag=5
+      END IF
+      IF (Master.and.(M3s_south.gt.1)) THEN
+        WRITE (stdout,80) '3D stokes','southern edge'
+        exit_flag=5
+      END IF
+      IF (Master.and.(M3s_east.eq.0)) THEN
+        WRITE (stdout,20) 'EAST_M3SCLOSED',                             &
+     &  'Eastern edge, 3D stokes, Closed condition.'
+        is=LEN_TRIM(Coptions)+1
+        Coptions(is:is+28)=' EAST_M3SCLOSED - DEFAULT -,'
+      END IF
+      IF (Master.and.(M3s_west.eq.0)) THEN
+        WRITE (stdout,20) 'WEST_M3SCLOSED',                             &
+     &  'Western edge, 3D stokes, Closed condition.'
+        is=LEN_TRIM(Coptions)+1
+        Coptions(is:is+28)=' WEST_M3SCLOSED - DEFAULT -,'
+      END IF
+      IF (Master.and.(M3s_north.eq.0)) THEN
+        WRITE (stdout,20) 'NORTH_M3SCLOSED',                            &
+     &  'Northern edge, 3D stokes, Closed condition.'
+        is=LEN_TRIM(Coptions)+1
+        Coptions(is:is+29)=' NORTH_M3SCLOSED - DEFAULT -,'
+      END IF
+      IF (Master.and.(M3s_south.eq.0)) THEN
+        WRITE (stdout,20) 'SOUTH_M3SCLOSED',                            &
+     &  'Southern edge, 3D stokes, Closed condition.'
+        is=LEN_TRIM(Coptions)+1
+        Coptions(is:is+29)=' SOUTH_M3SCLOSED - DEFAULT -,'
       END IF
 !
 !  Stop if more than one boundary conditions option for tracers is

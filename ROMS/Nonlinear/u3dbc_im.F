@@ -628,9 +628,11 @@
 !set this for Parent Grid ONLY
       END IF
 #endif
-
-
 # ifdef REFINED_GRID_BC
+!
+! For child grid, impose bc's to reduce noise reflections of a 
+! clamped condition.
+!
       IF (ng.ge.2) THEN
         ngp=myparent(ng)
         fac1=time(ngp)+dt(ngp)-time(ng)-dt(ng)
@@ -649,213 +651,142 @@
 !
 !  Western edge, implicit upstream radiation condition.
 !
-        DO k=1,N(ng)
-          DO j=Jstr,Jend+1
-            grad(Istr  ,j)=u(Istr  ,j  ,k,nstp)-                        &
-     &                     u(Istr  ,j-1,k,nstp)
-            grad(Istr+1,j)=u(Istr+1,j  ,k,nstp)-                        &
-     &                     u(Istr+1,j-1,k,nstp)
-          END DO
-          DO j=Jstr,Jend
-            dUdt=u(Istr+1,j,k,nstp)-u(Istr+1,j,k,nout)
-            dUdx=u(Istr+1,j,k,nout)-u(Istr+2,j,k,nout)
-!#   ifdef WEST_M3NUDGING
-            IF ((dUdt*dUdx).lt.0.0_r8) THEN
-              tau=M3obc_in(ng,iwest)
-            ELSE
-              tau=M3obc_out(ng,iwest)
-            END IF
-            tau=tau*dt(ng)
-!#   endif
-            IF ((dUdt*dUdx).lt.0.0_r8) dUdt=0.0_r8
-            IF ((dUdt*(grad(Istr+1,j)+grad(Istr+1,j+1))).gt.0.0_r8) THEN
-              dUde=grad(Istr+1,j  )
-            ELSE
-              dUde=grad(Istr+1,j+1)
-            END IF
-            cff=MAX(dUdx*dUdx+dUde*dUde,eps)
-            Cx=dUdt*dUdx
-!#   ifdef RADIATION_2D
-            Ce=MIN(cff,MAX(dUdt*dUde,-cff))
-!#   else
-!            Ce=0.0_r8
-!#   endif
-            u(Istr,j,k,nout)=(cff*u(Istr  ,j,k,nstp)+                   &
-     &                        Cx *u(Istr+1,j,k,nout)-                   &
-     &                        MAX(Ce,0.0_r8)*grad(Istr,j  )-            &
-     &                        MIN(Ce,0.0_r8)*grad(Istr,j+1))/           &
-     &                       (cff+Cx)
-!#   ifdef WEST_M3NUDGING
-            my_val=fac1*REFINED(ng)%uR_west(4,j,k,t1)+                  &
-     &             fac2*REFINED(ng)%uR_west(4,j,k,t2)
-            u(Istr,j,k,nout)=u(Istr,j,k,nout)+                          &
-     &                       tau*(my_val-u(Istr,j,k,nstp))
-!#   endif
+          DO k=1,N(ng)
+            DO j=Jstr,Jend+1
+              grad(Istr  ,j)=u(Istr  ,j  ,k,nstp)-                      &
+     &                       u(Istr  ,j-1,k,nstp)
+              grad(Istr+1,j)=u(Istr+1,j  ,k,nstp)-                      &
+     &                       u(Istr+1,j-1,k,nstp)
+            END DO
+            DO j=Jstr,Jend
+              dUdt=u(Istr+1,j,k,nstp)-u(Istr+1,j,k,nout)
+              dUdx=u(Istr+1,j,k,nout)-u(Istr+2,j,k,nout)
+              IF ((dUdt*dUdx).lt.0.0_r8) dUdt=0.0_r8
+              IF ((dUdt*(grad(Istr+1,j)+grad(Istr+1,j+1))).gt.          &
+     &             0.0_r8) THEN
+                dUde=grad(Istr+1,j  )
+              ELSE
+                dUde=grad(Istr+1,j+1)
+              END IF
+              cff=MAX(dUdx*dUdx+dUde*dUde,eps)
+              Cx=dUdt*dUdx
+              Ce=MIN(cff,MAX(dUdt*dUde,-cff))
+              u(Istr,j,k,nout)=(cff*u(Istr  ,j,k,nstp)+                 &
+     &                          Cx *u(Istr+1,j,k,nout)-                 &
+     &                          MAX(Ce,0.0_r8)*grad(Istr,j  )-          &
+     &                          MIN(Ce,0.0_r8)*grad(Istr,j+1))/         &
+     &                         (cff+Cx)
 #   ifdef MASKING
-            u(Istr,j,k,nout)=u(Istr,j,k,nout)*                          &
-     &                       GRID(ng)%umask(Istr,j)
+              u(Istr,j,k,nout)=u(Istr,j,k,nout)*                        &
+     &                         GRID(ng)%umask(Istr,j)
 #   endif
+            END DO
           END DO
-        END DO
         END IF
         IF (EASTERN_EDGE) THEN
 !
 !  Eastern edge, implicit upstream radiation condition.
 !
-        DO k=1,N(ng)
-          DO j=Jstr,Jend+1
-            grad(Iend  ,j)=u(Iend  ,j  ,k,nstp)-                        &
-     &                     u(Iend  ,j-1,k,nstp)
-            grad(Iend+1,j)=u(Iend+1,j  ,k,nstp)-                        &
-     &                     u(Iend+1,j-1,k,nstp)
-          END DO
-          DO j=Jstr,Jend
-            dUdt=u(Iend,j,k,nstp)-u(Iend  ,j,k,nout)
-            dUdx=u(Iend,j,k,nout)-u(Iend-1,j,k,nout)
-!#   ifdef EAST_M3NUDGING
-            IF ((dUdt*dUdx).lt.0.0_r8) THEN
-              tau=M3obc_in(ng,ieast)
-            ELSE
-              tau=M3obc_out(ng,ieast)
-            END IF
-            tau=tau*dt(ng)
-!#   endif
-            IF ((dUdt*dUdx).lt.0.0_r8) dUdt=0.0_r8
-            IF ((dUdt*(grad(Iend,j)+grad(Iend,j+1))).gt.0.0_r8) THEN
-              dUde=grad(Iend,j  )
-            ELSE
-              dUde=grad(Iend,j+1)
-            END IF
-            cff=MAX(dUdx*dUdx+dUde*dUde,eps)
-            Cx=dUdt*dUdx
-!#   ifdef RADIATION_2D
-            Ce=MIN(cff,MAX(dUdt*dUde,-cff))
-!#   else
-!            Ce=0.0_r8
-!#   endif
-            u(Iend+1,j,k,nout)=(cff*u(Iend+1,j,k,nstp)+                 &
-     &                          Cx *u(Iend  ,j,k,nout)-                 &
-     &                          MAX(Ce,0.0_r8)*grad(Iend+1,j  )-        &
-     &                          MIN(Ce,0.0_r8)*grad(Iend+1,j+1))/       &
-     &                         (cff+Cx)
-!#   ifdef EAST_M3NUDGING
-            my_val=fac1*REFINED(ng)%uR_east(1,j,k,t1)+                  &
-     &             fac2*REFINED(ng)%uR_east(1,j,k,t2)
-            u(Iend+1,j,k,nout)=u(Iend+1,j,k,nout)+                      &
-     &                         tau*(my_val-u(Iend+1,j,k,nstp))
-!#   endif
+          DO k=1,N(ng)
+            DO j=Jstr,Jend+1
+              grad(Iend  ,j)=u(Iend  ,j  ,k,nstp)-                      &
+     &                       u(Iend  ,j-1,k,nstp)
+              grad(Iend+1,j)=u(Iend+1,j  ,k,nstp)-                      &
+     &                       u(Iend+1,j-1,k,nstp)
+            END DO
+            DO j=Jstr,Jend
+              dUdt=u(Iend,j,k,nstp)-u(Iend  ,j,k,nout)
+              dUdx=u(Iend,j,k,nout)-u(Iend-1,j,k,nout)
+              IF ((dUdt*dUdx).lt.0.0_r8) dUdt=0.0_r8
+              IF ((dUdt*(grad(Iend,j)+grad(Iend,j+1))).gt.0.0_r8) THEN
+                dUde=grad(Iend,j  )
+              ELSE
+                dUde=grad(Iend,j+1)
+              END IF
+              cff=MAX(dUdx*dUdx+dUde*dUde,eps)
+              Cx=dUdt*dUdx
+              Ce=MIN(cff,MAX(dUdt*dUde,-cff))
+              u(Iend+1,j,k,nout)=(cff*u(Iend+1,j,k,nstp)+               &
+     &                            Cx *u(Iend  ,j,k,nout)-               &
+     &                            MAX(Ce,0.0_r8)*grad(Iend+1,j  )-      &
+     &                            MIN(Ce,0.0_r8)*grad(Iend+1,j+1))/     &
+     &                           (cff+Cx)
 #   ifdef MASKING
-            u(Iend+1,j,k,nout)=u(Iend+1,j,k,nout)*                      &
-     &                         GRID(ng)%umask(Iend+1,j)
+              u(Iend+1,j,k,nout)=u(Iend+1,j,k,nout)*                    &
+     &                           GRID(ng)%umask(Iend+1,j)
 #   endif
+            END DO
           END DO
-        END DO
         END IF
         IF (SOUTHERN_EDGE) THEN
 !
 !  Southern edge, implicit upstream radiation condition.
 !
-        DO k=1,N(ng)
-          DO i=IstrU-1,Iend
-            grad(i,Jstr-1)=u(i+1,Jstr-1,k,nstp)-                        &
-     &                     u(i  ,Jstr-1,k,nstp)
-            grad(i,Jstr  )=u(i+1,Jstr  ,k,nstp)-                        &
-     &                     u(i  ,Jstr  ,k,nstp)
-          END DO
-          DO i=IstrU,Iend
-            dUdt=u(i,Jstr,k,nstp)-u(i,Jstr  ,k,nout)
-            dUde=u(i,Jstr,k,nout)-u(i,Jstr+1,k,nout)
-!#   ifdef SOUTH_M3NUDGING
-            IF ((dUdt*dUde).lt.0.0_r8) THEN
-              tau=M3obc_in(ng,isouth)
-            ELSE
-              tau=M3obc_out(ng,isouth)
-            END IF
-            tau=tau*dt(ng)
-!#   endif
-            IF ((dUdt*dUde).lt.0.0_r8) dUdt=0.0_r8
-            IF ((dUdt*(grad(i-1,Jstr)+grad(i,Jstr))).gt.0.0_r8) THEN
-              dUdx=grad(i-1,Jstr)
-            ELSE
-              dUdx=grad(i  ,Jstr)
-            END IF
-            cff=MAX(dUdx*dUdx+dUde*dUde,eps)
-!#   ifdef RADIATION_2D
-            Cx=MIN(cff,MAX(dUdt*dUdx,-cff))
-!#   else
-!            Cx=0.0_r8
-!#   endif
-            Ce=dUdt*dUde
-            u(i,Jstr-1,k,nout)=(cff*u(i,Jstr-1,k,nstp)+                 &
-     &                          Ce *u(i,Jstr  ,k,nout)-                 &
-     &                          MAX(Cx,0.0_r8)*grad(i-1,Jstr-1)-        &
-     &                          MIN(Cx,0.0_r8)*grad(i  ,Jstr-1))/       &
-     &                         (cff+Ce)
-!#   ifdef SOUTH_M3NUDGING
-            my_val=fac1*REFINED(ng)%uR_south(i,4,k,t1)+                 &
-     &             fac2*REFINED(ng)%uR_south(i,4,k,t2)
-            u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)+                      &
-     &                         tau*(my_val-u(i,Jstr-1,k,nstp))
-!#   endif
+          DO k=1,N(ng)
+            DO i=IstrU-1,Iend
+              grad(i,Jstr-1)=u(i+1,Jstr-1,k,nstp)-                      &
+     &                       u(i  ,Jstr-1,k,nstp)
+              grad(i,Jstr  )=u(i+1,Jstr  ,k,nstp)-                      &
+     &                       u(i  ,Jstr  ,k,nstp)
+            END DO
+            DO i=IstrU,Iend
+              dUdt=u(i,Jstr,k,nstp)-u(i,Jstr  ,k,nout)
+              dUde=u(i,Jstr,k,nout)-u(i,Jstr+1,k,nout)
+              IF ((dUdt*dUde).lt.0.0_r8) dUdt=0.0_r8
+              IF ((dUdt*(grad(i-1,Jstr)+grad(i,Jstr))).gt.0.0_r8) THEN
+                dUdx=grad(i-1,Jstr)
+              ELSE
+                dUdx=grad(i  ,Jstr)
+              END IF
+              cff=MAX(dUdx*dUdx+dUde*dUde,eps)
+              Cx=MIN(cff,MAX(dUdt*dUdx,-cff))
+              Ce=dUdt*dUde
+              u(i,Jstr-1,k,nout)=(cff*u(i,Jstr-1,k,nstp)+               &
+     &                            Ce *u(i,Jstr  ,k,nout)-               &
+     &                            MAX(Cx,0.0_r8)*grad(i-1,Jstr-1)-      &
+     &                            MIN(Cx,0.0_r8)*grad(i  ,Jstr-1))/     &
+     &                           (cff+Ce)
 #   ifdef MASKING
-            u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)*                      &
-     &                         GRID(ng)%umask(i,Jstr-1)
+              u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)*                    &
+     &                           GRID(ng)%umask(i,Jstr-1)
 #   endif
+            END DO
           END DO
-        END DO
         END IF
         IF (NORTHERN_EDGE) THEN
 !
 !  Northern edge, implicit upstream radiation condition.
 !
-        DO k=1,N(ng)
-          DO i=IstrU-1,Iend
-            grad(i,Jend  )=u(i+1,Jend  ,k,nstp)-                        &
-     &                     u(i  ,Jend  ,k,nstp)
-            grad(i,Jend+1)=u(i+1,Jend+1,k,nstp)-                        &
-     &                     u(i  ,Jend+1,k,nstp)
-          END DO
-          DO i=IstrU,Iend
-            dUdt=u(i,Jend,k,nstp)-u(i,Jend  ,k,nout)
-            dUde=u(i,Jend,k,nout)-u(i,Jend-1,k,nout)
-!#   ifdef NORTH_M3NUDGING
-            IF ((dUdt*dUde).lt.0.0_r8) THEN
-              tau=M3obc_in(ng,inorth)
-            ELSE
-              tau=M3obc_out(ng,inorth)
-            END IF
-            tau=tau*dt(ng)
-!#   endif
-            IF ((dUdt*dUde).lt.0.0_r8) dUdt=0.0_r8
-            IF ((dUdt*(grad(i-1,Jend)+grad(i,Jend))).gt.0.0_r8) THEN
-              dUdx=grad(i-1,Jend)
-            ELSE
-              dUdx=grad(i  ,Jend)
-            END IF
-            cff=MAX(dUdx*dUdx+dUde*dUde,eps)
-!#   ifdef RADIATION_2D
-            Cx=MIN(cff,MAX(dUdt*dUdx,-cff))
-!#   else
-!            Cx=0.0_r8
-!#   endif
-            Ce=dUdt*dUde
-            u(i,Jend+1,k,nout)=(cff*u(i,Jend+1,k,nstp)+                 &
-     &                          Ce *u(i,Jend  ,k,nout)-                 &
-     &                          MAX(Cx,0.0_r8)*grad(i-1,Jend+1)-        &
-     &                          MIN(Cx,0.0_r8)*grad(i  ,Jend+1))/       &
-     &                         (cff+Ce)
-!#   ifdef NORTH_M3NUDGING
-            my_val=fac1*REFINED(ng)%uR_north(i,1,k,t1)+                 &
-     &             fac2*REFINED(ng)%uR_north(i,1,k,t2)
-            u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)+                      &
-     &                         tau*(my_val-u(i,Jend+1,k,nstp))
-!#    endif
+          DO k=1,N(ng)
+            DO i=IstrU-1,Iend
+              grad(i,Jend  )=u(i+1,Jend  ,k,nstp)-                      &
+     &                       u(i  ,Jend  ,k,nstp)
+              grad(i,Jend+1)=u(i+1,Jend+1,k,nstp)-                      &
+     &                       u(i  ,Jend+1,k,nstp)
+            END DO
+            DO i=IstrU,Iend
+              dUdt=u(i,Jend,k,nstp)-u(i,Jend  ,k,nout)
+              dUde=u(i,Jend,k,nout)-u(i,Jend-1,k,nout)
+              IF ((dUdt*dUde).lt.0.0_r8) dUdt=0.0_r8
+              IF ((dUdt*(grad(i-1,Jend)+grad(i,Jend))).gt.0.0_r8) THEN
+                dUdx=grad(i-1,Jend)
+              ELSE
+                dUdx=grad(i  ,Jend)
+              END IF
+              cff=MAX(dUdx*dUdx+dUde*dUde,eps)
+              Cx=MIN(cff,MAX(dUdt*dUdx,-cff))
+              Ce=dUdt*dUde
+              u(i,Jend+1,k,nout)=(cff*u(i,Jend+1,k,nstp)+               &
+     &                            Ce *u(i,Jend  ,k,nout)-               &
+     &                            MAX(Cx,0.0_r8)*grad(i-1,Jend+1)-      &
+     &                            MIN(Cx,0.0_r8)*grad(i  ,Jend+1))/     &
+     &                           (cff+Ce)
 #   ifdef MASKING
-            u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)*                      &
-     &                         GRID(ng)%umask(i,Jend+1)
+              u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)*                    &
+     &                           GRID(ng)%umask(i,Jend+1)
 #   endif
+            END DO
           END DO
-        END DO
         END IF
 !
 !-----------------------------------------------------------------------
@@ -864,32 +795,30 @@
 !
         IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
           DO k=1,N(ng)
-            u(Istr,Jstr-1,k,nout)=0.5_r8*(u(Istr+1,Jstr-1,k,nout)+        &
+            u(Istr,Jstr-1,k,nout)=0.5_r8*(u(Istr+1,Jstr-1,k,nout)+      &
      &                                    u(Istr  ,Jstr  ,k,nout))
           END DO
         END IF
         IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
           DO k=1,N(ng)
-            u(Iend+1,Jstr-1,k,nout)=0.5_r8*(u(Iend  ,Jstr-1,k,nout)+      &
+            u(Iend+1,Jstr-1,k,nout)=0.5_r8*(u(Iend  ,Jstr-1,k,nout)+    &
      &                                      u(Iend+1,Jstr  ,k,nout))
           END DO
         END IF
         IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
           DO k=1,N(ng)
-            u(Istr,Jend+1,k,nout)=0.5_r8*(u(Istr  ,Jend  ,k,nout)+        &
+            u(Istr,Jend+1,k,nout)=0.5_r8*(u(Istr  ,Jend  ,k,nout)+      &
      &                                    u(Istr+1,Jend+1,k,nout))
           END DO
         END IF
         IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
           DO k=1,N(ng)
-            u(Iend+1,Jend+1,k,nout)=0.5_r8*(u(Iend+1,Jend  ,k,nout)+      &
+            u(Iend+1,Jend+1,k,nout)=0.5_r8*(u(Iend+1,Jend  ,k,nout)+    &
      &                                      u(Iend  ,Jend+1,k,nout))
           END DO
         END IF
-
       END IF
 # endif
-
 
       RETURN
       END SUBROUTINE u3dbc_tile

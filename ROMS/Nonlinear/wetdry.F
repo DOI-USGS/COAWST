@@ -209,6 +209,15 @@
             cff5=ABS(ABS(cff1)-1.0_r8)
             cff6=0.5_r8+DSIGN(0.5_r8,DU_avg1(i,j))*cff1
             umask_wet(i,j)=0.5_r8*cff1*cff5+cff6*(1.0_r8-cff5)
+!
+!  Additional catch here to stop lone ponds.
+!
+            IF (DU_avg1(i,j).eq.0.0_r8) THEN
+              IF ((wetdry(i-1,j)+wetdry(i,j)).le.1.0_r8) THEN
+                umask_wet(i,j)=0.0_r8
+              END IF
+            END IF
+!
             umask_full(i,j)=umask_wet(i,j)*umask(i,j)
           END DO
         END DO
@@ -224,6 +233,15 @@
             cff5=ABS(ABS(cff1)-1.0_r8)
             cff6=0.5_r8+DSIGN(0.5_r8,DV_avg1(i,j))*cff1
             vmask_wet(i,j)=0.5_r8*cff1*cff5+cff6*(1.0_r8-cff5)
+!
+!  Additional catch here to stop lone ponds.
+!
+            IF (DV_avg1(i,j).eq.0.0_r8) THEN
+              IF ((wetdry(i,j-1)+wetdry(i,j)).le.1.0_r8) THEN
+                vmask_wet(i,j)=0.0_r8
+              END IF
+            END IF
+!
             vmask_full(i,j)=vmask_wet(i,j)*vmask(i,j)
           END DO
         END DO
