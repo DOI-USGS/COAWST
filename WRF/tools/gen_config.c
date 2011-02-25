@@ -5,7 +5,9 @@
 #include "registry.h"
 #include "data.h"
 #include <string.h>
-#include <strings.h>
+#ifndef _WIN32
+# include <strings.h>
+#endif
 #include "sym.h"
 
 int
@@ -205,31 +207,38 @@ gen_get_nl_config ( char * dirname )
 {
   FILE * fp ;
   char  fname[NAMELEN] ;
-  char * fn = "_nl_config.inc" ;
+  char * fn = "nl_config.inc" ;
   char * gs, * intnt ;
   char  howset[NAMELEN] ;
   node_t *p ;
   int sw ;
   int num_rconfigs = 0 ;
-  int i, half, j ;
+  int i, fraction, j ;
+#define FRAC 8
+
+  strcpy( fname, fn ) ;
+  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
+  if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
+  print_warning(fp,fname) ;
 
   for ( p = Domain.fields ; p != NULL ; p = p-> next ) { if ( p->node_kind & RCONFIG ) { num_rconfigs++ ; } }  /* howmany deez guys? */
 
-  for ( half = 0, j=0 ; half < num_rconfigs ; half += (num_rconfigs+1)/2, j++ ) {    /* break the files in half so we don't kill the compilers as much */
   for ( sw = 0 ; sw < 2 ; sw++ ) {
 
   if ( sw == 0 ) { gs = "get" ; intnt = "OUT" ; } else { gs = "set" ; intnt = "IN" ; }
 
-  strcpy( fname, fn ) ;
-  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s_%d%s",dirname,gs,j,fn) ; }
-  if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
-  print_warning(fp,fname) ;
+  fprintf(fp,"#ifdef NL_%s_ROUTINES\n",gs) ;
+
+  for ( fraction = 0, j=0 ; fraction < num_rconfigs ; fraction += ((num_rconfigs+1)/FRAC+1), j++ ) { /* break the files in pieces
+                                                                                                    so we don't kill the 
+                                                                                                    compilers as much */
+  fprintf(fp,"#if (NNN == %d)\n",j) ;
 
   for ( p = Domain.fields, i = -1 ; p != NULL ; p = p-> next )
   {
     if ( p->node_kind & RCONFIG ) {
        i++ ;
-    if ( (i >= half) && (i < half + (num_rconfigs+1)/2) )
+    if ( (i >= fraction) && (i < fraction + (num_rconfigs+1)/FRAC+1) )
     {
       strcpy(howset,p->howset) ;
       fprintf(fp,"SUBROUTINE nl_%s_%s ( id_id , %s )\n",gs,p->name, p->name) ;
@@ -238,7 +247,7 @@ gen_get_nl_config ( char * dirname )
       }
       fprintf(fp,"  %s , INTENT(%s) :: %s\n",p->type->name,intnt,p->name) ;
       fprintf(fp,"  INTEGER id_id\n") ;
-      fprintf(fp,"  CHARACTER*80 emess\n") ;
+      if ( ! sw_fort_kludge ) fprintf(fp,"  CHARACTER*80 emess\n") ;
       if ( sw == 0 ) /* get */
       {
         if ( !strcmp( p->nentries, "1" )) {
@@ -324,9 +333,11 @@ gen_get_nl_config ( char * dirname )
     }
     }
   }
-  close_the_file( fp ) ;
+  fprintf(fp,"#endif\n") ;
+  } /* fraction */
+  fprintf(fp,"#endif\n") ;
   }
-  } /* halfs */
+  close_the_file( fp ) ;
   return(0) ;
 }
 
@@ -457,7 +468,7 @@ gen_config_reads ( char * dirname )
     }
   }
   fprintf(fp,"    END SELECT\n") ;
-  fprintf(fp,"9201 CALL wrf_message(\"Error while reading namelist \"//TRIM(nml_name))\n") ;
+  fprintf(fp,"9201 CALL wrf_message(\"  ------ ERROR while reading namelist \"//TRIM(nml_name)//\" ------\")\n") ;
   fprintf(fp,"    nml_read_error = .TRUE.\n") ;
 
   fprintf(fp,"    CALL wrf_alt_nml_obsolete(nml_read_unit, TRIM(nml_name))\n") ;
@@ -466,7 +477,7 @@ gen_config_reads ( char * dirname )
   fprintf(fp,"                      \" Using registry defaults for variables in \"//TRIM(nml_name))\n") ;
   fprintf(fp," END DO NML_LOOP\n") ;
   fprintf(fp," \n") ;
-  fprintf(fp," IF ( nml_read_error ) CALL wrf_error_fatal(\"Errors while reading one or more namelists from namelist.input.\")\n") ;
+  fprintf(fp," IF ( nml_read_error ) CALL wrf_error_fatal(\"ERRORS while reading one or more namelists from namelist.input.\")\n") ;
 
   close_the_file( fp ) ;
   return(0) ;

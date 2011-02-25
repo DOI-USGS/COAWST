@@ -178,7 +178,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                          u_base, v_base, t_base, qv_base, z_base,         &
                          msfux, msfuy, msfvx, msfvx_inv,                  &
                          msfvy, msftx, msfty,                             &
-                         xlat, f, e, sina, cosa,                          &
+                         clat, f, e, sina, cosa,                          &
                          fnm, fnp, rdn, rdnw,                             &
                          dt, rdx, rdy, khdif, kvdif, xkmhd, xkhh,         &
                          diff_6th_opt, diff_6th_factor,                   &
@@ -264,7 +264,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                                                     msfvy,   &
                                                                     msftx,   &
                                                                     msfty,   &
-                                                                    xlat,    & 
+                                                                    clat,    & 
                                                                     f,       &
                                                                     e,       &
                                                                     sina,    &
@@ -386,28 +386,28 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                     ims, ime, jms, jme, 1, 1, &
                     its, ite, jts, jte, 1, 1 )
 
-     !  advection tendencies
-     CALL nl_get_time_step ( 1, time_step )
+   !  advection tendencies
+   CALL nl_get_time_step ( 1, time_step )
 
-     CALL advect_u ( u, u , ru_tend, ru, rv, ww,   &
-                     mut, time_step, config_flags, &
-                     msfux, msfuy, msfvx, msfvy,   &
-                     msftx, msfty,                 &
-                     fnm, fnp, rdx, rdy, rdnw,     &
-                     ids, ide, jds, jde, kds, kde, &
-                     ims, ime, jms, jme, kms, kme, &
-                     its, ite, jts, jte, kts, kte )
+   CALL advect_u ( u, u , ru_tend, ru, rv, ww,   &
+                   mut, time_step, config_flags, &
+                   msfux, msfuy, msfvx, msfvy,   &
+                   msftx, msfty,                 &
+                   fnm, fnp, rdx, rdy, rdnw,     &
+                   ids, ide, jds, jde, kds, kde, &
+                   ims, ime, jms, jme, kms, kme, &
+                   its, ite, jts, jte, kts, kte )
 
-     CALL advect_v ( v, v , rv_tend, ru, rv, ww,   &
-                     mut, time_step, config_flags, &
-                     msfux, msfuy, msfvx, msfvy,   &
-                     msftx, msfty,                 &
-                     fnm, fnp, rdx, rdy, rdnw,     &
-                     ids, ide, jds, jde, kds, kde, &
-                     ims, ime, jms, jme, kms, kme, &
-                     its, ite, jts, jte, kts, kte )
+   CALL advect_v ( v, v , rv_tend, ru, rv, ww,   &
+                   mut, time_step, config_flags, &
+                   msfux, msfuy, msfvx, msfvy,   &
+                   msftx, msfty,                 &
+                   fnm, fnp, rdx, rdy, rdnw,     &
+                   ids, ide, jds, jde, kds, kde, &
+                   ims, ime, jms, jme, kms, kme, &
+                   its, ite, jts, jte, kts, kte )
 
-     IF (non_hydrostatic)                          &
+   IF (non_hydrostatic)                          &
      CALL advect_w ( w, w, rw_tend, ru, rv, ww,    &
                      mut, time_step, config_flags, &
                      msfux, msfuy, msfvx, msfvy,   &
@@ -453,77 +453,78 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                   ims, ime, jms, jme, kms, kme,      &
                   its, ite, jts, jte, kts, kte      )
 
-  CALL horizontal_pressure_gradient( ru_tend,rv_tend,                &
-                                     ph,alt,p,pb,al,php,cqu,cqv,     &
-                                     muu,muv,mu,fnm,fnp,rdnw,        &
-                                     cf1,cf2,cf3,rdx,rdy,msfux,msfuy,&
-                                     msfvx,msfvy,msftx,msfty,        &
-                                     config_flags, non_hydrostatic,  &
-                                     top_lid,                        &
-                                     ids, ide, jds, jde, kds, kde,   &
-                                     ims, ime, jms, jme, kms, kme,   &
-                                     its, ite, jts, jte, kts, kte   )
+     CALL horizontal_pressure_gradient( ru_tend,rv_tend,                &
+                                         ph,alt,p,pb,al,php,cqu,cqv,     &
+                                         muu,muv,mu,fnm,fnp,rdnw,        &
+                                         cf1,cf2,cf3,rdx,rdy,msfux,msfuy,&
+                                         msfvx,msfvy,msftx,msfty,        &
+                                         config_flags, non_hydrostatic,  &
+                                         top_lid,                        &
+                                         ids, ide, jds, jde, kds, kde,   &
+                                         ims, ime, jms, jme, kms, kme,   &
+                                         its, ite, jts, jte, kts, kte   )
 
-  IF (non_hydrostatic)                            &
-  CALL pg_buoy_w( rw_tend, p, cqw, mu, mub,       &
-                  rdnw, rdn, g, msftx, msfty,     &
-                  ids, ide, jds, jde, kds, kde,   &
-                  ims, ime, jms, jme, kms, kme,   &
-                  its, ite, jts, jte, kts, kte   )
+     IF (non_hydrostatic) THEN
+          CALL pg_buoy_w( rw_tend, p, cqw, mu, mub,       &
+                          rdnw, rdn, g, msftx, msfty,     &
+                          ids, ide, jds, jde, kds, kde,   &
+                          ims, ime, jms, jme, kms, kme,   &
+                          its, ite, jts, jte, kts, kte   )
+     ENDIF
 
-  CALL w_damp   ( rw_tend, max_vert_cfl,            &
-                    max_horiz_cfl,                  &
-                    u, v, ww, w, mut, rdnw,         &
-                    rdx, rdy, msfux, msfuy, msfvx,  &
-                    msfvy, dt, config_flags,        &
-                    ids, ide, jds, jde, kds, kde,   &
-                    ims, ime, jms, jme, kms, kme,   &
-                    its, ite, jts, jte, kts, kte   )
+     CALL w_damp   ( rw_tend, max_vert_cfl,            &
+                      max_horiz_cfl,                  &
+                      u, v, ww, w, mut, rdnw,         &
+                      rdx, rdy, msfux, msfuy, msfvx,  &
+                      msfvy, dt, config_flags,        &
+                      ids, ide, jds, jde, kds, kde,   &
+                      ims, ime, jms, jme, kms, kme,   &
+                      its, ite, jts, jte, kts, kte   )
 
-  IF(config_flags%pert_coriolis) THEN
+     IF(config_flags%pert_coriolis) THEN
 
-    CALL perturbation_coriolis ( ru, rv, rw,                   &
-                                 ru_tend,  rv_tend,  rw_tend,  &
-                                 config_flags,                 &
-                                 u_base, v_base, z_base,       &
-                                 muu, muv, phb, ph,            &
-                                 msftx, msfty, msfux, msfuy,   &
-                                 msfvx, msfvy,                 &
-                                 f, e, sina, cosa, fnm, fnp,   &
-                                 ids, ide, jds, jde, kds, kde, &
-                                 ims, ime, jms, jme, kms, kme, &
-                                 its, ite, jts, jte, kts, kte )
-  ELSE
-    CALL coriolis ( ru, rv, rw,                   &
-                    ru_tend,  rv_tend,  rw_tend,  &
-                    config_flags,                 &
-                    msftx, msfty, msfux, msfuy,   &
-                    msfvx, msfvy,                 &
-                    f, e, sina, cosa, fnm, fnp,   &
-                    ids, ide, jds, jde, kds, kde, &
-                    ims, ime, jms, jme, kms, kme, &
-                    its, ite, jts, jte, kts, kte )
+          CALL perturbation_coriolis ( ru, rv, rw,                   &
+                                       ru_tend,  rv_tend,  rw_tend,  &
+                                       config_flags,                 &
+                                       u_base, v_base, z_base,       &
+                                       muu, muv, phb, ph,            &
+                                       msftx, msfty, msfux, msfuy,   &
+                                       msfvx, msfvy,                 &
+                                       f, e, sina, cosa, fnm, fnp,   &
+                                       ids, ide, jds, jde, kds, kde, &
+                                       ims, ime, jms, jme, kms, kme, &
+                                       its, ite, jts, jte, kts, kte )
+     ELSE
+          CALL coriolis ( ru, rv, rw,                   &
+                          ru_tend,  rv_tend,  rw_tend,  &
+                          config_flags,                 &
+                          msftx, msfty, msfux, msfuy,   &
+                          msfvx, msfvy,                 &
+                          f, e, sina, cosa, fnm, fnp,   &
+                          ids, ide, jds, jde, kds, kde, &
+                          ims, ime, jms, jme, kms, kme, &
+                          its, ite, jts, jte, kts, kte )
 
-  END IF
+     END IF
 
-  CALL curvature ( ru, rv, rw, u, v, w,            &
-                   ru_tend,  rv_tend,  rw_tend,    &
-                   config_flags,                   &
-                   msfux, msfuy, msfvx, msfvy,     &
-                   msftx, msfty,                   &
-                   xlat, fnm, fnp, rdx, rdy,       &
-                   ids, ide, jds, jde, kds, kde,   &
-                   ims, ime, jms, jme, kms, kme,   &
-                   its, ite, jts, jte, kts, kte   )
+     CALL curvature ( ru, rv, rw, u, v, w,            &
+                       ru_tend,  rv_tend,  rw_tend,    &
+                       config_flags,                   &
+                       msfux, msfuy, msfvx, msfvy,     &
+                       msftx, msfty,                   &
+                       clat, fnm, fnp, rdx, rdy,       &
+                       ids, ide, jds, jde, kds, kde,   &
+                       ims, ime, jms, jme, kms, kme,   &
+                       its, ite, jts, jte, kts, kte   )
 
 ! Damping option added for Held-Suarez test (also uses lw option HELDSUAREZ)
-  IF (config_flags%ra_lw_physics == HELDSUAREZ) THEN
-     CALL held_suarez_damp ( ru_tend, rv_tend,               &   
-                             ru,rv,p,pb,                     &
-                             ids, ide, jds, jde, kds, kde,   &
-                             ims, ime, jms, jme, kms, kme,   &
-                             its, ite, jts, jte, kts, kte   )
-  END IF
+      IF (config_flags%ra_lw_physics == HELDSUAREZ) THEN
+         CALL held_suarez_damp ( ru_tend, rv_tend,               &   
+                                 ru,rv,p,pb,                     &
+                                 ids, ide, jds, jde, kds, kde,   &
+                                 ims, ime, jms, jme, kms, kme,   &
+                                 its, ite, jts, jte, kts, kte   )
+      END IF
 
 !**************************************************************
 !
@@ -902,7 +903,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                                       scalar_old(ims,kms,jms,im),         &
                                       advect_tend(ims,kms,jms),           &
                                       ru, rv, ww, mut, mub, mu_old,       &
-                                      config_flags,                       &
+                                      time_step, config_flags,            &
                                       msfux, msfuy, msfvx, msfvy,         &
                                       msftx, msfty, fnm, fnp,             &
                                       rdx, rdy, rdnw,dt,                  &
@@ -1068,13 +1069,11 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
 !  set loop limits.
 
       i_start = its
-      i_end   = ite
+      i_end   = min(ite,ide-1)
       j_start = jts
-      j_end   = jte
+      j_end   = min(jte,jde-1)
       k_start = kts
       k_end   = kte-1
-      IF(j_end == jde) j_end = j_end - 1
-      IF(i_end == ide) i_end = i_end - 1
 
       i_start_spc = i_start
       i_end_spc   = i_end
@@ -1251,13 +1250,11 @@ SUBROUTINE rk_update_scalar_pd( scs, sce,                      &
 !  set loop limits.
 
       i_start = its
-      i_end   = ite
+      i_end   = min(ite,ide-1)
       j_start = jts
-      j_end   = jte
+      j_end   = min(jte,jde-1)
       k_start = kts
       k_end   = kte-1
-      IF(j_end == jde) j_end = j_end - 1
-      IF(i_end == ide) i_end = i_end - 1
 
       i_start_spc = i_start
       i_end_spc   = i_end
@@ -1319,6 +1316,7 @@ END SUBROUTINE rk_update_scalar_pd
 SUBROUTINE init_zero_tendency(ru_tendf, rv_tendf, rw_tendf, ph_tendf,  &
                               t_tendf,  tke_tendf, mu_tendf,           &
                               moist_tendf,chem_tendf,scalar_tendf,     &
+                              tracer_tendf,n_tracer,                   &
                               n_moist,n_chem,n_scalar,rk_step,         &
                               ids, ide, jds, jde, kds, kde,            &
                               ims, ime, jms, jme, kms, kme,            &
@@ -1331,7 +1329,7 @@ SUBROUTINE init_zero_tendency(ru_tendf, rv_tendf, rw_tendf, ph_tendf,  &
                                     ims, ime, jms, jme, kms, kme, &
                                     its, ite, jts, jte, kts, kte
 
-   INTEGER ,       INTENT(IN   ) :: n_moist,n_chem,n_scalar,rk_step
+   INTEGER ,       INTENT(IN   ) :: n_moist,n_chem,n_scalar,n_tracer,rk_step
 
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(INOUT) ::  &
                                                              ru_tendf, &
@@ -1348,6 +1346,8 @@ SUBROUTINE init_zero_tendency(ru_tendf, rv_tendf, rw_tendf, ph_tendf,  &
 
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_chem ),INTENT(INOUT)::&
                                                           chem_tendf
+   REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_tracer ),INTENT(INOUT)::&
+                                                          tracer_tendf
 
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_scalar ),INTENT(INOUT)::&
                                                           scalar_tendf
@@ -1410,6 +1410,14 @@ SUBROUTINE init_zero_tendency(ru_tendf, rv_tendf, rw_tendf, ph_tendf,  &
 !   DO ic=PARAM_FIRST_SCALAR,n_chem
    DO ic=1,n_chem                       ! make sure first one is zero too
       CALL zero_tend ( chem_tendf(ims,kms,jms,ic),   &
+                       ids, ide, jds, jde, kds, kde, &
+                       ims, ime, jms, jme, kms, kme, &
+                       its, ite, jts, jte, kts, kte  )
+   ENDDO
+
+!   DO ic=PARAM_FIRST_SCALAR,n_tracer
+   DO ic=1,n_tracer                     ! make sure first one is zero too
+      CALL zero_tend ( tracer_tendf(ims,kms,jms,ic), &
                        ids, ide, jds, jde, kds, kde, &
                        ims, ime, jms, jme, kms, kme, &
                        its, ite, jts, jte, kts, kte  )

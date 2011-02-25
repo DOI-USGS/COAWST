@@ -12,7 +12,7 @@ CONTAINS
 #ifdef SWAN_COUPLING
      &          ,hwave, lwavep, pwave                                 &
 #endif
-     &          ,fractional_seaice                                    &
+     &          ,fractional_seaice,tice2tsk_if2cold                   &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,psih          &
 #if (NMM_CORE==1)
@@ -22,6 +22,7 @@ CONTAINS
 #endif
      &          ,raincv,rho,sfcevp,sfcexc,sfcrunoff                   &
      &          ,smois,smstav,smstot,snoalb,snow,snowc,snowh,stepbl   &
+     &          ,smcrel                                               &
      &          ,th10,th2,thz0,th_phy,tmn,tshltr,tsk,tslb             &
      &          ,tyr,tyra,tdly,tlag,lagday,nyear,nday,tmn_update,yr   &
      &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
@@ -41,7 +42,9 @@ CONTAINS
      &          ,ch,tsq,qsq,cov                                       & ! MYNN
 #endif
             !  Optional urban
-     &          ,declin_urb,cosz_urb2d,omg_urb2d,xlat_urb2d           & !I urban
+     &          ,slope_rad,topo_shading,shadowmask                    & !I solar
+     &          ,swnorm,slope,slp_azi                                 & !I solar
+     &          ,declin,solcon,coszen,hrang,xlat_urb2d                & !I solar/urban
      &          ,num_roof_layers, num_wall_layers                     & !I urban
      &          ,num_road_layers, dzr, dzb, dzg                       & !I urban
      &          ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d         & !H urban
@@ -50,6 +53,7 @@ CONTAINS
      &          ,trl_urb3d,tbl_urb3d,tgl_urb3d                        & !H urban
      &          ,sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d          & !H urban
      &          ,frc_urb2d, utype_urb2d                               & !H urban
+     &          ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif          &
      &          , ids,ide,jds,jde,kds,kde                             &
      &          , ims,ime,jms,jme,kms,kme                             &
      &          , i_start,i_end,j_start,j_end,kts,kte,num_tiles       &
@@ -63,7 +67,7 @@ CONTAINS
      &          ,capg,hol,mol                                         &
      &          ,rainncv,rainbl,regime,thc                            &
      &          ,qsg,qvg,qcg,soilt1,tsnav                             &
-     &          ,smfr3d,keepfr3dflag                                  &
+     &          ,smfr3d,keepfr3dflag,dew                              &
              !  Other optionals (more or less nmm specific)
      &          ,potevp,snopcx,soiltb,sr                              &
              !  Optional observation PX LSM surface nudging
@@ -74,8 +78,8 @@ CONTAINS
      &          ,uratx,vratx,tratx                                    &
              !  Optional simple oml model
      &          ,omlcall,oml_hml0,oml_gamma                           &
-     &          ,tml,t0ml,hml,h0ml,huml,hvml,f                        &
-     &          ,ustm,ck,cka,cd,cda,isftcflx                          &
+     &          ,tml,t0ml,hml,h0ml,huml,hvml,f,tmoml                  &
+     &          ,ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                  &
      &         ,isurban, mminlu                                       &
      &          ,snotime                                              &
      &           ,rdlai2d                                             &
@@ -86,7 +90,13 @@ CONTAINS
          ! Optional urban with BEP
      &          ,sf_urban_physics,gmt,xlat,xlong,julday               &
      &          ,num_urban_layers                                     & !multi-layer urban
-     &          ,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d           & !multi-layer urban
+     &          ,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d              & !multi-layer urban
+     &          ,tlev_urb3d,qlev_urb3d                                & !multi-layer urban
+     &          ,tw1lev_urb3d,tw2lev_urb3d                            & !multi-layer urban
+     &          ,tglev_urb3d,tflev_urb3d                              & !multi-layer urban
+     &          ,sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d                  & !multi-layer urban
+     &          ,sfvent_urb3d,lfvent_urb3d                            & !multi-layer urban 
+     &          ,sfwin1_urb3d,sfwin2_urb3d                            & !multi-layer urban       
      &          ,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d            & !multi-layer urban
      &          ,a_u_bep,a_v_bep,a_t_bep,a_q_bep                      &
      &          ,b_u_bep,b_v_bep,b_t_bep,b_q_bep                      &
@@ -135,6 +145,7 @@ CONTAINS
    USE module_sf_pxlsm
 #if ( EM_CORE==1)
    USE module_sf_mynn
+   USE module_sf_oml
 #endif
 
 #if ( NMM_CORE == 1 )
@@ -144,24 +155,27 @@ CONTAINS
    USE module_sf_slab
 !
    USE module_sf_sfcdiags
+   USE module_sf_sfcdiags_ruclsm
    USE module_sf_sstskin
    USE module_sf_tmnupdate
 !
-
-   !  This driver calls subroutines for the surface parameterizations.
-   !
-   !  surface layer: (between surface and pbl)
-   !      1. sfclay
-   !      2. myjsfc
-   !      7. Pleim surface layer
-   !      5. MYNN surface layer
-   !  surface: ground temp/lsm scheme:
-   !      1. slab
-   !      2. Noah LSM
-   !      7. Pleim-Xiu LSM
-
-   !  surface: ground temp/lsm scheme for urban:
-   !      2.  BEP
+!  This driver calls subroutines for the surface parameterizations.
+!
+!  surface layer: (between surface and pbl)
+!      1. sfclay
+!      2. myjsfc
+!      7. Pleim surface layer
+!      5. MYNN surface layer
+!  surface: ground temp/lsm scheme:
+!      1. slab
+!      2. Noah LSM
+!      7. Pleim-Xiu LSM
+!
+!  surface: ground temp/lsm scheme for urban:
+!      2.  BEP
+!
+!  ocean mixed layer model
+!      omlcall = 1
 !------------------------------------------------------------------
    IMPLICIT NONE
 !======================================================================
@@ -347,6 +361,7 @@ CONTAINS
    INTEGER, INTENT(IN ), OPTIONAL :: ISURBAN
    CHARACTER(LEN=*), INTENT(IN ), OPTIONAL :: MMINLU
    LOGICAL, INTENT(IN )::   WARM_RAIN
+   LOGICAL, INTENT(IN)::   tice2tsk_if2cold
    INTEGER, INTENT(INOUT ),OPTIONAL ::   NYEAR
    INTEGER, INTENT(INOUT ),OPTIONAL ::   NDAY
    INTEGER, INTENT(IN ),OPTIONAL ::   YR
@@ -357,15 +372,15 @@ CONTAINS
 #endif
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SMOIS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   TSLB
+   REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(OUT)  ::   SMCREL
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   GLW
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   GSW,SWDOWN
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   GSW,SWDOWN
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   HT
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   RAINCV
 #ifdef SWAN_COUPLING
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   HWAVE
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   LWAVEP
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   PWAVE
-
 #endif
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   SST
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   SSTSK
@@ -376,7 +391,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   TDLY
    REAL, DIMENSION( ims:ime , 1:lagday , jms:jme ), INTENT(INOUT ),OPTIONAL ::   TLAG
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   VEGFRA
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   XICE
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   XICE
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XLAND
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICEM
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   MAVAIL
@@ -476,6 +491,19 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tgb_urb4d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tlev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: qlev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1lev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2lev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tglev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tflev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: lf_ac_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: sf_ac_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: cm_ac_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: sfvent_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: lfvent_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfwin1_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfwin2_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw1_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw2_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfr_urb3d
@@ -499,7 +527,7 @@ CONTAINS
 !
 !  arguments for Ocean Mixed Layer Model
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT )::   TML, T0ML, HML, H0ML, HUML, HVML
-   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN    )::   F
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN    )::   F, TMOML
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(OUT   )::   CK, CKA, CD, CDA, USTM
 
 #if ( EM_CORE==1)
@@ -511,7 +539,12 @@ CONTAINS
 #endif
 
 
-   INTEGER, OPTIONAL, INTENT(IN )::   ISFTCFLX
+   INTEGER, OPTIONAL, INTENT(IN )::   slope_rad, topo_shading
+   INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN):: shadowmask
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT):: swnorm
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN):: slope,slp_azi
+
+   INTEGER, OPTIONAL, INTENT(IN )::   ISFTCFLX,IZ0TLND
    INTEGER, OPTIONAL, INTENT(IN )::   OMLCALL
    REAL   , OPTIONAL, INTENT(IN )::   OML_HML0
    REAL   , OPTIONAL, INTENT(IN )::   OML_GAMMA
@@ -576,6 +609,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   qsg
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   qvg
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   qcg
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   dew
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   soilt1
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   tsnav
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   potevp ! NMM LSM
@@ -611,12 +645,18 @@ CONTAINS
    REAL    :: julian
    REAL    :: total_depth,mid_point_depth
    REAL    :: tconst,tprior,tnew,yrday,deltat
+   REAL    :: SWSAVE
+   REAL,       DIMENSION( ims:ime, jms:jme )          ::  GSWSAVE
 !-------------------------------------------------
 ! urban related variables are added to declaration
 !-------------------------------------------------
-     REAL, OPTIONAL, INTENT(IN) :: DECLIN_URB                                 !urban
-     REAL, OPTIONAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: COSZ_URB2D  !urban
-     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: OMG_URB2D   !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMC_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHC_SFCDIF
+     REAL, OPTIONAL, INTENT(IN) :: DECLIN, SOLCON
+     REAL, OPTIONAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: COSZEN
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: HRANG
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: XLAT_URB2D  !urban
      INTEGER,  INTENT(IN) :: num_roof_layers                         !urban
      INTEGER,  INTENT(IN) :: num_wall_layers                         !urban
@@ -682,6 +722,7 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: RMOL_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: UST_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: QZ0_SEA
+     REAL, DIMENSION( ims:ime, jms:jme ) :: TSK_LOCAL
 !
    REAL :: xice_threshold
 !
@@ -752,6 +793,17 @@ CONTAINS
     DO ij = 1 , num_tiles
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
+
+         IF ( FRACTIONAL_SEAICE == 1 ) then
+            IF ( ( XICE(I,J) .NE. XICEM(I,J) ) .AND. ( XICEM(I,J) .GT. XICE_THRESHOLD ) ) THEN
+               ! Fractional values of ALBEDO and EMISSIVITY are valid according to the 
+               ! earlier fractional seaice value, XICEM.  Recompute them for the new 
+               ! seaice value XICE.
+               ALBEDO(I,J) = 0.08 + XICE(I,J)/XICEM(I,J) * ( ALBEDO(I,J) - 0.08 )
+               EMISS (I,J) = 0.98 + XICE(I,J)/XICEM(I,J) * ( EMISS (I,J) - 0.98 )
+            ENDIF
+         ENDIF
+
         IF ( XLAND(i,j) .GT. 1.5 .AND. XICE(I,J) .GE. XICE_THRESHOLD .AND. XICEM(I,J) .LT. XICE_THRESHOLD ) THEN
 ! water point turns to sea-ice point
           XICEM(I,J) = XICE(I,J)
@@ -760,6 +812,14 @@ CONTAINS
           ISLTYP(I,J) = 16
           VEGFRA(I,J) = 0.
           TMN(I,J) = 271.4
+          ! Over new ice, initial guesses of ALBEDO and EMISS are
+          ! based on default water and ice values for albedo and
+          ! emissivity.  The land-surface schemes can update these
+          ! values
+          ALBEDO(I,J) = 0.80 * XICE(I,J) + 0.08 * ( 1.0-XICE(I,J) )
+          ALBBCK(I,J) = 0.80
+          EMISS(I,J)  = 0.98 * XICE(I,J) + 0.98 * ( 1.0-XICE(I,J) )
+          EMBCK(I,J)  = 0.98
           DO nk = 1, num_soil_layers
             TSLB(I,NK,J) = TSK(I,J)
             SMOIS(I,NK,J) = 1.0
@@ -777,19 +837,36 @@ CONTAINS
           IVGTYP(I,J) = ISWATER
           ISLTYP(I,J) = 14
           VEGFRA(I,J) = 0.
+          SNOW(I,J)  = 0.
+          SNOWC(I,J) = 0.
+          SNOWH(I,J) = 0.
           TMN(I,J) = SST(I,J)
+          ALBEDO(I,J) = 0.08
+          ALBBCK(I,J) = 0.08
+          EMISS(I,J)  = 0.98
+          EMBCK(I,J)  = 0.98
           DO nk = 1, num_soil_layers
             TSLB(I,NK,J) = SST(I,J)
             SMOIS(I,NK,J) = 1.0
             SH2O(I,NK,J) = 1.0
           ENDDO
         ENDIF
+
+        XICEM(i,j) = XICE(i,j)
+
       ENDDO
       ENDDO
-    IF(PRESENT(SST_SKIN))THEN
+    ENDDO
+    !$OMP END PARALLEL DO
+  ENDIF
+
+  IF(PRESENT(SST_SKIN))THEN
     IF (sst_skin .EQ. 1) THEN
- ! Calculate skin sst based on Zeng and Beljaars (2005)
-        CALL wrf_debug( 100, 'in SST_UPDATE' )
+! Calculate skin sst based on Zeng and Beljaars (2005)
+      CALL wrf_debug( 100, 'in SST_SKIN_UPDATE' )
+      !$OMP PARALLEL DO   &
+      !$OMP PRIVATE ( ij, i, j, k )
+      DO ij = 1 , num_tiles
         CALL sst_skin_update(xland,glw,gsw,hfx,qfx,tsk,ust,         &
                 emiss,dtw,sstsk,dt,stbolt,                          &
                 ids, ide, jds, jde, kds, kde,                       &
@@ -800,13 +877,14 @@ CONTAINS
             IF(XLAND(i,j) .GT. 1.5)TSK(i,j)=SSTSK(i,j)
           ENDDO
         ENDDO
-    ENDIF
-    ENDIF
-    ENDDO
+      ENDDO
     !$OMP END PARALLEL DO
+    ENDIF
   ENDIF
+
   IF(PRESENT(TMN_UPDATE))THEN
   IF (tmn_update .EQ. 1) THEN
+      CALL wrf_debug( 100, 'in TMN_UPDATE' )
       CALL tmnupdate(tsk,tmn,tlag,tyr,tyra,tdly,nday,nyear,lagday, &
                 julian_in, dt, yr,                                  &
                 ids, ide, jds, jde, kds, kde,                       &
@@ -815,8 +893,6 @@ CONTAINS
 
   ENDIF
   ENDIF
-
-
 !
 ! Modified for adaptive time step
 !
@@ -854,6 +930,25 @@ CONTAINS
 
   IF (ra_lw_physics .gt. 0) radiation = .true.
 
+  IF( PRESENT(slope_rad).AND. radiation )THEN
+! topographic slope effects modify SWDOWN and GSW here
+    IF (slope_rad .EQ. 1) THEN
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij, i, j, k )
+    DO ij = 1 , num_tiles
+           CALL TOPO_RAD_ADJ_DRVR (XLAT,XLONG,COSZEN,             &
+                    shadowmask,                                   &
+                    declin,                                       &
+                    SWDOWN,GSW,SWNORM,GSWSAVE,solcon,hrang,       &
+                    slope,slp_azi,                                &
+                ids, ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                     &
+                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte   )
+    ENDDO
+    !$OMP END PARALLEL DO
+
+    ENDIF
+  ENDIF
 !----
 ! CALCULATE CONSTANT
 
@@ -936,11 +1031,11 @@ CONTAINS
                  XICE,SST,TSK_SEA,                                                  &
                  CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
                  HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
-                 ITIMESTEP,XICE_THRESHOLD,                                          &
+                 ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                  ids,ide, jds,jde, kds,kde,                          &
                  ims,ime, jms,jme, kms,kme,                          &
                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-                 ustm,ck,cka,cd,cda,isftcflx                         )
+                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
          ELSE
          CALL SFCLAY(u_phytmp,v_phytmp,t_phy,qv_curr,&
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
@@ -953,7 +1048,7 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-               ustm,ck,cka,cd,cda,isftcflx                         )
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
 #if ( EM_CORE==1)
            DO j = j_start(ij),j_end(ij)
            DO i = i_start(ij),i_end(ij)
@@ -982,8 +1077,8 @@ CONTAINS
                  u10,v10,                                            &
                  gz1oz0,wspd,br,isfflx,dx,                           &
                  svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
-                 XICE, SST, ITIMESTEP, XICE_THRESHOLD,                              &
-                 CHS_SEA, CHS2_SEA, CPM_SEA, CQS2_SEA,FLHC_SEA,FLQC_SEA,            &
+                 XICE, SST, ITIMESTEP, TICE2TSK_IF2COLD,XICE_THRESHOLD, &
+                 CHS_SEA, CHS2_SEA, CPM_SEA, CQS2_SEA,FLHC_SEA,FLQC_SEA,&
                  HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                  ids,ide, jds,jde, kds,kde,                          &
                  ims,ime, jms,jme, kms,kme,                          &
@@ -1019,7 +1114,8 @@ CONTAINS
                 u_phy,v_phy,tke_myj,                                 &
                 tsk,qsfc,thz0,qz0,uz0,vz0,                           &
                 lowlyr,                                              &
-                xland,                                               &
+                xland,ivgtyp,isurban,iz0tlnd,                        &
+                TICE2TSK_IF2COLD,                                    & ! Extra for wrapper.
                 XICE_THRESHOLD,                                      & ! Extra for wrapper.
                 XICE, SST,                                           & ! Extra for wrapper.
                 CHS_SEA, CHS2_SEA, CQS2_SEA, CPM_SEA,            &
@@ -1030,7 +1126,7 @@ CONTAINS
                 akhs,akms,                                           &
                 br,                                                 &
                 chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
-                u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,     &
+                u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
                 p1000mb,                                             &
 #ifdef SWAN_COUPLING
                 hwave, lwavep, pwave,                                &
@@ -1041,16 +1137,16 @@ CONTAINS
         ELSE
             CALL MYJSFC(itimestep,ht,dz8w,                         &
               p_phy,p8w,th_phy,t_phy,                              &
-              qv_curr,qc_curr,                                     &
+              qv_curr,qc_curr,                                      &
               u_phy,v_phy,tke_myj,                                 &
               tsk,qsfc,thz0,qz0,uz0,vz0,                           &
               lowlyr,                                              &
-              xland,                                               &
+              xland,ivgtyp,isurban,iz0tlnd,                        &
               ust,znt,z0,pblh,mavail,rmol,                         &
               akhs,akms,                                           &
-              br,                                                  &
+              br,                                                 &
               chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
-              u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,     &
+              u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
               p1000mb,                                             &
 #ifdef SWAN_COUPLING
               hwave, lwavep, pwave,                                &
@@ -1107,6 +1203,7 @@ CONTAINS
                QGH,QSFC,U10,V10,                                   &
                GZ1OZ0,WSPD,BR,ISFFLX,                              &
                EP_1,EP_2,KARMAN,itimestep,                         &
+               TICE2TSK_IF2COLD,                            &
                XICE_THRESHOLD,                              &
                CHS_SEA, CHS2_SEA, CPM_SEA, CQS2_SEA,        &
                FLHC_SEA, FLQC_SEA,                          &
@@ -1254,9 +1351,7 @@ CONTAINS
              p1000mb,                                             &
              ids,ide, jds,jde, kds,kde,                           &
              ims,ime, jms,jme, kms,kme,                           &
-             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,&
-             tml,t0ml,hml,h0ml,huml,hvml,ust,u_phy,v_phy,f,g,     &
-             omlcall,oml_gamma                                    )
+             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte)
 
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
@@ -1279,8 +1374,8 @@ CONTAINS
 
        IF (PRESENT(qv_curr)    .AND.  PRESENT(rainbl)        .AND.    &
 !          PRESENT(emiss)      .AND.  PRESENT(t2)            .AND.    &
-!          PRESENT(declin_urb) .AND.  PRESENT(cosz_urb2d)    .AND.    &
-!          PRESENT(omg_urb2d)  .AND. PRESENT( xlat_urb2d)    .AND.    &
+!          PRESENT(declin) .AND.  PRESENT(coszen)    .AND.    &
+!          PRESENT(hrang)  .AND. PRESENT( xlat_urb2d)    .AND.    &
 !          PRESENT(dzr)       .AND.    &
 !          PRESENT( dzb)            .AND. PRESENT(dzg)       .AND.    &
 !          PRESENT(tr_urb2d) .AND. PRESENT(tb_urb2d)         .AND.    &
@@ -1300,6 +1395,19 @@ CONTAINS
            frpcpn=.true.
          ENDIF
          IF ( FRACTIONAL_SEAICE == 1) THEN
+            ! The fields passed to LSM need to represent the full ice values, not
+            ! the fractional values.  Convert ALBEDO and EMISS from the blended value 
+            ! to a value representing only the sea-ice portion.   Albedo over open 
+            ! water is taken to be 0.08. Emissivity over open water is taken to be 0.98
+            DO j = j_start(ij) , j_end(ij)
+               DO i = i_start(ij) , i_end(ij)
+                  IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
+                     ALBEDO(I,J) = (ALBEDO(I,J)-(1.-XICE(I,J))*0.08)/XICE(I,J)
+                     EMISS(I,J) = (EMISS(I,J)-(1.-XICE(I,J))*0.98)/XICE(I,J)
+                  ENDIF
+               ENDDO
+            ENDDO
+
             IF ( isisfc ) THEN
                ! Use surface layer routine values from the ice portion of grid point
             ELSE
@@ -1307,24 +1415,16 @@ CONTAINS
                ! We don't have surface layer routine values at this time, so
                ! just use what we have.  Use ice component of TSK
                !
+               CALL get_local_ice_tsk( ims, ime, jms, jme,                   &
+                                       i_start(ij), i_end(ij),               & 
+                                       j_start(ij), j_end(ij),               &
+                                       itimestep, .false., tice2tsk_if2cold, &
+                                       XICE, XICE_THRESHOLD,                 &
+                                       SST, TSK, TSK_SEA, TSK_LOCAL )
+
                DO j = j_start(ij) , j_end(ij)
                   DO i = i_start(ij) , i_end(ij)
-                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
-                        IF ( SST(i,j) .LT. 271.4 ) THEN
-                           SST(i,j) = 271.4
-                        ENDIF
-                        TSK_SEA(i,j) = SST(i,j)
-                        ! Convert TSK from our ice/water average value to value good for solid-ice surface.
-                        TSK(i,j) = ( TSK(i,j) - (1.-XICE(i,j)) *SST(i,j) ) / XICE(i,j)
-                        IF (XICE(i,j).lt.0.2 .and. TSK(i,j).lt.253.15) THEN
-                           TSK(i,j) = 253.15
-                        ENDIF
-                        IF (XICE(i,j).lt.0.1 .and. TSK(i,j).lt.263.15) THEN
-                           TSK(i,j) = 263.15
-                        ENDIF
-                     ELSE
-                        TSK_SEA(i,j) = TSK(i,j)
-                     ENDIF
+                     TSK(i,j) = TSK_LOCAL(i,j)
                   ENDDO
                ENDDO
             ENDIF
@@ -1348,6 +1448,7 @@ CONTAINS
                 acsnom,acsnow,                                  & !o
                 snopcx,                                         & !o
                 potevp,                                         & !o
+                smcrel,                                         & !o
                 xice_threshold,                                 &
                 rdlai2d,usemonalb,                              &
                 br,                                             & !?
@@ -1357,6 +1458,7 @@ CONTAINS
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
                 sf_urban_physics                                &
 !Optional urban
+                ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif    &
                 ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
                 uc_urb2d,                                       & !H urban
                 xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d,    & !H urban
@@ -1365,13 +1467,19 @@ CONTAINS
                 psim_urb2d,psih_urb2d,u10_urb2d,v10_urb2d,      & !O urban
                 GZ1OZ0_urb2d, AKMS_URB2D,                       & !O urban
                 th2_urb2d,q2_urb2d,ust_urb2d,                   & !O urban
-                declin_urb,cosz_urb2d,omg_urb2d,                & !I urban
+                declin,coszen,hrang,                            & !I solar
                 xlat_urb2d,                                     & !I urban
                 num_roof_layers, num_wall_layers,               & !I urban
                 num_road_layers, DZR, DZB, DZG,                 & !I urban
                 FRC_URB2D, UTYPE_URB2D,                         & !I urban
                 num_urban_layers,                               & !I multi-layer urban
                 trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,        & !H multi-layer urban
+                tlev_urb3d,qlev_urb3d,                          & !H multi-layer urban
+                tw1lev_urb3d,tw2lev_urb3d,                      & !H multi-layer urban
+                tglev_urb3d,tflev_urb3d,                        & !H multi-layer urban
+                sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d,            & !H multi-layer urban
+                sfvent_urb3d,lfvent_urb3d,                      & !H multi-layer urban
+                sfwin1_urb3d,sfwin2_urb3d,                      & !H multi-layer urban
                 sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,      & !H multi-layer urban
                 th_phy,rho,p_phy,ust,                           & !I multi-layer urban
                 gmt,julday,xlong,xlat,                          & !I multi-layer urban
@@ -1380,7 +1488,21 @@ CONTAINS
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
                 )
+         
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
+            ! LSM Returns full land/ice values, no fractional values.
+            ! We return to a fractional component here.  SFLX currently hard-wires
+            ! emissivity over sea ice to 0.98, the same value as over open water, so
+            ! the fractional consideration doesn't have any effect for emissivity.
+            DO j=j_start(ij),j_end(ij)
+               DO i=i_start(ij),i_end(ij)
+                  IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                     albedo(i,j) = ( albedo(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
+                     emiss(i,j) = ( emiss(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.98  )
+                  ENDIF
+               ENDDO
+            ENDDO
+
             IF ( isisfc ) THEN
                DO j=j_start(ij),j_end(ij)
                   DO i=i_start(ij),i_end(ij)
@@ -1455,7 +1577,7 @@ CONTAINS
        ENDDO                                                  !urban
      ENDIF
 ! urban BEP
-     IF(SF_URBAN_PHYSICS.eq.2) THEN
+     IF((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.eq.3)) THEN
        DO j=j_start(ij),j_end(ij)                             !urban
          DO i=i_start(ij),i_end(ij)                           !urban
           IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &  !urban
@@ -1483,6 +1605,7 @@ CONTAINS
            PRESENT(qcg)        .AND.  PRESENT(soilt1)  .AND.    &
            PRESENT(tsnav)      .AND.  PRESENT(smfr3d)  .AND.    &
            PRESENT(keepfr3dflag) .AND. PRESENT(rainbl) .AND.    &
+           PRESENT(dew)                                .AND.    &
                                                       .TRUE. ) THEN
 
            IF( PRESENT(sr) ) THEN
@@ -1492,6 +1615,19 @@ CONTAINS
            ENDIF
            CALL wrf_debug(100,'in RUC LSM')
            IF ( FRACTIONAL_SEAICE == 1 ) THEN
+              ! The fields passed to LSMRUC need to represent the full ice values, not
+              ! the fractional values.  Convert ALBEDO and EMISS from the blended value 
+              ! to a value representing only the sea-ice portion.   Albedo over open 
+              ! water is taken to be 0.08. Emissivity over open water is taken to be 0.98
+              DO j = j_start(ij) , j_end(ij)
+                 DO i = i_start(ij) , i_end(ij)
+                    IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
+                       ALBEDO(I,J) = (ALBEDO(I,J) - (1.-XICE(I,J))*0.08) / XICE(I,J)
+                       EMISS(I,J)  = (EMISS(I,J)  - (1.-XICE(I,J))*0.98) / XICE(I,J)
+                    ENDIF
+                 ENDDO
+              ENDDO
+
               IF ( isisfc ) THEN
                  !
                  ! use surface layer routine values from the ice portion of grid point
@@ -1501,24 +1637,15 @@ CONTAINS
                  ! don't have srfc layer routine values at this time, so just use what you have
                  ! use ice component of TSK
                  !
+                 CALL get_local_ice_tsk( ims, ime, jms, jme,                   &
+                                         i_start(ij), i_end(ij),               &
+                                         j_start(ij), j_end(ij),               &
+                                         itimestep, .false., tice2tsk_if2cold, &
+                                         XICE, XICE_THRESHOLD,                 &
+                                         SST, TSK, TSK_SEA, TSK_LOCAL )
                  DO j = j_start(ij) , j_end(ij)
                     DO i = i_start(ij) , i_end(ij)
-                       IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
-                          TSK_SEA(i,j) = SST(i,j)
-                          IF ( SST(i,j) .LT. 271. ) THEN
-                             SST(i,j) = 271.4
-                             TSK_SEA(i,j) = SST(i,j)
-                          endif
-                          TSK(i,j) = ( TSK(i,j) - (1.-XICE(i,j)) *SST(i,j) ) / XICE(i,j)
-                          IF ( ( XICE(i,j) .LT. 0.2 ) .AND. ( TSK(i,j) .LT. 253.15 ) ) THEN
-                             TSK(i,j) = 253.15
-                          ENDIF
-                          IF ( ( XICE(i,j).LT.0.1 ) .AND. ( TSK(i,j).lt.263.15 ) ) THEN
-                             TSK(i,j) = 263.15
-                          ENDIF
-                       ELSE
-                          TSK_SEA(i,j) = TSK(i,j)
-                       ENDIF
+                       TSK(i,j) = TSK_LOCAL(i,j)
                     ENDDO
                  ENDDO
               ENDIF
@@ -1529,10 +1656,11 @@ CONTAINS
                 dz8w,p8w,t_phy,qv_curr,qc_curr,rho,             & !p8w in [pa]
                 glw,gsw,emiss,chklowq,                          &
                 chs,flqc,flhc,mavail,canwat,vegfra,albedo,znt,  &
-                snoalb, albbck,                                 &   !new
-                qsfc,qsg,qvg,qcg,soilt1,tsnav,                  &
-                tmn,ivgtyp,isltyp,xland,xice,                   &
-                cp,g,xlv,stbolt,                                &
+                z0,snoalb, albbck,                              &   !new
+                qsfc,qsg,qvg,qcg,dew,soilt1,tsnav,              &
+                tmn,ivgtyp,isltyp,xland,                        &
+                isice,xice,xice_threshold,                      &
+                cp,rovcp,g,xlv,stbolt,                          &
                 smois,sh2o,smstav,smstot,tslb,tsk,hfx,qfx,lh,   &
                 sfcrunoff,udrunoff,sfcexc,                      &
                 sfcevp,grdflx,acsnow,acsnom,                    &
@@ -1543,6 +1671,16 @@ CONTAINS
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
            IF ( FRACTIONAL_SEAICE == 1 ) THEN
+              ! LSMRUC Returns full land/ice values, no fractional values.
+              ! We return to a fractional component here.
+              DO j=j_start(ij),j_end(ij)
+                 DO i=i_start(ij),i_end(ij)
+                    IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                       albedo(i,j) = ( albedo(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
+                       emiss(i,j)  = ( emiss(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.98  )
+                    ENDIF
+                 ENDDO
+              ENDDO
               if ( isisfc ) then
                  !
                  !  back to ice and ocean average
@@ -1578,14 +1716,13 @@ CONTAINS
                  ENDDO
               endif
            ENDIF
-!tgs     IF(.not. MYJ) then
-             
-          CALL SFCDIAGS(HFX,QFX,TSK,QVG,CHS2,CQS2,T2,TH2,Q2,      &
-                     PSFC,CP,R_d,RCP,                              &
-                     ids,ide, jds,jde, kds,kde,                    &
-                     ims,ime, jms,jme, kms,kme,                    &
-             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
-!tgs     ENDIF
+
+          CALL SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
+                     T_PHY,QV_CURR,RHO,P8W,                              &
+                     PSFC,CP,R_d,RCP,                                    &
+                     ids,ide, jds,jde, kds,kde,                          &
+                     ims,ime, jms,jme, kms,kme,                          &
+                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
 
        ELSE
@@ -1595,10 +1732,7 @@ CONTAINS
      CASE (PXLSMSCHEME)
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
            PRESENT(emiss)      .AND.  PRESENT(t2)      .AND.    &
-           PRESENT(qsg)        .AND.  PRESENT(qvg)     .AND.    &
-           PRESENT(qcg)        .AND.  PRESENT(soilt1)  .AND.    &
-           PRESENT(tsnav)      .AND.  PRESENT(smfr3d)  .AND.    &
-           PRESENT(keepfr3dflag) .AND. PRESENT(rainbl) .AND.    &
+           PRESENT(rainbl) .AND.    &
                                                       .TRUE. ) THEN
           IF ( FRACTIONAL_SEAICE == 1 ) THEN
 
@@ -1613,24 +1747,15 @@ CONTAINS
                 ! don't have srfc layer routine values at this time, so just use what you have
                 ! use ice component of TSK
                 !
+                CALL get_local_ice_tsk( ims, ime, jms, jme,                   &
+                                        i_start(ij), i_end(ij),               &
+                                        j_start(ij), j_end(ij),               &
+                                        itimestep, .false., tice2tsk_if2cold, &
+                                        XICE, XICE_THRESHOLD,                 &
+                                        SST, TSK, TSK_SEA, TSK_LOCAL )
                 DO j = j_start(ij) , j_end(ij)
                    DO i=i_start(ij) , i_end(ij)
-                      IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
-                         TSK_SEA(i,j) = SST(i,j)
-                         IF ( SST(i,j) .LT. 271. ) THEN
-                            SST(i,j) = 271.4
-                            TSK_SEA(i,j) = SST(i,j)
-                         ENDIF
-                         TSK(i,j) = ( TSK(i,j) - (1.-XICE(i,j)) *SST(i,j) ) / XICE(i,j)
-                         IF ( ( XICE(i,j) .LT. 0.2 ) .AND. ( TSK(i,j) .lt. 253.15 ) ) THEN
-                            TSK(i,j) = 253.15
-                         ENDIF
-                         IF ( ( XICE(i,j) .LT. 0.1 ) .AND. ( TSK(i,j) .LT. 263.15 ) ) THEN
-                            TSK(i,j) = 263.15
-                         ENDIF
-                      ELSE
-                         TSK_SEA(i,j) = TSK(i,j)
-                      ENDIF
+                      TSK(i,j) = TSK_LOCAL(i,j)
                    ENDDO
                 ENDDO
              ENDIF
@@ -1639,12 +1764,12 @@ CONTAINS
           CALL PXLSM(u_phy, v_phy, dz8w, qv_curr, t_phy, th_phy, rho,&
                      psfc, gsw, glw, rainbl, emiss,                  &
                      ITIMESTEP, num_soil_layers, DT, anal_interval,  &
-                     xland, albbck, albedo, snoalb, smois, tslb,     &
+                     xland, xice, albbck, albedo, snoalb, smois, tslb, &
                      mavail,T2, Q2,                                  &
                      zs, dzs, psih,                                  &
                      landusef,soilctop,soilcbot,vegfra, vegf_px,     &
                      isltyp,ra,rs,lai,nlcat,nscat,                   &
-                     hfx,qfx,lh,tsk,znt,canwat,                      &
+                     hfx,qfx,lh,tsk,sst,znt,canwat,                  &
                      grdflx,shdmin,shdmax,                           &
                      snowc,pblh,rmol,ust,capg,dtbl,                  &
                      t2_ndg_old,t2_ndg_new,q2_ndg_old,q2_ndg_new,    &
@@ -1720,6 +1845,25 @@ CONTAINS
 
  430 CONTINUE
 
+#if ( EM_CORE==1)
+   IF (omlcall .EQ. 1) THEN
+! simple ocean mixed layer model based Pollard, Rhines and Thompson (1973)
+     CALL wrf_debug( 100, 'Call OCEANML' )
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = 1 , num_tiles
+        CALL oceanml(tml,t0ml,hml,h0ml,huml,hvml,ust,u_phy,v_phy, &
+                     tmoml,f,g,oml_gamma,                         &
+                     xland,hfx,lh,tsk,gsw,glw,emiss,              &
+                     dtbl,STBOLT,                                 &
+                     ids,ide, jds,jde, kds,kde,                   &
+                     ims,ime, jms,jme, kms,kme,                   &
+                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte)
+     ENDDO
+     !$OMP END PARALLEL DO
+   ENDIF
+#endif
+
 ! Reset RAINBL in mm (Accumulation between PBL calls)
 
      IF ( PRESENT( rainbl ) ) THEN
@@ -1735,6 +1879,31 @@ CONTAINS
        !$OMP END PARALLEL DO
      ENDIF
 
+     IF( PRESENT(slope_rad).AND. radiation )THEN
+! topographic slope effects removed from SWDOWN and GSW here for output
+       IF (slope_rad .EQ. 1) THEN
+
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij, i, j, k )
+       DO ij = 1 , num_tiles
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+         IF(SWNORM(I,J) .GT. 1.E-3)THEN  ! daytime
+            SWSAVE = SWDOWN(i,j)
+! SWDOWN contains unaffected SWDOWN in output
+            SWDOWN(i,j) = SWNORM(i,j)
+! SWNORM contains slope-affected SWDOWN in output
+            SWNORM(i,j) = SWSAVE
+            GSW(i,j) = GSWSAVE(i,j)
+         ENDIF
+         ENDDO
+         ENDDO
+       ENDDO
+       !$OMP END PARALLEL DO
+
+       ENDIF
+     ENDIF
+
    ENDIF
 
    END SUBROUTINE surface_driver
@@ -1745,7 +1914,8 @@ CONTAINS
    subroutine myjsfc_seaice_wrapper(ITIMESTEP,HT,DZ,      &
         &     PMID,PINT,TH,T,QV,QC,U,V,Q2,                &
         &     TSK,QSFC,THZ0,QZ0,UZ0,VZ0,                  &
-        &     LOWLYR,XLAND,                               &
+        &     LOWLYR,XLAND,IVGTYP,ISURBAN,IZ0TLND,        &
+        &     TICE2TSK_IF2COLD,                           &  ! Extra for wrapper
         &     XICE_THRESHOLD,                             &  ! Extra for wrapper
         &     XICE,SST,                                   &  ! Extra for wrapper
         &     CHS_SEA, CHS2_SEA, CQS2_SEA, CPM_SEA,       &  ! Extra for wrapper
@@ -1793,6 +1963,9 @@ CONTAINS
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT) :: VZ0
      INTEGER,DIMENSION(IMS:IME,JMS:JME),     INTENT(IN)    :: LOWLYR
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)    :: XLAND
+     INTEGER,DIMENSION(IMS:IME,JMS:JME),     INTENT(IN)    :: IVGTYP
+     INTEGER                                               :: ISURBAN
+     INTEGER                                               :: IZ0TLND
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)    :: XICE       ! Extra for wrapper
      ! REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)    :: SST        ! Extra for wrapper
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT) :: SST        ! Extra for wrapper
@@ -1843,10 +2016,10 @@ CONTAINS
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)   :: HWAVE
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)   :: LWAVEP
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)   :: PWAVE
-
 #endif
      REAL,                                   INTENT(IN)    :: P1000
      REAL,                                   INTENT(IN)    :: XICE_THRESHOLD
+     LOGICAL,                                INTENT(IN)    :: TICE2TSK_IF2COLD
      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE,       &
           &                IMS,IME,JMS,JME,KMS,KME,       &
           &                ITS,ITE,JTS,JTE,KTS,KTE
@@ -1891,54 +2064,22 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: RMOL_HOLD
      REAL, DIMENSION( ims:ime, jms:jme ) :: AKHS_HOLD
      REAL, DIMENSION( ims:ime, jms:jme ) :: AKMS_HOLD
+     REAL, DIMENSION( ims:ime, jms:jme ) :: TSK_LOCAL
      REAL :: PSFC
 
      ! Set things up for the frozen-surface call to myjsfc
      ! Is SST local here, or are the changes to be fed back to the calling routines?
 
      ! We want a TSK valid for the ice-covered regions of the grid cell.
+
+     CALL get_local_ice_tsk( ims, ime, jms, jme, its, ite, jts, jte,  &
+                             itimestep, .true., tice2tsk_if2cold,     &
+                             XICE, XICE_THRESHOLD,                    &
+                             SST, TSK, TSK_SEA, TSK_LOCAL )
      DO j = JTS , JTE
         DO i = ITS , ITE
+           TSK(i,j) = TSK_LOCAL(i,j)
            IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
-
-              TSK_SEA(i,j) = SST(i,j)
-
-              IF ( SST(i,j) .LT. 271.4 ) THEN
-                 SST(i,j) = 271.4
-                 TSK_SEA(i,j) = SST(i,j)
-              ENDIF
-
-              IF ( ( SST(i,j) .GT. 273.0 ) .AND. ( itimestep .LE. 3 ) ) THEN
-                 ! Why the dependence on the time step count, here?
-                 IF ( XICE(i,j) .GE. 0.6 ) THEN
-                    SST(i,j) = 271.4
-                    TSK_SEA(i,j) = SST(i,j)
-                 ELSEIF ( XICE(i,j) .GE. 0.4 ) THEN
-                    SST(i,j) = 273.
-                    TSK_SEA(i,j) = SST(i,j)
-                 ELSEIF ( ( XICE(i,j) .GE. 0.2 ) .and. ( SST(i,j).GT.275. ) ) THEN
-                    SST(i,j) = 275.
-                    TSK_SEA(i,j) = SST(i,j)
-                 ELSEIF (SST(i,j).GT.278.) THEN
-                    SST(i,j) = 278.
-                    TSK_SEA(i,j) = SST(i,j)
-                 ENDIF
-              ENDIF
-
-              ! Change the TSK value here, to recover the value valid for
-              ! ice-covered portions of the grid cell.
-
-              ! The original TSK is taken to represent the blended result of the
-              ! open-water values (SST) and the ice-covered value (the new TSK we
-              ! derive here).
-              TSK(i,j) = ( TSK(i,j) - (1.0-XICE(i,j)) *SST(i,j) ) / XICE(i,j)
-
-              IF (XICE(i,j).lt.0.2 .and. TSK(i,j).lt.253.15) THEN
-                 TSK(i,j) = 253.15
-              ENDIF
-              IF (XICE(i,j).lt.0.1 .and. TSK(i,j).lt.263.15) THEN
-                 TSK(i,j) = 263.15
-              ENDIF
 
               ! Over fractional sea-ice points, back out an ice portion of QSFC as well.
               ! QSFC_SEA calculation as done in myjsfc for open water points
@@ -1949,9 +2090,6 @@ CONTAINS
               HFX_SEA(i,j)  = HFX(i,j)
               QFX_SEA(i,j)  = QFX(i,j)
               FLX_LH_SEA(i,j)   = FLX_LH(i,j)
-!
-           ELSE
-              TSK_SEA(i,j) = TSK(i,j)
            ENDIF
         ENDDO
      ENDDO
@@ -2023,7 +2161,7 @@ CONTAINS
      CALL MYJSFC ( ITIMESTEP, HT, DZ,                              &  ! I,I,I,
           &        PMID, PINT, TH, T, QV, QC, U, V, Q2,            &  ! I,I,I,I,I,I,I,I,I,
           &        TSK, QSFC, THZ0, QZ0, UZ0, VZ0,                 &  ! I,IO,IO,IO,IO,IO,
-          &        LOWLYR, XLAND,                                  &  ! I,I,
+          &        LOWLYR, XLAND, IVGTYP, ISURBAN, IZ0TLND,        &  ! I,I,I,I,I
           &        USTAR, ZNT, Z0BASE, PBLH, MAVAIL, RMOL,         &  ! IO,IO,I,IO,I,IO,
           &        AKHS, AKMS,                                     &  ! IO,IO,
           &        BR,                                             &  ! O
@@ -2081,7 +2219,7 @@ CONTAINS
      CALL MYJSFC ( ITIMESTEP, HT, DZ,                                                          & ! I,I,I,
           &        PMID, PINT, TH, T, QV, QC, U, V, Q2,                                        & ! I,I,I,I,I,I,I,I,I,
           &        TSK_SEA, QSFC_SEA, THZ0_SEA, QZ0_SEA, UZ0_SEA, VZ0_SEA,                     & ! I,IO,IO,IO,IO,IO,
-          &        LOWLYR, XLAND_SEA,                                                    & ! I,I,
+          &        LOWLYR, XLAND_SEA, IVGTYP, ISURBAN, IZ0TLND,                                & ! I,I,I,I,I,
           &        USTAR_SEA, ZNT_SEA, Z0BASE_SEA, PBLH_SEA, MAVAIL_SEA, RMOL_SEA,             & ! IO,IO,I,IO,I,IO,
           &        AKHS_SEA, AKMS_SEA,                                                         & ! IO,IO,
           &        BR_SEA,                                                                     & ! dummy space holder
@@ -2160,6 +2298,7 @@ CONTAINS
                      QGH,QSFC,U10,V10,                           &
                      GZ1OZ0,WSPD,BR,ISFFLX,                      &
                      EP1,EP2,KARMAN,itimestep,                   &
+                     TICE2TSK_IF2COLD,                           &
                      XICE_THRESHOLD,                             &
                      CHS_SEA, CHS2_SEA, CPM_SEA, CQS2_SEA,       &
                      FLHC_SEA, FLQC_SEA,                         &
@@ -2242,6 +2381,7 @@ CONTAINS
 
       REAL,                              INTENT(IN)    ::               &
                                         XICE_THRESHOLD
+      LOGICAL,                          INTENT(IN)     :: TICE2TSK_IF2COLD
 
 !-------------------------------------------------------------------------
 !   Local
@@ -2262,50 +2402,10 @@ CONTAINS
                                         ZNT_HOLD,                       &
                                         TSK_LOCAL
 
-
-     DO j = JTS , JTE
-        DO i = ITS , ITE
-           IF ( ( XICE(i,j) .GE. XICE_THRESHOLD ) .and. ( XICE(I,J) .LE. 1.0 ) ) THEN
-              ! Sea-ice point
-
-              IF ( SST(i,j) .LT. 271.4 ) THEN
-                 SST(i,j) = 271.4
-              ENDIF
-
-              IF ( SST(i,j) .GT. 273. .and. itimestep .le. 3) then
-                 ! Why the dependence on the time step count, here?
-                 IF ( XICE(i,j) .GE. 0.6 ) THEN
-                    SST(i,j) = 271.4
-                 ELSEIF ( XICE(i,j) .GE. 0.4 ) THEN
-                    SST(i,j) = 273.
-                 ELSEIF (XICE(i,j).GE.0.2 .and. SST(i,j).GT.275.) THEN
-                    SST(i,j) = 275.
-                 ELSEIF (SST(i,j).GT.278.) THEN
-                    SST(i,j) = 278.
-                 ENDIF
-              ENDIF
-              TSK_SEA(i,j) = SST(i,j)
-
-              ! The original TSK is taken to represent the blended
-              ! result of the open-water values (SST) and the
-              ! ice-covered value (the local TSK we derive here).
-
-              TSK_LOCAL(i,j) = ( TSK(i,j) - (1.0-XICE(i,j)) * SST(i,j) ) / XICE(i,j)
-
-              IF ( ( XICE(i,j) .LT. 0.2 ) .AND. ( TSK_LOCAL(i,j) .LT. 253.15 ) ) THEN
-                 TSK_LOCAL(i,j) = 253.15
-              ENDIF
-              IF ( ( XICE(i,j) .LT. 0.1 ) .and. ( TSK_LOCAL(i,j) .LT. 263.15 ) ) THEN
-                 TSK_LOCAL(i,j) = 263.15
-              ENDIF
-
-           ELSE
-              ! land/open-water point
-              TSK_LOCAL(i,j) = TSK(i,j)
-           ENDIF
-
-        ENDDO
-     ENDDO
+      CALL get_local_ice_tsk( ims, ime, jms, jme, its, ite, jts, jte,  &
+                              itimestep, .true., tice2tsk_if2cold,     &
+                              XICE, XICE_THRESHOLD,                    &
+                              SST, TSK, TSK_SEA, TSK_LOCAL )
 
 !
 ! Set up for frozen ocean call for sea ice points
@@ -2459,11 +2559,11 @@ CONTAINS
 XICE,SST,TSK_SEA,                                                  &
 CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
 HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
-ITIMESTEP,XICE_THRESHOLD,                                          &
+ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     ustm,ck,cka,cd,cda,isftcflx                   )
+                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
      USE module_sf_sfclay
      implicit none
 
@@ -2535,12 +2635,13 @@ ITIMESTEP,XICE_THRESHOLD,                                          &
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                INTENT(OUT)     ::              ck,cka,cd,cda,ustm
 
-     INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX
+     INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
 
 !--------------------------------------------------------------------
 !    New for wrapper
 !--------------------------------------------------------------------
      INTEGER,  INTENT(IN)               ::      ITIMESTEP
+     LOGICAL,  INTENT(IN)               ::      TICE2TSK_IF2COLD
      REAL,     INTENT(IN)               ::      XICE_THRESHOLD
      REAL,     DIMENSION( ims:ime, jms:jme ),                     &
                INTENT(IN)               ::      XICE
@@ -2616,7 +2717,7 @@ ITIMESTEP,XICE_THRESHOLD,                                          &
       ! SVP1,SVP2,SVP3,SVPT0
       ! EP1,EP2,KARMAN,EOMEG,STBOLT
       ! CP,G,ROVCP,R,XLV,DX
-      ! ISFTCFLX
+      ! ISFTCFLX,IZ0TLND
       ! P1000
       ! dz8w
       ! QV3D
@@ -2630,39 +2731,10 @@ ITIMESTEP,XICE_THRESHOLD,                                          &
       ! V3D
       ! PSFC
 
-     DO j = JTS , JTE
-        DO i = ITS , ITE
-           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) )  THEN
-
-              IF ( SST(i,j) .LT. 271.4 ) THEN
-                 SST(i,j) = 271.4
-              ENDIF
-              IF ( SST(i,j) .GT. 273. .AND. itimestep .le. 3) THEN
-                 IF ( XICE(i,j) .GE. 0.6 ) THEN
-                    SST(i,j) = 271.4
-                 ELSEIF ( XICE(i,j) .GE. 0.4 ) THEN
-                    SST(i,j) = 273.
-                 ELSEIF (XICE(i,j).GE.0.2 .and. SST(i,j).GT.275.) THEN
-                    SST(i,j) = 275.
-                 ELSEIF (SST(i,j).GT.278.) THEN
-                    SST(i,j) = 278.
-                 ENDIF
-              ENDIF
-              TSK_SEA(i,j) = SST(i,j)
-
-              TSK_LOCAL(i,j) = ( TSK(i,j) - (1.0-XICE(i,j)) *SST(i,j) ) / XICE(i,j)
-              IF (XICE(i,j) .lt. 0.2 .and. TSK(i,j) .lt. 253.15) THEN
-                 TSK_LOCAL(i,j) = 253.15
-              ENDIF
-              IF (XICE(i,j) .lt. 0.1 .and. TSK(i,j) .lt. 263.15) THEN
-                 TSK_LOCAL(i,j) = 263.15
-              ENDIF
-           ELSE
-              TSK_SEA(i,j) = TSK(i,j)
-              TSK_LOCAL(i,j) = TSK(i,j)
-           ENDIF
-        ENDDO
-     ENDDO
+     CALL get_local_ice_tsk( ims, ime, jms, jme, its, ite, jts, jte,  &
+                             itimestep, .true., tice2tsk_if2cold,     &
+                             XICE, XICE_THRESHOLD,                    &
+                             SST, TSK, TSK_SEA, TSK_LOCAL )
 
 
 ! INTENT (INOUT) to SFCLAY:  Save the variables before the first call
@@ -2718,7 +2790,7 @@ ITIMESTEP,XICE_THRESHOLD,                                          &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &
-                 ustm,ck,cka,cd,cda,isftcflx                   )
+                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
 
      ! Set up for open-water call
      DO j = JTS , JTE
@@ -2783,7 +2855,7 @@ ITIMESTEP,XICE_THRESHOLD,                                          &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    & ! 0
-                 ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx   )
+                 ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd )
 
      DO j = JTS , JTE
         DO i = ITS, ITE
@@ -2849,7 +2921,7 @@ ITIMESTEP,XICE_THRESHOLD,                                          &
                      U10,V10,                                      &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,          &
-XICE, SST, ITIMESTEP, XICE_THRESHOLD,                              &
+XICE, SST, ITIMESTEP, TICE2TSK_IF2COLD,XICE_THRESHOLD,             &
 CHS_SEA, CHS2_SEA, CPM_SEA, CQS2_SEA, FLHC_SEA, FLQC_SEA,          &
 HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                      ids,ide, jds,jde, kds,kde,                    &
@@ -2862,6 +2934,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                                        its,ite, jts,jte, kts,kte
 
      INTEGER,  INTENT(IN )   ::        ISFFLX
+     LOGICAL,  INTENT(IN )   ::        TICE2TSK_IF2COLD
      REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
      REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN
 
@@ -2986,39 +3059,10 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                                                          U10_SEA, &
                                                          V10_SEA
 
-     DO j = JTS , JTE
-        DO i = ITS , ITE
-           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) )  THEN
-
-              IF ( SST(i,j) .LT. 271.4 ) THEN
-                 SST(i,j) = 271.4
-              ENDIF
-              IF ( SST(i,j) .GT. 273. .AND. itimestep .le. 3) THEN
-                 IF ( XICE(i,j) .GE. 0.6 ) THEN
-                    SST(i,j) = 271.4
-                 ELSEIF ( XICE(i,j) .GE. 0.4 ) THEN
-                    SST(i,j) = 273.
-                 ELSEIF (XICE(i,j).GE.0.2 .and. SST(i,j).GT.275.) THEN
-                    SST(i,j) = 275.
-                 ELSEIF (SST(i,j).GT.278.) THEN
-                    SST(i,j) = 278.
-                 ENDIF
-              ENDIF
-              TSK_SEA(i,j) = SST(i,j)
-
-              TSK_LOCAL(i,j) = ( TSK(i,j) - (1.0-XICE(i,j)) *SST(i,j) ) / XICE(i,j)
-              IF (XICE(i,j) .lt. 0.2 .and. TSK(i,j) .lt. 253.15) THEN
-                 TSK_LOCAL(i,j) = 253.15
-              ENDIF
-              IF (XICE(i,j) .lt. 0.1 .and. TSK(i,j) .lt. 263.15) THEN
-                 TSK_LOCAL(i,j) = 263.15
-              ENDIF
-           ELSE
-              TSK_SEA(i,j) = TSK(i,j)
-              TSK_LOCAL(i,j) = TSK(i,j)
-           ENDIF
-        ENDDO
-     ENDDO
+     CALL get_local_ice_tsk( ims, ime, jms, jme, its, ite, jts, jte,  &
+                             itimestep, .true., tice2tsk_if2cold,     &
+                             XICE, XICE_THRESHOLD,                    &
+                             SST, TSK, TSK_SEA, TSK_LOCAL )
 !
 ! INTENT (INOUT) to PXSFCLAY:  Save the variables before the first call
 ! (for land/frozen water) to SFCLAY, to keep from double-counting the
@@ -3158,6 +3202,230 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
    END SUBROUTINE pxsfclay_seaice_wrapper
 
 !-------------------------------------------------------------------------
-!-------------------------------------------------------------------------
+
+   SUBROUTINE TOPO_RAD_ADJ_DRVR (XLAT,XLONG,COSZEN,               &
+                    shadowmask,                                   &
+                    declin,                                       &
+                    SWDOWN,GSW,SWNORM,GSWSAVE,solcon,hrang2d,     &
+                    slope_in,slp_azi_in,                          &
+                ids, ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                     &
+                its, ite, jts, jte, kts, kte                      )
+!------------------------------------------------------------------
+   IMPLICIT NONE
+!------------------------------------------------------------------
+   INTEGER, INTENT(IN)   ::       its,ite,jts,jte,kts,kte,        &
+                                  ims,ime,jms,jme,kms,kme,        &
+                                  ids,ide,jds,jde,kds,kde
+   INTEGER, DIMENSION( ims:ime, jms:jme ),                        &
+         INTENT(IN)      ::       shadowmask
+   REAL, DIMENSION( ims:ime, jms:jme ),                           &
+         INTENT(IN   )   ::       XLAT,XLONG
+   REAL, DIMENSION( ims:ime, jms:jme ),                           &
+         INTENT(INOUT)   ::       SWDOWN,GSW,SWNORM,GSWSAVE
+   real,intent(in)  :: solcon   
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: hrang2d,coszen 
+
+
+   REAL, INTENT(IN    )  ::       declin
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: slope_in,slp_azi_in
+
+
+! LOCAL VARS
+   integer    :: i,j
+   real       :: pi,degrad
+   integer    :: shadow
+   real       :: swdown_teradj,swdown_in,xlat1,xlong1
+
+!------------------------------------------------------------------
+
+     pi = 4.*atan(1.)
+     degrad=pi/180.
+
+       DO J=jts,jte
+       DO I=its,ite
+         SWNORM(i,j) = SWDOWN(i,j)     ! save
+         IF(SWDOWN(I,J) .GT. 1.E-3)THEN  ! daytime
+             shadow = shadowmask(i,j)
+
+         SWDOWN_IN = SWDOWN(i,j)
+         XLAT1 = XLAT(i,j)
+         XLONG1 = XLONG(i,j)
+         CALL TOPO_RAD_ADJ (XLAT1,XLONG1,COSZEN(i,j),             &
+                    DECLIN,DEGRAD,                                &
+                    SWDOWN_IN,solcon,hrang2d(i,j),SWDOWN_teradj,  &
+                    kts,kte,                                      &
+                    slope_in(i,j),slp_azi_in(i,j),                &
+                    shadow , i,j                                  &
+                    )
+
+         GSWSAVE(I,J) = GSW(I,J)       ! save
+         GSW(I,J) = GSW(I,J)*SWDOWN_teradj/SWDOWN(i,j)
+         SWDOWN(i,j) = SWDOWN_teradj
+
+         ENDIF ! daytime
+       ENDDO  ! i_loop
+       ENDDO  ! j_loop
+
+
+   END SUBROUTINE TOPO_RAD_ADJ_DRVR
+!------------------------------------------------------------------
+!------------------------------------------------------------------
+   SUBROUTINE TOPO_RAD_ADJ (XLAT1,XLONG1,COSZEN,                 &
+                    DECLIN,DEGRAD,                               &
+                    SWDOWN_IN,solcon,hrang,SWDOWN_teradj,        &
+                    kts,kte,                                     &
+                    slope,slp_azi,                               &
+                    shadow                                       &
+                    ,i,j)
+
+!------------------------------------------------------------------
+   IMPLICIT NONE
+!------------------------------------------------------------------
+  INTEGER, INTENT(IN)       :: kts,kte
+  REAL, INTENT(IN)          :: COSZEN,DECLIN,              &
+                               XLAT1,XLONG1,DEGRAD
+  REAL, INTENT(IN)          :: SWDOWN_IN,solcon,hrang
+  INTEGER, INTENT(IN)       :: shadow
+  REAL, INTENT(IN)          :: slp_azi,slope
+
+  REAL, INTENT(OUT)         :: SWDOWN_teradj
+
+! LOCAL VARS
+   REAL            :: XT24,TLOCTM,CSZA,XXLAT
+   REAL            :: diffuse_frac,corr_fac,csza_slp
+   integer         :: i,j
+
+
+!------------------------------------------------------------------
+
+     SWDOWN_teradj=SWDOWN_IN
+
+     CSZA=COSZEN
+     XXLAT=XLAT1*DEGRAD
+
+! RETURN IF NIGHT
+         IF(CSZA.LE.1.E-9) return 
+        
+!  Parameterize diffuse fraction of global solar radiation as a function of the ratio between TOA radiation and surface global radiation
+              diffuse_frac = min(1.,1./(max(0.1,2.1-2.8*log(log(csza*solcon/max(SWDOWN_IN,1.e-3))))))
+        if ((slope.eq.0).or.(diffuse_frac.eq.1).or.(csza.lt.1.e-2)) then  ! no topographic effects when all radiation diffuse or sun too close to horizon
+          corr_fac = 1
+          goto 140
+        endif
+
+! cosine of zenith angle over sloping topography
+        csza_slp = ((SIN(XXLAT)*COS(HRANG))*                                          &
+                    (-cos(slp_azi)*sin(slope))-SIN(HRANG)*(sin(slp_azi)*sin(slope))+  &
+                    (COS(XXLAT)*COS(HRANG))*cos(slope))*                              &
+                   COS(DECLIN)+(COS(XXLAT)*(cos(slp_azi)*sin(slope))+                 &
+                   SIN(XXLAT)*cos(slope))*SIN(DECLIN)
+        IF(csza_slp.LE.1.E-4) csza_slp = 0
+
+! Topographic shading
+        if (shadow.eq.1) csza_slp = 0
+
+! Correction factor for sloping topography; the diffuse fraction of solar radiation is assumed to be unaffected by the slope
+        corr_fac = diffuse_frac + (1-diffuse_frac)*csza_slp/csza
+
+ 140        continue
+
+      SWDOWN_teradj=(1.)*SWDOWN_IN*corr_fac
+
+   END SUBROUTINE TOPO_RAD_ADJ
+
+!=======================================================================
+
+   SUBROUTINE get_local_ice_tsk ( ims, ime, jms, jme,     &
+                                  its, ite, jts, jte,     &
+                                  itimestep,              &
+                                  sfc_layer_values,       &
+                                  tice2tsk_if2cold,       &
+                                  XICE, XICE_THRESHOLD,   &
+                                  SST, TSK, TSK_SEA, TSK_ICE )
+!<DESCRIPTION>
+!
+! For grid cells with a fractional ice area, derive the ice surface 
+! temperature from the area-averaged surface temperature (the blended
+! result of the open-water values (SST) and the ice-covered value).
+!
+!</DESCRIPTION>
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: ims, ime, jms, jme    !-- start/end index for i/j in memory
+      INTEGER, INTENT(IN) :: its, ite, jts, jte    !-- start/end index for i/j in tile
+      INTEGER, INTENT(IN) :: itimestep             !-- timestep
+      LOGICAL, INTENT(IN) :: sfc_layer_values      !-- True if there are surface layer routine values
+                                                   !-- available from the ice portion of the grid point
+                                                   !-- (i.e. called from a seaice_wrapper subroutine)
+      LOGICAL, INTENT(IN) :: tice2tsk_if2cold      !-- True to set TSK_ICE to TSK.  This may be
+                                                   !-- necessary to avoid unphysically low ice
+                                                   !-- temperatures is there is a mis-match between
+                                                   !-- ice fraction and surface temperature.
+
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)    :: XICE        ! Ice fraction
+      REAL                                , INTENT(IN)    :: XICE_THRESHOLD 
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)    :: TSK         ! Surface temperature (K)
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: SST         ! Sea surface temperature (K)
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(OUT)   :: TSK_SEA     ! Sfc temp of open water portion of grid cell 
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(OUT)   :: TSK_ICE     ! Sfc temp of ice oprtion of grid cell
+
+! Local
+      INTEGER :: i,j
+
+      DO j = JTS , JTE
+         DO i = ITS , ITE
+            IF ( ( XICE(i,j) >= XICE_THRESHOLD ) .AND. ( XICE(I,J) <= 1.0 ) ) THEN
+ 
+               IF ( SST(i,j) < 271.4 ) THEN
+                  SST(i,j) = 271.4
+               ENDIF
+ 
+               IF (sfc_layer_values) THEN
+                  IF ( SST(i,j) > 273. .AND. itimestep <= 3) then
+                     ! Why the dependence on the time step count, here?
+                     IF ( XICE(i,j) >= 0.6 ) THEN
+                        SST(i,j) = 271.4
+                     ELSEIF ( XICE(i,j) >= 0.4 ) THEN
+                        SST(i,j) = 273.
+                     ELSEIF (XICE(i,j) >= 0.2 .AND. SST(i,j) > 275.) THEN
+                        SST(i,j) = 275.
+                     ELSEIF (SST(i,j) > 278.) THEN
+                        SST(i,j) = 278.
+                     ENDIF
+                  ENDIF
+               ENDIF
+               TSK_SEA(i,j) = SST(i,j)
+ 
+               IF ( tice2tsk_if2cold ) THEN
+!------------------------------------------------------------------------------------
+! This avoids unphysically low ice temperatures for grid cells with low ice fractions
+! and low area-averaged temperatures.  This can happen when the initial ice fraction 
+! and surface temperature come from different data sets.
+!------------------------------------------------------------------------------------
+                  TSK_ICE(i,j) = MIN( TSK(i,j), 273.15 )
+               ELSE
+                  TSK_ICE(i,j) = ( TSK(i,j) - (1.0-XICE(i,j)) * SST(i,j) ) / XICE(i,j)
+               ENDIF
+ 
+               IF ( ( XICE(i,j) < 0.2 ) .AND. ( TSK(i,j) < 253.15 ) ) THEN
+                  TSK_ICE(i,j) = 253.15
+               ENDIF
+               IF ( ( XICE(i,j) < 0.1 ) .AND. ( TSK(i,j) < 263.15 ) ) THEN
+                  TSK_ICE(i,j) = 263.15
+               ENDIF
+            ELSE
+               ! land/open-water point
+               TSK_SEA(i,j) = TSK(i,j)
+               TSK_ICE(i,j) = TSK(i,j)
+            ENDIF
+         ENDDO
+      ENDDO
+
+   END SUBROUTINE get_local_ice_tsk
+
+!=======================================================================
+!=======================================================================
 
 END MODULE module_surface_driver

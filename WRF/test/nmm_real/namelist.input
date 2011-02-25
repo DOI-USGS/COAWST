@@ -20,7 +20,7 @@
  history_interval                    = 60,       60,
  frames_per_outfile                  = 1,        1,
  restart                             = .false.,
- restart_interval                    = 5760,
+ restart_interval                    = 5400,
  reset_simulation_start              = F,
  io_form_input                       = 2
  io_form_history                     = 2
@@ -62,15 +62,15 @@
  sf_surface_physics                  = 2,        2, 
  bl_pbl_physics                      = 2,        2,
  nphs                                = 6,        18,
- cu_physics                          = 2,
- ncnvc                               = 6,
- tprec                               = 3,
- theat                               = 6,
- tclod                               = 6,
- trdsw                               = 6,
- trdlw                               = 6,
- tsrfc                               = 6,
- pcpflg                              = .false.,
+ cu_physics                          = 2,        2,
+ ncnvc                               = 6,        18,
+ tprec                               = 3,        3,
+ theat                               = 6,        6,
+ tclod                               = 6,        6,
+ trdsw                               = 6,        6,
+ trdlw                               = 6,        6,
+ tsrfc                               = 6,        6,
+ pcpflg                              = .false.,  .false.,
  isfflx                              = 0,
  ifsnow                              = 0,
  icloud                              = 0,
@@ -80,6 +80,9 @@
  /
 
  &dynamics
+ euler_adv                           = .false.,
+ idtadt                              = 1,
+ idtadc                              = 1
  /
 
  &bdy_control
@@ -90,7 +93,7 @@
 
  &fdda
  /
-
+ 
  &grib2
  /
 

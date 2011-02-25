@@ -22,6 +22,9 @@ CONTAINS
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
                  ,qke,tsq,qsq,cov,rmol,ch,qcg,grav_settling        &
+#if (NMM_CORE==1)
+                 ,DISHEAT                                          &
+#endif
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
@@ -56,11 +59,12 @@ CONTAINS
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
-                   BEPSCHEME,MYJSFCSCHEME
+                   BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, p_qi,param_first_scalar 
 #else
    USE module_state_description, ONLY :                            &
-                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME,&
-                   MYJSFCSCHEME
+                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
+                   , QNSEPBLSCHEME, p_qi,param_first_scalar &
+                   , MYJSFCSCHEME
 #endif
 
    USE module_model_constants
@@ -243,6 +247,9 @@ CONTAINS
                INTENT(IN   )    ::                        LOWLYR
 !
    LOGICAL,      INTENT(IN   )    ::   warm_rain
+#if (NMM_CORE==1)
+   LOGICAL,      INTENT(IN   )    ::   DISHEAT ! (for HWRF)
+#endif
 
    REAL,       DIMENSION( kms:kme ),                              &
                OPTIONAL, INTENT(IN   )    ::               znu,   &
@@ -425,19 +432,28 @@ CONTAINS
                                                           ZNTOLD, &
                                                              ZOL, &
                                                             PSFC
-!
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::a_u        ! Implicit component for the momemtum in X-direction
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::a_v        ! Implicit component for the momemtum in Y-direction
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::a_t        ! Implicit component for the Pot. Temp.
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::a_q        ! Implicit component for the water vapor
+! make these allocatable depending on the setting of idiff
+! Typically, we try to avoide allocating and deallocating local storage like this
+! so as not to fragment the stack. But at this point, the idiff = 1 case is disabled
+! (set to 0 for all cases) and has to be set manually by users who want to work with
+! it.  When it becomes a more standard option, this should be redone, either defining
+! these as state with package clauses to turn them on and off and passing them in,
+! or pass in an integer flag that can be used to dimension the arrays to 1:1:1 as
+! local variables.  JM 20100316
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::b_u        ! Explicit component for the momemtum in X-direction
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::b_v        ! Explicit component for the momemtum in Y-direction
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::b_t        ! Explicit component for the Pot. Temp.
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::b_q        ! Explicit component for the water vapor
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::a_u        ! Implicit component for the momemtum in X-direction
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::a_v        ! Implicit component for the momemtum in Y-direction
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::a_t        ! Implicit component for the Pot. Temp.
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::a_q        ! Implicit component for the water vapor
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::sf           ! surfaces
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )  ::vl            ! volumes
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::b_u        ! Explicit component for the momemtum in X-direction
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::b_v        ! Explicit component for the momemtum in Y-direction
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::b_t        ! Explicit component for the Pot. Temp.
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::b_q        ! Explicit component for the water vapor
+
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::sf         ! surfaces
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::vl         ! volumes
+
    REAL    :: DTMIN,DTBL
 !
 
@@ -464,16 +480,19 @@ CONTAINS
     SELECT CASE(sf_urban_physics)
 #if (NMM_CORE != 1)
       CASE (BEPSCHEME)
-      flag_bep=.true.
+        flag_bep=.true.
+      CASE (BEP_BEMSCHEME)
+        flag_bep=.true.
 #endif
       CASE DEFAULT
-      flag_bep=.false.
-    End Select
+        flag_bep=.false.
+    END SELECT
+
     SELECT CASE(sf_sfclay_physics)
-    CASE (MYJSFCSCHEME)
-       flag_myjsfc=.true.
-    CASE DEFAULT
-       flag_myjsfc=.false.
+      CASE (MYJSFCSCHEME)
+         flag_myjsfc=.true.
+      CASE DEFAULT
+         flag_myjsfc=.false.
     END SELECT
 !
   flag_qv = .FALSE. ; IF ( PRESENT( F_QV ) ) flag_qv = F_QV
@@ -556,6 +575,21 @@ CONTAINS
 ! Added this else clause so that idiff is always initialized regardless of which core we are using
        idiff=0
 #endif
+
+   IF ( idiff .EQ. 1 ) THEN
+     ALLOCATE (a_u(ims:ime,kms:kme,jms:jme))       ! Implicit component for the momemtum in X-direction
+     ALLOCATE (a_v(ims:ime,kms:kme,jms:jme))       ! Implicit component for the momemtum in Y-direction
+     ALLOCATE (a_t(ims:ime,kms:kme,jms:jme))       ! Implicit component for the Pot. Temp.
+     ALLOCATE (a_q(ims:ime,kms:kme,jms:jme))       ! Implicit component for the water vapor
+     ALLOCATE (b_u(ims:ime,kms:kme,jms:jme))       ! Explicit component for the momemtum in X-direction
+     ALLOCATE (b_v(ims:ime,kms:kme,jms:jme))       ! Explicit component for the momemtum in Y-direction
+     ALLOCATE (b_t(ims:ime,kms:kme,jms:jme))       ! Explicit component for the Pot. Temp.
+     ALLOCATE (b_q(ims:ime,kms:kme,jms:jme))       ! Explicit component for the water vapor
+     ALLOCATE (sf(ims:ime,kms:kme,jms:jme) )       ! surfaces
+     ALLOCATE (vl(ims:ime,kms:kme,jms:jme) )       ! volumes
+   ENDIF
+
+
 ! SAVE OLD VALUES
 
    !$OMP PARALLEL DO   &
@@ -598,7 +632,7 @@ CONTAINS
       ENDDO
 
 #if (NMM_CORE != 1)
-      if(idiff.eq.1)then
+      IF ( idiff.eq.1 ) THEN
 !Alberto
 ! Here we should put a switch: 
 ! if we do not use BEP, just initialize the values of the a, and b to zero, except for the lowest model level, 
@@ -612,7 +646,6 @@ CONTAINS
 ! This stuff is becoming large, probably better to put in a subroutine
 !!!!!!!!!!!!!!!!!!!
 ! preparing the a, b, sf, and vl terms
-         
          
          IF (flag_bep) THEN    
            do j=j_start(ij),j_end(ij)
@@ -632,7 +665,7 @@ CONTAINS
            sf(i,kte+1,j)=1.
            enddo
            enddo
-         else
+         ELSE
            do j=j_start(ij),j_end(ij)
            do i=i_start(ij),i_end(ij)
            do k=kts,kte
@@ -665,7 +698,7 @@ CONTAINS
            enddo
            enddo
            
-         endif
+         ENDIF
 
         endif      
                                            
@@ -708,21 +741,37 @@ CONTAINS
               ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten                  &
               ,FLAG_QI=flag_qi                                      &
               ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
-              ,DZ8W=dz8w,Z=z,XLV=XLV,RV=r_v,PSFC=PSFC               &
+              ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
               ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
-              ,ZNT=znt,UST=ust,ZOL=zol,HOL=hol,HPBL=pblh            &
+              ,ZNT=znt,UST=ust,HPBL=pblh                            &
               ,PSIM=psim,PSIH=psih,XLAND=xland                      &
-              ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &
+              ,HFX=hfx,QFX=qfx,GZ1OZ0=gz1oz0                        &
               ,U10=u10,V10=v10                                      &
-              ,WSPD=wspd,BR=br,DT=dtbl,DTMIN=dtmin,KPBL2D=kpbl      &
-              ,SVP1=svp1,SVP2=svp2,SVP3=svp3,SVPT0=svpt0            &
-              ,EP1=ep_1,EP2=ep_2,KARMAN=karman,EOMEG=eomeg          &
-              ,STBOLT=stbolt,EXCH_H=exch_h,REGIME=regime            &
+              ,WSPD=wspd,BR=br,DT=dtbl,KPBL2D=kpbl                  &
+              ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
+              ,EXCH_H=exch_h,REGIME=regime                          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
            ELSE
+               WRITE ( message , FMT = '(A,7(L1,1X))' )             &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'qi_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten, '//                                     &
+                 'rqiblten, '//                                     &
+                 'hol = ' ,                                         &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( qi_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten ) ,                             &
+                  PRESENT( rqiblten ) ,                             &
+                  PRESENT( hol      )
+               CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call YSU pbl')
            ENDIF
 
@@ -759,6 +808,19 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
            ELSE
+               WRITE ( message , FMT = '(A,5(L1,1X))' )             &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten, '//                                     &
+                 'hol = ' ,                                         &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten ) ,                             &
+                  PRESENT( hol      )
+               CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call MRF pbl')
            ENDIF
 
@@ -775,17 +837,32 @@ CONTAINS
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
               ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
               ,RQIBLTEN=rqiblten                                    &
-              ,CP=cp,G=g,ROVCP=rcp,R=r_d,ROVG=rovg,FLAG_QI=flag_qi  &
+              ,CP=cp,G=g,ROVCP=rcp,R=r_d,ROVG=rovg                  &
               ,DZ8W=dz8w,z=z,PSFC=psfc                              &
               ,UST=ust,PBL=pblh,PSIM=psim,PSIH=psih                 &
               ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &
               ,WSPD=wspd,BR=br                                      &
               ,DT=dtbl,KPBL2D=kpbl,EP1=ep_1,KARMAN=karman           &
+#if (NMM_CORE==1)
+              ,DISHEAT=DISHEAT                                      &
+#endif
+              ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
            ELSE
+               WRITE ( message , FMT = '(A,4(L1,1X))' )             &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten = ',                                     &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten )
+               CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call GFS pbl')
            ENDIF
 
@@ -850,6 +927,17 @@ CONTAINS
             ENDIF
 
            ELSE
+               WRITE ( message , FMT = '(A,4(L1,1X))' )             &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten = ' ,                                    &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten )
+               CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call MYJ pbl')
            ENDIF
  
@@ -877,6 +965,17 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
            ELSE
+               WRITE ( message , FMT = '(A,4(L1,1X))' )             &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten = ' ,                                    &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten )
+               CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call QNSE pbl')
            ENDIF
 
@@ -903,6 +1002,17 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte                   &   
                                                                       )
            ELSE
+               WRITE ( message , FMT = '(A,4(L1,1X))' )             &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten = ' ,                                    &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten )
+               CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call ACM2 pbl')
            ENDIF
 
@@ -914,7 +1024,7 @@ CONTAINS
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                 & PRESENT(qke) .AND. PRESENT(tsq) .AND. &
                 & PRESENT(qsq) .AND. PRESENT(cov) .AND. &
-                & PRESENT(rmol) .AND. PRESENT(rmol) .AND. &
+                & PRESENT(rmol) .AND. &
                 & PRESENT(qcg) .AND. PRESENT(ch) .AND. &
                 & PRESENT(grav_settling) ) THEN
 
@@ -938,13 +1048,41 @@ CONTAINS
                    &Qke=qke,Tsq=tsq,Qsq=qsq,Cov=cov,&
                    &Du=rublten,Dv=rvblten,Dth=rthblten,&
                    &Dqv=rqvblten,Dqc=rqcblten,&
-                   &k_h=exch_h,k_m=exch_m&
+                   &k_h=exch_h,k_m=exch_m,&
+                   &pblh=pblh&
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
                    ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                    )
 
            ELSE
+               WRITE ( message , FMT = '(A,12(L1,1X))' )            &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten, '//                                     &
+                 'qke, '//                                          &
+                 'tsq = '//                                         &
+                 'qsq = '//                                         &
+                 'cov = '//                                         &
+                 'rmol = '//                                        &
+                 'qcg = '//                                         &
+                 'ch = '//                                          &
+                 'grav_settling = ',                                &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten ) ,                             &
+                  PRESENT( qke      ) ,                             &
+                  PRESENT( tsq      ) ,                             &
+                  PRESENT( qsq      ) ,                             &
+                  PRESENT( cov      ) ,                             &
+                  PRESENT( rmol     ) ,                             &
+                  PRESENT( qcg      ) ,                             &
+                  PRESENT( ch       ) ,                             &
+                  PRESENT( grav_settling)
+               CALL wrf_debug(0,message)
               CALL wrf_error_fatal('Lack arguments to call MYNN pbl')
            ENDIF
 
@@ -996,6 +1134,7 @@ CONTAINS
               ,VAR2D=var2d,OC12D=oc12d     &
               ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4  &
               ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4  &
+              ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
               ,CP=cp,G=g,RD=r_d                           &
               ,RV=r_v,EP1=ep_1,PI=3.141592653                        &
               ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep      &
@@ -1008,7 +1147,8 @@ CONTAINS
 
 #if (NMM_CORE != 1)
 
-          if(idiff.eq.1)then
+     IF (idiff.eq.1) THEN
+
 !Alberto: here we call the general routine to solve the diffusion
 ! + all the source/sink terms.
 ! the only thing that should be passed from the PBL schemes is the value of the exch_h, and exch_m 
@@ -1033,8 +1173,18 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme        &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
 
+          DEALLOCATE (a_u)       ! Implicit component for the momemtum in X-direction
+          DEALLOCATE (a_v)       ! Implicit component for the momemtum in Y-direction
+          DEALLOCATE (a_t)       ! Implicit component for the Pot. Temp.
+          DEALLOCATE (a_q)       ! Implicit component for the water vapor
+          DEALLOCATE (b_u)       ! Explicit component for the momemtum in X-direction
+          DEALLOCATE (b_v)       ! Explicit component for the momemtum in Y-direction
+          DEALLOCATE (b_t)       ! Explicit component for the Pot. Temp.
+          DEALLOCATE (b_q)       ! Explicit component for the water vapor
+          DEALLOCATE (sf )       ! surfaces
+          DEALLOCATE (vl )       ! volumes
       
-      endif       !idiff
+     ENDIF       !idiff
 #endif
 
    ENDDO

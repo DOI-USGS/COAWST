@@ -13,6 +13,8 @@
 !
 !-----------------------------------------------------------------------
       USE MODULE_MODEL_CONSTANTS
+      USE MODULE_CONFIGURE,             ONLY : GRID_CONFIG_REC_TYPE
+      USE MODULE_STATE_DESCRIPTION
 !-----------------------------------------------------------------------
 !
       LOGICAL :: SECOND=.TRUE.
@@ -25,8 +27,13 @@
 !***********************************************************************
       SUBROUTINE HDIFF(NTSD,DT,FIS,DY,HDAC,HDACV                        &
      &                ,HBM2,DETA1,SIGMA                                 &
+#ifdef HWRF
+     &                ,T,Q,U,V,Q2,Z,W,SM,SICE,h_diff                    &
+#else
      &                ,T,Q,U,V,Q2,Z,W,SM,SICE                           &
+#endif
      &                ,IHE,IHW,IVE,IVW                                  &
+     &                ,CONFIG_FLAGS                                     &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -84,6 +91,10 @@
 !
 !-----------------------------------------------------------------------
 !
+!***  STRUCTURE THAT CONTAINS RUN-TIME CONFIGURATION (NAMELIST) DATA FOR DOMAIN
+!
+      TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
+!
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE
@@ -91,6 +102,9 @@
       INTEGER,INTENT(IN) :: NTSD
 !
       REAL,INTENT(IN) :: DT,DY
+#ifdef HWRF
+      REAL,INTENT(IN) :: H_DIFF  
+#endif
 !
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: DETA1
 !
@@ -256,14 +270,20 @@
      &         -V(I,J+1,K)+V(I,J-1,K)
           DEFSK=U(I,J+1,K)-U(I,J-1,K)                                   &
      &         +V(I+IHE(J),J,K)-V(I+IHW(J),J,K)
-          DEF1=W(I+IHW(J),J-1,K)-W(I,J,K)
-          DEF2=W(I+IHE(J),J-1,K)-W(I,J,K)
-          DEF3=W(I+IHW(J),J+1,K)-W(I,J,K)
-          DEF4=W(I+IHE(J),J+1,K)-W(I,J,K)
+          DEF1=(W(I+IHW(J),J-1,K)-W(I,J,K))*0.5
+          DEF2=(W(I+IHE(J),J-1,K)-W(I,J,K))*0.5
+          DEF3=(W(I+IHW(J),J+1,K)-W(I,J,K))*0.5
+          DEF4=(W(I+IHE(J),J+1,K)-W(I,J,K))*0.5
           Q2L=Q2(I,J,K)
           IF(Q2L<=EPSQ2)Q2L=0.
-          DEF_IJ=DEFTK*DEFTK+DEFSK*DEFSK+DEF1*DEF1+DEF2*DEF2            & 
-     &          +DEF3*DEF3+DEF4*DEF4+SCQ2*Q2L
+          IF ( CONFIG_FLAGS%BL_PBL_PHYSICS  == MYJPBLSCHEME) then
+                DEF_IJ=DEFTK*DEFTK+DEFSK*DEFSK+DEF1*DEF1+DEF2*DEF2 &
+    &             +DEF3*DEF3+DEF4*DEF4+SCQ2*Q2L
+          else
+                DEF_IJ=DEFTK*DEFTK+DEFSK*DEFSK+DEF1*DEF1+DEF2*DEF2 &
+    &            +DEF3*DEF3+DEF4*DEF4
+          ENDIF
+
           DEF_IJ=SQRT(DEF_IJ+DEF_IJ)*HBM2(I,J)
           DEF_IJ=MAX(DEF_IJ,DEFC)
           DEF_IJ=MIN(DEF_IJ,DEFM)
@@ -333,8 +353,13 @@
             T (I,J,K)=T (I,J,K)+TDIF (I,J)
             Q (I,J,K)=Q (I,J,K)+QDIF (I,J)
 !
+#ifdef HWRF
+            U(I,J,K)=U(I,J,K)+UDIF(I,J)*h_diff
+            V(I,J,K)=V(I,J,K)+VDIF(I,J)*h_diff
+#else
             U(I,J,K)=U(I,J,K)+UDIF(I,J)
             V(I,J,K)=V(I,J,K)+VDIF(I,J)
+#endif
           ENDDO
           ENDDO
 !
@@ -410,10 +435,17 @@
 !
           DO J=MYJS2,MYJE2
           DO I=MYIS1,MYIE1
+#ifdef HWRF
+            U(I,J,K)=U(I,J,K)-(UNE(I,J)-UNE(I+IVW(J),J-1)               &
+     &                        +USE(I,J)-USE(I+IVW(J),J+1))*HDACV(I,J)*h_diff
+            V(I,J,K)=V(I,J,K)-(VNE(I,J)-VNE(I+IVW(J),J-1)               &
+     &                        +VSE(I,J)-VSE(I+IVW(J),J+1))*HDACV(I,J)*h_diff
+#else
             U(I,J,K)=U(I,J,K)-(UNE(I,J)-UNE(I+IVW(J),J-1)               &
      &                        +USE(I,J)-USE(I+IVW(J),J+1))*HDACV(I,J)
             V(I,J,K)=V(I,J,K)-(VNE(I,J)-VNE(I+IVW(J),J-1)               &
      &                        +VSE(I,J)-VSE(I+IVW(J),J+1))*HDACV(I,J)
+#endif
           ENDDO
           ENDDO
 !

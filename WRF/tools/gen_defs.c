@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#ifndef _WIN32
+# include <strings.h>
+#endif
 
 #include "protos.h"
 #include "registry.h"
@@ -188,6 +190,7 @@ gen_decls ( FILE * fp , node_t * node , int sw_ranges, int sw_point , int mask ,
         if ( bdyonly && p->node_kind & FIELD && ! p->boundary_array )  continue ;  /* short circuit all fields except bdy arrrays */
 
         if ( p->boundary_array && sw_new_bdys ) {
+          if ( layer == DRIVER_LAYER || associated_with_4d_array(p) ) {
           int bdy ;
           for ( bdy = 1; bdy <=4 ; bdy++ ) {
             switch ( sw_ranges )
@@ -205,6 +208,7 @@ gen_decls ( FILE * fp , node_t * node , int sw_ranges, int sw_point , int mask ,
                         dimspec ,
                         (sw_point==POINTERDECL)?declare_array_as_pointer(t3,p):"" ,
                         fname, bdy_indicator( bdy )  ) ;
+          }
           }
         } else {
           switch ( sw_ranges )

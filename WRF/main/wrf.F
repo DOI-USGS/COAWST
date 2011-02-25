@@ -25,17 +25,22 @@ PROGRAM wrf
 #ifdef WRF_COUPLING
 END subroutine wrf
 #else
-   ! Set up WRF model.  
-   CALL wrf_init
+#ifdef _OPENMP
+  CALL setfeenv()
+#endif
 
-   ! Run digital filter initialization if requested.
-   CALL wrf_dfi
+  ! Set up WRF model.  
+  CALL wrf_init
 
-   ! WRF model time-stepping.  Calls integrate().  
-   CALL wrf_run
+  ! Run digital filter initialization if requested.
+  CALL wrf_dfi
 
-   ! WRF model clean-up.  This calls MPI_FINALIZE() for DM parallel runs.  
-   CALL wrf_finalize
+  ! WRF model time-stepping.  Calls integrate().  
+  CALL wrf_run
+
+  ! WRF model clean-up.  This calls MPI_FINALIZE() for DM parallel runs.  
+  CALL wrf_finalize
+
 END PROGRAM wrf
 #endif
 

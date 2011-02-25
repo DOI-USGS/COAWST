@@ -23,16 +23,20 @@
    USE module_comm_dm
 
    USE module_physics_init
+   USE module_fr_sfire_driver, ONLY : sfire_driver_em_init
 #ifdef WRF_CHEM
    USE module_aerosols_sorgam, ONLY: sum_pm_sorgam
    USE module_gocart_aerosols, ONLY: sum_pm_gocart
    USE module_mosaic_driver, ONLY: sum_pm_mosaic
+   USE module_input_tracer, ONLY: initialize_tracer
 #endif
 
 !!debug
 !USE module_compute_geop
 
    USE module_model_constants
+   USE module_avgflx_em, ONLY : zero_avgflx
+
    IMPLICIT NONE
    !  Input data.
    TYPE (domain)          :: grid
@@ -72,7 +76,7 @@
    REAL :: qvf1, qvf2, qvf
    REAL :: MPDT
    REAL :: spongeweight
-   LOGICAL :: first_trip_for_this_domain, start_of_simulation
+   LOGICAL :: first_trip_for_this_domain, start_of_simulation, fill_w_flag
 #ifndef WRF_CHEM
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: cldfra_old
 #endif
@@ -83,10 +87,13 @@
    CHARACTER (LEN=132) :: message
    TYPE(WRFU_TimeInterval) :: stepTime
    REAL, DIMENSION(:,:), ALLOCATABLE :: clat_glob
+   logical :: f_flux  ! flag for computing averaged fluxes in cu_gd
 
    INTEGER :: idex, jdex
+   INTEGER :: im1,ip1,jm1,jp1
+   REAL :: hx,hy,pi
 
-  CALL get_ijk_from_grid ( grid ,                               &
+   CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
                            ips, ipe, jps, jpe, kps, kpe,        &
@@ -405,6 +412,14 @@
        ENDDO
 
        DO j = jts,min(jte,jde-1)
+       DO k = kts,kte
+       DO i = its, min(ite,ide-1)
+          grid%ph_1(i,k,j)=grid%ph_2(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+
+       DO j = jts,min(jte,jde-1)
        DO i = its, min(ite,ide-1)
            IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
              grid%mu_1(i,j)=grid%mu_2(i,j)
@@ -442,6 +457,24 @@
      ENDDO
     ENDIF
 
+! Use equations from calc_p_rho_phi to derive p and al from ph
+
+    DO j=jts,min(jte,jde-1)
+    DO k=kts,kte-1
+    DO i=its,min(ite,ide-1)
+       qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+       grid%al(i,k,j)=-1./(grid%mub(i,j)+grid%mu_1(i,j))*(grid%alb(i,k,j)*grid%mu_1(i,j)  &
+                  +grid%rdnw(k)*(grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)))
+       grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_1(i,k,j))*qvf)/                     &
+                  (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
+                  -grid%pb(i,k,j)
+       grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
+       grid%alt(i,k,j) = grid%al(i,k,j) + grid%alb(i,k,j)
+    ENDDO
+    ENDDO
+    ENDDO
+
+#if 0
      DO j = jts,min(jte,jde-1)
 
        k = kte-1
@@ -451,6 +484,7 @@
            qvf2 = 1./(1.+qvf1)
            qvf1 = qvf1*qvf2
            grid%p(i,k,j) = - 0.5*(grid%mu_1(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
+           grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
            qvf = 1. + rvovrd*moist(i,k,j,P_QV)
            grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf*(((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
            grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
@@ -464,6 +498,7 @@
            qvf2 = 1./(1.+qvf1)
            qvf1 = qvf1*qvf2
            grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_1(i,j) + qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
+           grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
            qvf = 1. + rvovrd*moist(i,k,j,P_QV)
            grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
                         (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
@@ -473,6 +508,7 @@
        ENDDO
 
      ENDDO
+#endif
 
    ENDIF
 
@@ -544,8 +580,12 @@
 #endif
 
 !     This first call just initializes variables.
+!     If a restart, get initialized variables from restart file
 
-      CALL adapt_timestep(grid, config_flags)
+      IF ( .NOT. ( config_flags%restart ) ) then
+         CALL adapt_timestep(grid, config_flags)
+      END IF
+
 
    END IF
 
@@ -567,6 +607,21 @@
 ! The tiling is to handle the fact that we may be masking off part of the computation.
 !
    DO ij = 1, grid%num_tiles
+
+!tgs do not need physics initialization for backward DFI integration
+     IF ( grid%dfi_opt .NE. DFI_NODFI .and. grid%dfi_stage .EQ. DFI_FST) THEN     !tgs
+        grid%stepra=nint(grid%RADT*60./grid%DT)
+        grid%stepra=max(grid%stepra,1)
+        grid%stepbl=nint(grid%BLDT*60./grid%DT)
+        grid%stepbl=max(grid%stepbl,1)
+        grid%stepcu=nint(grid%CUDT*60./grid%DT)
+        grid%stepcu=max(grid%stepcu,1)
+        grid%stepfg=nint(grid%FGDT*60./grid%DT)
+        grid%stepfg=max(grid%stepfg,1)
+     ENDIF
+     
+     IF ( ( grid%dfi_opt .NE. DFI_NODFI .and. grid%dfi_stage .EQ. DFI_FWD) .or.            &
+          ( grid%dfi_opt .EQ. DFI_NODFI)) THEN
 
      CALL phy_init (  grid%id , config_flags, grid%DT, grid%RESTART, grid%znw, grid%znu,   &
                       grid%p_top, grid%tsk, grid%RADT,grid%BLDT,grid%CUDT, MPDT, &
@@ -629,24 +684,44 @@
                       grid%TRL_URB3D, grid%TBL_URB3D, grid%TGL_URB3D,        & !Optional urban
                       grid%SH_URB2D, grid%LH_URB2D, grid%G_URB2D, grid%RN_URB2D,  & !Optional urban
                       grid%TS_URB2D, grid%FRC_URB2D, grid%UTYPE_URB2D,      & !Optional urban
-                      grid%TRB_URB4D,grid%TW1_URB4D,grid%TW2_URB4D,grid%TGB_URB4D,    & !multi-layer urban
+                      grid%TRB_URB4D,grid%TW1_URB4D,grid%TW2_URB4D,grid%TGB_URB4D,grid%TLEV_URB3D,  & !multi-layer urban
+                      grid%QLEV_URB3D,grid%TW1LEV_URB3D,grid%TW2LEV_URB3D,        & !multi-layer urban
+                      grid%TGLEV_URB3D,grid%TFLEV_URB3D,grid%SF_AC_URB3D,         & !multi-layer urban 
+                      grid%LF_AC_URB3D,grid%CM_AC_URB3D,grid%SFVENT_URB3D,grid%LFVENT_URB3D,   & !multi-layer urban
+                      grid%SFWIN1_URB3D,grid%SFWIN2_URB3D, & !multi-layer urban
                       grid%SFW1_URB3D,grid%SFW2_URB3D,grid%SFR_URB3D,grid%SFG_URB3D,     & !multi-layer urban
                       grid%A_U_BEP,grid%A_V_BEP,grid%A_T_BEP,grid%A_Q_BEP,             & !multi-layer urban
                       grid%A_E_BEP,grid%B_U_BEP,grid%B_V_BEP,grid%B_T_BEP,             & !multi-layer urban
                       grid%B_Q_BEP,grid%B_E_BEP,grid%DLG_BEP,                          & !multi-layer urban
                       grid%DL_U_BEP,grid%SF_BEP,grid%VL_BEP,                           & !multi-layer urban
-                      grid%TML,grid%T0ML,grid%HML,grid%H0ML,grid%HUML,grid%HVML,     & !Optional oml
+                      grid%TML,grid%T0ML,grid%HML,grid%H0ML,grid%HUML,grid%HVML,grid%TMOML,     & !Optional oml
                       grid%itimestep, grid%fdob,            &
                       t00, p00, a,                      & ! for obs_nudge base state
                       grid%TYR, grid%TYRA, grid%TDLY, grid%TLAG, grid%NYEAR, grid%NDAY,grid%tmn_update, &
                       grid%achfx, grid%aclhf, grid%acgrdflx                 &
                       )
+       ENDIF   !tgs
 
    ENDDO
 
-
-
    CALL wrf_debug ( 100 , 'start_domain_em: After call to phy_init' )
+
+   IF (config_flags%do_avgflx_em .EQ. 1) THEN
+      WRITE ( message , FMT = '("start_em: initializing avgflx on domain ",I3)' ) &
+           & grid%id
+      CALL wrf_message(trim(message)) 
+      grid%avgflx_count = 0
+      DO ij = 1, grid%num_tiles
+         call wrf_debug(200,'In start_em, before zero_avgflx call')
+         if (.not. grid%restart) call zero_avgflx(grid%avgflx_rum,grid%avgflx_rvm,grid%avgflx_wwm, &
+              &   ids, ide, jds, jde, kds, kde,           &
+              &   ims, ime, jms, jme, kms, kme,           &
+              &   grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte, f_flux, &
+              &   grid%avgflx_cfu1,grid%avgflx_cfd1,grid%avgflx_dfu1, &
+              &   grid%avgflx_efu1,grid%avgflx_dfd1,grid%avgflx_efd1 )
+         call wrf_debug(200,'In start_em, after zero_avgflx call')
+      ENDDO
+   ENDIF
 
 #ifdef MCELIO
    grid%LU_MASK = 0.
@@ -769,24 +844,57 @@
                            its , ite , jts , jte , &
                            its , ite , jts , jte   )
 
-   IF ( start_of_simulation ) THEN
-   CALL set_w_surface(  config_flags, grid%znw,                         &
+! Set the w at the surface.  If this is the start of a forecast, or if this is a cycled run
+! and the start of that forecast, we define the w field.  However, if this a restart, then 
+! we leave w alone.  Initial value is V dot grad(topo) at surface, then smoothly decaying
+! above that.
+
+   IF ( ( start_of_simulation .OR. config_flags%cycling ) .AND. ( .NOT. config_flags%restart ) ) THEN
+   fill_w_flag = .true.
+   CALL set_w_surface(  config_flags, grid%znw, fill_w_flag,             &
                         grid%w_1, grid%ht, grid%u_1, grid%v_1, grid%cf1, &
                         grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
-                        ids, ide, jds, jde, kds, kde,                      &
-                        ips, ipe, jps, jpe, kps, kpe,                      &
-                        its, ite, jts, jte, kts, kte,                      &
-                        ims, ime, jms, jme, kms, kme                      )
-   CALL set_w_surface(  config_flags, grid%znw,                         &
+                        ids, ide, jds, jde, kds, kde,                    &
+                        ims, ime, jms, jme, kms, kme,                    &
+                        its, ite, jts, jte, kts, kte                     )
+   CALL set_w_surface(  config_flags, grid%znw, fill_w_flag,             &
                         grid%w_2, grid%ht, grid%u_2, grid%v_2, grid%cf1, &
                         grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
-                        ids, ide, jds, jde, kds, kde,                      &
-                        ips, ipe, jps, jpe, kps, kpe,                      &
-                        its, ite, jts, jte, kts, kte,                      &
-                        ims, ime, jms, jme, kms, kme                      )
-   END IF
+                        ids, ide, jds, jde, kds, kde,                    &
+                        ims, ime, jms, jme, kms, kme,                    &
+                        its, ite, jts, jte, kts, kte                     ) 
 
 ! finished setting kinematic condition for w at the surface
+
+! set up slope-radiation constant arrays based on topography
+       DO j = jts,min(jte,jde-1)
+       DO i = its, min(ite,ide-1)
+          im1 = max(i-1,ids)
+          ip1 = min(i+1,ide-1)
+          jm1 = max(j-1,jds)
+          jp1 = min(j+1,jde-1)
+          grid%toposlpx(i,j)=(grid%ht(ip1,j)-grid%ht(im1,j))*grid%msftx(i,j)*grid%rdx/(ip1-im1)
+          grid%toposlpy(i,j)=(grid%ht(i,jp1)-grid%ht(i,jm1))*grid%msfty(i,j)*grid%rdy/(jp1-jm1)
+             hx = grid%toposlpx(i,j)
+             hy = grid%toposlpy(i,j)
+             pi = 4.*atan(1.)
+             grid%slope(i,j) = atan((hx**2+hy**2)**.5)
+             if (grid%slope(i,j).lt.1.e-4) then
+               grid%slope(i,j) = 0.
+               grid%slp_azi(i,j) = 0.
+             else
+               grid%slp_azi(i,j) = atan2(hx,hy)+pi
+
+! Rotate slope azimuth to lat-lon grid
+               if (grid%cosa(i,j).ge.0) then
+                 grid%slp_azi(i,j) = grid%slp_azi(i,j) - asin(grid%sina(i,j))
+               else
+                 grid%slp_azi(i,j) = grid%slp_azi(i,j) - (pi - asin(grid%sina(i,j)))
+               endif
+             endif
+       ENDDO
+       ENDDO
+   END IF
 
    CALL set_physical_bc3d( grid%w_1 , 'W' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
@@ -922,6 +1030,15 @@
 
 
 #ifdef WRF_CHEM
+        if(config_flags%tracer_opt > 0 )then
+           call initialize_tracer (tracer,config_flags%chem_in_opt, &
+                               config_flags%tracer_opt,num_tracer,  &
+                               ids,ide, jds,jde, kds,kde,      & ! domain dims
+                               ims,ime, jms,jme, kms,kme,      & ! memory dims
+                               ips,ipe, jps,jpe, kps,kpe,      & ! patch  dims
+                               its,ite, jts,jte, kts,kte )
+
+        endif
 !
 !   we do this here, so we only have one chem_init routine for either core....
 !
@@ -1080,6 +1197,18 @@
 #  include "PERIOD_BDY_EM_SCALAR.inc"
 #  include "PERIOD_BDY_EM_CHEM.inc"
 #endif
+
+!  FIRE
+if(config_flags%ifire.eq.2)then
+
+   call sfire_driver_em_init ( grid , config_flags    &
+            ,ids,ide, kds,kde, jds,jde                &
+            ,ims,ime, kms,kme, jms,jme                &
+            ,ips,ipe, kps,kpe, jps,jpe ) 
+
+   CALL wrf_debug ( 100 , 'start_domain_em: After call to sfire_driver_em_init' )
+endif
+
 
      CALL wrf_debug ( 100 , 'start_domain_em: Returning' )
 

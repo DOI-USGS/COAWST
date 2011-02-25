@@ -1375,7 +1375,6 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
    advective_order = config_flags%h_sca_adv_order 
-!   advective_order = 2  !  original configuration (pre Oct 2001)
 
    itf=MIN(ite,ide-1)
    jtf=MIN(jte,jde-1)
@@ -1691,6 +1690,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    ELSE IF (advective_order <= 6) THEN
 
+!!! NOTE: this branch has been looked at and fixed with changes for overdecomposition
+!!!       the branches covering the other advective_order cases have not.  20090923. JM
+
 !  y (v) advection
 
    i_start = its
@@ -1737,7 +1739,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
 !  4th order stencil for open or specified conditions two in form the boundary
 
-   IF ( (config_flags%open_ys .or. specified) .and. jts <= jds+2 )  THEN
+   IF ( (config_flags%open_ys .or. specified) .and. jts <= jds+2 .and. jds+2 <= jte )  THEN
 
      j = jds+2
      DO k = 2, kte-1
@@ -1768,8 +1770,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    END IF
 
-   IF ( (config_flags%open_ye .or. specified) .and. jte >= jde-3 )  THEN
-
+   IF ( (config_flags%open_ye .or. specified) .and. jts <= jde-3 .and. jde-3 <= jte )  THEN
      j = jde-3
      DO k = 2, kte-1
      DO i = i_start, itf
@@ -1801,7 +1802,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
 !  2nd order stencil for open and specified conditions one row in from boundary
 
-   IF ( (config_flags%open_ys .or. specified) .and. jts <= jds+1 )  THEN
+   IF ( (config_flags%open_ys .or. specified) .and. jts <= jds+1 .and. jds+1 <= jte )  THEN
 
      j = jds+1
      DO k = 2, kte-1
@@ -1825,7 +1826,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    END IF
 
-   IF ( (config_flags%open_ye .or. specified) .and. jte >= jde-2 )  THEN
+   IF ( (config_flags%open_ye .or. specified) .and. jts <= jde-2 .and. jde-2 <= jte )  THEN
 
      j = jde-2
      DO k = 2, kte-1
@@ -1892,7 +1893,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
 !  4th order stencil two in from the boundary for open and specified conditions
 
-   IF ( (config_flags%open_xs) .and. its <= ids+2 ) THEN
+   IF ( (config_flags%open_xs) .and. its <= ids+2 .and. ids+2 <= ite ) THEN
      i = ids + 2
      DO j = j_start, jtf
        DO k = 2, kte-1
@@ -1916,7 +1917,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      ENDDO
    END IF
 
-   IF ( (config_flags%open_xe) .and. ite >= ide-3 ) THEN
+   IF ( (config_flags%open_xe) .and. its <= ide-3 .and. ide-3 <= ite ) THEN
      i = ide-3
      DO j = j_start, jtf
        DO k = 2, kte-1
@@ -1942,7 +1943,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
 !  2nd order stencil for open and specified conditions one in from the boundary
 
-   IF ( (config_flags%open_xs .or. specified) .and. its <= ids+1 ) THEN
+   IF ( (config_flags%open_xs .or. specified) .and. its <= ids+1 .and. ids+1 <= ite ) THEN
 
      i = ids + 1
 
@@ -1967,7 +1968,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    END IF
 
-   IF ( (config_flags%open_xe .or. specified) .and. ite >= ide-2 ) THEN
+   IF ( (config_flags%open_xe .or. specified) .and. its <= ide-2 .and. ide-2 <= ite ) THEN
 
      i = ide-2
      DO j = j_start, jtf
@@ -4546,10 +4547,11 @@ END SUBROUTINE pole_point_bc
    SUBROUTINE phy_prep ( config_flags,                                &  ! input
                          mu, muu, muv, u, v, p, pb, alt, ph,          &  ! input
                          phb, t, tsk, moist, n_moist,                 &  ! input
-                         mu_3d, rho, th_phy, p_phy , pi_phy ,         &  ! output
+                         rho, th_phy, p_phy , pi_phy ,                &  ! output
                          u_phy, v_phy, p8w, t_phy, t8w,               &  ! output
                          z, z_at_w, dz8w,                             &  ! output
-                         fzm, fzp,                                    &  ! params
+                         p_hyd, p_hyd_w,                              &  ! output
+                         fzm, fzp, znw, p_top,                        &  ! params
                          RTHRATEN,                                    &
                          RTHBLTEN, RUBLTEN, RVBLTEN,                  &
                          RQVBLTEN, RQCBLTEN, RQIBLTEN,                &
@@ -4586,11 +4588,16 @@ END SUBROUTINE pole_point_bc
                                                               t_phy, &
                                                              th_phy, &
                                                                 t8w, &
-                                                              mu_3d, &
                                                                 rho, &
                                                                   z, &
                                                                dz8w, &
                                                               z_at_w 
+
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) ,                 &
+          INTENT(  OUT)                                  ::   p_hyd, &
+                                                              p_hyd_w
+
+   REAL , INTENT(IN   )                                  ::   p_top
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) ,                 &
           INTENT(IN   )                                  ::      pb, &
@@ -4605,6 +4612,8 @@ END SUBROUTINE pole_point_bc
 
    REAL , DIMENSION( kms:kme ) ,           INTENT(IN   ) ::     fzm,   &
                                                                 fzp
+
+   REAL , DIMENSION( kms:kme ) ,           INTENT(IN   ) ::     znw
 
    REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
           INTENT(INOUT)   ::                               RTHRATEN  
@@ -4642,6 +4651,7 @@ END SUBROUTINE pole_point_bc
    INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, j_startv
    INTEGER :: i, j, k
    REAL    :: w1, w2, z0, z1, z2
+   REAL    :: e_vapor
 
 !-----------------------------------------------------------------------
 
@@ -4664,7 +4674,7 @@ END SUBROUTINE pole_point_bc
     k_start = kts
     k_end = min( kte, kde-1 )
 
-!  compute thermodynamics and velocities at pressure points
+!  compute thermodynamics and velocities at pressure points (or half levels)
 
     do j = j_start,j_end
     do k = k_start, k_end
@@ -4675,7 +4685,6 @@ END SUBROUTINE pole_point_bc
       pi_phy(i,k,j) = (p_phy(i,k,j)/p1000mb)**rcp
       t_phy(i,k,j) = th_phy(i,k,j)*pi_phy(i,k,j)
       rho(i,k,j) = 1./alt(i,k,j)*(1.+moist(i,k,j,P_QV))
-      mu_3d(i,k,j) = mu(i,j)
       u_phy(i,k,j) = 0.5*(u(i,k,j)+u(i+1,k,j))
       v_phy(i,k,j) = 0.5*(v(i,k,j)+v(i,k,j+1))
 
@@ -4707,7 +4716,7 @@ END SUBROUTINE pole_point_bc
     enddo
     enddo
 
-!  compute z at p points (average of z at w points)
+!  compute z at p points or half levels (average of z at full levels)
 
     do j = j_start,j_end
     do k = k_start, k_end
@@ -4717,7 +4726,7 @@ END SUBROUTINE pole_point_bc
     enddo
     enddo
 
-!  interp t and p at w points
+!  interp t and p to full levels
 
     do j = j_start,j_end
     do k = 2, k_end
@@ -4757,6 +4766,36 @@ END SUBROUTINE pole_point_bc
       p8w(i,kde,j) = exp(w1*log(p_phy(i,kde-1,j))+w2*log(p_phy(i,kde-2,j)))
       t8w(i,kde,j) = w1*t_phy(i,kde-1,j)+w2*t_phy(i,kde-2,j)
 
+    enddo
+    enddo
+
+! calculate hydrostatic pressure at both full and half levels
+! first, full level p: assuming dry over model top
+
+    do j = j_start,j_end
+    do i = i_start, i_end
+       p_hyd_w(i,kte,j) = p_top
+    enddo
+    enddo
+
+    e_vapor = 0.
+    do j = j_start,j_end
+    do k = kte-1, k_start, -1
+    do i = i_start, i_end
+!      e_vapor = 1./alt(i,k,j)*moist(i,k,j,P_QV)*g*dz8w(i,k,j) 
+!      p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j)+e_vapor
+       p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j)+1./alt(i,k,j)*(1.+moist(i,k,j,P_QV))*g*dz8w(i,k,j)
+    enddo
+    enddo
+    enddo
+
+! now calculate hydrostatic pressure at half levels
+
+    do j = j_start,j_end
+    do k = k_start, k_end
+    do i = i_start, i_end
+       p_hyd(i,k,j) = 0.5*(p_hyd_w(i,k,j)+p_hyd_w(i,k+1,j))
+    enddo
     enddo
     enddo
 
@@ -5132,6 +5171,9 @@ END SUBROUTINE phy_prep
    SUBROUTINE moist_physics_finish_em( t_new, t_old, t0, mut,     &
                                        th_phy, h_diabatic, dt,    &
                                        config_flags,              &
+#if ( WRF_DFI_RADAR == 1 )
+                                       dfi_tten_rad,dfi_stage,    &
+#endif
                                        ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
                                        its,ite, jts,jte, kts,kte )
@@ -5152,6 +5194,14 @@ END SUBROUTINE phy_prep
                                                   t_old, &
                                                  th_phy, &
                                                   h_diabatic
+#if ( WRF_DFI_RADAR == 1 )
+   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &
+         INTENT(IN), OPTIONAL ::               dfi_tten_rad
+   INTEGER,      INTENT(IN   ) ,OPTIONAL   :: dfi_stage
+   REAL :: dfi_tten_max, old_max
+#endif
+
+   REAL mpten, mptenmax, mptenmin
 
    REAL, DIMENSION( ims:ime , jms:jme ),  INTENT(INOUT) ::  mut
 
@@ -5159,7 +5209,7 @@ END SUBROUTINE phy_prep
    REAL, INTENT(IN   ) :: t0, dt
 
    INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end
-   INTEGER :: i, j, k
+   INTEGER :: i, j, k, imax, jmax, imin, jmin
 
 !--------------------------------------------------------------------
 
@@ -5177,18 +5227,67 @@ END SUBROUTINE phy_prep
     i_end   = min( ite,ide-1 )
     j_start = jts    
     j_end   = min( jte,jde-1 )
+!      i_start=max(its,ids+4)
+!      i_end=min(ite,ide-5)
+!      j_start=max(jts,jds+4)
+!      j_end=min(jte,jde-5)
 
     k_start = kts
     k_end = min( kte, kde-1 )
 
+#if ( WRF_DFI_RADAR == 1 )
+         if ( PRESENT(dfi_stage) .and.  dfi_stage ==DFI_FWD            &
+             .and. PRESENT(dfi_tten_rad) ) then
+             WRITE(wrf_err_message,*)'Add radar tendency: i_start,j_start: ', i_start, j_start
+             CALL wrf_debug ( 50 , TRIM(wrf_err_message) )
+         endif
+     dfi_tten_max=-999
+     old_max=-999
+#endif
+
 !  add microphysics theta diff to perturbation theta, set h_diabatic
 
      IF ( config_flags%no_mp_heating .eq. 0 ) THEN
+       mptenmax = 0.
+       mptenmin = 999.
      DO j = j_start, j_end
      DO k = k_start, k_end
      DO i = i_start, i_end
-         t_new(i,k,j) = t_new(i,k,j) + (th_phy(i,k,j)-h_diabatic(i,k,j))
-         h_diabatic(i,k,j) = (th_phy(i,k,j)-h_diabatic(i,k,j))/dt
+          mpten = th_phy(i,k,j)-h_diabatic(i,k,j)
+#if ( WRF_DFI_RADAR == 1 )
+       if(mpten.gt.mptenmax) then
+          mptenmax=mpten
+          imax=i
+          jmax=j
+       endif
+       if(mpten.lt.mptenmin) then
+          mptenmin=mpten
+          imin=i
+          jmin=j
+       endif
+          mpten=min(config_flags%mp_tend_lim*dt, mpten)
+          mpten=max(-config_flags%mp_tend_lim*dt, mpten)
+
+       if(k < k_end ) then
+         if(dfi_tten_max < dfi_tten_rad(i,k,j) ) dfi_tten_max = dfi_tten_rad(i,k,j)
+         if(old_max < (th_phy(i,k,j)-h_diabatic(i,k,j)) ) old_max=th_phy(i,k,j)-h_diabatic(i,k,j)
+       endif
+
+       if ( PRESENT(dfi_stage) .and.                                   &
+          dfi_stage == DFI_FWD .and. PRESENT(dfi_tten_rad) .and.       &
+          dfi_tten_rad(i,k,j) >= -0.1 .and. dfi_tten_rad(i,k,j) <= 0.1 &
+          .and. k < k_end ) then
+! add radar temp tendency
+! there is radar coverage
+           t_new(i,k,j) = t_new(i,k,j) + (dfi_tten_rad(i,k,j))*dt
+       else
+! no radar coverage
+           t_new(i,k,j) = t_new(i,k,j) + mpten
+       endif
+#else
+         t_new(i,k,j) = t_new(i,k,j) + mpten
+#endif
+         h_diabatic(i,k,j) =  mpten/dt
      ENDDO
      ENDDO
      ENDDO

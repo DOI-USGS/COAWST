@@ -1,10 +1,10 @@
 MODULE module_optional_input
 
    INTEGER :: flag_metgrid  , flag_tavgsfc  , flag_psfc     , flag_soilhgt  , flag_mf_xy , flag_slp , &
-              flag_snow     , flag_snowh    , flag_tsk
+              flag_snow     , flag_snowh    , flag_tsk      , flag_pinterp
 
    INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , &
-              flag_qg       , flag_qni
+              flag_qg       , flag_qni      , flag_sh
 
    INTEGER :: flag_soil_levels, flag_soil_layers
 
@@ -20,6 +20,8 @@ MODULE module_optional_input
               flag_soilw000 , flag_soilw005 , flag_soilw020 , flag_soilw040 , flag_soilw160 , flag_soilw300
 
    INTEGER :: flag_sst      , flag_toposoil
+
+   INTEGER :: flag_icedepth , flag_icefrac
 
    INTEGER                  :: num_soil_levels_input
    INTEGER                  :: num_st_levels_input , num_sm_levels_input , num_sw_levels_input
@@ -37,8 +39,8 @@ CONTAINS
 
    SUBROUTINE init_module_optional_input ( grid , config_flags ) 
 
-      USE module_domain
-      USE module_configure
+      USE module_domain	, ONLY : domain
+      USE module_configure , ONLY : grid_config_rec_type
 
       IMPLICIT NONE 
 
@@ -102,8 +104,8 @@ CONTAINS
    SUBROUTINE optional_input ( grid , fid, config_flags )
 
       USE module_io_domain
-      USE module_configure      
-      USE module_domain
+      USE module_configure       , ONLY : grid_config_rec_type
+      USE module_domain	, ONLY : domain
 
       IMPLICIT NONE 
 
@@ -182,6 +184,11 @@ CONTAINS
                                  ims, ime, jms, jme, kms, kme, &
                                  its, ite, jts, jte, kts, kte  )
 
+      CALL optional_ice        ( grid , fid , &
+                                 ids, ide, jds, jde, kds, kde, &
+                                 ims, ime, jms, jme, kms, kme, &
+                                 its, ite, jts, jte, kts, kte  )
+
       flag_soil_levels = 0 
       flag_soil_layers = 0 
 
@@ -222,8 +229,7 @@ CONTAINS
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 2 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 3 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 7 ) .OR. &
-            ( model_config_rec%sf_surface_physics(grid%id) .EQ. 88 ).OR. &
-            ( model_config_rec%sf_surface_physics(grid%id) .EQ. 99 ) ) THEN
+            ( model_config_rec%sf_surface_physics(grid%id) .EQ. 88 ) ) THEN
    
          CALL optional_lsm_levels ( grid , fid , &
                                     ids, ide, jds, jde, kds, kde, &
@@ -241,9 +247,9 @@ CONTAINS
                                its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
+      USE module_domain	, ONLY : domain
 
-USE module_configure
+USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
       IMPLICIT NONE 
@@ -264,6 +270,7 @@ USE module_io_domain
       flag_qs       = 0
       flag_qg       = 0
       flag_qni      = 0
+      flag_sh       = 0
 
       flag_name(1:8) = 'QV      '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
@@ -300,6 +307,11 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_qni       = itmp
       END IF
+      flag_name(1:8) = 'SH      '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_sh       = itmp
+      END IF
     
    END SUBROUTINE optional_moist
 
@@ -311,8 +323,8 @@ USE module_io_domain
                                  its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
-USE module_configure
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
       IMPLICIT NONE 
@@ -332,6 +344,14 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
          flag_metgrid  = itmp
+      END IF
+
+      flag_pinterp = 0
+
+      flag_name(1:8) = 'P_INTERP'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_pinterp  = itmp
       END IF
 
       flag_mf_xy = 0 
@@ -354,8 +374,8 @@ USE module_io_domain
                              its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
-USE module_configure
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
       IMPLICIT NONE 
@@ -387,8 +407,8 @@ USE module_io_domain
                                  its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
-USE module_configure
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
       IMPLICIT NONE 
@@ -420,8 +440,8 @@ USE module_io_domain
                                  its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
-USE module_configure
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
       IMPLICIT NONE 
@@ -453,8 +473,8 @@ USE module_io_domain
                                its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
-USE module_configure
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
       IMPLICIT NONE 
@@ -495,8 +515,8 @@ USE module_io_domain
                              its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
-USE module_configure
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
       IMPLICIT NONE 
@@ -546,14 +566,54 @@ USE module_io_domain
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+   SUBROUTINE optional_ice ( grid , fid , &
+                             ids, ide, jds, jde, kds, kde, &
+                             ims, ime, jms, jme, kms, kme, &
+                             its, ite, jts, jte, kts, kte  )
+
+      USE module_io_wrf
+      USE module_domain	, ONLY : domain
+      USE module_configure , ONLY : grid_config_rec_type
+      USE module_io_domain
+
+      IMPLICIT NONE 
+
+      TYPE ( domain ) :: grid
+      INTEGER , INTENT(IN) :: fid
+
+      INTEGER :: ids, ide, jds, jde, kds, kde, &
+                 ims, ime, jms, jme, kms, kme, &
+                 its, ite, jts, jte, kts, kte
+
+      INTEGER :: itmp , icnt , ierr
+
+      flag_icedepth = 0 
+      flag_icefrac  = 0 
+
+      flag_name(1:8) = 'ICEDEPTH'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_icedepth = itmp
+      END IF
+
+      flag_name(1:8) = 'ICEFRAC '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_icefrac  = itmp
+      END IF
+    
+   END SUBROUTINE optional_ice
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
    SUBROUTINE optional_lsm_levels ( grid , fid , &
                                     ids, ide, jds, jde, kds, kde, &
                                     ims, ime, jms, jme, kms, kme, &
                                     its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
-      USE module_configure
+      USE module_domain	, ONLY : domain
+      !USE module_configure , ONLY : grid_config_rec_type
       USE module_io_domain
 
       IMPLICIT NONE 

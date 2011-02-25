@@ -10,6 +10,7 @@ CONTAINS
   SUBROUTINE first_rk_step_part1 (   grid , config_flags              &
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
+                             , tracer, tracer_tend              &
                              , scalar , scalar_tend             &
                              , fdda3d, fdda2d                   &
                              , ru_tendf, rv_tendf               &
@@ -21,7 +22,6 @@ CONTAINS
                              , cu_act_flag , hol , th_phy        &
                              , pi_phy , p_phy , t_phy , u_phy , v_phy     &
                              , dz8w , p8w , t8w , rho_phy , rho           &
-                             , mu_3d                            &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -30,6 +30,7 @@ CONTAINS
                              , imsy,imey,jmsy,jmey,kmsy,kmey    &
                              , ipsy,ipey,jpsy,jpey,kpsy,kpey    &
                              , k_start , k_end                  &
+                             , f_flux                           &
                             )
     USE module_state_description
     USE module_model_constants
@@ -39,20 +40,16 @@ CONTAINS
     USE module_surface_driver, ONLY : surface_driver
     USE module_cumulus_driver, ONLY : cumulus_driver
     USE module_pbl_driver, ONLY : pbl_driver
-    USE module_fr_sfire_driver, ONLY : sfire_driver_em
+    USE module_fr_sfire_driver, ONLY : sfire_driver_em_step
     USE module_fddagd_driver, ONLY : fddagd_driver
     USE module_em, ONLY : init_zero_tendency
     USE module_force_scm
     USE module_big_step_utilities_em, ONLY : phy_prep
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
-#else
-    USE module_dm
+    USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub
 #endif
-    USE module_comm_dm
     USE module_utility
-! jm debug
-    USE module_fr_sfire_util
     IMPLICIT NONE
 
     TYPE ( domain ), INTENT(INOUT) :: grid
@@ -75,6 +72,8 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_moist),INTENT(INOUT)   :: moist_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_chem),INTENT(INOUT)   :: chem
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_chem),INTENT(INOUT)   :: chem_tend
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_fdda3d),INTENT(INOUT)  :: fdda3d
@@ -99,7 +98,6 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t8w
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: mu_3d
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: ru_tendf
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rv_tendf
@@ -110,17 +108,18 @@ CONTAINS
 
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: mu_tendf
 
-    INTEGER , INTENT(IN)                          ::  k_start, k_end
+    INTEGER, INTENT(IN)                           ::  k_start, k_end
+    LOGICAL, INTENT(IN), OPTIONAL                 ::  f_flux
 
 ! Local
 
     REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc, mixht
-    INTEGER, DIMENSION( ims:ime, jms:jme ) :: shadowmask
     INTEGER                             :: ij
     INTEGER  num_roof_layers
     INTEGER  num_wall_layers
     INTEGER  num_road_layers
     INTEGER  iswater
+    LOGICAL  :: l_flux
     INTEGER  :: isurban
     INTEGER  rk_step
     INTEGER                         :: yr, month, day, hr, minute, sec, rc
@@ -132,6 +131,10 @@ CONTAINS
 
    CHARACTER (LEN=256) :: mminlu
 
+#if ( WRF_DFI_RADAR == 1 )
+    INTEGER  do_capsupress   ! =1 do CAP supress, other = don't
+#endif
+
   CALL get_ijk_from_subgrid (  grid ,                   &
                             sids, side, sjds, sjde, skds, skde,    &
                             sims, sime, sjms, sjme, skms, skme,    &
@@ -139,6 +142,9 @@ CONTAINS
 
  ! initialize all tendencies to zero in order to update physics
  ! tendencies first (separate from dry dynamics).
+
+   l_flux=.FALSE.
+   if (present(f_flux)) l_flux=f_flux
 
     rk_step = 1
 
@@ -153,7 +159,8 @@ BENCH_START(init_zero_tend_tim)
                                    ph_tendf, t_tendf, tke_tend,      &
                                    mu_tendf,                         &
                                    moist_tend,chem_tend,scalar_tend, &
-                                   num_moist,num_chem,num_scalar,       &
+                                   tracer_tend,num_tracer,           &
+                                   num_moist,num_chem,num_scalar,    &
                                    rk_step,                          &
                                    ids, ide, jds, jde, kds, kde,     &
                                    ims, ime, jms, jme, kms, kme,     &
@@ -178,11 +185,11 @@ BENCH_END(init_zero_tend_tim)
                         grid%mut, grid%muu, grid%muv, grid%u_2, &
                         grid%v_2, grid%p, grid%pb, grid%alt,              &
                         grid%ph_2, grid%phb, grid%t_2, grid%tsk, moist, num_moist,   &
-                        mu_3d, rho,                             &
-                        th_phy, p_phy, pi_phy, u_phy, v_phy,    &
-                        p8w, t_phy, t8w, grid%z, grid%z_at_w,             &
-                        dz8w, grid%fnm, grid%fnp,                         &
-                        grid%rthraten,                               &
+                        rho,th_phy, p_phy, pi_phy, u_phy, v_phy,    &
+                        p8w, t_phy, t8w, grid%z, grid%z_at_w, dz8w, &
+                        grid%p_hyd, grid%p_hyd_w,                   &
+                        grid%fnm, grid%fnp, grid%znw, grid%p_top,   &
+                        grid%rthraten,                          &
                         grid%rthblten, grid%rublten, grid%rvblten,             &
                         grid%rqvblten, grid%rqcblten, grid%rqiblten,           &
                         grid%rthcuten, grid%rqvcuten, grid%rqccuten,           &
@@ -215,7 +222,7 @@ BENCH_END(phy_prep_tim)
      &        ,julian=grid%julian, xtime=grid%xtime, RADT=grid%radt            &
      &        ,STEPRA=grid%stepra                                              &
      &        ,ht=grid%ht,dx=grid%dx,dy=grid%dy,sina=grid%sina,cosa=grid%cosa  &
-     &        ,shadowmask=shadowmask,slope_rad=config_flags%slope_rad          &
+     &        ,shadowmask=grid%shadowmask,slope_rad=config_flags%slope_rad     &
      &        ,topo_shading=config_flags%topo_shading                          &
      &        ,shadlen=config_flags%shadlen,ht_shad=grid%ht_shad,ht_loc=ht_loc &
      &        ,ht_shad_bxs=grid%ht_shad_bxs, ht_shad_bxe=grid%ht_shad_bxe      &
@@ -245,7 +252,7 @@ BENCH_START(rad_driver_tim)
      &        ,ITIMESTEP=grid%itimestep,JULDAY=grid%julday      , JULIAN=grid%julian &
      &        ,JULYR=grid%julyr        ,LW_PHYSICS=config_flags%ra_lw_physics        &
      &        ,NCFRCV=grid%ncfrcv      ,NCFRST=grid%ncfrst      ,NPHS=1              &
-     &        ,P8W=p8w                 ,P=p_phy                 ,PI=pi_phy           &
+     &        ,P8W=grid%p_hyd_w        ,P=grid%p_hyd            ,PI=pi_phy           &
      &        ,RADT=grid%radt          ,RA_CALL_OFFSET=grid%ra_call_offset           &
      &        ,RHO=rho                 ,RLWTOA=grid%rlwtoa                           &
      &        ,RSWTOA=grid%rswtoa      ,RTHRATEN=grid%rthraten                       &
@@ -256,9 +263,8 @@ BENCH_START(rad_driver_tim)
      &        ,TAUCLDI=grid%taucldi    ,TSK=grid%tsk            ,VEGFRA=grid%vegfra  &
      &        ,WARM_RAIN=grid%warm_rain ,XICE=grid%xice         ,XLAND=grid%xland    &
      &        ,XLAT=grid%xlat          ,XLONG=grid%xlong        ,YR=yr               &
-!Optional urban
-     &        ,DECLIN_URB=grid%declin_urb        ,COSZ_URB2D=grid%cosz_urb2d   &
-     &        ,OMG_URB2D=grid%omg_urb2d                                        &
+!Optional solar variables
+     &        ,DECLINX=grid%declin ,SOLCONX=grid%solcon ,COSZEN=grid%coszen ,HRANG=grid%hrang    &
 !
      &        ,Z=grid%z                                                   &
      &        ,LEVSIZ=grid%levsiz, N_OZMIXM=num_ozmixm                    &
@@ -321,7 +327,7 @@ BENCH_START(rad_driver_tim)
      &        ,WAER300=grid%waer1, WAER400=grid%waer2, WAER600=grid%waer3, WAER999=grid%waer4 & ! jcb
 #endif
      &         ,slope_rad=config_flags%slope_rad,topo_shading=config_flags%topo_shading     &
-     &         ,shadowmask=shadowmask,ht=grid%ht,dx=grid%dx,dy=grid%dy,sina=grid%sina,cosa=grid%cosa    )
+     &         ,shadowmask=grid%shadowmask,ht=grid%ht,dx=grid%dx,dy=grid%dy    )
 
 BENCH_END(rad_driver_tim)
 
@@ -357,13 +363,14 @@ BENCH_START(surf_driver_tim)
 #endif
      &        ,HT=grid%ht              ,IFSNOW=config_flags%ifsnow      ,ISFFLX=config_flags%isfflx      &
      &        ,FRACTIONAL_SEAICE=config_flags%fractional_seaice           &
+     &        ,TICE2TSK_IF2COLD=config_flags%tice2tsk_if2cold             &
      &        ,ISLTYP=grid%isltyp      ,ITIMESTEP=grid%itimestep, JULIAN_IN=grid%julian                  &
      &        ,IVGTYP=grid%ivgtyp      ,LH=grid%lh              ,LOWLYR=grid%lowlyr      &
      &        ,MAVAIL=grid%mavail      ,NUM_SOIL_LAYERS=config_flags%num_soil_layers        &
-     &        ,P8W=p8w            ,PBLH=grid%pblh          ,PI_PHY=pi_phy      &
+     &        ,P8W=grid%p_hyd_w            ,PBLH=grid%pblh          ,PI_PHY=pi_phy      &
      &        ,PSFC=grid%psfc          ,PSHLTR=grid%pshltr      ,PSIH=psih          &
      &        ,BLDT=grid%bldt     ,CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag  &
-     &        ,PSIM=psim          ,P_PHY=p_phy        ,Q10=grid%q10            &
+     &        ,PSIM=psim          ,P_PHY=grid%p_hyd        ,Q10=grid%q10            &
      &        ,Q2=grid%q2              ,QFX=grid%qfx            ,QSFC=grid%qsfc          &
      &        ,QSHLTR=grid%qshltr      ,QZ0=grid%qz0            ,RAINCV=grid%raincv      &
      &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics            ,RHO=rho            &
@@ -374,6 +381,7 @@ BENCH_START(surf_driver_tim)
      &        ,SHDMAX=grid%shdmax      ,SHDMIN=grid%shdmin      ,SMOIS=grid%smois        &
      &        ,SMSTAV=grid%smstav      ,SMSTOT=grid%smstot      ,SNOALB=grid%snoalb      &
      &        ,SNOW=grid%snow          ,SNOWC=grid%snowc        ,SNOWH=grid%snowh        &
+     &        ,SMCREL=grid%smcrel                                                        &
      &        ,SST=grid%sst            ,SST_UPDATE=grid%sst_update                  &
      &        ,SSTSK=grid%sstsk        ,DTW=grid%dtw            ,SST_SKIN=grid%sst_skin  &
      &        ,STEPBL=grid%stepbl      ,TH10=grid%th10          ,TH2=grid%th2            &
@@ -393,12 +401,15 @@ BENCH_START(surf_driver_tim)
      &        ,ZS=grid%zs              ,XICEM=grid%xicem   ,ISICE=grid%landuse_isice&
      &        ,USTM=grid%ustm          ,CK=grid%ck         ,CKA=grid%cka            &
      &                                 ,CD=grid%cd         ,CDA=grid%cda            &
-     &        ,ISFTCFLX=config_flags%isftcflx                                       &
+     &        ,ISFTCFLX=config_flags%isftcflx, IZ0TLND=config_flags%iz0tlnd         &
      &        ,OMLCALL=config_flags%omlcall ,OML_HML0=config_flags%oml_hml0 ,OML_GAMMA=config_flags%oml_gamma &
      &        ,TML=grid%tml, T0ML=grid%t0ml, HML=grid%hml, H0ML=grid%h0ml, HUML=grid%huml, HVML=grid%hvml, F=grid%f &
-     &        ,ISWATER=iswater &
-     &        ,DECLIN_URB=grid%declin_urb  ,COSZ_URB2D=grid%cosz_urb2d    & !I urban
-     &        ,OMG_URB2D=grid%omg_urb2d    ,xlat_urb2d=grid%XLAT          & !I urban
+     &        ,TMOML=grid%TMOML,ISWATER=iswater &
+     &        ,SLOPE_RAD=config_flags%slope_rad,TOPO_SHADING=config_flags%topo_shading & ! solar
+     &        ,SHADOWMASK=grid%shadowmask                                              & ! solar
+     &        ,SLOPE=grid%slope, SLP_AZI=grid%slp_azi, SWNORM=grid%swnorm              & ! solar
+     &        ,DECLIN=grid%declin ,SOLCON=grid%solcon ,COSZEN=grid%coszen ,HRANG=grid%hrang    &
+     &        ,xlat_urb2d=grid%XLAT                                       & !I urban
      &        ,NUM_ROOF_LAYERS=num_roof_layers                            & !I urban
      &        ,NUM_WALL_LAYERS=num_wall_layers                            & !I urban
      &        ,NUM_ROAD_LAYERS=num_road_layers                            &
@@ -421,8 +432,21 @@ BENCH_START(surf_driver_tim)
          ! Optional urban for BEP scheme
      &        ,SF_URBAN_PHYSICS=config_flags%sf_urban_physics             &
      &        ,NUM_URBAN_LAYERS=config_flags%num_urban_layers             & !multi-layer urban
-     &        ,TRB_URB4D=grid%trb_urb4d,TW1_URB4D=grid%tw1_urb4d        & !multi-layer urban
-     &        ,TW2_URB4D=grid%tw2_urb4d,TGB_URB4D=grid%tgb_urb4d        & !multi-layer urban
+     &        ,TRB_URB4D=grid%trb_urb4d,TW1_URB4D=grid%tw1_urb4d          & !multi-layer urban
+     &        ,TW2_URB4D=grid%tw2_urb4d,TGB_URB4D=grid%tgb_urb4d          & !multi-layer urban
+     &        ,TLEV_URB3D=grid%tlev_urb3d                               & !multi-layer urban
+     &        ,QLEV_URB3D=grid%qlev_urb3d                               & !multi-layer urban
+     &        ,TW1LEV_URB3D=grid%tw1lev_urb3d                           & !multi-layer urban
+     &        ,TW2LEV_URB3D=grid%tw2lev_urb3d                           & !multi-layer urban
+     &        ,TGLEV_URB3D=grid%tglev_urb3d                             & !multi-layer urban
+     &        ,TFLEV_URB3D=grid%tflev_urb3d                             & !multi-layer urban
+     &        ,SF_AC_URB3D=grid%sf_ac_urb3d                             & !multi-layer urban
+     &        ,LF_AC_URB3D=grid%lf_ac_urb3d                             & !multi-layer urban
+     &        ,CM_AC_URB3D=grid%cm_ac_urb3d                             & !multi-layer urban
+     &        ,SFVENT_URB3D=grid%sfvent_urb3d                           & !multi-layer urban
+     &        ,LFVENT_URB3D=grid%lfvent_urb3d                           & !multi-layer urban
+     &        ,SFWIN1_URB3D=grid%sfwin1_urb3d                           & !multi-layer urban
+     &        ,SFWIN2_URB3D=grid%sfwin2_urb3d                           & !multi-layer urban
      &        ,SFW1_URB3D=grid%sfw1_urb3d,SFW2_URB3D=grid%sfw2_urb3d      & !multi-layer urban
      &        ,SFR_URB3D=grid%sfr_urb3d,SFG_URB3D=grid%sfg_urb3d          & !multi-layer urban
      &        ,GMT=grid%gmt,XLAT=grid%xlat,XLONG=grid%xlong,JULDAY=grid%julday  &
@@ -433,15 +457,17 @@ BENCH_START(surf_driver_tim)
      &        ,SF_BEP=grid%sf_bep,VL_BEP=grid%vl_bep                            &
      &        ,A_E_BEP=grid%a_e_bep,B_E_BEP=grid%b_e_bep,DLG_BEP=grid%dlg_bep   &
      &        ,DL_U_BEP=grid%dl_u_bep                                           &
+     &        ,CMR_SFCDIF=grid%cmr_sfcdif, CHR_SFCDIF=grid%chr_sfcdif     & !I/O urban
+     &        ,CMC_SFCDIF=grid%cmc_sfcdif, CHC_SFCDIF=grid%chc_sfcdif     & !I/O urban
            ! P-X LSM Variables
      &        ,LANDUSEF=grid%landusef, SOILCTOP=grid%soilctop             &   ! P-X LSM
      &        ,SOILCBOT=grid%soilcbot                                     &   ! P-X LSM
      &        ,RA=grid%ra, RS=grid%rs, LAI=grid%lai                       &   ! P-X LSM
      &        ,NLCAT=grid%num_land_cat,  NSCAT=grid%num_soil_cat          &   ! P-X LSM
      &        ,VEGF_PX=grid%vegf_px, SNOWNCV=grid%snowncv                 &   ! P-X LSM
-     &        ,ANAL_INTERVAL=config_flags%sgfdda_interval_s               &   ! P-X LSM
+     &        ,ANAL_INTERVAL=config_flags%auxinput9_interval_s+config_flags%auxinput9_interval_m*60  &   ! P-X LSM
      &        ,PXLSM_SMOIS_INIT=config_flags%pxlsm_smois_init             &   ! P-X LSM
-     &        ,PXLSM_SOIL_NUDGE=config_flags%grid_sfdda                   &   ! P-X LSM
+     &        ,PXLSM_SOIL_NUDGE=config_flags%pxlsm_soil_nudge             &   ! P-X LSM
            ! Optional PX LSM nudging
      &        ,t2_ndg_old=grid%t2_ndg_old                  &
      &        ,q2_ndg_old=grid%q2_ndg_old                  &
@@ -463,16 +489,16 @@ BENCH_START(surf_driver_tim)
      &        ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI                 &
      &        ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS                 &
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
-     &        ,CAPG=grid%capg, EMISS=grid%emiss, HOL=hol,MOL=grid%mol                    &
+     &        ,CAPG=grid%capg, EMISS=grid%emiss, HOL=hol,MOL=grid%mol     &
      &        ,T2OBS=grid%t2obs, Q2OBS=grid%q2obs                         &
      &        ,RAINBL=grid%rainbl,SR=grid%sr                                              &
-     &        ,RAINNCV=grid%rainncv,REGIME=grid%regime,T2=grid%t2,THC=grid%thc                &
-     &        ,QSG=grid%qsg,QVG=grid%qvg,QCG=grid%qcg,SOILT1=grid%soilt1,TSNAV=grid%tsnav          & ! ruc lsm
-     &        ,SMFR3D=grid%smfr3d,KEEPFR3DFLAG=grid%keepfr3dflag                    & ! ruc lsm
-     &        ,POTEVP=grid%POTEVP, SNOPCX=grid%SNOPCX, SOILTB=grid%SOILTB                & ! ruc lsm
+     &        ,RAINNCV=grid%rainncv,REGIME=grid%regime,T2=grid%t2,THC=grid%thc            &
+     &        ,QSG=grid%qsg,QVG=grid%qvg,QCG=grid%qcg,SOILT1=grid%soilt1,TSNAV=grid%tsnav & ! ruc lsm
+     &        ,SMFR3D=grid%smfr3d,KEEPFR3DFLAG=grid%keepfr3dflag,DEW=grid%dew             & ! ruc lsm
+     &        ,POTEVP=grid%POTEVP, SNOPCX=grid%SNOPCX, SOILTB=grid%SOILTB                 & ! ruc lsm
      &        ,ISURBAN=isurban, MMINLU=TRIM(mminlu)                       &
-     &        ,SNOTIME = grid%SNOTIME &
-     &        ,RDLAI2D=config_flags%rdlai2d                                   &
+     &        ,SNOTIME = grid%SNOTIME                                     &
+     &        ,RDLAI2D=config_flags%rdlai2d                               &
      &        ,usemonalb=config_flags%usemonalb                           &
      &        ,NOAHRES=grid%noahres                                       &
 !mynn mp@
@@ -495,9 +521,9 @@ BENCH_START(pbl_driver_tim)
      &        ,F=grid%f  ,GRDFLX=grid%grdflx      &
      &        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx            ,HT=grid%ht              &
      &        ,ITIMESTEP=grid%itimestep                    ,KPBL=grid%kpbl          &
-     &        ,LH=grid%lh              ,LOWLYR=grid%lowlyr      ,P8W=p8w            &
+     &        ,LH=grid%lh              ,LOWLYR=grid%lowlyr      ,P8W=grid%p_hyd_w   &
      &        ,PBLH=grid%pblh          ,PI_PHY=pi_phy      ,PSIH=psih          &
-     &        ,PSIM=psim          ,P_PHY=p_phy        ,QFX=grid%qfx            &
+     &        ,PSIM=psim          ,P_PHY=grid%p_hyd        ,QFX=grid%qfx            &
      &        ,QSFC=grid%qsfc          ,QZ0=grid%qz0  ,MIXHT=mixht                  &
      &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics                   &
      &        ,RHO=rho            ,RQCBLTEN=grid%rqcblten  ,RQIBLTEN=grid%rqiblten  &
@@ -565,13 +591,17 @@ BENCH_END(pbl_driver_tim)
 
 BENCH_START(fire_driver_tim)
         if(config_flags%ifire.eq.2)then 
-            call sfire_driver_em ( grid , config_flags    &
+            ! initialization moved to start_em:start_domain_em
+!            if(grid%initestep.eq.1) &
+!            call sfire_driver_em_init (  grid , config_flags    &
+!            ,ids,ide, kds,kde, jds,jde                              &
+!            ,ims,ime, kms,kme, jms,jme                              &
+!            ,ips,ipe, kps,kpe, jps,jpe  )
+            ! one timestep of the fire model
+            call sfire_driver_em_step (  grid , config_flags    &
             ,ids,ide, kds,kde, jds,jde                              &
             ,ims,ime, kms,kme, jms,jme                              &
             ,ips,ipe, kps,kpe, jps,jpe                              &
-            ,sids,side, sjds,sjde                        &
-            ,sims,sime, sjms,sjme                        &
-            ,sips,sipe, sjps,sjpe                        &
             ,rho,grid%z_at_w,dz8w)
         endif
 
@@ -583,19 +613,26 @@ BENCH_END(fire_driver_tim)
 
       CALL wrf_debug ( 200 , ' call cumulus_driver' )
 
+#if ( WRF_DFI_RADAR == 1 )
+      do_capsupress=0
+      if (config_flags%dfi_radar == 1) then
+         if(grid%dfi_stage == DFI_FWD ) do_capsupress=1
+         if(grid%itimestep <= 31 .and. grid%dfi_stage == DFI_FST ) do_capsupress=1
+      endif
+#endif
 
 BENCH_START(cu_driver_tim)
       CALL cumulus_driver(grid                                             &
                  ! Prognostic variables
      &             ,U=u_phy   ,V=v_phy   ,TH=th_phy  ,T=t_phy             &
-     &             ,W=grid%w_2     ,P=p_phy   ,PI=pi_phy  ,RHO=rho             &
+     &             ,W=grid%w_2     ,P=grid%p_hyd   ,PI=pi_phy  ,RHO=rho             &
                  ! Other arguments
      &             ,ITIMESTEP=grid%itimestep ,DT=grid%dt      ,DX=grid%dx                &
      &             ,CUDT=grid%cudt,CURR_SECS=curr_secs,ADAPT_STEP_FLAG=adapt_step_flag &
      &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,PRATEC=grid%pratec         &
      &             , NCA=grid%nca                                         &
      &             ,HTOP=grid%cutop     ,HBOT=grid%cubot       ,KPBL=grid%kpbl             &
-     &             ,DZ8W=dz8w     ,P8W=p8w                                &
+     &             ,DZ8W=dz8w     ,P8W=grid%p_hyd_w                                &
      &             ,W0AVG=grid%w0avg   ,STEPCU=grid%stepcu                          &
      &             ,CLDEFI=grid%cldefi ,LOWLYR=grid%lowlyr ,XLAND=grid%xland             &
      &             ,APR_GR=grid%apr_gr ,APR_W=grid%apr_w   ,APR_MC=grid%apr_mc           &
@@ -604,12 +641,15 @@ BENCH_START(cu_driver_tim)
      &             ,MASS_FLUX=grid%mass_flux          ,XF_ENS=grid%xf_ens           &
      &             ,PR_ENS=grid%pr_ens ,HT=grid%ht,EDT_OUT=grid%edt_out             &
      &             ,imomentum=grid%imomentum,clos_choice=grid%clos_choice       &
+     &             ,ishallow=config_flags%ishallow                                  &
      &             ,cugd_tten=grid%cugd_tten,cugd_qvten=grid%cugd_qvten,cugd_qcten=grid%cugd_qcten   &
      &             ,cugd_ttens=grid%cugd_ttens,cugd_qvtens=grid%cugd_qvtens   &
      &             ,ENSDIM=config_flags%ensdim ,MAXIENS=config_flags%maxiens ,MAXENS=config_flags%maxens         &
      &             ,MAXENS2=config_flags%maxens2                ,MAXENS3=config_flags%maxens3       &
      &             ,CU_ACT_FLAG=cu_act_flag   ,WARM_RAIN=grid%warm_rain        &
      &             ,GSW=grid%gsw,cugd_avedx=config_flags%cugd_avedx &
+     &             ,k22_shallow=grid%k22_shallow,kbcon_shallow=grid%kbcon_shallow            &
+     &             ,ktop_shallow=grid%ktop_shallow,xmb_shallow=grid%xmb_shallow            &
      &             ,PERIODIC_X=(config_flags%polar .OR. config_flags%periodic_x)  &
      &             ,PERIODIC_Y=config_flags%periodic_y  &
                  ! Selection flag
@@ -638,9 +678,12 @@ BENCH_START(cu_driver_tim)
      &             ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS            &
      &             ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG            &
 #ifdef WRF_CHEM
-     &             ,GD_CLOUD=grid%GD_CLOUD,GD_CLOUD2=grid%GD_CLOUD2                          &
+     &             ,GD_CLOUD=grid%GD_CLOUD,GD_CLOUD2=grid%GD_CLOUD2       &
 #endif
-     &                                                          )
+#if ( WRF_DFI_RADAR == 1 )
+     &             ,DO_CAPSUPPRESS=do_capsupress                          &
+#endif
+     &             ,cfu1=grid%cfu1,cfd1=grid%cfd1,dfu1=grid%dfu1,efu1=grid%efu1,dfd1=grid%dfd1,efd1=grid%efd1,f_flux=l_flux)
 BENCH_END(cu_driver_tim)
 
 ! JPH call force_scm to update bl tendencies
@@ -654,7 +697,8 @@ BENCH_END(cu_driver_tim)
      &             ,scm_vert_adv=config_flags%scm_vert_adv                &
      &             ,u_base=grid%u_base,v_base=grid%v_base                 &
      &             ,z_base=grid%z_base                                    &
-     &             ,z_force=grid%z_force,u_g=grid%u_g,v_g=grid%v_g        &
+     &             ,z_force=grid%z_force,z_force_tend=grid%z_force_tend   &
+     &             ,u_g=grid%u_g,v_g=grid%v_g                             &
      &             ,u_g_tend=grid%u_g_tend,v_g_tend=grid%v_g_tend         &
      &             ,w_subs=grid%w_subs, w_subs_tend=grid%w_subs_tend      &
      &             ,th_upstream_x=grid%th_upstream_x                      &
@@ -673,6 +717,10 @@ BENCH_END(cu_driver_tim)
      &             ,v_upstream_x_tend=grid%v_upstream_x_tend              &
      &             ,v_upstream_y=grid%v_upstream_y                        &
      &             ,v_upstream_y_tend=grid%v_upstream_y_tend              &
+     &             ,tau_x=grid%tau_x                                      &
+     &             ,tau_x_tend=grid%tau_x_tend                            &
+     &             ,tau_y=grid%tau_y                                      &
+     &             ,tau_y_tend=grid%tau_y_tend                            &
      &             ,z=grid%z,z_at_w=grid%z_at_w                           &
      &             ,th=th_phy, qv=moist(ims,kms,jms,P_QV)                 &
      &             ,u=u_phy, v=v_phy                                      &

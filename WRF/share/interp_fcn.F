@@ -92,14 +92,18 @@
 !                 if ( imask(ni,nj) .eq. 1 .or. imask(ni-nioff,nj-njoff) .eq. 1 ) then
 !                   icmask( i, j ) = .TRUE.
 !                 endif
+                 if ( ni.ge.nims.and.ni.le.nime.and.nj.ge.njms.and.nj.le.njme) then
                   if ( imask(ni,nj) .eq. 1 ) then
                     icmask( i, j ) = .TRUE.
                   endif
+                 endif
+                 if ( ni-nioff.ge.nims.and.ni.le.nime.and.nj-njoff.ge.njms.and.nj.le.njme) then
                   if (ni .ge. nits-nioff .and. nj .ge. njts-njoff ) then
                     if ( imask(ni-nioff,nj-njoff) .eq. 1) then
                         icmask( i, j ) = .TRUE.
                     endif
                   endif
+                 endif
                 endif
                 psca(i,j,nf) = cfld(i,k,j)
               ENDDO
@@ -819,9 +823,13 @@
 
      shw = 0
 
-     ioff = 0 ; joff = 0
-     IF ( xstag ) ioff = 1
-     IF ( ystag ) joff = 1
+     ioff  = 0 ; joff  = 0
+     IF ( xstag ) THEN 
+       ioff = (nri-1)/2
+     ENDIF
+     IF ( ystag ) THEN
+       joff = (nrj-1)/2
+     ENDIF
 
      ! Iterate over the ND tile and compute the values
      ! from the CD tile. 

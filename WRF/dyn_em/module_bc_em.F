@@ -231,7 +231,8 @@ CONTAINS
                                                                                mu_btys,mu_btye
    REAL, INTENT(IN   ) :: dtbc
 
-   REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) :: rfield
+! changed to tile dimensions, 20090923, JM
+   REAL , DIMENSION( its-1:ite+1 , kts:kte, jts-1:jte+1  ) :: rfield
    INTEGER :: i_start, i_end, j_start, j_end, i, j, k
 
            CALL relax_bdytend ( ru, ru_tendf,             &
@@ -268,8 +269,7 @@ CONTAINS
            ENDDO
            ENDDO
            ENDDO
-           
-           CALL relax_bdytend ( rfield, ph_tendf,             &
+           CALL relax_bdytend_tile ( rfield, ph_tendf,             &
                                ph_bxs,ph_bxe,ph_bys,ph_bye, ph_btxs,ph_btxe,ph_btys,ph_btye,       &
                                'h'        , config_flags, &
                                spec_bdy_width, spec_zone, relax_zone, &
@@ -277,7 +277,8 @@ CONTAINS
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                               its,ite, jts,jte, kts,kte )
+                               its,ite, jts,jte, kts,kte,  &
+                               its-1, ite+1, jts-1,jte+1,kts,kte )  ! dims of first argument
            DO j=j_start,j_end
            DO k=kts,kte-1
            DO i=i_start,i_end
@@ -285,7 +286,7 @@ CONTAINS
            ENDDO
            ENDDO
            ENDDO
-           CALL relax_bdytend ( rfield, t_tendf,              &
+           CALL relax_bdytend_tile ( rfield, t_tendf,              &
                                t_bxs,t_bxe,t_bys,t_bye, t_btxs,t_btxe,t_btys,t_btye,       &
                                't'        , config_flags, &
                                spec_bdy_width, spec_zone, relax_zone, &
@@ -293,7 +294,8 @@ CONTAINS
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                               its,ite, jts,jte, kts,kte )
+                               its,ite, jts,jte, kts,kte,  &
+                               its-1, ite+1, jts-1,jte+1,kts,kte )  ! dims of first argument
            CALL relax_bdytend ( mu, mu_tend,               &
                                mu_bxs,mu_bxe,mu_bys,mu_bye, mu_btxs,mu_btxe,mu_btys,mu_btye,                &
                                'm'        , config_flags,  &
@@ -319,7 +321,7 @@ CONTAINS
            ENDDO
            ENDDO
            
-           CALL relax_bdytend ( rfield, rw_tendf,             &
+           CALL relax_bdytend_tile ( rfield, rw_tendf,             &
                                w_bxs,w_bxe,w_bys,w_bye, w_btxs,w_btxe,w_btys,w_btye,       &
                                'h'        , config_flags, &
                                spec_bdy_width, spec_zone, relax_zone, &
@@ -327,7 +329,8 @@ CONTAINS
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                               its,ite, jts,jte, kts,kte )
+                               its,ite, jts,jte, kts,kte,  &
+                               its-1, ite+1, jts-1,jte+1,kts,kte )  ! dims of first argument
 
         END IF
 
@@ -969,40 +972,117 @@ CONTAINS
 
 !---------------------------------------------------------------------
 
-  SUBROUTINE set_w_surface( config_flags, znw,                           &
+   SUBROUTINE zero_bdytend  (                                                  &
+                              u_btxs,u_btxe,u_btys,u_btye,                     &
+                              v_btxs,v_btxe,v_btys,v_btye,                     &
+                              ph_btxs,ph_btxe,ph_btys,ph_btye,                 &
+                              t_btxs,t_btxe,t_btys,t_btye,                     &
+                              w_btxs,w_btxe,w_btys,w_btye,                     &
+                              mu_btxs,mu_btxe,mu_btys,mu_btye,                 &
+                              moist_btxs,moist_btxe,   &
+                              moist_btys,moist_btye,   &
+                              spec_bdy_width,n_moist,                          &
+                              ids,ide, jds,jde, kds,kde,  & ! domain dims
+                              ims,ime, jms,jme, kms,kme,  & ! memory dims
+                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                              its,ite, jts,jte, kts,kte   )
+   IMPLICIT NONE
+
+   !  Input data.
+
+   INTEGER ,               INTENT(IN   ) :: spec_bdy_width, n_moist
+
+   INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                                            ims, ime, jms, jme, kms, kme, &
+                                            ips, ipe, jps, jpe, kps, kpe, &
+                                            its, ite, jts, jte, kts, kte
+
+   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width    ), INTENT(INOUT) :: u_btxs,u_btxe, &
+                                                                               v_btxs,v_btxe, &
+                                                                               ph_btxs,ph_btxe, &
+                                                                               w_btxs,w_btxe, &
+                                                                               t_btxs,t_btxe
+
+   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width    ), INTENT(INOUT) :: u_btys,u_btye, &
+                                                                               v_btys,v_btye, &
+                                                                               ph_btys,ph_btye, &
+                                                                               w_btys,w_btye, &
+                                                                               t_btys,t_btye
+
+   REAL,  DIMENSION( jms:jme , 1:1     , spec_bdy_width    ), INTENT(INOUT) :: mu_btxs,mu_btxe
+   REAL,  DIMENSION( ims:ime , 1:1     , spec_bdy_width    ), INTENT(INOUT) :: mu_btys,mu_btye
+
+   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width , n_moist ), INTENT(INOUT) :: moist_btxs,moist_btxe
+   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width , n_moist ), INTENT(INOUT) :: moist_btys,moist_btye
+
+! setting bdy tendencies to zero during DFI
+
+       CALL wrf_debug( 10, 'In zero_bdytend, setting bdy tendencies to 0 during DFI' )
+       u_btxs = 0.
+       u_btxe = 0.
+       u_btys = 0.
+       u_btye = 0.
+       v_btxs = 0.
+       v_btxe = 0.
+       v_btys = 0.
+       v_btye = 0.
+       t_btxs = 0.
+       t_btxe = 0.
+       t_btys = 0.
+       t_btye = 0.
+       ph_btxs = 0.
+       ph_btxe = 0.
+       ph_btys = 0.
+       ph_btye = 0.
+       mu_btxs = 0.
+       mu_btxe = 0.
+       mu_btys = 0.
+       mu_btye = 0.
+       moist_btxs = 0.
+       moist_btxe = 0.
+       moist_btys = 0.
+       moist_btye = 0.
+
+!  ENDIF
+
+   END SUBROUTINE zero_bdytend
+
+!---------------------------------------------------------------------
+
+  SUBROUTINE set_w_surface( config_flags, znw, fill_w_flag,              &
                             w, ht, u, v, cf1, cf2, cf3, rdx, rdy,        &
                             msftx, msfty,                                &
                             ids, ide, jds, jde, kds, kde,                &
-                            ips, ipe, jps, jpe, kps, kpe,                &
-                            its, ite, jts, jte, kts, kte,                &
-                            ims, ime, jms, jme, kms, kme                )
-  implicit none
+                            ims, ime, jms, jme, kms, kme,                &
+                            its, ite, jts, jte, kts, kte                 )
+     implicit none
 
-  TYPE( grid_config_rec_type ) config_flags
+     TYPE( grid_config_rec_type ) config_flags
 
-  INTEGER ,       INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
-                                   ims, ime, jms, jme, kms, kme, &
-                                   its, ite, jts, jte, kts, kte, &
-                                   ips, ipe, jps, jpe, kps, kpe
+     INTEGER ,       INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                                      ims, ime, jms, jme, kms, kme, &
+                                      its, ite, jts, jte, kts, kte
 
-   REAL :: rdx, rdy, cf1, cf2, cf3
+     REAL :: rdx, rdy, cf1, cf2, cf3
+
+     REAL , DIMENSION(  ims:ime , kms:kme, jms:jme ) ,                      &
+                                                 INTENT(IN   ) ::  u,       &
+                                                                   v
+
+     REAL , DIMENSION(  ims:ime , kms:kme, jms:jme ) ,                      &
+                                              INTENT(INOUT) ::  w
+
+     REAL , DIMENSION(  ims:ime , jms:jme ) , INTENT(IN   ) ::  ht,         &
+                                                                msftx,      &
+                                                                msfty
+     REAL , DIMENSION( kms:kme ) , INTENT(IN   ) ::  znw
+  
+     LOGICAL, INTENT(IN   ) :: fill_w_flag
 
 
-   REAL , DIMENSION(  ims:ime , kms:kme, jms:jme ) ,                      &
-                                               INTENT(IN   ) ::  u,       &
-                                                                 v
-
-   REAL , DIMENSION(  ims:ime , kms:kme, jms:jme ) ,                      &
-                                               INTENT(INOUT) ::  w
-
-   REAL , DIMENSION(  ims:ime , jms:jme ) , INTENT(IN   ) ::  ht,         &
-                                                              msftx,      &
-                                                              msfty
-   REAL , DIMENSION( kms:kme ) , INTENT(IN   ) ::  znw
-
-
-   INTEGER :: i,j,k
-   INTEGER :: ip1,im1,jp1,jm1
+     INTEGER :: i,j,k
+     INTEGER :: ip1,im1,jp1,jm1
+     INTEGER :: ip1_limit,im1_limit,jp1_limit,jm1_limit
 
 !  set kinematic lower boundary condition on W
 
@@ -1017,12 +1097,29 @@ CONTAINS
 !  [NB - cf1, cf2 and cf3 do vertical weighting of u or v values
 !   nearest the surface]
 
+! get indices for points next to edge of domain 
+
+     jm1_limit = jds        ! No periodic BC's
+     jp1_limit = jde-1
+     im1_limit = ids
+     ip1_limit = ide-1
+
+     IF ( config_flags%periodic_x ) THEN
+       im1_limit = ids-1
+       ip1_limit = ide
+     ENDIF
+
+     IF ( config_flags%periodic_y ) THEN
+       jm1_limit = jds-1
+       jp1_limit = jde
+     ENDIF
+
      DO j = jts,min(jte,jde-1)
-       jm1 = max(j-1,jds)
-       jp1 = min(j+1,jde-1)
+       jm1 = max(j-1, jm1_limit)
+       jp1 = min(j+1, jp1_limit)
      DO i = its,min(ite,ide-1)
-       im1 = max(i-1,ids)
-       ip1 = min(i+1,ide-1)
+       im1 = max(i-1, im1_limit)
+       ip1 = min(i+1, ip1_limit)
 
          w(i,1,j)=  msfty(i,j)*                              &
                   .5*rdy*(                                   &
@@ -1041,14 +1138,15 @@ CONTAINS
       ENDDO
 
 ! Fill the atmospheric w field with smoothly decaying values
-
-     DO j = jts,min(jte,jde-1)
-     DO k = kts+1,kte
-     DO i = its,min(ite,ide-1)
-         w(i,k,j) = w(i,1,j)*znw(k)*znw(k)
-     ENDDO
-     ENDDO
-     ENDDO
+      IF (fill_w_flag) THEN
+        DO j = jts,min(jte,jde-1)
+        DO k = kts+1,kte
+        DO i = its,min(ite,ide-1)
+          w(i,k,j) = w(i,1,j)*znw(k)*znw(k)
+        ENDDO
+        ENDDO
+        ENDDO
+      ENDIF
 
   END SUBROUTINE set_w_surface
 

@@ -24,7 +24,7 @@ CONTAINS
               ,EMISS, rho, p8w, p , pi , dz8w ,t, t8w, GMT                &
               ,XLAND, XICE, TSK, HTOP,HBOT,HTOPR,HBOTR, CUPPT, VEGFRA, SNOW     &
               ,julyr, JULDAY, julian, YR, xtime, RADT, STEPRA, ICLOUD, warm_rain     &
-              ,declin_urb,COSZ_URB2D, omg_urb2d                           & !Optional urban
+              ,declinx,solconx,COSZEN, HRANG                              & !Optional 
               ,ra_call_offset,RSWTOA,RLWTOA, CZMEAN                       &
               ,CFRACL, CFRACM, CFRACH                                     &
               ,ACFRST,NCFRST,ACFRCV,NCFRCV,SWDOWNC                        &
@@ -51,29 +51,41 @@ CONTAINS
               ,waer300, waer400, waer600, waer999                         & ! jcb
               ,qc_adjust ,qi_adjust                                       & ! jm
               ,cu_rad_feedback, aer_ra_feedback                           & ! jm
-              ,ht,dx,dy,sina,cosa,shadowmask,slope_rad ,topo_shading      ) ! slope-dependent radiation
+              ,ht,dx,dy,shadowmask,slope_rad ,topo_shading                ) ! slope-dependent radiation
 
 !-------------------------------------------------------------------------
 
 ! !USES:
+#ifdef HWRF
+   USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
+                                       ,RRTMG_LWSCHEME, RRTMG_SWSCHEME  &
+                                       ,SWRADSCHEME, GSFCSWSCHEME       &
+                                       ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
+                                       ,HELDSUAREZ, HWRFSWSCHEME, HWRFLWSCHEME
+#else
    USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
                                        ,RRTMG_LWSCHEME, RRTMG_SWSCHEME  &
                                        ,SWRADSCHEME, GSFCSWSCHEME       &
                                        ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
                                        ,HELDSUAREZ
+#endif
    USE module_model_constants
    USE module_wrf_error , ONLY : wrf_err_message
 
 ! *** add new modules of schemes here
 
-   USE module_ra_sw , ONLY : swrad
-   USE module_ra_gsfcsw , ONLY : gsfcswrad
-   USE module_ra_rrtm , ONLY : rrtmlwrad
-   USE module_ra_rrtmg_lw , ONLY : rrtmg_lwrad
-   USE module_ra_rrtmg_sw , ONLY : rrtmg_swrad
-   USE module_ra_cam , ONLY : camrad
-   USE module_ra_gfdleta , ONLY : etara
-   USE module_ra_hs , ONLY : hsrad
+   USE module_ra_sw         , ONLY : swrad
+   USE module_ra_gsfcsw     , ONLY : gsfcswrad
+   USE module_ra_rrtm       , ONLY : rrtmlwrad
+   USE module_ra_rrtmg_lw   , ONLY : rrtmg_lwrad
+   USE module_ra_rrtmg_sw   , ONLY : rrtmg_swrad
+   USE module_ra_cam        , ONLY : camrad
+   USE module_ra_gfdleta    , ONLY : etara
+#ifdef HWRF
+   USE module_ra_hwrf
+#endif
+   USE module_ra_hs         , ONLY : hsrad
+
 
    !  This driver calls subroutines for the radiation parameterizations.
    !
@@ -429,7 +441,7 @@ CONTAINS
 
      REAL, OPTIONAL, INTENT(IN) :: dx,dy
      INTEGER, OPTIONAL, INTENT(IN) :: slope_rad,topo_shading
-     REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)  :: sina,cosa,ht
+     REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)  :: ht
      INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN) :: shadowmask
 
 
@@ -439,7 +451,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) ::    CEMISS
    REAL, DIMENSION( ims:ime, jms:jme ) ::             coszr
 
-   REAL    ::    DECLIN,SOLCON 
+   REAL    ::    DECLIN,SOLCON,XXLAT,TLOCTM,XT24
    INTEGER ::    i,j,k,its,ite,jts,jte,ij
    INTEGER ::    STEPABS
    LOGICAL ::    gfdl_lw,gfdl_sw
@@ -454,11 +466,11 @@ CONTAINS
    REAL    ::    next_rad_time
    LOGICAL ::    run_param
 !------------------------------------------------------------------
-! urban related variables are added to declaration
+! solar related variables are added to declaration
 !-------------------------------------------------
-   REAL, OPTIONAL, INTENT(OUT) :: DECLIN_URB  !urban
-   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: COSZ_URB2D  !urban
-   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: omg_urb2d   !urban
+   REAL, OPTIONAL, INTENT(OUT) :: DECLINX,SOLCONX
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: COSZEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: HRANG
 !------------------------------------------------------------------
 
    if (lw_physics .eq. 0 .and. sw_physics .eq. 0)         return
@@ -514,6 +526,38 @@ CONTAINS
 
    gfdl_lw = .false.
    gfdl_sw = .false.
+
+
+! moved up and out of OMP loop because it only needs to be computed once
+! and because it is not entirely thread-safe (XT24, TOLOCTM and XXLAT need
+! their thread-privacy)  JM 20100217
+   DO ij = 1 , num_tiles
+     its = i_start(ij)
+     ite = i_end(ij)
+     jts = j_start(ij)
+     jte = j_end(ij)
+     CALL radconst(XTIME,DECLIN,SOLCON,JULIAN,               &
+                   DEGRAD,DPD                                )
+
+     IF(PRESENT(declinx).AND.PRESENT(solconx))THEN
+! saved to state arrays used in surface driver
+       declinx=declin
+       solconx=solcon
+     ENDIF
+
+     IF(PRESENT(coszen).AND.PRESENT(hrang))THEN
+! state arrays of hrang and coszen used in surface driver
+       XT24=MOD(XTIME+RADT*0.5,1440.)
+       DO j=jts,jte
+       DO i=its,ite
+          TLOCTM=GMT+XT24/60.+XLONG(I,J)/15.
+          HRANG(I,J)=15.*(TLOCTM-12.)*DEGRAD
+          XXLAT=XLAT(I,J)*DEGRAD
+          COSZEN(I,J)=SIN(XXLAT)*SIN(DECLIN)+COS(XXLAT)*COS(DECLIN)*COS(HRANG(I,J))
+       ENDDO
+       ENDDO
+     ENDIF
+   ENDDO
 
 !---------------
    !$OMP PARALLEL DO   &
@@ -630,12 +674,6 @@ CONTAINS
 !---------------
 ! Calculate constant for short wave radiation
 
-     CALL radconst(XTIME,DECLIN,SOLCON,JULIAN,               &
-                   DEGRAD,DPD                                )
-
-
-     if(present(DECLIN_URB))DECLIN_URB=DECLIN  ! urban
-
      lwrad_cldfra_select: SELECT CASE(lw_physics)
 
         CASE (GFDLLWSCHEME)
@@ -655,6 +693,7 @@ CONTAINS
                    ids,ide, jds,jde, kds,kde,              &
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
+
      ENDIF
 
         CASE (RRTMG_LWSCHEME)
@@ -663,12 +702,13 @@ CONTAINS
           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
 ! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
 
-   CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,                     &
+        CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,               &
                    F_QV,F_QC,F_QI,F_QS,t,p,                &
                    F_ICE_PHY,F_RAIN_PHY,                   &
                    ids,ide, jds,jde, kds,kde,              &
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
+
      ENDIF
  
         CASE DEFAULT
@@ -728,7 +768,6 @@ CONTAINS
                  ,VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt               &
                  ,NSTEPRA=stepra,NPHS=nphs,ITIMESTEP=itimestep      &
                  ,XTIME=xtime,JULIAN=julian                         &
-                 ,COSZ_URB2D=COSZ_URB2D  ,OMG_URB2D=omg_urb2d       &
                  ,JULYR=julyr,JULDAY=julday                         &
                  ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
@@ -748,15 +787,34 @@ CONTAINS
                CALL wrf_error_fatal('Can not call ETARA (1b). Missing moisture fields.')
              ENDIF
 
+#ifdef HWRF
+       CASE (HWRFLWSCHEME)
+
+             CALL wrf_debug (100, 'CALL hwrflw')
+
+             gfdl_lw  = .true.
+
+               CALL HWRFRA(DT=dt,thraten=RTHRATEN,thratenlw=RTHRATENLW,thratensw=RTHRATENSW,pi3d=pi, &
+                        XLAND=xland,P8w=p8w,DZ8w=dz8w,RHO_PHY=rho,P_PHY=p,T=t,          &
+                        QV=qv,QW=qc_temp,QI=Qi,                      &
+                        TSK2D=tsk,GLW=GLW,GSW=GSW,                                 &
+                        TOTSWDN=swdown,TOTLWDN=glw,RSWTOA=rswtoa,RLWTOA=rlwtoa,CZMEAN=czmean,        & !Added
+                        GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot,htopr=htopr,hbotr=hbotr,ALBEDO=albedo,CUPPT=cuppt,&
+                        VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt,                           & !Modified
+                        NSTEPRA=stepra,NPHS=nphs,itimestep=itimestep,                       & !Modified
+                        julyr=julyr,julday=julday,gfdl_lw=gfdl_lw,gfdl_sw=gfdl_sw,                &
+                        CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach,                        & !Added
+                        ACFRST=acfrst,NCFRST=ncfrst,ACFRCV=acfrcv,NCFRCV=ncfrcv,                 & !Added
+                        ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,                   &
+                        ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,                   &
+                        its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte                    )
+
+
+#endif
+
         CASE (CAMLWSCHEME)
 
              CALL wrf_debug(100, 'CALL camrad lw')
-             IF(cam_abs_dim1 .ne. 4 .or. cam_abs_dim2 .ne. kde .or.  &
-                paerlev .ne. 29 .or. levsiz .ne. 59 )THEN
-               WRITE( wrf_err_message , * ) &
-'set paerlev=29, levsiz=59, cam_abs_dim1=4, and cam_abs_dim2=number of levels (e_vert) in physics namelist for CAM radiation'
-               CALL wrf_error_fatal ( wrf_err_message )
-             ENDIF
              IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
@@ -819,6 +877,7 @@ CONTAINS
                   P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
                   T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
                   ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
+                  F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
                   XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                   QV3D=QV,QC3D=QC,QR3D=QR,                          &
                   QI3D=QI,QS3D=QS,QG3D=QG,                          &
@@ -881,7 +940,7 @@ CONTAINS
           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
 ! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
 
-   CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,                     &
+        CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,               &
                    F_QV,F_QC,F_QI,F_QS,t,p,                &
                    F_ICE_PHY,F_RAIN_PHY,                   &
                    ids,ide, jds,jde, kds,kde,              &
@@ -908,13 +967,11 @@ CONTAINS
                     ,P3D=p,PI3D=pi,DZ8W=dz8w,GMT=gmt                   &
                     ,R=r_d,CP=cp,G=g,JULDAY=julday                     &
                     ,XTIME=xtime,DECLIN=declin,SOLCON=solcon           &
-!                    ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d            & !urban
                     ,RADFRQ=radt,ICLOUD=icloud,DEGRAD=degrad           &
                     ,warm_rain=warm_rain                               &
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                     ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                    ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d        & !urban
                     ,QV3D=qv                                           &
                     ,QC3D=qc                                           &
                     ,QR3D=qr                                           &
@@ -922,10 +979,7 @@ CONTAINS
                     ,QS3D=qs                                           &
                     ,QG3D=qg                                           &
                     ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
-                    ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
-                    ,slope_rad=slope_rad,topo_shading=topo_shading     &
-                    ,shadowmask=shadowmask                             &
-                    ,ht=ht,dx=dx,dy=dy,sina=sina,cosa=cosa             )
+                    ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     )
 
         CASE (GSFCSWSCHEME)
              CALL wrf_debug(100, 'CALL gsfcswrad')
@@ -935,7 +989,6 @@ CONTAINS
                     ,DZ8W=dz8w,RHO_PHY=rho                             &
                     ,CLDFRA3D=cldfra,RSWTOA=rswtoa                     &
                     ,GMT=gmt,CP=cp,G=g                                 &
-!                    ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d            & !urban
                     ,JULDAY=julday,XTIME=xtime                         &
                     ,DECLIN=declin,SOLCON=solcon                       &
                     ,RADFRQ=radt,DEGRAD=degrad                         &
@@ -953,7 +1006,6 @@ CONTAINS
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                     ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                    ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d        & !urban
                     ,QV3D=qv                                           &
                     ,QC3D=qc                                           &
                     ,QR3D=qr                                           &
@@ -967,12 +1019,6 @@ CONTAINS
                                                                        )
         CASE (CAMSWSCHEME)
              CALL wrf_debug(100, 'CALL camrad sw')
-             IF(cam_abs_dim1 .ne. 4 .or. cam_abs_dim2 .ne. kde .or.  &
-                paerlev .ne. 29 .or. levsiz .ne. 59 )THEN
-               WRITE( wrf_err_message , * ) &
-'set paerlev=29, levsiz=59, cam_abs_dim1=4, and cam_abs_dim2=number of levels (e_vert) in physics namelist for CAM radiation'
-               CALL wrf_error_fatal ( wrf_err_message )
-             ENDIF
              IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
@@ -1044,6 +1090,7 @@ CONTAINS
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
                      dz8w=dz8w,CLDFRA3D=CLDFRA,R=R_D,G=G,              &
                      ICLOUD=icloud,WARM_RAIN=warm_rain,                &
+                     F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
                      XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                      QV3D=qv,QC3D=qc,QR3D=qr,                          &
                      QI3D=qi,QS3D=qs,QG3D=qg,                          &
@@ -1084,7 +1131,6 @@ CONTAINS
                  ,VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt               &
                  ,NSTEPRA=stepra,NPHS=nphs,ITIMESTEP=itimestep      &
                  ,XTIME=xtime,JULIAN=julian                         &
-                 ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d        &
                  ,JULYR=julyr,JULDAY=julday                         &
                  ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
@@ -1103,6 +1149,28 @@ CONTAINS
              ELSE
                CALL wrf_error_fatal('Can not call ETARA (2b). Missing moisture fields.')
              ENDIF
+
+#ifdef HWRF
+      CASE (HWRFSWSCHEME)
+
+             CALL wrf_debug (100, 'CALL hwrfsw')
+
+             gfdl_sw = .true.
+               CALL HWRFRA(DT=dt,thraten=RTHRATEN,thratenlw=RTHRATENLW,thratensw=RTHRATENSW,pi3d=pi, &
+                        XLAND=xland,P8w=p8w,DZ8w=dz8w,RHO_PHY=rho,P_PHY=p,T=t,          &
+                        QV=qv,QW=qc_temp,QI=Qi,                      &
+                        TSK2D=tsk,GLW=GLW,GSW=GSW,                                 &
+                        TOTSWDN=swdown,TOTLWDN=glw,RSWTOA=rswtoa,RLWTOA=rlwtoa,CZMEAN=czmean,        & !Added
+                        GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot,htopr=htopr,hbotr=hbotr,ALBEDO=albedo,CUPPT=cuppt,            &
+                        VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt,                           & !Modified
+                        NSTEPRA=stepra,NPHS=nphs,itimestep=itimestep,                       & !Modified
+                        julyr=julyr,julday=julday,gfdl_lw=gfdl_lw,gfdl_sw=gfdl_sw,                &
+                        CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach,                        & !Added
+                        ACFRST=acfrst,NCFRST=ncfrst,ACFRCV=acfrcv,NCFRCV=ncfrcv,                 & !Added
+                        ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,                   &
+                        ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,                   &
+                        its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte                    )
+#endif
 
         CASE (0)
 
@@ -1246,8 +1314,13 @@ CONTAINS
               ,kts, kte                                                   &
               ,num_tiles                                                  )
 
-   USE module_domain
-   USE module_dm
+   USE module_domain  , ONLY : domain
+#ifdef DM_PARALLEL
+   USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks,wrf_dm_minval_integer
+# if (EM_CORE == 1)
+   USE module_comm_dm   , ONLY : halo_toposhad_sub
+# endif
+#endif
    USE module_bc
    USE module_model_constants
 
@@ -1562,11 +1635,18 @@ CONTAINS
                                                                  QC, &
                                                                  QS, &
                                                               t_phy, &
-                                                              p_phy, &
+                                                              p_phy
+!                                                              p_phy, &
+!                                                          F_ICE_PHY, &
+!                                                         F_RAIN_PHY
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                     &
+         OPTIONAL,                                                   &
+         INTENT(IN   ) ::                                            &
                                                           F_ICE_PHY, &
                                                          F_RAIN_PHY
 
-   LOGICAL,INTENT(IN) :: F_QC,F_QI,F_QV,F_QS
+   LOGICAL,OPTIONAL,INTENT(IN) :: F_QC,F_QI,F_QV,F_QS
 
 !  REAL thresh
    INTEGER:: i,j,k
@@ -1633,38 +1713,59 @@ CONTAINS
       QVSW = EP_2 * esw / ( p_phy(i,k,j) - esw )
       QVSI = EP_2 * esi / ( p_phy(i,k,j) - esi )
 
-      IF ( F_QI .and. F_QC .and. F_QS) THEN
-        QCLD=QI(i,k,j)+QC(i,k,j)+QS(I,k,j)
-        IF (QCLD .LT. QCLDMIN) THEN
-          weight = 0.
-        ELSE
-          weight = (QI(i,k,j)+QS(I,k,j)) / QCLD
-        ENDIF
-      ELSE IF ( F_QC ) THEN
+      IF ( PRESENT(F_QI) .and. PRESENT(F_QC) .and. PRESENT(F_QS) ) THEN
+
+! mji - For MP options 2, 4, 6, 7, 8, etc. (qc = liquid, qi = ice, qs = snow)
+         IF ( F_QI .and. F_QC .and. F_QS) THEN
+            QCLD = QI(i,k,j)+QC(i,k,j)+QS(i,k,j)
+            IF (QCLD .LT. QCLDMIN) THEN
+               weight = 0.
+            ELSE
+               weight = (QI(i,k,j)+QS(i,k,j)) / QCLD
+            ENDIF
+         ENDIF
+
+! mji - For MP options 1 and 3, (qc only)
+!  For MP=1, qc = liquid, for MP=3, qc = liquid or ice depending on temperature
+         IF ( F_QC .and. .not. F_QI .and. .not. F_QS ) THEN
+            QCLD = QC(i,k,j)
+            IF (QCLD .LT. QCLDMIN) THEN
+               weight = 0.
+            ELSE
+               if (t_phy(i,k,j) .gt. 273.15) weight = 0.
+               if (t_phy(i,k,j) .le. 273.15) weight = 1.
+            ENDIF
+         ENDIF
+
+! mji - For MP option 5; (qc = liquid, qs = ice)
+         IF ( F_QC .and. .not. F_QI .and. F_QS .and. PRESENT(F_ICE_PHY) ) THEN
 
 ! Mixing ratios of cloud water & total ice (cloud ice + snow).
 ! Mixing ratios of rain are not considered in this scheme.
 ! F_ICE is fraction of ice
 ! F_RAIN is fraction of rain
 
-      QIMID=QC(i,k,j)*F_ICE_PHY(i,k,j)
-      QWMID=(QC(i,k,j)-QIMID)*(1.-F_RAIN_PHY(i,k,j))
-
-
+           QIMID = QS(i,k,j)
+           QWMID = QC(i,k,j)
+! old method
+!           QIMID = QC(i,k,j)*F_ICE_PHY(i,k,j)
+!           QWMID = (QC(i,k,j)-QIMID)*(1.-F_RAIN_PHY(i,k,j))
 !
 !--- Total "cloud" mixing ratio, QCLD.  Rain is not part of cloud,
 !    only cloud water + cloud ice + snow
 !
-      QCLD=QWMID+QIMID
-        IF (QCLD .LT. QCLDMIN) THEN
-          weight = 0.
-        ELSE
-          weight = F_ICE_PHY(i,k,j)
-        ENDIF
+           QCLD=QWMID+QIMID
+           IF (QCLD .LT. QCLDMIN) THEN
+              weight = 0.
+           ELSE
+              weight = F_ICE_PHY(i,k,j)
+           ENDIF
+         ENDIF
 
       ELSE
-        CLDFRA(i,k,j)=0.
-      ENDIF !  IF ( F_QI .and. F_QC )
+         CLDFRA(i,k,j)=0.
+
+      ENDIF !  IF ( F_QI .and. F_QC .and. F_QS)
 
 
       QVS_WEIGHT = (1-weight)*QVSW + weight*QVSI

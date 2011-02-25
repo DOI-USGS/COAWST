@@ -33,35 +33,52 @@ CONTAINS
                      ,apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma     &
                      ,apr_capme,apr_capmi,edt_out,clos_choice         &
                      ,mass_flux,xf_ens,pr_ens,cugd_avedx,imomentum    &
-                     ,cugd_tten,cugd_qvten,cugd_qcten                 &
+                     ,ishallow,cugd_tten,cugd_qvten,cugd_qcten        &
                      ,cugd_ttens,cugd_qvtens                          &
                      ,gd_cloud,gd_cloud2      &
+                     ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
                  ! Optional moisture and other tendencies
                      ,rqvcuten,rqccuten,rqrcuten                      &
                      ,rqicuten,rqscuten,rqgcuten                      &
                      ,rqvblten,rqvften                                &
                      ,rthcuten,rthraten,rthblten,rthften              &
+#if (NMM_CORE==1)
+                 ! for hwrf-sas                      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
+                     ,rucuten,rvcuten,mommix,store_rand               &
+#endif
                  ! Optional moisture tracer flags 
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
+                     ,CFU1,CFD1,DFU1,EFU1,DFD1,EFD1,f_flux            &
+#if ( WRF_DFI_RADAR == 1 )
+                 ! Optional CAP suppress option      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
+                     ,do_capsuppress                                  &
+#endif                                 
                                                                       )
 !----------------------------------------------------------------------
    USE module_model_constants
    USE module_state_description, ONLY:     KFSCHEME,BMJSCHEME         &
                                           ,KFETASCHEME,GDSCHEME       &
                                           ,G3SCHEME                   &
+                                          ,P_QC,P_QI,Param_FIRST_SCALAR &
                                           ,SASSCHEME
 
 ! *** add new modules of schemes here
 
-   USE module_cu_kf
-   USE module_cu_bmj
-   USE module_dm
-   USE module_domain, ONLY: domain
-   USE module_cu_kfeta
-   USE module_cu_gd, ONLY : GRELLDRV
-   USE module_cu_g3, ONLY : G3DRV,CONV_GRELL_SPREAD3D
+   USE module_cu_kf     ,  ONLY : kfcps
+   USE module_cu_bmj    ,  ONLY : bmjdrv
+#ifdef DM_PARALLEL
+   USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks 
+# if (EM_CORE == 1)
+   USE module_comm_dm   ,  ONLY : halo_cup_g3_in_sub, halo_cup_g3_out_sub
+# endif
+#endif
+   USE module_domain    , ONLY: domain
+   USE module_cu_kfeta  , ONLY : kf_eta_cps
+   USE module_cu_gd     , ONLY : grelldrv
+   USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas
+   USE module_wrf_error , ONLY : wrf_err_message
 
    !  This driver calls subroutines for the cumulus parameterizations.
    !
@@ -270,16 +287,27 @@ CONTAINS
 
    REAL,  INTENT(IN   ) :: DT, DX
    INTEGER,      INTENT(IN   ),OPTIONAL    ::                             &
-                                      ips,ipe, jps,jpe, kps,kpe,imomentum
+                   ips,ipe, jps,jpe, kps,kpe,imomentum,ishallow
    REAL,  INTENT(IN   ),OPTIONAL :: CUDT
    REAL,  INTENT(IN   ),OPTIONAL :: CURR_SECS
    LOGICAL,INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
    REAL   :: cudt_pass, curr_secs_pass
    LOGICAL :: adapt_step_flag_pass
 
+#if (NMM_CORE==1)
+   REAL, DIMENSION( ims:ime, jms:jme, kms:kme ),                 &
+                   INTENT(INOUT) :: rucuten,rvcuten
+   REAL, DIMENSION( ims:ime , jms:jme ),                         &
+                    INTENT(IN) ::  STORE_RAND
+   REAL,            INTENT(INOUT) :: mommix
+#endif
+
 !
 ! optional arguments
 !
+   INTEGER, DIMENSION( ims:ime, jms:jme ),                       &
+         OPTIONAL, INTENT(INOUT) ::                              &
+     k22_shallow,kbcon_shallow,ktop_shallow
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          OPTIONAL, INTENT(INOUT) ::                              &
                       ! optional moisture tracers
@@ -303,7 +331,7 @@ CONTAINS
                     OPTIONAL,                                    &
                     INTENT(INOUT) ::                             &
                 apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma      &
-               ,apr_capme,apr_capmi,edt_out                      &
+               ,apr_capme,apr_capmi,edt_out,xmb_shallow          &
                                                     , MASS_FLUX
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          OPTIONAL, INTENT(INOUT) ::                              &
@@ -311,6 +339,15 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
           OPTIONAL,                                              &
           INTENT(INOUT) ::                       XF_ENS, PR_ENS
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
+         OPTIONAL,                                              &
+         INTENT(INOUT) ::                                       &
+                                                   CFU1,        &
+                                                   CFD1,        &
+                                                   DFU1,        &
+                                                   EFU1,        &
+                                                   DFD1,        &
+                                                   EFD1
 
 !
 ! Flags relating to the optional tendency arrays declared above
@@ -326,14 +363,28 @@ CONTAINS
                                                      ,f_qi      &
                                                      ,f_qs      &
                                                      ,f_qg
+   LOGICAL, INTENT(IN), OPTIONAL ::                   f_flux
 
+#if ( WRF_DFI_RADAR == 1 )
+!
+!  option of cap suppress: 
+!        do_capsuppress = 1   do
+!        do_capsuppress = other   don't
+!
+!
+   INTEGER,      INTENT(IN   ) ,OPTIONAL   :: do_capsuppress
+   REAL, DIMENSION( ims:ime, jms:jme ) :: cap_suppress_loc
+#endif
 
 ! LOCAL  VAR
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij
+   logical :: l_flux
 
 !-----------------------------------------------------------------
 
+   l_flux=.FALSE.
+   if (present(f_flux)) l_flux=f_flux
    if (.not. PRESENT(CURR_SECS)) then
       curr_secs_pass = -1
    else 
@@ -359,7 +410,6 @@ CONTAINS
    else
       tmppratec(:,:) = 0.
    end if
-
 
    IF (cu_physics .eq. 0) return
 #if  ( EM_CORE == 1 )
@@ -526,7 +576,10 @@ CONTAINS
                ,RQVBLTEN=RQVBLTEN                               &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
-                                                                )
+               ,CFU1=CFU1,CFD1=CFD1,DFU1=DFU1,EFU1=EFU1         &
+               ,DFD1=DFD1,EFD1=EFD1,f_flux=l_flux               )
+          CALL wrf_debug(200,'back from grelldrv')
+
      CASE (SASSCHEME)
                                                                                                                                            
           IF ( adapt_step_flag_pass ) THEN
@@ -536,25 +589,43 @@ CONTAINS
           CALL wrf_debug(100,'in cu_sas')
           CALL CU_SAS(                                          &
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
+               ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
+               ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
+#if (NMM_CORE==1)
+               ,RUCUTEN=RUCUTEN, RVCUTEN=RVCUTEN                &
+#endif
                ,RAINCV=RAINCV,PRATEC=tmpPRATEC,HTOP=HTOP,HBOT=HBOT &
-               ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
+               ,U3D=u,V3D=v,W=w,T3D=t                           &
                ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
+               ,PI3D=pi,RHO3D=rho                               &
                ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
                ,CU_ACT_FLAG=CU_ACT_FLAG                         &
+               ,P_QC=p_qc                                       &
+#if (NMM_CORE==1)
+               ,store_rand=store_rand  &
+               ,MOMMIX=MOMMIX  &
+#endif
+               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
                ,CUDT=cudt_pass                                  &
                ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
-              ! optionals
-               ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
-               ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
-               ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
-               ,F_QI=f_qi,F_QS=f_qs                             &
                                                                 )
      CASE (G3SCHEME)
           CALL wrf_debug(100,'in grelldrv')
+#if ( WRF_DFI_RADAR == 1 )
+          if (do_capsuppress == 1) then
+            WRITE( wrf_err_message , * ) 'G3 do CAP suppress',its,jts,min( jte,jde-1 ),min( ite,ide-1 ),kte
+            CALL wrf_debug(200, wrf_err_message)
+            DO j = jts, min( jte,jde-1 )
+            DO i = its, min( ite,ide-1 )
+               cap_suppress_loc(i,j) = grid%dfi_tten_rad(i,kte,j)
+            ENDDO
+            ENDDO
+         endif
+#endif
           CALL G3DRV(                                           &
                 DT=dt, ITIMESTEP=itimestep, DX=dx               &
                ,U=u,V=v,T=t,W=w ,RHO=rho                        &
@@ -566,11 +637,15 @@ CONTAINS
                ,APR_CAPMI=apr_capmi,MASS_FLUX=mass_flux         &
                ,XF_ENS=xf_ens,PR_ENS=pr_ens,HT=ht               &
                ,xland=xland,gsw=gsw,edt_out=edt_out             &
-               ,GDC=gd_cloud,GDC2=gd_cloud2                     &
+               ,GDC=gd_cloud,GDC2=gd_cloud2,kpbl=kpbl           &
+               ,k22_shallow=k22_shallow                         &
+               ,kbcon_shallow=kbcon_shallow                     &
+               ,ktop_shallow=ktop_shallow                       &
+               ,xmb_shallow=xmb_shallow                         &
                ,cugd_tten=cugd_tten,cugd_qvten=cugd_qvten       &
                ,cugd_ttens=cugd_ttens,cugd_qvtens=cugd_qvtens   &
                ,cugd_qcten=cugd_qcten,cugd_avedx=cugd_avedx     &
-               ,imomentum=imomentum                             &
+               ,imomentum=imomentum,ishallow_g3=ishallow        &
                ,ENSDIM=ensdim,MAXIENS=maxiens,MAXENS=maxens     &
                ,MAXENS2=maxens2,MAXENS3=maxens3,ichoice=clos_choice &
                ,STEPCU=STEPCU,htop=htop,hbot=hbot               &
@@ -587,10 +662,16 @@ CONTAINS
 #else
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
+               ,rqvblten=rqvblten,rthblten=rthblten             &
 #endif
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
+#if ( WRF_DFI_RADAR == 1 )
+                 ! Optional CAP suppress option
+              ,do_capsuppress=do_capsuppress                    &
+              ,cap_suppress_loc=cap_suppress_loc                &
+#endif                                 
                                                                 )
 
      CASE DEFAULT 
@@ -638,6 +719,7 @@ CONTAINS
       if (PRESENT(PRATEC)) then
          pratec(:,:) = tmppratec(:,:)
       endif
+          CALL wrf_debug(200,'returning from cumulus_driver')
    END SUBROUTINE cumulus_driver
 
 END MODULE module_cumulus_driver

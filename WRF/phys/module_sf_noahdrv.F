@@ -4,6 +4,7 @@ MODULE module_sf_noahdrv
   USE module_sf_noahlsm
   USE module_sf_urban
   USE module_sf_bep
+  USE module_sf_bep_bem
 #ifdef WRF_CHEM
   USE module_data_gocart_dust
 #endif
@@ -31,6 +32,7 @@ CONTAINS
                   ACSNOM,ACSNOW,                                & !O
                   SNOPCX,                                       & !O
                   POTEVP,                                       & !O
+                  SMCREL,                                       & !O
                   XICE_THRESHOLD,                               &
                   RDLAI2D,USEMONALB,                            &
                   RIB,                                          & !?
@@ -39,6 +41,7 @@ CONTAINS
                   ims,ime, jms,jme, kms,kme,                    &
                   its,ite, jts,jte, kts,kte,                    &
                   sf_urban_physics,                             &
+                  CMR_SFCDIF,CHR_SFCDIF,CMC_SFCDIF,CHC_SFCDIF,  &
 !Optional Urban
                   TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D, & !H urban
                   UC_URB2D,                                     & !H urban
@@ -54,7 +57,13 @@ CONTAINS
                   num_road_layers, DZR, DZB, DZG,               & !I urban
                   FRC_URB2D,UTYPE_URB2D,                        & !O
                   num_urban_layers,                             & !I multi-layer urban
-                  trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,   & !H multi-layer urban
+                  trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,      & !H multi-layer urban
+                  tlev_urb3d,qlev_urb3d,                        & !H multi-layer urban
+                  tw1lev_urb3d,tw2lev_urb3d,                    & !H multi-layer urban
+                  tglev_urb3d,tflev_urb3d,                      & !H multi-layer urban
+                  sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d,          & !H multi-layer urban
+                  sfvent_urb3d,lfvent_urb3d,                    & !H multi-layer urban
+                  sfwin1_urb3d,sfwin2_urb3d,                    & !H multi-layer urban
                   sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,    & !H multi-layer urban
                   th_phy,rho,p_phy,ust,                         & !I multi-layer urban
                   gmt,julday,xlong,xlat,                        & !I multi-layer urban
@@ -137,6 +146,8 @@ CONTAINS
 !-- DRIP        through-fall of precip and/or dew in excess of canopy
 !                 water-holding capacity (m)
 !-- DEW         dewfall (or frostfall for t<273.15) (M)
+!-- SMAV        Soil Moisture Availability for each layer, as a fraction
+!                 between SMCWLT and SMCMAX (dimensionless fraction)
 ! ----------------------------------------------------------------------
 !-- BETA        ratio of actual/potential evap (dimensionless)
 !-- ETP         potential evaporation (W m-2)
@@ -249,6 +260,9 @@ CONTAINS
                                                          SH2O,  & ! new soil liquid
                                                          TSLB     ! TSLB     STEMP
 
+   REAL,     DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &
+             INTENT(OUT)     ::                         SMCREL
+
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(INOUT)    ::                            TSK, & !was TGB (temperature)
                                                            HFX, &
@@ -284,9 +298,15 @@ CONTAINS
    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LAI
    REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) ::        QZ0
 
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMC_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHC_SFCDIF
 ! Local variables (moved here from driver to make routine thread safe, 20031007 jm)
 
       REAL, DIMENSION(1:num_soil_layers) ::  ET
+
+      REAL, DIMENSION(1:num_soil_layers) ::  SMAV
 
       REAL  ::  BETA, ETP, SSOIL,EC, EDIR, ESNOW, ETT,        &
                 FLX1,FLX2,FLX3, DRIP,DEW,FDOWN,RC,PC,RSMIN,XLAI,  &
@@ -471,6 +491,19 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tgb_urb4d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tlev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: qlev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1lev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2lev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tglev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tflev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: lf_ac_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: sf_ac_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: cm_ac_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: sfvent_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: lfvent_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfwin1_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfwin2_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw1_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw2_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfr_urb3d
@@ -497,6 +530,7 @@ CONTAINS
 !   REAL,    DIMENSION( ims:ime, jms:jme ) :: GRDFLX_URB
 !   REAL,    DIMENSION( ims:ime, jms:jme ) :: QFX_URB,QSFC_URB,UMOM_URB,VMOM_URB
    REAL,    DIMENSION( ims:ime, jms:jme ) :: HFX_URB,UMOM_URB,VMOM_URB
+   REAL,    DIMENSION( ims:ime, jms:jme ) :: QFX_URB
 !   REAL,    DIMENSION( ims:ime, jms:jme ) :: ALBEDO_URB,EMISS_URB,UMOM,VMOM,UST
    REAL, DIMENSION(ims:ime,jms:jme) ::EMISS_URB
    REAL, DIMENSION(ims:ime,jms:jme) :: RL_UP_URB
@@ -504,13 +538,13 @@ CONTAINS
    REAL, DIMENSION(ims:ime,jms:jme) ::GRDFLX_URB
    REAL :: SIGMA_SB,RL_UP_RURAL,RL_UP_TOT,RS_ABS_TOT,UMOM,VMOM
    REAL :: r1,r2,r3
+   REAL :: CMR_URB, CHR_URB, CMC_URB, CHC_URB
 ! ----------------------------------------------------------------------
 ! DECLARATIONS END - urban
 ! ----------------------------------------------------------------------
 
   REAL, PARAMETER  :: CAPA=R_D/CP
   REAL :: APELM,APES,SFCTH2,PSFC
-
   real, intent(in) :: xice_threshold
   character(len=80) :: message_text
 
@@ -558,6 +592,7 @@ CONTAINS
             DO NS=1,NSOIL
               SMOIS(I,NS,J)=1.0
               TSLB(I,NS,J)=273.16                                          !STEMP
+              SMCREL(I,NS,J)=1.0
             ENDDO
           ELSE
             IF ( XICE(I,J) .GE. XICE_THRESHOLD ) THEN
@@ -566,6 +601,7 @@ CONTAINS
               SMSTOT(I,J)=1.0
               DO NS=1,NSOIL
                 SMOIS(I,NS,J)=1.0
+                SMCREL(I,NS,J)=1.0
               ENDDO
             ENDIF
           ENDIF
@@ -733,7 +769,7 @@ CONTAINS
 !Fei: urban. for urban surface, if calling UCM, redefine the natural surface in cities as
 ! the "NATURAL" category in the VEGPARM.TBL
 	
-	   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2 ) THEN
+	   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN
                 IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
                   IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
 		 VEGTYP = NATURAL
@@ -744,7 +780,7 @@ CONTAINS
 		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
                    if(sf_urban_physics.eq.1)then
            T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
-                   elseif(sf_urban_physics.eq.2)then
+                   elseif((sf_urban_physics.eq.2).OR.(sf_urban_physics.eq.3))then
                 r1= (tsk(i,j)**4.)
                 r2= frc_urb2d(i,j)*(ts_urb2d(i,j)**4.)
                 r3= (1.-frc_urb2d(i,j))
@@ -808,7 +844,7 @@ CONTAINS
                  SNOMLT,SNCOVR,                                   &    !O
                  RUNOFF1,RUNOFF2,RUNOFF3,                         &    !O
                  RC,PC,RSMIN,XLAI,RCS,RCT,RCQ,RCSOIL,             &    !O
-                 SOILW,SOILM,Q1,                                  &    !D
+                 SOILW,SOILM,Q1,SMAV,                             &    !D
                  RDLAI2D,USEMONALB,                               &
                  SNOTIME1,                                        &
                  RIBB,                                            &
@@ -969,6 +1005,12 @@ CONTAINS
 !
             CHS_URB  = CHS(I,J)
             CHS2_URB = CHS2(I,J)
+            IF (PRESENT(CMR_SFCDIF)) THEN
+               CMR_URB = CMR_SFCDIF(I,J)
+               CHR_URB = CHR_SFCDIF(I,J)
+               CMC_URB = CMC_SFCDIF(I,J)
+               CHC_URB = CHC_SFCDIF(I,J)
+            ENDIF
 !
 ! Call urban
 
@@ -986,6 +1028,7 @@ CONTAINS
                        TS_URB,QS_URB,SH_URB,LH_URB,LH_KINEMATIC_URB,    & ! O
                        SW_URB,ALB_URB,LW_URB,G_URB,RN_URB,PSIM_URB,PSIH_URB, & ! O
                        GZ1OZ0_URB,                                      & !O
+                       CMR_URB, CHR_URB, CMC_URB, CHC_URB,              &
                        U10_URB, V10_URB, TH2_URB, Q2_URB,               & ! O
                        UST_URB)                                           !O
 
@@ -1025,7 +1068,10 @@ CONTAINS
             LH(I,J) = FRC_URB2D(I,J)*LH_URB+(1-FRC_URB2D(I,J))*ETA            ![W/m/m]
             GRDFLX(I,J) = FRC_URB2D(I,J)*G_URB+(1-FRC_URB2D(I,J))*SSOIL       ![W/m/m]
             TSK(I,J) = FRC_URB2D(I,J)*TS_URB+(1-FRC_URB2D(I,J))*T1            ![K]
-            QSFC(I,J)= FRC_URB2D(I,J)*QS_URB+(1-FRC_URB2D(I,J))*Q1            ![-]
+            Q1 = FRC_URB2D(I,J)*QS_URB+(1-FRC_URB2D(I,J))*Q1            ![-]
+! Convert QSFC back to mixing ratio
+            QSFC(I,J)= Q1/(1.0-Q1)
+            UST(I,J)= FRC_URB2D(I,J)*UST_URB+(1-FRC_URB2D(I,J))*UST(I,J)      ![m/s]
 
 #if 0
     IF(IPRINT)THEN
@@ -1081,7 +1127,12 @@ CONTAINS
             Q2_URB2D(I,J)    = Q2_URB
             UST_URB2D(I,J)   = UST_URB
             AKMS_URB2D(I,J)  = KARMAN * UST_URB2D(I,J)/(GZ1OZ0_URB2D(I,J)-PSIM_URB2D(I,J))
-
+            IF (PRESENT(CMR_SFCDIF)) THEN
+               CMR_SFCDIF(I,J) = CMR_URB
+               CHR_SFCDIF(I,J) = CHR_URB
+               CMC_SFCDIF(I,J) = CMC_URB
+               CHC_SFCDIF(I,J) = CHC_URB
+            ENDIF
           END IF
 
          ENDIF                                   ! end of UCM CALL if block
@@ -1092,6 +1143,9 @@ CONTAINS
 !***  DIAGNOSTICS
           SMSTAV(I,J)=SOILW
           SMSTOT(I,J)=SOILM*1000.
+          DO NS=1,NSOIL
+          SMCREL(I,NS,J)=SMAV(NS)
+          ENDDO
 !         Convert the water unit into mm
           SFCRUNOFF(I,J)=SFCRUNOFF(I,J)+RUNOFF1*DT*1000.0
           UDRUNOFF(I,J)=UDRUNOFF(I,J)+(RUNOFF2+RUNOFF3)*DT*1000.0
@@ -1120,6 +1174,7 @@ CONTAINS
             RL_UP_URB(i,j)=0.
             RS_ABS_URB(i,j)=0.
             GRDFLX_URB(i,j)=0.
+            b_q_bep(i,kts:kte,j)=0.
          end do
          end do
        CALL BEP(frc_urb2d,utype_urb2d,itimestep,dz8w,dt,u_phy,v_phy,   &
@@ -1139,7 +1194,42 @@ CONTAINS
 
        ENDIF
 
-    if(sf_urban_physics.eq.2)then                                 !Bep begin
+       
+       IF (SF_URBAN_PHYSICS == 3) THEN
+
+
+         do j=jts,jte
+         do i=its,ite
+            EMISS_URB(i,j)=0.
+            RL_UP_URB(i,j)=0.
+            RS_ABS_URB(i,j)=0.
+            GRDFLX_URB(i,j)=0.
+            b_q_bep(i,kts:kte,j)=0.
+         end do
+         end do
+          
+       CALL BEP_BEM(frc_urb2d,utype_urb2d,itimestep,dz8w,dt,u_phy,v_phy, &
+                th_phy,rho,p_phy,swdown,glw,                           &
+                gmt,julday,xlong,xlat,declin_urb,cosz_urb2d,omg_urb2d, &
+                num_urban_layers,                                      &
+                trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,               &
+                tlev_urb3d,qlev_urb3d,tw1lev_urb3d,tw2lev_urb3d,       &
+                tglev_urb3d,tflev_urb3d,sf_ac_urb3d,lf_ac_urb3d,       &
+                cm_ac_urb3d,sfvent_urb3d,lfvent_urb3d,                 &
+                sfwin1_urb3d,sfwin2_urb3d,                             &
+                sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,             &
+                a_u_bep,a_v_bep,a_t_bep,                               &
+                a_e_bep,b_u_bep,b_v_bep,                               &
+                b_t_bep,b_e_bep,b_q_bep,dlg_bep,                       &
+                dl_u_bep,sf_bep,vl_bep,                                &
+                rl_up_urb,rs_abs_urb,emiss_urb,grdflx_urb,qv3d,        &
+                ids,ide, jds,jde, kds,kde,                             &
+                ims,ime, jms,jme, kms,kme,                             &
+                its,ite, jts,jte, kts,kte )
+
+       ENDIF
+
+    if((sf_urban_physics.eq.2).OR.(sf_urban_physics.eq.3))then         !Bep begin
 ! fix the value of the Stefan-Boltzmann constant
          sigma_sb=5.67e-08
          do j=jts,jte
@@ -1147,6 +1237,7 @@ CONTAINS
             UMOM_URB(I,J)=0.
             VMOM_URB(I,J)=0.
             HFX_URB(I,J)=0.
+            QFX_URB(I,J)=0.
          do k=kts,kte
             a_u_bep(i,k,j)=a_u_bep(i,k,j)*frc_urb2d(i,j)
             a_v_bep(i,k,j)=a_v_bep(i,k,j)*frc_urb2d(i,j)
@@ -1156,9 +1247,11 @@ CONTAINS
             b_u_bep(i,k,j)=b_u_bep(i,k,j)*frc_urb2d(i,j)
             b_v_bep(i,k,j)=b_v_bep(i,k,j)*frc_urb2d(i,j)
             b_t_bep(i,k,j)=b_t_bep(i,k,j)*frc_urb2d(i,j)
-            b_q_bep(i,k,j)=0.
+            b_q_bep(i,k,j)=b_q_bep(i,k,j)*frc_urb2d(i,j)
             b_e_bep(i,k,j)=b_e_bep(i,k,j)*frc_urb2d(i,j)
             HFX_URB(I,J)=HFX_URB(I,J)+B_T_BEP(I,K,J)*RHO(I,K,J)*CP*                &
+                          DZ8W(I,K,J)*VL_BEP(I,K,J)
+            QFX_URB(I,J)=QFX_URB(I,J)+B_Q_BEP(I,K,J)*               &
                           DZ8W(I,K,J)*VL_BEP(I,K,J)
             UMOM_URB(I,J)=UMOM_URB(I,J)+ (A_U_BEP(I,K,J)*U_PHY(I,K,J)+             &
                           B_U_BEP(I,K,J))*DZ8W(I,K,J)*VL_BEP(I,K,J)
@@ -1173,7 +1266,7 @@ CONTAINS
                            ((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)+a_v_bep(i,1,j)
             b_t_bep(i,1,j)=(1.-frc_urb2d(i,j))*hfx_rural(i,j)/dz8w(i,1,j)/rho(i,1,j)/CP+ &
                             b_t_bep(i,1,j)
-            b_q_bep(i,1,j)=(1.-frc_urb2d(i,j))*qfx_rural(i,j)/dz8w(i,1,j)/rho(i,1,j)
+            b_q_bep(i,1,j)=(1.-frc_urb2d(i,j))*qfx_rural(i,j)/dz8w(i,1,j)/rho(i,1,j)+b_q_bep(i,1,j)
             umom=(1.-frc_urb2d(i,j))*ust(i,j)*ust(i,j)*u_phy(i,1,j)/               &
                          ((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)+umom_urb(i,j)
             vmom=(1.-frc_urb2d(i,j))*ust(i,j)*ust(i,j)*v_phy(i,1,j)/               &
@@ -1189,8 +1282,8 @@ CONTAINS
               rl_up_rural=-emiss_rural(i,j)*sigma_sb*(tsk_rural(i,j)**4.)-(1.-emiss_rural(i,j))*glw(i,j)
               rl_up_tot=(1.-frc_urb2d(i,j))*rl_up_rural+frc_urb2d(i,j)*rl_up_urb(i,j)   
               emiss(i,j)=(1.-frc_urb2d(i,j))*emiss_rural(i,j)+frc_urb2d(i,j)*emiss_urb(i,j)
-              ts_urb2d(i,j)=((-rl_up_urb(i,j)-(1.-emiss_urb(i,j))*glw(i,j))/emiss_urb(i,j)/sigma_sb)**0.25
-           tsk(i,j)=( (-1.*rl_up_tot-(1.-emiss(i,j))*glw(i,j) )/emiss(i,j)/sigma_sb)**.25
+              ts_urb2d(i,j)=(max(0.,(-rl_up_urb(i,j)-(1.-emiss_urb(i,j))*glw(i,j))/emiss_urb(i,j)/sigma_sb))**0.25
+              tsk(i,j)=(max(0., (-1.*rl_up_tot-(1.-emiss(i,j))*glw(i,j) )/emiss(i,j)/sigma_sb))**.25
            rs_abs_tot=(1.-frc_urb2d(i,j))*swdown(i,j)*(1.-albedo(i,j))+frc_urb2d(i,j)*rs_abs_urb(i,j)  
           if(swdown(i,j).gt.0.)then
            albedo(i,j)=1.-rs_abs_tot/swdown(i,j)
@@ -1199,14 +1292,15 @@ CONTAINS
           endif
 ! rename *_urb to sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d
          grdflx(i,j)= (1.-frc_urb2d(i,j))*grdflx_rural(i,j)+frc_urb2d(i,j)*grdflx_urb(i,j) 
-         qfx(i,j)=(1.-frc_urb2d(i,j))*qfx_rural(i,j)
-         lh(i,j)=(1.-frc_urb2d(i,j))*qfx_rural(i,j)*xlv
+         qfx(i,j)=(1.-frc_urb2d(i,j))*qfx_rural(i,j)+qfx_urb(i,j)
+!        lh(i,j)=(1.-frc_urb2d(i,j))*qfx_rural(i,j)*xlv
+         lh(i,j)=qfx(i,j)*xlv
          HFX(I,J) = HFX_URB(I,J)+(1-FRC_URB2D(I,J))*HFX_RURAL(I,J)         ![W/m/m]
             SH_URB2D(I,J)    = HFX_URB(I,J)/FRC_URB2D(I,J)
-            LH_URB2D(I,J)    = 0.
+            LH_URB2D(I,J)    = qfx_urb(i,j)*xlv
             G_URB2D(I,J)     = grdflx_urb(i,j)
             RN_URB2D(I,J)    = rs_abs_urb(i,j)+emiss_urb(i,j)*glw(i,j)-rl_up_urb(i,j)
-         ust(i,j)=(umom**2.+vmom**2.)**.25
+            ust(i,j)=(umom**2.+vmom**2.)**.25
 !          if(tsk(i,j).gt.350)write(*,*)'tsk too big!',i,j,tsk(i,j)
 !          if(tsk(i,j).lt.260)write(*,*)'tsk too small!',i,j,tsk(i,j),rl_up_tot,rl_up_urb(i,j),rl_up_rural
 !                    print*,'ivgtyp,i,j,sigma_sb',ivgtyp(i,j),i,j,sigma_sb
@@ -1316,6 +1410,15 @@ CONTAINS
      CALL  SOIL_VEG_GEN_PARM( MMINLU, MMINSL )
    ENDIF
 
+#ifdef WRF_CHEM
+!
+! need this parameter for dust parameterization in wrf/chem
+!
+   do I=1,NSLTYPE
+      porosity(i)=maxsmc(i)
+   enddo
+#endif
+
    IF(.not.restart)THEN
 
    itf=min0(ite,ide-1)
@@ -1338,14 +1441,6 @@ CONTAINS
       CALL wrf_error_fatal( "module_sf_noahlsm.F: lsminit: out of range value "// &
                             "of ISLTYP. Is this field in the input?" )
    ENDIF
-#ifdef WRF_CHEM
-!
-! need this parameter for dust parameterization in wrf/chem
-!
-   do I=1,NSLTYPE
-      porosity(i)=maxsmc(i)
-   enddo
-#endif
 
 ! initialize soil liquid water content SH2O
 
@@ -1694,6 +1789,8 @@ CONTAINS
           READ (19,*)SMLOW_DATA
           READ (19,*)
           READ (19,*)SMHIGH_DATA
+          READ (19,*)
+          READ (19,*)LVCOEF_DATA
         CLOSE (19)
       ENDIF
 
@@ -1711,6 +1808,7 @@ CONTAINS
       CALL wrf_dm_bcast_real    ( CZIL_DATA    ,  1 )
       CALL wrf_dm_bcast_real    ( SMLOW_DATA   ,  1 )
       CALL wrf_dm_bcast_real    ( SMHIGH_DATA  ,  1 )
+      CALL wrf_dm_bcast_real    ( LVCOEF_DATA  ,  1 )
 
 
 !-----------------------------------------------------------------

@@ -1,10 +1,10 @@
    SUBROUTINE dfi_accumulate( grid )
 
-      USE module_domain
-      USE module_configure
+      USE module_domain, ONLY : domain
+!      USE module_configure
       USE module_driver_constants
       USE module_machine
-      USE module_dm
+!      USE module_dm
       USE module_model_constants
       USE module_state_description
 
@@ -38,7 +38,18 @@
        grid%dfi_al(:,:,:)  = grid%dfi_al(:,:,:)  + grid%al(:,:,:)    * hn
        grid%dfi_alt(:,:,:) = grid%dfi_alt(:,:,:) + grid%alt(:,:,:)   * hn
        grid%dfi_pb(:,:,:)  = grid%dfi_pb(:,:,:)  + grid%pb(:,:,:)    * hn
+      ! neg. check on hydrometeor and scalar variables
+       grid%moist(:,:,:,:) = max(0.,grid%moist(:,:,:,:))
+       grid%dfi_scalar(:,:,:,:) = max(0.,grid%dfi_scalar(:,:,:,:))
+#if ( WRF_DFI_RADAR == 1 )
+     IF ( grid%dfi_radar .EQ. 0 ) then  
        grid%dfi_moist(:,:,:,:)  = grid%dfi_moist(:,:,:,:)  + grid%moist(:,:,:,:)  * hn
+     ELSE
+       grid%dfi_moist(:,:,:,P_QV) = grid%dfi_moist(:,:,:,P_QV) + grid%moist(:,:,:,P_QV) * hn
+     ENDIF
+#else
+       grid%dfi_moist(:,:,:,:)  = grid%dfi_moist(:,:,:,:)  + grid%moist(:,:,:,:)  * hn
+#endif
        grid%dfi_scalar(:,:,:,:) = grid%dfi_scalar(:,:,:,:) + grid%scalar(:,:,:,:) * hn
 
       ! accumulate DFI coefficient
@@ -51,8 +62,9 @@
 #if (EM_CORE == 1)
    SUBROUTINE wrf_dfi_bck_init ( )
 
-      USE module_domain
+      USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time
       USE module_utility
+      USE module_state_description
 
       IMPLICIT NONE
 
@@ -60,27 +72,27 @@
 
       INTERFACE
          SUBROUTINE Setup_Timekeeping(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE Setup_Timekeeping
 
          SUBROUTINE dfi_save_arrays(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE dfi_save_arrays
 
          SUBROUTINE dfi_clear_accumulation(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE dfi_clear_accumulation
 
          SUBROUTINE optfil_driver(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE optfil_driver
 
          SUBROUTINE start_domain(grid, allowed_to_read)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain)          :: grid
             LOGICAL, INTENT(IN)    :: allowed_to_read
          END SUBROUTINE start_domain
@@ -89,7 +101,11 @@
       head_grid%dfi_stage = DFI_BCK
 
       ! Negate time step
-      CALL nl_set_time_step ( 1, -head_grid%time_step )
+      IF ( head_grid%time_step_dfi .gt. 0 ) THEN
+        CALL nl_set_time_step ( 1, -head_grid%time_step_dfi )
+      ELSE
+        CALL nl_set_time_step ( 1, -head_grid%time_step )
+      ENDIF
 
       CALL Setup_Timekeeping (head_grid)
 
@@ -99,19 +115,33 @@
       CALL nl_set_ra_sw_physics( 1, 0 )
       CALL nl_set_sf_surface_physics( 1, 0 )
       CALL nl_set_sf_sfclay_physics( 1, 0 )
+      CALL nl_set_sf_urban_physics( 1, 0 )
       CALL nl_set_bl_pbl_physics( 1, 0 )
       CALL nl_set_cu_physics( 1, 0 )
       CALL nl_set_damp_opt( 1, 0 )
+      CALL nl_set_diff_6th_opt( 1, 0 )
+      CALL nl_set_sst_update( 1, 0 )
+      CALL nl_set_fractional_seaice( 1, 0 )
+      CALL nl_set_gwd_opt( 1, 0 )
+      CALL nl_set_use_adaptive_time_step( 1, .false. )
+      ! set bc
+      CALL nl_set_constant_bc(1, head_grid%constant_bc)
 
 #ifdef WRF_CHEM
       ! set chemistry option to zero
       CALL nl_set_chem_opt (1, 0)
       CALL nl_set_aer_ra_feedback (1, 0)
+      CALL nl_set_io_form_auxinput5 (1, 0)
+      CALL nl_set_io_form_auxinput7 (1, 0)
+      CALL nl_set_io_form_auxinput8 (1, 0)
 #endif
 
       ! set diffusion to zero for backward integration
       CALL nl_set_km_opt( 1, head_grid%km_opt_dfi)
-      CALL nl_set_moist_adv_dfi_opt( 1, head_grid%moist_adv_dfi_opt)
+!     CALL nl_set_moist_adv_dfi_opt( 1, head_grid%moist_adv_dfi_opt)
+      IF ( head_grid%moist_adv_opt == 2 ) THEN
+        CALL nl_set_moist_adv_opt ( 1, 0 )
+      ENDIF
 
       head_grid%start_subtime = domain_get_start_time ( head_grid )
       head_grid%stop_subtime = domain_get_stop_time ( head_grid )
@@ -130,8 +160,9 @@
 
    SUBROUTINE wrf_dfi_fwd_init ( )
 
-      USE module_domain
+      USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time
       USE module_utility
+      USE module_state_description
 
       IMPLICIT NONE
 
@@ -139,27 +170,27 @@
 
       INTERFACE
          SUBROUTINE Setup_Timekeeping(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE Setup_Timekeeping
 
          SUBROUTINE dfi_save_arrays(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE dfi_save_arrays
 
          SUBROUTINE dfi_clear_accumulation(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE dfi_clear_accumulation
 
          SUBROUTINE optfil_driver(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE optfil_driver
 
          SUBROUTINE start_domain(grid, allowed_to_read)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain)          :: grid
             LOGICAL, INTENT(IN)    :: allowed_to_read
          END SUBROUTINE start_domain
@@ -167,13 +198,15 @@
 
       head_grid%dfi_stage = DFI_FWD
 
-      ! get the negative time step from the namelist and store
-      ! it as positive again.  
       ! for Setup_Timekeeping to use when setting the clock
       ! note that this ignores fractional parts of time step
-      CALL nl_get_time_step( 1, head_grid%time_step )
-      head_grid%time_step = abs(head_grid%time_step)
-      CALL nl_set_time_step( 1, head_grid%time_step )
+
+!     CALL nl_set_time_step( 1, head_grid%time_step_dfi )
+      IF ( head_grid%time_step_dfi .gt. 0 ) THEN
+        CALL nl_set_time_step ( 1, head_grid%time_step_dfi )
+      ELSE
+        CALL nl_set_time_step ( 1, head_grid%time_step )
+      ENDIF
 
       head_grid%itimestep=0
       head_grid%xtime=0.
@@ -184,15 +217,23 @@
       CALL nl_set_ra_sw_physics( 1, head_grid%ra_sw_physics)
       CALL nl_set_sf_surface_physics( 1, head_grid%sf_surface_physics)
       CALL nl_set_sf_sfclay_physics( 1, head_grid%sf_sfclay_physics)
+      CALL nl_set_sf_urban_physics( 1, head_grid%sf_urban_physics)
       CALL nl_set_bl_pbl_physics( 1, head_grid%bl_pbl_physics)
       CALL nl_set_cu_physics( 1, head_grid%cu_physics)
       CALL nl_set_damp_opt( 1, head_grid%damp_opt)
+      CALL nl_set_diff_6th_opt( 1, head_grid%diff_6th_opt)
+      CALL nl_set_sst_update( 1, 0 )
+      CALL nl_set_fractional_seaice( 1, head_grid%fractional_seaice)
+      CALL nl_set_gwd_opt( 1, head_grid%gwd_opt)
+      CALL nl_set_use_adaptive_time_step( 1, .false. )
+      ! set bc
+      CALL nl_set_constant_bc(1, head_grid%constant_bc)
 
-#ifdef WRF_CHEM
-      ! reset chem option to normal
-      CALL nl_set_chem_opt( 1, head_grid%chem_opt)
-      CALL nl_set_aer_ra_feedback (1, head_grid%aer_ra_feedback)
-#endif
+!  #ifdef WRF_CHEM
+!      ! reset chem option to normal
+!      CALL nl_set_chem_opt( 1, head_grid%chem_opt)
+!      CALL nl_set_aer_ra_feedback (1, head_grid%aer_ra_feedback)
+!  #endif
 
       ! reset km_opt to norlmal
       CALL nl_set_km_opt( 1, head_grid%km_opt)
@@ -218,7 +259,8 @@
 
    SUBROUTINE wrf_dfi_fst_init ( )
 
-      USE module_domain
+      USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time
+      USE module_state_description
 
       IMPLICIT NONE
 
@@ -226,27 +268,27 @@
 
       INTERFACE
          SUBROUTINE Setup_Timekeeping(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE Setup_Timekeeping
 
          SUBROUTINE dfi_save_arrays(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE dfi_save_arrays
 
          SUBROUTINE dfi_clear_accumulation(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE dfi_clear_accumulation
 
          SUBROUTINE optfil_driver(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE optfil_driver
 
          SUBROUTINE start_domain(grid, allowed_to_read)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain)          :: grid
             LOGICAL, INTENT(IN)    :: allowed_to_read
          END SUBROUTINE start_domain
@@ -254,8 +296,26 @@
 
       head_grid%dfi_stage = DFI_FST 
 
+     ! reset time_step to normal and adaptive_time_step
+      CALL nl_set_time_step( 1, head_grid%time_step )
+
       head_grid%itimestep=0
       head_grid%xtime=0.         ! BUG: This will probably not work for all DFI options
+! only use adaptive time stepping for forecast
+      CALL nl_set_use_adaptive_time_step( 1, head_grid%use_adaptive_time_step )
+!     CALL nl_set_sst_update( 1, head_grid%sst_update )
+
+#ifdef WRF_CHEM
+      ! reset chem option to normal
+      CALL nl_set_chem_opt( 1, head_grid%chem_opt)
+      CALL nl_set_aer_ra_feedback (1, head_grid%aer_ra_feedback)
+      CALL nl_set_io_form_auxinput5 (1, head_grid%io_form_auxinput5)
+      CALL nl_set_io_form_auxinput7 (1, head_grid%io_form_auxinput7)
+      CALL nl_set_io_form_auxinput8 (1, head_grid%io_form_auxinput8)
+#endif
+
+      ! reset to normal bc
+      CALL nl_set_constant_bc(1, .false.)
 
       CALL Setup_Timekeeping (head_grid)
       head_grid%start_subtime = domain_get_start_time ( head_grid )
@@ -269,9 +329,9 @@
    SUBROUTINE wrf_dfi_write_initialized_state( )
 
       ! Driver layer
-      USE module_domain
+      USE module_domain, ONLY : head_grid
       USE module_io_domain
-      USE module_configure
+      USE module_configure, ONLY : grid_config_rec_type, model_config_rec
 
       IMPLICIT NONE
 
@@ -284,16 +344,16 @@
 
       CALL model_to_grid_config_rec ( head_grid%id , model_config_rec , config_flags )
 
-      WRITE (wrf_err_message,'(A,I4)') 'Writing out initialized model state'
+      WRITE (wrf_err_message,'(A)') 'Writing out initialized model state'
       CALL wrf_message(TRIM(wrf_err_message))
 
       rstname = 'wrfinput_initialized_d01'
-      CALL open_w_dataset ( fid, TRIM(rstname), head_grid, config_flags, output_model_input, "DATASET=INPUT", ierr )
+      CALL open_w_dataset ( fid, TRIM(rstname), head_grid, config_flags, output_input, "DATASET=INPUT", ierr )
       IF ( ierr .NE. 0 ) THEN
          WRITE( message , '("program wrf: error opening ",A," for writing")') TRIM(rstname)
          CALL WRF_ERROR_FATAL ( message )
       END IF
-      CALL output_model_input ( fid,   head_grid, config_flags, ierr )
+      CALL output_input ( fid,   head_grid, config_flags, ierr )
       CALL close_dataset ( fid, config_flags, "DATASET=INPUT" )
 
    END SUBROUTINE wrf_dfi_write_initialized_state
@@ -301,13 +361,13 @@
 
    SUBROUTINE wrf_dfi_array_reset ( )
 
-      USE module_domain
+      USE module_domain, ONLY : head_grid
 
       IMPLICIT NONE
 
       INTERFACE
          SUBROUTINE dfi_array_reset(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE dfi_array_reset
       END INTERFACE
@@ -321,11 +381,12 @@
 
    SUBROUTINE optfil_driver( grid )
 
-      USE module_domain
-      USE module_wrf_error
-      USE module_timing
-      USE module_date_time
-      USE module_configure
+      USE module_domain, ONLY : domain
+      USE module_utility
+!      USE module_wrf_error
+!      USE module_timing
+!      USE module_date_time
+!      USE module_configure
       USE module_state_description
       USE module_model_constants
 
@@ -337,6 +398,7 @@
       integer :: nstep2, nstepmax, rundfi, i, rc
       real :: timestep, tauc
       TYPE(WRFU_TimeInterval) :: run_interval
+      CHARACTER*80 mess
 
       timestep=abs(grid%dt)
       run_interval = grid%stop_subtime - grid%start_subtime
@@ -354,7 +416,8 @@
       ! Get DFI coefficient
       grid%hcoeff(:) = 0.0
       IF ( grid%dfi_nfilter < 0 .OR. grid%dfi_nfilter > 8 ) THEN
-write(0,*) 'Invalid filter specified in namelist.'
+write(mess,*) 'Invalid filter specified in namelist.'
+call wrf_message(mess)
       ELSE
          call dfcoef(nstep2-1, grid%dt, tauc, grid%dfi_nfilter, grid%hcoeff)
       END IF
@@ -374,12 +437,12 @@ write(0,*) 'Invalid filter specified in namelist.'
 
    SUBROUTINE dfi_clear_accumulation( grid )
 
-      USE module_domain
-      USE module_configure
-      USE module_driver_constants
-      USE module_machine
-      USE module_dm
-      USE module_model_constants
+      USE module_domain, ONLY : domain
+!      USE module_configure
+!      USE module_driver_constants
+!      USE module_machine
+!      USE module_dm
+!      USE module_model_constants
       USE module_state_description
 
       IMPLICIT NONE
@@ -402,7 +465,15 @@ write(0,*) 'Invalid filter specified in namelist.'
       grid%dfi_al(:,:,:)     = 0.
       grid%dfi_alt(:,:,:)    = 0.
       grid%dfi_pb(:,:,:)     = 0.
+#if ( WRF_DFI_RADAR == 1 )
+    IF ( grid%dfi_radar .EQ. 0 ) then  
       grid%dfi_moist(:,:,:,:)  = 0.
+    ELSE
+      grid%dfi_moist(:,:,:,P_QV) = 0.
+    ENDIF
+#else
+      grid%dfi_moist(:,:,:,:)  = 0.
+#endif
       grid%dfi_scalar(:,:,:,:) = 0.
 
       grid%hcoeff_tot  = 0.0
@@ -412,18 +483,24 @@ write(0,*) 'Invalid filter specified in namelist.'
 
    SUBROUTINE dfi_save_arrays( grid )
 
-      USE module_domain
-      USE module_configure
-      USE module_driver_constants
-      USE module_machine
-      USE module_dm
+      USE module_domain, ONLY : domain
+!      USE module_configure
+!      USE module_driver_constants
+!      USE module_machine
+!      USE module_dm
       USE module_model_constants
       USE module_state_description
 
       IMPLICIT NONE
 
+      INTEGER :: its, ite, jts, jte, kts, kte, &
+                 i, j, k
+
       !  Input data.
       TYPE(domain) , POINTER          :: grid
+      ! local
+
+      REAL es,qs,pol,tx,temp,pres,rslf
 
       ! save surface 2-D fields
       grid%dfi_SNOW(:,:)   = grid%SNOW(:,:) 
@@ -431,33 +508,86 @@ write(0,*) 'Invalid filter specified in namelist.'
       grid%dfi_SNOWC(:,:)  = grid%SNOWC(:,:) 
       grid%dfi_CANWAT(:,:) = grid%CANWAT(:,:) 
       grid%dfi_TSK(:,:)    = grid%TSK(:,:) 
-      grid%dfi_QVG(:,:)    = grid%QVG(:,:) 
-      grid%dfi_SOILT1(:,:) = grid%SOILT1(:,:) 
-      grid%dfi_TSNAV(:,:)  = grid%TSNAV(:,:) 
 
       ! save soil fields
       grid%dfi_TSLB(:,:,:)         = grid%TSLB(:,:,:) 
       grid%dfi_SMOIS(:,:,:)        = grid%SMOIS(:,:,:) 
+      ! RUC LSM only, need conditional
+      IF ( grid%sf_surface_physics .EQ. 3 ) then
+      grid%dfi_QVG(:,:)            = grid%QVG(:,:) 
+      grid%dfi_SOILT1(:,:)         = grid%SOILT1(:,:) 
+      grid%dfi_TSNAV(:,:)          = grid%TSNAV(:,:) 
       grid%dfi_SMFR3D(:,:,:)       = grid%SMFR3D(:,:,:) 
       grid%dfi_KEEPFR3DFLAG(:,:,:) = grid%KEEPFR3DFLAG(:,:,:) 
+      ENDIF
+
+      ! save hydrometeor fields 
+#if ( WRF_DFI_RADAR == 1 )
+    IF ( grid%dfi_radar .EQ. 1 ) then    !tgs
+!      grid%dfi_moist(:,:,:,:)  =   grid%moist(:,:,:,:)
+      grid%dfi_moist(:,:,:,P_QC)  =   grid%moist(:,:,:,P_QC)
+      grid%dfi_moist(:,:,:,P_QR)  =   grid%moist(:,:,:,P_QR)
+      grid%dfi_moist(:,:,:,P_QI)  =   grid%moist(:,:,:,P_QI)
+      grid%dfi_moist(:,:,:,P_QS)  =   grid%moist(:,:,:,P_QS)
+      grid%dfi_moist(:,:,:,P_QG)  =   grid%moist(:,:,:,P_QG)
+
+       if(grid%dfi_stage .EQ. DFI_BCK) then
+! compute initial RH field to be reintroduced after the diabatic DFI
+            its = grid%sp31 ; ite = grid%ep31 ;  
+            kts = grid%sp32 ; kte = grid%ep32 ; 
+            jts = grid%sp33 ; jte = grid%ep33 ;
+   DO j=jts,jte
+      DO i=its,ite
+         do k = kts , kte
+          temp = (grid%t_2(i,k,j)+t0)*( (grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb )&
+                     ** (r_d / Cp)
+          pres = grid%p(i,k,j)+grid%pb(i,k,j)
+!tgs rslf - function to compute qs from Thompson microphysics
+          qs = rslf(pres, temp)
+          grid%dfi_rh (i,k,j) = MIN(1.,MAX(0.,grid%moist(i,k,j,P_QV)/qs))
+
+!tgs saturation check for points with water or ice clouds
+      IF ((grid%moist (i,k,j,P_QC) .GT. 1.e-6  .or.        &
+          grid%moist (i,k,j,P_QI) .GT. 1.e-6)  .and.       &
+          grid%dfi_rh (i,k,j) .lt. 1.) THEN 
+               grid%dfi_rh (i,k,j)=1.
+      ENDIF
+         
+        end do
+      END DO
+    ENDDO
+       endif
+
+    ENDIF
+
+#endif
 
    END SUBROUTINE dfi_save_arrays
 
 
    SUBROUTINE dfi_array_reset( grid )
 
-      USE module_domain
-      USE module_configure
-      USE module_driver_constants
-      USE module_machine
-      USE module_dm
+      USE module_domain, ONLY : domain
+!      USE module_configure
+!      USE module_driver_constants
+!      USE module_machine
+!      USE module_dm
       USE module_model_constants
       USE module_state_description
 
       IMPLICIT NONE
 
+      INTEGER :: its, ite, jts, jte, kts, kte, &
+                 i, j, k
+
       !  Input data.
       TYPE(domain) , POINTER          :: grid
+      ! local
+!      real p1000mb,eps,svp1,svp2,svp3,svpt0
+      real eps
+!      parameter (p1000mb = 1.e+05, eps=0.622,svp1=0.6112,svp3=29.65,svpt0=273.15)
+      parameter (eps=0.622)
+      REAL es,qs,pol,tx,temp,pres,rslf             
 
       IF ( grid%dfi_opt .EQ. DFI_NODFI ) RETURN
 
@@ -479,8 +609,16 @@ write(0,*) 'Invalid filter specified in namelist.'
       grid%al(:,:,:)    = grid%dfi_al(:,:,:)    / grid%hcoeff_tot
       grid%alt(:,:,:)   = grid%dfi_alt(:,:,:)   / grid%hcoeff_tot
       grid%pb(:,:,:)    = grid%dfi_pb(:,:,:)    / grid%hcoeff_tot
-      grid%moist(:,:,:,:)  = grid%dfi_moist(:,:,:,:)  / grid%hcoeff_tot
-      grid%scalar(:,:,:,:) = grid%dfi_scalar(:,:,:,:) / grid%hcoeff_tot
+#if ( WRF_DFI_RADAR == 1 )
+    IF ( grid%dfi_radar .EQ. 0 ) then   ! tgs no radar assimilation
+      grid%moist(:,:,:,:)  = max(0.,grid%dfi_moist(:,:,:,:)  / grid%hcoeff_tot)
+    ELSE
+      grid%moist(:,:,:,P_QV)  = max(0.,grid%dfi_moist(:,:,:,P_QV)  / grid%hcoeff_tot)
+    ENDIF
+#else
+      grid%moist(:,:,:,:)  = max(0.,grid%dfi_moist(:,:,:,:)  / grid%hcoeff_tot)
+#endif
+      grid%scalar(:,:,:,:) = max(0.,grid%dfi_scalar(:,:,:,:) / grid%hcoeff_tot)
 
       ! restore initial fields
       grid%SNOW  (:,:) = grid%dfi_SNOW  (:,:)
@@ -488,14 +626,61 @@ write(0,*) 'Invalid filter specified in namelist.'
       grid%SNOWC (:,:) = grid%dfi_SNOWC (:,:)
       grid%CANWAT(:,:) = grid%dfi_CANWAT(:,:)
       grid%TSK   (:,:) = grid%dfi_TSK   (:,:)
-      grid%QVG   (:,:) = grid%dfi_QVG   (:,:)
-      grid%SOILT1(:,:) = grid%dfi_SOILT1(:,:)   
-      grid%TSNAV (:,:) = grid%dfi_TSNAV (:,:)  
 
       grid%TSLB  (:,:,:)       = grid%dfi_TSLB   (:,:,:)
       grid%SMOIS (:,:,:)       = grid%dfi_SMOIS  (:,:,:)
+      IF ( grid%sf_surface_physics .EQ. 3 ) then
+      grid%QVG   (:,:)         = grid%dfi_QVG   (:,:)
+      grid%TSNAV (:,:)         = grid%dfi_TSNAV (:,:)  
+      grid%SOILT1(:,:)         = grid%dfi_SOILT1(:,:)   
       grid%SMFR3D(:,:,:)       = grid%dfi_SMFR3D (:,:,:)
       grid%KEEPFR3DFLAG(:,:,:) = grid%dfi_KEEPFR3DFLAG(:,:,:)
+      ENDIF
+
+      ! restore analized hydrometeor fileds 
+#if ( WRF_DFI_RADAR == 1 )
+    IF ( grid%dfi_radar .EQ. 1 ) then
+!      grid%moist(:,:,:,:)      = grid%dfi_moist(:,:,:,:)    !tgs
+      grid%moist(:,:,:,P_QC)      = grid%dfi_moist(:,:,:,P_QC)    !tgs
+      grid%moist(:,:,:,P_QR)      = grid%dfi_moist(:,:,:,P_QR)    !tgs
+      grid%moist(:,:,:,P_QI)      = grid%dfi_moist(:,:,:,P_QI)    !tgs
+      grid%moist(:,:,:,P_QS)      = grid%dfi_moist(:,:,:,P_QS)    !tgs
+      grid%moist(:,:,:,P_QG)      = grid%dfi_moist(:,:,:,P_QG)    !tgs
+
+       if(grid%dfi_stage .EQ. DFI_FWD) then
+!tgs change QV to restore initial RH field after the diabatic DFI
+            its = grid%sp31 ; ite = grid%ep31 ;  
+            kts = grid%sp32 ; kte = grid%ep32 ; 
+            jts = grid%sp33 ; jte = grid%ep33 ;
+   DO j=jts,jte
+      DO i=its,ite
+         do k = kts , kte
+          temp = (grid%t_2(i,k,j)+t0)*( (grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb )&
+                     ** (r_d / Cp)
+          pres = grid%p(i,k,j)+grid%pb(i,k,j)
+!tgs rslf - function to compute qs from Thompson microphysics
+          qs = rslf(pres, temp)
+
+!      if(i.eq. 178 .and. j.eq. 148 .and. k.eq.11) then
+!       print *,'temp,pres,qs-thomp',temp,pres,qs
+!      endif
+
+      IF(grid%moist(i,k,j,P_QC) .GT. 1.e-6 .or.                    &
+         grid%moist(i,k,j,P_QI) .GT. 1.e-6) THEN
+         grid%moist (i,k,j,P_QV) = MAX(0.,grid%dfi_rh(i,k,j)*QS)
+      ENDIF
+
+!      if(i.eq. 178 .and. j.eq. 148 .and. k.eq.11) then
+!       print *,'temp,pres,qs,grid%moist (i,k,j,P_QV)',temp,pres,qs,  &
+!                grid%moist(i,k,j,P_QV)
+!      endif
+         enddo
+      ENDDO
+   ENDDO
+       endif
+
+    ENDIF
+#endif
 
    END SUBROUTINE dfi_array_reset
 
@@ -948,7 +1133,8 @@ write(0,*) 'Invalid filter specified in namelist.'
       
       PI = 4*ATAN(1.D0)
 
-      print *, 'in dfcoef, deltat = ', deltat, 'taus=',taus
+      WRITE (mes,'(A,F8.2,A,F10.2)') 'In dolph, deltat = ',deltat,' taus = ',taus
+      CALL wrf_message(TRIM(mes))
 
       N = 2*M+1
       NM1 = N-1
@@ -961,10 +1147,12 @@ write(0,*) 'Invalid filter specified in namelist.'
       R = 1/RR
       DB = 20*LOG10(R)
 
-
-      WRITE(*,'(1X,''DOLPH: M,N='',2I8)')M,N
-      WRITE(*,'(1X,''DOLPH: THETAS (STOP-BAND EDGE)='',F10.3)')THETAS
-      WRITE(*,'(1X,''DOLPH: R,DB='',2F10.3)')R, DB
+      WRITE (mes,'(A,2I8)') 'In dolph: M,N = ', M,N
+      CALL wrf_message(TRIM(mes))
+      WRITE (mes,'(A,F10.3)') 'In dolph: THETAS (STOP-BAND EDGE) = ', thetas
+      CALL wrf_message(TRIM(mes))
+      WRITE (mes,'(A,2F10.3)') 'In dolph: R,DB = ', R,DB
+      CALL wrf_message(TRIM(mes))
 
       DO NT=0,M
          SUM = 1
@@ -977,8 +1165,8 @@ write(0,*) 'Invalid filter specified in namelist.'
          ENDDO
          W(NT) = SUM/N
          TIME(NT) = NT
-         WRITE(*,'(1X,''DOLPH: TIME, W='',F10.6,2X,E17.7)')  &
-           TIME(NT), W(NT)
+         WRITE (mes,'(A,F10.6,2x,E17.7)') 'In dolph: TIME, W = ', TIME(NT), W(NT)
+         CALL wrf_message(TRIM(mes))
       ENDDO
 !     fill in the negative-time values by symmetry.
       DO NT=0,M
@@ -991,9 +1179,10 @@ write(0,*) 'Invalid filter specified in namelist.'
       DO NT=0,2*M
          SUMW = SUMW + W2(NT)
       ENDDO
-      WRITE(*,'(1X,''DOLPH: SUM OF WEIGHTS W2='',F10.4)')SUMW
+      WRITE (mes,'(A,F10.4)') 'In dolph: SUM OF WEIGHTS W2 = ', sumw
+      CALL wrf_message(TRIM(mes))
 
-      DO NT=0,2*M
+      DO NT=0,M
          WINDOW(NT) = W2(NT)
       ENDDO
 
@@ -1269,7 +1458,7 @@ write(0,*) 'Invalid filter specified in namelist.'
 !             DS     :  Deviation in stop-band (db)
 !----------------------------------------------------------
 !
-     USE module_domain
+     USE module_domain, ONLY : domain
     
      TYPE(domain) , POINTER :: grid
 
@@ -1973,5 +2162,29 @@ write(0,*) 'Invalid filter specified in namelist.'
 1      CONTINUE
       GEE = P/D
    END FUNCTION GEE
+
+      REAL FUNCTION RSLF(P,T)
+
+      IMPLICIT NONE
+      REAL, INTENT(IN):: P, T
+      REAL:: ESL,X
+      REAL, PARAMETER:: C0= .611583699E03
+      REAL, PARAMETER:: C1= .444606896E02
+      REAL, PARAMETER:: C2= .143177157E01
+      REAL, PARAMETER:: C3= .264224321E-1
+      REAL, PARAMETER:: C4= .299291081E-3
+      REAL, PARAMETER:: C5= .203154182E-5
+      REAL, PARAMETER:: C6= .702620698E-8
+      REAL, PARAMETER:: C7= .379534310E-11
+      REAL, PARAMETER:: C8=-.321582393E-13
+
+      X=MAX(-80.,T-273.16)
+
+!      ESL=612.2*EXP(17.67*X/(T-29.65))
+      ESL=C0+X*(C1+X*(C2+X*(C3+X*(C4+X*(C5+X*(C6+X*(C7+X*C8)))))))
+      RSLF=.622*ESL/(P-ESL)
+
+      END FUNCTION RSLF
+
 
 #endif

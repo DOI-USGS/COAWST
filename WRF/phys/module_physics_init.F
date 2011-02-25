@@ -12,7 +12,7 @@ MODULE module_physics_init
 
    USE module_state_description
    USE module_model_constants
-   USE module_configure
+   USE module_configure, ONLY : grid_config_rec_type
 
 CONTAINS
 
@@ -41,6 +41,9 @@ CONTAINS
                          TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_MYJ,  &
 #if (NMM_CORE != 1)
                          TKE_PBL,  &
+#endif
+#if (NMM_CORE == 1)
+                         RUCUTEN, RVCUTEN,  &
 #endif
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  &
@@ -77,13 +80,19 @@ CONTAINS
                          SH_URB2D, LH_URB2D, G_URB2D, RN_URB2D,  & !Optional urban
                          TS_URB2D, FRC_URB2D, UTYPE_URB2D,       & !Optional urban
                          TRB_URB4D,TW1_URB4D,TW2_URB4D,          & !Optional multi-layer urban
-                         TGB_URB4D,SFW1_URB3D,SFW2_URB3D,        & !Optional multi-layer urban
+                         TGB_URB4D,TLEV_URB3D,QLEV_URB3D,        & !Optional multi-layer urban
+                         TW1LEV_URB3D,TW2LEV_URB3D,              & !Optional multi-layer urban
+                         TGLEV_URB3D,TFLEV_URB3D,                & !Optional multi-layer urban
+                         SF_AC_URB3D,LF_AC_URB3D,CM_AC_URB3D,    & !Optional multi-layer urban
+                         SFVENT_URB3D,LFVENT_URB3D,              & !Optional multi-layer urban
+                         SFWIN1_URB3D,SFWIN2_URB3D,              & !Optional multi-layer urban
+                         SFW1_URB3D,SFW2_URB3D,                  & !Optional multi-layer urban
                          SFR_URB3D,SFG_URB3D,                    & !Optional multi-layer urban
                          A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,        & !Optional multi-layer urban
                          A_E_BEP,B_U_BEP,B_V_BEP,                & !Optional multi-layer urban
                          B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,        & !Optional multi-layer urban
                          DL_U_BEP,SF_BEP,VL_BEP,                 & !Optional multi-layer urban
-                         TML,T0ML,HML,H0ML,HUML,HVML,            & !Optional oml
+                         TML,T0ML,HML,H0ML,HUML,HVML,TMOML,      & !Optional oml
                          itimestep,                              & !Optional obs fdda
 #if ( EM_CORE == 1 )
                          fdob,                                   & !Optional obs fdda
@@ -147,7 +156,7 @@ CONTAINS
                                                         SMSTAV, &
                                                         SMSTOT, &
                                                      SFCRUNOFF, &
-                                                   UDRUNOFF, &
+                                                      UDRUNOFF, &
                                                         SFCEVP, &
                                                         GRDFLX, &
                                                         ACSNOW, &
@@ -217,6 +226,10 @@ CONTAINS
 #if (NMM_CORE != 1)
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    TKE_PBL
 #endif 
+#if (NMM_CORE == 1)
+   REAL,     DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(INOUT) :: &
+             RUCUTEN, RVCUTEN
+#endif
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
              cugd_tten,cugd_ttens,cugd_qvten,                &
              cugd_qvtens,cugd_qcten
@@ -241,7 +254,7 @@ CONTAINS
 
 ! ocean mixed layer
    REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
-             TML,T0ML,HML,H0ML,HUML,HVML
+             TML,T0ML,HML,H0ML,HUML,HVML,TMOML
 
 !fdda
    REAL,     OPTIONAL, INTENT(IN) :: FGDT
@@ -289,6 +302,19 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW1_URB4D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW2_URB4D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TGB_URB4D ! multi-layer UCM
+   REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TLEV_URB3D ! multi-layer UCM
+   REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: QLEV_URB3D ! multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW1LEV_URB3D ! multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW2LEV_URB3D ! multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TGLEV_URB3D ! multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TFLEV_URB3D ! multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LF_AC_URB3D !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SF_AC_URB3D !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CM_AC_URB3D !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SFVENT_URB3D !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LFVENT_URB3D !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFWIN1_URB3D ! multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFWIN2_URB3D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFG_URB3D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFR_URB3D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW1_URB3D ! multi-layer UCM
@@ -389,7 +415,8 @@ integer myproc
       XLAND(i,j)=1.
       GSW(i,j)=0.
       GLW(i,j)=0.
-      UST(i,j)=0.
+!-- initialize ust to a small value
+      UST(i,j)=0.0001
       MOL(i,j)=0.0
       PBLH(i,j)=0.0
       HFX(i,j)=0.
@@ -462,6 +489,7 @@ integer myproc
                 TRIM ( mminlu_loc ) ,                               &
                 landuse_ISICE, landuse_LUCATS,                      &
                 landuse_LUSEAS, landuse_ISN,                        &
+                config_flags%fractional_seaice,                      &
                 lu_state,                                           &
                 allowed_to_read , usemonalb ,                       &
                 ids, ide, jds, jde, kds, kde,                       &
@@ -486,19 +514,19 @@ integer myproc
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to ra_init' )
 
-   CALL ra_init(id,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,             &
-                RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
-                levsiz,XLAT,n_ozmixm,                           &
-                cldfra_old,                                     & ! Optional
-                ozmixm,pin,                                     & ! Optional
-                m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     & ! Optional
-                paerlev,n_aerosolc,                             &
-                sfull,shalf,pptop,swrad_scat,                   &
-                config_flags,restart,                           &
-                allowed_to_read, start_of_simulation,           &
-                ids, ide, jds, jde, kds, kde,                   &
-                ims, ime, jms, jme, kms, kme,                   &
-                its, ite, jts, jte, kts, kte                    )
+   CALL ra_init(id=id,STEPRA=STEPRA,RADT=RADT,DT=DT,RTHRATEN=RTHRATEN,RTHRATENLW=RTHRATENLW,             &
+                RTHRATENSW=RTHRATENSW,CLDFRA=CLDFRA,EMISS=EMISS,cen_lat=cen_lat,JULYR=JULYR,JULDAY=JULDAY,GMT=GMT,    &
+                levsiz=levsiz,XLAT=XLAT,n_ozmixm=n_ozmixm,                           &
+                cldfra_old=cldfra_old,                                     & ! Optional
+                ozmixm=ozmixm,pin=pin,                                     & ! Optional
+                m_ps_1=m_ps_1,m_ps_2=m_ps_2,m_hybi=m_hybi,aerosolc_1=aerosolc_1,aerosolc_2=aerosolc_2,     & ! Optional
+                paerlev=paerlev,n_aerosolc=n_aerosolc,                             &
+                sfull=sfull,shalf=shalf,pptop=pptop,swrad_scat=swrad_scat,p_top=p_top,       &
+                config_flags=config_flags,restart=restart,                           &
+                allowed_to_read=allowed_to_read, start_of_simulation=start_of_simulation,           &
+                ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde,                   &
+                ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme,                   &
+                its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte                    )
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to bl_init' )
    CALL bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,        &
@@ -531,7 +559,13 @@ integer myproc
                 SF_URBAN_PHYSICS,                               & !Optional urban
                 NUM_URBAN_LAYERS,                               & !Optional multi-layer urban
                 TRB_URB4D,TW1_URB4D,TW2_URB4D,                  & !Optional multi-layer urban
-                TGB_URB4D,SFW1_URB3D,SFW2_URB3D,                & !Optional multi-layer urban
+                TGB_URB4D,TLEV_URB3D,QLEV_URB3D,                & !Optional multi-layer urban
+                TW1LEV_URB3D,TW2LEV_URB3D,                      & !Optional multi-layer urban
+                TGLEV_URB3D,TFLEV_URB3D,                        & !Optional multi-layer urban
+                SF_AC_URB3D,LF_AC_URB3D,CM_AC_URB3D,            & !Optional multi-layer urban
+                SFVENT_URB3D,LFVENT_URB3D,                      & !Optional multi-layer urban
+                SFWIN1_URB3D,SFWIN2_URB3D,                      & !Optional multi-layer urban
+                SFW1_URB3D,SFW2_URB3D,                          & !Optional multi-layer urban
                 SFR_URB3D,SFG_URB3D,                            & !Optional multi-layer urban
                 A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                & !Optional multi-layer urban
                 A_E_BEP,B_U_BEP,B_V_BEP,                        & !Optional multi-layer urban
@@ -542,12 +576,15 @@ integer myproc
                 its, ite, jts, jte, kts, kte,                   &
                 ACHFX,ACLHF,ACGRDFLX,                           &
                 oml_hml0, omlcall,                              & !Optional oml
-                TML,T0ML,HML,H0ML,HUML,HVML                     ) !Optional oml
+                TML,T0ML,HML,H0ML,HUML,HVML,TMOML               ) !Optional oml
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to cu_init' )
 
    CALL cu_init(STEPCU,CUDT,DT,RTHCUTEN,RQVCUTEN,RQRCUTEN,      &
                 RQCCUTEN,RQSCUTEN,RQICUTEN,NCA,RAINC,           &
+#if (NMM_CORE == 1)
+                         RUCUTEN, RVCUTEN,  &
+#endif
                 RAINCV,W0AVG,config_flags,restart,              &
                 CLDEFI,LOWLYR,MASS_FLUX,                        &
                 RTHFTEN, RQVFTEN,                               &
@@ -601,10 +638,38 @@ integer myproc
                   model_config_rec%obs_sfcfact,                 &
                   model_config_rec%obs_sfcfacr,                 &
                   model_config_rec%obs_dpsmx,                   &
-                  model_config_rec%obs_lml_ht1,                 &
-                  model_config_rec%obs_lml_ht2,                 &
+                  model_config_rec%obs_nudge_wind,              &
+                  model_config_rec%obs_nudge_temp,              &
+                  model_config_rec%obs_nudge_mois,              &
+                  model_config_rec%obs_nudgezfullr1_uv,         &
+                  model_config_rec%obs_nudgezrampr1_uv,         &
+                  model_config_rec%obs_nudgezfullr2_uv,         &
+                  model_config_rec%obs_nudgezrampr2_uv,         &
+                  model_config_rec%obs_nudgezfullr4_uv,         &
+                  model_config_rec%obs_nudgezrampr4_uv,         &
+                  model_config_rec%obs_nudgezfullr1_t,          &
+                  model_config_rec%obs_nudgezrampr1_t,          &
+                  model_config_rec%obs_nudgezfullr2_t,          &
+                  model_config_rec%obs_nudgezrampr2_t,          &
+                  model_config_rec%obs_nudgezfullr4_t,          &
+                  model_config_rec%obs_nudgezrampr4_t,          &
+                  model_config_rec%obs_nudgezfullr1_q,          &
+                  model_config_rec%obs_nudgezrampr1_q,          &
+                  model_config_rec%obs_nudgezfullr2_q,          &
+                  model_config_rec%obs_nudgezrampr2_q,          &
+                  model_config_rec%obs_nudgezfullr4_q,          &
+                  model_config_rec%obs_nudgezrampr4_q,          &
+                  model_config_rec%obs_nudgezfullmin,           &
+                  model_config_rec%obs_nudgezrampmin,           &
+                  model_config_rec%obs_nudgezmax,               &
                   xlat,                                         &
                   xlong,                                        &
+                  model_config_rec%start_year(id),              &
+                  model_config_rec%start_month(id),             &
+                  model_config_rec%start_day(id),               &
+                  model_config_rec%start_hour(id),              &
+                  model_config_rec%start_minute(id),            &
+                  model_config_rec%start_second(id),            &
                   p00, t00, tlp,                                &
                   zhalf, p_top,                                 &
                   fdob,                                         &
@@ -621,6 +686,7 @@ integer myproc
    SUBROUTINE landuse_init(lu_index, snowc, albedo, albbck, snoalb, mavail, emiss, embck, &
                 znt,Z0,thc,xland, xice, xicem, julday, cen_lat, iswater, mminlu,  &
                 ISICE, LUCATS, LUSEAS, ISN,                         &
+                fractional_seaice,                                  &
                 lu_state,                                           &
                 allowed_to_read , usemonalb ,                       &
                 ids, ide, jds, jde, kds, kde,                       &
@@ -639,13 +705,14 @@ integer myproc
    REAL    , INTENT(IN)           :: cen_lat
    CHARACTER(LEN=*), INTENT(IN)        :: mminlu
    LOGICAL,  INTENT(IN)           :: allowed_to_read , usemonalb
-   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: lu_index, snowc, xice, snoalb
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: lu_index, snowc, xice, snoalb 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT  ) :: albedo, albbck, mavail, emiss, &
                                                                embck,                         &
                                                                znt, Z0, thc, xland, xicem
-   INTEGER , INTENT(INOUT)  :: ISICE, LUCATS, LUSEAS, ISN
+   INTEGER , INTENT(INOUT)  :: ISICE, LUCATS, LUSEAS, ISN, fractional_seaice
    REAL    , INTENT(INOUT)  , DIMENSION( : ) :: lu_state
 
+   REAL :: xice_threshold
 !---------------------------------------------------------------------
 ! Local
    CHARACTER*256 LUTYPE
@@ -669,6 +736,12 @@ integer myproc
    CALL wrf_debug( 100 , 'top of landuse_init' )
 
    NSN=-1  ! set this to suppress uninitalized data messages from tools
+
+  if ( fractional_seaice == 0 ) then
+     xice_threshold = 0.5
+  else if ( fractional_seaice == 1 ) then
+     xice_threshold = 0.02
+  endif
 
 ! recover LU variables from state
    IF ( 6*(max_cats*max_seas)+1*max_cats .GT. 7501 ) THEN
@@ -829,15 +902,22 @@ integer myproc
           ENDIF
 !    SET SEA-ICE POINTS TO LAND WITH ICE/SNOW SURFACE PROPERTIES
           XICEM(I,J)=XICE(I,J)
-          IF(XICE(I,J).GT.0.5)THEN
+          IF(XICE(I,J).GE.xice_threshold)THEN
             XLAND(I,J)=1.0
             ALBBCK(I,J)=ALBD(ISICE,ISN)/100.
-            ALBEDO(I,J)=ALBBCK(I,J)
+            EMBCK(I,J)=SFEM(ISICE,ISN)
+            IF (FRACTIONAL_SEAICE == 1) THEN
+               ! The 0.08 value is the albedo over open water.
+               ! The 0.98 value is the emissivity over open water.
+               ALBEDO(I,J) = ( XICE(I,J) * ALBBCK(I,J) ) + ( (1.0-XICE(I,J)) * 0.08 )
+               EMISS(I,J)  = ( XICE(I,J) * EMBCK(I,J)  ) + ( (1.0-XICE(I,J)) * 0.98 )
+            ELSE
+               ALBEDO(I,J)=ALBBCK(I,J)
+               EMISS(I,J)=EMBCK(I,J)
+            ENDIF
             THC(I,J)=THERIN(ISICE,ISN)/100.
             Z0(I,J)=SFZ0(ISICE,ISN)/100.
             ZNT(I,J)=Z0(I,J)
-            EMBCK(I,J)=SFEM(ISICE,ISN)
-            EMISS(I,J)=EMBCK(I,J)
             MAVAIL(I,J)=SLMO(ISICE,ISN)
           ENDIF
         ENDDO
@@ -873,21 +953,24 @@ integer myproc
                       ozmixm,pin,                                     & ! Optional
                       m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     & ! Optional
                       paerlev,n_aerosolc,                             &
-                      sfull,shalf,pptop,swrad_scat,                  &
+                      sfull,shalf,pptop,swrad_scat,p_top,            &
                       config_flags,restart,                          &
                       allowed_to_read, start_of_simulation,          &
                       ids, ide, jds, jde, kds, kde,                  &
                       ims, ime, jms, jme, kms, kme,                  &
                       its, ite, jts, jte, kts, kte                   )
 !---------------------------------------------------------------------
-   USE module_ra_rrtm
-   USE module_ra_rrtmg_lw
-   USE module_ra_rrtmg_sw
-   USE module_ra_cam
-   USE module_ra_sw
-   USE module_ra_gsfcsw
-   USE module_ra_gfdleta
-   USE module_ra_hs
+   USE module_ra_rrtm      , ONLY : rrtminit
+   USE module_ra_rrtmg_lw  , ONLY : rrtmg_lwinit
+   USE module_ra_rrtmg_sw  , ONLY : rrtmg_swinit
+   USE module_ra_cam       , ONLY : camradinit
+   USE module_ra_sw        , ONLY : swinit
+   USE module_ra_gsfcsw    , ONLY : gsfc_swinit
+   USE module_ra_gfdleta   , ONLY : gfdletainit
+#if(NMM_CORE==1)
+   USE module_ra_hwrf      , ONLY : hwrfrainit
+#endif
+   USE module_ra_hs        , ONLY : hsinit
    USE module_domain
 !---------------------------------------------------------------------
    IMPLICIT NONE
@@ -903,7 +986,7 @@ integer myproc
 
    INTEGER , INTENT(IN)           :: JULDAY,JULYR
    REAL ,    INTENT(IN)           :: DT, RADT, cen_lat, GMT, pptop,  &
-                                     swrad_scat
+                                     swrad_scat, p_top
    LOGICAL,  INTENT(IN)           :: start_of_simulation
 
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
@@ -936,8 +1019,11 @@ integer myproc
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: EMISS
    LOGICAL :: etalw = .false.
+   LOGICAL :: hwrflw= .false.
    LOGICAL :: camlw = .false.
    LOGICAL :: etamp = .false.
+   LOGICAL :: acswalloc = .false.
+   LOGICAL :: aclwalloc = .false.
    integer :: month,iday
    INTEGER :: i, j, k, itf, jtf, ktf
 !---------------------------------------------------------------------
@@ -993,7 +1079,7 @@ integer myproc
 
         CASE (RRTMSCHEME)
              CALL rrtminit(                                 &
-                           allowed_to_read ,                &
+                           p_top, allowed_to_read ,         &
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )
@@ -1019,6 +1105,7 @@ integer myproc
              ENDIF
 
              camlw = .true.
+             aclwalloc = .true.
 
         CASE (RRTMG_LWSCHEME)
              CALL rrtmg_lwinit(                             &
@@ -1026,6 +1113,8 @@ integer myproc
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )
+
+             aclwalloc = .true.
 
         CASE (GFDLLWSCHEME)
              CALL nl_get_start_month(id,month)
@@ -1037,6 +1126,28 @@ integer myproc
                               ims, ime, jms, jme, kms, kme, &
                               its, ite, jts, jte, kts, kte  )
              etalw = .true.
+#if(NMM_CORE==1)
+        CASE (HWRFLWSCHEME)
+             CALL nl_get_start_month(id,month)
+             CALL nl_get_start_day(id,iday)
+! test this with standard jul-day calls
+!     CALL nl_get_start_year(id,start_year)
+!     CALL nl_get_start_month(id,start_month)
+!     CALL nl_get_start_day(id,start_day)
+!     CALL nl_get_start_hour(id,start_hour)
+!     CALL nl_get_start_minute(id,start_minute)
+!     CALL nl_get_start_second(id,start_second)
+!     CALL jdn_sec(day_in_sec,start_year,start_month,start_day,0,0,0)
+!     CALL jdn_sec(day_in_sec_ref,start_year,1,1,0,0,0)
+!     julyr_start=start_year
+!     julday_start=(day_in_sec-day_in_sec_ref)/(3600.*24.)+1
+!     gmt_start=start_hour+real(start_minute)/60.+real(start_second)/3600.
+              CALL hwrfrainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
+!             CALL hwrfrainit(sfull,shalf,pptop,JULYR_start,MONTH,IDAY,GMT_start,&
+                           allowed_to_read ,                         &
+                           kds, kde, kms, kme, kts, kte     )
+             hwrflw = .true.
+#endif
         CASE (HELDSUAREZ)
              CALL hsinit(RTHRATEN,restart,             &
                          ids, ide, jds, jde, kds, kde, &
@@ -1071,6 +1182,7 @@ integer myproc
                          ims, ime, jms, jme, kms, kme,     &
                          its, ite, jts, jte, kts, kte      )
              ENDIF
+             acswalloc = .true.
 
         CASE (GSFCSWSCHEME)
              CALL gsfc_swinit(cen_lat, allowed_to_read )
@@ -1081,6 +1193,8 @@ integer myproc
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )
+
+             acswalloc = .true.
 
         CASE (GFDLSWSCHEME)
              IF(.not.etalw)THEN
@@ -1093,10 +1207,29 @@ integer myproc
                               ims, ime, jms, jme, kms, kme, &
                               its, ite, jts, jte, kts, kte  )
              ENDIF
-
+#if(NMM_CORE==1)
+        CASE (HWRFSWSCHEME)
+             IF(.not.hwrflw)THEN
+             CALL nl_get_start_month(id,month)
+             CALL nl_get_start_day(id,iday)
+             CALL hwrfrainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
+                           allowed_to_read,                          &
+                           kds, kde, kms, kme, kts, kte     )
+             ENDIF
+#endif
         CASE DEFAULT
 
    END SELECT swrad_select
+
+#if ( EM_CORE == 1 ) 
+   ! test for conditionally allocated arrays when using bucket_J
+
+   IF(config_flags%bucket_J .gt. 0.0)THEN
+     IF(.not. (acswalloc .and. aclwalloc))THEN
+           CALL wrf_error_fatal ( 'Need CAM or RRTMG radiation for bucket_J option')
+     ENDIF
+   ENDIF
+#endif
 
    END SUBROUTINE ra_init
 
@@ -1131,7 +1264,13 @@ integer myproc
                 SF_URBAN_PHYSICS,                               & !Optional urban
                 NUM_URBAN_LAYERS,                               & !Optional multi-layer urban
                 TRB_URB4D,TW1_URB4D,TW2_URB4D,                  & !Optional multi-layer urban
-                TGB_URB4D,SFW1_URB3D,SFW2_URB3D,                & !Optional multi-layer urban
+                TGB_URB4D,TLEV_URB3D,QLEV_URB3D,                & !Optional multi-layer urban
+                TW1LEV_URB3D,TW2LEV_URB3D,                      & !Optional multi-layer urban
+                TGLEV_URB3D,TFLEV_URB3D,                        & !Optional multi-layer urban
+                SF_AC_URB3D,LF_AC_URB3D,CM_AC_URB3D,            & !Optional multi-layer urban
+                SFVENT_URB3D,LFVENT_URB3D,                      & !Optional multi-layer urban
+                SFWIN1_URB3D,SFWIN2_URB3D,                      & !Optional multi-layer urban
+                SFW1_URB3D,SFW2_URB3D,                          & !Optional multi-layer urban
                 SFR_URB3D,SFG_URB3D,                            & !Optional multi-layer urban
                 A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                & !Optional multi-layer urban
                 A_E_BEP,B_U_BEP,B_V_BEP,                        & !Optional multi-layer urban
@@ -1142,7 +1281,7 @@ integer myproc
                 its, ite, jts, jte, kts, kte,                   &
                 ACHFX,ACLHF,ACGRDFLX,                           &
                 oml_hml0, omlcall,                              & !Optional oml
-                TML,T0ML,HML,H0ML,HUML,HVML                     ) !Optional oml
+                TML,T0ML,HML,H0ML,HUML,HVML,TMOML               ) !Optional oml
 !--------------------------------------------------------------------
    USE module_sf_sfclay
    USE module_sf_slab
@@ -1156,8 +1295,10 @@ integer myproc
    USE module_sf_noahdrv
    USE module_sf_urban
    USE module_sf_bep                                  !BEP
+   USE module_sf_bep_bem
    USE module_sf_ruclsm
    USE module_sf_pxlsm
+   USE module_sf_oml
    USE module_bl_myjpbl
    USE module_bl_myjurb
    USE module_bl_boulac
@@ -1282,6 +1423,19 @@ integer myproc
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW1_URB4D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW2_URB4D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TGB_URB4D !Optional UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TLEV_URB3D !Optional UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: QLEV_URB3D !Optional UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW1LEV_URB3D ! multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW2LEV_URB3D ! multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TGLEV_URB3D ! multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TFLEV_URB3D ! multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LF_AC_URB3D  !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SF_AC_URB3D  !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CM_AC_URB3D  !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SFVENT_URB3D !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LFVENT_URB3D !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFWIN1_URB3D ! multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFWIN2_URB3D ! multi-layer UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFW1_URB3D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFW2_URB3D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFR_URB3D !Optional UCM
@@ -1305,7 +1459,7 @@ integer myproc
                                         ACHFX,ACLHF,ACGRDFLX
 ! Optional OML variables
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
-                                        TML,T0ML,HML,H0ML,HUML,HVML
+                                        TML,T0ML,HML,H0ML,HUML,HVML,TMOML
    INTEGER,  OPTIONAL,  INTENT(IN) :: omlcall
    REAL,  OPTIONAL,  INTENT(IN) :: oml_hml0
    LOGICAL,  INTENT(IN) :: start_of_simulation
@@ -1345,7 +1499,7 @@ integer myproc
            isfc = 1
       CASE (PXSFCSCHEME)
            CALL pxsfclayinit( allowed_to_read )
-           isfc = 1
+           isfc = 7
       CASE (MYJSFCSCHEME)
            CALL myjsfcinit(LOWLYR,UST,                         &
 #if ( NMM_CORE == 1 )
@@ -1374,7 +1528,7 @@ integer myproc
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
-           isfc = 2
+           isfc = 4
 
       CASE (GFSSFCSCHEME)
            CALL myjsfcinit(LOWLYR,UST,                         &
@@ -1389,7 +1543,7 @@ integer myproc
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
-           isfc = 1
+           isfc = 2
 #if (NMM_CORE==1)
       CASE (GFDLSFCSCHEME)
            CALL myjsfcinit(LOWLYR,UST,                         &
@@ -1400,7 +1554,7 @@ integer myproc
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
-           isfc = 1
+           isfc = 2
 #endif
 
 #if ( EM_CORE == 1 )
@@ -1408,21 +1562,9 @@ integer myproc
 
         CASE (MYNNSFCSCHEME)
 
-           SELECT CASE(config_flags%bl_pbl_physics)
-
-           CASE(MYNNPBLSCHEME2)
-              mynn_closure_level=2
-              
-           CASE(MYNNPBLSCHEME3)
-              mynn_closure_level=3
-
-           CASE DEFAULT
-              
-
-           END SELECT
-
-           CALL mynn_sf_init_driver(allowed_to_read,mynn_closure_level)
-           isfc=3
+           CALL mynn_sf_init_driver(allowed_to_read)
+           isfc=5
+!          isfc=3
 
 #endif
 
@@ -1442,9 +1584,7 @@ integer myproc
                          allowed_to_read ,start_of_simulation ,&
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
-                         its, ite, jts, jte, kts, kte,         &
-                         oml_hml0, omlcall,                    &
-                         tml, t0ml, hml, h0ml, huml, hvml      )
+                         its, ite, jts, jte, kts, kte          )
 
 #if (NMM_CORE == 1)
      CASE (GFDLSLAB)
@@ -1472,14 +1612,15 @@ integer myproc
                      its,ite, jts,jte, kts,kte                 )
 
 !URBAN
-          IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2)) THEN
+          IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
 
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
-
-                CALL urban_param_init(DZR,DZB,DZG,num_soil_layers                    & !urban
-                                )
+                
+                CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,                   & !urban
+                                sf_urban_physics)
 !                                num_roof_layers,num_wall_layers,road_soil_layers)   !urban
-
+                               
+                
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,                     & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,               & !urban
 !                              num_roof_layers,num_wall_layers,num_road_layers, & !urban
@@ -1490,6 +1631,12 @@ integer myproc
                               SH_URB2D,LH_URB2D,G_URB2D,RN_URB2D, TS_URB2D,    & !urban
                               num_urban_layers,                                & !urban
                               TRB_URB4D,TW1_URB4D,TW2_URB4D,TGB_URB4D,         & !urban
+                              TLEV_URB3D,QLEV_URB3D,                           & !urban
+                              TW1LEV_URB3D,TW2LEV_URB3D,                       & !urban
+                              TGLEV_URB3D,TFLEV_URB3D,                         & !urban
+                              SF_AC_URB3D,LF_AC_URB3D,CM_AC_URB3D,             & !urban
+                              SFVENT_URB3D,LFVENT_URB3D,                       & !urban
+                              SFWIN1_URB3D,SFWIN2_URB3D,                       & !urban
                               SFW1_URB3D,SFW2_URB3D,SFR_URB3D,SFG_URB3D,       & !urban
                               A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                 & !multi-layer urban
                               A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
@@ -1504,8 +1651,9 @@ integer myproc
       CASE (RUCLSMSCHEME)
 !          if(isfc .ne. 2)CALL wrf_error_fatal &
 !           ( 'module_physics_init: use myjsfc and myjpbl scheme for this lsm option' )
-           CALL lsmrucinit( SMFR3D,TSLB,SMOIS,ISLTYP,mavail,       &
-                     num_soil_layers, restart,                     &
+           CALL ruclsminit( SH2O,SMFR3D,TSLB,SMOIS,ISLTYP,IVGTYP,XICE,  &
+                     mavail,num_soil_layers, config_flags%iswater,      &
+                     config_flags%isice, restart,                  &
                      allowed_to_read ,                             &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
@@ -1526,6 +1674,17 @@ integer myproc
       CASE DEFAULT
 
    END SELECT sfc_select
+
+   IF(PRESENT(OMLCALL))THEN
+     IF (omlcall .EQ. 1) THEN
+        CALL omlinit(oml_hml0, tsk,                           &
+                     tml,t0ml,hml,h0ml,huml,hvml,tmoml,       &
+                     allowed_to_read, start_of_simulation,    &
+                     ids,ide, jds,jde, kds,kde,               &
+                     ims,ime, jms,jme, kms,kme,               &
+                     its,ite, jts,jte, kts,kte                )
+     ENDIF
+   ENDIF
 
 !-- initialize pbl scheme
 
@@ -1554,8 +1713,8 @@ integer myproc
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
       CASE (ACMPBLSCHEME)
-           if(isfc .ne. 1)CALL wrf_error_fatal &
-            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+           if(isfc .ne. 1 .and. isfc .ne. 7)CALL wrf_error_fatal &
+            ( 'module_physics_init: use sfclay or pxsfc scheme for this pbl option' )
            CALL acminit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -1565,8 +1724,8 @@ integer myproc
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
       CASE (GFSSCHEME)
-           if(isfc .ne. 1)CALL wrf_error_fatal &
-            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+           if(isfc .ne. 2)CALL wrf_error_fatal &
+            ( 'module_physics_init: use myjsfc scheme for this pbl option' )
            CALL gfsinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -1578,7 +1737,7 @@ integer myproc
       CASE (MYJPBLSCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
-          IF (SF_URBAN_PHYSICS.eq.2) THEN
+          IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
            CALL myjurbinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
                         TKE_MYJ,EXCH_H,restart,               &
                         allowed_to_read ,                     &
@@ -1595,6 +1754,8 @@ integer myproc
                         its, ite, jts, jte, kts, kte          )
           END IF
       CASE (QNSEPBLSCHEME)
+           if(isfc .ne. 4)CALL wrf_error_fatal &
+            ( 'module_physics_init: use qnsesfc scheme for this pbl option' )
            CALL qnsepblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
                         TKE_MYJ,EXCH_H,restart,               &
                         allowed_to_read ,                     &
@@ -1603,6 +1764,8 @@ integer myproc
                         its, ite, jts, jte, kts, kte          )
 #if (NMM_CORE != 1)
       CASE (BOULACSCHEME)
+           if(isfc .ne. 1 .and. isfc .ne. 2)CALL wrf_error_fatal &
+            ( 'module_physics_init: use sfclay or myjsfc scheme for this pbl option' )
            CALL boulacinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
                          TKE_PBL,EXCH_H,restart,               &
                          allowed_to_read ,                     &
@@ -1616,9 +1779,21 @@ integer myproc
 !mynn 
            
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
-           IF(isfc .NE. 3 .AND. isfc .NE. 1 .AND. isfc .NE. 2) CALL wrf_error_fatal &
-                ( 'module_physics_init: use mynn sfc scheme or sfclay scheme for this pbl option')
+           IF(isfc .NE. 5 .AND. isfc .NE. 1 .AND. isfc .NE. 2) CALL wrf_error_fatal &
+                ( 'module_physics_init: use mynnsfc or sfclay or myjsfc scheme for this pbl option')
            
+           SELECT CASE(config_flags%bl_pbl_physics)
+
+             CASE(MYNNPBLSCHEME2)
+                mynn_closure_level=2
+
+             CASE(MYNNPBLSCHEME3)
+                mynn_closure_level=3
+
+             CASE DEFAULT
+
+           END SELECT
+
            CALL mynn_bl_init_driver(&
                 &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN&
                 &,restart,allowed_to_read,mynn_closure_level &
@@ -1638,6 +1813,9 @@ integer myproc
 !==================================================================
    SUBROUTINE cu_init(STEPCU,CUDT,DT,RTHCUTEN,RQVCUTEN,RQRCUTEN,  &
                       RQCCUTEN,RQSCUTEN,RQICUTEN,NCA,RAINC,       &
+#if (NMM_CORE == 1)
+                         RUCUTEN, RVCUTEN,  &
+#endif
                       RAINCV,W0AVG,config_flags,restart,          &
                       CLDEFI,LOWLYR,MASS_FLUX,                    &
                       RTHFTEN, RQVFTEN,                           &
@@ -1694,6 +1872,10 @@ integer myproc
                                    APR_CAPMA,APR_CAPME,APR_CAPMI
 
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: LOWLYR
+#if (NMM_CORE == 1)
+   REAL,     DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(INOUT) :: &
+             RUCUTEN, RVCUTEN
+#endif
 
 ! LOCAL VAR
 
@@ -1774,8 +1956,10 @@ integer myproc
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 #endif
-     CASE (SASSCHEME)
           CALL sasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
+#if (NMM_CORE == 1)
+                      RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS
+#endif
                       restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
                       allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &
@@ -1803,9 +1987,14 @@ integer myproc
    USE module_mp_wsm5
    USE module_mp_wsm6
    USE module_mp_etanew
+#if (NMM_CORE == 1)
+   USE module_mp_HWRF
+#endif
    USE module_mp_thompson
    USE module_mp_thompson07
    USE module_mp_morr_two_moment
+   USE module_mp_milbrandt2mom
+!  USE module_mp_milbrandt3mom
    USE module_mp_wdm5
    USE module_mp_wdm6
 !------------------------------------------------------------------
@@ -1864,6 +2053,15 @@ integer myproc
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
+#if(NMM_CORE==1)
+     CASE (etamp_HWRF)
+         CALL etanewinit_HWRF (MPDT,DT,DX,DY,LOWLYR,restart,           &
+                          F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
+                          allowed_to_read,                        &
+                          ids, ide, jds, jde, kds, kde,           &
+                          ims, ime, jms, jme, kms, kme,           &
+                          its, ite, jts, jte, kts, kte            )
+#endif 
      CASE (THOMPSON)
 ! Cycling the WRF forecast with moving nests will cause this initialization to be
 ! called for each nest move. This is potentially very computationally expensive.
@@ -1874,6 +2072,10 @@ integer myproc
 
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init
+     CASE (MILBRANDT2MOM)
+         CALL milbrandt2mom_init
+!      CASE (MILBRANDT3MOM)
+!          CALL milbrandt3mom_init
      CASE (WDM5SCHEME)
           CALL wdm5init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
      CASE (WDM6SCHEME)
@@ -1948,7 +2150,7 @@ integer myproc
                config_flags%guv, &
                config_flags%gt, config_flags%gq, &
                config_flags%if_ramping, config_flags%dtramp_min, &
-               config_flags%gfdda_end_h, &
+               config_flags%auxinput10_end_h, &
                config_flags%grid_sfdda, &
                config_flags%guv_sfc, &
                config_flags%gt_sfc, &
@@ -1976,7 +2178,7 @@ integer myproc
                config_flags%guv, &
                config_flags%gt, config_flags%gph, &
                config_flags%if_ramping, config_flags%dtramp_min, &
-               config_flags%gfdda_end_h, &
+               config_flags%auxinput9_end_h, &
                config_flags%xwavenum,config_flags%ywavenum, &
                       restart, allowed_to_read,                    &
                       ids, ide, jds, jde, kds, kde,                &
@@ -1997,8 +2199,20 @@ integer myproc
                         no_pbl_nudge_t,                            &
                         no_pbl_nudge_q,                            &
                         sfcfact, sfcfacr, dpsmx,                   &
-                        lml_ht1, lml_ht2,                          &
+                        nudge_wind, nudge_temp, nudge_mois,        &
+                        nudgezfullr1_uv, nudgezrampr1_uv,          &
+                        nudgezfullr2_uv, nudgezrampr2_uv,          &
+                        nudgezfullr4_uv, nudgezrampr4_uv,          &
+                        nudgezfullr1_t,  nudgezrampr1_t,           &
+                        nudgezfullr2_t,  nudgezrampr2_t,           &
+                        nudgezfullr4_t,  nudgezrampr4_t,           &
+                        nudgezfullr1_q,  nudgezrampr1_q,           &
+                        nudgezfullr2_q,  nudgezrampr2_q,           &
+                        nudgezfullr4_q,  nudgezrampr4_q,           &
+                        nudgezfullmin, nudgezrampmin, nudgezmax,   &
                         xlat, xlong,                               &
+                        start_year, start_month, start_day,        &
+                        start_hour, start_minute, start_second,    &
                         p00, t00, tlp,                             &
                         znu, p_top,                                &
                         fdob, ipf_init,                            &
@@ -2033,10 +2247,38 @@ integer myproc
    REAL    , INTENT(IN)    :: sfcfact      ! scale factor applied to time window for surface obs
    REAL    , INTENT(IN)    :: sfcfacr      ! scale fac applied to horiz rad of infl for sfc obs
    REAL    , INTENT(IN)    :: dpsmx        ! max pressure change allowed within horiz. infl. range
-   REAL    , INTENT(IN)    :: lml_ht1      ! height 1 for spreading of lowest model level obs
-   REAL    , INTENT(IN)    :: lml_ht2      ! height 2 for spreading of lowest model level obs
+   INTEGER , INTENT(IN)    :: nudge_wind(maxdom)       ! wind-nudging flag
+   INTEGER , INTENT(IN)    :: nudge_temp(maxdom)       ! temperature-nudging flag
+   INTEGER , INTENT(IN)    :: nudge_mois(maxdom)       ! moisture-nudging flag
+   REAL    , INTENT(IN)    :: nudgezfullr1_uv  ! vert infl fcn, regime=1 full-wt   hght, winds
+   REAL    , INTENT(IN)    :: nudgezrampr1_uv  ! vert infl fcn, regime=1 ramp down hght, winds
+   REAL    , INTENT(IN)    :: nudgezfullr2_uv  ! vert infl fcn, regime=2 full-wt   hght, winds
+   REAL    , INTENT(IN)    :: nudgezrampr2_uv  ! vert infl fcn, regime=2 ramp down hght, winds
+   REAL    , INTENT(IN)    :: nudgezfullr4_uv  ! vert infl fcn, regime=4 full-wt   hght, winds
+   REAL    , INTENT(IN)    :: nudgezrampr4_uv  ! vert infl fcn, regime=4 ramp down hght, winds
+   REAL    , INTENT(IN)    :: nudgezfullr1_t   ! vert infl fcn, regime=1 full-wt   hght, temp
+   REAL    , INTENT(IN)    :: nudgezrampr1_t   ! vert infl fcn, regime=1 ramp down hght, temp
+   REAL    , INTENT(IN)    :: nudgezfullr2_t   ! vert infl fcn, regime=2 full-wt   hght, temp
+   REAL    , INTENT(IN)    :: nudgezrampr2_t   ! vert infl fcn, regime=2 ramp down hght, temp
+   REAL    , INTENT(IN)    :: nudgezfullr4_t   ! vert infl fcn, regime=4 full-wt   hght, temp
+   REAL    , INTENT(IN)    :: nudgezrampr4_t   ! vert infl fcn, regime=4 ramp down hght, temp
+   REAL    , INTENT(IN)    :: nudgezfullr1_q   ! vert infl fcn, regime=1 full-wt   hght, mois
+   REAL    , INTENT(IN)    :: nudgezrampr1_q   ! vert infl fcn, regime=1 ramp down hght, mois
+   REAL    , INTENT(IN)    :: nudgezfullr2_q   ! vert infl fcn, regime=2 full-wt   hght, mois
+   REAL    , INTENT(IN)    :: nudgezrampr2_q   ! vert infl fcn, regime=2 ramp down hght, mois
+   REAL    , INTENT(IN)    :: nudgezfullr4_q   ! vert infl fcn, regime=4 full-wt   hght, mois
+   REAL    , INTENT(IN)    :: nudgezrampr4_q   ! vert infl fcn, regime=4 ramp down hght, mois
+   REAL    , INTENT(IN)    :: nudgezfullmin    ! min dpth thru which vert infl fcn remains 1.0 (m)
+   REAL    , INTENT(IN)    :: nudgezrampmin    ! min dpth thru which vif decreases 1.0 to 0.0 (m)
+   REAL    , INTENT(IN)    :: nudgezmax        ! max dpth in which vif is nonzero (m)
    REAL    , INTENT(IN)    :: xlat ( ims:ime, jms:jme )        ! latitudes on mass-point grid
    REAL    , INTENT(IN)    :: xlong( ims:ime, jms:jme )        ! longitudes on mass-point grid
+   INTEGER , INTENT(INOUT) :: start_year
+   INTEGER , INTENT(INOUT) :: start_month
+   INTEGER , INTENT(INOUT) :: start_day
+   INTEGER , INTENT(INOUT) :: start_hour
+   INTEGER , INTENT(INOUT) :: start_minute
+   INTEGER , INTENT(INOUT) :: start_second
    REAL    , INTENT(IN)    :: p00                      ! base state pressure
    REAL    , INTENT(IN)    :: t00                      ! base state temperature
    REAL    , INTENT(IN)    :: tlp                      ! base state lapse rate
@@ -2060,8 +2302,20 @@ integer myproc
                         no_pbl_nudge_t,                            &
                         no_pbl_nudge_q,                            &
                         sfcfact, sfcfacr, dpsmx,                   &
-                        lml_ht1, lml_ht2,                          &
+                        nudge_wind, nudge_temp, nudge_mois,        &
+                        nudgezfullr1_uv, nudgezrampr1_uv,          &
+                        nudgezfullr2_uv, nudgezrampr2_uv,          &
+                        nudgezfullr4_uv, nudgezrampr4_uv,          &
+                        nudgezfullr1_t,  nudgezrampr1_t,           &
+                        nudgezfullr2_t,  nudgezrampr2_t,           &
+                        nudgezfullr4_t,  nudgezrampr4_t,           &
+                        nudgezfullr1_q,  nudgezrampr1_q,           &
+                        nudgezfullr2_q,  nudgezrampr2_q,           &
+                        nudgezfullr4_q,  nudgezrampr4_q,           &
+                        nudgezfullmin,  nudgezrampmin, nudgezmax,  &
                         xlat, xlong,                               &
+                        start_year, start_month, start_day,        &
+                        start_hour, start_minute, start_second,    &
                         p00, t00, tlp,                             &
                         znu, p_top,                                &
                         fdob, ipf_init,                            &

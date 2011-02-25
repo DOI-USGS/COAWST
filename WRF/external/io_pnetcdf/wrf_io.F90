@@ -41,7 +41,7 @@ module wrf_data_pnc
   integer                , parameter      :: WARN             = 1
   integer                , parameter      :: WrfDataHandleMax = 99
   integer                , parameter      :: MaxDims          = 2000 ! = NF_MAX_VARS
-  integer                , parameter      :: MaxVars          = 2000
+  integer                , parameter      :: MaxVars          = 3000
   integer                , parameter      :: MaxTimes         = 9000000
   integer                , parameter      :: DateStrLen       = 19
   integer                , parameter      :: VarNameLen       = 31
@@ -88,6 +88,8 @@ module wrf_data_pnc
 ! or when open-for-write or open-for-read are committed.  It is set 
 ! to .FALSE. when the first field is read or written.  
     logical                               :: first_operation
+    integer                               :: gridid  ! this is the id of the grid from WRF, needed for parallel transposes, and passed in as SysDepInfo
+    integer                               :: ntasks_x, local_communicator_x
   end type wrf_data_handle
   type(wrf_data_handle),target            :: WrfDataHandles(WrfDataHandleMax)
 end module wrf_data_pnc
@@ -470,6 +472,42 @@ subroutine GetIndices(NDim,Start,End,i1,i2,j1,j2,k1,k2)
   k2 = End  (3)
   return
 end subroutine GetIndices
+
+logical function ZeroLengthHorzDim(MemoryOrder,Vector,Status)
+  use wrf_data_pnc
+  include 'wrf_status_codes.h'
+  character*(*)              ,intent(in)    :: MemoryOrder
+  integer,dimension(*)       ,intent(in)    :: Vector
+  integer                    ,intent(out)   :: Status
+  integer                                   :: NDim
+  integer,dimension(NVarDims)               :: temp
+  character*3                               :: MemOrd
+  logical zero_length
+
+  call GetDim(MemoryOrder,NDim,Status)
+  temp(1:NDim) = Vector(1:NDim)
+  call LowerCase(MemoryOrder,MemOrd)
+  zero_length = .false.
+  select case (MemOrd)
+    case ('xsz','xez','ysz','yez','xs','xe','ys','ye','z','c')
+      continue
+    case ('0')
+      continue  ! NDim=0 for scalars.  TBH:  20060502
+    case ('xzy','yzx')
+      zero_length = temp(1) .lt. 1 .or. temp(3) .lt. 1
+    case ('xy','yx','xyz','yxz')
+      zero_length = temp(1) .lt. 1 .or. temp(2) .lt. 1
+    case ('zxy','zyx')
+      zero_length = temp(2) .lt. 1 .or. temp(3) .lt. 1
+    case default
+      Status = WRF_WARN_BAD_MEMORYORDER
+      ZeroLengthHorzDim = .true.
+      return
+  end select
+  Status = WRF_NO_ERR
+  ZeroLengthHorzDim = zero_length
+  return
+end function ZeroLengthHorzDim
 
 subroutine ExtOrder(MemoryOrder,Vector,Status)
   use wrf_data_pnc
@@ -1180,6 +1218,9 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   character (7)                     :: Buffer
   integer                           :: VDimIDs(2)
   integer                           :: info, ierr   ! added for Blue Gene (see NF_CREAT below)
+  character*128                     :: idstr,ntasks_x_str,loccomm_str
+  integer                           :: gridid
+  integer local_communicator_x, ntasks_x
 
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
@@ -1195,6 +1236,21 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   endif
   DH%TimeIndex = 0
   DH%Times     = ZeroDate
+  CALL get_value_pnetcdf( 'GRIDID', SysDepInfo ,idstr )
+  CALL get_value_pnetcdf( 'NTASKS_X', SysDepInfo ,ntasks_x_str )
+!  CALL get_value_pnetcdf( 'LOCAL_COMMUNICATOR_X', SysDepInfo ,loccomm_str )
+  IF ( LEN(idstr) > 0 ) THEN
+    READ(idstr,'(i3)') gridid
+!    READ(ntasks_x_str,*)ntasks_x
+!    READ(loccomm_str,*)local_communicator_x
+    CALL wrf_get_dm_communicator_x(local_communicator_x) 
+    CALL wrf_get_dm_ntasks_x(ntasks_x) 
+    DH%GridID    = gridid
+    DH%ntasks_x  = ntasks_x
+    DH%local_communicator_x = local_communicator_x
+  ELSE
+    DH%GridID    = -1
+  ENDIF
 !  stat = NFMPI_CREATE(Comm, FileName, NF_CLOBBER, MPI_INFO_NULL, DH%NCID)
 
 #ifndef BLUEGENE
@@ -1305,7 +1361,7 @@ SUBROUTINE ext_pnc_open_for_write_commit(DataHandle, Status)
   stat = NFMPI_ENDDEF(DH%NCID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'NetCDF error in ext_pnc_open_for_write_commit ',__FILE__,', line', __LINE__
+    write(msg,*) 'NetCDF error (',stat,') from NFMPI_ENDDEF in ext_pnc_open_for_write_commit ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -2275,7 +2331,7 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
   integer      ,dimension(NVarDims)            :: VDimIDs
   character(80),dimension(NVarDims)            :: RODimNames
   integer      ,dimension(NVarDims)            :: StoredStart
-  integer      ,dimension(:,:,:,:),allocatable :: XField
+  integer      ,dimension(:,:,:,:),allocatable :: XField,ax
   integer                                      :: stat
   integer                                      :: NVar
   integer                                      :: i,j
@@ -2284,8 +2340,18 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
   integer                                      :: l1,l2,m1,m2,n1,n2
   integer                                      :: XType
   integer                                      :: di
-  character (80)                               :: NullName
+  character (80)                               :: NullName, t1, t2, t3
   logical                                      :: NotFound
+  logical                                      :: sw_xpose
+  integer, dimension(3) ::                   &
+                           ds, de            &
+                          ,ms, me            &
+                          ,ps, pe            &
+                          ,mxs, mxe          &
+                          ,pxs, pxe, pxe2    &
+                          ,mys, mye          &
+                          ,pys, pye
+  integer iwordsz, rwordsz, data_order
 
   MemoryOrder = trim(adjustl(MemoryOrdIn))
   NullName=char(0)
@@ -2303,6 +2369,27 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
   endif
   VarName = Var
   call GetDH(DataHandle,DH,Status)
+  call ExtOrderStr(MemoryOrder,DimNames,RODimNames,Status)
+  sw_xpose = .FALSE.
+!  IF ( DH%GridID > 0 ) THEN
+  IF ( .FALSE. ) THEN
+    t1 = RODimNames(1)
+    t2 = RODimNames(2)
+    t3 = RODimNames(3)
+    IF ( t1(1:9)  .EQ. 'west_east'   .AND. &
+         t2(1:11) .EQ. 'south_north' .AND. &
+         t3(1:10) .EQ. 'bottom_top'          ) THEN
+      sw_xpose = .TRUE.
+      CALL get_dims_from_grid_id ( DH%GridID   &
+                            ,ds, de           &
+                            ,ms, me           &
+                            ,ps, pe           &
+                            ,mxs, mxe         &
+                            ,pxs, pxe         &
+                            ,mys, mye         &
+                            ,pys, pye )
+    ENDIF
+  ENDIF
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
@@ -2314,14 +2401,23 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
   CALL wrf_debug( 100, msg )
 
 !jm 20061024
-  Length(1:NDim) = PatchEnd(1:NDim)-PatchStart(1:NDim)+1
+  IF ( sw_xpose .AND. NDim .EQ. 3 ) THEN
+    DO j=1,NDim
+      Length(j) = MIN(pxe(j),DomainEnd(j))-pxs(j)+1   ! we will use the x-transposed dimensions when writing to pNetCDF
+    ENDDO
+  ELSE
+    Length(1:NDim) = PatchEnd(1:NDim)-PatchStart(1:NDim)+1
+  ENDIF
   Length_global(1:NDim) = DomainEnd(1:NDim)-DomainStart(1:NDim)+1
 
+  IF ( ZeroLengthHorzDim(MemoryOrder,Length_global,Status) ) THEN
+     write(msg,*)'ext_pnc_write_field: zero length global dimension in ',TRIM(Var),'. Ignoring'
+     call wrf_debug ( WARN , TRIM(msg))
+     return
+  ENDIF
 
   call ExtOrder(MemoryOrder,Length,Status)
   call ExtOrder(MemoryOrder,Length_global,Status)
-
-  call ExtOrderStr(MemoryOrder,DimNames,RODimNames,Status)
 
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
@@ -2335,7 +2431,7 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
     do NVar=1,MaxVars
       if(DH%VarNames(NVar) == VarName ) then
         Status = WRF_WARN_2DRYRUNS_1VARIABLE
-        write(msg,*) 'Warning 2 DRYRUNS 1 VARIABLE in ',__FILE__,', line', __LINE__ 
+        write(msg,*) 'Warning 2 DRYRUNS 1 VARIABLE (',TRIM(VarName),') in ',__FILE__,', line', __LINE__ 
         call wrf_debug ( WARN , TRIM(msg))
         return
       elseif(DH%VarNames(NVar) == NO_NAME) then
@@ -2349,7 +2445,8 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
         return
       endif
     enddo
-    do j = 1,NDim
+!   ------------------------------
+    do j = 1,NDim  ! dim loop
       if(RODimNames(j) == NullName .or. RODimNames(j) == '') then
         do i=1,MaxDims
           if(DH%DimLengths(i) == Length_global(j)) then
@@ -2366,7 +2463,7 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
             exit
           elseif(i == MaxDims) then
             Status = WRF_WARN_TOO_MANY_DIMS
-            write(msg,*) 'Warning TOO MANY DIMENSIONS in ',__FILE__,', line', __LINE__ 
+            write(msg,*) 'Warning TOO MANY DIMENSIONS (',i,') in (',TRIM(VarName),') ',__FILE__,', line', __LINE__ 
             call wrf_debug ( WARN , TRIM(msg))
             return
           endif
@@ -2411,7 +2508,8 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
       endif
       VDimIDs(j) = DH%DimIDs(i)
       DH%VarDimLens(j,NVar) = Length_global(j)
-    enddo
+    enddo  ! dim loop
+!   ------------------------------
     VDimIDs(NDim+1) = DH%DimUnlimID
     select case (FieldType)
       case (WRF_REAL)
@@ -2485,24 +2583,71 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
         return
       endif
     enddo
-    StoredStart = 1
-    call GetIndices(NDim,MemoryStart,MemoryEnd,l1,l2,m1,m2,n1,n2)
-    call GetIndices(NDim,StoredStart,Length   ,x1,x2,y1,y2,z1,z2)
-    call GetIndices(NDim,PatchStart, PatchEnd ,i1,i2,j1,j2,k1,k2)
+
+
     di=1
     if(FieldType == WRF_DOUBLE) di=2
-    allocate(XField(di,x1:x2,y1:y2,z1:z2), STAT=stat)
-    if(stat/= 0) then
-      Status = WRF_ERR_FATAL_ALLOCATION_ERROR
-      write(msg,*) 'Fatal ALLOCATION ERROR in ',__FILE__,', line', __LINE__
-      call wrf_debug ( FATAL , TRIM(msg))
-      return
-    endif
-    call Transpose('write',MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
-                                         ,XField,x1,x2,y1,y2,z1,z2 &
-                                                ,i1,i2,j1,j2,k1,k2 )
-    StoredStart(1:NDim) = PatchStart(1:NDim)
+
+    IF ( sw_xpose .AND. Ndim .EQ. 3 ) THEN
+       ALLOCATE( ax(di,mxs(1):mxe(1),mxs(2):mxe(2),mxs(3):mxe(3)), STAT=stat )
+       if(stat/= 0) then
+         Status = WRF_ERR_FATAL_ALLOCATION_ERROR
+         write(msg,*) 'Fatal ALLOCATION ERROR in ',__FILE__,', line', __LINE__
+         call wrf_debug ( FATAL , TRIM(msg))
+         return
+       endif
+       call inquire_of_wrf_iwordsize( iwordsz )
+       call inquire_of_wrf_rwordsize( rwordsz )
+       call inquire_of_wrf_data_order_xzy( data_order )
+       call trans_z2x ( DH%ntasks_x, DH%local_communicator_x, 1                   &
+                               ,di*rwordsz, iwordsz, data_order                   &
+                               ,Field                                             &
+                               ,ds(1), de(1), ds(2), de(2), ds(3), de(3)          &
+                               ,ps(1), pe(1), ps(2), pe(2), ps(3), pe(3)          &
+                               ,ms(1), me(1), ms(2), me(2), ms(3), me(3)          &
+                               ,ax                                                &
+                               ,pxs(1), pxe(1), pxs(2), pxe(2), pxs(3), pxe(3)    &
+                               ,mxs(1), mxe(1), mxs(2), mxe(2), mxs(3), mxe(3)   )
+       StoredStart = 1
+       call GetIndices(NDim,mxs,mxe              ,l1,l2,m1,m2,n1,n2)
+       call GetIndices(NDim,StoredStart,Length   ,x1,x2,y1,y2,z1,z2)  !make sure Length is set using pxs/pxe , above
+       DO j=1,NDim
+         pxe2(j) = min(pxe(j),DomainEnd(j))
+       ENDDO
+       call GetIndices(NDim,pxs,pxe2              ,i1,i2,j1,j2,k1,k2)
+
+       allocate(XField(di,x1:x2,y1:y2,z1:z2), STAT=stat)
+       if(stat/= 0) then
+         Status = WRF_ERR_FATAL_ALLOCATION_ERROR
+         write(msg,*) 'Fatal ALLOCATION ERROR in ',__FILE__,', line', __LINE__
+         call wrf_debug ( FATAL , TRIM(msg))
+         return
+       endif
+
+       call Transpose('write',MemoryOrder,di, ax   ,l1,l2,m1,m2,n1,n2 &
+                                            ,XField,x1,x2,y1,y2,z1,z2 &
+                                                   ,i1,i2,j1,j2,k1,k2 )
+       StoredStart(1:NDim) = pxs(1:NDim)
+    ELSE
+       StoredStart = 1
+       call GetIndices(NDim,MemoryStart,MemoryEnd,l1,l2,m1,m2,n1,n2)
+       call GetIndices(NDim,StoredStart,Length   ,x1,x2,y1,y2,z1,z2)
+       call GetIndices(NDim,PatchStart, PatchEnd ,i1,i2,j1,j2,k1,k2)
+       allocate(XField(di,x1:x2,y1:y2,z1:z2), STAT=stat)
+       if(stat/= 0) then
+         Status = WRF_ERR_FATAL_ALLOCATION_ERROR
+         write(msg,*) 'Fatal ALLOCATION ERROR in ',__FILE__,', line', __LINE__
+         call wrf_debug ( FATAL , TRIM(msg))
+         return
+       endif
+       call Transpose('write',MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
+                                            ,XField,x1,x2,y1,y2,z1,z2 &
+                                                   ,i1,i2,j1,j2,k1,k2 )
+       StoredStart(1:NDim) = PatchStart(1:NDim)
+    ENDIF
+
     call ExtOrder(MemoryOrder,StoredStart,Status)
+
     call FieldIO('write',DataHandle,DateStr,StoredStart,Length,MemoryOrder, &
                   FieldType,NCID,VarID,XField,Status)
     if(Status /= WRF_NO_ERR) then
@@ -2517,6 +2662,17 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
       call wrf_debug ( FATAL , TRIM(msg))
       return
     endif
+
+    IF ( sw_xpose .AND. Ndim .EQ. 3 ) THEN
+       DEALLOCATE(ax, STAT=stat)
+       if(stat/= 0) then
+         Status = WRF_ERR_FATAL_DEALLOCATION_ERR
+         write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
+         call wrf_debug ( FATAL , TRIM(msg))
+         return
+       endif
+    ENDIF
+
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
@@ -2733,12 +2889,6 @@ subroutine ext_pnc_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
         write(msg,*) 'Warning ZERO LENGTH READ in ',__FILE__,', line', __LINE__
         call wrf_debug ( WARN , TRIM(msg))
         return
-      elseif(DomainStart(j) < MemoryStart(j)) then
-        Status = WRF_WARN_DIMENSION_ERROR
-        write(msg,*) 'Warning dim ',j,' DomainStart (',DomainStart(j), &
-                     ') < MemoryStart (',MemoryStart(j),') in ',__FILE__,', line', __LINE__
-        call wrf_debug ( WARN , TRIM(msg))
-!        return
       endif
     enddo
 
@@ -3431,3 +3581,46 @@ subroutine ext_pnc_error_str( Code, ReturnString, Status)
 
   return
 end subroutine ext_pnc_error_str
+
+! parse comma separated list of VARIABLE=VALUE strings and return the
+! value for the matching variable if such exists, otherwise return
+! the empty string
+SUBROUTINE get_value_pnetcdf ( varname , str , retval )
+  IMPLICIT NONE
+  CHARACTER*(*) ::    varname
+  CHARACTER*(*) ::    str
+  CHARACTER*(*) ::    retval
+
+  CHARACTER (128) varstr, tstr
+  INTEGER i,j,n,varstrn
+  LOGICAL nobreak, nobreakouter
+
+  varstr = TRIM(varname)//"="
+  varstrn = len(TRIM(varstr))
+  n = len(TRIM(str))
+  retval = ""
+  i = 1
+  nobreakouter = .TRUE.
+  DO WHILE ( nobreakouter )
+    j = 1
+    nobreak = .TRUE.
+    tstr = ""
+    DO WHILE ( nobreak )
+      nobreak = .FALSE.
+      IF ( i .LE. n ) THEN
+        IF (str(i:i) .NE. ',' ) THEN
+           tstr(j:j) = str(i:i)
+           nobreak = .TRUE.
+        ENDIF
+      ENDIF
+      j = j + 1
+      i = i + 1
+    ENDDO
+    IF ( i .GT. n ) nobreakouter = .FALSE.
+    IF ( varstr(1:varstrn) .EQ. tstr(1:varstrn) ) THEN
+      retval(1:) = TRIM(tstr(varstrn+1:))
+      nobreakouter = .FALSE.
+    ENDIF
+  ENDDO
+  RETURN
+END SUBROUTINE get_value_pnetcdf

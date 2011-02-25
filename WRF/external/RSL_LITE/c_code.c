@@ -9,6 +9,10 @@
 # define O_WRONLY _O_WRONLY
 #endif
 
+#ifdef _WIN32
+#include <Winsock2.h>
+#endif
+
 #define STANDARD_ERROR 2
 
 #define STANDARD_OUTPUT 1
@@ -30,7 +34,6 @@ RSL_LITE_ERROR_DUP1 ( int *me )
 /* redirect standard out and standard error based on compile options*/
                                                                                                                                               
 #ifndef NCEP_DEBUG_MULTIDIR
-# ifndef MS_SUA
     gethostname( hostname, 256 ) ;
 
 /* redirect standard out*/
@@ -50,6 +53,9 @@ RSL_LITE_ERROR_DUP1 ( int *me )
     }
 
 /* redirect standard error */
+# if defined( _WIN32 ) 
+    if ( *me != 0 ) {   /* stderr from task 0 should come to screen on windows because it is buffered if redirected */
+#endif
     sprintf(filename,"rsl.error.%04d",*me) ;
     if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
     {
@@ -66,33 +72,8 @@ RSL_LITE_ERROR_DUP1 ( int *me )
     }
     fprintf( stdout, "taskid: %d hostname: %s\n",*me,hostname) ;
     fprintf( stderr, "taskid: %d hostname: %s\n",*me,hostname) ;
-# else
-    printf("host %d", *me ) ;
-    system("hostname") ;
-    sprintf( hostname, "host %d", *me ) ;
-/* redirect standard out*/
-    sprintf(filename,"rsl.out.%04d",*me) ;
-    if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
-    {
-        return ;
+# if defined( _WIN32 ) 
     }
-    if( dup2( newfd, STANDARD_OUTPUT ) < 0 )
-    {
-        close(newfd) ;
-        return ;
-    }
-/* redirect standard error */
-    sprintf(filename,"rsl.error.%04d",*me) ;
-    if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
-    {
-        return ;
-    }
-    if( dup2( newfd, STANDARD_ERROR ) < 0 )
-    {
-        close(newfd) ;
-        return ;
-    }
-
 # endif
 #else
 # ifndef NCEP_DEBUG_GLOBALSTDOUT
@@ -174,6 +155,16 @@ RSL_LITE_ERROR_DUP1 ( int *me )
 # endif
 #endif
 }
+
+#ifdef _WIN32
+/* Windows doesn't have a gethostid function so add a stub.
+   TODO: Create a version that will work on Windows. */
+int
+gethostid ()
+{
+        return 0;
+}
+#endif
 
 RSL_LITE_GET_HOSTNAME ( char * hn, int * size, int *n, int *hostid ) 
 {
@@ -680,7 +671,7 @@ RSL_LITE_EXCH_X ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 
 #endif
 }
 
-#ifndef MS_SUA
+#if !defined( MS_SUA)  && !defined(_WIN32)
 #include <sys/time.h>
 RSL_INTERNAL_MILLICLOCK ()
 {

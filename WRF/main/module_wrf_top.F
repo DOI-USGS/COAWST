@@ -15,12 +15,13 @@ MODULE module_wrf_top
    USE module_integrate
    USE module_driver_constants
    USE module_configure
+   USE module_check_a_mundo
 
    USE module_timing
    USE module_wrf_error
 
 #ifdef DM_PARALLEL
-   USE module_dm
+   USE module_dm, ONLY : wrf_dm_initialize
 #endif
 
    IMPLICIT NONE
@@ -91,12 +92,20 @@ CONTAINS
 !<DESCRIPTION>
 !     WRF initialization routine.
 !</DESCRIPTION>
+#ifdef _OPENMP
+     use omp_lib
+#endif
+#ifdef _ACCEL
+     use accel_lib
 #endif
      LOGICAL, OPTIONAL, INTENT(IN) :: no_init1
      INTEGER i, myproc, nproc, hostid, loccomm, ierr, buddcounter, mydevice
      INTEGER, ALLOCATABLE :: hostids(:), budds(:)
      CHARACTER*512 hostname
-#if defined(DM_PARALLEL) && defined(RUN_ON_GPU)
+#ifdef _ACCEL
+     integer :: it, nt, in, devnum
+#endif
+#if defined(DM_PARALLEL) && !defined(STUBMPI) && ( defined(RUN_ON_GPU) || defined(_ACCEL))
      include "mpif.h"
 #endif
 #include "version_decl"
@@ -132,9 +141,12 @@ CONTAINS
    CALL init_modules(1)
    IF ( .NOT. PRESENT( no_init1 ) ) THEN
      ! Initialize utilities (time manager, etc.)
+#ifdef NO_LEAP_CALENDAR
+     CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_NOLEAP )
+#else
      CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN )
-   ENDIF
 #endif
+   ENDIF
    ! Phase 2 resumes after MPI_INIT() (if it is called)
    CALL init_modules(2)
 
@@ -165,12 +177,64 @@ CONTAINS
 #endif
 
    CALL set_derived_rconfigs
+   CALL check_nml_consistency
+   CALL set_physics_rconfigs
+
+#ifdef _ACCEL
+   buddcounter = 1
+   mydevice = 0
+# if defined(DM_PARALLEL) && !defined(STUBMPI) 
+   CALL wrf_get_myproc( myproc )
+   CALL wrf_get_nproc( nproc )
+   CALL wrf_get_hostid ( hostid )
+   CALL wrf_get_dm_communicator ( loccomm )
+
+   ALLOCATE( hostids(nproc) )
+   ALLOCATE( budds(nproc) )
+   CALL mpi_allgather( hostid, 1, MPI_INTEGER, hostids, 1, MPI_INTEGER, loccomm, ierr )
+   if ( ierr .NE. 0 ) print * ,'error in mpi_allgather ',ierr
+   budds = -1
+   buddcounter = 0
+   ! mark the ones i am on the same node with
+   DO i = 1, nproc
+      IF ( hostid .EQ. hostids(i) ) THEN
+         budds(i) = buddcounter
+         buddcounter = buddcounter + 1
+      ENDIF
+   ENDDO
+   mydevice = budds(myproc+1)
+   DEALLOCATE( hostids )
+   DEALLOCATE( budds )
+# endif
+   in = acc_get_num_devices(acc_device_nvidia)
+   if (in .le. 0) print *, 'error:  No GPUS present: ',in
+# ifdef _OPENMP
+   !$OMP PARALLEL SHARED(mydevice,in) PRIVATE(it,nt,devnum)
+   it = omp_get_thread_num()
+   nt = omp_get_num_threads()
+   devnum = mod(mod(mydevice*nt,in) + it, in)
+# ifdef _ACCEL_PROF
+   print *, "Process, Thread, Device: ",mydevice, it, devnum
+# endif
+   call acc_set_device_num(devnum, acc_device_nvidia)
+
+   !$OMP END PARALLEL
+# else
+   it = 0
+   nt = 1
+   devnum = mod(mod(mydevice*nt,in) + it, in)
+#  ifdef _ACCEL_PROF
+   print *, "Process, Thread, Device: ",mydevice, it, devnum
+#  endif
+   call acc_set_device_num(devnum, acc_device_nvidia)
+# endif
+#endif
 
 #ifdef RUN_ON_GPU
    CALL wrf_get_myproc( myproc )
    CALL wrf_get_nproc( nproc )
-   CALL wrf_get_hostid ( hostid ) 
 # ifdef DM_PARALLEL
+   CALL wrf_get_hostid ( hostid ) 
    CALL wrf_get_dm_communicator ( loccomm )
    ALLOCATE( hostids(nproc) )
    ALLOCATE( budds(nproc) )
