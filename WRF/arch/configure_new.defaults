@@ -93,8 +93,10 @@ OMPCC           =       # -mp
 SFC             =       pgf90
 SCC            ?=       gcc
 CCOMP           =       pgcc
-DM_FC           =       mpif90 -f90=$(SFC)
-DM_CC           =       mpicc -cc=$(SCC)
+#DM_FC          =       mpif90 -f90=$(SFC)
+#DM_CC          =       mpicc  -cc=$(SCC)
+DM_FC           =       mpif90
+DM_CC           =       mpicc
 FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)

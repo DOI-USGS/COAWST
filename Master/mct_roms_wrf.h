@@ -720,7 +720,7 @@
         CALL finalize_ocn2atm_coupling
       ELSE
         IF (Master) THEN
-          WRITE (stdout,'(a)') 'ROMS recv Atm fields'
+          WRITE (stdout,'(a)') 'ROMS recv data from WRF'
         END IF
       END IF
 !

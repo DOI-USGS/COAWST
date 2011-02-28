@@ -92,6 +92,7 @@ CONTAINS
 !<DESCRIPTION>
 !     WRF initialization routine.
 !</DESCRIPTION>
+#endif
 #ifdef _OPENMP
      use omp_lib
 #endif
@@ -147,6 +148,7 @@ CONTAINS
      CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN )
 #endif
    ENDIF
+#endif
    ! Phase 2 resumes after MPI_INIT() (if it is called)
    CALL init_modules(2)
 

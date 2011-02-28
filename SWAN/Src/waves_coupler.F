@@ -793,7 +793,7 @@
         CALL MCT_Send (AttrVect_G(ng)%wav2atm_AV, SWANtoWRF, MyError)
 #  endif
         IF (MYRANK.EQ.0) THEN
-          WRITE (*,*) '== SWAN sent fields to atm model'
+          WRITE (SCREEN,35) '== SWAN grid ',ng,' sent data to WRF'
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupl fail swancplr, MyStatus= ', MyError
@@ -816,7 +816,7 @@
         CALL MCT_Recv (AttrVect_G(ng)%atm2wav_AV, SWANtoWRF, MyError)
 #  endif
         IF (MYRANK.EQ.0) THEN
-          WRITE (*,*) '== SWAN recvd atm fields'
+          WRITE (SCREEN,35) '== SWAN grid ',ng,' recv data from WRF'
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError

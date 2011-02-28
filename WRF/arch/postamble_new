@@ -58,6 +58,7 @@ REGISTRY        =    Registry
 
 LIB             =    $(LIB_BUNDLED) $(LIB_EXTERNAL) $(LIB_LOCAL)
 LIB             +=   -L$(MCT_LIBDIR) -lmct -lmpeu
+LIB             +=   $(shell nc-config --libs)
 LDFLAGS         =    $(OMP) $(FCFLAGS) $(LDFLAGS_LOCAL) CONFIGURE_LDFLAGS
 ENVCOMPDEFS     =    CONFIGURE_COMPILEFLAGS
 CPPFLAGS        =    -D'PROJECT_HEADER="$(MY_HEADER_DIR)/$(HEADER)"'

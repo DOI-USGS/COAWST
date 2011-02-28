@@ -6,7 +6,8 @@ RM      =       rm -f
 
 
 
-MODULES =       module_driver_constants.o  \
+MODULES =       module_parallel.o \
+                module_driver_constants.o  \
                 module_domain_type.o       \
                 atm_coupler.o              \
                 module_streams.o           \
@@ -185,6 +186,7 @@ md_calls.inc : md_calls.m4
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 
+module_parallel.o: module_domain.o
 
 module_configure.o: \
 		../dyn_em/namelist_remappings_em.h \
@@ -198,7 +200,8 @@ module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
 		module_driver_constants.o \
 		module_timing.o \
 		module_comm_nesting_dm.o \
-		module_configure.o module_comm_dm.o
+		module_configure.o module_comm_dm.o \
+                module_parallel.o
 
 module_comm_dm.o: module_comm_dm_0.o module_comm_dm_1.o module_comm_dm_2.o module_comm_dm_3.o module_comm_dm_4.o
 
@@ -257,7 +260,7 @@ module_integrate.o: module_domain.o \
 		module_state_description.o \
 		module_nesting.o \
 		module_configure.o \
-        atm_coupler.o \
+		atm_coupler.o \
 		$(ESMF_MOD_DEPENDENCE)
 
 module_io.o : md_calls.inc \
