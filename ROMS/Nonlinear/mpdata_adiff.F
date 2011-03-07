@@ -131,7 +131,7 @@
       integer :: i, is, j, k
 
       real(r8), parameter :: Large = 1.0E+20_r8
-      real(r8), parameter :: eps = 1.0E-14_r8
+      real(r8), parameter :: eps = 1.0E-18_r8
 
       real(r8) :: A, B, Tmax, Tmin, Um, Vm, X, Y, Z
       real(r8) :: cff, cff1, cff2, sig_alfa

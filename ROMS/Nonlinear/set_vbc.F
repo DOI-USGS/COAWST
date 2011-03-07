@@ -479,6 +479,11 @@
      &                  v(i-1,j+1,1,nrhs))
           cff2=SQRT(u(i,j,1,nrhs)*u(i,j,1,nrhs)+cff1*cff1)
           bustr(i,j)=rdrg2(ng)*u(i,j,1,nrhs)*cff2
+#  ifdef WET_DRY
+          cff2=0.75_r8*0.5_r8*(Hz(i-1,j,1)+Hz(i,j,1))
+          bustr(i,j)=SIGN(1.0_r8,bustr(i,j))*MIN(ABS(bustr(i,j)),       &
+     &               ABS(u(i,j,1,nrhs))*cff2/dt(ng))
+#  endif
         END DO
       END DO
       DO j=JstrV,Jend
@@ -489,6 +494,11 @@
      &                  u(i+1,j-1,1,nrhs))
           cff2=SQRT(cff1*cff1+v(i,j,1,nrhs)*v(i,j,1,nrhs))
           bvstr(i,j)=rdrg2(ng)*v(i,j,1,nrhs)*cff2
+#  ifdef WET_DRY
+          cff2=0.75_r8*0.5_r8*(Hz(i,j-1,1)+Hz(i,j,1))
+          bvstr(i,j)=SIGN(1.0_r8,bvstr(i,j))*MIN(ABS(bvstr(i,j)),       &
+     &               ABS(v(i,j,1,nrhs))*cff2/dt(ng))
+#  endif
         END DO
       END DO
 #    elif defined UV_LDRAG
@@ -498,11 +508,21 @@
       DO j=Jstr,Jend
         DO i=IstrU,Iend
           bustr(i,j)=rdrg(ng)*u(i,j,1,nrhs)
+#  ifdef WET_DRY
+          cff2=0.75_r8*0.5_r8*(Hz(i-1,j,1)+Hz(i,j,1))
+          bustr(i,j)=SIGN(1.0_r8,bustr(i,j))*MIN(ABS(bustr(i,j)),       &
+     &               ABS(u(i,j,1,nrhs))*cff2/dt(ng))
+#  endif
         END DO
       END DO
       DO j=JstrV,Jend
         DO i=Istr,Iend
           bvstr(i,j)=rdrg(ng)*v(i,j,1,nrhs)
+#  ifdef WET_DRY
+          cff2=0.75_r8*0.5_r8*(Hz(i,j-1,1)+Hz(i,j,1))
+          bvstr(i,j)=SIGN(1.0_r8,bvstr(i,j))*MIN(ABS(bvstr(i,j)),       &
+     &               ABS(v(i,j,1,nrhs))*cff2/dt(ng))
+#  endif
         END DO
       END DO
 #    endif
