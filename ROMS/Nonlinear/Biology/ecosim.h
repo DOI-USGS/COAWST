@@ -2358,9 +2358,6 @@
      &                                t(i,j,k,nnew,itrc)+               &
      &                                Hz(i,j,k)*                        &
      &                                (Bio(i,k,itrc)-Bio_old(i,k,itrc)))
-#ifdef TS_MPDATA
-               t(i,j,k,3,itrc)=t(i,j,k,nnew,itrc)*Hz_inv(i,k)
-#endif
             END DO
           END DO
         END DO

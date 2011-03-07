@@ -320,7 +320,11 @@
 # if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
       integer :: idiag
 # endif
+# ifdef TS_MPDATA
+      real(r8), parameter :: Gamma = 0.5_r8
+# else
       real(r8), parameter :: Gamma = 1.0_r8/6.0_r8
+# endif
       real(r8), parameter :: eps = 1.0E-16_r8
 
       real(r8) :: cff, cff1, cff2, cff3, cff4
@@ -370,7 +374,6 @@
         END DO
       END DO
 #  endif
-#  ifndef TS_MPDATA
 !
 !-----------------------------------------------------------------------
 !  Compute intermediate tracer at n+1/2 time-step, t(i,j,k,3,itrc).
@@ -398,6 +401,26 @@
               FE(i,j)=Hvom(i,j,k)*                                      &
      &                0.5_r8*(t(i,j-1,k,nstp,itrc)+                     &
      &                        t(i,j  ,k,nstp,itrc))
+            END DO
+          END DO
+#   elif defined TS_MPDATA
+!
+!  First-order, upstream differences horizontal advective fluxes.
+!
+          DO j=Jstr,Jend
+            DO i=Istr,Iend+1
+              cff1=MAX(Huon(i,j,k),0.0_r8)
+              cff2=MIN(Huon(i,j,k),0.0_r8)
+              FX(i,j)=cff1*t(i-1,j,k,nstp,itrc)+                        &
+     &                cff2*t(i  ,j,k,nstp,itrc)
+            END DO
+          END DO
+          DO j=Jstr,Jend+1
+            DO i=Istr,Iend
+              cff1=MAX(Hvom(i,j,k),0.0_r8)
+              cff2=MIN(Hvom(i,j,k),0.0_r8)
+              FE(i,j)=cff1*t(i,j-1,k,nstp,itrc)+                        &
+     &                cff2*t(i,j  ,k,nstp,itrc)
             END DO
           END DO
 #   else
@@ -921,7 +944,6 @@
           END DO
         END DO T_LOOP2
       END DO J_LOOP1
-#  endif /* !TS_MPDATA */
 !
 !-----------------------------------------------------------------------
 !  Start computation of tracers at n+1 time-step, t(i,j,k,nnew,itrc).
@@ -979,9 +1001,6 @@
               cff1=Hz(i,j,k)*t(i,j,k,nstp,itrc)
               cff2=FC(i,k)-FC(i,k-1)
               t(i,j,k,nnew,itrc)=cff1+cff2
-#  ifdef TS_MPDATA
-              t(i,j,k,3,itrc)=t(i,j,k,nnew,itrc)/Hz(i,j,k)
-#  endif
 #  ifdef DIAGNOSTICS_TS
               DiaTwrk(i,j,k,itrc,iTrate)=cff1
               DiaTwrk(i,j,k,itrc,iTvdif)=cff2
@@ -1222,12 +1241,6 @@
 #  endif
       END DO
 #  ifdef DISTRIBUTE
-#   ifdef TS_MPDATA
-      CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    t(:,:,:,nnew,:))
-#   endif
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
      &                    NghostPoints, EWperiodic, NSperiodic,         &

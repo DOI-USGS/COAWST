@@ -1250,9 +1250,6 @@
             DO i=Istr,Iend
               t(i,j,k,nnew,indx)=MIN(t(i,j,k,nnew,indx),0.0_r8)+        &
      &                           Hz(i,j,k)*Bio(i,k,indx)
-#ifdef TS_MPDATA
-              t(i,j,k,3,indx)=t(i,j,k,nnew,indx)*Hz_inv(i,k)
-#endif
             END DO
           END DO
         END DO

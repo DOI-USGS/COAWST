@@ -220,7 +220,9 @@
      &                            (ramp_time/5.0_r8))+1.0_r8)),         &
      &              (1.0_r8-(0.5_r8*(TANH((time(ng)/3600.0_r8-ramp_d)/  &
      &                                    (ramp_time/5.0_r8))+1.0_r8))))
+# ifdef WAVES_HEIGHT
           Hwave(i,j)=MAX((cff1*mxst),0.01_r8)
+# endif
         END DO
       END DO
 #elif defined NJ_BIGHT

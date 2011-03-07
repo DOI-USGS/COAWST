@@ -94,7 +94,6 @@
 # endif
      &                       FORCES(ng) % bustr,                        &
      &                       FORCES(ng) % bvstr,                        &
-     &                       OCEAN(ng) % t,                             &
 # if defined BEDLOAD_SOULSBY
      &                   FORCES(ng) % Hwave,                            &
      &                   FORCES(ng) % Lwave,                            &
@@ -142,7 +141,6 @@
      &                             Dwave, Pwave_bot,                    &
 # endif
      &                             bustr, bvstr,                        &
-     &                             t,                                   &
 # if defined BEDLOAD_SOULSBY
      &                             Hwave, Lwave,                        &
      &                             angler,                              &
@@ -223,7 +221,6 @@
       real(r8), intent(inout) :: bedldu(LBi:,LBj:,:)
       real(r8), intent(inout) :: bedldv(LBi:,LBj:,:)
 #  endif
-      real(r8), intent(inout) :: t(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: bed(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: bed_frac(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: bed_mass(LBi:,LBj:,:,:,:)
@@ -269,7 +266,6 @@
       real(r8), intent(inout) :: bedldu(LBi:UBi,LBj:UBj,NST)
       real(r8), intent(inout) :: bedldv(LBi:UBi,LBj:UBj,NST)
 #  endif
-      real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(inout) :: bed(LBi:UBi,LBj:UBj,Nbed,MBEDP)
       real(r8), intent(inout) :: bed_frac(LBi:UBi,LBj:UBj,Nbed,NST)
       real(r8), intent(inout) :: bed_mass(LBi:UBi,LBj:UBj,Nbed,1:2,NST)
@@ -801,6 +797,22 @@
         DO j=Jstr,JendR
           DO i=IstrR,IendR
             bedldv(i,j,ised)=FE(i,j)*(pm(i,j-1)+pm(i,j))*cff
+          END DO
+        END DO
+      END DO
+!
+!  Need to update bed mass for the non-cohesive sediment types, becasue 
+!  they did not partake in the bedload transport.
+!
+      DO ised=1,NCS
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+            bed_mass(i,j,1,nnew,ised)=bed_mass(i,j,1,nstp,ised)
+#  if !defined SUSPLOAD
+            DO k=2,Nbed
+              bed_mass(i,j,k,nnew,ised)=bed_mass(i,j,k,nstp,ised)
+            END DO
+#  endif
           END DO
         END DO
       END DO

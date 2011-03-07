@@ -102,10 +102,6 @@
      &                    OBS(ng) % Tobs,                               &
 # endif
      &                    MIXING(ng) % Akt,                             &
-# ifdef TS_MPDATA
-     &                    OCEAN(ng) % u,                                &
-     &                    OCEAN(ng) % v,                                &
-# endif
      &                    OCEAN(ng) % W,                                &
 # ifdef WEC_VF
      &                    OCEAN(ng) % w_stokes,                         &
@@ -157,9 +153,6 @@
      &                          EobsT, Tobs,                            &
 # endif
      &                          Akt,                                    &
-# ifdef TS_MPDATA
-     &                          u, v,                                   &
-# endif
      &                          W,                                      &
 # ifdef WEC_VF
      &                          w_stokes,                               &
@@ -250,10 +243,6 @@
 #  else
       real(r8), intent(in) :: Akt(LBi:,LBj:,0:,:)
 #  endif
-#  ifdef TS_MPDATA
-      real(r8), intent(in) :: u(LBi:,LBj:,:,:)
-      real(r8), intent(in) :: v(LBi:,LBj:,:,:)
-#  endif
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
 #  ifdef WEC_VF
       real(r8), intent(in) :: w_stokes(LBi:,LBj:,0:)
@@ -316,10 +305,6 @@
       real(r8), intent(in) :: Hvom(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: Akt(LBi:UBi,LBj:UBj,0:N(ng),NAT)
-#  ifdef TS_MPDATA
-      real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
-      real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
-#  endif
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
 #  ifdef WEC_VF
       real(r8), intent(in) :: w_stokes(LBi:UBi,LBj:UBj,0:N(ng))
@@ -435,21 +420,21 @@
     (defined EW_PERIODIC || defined NS_PERIODIC || defined DISTRIBUTE)
 !
 !  The MPDATA algorithm requires a three-point footprint, so exchange
-!  boundary data on t(:,:,:,3,:) so other processes computed earlier
+!  boundary data on t(:,:,:,nnew,:) so other processes computed earlier
 !  (horizontal diffusion, biology, or sediment) are accounted.
 !
 #  if defined EW_PERIODIC || defined NS_PERIODIC
       DO itrc=1,NT(ng)
         CALL exchange_r3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-     &                          t(:,:,:,3,itrc))
+     &                          t(:,:,:,nnew,itrc))
       END DO
 #  endif
 #  ifdef DISTRIBUTE
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    t(:,:,:,3,:))
+     &                    t(:,:,:,nnew,:))
 #  endif
 # endif
 
@@ -810,14 +795,7 @@
               cff2=cff*(FE(i,j+1)-FE(i,j))
               cff3=cff1+cff2
 #  ifdef TS_MPDATA
-              cff4=Hz(i,j,k)+                                           &
-     &             cff*(Huon(i+1,j,k)-Huon(i,j,k)+                      &
-     &                  Hvom(i,j+1,k)-Hvom(i,j,k)+                      &
-#   ifdef WEC_VF
-     &                  (w_stokes(i,j,k)-w_stokes(i,j,k-1))+            &
-#   endif
-     &                  (W(i,j,k)-W(i,j,k-1)))                 ! Hz_old
-              Ta(i,j,k,itrc)=t(i,j,k,3,itrc)*cff4-cff3
+              Ta(i,j,k,itrc)=t(i,j,k,nnew,itrc)-cff3
 #  else
               t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff3
 #  endif
@@ -942,7 +920,7 @@
 #  endif
             FC(i,N(ng))=0.0_r8
           END DO
-# elif defined TS_MPDATA 
+# elif defined TS_MPDATA
 #  if !defined WEC_VF
 !
 !  First_order, upstream differences vertical advective flux.
