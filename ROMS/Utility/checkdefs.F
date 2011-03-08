@@ -1354,6 +1354,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+18)=' BOTTOM_STREAMING,'
 #endif
+#ifdef SURFACE_STREAMING
+      IF (Master) WRITE (stdout,20) 'SURFACE_STREAMING',                 &
+     &   'Wave current streaming term.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' SURFACE_STREAMING,'
+#endif
 #ifdef WAVE_MIXING
       IF (Master) WRITE (stdout,20) 'WAVE_MIXING',                      &
      &   'Enhanced veritcal mixing from waves term.'

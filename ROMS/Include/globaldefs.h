@@ -677,24 +677,6 @@
 #endif
 
 /*
-** Activate internal switch for imposing REFDIF as a
-** monochromatic wave driver.
-*/
-
-#if defined REFDIF_COUPLING && defined ROLLER_SVENDSEN
-# define ROLLER_MONO
-#endif
-
-/*
-** Activate internal switch for activating a roller.
-*/
-
-#if (defined ROLLER_SVENDSEN || defined ROLLER_MONO ||	\
-     defined ROLLER_RENIERS) && defined WEC
-# define WEC_ROLLER
-#endif
-
-/*
 ** Activate internal switch to set-up nudging coefficients.
 */
 
@@ -951,6 +933,25 @@
 #if defined WEC_MELLOR || defined WEC_VF
 #   define WEC
 #endif
+
+/*
+** Activate internal switch for imposing REFDIF as a
+** monochromatic wave driver.
+*/
+
+#if defined REFDIF_COUPLING && defined ROLLER_SVENDSEN
+# define ROLLER_MONO
+#endif
+
+/*
+** Activate internal switch for activating a roller.
+*/
+
+#if (defined ROLLER_SVENDSEN || defined ROLLER_MONO ||	\
+     defined ROLLER_RENIERS) && defined WEC
+# define WEC_ROLLER
+#endif
+
 
 #if defined BBL_MODEL   || defined WEC || \
     defined WAVES_OCEAN

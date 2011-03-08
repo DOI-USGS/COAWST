@@ -695,7 +695,8 @@
 ** ROLLER_SVENDSEN     activate wave roller based on Svendsen                **
 ** ROLLER_MONO         activate wave roller for monchromatic waves           **
 ** ROLLER_RENIERS      activate wave roller based on Reniers                 **
-** BOTTOM_STREAMING    activate wave enhances bottom streaming               **
+** BOTTOM_STREAMING    activate wave enhanced bottom streaming               **
+** SURFACE_STREAMING   activate wave enhanced surface streaming              **
 ** WAVE_MIXING         activate enhanced vertical viscosity mixing from waves**
 **                                                                           **
 ** NetCDF input/output OPTIONS:                                              **
