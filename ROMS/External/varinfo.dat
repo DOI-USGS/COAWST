@@ -4847,6 +4847,24 @@
   'v2dvar'
   1.0d0
 
+'ubar_sstm'                                        ! Input/Output
+  '2D u-momentum, surface sreaming term'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_sstm, scalar, series'
+  'ocean_time'
+  'idDu2d(M2sstm)'
+  'u2dvar'
+  1.0d0
+
+'vbar_sstm'                                        ! Input/Output
+  '2D v-momentum, surface sreaming term'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_sstm, scalar, series'
+  'ocean_time'
+  'idDv2d(M2sstm)'
+  'v2dvar'
+  1.0d0
+
 'ubar_wrol'                                        ! Input/Output
   '2D u-momentum, wave roller acceleration term'
   'meter second-2'                                 ! [m/s2]
@@ -5316,6 +5334,24 @@
   'v_bstm, scalar, series'
   'ocean_time'
   'idDv3d(M3bstm)'
+  'v3dvar'
+  1.0d0
+
+'u_sstm'                                           ! Input/Output
+  '3D u-momentum, surface sreaming term'
+  'meter second-2'                                 ! [m/s2]
+  'u_sstm, scalar, series'
+  'ocean_time'
+  'idDu3d(M3sstm)'
+  'u3dvar'
+  1.0d0
+
+'v_sstm   '                                        ! Input/Output
+  '3D v-momentum, surface sreaming term'
+  'meter second-2'                                 ! [m/s2]
+  'v_sstm, scalar, series'
+  'ocean_time'
+  'idDv3d(M3sstm)'
   'v3dvar'
   1.0d0
 

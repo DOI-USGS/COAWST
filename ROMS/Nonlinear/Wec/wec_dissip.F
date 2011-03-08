@@ -7,8 +7,8 @@
 !  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
-!================================================== John C. Warner ====!
 !                                                   Nirnimesh Kumar    !
+!================================================== John C. Warner ====!
 !                                                                      !
 !  This routine computes the terms corresponding to vortex forces in   !
 !  momentum equations.                                                 !
@@ -17,11 +17,11 @@
 !                                                                      !
 !  Thornton, E. B., and R. T. Guza, Surf zone longshore currents and   !
 !  random waves: field data and models, J. Phys. Oceanogr.,            !
-!  16,1165–1178, 1986.                                              !
+!  16,1165–1178, 1986.                                                 !
 !                                                                      !
 !  Church, J. C., and E. B. Thornton, Effects of breaking wave induced !
 !  turbulence within a longshore current model, Coastal Eng., 20,      !
-!  1–28, 1993.                                                      !
+!  1–28, 1993.                                                         !
 !=======================================================================
 !
       implicit none

@@ -105,6 +105,14 @@
      &                  MIXING(ng) % rurol2d,                           &
      &                  MIXING(ng) % rvrol2d,                           &
 #   endif
+#   ifdef BOTTOM_STREAMING
+     &                  MIXING(ng) % rubst2d,                           &
+     &                  MIXING(ng) % rvbst2d,                           &
+#   endif
+#   ifdef SURFACE_STREAMING
+     &                  MIXING(ng) % russt2d,                           &
+     &                  MIXING(ng) % rvsst2d,                           &
+#   endif
      &                  MIXING(ng) % rubrk2d,                           &
      &                  MIXING(ng) % rvbrk2d,                           &
      &                  MIXING(ng) % rukvf2d,                           &
@@ -211,6 +219,12 @@
 #  ifdef WEC_VF
 #   ifdef WEC_ROLLER
      &                        rurol2d, rvrol2d,                         &
+#   endif
+#   ifdef BOTTOM_STREAMING
+     &                        rubst2d, rvbst2d,                         &
+#   endif
+#   ifdef SURFACE_STREAMING
+     &                        russt2d, rvsst2d,                         &
 #   endif
      &                        rubrk2d, rvbrk2d,                         &
      &                        rukvf2d, rvkvf2d,                         &
@@ -349,6 +363,14 @@
 #    ifdef WEC_ROLLER
       real(r8), intent(in) :: rurol2d(LBi:,LBj:)
       real(r8), intent(in) :: rvrol2d(LBi:,LBj:)
+#    endif
+#    ifdef BOTTOM_STREAMING
+      real(r8), intent(in) :: rubst2d(LBi:,LBj:)
+      real(r8), intent(in) :: rvbst2d(LBi:,LBj:)
+#    endif
+#    ifdef SURFACE_STREAMING
+      real(r8), intent(in) :: russt2d(LBi:,LBj:)
+      real(r8), intent(in) :: rvsst2d(LBi:,LBj:)
 #    endif
       real(r8), intent(in) :: rubrk2d(LBi:,LBj:)
       real(r8), intent(in) :: rvbrk2d(LBi:,LBj:)
@@ -493,6 +515,14 @@
       real(r8), intent(in) :: rurol2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rvrol2d(LBi:UBi,LBj:UBj)
 #   endif
+#    ifdef BOTTOM_STREAMING
+      real(r8), intent(in) :: rubst2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: rvbst2d(LBi:UBi,LBj:UBj)
+#    endif
+#    ifdef SURFACE_STREAMING
+      real(r8), intent(in) :: russt2d(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: rvsst2d(LBi:UBi,LBj:UBj)
+#    endif
       real(r8), intent(in) :: rubrk2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rvbrk2d(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rukvf2d(LBi:UBi,LBj:UBj)
@@ -2109,7 +2139,6 @@
           cff1=rubrk2d(i,j)
           rhs_ubar(i,j)=rhs_ubar(i,j)+cff1
 #  ifdef DIAGNOSTICS_UV
-          DiaU2rhs(i,j,M2bstm)=0.0_r8   ! add this in later
           DiaU2rhs(i,j,M2wbrk)=cff1
 #  endif
 #  ifdef WEC_ROLLER
@@ -2123,13 +2152,34 @@
           DiaU2rhs(i,j,M2wrol)=0.0_r8
 #   endif
 #  endif
+#  ifdef BOTTOM_STREAMING
+          cff1=rubst2d(i,j)
+          rhs_ubar(i,j)=rhs_ubar(i,j)+cff1
+#   ifdef DIAGNOSTICS_UV
+          DiaU2rhs(i,j,M2bstm)=cff1
+#   endif
+#  else
+#   ifdef DIAGNOSTICS_UV
+          DiaU2rhs(i,j,M2bstm)=0.0_r8
+#   endif
+#  endif
+#  ifdef SURFACE_STREAMING
+          cff1=russt2d(i,j)
+          rhs_ubar(i,j)=rhs_ubar(i,j)+cff1
+#   ifdef DIAGNOSTICS_UV
+          DiaU2rhs(i,j,M2sstm)=cff1
+#   endif
+#  else
+#   ifdef DIAGNOSTICS_UV
+          DiaU2rhs(i,j,M2sstm)=0.0_r8
+#   endif
+#  endif
         END DO
         IF (j.ge.JstrV) THEN
           DO i=Istr,Iend
             cff1=rvbrk2d(i,j)
             rhs_vbar(i,j)=rhs_vbar(i,j)+cff1
 #  ifdef DIAGNOSTICS_UV
-            DiaV2rhs(i,j,M2bstm)=0.0_r8   ! add this in later
             DiaV2rhs(i,j,M2wbrk)=cff1
 #  endif
 #  ifdef WEC_ROLLER
@@ -2140,7 +2190,29 @@
 #   endif
 #  else
 #   ifdef DIAGNOSTICS_UV
-          DiaV2rhs(i,j,M2wrol)=0.0_r8
+            DiaV2rhs(i,j,M2wrol)=0.0_r8
+#   endif
+#  endif
+#  ifdef BOTTOM_STREAMING
+            cff1=rvbst2d(i,j)
+            rhs_vbar(i,j)=rhs_vbar(i,j)+cff1
+#   ifdef DIAGNOSTICS_UV
+            DiaV2rhs(i,j,M2bstm)=cff1
+#   endif
+#  else
+#   ifdef DIAGNOSTICS_UV
+            DiaV2rhs(i,j,M2bstm)=0.0_r8
+#   endif
+#  endif
+#  ifdef SURFACE_STREAMING
+            cff1=rvsst2d(i,j)
+            rhs_vbar(i,j)=rhs_vbar(i,j)+cff1
+#   ifdef DIAGNOSTICS_UV
+            DiaV2rhs(i,j,M2sstm)=cff1
+#   endif
+#  else
+#   ifdef DIAGNOSTICS_UV
+            DiaV2rhs(i,j,M2sstm)=0.0_r8
 #   endif
 #  endif
           END DO

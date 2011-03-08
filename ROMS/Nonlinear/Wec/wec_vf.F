@@ -7,6 +7,7 @@
 !  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
+!                                                   Nirnimesh Kumar    !
 !================================================== John C. Warner ====!
 !                                                                      !
 !  This routine computes the terms corresponding to vortex forces in   !
@@ -724,29 +725,21 @@
           END IF
         END DO
       END DO
-      DO j=JstrV,Jend
+      DO j=Jstr,Jend
         DO i=IstrU,Iend
-          CF(i)=0.0_r8
-          DO k=1,N(ng)
-            Hzk(i,k)=0.5_r8*(Hz(i-1,j,k)+                               &
-     &                       Hz(i  ,j,k))
-            CF(i)=CF(i)+Hzk(i,k)
-          END DO
-          rubrk2d(i,j)=rubrk2d(i,j)/CF(i)
+          cff=0.5_r8*(Dstp(i,j)+Dstp(i-1,j))
+          rubrk2d(i,j)=rubrk2d(i,j)/cff
 # ifdef WEC_ROLLER
-          rurol2d(i,j)=rurol2d(i,j)/CF(i)
+          rurol2d(i,j)=rurol2d(i,j)/cff
 # endif
 !
-          CF(i)=0.0_r8
-          DO k=1,N(ng)
-            Hzk(i,k)=0.5_r8*(Hz(i,j  ,k)+                               &
-     &                       Hz(i,j-1,k))
-            CF(i)=CF(i)+Hzk(i,k)
-          END DO
-          rvbrk2d(i,j)=rvbrk2d(i,j)/CF(i)
+          IF (j.ge.JstrV) THEN
+            cff=0.5_r8*(Dstp(i,j)+Dstp(i,j-1))
+            rvbrk2d(i,j)=rvbrk2d(i,j)/cff
 # ifdef WEC_ROLLER
-          rvrol2d(i,j)=rvrol2d(i,j)/CF(i)
+            rvrol2d(i,j)=rvrol2d(i,j)/cff
 # endif
+          END IF
         END DO
       END DO
       K_LOOP : DO k=1,N(ng)

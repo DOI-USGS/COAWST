@@ -104,6 +104,7 @@
         integer :: M2kvrf          ! 2D momentum, K vortex force
         integer :: M2fsco          ! 2D momentum, coriolis-stokes
         integer :: M2bstm          ! 2D momentum, bottom streaming
+        integer :: M2sstm          ! 2D momentum, surface streaming
         integer :: M2wrol          ! 2D momentum, wave roller accel
         integer :: M2wbrk          ! 2D momentum, wave breaking
         integer :: M2zeta          ! 2D momentum, Eulerian sea level adjustment
@@ -134,6 +135,7 @@
         integer :: M3kvrf          ! 3D momentum, K vortex force
         integer :: M3fsco          ! 3D momentum, coriolis-stokes
         integer :: M3bstm          ! 3D momentum, bottom streaming
+        integer :: M3sstm          ! 3D momentum, surface streaming
         integer :: M3wrol          ! 3D momentum, wave roller accel
         integer :: M3wbrk          ! 3D momentum, wave breaking
 #   endif
@@ -1924,12 +1926,19 @@
       M2fsco=ic+1
       ic=ic+1
 #   endif
+#   ifdef BOTTOM_STREAMING
+      M2bstm=ic+1
+      ic=ic+1
+#   endif
+#   ifdef SURFACE_STREAMING
+      M2sstm=ic+1
+      ic=ic+1
+#   endif
       M2hjvf=ic+1
       M2kvrf=ic+2
-      M2bstm=ic+3
-      M2wrol=ic+4
-      M2wbrk=ic+5
-      ic=ic+5
+      M2wrol=ic+3
+      M2wbrk=ic+4
+      ic=ic+4
 #  endif
 #  if defined UV_VIS2 || defined UV_VIS4
       M2hvis=ic+1
@@ -1977,13 +1986,20 @@
       M3fsco=ic+1
       ic=ic+1
 #    endif
+#    ifdef BOTTOM_STREAMING
+      M3bstm=ic+1
+      ic=ic+1
+#    endif
+#    ifdef SURFACE_STREAMING
+      M3sstm=ic+1
+      ic=ic+1
+#    endif
       M3vjvf=ic+1
       M3hjvf=ic+2
       M3kvrf=ic+3
-      M3bstm=ic+4
-      M3wrol=ic+5
-      M3wbrk=ic+6
-      ic=ic+6
+      M3wrol=ic+4
+      M3wbrk=ic+5
+      ic=ic+5
 #   endif
       M3pgrd=ic+1             ! needs to be here, indices below
       M3vvis=ic+2             ! require special treatment

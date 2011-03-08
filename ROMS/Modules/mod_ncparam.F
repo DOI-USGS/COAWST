@@ -1700,10 +1700,18 @@
               CASE ('idDv2d(M2fsco)')
                 idDv2d(M2fsco)=varid
 #  endif
+#  ifdef BOTTOM_STREAMING
               CASE ('idDu2d(M2bstm)')
                 idDu2d(M2bstm)=varid
               CASE ('idDv2d(M2bstm)')
                 idDv2d(M2bstm)=varid
+#  endif
+#  ifdef SURFACE_STREAMING
+              CASE ('idDu2d(M2sstm)')
+                idDu2d(M2sstm)=varid
+              CASE ('idDv2d(M2sstm)')
+                idDv2d(M2sstm)=varid
+#  endif
               CASE ('idDu2d(M2wrol)')
                 idDu2d(M2wrol)=varid
               CASE ('idDv2d(M2wrol)')
@@ -1809,10 +1817,18 @@
               CASE ('idDv3d(M3fsco)')
                 idDv3d(M3fsco)=varid
 #   endif
+#   ifdef BOTTOM_STREAMING
               CASE ('idDu3d(M3bstm)')
                 idDu3d(M3bstm)=varid
               CASE ('idDv3d(M3bstm)')
                 idDv3d(M3bstm)=varid
+#   endif
+#   ifdef SURFACE_STREAMING
+              CASE ('idDu3d(M3sstm)')
+                idDu3d(M3sstm)=varid
+              CASE ('idDv3d(M3sstm)')
+                idDv3d(M3sstm)=varid
+#  endif
               CASE ('idDu3d(M3wrol)')
                 idDu3d(M3wrol)=varid
               CASE ('idDv3d(M3wrol)')

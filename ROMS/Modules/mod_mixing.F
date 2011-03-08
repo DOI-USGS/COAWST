@@ -133,6 +133,10 @@
 !  rvbrk2d      2D WEC breaking stress in ETA-direction.               !
 !  rukvf2d      2D WEC K-stress in XI-direction.                       !
 !  rvkvf2d      2D WEC K-stress in ETA-direction.                      !
+!  rubst2d      2D WEC bottom streaming XI-direction.                  !
+!  rvbst2d      2D WEC bottom streaming ETA-direction.                 !
+!  russt2d      2D WEC surface streaming XI-direction.                 !
+!  rvsst2d      2D WEC surface streaming ETA-direction.                !
 #endif
 !=======================================================================
 !
@@ -193,6 +197,14 @@
           real(r8), pointer :: rvbrk2d(:,:)
           real(r8), pointer :: rukvf2d(:,:)
           real(r8), pointer :: rvkvf2d(:,:)
+# ifdef BOTTOM_STREAMING
+          real(r8), pointer :: rubst2d(:,:)
+          real(r8), pointer :: rvbst2d(:,:)
+# endif
+# ifdef SURFACE_STREAMING
+          real(r8), pointer :: russt2d(:,:)
+          real(r8), pointer :: rvsst2d(:,:)
+# endif
 #endif
 #ifdef SOLVE3D
 # ifdef WEC
@@ -450,6 +462,14 @@
       allocate ( MIXING(ng) % rvbrk2d(LBi:UBi,LBj:UBj) )
       allocate ( MIXING(ng) % rukvf2d(LBi:UBi,LBj:UBj) )
       allocate ( MIXING(ng) % rvkvf2d(LBi:UBi,LBj:UBj) )
+# ifdef BOTTOM_STREAMING
+      allocate ( MIXING(ng) % rubst2d(LBi:UBi,LBj:UBj) )
+      allocate ( MIXING(ng) % rvbst2d(LBi:UBi,LBj:UBj) )
+# endif
+# ifdef SURFACE_STREAMING
+      allocate ( MIXING(ng) % russt2d(LBi:UBi,LBj:UBj) )
+      allocate ( MIXING(ng) % rvsst2d(LBi:UBi,LBj:UBj) )
+# endif
 #endif
 #ifdef SOLVE3D
 # ifdef WEC_MELLOR
@@ -791,6 +811,14 @@
             MIXING(ng) % rvbrk2d(i,j) = IniVal
             MIXING(ng) % rukvf2d(i,j) = IniVal
             MIXING(ng) % rvkvf2d(i,j) = IniVal
+#  ifdef BOTTOM_STREAMING
+            MIXING(ng) % rubst2d(i,j) = IniVal
+            MIXING(ng) % rvbst2d(i,j) = IniVal
+#  endif
+#  ifdef SURFACE_STREAMING
+            MIXING(ng) % russt2d(i,j) = IniVal
+            MIXING(ng) % rvsst2d(i,j) = IniVal
+#  endif
 # endif
 # ifdef SOLVE3D
             DO k=1,N(ng)

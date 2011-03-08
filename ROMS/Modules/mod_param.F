@@ -477,9 +477,16 @@
 #   endif
 #   ifdef WEC_VF
 #    ifdef UV_COR
-        NDM2d=NDM2d+1  !
+        NDM2d=NDM2d+1  ! Coriolis
 #    endif
-        NDM2d=NDM2d+9  !
+#    ifdef BOTTOM_STREAMING
+        NDM2d=NDM2d+1  ! Bottom streaming
+#    endif
+#    ifdef SURFACE_STREAMING
+        NDM2d=NDM2d+1  ! Surface streaming
+#    endif
+        NDM2d=NDM2d+8  ! zeta, zetaw, zqsp, zbeh (all 4 = prsgrd),
+                       ! K- and Horiz- VF, roller, break
 #   endif
 #   ifdef UV_COR
         NDM2d=NDM2d+1  ! Coriolis
@@ -503,11 +510,19 @@
 #   endif
 #   ifdef WEC_VF
 #    ifdef UV_COR
-        NDM3d=NDM3d+1  !
+        NDM3d=NDM3d+1  ! Coriolis
         NDrhs=NDrhs+1
 #    endif
-        NDM3d=NDM3d+6  !
-        NDrhs=NDrhs+6
+#    ifdef BOTTOM_STREAMING
+        NDM3d=NDM3d+1  ! Bottom streaming
+        NDrhs=NDrhs+1
+#    endif
+#    ifdef SURFACE_STREAMING
+        NDM3d=NDM3d+1  ! Surface streaming
+        NDrhs=NDrhs+1
+#    endif
+        NDM3d=NDM3d+5  ! wave break, roller, K- Horiz and Jvert- VF
+        NDrhs=NDrhs+5
 #   endif
 #   ifdef UV_COR
         NDM3d=NDM3d+1  ! Coriolis

@@ -535,7 +535,12 @@
 #   ifdef UV_COR
           Dwrk(i,M2fsco)=DiaU3wrk(i,j,1,M3fsco)*Hzk(i,1)
 #   endif
+#   ifdef BOTTOM_STREAMING
           Dwrk(i,M2bstm)=DiaU3wrk(i,j,1,M3bstm)*Hzk(i,1)
+#   endif
+#   ifdef SURFACE_STREAMING
+          Dwrk(i,M2sstm)=DiaU3wrk(i,j,1,M3sstm)*Hzk(i,1)
+#   endif
           Dwrk(i,M2wrol)=DiaU3wrk(i,j,1,M3wrol)*Hzk(i,1)
           Dwrk(i,M2wbrk)=DiaU3wrk(i,j,1,M3wbrk)*Hzk(i,1)
 #  endif
@@ -586,8 +591,14 @@
             Dwrk(i,M2fsco)=Dwrk(i,M2fsco)+                              &
      &                     DiaU3wrk(i,j,k,M3fsco)*Hzk(i,k)
 #   endif
+#   ifdef BOTTOM_STREAMING
             Dwrk(i,M2bstm)=Dwrk(i,M2bstm)+                              &
      &                     DiaU3wrk(i,j,k,M3bstm)*Hzk(i,k)
+#   endif
+#   ifdef SURFACE_STREAMING
+            Dwrk(i,M2sstm)=Dwrk(i,M2sstm)+                              &
+     &                     DiaU3wrk(i,j,k,M3sstm)*Hzk(i,k)
+#   endif
             Dwrk(i,M2wrol)=Dwrk(i,M2wrol)+                              &
      &                     DiaU3wrk(i,j,k,M3wrol)*Hzk(i,k)
             Dwrk(i,M2wbrk)=Dwrk(i,M2wbrk)+                              &
@@ -673,13 +684,18 @@
             DiaU3wrk(i,j,k,M3fsco)=DiaU3wrk(i,j,k,M3fsco)-              &
      &                             Dwrk(i,M2fsco)
 #   endif
+#   ifdef BOTTOM_STREAMING
             DiaU3wrk(i,j,k,M3bstm)=DiaU3wrk(i,j,k,M3bstm)-              &
      &                             Dwrk(i,M2bstm)
+#   endif
+#   ifdef SURFACE_STREAMING
+            DiaU3wrk(i,j,k,M3sstm)=DiaU3wrk(i,j,k,M3sstm)-              &
+     &                             Dwrk(i,M2sstm)
+#   endif
             DiaU3wrk(i,j,k,M3wrol)=DiaU3wrk(i,j,k,M3wrol)-              &
      &                             Dwrk(i,M2wrol)
             DiaU3wrk(i,j,k,M3wbrk)=DiaU3wrk(i,j,k,M3wbrk)-              &
      &                             Dwrk(i,M2wbrk)
-
 #  endif
 # endif
           END DO
@@ -911,7 +927,12 @@
 #   ifdef UV_COR
             Dwrk(i,M2fsco)=DiaV3wrk(i,j,1,M3fsco)*Hzk(i,1)
 #   endif
+#   ifdef BOTTOM_STREAMING
             Dwrk(i,M2bstm)=DiaV3wrk(i,j,1,M3bstm)*Hzk(i,1)
+#   endif
+#   ifdef SURFACE_STREAMING
+            Dwrk(i,M2sstm)=DiaV3wrk(i,j,1,M3sstm)*Hzk(i,1)
+#   endif
             Dwrk(i,M2wrol)=DiaV3wrk(i,j,1,M3wrol)*Hzk(i,1)
             Dwrk(i,M2wbrk)=DiaV3wrk(i,j,1,M3wbrk)*Hzk(i,1)
 #  endif
@@ -962,8 +983,14 @@
               Dwrk(i,M2fsco)=Dwrk(i,M2fsco)+                            &
      &                       DiaV3wrk(i,j,k,M3fsco)*Hzk(i,k)
 #   endif
+#   ifdef BOTTOM_STREAMING
               Dwrk(i,M2bstm)=Dwrk(i,M2bstm)+                            &
      &                       DiaV3wrk(i,j,k,M3bstm)*Hzk(i,k)
+#   endif
+#   ifdef SURFACE_STREAMING
+              Dwrk(i,M2sstm)=Dwrk(i,M2sstm)+                            &
+     &                       DiaV3wrk(i,j,k,M3sstm)*Hzk(i,k)
+#   endif
               Dwrk(i,M2wrol)=Dwrk(i,M2wrol)+                            &
      &                       DiaV3wrk(i,j,k,M3wrol)*Hzk(i,k)
               Dwrk(i,M2wbrk)=Dwrk(i,M2wbrk)+                            &
@@ -1049,8 +1076,14 @@
               DiaV3wrk(i,j,k,M3fsco)=DiaV3wrk(i,j,k,M3fsco)-            &
      &                               Dwrk(i,M2fsco)
 #   endif
+#   ifdef BOTTOM_STREAMING
               DiaV3wrk(i,j,k,M3bstm)=DiaV3wrk(i,j,k,M3bstm)-            &
      &                               Dwrk(i,M2bstm)
+#   endif
+#   ifdef SURFACE_STREAMING
+              DiaV3wrk(i,j,k,M3sstm)=DiaV3wrk(i,j,k,M3sstm)-            &
+     &                               Dwrk(i,M2sstm)
+#   endif
               DiaV3wrk(i,j,k,M3wrol)=DiaV3wrk(i,j,k,M3wrol)-            &
      &                               Dwrk(i,M2wrol)
               DiaV3wrk(i,j,k,M3wbrk)=DiaV3wrk(i,j,k,M3wbrk)-            &

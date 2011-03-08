@@ -17,6 +17,8 @@
 #undef  WEC_MELLOR
 #define WEC_VF
 #define WDISS_CHURTHOR
+#define BOTTOM_STREAMING
+#define SURFACE_STREAMING
 
 #define UV_VIS2
 #define MIX_S_UV

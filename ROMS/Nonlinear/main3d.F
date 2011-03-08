@@ -419,9 +419,6 @@
 #  ifdef BOTTOM_STREAMING
             CALL wec_streaming (ng, TILE)
 #  endif
-#  ifdef WAVE_MIXING
-            CALL wec_wave_mix (ng, TILE)
-#  endif
           END DO
         END DO
 #  if !defined REFINED_GRID
@@ -807,6 +804,9 @@
             CALL my25_corstep (ng, TILE)
 # elif defined GLS_MIXING
             CALL gls_corstep (ng, TILE)
+# endif
+# if defined WEC_VF && defined WAVE_MIXING
+            CALL wec_wave_mix (ng, TILE)
 # endif
 # ifdef BIOLOGY
             CALL biology (ng, TILE)

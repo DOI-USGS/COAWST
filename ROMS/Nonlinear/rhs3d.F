@@ -2120,7 +2120,12 @@
 #   ifdef UV_COR
           DiaRUfrc(i,j,3,M2fsco)=DiaRU(i,j,1,nrhs,M3fsco)
 #   endif
+#   ifdef BOTTOM_STREAMING
           DiaRUfrc(i,j,3,M2bstm)=DiaRU(i,j,1,nrhs,M3bstm)
+#   endif
+#   ifdef SURFACE_STREAMING
+          DiaRUfrc(i,j,3,M2sstm)=DiaRU(i,j,1,nrhs,M3sstm)
+#   endif
           DiaRUfrc(i,j,3,M2wrol)=DiaRU(i,j,1,nrhs,M3wrol)
           DiaRUfrc(i,j,3,M2wbrk)=DiaRU(i,j,1,nrhs,M3wbrk)
 #  endif
@@ -2165,8 +2170,14 @@
             DiaRUfrc(i,j,3,M2fsco)=DiaRUfrc(i,j,3,M2fsco)+              &
      &                             DiaRU(i,j,k,nrhs,M3fsco)
 #   endif
+#   ifdef BOTTOM_STREAMING
             DiaRUfrc(i,j,3,M2bstm)=DiaRUfrc(i,j,3,M2bstm)+              &
      &                             DiaRU(i,j,k,nrhs,M3bstm)
+#   endif
+#   ifdef SURFACE_STREAMING
+            DiaRUfrc(i,j,3,M2sstm)=DiaRUfrc(i,j,3,M2sstm)+              &
+     &                             DiaRU(i,j,k,nrhs,M3sstm)
+#   endif
             DiaRUfrc(i,j,3,M2wrol)=DiaRUfrc(i,j,3,M2wrol)+              &
      &                             DiaRU(i,j,k,nrhs,M3wrol)
             DiaRUfrc(i,j,3,M2wbrk)=DiaRUfrc(i,j,3,M2wbrk)+              &
@@ -2213,7 +2224,12 @@
 #   ifdef UV_COR
             DiaRVfrc(i,j,3,M2fsco)=DiaRV(i,j,1,nrhs,M3fsco)
 #   endif
+#   ifdef BOTTOM_STREAMING
             DiaRVfrc(i,j,3,M2bstm)=DiaRV(i,j,1,nrhs,M3bstm)
+#   endif
+#   ifdef SURFACE_STREAMING
+            DiaRVfrc(i,j,3,M2sstm)=DiaRV(i,j,1,nrhs,M3sstm)
+#   endif
             DiaRVfrc(i,j,3,M2wrol)=DiaRV(i,j,1,nrhs,M3wrol)
             DiaRVfrc(i,j,3,M2wbrk)=DiaRV(i,j,1,nrhs,M3wbrk)
 #  endif
@@ -2258,8 +2274,14 @@
               DiaRVfrc(i,j,3,M2fsco)=DiaRVfrc(i,j,3,M2fsco)+            &
      &                               DiaRV(i,j,k,nrhs,M3fsco)
 #   endif
+#   ifdef BOTTOM_STREAMING
               DiaRVfrc(i,j,3,M2bstm)=DiaRVfrc(i,j,3,M2bstm)+            &
      &                               DiaRV(i,j,k,nrhs,M3bstm)
+#   endif
+#   ifdef SURFACE_STREAMING
+              DiaRVfrc(i,j,3,M2sstm)=DiaRVfrc(i,j,3,M2sstm)+            &
+     &                               DiaRV(i,j,k,nrhs,M3sstm)
+#   endif
               DiaRVfrc(i,j,3,M2wrol)=DiaRVfrc(i,j,3,M2wrol)+            &
      &                               DiaRV(i,j,k,nrhs,M3wrol)
               DiaRVfrc(i,j,3,M2wbrk)=DiaRVfrc(i,j,3,M2wbrk)+            &
