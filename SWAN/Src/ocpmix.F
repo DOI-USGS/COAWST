@@ -2199,7 +2199,7 @@
 !     blanks and commas serve as separation between data items
 !     DATITM is string containing one data item
 !
-      IITM = 0
+      IITM = 1
       DO 170 ILL = 1, LENLIN
          CRL = RELINE(ILL:ILL)
          IF (LCHSTR) THEN
