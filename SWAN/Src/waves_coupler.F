@@ -193,6 +193,7 @@
 !
 # ifdef REFINED_GRID
       CALL initialize_param
+
       allocate ( wavids(Ngrids) )
       allocate ( ocnids(Ngrids) )
       DO j=1,Ngrids
@@ -722,7 +723,7 @@
       ELSE IF (IVTYPE.eq.17) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "WLEN",avdata)
-      ELSE IF (IVTYPE.eq.70) THEN
+      ELSE IF (IVTYPE.eq.71) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "WLENP",avdata)
 # ifdef AIR_WAVES
@@ -1261,12 +1262,6 @@
                 COMPDA(INDX,JVX2)=TEMPMCT(IP,idvlx)
                 COMPDA(INDX,JVY2)=TEMPMCT(IP,idvly)
 # ifdef WRF_COUPLING
-!               cff1=TEMPMCT(IP,6)*CosAngler(INDX)+                      &
-!     &              TEMPMCT(IP,7)*SinAngler(INDX)
-!               cff2=TEMPMCT(IP,7)*CosAngler(INDX)-                      &
-!     &              TEMPMCT(IP,6)*SinAngler(INDX)
-!               COMPDA(INDX,JWX2)=cff1
-!               COMPDA(INDX,JWY2)=cff2
                 COMPDA(INDX,JWX2)=TEMPMCT(IP,idu10)
                 COMPDA(INDX,JWY2)=TEMPMCT(IP,idv10)
 # endif

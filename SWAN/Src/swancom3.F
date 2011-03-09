@@ -54,7 +54,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -563,7 +563,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -622,7 +622,7 @@
 !     b. For SWIND3 (wind input according to Snyder (1981) ***
 !
 !       - wind friction velocity according to Wu (1982):
-!           *                                                -3
+!          *                                                 -3
 !         U  =  UFRIC = wind10 sqrt( (0.8 + 0.065 wind10 ) 10  )
 !
 !     c. For SWIND4 (wind input according to Janssen 1991)
@@ -635,7 +635,7 @@
 !
 !          else wind friction velocity according to Wu (1982):
 !
-!         *                                                -3
+!          *                                                 -3
 !         U  =  UFRIC = wind10 sqrt( (0.8 + 0.065 wind10 ) 10  )
 !
 !     d.
@@ -865,13 +865,15 @@
 !
 !       *** Calculate the wind friction velocity  ***
 !       *** according to Wu (1982)                ***
+!       *** apply cd-cap if appropriate           ***
 !
         IF ( WIND10 .GT. 7.5 ) THEN
-          UFRIC = WIND10 * SQRT (( 0.8 + 0.065 * WIND10 ) * 0.001 )
+          CDRAG = ( 0.8 + 0.065 * WIND10 ) * 0.001
+          CDRAG = MIN ( CDCAP, CDRAG )
         ELSE
           CDRAG = 0.0012873
-          UFRIC = SQRT ( CDRAG ) * WIND10
         ENDIF
+        UFRIC = SQRT ( CDRAG ) * WIND10
 !
 !       *** Wind friction velocity and PM-frequency ***
 !
@@ -928,7 +930,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1161,7 +1163,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1338,7 +1340,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1577,7 +1579,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1810,7 +1812,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2355,7 +2357,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

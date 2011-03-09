@@ -15,7 +15,7 @@
 \end{center}
 \vfill
 \begin{center}
-{\Large\bf SWAN Cycle III version 40.72ABCDE}
+{\Large\bf SWAN Cycle III version 40.81}
 \end{center}
 
 \cleardoublepage
@@ -44,7 +44,7 @@ home page    &:& \hl{http://www.swan.tudelft.nl}
 \vfill
 
 \noindent
-Copyright (c) 2009 Delft University of Technology.
+Copyright (c) 1993-2010 Delft University of Technology.
 \\[2ex]
 \noindent
 Permission is granted to copy, distribute and/or modify this document
@@ -122,7 +122,7 @@ that steps 3 and 4 can be done fully automatically.
 
 \section{The material}
 
-The downloaded file {\tt swan4072.tgz} contains the SWAN source code. You can unzip this
+The downloaded file {\tt swan4081.tgz} contains the SWAN source code. You can unzip this
 file either with WinZip (in case of Windows) or with the command {\tt tar xzf} (in case of
 UNIX or Linux). The SWAN source code consists of the following files:
 \begin{tabbing}
@@ -249,7 +249,7 @@ documentations            \>:       swanuse.tex \\
                           \> $\,\,$ latexfordummies.tex \\
                           \> $\,\,$ latexfordummies.pdf \\
                           \> $\,\,$ conc.lst \\
-                          \> $\,\,$ *.eps, *.ps \\
+                          \> $\,\,$ *.eps \\
 \end{tabbing}
 
 \noindent
@@ -268,8 +268,8 @@ features are published on the SWAN web page. These are provided by patch files t
 be downloaded from the web site. Typically, a patch can be installed over the top of the
 existing source code. Patches are indicated by a link to {\bf patchfile}. The names
 refer to the current version number supplemented with letter codes. The first will be
-coded 'A' (i.e. 40.72.A), the second will be coded 'B', the third will be coded 'C', etc.
-The version number in the resulting output files will be updated to 40.72ABC, indicating
+coded 'A' (i.e. 40.81.A), the second will be coded 'B', the third will be coded 'C', etc.
+The version number in the resulting output files will be updated to 40.81ABC, indicating
 the implemented patches.
 \\[2ex]
 \noindent
@@ -292,8 +292,8 @@ found. If you have trouble with patch, you can look at the patch file itself.
 Note to UNIX/Linux users:
 the downloaded patch files are MS-DOS ASCII files and contain carriage return (CR) characters.
 To convert these files to  UNIX format, use the command {\tt dos2unix}. Alternatively,
-execute {\tt cat 40.72.[A-C] | tr -d '$\backslash$r' | patch} that apply the patch files
-40.72.A to 40.72.C to the SWAN source code at once after which the conversion is
+execute {\tt cat 40.81.[A-C] | tr -d '$\backslash$r' | patch} that apply the patch files
+40.81.A to 40.81.C to the SWAN source code at once after which the conversion is
 carried out.
 \\[2ex]
 \noindent
@@ -461,7 +461,7 @@ indentifiable prefix in the first 3 or 4 columns of the subroutine. A Perl scrip
 switches to be removed. This script can be used as follows:
 \begin{verbatim}
 perl switch.pl [-dos] [-unix] [-f95] [-mpi] [-cray] [-sgi]
-               [-cvis] [-timg] [-impi] *.ftn
+               [-cvis] [-timg] [-impi] [-cdate10|12|14] *.ftn
 \end{verbatim}
 where the options are all optionally. The meaning of these options are as follows.
 \begin{itemize}
@@ -501,6 +501,15 @@ where the options are all optionally. The meaning of these options are as follow
   \item[{\tt -impi}]
   Some Fortran compilers do not support {\tt USE MPI} statement and therefore,
   the module {\tt MPI} in {\tt swmod1.ftn} must be included by removing the switch !/impi.
+  \item[{\tt -cdate10}]
+  The length of the string CDATE indicating the date-time in the WAM boundary condition file is 10.
+  The format of CDATE is for instance 8705301530 (i.e. 30 May 1987, 15:30 hrs).
+  \item[{\tt -cdate12}]
+  The length of the string CDATE indicating the date-time in the WAM boundary condition file is 12.
+  The format of CDATE is for instance 870530153000 (i.e. 30 May 1987, 15:30:00 hrs).
+  \item[{\tt -cdate14}]
+  The length of the string CDATE indicating the date-time in the WAM boundary condition file is 14.
+  The format of CDATE is for instance 19870530153000 (i.e. 30 May 1987, 15:30:00 hrs).
 \end{itemize}
 
 \noindent

@@ -20,4 +20,4 @@ OUT = -o
 EXTO = o
 MAKE = make
 RM = rm -f
-swch = -unix -impi -mpi -f95 -timg
+swch = -unix -impi -mpi -f95

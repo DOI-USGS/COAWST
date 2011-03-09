@@ -11,7 +11,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -474,6 +474,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        compda(ivlow:ivup,JDSXB) = 0.
        compda(ivlow:ivup,JDSXS) = 0.
        compda(ivlow:ivup,JDSXW) = 0.
+       compda(ivlow:ivup,JDSXV) = 0.
        compda(ivlow:ivup,JGENR) = 0.
        compda(ivlow:ivup,JGSXW) = 0.
        compda(ivlow:ivup,JREDS) = 0.
@@ -543,6 +544,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
              write (PRINTF,103) iter, PNUMS(20), PNUMS(30)
              write (PRINTF,104) IWIND, IWCAP, IQUAD
              write (PRINTF,105) ISURF, IBOT , ITRIAD
+             write (PRINTF,106) IVEG
           endif
           !
        endif
@@ -877,6 +879,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                                       idwmax              , isstop              ,                                             &
                                       swtsda(1,1,1,JPWNDA), swtsda(1,1,1,JPWNDB), swtsda(1,1,1,JPWCAP), swtsda(1,1,1,JPBTFR), &
                                       swtsda(1,1,1,JPWBRK), swtsda(1,1,1,JP4S)  , swtsda(1,1,1,JP4D)  ,                       &
+                                      swtsda(1,1,1,JPVEGT),                                                                   &
                                       swtsda(1,1,1,JPTRI) ,                                                                   &
                                       hs                  , etot                , qbloc               , thetaw              , &
                                       hm                  , fpm                 , wind10              , dummy               , &
@@ -891,6 +894,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                                       disc0               ,                                                                   &
                                       disc1               , genc0               , genc1               , redc0               , &
                                       redc1               , xis                 , compda(1,JFRC2)     , it                  , &
+                                      compda(1,JNPLA2)    ,                                                                   &
                                       compda(1,JURSEL)    , anybin              , reflso              )
 !TIMG                        call SWTSTO(117)
                         !
@@ -952,6 +956,12 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                            !
                         endif
                         !
+                        ! if negative action density occur rescale with a factor
+                        !
+!TIMG                        call SWTSTA(121)
+                        if ( BRESCL ) call RESCALE ( ac2, isstop, idcmin, idcmax, nrscal )
+!TIMG                        call SWTSTO(121)
+                        !
                         ! store propagation, generation, dissipation, redistribution, leak and radiation stress in present vertex
                         !
 !TIMG                        call SWTSTA(124)
@@ -964,6 +974,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                                          amat(1,1,4)    , amat(1,1,5)    ,                  &
                                          amat(1,1,2)    , amat(1,1,3)    ,                  &
                                          compda(1,JDSXB), compda(1,JDSXS), compda(1,JDSXW), &
+                                         compda(1,JDSXV),                                   &
                                          compda(1,JGSXW), compda(1,JGENR),                  &
                                          compda(1,JRSXQ), compda(1,JRSXT),                  &
                                          compda(1,JREDS),                                   &
@@ -971,12 +982,6 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                                          compda(1,JTSXS), compda(1,JTRAN),                  &
                                          leakcf         , compda(1,JRADS), spcsig           )
 !TIMG                        call SWTSTO(124)
-                        !
-                        ! if negative action density occur rescale with a factor
-                        !
-!TIMG                        call SWTSTA(121)
-                        if ( BRESCL ) call RESCALE ( ac2, isstop, idcmin, idcmax, nrscal )
-!TIMG                        call SWTSTO(121)
                         !
                         ! limit the change of the spectrum
                         !
@@ -1035,6 +1040,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
           if ( IFS2D > 0 ) write (IFS2D,151) iter
           call PLTSRC ( swtsda(1,1,1,JPWNDA), swtsda(1,1,1,JPWNDB), swtsda(1,1,1,JPWCAP), swtsda(1,1,1,JPBTFR), &
                         swtsda(1,1,1,JPWBRK), swtsda(1,1,1,JP4S)  , swtsda(1,1,1,JP4D)  , swtsda(1,1,1,JPTRI) , &
+                        swtsda(1,1,1,JPVEGT),                                                                   &
                         ac2                 , spcsig              , compda(1,JDP2)      , xytst               , &
                         dummy               )
        endif
@@ -1227,6 +1233,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        if ( IFS2D > 0 ) write (IFS2D,152) CHTIME
        call PLTSRC ( swtsda(1,1,1,JPWNDA), swtsda(1,1,1,JPWNDB), swtsda(1,1,1,JPWCAP), swtsda(1,1,1,JPBTFR), &
                      swtsda(1,1,1,JPWBRK), swtsda(1,1,1,JP4S)  , swtsda(1,1,1,JP4D)  , swtsda(1,1,1,JPTRI) , &
+                     swtsda(1,1,1,JPVEGT),                                                                   &
                      ac2                 , spcsig              , compda(1,JDP2)      , xytst               , &
                      dummy               )
     endif
@@ -1257,10 +1264,11 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
  102 format (// ' User-defined settings of 3rd generation mode is re-used:')
  103 format (' ITER  ',i4,'    GRWMX ',e12.4,'    ALFA   ',e12.4)
  104 format (' IWIND ',i4,'    IWCAP ',i4   ,'            IQUAD  ',i4)
- 105 format (' ISURF ',i4,'    IBOT  ',i4   ,'            ITRIAD ',i4,/)
+ 105 format (' ISURF ',i4,'    IBOT  ',i4   ,'            ITRIAD ',i4)
+ 106 format (' IVEG  ',i4,/)
  107 format (' Test points :',2i5)
  108 format (' Number of active points = ',i6,' (fillings-degree: ',f6.2,' %)')
- 110 format ('+time ', a18, ', step ',i4, '; iteration ',i4, '; sweep ',i3)
+ 110 format ('+time ', a18, ', step ',i6, '; iteration ',i4, '; sweep ',i3)
  120 format (' iteration ', i4, '; sweep ', i3)
  130 format ('+iteration ', i4, '; sweep ', i3)
  134 format (1x,'use of ',a9,' in ',f6.2,' % of active vertices with maximum in spectral space = ',i4)

@@ -4,7 +4,7 @@
 !            'title3'
 !
 !   SET  [level]  [nor]  [depmin]  [maxmes]                                 &
-!        [maxerr]  [grav]  [rho]  [inrhog]                                  &
+!        [maxerr]  [grav]  [rho] [cdcap] [inrhog]                           &
 !        [hsrerr]  CARTesian|NAUTical  [pwtail]                             &
 !        [froudmax]  [printf]  [prtest]
 !
@@ -22,7 +22,7 @@
 !          \ SECtor [dir1] [dir2] /  [mdc]  [flow]  [fhig]  [msc]
 !
 !   INPgrid                                                                 &
-!      BOTtom | WLEVel | CURrent | VX | VY | FRiction | WInd | WX | WY      &
+!      BOTtom | WLEV | CUR | VX | VY | FRic | WInd | WX | WY | NPLAnts      &
 !
 !      | REG [xpinp] [ypinp] [alpinp]  [mxinp] [myinp]  [dxinp] [dyinp] |
 !      |                                                                |
@@ -38,7 +38,7 @@
 !   READgrid UNSTRUCtured <  TRIAngle \
 !                          | EASYmesh / 'fname'
 !
-!   READinp    BOTtom|WLevel|CURrent|FRiction|WInd|COORdinates              &
+!   READinp    BOTtom|WLevel|CURrent|FRiction|WInd|COORdinates|NPLAnts      &
 !        [fac]  / 'fname1'        \
 !               \ SERIES 'fname2' /  [idla] [nhedf] ([nhedt]) (nhedvec])    &
 !        FREE | FORMAT 'form' | [idfm] | UNFORMATTED
@@ -102,7 +102,7 @@
 !         |
 !         |   AB       [cds2] [br] [p0] [powst] [powk]
 !
-!   QUADrupl [iquad] [limiter] [lambda] [cnl4] [csh1] [csh2] [csh3]
+!   QUADrupl [iquad] [lambda] [cnl4] [csh1] [csh2] [csh3]
 !
 !                             | CNL4 < [cnl4] >               |
 !   MDIA LAMbda < [lambda] > <                                 >
@@ -128,6 +128,8 @@
 !              |    MADsen  [kn]
 !
 !   TRIad   [trfac] [cutfr] [urcrit] [urslim]
+!
+!   VEGEtation  < [height] [diamtr] [nstems] [drag] >
 !
 !   LIMiter [ursell] [qb]
 !
@@ -204,7 +206,7 @@
 !          <  HSIGN|HSWELL|DIR|PDIR|TDIR|TM01|RTM01|RTP|TM02|FSPR|DSPR|VEL| &
 !             FRCOEF|WIND|DISSIP|QB|TRANSP|FORCE|UBOT|URMS|WLEN|STEEPNESS|  &
 !             DHSIGN|DRTM01|LEAK|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|DEPTH|  &
-!             TMBOT|QP|BFI|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP|        &
+!             TMBOT|QP|BFI|NPLANT|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP| &
 !             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS >       &
 !             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC|MIN|HR|DAY)
 !

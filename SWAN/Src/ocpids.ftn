@@ -1,10 +1,15 @@
+#include "swancpp.h"
 !     Last change:  NB   04 Jan 2001   12:00 pm
 !
 !          OCEAN PACK - Installation dependent subroutines
 !
 !*****************************************************************
 !                                                                *
+#ifdef SWAN_MODEL
+      SUBROUTINE OCPINI (ng, LREAD, INERR)
+#else
       SUBROUTINE OCPINI (INIFIL, LREAD, INERR)
+#endif
 !                                                                *
 !*****************************************************************
 !
@@ -27,7 +32,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -89,7 +94,13 @@
 !                        and command reading must be initialised
 !
       LOGICAL    LREAD, FILEXI
+#ifdef SWAN_MODEL
+      INTEGER, intent(in) :: ng
+      CHARACTER INIFIL*40
+      CHARACTER OUTFIL *40, TSTFIL *40,
+#else
       CHARACTER  INPFIL *40, OUTFIL *40, INIFIL *(*), TSTFIL *40,
+#endif
      &           PLTOPT *4, TIMSTR *24,
      &           OUTFO *40, TSTFO *40, TXT*120
       INTEGER    PRCTIM(6), INIVER, INIVEF
@@ -108,6 +119,20 @@
          IF (.NOT.ALLOCATED(IWEIG)) ALLOCATE(IWEIG(NPROC))
          IWEIG = 100
       END IF
+#ifdef SWAN_MODEL
+      INIFIL='swaninit'
+      ILPOS = INDEX ( INIFIL, ' ' )-1
+      IF (ILPOS.GT.0) THEN
+        WRITE(INIFIL(ILPOS+1:ILPOS+2),183) ng
+      END IF
+ 183  FORMAT(I2.2)
+!
+      IF (PARLL) THEN                                                   40.30
+        ILPOS = INDEX ( INIFIL, ' ' )-1                                 40.30
+        WRITE(INIFIL(ILPOS+1:ILPOS+4),13) INODE                         40.30
+  13    FORMAT('-',I3.3)                                                40.30
+      END IF                                                            40.30
+#endif
 !
 !     see whether initialisation file exists
 !
@@ -123,7 +148,11 @@
         IF (INIVEF.GT.INIVER .OR. INIVEF.LE.0) GOTO 935                   40.00
         READ (11, 120, ERR=930, END=930) INST
         READ (11, *,   ERR=930, END=930) INPUTF
+#ifdef SWAN_MODEL
+        READ (11, 120, ERR=930, END=930)
+#else
         READ (11, 120, ERR=930, END=930) INPFIL
+#endif
         READ (11, *,   ERR=930, END=930) PRINTF
         READ (11, 120, ERR=930, END=930) OUTFIL
         READ (11, *,   ERR=930, END=930) PRTEST
@@ -179,15 +208,27 @@
 !       REFERENCE NUMBERS AND NAMES OF STANDARD FILES
 !
         INPUTF = 3
+#ifndef SWAN_MODEL
         INPFIL = 'INPUT'
-        PRINTF = 4
+#endif
         OUTFIL = 'PRINT'
+#ifdef SWAN_MODEL
+        WRITE(OUTFIL(6:7),181) ng
+ 181    FORMAT(I2.2)
+        PRINTF = 500+ng
+#else
+        PRINTF = 4
+#endif
 !       unit ref. numbers for output to screen and to separate
 !       test print file:
         PRTEST = PRINTF
         TSTFIL = '    '
         SCREEN = 6
+#ifdef SWAN_MODEL
+        IUNMAX = 99999999
+#else
         IUNMAX = 99
+#endif
 !/SGI        IUNMAX = 199
 !       TABC is the Tab character (interpreted as blank in command reading)
         TABC = CHAR(9)                                                    40.69
@@ -241,7 +282,11 @@
         WRITE (12, 210) PRTEST, 'test file ref. number'
         WRITE (12, 220) TSTFO,  'test file name'                          40.30
         WRITE (12, 210) SCREEN, 'screen ref. number'
+#ifdef SWAN_MODEL
+        WRITE (12, 211) IUNMAX, 'highest file ref. number'
+#else
         WRITE (12, 210) IUNMAX, 'highest file ref. number'
+#endif
         WRITE (12, 230) COMID,  'comment identifier'
         WRITE (12, 230) TABC,   'TAB character'
         WRITE (12, 230) DIRCH1, 'dir sep char in input file'
@@ -254,6 +299,9 @@
         END IF
         CLOSE (12)
   210   FORMAT (I5, T41, A)
+#ifdef SWAN_MODEL
+  211   FORMAT (I8, T41, A)
+#endif
   220   FORMAT (A40, A)
   230   FORMAT (A1, T41, A)
   240   FORMAT (I5, T41, A19, I3)
@@ -339,7 +387,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -438,7 +486,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -488,7 +536,11 @@
 !
       INTEGER :: JUMPYEAR = 30     ! Used in interpretation of 2-digit year code
       INTEGER    IOPT, DTTIME(6)
+#ifdef SWAN_MODEL
+      CHARACTER  TIMSTR *15, MONC(12) *3, MONCI *3
+#else
       CHARACTER  TIMSTR *24, MONC(12) *3, MONCI *3
+#endif
       DATA MONC /'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL',
      &           'AUG', 'SEP', 'OCT', 'NOV', 'DEC'/
 !
@@ -562,7 +614,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

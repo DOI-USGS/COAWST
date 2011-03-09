@@ -11,7 +11,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -283,7 +283,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     !
     ! allocation of shared arrays
     !
-    call SWTSTA(101)
+!TIMG    call SWTSTA(101)
     allocate(islmin(nverts))
     allocate( nflim(nverts))
     allocate(nrscal(nverts))
@@ -308,7 +308,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     endif
     !
     !$ allocate(tlist(nverts))
-    call SWTSTO(101)
+!TIMG    call SWTSTO(101)
     !
     ! initialization of shared arrays
     !
@@ -351,7 +351,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     !
     ! allocation of private arrays
     !
-    call SWTSTA(101)
+!TIMG    call SWTSTA(101)
     allocate(   cad(MDC,MSC      ))
     allocate(   cas(MDC,MSC      ))
     allocate(   cax(MDC,MSC,ICMAX))
@@ -389,9 +389,9 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     ! calculate ranges of spectral space for arrays related to 4 wave-wave interactions
     !
     !$omp single
-    call SWTSTA(135)
+!TIMG    call SWTSTA(135)
     if ( IQUAD > 0 ) call FAC4WW ( xis, snlc1, dal1, dal2, dal3, spcsig, wwint, wwawg, wwswg )
-    call SWTSTO(135)
+!TIMG    call SWTSTO(135)
     !$omp end single
     !
     if ( IQUAD > 0 ) then
@@ -429,7 +429,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        allocate(da2m(0,0))
        allocate(dsnl(0,0))
     endif
-    call SWTSTO(101)
+!TIMG    call SWTSTO(101)
     !
     ! marks vertices active and non-active
     !
@@ -459,7 +459,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     !
     !$ call SwanThreadBounds( nwetp, ivlow, ivup, tlist )
     !
-    call SWTSTA(103)
+!TIMG    call SWTSTA(103)
     iterloop: do iter = 1, ITERMX
        !
        ! some initializations
@@ -474,6 +474,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        compda(ivlow:ivup,JDSXB) = 0.
        compda(ivlow:ivup,JDSXS) = 0.
        compda(ivlow:ivup,JDSXW) = 0.
+       compda(ivlow:ivup,JDSXV) = 0.
        compda(ivlow:ivup,JGENR) = 0.
        compda(ivlow:ivup,JGSXW) = 0.
        compda(ivlow:ivup,JREDS) = 0.
@@ -543,6 +544,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
              write (PRINTF,103) iter, PNUMS(20), PNUMS(30)
              write (PRINTF,104) IWIND, IWCAP, IQUAD
              write (PRINTF,105) ISURF, IBOT , ITRIAD
+             write (PRINTF,106) IVEG
           endif
           !
        endif
@@ -704,15 +706,15 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                   !
                   ! compute wavenumber and group velocity in points of stencil
                   !
-                  call SWTSTA(110)
+!TIMG                  call SWTSTA(110)
                   call SwanDispParm ( kwave, cgo, compda(1,JDP2), spcsig )
-                  call SWTSTO(110)
+!TIMG                  call SWTSTO(110)
                   !
                   ! compute wave transport velocities in points of stencil for all directions
                   !
-                  call SWTSTA(111)
+!TIMG                  call SWTSTA(111)
                   call SwanPropvelX ( cax, cay, compda(1,JVX2), compda(1,JVY2), cgo, spcdir(1,2), spcdir(1,3) )
-                  call SWTSTO(111)
+!TIMG                  call SWTSTO(111)
                   !
                   ! compute local contravariant base vectors at present vertex
                   !
@@ -741,25 +743,25 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                   !
                   ! compute spectral directions for the considered sweep in present vertex
                   !
-                  call SWTSTA(112)
+!TIMG                  call SWTSTA(112)
                   call SwanSweepSel ( idcmin, idcmax, anybin, iscmin, iscmax, &
                                       iddlow, iddtop, idtot , isslow, isstop, &
                                       istot , cax   , cay   , rdx   , rdy   , &
                                       spcsig)
-                  call SWTSTO(112)
+!TIMG                  call SWTSTO(112)
                   !
                   if ( idtot > 0 ) then
                      !
                      ! compute propagation velocities in spectral space for the considered sweep in present vertex
                      !
-                     call SWTSTA(113)
+!TIMG                     call SWTSTA(113)
                      call SwanPropvelS ( cad           , cas           , compda(1,JVX2), compda(1,JVY2), &
                                          compda(1,JDP1), compda(1,JDP2), cax           , cay           , &
                                          kwave         , cgo           , spcsig        , idcmin        , &
                                          idcmax        , spcdir(1,2)   , spcdir(1,3)   , spcdir(1,4)   , &
                                          spcdir(1,5)   , spcdir(1,6)   , rdx           , rdy           , &
                                          jc            )
-                     call SWTSTO(113)
+!TIMG                     call SWTSTO(113)
                      !
                      ! estimate action density in case of first iteration at cold start in stationary mode
                      ! (since it is zero in first stationary run)
@@ -778,12 +780,12 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                      !
                      ! calculate various integral parameters
                      !
-                     call SWTSTA(116)
+!TIMG                     call SWTSTA(116)
                      call SINTGRL (spcdir, kwave        , ac2  , compda(1,JDP2), qbloc , compda(1,JURSEL), &
                                    rdx   , rdy          , dummy, etot          , abrbot, compda(1,JUBOT) , &
                                    hs    , compda(1,JQB), hm   , kmespc        , smebrk, compda(1,JPBOT) , &
                                    swpnr )
-                     call SWTSTO(116)
+!TIMG                     call SWTSTO(116)
                      !
                      compda(ivert,JHS) = hs
  20                  continue
@@ -793,7 +795,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                      obredf = 1.
                      reflso = 0.
                      !
-                     call SWTSTA(136)
+!TIMG                     call SWTSTA(136)
                      if ( NUMOBS > 0 ) then
                         !
                         ! determine obstacle for the link(s) in the computational stencil
@@ -831,19 +833,19 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                         endif
                         !
                      endif
-                     call SWTSTO(136)
+!TIMG                     call SWTSTO(136)
                      if (lpredt) goto 10
                      !
                      ! compute the transport part of the action balance equation
                      !
-                     call SWTSTA(118)
+!TIMG                     call SWTSTA(118)
                      call SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
                                          cgo   , cax   , cay   , cad   , cas   , &
                                          anybin, rdx   , rdy   , spcsig, spcdir, &
                                          obredf, idcmin, idcmax, iscmin, iscmax, &
                                          iddlow, iddtop, isslow, isstop, anyblk, &
                                          trac0 , trac1 )
-                     call SWTSTO(118)
+!TIMG                     call SWTSTO(118)
                      !
                      ! compute the source part of the action balance equation
                      !
@@ -858,16 +860,16 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                         ! wind friction velocity and the minimum and maximum counters for
                         ! active wind input
                         !
-                        call SWTSTA(115)
+!TIMG                        call SWTSTA(115)
                         if ( IWIND > 0 ) call WINDP1 ( wind10, thetaw, idwmin        , idwmax        , &
                                                        fpm   , ufric , compda(1,JWX2), compda(1,JWY2), &
                                                        anywnd, spcdir, compda(1,JVX2), compda(1,JVY2), &
                                                        spcsig )
-                        call SWTSTO(115)
+!TIMG                        call SWTSTO(115)
                         !
                         ! compute the source terms
                         !
-                        call SWTSTA(117)
+!TIMG                        call SWTSTA(117)
                         call SOURCE ( iter                , IXCGRD(1)           , IYCGRD(1)           , swpnr               , &
                                       kwave               , spcsig              , spcdir(1,2)         , spcdir(1,3)         , &
                                       ac2                 , compda(1,JDP2)      , amat(1,1,1)         , rhs                 , &
@@ -877,6 +879,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                                       idwmax              , isstop              ,                                             &
                                       swtsda(1,1,1,JPWNDA), swtsda(1,1,1,JPWNDB), swtsda(1,1,1,JPWCAP), swtsda(1,1,1,JPBTFR), &
                                       swtsda(1,1,1,JPWBRK), swtsda(1,1,1,JP4S)  , swtsda(1,1,1,JP4D)  ,                       &
+                                      swtsda(1,1,1,JPVEGT),                                                                   &
                                       swtsda(1,1,1,JPTRI) ,                                                                   &
                                       hs                  , etot                , qbloc               , thetaw              , &
                                       hm                  , fpm                 , wind10              , dummy               , &
@@ -891,8 +894,9 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                                       disc0               ,                                                                   &
                                       disc1               , genc0               , genc1               , redc0               , &
                                       redc1               , xis                 , compda(1,JFRC2)     , it                  , &
+                                      compda(1,JNPLA2)    ,                                                                   &
                                       compda(1,JURSEL)    , anybin              , reflso              )
-                        call SWTSTO(117)
+!TIMG                        call SWTSTO(117)
                         !
                      endif
                      !
@@ -902,23 +906,23 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                         !
                         ! preparatory steps before solving system of equations
                         !
-                        call SWTSTA(119)
+!TIMG                        call SWTSTA(119)
                         call SOLPRE(ac2        , ac2old     , rhs        , amat(1,1,4), &
                                     amat(1,1,1), amat(1,1,5), amat(1,1,2), amat(1,1,3), &
                                     idcmin     , idcmax     , anybin     , idtot      , &
                                     istot      , iddlow     , iddtop     , isstop     , &
                                     spcsig     )
-                        call SWTSTO(119)
+!TIMG                        call SWTSTO(119)
                         !
                         if ( .not.DYNDEP .and. ICUR == 0 ) then
                            !
                            ! propagation in theta space only
                            ! solve tridiagonal system of equations using Thomas' algorithm
                            !
-                           call SWTSTA(120)
+!TIMG                           call SWTSTA(120)
                            call SOLMAT ( idcmin     , idcmax     , ac2        , rhs, &
                                          amat(1,1,1), amat(1,1,5), amat(1,1,4)     )
-                           call SWTSTO(120)
+!TIMG                           call SWTSTO(120)
                            !
                         else
                            !
@@ -929,32 +933,38 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                               ! implicit scheme in sigma space
                               ! solve pentadiagonal system of equations using SIP solver
                               !
-                              call SWTSTA(120)
+!TIMG                              call SWTSTA(120)
                               call SWSIP ( ac2        , amat(1,1,1)    , rhs            , amat(1,1,4), &
                                            amat(1,1,5), amat(1,1,2)    , amat(1,1,3)    , ac2old     , &
                                            PNUMS(12)  , nint(PNUMS(14)), nint(PNUMS(13)), inocnt     , &
                                            iddlow     , iddtop         , isstop         , idcmin     , &
                                            idcmax     )
-                              call SWTSTO(120)
+!TIMG                              call SWTSTO(120)
                               !
                            elseif (int(PNUMS(8)) == 2 ) then
                               !
                               ! explicit scheme in sigma space
                               ! solve tridiagonal system of equations using Thomas' algorithm
                               !
-                              call SWTSTA(120)
+!TIMG                              call SWTSTA(120)
                               call SOLMT1  ( idcmin     , idcmax     , ac2        , rhs    , &
                                              amat(1,1,1), amat(1,1,5), amat(1,1,4),          &
                                              isstop     , anyblk     , iddlow     , iddtop )
-                              call SWTSTO(120)
+!TIMG                              call SWTSTO(120)
                               !
                            endif
                            !
                         endif
                         !
+                        ! if negative action density occur rescale with a factor
+                        !
+!TIMG                        call SWTSTA(121)
+                        if ( BRESCL ) call RESCALE ( ac2, isstop, idcmin, idcmax, nrscal )
+!TIMG                        call SWTSTO(121)
+                        !
                         ! store propagation, generation, dissipation, redistribution, leak and radiation stress in present vertex
                         !
-                        call SWTSTA(124)
+!TIMG                        call SWTSTA(124)
                         if ( LADDS )                                                        &
                            call ADDDIS ( compda(1,JDISS), compda(1,JLEAK), ac2   , anybin , &
                                          disc0          , disc1          ,                  &
@@ -964,32 +974,27 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                                          amat(1,1,4)    , amat(1,1,5)    ,                  &
                                          amat(1,1,2)    , amat(1,1,3)    ,                  &
                                          compda(1,JDSXB), compda(1,JDSXS), compda(1,JDSXW), &
+                                         compda(1,JDSXV),                                   &
                                          compda(1,JGSXW), compda(1,JGENR),                  &
                                          compda(1,JRSXQ), compda(1,JRSXT),                  &
                                          compda(1,JREDS),                                   &
                                          compda(1,JTSXG), compda(1,JTSXT),                  &
                                          compda(1,JTSXS), compda(1,JTRAN),                  &
                                          leakcf         , compda(1,JRADS), spcsig           )
-                        call SWTSTO(124)
-                        !
-                        ! if negative action density occur rescale with a factor
-                        !
-                        call SWTSTA(121)
-                        if ( BRESCL ) call RESCALE ( ac2, isstop, idcmin, idcmax, nrscal )
-                        call SWTSTO(121)
+!TIMG                        call SWTSTO(124)
                         !
                         ! limit the change of the spectrum
                         !
-                        call SWTSTA(122)
+!TIMG                        call SWTSTA(122)
                         if ( PNUMS(20) < 100. ) call PHILIM ( ac2, ac2old, cgo, kwave, spcsig, anybin, islmin, nflim, qbloc )
-                        call SWTSTO(122)
+!TIMG                        call SWTSTO(122)
                         !
                         ! reduce the computed energy density if the value is larger then the limit value
                         ! as computed in SOURCE in case of first or second generation mode
                         !
-                        call SWTSTA(123)
+!TIMG                        call SWTSTA(123)
                         if ( IWIND == 1 .or. IWIND == 2 ) call WINDP3 ( isstop, alimw, ac2, groww, idcmin, idcmax )
-                        call SWTSTO(123)
+!TIMG                        call SWTSTO(123)
                         !
                         ! store some infinity norms meant for convergence check
                         !
@@ -1028,17 +1033,18 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        ! store the source terms assembled in test points per iteration in the files IFPAR, IFS1D and IFS2D
        !
        !$omp master
-       call SWTSTA(105)
+!TIMG       call SWTSTA(105)
        if ( NPTST > 0 .and. NSTATM == 0 ) then
           if ( IFPAR > 0 ) write (IFPAR,151) iter
           if ( IFS1D > 0 ) write (IFS1D,151) iter
           if ( IFS2D > 0 ) write (IFS2D,151) iter
           call PLTSRC ( swtsda(1,1,1,JPWNDA), swtsda(1,1,1,JPWNDB), swtsda(1,1,1,JPWCAP), swtsda(1,1,1,JPBTFR), &
                         swtsda(1,1,1,JPWBRK), swtsda(1,1,1,JP4S)  , swtsda(1,1,1,JP4D)  , swtsda(1,1,1,JPTRI) , &
+                        swtsda(1,1,1,JPVEGT),                                                                   &
                         ac2                 , spcsig              , compda(1,JDP2)      , xytst               , &
                         dummy               )
        endif
-       call SWTSTO(105)
+!TIMG       call SWTSTO(105)
        !
        ! indicate number of vertices in which rescaling has taken place
        ! (only for debug purposes)
@@ -1097,7 +1103,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        !
        if ( PNUMS(21) <= 1. ) then
           !
-          call SWTSTA(102)
+!TIMG          call SWTSTA(102)
           if ( PNUMS(21) == 0. ) then
              !
              call SwanConvAccur ( accur, hscurr, tmcurr, compda(1,JDHS), compda(1,JDTM), xytst, spcsig, ac2, ivlow, ivup )
@@ -1118,7 +1124,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
              if ( NSTATC == 0 ) write (SCREEN,140) accur, PNUMS(4)
           endif
           !$omp end master
-          call SWTSTO(102)
+!TIMG          call SWTSTO(102)
           !
           ! synchronize threads
           !$omp barrier
@@ -1130,7 +1136,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        elseif ( PNUMS(21) == 2. ) then
           !
          !$omp master
-          call SWTSTA(102)
+!TIMG          call SWTSTA(102)
           write (PRINTF,141)
           if ( NSTATC == 0 ) write (SCREEN,141)
           if ( iter == 1 ) then
@@ -1149,7 +1155,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
              endif
           endif
           acnrmo = acnrms(1)
-          call SWTSTO(102)
+!TIMG          call SWTSTO(102)
           !$omp end master
           !
           ! synchronize threads
@@ -1162,11 +1168,11 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        endif
        !
     enddo iterloop
-    call SWTSTO(103)
+!TIMG    call SWTSTO(103)
     !
     ! deallocation of private arrays
     !
-    call SWTSTA(101)
+!TIMG    call SWTSTA(101)
     deallocate(  cad)
     deallocate(  cas)
     deallocate(  cax)
@@ -1212,7 +1218,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     deallocate(da2p)
     deallocate(da2m)
     deallocate(dsnl)
-    call SWTSTO(101)
+!TIMG    call SWTSTO(101)
     !
     ! end of parallel region
     !
@@ -1220,21 +1226,22 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     !
     ! store the source terms assembled in test points per time step in the files IFPAR, IFS1D and IFS2D
     !
-    call SWTSTA(105)
+!TIMG    call SWTSTA(105)
     if ( NPTST > 0 .and. NSTATM == 1 ) then
        if ( IFPAR > 0 ) write (IFPAR,152) CHTIME
        if ( IFS1D > 0 ) write (IFS1D,152) CHTIME
        if ( IFS2D > 0 ) write (IFS2D,152) CHTIME
        call PLTSRC ( swtsda(1,1,1,JPWNDA), swtsda(1,1,1,JPWNDB), swtsda(1,1,1,JPWCAP), swtsda(1,1,1,JPBTFR), &
                      swtsda(1,1,1,JPWBRK), swtsda(1,1,1,JP4S)  , swtsda(1,1,1,JP4D)  , swtsda(1,1,1,JPTRI) , &
+                     swtsda(1,1,1,JPVEGT),                                                                   &
                      ac2                 , spcsig              , compda(1,JDP2)      , xytst               , &
                      dummy               )
     endif
-    call SWTSTO(105)
+!TIMG    call SWTSTO(105)
     !
     ! deallocation of shared arrays
     !
-    call SWTSTA(101)
+!TIMG    call SWTSTA(101)
     deallocate(islmin)
     deallocate( nflim)
     deallocate(nrscal)
@@ -1251,16 +1258,17 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     deallocate(memnl4)
     !
 !$  deallocate(tlist)
-    call SWTSTO(101)
+!TIMG    call SWTSTO(101)
     !
  101 format (// ' Settings of 2nd generation mode as first guess are used:')
  102 format (// ' User-defined settings of 3rd generation mode is re-used:')
  103 format (' ITER  ',i4,'    GRWMX ',e12.4,'    ALFA   ',e12.4)
  104 format (' IWIND ',i4,'    IWCAP ',i4   ,'            IQUAD  ',i4)
- 105 format (' ISURF ',i4,'    IBOT  ',i4   ,'            ITRIAD ',i4,/)
+ 105 format (' ISURF ',i4,'    IBOT  ',i4   ,'            ITRIAD ',i4)
+ 106 format (' IVEG  ',i4,/)
  107 format (' Test points :',2i5)
  108 format (' Number of active points = ',i6,' (fillings-degree: ',f6.2,' %)')
- 110 format ('+time ', a18, ', step ',i4, '; iteration ',i4, '; sweep ',i3)
+ 110 format ('+time ', a18, ', step ',i6, '; iteration ',i4, '; sweep ',i3)
  120 format (' iteration ', i4, '; sweep ', i3)
  130 format ('+iteration ', i4, '; sweep ', i3)
  134 format (1x,'use of ',a9,' in ',f6.2,' % of active vertices with maximum in spectral space = ',i4)

@@ -1,3 +1,4 @@
+#include "swancpp.h"
 !
 !     SWAN/OUTPUT       file 2 of 2
 !
@@ -36,7 +37,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -230,7 +231,7 @@
         IF (OVSVTY(IVTYPE) .LT. 3) THEN
 !                      scalar quantities
           IF (MATLAB) THEN                                                40.30
-             IF (IL.EQ.1 .OR. IVTYPE.LT.3) THEN                           40.94 40.41
+             IF (IL.EQ.1 .OR. IVTYPE.LT.3 .OR. IVTYPE.EQ.52) THEN         40.94 40.41
                 NAMVAR = OVSNAM(IVTYPE)                                   40.41
              ELSE                                                         40.41
                 NAMVAR = OVSNAM(IVTYPE)(1:LEN_TRIM(OVSNAM(IVTYPE)))//     40.41
@@ -309,7 +310,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -535,7 +536,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -683,7 +684,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1076,7 +1077,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1197,7 +1198,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1541,7 +1542,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1866,7 +1867,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1980,7 +1981,11 @@
 !  6. Local variables
 !
 !     CTMP  :     a temporary character array
+#ifdef SWAN_MODEL
+!     HEADERS:    header of binary MAT-file
+#else
 !     HEADER:     header of binary MAT-file
+#endif
 !     I     :     loop variable
 !     IENT  :     number of entries
 !     IOS   :     auxiliary integer with iostat-number
@@ -1998,7 +2003,11 @@
       INTEGER NAMLEN, NANVAL
       INTEGER, SAVE :: IRECS
       CHARACTER*80 MSGSTR
+#ifdef SWAN_MODEL
+      CHARACTER(LEN=HeaderSize) HEADERS
+#else
       CHARACTER(LEN=HeaderSize) HEADER
+#endif
       CHARACTER(LEN=BlockSize) CTMP
 
 !
@@ -2051,6 +2060,34 @@
 
 !     --- descriptive header
 
+#ifdef SWAN_MODEL
+      WRITE (HEADERS, '(6A)') 'Data produced by SWAN version ',
+     &                       TRIM(VERTXT),'; project: ',TRIM(PROJID),
+     &                       '; run number: ',PROJNR
+
+!     --- data offset
+
+      HEADERS(117:124) = CHAR(ICHAR(' '))
+
+!     --- version
+
+      HEADERS(125:126) = CHAR(0) // CHAR(1)
+
+!     --- endian indicator
+
+      WRITE(HEADERS(127:128),'(A)') INT(19785,KIND=2)
+
+!     --- write header once
+
+      IF ( IREC.EQ.1 ) THEN
+         DO I = 1, HeaderSize/DataSize
+            J = DataSize*(I-1) + 1
+            IF ( IOS.EQ.0 )
+     &         WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) HEADERS(J:J+DataSize-1)
+            IREC = IREC + 1
+         END DO
+      END IF
+#else
       WRITE (HEADER, '(6A)') 'Data produced by SWAN version ',
      &                       TRIM(VERTXT),'; project: ',TRIM(PROJID),
      &                       '; run number: ',PROJNR
@@ -2077,6 +2114,7 @@
             IREC = IREC + 1
          END DO
       END IF
+#endif
 
 !     --- array tag
 

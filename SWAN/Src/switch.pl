@@ -9,6 +9,9 @@ $cry = "FALSE";
 $sgi = "FALSE";
 $imp = "FALSE";
 $cvi = "FALSE";
+$cd10 = 'FALSE';
+$cd12 = 'FALSE';
+$cd14 = 'FALSE';
 while ( $ARGV[0]=~/-.*/ )
    {
    if ($ARGV[0]=~/-esmf/) {$esmf="TRUE";shift;}
@@ -21,6 +24,9 @@ while ( $ARGV[0]=~/-.*/ )
    if ($ARGV[0]=~/-sgi/) {$sgi="TRUE";shift;}
    if ($ARGV[0]=~/-impi/) {$imp="TRUE";shift;}
    if ($ARGV[0]=~/-cvis/) {$cvi="TRUE";shift;}
+   if ($ARGV[0]=~/-cdate10/) {$cd10="TRUE";shift;}
+   if ($ARGV[0]=~/-cdate12/) {$cd12="TRUE";shift;}
+   if ($ARGV[0]=~/-cdate14/) {$cd14="TRUE";shift;}
    }
 
 # --- make a list of all files
@@ -37,14 +43,15 @@ foreach $file (@files)
   {
     ($tempf)=split(/.ftn/, $file);
     $ext = ($file =~ m/ftn90/) ? "f90" : "f";
-#    $outfile = join(".",$tempf,$ext);
+#   $outfile = join(".",$tempf,$ext);
     $outfile = join(".",$tempf,"F");
   }
   else
   {
     ($tempf)=split(/.ftn/, $file);
     $ext = ($file =~ m/ftn90/) ? "f90" : "for";
-    $outfile = join(".",$tempf,$ext);
+#   $outfile = join(".",$tempf,$ext);
+    $outfile = join(".",$tempf,"F");
   }
 # --- process file
   if (   (! -e $outfile)            #outfile doesn't exist
@@ -67,9 +74,15 @@ foreach $file (@files)
       if ($sgi=~/TRUE/) {$newline=~s/^!\/SGI//;}
       if ($imp=~/TRUE/) {$newline=~s/^!\/impi//;}
       if ($cvi=~/TRUE/) {$newline=~s/^!CVIS//;}
+      if ($cd10=~/TRUE/) {$newline=~s/^!CDAT10//;}
+      if ($cd12=~/TRUE/) {$newline=~s/^!CDAT12//;}
+      if ($cd14=~/TRUE/) {$newline=~s/^!CDAT14//;}
       print OUTFILE $newline;
     }
     close file;
     close(OUTFILE);
   }
 }
+
+# run manually as 
+# perl switch.pl -unix -impi -mpi -f95 -cdate14 *.ftn *.ftn90

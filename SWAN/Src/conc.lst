@@ -31,6 +31,7 @@ longitude
 nautical
 obstacle
 ocean
+plant
 propagation
 quadruplets
 recti-linear
@@ -49,6 +50,7 @@ swell
 triads
 triangular
 unstructured
+vegetation
 WAM
 WAVEWATCH
 whitecapping

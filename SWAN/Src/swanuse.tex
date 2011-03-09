@@ -32,7 +32,7 @@
 \end{center}
 \vfill
 \begin{center}
-{\Large\bf SWAN Cycle III version 40.72ABCDE}
+{\Large\bf SWAN Cycle III version 40.81}
 \end{center}
 
 \cleardoublepage
@@ -61,7 +61,7 @@ home page    &:& \hl{http://www.swan.tudelft.nl}
 \vfill
 
 \noindent
-Copyright (c) 2009 Delft University of Technology.
+Copyright (c) 1993-2010 Delft University of Technology.
 \\[2ex]
 \noindent
 Permission is granted to copy, distribute and/or modify this document
@@ -699,7 +699,9 @@ always at computational times.
 \section{Activation of physical processes}
 SWAN contains a number of physical processes (see Scientific/Technical documentation) that add or withdraw wave energy to or
 from the wave field. The processes included are: wind input, whitecapping, bottom friction, depth-induced
-wave breaking, obstacle transmission, nonlinear wave-wave interactions (quadruplets and triads) and
+wave breaking,
+dissipation due to vegetation,
+obstacle transmission, nonlinear wave-wave interactions (quadruplets and triads) and
 wave-induced set-up. SWAN can run in several modes, indicating the level of parameterization. SWAN can operate
 in first-, second- and third-generation mode. The first- and second-generation modes are essentially those
 of Holthuijsen and De Boer (1988); first-generation with a constant Phillips "constant" of 0.0081 and
@@ -762,6 +764,8 @@ Obstacle transmission   & Seelig (1979), d'Angremond (1996)      & $\times$ & $\
 \hline
 Wave-induced set-up     &                                        & $\times$ & $\times$ & $\times$ \\
 \hline
+Vegetation dissipation  & Dalrymple (1984)                       & $\times$ & $\times$ & $\times$ \\
+\hline
 \end{tabular}
 \end{center}
 \end{table}
@@ -774,6 +778,7 @@ The processes are activated as follows:
   \item {\it Triads} is activated by command {\tt TRIAD}.
   \item {\it Bottom friction} is activated by command {\tt FRICTION}.
   \item {\it Depth-induced breaking} is activated by command {\tt BREAKING}\footnote{active by default, can be deactivated with command {\tt OFF}.}.
+  \item {\it Vegetation dissipation} is activated by command {\tt VEGETATION}.
   \item {\it Obstacle transmission} is activated by command {\tt OBSTACLE}.
   \item {\it Wave-induced set-up} is activated by command {\tt SETUP}.
 \end{itemize}
@@ -901,6 +906,7 @@ xxxxxxxxxxxx\= \kill
 {\tt BREAKING} \> activates dissipation by depth-induced wave breaking\\
 {\tt FRICTION} \> activates dissipation by bottom friction\\
 {\tt TRIAD}    \> activates three wave-wave interactions\\
+{\tt VEGETAT}  \> activates dissipation due to vegetation\\
 {\tt LIMITER}  \> de-actives quadruplets if a certain Ursell number exceeds\\
 {\tt OBSTACLE} \> defines characteristics of sub-grid obstacles\\
 {\tt SETUP}    \> activates the computation of the wave-induced set-up\\
@@ -1036,7 +1042,7 @@ xxxxxxxxxxxx\= \kill
 \idxcmd{SET}
 \linecmd
 \begin{verbatim}
-SET  [level] [nor] [depmin] [maxmes] [maxerr] [grav] [rho]     &
+SET  [level] [nor] [depmin] [maxmes] [maxerr] [grav] [rho] [cdcap]    &
 
                         |    NAUTical  |
      [inrhog] [hsrerr] <                > [pwtail] [froudmax] [printf] [prtest]
@@ -1080,6 +1086,10 @@ xxxxxxxxxxxx\= \kill
                    Default: {\tt [grav]} = 9.81.\-\\
 {\tt [rho]}     \> is the water density $\rho$ (in kg/m$^3$).\+\\
                    Default: {\tt [rho]} = 1025.\-\\
+{\tt [cdcap]}   \> is a maximum value for the wind drag coefficient. A value of {\tt [cdcap]} = 99999\+\\
+                   means no cutting off the drag coefficient. A suggestion for this parameter is\\
+                   {\tt [cdcap]} = 2.5$\times$ 10$^{-3}$.\\
+                   Default: {\tt [cdcap]} = 99999.\-\\
 {\tt [inrhog]}  \> to indicate whether the user requires output based on variance or based on true\+\\
                    energy (see Section~\ref{sec:units}).\\
                    \pushtabs
@@ -1435,6 +1445,8 @@ INPgrid     (<               >)                                                 
               | <           |
               |  | WX       |
               |  | WY       |
+              |             |
+              | NPLAnts     |
 
        | -> REGular [xpinp] [ypinp] [alpinp] [mxinp] [myinp] [dxinp] [dyinp] |
        |                                                                     |
@@ -1464,7 +1476,8 @@ actual reading of values of bottom levels, currents, etc. from file is controlle
 \\[2ex]
 \noindent
 There can be different grids for bottom level ({\tt BOTTOM}), flow current ({\tt CURRENT}), bottom friction coefficient
-({\tt FRICTION}) and wind velocity ({\tt WIND}). If the current velocity components are available on different grids,
+({\tt FRICTION}), wind velocity ({\tt WIND}) and vegetation density ({\tt NPLANTS}).
+If the current velocity components are available on different grids,
 then option {\tt VX}, {\tt VY} can define these different grids for the $x-$ and $y-$component of the current, respectively
 (but the grids must have identical orientation). Different grids for {\tt VX} and {\tt VY} may be useful if the data are
 generated by a circulation model using a staggered grid. The same holds for the wind velocity
@@ -1482,6 +1495,10 @@ wind and friction is then required.
 \\[2ex]
 \noindent
 Note that in case of option {\tt BOTTOM} only stationary input field is allowed.
+\\[2ex]
+\noindent
+Note that in 1D mode, both $x-$ and $y-$components of the current and/or wind must be specified. Also, {\tt VX} and {\tt WX}
+must always be followed by {\tt VY} and {\tt WY}, respectively.
 \\[2ex]
 \noindent
 If the computational grid is unstructured (generated by Triangle or Easymesh), the input grids can be either regular
@@ -1521,6 +1538,8 @@ xxxxxxxxxxxx\= \kill
                        $$x-$$component but same orientation).\-\\
 {\tt WY}            \> defines input grid of the $y-$component of the wind field (different grid than\+\\
                        $y-$component but same orientation).\-\\
+{\tt NPLANTS}       \> defines input grid of the horizontally varying vegetation density (defined\+\\
+                       in command {\tt VEGETATION}).\-\\
 {\tt REGULAR}       \> means that the input grid is uniform and rectangular.\\
 {\tt CURVILINEAR}   \> means that the input grid is curvi-linear; this option is available only if the\+\\
                        computational grid is curvi-linear as well. The input grid is identical\\
@@ -1572,13 +1591,13 @@ xxxxxxxxxxxx\= \kill
                        than the number of grid points in this direction!).\\
                        Default: {\tt [myinp]} = {\tt [myc]}.\-\\
 {\tt [stagrx]}      \> staggered $x'-$direction with respect to computational grid; default: 0.\+\\
-                       Note: e.g. {\tt [stagrx]}=0.5 means that the grid points are shifted a half step in\\
-                       $x'-$direction; in many flow models $x-$velocities are defined in points shifted\\
-                       a half step in $x'-$direction.\-\\
+                       Note: e.g. {\tt [stagrx]}=0.5 means that the input grid points are shifted a half\\
+                       step in $x'-$direction; in many flow models $x-$velocities are defined in points\\
+                       shifted a half step in $x'-$direction.\-\\
 {\tt [stagry]}      \> staggered $y'-$direction with respect to computational grid; default: 0.\+\\
-                       Note: e.g. {\tt [stagry]}=0.5 means that the grid points are shifted a half step in\\
-                       $y'-$direction; in many flow models $y-$velocities are defined in points shifted\\
-                       a half step in $y'-$direction.\-\\
+                       Note: e.g. {\tt [stagry]}=0.5 means that the input grid points are shifted a half\\
+                       step in $y'-$direction; in many flow models $y-$velocities are defined in points\\
+                       shifted a half step in $y'-$direction.\-\\
 {\tt EXCEPTION}     \> certain points inside the given grid that are to be ignored during the\+\\
                        computation can be identified by means of an exception value as given in\\
                        the corresponding input file as controlled by the command {\tt READINP}.\\
@@ -1634,6 +1653,8 @@ xxxxxxxxxxxx\= \kill
 READinp  <   WInd         >  [fac]  <                        >   [idla]    &
           |              |           |  SERIes   'fname2'   |
           |  FRiction    |
+          |              |
+          |  NPLAnts     |
 
                                            | -> FREe                       |
                                            |                               |
@@ -1673,16 +1694,19 @@ xxxxxxxxxxxx\= \kill
                        of the curvi-linear grid! If the current velocity is relatively large, i.e.\\
                        the Froude number $U/ \sqrt{g d}$ is larger than 0.8, it will be reduced such that\\
                        the Froude number becomes equal to 0.8.\-\\
-{\tt FRICTION}      \> with this option the user indicates that friction coefficient is to be read from\+\\
-                       file for Collins: {\tt [cfw]} and for Madsen: {\tt [kn]} (no space- or time-variable\\
-                       coefficient for the Jonswap expression, see command {\tt FRICTION}). If the\\
-                       coefficients are constant in space and time: see command {\tt FRICTION}.\-\\
 {\tt WIND}          \> recti-linear (curvi-linear) input grid: with this option the user indicates that\+\\
                        the $x-$ and $y-$component ($\xi-$ and $\eta-$component) are to be read from one and\\
                        the same file (with one {\tt READINP} command). With this option SWAN reads first\\
                        all $x-$components ($\xi-$components), and then all $y-$component ($\eta-$components)\\
                        (see below). The components $\xi$ and $\eta$  are taken along the directions of the grid\\
                        lines of the curvi-linear grid! If the wind is constant, see command {\tt WIND}.\-\\
+{\tt FRICTION}      \> with this option the user indicates that friction coefficient is to be read from\+\\
+                       file for Collins: {\tt [cfw]} and for Madsen: {\tt [kn]} (no space- or time-variable\\
+                       coefficient for the Jonswap expression, see command {\tt FRICTION}). If the\\
+                       coefficients are constant in space and time: see command {\tt FRICTION}.\-\\
+{\tt NPLANTS}       \> with this option the user indicates that horizontally varying vegetation\+\\
+                       density (per m$^2$) is to be read from file. If the density is constant then\\
+                       see command {\tt VEGETATION} for specifcation.\-\\
 {\tt [fac]}         \> SWAN multiplies all values that are read from file with {\tt [fac]}. For instance\+\\
                        if the bottom levels are given in unit decimeter, one should make {\tt [fac]}=0.1 to\\
                        obtain levels in m. To change sign of bottom level use a negative value of {\tt [fac]}.\\
@@ -2440,7 +2464,6 @@ xxxxxxxxxxxx\= \kill
                   \pushtabs
                   xxxxxx\=xxxxxxx \kill
                   = 4  \> Multiple DIA\\
-                  = 6  \> FD-RIAM\\
                   = 51 \> XNL (deep water transfer)\\
                   = 52 \> XNL (deep water transfer with WAM depth scaling)\\
                   = 53 \> XNL (finite depth transfer)\\
@@ -2453,7 +2476,7 @@ xxxxxxxxxxxx\= \kill
 {\tt [Csh1]}   \> coefficient for shallow water scaling in case of DIA.\+\\
                   Default: {\tt [Csh1]}=5.5.\-\\
 {\tt [Csh2]}   \> coefficient for shallow water scaling in case of DIA.\+\\
-                  Default: {\tt [Csh2]}=6/7.\-\\
+                  Default: {\tt [Csh2]}=0.833333.\-\\
 {\tt [Csh3]}   \> coefficient for shallow water scaling in case of DIA.\+\\
                   Default: {\tt [Csh3]}=$-$1.25.\-\\
 \end{tabbing}
@@ -2464,6 +2487,14 @@ xxxxxxxxxxxx\= \kill
 BREaking  CONstant [alpha] [gamma]
 \end{verbatim}
 \linecmd
+%\idxcmd{BREAKING}
+%\linecmd
+%\begin{verbatim}
+%           | -> CONstant [alpha] [gamma]               |
+%BREaking  <                                             > ( FREQDep [power] )
+%           |    WESTHuys [alpha] [pown] [bref] [shfac] |
+%\end{verbatim}
+%\linecmd
 
 \noindent
 With this command the user can influence depth-induced wave breaking in shallow water in the SWAN model.
@@ -2480,6 +2511,18 @@ xxxxxxxxxxxx\= \kill
                   Default: {\tt [alpha]} = 1.0.\-\\
 {\tt [gamma]}  \> the ratio of maximum individual wave height over depth.\+\\
                   Default: {\tt [gamma]} = 0.73.\-\\
+%{\tt WESTHUY}  \> indicates that the biphase scaling of Van der Westhuysen is to be used.\\
+%{\tt [alpha]}  \> proportionality coefficient.\+\\
+%                  Default: {\tt [alpha]} = 0.98.\-\\
+%{\tt [pown]}   \> exponent in the fraction of breaking waves.\+\\
+%                  Default: {\tt [pown]} = 2.5.\-\\
+%{\tt [bref]}   \> the biphase at which all waves are considered to be broken.\+\\
+%                  Default: {\tt [bref]} = -1.3963.\-\\
+%{\tt [shfac]}  \> the shape factor.\+\\
+%                  Default: {\tt [shfac]} = 500.\-\\
+%{\tt FREQDEP}  \> indicates that frequency dependent breaking is to be used.\\
+%{\tt [power]}  \> power of the frequency dependence. Valid values are 0, 1 and 2.\+\\
+%                  Default: {\tt [power]} = 2.\-\\
 \end{tabbing}
 
 \idxcmd{FRICTION}
@@ -2564,6 +2607,32 @@ xxxxxxxxxxxx\= \kill
                   Default: {\tt [urslim]} = 0.01.\-\\
 \end{tabbing}
 
+\idxcmd{VEGETATION}
+\linecmd
+\begin{verbatim}
+VEGEtation  < [height] [diamtr] [nstems] [drag] >
+\end{verbatim}
+\linecmd
+
+\noindent
+With this command the user can activate wave damping due to vegetation based on the Dalrymple's formula (1984). If this command is not
+used, SWAN will not account for vegetation effects. The vegetation (rigid plants) can be divided over a number of vertical segments and so, the
+possibility to vary the vegetation vertically is included. Each vertical layer represents some characteristics of the plants. These
+variables as indicated below can be repeated as many vertical layers to be chosen.
+\begin{tabbing}
+xxxxxxxxxxxx\= \kill
+{\tt [height]} \> the plant height per layer (in m).\\
+{\tt [diamtr]} \> the diameter of each plant stand per layer (in m).\\
+{\tt [nstems]} \> the number of plant stands per square meter for each layer.\+\\
+                  Note that {\tt [nstems]} is allowed to vary over the computational region to\\
+                  account for the zonation of vegetation. In that case use the commands\\
+                  {\tt INPGRID NPLANTS} and {\tt READINP NPLANTS} to define and read the vegetation\\
+                  density. The (vertically varying) value of {\tt [nstems]} in this command will\\
+                  be multiplied with this horizontally varying plant density.\\
+                  Default: {\tt [nstems]} = 1.\-\\
+{\tt [drag]}   \> the drag coefficient per layer.\\
+\end{tabbing}
+
 \idxcmd{LIMITER}
 \linecmd
 \begin{verbatim}
@@ -2631,13 +2700,17 @@ length.
       results.
       \begin{itemize}
          \item Avoid sharp angles in the obstacle definition.
-         \item If necessary, put corner point of the sharp edge exactly on line between two computational grid points,
+         \item If necessary, put corner point of the sharp edge exactly on a line between two computational grid points,
                but not exactly on the grid point.
       \end{itemize}
 \item At the boundaries of the computational area, the reflected spectrum is not taken into account.
       This can only be resolved by a different treatment of the boundaries in the program. Until this
       time, it is recommended to place obstacles at the inner area of the computational grid, not at or
       through the boundaries.
+\item Obstacle lines are only effective when the obstacle line is bordered by wet points on both sides.
+      In practice, this may give problems when a reflection line is also used to specify a boundary between
+      wet and land points. This can be avoided by shifting the position of the reflection line or by
+      creating wet points on the land side of the obstacle line.
 \end{enumerate}
 
 \noindent
@@ -2670,7 +2743,7 @@ xxxxxxxxxxxx\= \kill
                     formula.\\
                     Default: {\tt [beta]}=0.15.\-\\
 {\tt DANGREMOND} \> with this option the user indicates to use the d'Angremond/Van der Meer formula\+\\
-                    (1996) for computing transmission coefficient.\-\\
+                    (1996) for computing the transmission coefficient.\-\\
 {\tt [hgt]}      \> the elevation of the top of the obstacle above reference level (same reference\+\\
                     level as for bottom etc.); use a negative value if the top is below that reference\\
                     level. If this command is used, this value is required.\-\\
@@ -2684,8 +2757,8 @@ xxxxxxxxxxxx\= \kill
                     of reflected significant wave height over incoming significant wave height.\\
                     Restriction: $0 \leq$ {\tt [reflc]} $\leq 1$.\\
                     Default: {\tt [reflc]}=1, if the keyword REFL is present, otherwise {\tt [reflc]}=0.\\
-                    NOTE: the program checks if the criterion $0 \leq$ {\tt [reflc]}$^2 + ${\tt [trcoef]}$^2 \leq 1$\\
-                    is fulfilled.\-\\
+                    NOTE: the program checks if the criterion {\tt [reflc]}$^2 + ${\tt [trcoef]}$^2 \leq 1$ is\\
+                    fulfilled.\-\\
 {\tt RSPEC}      \> indicates specular reflection which is the default. The angle of reflection\+\\
                     equals the angle of incidence.\-\\
 {\tt RDIFF}      \> indicates diffuse reflection, i.e. specular reflection where incident waves\+\\
@@ -2717,7 +2790,7 @@ If this optional command is given, the wave-induced set-up is computed and accou
 computations (during the computation it is added to the depth that is obtained from the {\tt READ BOTTOM}
 and {\tt READ WLEVEL} commands).
 This approximation in SWAN can \underline{only} be applied to open coast (unlimited supply of water from outside
-the domain, e.g. nearshore coasts and estuaries) in contrast to closed basin, e.g. lakes, where this option
+the domain, e.g. nearshore coasts) in contrast to closed basin, e.g. lakes and estuaries, where this option
 should not be used.
 Note that set-up is not computed correctly with spherical coordinates.
 Note that set-up is not supported in case of parallel runs using either MPI or OpenMP!
@@ -3168,12 +3241,14 @@ CANNOT BE USED IN \underline{1D-MODE}.
 With this optional command the user provides SWAN with information to determine output locations along
 the depth contour line(s) defined \underline{subsequently} in command {\tt ISOLINE} (see below).
 \\[2ex]
-The locations are determined by SWAN as the intersections of the depth contour line(s) and the set of
+These locations are determined by SWAN as the intersections of the depth contour line(s) and the set of
 straight rays defined in this command {\tt RAY}. These rays are characterized by a set of master rays defined
 by their start and end positions ({\tt [xp],[yp]}) and ({\tt [xq],[yq]}). Between each pair of sequential master rays thus
 defined SWAN generates {\tt [int]}$-$1 intermediate rays by linear interpolation of the start and end positions.
 \\[2ex]
 Note that the rays thus defined have nothing in common with wave rays (e.g. as obtained from conventional refraction computations).
+\\[2ex]
+Also note that when using rays, the input grid for bottom and water level should not be curvi-linear.
 
 \begin{tabbing}
  xxxxxxxxxxxx\= \kill
@@ -3210,8 +3285,8 @@ contour line (in combination with command {\tt RAY}).
 {\tt {'sname'}} \> name of the set of output locations defined by this command\\
 {\tt 'rname'}   \> name of the set of rays (as defined in command {\tt RAY})\\
 {\tt [dep]}     \> the depth (in m) of the depth contour line along which output locations are\+\\
-                   generated by SWAN. If the keyword {\tt DEPTH} appears in front of the value the\\
-                   true depth is used, if the keyword {\tt BOTTOM} appears the water level is ignored,\\
+                   generated by SWAN. If the keyword {\tt DEPTH} is employed, the stationary\\
+                   water depth is used, if the keyword {\tt BOTTOM} appears, the water level is ignored,\\
                    i.e. the depth with respect to datum level is used.\-\\
 \end{tabbing}
 
@@ -3533,6 +3608,8 @@ BLOck  'sname'  <               > 'fname' (LAYout [idla])
            |           |
            | DISWcap   |
            |           |
+           | DISVeg    !
+           |           |
            | RADStr    |
            |           |
            | QB        |
@@ -3552,6 +3629,8 @@ BLOck  'sname'  <               > 'fname' (LAYout [idla])
            | STEEpness |
            |           |
            | BFI       |
+           |           |
+           | NPLants   |
            |           |
            | DHSign    |
            |           |
@@ -3693,6 +3772,8 @@ the energy balance equation:
                 (in W/m$^2$ or m$^2$/s, depending on command {\tt SET}).\-\\
 {\tt DISWCAP} \> energy dissipation due to whitecapping\+\\
                 (in W/m$^2$ or m$^2$/s, depending on command {\tt SET}).\-\\
+{\tt DISVEG} \> energy dissipation due to vegetation\+\\
+                (in W/m$^2$ or m$^2$/s, depending on command {\tt SET}).\-\\
 {\tt RADSTR} \> energy transfer between waves and currents due to radiation stress\+\\
                 (in W/m$^2$ or m$^2$/s, depending on command {\tt SET}).\-\\
 \end{tabbing}
@@ -3717,6 +3798,7 @@ the energy balance equation:
 {\tt WLEN}   \> average wavelength (in m).\\
 {\tt STEEPNESS} \> average wave steepness (dimensionless).\\
 {\tt BFI}    \> Benjamin-Feir index (dimensionless).\\
+{\tt NPLANTS} \> number of plants per square meter.\\
 {\tt DHSIGN} \> the difference in significant wave height as computed in the last two iterations.\+\\
                 This is \underline{not} the difference between the computed values and the final limit of\\
                 the iteration process, at most an indication of this difference.\-\\
@@ -4576,7 +4658,7 @@ Below the file {\tt swan.edt} is presented in which all the commands that can be
 !            'title3'
 !
 !   SET  [level]  [nor]  [depmin]  [maxmes]                                 &
-!        [maxerr]  [grav]  [rho]  [inrhog]                                  &
+!        [maxerr]  [grav]  [rho] [cdcap] [inrhog]                           &
 !        [hsrerr]  CARTesian|NAUTical  [pwtail]                             &
 !        [froudmax]  [printf]  [prtest]
 !
@@ -4594,7 +4676,7 @@ Below the file {\tt swan.edt} is presented in which all the commands that can be
 !          \ SECtor [dir1] [dir2] /  [mdc]  [flow]  [fhig]  [msc]
 !
 !   INPgrid                                                                 &
-!      BOTtom | WLEVel | CURrent | VX | VY | FRiction | WInd | WX | WY      &
+!      BOTtom | WLEV | CUR | VX | VY | FRic | WInd | WX | WY | NPLAnts      &
 !
 !      | REG [xpinp] [ypinp] [alpinp]  [mxinp] [myinp]  [dxinp] [dyinp] |
 !      |                                                                |
@@ -4610,7 +4692,7 @@ Below the file {\tt swan.edt} is presented in which all the commands that can be
 !   READgrid UNSTRUCtured <  TRIAngle \
 !                          | EASYmesh / 'fname'
 !
-!   READinp    BOTtom|WLevel|CURrent|FRiction|WInd|COORdinates              &
+!   READinp    BOTtom|WLevel|CURrent|FRiction|WInd|COORdinates|NPLAnts      &
 !        [fac]  / 'fname1'        \
 !               \ SERIES 'fname2' /  [idla] [nhedf] ([nhedt]) (nhedvec])    &
 !        FREE | FORMAT 'form' | [idfm] | UNFORMATTED
@@ -4674,7 +4756,7 @@ Below the file {\tt swan.edt} is presented in which all the commands that can be
 !         |
 !         |   AB       [cds2] [br] [p0] [powst] [powk]
 !
-!   QUADrupl [iquad] [limiter] [lambda] [cnl4] [csh1] [csh2] [csh3]
+!   QUADrupl [iquad] [lambda] [cnl4] [csh1] [csh2] [csh3]
 !
 !                             | CNL4 < [cnl4] >               |
 !   MDIA LAMbda < [lambda] > <                                 >
@@ -4700,6 +4782,8 @@ Below the file {\tt swan.edt} is presented in which all the commands that can be
 !              |    MADsen  [kn]
 !
 !   TRIad   [trfac] [cutfr] [urcrit] [urslim]
+!
+!   VEGEtation  < [height] [diamtr] [nstems] [drag] >
 !
 !   LIMiter [ursell] [qb]
 !
@@ -4776,7 +4860,7 @@ Below the file {\tt swan.edt} is presented in which all the commands that can be
 !          <  HSIGN|HSWELL|DIR|PDIR|TDIR|TM01|RTM01|RTP|TM02|FSPR|DSPR|VEL| &
 !             FRCOEF|WIND|DISSIP|QB|TRANSP|FORCE|UBOT|URMS|WLEN|STEEPNESS|  &
 !             DHSIGN|DRTM01|LEAK|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|DEPTH|  &
-!             TMBOT|QP|BFI|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP|        &
+!             TMBOT|QP|BFI|NPLANT|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP| &
 !             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS >       &
 !             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC|MIN|HR|DAY)
 !
@@ -4834,7 +4918,7 @@ These files contain the following information:
 
 \begin{verbatim}
 SWAN   1                                Swan standard spectral file, version
-$ Data produced by SWAN version 40.72ABCDE
+$ Data produced by SWAN version 40.81
 $ Project:'projname'     ;   run number:'runnum'
 TIME                                    time-dependent data
      1                                  time coding option
@@ -4940,7 +5024,7 @@ LOCATION   2
 
 \begin{verbatim}
 SWAN   1                                Swan standard spectral file, version
-$ Data produced by SWAN version 40.72ABCDE
+$ Data produced by SWAN version 40.81
 $ Project:'projname'     ;   run number:'runnum'
 LOCATIONS                               locations in x-y-space
      1                                  number of locations
@@ -5120,7 +5204,7 @@ For nonstationary computations repeat from VVV.
 
 \bibitem{Implman}
 {SWAN -- Implementation manual}. Delft University of Technology, Environmental Fluid Mechanics Section, available from
-\hl{http://www.swan.tudelft.nl} (Version 40.72ABCDE, December 2009).
+\hl{http://www.swan.tudelft.nl} (Version 40.81, June 2010).
 
 \bibitem{Progrul}
 {SWAN -- Programming rules}. Delft University of Technology, Environmental Fluid Mechanics Section, available from
@@ -5128,7 +5212,7 @@ For nonstationary computations repeat from VVV.
 
 \bibitem{Techdoc}
 {SWAN -- Scientific and Technical documentation}. Delft University of Technology, Environmental Fluid Mechanics Section, available from
-\hl{http://www.swan.tudelft.nl} (Version 40.72ABCDE, December 2009).
+\hl{http://www.swan.tudelft.nl} (Version 40.81, June 2010).
 
 \end{thebibliography}
 
@@ -5138,127 +5222,131 @@ For nonstationary computations repeat from VVV.
 
   \indexspace
 
-  \item bathymetry, \hyperpage{5}, \hyperpage{10, 11}, \hyperpage{64}, 
-		\hyperpage{85}
-  \item BLOCK, \hyperpage{74}
-  \item bottom, \hyperpage{3}, \hyperpage{8--13}, \hyperpage{16}, 
-		\hyperpage{18, 19}, \hyperpage{21, 22}, \hyperpage{24}, 
-		\hyperpage{34, 35}, \hyperpage{38--40}, \hyperpage{53}, 
-		\hyperpage{55, 56}, \hyperpage{58}, \hyperpage{66, 67}, 
-		\hyperpage{69}, \hyperpage{79, 80}, \hyperpage{86}, 
-		\hyperpage{92}, \hyperpage{94}
-  \item BOUND SHAPE, \hyperpage{41}
-  \item boundary, \hyperpage{1}, \hyperpage{3}, \hyperpage{6--14}, 
-		\hyperpage{22}, \hyperpage{26}, \hyperpage{28}, 
-		\hyperpage{30}, \hyperpage{32}, \hyperpage{42--51}, 
-		\hyperpage{53}, \hyperpage{61}, \hyperpage{66}, 
-		\hyperpage{70--72}, \hyperpage{83, 84}, \hyperpage{87}
-  \item BOUNDNEST1, \hyperpage{46}
-  \item BOUNDNEST2, \hyperpage{47}
+  \item bathymetry, \hyperpage{5}, \hyperpage{10, 11}, \hyperpage{65},
+		\hyperpage{87}
+  \item BLOCK, \hyperpage{75}
+  \item bottom, \hyperpage{3}, \hyperpage{8--13}, \hyperpage{16},
+		\hyperpage{18, 19}, \hyperpage{21, 22}, \hyperpage{24},
+		\hyperpage{34, 35}, \hyperpage{38--40}, \hyperpage{53},
+		\hyperpage{55, 56}, \hyperpage{59, 60},
+		\hyperpage{67, 68}, \hyperpage{70}, \hyperpage{80, 81},
+		\hyperpage{87}, \hyperpage{94}, \hyperpage{96}
+  \item BOUND SHAPE, \hyperpage{42}
+  \item boundary, \hyperpage{1}, \hyperpage{3}, \hyperpage{6--14},
+		\hyperpage{22}, \hyperpage{26}, \hyperpage{28},
+		\hyperpage{30}, \hyperpage{32}, \hyperpage{42--51},
+		\hyperpage{54}, \hyperpage{59}, \hyperpage{62},
+		\hyperpage{67}, \hyperpage{71}, \hyperpage{73},
+		\hyperpage{84, 85}, \hyperpage{88}
+  \item BOUNDNEST1, \hyperpage{47}
+  \item BOUNDNEST2, \hyperpage{48}
   \item BOUNDNEST3, \hyperpage{49}
-  \item BOUNDSPEC, \hyperpage{42}
-  \item BREAKING, \hyperpage{54}
-  \item breaking, \hyperpage{11}, \hyperpage{16--18}, \hyperpage{22}, 
-		\hyperpage{53, 54}, \hyperpage{56, 57}, \hyperpage{61}, 
-		\hyperpage{80}, \hyperpage{86}, \hyperpage{92}
+  \item BOUNDSPEC, \hyperpage{43}
+  \item BREAKING, \hyperpage{55}
+  \item breaking, \hyperpage{11}, \hyperpage{16--18}, \hyperpage{22},
+		\hyperpage{53}, \hyperpage{55}, \hyperpage{57},
+		\hyperpage{62}, \hyperpage{81}, \hyperpage{87},
+		\hyperpage{94}
 
   \indexspace
 
-  \item Cartesian, \hyperpage{3}, \hyperpage{7, 8}, \hyperpage{21}, 
-		\hyperpage{26, 27}, \hyperpage{29}, \hyperpage{36}, 
-		\hyperpage{41}, \hyperpage{44}, \hyperpage{46}, 
-		\hyperpage{48--51}, \hyperpage{59}, \hyperpage{67--71}, 
-		\hyperpage{73, 74}, \hyperpage{78}, \hyperpage{86}, 
-		\hyperpage{90}, \hyperpage{94}, \hyperpage{106}, 
-		\hyperpage{108, 109}
+  \item Cartesian, \hyperpage{3}, \hyperpage{7, 8}, \hyperpage{21},
+		\hyperpage{26, 27}, \hyperpage{29}, \hyperpage{36},
+		\hyperpage{42}, \hyperpage{44}, \hyperpage{46},
+		\hyperpage{48--51}, \hyperpage{60}, \hyperpage{68--72},
+		\hyperpage{74, 75}, \hyperpage{79}, \hyperpage{87},
+		\hyperpage{92}, \hyperpage{96}, \hyperpage{108},
+		\hyperpage{110, 111}
   \item CGRID, \hyperpage{28}
-  \item co-ordinate, \hyperpage{32}
+  \item co-ordinate, \hyperpage{31, 32}
   \item coastal, \hyperpage{3--5}, \hyperpage{15}
-  \item COMPUTE, \hyperpage{86}
-  \item convergence, \hyperpage{6, 7}, \hyperpage{63}
+  \item COMPUTE, \hyperpage{88}
+  \item convergence, \hyperpage{6, 7}, \hyperpage{64}
   \item COORDINATES, \hyperpage{27}
   \item Courant, \hyperpage{14}
-  \item current, \hyperpage{3}, \hyperpage{5, 6}, \hyperpage{9--12}, 
-		\hyperpage{14}, \hyperpage{16}, \hyperpage{19--21}, 
-		\hyperpage{26, 27}, \hyperpage{32}, \hyperpage{34, 35}, 
-		\hyperpage{38}, \hyperpage{45}, \hyperpage{52}, 
-		\hyperpage{64, 65}, \hyperpage{67}, \hyperpage{79, 80}, 
-		\hyperpage{83}, \hyperpage{90}
-  \item CURVE, \hyperpage{68}
-  \item curvi-linear, \hyperpage{3}, \hyperpage{6}, \hyperpage{8, 9}, 
-		\hyperpage{13, 14}, \hyperpage{16}, \hyperpage{21, 22}, 
-		\hyperpage{29}, \hyperpage{32}, \hyperpage{34, 35}, 
-		\hyperpage{38, 39}, \hyperpage{43}, \hyperpage{47, 48}, 
-		\hyperpage{50}, \hyperpage{62}, \hyperpage{65}, 
-		\hyperpage{67}
+  \item current, \hyperpage{3}, \hyperpage{5, 6}, \hyperpage{9--12},
+		\hyperpage{14}, \hyperpage{16}, \hyperpage{19--21},
+		\hyperpage{27}, \hyperpage{32}, \hyperpage{34, 35},
+		\hyperpage{39}, \hyperpage{45}, \hyperpage{52},
+		\hyperpage{65, 66}, \hyperpage{68}, \hyperpage{80, 81},
+		\hyperpage{85}, \hyperpage{92}
+  \item CURVE, \hyperpage{69}
+  \item curvi-linear, \hyperpage{3}, \hyperpage{6}, \hyperpage{8, 9},
+		\hyperpage{13, 14}, \hyperpage{16}, \hyperpage{21, 22},
+		\hyperpage{29}, \hyperpage{31, 32}, \hyperpage{34},
+		\hyperpage{36}, \hyperpage{38, 39}, \hyperpage{44},
+		\hyperpage{47, 48}, \hyperpage{50}, \hyperpage{63},
+		\hyperpage{67, 68}, \hyperpage{70}
 
   \indexspace
 
-  \item dam, \hyperpage{4}, \hyperpage{7}, \hyperpage{98}
-  \item DIFFRACTION, \hyperpage{60}
-  \item diffraction, \hyperpage{5}, \hyperpage{22}, \hyperpage{60, 61}, 
-		\hyperpage{64}
-  \item diffusion, \hyperpage{62}, \hyperpage{64, 65}
-  \item dissipation, \hyperpage{22}, \hyperpage{52, 53}, \hyperpage{55}, 
-		\hyperpage{61}, \hyperpage{79, 80}, \hyperpage{92}
+  \item dam, \hyperpage{4}, \hyperpage{7}, \hyperpage{57},
+		\hyperpage{100}
+  \item DIFFRACTION, \hyperpage{61}
+  \item diffraction, \hyperpage{5}, \hyperpage{22}, \hyperpage{61, 62},
+		\hyperpage{65}
+  \item diffusion, \hyperpage{63}, \hyperpage{65, 66}
+  \item dissipation, \hyperpage{16, 17}, \hyperpage{22},
+		\hyperpage{52, 53}, \hyperpage{55, 56}, \hyperpage{62},
+		\hyperpage{81}, \hyperpage{94}
 
   \indexspace
 
-  \item filter, \hyperpage{13, 14}, \hyperpage{60}
-  \item flow, \hyperpage{6}, \hyperpage{30, 31}, \hyperpage{34}, 
-		\hyperpage{36, 37}, \hyperpage{64}
-  \item force, \hyperpage{80}, \hyperpage{93}
-  \item FRAME, \hyperpage{66}
-  \item frequency, \hyperpage{4}, \hyperpage{6}, \hyperpage{8}, 
-		\hyperpage{14, 15}, \hyperpage{26}, \hyperpage{30, 31}, 
-		\hyperpage{42}, \hyperpage{45}, \hyperpage{51, 52}, 
-		\hyperpage{54--56}, \hyperpage{61}, \hyperpage{64--66}, 
-		\hyperpage{72--74}, \hyperpage{78, 79}, \hyperpage{83}, 
-		\hyperpage{86}, \hyperpage{89}, \hyperpage{91}, 
-		\hyperpage{108, 109}
+  \item filter, \hyperpage{13, 14}, \hyperpage{61}
+  \item flow, \hyperpage{6}, \hyperpage{30, 31}, \hyperpage{34},
+		\hyperpage{37}, \hyperpage{65}
+  \item force, \hyperpage{81}, \hyperpage{95}
+  \item FRAME, \hyperpage{67}
+  \item frequency, \hyperpage{4}, \hyperpage{6}, \hyperpage{8},
+		\hyperpage{14, 15}, \hyperpage{26}, \hyperpage{30, 31},
+		\hyperpage{42}, \hyperpage{45}, \hyperpage{51},
+		\hyperpage{53--57}, \hyperpage{62}, \hyperpage{65--67},
+		\hyperpage{73--75}, \hyperpage{80}, \hyperpage{84, 85},
+		\hyperpage{87}, \hyperpage{91}, \hyperpage{93},
+		\hyperpage{110, 111}
   \item FRICTION, \hyperpage{55}
-  \item friction, \hyperpage{9--12}, \hyperpage{16--19}, 
-		\hyperpage{21, 22}, \hyperpage{24}, \hyperpage{34, 35}, 
-		\hyperpage{38}, \hyperpage{53}, \hyperpage{55, 56}, 
-		\hyperpage{79, 80}, \hyperpage{86}, \hyperpage{92}
-  \item Froude, \hyperpage{26, 27}, \hyperpage{38}
+  \item friction, \hyperpage{9--12}, \hyperpage{16--19},
+		\hyperpage{21, 22}, \hyperpage{24}, \hyperpage{34, 35},
+		\hyperpage{39}, \hyperpage{53}, \hyperpage{55, 56},
+		\hyperpage{80, 81}, \hyperpage{87}, \hyperpage{94}
+  \item Froude, \hyperpage{27}, \hyperpage{39}
 
   \indexspace
 
-  \item garden-sprinkler, \hyperpage{62}
+  \item garden-sprinkler, \hyperpage{63}
   \item GEN1, \hyperpage{52}
-  \item GEN2, \hyperpage{52}
+  \item GEN2, \hyperpage{53}
   \item GEN3, \hyperpage{53}
-  \item GROUP, \hyperpage{67}
+  \item GROUP, \hyperpage{68}
 
   \indexspace
 
-  \item harbour, \hyperpage{5}, \hyperpage{60}
-  \item HOTFILE, \hyperpage{88}
+  \item harbour, \hyperpage{5}, \hyperpage{61}
+  \item HOTFILE, \hyperpage{89}
 
   \indexspace
 
-  \item INITIAL, \hyperpage{50}
-  \item initial, \hyperpage{8}, \hyperpage{10, 11}, \hyperpage{14}, 
-		\hyperpage{22}, \hyperpage{41}, \hyperpage{51}, 
-		\hyperpage{87, 88}
+  \item INITIAL, \hyperpage{51}
+  \item initial, \hyperpage{8}, \hyperpage{10, 11}, \hyperpage{14},
+		\hyperpage{22}, \hyperpage{42}, \hyperpage{51, 52},
+		\hyperpage{88, 89}
   \item INPGRID, \hyperpage{33}
   \item island, \hyperpage{4}, \hyperpage{6}, \hyperpage{11}
-  \item ISOLINE, \hyperpage{69}
+  \item ISOLINE, \hyperpage{70}
 
   \indexspace
 
-  \item Jonswap, \hyperpage{38}
+  \item Jonswap, \hyperpage{39}
 
   \indexspace
 
-  \item latitude, \hyperpage{8}, \hyperpage{27}, \hyperpage{86}, 
-		\hyperpage{108}
-  \item LIMITER, \hyperpage{56}
-  \item limiter, \hyperpage{5}, \hyperpage{7}, \hyperpage{56}, 
-		\hyperpage{64, 65}
-  \item longitude, \hyperpage{8}, \hyperpage{27}, \hyperpage{49, 50}, 
-		\hyperpage{86}, \hyperpage{108}
+  \item latitude, \hyperpage{8}, \hyperpage{28}, \hyperpage{87},
+		\hyperpage{110}
+  \item LIMITER, \hyperpage{57}
+  \item limiter, \hyperpage{5}, \hyperpage{7}, \hyperpage{57},
+		\hyperpage{65, 66}
+  \item longitude, \hyperpage{8}, \hyperpage{28}, \hyperpage{49, 50},
+		\hyperpage{87}, \hyperpage{110}
 
   \indexspace
 
@@ -5266,116 +5354,124 @@ For nonstationary computations repeat from VVV.
 
   \indexspace
 
-  \item nautical, \hyperpage{7, 8}, \hyperpage{108, 109}
-  \item NESTOUT, \hyperpage{84}
-  \item NGRID, \hyperpage{70}
-  \item NUMERIC, \hyperpage{62}
+  \item nautical, \hyperpage{7, 8}, \hyperpage{110, 111}
+  \item NESTOUT, \hyperpage{85}
+  \item NGRID, \hyperpage{71}
+  \item NUMERIC, \hyperpage{63}
 
   \indexspace
 
-  \item OBSTACLE, \hyperpage{57}
-  \item obstacle, \hyperpage{5}, \hyperpage{16}, \hyperpage{22}, 
-		\hyperpage{57--60}
+  \item OBSTACLE, \hyperpage{58}
+  \item obstacle, \hyperpage{5}, \hyperpage{16}, \hyperpage{22},
+		\hyperpage{58--61}
   \item ocean, \hyperpage{4--6}, \hyperpage{28}
-  \item OFF, \hyperpage{61}
-  \item OUTPUT, \hyperpage{74}
+  \item OFF, \hyperpage{62}
+  \item OUTPUT, \hyperpage{75}
 
   \indexspace
 
-  \item POINTS, \hyperpage{69}
+  \item plant, \hyperpage{57}, \hyperpage{81}
+  \item POINTS, \hyperpage{71}
   \item PROJECT, \hyperpage{24}
-  \item PROP, \hyperpage{61}
-  \item propagation, \hyperpage{6}, \hyperpage{12}, \hyperpage{22}, 
-		\hyperpage{57}, \hyperpage{61, 62}, \hyperpage{79}, 
-		\hyperpage{92}
+  \item PROP, \hyperpage{62}
+  \item propagation, \hyperpage{6}, \hyperpage{12}, \hyperpage{22},
+		\hyperpage{58}, \hyperpage{62, 63}, \hyperpage{80},
+		\hyperpage{94}
 
   \indexspace
 
-  \item QUADRUPL, \hyperpage{53}
-  \item quadruplets, \hyperpage{15, 16}, \hyperpage{22}, \hyperpage{54}, 
-		\hyperpage{56}, \hyperpage{79}, \hyperpage{92}
-  \item QUANTITY, \hyperpage{72}
+  \item QUADRUPL, \hyperpage{54}
+  \item quadruplets, \hyperpage{15, 16}, \hyperpage{22}, \hyperpage{54},
+		\hyperpage{57}, \hyperpage{81}, \hyperpage{94}
+  \item QUANTITY, \hyperpage{73}
 
   \indexspace
 
-  \item RAY, \hyperpage{68}
-  \item READGRID COORDINATES, \hyperpage{32}
+  \item RAY, \hyperpage{69}
+  \item READGRID COORDINATES, \hyperpage{31}
   \item READGRID UNSTRUCTURED, \hyperpage{32}
-  \item READINP, \hyperpage{37}
-  \item recti-linear, \hyperpage{3}, \hyperpage{16}, \hyperpage{29}, 
-		\hyperpage{38}, \hyperpage{67}
-  \item reflection, \hyperpage{57--59}
-  \item refraction, \hyperpage{6}, \hyperpage{11}, \hyperpage{61}, 
-		\hyperpage{64}, \hyperpage{69}
-  \item regular, \hyperpage{4}, \hyperpage{8, 9}, \hyperpage{16}, 
-		\hyperpage{22}, \hyperpage{28, 29}, \hyperpage{31, 32}, 
-		\hyperpage{34, 35}, \hyperpage{62}, \hyperpage{65, 66}
+  \item READINP, \hyperpage{38}
+  \item recti-linear, \hyperpage{3}, \hyperpage{16}, \hyperpage{29},
+		\hyperpage{38, 39}, \hyperpage{68}
+  \item reflection, \hyperpage{58--60}
+  \item refraction, \hyperpage{6}, \hyperpage{11}, \hyperpage{62},
+		\hyperpage{65}, \hyperpage{70}
+  \item regular, \hyperpage{4}, \hyperpage{8, 9}, \hyperpage{16},
+		\hyperpage{22}, \hyperpage{28, 29}, \hyperpage{31, 32},
+		\hyperpage{34, 35}, \hyperpage{63}, \hyperpage{66, 67}
 
   \indexspace
 
   \item SET, \hyperpage{25}
-  \item set-up, \hyperpage{4}, \hyperpage{6}, \hyperpage{16, 17}, 
-		\hyperpage{22}, \hyperpage{28}, \hyperpage{59, 60}, 
-		\hyperpage{65}
-  \item SETUP, \hyperpage{59}
+  \item set-up, \hyperpage{4}, \hyperpage{6}, \hyperpage{16, 17},
+		\hyperpage{22}, \hyperpage{28}, \hyperpage{60, 61},
+		\hyperpage{66}
+  \item SETUP, \hyperpage{60}
   \item shoaling, \hyperpage{18}
-  \item SORDUP, \hyperpage{62}
-  \item SPECOUT, \hyperpage{83}
-  \item specular, \hyperpage{59}
-  \item spherical, \hyperpage{3--5}, \hyperpage{8, 9}, \hyperpage{21}, 
-		\hyperpage{25}, \hyperpage{27--29}, \hyperpage{31}, 
-		\hyperpage{36}, \hyperpage{45}, \hyperpage{48--50}, 
-		\hyperpage{59}, \hyperpage{67--71}, \hyperpage{81}, 
-		\hyperpage{86}, \hyperpage{103}, \hyperpage{108}
-  \item stability, \hyperpage{14}, \hyperpage{62}
-  \item stationary, \hyperpage{4}, \hyperpage{6}, \hyperpage{8}, 
-		\hyperpage{14}, \hyperpage{16}, \hyperpage{18}, 
-		\hyperpage{20, 21}, \hyperpage{26, 27}, \hyperpage{34}, 
-		\hyperpage{37--39}, \hyperpage{45, 46}, \hyperpage{51}, 
-		\hyperpage{53}, \hyperpage{62--64}, \hyperpage{80}, 
-		\hyperpage{87}, \hyperpage{103}, \hyperpage{106}, 
-		\hyperpage{108, 109}
-  \item steepness, \hyperpage{53}, \hyperpage{80}, \hyperpage{93}
-  \item STOP, \hyperpage{88}
-  \item swell, \hyperpage{12}, \hyperpage{15}, \hyperpage{55}, 
-		\hyperpage{62}, \hyperpage{73, 74}, \hyperpage{78}, 
-		\hyperpage{89}
+  \item SORDUP, \hyperpage{63}
+  \item SPECOUT, \hyperpage{84}
+  \item specular, \hyperpage{60}
+  \item spherical, \hyperpage{3--5}, \hyperpage{8, 9}, \hyperpage{21},
+		\hyperpage{25}, \hyperpage{27--29}, \hyperpage{32},
+		\hyperpage{36}, \hyperpage{46}, \hyperpage{48--51},
+		\hyperpage{60}, \hyperpage{68--72}, \hyperpage{82},
+		\hyperpage{87}, \hyperpage{105}, \hyperpage{110}
+  \item stability, \hyperpage{14}, \hyperpage{63}
+  \item stationary, \hyperpage{4}, \hyperpage{6}, \hyperpage{8},
+		\hyperpage{14}, \hyperpage{16}, \hyperpage{18},
+		\hyperpage{20, 21}, \hyperpage{26, 27},
+		\hyperpage{34, 35}, \hyperpage{37--39}, \hyperpage{46},
+		\hyperpage{51, 52}, \hyperpage{54}, \hyperpage{63--65},
+		\hyperpage{70}, \hyperpage{82}, \hyperpage{88, 89},
+		\hyperpage{105}, \hyperpage{108}, \hyperpage{110, 111}
+  \item steepness, \hyperpage{54}, \hyperpage{81}, \hyperpage{95}
+  \item STOP, \hyperpage{89}
+  \item swell, \hyperpage{12}, \hyperpage{15}, \hyperpage{56},
+		\hyperpage{63}, \hyperpage{74, 75}, \hyperpage{79},
+		\hyperpage{91}
 
   \indexspace
 
-  \item TABLE, \hyperpage{81}
-  \item TEST, \hyperpage{85}
+  \item TABLE, \hyperpage{82}
+  \item TEST, \hyperpage{86}
   \item TRIAD, \hyperpage{56}
-  \item triads, \hyperpage{16}, \hyperpage{56}, \hyperpage{79}, 
-		\hyperpage{92}
+  \item triads, \hyperpage{16}, \hyperpage{56}, \hyperpage{81},
+		\hyperpage{94}
   \item triangular, \hyperpage{3}, \hyperpage{16}
 
   \indexspace
 
-  \item unstructured, \hyperpage{3, 4}, \hyperpage{8, 9}, 
-		\hyperpage{12}, \hyperpage{21}, \hyperpage{29}, 
-		\hyperpage{32}, \hyperpage{34, 35}, \hyperpage{44}, 
-		\hyperpage{58}, \hyperpage{60}, \hyperpage{62--64}, 
-		\hyperpage{66}, \hyperpage{71}, \hyperpage{78}
+  \item unstructured, \hyperpage{3, 4}, \hyperpage{8, 9},
+		\hyperpage{12}, \hyperpage{21}, \hyperpage{29},
+		\hyperpage{32}, \hyperpage{35, 36}, \hyperpage{44},
+		\hyperpage{59}, \hyperpage{61}, \hyperpage{63},
+		\hyperpage{65}, \hyperpage{67}, \hyperpage{72},
+		\hyperpage{79}
 
   \indexspace
 
-  \item WAM, \hyperpage{4--7}, \hyperpage{9, 10}, \hyperpage{15}, 
-		\hyperpage{18}, \hyperpage{22}, \hyperpage{37}, 
-		\hyperpage{46}, \hyperpage{48, 49}, \hyperpage{54}, 
-		\hyperpage{81--84}, \hyperpage{87}
-  \item WAVEWATCH, \hyperpage{4--7}, \hyperpage{9, 10}, \hyperpage{15}, 
-		\hyperpage{22}, \hyperpage{46}, \hyperpage{49, 50}
-  \item whitecapping, \hyperpage{7}, \hyperpage{16}, \hyperpage{53}, 
-		\hyperpage{61}, \hyperpage{80}, \hyperpage{86}, 
-		\hyperpage{92}
+  \item VEGETATION, \hyperpage{57}
+  \item vegetation, \hyperpage{16}, \hyperpage{22}, \hyperpage{34, 35},
+		\hyperpage{39}, \hyperpage{57}, \hyperpage{81}
+
+  \indexspace
+
+  \item WAM, \hyperpage{4--7}, \hyperpage{9, 10}, \hyperpage{15},
+		\hyperpage{18}, \hyperpage{22}, \hyperpage{37},
+		\hyperpage{46}, \hyperpage{48, 49}, \hyperpage{54},
+		\hyperpage{82}, \hyperpage{84--86}, \hyperpage{88}
+  \item WAVEWATCH, \hyperpage{4--7}, \hyperpage{9, 10}, \hyperpage{15},
+		\hyperpage{22}, \hyperpage{46}, \hyperpage{50}
+  \item whitecapping, \hyperpage{7}, \hyperpage{16}, \hyperpage{53, 54},
+		\hyperpage{62}, \hyperpage{81}, \hyperpage{87},
+		\hyperpage{94}
   \item WIND, \hyperpage{41}
-  \item wind, \hyperpage{3}, \hyperpage{5}, \hyperpage{7--12}, 
-		\hyperpage{14--19}, \hyperpage{21}, \hyperpage{26}, 
-		\hyperpage{34, 35}, \hyperpage{39}, \hyperpage{41}, 
-		\hyperpage{51--53}, \hyperpage{55}, \hyperpage{61, 62}, 
-		\hyperpage{64, 65}, \hyperpage{79}, \hyperpage{86, 87}, 
-		\hyperpage{92}, \hyperpage{94}
+  \item wind, \hyperpage{3}, \hyperpage{5}, \hyperpage{7--12},
+		\hyperpage{14--19}, \hyperpage{21}, \hyperpage{26},
+		\hyperpage{34, 35}, \hyperpage{39}, \hyperpage{41, 42},
+		\hyperpage{51--54}, \hyperpage{56}, \hyperpage{62, 63},
+		\hyperpage{65, 66}, \hyperpage{80}, \hyperpage{87, 88},
+		\hyperpage{94}, \hyperpage{96}
 
 \end{theindex}
 

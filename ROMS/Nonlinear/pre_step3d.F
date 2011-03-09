@@ -757,6 +757,26 @@
 #    endif
             FC(i,N(ng))=0.0_r8
           END DO
+#   elif defined TS_MPDATA
+#    if !defined WEC_VF
+!
+!  First_order, upstream differences vertical advective flux.
+!
+          DO i=Istr,Iend
+            DO k=1,N(ng)-1
+              cff1=MAX(W(i,j,k),0.0_r8)
+              cff2=MIN(W(i,j,k),0.0_r8)
+              FC(i,k)=cff1*t(i,j,k  ,nstp,itrc)+                        &
+     &                cff2*t(i,j,k+1,nstp,itrc)
+            END DO
+#     ifdef SED_MORPH
+            FC(i,0)=W(i,j,0)*t(i,j,1,nstp,itrc)
+#     else
+            FC(i,0)=0.0_r8
+#     endif
+            FC(i,N(ng))=0.0_r8
+          END DO
+#    endif
 #   else
 !
 !  Fourth-order, central differences vertical advective flux.
@@ -891,6 +911,24 @@
           END DO
           DO i=Istr,Iend
             FCs(i,0)=0.0_r8
+            FCs(i,N(ng))=0.0_r8
+          END DO
+#    elif defined TS_MPDATA
+!
+!  First_order, upstream differences vertical advective flux.
+!
+          DO i=Istr,Iend
+            DO k=1,N(ng)-1
+              cff1=MAX(W(i,j,k)+w_stokes(i,j,k),0.0_r8)
+              cff2=MIN(W(i,j,k)+w_stokes(i,j,k),0.0_r8)
+              FCs(i,k)=cff1*t(i,j,k  ,nstp,itrc)+                       &
+     &                 cff2*t(i,j,k+1,nstp,itrc)
+            END DO
+#     ifdef SED_MORPH
+            FCs(i,0)=W(i,j,0)*t(i,j,1,nstp,itrc)
+#     else
+            FCs(i,0)=0.0_r8
+#     endif
             FCs(i,N(ng))=0.0_r8
           END DO
 #    else

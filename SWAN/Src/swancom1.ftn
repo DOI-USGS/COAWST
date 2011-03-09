@@ -1,3 +1,4 @@
+#include "swancpp.h"
 !
 !     SWAN/COMPU    file 1 of 5
 !
@@ -63,6 +64,9 @@
       USE m_constants                                                     40.41
       USE m_xnldata                                                       40.41
       USE m_fileio                                                        40.41
+#ifdef SWAN_MODEL
+      USE M_COUPLING
+#endif
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -76,7 +80,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -360,6 +364,7 @@
 !                     JPWNDB   wind source term part B
 !                     JPWCAP   whitecapping source term
 !                     JPBTFR   bottom friction
+!                     JPVEGT   vegetation dissipation
 !                     JPWBRK   surf breaking
 !                     JP4S     quadruplet interactions
 !                     JP4D     quadruplet interactions
@@ -609,6 +614,8 @@
 !      |       |--------+ SOURCE             comp. of source terms
 !      |       |        |
 !      |       |        +-------+ SBOT       bottom friction
+!      |       |        |
+!      |       |        +-------+ SVEG       dissipation due to vegetation
 !      |       |        |
 !      |       |        +-------+ SWCAP      white capping
 !      |       |        |
@@ -1212,6 +1219,7 @@
           COMPDA(IP,JDSXB) = 0.                                           40.61
           COMPDA(IP,JDSXS) = 0.                                           40.61
           COMPDA(IP,JDSXW) = 0.                                           40.61
+          COMPDA(IP,JDSXV) = 0.                                           40.61
           COMPDA(IP,JGENR) = 0.                                           40.85
           COMPDA(IP,JGSXW) = 0.                                           40.85
           COMPDA(IP,JREDS) = 0.                                           40.85
@@ -1324,6 +1332,8 @@
  2002      FORMAT('  IWIND   ',I4,' IWCAP   ',I4,' IQUAD   ',I4)
            WRITE(PRINTF,2003) ITRIAD, IBOT , ISURF
  2003      FORMAT('  ITRIAD  ',I4,' IBOT    ',I4,' ISURF   ',I4)
+           WRITE(PRINTF,2005) IVEG                                        40.55
+ 2005      FORMAT('  IVEG    ',I4)                                        40.55
            WRITE(PRINTF,*)' -----------------------------------------',
      &                    '----------------------'
         ENDIF
@@ -1465,10 +1475,17 @@
 !
             IF (SCREEN.NE.PRINTF) THEN
               IF (NSTATC.EQ.1) THEN                                       40.00
+#ifdef SWAN_MODEL
+                IF (INODE.EQ.MASTER) WRITE(PRINTF,313) CHTIME, IT,
+     &                                    ITER, SWPDIR, GRIDNUM
+ 313            FORMAT ('+time ', A18, ', step ',I6, '; iteration '
+     &                  ,I4, '; sweep ',I1,' grid  ',I2)                  40.23 40.00
+#else
                 IF (INODE.EQ.MASTER) WRITE(SCREEN,313) CHTIME, IT,        40.30
      &                                                 ITER, SWPDIR       40.30
- 313            FORMAT ('+time ', A18, ', step ',I4, '; iteration '
+ 313            FORMAT ('+time ', A18, ', step ',I6, '; iteration '
      &                  ,I4, '; sweep ',I1)                               40.23 40.00
+#endif
               ELSE
                 WRITE(PRINTF,314) ITER, SWPDIR
                 IF (INODE.EQ.MASTER) THEN                                 40.30
@@ -1820,6 +1837,7 @@
      &                 SWTSDA(1,1,1,JPWCAP)  ,SWTSDA(1,1,1,JPBTFR)  ,
      &                 SWTSDA(1,1,1,JPWBRK)  ,SWTSDA(1,1,1,JP4S)    ,
      &                 SWTSDA(1,1,1,JP4D)    ,SWTSDA(1,1,1,JPTRI)   ,
+     &                 SWTSDA(1,1,1,JPVEGT)  ,                            40.55
      &                 AC2                   ,SPCSIG                ,     40.00
      &                 COMPDA(1,JDP2)        ,XYTST                 ,
      &                                        KGRPNT                )     40.00
@@ -1977,6 +1995,7 @@
      &                SWTSDA(1,1,1,JPWCAP)  ,SWTSDA(1,1,1,JPBTFR)  ,
      &                SWTSDA(1,1,1,JPWBRK)  ,SWTSDA(1,1,1,JP4S)    ,
      &                SWTSDA(1,1,1,JP4D)    ,SWTSDA(1,1,1,JPTRI)   ,
+     &                SWTSDA(1,1,1,JPVEGT)  ,                             40.55
      &                AC2                   ,SPCSIG                ,      40.00
      &                COMPDA(1,JDP2)        ,XYTST                 ,
      &                                       KGRPNT                )      40.00
@@ -2064,7 +2083,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2370,6 +2389,7 @@
 !                   4. Generation of wave energy by wind effects
 !                   5. Nonlinear wave-wave interactions (quadruplets)
 !                   6. Nonlinear wave-wave interactions (triads)
+!                   7. Dissipation due to vegetation
 !       -----------------------------------------------------------------
 !       Call ACTION  calculate the derivatives in x,y,s,d space and store
 !                    the results in the corresponding arrays
@@ -2938,6 +2958,7 @@
      &  IDWMAX              ,ISSTOP              ,SWTSDA(1,1,1,JPWNDA),
      &  SWTSDA(1,1,1,JPWNDB),SWTSDA(1,1,1,JPWCAP),SWTSDA(1,1,1,JPBTFR),
      &  SWTSDA(1,1,1,JPWBRK),SWTSDA(1,1,1,JP4S)  ,SWTSDA(1,1,1,JP4D)  ,
+     &  SWTSDA(1,1,1,JPVEGT),                                             40.55
      &  SWTSDA(1,1,1,JPTRI) ,                     HS                  ,   40.22
      &  ETOT                ,QBLOC               ,THETAW              ,
      &  HM                  ,FPM                 ,WIND10              ,
@@ -2956,6 +2977,7 @@
      &  SWMATR(1,1,JGEN0)   ,SWMATR(1,1,JGEN1)   ,                        40.85
      &  SWMATR(1,1,JRED0)   ,SWMATR(1,1,JRED1)   ,                        40.85
      &  XIS                 ,COMPDA(1,JFRC2)     ,IT                  ,   40.00
+     &  COMPDA(1,JNPLA2)    ,                                             40.55
      &  COMPDA(1,JURSEL)    ,LSWMAT(1,1,JABIN)   ,REFLSO                  40.41 40.03
      &                                                                )   30.21
 !TIMG        CALL SWTSTO(117)                                                  40.23
@@ -3074,6 +3096,13 @@
           ENDDO
         END IF
 !
+!       *** if negative action density occur rescale with a factor ***
+!       *** only the sector computed is rescaled !!                ***
+!
+!TIMG        CALL SWTSTA(121)                                                  40.23
+        IF (BRESCL) CALL RESCALE(AC2, ISSTOP, IDCMIN, IDCMAX, NRSCAL)     40.23 40.00
+!TIMG        CALL SWTSTO(121)                                                  40.23
+!
 !       calculate propagation, generation, dissipation, redistribution
 !       leak and radiation stress in present grid point
 !
@@ -3090,6 +3119,7 @@
      &                  COMPDA(1,JDSXB)    ,                              40.67 40.61
      &                  COMPDA(1,JDSXS)    ,                              40.67 40.61
      &                  COMPDA(1,JDSXW)    ,                              40.67 40.61
+     &                  COMPDA(1,JDSXV)    ,                              40.67 40.61
      &                  COMPDA(1,JGSXW)    ,COMPDA(1,JGENR)    ,          40.85
      &                  COMPDA(1,JRSXQ)    ,COMPDA(1,JRSXT)    ,          40.85
      &                  COMPDA(1,JREDS)    ,                              40.85
@@ -3099,13 +3129,6 @@
      &                  SPCSIG                                            30.72
      &                                                         )
 !TIMG        CALL SWTSTO(124)                                                  40.23
-!
-!       *** if negative action density occur rescale with a factor ***
-!       *** only the sector computed is rescaled !!                ***
-!
-!TIMG        CALL SWTSTA(121)                                                  40.23
-        IF (BRESCL) CALL RESCALE(AC2, ISSTOP, IDCMIN, IDCMAX, NRSCAL)     40.23 40.00
-!TIMG        CALL SWTSTO(121)                                                  40.23
 !
 !       limit the change of the spectrum
 !
@@ -3184,7 +3207,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3274,6 +3297,8 @@
  7114 FORMAT('                      : IWCAP  ',I12  ,' IWIND ',I12)
       WRITE(PRINTF,7015) ITRIAD,IQUAD
  7015 FORMAT('                      : ITRIAD ',I12  ,' IQUAD ',I12)
+      WRITE(PRINTF,7017) IVEG                                             40.55
+ 7017 FORMAT('                      : IVEG   ',I12)                       40.55
       IF (OPTG.NE.5) WRITE(PRINTF,7004) DX,DY                             40.80
  7004 FORMAT(' Spatial step         : DX     ',E12.4,' DY    ',E12.4)
       WRITE(PRINTF,7104) EXP(ALOG(SHIG/SLOW)/REAL(MSC-1))-1.,             40.41
@@ -3291,9 +3316,9 @@
  8013 FORMAT(' Accuracy parameters  : DREL   ',E12.4,' NPNTS ',E12.4)     40.41
       IF (PNUMS(21).EQ.0.) THEN                                           40.41
          WRITE(PRINTF,8213) PNUMS(15),PNUMS(16)                           40.41
-      ELSEIF (PNUMS(21).EQ.1.) THEN                                       40.41
+      ELSE IF (PNUMS(21).EQ.1.) THEN                                      40.41
          WRITE(PRINTF,8214) PNUMS(2),PNUMS(15)                            40.41
-      ENDIF                                                               40.41
+      END IF                                                              40.41
  8213 FORMAT('                      : DHOVAL ',E12.4,' DTOVAL',E12.4)     40.41
  8214 FORMAT('                      : DHABS  ',E12.4,' CURVAT',E12.4)     40.41
       WRITE(PRINTF,3613) PNUMS(20)
@@ -3388,6 +3413,13 @@
          WRITE (PRINTF, *) 'Bottom friction is off'
       ENDIF
 !
+      IF (IVEG.EQ.1) THEN                                                 40.55
+        WRITE(PRINTF,7008)                                                40.55
+ 7008   FORMAT(' Vegetation due to Dalrymple (1984)')                     40.55
+      ELSE                                                                40.55
+        WRITE (PRINTF, *) 'Vegetation is off'                             40.55
+      ENDIF                                                               40.55
+!
       IF (IWCAP.EQ.1) THEN
          WRITE(PRINTF,6005) PWCAP(1),PWCAP(2)
  6005    FORMAT(' W-cap Komen (`84)    : EMPCOF ',E12.4,
@@ -3458,11 +3490,11 @@
       ENDIF
 !
       IF (IDIFFR.EQ.1) THEN                                               40.41
-         WRITE(PRINTF,7110) PDIFFR(1), NINT(PDIFFR(2))
- 7110    FORMAT(' Diffraction          : SMPAR  ',E12.4,
-     &          ' SMNUM ',I12)
+        WRITE(PRINTF,7110) PDIFFR(1), NINT(PDIFFR(2))
+ 7110   FORMAT(' Diffraction          : SMPAR  ',E12.4,
+     &         ' SMNUM ',I12)
       ELSE
-         WRITE (PRINTF, *) 'Diffraction is off'
+        WRITE (PRINTF, *) 'Diffraction is off'
       ENDIF
 !
       WRITE(PRINTF,7126) PWIND(14), PWIND(15)
@@ -3536,7 +3568,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4000,7 +4032,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4220,7 +4252,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4614,7 +4646,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5037,7 +5069,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5257,7 +5289,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5503,7 +5535,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5814,6 +5846,7 @@
      &                     IDWMAX     ,ISSTOP     ,PLWNDA     ,
      &                     PLWNDB     ,PLWCAP     ,PLBTFR     ,
      &                     PLWBRK     ,PLNL4S     ,PLNL4D     ,
+     &                     PLVEGT     ,                                   40.55
      &                     PLTRI      ,            HS         ,           40.22
      &                     ETOT       ,QBLOC      ,THETAW     ,
      &                     HM         ,FPM        ,WIND10     ,
@@ -5831,6 +5864,7 @@
      &                     DISSC0     ,DISSC1     ,GENC0      ,           40.85
      &                     GENC1      ,REDC0      ,REDC1      ,           40.85
      &                     XIS        ,FRCOEF     ,IT         ,           30.00
+     &                     NPLA2      ,                                   40.55
      &                     URSELL     ,ANYBIN     ,REFLSO                 40.41 40.03
      &                                                        )           30.21
 !
@@ -5860,7 +5894,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5891,6 +5925,7 @@
 !     40.23: Marcel Zijlema
 !     40.41: Andre van der Westhuysen
 !     40.41: Marcel Zijlema
+!     40.55: Marcel Zijlema
 !     40.61: Marcel Zijlema
 !     40.85: Marcel Zijlema
 !
@@ -5909,13 +5944,13 @@
 !     40.22, Sep. 01: Changed array definitions to use the parameter      40.22
 !                     MICMAX instead of ICMAX.                            40.22
 !     40.17, Dec. 01: Implemented Multiple DIA                            40.17
-!     40.17, Dec. 01: Introduced FD-RIAM interface
 !     40.23, Aug. 02: Print of CPU times added
 !     40.23, Aug. 02: Parameter list of SWSNL2 and FILNL3 changed
 !     40.41, May  04: Implementation of XNL (WRT) interface
 !     40.41, Aug. 04: contribution due to reflection added to right-hand
 !                     side of the system of equations
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.55, Dec. 05: introducing vegetation model
 !     40.61, Sep. 06: introduction of all separate dissipation coefficients
 !                     for output purposes
 !     40.85, Aug. 08: add generation and redistribition for output purposes
@@ -6073,7 +6108,6 @@
       INTEGER           :: N2, LMAX                                       40.17
 
       REAL              :: DQ, DQ2, DT2                                   40.17
-      REAL, ALLOCATABLE :: ACRIAM(:,:), SNLRIAM(:,:), SIGRIAM(:)          40.17
 !
 !  7. Common blocks used
 !
@@ -6085,6 +6119,10 @@
 !     Call SBOT  to compute the source term due to bottom friction
 !      according to Hasselmann et al. (1974), Putnam and Jonsson (1949)
 !      or Madsen et al. (1991)
+!   ------------------------------------------------------------
+!   If SVEG is on (IVEG > 0 ) then,
+!     Call SVEG  to compute the source term due to vegetation
+!      dissipation according to Dalrymple (1984)
 !   ------------------------------------------------------------
 !   If SSURF is on (ISURF > 0 ) then,
 !     Call SSURF to compute the source term due to wave breaking
@@ -6167,6 +6205,7 @@
       REAL  :: PLWBRK(MDC,MSC,NPTST)
       REAL  :: PLNL4S(MDC,MSC,NPTST)
       REAL  :: PLNL4D(MDC,MSC,NPTST)
+      REAL  :: PLVEGT(MDC,MSC,NPTST)                                      40.55
       REAL  :: PLTRI(MDC,MSC,NPTST)
       REAL  :: WWAWG(*)
       REAL  :: WWSWG(*)
@@ -6182,6 +6221,7 @@
       REAL  :: REDC1 (1:MDC,1:MSC,1:MREDS)                                40.85
       REAL  :: URSELL(MCGRD)                                              40.03
       REAL  :: FRCOEF(MCGRD)                                              20.68
+      REAL  :: NPLA2(MCGRD)                                               40.55
       REAL  :: REFLSO(MDC,MSC)                                            40.41
 !
 
@@ -6230,6 +6270,20 @@
      &             PLBTFR   ,ISSTOP   ,DISSC1   ,VARFR    ,FRCOEF   )     40.67
       END IF
 !TIMG      CALL SWTSTO(130)                                                    40.23
+!
+!TIMG      CALL SWTSTA(139)                                                    40.55
+      IF ( IVEG.GE.1 ) THEN                                               40.55
+!
+!     *** wave-vegetation interactions ***                                40.55
+!
+!        *** energy dissipation according to Dalrymple (1984)             40.55
+!
+         CALL SVEG (DEP2   ,IMATDA   ,ETOT   ,SMEBRK    ,                 40.58 40.55
+     &              KMESPC ,PLVEGT   ,                                    40.58 40.55
+     &              IDCMIN ,IDCMAX   ,ISSTOP ,DISSC1    ,                 40.55
+     &              NPLA2  )                                              40.67 40.61 40.55
+      END IF                                                              40.55
+!TIMG      CALL SWTSTO(139)                                                    40.55
 !
 !TIMG      CALL SWTSTA(131)                                                    40.23
       IF (ISURF .GE. 1) THEN
@@ -6321,7 +6375,7 @@
 !
         IF ( ICUR .EQ. 0 .OR. ITER .GT. 1 ) THEN
 !
-            CALL SWLTA ( AC2   , DEP2  , CGO   , SPCSIG,                  40.55
+            CALL SWLTA ( AC2   , DEP2  , CGO   , SPCSIG,                  40.56
      &                   KWAVE , IMATRA, IMATDA, REDC0 , REDC1 ,          40.85
      &                   IDDLOW, IDDTOP, ISSTOP, IDCMIN, IDCMAX,
      &                   HS    , SMEBRK, PLTRI , URSELL )
@@ -6437,104 +6491,6 @@
 
           CALL FILNL3 (IDCMIN  ,IDCMAX  ,IMATRA  ,IMATDA  ,AC2     ,      40.23
      &                 MEMNL4  ,PLNL4S  ,ISSTOP  ,REDC0   ,REDC1   )      40.85 40.41
-!
-        ELSE IF (IQUAD .EQ. 6) THEN                                       40.17
-
-!         Calculate the quadruplets using the shallow water expression    40.17
-!         of Hashimoto, Komatsu and Masuda                                40.17
-
-!         Avoid calculation of the quadruplets in more than one sweep     40.10
-
-          IF ((ITER .GE. 1) .AND.                                         40.10
-     &         ( (SWPDIR.EQ.1)                                 .OR.       40.10
-     &          ((SWPDIR.EQ.2).AND.(IX.EQ.1)                  ).OR.       40.10
-     &          ((SWPDIR.EQ.3).AND.(IY.EQ.1)  .AND.(.NOT.ONED)).OR.       40.10
-     &          ((SWPDIR.EQ.4).AND.(IX.EQ.MXC).AND.(IY.EQ.1)              40.10
-     &                                        .AND.(.NOT.ONED)) )         40.10
-     &       ) THEN                                                       40.10
-
-            N2   = INT(MDC/2)+1                                           40.17
-            DT2  = DDIR/2.                                                40.17
-            DQ   = LOG((SHIG/SLOW)**(1./MSC))                             40.17
-            DQ2  = DQ/2.                                                  40.17
-
-!           The action density array should be extended to LMAX using     40.17
-!           a diagnostic tail.                                            40.17
-
-!           RIAM and SWAN use swapped indices for frequencies and         40.17
-!           directions                                                    40.17
-
-            LMAX = NINT(LOG(2.*SHIG/SLOW)/LOG(SHIG/SLOW)*MSC)             40.17
-
-            ALLOCATE(ACRIAM(LMAX,MDC),SNLRIAM(LMAX,MDC),SIGRIAM(LMAX))    40.17
-
-            DO IS = 1, MSC                                                40.17
-              SIGRIAM(IS)=SPCSIG(IS)                                      40.17
-              DO ID = 1, MDC                                              40.17
-                 ACRIAM(IS,ID) = AC2(ID,IS,KCGRD(1))                      40.17
-              ENDDO                                                       40.17
-            ENDDO                                                         40.17
-
-!           We need to multiply the action density with rho*grav in order 40.33
-!           to get action based on true energy and with Cg / k to get     40.33
-!           an action density spectrum in terms of wavenumber vector in
-!           stead of frequency and direction. Wavenumber vector is used   40.33
-!           for the action density in the exact computations of Hashimoto.
-
-            DO IS = 1, MSC                                                40.17
-              DO ID = 1, MDC                                              40.17
-                 ACRIAM(IS,ID) = ACRIAM(IS,ID) * RHO * GRAV *             40.33
-     &                           CGO(IS,1) / KWAVE(IS,1)                  40.33
-              ENDDO                                                       40.17
-            ENDDO                                                         40.17
-
-!           extend the range from MSC to LMAX                             40.33
-            DO IS = MSC+1, LMAX                                           40.17
-               SIGRIAM(IS)=SIGRIAM(IS-1)*(SPCSIG(MSC)/SPCSIG(MSC-1))      40.17
-               DO ID = 1, MDC                                             40.17
-                  ACRIAM(IS,ID) = ACRIAM(MSC,ID) *                        40.17
-     &                     (SIGRIAM(MSC)/SIGRIAM(IS))**(PWTAIL(3)+3)      40.17
-               ENDDO                                                      40.17
-            ENDDO                                                         40.17
-            CALL RIAM_SLW(LMAX,MDC,N2,GRAV,DEP2(KCGRD(1)),                40.17
-     &                    DQ,DQ2,DDIR,DT2,SIGRIAM,RHO,                    40.17
-     &                    ACRIAM, SNLRIAM,1)                              40.17
-
-!           divide SNL4 by rho and grav to get energy source term         40.33
-!           formulated in variance density                                40.33
-!           divide by sigma to get action density source term             40.33
-
-            DO ID = 1, MDC
-              DO IS = 1, MSC                                              40.17
-                 MEMNL4(ID,IS,KCGRD(1)) = SNLRIAM(IS,ID) /                40.33
-     &                                    (SPCSIG(IS) * RHO * GRAV)       40.33
-              ENDDO                                                       40.17
-            ENDDO                                                         40.17
-
-            DEALLOCATE(ACRIAM,SNLRIAM,SIGRIAM)                            40.17
-
-          ENDIF                                                           40.10
-
-          IF (ITEST.GE.30) THEN                                           40.10
-            WRITE (PRTEST,*) '+SOURCE: IX, IY, SWPDIR: ',                 40.10
-     &                       IX, IY, SWPDIR                               40.10
-          ENDIF                                                           40.10
-          IF (TESTFL.AND.ITEST.GE.100) THEN                               40.10
-            DO IS=1, MSC                                                  40.10
-               DO ID = 1, MDC                                             40.10
-                  WRITE(PRINTF,9200) IS,ID,MEMNL4(ID,IS,KCGRD(1))         40.10
- 9200             FORMAT(' SOURCE: IS ID MEMNL(): ',2I6,E12.4)            40.10
-               ENDDO                                                      40.10
-            ENDDO                                                         40.10
-          ENDIF                                                           40.10
-
-          CALL FILNL3 (IDCMIN  ,IDCMAX  ,IMATRA  ,IMATDA  ,AC2     ,      40.23
-     &                 MEMNL4  ,PLNL4S  ,ISSTOP  ,REDC0   ,REDC1   )      40.85 40.41 40.10
-
-          IF (ITEST.GE.30) THEN                                           40.10
-            WRITE (PRTEST,*) '+SOURCE: ITER, IQUAD, SWPDIR: ',            40.10
-     &                       ITER, IQUAD, SWPDIR                          40.10
-          ENDIF                                                           40.10
 !
         ELSE IF ( IQUAD .EQ. 8) THEN                                      40.41
 !
@@ -6661,7 +6617,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6812,7 +6768,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6956,7 +6912,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7145,7 +7101,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7756,7 +7712,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8265,7 +8221,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8383,7 +8339,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8743,7 +8699,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -9298,7 +9254,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

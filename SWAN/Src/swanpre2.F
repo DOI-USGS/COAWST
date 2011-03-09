@@ -41,7 +41,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -168,7 +168,7 @@
 #ifdef SWAN_MODEL
       CALL SWREOQ ( FOUND, ng)
 #else
-      CALL SWREOQ ( FOUND )                                         40.31
+      CALL SWREOQ ( FOUND )                                               40.31 30.90
 #endif
       IF (STPNOW()) RETURN                                                34.01
       IF (FOUND) RETURN
@@ -222,7 +222,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1220,11 +1220,11 @@
              CALL ININTG ('MYN',MYN,'STA',MAX(1,NINT(YNLEN/DYN)))         40.00
              MIP = 0
 #ifdef SWAN_MODEL
-             ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(2*(MXN+MYN)))                40.31
-             ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(2*(MXN+MYN)))                40.31
+             ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(2*(MXN+MYN)))             40.31
+             ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(2*(MXN+MYN)))             40.31
 #else
-             ALLOCATE(OPSTMP%XP(2*(MXN+MYN)))                                40.31
-             ALLOCATE(OPSTMP%YP(2*(MXN+MYN)))                                40.31
+             ALLOCATE(OPSTMP%XP(2*(MXN+MYN)))                             40.31
+             ALLOCATE(OPSTMP%YP(2*(MXN+MYN)))                             40.31
 #endif
              XF=XPCN
              YF=YPCN
@@ -1371,7 +1371,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1619,6 +1619,11 @@
                    JDSXW  = MCMVAR                                        40.65
                    ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.65
+                IF (IVTYPE.EQ.57 .AND. JDSXV.LE.1) THEN                   40.65
+                   MCMVAR = MCMVAR+1                                      40.65
+                   JDSXV  = MCMVAR                                        40.65
+                   ALOCMP = .TRUE.                                        40.97
+                ENDIF                                                     40.65
                 IF (IVTYPE.EQ.60 .AND. JGENR.LE.1) THEN                   40.85
                    MCMVAR = MCMVAR+1                                      40.85
                    JGENR  = MCMVAR                                        40.85
@@ -1728,9 +1733,9 @@
 
       IF (KEYWIS ('TAB')) THEN
 #ifdef SWAN_MODEL
-          CALL SWNMPS (PSNAME, STYPE, MIP, IERR, ng)
+        CALL SWNMPS (PSNAME, STYPE, MIP, IERR, ng)
 #else
-          CALL SWNMPS (PSNAME, STYPE, MIP, IERR)                          40.31
+        CALL SWNMPS (PSNAME, STYPE, MIP, IERR)                            40.31
 #endif
         IF (IERR.NE.0) GOTO 800
 !
@@ -1820,6 +1825,11 @@
             IF (IVTYPE.EQ.56 .AND. JDSXW.LE.1) THEN                       40.65
                MCMVAR = MCMVAR+1                                          40.65
                JDSXW  = MCMVAR                                            40.65
+               ALOCMP = .TRUE.                                            40.97
+            ENDIF                                                         40.65
+            IF (IVTYPE.EQ.57 .AND. JDSXV.LE.1) THEN                       40.65
+               MCMVAR = MCMVAR+1                                          40.65
+               JDSXV  = MCMVAR                                            40.65
                ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.65
             IF (IVTYPE.EQ.60 .AND. JGENR.LE.1) THEN                       40.85
@@ -1935,9 +1945,9 @@
 
       IF (KEYWIS ('SPEC')) THEN
 #ifdef SWAN_MODEL
-          CALL SWNMPS (PSNAME, STYPE, MIP, IERR, ng)
+        CALL SWNMPS (PSNAME, STYPE, MIP, IERR, ng)
 #else
-          CALL SWNMPS (PSNAME, STYPE, MIP, IERR)                          40.31
+        CALL SWNMPS (PSNAME, STYPE, MIP, IERR)                            40.31
 #endif
         IF (IERR.NE.0) GOTO 800
 !
@@ -2128,7 +2138,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2302,7 +2312,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2427,7 +2437,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2563,7 +2573,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3894,7 +3904,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4399,7 +4409,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4596,7 +4606,9 @@
 
 
       CHARACTER (LEN=4)  :: BTYPE     ! type of boundary cond.
-      CHARACTER (LEN=12) :: CDATE     ! date-time
+!CDAT10      CHARACTER (LEN=10) :: CDATE     ! date-time
+!CDAT12      CHARACTER (LEN=12) :: CDATE     ! date-time
+      CHARACTER (LEN=14) :: CDATE     ! date-time
       CHARACTER (LEN=80) :: HEDLIN    ! heading line
 
       DOUBLE PRECISION :: DDATE, XLON0, XLAT0
@@ -5023,7 +5035,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5499,7 +5511,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5833,7 +5845,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6000,7 +6012,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6334,7 +6346,7 @@
            ENDDO                                                          40.80
         ENDIF                                                             40.80
  106    FORMAT (2(1X,F12.2))
-        WRITE (IFPAR, 132) 8                                              40.00
+        WRITE (IFPAR, 132) 9                                              40.55 40.00
  132    FORMAT ('QUANT', /, I6, T41, 'number of quantities in table')     40.00
         WRITE (IFPAR, 102) OVSNAM(10), OVLNAM(10)                         40.00
         WRITE (IFPAR, 102) OVUNIT(10), 'unit'                             40.00
@@ -6352,6 +6364,9 @@
         WRITE (IFPAR, 102) 'Sfric',  'bottom friction dissipation'        40.00
         WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.00
         WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.00
+        WRITE (IFPAR, 102) 'Svege',  'vegetation dissipation'             40.55
+        WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.55
+        WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.55
         WRITE (IFPAR, 102) 'Ssurf',  'surf breaking dissipation'          40.00
         WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.00
         WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.00
@@ -6417,7 +6432,7 @@
           WRITE (IFS1D, 214) SPCSIG(IS)/PI2                               40.00
  214      FORMAT (F10.4)                                                  40.00
  220    CONTINUE                                                          40.00
-        WRITE (IFS1D, 132) 7
+        WRITE (IFS1D, 132) 8                                              40.55
         WRITE (IFS1D, 102) 'VaDens', 'variance densities'                 40.00
         WRITE (IFS1D, 102) 'm2/Hz',  'unit'                               40.00
         WRITE (IFS1D, 104) 0.,       'exception value'                    40.00
@@ -6430,6 +6445,9 @@
         WRITE (IFS1D, 102) 'Sfric',  'bottom friction dissipation'        40.00
         WRITE (IFS1D, 102) 'm2',     'unit'                               40.00
         WRITE (IFS1D, 104) OVEXCV(7),'exception value'                    40.00
+        WRITE (IFS1D, 102) 'Svege',  'vegetation dissipation'             40.55
+        WRITE (IFS1D, 102) 'm2',     'unit'                               40.55
+        WRITE (IFS1D, 104) OVEXCV(7),'exception value'                    40.55
         WRITE (IFS1D, 102) 'Ssurf',  'surf breaking dissipation'          40.00
         WRITE (IFS1D, 102) 'm2',     'unit'                               40.00
         WRITE (IFS1D, 104) OVEXCV(7),'exception value'                    40.00
@@ -6500,7 +6518,7 @@
           WRITE (IFS2D, 324) SPCDIR(ID,1)*180./PI                         30.82
  324      FORMAT (F10.4)                                                  40.00
  330    CONTINUE                                                          40.00
-        WRITE (IFS2D, 132) 7
+        WRITE (IFS2D, 132) 8                                              40.55
         WRITE (IFS2D, 102) 'VaDens', 'variance densities'                 40.00
         WRITE (IFS2D, 102) 'm2/Hz/degr', 'unit'                           40.00
         WRITE (IFS2D, 104) 0.,       'exception value'                    40.00
@@ -6513,6 +6531,9 @@
         WRITE (IFS2D, 102) 'Sfric',  'bottom friction dissipation'        40.00
         WRITE (IFS2D, 102) 'm2/degr','unit'                               40.00
         WRITE (IFS2D, 104) OVEXCV(7),'exception value'                    40.00
+        WRITE (IFS2D, 102) 'Svege',  'vegetation dissipation'             40.55
+        WRITE (IFS2D, 102) 'm2/degr','unit'                               40.55
+        WRITE (IFS2D, 104) OVEXCV(7),'exception value'                    40.55
         WRITE (IFS2D, 102) 'Ssurf',  'surf breaking dissipation'          40.00
         WRITE (IFS2D, 102) 'm2/degr','unit'                               40.00
         WRITE (IFS2D, 104) OVEXCV(7),'exception value'                    40.00

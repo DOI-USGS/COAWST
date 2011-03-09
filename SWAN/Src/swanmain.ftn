@@ -1,3 +1,4 @@
+#include "swancpp.h"
 !
 !     SWAN main program and miscellaneous routines
 !
@@ -24,6 +25,871 @@
 !     SWINCO
 !     SWCLME: Clean memory
 !
+#ifdef SWAN_MODEL
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWAN_INITIALIZE (ng, ngc, ngp, Numgrids, MyComm, WNAME)
+!                                                                      *
+!***********************************************************************
+!
+      USE TIMECOMM                                                        40.41
+      USE OCPCOMM2                                                        40.41
+      USE OCPCOMM4                                                        40.41
+      USE SWCOMM1                                                         40.41
+      USE SWCOMM2                                                         40.41
+      USE SWCOMM3                                                         40.41
+      USE SWCOMM4                                                         40.41
+      USE OUTP_DATA                                                       40.51
+      USE M_GENARR                                                        40.31
+      USE M_PARALL                                                        40.31
+      USE SwanGriddata                                                    40.80
+# ifdef WAVES_OCEAN
+      USE M_PARALL2
+      USE WAVES_COUPLER_MOD, ONLY: INITIALIZE_WAV2OCN_COUPLING
+# endif
+# ifdef WRF_COUPLING
+      USE INTERP_SWAN_MOD, ONLY: compute_angler
+# endif
+      USE SWPOINT_MOD, ONLY: INIT_POINTERS, ALLOCATE_SWAN_ARRAYS
+      USE M_BNDSPEC
+      USE M_COUPLING
+      USE M_CVMESH
+!
+      IMPLICIT NONE
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering                              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2010  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+!
+!     30.60: Nico Booij
+!     30.72: IJsbrand Haagsma
+!     30.74: IJsbrand Haagsma (Include version)
+!     30.82: IJsbrand Haagsma
+!     30.90: IJsbrand Haagsma (Equivalence verion)
+!     32.01: Roeland Ris & Cor van der Schelde
+!     32.02: Roeland Ris & Cor van der Schelde (1D-version)
+!     34.01: IJsbrand Haagsma
+!     40.00, 40.13: Nico Booij
+!     34.01: Jeroen Adema
+!     33.08: W. Erick Rogers
+!     40.22: John Cazes and Tim Campbell
+!     40.23: Marcel Zijlema
+!     40.30: Marcel Zijlema
+!     40.31: Marcel Zijlema
+!     40.41: Marcel Zijlema
+!     40.51: Marcel Zijlema
+!     40.80: Marcel Zijlema
+!
+!  1. Updates
+!
+!            10 FEB   Subroutine SWMAIN introduced
+!     30.60, Aug. 97: argument list of ERRCHK changed
+!     30.72, Sept 97: INTEGER*4 replaced by INTEGER
+!     30.72, Nov. 97: declaration of ITERMX removed because it is a common
+!                     variable, which is declared in the INCLUDE file
+!     30.72, Nov. 97: PWTAIL(3) is made dependent on PWTAIL(1), also in the
+!                     initialisation
+!     30.74, Nov. 97: Prepared for version with INCLUDE statements
+!     32.01, Jan. 98: Nautical convention included (project h3268)
+!     32.01, Jan. 98: Comparison of computed and prescribed significant
+!                     wave height (project h3268)
+!     32.02, Jan. 98: Introduction of 1D-version
+!     30.72, Mar. 98: Added instruction to change [maxerr] in case of a
+!                     terminating warning
+!     40.00, Nov. 97: time step loop reorganized,
+!                     argument list in call SNEXTI changed
+!                     declaration of ITERMX removed
+!                     argument added in call SWOUTP
+!     30.82, Sep. 98: Added check on error level each time step to prevent
+!                     continuation of computation
+!     30.90, Oct. 98: Introduced EQUIVALENCE POOL-arrays
+!     34.01, Feb. 99: Changed STOP statement in a jump to end of subroutine
+!     34.01, Feb. 99: Close all files at end of this subroutine
+!     34.01, Feb. 99: Introducing STPNOW
+!     33.08, July 98: S&L scheme-related changes
+!     40.13, July 01: coefficient PTRIAD(4) added
+!                     make file 'norm_end' if program ends normally
+!     40.22, Oct. 01: call SWCOMP changed in view of parallellization
+!     40.23, Aug. 02: Print of CPU times added
+!     40.30, Mar. 03: introduction distributed-memory approach using MPI
+!     40.31, Dec. 03: removing POOL mechanism and reconsidering this
+!                     subroutine
+!     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.51, Feb. 05: re-design output process in parallel mode
+!     40.80, Jun. 07: extension to unstructured grids
+!
+!  2. Purpose
+!
+!     SWMAIN subroutine, calling SWINIT, SWREAD, SWCOMP and SWOUTP
+!
+!  3. Method
+!
+!     ---
+!
+!  4. Argument variables
+!
+!  6. Local variables
+!
+!     AC1   :     Contains action density at previous time step           40.31
+!     BGRIDP:     data concerning boundary grid points                    40.31
+!     BLKND :     array giving node number per subdomain                  40.41
+!     BLKNDC:     auxiliary array for collecting the array BLKND          40.41
+!     BSPECS:     array containing boundary spectra                       40.31
+!     CHARS :     array to pass character info to MSGERR                  40.41
+!     COMPDA:     array containing various data depending on grid         40.31
+!     CROSS :     integer array indicating obstacle crossing              40.30
+!                 (0=no, >0=yes)                                          40.30
+!     ILEN  :     length of array                                         40.30
+!     INERR :     number of the initialisation error                      40.31
+!     OURQT :     array indicating at what time requested output          40.51
+!                 is processed                                            40.51
+!     IUNIT :     counter for file unit numbers                           34.01
+!     LOPEN :     indicates whether a file is open                        34.01
+!     MSGSTR:     string to pass message to call MSGERR                   40.41
+!
+      CHARACTER*80, intent(in) :: WNAME
+      INTEGER, INTENT(in) :: ng, ngc, ngp, Numgrids, MyCOMM
+      INTEGER   IUNIT                                                     34.01
+      INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN                             40.30
+      INTEGER   INERR, IFLD                                               40.31
+      INTEGER   ISTAT, IF1, IL1                                           40.41
+      CHARACTER COMPUT *4, DTTIWR*18                                      40.00
+      CHARACTER*20 NUMSTR, CHARS(1)                                       40.41
+      CHARACTER*80 MSGSTR                                                 40.41
+      LOGICAL   LOPEN                                                     34.01
+
+
+!
+!  7. Common blocks used
+!
+!
+!  8. Subroutines used
+!
+!     SWINIT
+!     SWREAD
+!     FOR
+!     SWPREP
+!     ERRCHK
+!     SWRBC
+!     SWINCO
+!     SWCOLOUT                                                            40.30
+!     SWGATHER                                                            40.30
+!     SWSYNC                                                              40.30
+!     SWCOLLECT        Collects geographical field array from all nodes   40.41
+!     SNEXTI
+!     SWCOMP
+!     HSOBND: Generates warning if comp. and prescr. Hs differ more than  32.01
+!             a fraction HSRERR at the up-wave boundary                   32.01
+!     SWOUTP
+!     SWPRTI                                                              40.23
+!     SWTSTA                                                              40.23
+!     SWTSTO                                                              40.23
+!     MSGERR : Handles error messages according to severity               40.41
+!     NUMSTR : Converts integer/real to string                            40.41
+!     TXPBLA : Removes leading and trailing blanks in string              40.41
+!
+      LOGICAL STPNOW                                                      34.01
+!
+!  9. Subroutines calling
+!
+!     MAIN program SWAN
+!
+! 10. Error Messages
+!
+!     ---
+!
+! 11. Remarks
+!
+!     The description of the structure of this subroutine is very
+!     short as most of the source code can easily be understood with
+!     the aid of the command descriptions in the user manual and the
+!     purpose of the subroutines from the system documentation.
+!
+! 12. Structure
+!
+!     ----------------------------------------------------------------
+!     Call SWINIT to initialize various common data
+!     Repeat                                                              40.00
+!         Call SWREAD to read and process user commands
+!         If last command was STOP
+!         Then exit from repeat
+!         -------------------------------------------------------------
+!         Call SWPREP to check input and prepare computation
+!         If nonstationary computation is to be made                      40.00
+!         Then start time step loop at IT=0 and                           40.00
+!         Call SWINCO to calculate initial wave spectra                   40.00
+!         -------------------------------------------------------------
+!         For requested number of time steps do                           40.00
+!             Call SNEXTI to update boundary conditions and input fields  40.00
+!             If IT>0                                                     40.00
+!             Then Call SWCOMP to calculate the wave field                40.00
+!             ---------------------------------------------------------
+!             Call SWOUTP to postprocess the results and create output
+!             Update time
+!     ----------------------------------------------------------------
+!
+! 13. Source text
+!
+      Gridnum=ng
+      CALL ALLOCATE_SWAN_ARRAYS(ng, Numgrids)
+!
+!  Allocate here a few arrays that are grid specific, needed, and reallocated later.
+!
+      ALLOCATE (M_GENARR_MOD(ng)%XYTST_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%DEPTH_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%UXB_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%UYB_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%FRIC_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%WXI_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%WYI_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%ASTDF_G(1))
+      ALLOCATE (COMPT_MOD(ng)%NCOMPT_G)
+      NCOMPT=>COMPT_MOD(ng)%NCOMPT_G
+      ALLOCATE (COMPT_MOD(ng)%RCOMPT_G(50,5))
+      RCOMPT=>COMPT_MOD(ng)%RCOMPT_G
+      RCOMPT=0.
+!
+!  Allocate pointers
+!
+!  M_BNDSPEC
+!
+!     ALLOCATE (LBGP_G(Numgrids))
+      LBGP_G(ng)=.FALSE.
+!     LBGP=>LBGP_G(ng)
+!
+!
+      NREOQ_G(ng)=0
+      LOPS_G(ng)=.FALSE.
+      LORQ_G(ng)=.FALSE.
+      LORQ=>LORQ_G(ng)
+!
+      ALLOCATE (ORQDATZ_MOD(ng)%FORQ)
+
+      CALL INIT_POINTERS(ng)
+
+      ALLOCATE(BGPDATZ_MOD(ng)%FBGP)
+      ALLOCATE(BGPDATZ_MOD(ng)%CUBGP)
+
+      XCSAVE_G(ng)=0.0
+      YCSAVE_G(ng)=0.0
+      MXITNR_G(ng)=0
+      DO IFLD=1,NUMGRD
+        IFLNDS(IFLD)=0
+      END DO
+!
+      CALL SWINITMPI (MyComm)
+      INPFIL = WNAME
+
+!     --- initialize various data
+
+!TIMG      DCUMTM(:,1:2) = 0D0                                                 40.23
+!TIMG      NCUMTM(:)     = 0                                                   40.23
+!TIMG      CALL SWTSTA(1)                                                      40.23
+
+      LEVERR=0                                                            40.23
+      MAXERR=1                                                            34.01
+      ITRACE=0                                                            40.23
+      INERR =0                                                            40.31
+
+!TIMG      CALL SWTSTA(2)                                                      40.23
+      CALL SWINIT (ng, INERR)                                             40.31 34.01
+!TIMG      CALL SWTSTO(2)                                                      40.23
+      IF (INERR.GT.0) RETURN                                              34.01
+      IF (STPNOW()) RETURN                                                34.01
+!
+      COMPUT = '    '
+
+!     --- repeat
+
+!     DO
+
+!       --- read and process user commands
+
+!TIMG        CALL SWTSTA(3)                                                    40.23
+        CALL SWREAD (COMPUT, ng, Numgrids)                                40.31 30.90
+!TIMG        CALL SWTSTO(3)                                                    40.23
+        IF (STPNOW()) RETURN                                              34.01
+
+!       --- if last command was STOP then exit from repeat
+
+        IF (COMPUT.EQ.'STOP') THEN                                        40.13
+          IUNIT  = 0                                                      40.13
+          IOSTAT = 0                                                      40.13
+          FILENM = 'norm_end'                                             40.13
+          IF  (INODE.EQ.MASTER) THEN
+            CALL FOR (IUNIT, FILENM, 'UF', IOSTAT)                        40.13
+            WRITE (IUNIT, *) ' Normal end of run ', PROJNR                40.13
+          ENDIF
+          GOTO 900                                                        40.13
+        ENDIF                                                             40.13
+
+!       --- allocate some arrays meant for computation                    40.31
+
+        IF (NUMOBS .GT. 0) THEN
+           IF (OPTG.NE.5) THEN                                            40.80
+!             structured grid                                             40.80
+              ILEN = 2*MCGRD                                              40.80
+           ELSE                                                           40.80
+!             unstructured grid                                           40.80
+              ILEN = nfaces                                               40.80
+           ENDIF                                                          40.80
+           ALLOCATE (PARALL2_MOD(ng)%CROSS_G(ILEN))
+        ELSE
+           ALLOCATE (PARALL2_MOD(ng)%CROSS_G(0))
+        ENDIF                                                             34.01
+        CROSS=>PARALL2_MOD(ng)%CROSS_G
+        ALLOCATE (PARALL2_MOD(ng)%BSPECS_G(MDC,MSC,NBSPEC,2))
+        BSPECS=>PARALL2_MOD(ng)%BSPECS_G
+!
+        ALLOCATE (PARALL2_MOD(ng)%BGRIDP_G(6*NBGRPT))
+        BGRIDP=>PARALL2_MOD(ng)%BGRIDP_G
+!
+#ifdef REFINED_GRID
+!
+!       Numspec is the number of boundary points for each grid that is 
+!       a child. This value is not necessary for ng=1, but it is 
+!       filled anyway.
+!
+        Numspec(ng)=MXCGL*2+MYCGL*2-4
+#endif
+!       --- do some preparations before computation                       40.31
+
+!TIMG        CALL SWTSTA(4)                                                    40.23
+        CALL SWPREP ( BSPECS, BGRIDP, CROSS , XCGRID, YCGRID, KGRPNT,     40.31
+     &                KGRBND, SPCDIR, SPCSIG, ng )                        40.31
+        IF (OPTG.EQ.5) CALL SwanPrepComp ( CROSS )                        40.80
+        IF (STPNOW()) RETURN                                              40.80
+!TIMG        CALL SWTSTO(4)                                                    40.23
+
+!       --- check all possible flags and if necessary change
+!           if option is not correct
+
+        CALL ERRCHK                                                       30.60
+        IF (STPNOW()) RETURN                                              34.01
+
+!       --- initialisation of necessary grids for depth,
+!           current, wind and friction
+
+!       IF (ALOCMP.AND.ALLOCATED(COMPDA)) DEALLOCATE(COMPDA)              40.97
+        ALLOCATE (PARALL2_MOD(ng)%COMPDA_G(MCGRD,MCMVAR),STAT=ISTAT)
+        COMPDA=>PARALL2_MOD(ng)%COMPDA_G
+        ALOCMP = .FALSE.                                                  40.97
+
+        IF ( ISTAT.NE.0 ) THEN                                            40.41
+           CHARS(1) = NUMSTR(ISTAT,RNAN,'(I6)')                           40.41
+           CALL TXPBLA(CHARS(1),IF1,IL1)                                  40.41
+           MSGSTR =                                                       40.41
+     &         'Allocation problem: array COMPDA and return code is '//   40.41
+     &         CHARS(1)(IF1:IL1)                                          40.41
+           CALL MSGERR ( 4, MSGSTR )                                      40.41
+           RETURN                                                         40.41
+        END IF                                                            40.41
+
+!TIMG        CALL SWTSTA(5)                                                    40.23
+        CALL SWRBC(COMPDA)                                                40.31
+!TIMG        CALL SWTSTO(5)                                                    40.23
+
+!       --- allocate AC1 in case of non-stationary situation or in case   40.31
+!           of using the S&L scheme                                       40.31
+
+        IF ( NSTATM.EQ.1 .AND. MXITNS.GT.1 .OR. PROPSC.EQ.3 ) THEN        40.31
+           ALLOCATE (PARALL2_MOD(ng)%AC1_G(MDC,MSC,MCGRD),STAT=ISTAT)
+           AC1=>PARALL2_MOD(ng)%AC1_G
+           IF (SIZE(AC1).EQ.0) THEN                                       40.41
+              DEALLOCATE(PARALL2_MOD(ng)%AC1_G)
+              ALLOCATE (PARALL2_MOD(ng)%AC1_G(MDC,MSC,MCGRD),STAT=ISTAT)
+              AC1=>PARALL2_MOD(ng)%AC1_G
+           END IF                                                         40.41
+           IF ( ISTAT.NE.0 ) THEN                                         40.41
+              CHARS(1) = NUMSTR(ISTAT,RNAN,'(I6)')                        40.41
+              CALL TXPBLA(CHARS(1),IF1,IL1)                               40.41
+              MSGSTR =                                                    40.41
+     &            'Allocation problem: array AC1 and return code is '//   40.41
+     &            CHARS(1)(IF1:IL1)                                       40.41
+              CALL MSGERR ( 4, MSGSTR )                                   40.41
+              RETURN                                                      40.41
+           END IF                                                         40.41
+           AC1 = 0.                                                       40.31
+        ELSE                                                              40.31
+           ALLOCATE (PARALL2_MOD(ng)%AC1_G(MDC,MSC,MCGRD),STAT=ISTAT)
+           AC1=>PARALL2_MOD(ng)%AC1_G
+        ENDIF
+
+        IF (LEVERR.GT.MAXERR) THEN                                        40.00
+
+          WRITE (PRINTF, 6010) LEVERR
+          IF (LEVERR.LT.4) WRITE (PRINTF, 6011)                           30.72
+ 6010     FORMAT(' ** No start of computation because of error level:'
+     &      ,I3)
+ 6011     FORMAT(' ** To ignore this error, change [maxerr] with the',    30.72
+     &           ' SET command')                                          30.72
+
+        ENDIF
+!
+          IF (ITEST.GE.40) THEN                                           40.00
+            IF (NSTATC.EQ.1) THEN                                         33.08
+              WRITE (PRINTF, '(" Type of computation: dynamic")')         32.02
+            ELSE                                                          32.02
+              IF (ONED) THEN                                              32.02
+                WRITE (PRINTF, '(" Type of computation: static 1-D")')    32.02
+              ELSE                                                        32.02
+                WRITE (PRINTF, '(" Type of computation: static 2-D")')    32.02
+              ENDIF                                                       32.02
+            ENDIF                                                         32.02
+          ENDIF
+!
+          IF (NSTATC.EQ.1) THEN                                           40.00
+            IT0 = 0                                                       40.00
+            IF (ICOND.EQ.1) THEN                                          40.00
+!
+!             --- compute default initial conditions
+!
+!TIMG              CALL SWTSTA(6)                                              40.23
+              CALL SWINCO ( AC2   , COMPDA, XCGRID, YCGRID,               40.31
+     &                      KGRPNT, SPCDIR, SPCSIG, XYTST )               40.31
+!TIMG              CALL SWTSTO(6)                                              40.23
+!
+!             --- reset ICOND to prevent second computation of
+!                 initial condition
+              ICOND = 0                                                   40.00
+
+            ENDIF
+          ELSE
+            IT0 = 1
+          ENDIF
+# ifdef WRF_COUPLING
+          CALL compute_angler(ng)
+# endif
+          IT=0
+          IF ( IT.EQ.IT0) THEN
+             ALLOCATE (PARALL2_MOD(ng)%OURQT_G(MAX_OUTP_REQ))
+             OURQT=>PARALL2_MOD(ng)%OURQT_G
+             OURQT = -9999.
+          ENDIF
+# ifdef MODEL_COUPLING
+!
+!         --- initialize MCT coupling
+!
+            CALL INITIALIZE_WAV2OCN_COUPLING (ng)
+# endif
+ 900  CONTINUE
+
+      RETURN
+      END SUBROUTINE SWAN_INITIALIZE
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWAN_RUN (CouplingTime, IT_in, ng, ngc, ngp, 
+     &                     first, Ngrids)
+!                                                                      *
+!***********************************************************************
+!
+      USE TIMECOMM
+      USE OCPCOMM2
+      USE OCPCOMM4
+      USE SWCOMM1
+      USE SWCOMM2
+      USE SWCOMM3
+      USE SWCOMM4
+      USE OUTP_DATA
+      USE M_GENARR
+      USE M_PARALL
+      USE M_PARALL2
+      USE M_COUPLING
+      USE SWPOINT_MOD, ONLY: INIT_POINTERS
+# ifdef REFINED_GRID
+      USE M_SREFINED
+# endif
+!
+      IMPLICIT NONE
+!
+      REAL,  intent(in) :: CouplingTime
+      INTEGER,  intent(in) :: IT_in, ng, ngc, ngp, first, Ngrids
+      INTEGER   IUNIT
+      INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN
+      INTEGER   INERR
+      INTEGER   IERR
+      INTEGER   ISTAT, IF1, IL1
+      CHARACTER PTYPE, PNAME *8, COMPUT *4, DTTIWR*18
+      CHARACTER*20 NUMSTR, CHARS(1)
+      CHARACTER*80 MSGSTR
+      LOGICAL   LOPEN
+      INTEGER nWAV_steps
+      LOGICAL STPNOW
+!
+!         ---  Time-stepping SWAN.
+      Gridnum=ng
+!
+!  Create list of pointers for each ng instance.
+!
+      CALL INIT_POINTERS(ng)
+!
+!  Modules M_GENARR
+!
+      KGRPNT=>M_GENARR_MOD(ng)%KGRPNT_G
+      KGRBND=>M_GENARR_MOD(ng)%KGRBND_G
+      XYTST=> M_GENARR_MOD(ng)%XYTST_G
+      AC2=>   M_GENARR_MOD(ng)%AC2_G
+      XCGRID=>M_GENARR_MOD(ng)%XCGRID_G
+      YCGRID=>M_GENARR_MOD(ng)%YCGRID_G
+      SPCSIG=>M_GENARR_MOD(ng)%SPCSIG_G
+      SPCDIR=>M_GENARR_MOD(ng)%SPCDIR_G
+      DEPTH=> M_GENARR_MOD(ng)%DEPTH_G
+      FRIC=>  M_GENARR_MOD(ng)%FRIC_G
+      UXB=>   M_GENARR_MOD(ng)%UXB_G
+      UYB=>   M_GENARR_MOD(ng)%UYB_G
+      WXI=>   M_GENARR_MOD(ng)%WXI_G
+      WYI=>   M_GENARR_MOD(ng)%WYI_G
+      WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
+      ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
+# ifdef WRF_COUPLING
+      CosAngler=>M_GENARR_MOD(ng)%CosAngler_G
+      SinAngler=>M_GENARR_MOD(ng)%SinAngler_G
+# endif
+!
+!  Module M_PARALL
+!
+      IBLKAD=>PARALL_MOD(ng)%IBLKAD_G
+      KGRPGL=>PARALL_MOD(ng)%KGRPGL_G
+      KGRBGL=>PARALL_MOD(ng)%KGRBGL_G
+      XGRDGL=>PARALL_MOD(ng)%XGRDGL_G
+      YGRDGL=>PARALL_MOD(ng)%YGRDGL_G
+!
+!  Module PARALL2
+!
+      BSPECS=>PARALL2_MOD(ng)%BSPECS_G
+      CROSS=> PARALL2_MOD(ng)%CROSS_G
+      BGRIDP=>PARALL2_MOD(ng)%BGRIDP_G
+      AC1=>   PARALL2_MOD(ng)%AC1_G
+      COMPDA=>PARALL2_MOD(ng)%COMPDA_G
+      OURQT=> PARALL2_MOD(ng)%OURQT_G
+!
+! SWANCOMM3
+!
+      NCOMPT=>COMPT_MOD(ng)%NCOMPT_G
+      RCOMPT=>COMPT_MOD(ng)%RCOMPT_G
+
+# ifdef REFINED_GRID
+!
+!     AC2_parent is the action density array filled for each parent
+!     tile. 
+!
+      IF (first.eq.0) THEN
+        ALLOCATE (PARALL2_MOD(ng)%AC2_parent_G(MSC*MDC*Numspec(ngc)))
+        AC2_parent=0.
+      END IF
+      AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
+
+# endif
+!     LORQ=>LORQ_G(ng)
+
+!         --- synchronize nodes                                           40.30
+
+          CALL SWSYNC                                                     40.30
+          IF (STPNOW()) RETURN                                            40.30
+
+!         --- loop over time steps                                        40.00
+
+          IT = IT_in
+
+!
+            IF (LEVERR.GT.MAXERR) THEN                                    30.82
+              WRITE (PRINTF, 6030) LEVERR                                 30.82
+              IF (LEVERR.LT.4) WRITE (PRINTF, 6030)                       40.30 30.82
+ 6030         FORMAT(' ** No continuation of computation because ',       30.82
+     &               'of error level:',I3)                                30.82
+              RETURN                                                      40.30
+            ENDIF                                                         30.82
+
+!           --- synchronize nodes
+
+            CALL SWSYNC                                                   40.30
+            IF (STPNOW()) RETURN                                          40.30
+!
+!           --- update boundary conditions and input fields
+!
+!TIMG            CALL SWTSTA(7)                                                40.23
+!
+!  This needs revisiting when i do the 2-way.
+!
+# ifdef REFINED_GRID
+            CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
+     &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
+     &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
+     &                    UYB   , WXI   , WYI   , ng, ngp, IT_in,
+     &                    PARALL2_MOD(ngp)%AC2_parent_G)
+# else
+            CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
+     &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
+     &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
+     &                    UYB   , WXI   , WYI   , ng, ngp, IT_in,
+     &                    1.)
+# endif
+!TIMG            CALL SWTSTO(7)                                                40.23
+            IF (STPNOW()) RETURN                                          34.01
+!
+!           --- synchronize nodes
+
+            CALL SWSYNC                                                   40.30
+            IF (STPNOW()) RETURN                                          40.30
+
+            IF (COMPUT.NE.'NOCO' .AND. IT.GT.0) THEN                      40.00
+
+              SAVITE = ITEST                                              30.21
+              IF (ICOTES .GT. ITEST) ITEST = ICOTES
+!
+!             --- compute action density for current time step
+!
+!TIMG              CALL SWTSTA(8)                                                   40.23
+              IF (OPTG.NE.5) THEN                                         40.80
+!                structured grid                                          40.80
+                 CALL SWCOMP( AC1   , AC2   , COMPDA, SPCDIR, SPCSIG,     40.31
+     &                        XYTST , IT    , KGRPNT, XCGRID, YCGRID,     40.31
+     &                        CROSS )                                     40.31
+              ELSE                                                        40.80
+!                unstructured grid                                        40.80
+                 CALL SwanCompUnstruc ( AC2   , AC1   , COMPDA,           40.80
+     &                                  SPCSIG, SPCDIR, XYTST ,           40.80
+     &                                  CROSS , IT    )                   40.80
+              ENDIF                                                       40.80
+!TIMG              CALL SWTSTO(8)                                                   40.23
+              IF (STPNOW()) RETURN                                        34.01
+!
+!             --- set ICOND=4 for stationary computation, for next
+!                 (stationary) COMPUTE command                            40.13
+              ICOND = 4                                                   40.13
+!
+!             --- check whether computed significant wave height at       32.01
+!                 boundary differs from prescribed value given in         32.01
+!                 boundary command values of incident Hs                  32.01
+!
+              IF ( BNDCHK ) THEN                                          32.01
+                CALL HSOBND ( AC2, SPCSIG, COMPDA(1,JHSIBC), KGRPNT )     40.31
+              ENDIF                                                       32.01
+!
+              ITEST = SAVITE                                              30.21
+
+            ENDIF
+!
+            SAVITE = ITEST                                                30.21
+            IF (IOUTES .GT. ITEST) ITEST = IOUTES
+
+!           --- synchronize nodes
+
+            CALL SWSYNC                                                   40.30
+            IF (STPNOW()) RETURN                                          40.30
+
+!           --- carry out the output requests
+
+!TIMG            CALL SWTSTA(9)                                                    40.23
+
+!           --- couple models during output computations
+
+            CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
+     &                    KGRPNT, XCGRID, YCGRID, OURQT , ng)
+# ifdef MODEL_COUPLING
+            nWAV_steps=MAX(1,INT(CouplingTime/DT))
+            IF (MOD(IT, nWAV_steps).eq.0) THEN
+              CALL SWOUTC ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
+     &                      KGRPNT, XCGRID, YCGRID, OURQT ,
+     &                      CouplingTime, ng, first)
+            END IF
+# endif
+# ifdef REFINED_GRID
+            IF (ng.lt.Ngrids) THEN
+              CALL SWOUTR ( AC2   , COMPDA,
+     &                      KGRPNT, ng, ngc, AC2_parent)
+            END IF
+# endif
+!TIMG            CALL SWTSTO(9)                                                     40.23
+            IF (STPNOW()) RETURN                                          40.30
+!
+            IF (ERRPTS.GT.0) REWIND(ERRPTS)                               30.50
+            ITEST = SAVITE                                                30.21
+
+!           --- update time
+            IF (NSTATC.EQ.1) THEN                                         40.00
+              IF (IT.LT.MTC) THEN
+                 TIMCO = TIMCO + DT                                       40.00
+                 CHTIME = DTTIWR(ITMOPT, TIMCO)                           40.00
+                 WRITE (PRINTF, 222) CHTIME, TIMCO                        40.00
+              ENDIF
+ 222          FORMAT(' Time of computation ->  ',A,' in sec:', F12.0)     40.00
+            ENDIF                                                         40.00
+      RETURN
+      END SUBROUTINE SWAN_RUN
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWAN_FINALIZE (ng, Numgrids)
+!                                                                      *
+!***********************************************************************
+!
+      USE TIMECOMM
+      USE OCPCOMM2
+      USE OCPCOMM4
+      USE SWCOMM1
+      USE SWCOMM2
+      USE SWCOMM3
+      USE SWCOMM4
+      USE OUTP_DATA
+      USE M_GENARR
+      USE M_PARALL
+      USE M_PARALL2
+      USE M_COUPLING
+      USE SWPOINT_MOD, ONLY: INIT_POINTERS, DEALLOCATE_SWAN_ARRAYS
+!
+      USE WAVES_COUPLER_MOD, ONLY : finalize_wav2ocn_coupling
+!# if defined WRF_COUPLING
+!      USE WAVES_COUPLER_MOD, ONLY : finalize_wav2atm_coupling
+!# endif
+!
+!     Local variables
+!
+!     BLKND :     array giving node number per subdomain
+!     BLKNDC:     auxiliary array for collecting the array BLKND
+!
+      INTEGER, INTENT(IN) :: ng, Numgrids
+      LOGICAL STPNOW
+      LOGICAL LOPEN
+      INTEGER MyStatus, IUNIT
+      REAL, ALLOCATABLE    :: BLKND(:), BLKNDC(:)
+!
+!  Create list of pointers for each ng instance.
+!
+      Gridnum=ng
+      CALL INIT_POINTERS(ng)
+!
+!  Modules M_GENARR
+!
+      KGRPNT=>M_GENARR_MOD(ng)%KGRPNT_G
+      KGRBND=>M_GENARR_MOD(ng)%KGRBND_G
+      XYTST=> M_GENARR_MOD(ng)%XYTST_G
+      AC2=>   M_GENARR_MOD(ng)%AC2_G
+      XCGRID=>M_GENARR_MOD(ng)%XCGRID_G
+      YCGRID=>M_GENARR_MOD(ng)%YCGRID_G
+      SPCSIG=>M_GENARR_MOD(ng)%SPCSIG_G
+      SPCDIR=>M_GENARR_MOD(ng)%SPCDIR_G
+      DEPTH=> M_GENARR_MOD(ng)%DEPTH_G
+      FRIC=>  M_GENARR_MOD(ng)%FRIC_G
+      UXB=>   M_GENARR_MOD(ng)%UXB_G
+      UYB=>   M_GENARR_MOD(ng)%UYB_G
+      WXI=>   M_GENARR_MOD(ng)%WXI_G
+      WYI=>   M_GENARR_MOD(ng)%WYI_G
+      WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
+      ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
+# ifdef WRF_COUPLING
+      CosAngler=>M_GENARR_MOD(ng)%CosAngler_G
+      SinAngler=>M_GENARR_MOD(ng)%SinAngler_G
+# endif
+!
+!  Module M_PARALL
+!
+      IBLKAD=>PARALL_MOD(ng)%IBLKAD_G
+      KGRPGL=>PARALL_MOD(ng)%KGRPGL_G
+      KGRBGL=>PARALL_MOD(ng)%KGRBGL_G
+      XGRDGL=>PARALL_MOD(ng)%XGRDGL_G
+      YGRDGL=>PARALL_MOD(ng)%YGRDGL_G
+!
+!  Module PARALL2
+!
+      BSPECS=>PARALL2_MOD(ng)%BSPECS_G
+      CROSS=> PARALL2_MOD(ng)%CROSS_G
+      BGRIDP=>PARALL2_MOD(ng)%BGRIDP_G
+      AC1=>   PARALL2_MOD(ng)%AC1_G
+      COMPDA=>PARALL2_MOD(ng)%COMPDA_G
+      OURQT=> PARALL2_MOD(ng)%OURQT_G
+      AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
+!
+! SWANCOMM3
+!
+      NCOMPT=>COMPT_MOD(ng)%NCOMPT_G
+      RCOMPT=>COMPT_MOD(ng)%RCOMPT_G
+!
+!TIMG       CALL SWTSTO(1)                                                     40.23
+!
+      CALL BACKUP( AC2, SPCSIG, SPCDIR, KGRPNT, XCGRID, YCGRID, ng )
+
+      DO IUNIT=1,HIOPEN                                                   34.01
+        INQUIRE(UNIT=IUNIT,OPENED=LOPEN)                                  34.01
+        IF (LOPEN.AND.IUNIT.NE.PRINTF) CLOSE(IUNIT)                       40.30
+      END DO                                                              34.01
+
+!     --- collect contents of individual process files for                40.30
+!         output requests in case of parallel computation                 40.30
+
+      CALL SWSYNC                                                         40.30
+!TIMG       CALL SWTSTA(9)                                                    40.23
+      IF ( PARLL ) THEN                                                   40.30
+         ALLOCATE (BLKND(MXC*MYC))                                        40.51 40.41
+         BLKND = REAL(INODE)                                              40.41
+         IF ( INODE.EQ.MASTER ) THEN
+            ALLOCATE(BLKNDC(MXCGL*MYCGL))                                 40.51 40.41
+            BLKNDC = 0.                                                   40.96
+         END IF
+         CALL SWCOLLECT ( BLKNDC, BLKND, .TRUE. )                         40.51 40.41
+         IF (STPNOW()) RETURN                                             40.41
+         IF ( INODE.EQ.MASTER ) THEN                                      40.30
+            CALL SWCOLOUT ( OURQT, BLKNDC, ng )                           40.51 40.41 40.30
+            DEALLOCATE(BLKNDC)                                            40.41 40.30
+         END IF                                                           40.30
+      END IF                                                              40.30
+!TIMG       CALL SWTSTO(9)                                                     40.23
+      CALL SWSYNC                                                         40.30
+!
+!TIMG      CALL SWPRTI                                                         40.23
+!
+      INQUIRE(UNIT=PRINTF,OPENED=LOPEN)                                   40.30
+      IF (LOPEN) CLOSE(PRINTF)                                            40.30
+!
+!     --- deallocate all allocated arrays                                 40.31
+
+      CALL DEALLOCATE_SWAN_ARRAYS (ng, Numgrids)
+
+# ifdef MODEL_COUPLING
+!
+!  Terminate MCT coupling.
+!
+       CALL finalize_wav2ocn_coupling(ng)
+!#  ifdef WRF_COUPLING
+!       CALL finalize_wav2atm_coupling
+!#  endif
+# endif
+!
+!       CALL SWCLME                                                         40.31
+!       CALL SWEXITMPI                                                      40.30
+      RETURN                                                              30.82
+!     end of subroutine SWAN_FINALIZE
+      END
+#else
 !***********************************************************************
 !                                                                      *
       PROGRAM SWAN
@@ -44,7 +910,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -150,7 +1016,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -260,7 +1126,7 @@
       INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN                             40.30
       INTEGER   INERR                                                     40.31
       INTEGER   ISTAT, IF1, IL1                                           40.41
-      CHARACTER PTYPE, PNAME *8, COMPUT *4, DTTIWR*18                     40.00
+      CHARACTER COMPUT *4, DTTIWR*18                                      40.00
       CHARACTER*20 NUMSTR, CHARS(1)                                       40.41
       CHARACTER*80 MSGSTR                                                 40.41
       LOGICAL   LOPEN                                                     34.01
@@ -532,7 +1398,7 @@
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
-     &                    UYB   , WXI   , WYI   )                         40.31
+     &                    UYB   , NPLAF , WXI   , WYI   )                 40.55 40.31
 !TIMG            CALL SWTSTO(7)                                                40.23
             IF (STPNOW()) RETURN                                          34.01
 !
@@ -605,10 +1471,12 @@
 
 !           --- update time
 
-            IF (NSTATM.EQ.1) THEN                                         40.00
-              IF (NSTATC.EQ.1 .AND. IT.LT.MTC) TIMCO = TIMCO + DT         40.00
-              CHTIME = DTTIWR(ITMOPT, TIMCO)                              40.00
-              IF (NSTATC.EQ.1) WRITE (PRINTF, 222) CHTIME, TIMCO          40.00
+            IF (NSTATC.EQ.1) THEN                                         40.00
+              IF (IT.LT.MTC) THEN
+                 TIMCO = TIMCO + DT                                       40.00
+                 CHTIME = DTTIWR(ITMOPT, TIMCO)                           40.00
+                 WRITE (PRINTF, 222) CHTIME, TIMCO                        40.00
+              ENDIF
  222          FORMAT(' Time of computation ->  ',A,' in sec:', F12.0)     40.00
             ENDIF                                                         40.00
 
@@ -669,9 +1537,14 @@
       RETURN                                                              30.82
 !     end of subroutine SWMAIN
       END
+#endif
 !***********************************************************************
 !                                                                      *
+#ifdef SWAN_MODEL
+      SUBROUTINE SWINIT (ng, NERR)
+#else
       SUBROUTINE SWINIT (INERR)                                           40.31 34.01
+#endif
 !                                                                      *
 !***********************************************************************
 
@@ -701,7 +1574,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -801,8 +1674,10 @@
 !     40.51, Sep. 05: output variables WATLEV and BOTLEV added
 !     40.51, Feb. 06: output variable TPS added
 !     40.61, Sep. 06: output variables DISBOT, DISSRF and DISWCP added
+!     40.61, Sep. 06: output variable DISVEG added
 !     40.64, Apr. 07: output variables Qp and BFI added
 !     40.80, Jun. 07: extension to unstructured grids
+!     41.12, Apr. 10: output quantity NPL added
 !
 !  2. Purpose
 !
@@ -851,16 +1726,20 @@
 !
 ! 13. Source text
 !
+#ifdef SWAN_MODEL
+      INTEGER, intent(in) :: ng
+#endif
       VERTXT = BLANK                                                      40.03
-      VERNUM = 40.72
+      VERNUM = 40.81
       WRITE (VERTXT, '(F5.2)') VERNUM                                     40.03
-      CALL BUGFIX ('A')
-      CALL BUGFIX ('B')
-      CALL BUGFIX ('C')
-      CALL BUGFIX ('D')
-      CALL BUGFIX ('E')
+!FIX      CALL BUGFIX ('A')
 !
+!
+#ifdef SWAN_MODEL
+      CALL OCPINI (ng, .TRUE.,INERR)
+#else
       CALL OCPINI ('swaninit', .TRUE.,INERR)                              34.01
+#endif
       IF (INERR.GT.0) RETURN                                              34.01
       IF (STPNOW()) RETURN                                                34.01
 !
@@ -871,8 +1750,14 @@
      &        /,20X,'         VERSION NUMBER ', A,                        40.03
      &        /,20X,'---------------------------------------',//)
 !
+#ifdef SWAN_MODEL
+      IF (SCREEN.NE.PRINTF.AND.INODE.EQ.MASTER)                         &
+     & WRITE (SCREEN,6020) 'SWAN grid', ng, ' is preparing computation'
+ 6020 FORMAT (/,a9,i4,a25,/)
+#else
       IF (SCREEN.NE.PRINTF.AND.INODE.EQ.MASTER) WRITE (SCREEN,6020)       40.30
  6020 FORMAT (/, ' SWAN is preparing computation',/)
+#endif
 !
 !     ***** initial values for common variables *****
 !     ***** names *****
@@ -899,6 +1784,7 @@
       GRAV   = 9.81
       WLEV   = 0.
       CASTD  = 0.               ! const. air-sea temp diff                40.03
+      CDCAP  = 99999.
       PI     = 4.*ATAN(1.)                                                40.31
       PI2    = 2.*PI
       UNDFLW = 1.E-15
@@ -994,10 +1880,12 @@
       ISURF  = 1
       IBOT   = 0
       ITRIAD = 0
+      IVEG   = 0                                                          40.55
       VARWI  = .FALSE.
       VARFR  = .FALSE.
       VARWLV = .FALSE.                                                    20.38
       VARAST = .FALSE.       ! True means spatially variable air-sea t.d. 40.03
+      VARNPL = .FALSE.                                                    40.55
       U10    = 0.
       WDIP   = 0.
       INRHOG = 0                                                          30.20
@@ -1016,7 +1904,16 @@
 !     Set the defaults for the MDIA:                                      40.17
 
       MDIA  = 6                                                           40.17
-      ALLOCATE(LAMBDA(MDIA),CNL4_1(MDIA),CNL4_2(MDIA))                    40.17
+!     ALLOCATE(LAMBDA(MDIA),CNL4_1(MDIA),CNL4_2(MDIA))                    40.17
+      IF (.not.ALLOCATED (LAMBDA)) THEN
+        ALLOCATE(LAMBDA(MDIA))
+      END IF
+      IF (.not.ALLOCATED (CNL4_1)) THEN
+        ALLOCATE(CNL4_1(MDIA))
+      END IF
+      IF (.not.ALLOCATED (CNL4_2)) THEN
+        ALLOCATE(CNL4_2(MDIA))
+      END IF
       LAMBDA = (/0.08,0.09,0.11,0.15,0.16,0.29/)                          40.17
       CNL4_1 = (/8.77,-13.82,10.02,-15.92,14.41,0.65/)                    40.17
       CNL4_2 = CNL4_1                                                     40.17
@@ -1217,7 +2114,7 @@
 !
 !     triad interactions
       PTRIAD(1)  = 0.05                                                   40.61 30.82
-      PTRIAD(2)  = 2.5                                                    40.61 40.55 30.82
+      PTRIAD(2)  = 2.5                                                    40.61 40.56 30.82
       PTRIAD(3)  = 10.                                                    40.23
       PTRIAD(4)  = 0.2                                                    40.13
       PTRIAD(5)  = 0.01                                                   40.23
@@ -1288,7 +2185,16 @@
       JHSIBC = 25                                                         40.00
       JHS    = 26                                                         40.13
       JURSEL = 27                                                         40.13
+#ifdef SWAN_MODEL
+      JPBOT = 28
+      JDSXB = 29
+      JDSXS = 30
+      JDSXW = 31
+      MCMVAR = 31
+      LADDS = .TRUE.
+#else
       MCMVAR = 27                                                         40.65 40.61 40.51 40.13
+#endif
 !     subarray sequence number 1 is used only for unused subarrays        40.13
       JFRC2 = 1                                                           40.00
       JFRC3 = 1                                                           40.00
@@ -1299,6 +2205,9 @@
 !     added for air-sea temp. diff.:
       JASTD2= 1                                                           40.03
       JASTD3= 1                                                           40.03
+!     added for number of plants per square meter                         40.55
+      JNPLA2= 1                                                           40.55
+      JNPLA3= 1                                                           40.55
 !
 !     *** added for wave setup ***                                        32.01
 !
@@ -1307,11 +2216,14 @@
 !
 !     --- added for output purposes                                       40.65
 !
+#if !defined SWAN_MODEL
       JPBOT  = 1                                                          40.65 40.51
-      JBOTLV = 1                                                          40.65
       JDSXB  = 1                                                          40.65 40.61
       JDSXS  = 1                                                          40.65 40.61
       JDSXW  = 1                                                          40.65 40.61
+#endif
+      JBOTLV = 1                                                          40.65
+      JDSXV  = 1                                                          40.65 40.61
       JGENR  = 1                                                          40.85
       JGSXW  = 1                                                          40.85
       JREDS  = 1                                                          40.85
@@ -1333,7 +2245,8 @@
       JP4S   = 6
       JP4D   = 7
       JPTRI  = 8
-      MTSVAR = 8
+      JPVEGT = 9                                                          40.55
+      MTSVAR = 9
 !
 !     ***** test output control *****
       ITEST  = 1                                                          40.41
@@ -2045,6 +2958,18 @@
       OVHEXP(IVTYPE) = 0.1
       OVEXCV(IVTYPE) = -9.
 !
+      IVTYPE = 57
+      OVKEYW(IVTYPE) = 'DISV'                                             40.61
+      OVSNAM(IVTYPE) = 'Sveg'                                             40.85
+      OVLNAM(IVTYPE) = 'Vegetation dissipation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
       IVTYPE = 58                                                         40.64
       OVKEYW(IVTYPE) = 'QP'
       OVSNAM(IVTYPE) = 'Qp'
@@ -2189,6 +3114,32 @@
       OVHEXP(IVTYPE) = 0.1
       OVEXCV(IVTYPE) = -9.
 !
+      IVTYPE = 70
+      OVKEYW(IVTYPE) = 'NPL'                                            ! 41.12
+      OVSNAM(IVTYPE) = 'Nplant'
+      OVLNAM(IVTYPE) = 'Plants per m2'
+      OVUNIT(IVTYPE) = '1/m2'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 100.
+      OVEXCV(IVTYPE) = -9.
+!
+#if defined SWAN_MODEL
+      IVTYPE = 71
+      OVKEYW(IVTYPE) = 'WLENP'                                             40.00
+      OVSNAM(IVTYPE) = 'Wlenp'
+      OVLNAM(IVTYPE) = 'Peak wave length'
+      OVUNIT(IVTYPE) = UL
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 200.
+      OVEXCV(IVTYPE) = -9.
+#endif
+!
 !     various parameters for computation of output quantities             40.00
 !
 !     reference time for TSEC
@@ -2217,8 +3168,13 @@
 !
 !***********************************************************************
 !                                                                      *
+#ifdef SWAN_MODEL
+      SUBROUTINE SWPREP ( BSPECS, BGRIDP, CROSS , XCGRID ,YCGRID ,        40.31
+     &                    KGRPNT, KGRBND, SPCDIR, SPCSIG, ng)
+#else
       SUBROUTINE SWPREP ( BSPECS, BGRIDP, CROSS , XCGRID ,YCGRID ,        40.31
      &                    KGRPNT, KGRBND, SPCDIR, SPCSIG )                40.31
+#endif
 !                                                                      *
 !***********************************************************************
 !
@@ -2244,7 +3200,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2301,6 +3257,9 @@
 !  4. Argument variables
 !
       INTEGER, INTENT(INOUT) :: KGRBND(*)                                 40.02
+#ifdef SWAN_MODEL
+      INTEGER, INTENT(IN) :: ng
+#endif
 !
 !     XCGRID: input  Coordinates of computational grid in x-direction     30.72
 !     YCGRID: input  Coordinates of computational grid in y-direction     30.72
@@ -2342,7 +3301,9 @@
       INTEGER, ALLOCATABLE :: CROSSGL(:,:)                                40.31
 !
       TYPE(BSDAT) , POINTER :: CURRBS                                     40.31
+#if !defined REFINED_GRID
       TYPE(BGPDAT), POINTER :: CURBGP                                     40.31
+#endif
       SAVE IENT
       DATA IENT/0/
       CALL STRACE (IENT, 'SWPREP')
@@ -2421,7 +3382,11 @@
 !
 !     check location of output areas
 !
+#ifdef SWAN_MODEL
+      CALL SPRCON ( XCGRID, YCGRID, KGRPNT, KGRBND, ng)
+#else
       CALL SPRCON ( XCGRID, YCGRID, KGRPNT, KGRBND )                      40.31
+#endif
 !
 !     *** find obstacles crossing the points in the stencil  ***
 !     *** in structured grids                                ***          40.80
@@ -2490,6 +3455,35 @@
       END DO                                                              40.31
 
       BGRIDP = 0                                                          40.31
+
+#ifdef SWAN_MODEL
+!curbgp is now BGPDATZ_MOD(ng)%CURBGP
+         IF (NBGGL.EQ.0) NBGGL  = NBGRPT                                  40.51 40.31
+         NBGRPT = 0                                                       40.31
+         ALLOCATE(BGPDATZ_MOD(ng)%CURBGP)
+         DO IX = MXF, MXL                                                 40.31
+           DO IY = MYF, MYL                                               40.31
+              INDX = KGRPGL(IX,IY)                                        40.31
+              BGPDATZ_MOD(ng)%CURBGP => BGPDATZ_MOD(ng)%FBGP
+              DO II = 1, NBGGL                                            40.31
+                 INDXGR = BGPDATZ_MOD(ng)%CURBGP%BGP(1)                   40.31
+                 IF ( INDXGR.EQ.INDX ) THEN                               40.31
+                    NBGRPT = NBGRPT + 1                                   40.31
+                    BGRIDP(6*NBGRPT-5) = KGRPNT(IX-MXF+1,IY-MYF+1)        40.31
+                    BGRIDP(6*NBGRPT-4) = BGPDATZ_MOD(ng)%CURBGP%BGP(2)    40.31
+                    BGRIDP(6*NBGRPT-3) = BGPDATZ_MOD(ng)%CURBGP%BGP(3)    40.31
+                    BGRIDP(6*NBGRPT-2) = BGPDATZ_MOD(ng)%CURBGP%BGP(4)    40.31
+                    BGRIDP(6*NBGRPT-1) = BGPDATZ_MOD(ng)%CURBGP%BGP(5)    40.31
+                    BGRIDP(6*NBGRPT  ) = BGPDATZ_MOD(ng)%CURBGP%BGP(6)    40.31
+                 END IF                                                   40.31
+                 IF (.NOT.ASSOCIATED(BGPDATZ_MOD(ng)%CURBGP%NEXTBGP))   &
+     &             EXIT                                                   40.31
+                 BGPDATZ_MOD(ng)%CURBGP =>                              &
+     &                           BGPDATZ_MOD(ng)%CURBGP%NEXTBGP           40.31
+              END DO                                                      40.31
+           END DO                                                         40.31
+        END DO                                                            40.31
+#else
       IF (OPTG.NE.5) THEN                                                 40.80
          IF (NBGGL.EQ.0) NBGGL  = NBGRPT                                  40.51 40.31
          NBGRPT = 0                                                       40.31
@@ -2526,6 +3520,7 @@
             CURBGP => CURBGP%NEXTBGP                                      40.80
          ENDDO                                                            40.80
       ENDIF                                                               40.80
+#endif
 !
 !     --- allocate arrays for diffraction and set prop scheme to BSBT     40.41
 !                                                                         40.21
@@ -2547,7 +3542,11 @@
 !
 !***********************************************************************
 !                                                                      *
+#ifdef SWAN_MODEL
+      SUBROUTINE SPRCON (XCGRID, YCGRID, KGRPNT, KGRBND, ng)
+#else
       SUBROUTINE SPRCON (XCGRID, YCGRID, KGRPNT, KGRBND)                  40.31 40.00
+#endif
 !                                                                      *
 !***********************************************************************
 !
@@ -2570,7 +3569,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2629,6 +3628,9 @@
 !     XCGRID: input  Coordinates of computational grid in x-direction     30.72
 !     YCGRID: input  Coordinates of computational grid in y-direction     30.72
 !
+#ifdef SWAN_MODEL
+      INTEGER, INTENT(IN) :: ng
+#endif
       INTEGER :: KGRBND(*)                                                40.02
 !
       REAL    :: XCGRID(MXC,MYC), YCGRID(MXC,MYC)                         30.72
@@ -2782,7 +3784,11 @@
 !
 !     ***** test location of output pointsets *****
       IF (LOPS) THEN                                                      40.31
+#ifdef SWAN_MODEL
+        CUOPS => OPSDATZ_MOD(ng)%FOPS
+#else
         CUOPS => FOPS                                                     40.31
+#endif
         DO                                                                40.31
 !         --- get name of point set                                       40.31
           SNAME = CUOPS%PSNAME                                            40.31
@@ -2953,7 +3959,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3107,6 +4113,10 @@
         COMPDA(1,JASTD2) = 0.                                             40.03
         COMPDA(1,JASTD3) = 0.                                             40.03
       ENDIF
+      IF (VARNPL) THEN                                                    40.55
+        COMPDA(1,JNPLA2) = 0.                                             40.55
+        COMPDA(1,JNPLA3) = 0.                                             40.55
+      ENDIF
       COMPDA(1,JBOTLV) = 0.                                               40.65
 !
 !     --- structured grid                                                 40.80
@@ -3149,8 +4159,13 @@
 !
           IF (ICUR.EQ.1 .AND. IGTYPE(2) .GE. 1) THEN                      30.82
             IF (DEPW.GT.0.) THEN
+#ifdef SWAN_MODEL
+              UU  = SVALQI (XP, YP, 2, UXB, 1 ,IX ,IY)
+              VV  = SVALQI (XP, YP, 3, UYB, 1 ,IX ,IY)
+#else
               UU  = SVALQI (XP, YP, 2, UXB, 0 ,IX ,IY)                    40.31 30.90
               VV  = SVALQI (XP, YP, 3, UYB, 0 ,IX ,IY)                    40.31 30.90
+#endif
               VTOT = SQRT (UU*UU + VV*VV)
               CGMAX = PNUMS(18)*SQRT(GRAV*DEPW)
               IF (VTOT .GT. CGMAX) THEN
@@ -3210,6 +4225,14 @@
              ASTD = SVALQI (XP, YP, 10, ASTDF, 1 ,IX ,IY)                 40.31 40.03
              COMPDA(INDX,JASTD2) = ASTD                                   40.03
              COMPDA(INDX,JASTD3) = ASTD                                   40.03
+          ENDIF
+!
+!     ***** compute number of plants per square meter *****               40.55
+!
+          IF (VARNPL) THEN
+             XNPL = SVALQI (XP, YP, 11, NPLAF, 1 ,IX ,IY)                 40.55
+             COMPDA(INDX,JNPLA2) = XNPL                                   40.55
+             COMPDA(INDX,JNPLA3) = XNPL                                   40.55
           ENDIF
 !
    10   CONTINUE
@@ -3330,6 +4353,18 @@
             COMPDA(INDX,JASTD3) = ASTD                                    40.80
          ENDIF
 !
+!     ***** compute number of plants per square meter *****               40.80
+!
+          IF (VARNPL) THEN
+             IF ( IGTYPE(11).EQ.3 ) THEN
+                XNPL = NPLAF(INDX)
+             ELSE
+                XNPL = SVALQI (XP, YP, 11, NPLAF, 1 ,0, 0)                40.80
+             ENDIF
+             COMPDA(INDX,JNPLA2) = XNPL                                   40.80
+             COMPDA(INDX,JNPLA3) = XNPL                                   40.80
+          ENDIF
+!
       ENDDO                                                               40.80
 !
 !     *** initialise setup and saved depth ***                            32.02
@@ -3379,7 +4414,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3782,7 +4817,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3911,7 +4946,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4040,7 +5075,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4207,7 +5242,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4306,7 +5341,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4632,10 +5667,18 @@
       END
 !*********************************************************************
 !                                                                    *
+#ifdef SWAN_MODEL
       SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
      &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
-     &                   UYB   , WXI   , WYI   )                          40.31
+     &                   UYB   , NPLAF,  WXI   , WYI   , ng    ,
+     &                   ngp   , ITjcw,  AC2_child)
+#else
+      SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
+     &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
+     &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
+     &                   UYB   , NPLAF , WXI   , WYI   )                  40.55 40.31
+#endif
 !                                                                    *
 !*********************************************************************
 !
@@ -4648,6 +5691,13 @@
       USE M_BNDSPEC                                                       40.31
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
+#ifdef SWAN_MODEL
+      USE M_MPI
+      USE mod_param
+#endif
+#ifdef REFINED_GRID
+      USE M_SREFINED
+#endif
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -4661,7 +5711,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4732,6 +5782,16 @@
 ! i   KGRPNT: computational grid point addresses
 ! i   XYTST : test points
 !
+#if defined SWAN_MODEL
+      INTEGER offset, spcount, IX, IY
+      INTEGER, intent(in) :: ng, ngp, ITjcw
+# ifdef REFINED_GRID
+      REAL, INTENT(IN) :: AC2_child(MSC*MDC*Numspec(ng))
+      REAL        AC2LOC(MCGRD)                                           40.31
+# else
+      REAL, INTENT(IN) :: AC2_child
+# endif
+#endif
       INTEGER  BGRIDP(*), XYTST(*), KGRPNT(MXC,MYC)
 !
 ! i   AC1   : action density spectra on old time level
@@ -4756,6 +5816,7 @@
       REAL     SPCSIG(MSC)                                                30.01
       REAL     XCGRID(MXC,MYC), YCGRID(MXC,MYC)                           30.21
       REAL     DEPTH(*), WLEVL(*), FRIC(*), UXB(*), UYB(*),               40.31
+     &         NPLAF(*),                                                  40.55
      &         WXI(*), WYI(*)                                             40.31
 !
 !     TIMCO ..... Time (date) of computation
@@ -4798,7 +5859,6 @@
 !
 ! 13. Source text
 !
-      CHARACTER   PTYPE*1                                                 30.74
       INTEGER     IERR
       REAL        TSTVAL(10)                                              40.00
       TYPE(BSPCDAT), POINTER :: CURBFL                                    40.31
@@ -4827,6 +5887,96 @@
 
 !     --- update boundary conditions
 
+#if defined SWAN_MODEL
+      IF (ng.eq.1) THEN
+        IF (INODE.EQ.MASTER) THEN                                           40.30
+         IF (ITEST.GE.80) WRITE (PRTEST,*) ' number of boundary files ',
+     &             NBFILS
+         CURBFL => FBNDFIL
+         DO IBFILE = 1, NBFILS
+
+!          --- read values from boundary file, and interpolate in time
+
+           CALL RBFILE ( SPCSIG, SPCDIR,                                  40.31
+     &                   CURBFL%BFILED, CURBFL%BSPLOC,                    40.31
+     &                   CURBFL%BSPDIR, CURBFL%BSPFRQ,                    40.31
+     &                   BSPECS, XYTST )                                  40.31
+           IF (STPNOW()) RETURN                                           34.01
+           IF (.NOT.ASSOCIATED(CURBFL%NEXTBSPC)) EXIT                     40.31
+           CURBFL => CURBFL%NEXTBSPC                                      40.31
+
+         END DO
+        END IF
+
+!     --- scatter array BSPECS to all nodes
+
+        CALL SWBROADC ( BSPECS, 2*MDC*MSC*NBSPEC, SWREAL )                  40.30
+        IF (STPNOW()) RETURN                                                40.30
+
+!     --- determine spectra on boundary points of grid
+        IF ( NBGRPT.GT.0 ) THEN
+           DO IBGRID = 1, NBGRPT
+             INDXGR = BGRIDP(6*IBGRID-5)
+             IF (BGRIDP(6*IBGRID-4).EQ.1) THEN
+!              obtain spectrum in boundary point from interpolation in space
+               W1 = 0.001 * REAL(BGRIDP(6*IBGRID-3))
+               K1 = BGRIDP(6*IBGRID-2)
+               W2 = 1.-W1
+               K2 = BGRIDP(6*IBGRID)
+               CALL SINTRP (W1, W2, BSPECS(1,1,K1,1), BSPECS(1,1,K2,1),
+     &                      AC2(1,1,INDXGR), SPCDIR, SPCSIG)
+!              --- store Hs from boundary condition in array HSOBND
+               ETOT = 0.
+               DO IS = 1, MSC
+                 SIG2 = SPCSIG(IS) ** 2
+                 DO ID = 1, MDC
+                   ETOT = ETOT + SIG2 * AC2(ID,IS,INDXGR)
+                 ENDDO
+               ENDDO
+               IF (ETOT.GT.0.) THEN
+                 HS = 4. * SQRT(FRINTF*DDIR*ETOT)
+               ELSE
+                 HS = 0.
+               ENDIF
+               COMPDA(INDXGR,JHSIBC) = HS
+             END IF
+           END DO
+        END IF
+# ifdef REFINED_GRID
+      ELSE
+!
+!     Obtain 2dspec array AC2 from parent grid.
+!
+        BOUNDHINDPR =>REFINED_MOD(ng)%BOUNDHINDPR_G
+        BOUNDHINDIX =>REFINED_MOD(ng)%BOUNDHINDIX_G
+        BOUNDHINDIY =>REFINED_MOD(ng)%BOUNDHINDIY_G
+        DO spcount=1,Numspec(ng)
+          IF (BOUNDHINDPR(spcount).eq.INODE) THEN
+            IX=BOUNDHINDIX(spcount)-MXF+1
+            IY=BOUNDHINDIY(spcount)-MYF+1
+            INDXGR=KGRPNT(IX,IY)
+            DO IS = 1, MSC
+              DO ID = 1, MDC
+                offset=MSC*MDC*(spcount-1)+(IS-1)*MDC+ID
+                AC2(ID,IS,INDXGR)=AC2_child(offset)
+              END DO
+            END DO
+          END IF
+        END DO
+
+!     --- exchange action densities at subdomain interfaces               40.31
+!         within distributed-memory environment                           40.31
+!
+!        DO ID = 1, MDC                                                   40.31
+!           DO IS = 1, MSC                                                40.31
+!              AC2LOC(:) = AC2(ID,IS,:)                                   40.31
+!              CALL SWEXCHG( AC2LOC, KGRPNT )                             40.31
+!              AC2(ID,IS,:) = AC2LOC(:)                                   40.31
+!           END DO                                                        40.31
+!        END DO                                                           40.31
+# endif
+      END IF
+#else
       IF (INODE.EQ.MASTER) THEN                                           40.30
          IF (ITEST.GE.80) WRITE (PRTEST,*) ' number of boundary files ',
      &             NBFILS
@@ -4938,10 +6088,12 @@
            END IF
          END DO
       END IF
+#endif
 !
 !     --- update input fields (wind, water level etc.)
 !
 !     fields 5 and 6: wind
+#ifndef AIR_WAVES
       IF (IFLDYN(5) .EQ. 1) THEN
         CALL FLFILE ( 5, 6, WXI, WYI,                                     40.31
      &               0, JWX2, JWX3, 0, JWY2, JWY3,
@@ -4979,17 +6131,19 @@
           ENDIF                                                           40.80
           WRITE (PRTEST, 122) ' Y-comp: ',
      &          (TSTVAL(IPTST), IPTST=1,MIN(10,NPTST))
- 122      FORMAT (A, 10(1X,E11.4))
+!122      FORMAT (A, 10(1X,E11.4))
         ENDIF
       ENDIF
-
+#endif
 !     field 4: friction coeff.
       IF (IFLDYN(4) .EQ. 1) THEN
+#ifndef SWAN_MODEL
         CALL FLFILE ( 4, 0, FRIC, 0.,                                     40.31
      &               0, JFRC2, JFRC3, 0, 0, 0,
      &               1., 0.,                                              40.31 30.90
      &               COMPDA, XCGRID, YCGRID,
      &               KGRPNT, IERR)
+#endif
         IF (STPNOW()) RETURN                                              34.01
         IF (NPTST.GT.0) THEN
           WRITE (PRTEST, '(A)') ' fric coeff from file in test points'
@@ -5012,11 +6166,13 @@
 
 !     field 7: water level
       IF (IFLDYN(7) .EQ. 1) THEN
+#ifndef SWAN_MODEL
         CALL FLFILE ( 7, 0, WLEVL, 0.,                                    40.31
      &               JWLV1, JWLV2, JWLV3, 0, 0, 0,
      &               1., 0.,                                              40.31 30.90
      &               COMPDA, XCGRID, YCGRID,
      &               KGRPNT, IERR)
+#endif
         IF (STPNOW()) RETURN                                              34.01
 !       Add bottom level to obtain depth
 !       structured grid                                                   40.80
@@ -5075,11 +6231,13 @@
 
 !     field 2 and 3: current velocity
       IF (IFLDYN(2) .EQ. 1) THEN
+#ifndef SWAN_MODEL
         CALL FLFILE ( 2, 3, UXB, UYB,                                     40.31
      &               JVX1, JVX2, JVX3, JVY1, JVY2, JVY3,
      &               COSVC, SINVC,                                        40.31 30.90
      &               COMPDA, XCGRID, YCGRID,
      &               KGRPNT, IERR)
+#endif
         IF (STPNOW()) RETURN                                              34.01
 !       reduce current velocity if Froude number is larger than PNUMS(18)
 !       structured grid                                                   40.80
@@ -5159,6 +6317,34 @@
      &          (TSTVAL(IPTST), IPTST=1,MIN(10,NPTST))
         ENDIF
       ENDIF
+
+!     field 11: field containing number of plants per square meter
+      IF (IFLDYN(11) .EQ. 1) THEN
+        CALL FLFILE (11, 0, NPLAF, 0.,
+     &               0, JNPLA2, JNPLA3, 0, 0, 0,
+     &               1., 0.,
+     &               COMPDA, XCGRID, YCGRID,
+     &               KGRPNT, IERR)
+        IF (STPNOW()) RETURN
+        IF (NPTST.GT.0) THEN
+          WRITE (PRTEST, '(A)') ' # plants/m2 from file in test points'
+          IF (OPTG.NE.5) THEN                                             40.80
+             DO IPTST = 1, MIN(10,NPTST)
+               IXP = XYTST(2*IPTST-1)
+               IYP = XYTST(2*IPTST)
+               TSTVAL(IPTST) = COMPDA(KGRPNT(IXP,IYP),JNPLA3)
+             ENDDO
+          ELSE                                                            40.80
+             DO IPTST = 1, MIN(10,NPTST)                                  40.80
+                IVP = XYTST(IPTST)                                        40.80
+                TSTVAL(IPTST) = COMPDA(IVP,JNPLA3)                        40.80
+             ENDDO                                                        40.80
+          ENDIF                                                           40.80
+          WRITE (PRTEST, 122) ' veg dens: ',
+     &          (TSTVAL(IPTST), IPTST=1,MIN(10,NPTST))
+        ENDIF
+      ENDIF
+ 122  FORMAT (A, 10(1X,E11.4))
 !
 !     End of subroutine SNEXTI
 !
@@ -5193,7 +6379,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5330,12 +6516,14 @@
 !     NSTATF    if True time appears in bound. cond. file
 !     UNFORM    if True reading is done unformatted
 !
-      CHARACTER BTYPE *4, HEDLIN *80, TIMSTR *20, CDATE *12,
-     &          DATITM(5) *18, SWWDATE*15, PTNME*12
+      CHARACTER BTYPE *4, HEDLIN *80, TIMSTR *20,
+     &          DATITM(5) *18, PTNME*12
 !     BTYPE     type of boundary condition
 !     HEDLIN    heading line
 !     TIMSTR    time string
-!     CDATE     date-time read from file
+!CDAT10      CHARACTER (LEN=10) :: CDATE     ! date-time
+!CDAT12      CHARACTER (LEN=12) :: CDATE     ! date-time
+!CDAT14      CHARACTER (LEN=14) :: CDATE     ! date-time
 !
       REAL, ALLOCATABLE :: SPAUX(:,:)
 !
@@ -5519,7 +6707,13 @@
                 IF (BTYPE.EQ.'WAMW') THEN                                 40.03
                   READ(NDSD, END=380, ERR=920) XLON, XLAT, CDATE,
      &               EMEAN, THQ, FMEAN
-                  TIMSTR = CDATE
+                  IF (LEN_TRIM(CDATE) == 10 ) THEN
+                     TIMSTR = TRIM(CDATE)
+                  ELSEIF (LEN_TRIM(CDATE) == 12 ) THEN
+                     TIMSTR = CDATE(1:10)
+                  ELSEIF (LEN_TRIM(CDATE) == 14 ) THEN
+                     TIMSTR = CDATE(3:12)
+                  ENDIF
 !                 convert time string to time in seconds
                   CALL DTRETI (TIMSTR, BFILED(6), TIMF2)                  40.03 40.05
                 ELSE IF (BTYPE.EQ.'WAMC') THEN
@@ -5788,7 +6982,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6054,7 +7248,7 @@
 !   (2D) fully spectral input
         IF (UNFORM) THEN
 !          unformatted reading
-           IF (DORDER.LT.0) THEN                                          40.55
+           IF (DORDER.LT.0) THEN
               READ (NDSD,END=930,ERR=920)
      &               ((BAUX1(IANG,IFRE),IANG=NANG,1,-1),IFRE=1,NFRE)
            ELSE
@@ -6211,7 +7405,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6443,11 +7637,19 @@
           IF (INDX.GT.1) THEN                                             40.00
             XP = XCGRID(IX,IY)
             YP = YCGRID(IX,IY)
+#ifdef MODEL_COUPLING
+            UU = SVALQI (XP, YP, IGR1, ARR, 1, IX, IY)
+#else
             UU = SVALQI (XP, YP, IGR1, ARR, 0, IX, IY)                    40.31 30.90
+#endif
             IF (IGR2.EQ.0) THEN
               COMPDA(INDX,JX3) = UU
             ELSE
+#ifdef MODEL_COUPLING
+              VV = SVALQI (XP, YP, IGR2, ARR2, 1, IX, IY)
+#else
               VV = SVALQI (XP, YP, IGR2, ARR2, 0, IX, IY)                 40.31 30.90
+#endif
               COMPDA(INDX,JX3) =  UU*COSFC + VV*SINFC
               COMPDA(INDX,JY3) = -UU*SINFC + VV*COSFC
             ENDIF
@@ -6540,7 +7742,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6836,7 +8038,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6878,6 +8080,37 @@
 !
 ! 13. Source text
 !
+#ifdef SWAN_MODEL
+      DEALLOCATE(SIGPOW)
+      DEALLOCATE(KGRPNT)
+      DEALLOCATE(KGRBND)
+      DEALLOCATE(XYTST )
+      DEALLOCATE(AC2   )
+      DEALLOCATE(XCGRID)
+      DEALLOCATE(YCGRID)
+      DEALLOCATE(SPCSIG)
+      DEALLOCATE(SPCDIR)
+      DEALLOCATE(DEPTH )
+      DEALLOCATE(FRIC  )
+      DEALLOCATE(UXB   )
+      DEALLOCATE(UYB   )
+      DEALLOCATE(WXI   )
+      DEALLOCATE(WYI   )
+      DEALLOCATE(WLEVL )
+      DEALLOCATE(ASTDF )
+# ifdef WRF_COUPLING
+      DEALLOCATE(CosAngler)
+      DEALLOCATE(SinAngler)
+# endif
+      DEALLOCATE(IBLKAD)
+      DEALLOCATE(XGRDGL)
+      DEALLOCATE(YGRDGL)
+      DEALLOCATE(KGRPGL)
+      DEALLOCATE(KGRBGL)
+      DEALLOCATE(DIFPARAM)
+      DEALLOCATE(DIFPARDX)
+      DEALLOCATE(DIFPARDY)
+#else
       IF (ALLOCATED(SIGPOW))   DEALLOCATE(SIGPOW)
       IF (ALLOCATED(KGRPNT))   DEALLOCATE(KGRPNT)
       IF (ALLOCATED(KGRBND))   DEALLOCATE(KGRBND)
@@ -6903,6 +8136,11 @@
       IF (ALLOCATED(DIFPARAM)) DEALLOCATE(DIFPARAM)
       IF (ALLOCATED(DIFPARDX)) DEALLOCATE(DIFPARDX)
       IF (ALLOCATED(DIFPARDY)) DEALLOCATE(DIFPARDY)
+      IF (ALLOCATED(NPLAF ))   DEALLOCATE(NPLAF )
+      IF (ALLOCATED(LAYH  ))   DEALLOCATE(LAYH  )
+      IF (ALLOCATED(VEGDIL))   DEALLOCATE(VEGDIL)
+      IF (ALLOCATED(VEGNSL))   DEALLOCATE(VEGNSL)
+      IF (ALLOCATED(VEGDRL))   DEALLOCATE(VEGDRL)
 !
       IF (ALLOCATED(xcugrd))   DEALLOCATE(xcugrd)
       IF (ALLOCATED(ycugrd))   DEALLOCATE(ycugrd)
@@ -6910,5 +8148,6 @@
       IF (ALLOCATED( vlist))   DEALLOCATE( vlist)
       IF (ALLOCATED( blist))   DEALLOCATE( blist)
 !
+#endif
       RETURN
       END

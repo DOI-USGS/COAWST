@@ -1,3 +1,4 @@
+#include "swancpp.h"
 !
 !     SWAN/READ file 1 of 2
 !
@@ -16,7 +17,11 @@
 !
 !***********************************************************************
 !                                                                      *
+#ifdef SWAN_MODEL
+      SUBROUTINE SWREAD (COMPUT, ng, Numgrids)
+#else
       SUBROUTINE SWREAD (COMPUT)                                          40.31 30.90
+#endif
 !                                                                      *
 !***********************************************************************
 
@@ -50,7 +55,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -107,6 +112,7 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.51: Marcel Zijlema
+!     40.55: Marcel Zijlema
 !     40.80: Marcel Zijlema
 !     40.87: Marcel Zijlema
 !
@@ -218,6 +224,7 @@
 !     40.31, Dec. 03: removing POOL-mechanism
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.51, Jun. 06: correct input of MDIA
+!     40.55, Dec. 05: introducing vegetation model
 !     40.80, Jun. 07: extension to unstructured grids
 !     40.87, Apr. 08: in keyword QUANTITY more than 1 output parameter at once
 !                     is possible and addition of [fmin] and [fmax]
@@ -249,6 +256,9 @@
 !
 !  5. Parameter variables
 !
+#ifdef SWAN_MODEL
+      INTEGER, INTENT(in) :: ng, Numgrids
+#endif
       INTEGER, PARAMETER :: MXINCL = 10                                   40.03
       INTEGER, PARAMETER :: NVOTP  = 15                                   40.87
 !
@@ -300,7 +310,9 @@
       TYPE(OBSTDAT), POINTER :: OBSTMP                                    40.31
       TYPE(OBSTDAT), SAVE, POINTER :: COBST                               40.31
 
+#if !defined SWAN_MODEL
       TYPE(OPSDAT), POINTER :: OPSTMP                                     40.31
+#endif
 
       TYPE XYPT                                                           40.31
         REAL                :: X, Y
@@ -316,6 +328,15 @@
       END TYPE AUXT                                                       40.87
       TYPE(AUXT), TARGET  :: FRSTQ                                        40.87
       TYPE(AUXT), POINTER :: CURRQ, TMPQ                                  40.87
+
+      TYPE VEGPT                                                          40.55
+        INTEGER              :: N                                         40.55
+        REAL                 :: H, D, C                                   40.55
+        TYPE(VEGPT), POINTER :: NEXTV                                     40.55
+      END TYPE VEGPT                                                      40.55
+
+      TYPE(VEGPT), TARGET  :: FRSTV                                       40.55
+      TYPE(VEGPT), POINTER :: CURRV, TMPV                                 40.55
 !
 !  8. Subroutines used
 !
@@ -384,7 +405,12 @@
 !     *** LOGCOM(6): array AC2 has been allocated                 ***     40.31
 !     *** In the current version, LOGCOM(1) has no meanings       ***     40.80 40.31
 !
+#ifdef SWAN_MODEL
+      LOGICAL, POINTER :: LOGCOM(:)
+      LOGICAL, SAVE, TARGET, ALLOCATABLE :: LOGCOM_G(:,:)
+#else
       LOGICAL, SAVE :: LOGCOM(1:6) = .FALSE.                              40.03
+#endif
       INTEGER   TIMARR(6)                                                 40.31 30.00
       CHARACTER PSNAME *8, PNAME *8, COMPUT *(*), PTYPE *1, DTTIWR *18    40.00
       INTEGER, SAVE :: IENT = 0       ! number of entries to this subr
@@ -394,6 +420,13 @@
       INTEGER IVOTP(NVOTP), INDX(1)                                       40.87
       DATA IVOTP /10, 11, 13, 15, 16, 17, 18, 19,                         40.87
      &            28, 32, 33, 42, 43, 47, 48    /                         40.87
+#if defined SWAN_MODEL
+      REAL, ALLOCATABLE :: TARR(:)                                        40.31
+      IF ((ng.eq.1).and.(.not.ALLOCATED(LOGCOM_G)))                     &
+     &                        ALLOCATE (LOGCOM_G(Numgrids,6))
+      LOGCOM=>LOGCOM_G(ng,:)
+      LOGCOM(1:6) = .FALSE.
+#endif
 
       CALL STRACE (IENT, 'SWREAD')
 !
@@ -539,11 +572,22 @@
           IF (OPTG.EQ.5) IPP = 1                                          40.80
           IF (.NOT.ALLOCATED(IARR)) ALLOCATE(IARR(IPP*MPTST))             40.80 40.31
 !
+#ifdef SWAN_MODEL
+          CALL RETSTP (IPP*MPTST, IARR, KGRPNT, KGRBND, XCGRID, YCGRID,   40.80 40.31
+     &                 SPCSIG, SPCDIR, ng)                                40.31
+#else
           CALL RETSTP (IPP*MPTST, IARR, KGRPNT, KGRBND, XCGRID, YCGRID,   40.80 40.31
      &                 SPCSIG, SPCDIR)                                    40.31
+#endif
           IF (STPNOW()) RETURN                                            34.01
           NPTSTA = MAX(1,NPTST)                                           40.00
+#ifdef SWAN_MODEL
+          DEALLOCATE (M_GENARR_MOD(ng)%XYTST_G)
+          ALLOCATE (M_GENARR_MOD(ng)%XYTST_G(IPP*NPTSTA))
+          XYTST=>M_GENARR_MOD(ng)%XYTST_G
+#else
           IF (.NOT.ALLOCATED(XYTST)) ALLOCATE(XYTST(IPP*NPTSTA))          40.80 40.31
+#endif
           CALL SWCOPI (IARR,XYTST,IPP*NPTSTA)                             40.80 40.31
           DEALLOCATE(IARR)                                                40.31
         ENDIF
@@ -1086,7 +1130,11 @@
           CALL MSGERR(2,                                                  40.80
      &    ' command READ BOT or READ UNSTRUC must precede this command')  40.80
         ELSE
+#ifdef SWAN_MODEL
+          CALL BACKUP( AC2, SPCSIG, SPCDIR, KGRPNT, XCGRID, YCGRID, ng )  40.31 30.90
+#else
           CALL BACKUP( AC2, SPCSIG, SPCDIR, KGRPNT, XCGRID, YCGRID )      40.31 30.90
+#endif
           IF (STPNOW()) RETURN                                            34.01
         ENDIF
         GO TO 100
@@ -1099,6 +1147,7 @@
 !
 !   INPgrid                                                                &
 !      BOTtom / WLEVel / CURrent / VX / VY / FRiction / WInd / WX / WY     &
+!      NPLAnts                                                             &
 !      | REG [xpinp] [ypinp] [alpinp]  [mxinp] [myinp]  [dxinp] [dyinp] |
 !     <  CURVilinear [stagrx] [stagry] [mxinp] [myinp]                   > &
 !      | UNSTRUCtured                                                   |
@@ -1113,43 +1162,140 @@
         IF (KEYWIS ('BOT')) THEN
           IGRD = 1
           PSNAME = 'BOTTGRID'
+#ifdef SWAN_MODEL
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+#endif
         ELSE IF (KEYWIS ('CUR')) THEN
           IGRD = 2
           IGR2 = 3                                                        10.26
           PSNAME = 'VXGRID  '
+#ifdef MODEL_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+          IGR1 = 2
+          IGR2 = 3
+          ICUR = 1
+          IF (JVX2.EQ.0) THEN
+            MCMVAR = MCMVAR + 2
+            JVX2   = MCMVAR - 1
+            JVY2   = MCMVAR
+          ENDIF
+          ALLOCATE (M_GENARR_MOD(ng)%UXB_G(MXG(IGR1)*MYG(IGR1)))
+          UXB=>M_GENARR_MOD(ng)%UXB_G
+          UXB=0.
+          ALLOCATE (M_GENARR_MOD(ng)%UYB_G(MXG(IGR2)*MYG(IGR2)))
+          UYB=>M_GENARR_MOD(ng)%UYB_G
+          UYB=0.
+#endif
         ELSE IF (KEYWIS ('VX')) THEN
           IGRD = 2
           PSNAME = 'VXGRID  '
+#ifdef MODEL_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+#endif
         ELSE IF (KEYWIS ('VY')) THEN
           IGRD = 3
           PSNAME = 'VYGRID  '
+#ifdef MODEL_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+#endif
         ELSE IF (KEYWIS ('FR')) THEN
           IGRD = 4
           PSNAME = 'FRICGRID'
+#ifdef MODEL_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+          IGR1   = 4
+          VARFR  = .TRUE.
+          MCMVAR = MCMVAR + 2                                               40.00
+          JFRC2  = MCMVAR - 1                                               40.00
+          JFRC3  = MCMVAR                                                   40.00
+          ALLOCATE (M_GENARR_MOD(ng)%FRIC_G(MXG(IGR1)*MYG(IGR1)))           40.31
+          FRIC=>M_GENARR_MOD(ng)%FRIC_G
+          FRIC=0.0001
+#endif
         ELSE IF (KEYWIS ('WI')) THEN
           IGRD = 5
-          IGR2 = 6                                                        10.26
+          IGR2 = 6                                                          10.26
           PSNAME = 'WXGRID  '
+#if defined SWAN_MODEL
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+          LWINDR = 2                                                        30.10
+          IWIND  = LWINDM                                                   30.10
+          IGR1   = 5
+          IGR2   = 6
+          VARWI  = .TRUE.
+          IF (JWX2.EQ.0) THEN
+            MCMVAR = MCMVAR + 2
+            JWX2   = MCMVAR - 1
+            JWY2   = MCMVAR
+          ENDIF
+          IF (.NOT.ALLOCATED(TARR)) THEN                                   40.41
+             ALLOCATE( TARR(MXG(IGR2)*MYG(IGR2)) )                         40.41
+             TARR = 0.                                                     40.41
+          END IF                                                           40.41
+!
+          DEALLOCATE(M_GENARR_MOD(ng)%WXI_G)
+          ALLOCATE (M_GENARR_MOD(ng)%WXI_G(MXG(IGR1)*MYG(IGR1)))
+          WXI=>M_GENARR_MOD(ng)%WXI_G
+          CALL SWCOPR( TARR, WXI, MXG(IGR1)*MYG(IGR1) )
+!
+          DEALLOCATE(M_GENARR_MOD(ng)%WYI_G)
+          ALLOCATE (M_GENARR_MOD(ng)%WYI_G(MXG(IGR2)*MYG(IGR2)))
+          WYI=>M_GENARR_MOD(ng)%WYI_G
+          CALL SWCOPR( TARR, WYI, MXG(IGR2)*MYG(IGR2) )
+!
+          DEALLOCATE(TARR)
+#endif
         ELSE IF (KEYWIS ('WX')) THEN
           IGRD = 5
           PSNAME = 'WXGRID  '
+#ifdef MODEL_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+#endif
         ELSE IF (KEYWIS ('WY')) THEN
           IGRD = 6
           PSNAME = 'WYGRID  '
+#ifdef MODEL_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+#endif
         ELSE IF (KEYWIS ('WLEV')) THEN                                    20.38
           IGRD = 7
           PSNAME = 'WLEVGRID'
+#ifdef MODEL_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+          IGR1 = 7
+          VARWLV = .TRUE.
+          IF (JWLV2.LE.1) THEN
+            MCMVAR = MCMVAR + 2
+            JWLV2  = MCMVAR - 1
+            JWLV3  = MCMVAR
+          ENDIF
+          ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(MXG(IGR1)*MYG(IGR1)))        40.31
+          WLEVL=>M_GENARR_MOD(ng)%WLEVL_G
+          WLEVL=0.
+#endif
 !       note: 8 and 9 are for coordinates                                 40.03
         ELSE IF (KEYWIS ('ASTD')) THEN                                    40.03
 !         air-sea temperature difference                                  40.03
           IGRD = 10
           PSNAME = 'ASTDGRID'
+#ifdef MODEL_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+#endif
+        ELSE IF (KEYWIS ('NPLA')) THEN                                    40.55
+!         number of plants per square meter                               40.55
+          IGRD = 11                                                       40.55
+          PSNAME = 'NPLAGRID'                                             40.55
         ELSE
           IGRD = 1
           PSNAME = 'BOTTGRID'
+#ifdef MODEL_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+#endif
         ENDIF
 !
+#ifndef MODEL_COUPLING
         CALL SINPGR (IGRD, IGR2, PSNAME)                                  40.31
+#endif
         IF (STPNOW()) RETURN                                              34.01
         GOTO 100
       ENDIF
@@ -1160,6 +1306,7 @@
 !   ============================================================================
 !
 !   READinp    BOTtom/WLevel/CURrent/FRiction/WInd/COORdinates               &
+!              NPLAnts                                                       &
 !        [fac]  / 'fname1'        \
 !               \ SERIES 'fname2' /  [idla] [nhedf] ([nhedt]) (nhedvec])     &
 !        FREE / FORMAT 'form' / [idfm] / UNFORMATTED
@@ -1221,14 +1368,22 @@
            GOTO 444                                                       40.80
         ENDIF
 !
+#ifdef MODEL_COUPLING
+        CALL SREDEP ( LWINDR, LWINDM, LOGCOM, ng)                         40.31 40.02
+#else
         CALL SREDEP ( LWINDR, LWINDM, LOGCOM )                            40.31 40.02
+#endif
         IF (STPNOW()) RETURN                                              34.01
 !       --- call CGINIT once as soon as both coordinates and bottom       40.31
 !           have been read and AC2 is not allocated                       40.31
  444    IF (OPTG .EQ. 1) THEN                                             40.80
 !         regular grid
           IF (LOGCOM(3) .AND. .NOT. LOGCOM(6)) THEN                       30.90
+#ifdef MODEL_COUPLING
+            CALL CGINIT(LOGCOM, ng)
+#else
             CALL CGINIT(LOGCOM)                                           40.31 30.90
+#endif
             IF (STPNOW()) RETURN                                          34.01
           ENDIF                                                           30.90
         ELSEIF (OPTG.EQ.3) THEN                                           40.80
@@ -1239,12 +1394,19 @@
             CALL MSGERR (3, '** before reading the bottom grid       *')
           ELSE IF (LOGCOM(2) .AND. LOGCOM(3) .AND.
      &             LOGCOM(4) .AND. .NOT. LOGCOM(6)) THEN
+#ifdef MODEL_COUPLING
+            CALL CGINIT(LOGCOM, ng)
+#else
             CALL CGINIT(LOGCOM)                                           40.31 30.90
+#endif
             IF (STPNOW()) RETURN                                          34.01
           ENDIF
         ELSEIF (OPTG.EQ.5) THEN                                           40.80
 !         unstructured grid
 !
+#if defined SWAN_MODEL
+            CALL MSGERR (3, '* swan cplng to unstr grid not avail.   *')  40.80
+#else
           IF ( .NOT.LOGCOM(5) ) THEN                                      40.80
             CALL MSGERR (3, '* read unstructured grid by means of    *')  40.80
             CALL MSGERR (3, '* SMS/ADCIRC, Triangle or Easymesh      *')  40.80
@@ -1282,6 +1444,7 @@
                ENDIF                                                      40.80
             ENDIF                                                         40.80
           ENDIF                                                           40.80
+#endif
         ENDIF
         GOTO 100
       ENDIF
@@ -1481,8 +1644,15 @@
           MDC = MDC + 1                                                   20.56
         ENDIF
 !
+#ifdef SWAN_MODEL
+        ALLOCATE (M_GENARR_MOD(ng)%SPCSIG_G(MSC))
+        SPCSIG=>M_GENARR_MOD(ng)%SPCSIG_G
+        ALLOCATE (M_GENARR_MOD(ng)%SPCDIR_G(MDC,6))
+        SPCDIR=>M_GENARR_MOD(ng)%SPCDIR_G
+#else
         IF(.NOT.ALLOCATED(SPCSIG)) ALLOCATE(SPCSIG(MSC))                  40.31
         IF(.NOT.ALLOCATED(SPCDIR)) ALLOCATE(SPCDIR(MDC,6))                40.31
+#endif
         CALL SSFILL(SPCSIG,SPCDIR)                                        40.31 30.90
 !
         IF (ITEST.GE. 20) THEN
@@ -1502,8 +1672,15 @@
  6051     FORMAT (' MDC: ',I6,' MSC: ',I6, ' DDIR: ', F6.3)               40.80
         ENDIF
 !
+#ifdef SWAN_MODEL
+        ALLOCATE (M_GENARR_MOD(ng)%XCGRID_G(MXC,MYC))
+        XCGRID=>M_GENARR_MOD(ng)%XCGRID_G
+        ALLOCATE (M_GENARR_MOD(ng)%YCGRID_G(MXC,MYC))
+        YCGRID=>M_GENARR_MOD(ng)%YCGRID_G
+#else
         IF(.NOT.ALLOCATED(XCGRID)) ALLOCATE(XCGRID(MXC,MYC))              40.31
         IF(.NOT.ALLOCATED(YCGRID)) ALLOCATE(YCGRID(MXC,MYC))              40.31
+#endif
 !
         IF (OPTG .EQ. 1) THEN                                             30.60
 !         *** The coordinates of computational points in ***
@@ -1521,6 +1698,40 @@
         ENDIF
 !
 !       *** the computational grid is included in output data  ***        40.31
+#ifdef SWAN_MODEL
+        IF ((MXC.GT.0) .AND. (MYC.GT.0) ) THEN                            40.31
+           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)
+           OPSDATZ_MOD(ng)%OPSTMP%PSNAME = 'COMPGRID'                                     40.31
+           IF (OPTG .EQ. 1) THEN                                          40.31
+              OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'F'                                         40.31
+              OPSDATZ_MOD(ng)%OPSTMP%OPR(1) = XPC                                         40.31
+              OPSDATZ_MOD(ng)%OPSTMP%OPR(2) = YPC                                         40.31
+              OPSDATZ_MOD(ng)%OPSTMP%OPR(3) = XCLEN                                       40.31
+              OPSDATZ_MOD(ng)%OPSTMP%OPR(4) = YCLEN                                       40.31
+              OPSDATZ_MOD(ng)%OPSTMP%OPR(5) = ALPC                                        40.31
+           ELSE IF (OPTG.EQ.3) THEN                                       40.80 40.31
+              OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'H'                                         40.31
+              OPSDATZ_MOD(ng)%OPSTMP%OPR(1) = FLOAT(MXC-1)                                40.31
+              OPSDATZ_MOD(ng)%OPSTMP%OPR(2) = FLOAT(MYC-1)                                40.31
+              OPSDATZ_MOD(ng)%OPSTMP%OPR(3) = 0.                                          40.31
+              OPSDATZ_MOD(ng)%OPSTMP%OPR(4) = 0.                                          40.31
+              OPSDATZ_MOD(ng)%OPSTMP%OPR(5) = ALPC                                        40.31
+           ENDIF                                                          40.31
+           OPSDATZ_MOD(ng)%OPSTMP%OPI(1) = MXC                                            40.31
+           OPSDATZ_MOD(ng)%OPSTMP%OPI(2) = MYC                                            40.31
+           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(0))                                         40.31
+           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(0))                                         40.31
+           NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                                        40.31
+           IF ( .NOT.LOPS ) THEN                                          40.31
+              OPSDATZ_MOD(ng)%FOPS => OPSDATZ_MOD(ng)%OPSTMP
+              OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS 
+              LOPS = .TRUE.                                               40.31
+           ELSE                                                           40.31
+              OPSDATZ_MOD(ng)%COPS%NEXTOPS => OPSDATZ_MOD(ng)%OPSTMP
+              OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%OPSTMP
+           END IF                                                         40.31
+        ENDIF
+#else
         IF ((MXC.GT.0) .AND. (MYC.GT.0) ) THEN                            40.31
            ALLOCATE(OPSTMP)                                               40.31
            OPSTMP%PSNAME = 'COMPGRID'                                     40.31
@@ -1553,6 +1764,7 @@
               COPS => OPSTMP                                              40.31
            END IF                                                         40.31
         ENDIF
+#endif
 !
         GOTO 100
       ENDIF
@@ -1570,7 +1782,11 @@
         MYC    = MYCGL                                                    40.31
         MCGRD  = MCGRDGL                                                  40.31
         NGRBND = NGRBGL                                                   40.31
+#ifdef SWAN_MODEL
+        CALL SWBOUN ( XGRDGL, YGRDGL, KGRPGL, XYTST, KGRBGL, ng)
+#else
         CALL SWBOUN ( XGRDGL, YGRDGL, KGRPGL, XYTST, KGRBGL )             40.31
+#endif
         IF (STPNOW()) RETURN                                              34.01
         MXC    = ITMP1                                                    40.31
         MYC    = ITMP2                                                    40.31
@@ -1794,7 +2010,7 @@
 ! =============================================================
 !
 !   SET  [level]  [nor]  [depmin]  [maxmes]        &
-!        [maxerr]  [grav]  [rho]  [inrhog]         &
+!        [maxerr]  [grav]  [rho] [cdcap] [inrhog]  &
 !        [hsrerr]  CARTesian/NAUTical  [pwtail]    &
 !        [froudmax]  [printf]  [prtest]
 !
@@ -1808,6 +2024,7 @@
          CALL ININTG ('MAXERR', MAXERR, 'UNC', 0)
          CALL INREAL ('GRAV',   GRAV,   'UNC', 0.)
          CALL INREAL ('RHO',    RHO,    'UNC', 0.)
+         CALL INREAL ('CDCAP',  CDCAP,  'UNC', 0.)
          CALL ININTG ('INRHOG', INRHOG, 'UNC', 0)
          IF (INRHOG.EQ.0) THEN                                            30.20
            OVUNIT(7) = 'm2/s'
@@ -2022,19 +2239,19 @@
 !
 ! =============================================================
 !
-!        | ->KOMen    [cds2] [stpm] [powst] [delta] [powk]                34.00
+!        | -> KOMen   [cds2] [stpm] [powst] [delta] [powk]                34.00
 !        |
-!        |   JANSsen  [cds1]  [delta] [pwtail]
+!        |    JANSsen [cds1]  [delta] [pwtail]
 !        |
-!        |   LHIG     [cflhig]
+!        |    LHIG    [cflhig]
 !        |
-! WCAP  <    BJ       [bjstp] [bjalf]
+! WCAP  <     BJ      [bjstp] [bjalf]
 !        |
-!        |   KBJ      [bjstp] [bjalf] [kconv]
+!        |    KBJ     [bjstp] [bjalf] [kconv]
 !        |                                                                40.30
-!        |   AB       [cds2] [br] [p0] [powst] [powk]                     40.53
+!        |    AB      [cds2] [br] [p0] [powst] [powk]                     40.53
 !        |
-!        |   WESTHuys [cds2] [br] [p0] [powst] [powk] &                   41.11
+!        |    WESTHuy [cds2] [br] [p0] [powst] [powk] &                   41.11
 !        |
 !        |            [nldisp] [cds3] [powfsh]                            41.11
 !
@@ -2045,15 +2262,15 @@
         IF (KEYWIS ('KOM')) THEN
 !         *** whitecapping according to Komen et al. (1984) ***
           IWCAP = 1
-          CALL INREAL ('CDS2', PWCAP(1), 'UNC', 0.)                       20.73
-          CALL INREAL ('STPM',  PWCAP(2), 'UNC', 0.)                      20.73
-          CALL INREAL ('POWST', PWCAP(9), 'UNC', 0.)                      34.00
+          CALL INREAL ('CDS2',  PWCAP(1),  'UNC', 0.)                     20.73
+          CALL INREAL ('STPM',  PWCAP(2),  'UNC', 0.)                     20.73
+          CALL INREAL ('POWST', PWCAP(9),  'UNC', 0.)                     34.00
           CALL INREAL ('DELTA', PWCAP(10), 'UNC', 0.)                     34.00
-          CALL INREAL ('POWK', PWCAP(11), 'UNC', 0.)                      34.00
+          CALL INREAL ('POWK',  PWCAP(11), 'UNC', 0.)                     34.00
         ELSE IF ( KEYWIS ('JANS')) THEN
 !         *** whitecapping according to Janssen (1989, 1991) ***
           IWCAP = 2
-          CALL INREAL ('CDS1', PWCAP(3), 'UNC', 0.)                       20.73
+          CALL INREAL ('CDS1',  PWCAP(3), 'UNC', 0.)                      20.73
           CALL INREAL ('DELTA', PWCAP(4), 'UNC', 0.)
 !
 !         Recalculate coefficients that are actually used in the          40.02
@@ -2157,6 +2374,67 @@
         ENDIF
         GOTO 100
       ENDIF
+!
+!   ------------------------------------------------------------------
+!   VEGEtation   < [height]  [diamtr]  [nstems]  [drag] >
+!   ------------------------------------------------------------------
+      IF (KEYWIS ('VEGE')) THEN
+        IVEG  = 1
+        ILMAX = 0
+        FRSTV%H = 0.
+        FRSTV%D = 0.
+        FRSTV%N = 0
+        FRSTV%C = 0.
+        NULLIFY(FRSTV%NEXTV)
+        CURRV => FRSTV
+ 303    CALL INREAL ('HEIGHT',HH,'REP',-1.)
+        IF ( HH.NE.-1. ) THEN
+           IF ( HH.LT.0. ) THEN
+              CALL MSGERR (2,'height is negative')
+              HH = 0.
+           END IF
+           CALL INREAL ('DIAMTR',DD,'REQ', 0.)
+           IF ( DD.LT.0. ) THEN
+              CALL MSGERR (2,'stem diameter is negative')
+              DD = 0.
+           END IF
+           CALL ININTG ('NSTEMS',NN,'REQ', 1 )
+           IF ( NN.LE.0 ) THEN
+              CALL MSGERR (2,'number of stems is negative or zero')
+              NN = 1
+           END IF
+           CALL INREAL ('DRAG'  ,CC,'REQ', 0.)
+           IF ( CC.LT.0. ) THEN
+              CALL MSGERR (2,'drag coefficient is negative')
+              CC = 0.
+           END IF
+           ILMAX = ILMAX+1
+           ALLOCATE(TMPV)
+           TMPV%H = HH
+           TMPV%D = DD
+           TMPV%N = NN
+           TMPV%C = CC
+           NULLIFY(TMPV%NEXTV)
+           CURRV%NEXTV => TMPV
+           CURRV => TMPV
+           GO TO 303
+        END IF
+        IF (ILMAX.EQ.0) CALL MSGERR(2,'No vegetation parameters found')
+        IF (.NOT.ALLOCATED(LAYH  )) ALLOCATE(LAYH  (ILMAX))
+        IF (.NOT.ALLOCATED(VEGDIL)) ALLOCATE(VEGDIL(ILMAX))
+        IF (.NOT.ALLOCATED(VEGNSL)) ALLOCATE(VEGNSL(ILMAX))
+        IF (.NOT.ALLOCATED(VEGDRL)) ALLOCATE(VEGDRL(ILMAX))
+        CURRV => FRSTV%NEXTV
+        DO JJ = 1, ILMAX
+           LAYH  (JJ) = CURRV%H
+           VEGDIL(JJ) = CURRV%D
+           VEGNSL(JJ) = REAL(CURRV%N)
+           VEGDRL(JJ) = CURRV%C
+           CURRV => CURRV%NEXTV
+        END DO
+        DEALLOCATE(TMPV)
+        GOTO 100
+      END IF
 !
 !     ------------------------------------------------------------------
 !
@@ -2264,15 +2542,13 @@
 !
 ! ======================================================================================
 !
-!       |   JANSsen [cds1] [delta]                         |              40.02
-! GEN3 <                                                    >     &
-!       | ->KOMen   [cds2] [stpm] [powst] [delta] [powk]   |              34.00
+!       |    JANSsen [cds1] [delta]                        |              40.02
 !       |                                                  |
-!       |   YAN     (NOT documented)                       |
+!       | -> KOMen   [cds2] [stpm]                         |              34.00
+! GEN3 <                                                    > (AGROW [a])
+!       |    YAN     (NOT documented)                      |
 !       |                                                  |
-!       |   WESTHuysen [cds2] [br] [p0] [powst] [powk]     |              40.53
-!
-!  (QUADrupl [iquad] [limiter] [lambda] [cnl4] [csh1] [csh2] [csh3]) (AGROW [a])
+!       |    WESTHuysen [cds2] [br] [p0] [powst] [powk]    |              40.53
 !
 ! ======================================================================================
 !
@@ -2285,7 +2561,7 @@
           IF (LWINDR .GT. 0) IWIND = LWINDM                               30.1x
 !         *** whitecapping according to Janssen (1989, 1991) ***
           IWCAP = 2
-          CALL INREAL ('CDS1', PWCAP(3), 'UNC', 0.)                       20.73
+          CALL INREAL ('CDS1',  PWCAP(3), 'UNC', 0.)                      20.73
           CALL INREAL ('DELTA', PWCAP(4), 'UNC', 0.)
 !
 !         Recalculate coefficientes that are actually used in the         40.02
@@ -2327,23 +2603,11 @@
           CALL INREAL ('CDS2', PWCAP(1), 'UNC', 0.)                       20.73
           CALL INREAL ('STPM', PWCAP(2), 'UNC', 0.)                       20.73
         ENDIF
-!       ***  parameters nonlinear 4 wave interactions ***
-        CALL INKEYW ('STA', ' ')
-        IF (KEYWIS ('QUAD')) THEN
-          CALL ININTG ('IQUAD', IQUAD, 'UNC', 0)
-!         *** if quadruplets are activated then LIMITER = 0.1 ***
-!         *** the standard value, however, is 1.e20           ***
-          CALL INREAL ('LAMBDA', PQUAD(1), 'UNC', 0.0)                    34.00
-          CALL INREAL ('CNL4', PQUAD(2), 'UNC', 0.0)                      34.00
-          CALL INREAL ('CSH1', PQUAD(3), 'UNC', 0.0)                      34.00
-          CALL INREAL ('CSH2', PQUAD(4), 'UNC', 0.0)                      34.00
-          CALL INREAL ('CSH3', PQUAD(5), 'UNC', 0.0)                      34.00
-        ENDIF
         CALL INKEYW ('STA', ' ')
         IF (KEYWIS('AGROW')) THEN                                         7/MAR
           CALL INREAL ('A',PWIND(31),'STA',0.0015)
         ELSE                                                              30.60
-          IF (NSTATM.EQ.1 .AND. ICOND.EQ.0) ICOND = 1                          30.70
+          IF (NSTATM.EQ.1 .AND. ICOND.EQ.0) ICOND = 1                     30.70
         ENDIF
         GOTO 100
       ENDIF
@@ -2493,14 +2757,11 @@
 !
 ! ===================================================================
 !
-!  QUADrupl [iquad] [limiter] [lambda] [cnl4] [csh1] [csh2] [csh3]        34.00
+!  QUADrupl [iquad] [lambda] [cnl4] [csh1] [csh2] [csh3]                  34.00
 !
 ! ===================================================================
 !
         CALL ININTG ('IQUAD', IQUAD, 'UNC',  0)
-!       *** if quadruplets are activated then LIMITER = 0.1 ***
-!       *** the standard value, however, is 1.e20           ***
-        CALL INREAL ('LIMITER', PNUMS(20), 'STA', 0.1)                    30.70
         CALL INREAL ('LAMBDA', PQUAD(1), 'UNC', 0.0)                      34.00
         CALL INREAL ('CNL4', PQUAD(2), 'UNC', 0.0)                        34.00
         CALL INREAL ('CSH1', PQUAD(3), 'UNC', 0.0)                        34.00
@@ -2515,14 +2776,14 @@
 !
 ! ============================================================
 !
-!  TRIad [trfac] [cutfr] [urcrit] [urslim]                                40.55
+!  TRIad [trfac] [cutfr] [urcrit] [urslim]                                40.56
 !
 ! ============================================================
 !
       IF (KEYWIS ('TRI')) THEN
         ITRIAD = 1                                                        20.81
         CALL INREAL ('TRFAC', PTRIAD(1), 'UNC', 0.0)
-        CALL INREAL ('CUTFR', PTRIAD(2), 'STA', 2.5)                      40.61 40.55 30.82
+        CALL INREAL ('CUTFR', PTRIAD(2), 'STA', 2.5)                      40.61 40.56 30.82
         CALL INREAL ('URCRIT', PTRIAD(4), 'UNC', 0.0)                     40.13
         CALL INREAL ('URSLIM', PTRIAD(5), 'STA', 0.01)                    40.41 40.23 40.13
         GOTO 100
@@ -2595,7 +2856,11 @@
 !
 !     process output requests                                             40.00
 !
+#ifdef SWAN_MODEL
+      CALL SPROUT(FOUND, DEPTH, WLEVL, ng)
+#else
       CALL SPROUT(FOUND, DEPTH, WLEVL)                                    40.31
+#endif
       IF (STPNOW()) RETURN                                                34.01
       IF (.NOT.FOUND) THEN
         LEVERR = MAX(LEVERR,3)
@@ -2607,7 +2872,11 @@
       END
 !***********************************************************************
 !                                                                      *
+#ifdef SWAN_MODEL
+      SUBROUTINE SINPGR (IGRID1, IGRID2, SNAMEG, ng)
+#else
       SUBROUTINE SINPGR (IGRID1, IGRID2, SNAMEG)                          40.31
+#endif
 !                                                                      *
 !***********************************************************************
 !
@@ -2635,7 +2904,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2733,9 +3002,15 @@
 ! 13. SOURCE TEXT
 !
       INTEGER   IGRID1
+#ifdef SWAN_MODEL
+      INTEGER, INTENT(IN) :: ng
+      INTEGER   IGRID2
+#endif
       CHARACTER SNAMEG *8
       LOGICAL   KEYWIS                                                    30.00
+#if !defined SWAN_MODEL
       TYPE(OPSDAT), POINTER :: OPSTMP                                     40.31
+#endif
       SAVE IENT
       DATA IENT/0/
       CALL STRACE(IENT,'SINPGR')
@@ -2771,6 +3046,8 @@
 !            | WY       |
 !            |          |
 !            | ASTD     |                                                 40.03
+!            |          |
+!            | NPLAnts  |                                                 40.55
 !
 !
 !    | REGular [xpinp] [ypinp] [alpinp] [mxinp] [myinp] [dxinp] [dyinp] |
@@ -2913,9 +3190,12 @@
           IFLTIM(IGRID2) = IFLTIM(IGRID1)                                 40.00
         ENDIF
         IF (IFLEND(IGRID1).LT.0.9E20) THEN
-          IF ( MOD(IFIX(IFLEND(IGRID1)-IFLBEG(IGRID1)),
-     &             IFIX(IFLINT(IGRID1))) .NE. 0) CALL MSGERR (1,
-     &             'Interval is not a fraction of the period')
+           IF ( MOD(IFLEND(IGRID1)-IFLBEG(IGRID1),IFLINT(IGRID1)) >
+     &                                         0.01*IFLINT(IGRID1) .AND.
+     &          MOD(IFLEND(IGRID1)-IFLBEG(IGRID1),IFLINT(IGRID1)) <
+     &                                         0.99*IFLINT(IGRID1) )
+     &        CALL MSGERR (1,
+     &             '[deltinp] is not a fraction of the period')
         ENDIF
       ENDIF
       IF ((MXG(IGRID1).EQ.0).OR.(MYG(IGRID1).EQ.0)) GOTO 100
@@ -2923,6 +3203,72 @@
 !
 !     ***** input grid is included in output data                 *****
 !     ***** reference point coincides with origin of output frame *****
+#ifdef SWAN_MODEL
+      ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                                    40.31
+      OPSDATZ_MOD(ng)%OPSTMP%PSNAME = SNAMEG                                              40.31
+      ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(0))                                              40.31
+      ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(0))                                              40.31
+!
+      IF (IGTYPE(IGRID1) .EQ. 1) THEN                                     30.21
+        OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'F'                                               40.31
+        XQLEN          = (MXG(IGRID1)-1)*DXG(IGRID1)
+        OPSDATZ_MOD(ng)%OPSTMP%OPR(3) = XQLEN                                             40.31
+!
+        IF (ONED) THEN                                                    32.02
+          YQLEN          = XQLEN                                          32.02
+        ELSE                                                              32.02
+          YQLEN          = (MYG(IGRID1)-1)*DYG(IGRID1)
+        ENDIF                                                             32.02
+!
+        OPSDATZ_MOD(ng)%OPSTMP%OPR(4) = YQLEN                                             40.31
+        OPSDATZ_MOD(ng)%OPSTMP%OPR(1) = XPG(IGRID1)                                       40.31
+        OPSDATZ_MOD(ng)%OPSTMP%OPR(2) = YPG(IGRID1)                                       40.31
+        OPSDATZ_MOD(ng)%OPSTMP%OPR(5) = ALPG(IGRID1)                                      40.31
+        OPSDATZ_MOD(ng)%OPSTMP%OPI(1) = MXG(IGRID1)                                       40.31
+        OPSDATZ_MOD(ng)%OPSTMP%OPI(2) = MYG(IGRID1)                                       40.31
+      ELSE
+        OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'H'                                               40.31
+        OPSDATZ_MOD(ng)%OPSTMP%OPR(1) = FLOAT(MXG(IGRID1)-1)                              40.31
+        OPSDATZ_MOD(ng)%OPSTMP%OPR(2) = FLOAT(MYG(IGRID1)-1)                              40.31
+        OPSDATZ_MOD(ng)%OPSTMP%OPR(3) = 0.                                                40.31
+        OPSDATZ_MOD(ng)%OPSTMP%OPR(4) = 0.                                                40.31
+        OPSDATZ_MOD(ng)%OPSTMP%OPR(5) = 0.                                                40.31
+        OPSDATZ_MOD(ng)%OPSTMP%OPI(1) = MXG(IGRID1)                                       40.31
+        OPSDATZ_MOD(ng)%OPSTMP%OPI(2) = MYG(IGRID1)                                       40.31
+!       *** Because the input grid is staggered should have    ***
+!       *** same length in X and Y than the computational grid ***
+        IF (MCGRD.GT.1) THEN
+          XQLEN = XCGMAX - XCGMIN                                         40.00
+          YQLEN = YCGMAX - YCGMIN
+        ENDIF
+      ENDIF
+      IF (ITEST .GE. 50 .OR. INTES .GE. 5) THEN
+        IF (OPSDATZ_MOD(ng)%OPSTMP%PSTYPE .EQ. 'F') THEN
+          WRITE(PRINTF,6021)IGRID1,'F',XQLEN,YQLEN,
+     &    XPG(IGRID1),YPG(IGRID1),ALPG(IGRID1),MXG(IGRID1),MYG(IGRID1)
+        ELSE
+          WRITE(PRINTF,6022)IGRID1,OPSDATZ_MOD(ng)%OPSTMP%PSTYPE,       &
+     &      MXG(IGRID1)-1,MYG(IGRID1)-1,0,0,0.,MXG(IGRID1),MYG(IGRID1)
+        ENDIF
+ 6021   FORMAT (' INP GRID PARAMETERS: ',/,
+     &          'IGRID , FRAMTYPE,XLENFR ,YLENFR  XPFR  YPFR    ALPFR',
+     &          '    MXFR MYFR',/,I2,1X,A,4X,
+     &           2(1X,E8.3), 2(1X,E10.3), F7.3, 2(1X,I4))                 40.31 30.60
+ 6022   FORMAT (' INP GRID PARAMETERS: ',/,
+     &          'IGRID, FRAMTYPE ,XMAXFR ,YMAXFR XMINFR YMINFR  ALPFR',
+     &          '    MXFR MYFR',/,
+     &          I3,8X,A,1X,4(3X,I4),5X,E8.3,2(1X,I4))
+      ENDIF                                                               30.21
+      NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                            
+      IF ( .NOT.LOPS ) THEN                                               40.31
+         OPSDATZ_MOD(ng)%FOPS = OPSDATZ_MOD(ng)%OPSTMP                   
+         OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS                   
+         LOPS = .TRUE.                                                    40.31
+      ELSE                                                                40.31
+         OPSDATZ_MOD(ng)%COPS%NEXTOPS => OPSDATZ_MOD(ng)%OPSTMP
+         OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%OPSTMP                  
+      END IF                                                              40.31
+#else
       ALLOCATE(OPSTMP)                                                    40.31
       OPSTMP%PSNAME = SNAMEG                                              40.31
       ALLOCATE(OPSTMP%XP(0))                                              40.31
@@ -2987,6 +3333,7 @@
          COPS%NEXTOPS => OPSTMP                                           40.31
          COPS => OPSTMP                                                   40.31
       END IF                                                              40.31
+#endif
 !
       IF (IGRID2.GT.0) THEN                                               10.26
         XPG(IGRID2)   = XPG(IGRID1)
@@ -3024,7 +3371,11 @@
       END
 !***********************************************************************
 !                                                                      *
+#ifdef SWAN_MODEL
+      SUBROUTINE SREDEP ( LWINDR, LWINDM ,LOGCOM, ng)
+#else
       SUBROUTINE SREDEP ( LWINDR, LWINDM ,LOGCOM )                        40.31 40.02
+#endif
 !                                                                      *
 !***********************************************************************
 !
@@ -3053,7 +3404,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3080,6 +3431,7 @@
 !     40.04: Annette Kieftenburg
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     40.55: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -3093,6 +3445,7 @@
 !     40.02, Oct. 00: Avoided real/int conflict by introducing RPOOL
 !     40.31, Oct. 03: remove POOL construction
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.55, Dec. 05: introducing vegetation model
 !
 !  2. Purpose
 !
@@ -3170,6 +3523,9 @@
 !
 ! 13. Source text
 !
+#ifdef SWAN_MODEL
+      INTEGER, INTENT(in) :: ng
+#endif
       REAL, ALLOCATABLE :: TARR(:)                                        40.31
       LOGICAL    KEYWIS, VECTOR                                           30.00
       LOGICAL    LOGCOM(6)                                                30.21
@@ -3182,6 +3538,7 @@
 !   ============================================================================
 !
 !   READinp    BOTtom/WLevel/CURrent/FRiction/WInd/COORdinates               &
+!              NPLAnts                                                       &
 !        [fac]  / 'fname1'        \
 !               \ SERIES 'fname2' /  [idla] [nhedf] ([nhedt]) (nhedvec])     &
 !        FREE / FORMAT 'form' / [idfm] / UNFORMATTED
@@ -3200,10 +3557,12 @@
       ELSE IF (KEYWIS ('FR')) THEN
         IGR1   = 4
         VARFR  = .TRUE.
+#if !defined MODEL_COUPLING
         MCMVAR = MCMVAR + 2                                               40.00
         JFRC2  = MCMVAR - 1                                               40.00
         JFRC3  = MCMVAR                                                   40.00
         ALOCMP = .TRUE.                                                   40.97
+#endif
       ELSE IF (KEYWIS ('WI')) THEN
         LWINDR = 2                                                        30.10
         IWIND  = LWINDM                                                   30.10
@@ -3233,6 +3592,16 @@
           JASTD3 = MCMVAR                                                 40.03
           ALOCMP = .TRUE.                                                 40.97
         ENDIF                                                             40.03
+      ELSE IF (KEYWIS ('NPLA')) THEN                                      40.55
+!       number of plants per square meter
+        IGR1   = 11
+        VARNPL = .TRUE.                                                   40.55
+        IF (JNPLA2.LE.1) THEN                                             40.55
+          MCMVAR = MCMVAR + 2                                             40.55
+          JNPLA2 = MCMVAR - 1                                             40.55
+          JNPLA3 = MCMVAR                                                 40.55
+          ALOCMP = .TRUE.                                                 40.97
+        ENDIF                                                             40.55
       ELSE
         CALL  WRNKEY
       ENDIF
@@ -3291,6 +3660,44 @@
      &             IFLIDL(IGR1), IFLFAC(IGR1),
      &             IFLNHD(IGR1), IFLNHF(IGR1))
       IF (STPNOW()) RETURN                                                34.01
+#ifdef SWAN_MODEL
+      IF (IGR1.EQ.1) THEN                                                 40.31
+         DEALLOCATE(M_GENARR_MOD(ng)%DEPTH_G)
+         ALLOCATE (M_GENARR_MOD(ng)%DEPTH_G(MXG(IGR1)*MYG(IGR1)))
+         DEPTH=>M_GENARR_MOD(ng)%DEPTH_G
+         CALL SWCOPR( TARR, DEPTH, MXG(IGR1)*MYG(IGR1) )                  40.31
+      ELSE IF (IGR1.EQ.2) THEN                                            40.31
+         DEALLOCATE(M_GENARR_MOD(ng)%UXB_G)
+         ALLOCATE (M_GENARR_MOD(ng)%UXB_G(MXG(IGR1)*MYG(IGR1)))
+         UXB=>M_GENARR_MOD(ng)%UXB_G
+         CALL SWCOPR( TARR, UXB, MXG(IGR1)*MYG(IGR1) )                    40.31
+      ELSE IF (IGR1.EQ.4) THEN                                            40.31
+         DEALLOCATE(M_GENARR_MOD(ng)%FRIC_G)
+         ALLOCATE (M_GENARR_MOD(ng)%FRIC_G(MXG(IGR1)*MYG(IGR1)))
+         FRIC=>M_GENARR_MOD(ng)%FRIC_G
+         CALL SWCOPR( TARR, FRIC, MXG(IGR1)*MYG(IGR1) )                   40.31
+      ELSE IF (IGR1.EQ.5) THEN                                            40.31
+         DEALLOCATE(M_GENARR_MOD(ng)%WXI_G)
+         ALLOCATE (M_GENARR_MOD(ng)%WXI_G(MXG(IGR1)*MYG(IGR1)))
+         WXI=>M_GENARR_MOD(ng)%WXI_G
+         CALL SWCOPR( TARR, WXI, MXG(IGR1)*MYG(IGR1) )                    40.31
+      ELSE IF (IGR1.EQ.7) THEN                                            40.31
+         DEALLOCATE(M_GENARR_MOD(ng)%WLEVL_G)
+         ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(MXG(IGR1)*MYG(IGR1)))
+         WLEVL=>M_GENARR_MOD(ng)%WLEVL_G
+         CALL SWCOPR( TARR, WLEVL, MXG(IGR1)*MYG(IGR1) )                  40.31
+      ELSE IF (IGR1.EQ.8) THEN                                            40.31
+         CALL SWCOPR( TARR, XCGRID, MXG(IGR1)*MYG(IGR1) )                 40.31
+      ELSE IF (IGR1.EQ.10) THEN                                           40.31
+         DEALLOCATE(M_GENARR_MOD(ng)%ASTDF_G)
+         ALLOCATE (M_GENARR_MOD(ng)%ASTDF_G(MXG(IGR1)*MYG(IGR1)))
+         ASTDF=>M_GENARR_MOD(ng)%ASTDF_G
+         CALL SWCOPR( TARR, ASTDF, MXG(IGR1)*MYG(IGR1) )                  40.31
+      ELSE IF (IGR1.EQ.11) THEN                                           40.55
+         IF (.NOT.ALLOCATED(NPLAF)) ALLOCATE(NPLAF(MXG(IGR1)*MYG(IGR1)))  40.55
+         CALL SWCOPR( TARR, NPLAF, MXG(IGR1)*MYG(IGR1) )                  40.55
+      END IF                                                              40.31
+#else
       IF (IGR1.EQ.1) THEN                                                 40.31
          IF (.NOT.ALLOCATED(DEPTH)) ALLOCATE(DEPTH(MXG(IGR1)*MYG(IGR1)))  40.31
          CALL SWCOPR( TARR, DEPTH, MXG(IGR1)*MYG(IGR1) )                  40.31
@@ -3311,7 +3718,11 @@
       ELSE IF (IGR1.EQ.10) THEN                                           40.31
          IF (.NOT.ALLOCATED(ASTDF)) ALLOCATE(ASTDF(MXG(IGR1)*MYG(IGR1)))  40.31
          CALL SWCOPR( TARR, ASTDF, MXG(IGR1)*MYG(IGR1) )                  40.31
+      ELSE IF (IGR1.EQ.11) THEN                                           40.55
+         IF (.NOT.ALLOCATED(NPLAF)) ALLOCATE(NPLAF(MXG(IGR1)*MYG(IGR1)))  40.55
+         CALL SWCOPR( TARR, NPLAF, MXG(IGR1)*MYG(IGR1) )                  40.55
       END IF                                                              40.31
+#endif
       DEALLOCATE(TARR)                                                    40.31
       IF (IGR2.GT.0) THEN
 
@@ -3324,6 +3735,21 @@
      &               IFLIDL(IGR2), IFLFAC(IGR2),
      &               IFLNHD(IGR2), 0)
         IF (STPNOW()) RETURN                                              34.01
+#ifdef SWAN_MODEL
+      IF (IGR2.EQ.3) THEN                                                 40.31
+         DEALLOCATE(M_GENARR_MOD(ng)%UYB_G)
+         ALLOCATE (M_GENARR_MOD(ng)%UYB_G(MXG(IGR2)*MYG(IGR2)))
+         UYB=>M_GENARR_MOD(ng)%UYB_G
+         CALL SWCOPR( TARR, UYB, MXG(IGR2)*MYG(IGR2) )                    40.31
+      ELSE IF (IGR2.EQ.6) THEN                                            40.31
+         DEALLOCATE(M_GENARR_MOD(ng)%WYI_G)
+         ALLOCATE (M_GENARR_MOD(ng)%WYI_G(MXG(IGR2)*MYG(IGR2)))
+         WYI=>M_GENARR_MOD(ng)%WYI_G
+         CALL SWCOPR( TARR, WYI, MXG(IGR2)*MYG(IGR2) )                    40.31
+      ELSE IF (IGR2.EQ.9) THEN                                            40.31
+           CALL SWCOPR( TARR, YCGRID, MXG(IGR2)*MYG(IGR2) )               40.31
+      END IF                                                              40.31
+#else
         IF (IGR2.EQ.3) THEN                                               40.31
            IF (.NOT.ALLOCATED(UYB)) ALLOCATE(UYB(MXG(IGR2)*MYG(IGR2)))    40.31
            CALL SWCOPR( TARR, UYB, MXG(IGR2)*MYG(IGR2) )                  40.31
@@ -3333,6 +3759,7 @@
         ELSE IF (IGR2.EQ.9) THEN                                          40.31
            CALL SWCOPR( TARR, YCGRID, MXG(IGR2)*MYG(IGR2) )               40.31
         END IF                                                            40.31
+#endif
         DEALLOCATE(TARR)                                                  40.31
       ENDIF
 !     set time of reading
@@ -3377,7 +3804,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3517,7 +3944,11 @@
       END
 !***********************************************************************
 !                                                                      *
+#ifdef SWAN_MODEL
+      SUBROUTINE CGINIT (LOGCOM, ng)
+#else
       SUBROUTINE CGINIT (LOGCOM)                                          40.31 30.90
+#endif
 !                                                                      *
 !***********************************************************************
 !
@@ -3544,7 +3975,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3614,6 +4045,9 @@
 !     MCGRDL:     number of wet grid points in own subdomain              40.31
 !     MSGSTR:     string to pass message to call MSGERR                   40.41
 !
+#ifdef SWAN_MODEL
+      INTEGER, INTENT(in) :: ng
+#endif
       INTEGER IENT, INDX, IX, IY, MCGRDL                                  40.31
       INTEGER ISTAT, IF1, IL1                                             40.41
       INTEGER, ALLOCATABLE :: IARR(:)                                     40.31
@@ -3656,23 +4090,43 @@
 !
 !     --- Calculation of computational grid dimension ***
 !
+#ifdef SWAN_MODEL
+      ALLOCATE (PARALL_MOD(ng)%KGRPGL_G(MXC,MYC))
+      KGRPGL=>PARALL_MOD(ng)%KGRPGL_G
+#else
       IF(.NOT.ALLOCATED(KGRPGL)) ALLOCATE(KGRPGL(MXC,MYC))                40.31
+#endif
 !
       CALL SWDIM ( KGRPGL, DEPTH, XCGRID, YCGRID )                        40.31 30.60
 !
 !     --- call CGBOUN to determine computational grid outline
 !
       IF (ONED) THEN                                                      30.81
+#ifdef SWAN_MODEL
+        ALLOCATE (PARALL_MOD(ng)%KGRBGL_G(4))
+        KGRBGL=>PARALL_MOD(ng)%KGRBGL_G
+#else
         IF(.NOT.ALLOCATED(KGRBGL)) ALLOCATE(KGRBGL(4))                    40.31
+#endif
         CALL CGBOUN ( KGRPGL, KGRBGL )                                    40.31 40.04
       ELSE                                                                30.81
         IF(.NOT.ALLOCATED(IARR)) ALLOCATE(IARR(2*MCGRD))                  40.31
         CALL CGBOUN ( KGRPGL, IARR )                                      40.31 40.04
         IF ( NGRBND.GT.0 ) THEN                                           40.31
+#ifdef SWAN_MODEL
+           ALLOCATE (PARALL_MOD(ng)%KGRBGL_G(2*NGRBND))
+           KGRBGL=>PARALL_MOD(ng)%KGRBGL_G
+#else
            IF(.NOT.ALLOCATED(KGRBGL)) ALLOCATE(KGRBGL(2*NGRBND))          40.31
+#endif
            CALL SWCOPI(IARR,KGRBGL,2*NGRBND)                              40.31
         ELSE                                                              40.31
+#ifdef SWAN_MODEL
+           ALLOCATE (PARALL_MOD(ng)%KGRBGL_G(0))
+           KGRBGL=>PARALL_MOD(ng)%KGRBGL_G
+#else
            IF(.NOT.ALLOCATED(KGRBGL)) ALLOCATE(KGRBGL(0))                 40.31
+#endif
         END IF                                                            40.31
       END IF                                                              30.81
       NGRBGL = NGRBND                                                     40.30
@@ -3681,7 +4135,11 @@
 !         distributed-memory approach                                     40.31
 
 !TIMG      CALL SWTSTA(211)                                                    40.31
+#ifdef SWAN_MODEL
+      CALL SWDECOMP(ng)
+#else
       CALL SWDECOMP                                                       40.31
+#endif
 !TIMG      CALL SWTSTO(211)                                                    40.31
       IF (STPNOW()) RETURN                                                40.31
 
@@ -3689,7 +4147,12 @@
 
 !     --- Create copy of parts of KGRPGL for each subdomain -> KGRPNT     40.31
 
+#ifdef SWAN_MODEL
+      ALLOCATE (M_GENARR_MOD(ng)%KGRPNT_G(MXC,MYC))
+      KGRPNT=>M_GENARR_MOD(ng)%KGRPNT_G
+#else
       IF(.NOT.ALLOCATED(KGRPNT)) ALLOCATE(KGRPNT(MXC,MYC))                40.31
+#endif
       KGRPNT = 1                                                          40.31
       MCGRDL = 1                                                          40.31
       DO IX = MXF, MXL                                                    40.31
@@ -3704,13 +4167,30 @@
 
 !     --- Create copies of parts of XCGRID, YCGRID for each subdomain     40.31
 
+#ifdef SWAN_MODEL
+      ALLOCATE (PARALL_MOD(ng)%XGRDGL_G(MXCGL,MYCGL))
+      XGRDGL=>PARALL_MOD(ng)%XGRDGL_G
+      ALLOCATE (PARALL_MOD(ng)%YGRDGL_G(MXCGL,MYCGL))
+      YGRDGL=>PARALL_MOD(ng)%YGRDGL_G
+#else
       IF (.NOT.ALLOCATED(XGRDGL)) ALLOCATE(XGRDGL(MXCGL,MYCGL))           40.31
       IF (.NOT.ALLOCATED(YGRDGL)) ALLOCATE(YGRDGL(MXCGL,MYCGL))           40.31
+#endif
       XGRDGL = XCGRID                                                     40.31
       YGRDGL = YCGRID                                                     40.31
+
+#ifdef SWAN_MODEL
+      DEALLOCATE(M_GENARR_MOD(ng)%XCGRID_G)
+      DEALLOCATE(M_GENARR_MOD(ng)%YCGRID_G)
+      ALLOCATE (M_GENARR_MOD(ng)%XCGRID_G(MXC,MYC))
+      XCGRID=>M_GENARR_MOD(ng)%XCGRID_G
+      ALLOCATE (M_GENARR_MOD(ng)%YCGRID_G(MXC,MYC))
+      YCGRID=>M_GENARR_MOD(ng)%YCGRID_G
+#else
       DEALLOCATE(XCGRID,YCGRID)                                           40.31
       ALLOCATE(XCGRID(MXC,MYC))                                           40.31
       ALLOCATE(YCGRID(MXC,MYC))                                           40.31
+#endif
       DO IX = MXF, MXL                                                    40.31
          DO IY = MYF, MYL                                                 40.31
             XCGRID(IX-MXF+1,IY-MYF+1) = XGRDGL(IX,IY)                     40.31
@@ -3741,20 +4221,40 @@
          IF (PARLL) THEN
             IARR = 0                                                      40.31
             CALL CGBOUN ( KGRPNT, IARR )                                  40.31
+#ifdef SWAN_MODEL
+            ALLOCATE (M_GENARR_MOD(ng)%KGRBND_G(2*NGRBND))
+            KGRBND=>M_GENARR_MOD(ng)%KGRBND_G
+#else
             IF(.NOT.ALLOCATED(KGRBND)) ALLOCATE(KGRBND(2*NGRBND))         40.31
+#endif
             IF (NGRBND.GT.0) CALL SWCOPI(IARR,KGRBND,2*NGRBND)            40.31
          ELSE                                                             40.31
+#ifdef SWAN_MODEL
+            ALLOCATE (M_GENARR_MOD(ng)%KGRBND_G(2*NGRBND))
+            KGRBND=>M_GENARR_MOD(ng)%KGRBND_G
+#else
             IF(.NOT.ALLOCATED(KGRBND)) ALLOCATE(KGRBND(2*NGRBND))         40.31
+#endif
             KGRBND = KGRBGL                                               40.31
          END IF                                                           40.31
       ELSE                                                                40.31
+#ifdef SWAN_MODEL
+         ALLOCATE (M_GENARR_MOD(ng)%KGRBND_G(0))
+         KGRBND=>M_GENARR_MOD(ng)%KGRBND_G
+#else
          IF(.NOT.ALLOCATED(KGRBND)) ALLOCATE(KGRBND(0))                   40.31
+#endif
       END IF                                                              40.31
       IF(ALLOCATED(IARR)) DEALLOCATE(IARR)                                40.31
 
 !TIMG      CALL SWTSTO(212)                                                    40.31
 
+#ifdef SWAN_MODEL
+      ALLOCATE (M_GENARR_MOD(ng)%AC2_G(MDC,MSC,MCGRD),STAT=ISTAT)
+      AC2=>M_GENARR_MOD(ng)%AC2_G
+#else
       IF(.NOT.ALLOCATED(AC2)) ALLOCATE(AC2(MDC,MSC,MCGRD),STAT=ISTAT)     40.41 40.31
+#endif
       IF ( ISTAT.NE.0 ) THEN                                              40.41
          CHARS(1) = NUMSTR(ISTAT,RNAN,'(I6)')                             40.41
          CALL TXPBLA(CHARS(1),IF1,IL1)                                    40.41
@@ -3806,7 +4306,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3926,16 +4426,10 @@
                   XOFFS  = XCGRID(IX,IY)                                  30.72
                   YOFFS  = YCGRID(IX,IY)                                  30.72
                   LXOFFS = .TRUE.
-                  IF (EQREAL(EXCFLD(8),0.)) THEN                          40.51
-                     XCGRID(IX,IY) = 1.E-5                                40.51
-                  ELSE
-                     XCGRID(IX,IY) = 0.
-                  END IF
-                  IF (EQREAL(EXCFLD(9),0.)) THEN                          40.51
-                     YCGRID(IX,IY) = 1.E-5                                40.51
-                  ELSE
-                     YCGRID(IX,IY) = 0.
-                  END IF
+                  XCGRID(IX,IY) = 0.
+                  YCGRID(IX,IY) = 0.
+                  EXCFLD(8) = REAL(EXCFLD(8) - DBLE(XOFFS))
+                  EXCFLD(9) = REAL(EXCFLD(9) - DBLE(YOFFS))
                 ELSE
                   XCGRID(IX,IY) = REAL(XCGRID(IX,IY) - DBLE(XOFFS))       30.72
                   YCGRID(IX,IY) = REAL(YCGRID(IX,IY) - DBLE(YOFFS))       30.72
@@ -4026,7 +4520,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4391,7 +4885,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4501,7 +4995,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4673,7 +5167,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4843,7 +5337,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5111,10 +5605,10 @@
             CALL MSGERR (2,
      &      'grid on hotstart file differs from one in CGRID command')    40.00
             WRITE (PRINTF, 123) NPTOT, NUMPTS                             40.80 40.62
- 123        FORMAT (1X, I6, ' points in comp.grid; on file:', I6)         40.03
+ 123        FORMAT (1X, I8, ' points in comp.grid; on file:', I8)         40.03
           ENDIF
           IF (ITEST.GE.50) WRITE (PRTEST, 124) NUMPTS                     40.03
- 124      FORMAT (1X, I6, '  output locations')
+ 124      FORMAT (1X, I8, '  output locations')
           DO IP = 1, NUMPTS
             READ (NREF, *)
           ENDDO
@@ -5283,8 +5777,13 @@
       END
 !*******************************************************************
 !                                                                  *
+#ifdef MODEL_COUPLING
+      SUBROUTINE BACKUP (AC2, SPCSIG, SPCDIR, KGRPNT,
+     &                   XCGRID, YCGRID, ng)
+#else
       SUBROUTINE BACKUP (AC2, SPCSIG, SPCDIR, KGRPNT,
      &                   XCGRID, YCGRID)
+#endif
 !                                                                  *
 !*******************************************************************
 !
@@ -5311,7 +5810,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5373,6 +5872,9 @@
       REAL    SPCDIR(MDC,6)                                               30.82
       REAL    SPCSIG(MSC)                                                 30.82
       REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.82
+#ifdef MODEL_COUPLING
+      INTEGER, INTENT(IN) :: ng
+#endif
 !
 !  8. Subroutines used
 !
@@ -5394,7 +5896,16 @@
 !
 !     ==================================================================
 !
+#ifdef MODEL_COUPLING
+       FILENM='swan_restart.dat'
+       ILPOS = INDEX ( FILENM, ' ' )-1
+       IF (ILPOS.GT.0) THEN
+          WRITE(FILENM(ILPOS+1:ILPOS+2),180) ng
+       END IF
+ 180   FORMAT(I2.2)
+#else
       CALL INCSTR ('FNAME', FILENM, 'REQ', ' ')
+#endif
 !     --- append node number to FILENM in case of parallel computing      40.31
       IF ( PARLL ) THEN                                                   40.31
          ILPOS = INDEX ( FILENM, ' ' )-1                                  40.31
@@ -5420,12 +5931,14 @@
         CRFORM = '(2F12.6)'                                               40.41
       ENDIF                                                               40.13
       IF (OPTG.NE.5) THEN                                                 40.80
-         WRITE (NREF, 103) MXC*MYC, 'number of locations'
+         WRITE (NREF, 104) MXC*MYC, MXC, MYC, 'number of locations'
+ 104     FORMAT (I8, 2I6, T41, A)
          DO IX = 1, MXC
            DO IY = 1, MYC
              IF ( EQREAL(XCGRID(IX,IY), EXCFLD(8)) .AND.                  40.41
      &            EQREAL(YCGRID(IX,IY), EXCFLD(9)) ) THEN                 40.41
-               WRITE (NREF, FMT=CRFORM) EXCFLD(8), EXCFLD(9)              40.41
+               WRITE (NREF, FMT=CRFORM) DBLE(EXCFLD(8)) + DBLE(XOFFS),
+     &                                  DBLE(EXCFLD(9)) + DBLE(YOFFS)
              ELSE
              WRITE (NREF, FMT=CRFORM) DBLE(XCGRID(IX,IY)) + DBLE(XOFFS),
      &                                DBLE(YCGRID(IX,IY)) + DBLE(YOFFS)   40.00
@@ -5433,7 +5946,8 @@
            ENDDO
          ENDDO
       ELSE                                                                40.80
-         WRITE (NREF, 103) nverts, 'number of locations'                  40.80
+         WRITE (NREF, 105) nverts, 'number of locations'                  40.80
+ 105     FORMAT (I8, T41, A)
          DO K = 1, nverts                                                 40.80
             WRITE (NREF, FMT=CRFORM) DBLE(xcugrd(K)) + DBLE(XOFFS),       40.80
      &                               DBLE(ycugrd(K)) + DBLE(YOFFS)        40.80

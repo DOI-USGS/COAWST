@@ -26,12 +26,13 @@ tasks:
       Compaq True 64 Alpha (DEC ALFA)     OSF1           Compaq
       Sun SPARC                           Solaris        Sun
       PA-RISC (HP 9000 series 700/800)    HP-UX v11      HP
+      IBM Power6 (pSeries 575)            Linux          IBM
       Intel Pentium (32-bit) PC           Linux          GNU (g95)
       Intel Pentium (32-bit) PC           Linux          GNU (gfortran)
       Intel Pentium (32-bit) PC           Linux          Intel
       Intel Pentium (64-bit) PC           Linux          Intel
       Intel Itanium (64-bit) PC           Linux          Intel
-      Intel Pentium (32-bit) PC           Linux          Portland Group
+      Intel Pentium (64-bit) PC           Linux          Portland Group
       Intel Pentium (32-bit) PC           Linux          Lahey
       Intel Pentium (32-bit) PC           MS Windows     Intel
       Intel Pentium (64-bit) PC           MS Windows     Intel

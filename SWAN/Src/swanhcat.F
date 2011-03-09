@@ -16,7 +16,7 @@
 !     hcat.nml file.
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,9 +40,9 @@
       implicit none
       character(256) RLINE
       character*128 arg_str, basefile, tmp
-      integer ios,i,j,k,l,numfiles, sum, halo,haloindex
+      integer ios,i,j,k,l,numfiles, sum, halo,haloindex, mxc, myc
       integer prevsource,freq,cdir, version
-      logical ydivide, verbose, haloflag, exists, stomp, nonstat
+      logical ydivide, verbose, haloflag, exists, stomp, nonstat, kspher
       real, allocatable :: x(:,:),y(:,:)
       integer, allocatable :: locations(:),index(:), source(:)
       integer, allocatable :: ownlocat(:)
@@ -51,7 +51,8 @@
  33   FORMAT('-',I3.3,A)
  35   FORMAT(A)
  36   FORMAT(F14.4,F14.4)
- 37   FORMAT(I6,A)
+ 37   FORMAT(F12.6,F12.6)
+ 38   FORMAT(I8,2I6,A)
 
 !.....Set command-line argument defaults
       basefile='NULL'
@@ -186,7 +187,12 @@
          IF(i==1) WRITE(10,35) TRIM(RLINE)
          IF (RLINE(1:4)=='TIME') nonstat=.TRUE.
          IF (RLINE(1:6).NE.'LONLAT' .AND. RLINE(1:4).NE.'LOCA') GOTO 110
-         READ (10+i,37) locations(i),RLINE
+         IF (RLINE(1:6).EQ.'LONLAT') THEN
+            kspher = .TRUE.
+         ELSE IF (RLINE(1:4).EQ.'LOCA') THEN
+            kspher = .FALSE.
+         ENDIF
+         READ (10+i,38) locations(i),mxc,myc,RLINE
          IF(verbose) PRINT *,'File',i,'has',locations(i),'locations'
       ENDDO
 
@@ -204,11 +210,19 @@
       allocate(source(1:sum))
 
 !.....Read in locations
-      DO i=1,numfiles
-         DO j=1,locations(i)
-            READ (10+i,36) x(i,j),y(i,j)
+      IF (.not.kspher) THEN
+         DO i=1,numfiles
+            DO j=1,locations(i)
+               READ (10+i,36) x(i,j),y(i,j)
+            ENDDO
          ENDDO
-      ENDDO
+      ELSE
+         DO i=1,numfiles
+            DO j=1,locations(i)
+               READ (10+i,37) x(i,j),y(i,j)
+            ENDDO
+         ENDDO
+      ENDIF
 
 !.....Determine how data is divided for parallel run either on x or y
       IF(x(1,1)==x(2,1)) THEN
@@ -309,13 +323,25 @@
          END DO
       END DO
 
+      IF (ydivide) THEN
+         myc = locations(0)/mxc
+      ELSE
+         mxc = locations(0)/myc
+      ENDIF
+
 !.....Write total number of locations to basefile
-      WRITE (10,37) locations(0),TRIM(RLINE)
+      WRITE (10,38) locations(0),mxc,myc,TRIM(RLINE)
 
 !.....Write grid points to basefile
-      DO i=1,locations(0)
-         WRITE (10,36) x(0,i),y(0,i)
-      ENDDO
+      IF (.not.kspher) THEN
+         DO i=1,locations(0)
+            WRITE (10,36) x(0,i),y(0,i)
+         ENDDO
+      ELSE
+         DO i=1,locations(0)
+            WRITE (10,37) x(0,i),y(0,i)
+         ENDDO
+      ENDIF
 
 !.....Process FREQ
       DO i=1,numfiles

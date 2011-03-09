@@ -37,7 +37,11 @@
 !
 !****************************************************************
 !
+#ifdef SWAN_MODEL
       USE M_MPI
+#else
+      USE MPI
+#endif
       USE OCPCOMM4                                                        40.41
       USE M_PARALL                                                        40.31
 !
@@ -142,7 +146,6 @@
       LEVERR = 0
       MAXERR = 1
       ITRACE = 0
-
 #ifdef SWAN_MODEL
       IF (PRESENT(MyCOMM)) THEN
         WAV_COMM_WORLD=MyCOMM
@@ -218,6 +221,7 @@
          PARLL = .FALSE.
       END IF
 #endif
+
 !     --- define MPI constants for communication within SWAN
 
       SWINT  = MPI_INTEGER
@@ -234,7 +238,11 @@
 !
 !****************************************************************
 !
+#ifdef SWAN_MODEL
       USE M_MPI
+#else
+      USE MPI
+#endif
       USE OCPCOMM4                                                        40.41
 #ifdef SWAN_MODEL
       USE M_PARALL
@@ -254,7 +262,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -365,7 +373,11 @@
 !
 !****************************************************************
 !
+#ifdef SWAN_MODEL
       USE M_MPI
+#else
+      USE MPI
+#endif
       USE OCPCOMM4                                                        40.41
       USE M_PARALL                                                        40.31
 !
@@ -383,7 +395,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -496,7 +508,11 @@
 !
 !****************************************************************
 !
+#ifdef SWAN_MODEL
       USE M_MPI
+#else
+      USE MPI
+#endif
       USE OCPCOMM4                                                        40.41
       USE M_PARALL                                                        40.31
 !
@@ -514,7 +530,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -635,7 +651,11 @@
 !
 !****************************************************************
 !
+#ifdef SWAN_MODEL
       USE M_MPI
+#else
+      USE MPI
+#endif
       USE OCPCOMM4                                                        40.41
       USE M_PARALL                                                        40.31
 !
@@ -653,7 +673,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -780,7 +800,11 @@
 !
 !****************************************************************
 !
+#ifdef SWAN_MODEL
       USE M_MPI
+#else
+      USE MPI
+#endif
       USE OCPCOMM4                                                        40.41
       USE M_PARALL                                                        40.31
 !
@@ -798,7 +822,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -866,8 +890,8 @@
 !                      to all other processes of the group
 !     MSGERR           Writes error message
 !     STRACE           Tracing routine for debugging
-!     SWTSTA           Start timing for a section of code
-!     SWTSTO           Stop timing for a section of code
+!TIMG!     SWTSTA           Start timing for a section of code
+!TIMG!     SWTSTO           Stop timing for a section of code
 !     TXPBLA           Removes leading and trailing blanks in string
 !
 !  9. Subroutines calling
@@ -893,7 +917,7 @@
 !     --- if not parallel, return
       IF (.NOT.PARLL) RETURN
 
-      CALL SWTSTA(201)
+!TIMG      CALL SWTSTA(201)
       CALL MPI_BCAST ( IPTR, ILEN, ITYPE, MASTER-1,
 #ifdef SWAN_MODEL
      &                 WAV_COMM_WORLD, IERR )
@@ -908,7 +932,7 @@
          CALL MSGERR ( 4, MSGSTR )
          RETURN
       END IF
-      CALL SWTSTO(201)
+!TIMG      CALL SWTSTO(201)
 
       RETURN
       END
@@ -918,7 +942,11 @@
 !
 !****************************************************************
 !
+#ifdef SWAN_MODEL
       USE M_MPI
+#else
+      USE MPI
+#endif
       USE OCPCOMM4                                                        40.41
       USE M_PARALL                                                        40.31
 !
@@ -936,7 +964,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1135,7 +1163,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1234,7 +1262,11 @@
 !
 !****************************************************************
 !
+#ifdef SWAN_MODEL
       USE M_MPI
+#else
+      USE MPI
+#endif
       USE OCPCOMM4
       USE M_PARALL
 !
@@ -1252,7 +1284,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1319,8 +1351,8 @@
 !                      distribute the result back to all processes
 !     MSGERR           Writes error message
 !     STRACE           Tracing routine for debugging
-!     SWTSTA           Start timing for a section of code
-!     SWTSTO           Stop timing for a section of code
+!TIMG!     SWTSTA           Start timing for a section of code
+!TIMG!     SWTSTO           Stop timing for a section of code
 !     TXPBLA           Removes leading and trailing blanks in string
 !
 !  9. Subroutines calling
@@ -1348,14 +1380,13 @@
 
       ALLOCATE(ITEMP(ILEN))
 
-      CALL SWTSTA(202)
+!TIMG      CALL SWTSTA(202)
       CALL MPI_ALLREDUCE ( IARR, ITEMP, ILEN, SWINT,
 #ifdef SWAN_MODEL
      &                     ITYPRD, WAV_COMM_WORLD, IERR )
 #else
      &                     ITYPRD, MPI_COMM_WORLD, IERR )
 #endif
-
       IF ( IERR.NE.MPI_SUCCESS ) THEN
          CHARS = INTSTR(IERR)
          CALL TXPBLA(CHARS,IF,IL)
@@ -1365,7 +1396,7 @@
          RETURN
       END IF
       IARR = ITEMP
-      CALL SWTSTO(202)
+!TIMG      CALL SWTSTO(202)
 
       DEALLOCATE(ITEMP)
 
@@ -1377,7 +1408,11 @@
 !
 !****************************************************************
 !
+#ifdef SWAN_MODEL
       USE M_MPI
+#else
+      USE MPI
+#endif
       USE OCPCOMM4
       USE M_PARALL
 !
@@ -1395,7 +1430,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1462,8 +1497,8 @@
 !                      distribute the result back to all processes
 !     MSGERR           Writes error message
 !     STRACE           Tracing routine for debugging
-!     SWTSTA           Start timing for a section of code
-!     SWTSTO           Stop timing for a section of code
+!TIMG!     SWTSTA           Start timing for a section of code
+!TIMG!     SWTSTO           Stop timing for a section of code
 !     TXPBLA           Removes leading and trailing blanks in string
 !
 !  9. Subroutines calling
@@ -1491,7 +1526,7 @@
 
       ALLOCATE(TEMP(ILEN))
 
-      CALL SWTSTA(202)
+!TIMG      CALL SWTSTA(202)
       CALL MPI_ALLREDUCE ( ARR, TEMP, ILEN, SWREAL,
 #ifdef SWAN_MODEL
      &                     ITYPRD, WAV_COMM_WORLD, IERR )
@@ -1507,7 +1542,7 @@
          RETURN
       END IF
       ARR = TEMP
-      CALL SWTSTO(202)
+!TIMG      CALL SWTSTO(202)
 
       DEALLOCATE(TEMP)
 
@@ -1538,7 +1573,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1741,7 +1776,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1908,7 +1943,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2254,7 +2289,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2428,7 +2463,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2498,8 +2533,8 @@
 !     STRACE           Tracing routine for debugging
 !     SWRECVNB         Data is received from a neighbour
 !     SWSENDNB         Data is sent to a neighbour
-!     SWTSTA           Start timing for a section of code
-!     SWTSTO           Stop timing for a section of code
+!TIMG!     SWTSTA           Start timing for a section of code
+!TIMG!     SWTSTO           Stop timing for a section of code
 !
       LOGICAL STPNOW
 !
@@ -2538,7 +2573,7 @@
 !     --- if not parallel, return
       IF (.NOT.PARLL) RETURN
 
-      CALL SWTSTA(203)
+!TIMG      CALL SWTSTA(203)
 
       NNEIGH = IBLKAD(1)
 
@@ -2590,7 +2625,7 @@
 
       END DO
 
-      CALL SWTSTO(203)
+!TIMG      CALL SWTSTO(203)
 
       RETURN
       END
@@ -2618,7 +2653,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2784,7 +2819,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2951,7 +2986,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3239,7 +3274,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3431,7 +3466,8 @@
                IF ( ABS(DIF).LT.0.5*DT .AND. CORQ%OQR(2).LT.0. ) THEN
                   CORQ%OQR(1) = TIMCO
                ELSE IF ( CORQ%OQR(2).GT.0. .AND. TIMCO.GE.TNEXT ) THEN
-                  CORQ%OQR(1) = TIMCO + CORQ%OQR(2)
+!                 CORQ%OQR(1) = TIMCO + CORQ%OQR(2)
+                  CORQ%OQR(1) = TNEXT + CORQ%OQR(2)
                ELSE
                   GOTO 50
                END IF
@@ -3607,7 +3643,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3750,7 +3786,6 @@
 
 !        --- if it is not open or already open thru another request
 
-!jcw     IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN+NREOQ ) THEN
          IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN ) THEN
 
 !           --- open generic output file or reset reference number
@@ -3937,7 +3972,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4072,7 +4107,6 @@
 
 !        --- if it is not open or already open thru another request
 
-!jcw     IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN+NREOQ ) THEN
          IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN ) THEN
 
 !           --- open generic output file or reset reference number
@@ -4264,7 +4298,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4428,10 +4462,11 @@
          ILPOS  = INDEX(FILENM, '-0')
          FILENM = FILENM(1:ILPOS-1)
          INQUIRE ( FILE=FILENM, OPENED=OPENED, NUMBER=IUT )
+         MATLAB = INDEX( FILENM, '.MAT' ).NE.0 .OR.                       40.41
+     &            INDEX (FILENM, '.mat' ).NE.0                            40.41
 
 !        --- if it is not open or already open thru another request
 
-!jcw     IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN+NREOQ ) THEN
          IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN ) THEN
 
 !           --- open generic output file or reset reference number
@@ -4444,8 +4479,6 @@
             END IF
             OQI(1) = NREF
 
-            MATLAB = INDEX( FILENM, '.MAT' ).NE.0 .OR.                    40.41
-     &               INDEX (FILENM, '.mat' ).NE.0                         40.41
             IF (MATLAB .AND. .NOT.OPENED) THEN
                CLOSE(NREF)
                OPEN(UNIT=NREF, FILE=FILENM, FORM='UNFORMATTED',
@@ -4567,7 +4600,7 @@
 
          IF (OVSVTY(IVTYPE) .LT. 3) THEN
             IF (MATLAB) THEN
-               IF (IL.EQ.1) THEN                                          40.41
+               IF (IL.EQ.1 .OR. IVTYPE.LT.3 .OR. IVTYPE.EQ.52) THEN       40.94 40.41
                   NAMVAR = OVSNAM(IVTYPE)                                 40.41
                ELSE                                                       40.41
                   NAMVAR = OVSNAM(IVTYPE)(1:LEN_TRIM(OVSNAM(IVTYPE)))//   40.41

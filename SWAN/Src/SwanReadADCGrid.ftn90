@@ -1,4 +1,6 @@
+#include "swancpp.h"
 subroutine SwanReadADCGrid
+#if !defined SWAN_MODEL
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -11,7 +13,7 @@ subroutine SwanReadADCGrid
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -199,4 +201,5 @@ subroutine SwanReadADCGrid
  950 call msgerr (4, 'unexpected end of file in grid file fort.14' )
     goto 900
     !
+#endif
 end subroutine SwanReadADCGrid

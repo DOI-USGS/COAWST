@@ -45,7 +45,7 @@ if ($os =~ /IRIX64/i) {
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -f95 -timg -sgi\n";
+  print OUTFILE "swch = -unix -f95 -timg -sgi -cdate12\n";
 }
 elsif ($os =~ /AIX/i) {
   print OUTFILE "##############################################################################\n";
@@ -71,7 +71,7 @@ elsif ($os =~ /AIX/i) {
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -f95 -timg\n";
+  print OUTFILE "swch = -unix -f95 -timg -cdate12\n";
 }
 elsif ($os =~ /OSF1/i) {
   print OUTFILE "##############################################################################\n";
@@ -96,7 +96,7 @@ elsif ($os =~ /OSF1/i) {
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -timg\n";
+  print OUTFILE "swch = -unix -timg -cdate12\n";
 }
 elsif ($os =~ /SunOS/i) {
   print OUTFILE "##############################################################################\n";
@@ -121,7 +121,7 @@ elsif ($os =~ /SunOS/i) {
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -timg\n";
+  print OUTFILE "swch = -unix -timg -cdate12\n";
 }
 elsif ($os =~ /HP-UX/i) {
   print OUTFILE "##############################################################################\n";
@@ -146,7 +146,7 @@ elsif ($os =~ /HP-UX/i) {
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -f95 -timg\n";
+  print OUTFILE "swch = -unix -f95 -timg -cdate12\n";
 }
 elsif ($os =~ /Linux/i) {
   system 'sh ./getcmpl';
@@ -183,7 +183,7 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -impi\n";
+    print OUTFILE "swch = -unix -impi -cdate12\n";
   }
   elsif ( -f "ifc" )
   {
@@ -211,7 +211,7 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -f95 -timg\n";
+    print OUTFILE "swch = -unix -f95 -timg -cdate12\n";
   }
   elsif ( -f "efc" )
   {
@@ -239,7 +239,7 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -f95 -timg\n";
+    print OUTFILE "swch = -unix -f95 -timg -cdate12\n";
   }
   elsif ( -f "pgf90" )
   {
@@ -266,7 +266,7 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -impi\n";
+    print OUTFILE "swch = -unix -impi -cdate12\n";
   }
   elsif ( -f "lf95" )
   {
@@ -293,7 +293,7 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix\n";
+    print OUTFILE "swch = -unix -cdate12\n";
   }
   elsif ( -f "gfortran" )
   {
@@ -314,13 +314,13 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "INCS_OMP =\n";
     print OUTFILE "INCS_MPI =\n";
     print OUTFILE "LIBS_SER =\n";
-    print OUTFILE "LIBS_OMP =\n";
+    print OUTFILE "LIBS_OMP = -static-libgcc\n";
     print OUTFILE "LIBS_MPI =\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix\n";
+    print OUTFILE "swch = -unix -cdate12\n";
   }
   elsif ( -f "g95" )
   {
@@ -347,7 +347,7 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix\n";
+    print OUTFILE "swch = -unix -cdate12\n";
   }
   elsif ( -f "xlf90" )
   {
@@ -374,7 +374,7 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix\n";
+    print OUTFILE "swch = -unix -cdate12\n";
   }
   else
   {
@@ -383,7 +383,7 @@ elsif ($os =~ /Linux/i) {
 }
 elsif ($os =~ /WindowsNT/i || $os =~ /MSWin32/i) {
   print OUTFILE "##############################################################################\n";
-  print OUTFILE "# IA32_Intel/EM64T_Intel:	Intel Pentium with MS Windows using Intel compiler 9.1.\n";
+  print OUTFILE "# IA32_Intel/EM64T_Intel:	Intel Pentium with MS Windows using Intel compiler 11.\n";
   print OUTFILE "##############################################################################\n";
   print OUTFILE "F90_SER = ifort\n";
   print OUTFILE "F90_OMP = ifort\n";
@@ -392,7 +392,7 @@ elsif ($os =~ /WindowsNT/i || $os =~ /MSWin32/i) {
   print OUTFILE "FLAGS_MSC = /assume:byterecl /traceback /nowarn /nologo\n";
   print OUTFILE "FLAGS90_MSC = \$(FLAGS_MSC)\n";
   print OUTFILE "FLAGS_SER =\n";
-  print OUTFILE "FLAGS_OMP = /Qopenmp\n";
+  print OUTFILE "FLAGS_OMP = /Qopenmp /Qopenmp-link:static\n";
   print OUTFILE "FLAGS_MPI =\n";
   print OUTFILE "INCS_SER =\n";
   print OUTFILE "INCS_OMP =\n";
@@ -404,7 +404,7 @@ elsif ($os =~ /WindowsNT/i || $os =~ /MSWin32/i) {
   print OUTFILE "EXTO = obj\n";
   print OUTFILE "MAKE = nmake\n";
   print OUTFILE "RM = del\n";
-  print OUTFILE "swch = -dos -impi -cvis\n";
+  print OUTFILE "swch = -dos -impi -cvis -cdate12\n";
 }
 elsif ($os =~ /Darwin/i) {
   print OUTFILE "##############################################################################\n";
@@ -429,7 +429,7 @@ elsif ($os =~ /Darwin/i) {
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix\n";
+  print OUTFILE "swch = -unix -cdate12\n";
 }
 else
 {

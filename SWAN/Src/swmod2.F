@@ -12,13 +12,14 @@
 !     M_PARALL           information for parallelisation with MPI
 !     M_DIFFR            information for diffraction
 !
+#ifdef SWAN_MODEL
 !     For COAWST:
 !     M_COUPLING         information for grid numbers
 !     M_CVMESH           information for the cvmesh routine
 !     M_PARALL2          needed to have allocation of main vars.
 !     M_SREFINED         used for refined grids
 !
-
+#endif
       MODULE M_WCAP
 !
 !
@@ -33,7 +34,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -154,7 +155,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -358,7 +359,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -379,12 +380,10 @@
 !  0. Authors
 !
 !     40.17: IJsbrand Haagsma
-!     40.41: Marcel Zijlema
 !
 !  1. Updates
 !
 !     Feb. 01: New Module
-!     Aug. 04: added linked list for RIAM
 !
 !  2. Purpose
 !
@@ -424,15 +423,6 @@
       REAL, PUBLIC, SAVE, ALLOCATABLE :: CNL4_2(:)
       REAL, PUBLIC, SAVE, ALLOCATABLE :: LAMBDA(:)
 
-      TYPE RIAMDAT
-         INTEGER                :: II(3), JJ(3)
-         REAL                   :: SSS, DI(3), DJ(3)
-         TYPE(RIAMDAT), POINTER :: NEXTRIAM
-      END TYPE RIAMDAT
-
-      TYPE(RIAMDAT), SAVE, TARGET  :: FRIAM
-      TYPE(RIAMDAT), SAVE, POINTER :: CURRIAM
-
 !  8. Subroutines and functions used
 !
 !     ---
@@ -471,7 +461,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -573,8 +563,6 @@
 #ifdef SWAN_MODEL
 !     LOGICAL, POINTER, SAVE :: LBGP     ! = .FALSE.
       LOGICAL, POINTER, SAVE :: LBGP_G(:)
-#endif
-#ifdef SWAN_MODEL
 !
 !    This is called a linked list.
 !
@@ -637,7 +625,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -749,7 +737,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -792,6 +780,7 @@
 !     UXB   , UYB
 !     WXI   , WYI
 !     WLEVL , ASTDF
+!     NPLAF
 !
 !  4. Modules used
 !
@@ -816,6 +805,8 @@
 !     KGRBND: array containing all boundary points
 !             (+ 2 extra zeros as area separator for all separated areas)
 !     KGRPNT: array containing indirect addresses for grid points
+!     LAYH  : layer thickness for vegetation model
+!     NPLAF : input field containing number of plants per square meter
 !     SPCDIR: (*,1); spectral directions (radians)
 !             (*,2); cosine of spectral directions
 !             (*,3); sine of spectral directions
@@ -825,6 +816,9 @@
 !     SPCSIG: Relative frequencies in computational domain in sigma-space
 !     UXB   : input field of contravariant U-velocity
 !     UYB   : input field of contravariant V-velocity
+!     VEGDIL: vegetation diameter for each layer and grid point
+!     VEGDRL: drag coefficient for each layer and grid point
+!     VEGNSL: number of plants / m2 for each layer and grid point
 !     WLEVL : input field of water level
 !     WXI   : input field of wind U-velocity (contravariant)
 !     WYI   : input field of wind V-velocity (contravariant)
@@ -888,6 +882,9 @@
       REAL   , SAVE, ALLOCATABLE :: WXI(:)   , WYI(:)
       REAL   , SAVE, ALLOCATABLE :: WLEVL(:) , ASTDF(:)
 #endif
+      REAL   , SAVE, ALLOCATABLE :: NPLAF(:)
+      REAL   , SAVE, ALLOCATABLE :: LAYH(:), VEGDIL(:), VEGDRL(:),
+     &                              VEGNSL(:)
 
 !  8. Subroutines and functions used
 !
@@ -927,7 +924,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1304,7 +1301,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1387,7 +1384,13 @@
 ! 13. Source text
 !
       END MODULE M_DIFFR
-
+#ifdef SWAN_MODEL
       MODULE M_MPI
       INCLUDE 'mpif.h'
       END MODULE M_MPI
+#else
+
+      MODULE MPI
+      INCLUDE 'mpif.h'
+      END MODULE MPI
+#endif

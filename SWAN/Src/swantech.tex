@@ -17,7 +17,7 @@
 \end{center}
 \vfill
 \begin{center}
-{\Large\bf SWAN Cycle III version 40.72ABCDE}
+{\Large\bf SWAN Cycle III version 40.81}
 \end{center}
 
 \cleardoublepage
@@ -46,7 +46,7 @@ home page    &:& \hl{http://www.swan.tudelft.nl}
 \vfill
 
 \noindent
-Copyright (c) 2009 Delft University of Technology.
+Copyright (c) 1993-2010 Delft University of Technology.
 \\[2ex]
 \noindent
 Permission is granted to copy, distribute and/or modify this document
@@ -200,12 +200,13 @@ Chapter~\ref{ch:concl} concludes this document by summarizing the overall soluti
 \\[2ex]
 \noindent
 This document, however, is not intended as being complete. Although, this document describes the essential steps
-involved in the simulation of wind-generated waves, so that the user can see which can be modified or extended to solve
+involved in the simulation of waves, so that the user can see which can be modified or extended to solve
 a particular problem properly, some issues involved in SWAN are not included. Below, a list of these issues is
-given, of which the information maybe available elsewhere:
+given, of which the information may be available elsewhere:
 \begin{itemize}
-  \item RIAM,
-  \item iterative solvers.
+  \item reflection,
+  \item iterative solvers,
+  \item overall solution algorithm.
 \end{itemize}
 
 \section{Acknowledgements} \label{sec:acknow}
@@ -219,8 +220,8 @@ thoroughly: Tim Campbell, John Cazes, IJsbrand Haagsma, Agnieszka Herman, Jim Ka
 Ekaterini Kriezi, Roberto Padilla-Hernandez, Erick Rogers, Kees Vuik, Andre van der Westhuysen and Marcel Zijlema.
 \\[2ex]
 \noindent
-Many thanks are due to Gerbrant van Vledder and Noriaki Hashimoto who provided the source code for exact
-computation of four wave-wave interations, XNL and RIAM, respectively.
+Many thanks are due to Gerbrant van Vledder who provided the source code XNL for exact
+computation of four wave-wave interations.
 \\[2ex]
 \noindent
 It was also the important role which SWAN played in several projects, mostly funded by the Office of Naval
@@ -332,9 +333,9 @@ density at a frequency $f$ is dstributed over the directions $\theta$ in $E(f,\t
 The energy density spectrum $E(f)$ and $E(f,\theta)$ are depicted in Figure~\ref{fig:spectra}. Based on the energy
 \begin{figure}[htb]
    \centerline{
-      \epsfig{file=spec1D2D.ps,height=10cm}
+      \epsfig{file=spec1D2D.eps,height=15cm,angle=-90}
               }
-      \caption{Illustrations of 1D and 2D wave spectra. (Reproduced from Holthuijsen (2005) with permission of
+      \caption{Illustrations of 1D and 2D wave spectra. (Reproduced from Holthuijsen (2007) with permission of
                Cambridge University Press.)}
       \label{fig:spectra}
 \end{figure}
@@ -360,7 +361,7 @@ and some wave periods:
 In SWAN, the energy density spectrum $E(\sigma,\theta)$ is generally used. On a larger scale the spectral energy density
 function $E(\sigma,\theta)$ becomes a function of space and time and wave dynamics should be considered to determine
 the evolution of the spectrum in space and time. For brevity, the notation $E(\sigma,\theta)$ will still be used.
-\nocite{Hol05}
+\nocite{Hol07}
 
 \section{Propagation of wave energy}
 
@@ -679,6 +680,9 @@ can be found in Nelson (1987) and Ruessink et al. (2003). (Both are implemented 
 The constant value is $\gamma=0.73$ found as
 the mean value of the data set of Battjes and Stive (1985).
 \nocite{Bat78J,Tho83G,Bat92B,Vin94SD,Arc94RC,Eld96B,Eld95B,Mas92K,Elg97GRHG,Che97GE,Nel87,Rue03WS,Bat85S}
+%In order to unify these parameterizations, Van der Westhuysen (2009a,b) proposes an alternative breaker
+%index that is based on the local shallow water nonlinearity of the wave field.
+%\nocite{Wes09a,Wes09b}
 \\[2ex]
 \noindent
 \underline{Nonlinear wave-wave interactions}\\[2ex]
@@ -698,10 +702,8 @@ interactions is not considered here.
 \\[2ex]
 \noindent
 A full computation of the quadruplet wave-wave interactions is extremely time consuming and not
-convenient in an operational wave model. Nevertheless, SWAN has two options to compute the Boltzmann integral
-in an exact manner. The first approach is the so-called FD-RIAM technique as proposed by Hashimoto~{\it et~al}.
-(1998). This approach enables to capture the frequency shift and the spectral shape changes as water depth
-decreases. The second approach is the exact method developed by Webb, Tracy and Resio (WRT)
+convenient in an operational wave model. Nevertheless, SWAN has an option to compute the Boltzmann integral
+in an exact manner. The approach is the exact method developed by Webb, Tracy and Resio (WRT)
 (Resio~{\it et~al}., 2001). This algorithm was reprogrammed by Van Vledder, bearing the name XNL
 (Van Vledder and Bottema, 2003). This method is also enable to capture the frequency shift and the spectral
 shape changes as water depth decreases.
@@ -715,7 +717,7 @@ developing wave spectrum; see Komen~{\it et~al}. (1994). For uni-directional wav
 valid. In fact, the quadruplet interaction coefficient for these waves is nearly zero. For finite-depth
 applications, Hasselmann and Hasselmann (1981) have shown that for a JONSWAP-type spectrum the quadruplet
 wave-wave interactions can be scaled with a simple expression.
-In some cases, the DIA technique may not be accurate enough. In Hashimoto~{\it et~al}. (2003), it was
+In some cases, the DIA technique may not be accurate enough. In Hashimoto~{\it et~al}. (2002), it was
 demonstrated that the accuracy of the DIA may be improved by increasing the number of quadruplet
 configurations. They proposed a Multiple DIA with up to 6 wave number configurations.
 \\[2ex]
@@ -742,7 +744,7 @@ over a barred beach (Arcilla~{\it et~al}., 1994). The model appeared to be fairl
 the essential features of the energy transfer from the primary peak of the spectrum to the super harmonics.
 A slightly different version, the so-called Lumped Triad Approximation (LTA) was later derived by
 Eldeberky (1996). This LTA technique is employed in SWAN.
-\nocite{Bej93B,Has98TN,Res01PTV,Vle03B,You93V,Has85HAB,Has81H,Abr92LT,Eld95B,Mad93S,Eld96}
+\nocite{Bej93B,Res01PTV,Vle03B,You93V,Has85HAB,Has81H,Has02HH,Abr92LT,Eld95B,Mad93S,Eld96}
 
 \subsection{Input by wind ($S_{\rm in}$)} \label{sec:inpwn}
 
@@ -978,6 +980,24 @@ scaling condition requires the additional dimensionless factor ${\tanh(kh)}^{-1/
 \nocite{Res04LV}
 \\[2ex]
 \noindent
+%\underline{Whitecapping: dissipation on opposing current}\\[2ex]
+%When a wave field meets an adverse current with a velocity that approaches the wave group velocity,
+%waves are blocked, which may cause steepness-induced breaking and reflection. Ris and Holthuijsen (1996)
+%show that SWAN underestimates wave dissipation in such situations, leading to a strong overestimation
+%in the significant wave height. Van der Westhuysen (2009c) proposes a saturation-based whitecapping
+%expression for the required enhanced dissipation. The dissipation due to current influence is taken
+%to be proportional to the relative increase in steepness due to the opposing current, expressed in terms
+%of the propagation velocity in spectral space $c_\sigma$:
+%\begin{equation}
+%  S_{\rm ds,c}(\sigma,\theta) = -C''_{\rm ds} \max{\left[ \frac{c_\sigma(\sigma,\theta)}{\sigma} , 0 \right]}
+%  {\left[ \frac{B(k)}{B_{\rm r}} \right]}^{p/2} E(\sigma,\theta)  \ \ .
+%  \label{eq:wccur}
+%\end{equation}
+%The proportionality coefficient is set to $C''_{\rm ds}$ = 1.5. The remaining parameters are given by
+%Van der Westhuysen (2007), namely $B_{\rm r} = 1.75 \times 10^{-3}$ and $p$ according to (\ref{eq:expo}).
+%\nocite{Ris96H,Wes09c}
+%\\[2ex]
+%\noindent
 \underline{Bottom friction}\\[2ex]
 The bottom friction models that have been selected for SWAN are the empirical model of JONSWAP
 (Hasselmann~{\it et~al}., 1973), the drag law model of Collins (1972) and the eddy-viscosity model of
@@ -1114,7 +1134,7 @@ is independent of the wave height:
 \begin{equation}
   W(H) = Q_b = \left( \frac{H_{\rm rms}}{\gamma d} \right)^n
 \end{equation}
-with a calibration parameter $n$ and a breaker index $\gamma$ (not to be confused with the Battjes and Janssen breaker index!).
+with a calibration parameter $n$(=4) and a breaker index $\gamma$ (not to be confused with the Battjes and Janssen breaker index!).
 The integral in expression (\ref{eq:tg83}) can then be simplified, as follows:
 \begin{equation}
   \int_{0}^{\infty} H^3 \, p_b(H)\,dH = Q_b\,\int_{0}^{\infty} H^3 \, p(H)\,dH = \frac{3}{4}\sqrt{\pi}\,Q_b\,H^3_{\rm rms}
@@ -1124,6 +1144,34 @@ Hence,
   D_{\rm tot} = - \frac{3 B^3 \tilde{\sigma}}{32 \sqrt{\pi} d} \, Q_b\, H^3_{\rm rms}
   \label{eq:tg83_2}
 \end{equation}
+%\\[2ex]
+%\noindent
+%Van der Westhuysen (2009b) shows that there appears to be a correlation between the nonlinearity of waves in the
+%surf zone, i.e. wave asymmetry, and their breaking probability. A parameter that can represent wave asymmetry in SWAN
+%is the biphase $\beta$, the phase angle of the complex bispectrum. This biphase is known to progress from 0 to $-\pi/2$
+%(or from small values to high values of Ursell number)
+%due to triad nonlinear interaction in a shoaling wave. In SWAN, the biphase is parametrized according to expression
+%(\ref{eq3-36}). Van der Westhuysen proposes the following fraction of breaking waves, to be used in (\ref {eq:tg83_2}):
+%\begin{equation}
+%  Q_b = \left( \frac{\beta}{\beta_{\rm ref}} \right)^n\ \ ,
+%\end{equation}
+%with $\beta_{\rm ref}$ a tunable reference value. Again, $n$ is a parameter to be determined by calibration. In this way,
+%it is assumed that the waves breaking due to their shallow water nonlinearity are distributed proportionally over the
+%probability density function of wave heights. Van der Westhuysen (2009a) estimates the reference biphase at
+%$\beta_{\rm ref} = -4\pi/9$, and shows that the exponent $n$ varies with the mean local wave steepness $S_{\mathrm{loc}}$
+%according to
+%\begin{equation}
+%  n = 4 - \frac{4}{\pi}\arctan \left[ 500\left( S_{\mathrm{loc}}-\tilde{S}_{\mathrm{loc}} \right) \right]
+%  \label{eq:nvar}
+%\end{equation}
+%in which $S_{\mathrm{loc}}$ is defined as
+%\begin{equation}
+%  S_{\mathrm{loc}} = \frac{H_{\mathrm{rms}} \tilde{k}}{2 \pi} \ , \ \ \ \ \
+%  \tilde{k} = \left[ \frac{\int \!\!\! \int k^{-\frac{1}{2}} E (\sigma,\theta) \,d\sigma\,d\theta}{E_{\mathrm{tot}}} \right]^{-2} ,
+%  \label{eq:sloc_vink}
+%\end{equation}
+%with an average value of $\tilde{S}_{\mathrm{loc}}$ = 0.038. This so-called biphase breaker model of
+%Van der Westhuysen is implemented in SWAN using a calibrated proportionality coefficient of $B=0.98$ (Van der Westhuysen, 2009a).
 
 \subsection{Nonlinear wave-wave interactions ($S_{\rm nl}$)} \label{sec:waveint}
 
@@ -1136,44 +1184,87 @@ integral. The second one is called the XNL approach and is implemented in SWAN b
 \underline{DIA}\\[2ex]
 The quadruplet wave-wave interactions are computed with the Discrete Interaction Approximation (DIA)
 as proposed by Hasselmann~{\it et~al}. (1985). Their source code (slightly adapted by Tolman, personal
-communication, 1993) has been used in the SWAN model. In the DIA two quadruplets of wave numbers are
+communication, 1993) has been implemented in the SWAN model. In the DIA two quadruplet wave number configurations are
 considered, both with frequencies:
 \begin{equation}
   \sigma_1 = \sigma_2 = \sigma\, , \sigma_3 = \sigma (1+\lambda) = \sigma^+ \, ,
   \sigma_4 = \sigma (1 - \lambda) = \sigma^{-}
   \label{eq3-27}
 \end{equation}
-where $\lambda$ is a constant coefficient set equal to 0.25. To satisfy the resonance conditions for the first
-quadruplet, the wave number vectors with frequency $\sigma_3$ and $\sigma_4$ lie at an angle of $\theta_1 = -11.5^o$
-and $\theta_2 = 33.6^o$ to the two identical wave number vectors with frequencies $\sigma_1$ and $\sigma_2$.
-The second quadruplet is the mirror of this first quadruplet (the wave number vectors with frequency
-$\sigma_3$ and $\sigma_4$ lie at mirror angles of $\theta_3 = 11.5^o$ and $\theta_4 = -33.6^o$.
+where $\lambda$ is a coefficient with a default value of 0.25. To satisfy the resonance conditions for the first
+quadruplet, the wave number vectors with frequency $\sigma_3$ and $\sigma_4$ lie at an angle of $\theta_3 = -11.48^o$
+and $\theta_4 = 33.56^o$ to the angle of the wave number vectors with frequencies $\sigma_1$ and $\sigma_2$.
+The second quadruplet is the mirror image of the first
+quadruplet with relative angles of $\theta_3 = \theta^+ = 11.48^o$ and $\theta_4 = \theta^- = -33.56^o$.
+An example of this
+wave number configuration is shown in Figure~\ref{fig:configdia}. See Van Vledder et al. (2000) for further
+information about wave number configurations for arbitrary values of $\lambda$.
+\nocite{Vle00HJRT}
+\begin{figure}[htb]
+   \centerline{
+      \epsfig{file=config_dia.eps,height=10cm}
+              }
+      \caption{Wave number configuration for $\lambda$=0.25 and its position in a discrete frequency-
+               direction spectrum (from Van Vledder et al., 2000).}
+      \label{fig:configdia}
+\end{figure}
 \\[2ex]
 \noindent
-Within this discrete interaction approximation, the source term $S_{\rm nl4}(\sigma,\theta)$ is given by:
+Within this discrete interaction approximation, the source term $S_{\rm nl4}(\sigma,\theta)$ for the nonlinear transfer rate is given by:
 \begin{equation}
   S_{\rm nl4} (\sigma,\theta) = S^*_{\rm nl4} (\sigma,\theta) + S^{**}_{\rm nl4} (\sigma,\theta)
   \label{eq3-28}
 \end{equation}
 where $S_{\rm nl4}^{*}$ refers to the first quadruplet and $S_{\rm nl4}^{**}$ to the second quadruplet
-(the expressions for $S_{\rm nl4}^{**}$ are identical to those for $S_{\rm nl4}^{*}$ for the mirror directions) and:
-\begin{equation}
-  S^*_{\rm nl4} = 2\delta S_{\rm nl4} (\alpha_1\sigma,\theta) - \delta S_{\rm nl4} (\alpha_2\sigma,\theta)
-             - \delta S_{\rm nl4} (\alpha_3\sigma,\theta)
-  \label{eq3-29}
-\end{equation}
-in which $\alpha_1 =1$, $\alpha_2 = (1+\lambda)$ and $\alpha_3 = (1-\lambda)$. Each of the contributions ($i=1,2,3$) is:
+(the expressions for $S_{\rm nl4}^{**}$ are identical to those for $S_{\rm nl4}^{*}$ for the mirror directions).
+The DIA exchanges wave variance at all three wave number vectors involved in a quadruplet
+wave number configuration. The rate of change of wave variance due to the quadruplet
+interaction at the three frequency-direction bins can be written as:
 \begin{eqnarray}
-  \delta S_{\rm nl4}(\alpha_i \sigma,\theta) &=& C_{\rm nl4} (2\pi)^2 g^{-4} \left(\frac{\sigma}{2\pi} \right)^{11}
-  \left[E^2 (\alpha_i\sigma,\theta) \left\{\frac{E(\alpha_i\sigma^+,\theta)}{(1+\lambda)^4} +
-  \frac{E(\alpha_i\sigma^{-},\theta)}{(1-\lambda)^4} \right\} \right. \nonumber \\
-  &&\left. \left. -2\frac{E(\alpha_i\sigma,\theta) E(\alpha_i\sigma^+,\theta) E(\alpha_i\sigma^-,\theta)}{(1-\lambda^2)^4}
+  \left(
+     \begin{array}{l}
+        \delta S^*_{\rm nl4} (\sigma,\theta) \\
+        \delta S^*_{\rm nl4} (\sigma^+,\theta^+) \\
+        \delta S^*_{\rm nl4} (\sigma^-,\theta^-)
+     \end{array}
+  \right)
+  &=&
+  \left(
+     \begin{array}{c}
+        2 \\
+       -1 \\
+       -1
+     \end{array}
+  \right)
+  C_{\rm nl4} (2\pi)^2 g^{-4} \left(\frac{\sigma}{2\pi} \right)^{11} \times \nonumber \\
+  &&\left[E^2 (\sigma,\theta) \left\{\frac{E(\sigma^+,\theta^+)}{(1+\lambda)^4} +
+  \frac{E(\sigma^{-},\theta^-)}{(1-\lambda)^4} \right\} \right. \nonumber \\
+  &&\left. \left. -2\frac{E(\sigma,\theta) E(\sigma^+,\theta^+) E(\sigma^-,\theta^-)}{(1-\lambda^2)^4}
     \right. \right]
   \label{eq3-30}
 \end{eqnarray}
-with constant $C_{nl4} = 3 \times 10^7$. Following Hasselmann and Hasselmann (1981), the quadruplet interaction
-in finite water depth is taken identical to the quadruplet transfer in deep water multiplied with a scaling
-factor:
+where $C_{nl4} = 3 \times 10^7$ by default.
+Eq. (\ref{eq3-30}) conserves wave variance, momentum and
+action when the frequencies are geometrically distributed (as is the case in the SWAN
+model). The wave variance density at the frequency-direction bins $E(\sigma^+,\theta^+)$ and $E(\sigma^-,\theta^-)$ is
+obtained by bi-linear interpolation between the four surrounding frequency-direction bins.
+Similarly, the rate of change of variance density is distributed between the four surrounding
+bins using the same weights as used for the bi-linear interpolation.
+\\[2ex]
+\noindent
+In the DIA algorithm, Eq. (\ref{eq3-30}) (and its mirror image) is applied to all spectral bins in a
+discrete frequency-direction spectrum. Figure~\ref{fig:configdia} shows an example of one wave number
+configuration and its mirror image in a discrete spectrum. An extended spectral grid is applied
+to compute the interactions in the frequency range affected by the parametric spectral tail.
+\\[2ex]
+\noindent
+SWAN has an option to replace bi-linear interpolation of wave variance density using the
+nearest bin approach using a weight equal to 1.
+\\[2ex]
+\noindent
+Following the WAM group (WAMDI, 1988), the quadruplet interaction in shallow water with
+depth $d$ is obtained by multiplying the deep water nonlinear transfer rate with a scaling factor
+$R(k_pd)$:
 \begin{equation}
   S_{\rm nl4}^{\rm finite~depth} = R(k_pd)S_{\rm nl4}^{\rm deep~water}
   \label{eq3-31}
@@ -1183,10 +1274,11 @@ where $R$ is given by:
   R(k_pd) = 1 + \frac{C_{sh1}}{k_pd} (1-C_{sh2}k_pd) e^{C_{sh3}k_pd}
   \label{eq3-32}
 \end{equation}
-in which $k_p$ is the peak wave number of the JONSWAP spectrum for which the original computations were
-carried out. The values of the coefficients are: $C _{sh1}= 5.5$, $C _{sh2} = 6/7$ and $C _{sh3} = -1.25$.
-In the shallow water limit, i.e., $k_p \rightarrow 0$ the nonlinear transfer tends to infinity. Therefore,
-a lower limit of $k_p = 0.5$ is applied (cf. WAM Cycle~4; Komen~{\it et~al}., 1994), resulting in a maximum value
+in which $k_p$ is the peak wave number of the frequency spectrum. WAMDI (1988) proposes the
+following values of the coefficients:
+$C _{sh1}= 5.5$, $C _{sh2} = 5/6$ and $C _{sh3} = -5/4$.
+In the shallow water limit, i.e., $k_p \rightarrow 0$ the nonlinear transfer rate tends to infinity. Therefore,
+a lower limit of $k_p = 0.5$ is applied, resulting in a maximum value
 of $R(k_pd)=4.43$. To increase the model robustness in case of arbitrarily shaped spectra, the peak wave number
 $k_p$ is replaced by $k_p = 0.75 \tilde{k}$ (cf. Komen~{\it et~al}., 1994).
 \\[2ex]
@@ -1534,6 +1626,107 @@ The maximum value of $\alpha$ is taken to be 0.155. This dependency of $\alpha$ 
 dimensionless energy of the wind sea permits an overshoot in the wave spectrum under wave
 generation conditions. For deep water $\alpha = 0.0081$ as proposed by Pierson and Moskowitz (1964).
 
+\section{Wave damping due to vegetation} \label{sec:veget}
+
+Apart from the six processes as outlined in Section~\ref{sec:soursnk}, SWAN has an option to include
+wave damping over a vegetation field (mangroves, salt marshes, etc.) at variable depths.
+A popular method of expressing the wave dissipation due to vegetation is the cylinder approach
+as suggested by Dalrymple~{\it et~al}. (1984). Here,
+energy losses are calculated as actual work carried out by the vegetation due to plant
+induced forces acting on the fluid, expressed in terms of a Morison type equation.
+In this method, vegetation motion such as vibration due to vortices and swaying is
+neglected. For relatively stiff plants the drag force is considered dominant and inertial
+forces are neglected. Moreover, since the drag due to friction is much smaller than the
+drag due to pressure differences, only the latter is considered. Based on
+this approach, the time-averaged rate of energy dissipation per unit
+area over the entire height of the vegetation is given by:
+\begin{equation}
+  \varepsilon_{\rm v} = \frac{2}{3\pi} \rho C_{\rm D} b_{\rm v} N_{\rm v} \left( \frac{gk}{2\sigma} \right)^3
+                 \frac{\sinh^3 k\alpha h + 3\sinh\, k\alpha h}{3k\cosh^3 kh} H^3
+\end{equation}
+where $\rho$ is the water density, $C_{\rm D}$ is the drag coefficient, $b_{\rm v}$ is the
+stem diameter of cylinder (plant), $N_{\rm v}$ is the number of plants per square meter,
+$\alpha h$ is the vegetation height, $h$ is the water depth and $H$ is the wave height.
+This formula was modified by Mendez and Losada (2004) for irregular waves.
+The mean rate of energy dissipation per unit horizontal
+area due to wave damping by vegetation is given by:
+\begin{equation}
+  <\varepsilon_{\rm v}> = \frac{1}{2\sqrt{\pi}} \rho {\tilde C}_{\rm D} b_{\rm v} N_{\rm v} \left( \frac{gk}{2\sigma} \right)^3
+                   \frac{\sinh^3 k\alpha h + 3\sinh\, k\alpha h}{3k\cosh^3 kh} H_{\rm rms}^3
+  \label{eq:mendez}
+\end{equation}
+with ${\tilde C}_{\rm D}$ is the bulk drag coefficient that may depend on the wave height. This is the only
+calibration parameter required for a given plant type.
+\nocite{Dal84KH,Men04L}
+\\[2ex]
+\noindent
+To include wave damping due to vegetation in SWAN, Eq.~(\ref{eq:source}) will be extended with $S_{\rm ds,veg}$ based
+on Eq.~(\ref{eq:mendez}). A spectral version of the vegetation dissipation model of Mendez and
+Losada can be obtained by expanding Eq.~(\ref{eq:mendez}) to include frequencies and directions as
+follows
+\begin{equation}
+  S_{\rm ds,veg} (\sigma,\theta) = \frac{D_{\rm tot}}{E_{\rm tot}} E(\sigma,\theta)
+\end{equation}
+with
+\begin{equation}
+  D_{\rm tot} = -\frac{1}{2g\sqrt{\pi}} {\tilde C}_{\rm D} b_{\rm v} N_{\rm v} \left( \frac{g{\tilde{k}}}{2{\tilde{\sigma}}} \right)^3
+                   \frac{\sinh^3 {\tilde{k}}\alpha h + 3\sinh\, {\tilde{k}}\alpha h}{3k\cosh^3 {\tilde{k}}h} H_{\rm rms}^3
+  \label{eq:mendez2}
+\end{equation}
+where the mean frequency $\tilde{\sigma}$, the mean wave number $\tilde{k}$ are given by Eqs.~(\ref{eq3-14}) and (\ref{eq3-15}), respectively.
+With $H^2_{\rm rms} = 8E_{\rm tot}$, the final expression reads
+\begin{equation}
+  S_{\rm ds,veg} = -\sqrt{\frac{2}{\pi}} g^2 {\tilde C}_{\rm D} b_{\rm v} N_{\rm v} \left( \frac{{\tilde{k}}}{{\tilde{\sigma}}} \right)^3
+                   \frac{\sinh^3 {\tilde{k}}\alpha h + 3\sinh\, {\tilde{k}}\alpha h}{3k\cosh^3 {\tilde{k}}h} \sqrt{E_{\rm tot}} E(\sigma,\theta)
+\end{equation}
+\\[2ex]
+\noindent
+Apart from extending the Mendez and Losada's formulation to a full
+spectrum, the possibility to vary the vegetation vertically is included. The
+contribution of each vertical segment is calculated individually with the total energy
+dissipation equal to the sum of the dissipation in each layer up till the still water level.
+With this implementation of the differences in characteristics of each layer, plants such
+as mangrove trees may be conveniently input into the SWAN model. The layer-wise
+segmentation is implemented by integration of the energy dissipation over
+height as follows:
+\begin{equation}
+  S_{\rm ds,veg} = \sum_{i=1}^{I} S_{{\rm ds,veg},i}
+\end{equation}
+where $I$ the number of vegetation
+layers and $i$ the layer under consideration with the energy dissipation for layer $i$.
+First, a check is performed to establish whether the vegetation is emergent or submergent
+relative to the water depth. In case of submergent vegetation the energy contributions of
+each layer are added up for the entire vegetation height. In case of emergent vegetation
+only the contributions of the layers below the still water level are taken into account.
+The implementation of vertical variation is illustrated in Figure~\ref{fig:veglay}.
+The energy dissipation term for a given layer $i$ therefore becomes
+\begin{eqnarray}
+  &&S_{{\rm ds,veg},i} = -\sqrt{\frac{2}{\pi}} g^2 {\tilde C}_{{\rm D},i} b_{{\rm v},i} N_{{\rm v},i} \left( \frac{{\tilde{k}}}{{\tilde{\sigma}}} \right)^3
+                   \sqrt{E_{\rm tot}} \nonumber \\
+                   &&\frac{\left(\sinh^3 {\tilde{k}}\alpha_i h - \sinh^3 {\tilde{k}}\alpha_{i-1} h\right) +
+                    3\left( \sinh\, {\tilde{k}}\alpha_i h - \sinh\, {\tilde{k}}\alpha_{i-1} h\right)}
+                   {3k\cosh^3 {\tilde{k}}h} E(\sigma,\theta)
+\end{eqnarray}
+The corresponding terms for each layer can then be added and the total integrated as
+described earlier to obtain the energy dissipation over the entire spectrum.
+Here $h$ is the total water depth and $\alpha_i$ the ratio of the depth of the layer under
+consideration to the total water depth up to the still water level, such that
+\begin{equation}
+  \sum_{i=1}^{I} \alpha_i \leq 1
+\end{equation}
+\begin{figure}[htb]
+   \centerline{
+      \epsfig{file=veglay.eps,height=5cm}
+              }
+      \caption{Layer schematization for vegetation.}
+      \label{fig:veglay}
+\end{figure}
+\\[2ex]
+\noindent
+Finally, in addition to the vertical variation, the possibility of horizontal variation of the
+vegetation characteristics is included as well. This inclusion enables the vegetation in a
+given region to be varied so as to reflect real density variations in the field.
+
 \section{The influence of ambient current on waves} \label{sec:curre}
 
 Waves are subject to the influence of ambient current, when they propagate on it. The ambient current
@@ -1646,7 +1839,11 @@ with the restriction:
 \begin{equation}
   0.05 \leq K_t \leq -0.006\frac{B_k}{H_i} + 0.93
 \end{equation}
-\nocite{God67TM,See79,Dan96MJ}
+The formula's (\ref{eq:dangremond}) and (\ref{eq:dangremond2}) give a discontinuity at $B_k = 10 H_i$. Following
+Van der Meer~{\it et~al} (2005), for practical
+application, Eq. (\ref{eq:dangremond}) is applied if $B_k < 8 H_i$, Eq. (\ref{eq:dangremond2}) if $B_k > 12 H_i$ and
+in between ($8 H_i \leq B_k \leq 12 H_i$), a linear interpolation is carried out.
+\nocite{God67TM,See79,Dan96MJ,Mee05BZW}
 
 \subsection{Reflection}
 
@@ -1989,17 +2186,17 @@ the Stelling and Leendertse scheme), SWAN will revert to the first order upwind 
 \\[2ex]
 \noindent
 Usually, the numerical diffusion of the Stelling and Leendertse scheme is so small that the so-called {\it garden-sprinkler effect} (GSE) may show up if propagation
-over very large distances is considered. This effect is due to the spectral resolution (see Booij and Holthuijsen (1987)). It can be counteracted by a diffusion term
+over very large distances is considered. This effect is due to the spectral resolution (see Booij and Holthuijsen, 1987). It can be counteracted by a diffusion term
 that has been explicitly added to the numerical scheme. Its value depends on the spectral resolution and the propagation time of the waves.
 \\[2ex]
 \noindent
 The diffusion applied \underline{in} the propagation direction is
 \begin{equation}
-  D_{ss} = \frac{\Delta c^2T}{12}
+  D_{ss} = \frac{\Delta c_g^2T}{12}
 \end{equation}
 where $T$ is the wave age. The diffusion \underline{normal to} the propagation direction is
 \begin{equation}
-  D_{nn} = \frac{c^2 \Delta \theta^2 T}{12}
+  D_{nn} = \frac{c_g^2 \Delta \theta^2 T}{12}
 \end{equation}
 From these, diffusion coefficients are calculated as
 \begin{equation}
@@ -2024,18 +2221,20 @@ and are computed at the time level $i_t-1$ as follows
   D_{xy} \left( \frac{(N)_{i_x,i_y} - (N)_{i_x-1,i_y} - (N)_{i_x-1,i_y} + (N)_{i_x-1,i_y-1}}{\Delta x \Delta y} \right)^{i_t-1}_{i_{\sigma}, i_{\theta}}
 \end{equation}
 This explicit scheme is fast (having little impact on computation time) but only conditionally stable. Through mathematical analysis (not shown) it can be
-shown that a likely stability condition for the one-dimensional Stelling and Leendertse scheme with this GSE correction is $\Delta t/\Delta x^2 \leq 0.5$ which
-corresponds to the two-dimensional stability criterion of Tolman (1995) based on Fletcher (1988), Part I, section 7.1.1.:
+shown that a likely stability condition is (Fletcher, 1988):
 \begin{equation}
   Q = \frac{\max(D_{xx},D_{yy},D_{xy})\Delta t}{\min(\Delta x,\Delta y)^2} \leq 0.5
   \label{eq:gsecrit}
 \end{equation}
-Thus, it is credible that Eq. (\ref{eq:gsecrit}) holds true for the two-dimensional Stelling and Leendertse scheme with this GSE correction. In experiments,
-it was found that with $Q \leq 0.48$, no instability was observed. In short, by adding the GSE correction, the unconditionally stable advection scheme of
-SWAN becomes a (likely) conditionally stable advection-diffusion scheme. It is readily shown that for typical ocean applications $D_{nn}$ dominates the
+Thus, it is credible that Eq. (\ref{eq:gsecrit}) holds true for the two-dimensional Stelling and Leendertse scheme with this GSE correction.
+In short, by adding the GSE correction, the unconditionally stable advection scheme of
+SWAN becomes a (likely) conditionally stable advection-diffusion scheme.
+This restriction appears not to be severe as is commonly believed for a typical advection-diffusion equation.
+In experiments,
+it was found that with $Q \leq 0.48$, no instability was observed. It is readily shown that for typical ocean applications $D_{nn}$ dominates the
 diffusion and $Q$ can be written as
 \begin{equation}
-  Q = \frac{{{\overline C}}^2 T \Delta t}{12 \Delta x^2}
+  Q = \frac{{c_g}^2 T \Delta t}{12 \Delta x^2}
   \label{eq:gsecrit2}
 \end{equation}
 The variable wave age $\overline{T}$ could be computed during the computations of SWAN but it requires the same order of magnitude of computer memory as
@@ -2044,9 +2243,9 @@ becomes
 \begin{equation}
   Q = \frac{{\overline L} \mu \Delta \theta^2}{12 \Delta x}
 \end{equation}
-where the characteristic travel distance of the waves is ${\overline L} = {\overline C}{\overline T}$ (e.g., the dimension of the ocean basin). For
-oceanic applications, the Courant number is typically $\mu \approx \frac{1}{2}$ so that $Q \leq 0.25$ for typical values of $\Delta \theta$ and
-${\overline L}/\Delta x$ (the number of grid point in one direction of the grid). This implies that the Stelling and Leendertse scheme with the
+where the characteristic travel distance of the waves is ${\overline L} = {c_g}{\overline T}$ (e.g., the dimension of the ocean basin). For
+oceanic applications, the Courant number is typically $\mu \approx \frac{1}{2}$ so that $Q \leq 0.25$ for typical values of $\Delta \theta \sim 10^o$ and
+${\overline L}/\Delta x \sim 200$ (the number of grid points in one direction of the grid). This implies that the Stelling and Leendertse scheme with the
 GSE correction is stable for typical ocean cases. For shelf sea (regional) applications, the value of $\mu = {\cal O} (1)$ but the garden-sprinkler
 effect tends to be small on these scales and the diffusion can and should not be used to avoid the stability problem. For small-scale (local)
 applications, typically $\mu = {\cal O} (10-100)$. But such cases are usually treated as stationary and the SORDUP scheme should be used (no GSE
@@ -2823,7 +3022,7 @@ crossing in between; the program takes $K_t=1$ for this point.
 \noindent
 A consequence of the above procedure is that the results are the same as long
 as the obstacle crosses the same grid lines.
-Thus the results for the the situation shown would be the same
+Thus the results for the situation shown would be the same
 if the obstacle would be longer as long as the end would be in the same mesh.
 Another consequence is that an obstacle has to cross at least
 a few grid lines in order to have a noticeable effect, see Figure~\ref{fig:obsgrid}.
@@ -2862,6 +3061,8 @@ but the contribution from point 1 is
   \item reduced by a transmission coefficient and
   \item partially replaced by the reflection of an incoming component in point 0.
 \end{itemize}
+Reflection only works when both grid points 0 and 1, as shown in Figure~\ref{fig:stencil2}, are wet points. This implies
+that obstacle lines are only effective when bordered by wet points on both sides of the obstacle.
 
 \section{Crossing of obstacle and grid line}
 \label{sec:cross}
@@ -3103,6 +3304,41 @@ Finally, the approximation of the source term reads
 \begin{equation}
   S^{n+1}_{i} = {\tilde D} \left( 1 + \frac{Q_b - 1}{Q_b - {\cal B}} \right)_i^n E_i^{n+1} - {\tilde D} \, \frac{Q_b - 1}{Q_b - {\cal B}} |^n_i E_i^n
 \end{equation}
+%\\[2ex]
+%Similarly, the surf breaking source term for the biphase scaling of Van der Westhuysen (2009) can be implemented using
+%expression (\ref{eq:st1}) with
+%\begin{equation}
+%  {\tilde D} = - \frac{3}{4} \frac{B^3 \tilde{\sigma}}{\sqrt{\pi}\,d} \, \left( \frac{\beta}{\beta_{\rm ref}} \right)^n \, H_{\rm rms}
+%             = - \frac{3}{4} \gamma \frac{B^3 \tilde{\sigma}}{\sqrt{\pi}} \, \left( \frac{\beta}{\beta_{\rm ref}} \right)^n \, \sqrt{\cal B}
+%\end{equation}
+%Note, that $\gamma = H_{\rm max}/d$ is not used in the biphase scaling. (It is just a help variable since we need the parameter $\cal B$.)
+%Again, we apply the Newton linearisation (\ref{eq:newlin}):
+%\begin{equation}
+%   S^{n+1}_{i} \approx \left( \frac{\partial S}{\partial E} \right)_i^n E_i^{n+1} + \left( {\tilde D} - \left( \frac{\partial S}{\partial E} \right)_i^n \right) E_i^n
+%\end{equation}
+%For the derivative $\partial S/\partial E$, we need the derivative of ${\tilde D}$ to $\cal B$ for the application of (\ref{eq:st4}).
+%Since, the biphase $\beta$, as given by
+%\begin{equation}
+%  \beta = -\frac{\pi}{2} + \frac{\pi}{2}\, \tanh(\frac{0.2}{\rm Ur}) \, , \quad {\rm Ur} \sim H_{\rm rms}
+%  \label{eq:biphase}
+%\end{equation}
+%is a function of ${\cal B}$ as well, we need an expression for the derivative $d \beta/d {\cal B}$. The transcendent formula (\ref{eq:biphase}) may be
+%approximated with the following more simpler expression
+%\begin{equation}
+%  \beta = p + q\,{\cal B}^{-1/4}
+%\end{equation}
+%with $p$ and $q$ some parameters to be determined.
+%As a result, we have
+%\begin{equation}
+%  \frac{\partial S}{\partial E} |_i = \left [ \frac{3}{2}  - \frac{1}{4} n \left( 1 - \frac{p}{\beta} \right) \right ] {\tilde D} |_i < 0\, , \quad \forall p < 0\, ,
+%  \, \, \forall n > 0
+%\end{equation}
+%The choice of $p$ only influences the numerical stability, not the outcomes! Based on some numerical experiments, we found $p = -5$.
+%So,
+%\begin{equation}
+%   S^{n+1}_{i} = \left [ \frac{3}{2}  - \frac{1}{4} n \left( 1 + \frac{5}{\beta} \right) \right ] {\tilde D} |_i^n E_i^{n+1} -
+%   \left [ \frac{1}{2}  - \frac{1}{4} n \left( 1 + \frac{5}{\beta} \right) \right ] {\tilde D} |_i^n E_i^n
+%\end{equation}
 
 \chap{Wave boundary and initial conditions} \label{ch:bc}
 
@@ -3200,7 +3436,7 @@ In a one-dimensional model (\ref{eq:1N}) can be used directly to compute the set
 dimensions (\ref{eq:1N}) is a set of two equations with only one unknown,
 the setup $\zeta$. In
 order to reduce the number of equations to one, we use the observation by
-Dingemans(1997) that wave-driven currents are mainly due to the
+Dingemans (1997) that wave-driven currents are mainly due to the
 divergence-free part of the wave forces whereas the setup is mainly due to the
 rotation-free part of the force field. We therefore take the divergence of eq. (\ref{eq:1N}) to
 obtain the following elliptic partial differential equation for $\zeta$:
@@ -3811,11 +4047,12 @@ Moreover, this can be automated to a large extent.
 Although, the CPU cost per grid point is often relative higher than cases with structured grids,
 this effect is probably more than offset by the reduction in the number of grid points.
 
-This chapter presents an unstructured grid procedure for SWAN.
+This chapter presents an unstructured grid procedure for SWAN. Details can also be found in (Zijlema, 2009, 2010).
 The numerical propagation scheme for structured grids is based on
 a four-direction Gauss-Seidel iteration technique and is accompanied by a fully implicit temporal discretization; see Section~\ref{sec:sol}.
 Hence, SWAN is stable for any time step.
 Because of this nice property, this solution technique is tailored to unstructured grids.
+\nocite{Zij09,Zij10}
 
 \section{Description of an unstructured grid}
 \label{sec:defunstr}
@@ -4347,7 +4584,7 @@ Conf. Coastal Engineering}, ASCE, 57-67
 \bibitem{Bil03S}
 Bilgili, A. and Smith, K.W., 2003.
 BatTri: a 2-D finite element grid generator, version 11.11.03.
-Available from: $<$http://www-nml.dartmouth.edu/Publications/internal\_reports/NML-03-15/$>$.
+Available from: \hl{http://www-nml.dartmouth.edu/Publications/internal\_reports/NML-03-15/}.
 
 \bibitem{Boo87H}
 Booij, N., and L.H. Holthuijsen, 1987, Propagation of ocean waves in discrete spectral wave m{\it odels,
@@ -4439,6 +4676,10 @@ Chrisochoides, N.P., E.N.~Houstis, J.R.~Rice, Mapping algorithms and software
 
 \bibitem{Col72}
 Collins, J.I., 1972: Prediction of shallow water spectra, {\it J. Geophys. Res}., {\bf 77}, No. 15, 2693-2707
+
+\bibitem{Dal84KH}
+Dalrymple, R.A., J.T. Kirby and P.A. Hwang, 1984: Wave diffraction due to areas of energy dissipation,
+{\it Journal of Waterways, Ports, Harbours and Coastal Engineering}, {\bf 110}, 67-79
 
 \bibitem{Dan96MJ}
 d'Angremond, K., J.W.~van der Meer and R.J. de Jong, 1996: Wave transmission at low-crested structures,
@@ -4535,10 +4776,6 @@ G\"{u}nther, H., S. Hasselmann and P.A.E.M. Janssen, 1992: The WAM model Cycle 4
 \bibitem{Har01A}
 Hargreaves, J.C. and Annan, J.D., 2001. Comments on ``{I}mprovement of the short-fetch behavior
   in the wave ocean model ({WAM})''. J. Atmos. Oceanic Techn., 18: 711--715.
-
-\bibitem{Has98TN}
-Hashimoto, N., H. Tsuruya and Y. Nakagawa, 1998: Numerical computations of the nonlinear energy
-transfer of gravity-wave spectra in finite water depths, {\it Coastal Engng. J.}, {\bf 40}, 23-40
 
 \bibitem{Has02HH}
 Hashimoto, N., IJ.G. Haagsma and L.H. Holthuijsen, 2002: Four-wave interactions in SWAN, {\it Proc. 28$^{{\rm th}}$
@@ -4663,9 +4900,9 @@ Holthuijsen, L.H, R.C. Ris, N. Booij and E.Cecchi, 2000: Swell and whitecapping,
 Holthuijsen, L.H., Herman, A. and Booij, N., 2003: Phase-decoupled refraction-diffraction for
 spectral wave models, {\it Coastal Engineering}, {\bf 49}, 291-305
 
-\bibitem{Hol05}
-Holthuijsen, L.H., 2005: {\it Waves in oceanic and coastal waters},
-Cambridge University Press, in press.
+\bibitem{Hol07}
+Holthuijsen, L.H., 2007: {\it Waves in oceanic and coastal waters},
+Cambridge University Press.
 
 \bibitem{Hsu05OL}
 Hsu, T.-W., S.-H. Ou and J.-M. Liau, 2005: Hindcasting nearshore wind waves using a FEM code for SWAN,
@@ -4707,7 +4944,7 @@ of 2$^{{\rm nd}}$ Int. Symposium on Ocean Wave Measurement and Analysis}, New Or
 
 \bibitem{Kar69}
 Karlson, T, 1969: Refraction of continuous ocean wave spectra, {\it Journal of Waterways, Ports, Harbours
-and Coastal Engineering}, ASCE, {\bf 95}, WW4, 275-287
+and Coastal Engineering}, {\bf 95}, 275-287
 
 \bibitem{Kir86}
 Kirby, J.T., 1986: Higher-order approximation in the parabolic equation method for water waves, {\it J.
@@ -4760,6 +4997,15 @@ Mase, H. and J.T. Kirby, 1992: Hybrid frequency-domain KdV equation for random w
 \bibitem{Mas93BJ}
 Mastenbroek, C., G. Burgers, and P.A.E.M. Janssen, 1993: The dynamical coupling of a wave model in
 a storm surge model through the atmospheric boundary layer, {\it J. Phys. Oceanogr}., {\bf 23}, 1856-1866
+
+\bibitem{Mee05BZW}
+Van der Meer, J.W., R. Briganti, B. Zanuttigh and B. Wang, 2005: Wave transmission and reflection at
+low-crested structures: design formulae, oblique wave attack and spectral change,
+{\it Coast. Engng}., {\bf 52}, 915-929
+
+\bibitem{Men04L}
+Mendez, F.J. and I.J. Losada, 2004: An empirical model to estimate the propagation of random breaking and
+nonbreaking waves over vegeation fields, {\it Coast. Engng}., {\bf 51}, 103-118
 
 \bibitem{Mei83}
 Mei, C.C., 1983: {\it The applied dynamics of ocean surface waves}, Wiley, New York, 740 p.
@@ -4914,7 +5160,7 @@ Prediction, NATO Conf. Ser}., {\bf V}, 1, 347$-$372
 \bibitem{She96}
 Shewchuk, J.R., 1996.
 Triangle: a two-dimensional quality mesh generator and Delaunay triangulator, version 1.3.
-Available from: $<$http://www-2.cs.cmu.edu/$\,\tilde{}\,$quake/triangle.html$>$.
+Available from: \hl{http://www-2.cs.cmu.edu/~quake/triangle.html}.
 
 \bibitem{Sny81DEL}
 Snyder, R.L., Dobson, F.W., Elliott, J.A. and R.B. Long, 1981: Array measurement of atmospheric pressure
@@ -4972,6 +5218,11 @@ sea waves in deep water. WES Report 11, US Army Corps of Engineers.
 Van Vledder, G. Ph., J.G. de Ronde and M.J.F. Stive, 1994: Performance of a spectral wind-wave model
 in shallow water, {\it Proc. 24$^{{\rm th}}$ Int. Conf. Coastal Engineering}, ASCE, 761-774
 
+\bibitem{Vle00HJRT}
+Van Vledder, G.Ph., T.H.C. Herbers, R.E. Jensen, D.T. Resio and B. Tracy, 2000: Modelling
+of non-linear quadruplet wave-wave interactions in operational wave models. {\it Proc. 27th Int.
+Conf. on Coastal Engineering}, Sydney, Australia.
+
 \bibitem{Vle02H}
 Van Vledder, G. Ph. and D.P. Hurdle, 2002: Performance of formulations for whitecapping in wave
 prediction models, {\it Proc. OMAE 2002}
@@ -5023,6 +5274,17 @@ Delft University of Technology, Department of Civil Engineering, The Netherlands
 \bibitem{Wes07ZB}
 Van der Westhuysen, A.J., M. Zijlema and J.A. Battjes, 2007: Nonlinear saturation-based whitecapping dissipation
 in SWAN for deep and shallow water, {\it Coast. Engng}., {\bf 54}, 151-170
+
+%\bibitem{Wes09a}
+%Van der Westhuysen, A.J., 2009: Modelling of depth-induced wave breaking over sloping and horizontal beds,
+%{\it Proc. 11th International Workshop on Wave Hindcasting and Forecasting}., JCOMM, {\it in press}.
+
+%\bibitem{Wes09b}
+%Van der Westhuysen, A.J., 2009: Modelling of depth-induced wave breaking under finite-depth wave growth
+%conditions, {\it J. Geophys. Res}., {\it in press}.
+
+%\bibitem{Wes09c}
+%Van der Westhuysen, A.J., 2009: Wave dissipation on opposing current, {\it J. Geophys. Res}., {\it in preparation}.
 
 \bibitem{Wil65}
 Wilson, B.W., 1965: Numerical prediction of ocean waves in the North Atlantic for December 1959,
@@ -5099,201 +5361,213 @@ SWAN simulation of nearshore wind wave spectra. {\it Coastal Engineering}, {\bf 
 Zijlema, M., 2009: Parallel, unstructured mesh implementation for SWAN,
 {\it Proc. 31$^{{\rm th}}$ Int. Conf. Coastal Engineering}, ASCE, 470-482
 
+\bibitem{Zij10}
+Zijlema, M., 2010: Computation of wind-wave spectra in coastal waters with SWAN on unstructured grids.
+{\it Coastal Engineering}, {\bf 57}, 267-277
+
 \end{thebibliography}
 
 \begin{theindex}
 \addcontentsline{toc}{chapter}{Index}
-  \item ambient, \hyperpage{2}, \hyperpage{7}, \hyperpage{11, 12}, 
-		\hyperpage{32}, \hyperpage{103}
+  \item ambient, \hyperpage{2}, \hyperpage{7}, \hyperpage{11, 12},
+		\hyperpage{35}, \hyperpage{107}
 
   \indexspace
 
-  \item bathymetry, \hyperpage{24}, \hyperpage{40}, \hyperpage{83}, 
-		\hyperpage{85}, \hyperpage{105}
-  \item bottom, \hyperpage{1--3}, \hyperpage{13--15}, 
-		\hyperpage{22--24}, \hyperpage{32, 33}, 
-		\hyperpage{48, 49}, \hyperpage{85}, \hyperpage{89, 90}, 
-		\hyperpage{100}, \hyperpage{102}, \hyperpage{105--110}
-  \item boundary, \hyperpage{3, 4}, \hyperpage{13}, \hyperpage{15}, 
-		\hyperpage{46}, \hyperpage{65, 66}, \hyperpage{68, 69}, 
-		\hyperpage{71--75}, \hyperpage{77}, \hyperpage{84}, 
-		\hyperpage{86}, \hyperpage{90}, \hyperpage{104, 105}
-  \item breaking, \hyperpage{1}, \hyperpage{3}, \hyperpage{13--17}, 
-		\hyperpage{20, 21}, \hyperpage{23--25}, \hyperpage{45}, 
-		\hyperpage{62}, \hyperpage{97}, \hyperpage{100, 101}, 
-		\hyperpage{104}, \hyperpage{109}
+  \item bathymetry, \hyperpage{24}, \hyperpage{44}, \hyperpage{87},
+		\hyperpage{89}, \hyperpage{109}
+  \item bottom, \hyperpage{1--3}, \hyperpage{13--15},
+		\hyperpage{22--24}, \hyperpage{36}, \hyperpage{52, 53},
+		\hyperpage{89}, \hyperpage{93, 94}, \hyperpage{104},
+		\hyperpage{106}, \hyperpage{109--114}
+  \item boundary, \hyperpage{3, 4}, \hyperpage{13}, \hyperpage{15},
+		\hyperpage{50}, \hyperpage{69, 70}, \hyperpage{72, 73},
+		\hyperpage{75--79}, \hyperpage{81}, \hyperpage{88},
+		\hyperpage{90}, \hyperpage{94}, \hyperpage{108, 109}
+  \item breaking, \hyperpage{1}, \hyperpage{3}, \hyperpage{13--17},
+		\hyperpage{20, 21}, \hyperpage{23--25}, \hyperpage{49},
+		\hyperpage{66}, \hyperpage{101}, \hyperpage{104, 105},
+		\hyperpage{108}, \hyperpage{110}, \hyperpage{114}
 
   \indexspace
 
-  \item Cartesian, \hyperpage{3}, \hyperpage{10--12}, \hyperpage{70}, 
-		\hyperpage{87}, \hyperpage{89, 90}
-  \item co-ordinate, \hyperpage{3}, \hyperpage{7}, \hyperpage{10--12}, 
-		\hyperpage{27, 28}, \hyperpage{54--56}, \hyperpage{72}, 
-		\hyperpage{74}
-  \item coastal, \hyperpage{1, 2}, \hyperpage{15}, \hyperpage{42}, 
-		\hyperpage{51}, \hyperpage{79}, \hyperpage{83}, 
-		\hyperpage{98, 99}, \hyperpage{101}, 
-		\hyperpage{103--105}, \hyperpage{107, 108}
-  \item convergence, \hyperpage{38, 39}, \hyperpage{44}, \hyperpage{46}, 
-		\hyperpage{51--54}, \hyperpage{77, 78}, 
-		\hyperpage{81, 82}, \hyperpage{90}, \hyperpage{107}, 
-		\hyperpage{111}
-  \item Courant, \hyperpage{42}
-  \item current, \hyperpage{2, 3}, \hyperpage{7}, \hyperpage{10--13}, 
-		\hyperpage{15}, \hyperpage{32}, \hyperpage{34}, 
-		\hyperpage{36}, \hyperpage{39, 40}, \hyperpage{43}, 
-		\hyperpage{46--49}, \hyperpage{56}, \hyperpage{61}, 
-		\hyperpage{67}, \hyperpage{80}, \hyperpage{82}, 
-		\hyperpage{92}, \hyperpage{100}, \hyperpage{102, 103}, 
-		\hyperpage{107--111}
-  \item curvi-linear, \hyperpage{2, 3}, \hyperpage{54--56}, 
-		\hyperpage{58}, \hyperpage{68}, \hyperpage{74, 75}, 
-		\hyperpage{83}, \hyperpage{98}, \hyperpage{103}
+  \item Cartesian, \hyperpage{3}, \hyperpage{10--12}, \hyperpage{74},
+		\hyperpage{91}, \hyperpage{93, 94}
+  \item co-ordinate, \hyperpage{3}, \hyperpage{7}, \hyperpage{10--12},
+		\hyperpage{28, 29}, \hyperpage{58--60}, \hyperpage{76},
+		\hyperpage{78}
+  \item coastal, \hyperpage{1, 2}, \hyperpage{15}, \hyperpage{46},
+		\hyperpage{55}, \hyperpage{83}, \hyperpage{87},
+		\hyperpage{102, 103}, \hyperpage{105},
+		\hyperpage{107--109}, \hyperpage{112, 113},
+		\hyperpage{116}
+  \item convergence, \hyperpage{42, 43}, \hyperpage{48}, \hyperpage{50},
+		\hyperpage{55--58}, \hyperpage{81, 82},
+		\hyperpage{85, 86}, \hyperpage{94}, \hyperpage{112},
+		\hyperpage{116}
+  \item Courant, \hyperpage{46}
+  \item current, \hyperpage{2, 3}, \hyperpage{7}, \hyperpage{10--13},
+		\hyperpage{15}, \hyperpage{35}, \hyperpage{38, 39},
+		\hyperpage{43, 44}, \hyperpage{47}, \hyperpage{50--53},
+		\hyperpage{60}, \hyperpage{65}, \hyperpage{71},
+		\hyperpage{84}, \hyperpage{86}, \hyperpage{96},
+		\hyperpage{104}, \hyperpage{106, 107},
+		\hyperpage{111--113}, \hyperpage{115}
+  \item curvi-linear, \hyperpage{2, 3}, \hyperpage{58--60},
+		\hyperpage{62}, \hyperpage{72}, \hyperpage{78, 79},
+		\hyperpage{87}, \hyperpage{102}, \hyperpage{107}
 
   \indexspace
 
-  \item dam, \hyperpage{16}, \hyperpage{32, 33}, \hyperpage{103}, 
-		\hyperpage{111}
-  \item diffraction, \hyperpage{3}, \hyperpage{10}, \hyperpage{32}, 
-		\hyperpage{34, 35}, \hyperpage{94}, \hyperpage{98}, 
-		\hyperpage{104, 105}
-  \item diffusion, \hyperpage{40--43}, \hyperpage{94}
-  \item dissipation, \hyperpage{1}, \hyperpage{3}, \hyperpage{12}, 
-		\hyperpage{14--16}, \hyperpage{20--24}, 
-		\hyperpage{62, 63}, \hyperpage{84}, \hyperpage{97}, 
-		\hyperpage{99}, \hyperpage{102}, \hyperpage{107}, 
-		\hyperpage{109, 110}
+  \item dam, \hyperpage{16}, \hyperpage{33}, \hyperpage{35--37},
+		\hyperpage{107}, \hyperpage{115}
+  \item diffraction, \hyperpage{3}, \hyperpage{10}, \hyperpage{36--39},
+		\hyperpage{98}, \hyperpage{102}, \hyperpage{104},
+		\hyperpage{108, 109}
+  \item diffusion, \hyperpage{44--47}, \hyperpage{98}
+  \item dissipation, \hyperpage{1}, \hyperpage{3}, \hyperpage{12},
+		\hyperpage{14--16}, \hyperpage{20--24},
+		\hyperpage{33, 34}, \hyperpage{66, 67}, \hyperpage{88},
+		\hyperpage{101}, \hyperpage{103, 104}, \hyperpage{106},
+		\hyperpage{111}, \hyperpage{113, 114}
 
   \indexspace
 
-  \item filter, \hyperpage{13}, \hyperpage{18}, \hyperpage{35}
-  \item flow, \hyperpage{7}, \hyperpage{67}, \hyperpage{99}, 
-		\hyperpage{104}, \hyperpage{106}, \hyperpage{111}
-  \item force, \hyperpage{36}, \hyperpage{56}, \hyperpage{67--69}, 
-		\hyperpage{74, 75}, \hyperpage{85}, \hyperpage{89}, 
-		\hyperpage{92}, \hyperpage{100}
-  \item frequency, \hyperpage{7--9}, \hyperpage{11}, \hyperpage{13, 14}, 
-		\hyperpage{16}, \hyperpage{18--23}, \hyperpage{25}, 
-		\hyperpage{28}, \hyperpage{30}, \hyperpage{32}, 
-		\hyperpage{37--39}, \hyperpage{43, 44}, \hyperpage{46}, 
-		\hyperpage{48--52}, \hyperpage{59--62}, 
-		\hyperpage{65, 66}, \hyperpage{97}, \hyperpage{105}, 
-		\hyperpage{111}
-  \item friction, \hyperpage{1}, \hyperpage{3}, \hyperpage{13--15}, 
-		\hyperpage{18}, \hyperpage{22, 23}, \hyperpage{102}, 
-		\hyperpage{104, 105}, \hyperpage{107}, 
-		\hyperpage{109, 110}
+  \item filter, \hyperpage{13}, \hyperpage{18}, \hyperpage{38}
+  \item flow, \hyperpage{7}, \hyperpage{71}, \hyperpage{103},
+		\hyperpage{108}, \hyperpage{110}, \hyperpage{115}
+  \item force, \hyperpage{33}, \hyperpage{39}, \hyperpage{60},
+		\hyperpage{71--73}, \hyperpage{78, 79}, \hyperpage{89},
+		\hyperpage{93}, \hyperpage{96}, \hyperpage{104}
+  \item frequency, \hyperpage{7--9}, \hyperpage{11}, \hyperpage{13, 14},
+		\hyperpage{16}, \hyperpage{18--23}, \hyperpage{25--27},
+		\hyperpage{29}, \hyperpage{31}, \hyperpage{34, 35},
+		\hyperpage{41--43}, \hyperpage{47, 48}, \hyperpage{50},
+		\hyperpage{52--56}, \hyperpage{63--66},
+		\hyperpage{69, 70}, \hyperpage{101}, \hyperpage{109},
+		\hyperpage{115}
+  \item friction, \hyperpage{1}, \hyperpage{3}, \hyperpage{13--15},
+		\hyperpage{17, 18}, \hyperpage{22, 23}, \hyperpage{33},
+		\hyperpage{106}, \hyperpage{108, 109}, \hyperpage{111},
+		\hyperpage{113, 114}
 
   \indexspace
 
-  \item garden-sprinkler, \hyperpage{41, 42}, \hyperpage{94}
+  \item garden-sprinkler, \hyperpage{45, 46}, \hyperpage{98}
 
   \indexspace
 
-  \item harbour, \hyperpage{3}, \hyperpage{35}
+  \item harbour, \hyperpage{3}, \hyperpage{39}
 
   \indexspace
 
-  \item initial, \hyperpage{13}, \hyperpage{15}, \hyperpage{28}, 
-		\hyperpage{47}, \hyperpage{65, 66}, \hyperpage{78}
-  \item island, \hyperpage{83, 84}
+  \item initial, \hyperpage{13}, \hyperpage{15}, \hyperpage{30},
+		\hyperpage{51}, \hyperpage{69, 70}, \hyperpage{82}
+  \item island, \hyperpage{87, 88}
 
   \indexspace
 
-  \item Jonswap, \hyperpage{65, 66}
+  \item Jonswap, \hyperpage{69, 70}
 
   \indexspace
 
   \item latitude, \hyperpage{11, 12}
-  \item limiter, \hyperpage{38}, \hyperpage{51, 52}, \hyperpage{54}
+  \item limiter, \hyperpage{42}, \hyperpage{55, 56}, \hyperpage{58}
   \item longitude, \hyperpage{11, 12}
 
   \indexspace
 
-  \item obstacle, \hyperpage{3}, \hyperpage{32--35}, \hyperpage{40, 41}, 
-		\hyperpage{57--59}
-  \item ocean, \hyperpage{1}, \hyperpage{7, 8}, \hyperpage{11}, 
-		\hyperpage{32}, \hyperpage{35}, \hyperpage{42}, 
-		\hyperpage{98}, \hyperpage{101--106}, \hyperpage{108}, 
-		\hyperpage{110, 111}
+  \item obstacle, \hyperpage{3}, \hyperpage{35--37}, \hyperpage{39},
+		\hyperpage{44, 45}, \hyperpage{61--63}
+  \item ocean, \hyperpage{1}, \hyperpage{7, 8}, \hyperpage{11},
+		\hyperpage{35}, \hyperpage{39}, \hyperpage{46},
+		\hyperpage{102}, \hyperpage{106--112},
+		\hyperpage{114, 115}
 
   \indexspace
 
-  \item propagation, \hyperpage{1--4}, \hyperpage{10--12}, 
-		\hyperpage{34, 35}, \hyperpage{39}, \hyperpage{41--45}, 
-		\hyperpage{47--49}, \hyperpage{55}, \hyperpage{58}, 
-		\hyperpage{79, 80}, \hyperpage{83}, \hyperpage{85}, 
-		\hyperpage{87--90}, \hyperpage{98}, 
-		\hyperpage{100, 101}, \hyperpage{103}, \hyperpage{107}, 
-		\hyperpage{109}
+  \item plant, \hyperpage{33, 34}
+  \item propagation, \hyperpage{1--4}, \hyperpage{10--12},
+		\hyperpage{38}, \hyperpage{43}, \hyperpage{45--49},
+		\hyperpage{51--53}, \hyperpage{59}, \hyperpage{62},
+		\hyperpage{83, 84}, \hyperpage{87}, \hyperpage{89},
+		\hyperpage{91--94}, \hyperpage{102},
+		\hyperpage{104, 105}, \hyperpage{107},
+		\hyperpage{110, 111}, \hyperpage{113}
 
   \indexspace
 
-  \item quadruplets, \hyperpage{16}, \hyperpage{25}, \hyperpage{50}
+  \item quadruplets, \hyperpage{16}, \hyperpage{54}
 
   \indexspace
 
-  \item recti-linear, \hyperpage{75}, \hyperpage{83}
-  \item reflection, \hyperpage{3}, \hyperpage{32}, \hyperpage{34, 35}, 
-		\hyperpage{37}, \hyperpage{58}
-  \item refraction, \hyperpage{1}, \hyperpage{3}, \hyperpage{11}, 
-		\hyperpage{34}, \hyperpage{40}, \hyperpage{46}, 
-		\hyperpage{48}, \hyperpage{65}, \hyperpage{89}, 
-		\hyperpage{98, 99}, \hyperpage{104, 105}, 
-		\hyperpage{108}, \hyperpage{111}
-  \item regular, \hyperpage{2}, \hyperpage{4}, \hyperpage{7}, 
-		\hyperpage{15}, \hyperpage{32}, \hyperpage{89}, 
-		\hyperpage{108}, \hyperpage{110, 111}
-
-  \indexspace
-
-  \item set-up, \hyperpage{3, 4}, \hyperpage{24}, \hyperpage{36}, 
-		\hyperpage{67}, \hyperpage{75}, \hyperpage{97}
-  \item shoaling, \hyperpage{1}, \hyperpage{3}, \hyperpage{15}, 
-		\hyperpage{100, 101}
-  \item SORDUP, \hyperpage{40}, \hyperpage{42}, \hyperpage{79}
-  \item spherical, \hyperpage{3}, \hyperpage{11, 12}, \hyperpage{90}
-  \item stability, \hyperpage{37, 38}, \hyperpage{42}, \hyperpage{46}, 
-		\hyperpage{52}, \hyperpage{63}, \hyperpage{86}, 
-		\hyperpage{89}
-  \item stationary, \hyperpage{2, 3}, \hyperpage{7}, \hyperpage{38--40}, 
-		\hyperpage{42}, \hyperpage{50}, \hyperpage{55}, 
-		\hyperpage{66, 67}, \hyperpage{98}, \hyperpage{100}, 
-		\hyperpage{103}, \hyperpage{111}
-  \item steepness, \hyperpage{14}, \hyperpage{19, 20}, \hyperpage{24}, 
-		\hyperpage{32}
-  \item swell, \hyperpage{14, 15}, \hyperpage{20}, \hyperpage{22}, 
-		\hyperpage{42, 43}, \hyperpage{99}, \hyperpage{102}, 
+  \item recti-linear, \hyperpage{79}, \hyperpage{87}
+  \item reflection, \hyperpage{3, 4}, \hyperpage{35}, \hyperpage{37},
+		\hyperpage{39}, \hyperpage{41}, \hyperpage{62, 63},
 		\hyperpage{110}
+  \item refraction, \hyperpage{1}, \hyperpage{3}, \hyperpage{11},
+		\hyperpage{37}, \hyperpage{44}, \hyperpage{50},
+		\hyperpage{52}, \hyperpage{69}, \hyperpage{93},
+		\hyperpage{102, 103}, \hyperpage{108, 109},
+		\hyperpage{112}, \hyperpage{115}
+  \item regular, \hyperpage{2}, \hyperpage{4}, \hyperpage{7},
+		\hyperpage{15}, \hyperpage{33}, \hyperpage{36},
+		\hyperpage{93}, \hyperpage{112}, \hyperpage{115}
+
+  \indexspace
+
+  \item set-up, \hyperpage{3, 4}, \hyperpage{24}, \hyperpage{39},
+		\hyperpage{71}, \hyperpage{79}, \hyperpage{101}
+  \item shoaling, \hyperpage{1}, \hyperpage{3}, \hyperpage{15},
+		\hyperpage{104, 105}
+  \item SORDUP, \hyperpage{44}, \hyperpage{46}, \hyperpage{83}
+  \item spherical, \hyperpage{3}, \hyperpage{11, 12}, \hyperpage{94}
+  \item stability, \hyperpage{41, 42}, \hyperpage{46}, \hyperpage{50},
+		\hyperpage{56}, \hyperpage{67}, \hyperpage{90},
+		\hyperpage{93}
+  \item stationary, \hyperpage{2, 3}, \hyperpage{7}, \hyperpage{42--44},
+		\hyperpage{46}, \hyperpage{54}, \hyperpage{59},
+		\hyperpage{70, 71}, \hyperpage{102}, \hyperpage{104},
+		\hyperpage{107}, \hyperpage{116}
+  \item steepness, \hyperpage{14}, \hyperpage{19, 20}, \hyperpage{24},
+		\hyperpage{35}
+  \item swell, \hyperpage{14, 15}, \hyperpage{20}, \hyperpage{22},
+		\hyperpage{46, 47}, \hyperpage{103}, \hyperpage{106},
+		\hyperpage{114}
 
   \indexspace
 
   \item triads, \hyperpage{16}
-  \item triangular, \hyperpage{78}, \hyperpage{84}, \hyperpage{86--88}
+  \item triangular, \hyperpage{82}, \hyperpage{88}, \hyperpage{90--92}
 
   \indexspace
 
-  \item unstructured, \hyperpage{4}, \hyperpage{83, 84}, \hyperpage{89}, 
-		\hyperpage{92}, \hyperpage{94}, \hyperpage{98}, 
-		\hyperpage{111}
+  \item unstructured, \hyperpage{4}, \hyperpage{87, 88}, \hyperpage{93},
+		\hyperpage{96}, \hyperpage{98}, \hyperpage{102},
+		\hyperpage{116}
 
   \indexspace
 
-  \item WAM, \hyperpage{1}, \hyperpage{13, 14}, \hyperpage{18--20}, 
-		\hyperpage{26}, \hyperpage{37, 38}, \hyperpage{51}, 
-		\hyperpage{61}, \hyperpage{65}, \hyperpage{101}, 
-		\hyperpage{103}, \hyperpage{108}, \hyperpage{110}
-  \item WAVEWATCH, \hyperpage{1}, \hyperpage{65}, \hyperpage{109}
-  \item whitecapping, \hyperpage{3}, \hyperpage{12}, \hyperpage{14}, 
-		\hyperpage{16}, \hyperpage{19, 20}, \hyperpage{22}, 
-		\hyperpage{32}, \hyperpage{102}, \hyperpage{104}, 
-		\hyperpage{109, 110}
-  \item wind, \hyperpage{1--4}, \hyperpage{7}, \hyperpage{12--15}, 
-		\hyperpage{17--22}, \hyperpage{30--32}, \hyperpage{37}, 
-		\hyperpage{39--43}, \hyperpage{45}, \hyperpage{47}, 
-		\hyperpage{50, 51}, \hyperpage{57}, \hyperpage{66}, 
-		\hyperpage{74}, \hyperpage{83}, \hyperpage{89}, 
-		\hyperpage{97--99}, \hyperpage{102--111}
+  \item vegetation, \hyperpage{33--35}
+
+  \indexspace
+
+  \item WAM, \hyperpage{1}, \hyperpage{13, 14}, \hyperpage{17--20},
+		\hyperpage{27}, \hyperpage{41, 42}, \hyperpage{55},
+		\hyperpage{65}, \hyperpage{69}, \hyperpage{105--107},
+		\hyperpage{113, 114}
+  \item WAVEWATCH, \hyperpage{1}, \hyperpage{69}, \hyperpage{113}
+  \item whitecapping, \hyperpage{3}, \hyperpage{12}, \hyperpage{14},
+		\hyperpage{16}, \hyperpage{19, 20}, \hyperpage{22},
+		\hyperpage{35}, \hyperpage{106}, \hyperpage{108},
+		\hyperpage{113, 114}
+  \item wind, \hyperpage{1--3}, \hyperpage{7}, \hyperpage{12--15},
+		\hyperpage{17--22}, \hyperpage{31--33}, \hyperpage{35},
+		\hyperpage{41}, \hyperpage{43--47}, \hyperpage{49},
+		\hyperpage{51}, \hyperpage{54, 55}, \hyperpage{61},
+		\hyperpage{70}, \hyperpage{78}, \hyperpage{87},
+		\hyperpage{93}, \hyperpage{101--103},
+		\hyperpage{106--116}
 
 \end{theindex}
 

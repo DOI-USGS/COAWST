@@ -16,7 +16,7 @@ subroutine SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -127,7 +127,7 @@ subroutine SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
     !
     ! compute transport in x-y space
     !
-    call SWTSTA(140)
+!TIMG    call SWTSTA(140)
     call SwanTranspX ( amat   , rhs  , ac2   , ac1   , cax   , cay   , &
                        rdx    , rdy  , obredf, idcmin, idcmax, isslow, &
                        isstop , trac0, trac1 )
@@ -135,11 +135,11 @@ subroutine SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
     ! add GSE correction, if appropriate
     !
     if ( WAVAGE > 0. ) call SwanGSECorr ( rhs, ac2, cgo, spcdir, idcmin, idcmax, isslow, isstop, trac0 )
-    call SWTSTO(140)
+!TIMG    call SWTSTO(140)
     !
     ! compute transport in theta space
     !
-    call SWTSTA(142)
+!TIMG    call SWTSTA(142)
     if ( IREFR /= 0 ) then
        !
        call STRSD ( DDIR       , idcmin     , idcmax     , cad    , &
@@ -148,11 +148,11 @@ subroutine SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
                     trac0      , trac1      )
        !
     endif
-    call SWTSTO(142)
+!TIMG    call SWTSTO(142)
     !
     ! compute transport in sigma space
     !
-    call SWTSTA(141)
+!TIMG    call SWTSTA(141)
     if ( (DYNDEP .OR. ICUR /= 0) .and. ITFRE /= 0 ) then
        !
        if ( int(PNUMS(8)) == 1 ) then
@@ -175,6 +175,6 @@ subroutine SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
        endif
        !
     endif
-    call SWTSTO(141)
+!TIMG    call SWTSTO(141)
     !
 end subroutine SwanTranspAc

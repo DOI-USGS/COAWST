@@ -932,11 +932,11 @@
               FC(i,k)=cff1*t(i,j,k  ,3,itrc)+                           &
      &                cff2*t(i,j,k+1,3,itrc)
             END DO
-#  ifdef SED_MORPH
+#   ifdef SED_MORPH
             FC(i,0)=W(i,j,0)*t(i,j,1,3,itrc)
-#  else
+#   else
             FC(i,0)=0.0_r8
-#  endif
+#   endif
             FC(i,N(ng))=0.0_r8
           END DO
 #  endif
@@ -1086,7 +1086,11 @@
               FCs(i,k)=cff1*t(i,j,k  ,3,itrc)+                          &
      &                 cff2*t(i,j,k+1,3,itrc)
             END DO
+#   ifdef SED_MORPH
+            FCs(i,0)=W(i,j,0)*t(i,j,1,3,itrc)
+#   else
             FCs(i,0)=0.0_r8
+#   endif
             FCs(i,N(ng))=0.0_r8
           END DO
 #  else
