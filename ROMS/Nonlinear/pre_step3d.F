@@ -776,6 +776,12 @@
 #     endif
             FC(i,N(ng))=0.0_r8
           END DO
+#    else
+          DO i=Istr,Iend
+            DO k=0,N(ng)
+              FC(i,k)=0.0_r8
+            END DO
+          END DO            
 #    endif
 #   else
 !
