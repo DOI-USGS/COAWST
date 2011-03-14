@@ -292,7 +292,9 @@
 
       real(r8) :: cff, cff1, cff2, cff3, cff4, cff5
 
+# if defined BEDLOAD_MPM
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tau_w
+# endif
 # ifdef BSTRESS_UPWIND
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tau_wX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tau_wE
@@ -331,7 +333,7 @@
 ! Compute maximum bottom stress for MPM bedload or suspended load.
 !-----------------------------------------------------------------------
 !
-# if defined BEDLOAD_MPM || defined SUSPLOAD
+# if defined BEDLOAD_MPM
 #  ifdef BBL_MODEL
       DO j=Jstr-1,Jend+1
         DO i=Istr-1,Iend+1
