@@ -4981,7 +4981,8 @@
 !     Calculate the orbital velocity UBOT, orbital excursion ABRBOT and
 !     bottom wave period TMBOT                                            40.51
 !
-        IF ( UB2 .GT. 0.) UBOT(KCGRD(1)) = SQRT ( 2. * UB2 )
+!jcw    IF ( UB2 .GT. 0.) UBOT(KCGRD(1)) = SQRT ( 2. * UB2 )
+        IF ( UB2 .GT. 0.) UBOT(KCGRD(1)) = SQRT ( UB2 )
         IF ( AB2 .GT. 0.) ABRBOT = SQRT (2. *  AB2)
         IF ( UB2.GT.0. .AND. AB2.GT.0. )                                  40.51
      &                               TMBOT(KCGRD(1)) = PI2*SQRT(AB2/UB2)  40.51

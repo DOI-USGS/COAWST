@@ -432,7 +432,7 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-      to_add=':URMS'
+      to_add=':UBOT'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -714,9 +714,9 @@
       ELSE IF (IVTYPE.eq.50) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "TMBOT",avdata)
-      ELSE IF (IVTYPE.eq.34) THEN
+      ELSE IF (IVTYPE.eq.6) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
-     &                             "URMS",avdata)
+     &                             "UBOT",avdata)
       ELSE IF (IVTYPE.eq.13) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DIR",avdata)

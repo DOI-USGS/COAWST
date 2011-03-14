@@ -332,7 +332,7 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-      to_add=':URMS'
+      to_add=':UBOT'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -755,7 +755,7 @@
 !
 !  Bottom orbital velocity (m/s).
 !
-      CALL AttrVect_exportRAttr(AttrVect_G(ng)%wav2ocn_AV, "URMS",      &
+      CALL AttrVect_exportRAttr(AttrVect_G(ng)%wav2ocn_AV, "UBOT",      &
      &                          A, Asize)
       ij=0
       DO j=JstrT,JendT

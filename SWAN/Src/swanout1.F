@@ -913,7 +913,7 @@
       Cpltype(2)=55                      ! DISSURF SWOEXD
       Cpltype(3)=56                      ! DISWCAP SWOEXD
       Cpltype(4)=50                      ! TMBOT   SWOEXD
-      Cpltype(5)=34                      ! URMS    SWOEXD
+      Cpltype(5)=6                       ! UBOT    SWOEXD
       Cpltype(6)=8                       ! QB      SWOEXD
       Cpltype(7)=10                      ! HSIGN   SWOEXA
       Cpltype(8)=12                      ! RTP     SWOEXA
