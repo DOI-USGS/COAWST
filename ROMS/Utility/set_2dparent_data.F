@@ -14,9 +14,6 @@
 !  data  is loaded  into global two-time record arrays.  The actual    !
 !  interpolation is carried elsewhere.                                 !
 !                                                                      !
-!  Currently,  this routine is only executed in serial mode by the     !
-!  main thread.                                                        !
-!                                                                      !
 !=======================================================================
 !
       implicit none
@@ -336,6 +333,63 @@
           END DO
         END DO
       END IF
+# ifdef WEC
+!
+! ubar_stokes
+!
+      IF (WESTERN_EDGE) THEN
+        DO j=JstrT,JendT
+          DO i=IstrT+1,Istr
+            ic=i+Nghostpoints
+            my_valu=fac1*REFINED(ng)%ubarsR_west(ic,j,t1)+              &
+     &              fac2*REFINED(ng)%ubarsR_west(ic,j,t2)
+#  ifdef MASKING
+            my_valu=my_valu*GRID(ng)%umask(i,j)
+#  endif
+            OCEAN(ng)%ubar_stokes(i,j)=my_valu
+          END DO
+        END DO
+      END IF
+      IF (EASTERN_EDGE) THEN
+        DO j=JstrT,JendT
+          DO i=Iend+1,IendT
+            ic=i-Iend
+            my_valu=fac1*REFINED(ng)%ubarsR_east(ic,j,t1)+              &
+     &              fac2*REFINED(ng)%ubarsR_east(ic,j,t2)
+#  ifdef MASKING
+            my_valu=my_valu*GRID(ng)%umask(i,j)
+#  endif
+            OCEAN(ng)%ubar_stokes(i,j)=my_valu
+          END DO
+        END DO
+      END IF
+      IF (SOUTHERN_EDGE) THEN
+        DO j=JstrT,Jstr-1
+          DO i=IstrTU+1,IendT
+            jc=j+Nghostpoints+1
+            my_valu=fac1*REFINED(ng)%ubarsR_south(i,jc,t1)+             &
+     &              fac2*REFINED(ng)%ubarsR_south(i,jc,t2)
+#  ifdef MASKING
+            my_valu=my_valu*GRID(ng)%umask(i,j)
+#  endif
+            OCEAN(ng)%ubar_stokes(i,j)=my_valu
+          END DO
+        END DO
+      END IF
+      IF (NORTHERN_EDGE) THEN
+        DO j=Jend+1,JendT
+          DO i=IstrTU+1,IendT
+            jc=j-Jend
+            my_valu=fac1*REFINED(ng)%ubarsR_north(i,jc,t1)+             &
+     &              fac2*REFINED(ng)%ubarsR_north(i,jc,t2)
+#  ifdef MASKING
+            my_valu=my_valu*GRID(ng)%umask(i,j)
+#  endif
+            OCEAN(ng)%ubar_stokes(i,j)=my_valu
+          END DO
+        END DO
+      END IF
+# endif
 !
 ! vbar
 !
@@ -399,7 +453,63 @@
           END DO
         END DO
       END IF
-
+# ifdef WEC
+!
+! vbar_stokes
+!
+      IF (WESTERN_EDGE) THEN
+        DO j=JstrTV+1,JendT
+          DO i=IstrT,Istr-1
+            ic=i+Nghostpoints+1
+            my_valv=fac1*REFINED(ng)%vbarsR_west(ic,j,t1)+              &
+     &              fac2*REFINED(ng)%vbarsR_west(ic,j,t2)
+#  ifdef MASKING
+            my_valv=my_valv*GRID(ng)%vmask(i,j)
+#  endif
+            OCEAN(ng)%vbar_stokes(i,j)=my_valv
+          END DO
+        END DO
+      END IF
+      IF (EASTERN_EDGE) THEN
+        DO j=JstrTV+1,JendT
+          DO i=Iend+1,IendT
+            ic=i-Iend
+            my_valv=fac1*REFINED(ng)%vbarsR_east(ic,j,t1)+              &
+     &              fac2*REFINED(ng)%vbarsR_east(ic,j,t2)
+#  ifdef MASKING
+            my_valv=my_valv*GRID(ng)%vmask(i,j)
+#  endif
+            OCEAN(ng)%vbar_stokes(i,j)=my_valv
+          END DO
+        END DO
+      END IF
+      IF (SOUTHERN_EDGE) THEN
+        DO j=JstrT+1,Jstr
+          DO i=IstrT,IendT
+            jc=j+Nghostpoints
+            my_valv=fac1*REFINED(ng)%vbarsR_south(i,jc,t1)+             &
+     &              fac2*REFINED(ng)%vbarsR_south(i,jc,t2)
+#  ifdef MASKING
+            my_valv=my_valv*GRID(ng)%vmask(i,j)
+#  endif
+            OCEAN(ng)%vbar_stokes(i,j)=my_valv
+          END DO
+        END DO
+      END IF
+      IF (NORTHERN_EDGE) THEN
+        DO j=Jend+1,JendT
+          DO i=IstrT,IendT
+            jc=j-Jend
+            my_valv=fac1*REFINED(ng)%vbarsR_north(i,jc,t1)+             &
+     &              fac2*REFINED(ng)%vbarsR_north(i,jc,t2)
+#  ifdef MASKING
+            my_valv=my_valv*GRID(ng)%vmask(i,j)
+#  endif
+            OCEAN(ng)%vbar_stokes(i,j)=my_valv
+          END DO
+        END DO
+      END IF
+# endif
 !
 # if defined EW_PERIODIC || defined NS_PERIODIC
 !
@@ -407,37 +517,45 @@
 !  Exchange boundary information.
 !-----------------------------------------------------------------------
 !
-      IF (ng.eq.1) THEN
-        CALL exchange_u2d_tile (ng, tile,                               &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%ubar(:,:,1))
-        CALL exchange_v2d_tile (ng, tile,                               &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%vbar(:,:,1))
-        CALL exchange_u2d_tile (ng, tile,                               &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%ubar(:,:,2))
-        CALL exchange_v2d_tile (ng, tile,                               &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%vbar(:,:,2))
-        CALL exchange_u2d_tile (ng, tile,                               &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%ubar(:,:,3))
-        CALL exchange_v2d_tile (ng, tile,                               &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%vbar(:,:,3))
+!     IF (ng.eq.1) THEN
         CALL exchange_r2d_tile (ng, tile,                               &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%zeta(:,:,1))
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          OCEAN(ng)%zeta(:,:,1))
         CALL exchange_r2d_tile (ng, tile,                               &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%zeta(:,:,2))
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          OCEAN(ng)%zeta(:,:,2))
         CALL exchange_r2d_tile (ng, tile,                               &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%zeta(:,:,3))
-      END IF
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          OCEAN(ng)%zeta(:,:,3))
+        CALL exchange_u2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          OCEAN(ng)%ubar(:,:,1))
+        CALL exchange_v2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          OCEAN(ng)%vbar(:,:,1))
+        CALL exchange_u2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          OCEAN(ng)%ubar(:,:,2))
+        CALL exchange_v2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          OCEAN(ng)%vbar(:,:,2))
+        CALL exchange_u2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          OCEAN(ng)%ubar(:,:,3))
+        CALL exchange_v2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          OCEAN(ng)%vbar(:,:,3))
+#  ifdef WEC
+        CALL exchange_u2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          OCEAN(ng)%ubar_stokes(:,:))
+        CALL exchange_v2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          OCEAN(ng)%vbar_stokes(:,:))
 #  endif
-#  ifdef DISTRIBUTE
+!     END IF
+# endif
+# ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
@@ -456,7 +574,14 @@
      &                    OCEAN(ng)%vbar(:,:,1),                        &
      &                    OCEAN(ng)%vbar(:,:,2),                        &
      &                    OCEAN(ng)%vbar(:,:,3))
+#  ifdef WEC
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    OCEAN(ng)%ubar_stokes(:,:),                   &
+     &                    OCEAN(ng)%vbar_stokes(:,:))
 #  endif
+# endif
 
 # ifdef PROFILE
 !

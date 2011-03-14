@@ -644,14 +644,14 @@
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
-     &                    UYB   , WXI   , WYI   , ng, ngp, IT_in,
-     &                    PARALL2_MOD(ngp)%AC2_parent_G)
+     &                    UYB   , NPLAF,  WXI   , WYI   , ng    ,
+     &                    ngp, IT_in, PARALL2_MOD(ngp)%AC2_parent_G)
 # else
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
-     &                    UYB   , WXI   , WYI   , ng, ngp, IT_in,
-     &                    1.)
+     &                    UYB   , NPLAF,  WXI   , WYI   , ng    ,
+     &                    ngp, IT_in, 1.)
 # endif
 !TIMG            CALL SWTSTO(7)                                                40.23
             IF (STPNOW()) RETURN                                          34.01

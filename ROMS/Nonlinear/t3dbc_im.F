@@ -640,9 +640,9 @@
             dTdt=t(Istr,j,k,nstp,itrc)-t(Istr  ,j,k,nout,itrc)
             dTdx=t(Istr,j,k,nout,itrc)-t(Istr+1,j,k,nout,itrc)
 !#   ifdef WEST_TNUDGING
-            tau=Tobc_out(itrc,ng,iwest)
-            IF ((dTdt*dTdx).lt.0.0_r8) tau=Tobc_in(itrc,ng,iwest)
-            tau=tau*dt(ng)
+!            tau=Tobc_out(itrc,ng,iwest)
+!            IF ((dTdt*dTdx).lt.0.0_r8) tau=Tobc_in(itrc,ng,iwest)
+!            tau=tau*dt(ng)
 !#   endif
             IF ((dTdt*dTdx).lt.0.0_r8) dTdt=0.0_r8
             IF ((dTdt*(grad(Istr,j)+grad(Istr,j+1))).gt.0.0_r8) THEN
@@ -665,10 +665,10 @@
      &                                  grad(Istr-1,j+1))/              &
      &                              (cff+Cx)
 !#   ifdef WEST_TNUDGING
-            my_val=fac1*REFINED(ng)%tR_west(4,j,k,t1,itrc)+             &
-     &             fac2*REFINED(ng)%tR_west(4,j,k,t2,itrc)
-            t(Istr-1,j,k,nout,itrc)=t(Istr-1,j,k,nout,itrc)+            &
-     &                              tau*(my_val-t(Istr-1,j,k,nstp,itrc))
+!            my_val=fac1*REFINED(ng)%tR_west(4,j,k,t1,itrc)+             &
+!     &             fac2*REFINED(ng)%tR_west(4,j,k,t2,itrc)
+!            t(Istr-1,j,k,nout,itrc)=t(Istr-1,j,k,nout,itrc)+            &
+!     &                              tau*(my_val-t(Istr-1,j,k,nstp,itrc))
 !#   endif
 #   ifdef MASKING
             t(Istr-1,j,k,nout,itrc)=t(Istr-1,j,k,nout,itrc)*            &
@@ -701,9 +701,9 @@
             dTdt=t(Iend,j,k,nstp,itrc)-t(Iend  ,j,k,nout,itrc)
             dTdx=t(Iend,j,k,nout,itrc)-t(Iend-1,j,k,nout,itrc)
 !#   ifdef EAST_TNUDGING
-            tau=Tobc_out(itrc,ng,ieast)
-            IF ((dTdt*dTdx).lt.0.0_r8) tau=Tobc_in(itrc,ng,ieast)
-            tau=tau*dt(ng)
+!            tau=Tobc_out(itrc,ng,ieast)
+!            IF ((dTdt*dTdx).lt.0.0_r8) tau=Tobc_in(itrc,ng,ieast)
+!            tau=tau*dt(ng)
 !#   endif
             IF ((dTdt*dTdx).lt.0.0_r8) dTdt=0.0_r8
             IF ((dTdt*(grad(Iend,j)+grad(Iend,j+1))).gt.0.0_r8) THEN
@@ -726,11 +726,11 @@
      &                                  grad(Iend+1,j+1))/              &
      &                              (cff+Cx)
 !#   ifdef EAST_TNUDGING
-            my_val=fac1*REFINED(ng)%tR_east(1,j,k,t1,itrc)+             &
-     &             fac2*REFINED(ng)%tR_east(1,j,k,t2,itrc)
-            t(Iend+1,j,k,nout,itrc)=t(Iend+1,j,k,nout,itrc)+            &
-     &                              tau*(my_val-                        &
-     &                                   t(Iend+1,j,k,nstp,itrc))
+!            my_val=fac1*REFINED(ng)%tR_east(1,j,k,t1,itrc)+             &
+!     &             fac2*REFINED(ng)%tR_east(1,j,k,t2,itrc)
+!            t(Iend+1,j,k,nout,itrc)=t(Iend+1,j,k,nout,itrc)+            &
+!     &                              tau*(my_val-                        &
+!     &                                   t(Iend+1,j,k,nstp,itrc))
 !#   endif
 #   ifdef MASKING
             t(Iend+1,j,k,nout,itrc)=t(Iend+1,j,k,nout,itrc)*            &
@@ -764,9 +764,9 @@
             dTdt=t(i,Jstr,k,nstp,itrc)-t(i,Jstr  ,k,nout,itrc)
             dTde=t(i,Jstr,k,nout,itrc)-t(i,Jstr+1,k,nout,itrc)
 !#   ifdef SOUTH_TNUDGING
-            tau=Tobc_out(itrc,ng,isouth)
-            IF ((dTdt*dTde).lt.0.0_r8) tau=Tobc_in(itrc,ng,isouth)
-            tau=tau*dt(ng)
+!            tau=Tobc_out(itrc,ng,isouth)
+!            IF ((dTdt*dTde).lt.0.0_r8) tau=Tobc_in(itrc,ng,isouth)
+!            tau=tau*dt(ng)
 !#   endif
             IF ((dTdt*dTde).lt.0.0_r8) dTdt=0.0_r8
             IF ((dTdt*(grad(i,Jstr)+grad(i+1,Jstr))).gt.0.0_r8) THEN
@@ -789,11 +789,11 @@
      &                                  grad(i+1,Jstr-1))/              &
      &                              (cff+Ce)
 !#   ifdef SOUTH_TNUDGING
-            my_val=fac1*REFINED(ng)%tR_south(i,4,k,t1,itrc)+            &
-     &             fac2*REFINED(ng)%tR_south(i,4,k,t2,itrc)
-            t(i,Jstr-1,k,nout,itrc)=t(i,Jstr-1,k,nout,itrc)+            &
-     &                              tau*(my_val-                        &
-     &                                   t(i,Jstr-1,k,nstp,itrc))
+!            my_val=fac1*REFINED(ng)%tR_south(i,4,k,t1,itrc)+            &
+!     &             fac2*REFINED(ng)%tR_south(i,4,k,t2,itrc)
+!            t(i,Jstr-1,k,nout,itrc)=t(i,Jstr-1,k,nout,itrc)+            &
+!     &                              tau*(my_val-                        &
+!     &                                   t(i,Jstr-1,k,nstp,itrc))
 !#   endif
 #   ifdef MASKING
             t(i,Jstr-1,k,nout,itrc)=t(i,Jstr-1,k,nout,itrc)*            &
@@ -826,9 +826,9 @@
             dTdt=t(i,Jend,k,nstp,itrc)-t(i,Jend  ,k,nout,itrc)
             dTde=t(i,Jend,k,nout,itrc)-t(i,Jend-1,k,nout,itrc)
 !#   ifdef NORTH_TNUDGING
-            tau=Tobc_out(itrc,ng,inorth)
-            IF ((dTdt*dTde).lt.0.0_r8) tau=Tobc_in(itrc,ng,inorth)
-            tau=tau*dt(ng)
+!            tau=Tobc_out(itrc,ng,inorth)
+!            IF ((dTdt*dTde).lt.0.0_r8) tau=Tobc_in(itrc,ng,inorth)
+!            tau=tau*dt(ng)
 !#   endif
             IF ((dTdt*dTde).lt.0.0_r8) dTdt=0.0_r8
             IF ((dTdt*(grad(i,Jend)+grad(i+1,Jend))).gt.0.0_r8) THEN
@@ -851,11 +851,11 @@
      &                                  grad(i+1,Jend+1))/              &
      &                              (cff+Ce)
 !#   ifdef NORTH_TNUDGING
-            my_val=fac1*REFINED(ng)%tR_north(i,1,k,t1,itrc)+            &
-     &             fac2*REFINED(ng)%tR_north(i,1,k,t2,itrc)
-            t(i,Jend+1,k,nout,itrc)=t(i,Jend+1,k,nout,itrc)+            &
-     &                              tau*(my_val-                        &
-     &                                   t(i,Jend+1,k,nstp,itrc))
+!            my_val=fac1*REFINED(ng)%tR_north(i,1,k,t1,itrc)+            &
+!     &             fac2*REFINED(ng)%tR_north(i,1,k,t2,itrc)
+!            t(i,Jend+1,k,nout,itrc)=t(i,Jend+1,k,nout,itrc)+            &
+!     &                              tau*(my_val-                        &
+!     &                                   t(i,Jend+1,k,nstp,itrc))
 !#   endif
 #   ifdef MASKING
             t(i,Jend+1,k,nout,itrc)=t(i,Jend+1,k,nout,itrc)*            &

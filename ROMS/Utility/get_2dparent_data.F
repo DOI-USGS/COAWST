@@ -494,16 +494,101 @@
             END DO
           END IF
 
-#ifdef get_DUon
+# ifdef WEC
+!!!!!!!!!!!!!!!!!!!
+!  ubar_stokes !!!!
+!!!!!!!!!!!!!!!!!!!
+!
+! get ubar_stokes
+!
+          CALL mp_gather2d (ngp, model, LBip, UBip, LBjp, UBjp, 0,      &
+     &                    gtype, 1.0_r8,                                &
+#  ifdef MASKING
+     &                    GRID(ngp) % umask(LBip:UBip,LBjp:UBjp),       &
+#  endif
+     &               OCEAN(ngp) % ubar_stokes(LBip:UBip,LBjp:UBjp),     &
+     &                    Npts, Aout)
+!
+! distribute the Aout (1D packed) field to all the nodes for ng=2
+          CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,             &
+     &                    OCN_COMM_WORLD, MyError)
+! unpack and place in global ng=1 2D array
+          ic=0
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              ic=ic+1
+              A(i,j)=Aout(ic)
+            END DO
+          END DO
+!
+! Now interpolate to the local tile for ng=2.
+!
+          IF (spherical) THEN
+            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
+     &                         REFINED(ng)%lonu_p(Imin:Imax,Jmin:Jmax), &
+     &                         REFINED(ng)%latu_p(Imin:Imax,Jmin:Jmax), &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
+     &                         GRID(ng)%lonu, GRID(ng)%latu, A2,        &
+     &                         my_min, my_max)
+          ELSE
+            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
+     &                         REFINED(ng)%xu_p(Imin:Imax,Jmin:Jmax),   &
+     &                         REFINED(ng)%yu_p(Imin:Imax,Jmin:Jmax),   &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
+     &                         GRID(ng)%xu, GRID(ng)%yu, A2,            &
+     &                         my_min, my_max)
+          END IF
+!
+          IF (WESTERN_EDGE) THEN
+            DO j=JstrT,JendT
+              DO i=IstrT+1,Istr
+                ic=i+Nghostpoints
+                REFINED(ng)%ubarsR_west(ic,j,t1)=A2(i,j)
+              END DO
+            END DO
+          END IF
+          IF (EASTERN_EDGE) THEN
+            DO j=JstrT,JendT
+              DO i=Iend+1,IendT
+                ic=i-Iend
+                REFINED(ng)%ubarsR_east(ic,j,t1)=A2(i,j)
+              END DO
+            END DO
+          END IF
+          IF (SOUTHERN_EDGE) THEN
+            DO j=JstrT,Jstr-1
+              DO i=IstrT,IendT
+                jc=j+Nghostpoints+1
+                REFINED(ng)%ubarsR_south(i,jc,t1)=A2(i,j)
+              END DO
+            END DO
+          END IF
+          IF (NORTHERN_EDGE) THEN
+            DO j=Jend+1,JendT
+              DO i=IstrT,IendT
+                jc=j-Jend
+                REFINED(ng)%ubarsR_north(i,jc,t1)=A2(i,j)
+              END DO
+            END DO
+          END IF
+# endif
+
+# ifdef get_DUon
 
 !
 ! get DUon
 !
           CALL mp_gather2d (ngp, model, LBip, UBip, LBjp, UBjp, 0,      &
      &                    gtype, 1.0_r8,                                &
-# ifdef MASKING
+#  ifdef MASKING
      &                    GRID(ngp) % umask(LBip,LBjp),                 &
-# endif
+#  endif
      &                    OCEAN(ngp) % DUon(LBip,LBjp),                 &
      &                    Npts, Aout)
 !
@@ -574,7 +659,7 @@
               END DO
             END DO
           END IF
-#endif
+# endif
 
         ELSE IF (ii.eq.3) THEN
 !!!!!!!!!!!!!!!!!!!
@@ -672,16 +757,99 @@
               END DO
             END DO
           END IF
+# ifdef WEC
+!!!!!!!!!!!!!!!!!!!
+!  vbar_stokes !!!!
+!!!!!!!!!!!!!!!!!!!
+!
+! get vbar_stokes
+!
+          CALL mp_gather2d (ngp, model, LBip, UBip, LBjp, UBjp, 0,      &
+     &                    gtype, 1.0_r8,                                &
+#  ifdef MASKING
+     &                    GRID(ngp) % vmask(LBip:UBip,LBjp:UBjp),       &
+#  endif
+     &               OCEAN(ngp) % vbar_stokes(LBip:UBip,LBjp:UBjp),     &
+     &                    Npts, Aout)
+!
+! distribute the Aout (1D packed) field to all the nodes for ng=2
+          CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,             &
+     &                    OCN_COMM_WORLD, MyError)
+! unpack and place in global ng=1 2D array
+          ic=0
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              ic=ic+1
+              A(i,j)=Aout(ic)
+            END DO
+          END DO
+!
+! Now interpolate to the local tile for ng=2.
+!
+          IF (spherical) THEN
+            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
+     &                         REFINED(ng)%lonv_p(Imin:Imax,Jmin:Jmax), &
+     &                         REFINED(ng)%latv_p(Imin:Imax,Jmin:Jmax), &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,&
+     &                         GRID(ng)%lonv, GRID(ng)%latv, A2,        &
+     &                         my_min, my_max)
+          ELSE
+            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
+     &                         REFINED(ng)%xv_p(Imin:Imax,Jmin:Jmax),   &
+     &                         REFINED(ng)%yv_p(Imin:Imax,Jmin:Jmax),   &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,&
+     &                         GRID(ng)%xv, GRID(ng)%yv, A2,            &
+     &                         my_min, my_max)
+          END IF
+          IF (WESTERN_EDGE) THEN
+            DO j=JstrT,JendT
+              DO i=IstrT,Istr-1
+                ic=i+Nghostpoints+1
+                REFINED(ng)%vbarsR_west(ic,j,t1)=A2(i,j)
+              END DO
+            END DO
+          END IF
+          IF (EASTERN_EDGE) THEN
+            DO j=JstrT,JendT
+              DO i=Iend+1,IendT
+                ic=i-Iend
+                REFINED(ng)%vbarsR_east(ic,j,t1)=A2(i,j)
+              END DO
+            END DO
+          END IF
+          IF (SOUTHERN_EDGE) THEN
+            DO j=JstrT+1,Jstr
+              DO i=IstrT,IendT
+                jc=j+Nghostpoints
+                REFINED(ng)%vbarsR_south(i,jc,t1)=A2(i,j)
+              END DO
+            END DO
+          END IF
+          IF (NORTHERN_EDGE) THEN
+            DO j=Jend+1,JendT
+              DO i=IstrT,IendT
+                jc=j-Jend
+                REFINED(ng)%vbarsR_north(i,jc,t1)=A2(i,j)
+              END DO
+            END DO
+          END IF
+# endif
 
-#ifdef get_DVom
+# ifdef get_DVom
 !
 ! get DVom
 !
           CALL mp_gather2d (ngp, model, LBip, UBip, LBjp, UBjp, 0,      &
      &                        gtype, 1.0_r8,                            &
-# ifdef MASKING
+#  ifdef MASKING
      &                        GRID(ngp) % vmask(LBip,LBjp),             &
-# endif
+#  endif
      &                        OCEAN(ngp) % DVom(LBip,LBjp),             &
      &                        Npts, Aout)
 !
@@ -752,7 +920,7 @@
               END DO
             END DO
           END IF
-#endif
+# endif
         END IF
 !
         IF (allocated(Aout)) THEN

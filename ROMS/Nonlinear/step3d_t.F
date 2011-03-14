@@ -1153,11 +1153,13 @@
           DO k=1,N(ng)
             DO i=I_RANGE
               cff1=CF(i,0)*(FC(i,k)-FC(i,k-1))
-# if defined TS_MPDATA && !defined WEC_VF
+# if defined TS_MPDATA
+#  if !defined WEC_VF
               Ta(i,j,k,itrc)=(Ta(i,j,k,itrc)-cff1)*oHz(i,j,k)
 #   ifdef DIAGNOSTICS_TS
               DiaTwrk(i,j,k,itrc,iTvadv)=-cff1
 #   endif
+#  endif
 # else
               t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1
 #  ifdef SPLINES

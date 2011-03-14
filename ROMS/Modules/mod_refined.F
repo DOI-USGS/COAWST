@@ -37,6 +37,16 @@
           real(r8), pointer :: vbarR_south(:,:,:)
           real(r8), pointer :: ubarR_north(:,:,:)
           real(r8), pointer :: vbarR_north(:,:,:)
+# ifdef WEC
+          real(r8), pointer :: ubarsR_west(:,:,:)
+          real(r8), pointer :: vbarsR_west(:,:,:)
+          real(r8), pointer :: ubarsR_east(:,:,:)
+          real(r8), pointer :: vbarsR_east(:,:,:)
+          real(r8), pointer :: ubarsR_south(:,:,:)
+          real(r8), pointer :: vbarsR_south(:,:,:)
+          real(r8), pointer :: ubarsR_north(:,:,:)
+          real(r8), pointer :: vbarsR_north(:,:,:)
+# endif
           real(r8), pointer :: DUonR_west(:,:,:)
           real(r8), pointer :: DUonR_east(:,:,:)
           real(r8), pointer :: DUonR_south(:,:,:)
@@ -54,7 +64,16 @@
           real(r8), pointer :: vR_south(:,:,:,:)
           real(r8), pointer :: uR_north(:,:,:,:)
           real(r8), pointer :: vR_north(:,:,:,:)
-
+# ifdef WEC
+          real(r8), pointer :: usR_west(:,:,:,:)
+          real(r8), pointer :: vsR_west(:,:,:,:)
+          real(r8), pointer :: usR_east(:,:,:,:)
+          real(r8), pointer :: vsR_east(:,:,:,:)
+          real(r8), pointer :: usR_south(:,:,:,:)
+          real(r8), pointer :: vsR_south(:,:,:,:)
+          real(r8), pointer :: usR_north(:,:,:,:)
+          real(r8), pointer :: vsR_north(:,:,:,:)
+# endif
           real(r8), pointer :: tR_west(:,:,:,:,:)
           real(r8), pointer :: tR_east(:,:,:,:,:)
           real(r8), pointer :: tR_south(:,:,:,:,:)
@@ -157,6 +176,18 @@
       allocate ( REFINED(ng) % vbarR_south(XI_DIM,4,2) )
       allocate ( REFINED(ng) % vbarR_north(XI_DIM,3,2) )
 
+# ifdef WEC
+      allocate ( REFINED(ng) % ubarsR_west(4,ETA_DIM,2) )
+      allocate ( REFINED(ng) % ubarsR_east(3,ETA_DIM,2) )
+      allocate ( REFINED(ng) % ubarsR_south(XI_DIM,4,2) )
+      allocate ( REFINED(ng) % ubarsR_north(XI_DIM,3,2) )
+
+      allocate ( REFINED(ng) % vbarsR_west(4,ETA_DIM,2) )
+      allocate ( REFINED(ng) % vbarsR_east(3,ETA_DIM,2) )
+      allocate ( REFINED(ng) % vbarsR_south(XI_DIM,4,2) )
+      allocate ( REFINED(ng) % vbarsR_north(XI_DIM,3,2) )
+# endif
+
       allocate ( REFINED(ng) % DUonR_west(4,ETA_DIM,2) )
       allocate ( REFINED(ng) % DUonR_east(3,ETA_DIM,2) )
       allocate ( REFINED(ng) % DUonR_south(XI_DIM,4,2) )
@@ -176,6 +207,18 @@
       allocate ( REFINED(ng) % vR_east(3,ETA_DIM,N(ng),2) )
       allocate ( REFINED(ng) % vR_south(XI_DIM,4,N(ng),2) )
       allocate ( REFINED(ng) % vR_north(XI_DIM,3,N(ng),2) )
+
+# ifdef WEC
+      allocate ( REFINED(ng) % usR_west(4,ETA_DIM,N(ng),2) )
+      allocate ( REFINED(ng) % usR_east(3,ETA_DIM,N(ng),2) )
+      allocate ( REFINED(ng) % usR_south(XI_DIM,4,N(ng),2) )
+      allocate ( REFINED(ng) % usR_north(XI_DIM,3,N(ng),2) )
+
+      allocate ( REFINED(ng) % vsR_west(4,ETA_DIM,N(ng),2) )
+      allocate ( REFINED(ng) % vsR_east(3,ETA_DIM,N(ng),2) )
+      allocate ( REFINED(ng) % vsR_south(XI_DIM,4,N(ng),2) )
+      allocate ( REFINED(ng) % vsR_north(XI_DIM,3,N(ng),2) )
+# endif
 
       allocate ( REFINED(ng) % tR_west(4,ETA_DIM,N(ng),2,NT(ng)) )
       allocate ( REFINED(ng) % tR_east(3,ETA_DIM,N(ng),2,NT(ng)) )
@@ -285,15 +328,27 @@
         REFINED(ng) % ubarR_north = IniVal
         REFINED(ng) % ubarR_south = IniVal
 
-        REFINED(ng) % DUonR_west = IniVal
-        REFINED(ng) % DUonR_east = IniVal
-        REFINED(ng) % DUonR_north = IniVal
-        REFINED(ng) % DUonR_south = IniVal
-
         REFINED(ng) % vbarR_west = IniVal
         REFINED(ng) % vbarR_east = IniVal
         REFINED(ng) % vbarR_north = IniVal
         REFINED(ng) % vbarR_south = IniVal
+
+# ifdef WEC
+        REFINED(ng) % ubarsR_west = IniVal
+        REFINED(ng) % ubarsR_east = IniVal
+        REFINED(ng) % ubarsR_north = IniVal
+        REFINED(ng) % ubarsR_south = IniVal
+
+        REFINED(ng) % vbarsR_west = IniVal
+        REFINED(ng) % vbarsR_east = IniVal
+        REFINED(ng) % vbarsR_north = IniVal
+        REFINED(ng) % vbarsR_south = IniVal
+# endif
+
+        REFINED(ng) % DUonR_west = IniVal
+        REFINED(ng) % DUonR_east = IniVal
+        REFINED(ng) % DUonR_north = IniVal
+        REFINED(ng) % DUonR_south = IniVal
 
         REFINED(ng) % DVomR_west = IniVal
         REFINED(ng) % DVomR_east = IniVal
@@ -309,6 +364,18 @@
         REFINED(ng) % vR_east = IniVal
         REFINED(ng) % vR_north = IniVal
         REFINED(ng) % vR_south = IniVal
+
+# ifdef WEC
+        REFINED(ng) % uR_west = IniVal
+        REFINED(ng) % uR_east = IniVal
+        REFINED(ng) % uR_north = IniVal
+        REFINED(ng) % uR_south = IniVal
+
+        REFINED(ng) % vR_west = IniVal
+        REFINED(ng) % vR_east = IniVal
+        REFINED(ng) % vR_north = IniVal
+        REFINED(ng) % vR_south = IniVal
+# endif
 
         REFINED(ng) % tR_west = IniVal
         REFINED(ng) % tR_east = IniVal

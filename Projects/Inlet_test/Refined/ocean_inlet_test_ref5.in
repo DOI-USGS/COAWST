@@ -463,7 +463,7 @@ Hout(idBott) == T T T T T T T T T T F F F F F F F F\
 ! Output NetCDF file names, [1:Ngrids].
 
      GSTNAME == ocean_gst.nc
-     RSTNAME == ocean_rst.nc \
+     RSTNAME == ocean_rst_ref1.nc \
                 ocean_rst_ref5.nc
      HISNAME == ocean_his_ref1.nc \
                 ocean_his_ref5.nc

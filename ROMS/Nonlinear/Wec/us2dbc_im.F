@@ -94,10 +94,10 @@
 
 #include "set_bounds.h"
 
-!#ifdef REFINED_GRID
+#ifdef REFINED_GRID
 !set this for Parent Grid ONLY
-!      IF (ng.eq.1) THEN
-!#endif
+      IF (ng.eq.1) THEN
+#endif
 
 # if !defined EW_PERIODIC && !defined COMPOSED_GRID
 !
@@ -514,10 +514,10 @@
       END IF
 # endif
 
-!#ifdef REFINED_GRID
+#ifdef REFINED_GRID
 !set this for Parent Grid ONLY
-!      END IF
-!#endif
+      END IF
+#endif
 !
       RETURN
       END SUBROUTINE us2dbc_tile

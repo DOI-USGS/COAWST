@@ -78,10 +78,10 @@
       USE mod_refined
       USE interpolate_mod
 
-# ifdef DISTRIBUTE
+#  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange4d
       USE mp_exchange_mod, ONLY : mp_exchange2d, mp_exchange3d
-# endif
+#  endif
 !
       implicit none
 !
@@ -102,18 +102,18 @@
       integer :: i, j, k, ngp, ic, jc, t1, t2, itrc
       real(r8) :: my_val, fac, fac1, fac2
 
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
+#  ifdef DISTRIBUTE
+#   ifdef EW_PERIODIC
       logical :: EWperiodic=.TRUE.
-#  else
+#   else
       logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
+#   endif
+#   ifdef NS_PERIODIC
       logical :: NSperiodic=.TRUE.
-#  else
+#   else
       logical :: NSperiodic=.FALSE.
+#   endif
 #  endif
-# endif
 !
 #  include "set_bounds.h"
       ngp=myparent(ng)
@@ -159,9 +159,9 @@
                 ic=i+Nghostpoints+1
                 my_val=fac1*REFINED(ng)%tR_west(ic,j,k,t1,itrc)+        &
      &                 fac2*REFINED(ng)%tR_west(ic,j,k,t2,itrc)
-# ifdef MASKING
+#  ifdef MASKING
                 my_val=my_val*GRID(ng)%rmask(i,j)
-# endif
+#  endif
                 OCEAN(ng)%t(i,j,k,3,itrc)=my_val
                 OCEAN(ng)%t(i,j,k,2,itrc)=my_val
                 OCEAN(ng)%t(i,j,k,1,itrc)=my_val
@@ -178,9 +178,9 @@
                 ic=i-Iend
                 my_val=fac1*REFINED(ng)%tR_east(ic,j,k,t1,itrc)+        &
      &                 fac2*REFINED(ng)%tR_east(ic,j,k,t2,itrc)
-# ifdef MASKING
+#  ifdef MASKING
                 my_val=my_val*GRID(ng)%rmask(i,j)
-# endif
+#  endif
                 OCEAN(ng)%t(i,j,k,3,itrc)=my_val
                 OCEAN(ng)%t(i,j,k,2,itrc)=my_val
                 OCEAN(ng)%t(i,j,k,1,itrc)=my_val
@@ -197,9 +197,9 @@
                 jc=j+Nghostpoints+1
                 my_val=fac1*REFINED(ng)%tR_south(i,jc,k,t1,itrc)+       &
      &                 fac2*REFINED(ng)%tR_south(i,jc,k,t2,itrc)
-# ifdef MASKING
+#  ifdef MASKING
                 my_val=my_val*GRID(ng)%rmask(i,j)
-# endif
+#  endif
                 OCEAN(ng)%t(i,j,k,3,itrc)=my_val
                 OCEAN(ng)%t(i,j,k,2,itrc)=my_val
                 OCEAN(ng)%t(i,j,k,1,itrc)=my_val
@@ -216,9 +216,9 @@
                 jc=j-Jend
                 my_val=fac1*REFINED(ng)%tR_north(i,jc,k,t1,itrc)+       &
      &                 fac2*REFINED(ng)%tR_north(i,jc,k,t2,itrc)
-# ifdef MASKING
+#  ifdef MASKING
                 my_val=my_val*GRID(ng)%rmask(i,j)
-# endif
+#  endif
                 OCEAN(ng)%t(i,j,k,3,itrc)=my_val
                 OCEAN(ng)%t(i,j,k,2,itrc)=my_val
                 OCEAN(ng)%t(i,j,k,1,itrc)=my_val
@@ -237,9 +237,9 @@
               ic=i+Nghostpoints
               my_val=fac1*REFINED(ng)%uR_west(ic,j,k,t1)+               &
      &               fac2*REFINED(ng)%uR_west(ic,j,k,t2)
-# ifdef MASKING
+#  ifdef MASKING
               my_val=my_val*GRID(ng)%umask(i,j)
-# endif
+#  endif
               OCEAN(ng)%u(i,j,k,2)=my_val
               OCEAN(ng)%u(i,j,k,1)=my_val
             END DO
@@ -253,9 +253,9 @@
               ic=i-Iend
               my_val=fac1*REFINED(ng)%uR_east(ic,j,k,t1)+               &
      &               fac2*REFINED(ng)%uR_east(ic,j,k,t2)
-# ifdef MASKING
+#  ifdef MASKING
               my_val=my_val*GRID(ng)%umask(i,j)
-# endif
+#  endif
               OCEAN(ng)%u(i,j,k,1)=my_val
               OCEAN(ng)%u(i,j,k,2)=my_val
             END DO
@@ -269,9 +269,9 @@
               jc=j+Nghostpoints+1
               my_val=fac1*REFINED(ng)%uR_south(i,jc,k,t1)+              &
      &               fac2*REFINED(ng)%uR_south(i,jc,k,t2)
-# ifdef MASKING
+#  ifdef MASKING
               my_val=my_val*GRID(ng)%umask(i,j)
-# endif
+#  endif
               OCEAN(ng)%u(i,j,k,1)=my_val
               OCEAN(ng)%u(i,j,k,2)=my_val
             END DO
@@ -285,15 +285,80 @@
               jc=j-Jend
               my_val=fac1*REFINED(ng)%uR_north(i,jc,k,t1)+              &
      &               fac2*REFINED(ng)%uR_north(i,jc,k,t2)
-# ifdef MASKING
+#  ifdef MASKING
               my_val=my_val*GRID(ng)%umask(i,j)
-# endif
+#  endif
               OCEAN(ng)%u(i,j,k,1)=my_val
               OCEAN(ng)%u(i,j,k,2)=my_val
             END DO
           END DO
         END DO
       END IF
+#  ifdef WEC
+!
+! u_stokes
+!
+      IF (WESTERN_EDGE) THEN
+        DO k=1,N(ng)
+          DO j=JstrT,JendT
+            DO i=IstrT+1,Istr
+              ic=i+Nghostpoints
+              my_val=fac1*REFINED(ng)%usR_west(ic,j,k,t1)+              &
+     &               fac2*REFINED(ng)%usR_west(ic,j,k,t2)
+#   ifdef MASKING
+              my_val=my_val*GRID(ng)%umask(i,j)
+#   endif
+              OCEAN(ng)%u_stokes(i,j,k)=my_val
+            END DO
+          END DO
+        END DO
+      END IF
+      IF (EASTERN_EDGE) THEN
+        DO k=1,N(ng)
+          DO j=JstrT,JendT
+            DO i=Iend+1,IendT
+              ic=i-Iend
+              my_val=fac1*REFINED(ng)%usR_east(ic,j,k,t1)+              &
+     &               fac2*REFINED(ng)%usR_east(ic,j,k,t2)
+#   ifdef MASKING
+              my_val=my_val*GRID(ng)%umask(i,j)
+#   endif
+              OCEAN(ng)%u_stokes(i,j,k)=my_val
+            END DO
+          END DO
+        END DO
+      END IF
+      IF (SOUTHERN_EDGE) THEN
+        DO k=1,N(ng)
+          DO j=JstrT,Jstr-1
+            DO i=IstrTU+1,IendT
+              jc=j+Nghostpoints+1
+              my_val=fac1*REFINED(ng)%usR_south(i,jc,k,t1)+             &
+     &               fac2*REFINED(ng)%usR_south(i,jc,k,t2)
+#   ifdef MASKING
+              my_val=my_val*GRID(ng)%umask(i,j)
+#   endif
+              OCEAN(ng)%u_stokes(i,j,k)=my_val
+            END DO
+          END DO
+        END DO
+      END IF
+      IF (NORTHERN_EDGE) THEN
+        DO k=1,N(ng)
+          DO j=Jend+1,JendT
+            DO i=IstrTU+1,IendT
+              jc=j-Jend
+              my_val=fac1*REFINED(ng)%usR_north(i,jc,k,t1)+             &
+     &               fac2*REFINED(ng)%usR_north(i,jc,k,t2)
+#   ifdef MASKING
+              my_val=my_val*GRID(ng)%umask(i,j)
+#   endif
+              OCEAN(ng)%u_stokes(i,j,k)=my_val
+            END DO
+          END DO
+        END DO
+      END IF
+#  endif
 !
 ! v
 !
@@ -304,9 +369,9 @@
               ic=i+Nghostpoints+1
               my_val=fac1*REFINED(ng)%vR_west(ic,j,k,t1)+               &
      &               fac2*REFINED(ng)%vR_west(ic,j,k,t2)
-# ifdef MASKING
+#  ifdef MASKING
               my_val=my_val*GRID(ng)%vmask(i,j)
-# endif
+#  endif
               OCEAN(ng)%v(i,j,k,2)=my_val
               OCEAN(ng)%v(i,j,k,1)=my_val
             END DO
@@ -320,9 +385,9 @@
               ic=i-Iend
               my_val=fac1*REFINED(ng)%vR_east(ic,j,k,t1)+               &
      &               fac2*REFINED(ng)%vR_east(ic,j,k,t2)
-# ifdef MASKING
+#  ifdef MASKING
               my_val=my_val*GRID(ng)%vmask(i,j)
-# endif
+#  endif
               OCEAN(ng)%v(i,j,k,1)=my_val
               OCEAN(ng)%v(i,j,k,2)=my_val
             END DO
@@ -336,9 +401,9 @@
               jc=j+Nghostpoints
               my_val=fac1*REFINED(ng)%vR_south(i,jc,k,t1)+              &
      &               fac2*REFINED(ng)%vR_south(i,jc,k,t2)
-# ifdef MASKING
+#  ifdef MASKING
               my_val=my_val*GRID(ng)%vmask(i,j)
-# endif
+#  endif
               OCEAN(ng)%v(i,j,k,1)=my_val
               OCEAN(ng)%v(i,j,k,2)=my_val
             END DO
@@ -352,18 +417,83 @@
               jc=j-Jend
               my_val=fac1*REFINED(ng)%vR_north(i,jc,k,t1)+              &
      &               fac2*REFINED(ng)%vR_north(i,jc,k,t2)
-# ifdef MASKING
+#  ifdef MASKING
               my_val=my_val*GRID(ng)%vmask(i,j)
-# endif
+#  endif
               OCEAN(ng)%v(i,j,k,1)=my_val
               OCEAN(ng)%v(i,j,k,2)=my_val
             END DO
           END DO
         END DO
       END IF
+#  ifdef WEC
 !
-# ifdef DISTRIBUTE
-#  if !defined TS_FIXED
+! v_stokes
+!
+      IF (WESTERN_EDGE) THEN
+        DO k=1,N(ng)
+          DO j=JstrTV+1,JendT
+            DO i=IstrT,Istr-1
+              ic=i+Nghostpoints+1
+              my_val=fac1*REFINED(ng)%vsR_west(ic,j,k,t1)+              &
+     &               fac2*REFINED(ng)%vsR_west(ic,j,k,t2)
+#   ifdef MASKING
+              my_val=my_val*GRID(ng)%vmask(i,j)
+#   endif
+              OCEAN(ng)%v_stokes(i,j,k)=my_val
+            END DO
+          END DO
+        END DO
+      END IF
+      IF (EASTERN_EDGE) THEN
+        DO k=1,N(ng)
+          DO j=JstrTV+1,JendT
+            DO i=Iend+1,IendT
+              ic=i-Iend
+              my_val=fac1*REFINED(ng)%vsR_east(ic,j,k,t1)+              &
+     &               fac2*REFINED(ng)%vsR_east(ic,j,k,t2)
+#   ifdef MASKING
+              my_val=my_val*GRID(ng)%vmask(i,j)
+#   endif
+              OCEAN(ng)%v_stokes(i,j,k)=my_val
+            END DO
+          END DO
+        END DO
+      END IF
+      IF (SOUTHERN_EDGE) THEN
+        DO k=1,N(ng)
+          DO j=JstrT+1,Jstr
+            DO i=IstrT,IendT
+              jc=j+Nghostpoints
+              my_val=fac1*REFINED(ng)%vsR_south(i,jc,k,t1)+             &
+     &               fac2*REFINED(ng)%vsR_south(i,jc,k,t2)
+#   ifdef MASKING
+              my_val=my_val*GRID(ng)%vmask(i,j)
+#   endif
+              OCEAN(ng)%v_stokes(i,j,k)=my_val
+            END DO
+          END DO
+        END DO
+      END IF
+      IF (NORTHERN_EDGE) THEN
+        DO k=1,N(ng)
+          DO j=Jend+1,JendT
+            DO i=IstrT,IendT
+              jc=j-Jend
+              my_val=fac1*REFINED(ng)%vsR_north(i,jc,k,t1)+             &
+     &               fac2*REFINED(ng)%vsR_north(i,jc,k,t2)
+#   ifdef MASKING
+              my_val=my_val*GRID(ng)%vmask(i,j)
+#   endif
+              OCEAN(ng)%v_stokes(i,j,k)=my_val
+            END DO
+          END DO
+        END DO
+      END IF
+#  endif
+!
+#  ifdef DISTRIBUTE
+#   if !defined TS_FIXED
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
@@ -376,7 +506,7 @@
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    OCEAN(ng)%t(:,:,:,3,:))
-#  endif
+#   endif
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
@@ -387,17 +517,22 @@
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    OCEAN(ng)%v(:,:,:,1),                         &
      &                    OCEAN(ng)%v(:,:,:,2))
-# endif
-
-
-# ifdef PROFILE
+#   ifdef WEC
+      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    OCEAN(ng)%u_stokes(:,:,:),                    &
+     &                    OCEAN(ng)%v_stokes(:,:,:))
+#   endif
+#  endif
+#  ifdef PROFILE
 !
 !-----------------------------------------------------------------------
 !  Turn off input data time wall clock.
 !-----------------------------------------------------------------------
 !
       CALL wclock_off (ng, iNLM, 3)
-# endif
+#  endif
       RETURN
       END SUBROUTINE set_3dparent_data_tile
 # endif
