@@ -24,12 +24,16 @@ ncload(grid_file)
 [MP,LP]=size(h);
 gridsize=LP*MP;
 
-%if ((spherical=='F')||(spherical=='f'))
+if ((spherical=='F')||(spherical=='f'))
 %  lon_rho=x_rho;
 %  lat_rho=y_rho;
 %  lon_psi=x_psi;
 %  lat_psi=y_psi;
-%end
+   projection='mercator';
+   m_proj(projection);
+   [lon_rho, lat_rho] = m_xy2ll(x_rho/6371000, y_rho/6371000);   % Degrees.
+   [lon_psi, lat_psi] = m_xy2ll(x_psi/6371000, y_psi/6371000);   % Degrees.
+end
 
 %create a full set of psi points
 [x_full_grid,y_full_grid]=create_extra_rho_grid(lon_psi,lat_psi);
