@@ -536,7 +536,7 @@ endif
 #--------------------------------------------------------------------------
 #  Target to create ROMS/TOMS dependecies.
 #--------------------------------------------------------------------------
-
+ifneq "$(MAKECMDGOALS)" "tarfile"
 $(SCRATCH_DIR)/$(NETCDF_MODFILE): | $(SCRATCH_DIR)
 	cp -f $(NETCDF_INCDIR)/$(NETCDF_MODFILE) $(SCRATCH_DIR)
 
@@ -556,6 +556,7 @@ SFMAKEDEPEND := ./ROMS/Bin/sfmakedepend
 
 depend: $(SCRATCH_DIR)
 	$(SFMAKEDEPEND) $(MDEPFLAGS) $(sources) > $(SCRATCH_DIR)/MakeDepend
+endif
 
 ifneq "$(MAKECMDGOALS)" "clean"
   -include $(SCRATCH_DIR)/MakeDepend
