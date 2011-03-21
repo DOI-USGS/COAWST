@@ -352,7 +352,8 @@ Hout(idU2Sd) == F F                        ! ubar_stokes     2D U-Stokes velocit
 Hout(idV2Sd) == F F                        ! vbar_stokes     2D V-Stokes velocity
 Hout(idU3Sd) == F F                        ! u_stokes        3D U-Stokes velocity
 Hout(idV3Sd) == F F                        ! v_stokes        3D V-Stokes velocity
-Hout(idW3Sd) == F F                        ! w_stokes        3D W-Stokes velocity
+Hout(idW3St) == F F                        ! w_stokes        3D W-Stokes velocity
+Hout(idW3Sd) == F F                        ! omega_stokes    3D Omega-Stokes velocity
 
 Hout(idWamp) == F F                        ! Hwave           wave height
 Hout(idWlen) == F F                        ! Lwave           wave length, mean
@@ -1203,7 +1204,8 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 !  Hout(idV2Sd)  Write out 2D V-Stokes velocity.
 !  Hout(idU3Sd)  Write out 3D U-Stokes velocity.
 !  Hout(idV3Sd)  Write out 3D V-Stokes velocity.
-!  Hout(idW3Sd)  Write out 3D W-Stokes velocity.
+!  Hout(idW3St)  Write out 3D W-Stokes velocity.
+!  Hout(idW3Sd)  Write out 3D Omega-Stokes velocity.
 !
 !  Hout(idWamp)  Write out wave height.
 !  Hout(idWlen)  Write out wave length.

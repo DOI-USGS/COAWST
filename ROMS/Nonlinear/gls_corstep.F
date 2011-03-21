@@ -68,7 +68,7 @@
      &                       OCEAN(ng) % v,                             &
      &                       OCEAN(ng) % W,                             &
 # ifdef WEC_VF
-     &                       OCEAN(ng) % w_stokes,                      &
+     &                       OCEAN(ng) % W_stokes,                      &
 # endif
      &                       FORCES(ng) % bustr,                        &
      &                       FORCES(ng) % bvstr,                        &
@@ -106,7 +106,7 @@
      &                             Huon, Hvom, Hz, pm, pn, z_r, z_w,    &
      &                             u, v, W,                             &
 # ifdef WEC_VF
-     &                             w_stokes,                            &
+     &                             W_stokes,                            &
 # endif
      &                             bustr, bvstr, sustr, svstr,          &
 # ifdef ZOS_HSIG
@@ -153,7 +153,7 @@
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
 # ifdef WEC_VF
-      real(r8), intent(in) :: w_stokes(LBi:,LBj:,0:)
+      real(r8), intent(in) :: W_stokes(LBi:,LBj:,0:)
 # endif
       real(r8), intent(in) :: bustr(LBi:,LBj:)
       real(r8), intent(in) :: bvstr(LBi:,LBj:)
@@ -190,7 +190,7 @@
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
 # ifdef WEC_VF
-      real(r8), intent(in) :: w_stokes(LBi:UBi,LBj:UBj,0:N(ng))
+      real(r8), intent(in) :: W_stokes(LBi:UBi,LBj:UBj,0:N(ng))
 # endif
       real(r8), intent(in) :: bustr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: bvstr(LBi:UBi,LBj:UBj)
@@ -696,7 +696,7 @@
           DO i=Istr,Iend
             cff=0.25_r8*(W(i,j,k)+W(i,j,k-1))
 #  ifdef WEC_VF
-            cff=cff+0.25_r8*(w_stokes(i,j,k)+w_stokes(i,j,k-1))
+            cff=cff+0.25_r8*(W_stokes(i,j,k)+W_stokes(i,j,k-1))
 #  endif
             FCK(i,k)=cff*(tke(i,j,k,3)+tke(i,j,k-1,3))
             FCP(i,k)=cff*(gls(i,j,k,3)+gls(i,j,k-1,3))
@@ -709,7 +709,7 @@
           DO i=Istr,Iend
             cff=0.5*(W(i,j,k)+W(i,j,k-1))
 #  ifdef WEC_VF
-            cff=cff+0.5_r8*(w_stokes(i,j,k)+w_stokes(i,j,k-1))
+            cff=cff+0.5_r8*(W_stokes(i,j,k)+W_stokes(i,j,k-1))
 #  endif
             FCK(i,k)=cff*(cff1*(tke(i,j,k-1,3)+                         &
      &                          tke(i,j,k  ,3))-                        &
@@ -727,7 +727,7 @@
          DO i=Istr,Iend
           cff=0.5_r8*(W(i,j,0)+W(i,j,1))
 #  ifdef WEC_VF
-          cff=cff+0.5_r8*(w_stokes(i,j,0)+w_stokes(i,j,1))
+          cff=cff+0.5_r8*(W_stokes(i,j,0)+W_stokes(i,j,1))
 #  endif
           FCK(i,1)=cff*(cff1*tke(i,j,0,3)+                              &
      &                  cff2*tke(i,j,1,3)-                              &
@@ -737,7 +737,7 @@
      &                  cff3*gls(i,j,2,3))
           cff=0.5_r8*(W(i,j,N(ng))+W(i,j,N(ng)-1))
 #  ifdef WEC_VF
-          cff=cff+0.5_r8*(w_stokes(i,j,N(ng))+w_stokes(i,j,N(ng)-1))
+          cff=cff+0.5_r8*(W_stokes(i,j,N(ng))+W_stokes(i,j,N(ng)-1))
 #  endif
           FCK(i,N(ng))=cff*(cff1*tke(i,j,N(ng)  ,3)+                    &
      &                      cff2*tke(i,j,N(ng)-1,3)-                    &

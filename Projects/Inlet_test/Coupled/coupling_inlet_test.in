@@ -62,7 +62,6 @@
    O2ANAME == ocn2atm_weights.nc
    O2WNAME == Projects/Inlet_test/DiffGrid/roms2swan_weights.nc
 
-
 !
 !  GLOSSARY:
 !  =========

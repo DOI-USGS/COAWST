@@ -1719,8 +1719,8 @@
            ENDIF                                                          40.31
            OPSDATZ_MOD(ng)%OPSTMP%OPI(1) = MXC                                            40.31
            OPSDATZ_MOD(ng)%OPSTMP%OPI(2) = MYC                                            40.31
-           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(0))                                         40.31
-           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(0))                                         40.31
+           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(1))                                         40.31
+           ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(1))                                         40.31
            NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                                        40.31
            IF ( .NOT.LOPS ) THEN                                          40.31
               OPSDATZ_MOD(ng)%FOPS => OPSDATZ_MOD(ng)%OPSTMP
@@ -3206,8 +3206,8 @@
 #ifdef SWAN_MODEL
       ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP)                                                    40.31
       OPSDATZ_MOD(ng)%OPSTMP%PSNAME = SNAMEG                                              40.31
-      ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(0))                                              40.31
-      ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(0))                                              40.31
+      ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%XP(1))                                              40.31
+      ALLOCATE(OPSDATZ_MOD(ng)%OPSTMP%YP(1))                                              40.31
 !
       IF (IGTYPE(IGRID1) .EQ. 1) THEN                                     30.21
         OPSDATZ_MOD(ng)%OPSTMP%PSTYPE = 'F'                                               40.31

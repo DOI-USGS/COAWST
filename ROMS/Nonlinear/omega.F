@@ -80,7 +80,7 @@
      &                 GRID(ng) % Hvom,                                 &
      &                 GRID(ng) % z_w,                                  &
 # if defined WEC_VF
-     &                 OCEAN(ng) % w_stokes,                            &
+     &                 OCEAN(ng) % W_stokes,                            &
 # endif
      &                 OCEAN(ng) % W)
 # ifdef PROFILE
@@ -106,7 +106,7 @@
      &                       Huon, Hvom,                                &
      &                       z_w,                                       &
 # if defined WEC_VF
-     &                       w_stokes,                                  &
+     &                       W_stokes,                                  &
 # endif
      &                       W)
 !***********************************************************************
@@ -147,7 +147,7 @@
       real(r8), intent(in) :: Hvom(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
 #  if defined WEC_VF
-      real(r8), intent(in) :: w_stokes(LBi:,LBj:,0:)
+      real(r8), intent(in) :: W_stokes(LBi:,LBj:,0:)
 #  endif
       real(r8), intent(out) :: W(LBi:,LBj:,0:)
 
@@ -168,7 +168,7 @@
       real(r8), intent(in) :: Hvom(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
 #  if defined WEC_VF
-      real(r8), intent(in) :: w_stokes(LBi:UBi,LBj:UBj,0:N(ng))
+      real(r8), intent(in) :: W_stokes(LBi:UBi,LBj:UBj,0:N(ng))
 #  endif
       real(r8), intent(out) :: W(LBi:UBi,LBj:UBj,0:N(ng))
 # endif
@@ -258,7 +258,7 @@
           DO i=I_RANGE
             W(i,j,k)=W(i,j,k)-                                          &
 # if defined WEC_VF
-     &               w_stokes(i,j,k)-                                   &
+     &               W_stokes(i,j,k)-                                   &
 # endif
      &               wrk(i)*(z_w(i,j,k)-z_w(i,j,0))
           END DO

@@ -61,7 +61,7 @@
      &                       GRID(ng) % pn,                             &
      &                       OCEAN(ng) % W,                             &
 # ifdef WEC_VF
-     &                       OCEAN(ng) % w_stokes,                      &
+     &                       OCEAN(ng) % W_stokes,                      &
 # endif
      &                       MIXING(ng) % gls,                          &
      &                       MIXING(ng) % tke)
@@ -81,7 +81,7 @@
 # endif
      &                             Huon, Hvom, Hz, pm, pn, W,           &
 # ifdef WEC_VF
-     &                             w_stokes,                            &
+     &                             W_stokes,                            &
 # endif
      &                             gls, tke)
 !***********************************************************************
@@ -116,7 +116,7 @@
       real(r8), intent(in) :: pn(LBi:,LBj:)
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
 # ifdef WEC_VF
-      real(r8), intent(in) :: w_stokes(LBi:,LBj:,0:)
+      real(r8), intent(in) :: W_stokes(LBi:,LBj:,0:)
 # endif
       real(r8), intent(inout) :: gls(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: tke(LBi:,LBj:,0:,:)
@@ -132,7 +132,7 @@
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
 # ifdef WEC_VF
-      real(r8), intent(in) :: w_stokes(LBi:UBi,LBj:UBj,0:N(ng))
+      real(r8), intent(in) :: W_stokes(LBi:UBi,LBj:UBj,0:N(ng))
 # endif
       real(r8), intent(inout) :: gls(LBi:UBi,LBj:UBj,0:N(ng),3)
       real(r8), intent(inout) :: tke(LBi:UBi,LBj:UBj,0:N(ng),3)
@@ -375,7 +375,7 @@
           DO i=Istr,Iend
             CF(i,k)=0.5_r8*(W(i,j,k)+W(i,j,k-1))
 #  ifdef WEC_VF
-            CF(i,k)=CF(i,k)+0.5_r8*(w_stokes(i,j,k)+w_stokes(i,j,k-1))
+            CF(i,k)=CF(i,k)+0.5_r8*(W_stokes(i,j,k)+W_stokes(i,j,k-1))
 #  endif
             FC (i,k)=CF(i,k)*                                           &
      &               0.5_r8*(tke(i,j,k-1,nstp)+tke(i,j,k,nstp))
@@ -390,7 +390,7 @@
           DO i=Istr,Iend
             CF(i,k)=0.5_r8*(W(i,j,k)+W(i,j,k-1))
 #  ifdef WEC_VF
-            CF(i,k)=CF(i,k)+0.5_r8*(w_stokes(i,j,k)+w_stokes(i,j,k-1))
+            CF(i,k)=CF(i,k)+0.5_r8*(W_stokes(i,j,k)+W_stokes(i,j,k-1))
 #  endif
             FC (i,k)=CF(i,k)*(cff1*(tke(i,j,k-1,nstp)+                  &
      &                              tke(i,j,k  ,nstp))-                 &
@@ -408,7 +408,7 @@
         DO i=Istr,Iend
           CF(i,1)=0.5*(W(i,j,0)+W(i,j,1))
 #  ifdef WEC_VF
-          CF(i,1)=CF(i,1)+0.5_r8*(w_stokes(i,j,0)+w_stokes(i,j,1))
+          CF(i,1)=CF(i,1)+0.5_r8*(W_stokes(i,j,0)+W_stokes(i,j,1))
 #  endif
           FC (i,1)=CF(i,1)*(cff1*tke(i,j,0,nstp)+                       &
      &                      cff2*tke(i,j,1,nstp)-                       &
@@ -419,7 +419,7 @@
           CF(i,N(ng))=0.5*(W(i,j,N(ng))+W(i,j,N(ng)-1))
 #  ifdef WEC_VF
           CF(i,N(ng))=CF(i,N(ng))+0.5_r8*                               &
-     &                (w_stokes(i,j,N(ng))+w_stokes(i,j,N(ng)-1))
+     &                (W_stokes(i,j,N(ng))+W_stokes(i,j,N(ng)-1))
 #  endif
           FC (i,N(ng))=CF(i,N(ng))*(cff1*tke(i,j,N(ng)  ,nstp)+         &
      &                              cff2*tke(i,j,N(ng)-1,nstp)-         &

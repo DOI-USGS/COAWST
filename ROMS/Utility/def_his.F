@@ -2240,7 +2240,7 @@
           IF (exit_flag.ne.NoError) RETURN
         END IF
 !
-!  Define 3D w-Stokes velocity.
+!  Define 3D omega-Stokes velocity.
 !
         IF (Hout(idW3Sd,ng)) THEN
           Vinfo( 1)=Vname(1,idW3Sd)
@@ -2257,6 +2257,25 @@
      &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
+!
+!  Define 3D w-Stokes velocity test
+!
+        IF (Hout(idW3St,ng)) THEN
+          Vinfo( 1)=Vname(1,idW3St)
+          Vinfo( 2)=Vname(2,idW3St)
+          Vinfo( 3)=Vname(3,idW3St)
+          Vinfo(14)=Vname(4,idW3St)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_r'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idW3St,ng),r8)
+          status=def_var(ng, iNLM, ncHISid(ng), hisVid(idW3St,ng),      &
+     &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+
 # endif
 #endif
 #ifdef WAVES_HEIGHT
@@ -2901,6 +2920,9 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW3Sd))) THEN
             got_var(idW3Sd)=.TRUE.
             hisVid(idW3Sd,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW3St))) THEN
+            got_var(idW3St)=.TRUE.
+            hisVid(idW3St,ng)=var_id(i)
 # endif
 #endif
 #ifdef WAVES_HEIGHT
@@ -3460,6 +3482,12 @@
         END IF
         IF (.not.got_var(idW3Sd).and.Hout(idW3Sd,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idW3Sd)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idW3St).and.Hout(idW3St,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idW3St)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

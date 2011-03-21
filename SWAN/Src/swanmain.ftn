@@ -277,6 +277,7 @@
       ALLOCATE (COMPT_MOD(ng)%RCOMPT_G(50,5))
       RCOMPT=>COMPT_MOD(ng)%RCOMPT_G
       RCOMPT=0.
+      XYTST=> M_GENARR_MOD(ng)%XYTST_G
 !
 !  Allocate pointers
 !
@@ -364,7 +365,7 @@
            ENDIF                                                          40.80
            ALLOCATE (PARALL2_MOD(ng)%CROSS_G(ILEN))
         ELSE
-           ALLOCATE (PARALL2_MOD(ng)%CROSS_G(0))
+           ALLOCATE (PARALL2_MOD(ng)%CROSS_G(1))
         ENDIF                                                             34.01
         CROSS=>PARALL2_MOD(ng)%CROSS_G
         ALLOCATE (PARALL2_MOD(ng)%BSPECS_G(MDC,MSC,NBSPEC,2))
@@ -827,7 +828,9 @@
       AC1=>   PARALL2_MOD(ng)%AC1_G
       COMPDA=>PARALL2_MOD(ng)%COMPDA_G
       OURQT=> PARALL2_MOD(ng)%OURQT_G
+#ifdef REFINED_GRID
       AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
+#endif
 !
 ! SWANCOMM3
 !

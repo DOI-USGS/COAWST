@@ -72,7 +72,7 @@
      &                            OCEAN(ng) % vbar_stokes,              &
      &                            OCEAN(ng) % u_stokes,                 &
      &                            OCEAN(ng) % v_stokes,                 &
-     &                            OCEAN(ng) % w_stokes)
+     &                            OCEAN(ng) % W_stokes)
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 21)
 # endif
@@ -101,7 +101,7 @@
      &                                  rulag3d, rvlag3d,               &
 # endif
      &                                  ubar_stokes, vbar_stokes,       &
-     &                                  u_stokes, v_stokes, w_stokes)
+     &                                  u_stokes, v_stokes, W_stokes)
 !***********************************************************************
 !
       USE mod_param
@@ -163,7 +163,7 @@
       real(r8), intent(inout) :: vbar_stokes(LBi:,LBj:)
       real(r8), intent(inout) :: u_stokes(LBi:,LBj:,:)
       real(r8), intent(inout) :: v_stokes(LBi:,LBj:,:)
-      real(r8), intent(inout) :: w_stokes(LBi:,LBj:,0:)
+      real(r8), intent(inout) :: W_stokes(LBi:,LBj:,0:)
 # else
       real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj)
 #  ifdef MASKING
@@ -199,7 +199,7 @@
       real(r8), intent(inout) :: vbar_stokes(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: u_stokes(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: v_stokes(LBi:UBi,LBj:UBj,N(ng))
-      real(r8), intent(inout) :: w_stokes(LBi:UBi,LBj:UBj,0:N(ng))
+      real(r8), intent(inout) :: W_stokes(LBi:UBi,LBj:UBj,0:N(ng))
 # endif
 !
 !  Local variable declarations.
@@ -395,7 +395,7 @@
         END DO
         DO j=Jstr,Jend
           DO i=Istr,Iend
-             w_stokes(i,j,k)=w_stokes(i,j,k-1)-                         &
+             W_stokes(i,j,k)=W_stokes(i,j,k-1)-                         &
      &                      (Huons(i+1,j)-Huons(i,j)+                   &
      &                       Hvoms(i,j+1)-Hvoms(i,j))
           END DO
@@ -403,17 +403,16 @@
       END DO
       DO j=Jstr,Jend
         DO i=Istr,Iend
-          wrk(i)=w_stokes(i,j,N(ng))/(z_w(i,j,N(ng))-z_w(i,j,0))
+          wrk(i)=W_stokes(i,j,N(ng))/(z_w(i,j,N(ng))-z_w(i,j,0))
         END DO
-!
         DO k=N(ng)-1,1,-1
-          DO i=Istr,Iend
-            w_stokes(i,j,k)=w_stokes(i,j,k)-                            &
+         DO i=Istr,Iend
+            W_stokes(i,j,k)=W_stokes(i,j,k)-                            &
      &                      wrk(i)*(z_w(i,j,k)-z_w(i,j,0))
           END DO
         END DO
         DO i=Istr,Iend
-          w_stokes(i,j,N(ng))=0.0_r8
+          W_stokes(i,j,N(ng))=0.0_r8
         END DO
       END DO
 !
@@ -484,7 +483,7 @@
 #  endif
       CALL bc_w3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 0, N(ng),                   &
-     &                  w_stokes)
+     &                  W_stokes)
 # ifdef WEC_MELLOR
       CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
@@ -517,7 +516,7 @@
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    w_stokes)
+     &                    W_stokes)
 # endif
       RETURN
       END SUBROUTINE wec_stokes_tile

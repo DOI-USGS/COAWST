@@ -3204,6 +3204,7 @@
         WRITE (stdout,80) '2D momentum','southern edge'
         exit_flag=5
       END IF
+#ifdef WEC_VF
 !
 !  Stop if more than one boundary conditions option for 2D stokes
 !  is selected at each boundary edge.
@@ -3248,6 +3249,7 @@
         is=LEN_TRIM(Coptions)+1
         Coptions(is:is+29)=' SOUTH_M2SCLOSED - DEFAULT -,'
       END IF
+#endif
 #ifdef SOLVE3D
 !
 !  Stop if more than one boundary conditions option for 3D momentum
@@ -3269,6 +3271,7 @@
         WRITE (stdout,80) '3D momentum','southern edge'
         exit_flag=5
       END IF
+#ifdef WEC_VF
 !
 !  Stop if more than one boundary conditions option for 3D stokes
 !  is selected at each boundary edge.
@@ -3313,6 +3316,7 @@
         is=LEN_TRIM(Coptions)+1
         Coptions(is:is+29)=' SOUTH_M3SCLOSED - DEFAULT -,'
       END IF
+#endif
 !
 !  Stop if more than one boundary conditions option for tracers is
 !  selected at each boundary edge.

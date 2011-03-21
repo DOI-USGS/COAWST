@@ -2348,7 +2348,7 @@
         END IF
       END IF
 !
-!  Write out 3D W-momentum stokes velocity.
+!  Write out 3D Omega-momentum stokes velocity.
 !
       IF (Hout(idW3Sd,ng)) THEN
         IF (.not.allocated(wrk)) THEN
@@ -2361,7 +2361,7 @@
           CALL scale_omega (ng, TILE, LBi, UBi, LBj, UBj, 0, N(ng),     &
      &                      GRID(ng) % pm,                              &
      &                      GRID(ng) % pn,                              &
-     &                      OCEAN(ng) % w_stokes,                       &
+     &                      OCEAN(ng) % W_stokes,                       &
      &                      wrk)
         END DO
         status=nf_fwrite3d(ng, iNLM, ncHISid(ng),hisVid(idW3Sd,ng),     &
@@ -2378,6 +2378,32 @@
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW3Sd)), tHISindx(ng)
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out 3D W-momentum stokes velocity.
+!
+      IF (Hout(idW3St,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*w3dvar
+        status=nf_fwrite3d(ng, iNLM, ncHISid(ng),hisVid(idW3St,ng),     &
+     &                     tHISindx(ng), gtype,                         &
+     &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
+# ifdef MASKING
+#  ifdef WET_DRY
+     &                     GRID(ng) % rmask_full,                       &
+#  else
+     &                     GRID(ng) % rmask,                            &
+#  endif
+# endif
+     &                     OCEAN(ng) % wstvel)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idW3St)), tHISindx(ng)
           END IF
           exit_flag=3
           ioerror=status

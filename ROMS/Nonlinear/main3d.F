@@ -132,6 +132,7 @@
       USE step_floats_mod, ONLY : step_floats
 # endif
       USE wvelocity_mod, ONLY : wvelocity
+      USE wstvelocity_mod, ONLY : wstvelocity
 # ifdef COMPOSED_GRID
       USE nesting_mod, ONLY : nesting
 # endif
@@ -559,6 +560,9 @@
 # endif
             CALL omega (ng, TILE)
             CALL wvelocity (ng, TILE, nstp(ng))
+# ifdef WEC
+            CALL wstvelocity (ng, TILE, nstp(ng))
+# endif
           END DO
         END DO
 # if !defined REFINED_GRID

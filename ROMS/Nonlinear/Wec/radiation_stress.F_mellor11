@@ -93,7 +93,7 @@
      &                            FORCES(ng) % Hwave,                   &
      &                            FORCES(ng) % Dwave,                   &
      &                            FORCES(ng) % Lwave,                   &
-# ifdef SVENDSEN_ROLLER
+# ifdef ROLLER_SVENDSEN
      &                            FORCES(ng) % Wave_break,              &
 # endif
 # ifdef SOLVE3D
@@ -152,7 +152,7 @@
      &                                  Hz, z_r, z_w,                   &
 # endif
      &                                  Hwave, Dwave, Lwave,            &
-# ifdef SVENDSEN_ROLLER
+# ifdef ROLLER_SVENDSEN
      &                                  Wave_break,                     &
 # endif
 # ifdef SOLVE3D
@@ -224,7 +224,7 @@
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
-#  ifdef SVENDSEN_ROLLER
+#  ifdef ROLLER_SVENDSEN
       real(r8), intent(in) :: Wave_break(LBi:,LBj:)
 #  endif
 #  ifdef SOLVE3D
@@ -288,7 +288,7 @@
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
-#  ifdef SVENDSEN_ROLLER
+#  ifdef ROLLER_SVENDSEN
       real(r8), intent(in) :: Wave_break(LBi:UBi,LBj:UBj)
 #  endif
 #  ifdef SOLVE3D
@@ -454,7 +454,7 @@
           END DO
           oroller(i,j)=1.0_r8/(oroller(i,j)+eps)
 
-#   ifdef MONO_ROLLER
+#   ifdef ROLLER_MONO
 !
 !  Here Wave_break is really wave_area.
 !
@@ -589,7 +589,7 @@
             cff3=(kD(i-1,j)+kD(i,j))
 
 #  if defined ROLLER_SVENDSEN
-#   ifdef MONO_ROLLER
+#   ifdef ROLLER_MONO
 !
 !  Here Wave_break is really wave_area.
 !
@@ -660,7 +660,7 @@
             cff2=(waveE(i,j-1)+waveE(i,j))
             cff3=(kD(i,j-1)+kD(i,j))
 #  if defined ROLLER_SVENDSEN
-#   ifdef MONO_ROLLER
+#   ifdef ROLLER_MONO
 !
 !  Here Wave_break is really wave_area.
 !
@@ -1117,7 +1117,7 @@
 !
 !  Add roller contribution.
 !
-#   ifdef MONO_ROLLER
+#   ifdef ROLLER_MONO
 !
 !  Here Wave_break is really wave_area.
 !
@@ -1178,7 +1178,7 @@
           ubar_stokes(i,j)=cff3*cff5*(waveE(i-1,j)+waveE(i,j))
 
 #  if defined ROLLER_SVENDSEN
-#   ifdef MONO_ROLLER
+#   ifdef ROLLER_MONO
 !
 !  Here Wave_break is really wave_area.
 !
@@ -1233,7 +1233,7 @@
           vbar_stokes(i,j)=cff3*cff5*(waveE(i,j-1)+waveE(i,j))
 
 #  if defined ROLLER_SVENDSEN
-#   ifdef MONO_ROLLER
+#   ifdef ROLLER_MONO
 !
 !  Here Wave_break is really wave_area.
 !

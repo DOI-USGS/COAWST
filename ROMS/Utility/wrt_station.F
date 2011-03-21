@@ -1136,13 +1136,13 @@
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
-!  Write out 3D W-momentum stokes velocity.
+!  Write out 3D Omega-momentum stokes velocity.
 !
       IF (Sout(idW3Sd,ng)) THEN
         scale=1.0_r8
         CALL extract_sta3d (ng, iNLM, Cgrid, idW3Sd, w3dvar,            &
      &                      LBi, UBi, LBj, UBj, 0, N(ng),               &
-     &                      scale, OCEAN(ng) % w_stokes,                &
+     &                      scale, OCEAN(ng) % W_stokes,                &
      &                      NposR, XposR, YposR, ZposR, rsta)
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idW3Sd)), rsta,              &
@@ -1150,6 +1150,24 @@
      &                        (/N(ng),Nstation(ng),1/),                 &
      &                        ncid = ncSTAid(ng),                       &
      &                        varid = staVid(idW3Sd,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+
+!
+!  Write out 3D W-momentum stokes velocity test
+!
+      IF (Sout(idW3St,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta3d (ng, iNLM, Cgrid, idW3St, w3dvar,            &
+     &                      LBi, UBi, LBj, UBj, 0, N(ng),               &
+     &                      scale, OCEAN(ng) % wstvel,                  &
+     &                      NposR, XposR, YposR, ZposR, rsta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idW3St)), rsta,              &
+     &                        (/1,1,tSTAindx(ng)/),                     &
+     &                        (/N(ng),Nstation(ng),1/),                 &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idW3St,ng))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !

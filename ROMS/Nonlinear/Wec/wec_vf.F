@@ -91,7 +91,6 @@
      &                            OCEAN(ng) % v,                        &
      &                            OCEAN(ng) % u_stokes,                 &
      &                            OCEAN(ng) % v_stokes,                 &
-     &                            OCEAN(ng) % w_stokes,                 &
 #  ifdef DIAGNOSTICS_UV
      &                            DIAGS(ng) % DiaRU,                    &
      &                            DIAGS(ng) % DiaRV,                    &
@@ -150,7 +149,7 @@
      &                                  zeta,                           &
 # ifdef SOLVE3D
      &                                  u, v,                           &
-     &                                  u_stokes, v_stokes,w_stokes,    &
+     &                                  u_stokes, v_stokes,             &
 #  ifdef DIAGNOSTICS_UV
      &                                  DiaRU, DiaRV,                   &
 #  endif
@@ -229,7 +228,6 @@
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
       real(r8), intent(in) :: u_stokes(LBi:,LBj:,:)
       real(r8), intent(in) :: v_stokes(LBi:,LBj:,:)
-      real(r8), intent(in) :: w_stokes(LBi:,LBj:,0:)
 #   ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: DiaRV(LBi:,LBj:,:,:,:)
@@ -294,7 +292,6 @@
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: u_stokes(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: v_stokes(LBi:UBi,LBj:UBj,N(ng))
-      real(r8), intent(in) :: w_stokes(LBi:UBi,LBj:UBj,0:N(ng))
 #   ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
       real(r8), intent(inout) :: DiaRV(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
@@ -630,9 +627,9 @@
         END DO
       END DO
       DO k=1,N(ng)
-        fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
         DO j=JstrV-1,Jend
           DO i=IstrU-1,Iend
+            fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
             cff2=fac2*gamr(i,j)
             cff3=COSH(2.0_r8*pi*cff2)*odiss(i,j)
             cff1=Dissip_wcap(i,j)+Dissip_break(i,j)

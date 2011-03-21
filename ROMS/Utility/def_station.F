@@ -1119,7 +1119,7 @@
           IF (exit_flag.ne.NoError) RETURN
         END IF
 !
-!  Define 3D w-Stokes velocity.
+!  Define 3D omega-Stokes velocity.
 !
         IF (Sout(idW3Sd,ng)) THEN
           Vinfo( 1)=Vname(1,idW3Sd)
@@ -1132,6 +1132,22 @@
      &                   SetParAccess = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
         END IF
+
+!
+!  Define 3D w-Stokes velocity test
+!
+        IF (Sout(idW3St,ng)) THEN
+          Vinfo( 1)=Vname(1,idW3St)
+          Vinfo( 2)=Vname(2,idW3St)
+          Vinfo( 3)=Vname(3,idW3St)
+          Vinfo(14)=Vname(4,idW3St)
+          Vinfo(16)=Vname(1,idtime)
+          status=def_var(ng, iNLM, ncSTAid(ng), staVid(idW3St,ng),      &
+     &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
+     &                   SetParAccess = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+
 !
 !  Define 3D total WEC u-stress.
 !
@@ -1656,6 +1672,9 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW3Sd))) THEN
             got_var(idW3Sd)=.TRUE.
             staVid(idW3Sd,ng)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW3St))) THEN
+            got_var(idW3St)=.TRUE.
+            staVid(idW3St,ng)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idU3rs))) THEN
             got_var(idU3rs)=.TRUE.
             staVid(idU3rs,ng)=var_id(i)
@@ -2124,6 +2143,12 @@
         END IF
         IF (.not.got_var(idW3Sd).and.Sout(idW3Sd,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idW3Sd)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idW3St).and.Sout(idW3St,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idW3St)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

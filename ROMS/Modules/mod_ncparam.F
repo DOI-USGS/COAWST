@@ -322,6 +322,7 @@
         integer  :: idW3zx        ! 3D radiation stress, Szx-component
         integer  :: idW3zy        ! 3D radiation stress, Szy-component
         integer  :: idW3Sd        ! 3D W-Stokes drift velocity
+        integer  :: idW3St        ! 3D W-Stokes drift velocity test
         integer  :: idWamp        ! wave amplitude
         integer  :: idWbeh        ! WEC Bernoulli head
         integer  :: idWbrk        ! percent wave breaking
@@ -1393,6 +1394,8 @@
                 idV3Sd=varid
               CASE ('idW3Sd')
                 idW3Sd=varid
+              CASE ('idW3St')
+                idW3St=varid
               CASE ('idTper')
                 idTper=varid
               CASE ('idTzam')

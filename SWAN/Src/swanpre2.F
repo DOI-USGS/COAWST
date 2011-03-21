@@ -4088,8 +4088,8 @@
         ISTATF = 1
         IOPTT  = 1
         NBOUNC = 1
-        NANG   = 0
-        NFRE   = 0
+        NANG   = 1
+        NFRE   = 1
         NHEDF  = 0
         NHEDT  = 0
         NHEDS  = 0

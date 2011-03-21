@@ -27,6 +27,7 @@
 !  u            3D U-momentum component (m/s).                         !
 !  v            3D V-momentum component (m/s).                         !
 !  W            S-coordinate (omega*Hz/mn) vertical velocity (m3/s).   !
+!  wvel         Z-coordinate vertical velocity (m/s).                  !
 !                                                                      !
 !  Biology Variables.                                                  !
 !                                                                      !
@@ -52,7 +53,8 @@
 !  vbar_stokes  2D V-Stokes drift velocity (m/s).                      !
 !  u_stokes     3D U-Stokes drift velocity (m/s).                      !
 !  v_stokes     3D V-Stokes drift velocity (m/s).                      !
-!  w_stokes     3D W-Stokes drift velocity (m/s).                      !
+!  W_stokes     3D W-Stokes S-coordindate drift velocity (m3/s).       !
+!  wstvel       3D W-Stokes Z-coordinate  drift velocity (m/s).        !
 !                                                                      !
 #endif
 !=======================================================================
@@ -102,7 +104,8 @@
 #  endif
           real(r8), pointer :: u_stokes(:,:,:)
           real(r8), pointer :: v_stokes(:,:,:)
-          real(r8), pointer :: w_stokes(:,:,:)
+          real(r8), pointer :: W_stokes(:,:,:)
+          real(r8), pointer :: wstvel(:,:,:)
 # endif
 # ifdef UV_KIRBY
           real(r8), pointer :: uwave(:,:)
@@ -379,7 +382,8 @@
 #  endif
       allocate ( OCEAN(ng) % u_stokes(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % v_stokes(LBi:UBi,LBj:UBj,N(ng)) )
-      allocate ( OCEAN(ng) % w_stokes(LBi:UBi,LBj:UBj,0:N(ng)) )
+      allocate ( OCEAN(ng) % W_stokes(LBi:UBi,LBj:UBj,0:N(ng)) )
+      allocate ( OCEAN(ng) % wstvel(LBi:UBi,LBj:UBj,0:N(ng)) )
 # endif
 # ifdef UV_KIRBY
       allocate ( OCEAN(ng) % uwave(LBi:UBi,LBj:UBj) )
@@ -775,7 +779,8 @@
               OCEAN(ng) % W(i,j,k) = IniVal
               OCEAN(ng) % wvel(i,j,k) = IniVal
 # if defined WEC
-              OCEAN(ng) % w_stokes(i,j,k) = IniVal
+              OCEAN(ng) % W_stokes(i,j,k) = IniVal
+              OCEAN(ng) % wstvel(i,j,k) = IniVal
 # endif
             END DO
           END DO

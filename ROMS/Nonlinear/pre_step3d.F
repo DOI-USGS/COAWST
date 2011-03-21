@@ -102,7 +102,7 @@
 # endif
      &                      OCEAN(ng) % W,                              &
 # ifdef WEC_VF
-     &                      OCEAN(ng) % w_stokes,                       &
+     &                      OCEAN(ng) % W_stokes,                       &
 # endif
      &                      OCEAN(ng) % ru,                             &
      &                      OCEAN(ng) % rv,                             &
@@ -151,7 +151,7 @@
 # endif
      &                            W,                                    &
 # ifdef WEC_VF
-     &                            w_stokes,                             &
+     &                            W_stokes,                             &
 # endif
      &                            ru, rv,                               &
 # ifdef DIAGNOSTICS_TS
@@ -225,7 +225,7 @@
 #  endif
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
 #  ifdef WEC_VF
-      real(r8), intent(in) :: w_stokes(LBi:,LBj:,0:)
+      real(r8), intent(in) :: W_stokes(LBi:,LBj:,0:)
 #  endif
       real(r8), intent(in) :: ru(LBi:,LBj:,0:,:)
       real(r8), intent(in) :: rv(LBi:,LBj:,0:,:)
@@ -283,7 +283,7 @@
 #  endif
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
 #  ifdef WEC_VF
-      real(r8), intent(in) :: w_stokes(LBi:UBi,LBj:UBj,0:N(ng))
+      real(r8), intent(in) :: W_stokes(LBi:UBi,LBj:UBj,0:N(ng))
 #  endif
       real(r8), intent(in) :: ru(LBi:UBi,LBj:UBj,0:N(ng),2)
       real(r8), intent(in) :: rv(LBi:UBi,LBj:UBj,0:N(ng),2)
@@ -640,7 +640,7 @@
      &                      (Huon(i+1,j,k)-Huon(i,j,k)+                 &
      &                       Hvom(i,j+1,k)-Hvom(i,j,k)+                 &
 #   ifdef WEC_VF
-     &                      (w_stokes(i,j,k)-w_stokes(i,j,k-1))+        &
+     &                      (W_stokes(i,j,k)-W_stokes(i,j,k-1))+        &
 #   endif
      &                      (W(i,j,k)-W(i,j,k-1))))
           END DO
@@ -860,7 +860,7 @@
           DO k=N(ng)-1,0,-1
             DO i=Istr,Iend
               FCs(i,k)=FCs(i,k)-CF(i,k+1)*FCs(i,k+1)
-              FCs(i,k+1)=w_stokes(i,j,k+1)*FCs(i,k+1)
+              FCs(i,k+1)=W_stokes(i,j,k+1)*FCs(i,k+1)
             END DO
           END DO
           DO i=Istr,Iend
@@ -894,7 +894,7 @@
           cff1=1.0_r8/3.0_r8
           DO k=1,N(ng)-1
             DO i=Istr,Iend
-              FCs(i,k)=w_stokes(i,j,k)*                                 &
+              FCs(i,k)=W_stokes(i,j,k)*                                 &
      &                0.5_r8*(t(i,j,k  ,nstp,itrc)+                     &
      &                        t(i,j,k+1,nstp,itrc)-                     &
      &                        cff1*(CF(i,k+1)-CF(i,k)))
@@ -910,7 +910,7 @@
 !
           DO k=1,N(ng)-1
             DO i=Istr,Iend
-              FCs(i,k)=w_stokes(i,j,k)*                                 &
+              FCs(i,k)=W_stokes(i,j,k)*                                 &
      &                0.5_r8*(t(i,j,k  ,nstp,itrc)+                     &
      &                        t(i,j,k+1,nstp,itrc))
             END DO
@@ -925,8 +925,8 @@
 !
           DO i=Istr,Iend
             DO k=1,N(ng)-1
-              cff1=MAX(W(i,j,k)+w_stokes(i,j,k),0.0_r8)
-              cff2=MIN(W(i,j,k)+w_stokes(i,j,k),0.0_r8)
+              cff1=MAX(W(i,j,k)+W_stokes(i,j,k),0.0_r8)
+              cff2=MIN(W(i,j,k)+W_stokes(i,j,k),0.0_r8)
               FCs(i,k)=cff1*t(i,j,k  ,nstp,itrc)+                       &
      &                 cff2*t(i,j,k+1,nstp,itrc)
             END DO
@@ -946,7 +946,7 @@
           cff3=1.0_r8/12.0_r8
           DO k=2,N(ng)-2
             DO i=Istr,Iend
-              FCs(i,k)=w_stokes(i,j,k)*                                 &
+              FCs(i,k)=W_stokes(i,j,k)*                                 &
      &                (cff2*(t(i,j,k  ,nstp,itrc)+                      &
      &                       t(i,j,k+1,nstp,itrc))-                     &
      &                 cff3*(t(i,j,k-1,nstp,itrc)+                      &
@@ -955,11 +955,11 @@
           END DO
           DO i=Istr,Iend
             FCs(i,0)=0.0_r8
-            FCs(i,1)=w_stokes(i,j,1)*                                   &
+            FCs(i,1)=W_stokes(i,j,1)*                                   &
      &              (cff1*t(i,j,1,nstp,itrc)+                           &
      &               cff2*t(i,j,2,nstp,itrc)-                           &
      &               cff3*t(i,j,3,nstp,itrc))
-            FCs(i,N(ng)-1)=w_stokes(i,j,N(ng)-1)*                       &
+            FCs(i,N(ng)-1)=W_stokes(i,j,N(ng)-1)*                       &
      &                    (cff1*t(i,j,N(ng)  ,nstp,itrc)+               &
      &                     cff2*t(i,j,N(ng)-1,nstp,itrc)-               &
      &                     cff3*t(i,j,N(ng)-2,nstp,itrc))

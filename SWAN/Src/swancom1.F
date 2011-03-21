@@ -1478,6 +1478,8 @@
 #ifdef SWAN_MODEL
                 IF (INODE.EQ.MASTER) WRITE(PRINTF,313) CHTIME, IT,
      &                                    ITER, SWPDIR, GRIDNUM
+                IF (INODE.EQ.MASTER) WRITE(SCREEN,313) CHTIME, IT,
+     &                                    ITER, SWPDIR, GRIDNUM
  313            FORMAT ('+time ', A18, ', step ',I6, '; iteration '
      &                  ,I4, '; sweep ',I1,' grid  ',I2)                  40.23 40.00
 #else

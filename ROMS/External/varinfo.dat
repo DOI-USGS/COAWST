@@ -1602,10 +1602,19 @@
   'v3dvar'
   1.0d0
 
-'w_stokes'                                         ! Output
-  'w-Stokes drift velocity'
-  'meter second-1'                                 ! [m/s]
+'w_stokes'                                           ! Output
+  'w-Stokes vertical drift velocity'
+  'meter second-1'                                   ! [m/s]
   'w_stokes, scalar, series'
+  'ocean_time'
+  'idW3St'
+  'w3dvar'
+  1.0d0
+
+'omega_stokes'                                     ! Output
+  'S-coordinate vertical drift velocity'
+  'meter3 second-1'                                ! [m3/s]
+  'omega_stokes, scalar, series'
   'ocean_time'
   'idW3Sd'
   'w3dvar'
