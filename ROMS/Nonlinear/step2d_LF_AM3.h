@@ -2158,20 +2158,12 @@
 #   ifdef DIAGNOSTICS_UV
           DiaU2rhs(i,j,M2bstm)=cff1
 #   endif
-#  else
-#   ifdef DIAGNOSTICS_UV
-          DiaU2rhs(i,j,M2bstm)=0.0_r8
-#   endif
 #  endif
 #  ifdef SURFACE_STREAMING
           cff1=russt2d(i,j)
           rhs_ubar(i,j)=rhs_ubar(i,j)+cff1
 #   ifdef DIAGNOSTICS_UV
           DiaU2rhs(i,j,M2sstm)=cff1
-#   endif
-#  else
-#   ifdef DIAGNOSTICS_UV
-          DiaU2rhs(i,j,M2sstm)=0.0_r8
 #   endif
 #  endif
         END DO
