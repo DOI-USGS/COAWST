@@ -221,7 +221,7 @@
       real(r8) :: cff, cff2, cff3, cff4, cff5, cff6
       real(r8) :: fac1, fac2
       real(r8), parameter :: eps = 1.0E-14_r8
-      real(r8), parameter :: kDmax = 5.0_r8
+      real(r8), parameter :: kDmax = 300.0_r8       !5.0_r8
       real(r8), parameter :: Lwave_min = 1.0_r8
       real(r8), dimension(IminS:ImaxS) :: wrk
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dstp
