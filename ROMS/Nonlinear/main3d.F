@@ -132,7 +132,9 @@
       USE step_floats_mod, ONLY : step_floats
 # endif
       USE wvelocity_mod, ONLY : wvelocity
+# ifdef WEC
       USE wstvelocity_mod, ONLY : wstvelocity
+# endif
 # ifdef COMPOSED_GRID
       USE nesting_mod, ONLY : nesting
 # endif

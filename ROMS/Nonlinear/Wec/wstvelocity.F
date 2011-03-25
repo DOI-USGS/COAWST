@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       MODULE wstvelocity_mod
-#ifdef SOLVE3D
+#if defined SOLVE3D && defined WEC
 !
 !svn $Id: wstvelocity.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
