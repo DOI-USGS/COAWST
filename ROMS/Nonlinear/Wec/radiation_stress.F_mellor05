@@ -332,13 +332,14 @@
       integer :: i, j, k
 
       real(r8) :: cff, cff1, cff2, cff3, cff4, cff5, cff6
-      real(r8) :: fac1, fac2, FCCr, FCSr, FSSr
+      real(r8) :: fac1, fac2, fac2m, fac2p, FCCr, FCSr, FSSr
 
       real(r8), parameter :: eps = 1.0E-14_r8
-      real(r8), parameter :: kDmax = 5.0_r8
+      real(r8), parameter :: kDmax = 300.0_r8
       real(r8), parameter :: Lwave_min = 1.0_r8
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dstp
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: oDstp
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: kD
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wavec
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wavecgoc
@@ -392,6 +393,7 @@
 !  Compute total depth.
 !
           Dstp(i,j)=zeta(i,j,1)+h(i,j)
+          oDstp(i,j)=1.0_r8/Dstp(i,j)
 !
 !  Compute wave numbers and wave energy.
 !
@@ -420,7 +422,7 @@
           oroller(i,j)=0.0_r8
           gamw(i,j)=MIN(Dstp(i,j)/(Hwave(i,j)+eps),5.0_r8)
           DO k=1,N(ng)
-            cff2=SCALARS(ng)%Cs_r(k)
+            cff2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)-1.0_r8
 !! tanh s^4 functional
             oroller(i,j)=oroller(i,j)+                                  &
      &                   Hz(i,j,k)*                                     &
@@ -460,15 +462,19 @@
 !-----------------------------------------------------------------------
 !
       K_LOOP : DO k=1,N(ng)
-        fac2=1.0_r8+SCALARS(ng)%Cs_r(k)
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
+            fac2m=(z_w(i,j,k-1)-z_w(i,j,0))*oDstp(i,j)
+            fac2p=(z_w(i,j,k  )-z_w(i,j,0))*oDstp(i,j)
             cff1=waven(i,j)*waveE(i,j)
-            FCCr=COSH(kD(i,j)*fac2)*ocosh(i,j)
-            FCSr=COSH(kD(i,j)*fac2)*osinh(i,j)
-            FSSr=SINH(kD(i,j)*fac2)*osinh(i,j)
+            cff3=0.5_r8*(COSH(kD(i,j)*fac2p)+COSH(kD(i,j)*fac2m))
+            FCCr=cff3*ocosh(i,j)
+            FCSr=cff3*osinh(i,j)
+            cff3=0.5_r8*(SINH(kD(i,j)*fac2p)+SINH(kD(i,j)*fac2m))
+            FSSr=cff3*osinh(i,j)
             waveEr(i,j)=cff1*FCSr*FCCr
 #  ifdef ROLLER_SVENDSEN
+            fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
 !! tanh s^4 functional
             cff3=(1.0_r8-TANH((2.0_r8*(fac2-1.0_r8)*gamw(i,j))**4))
 !! s^4 functional
@@ -507,8 +513,10 @@
 !
         DO j=Jstr,Jend+1
           DO i=Istr,Iend+1
-            Sxyl_psi(i,j)=0.25_r8*(Sxyl(i-1,j-1)+Sxyl(i,j-1)+           &
-     &                             Sxyl(i-1,j  )+Sxyl(i,j  ))
+            Sxyl_psi(i,j)=0.25_r8*(Sxyl(i-1,j-1)*Hz(i-1,j-1,k)+             &
+     &                             Sxyl(i  ,j-1)*Hz(i  ,j-1,k)+             &
+     &                             Sxyl(i-1,j  )*Hz(i-1,j  ,k)+             &
+     &                             Sxyl(i  ,j  )*Hz(i  ,j  ,k))
           END DO
         END DO
 !
@@ -527,16 +535,9 @@
 !
 !  Add in cross stress term Sxy averaged at PSI-points.
 !
-        DO j=Jstr,Jend+1
-          DO i=Istr,Iend+1
-            UFe(i,j)=0.25_r8*(Hz(i,j  ,k)+Hz(i-1,j  ,k)+                &
-     &                        Hz(i,j-1,k)+Hz(i-1,j-1,k))*               &
-     &               Sxyl_psi(i,j)
-          END DO
-        END DO
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-            cff=(UFe(i,j+1)-UFe(i,j))*om_u(i,j)
+            cff=(Sxyl_psi(i,j+1)-Sxyl_psi(i,j))*om_u(i,j)
             rustr3d(i,j,k)=rustr3d(i,j,k)+cff
 #  ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3hrad)=DiaRU(i,j,k,nrhs,M3hrad)-cff
@@ -572,10 +573,15 @@
 !  Store old value to compute tendency term.
 !
             rulag3d(i,j,k)=u_stokes(i,j,k)
+            fac2p=0.5_r8*((z_w(i  ,j,k  )-z_w(i  ,j,0))*oDstp(i  ,j)+   &
+     &                    (z_w(i-1,j,k  )-z_w(i-1,j,0))*oDstp(i-1,j))
+            fac2m=0.5_r8*((z_w(i  ,j,k-1)-z_w(i  ,j,0))*oDstp(i  ,j)+   &
+     &                    (z_w(i-1,j,k-1)-z_w(i-1,j,0))*oDstp(i-1,j))
             u_stokes(i,j,k)=cff2*                                       &
      &                      (wavenx(i-1,j)+wavenx(i,j))/                &
      &                      (wavec (i-1,j)+wavec (i,j))*                &
-     &                      COSH(cff3*fac2)*0.5_r8*                     &
+     &                      0.5_r8*(COSH(cff3*fac2p)+COSH(cff3*fac2m))* &
+     &                      0.5_r8*                                     &
      &                      (o2sinh(i-1,j)+o2sinh(i,j))
 #  ifdef MASKING
             u_stokes(i,j,k)=u_stokes(i,j,k)*umask(i,j)
@@ -609,7 +615,7 @@
 !
         DO j=JstrV,Jend
           DO i=Istr,Iend
-            cff=(UFe(i+1,j)-UFe(i,j))*on_v(i,j)
+            cff=(Sxyl_psi(i+1,j)-Sxyl_psi(i,j))*on_v(i,j)
             rvstr3d(i,j,k)=rvstr3d(i,j,k)+cff
 #  ifdef DIAGNOSTICS_UV
             DiaRV(i,j,k,nrhs,M3hrad)=DiaRV(i,j,k,nrhs,M3hrad)-cff
@@ -643,24 +649,29 @@
 !
 !  Store old value to compute tendency term.
 !
-             rvlag3d(i,j,k)=v_stokes(i,j,k)
-             v_stokes(i,j,k)=cff2*                                      &
-     &                       (waveny(i,j-1)+waveny(i,j))/               &
-     &                       (wavec (i,j-1)+wavec (i,j))*               &
-     &                       COSH(cff3*fac2)*                           &
-     &                       0.5_r8*(o2sinh(i,j-1)+o2sinh(i,j))
+            rvlag3d(i,j,k)=v_stokes(i,j,k)
+            fac2p=0.5_r8*((z_w(i,j  ,k  )-z_w(i,j  ,0))*oDstp(i,j  )+   &
+     &                    (z_w(i,j-1,k  )-z_w(i,j-1,0))*oDstp(i,j-1))
+            fac2m=0.5_r8*((z_w(i,j  ,k-1)-z_w(i,j  ,0))*oDstp(i,j  )+   &
+     &                    (z_w(i,j-1,k-1)-z_w(i,j-1,0))*oDstp(i,j-1))
+            v_stokes(i,j,k)=cff2*                                       &
+     &                      (waveny(i,j-1)+waveny(i,j))/                &
+     &                      (wavec (i,j-1)+wavec (i,j))*                &
+     &                      0.5_r8*(COSH(cff3*fac2p)+COSH(cff3*fac2m))* &
+     &                      0.5_r8*                                     &
+     &                      (o2sinh(i,j-1)+o2sinh(i,j))
 #  ifdef MASKING
-              v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
+            v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
 #  endif
 #  ifdef WET_DRY
-              v_stokes(i,j,k)=v_stokes(i,j,k)*vmask_wet(i,j)
+            v_stokes(i,j,k)=v_stokes(i,j,k)*vmask_wet(i,j)
 #  endif
 !
 !  Finalize computation of stokes tendency term.
 !
-              rvlag3d(i,j,k)=0.5_r8*cff*                                &
-     &                       (Hz(i,j,k)+Hz(i,j-1,k))*                   &
-     &                       (v_stokes(i,j,k)-rvlag3d(i,j,k))
+            rvlag3d(i,j,k)=0.5_r8*cff*                                  &
+     &                     (Hz(i,j,k)+Hz(i,j-1,k))*                     &
+     &                     (v_stokes(i,j,k)-rvlag3d(i,j,k))
           END DO
         END DO
 
@@ -722,13 +733,13 @@
           DO k=0,N(ng)
             cff1=0.5_r8*(waven(i  ,j)*waveE(i  ,j)+                     &
      &                   waven(i-1,j)*waveE(i-1,j))
-            cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
+            cff2=(z_w(i,j,k)-z_w(i,j,0))*oDstp(i,j)
             FCCr=COSH(UFe(i,j)*cff2)*ocosh(i,j)
             FCSr=COSH(UFe(i,j)*cff2)*osinh(i,j)
             FSSr=SINH(UFe(i,j)*cff2)*osinh(i,j)
             waveEr(i,j)=cff1*FCSr*FCCr
 #   ifdef ROLLER_SVENDSEN
-            cff3=SCALARS(ng)%Cs_w(k)
+            cff3=(z_w(i,j,k)-z_w(i,j,0))*oDstp(i,j)-1.0_r8
             waveEr(i,j)=waveEr(i,j)+1.25_r8*(rollA(i,j)+rollA(i-1,j))* &
      &                  (1.0_r8-cff3**4)/(Dstp(i,j)+Dstp(i-1,j))
 #   endif
@@ -769,13 +780,13 @@
             DO k=0,N(ng)
               cff1=0.5_r8*(waven(i,j  )*waveE(i,j  )+                     &
      &                     waven(i,j-1)*waveE(i,j-1))
-              cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
+              cff2=(z_w(i,j,k)-z_w(i,j,0))*oDstp(i,j)
               FCCr=COSH(UFe(i,j)*cff2)*ocosh(i,j)
               FCSr=COSH(UFe(i,j)*cff2)*osinh(i,j)
               FSSr=SINH(UFe(i,j)*cff2)*osinh(i,j)
               waveEr(i,j)=cff1*FCSr*FCCr
 #   ifdef ROLLER_SVENDSEN
-              cff3=SCALARS(ng)%Cs_w(k)
+              cff3=(z_w(i,j,k)-z_w(i,j,0))*oDstp(i,j)-1.0_r8
               waveEr(i,j)=waveEr(i,j)+1.25_r8*(rollA(i,j)+rollA(i,j-1))* &
      &                    (1.0_r8-cff3**4)/(Dstp(i,j)+Dstp(i,j-1))
 #   endif
@@ -825,16 +836,19 @@
         END DO
         DO i=IstrU,Iend
           DO k=0,N(ng)
-              cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
-              FCC(i,k)=COSH(waveEr(i,j)*cff2)*ocosh(i,j)
-              FCS(i,k)=COSH(waveEr(i,j)*cff2)*osinh(i,j)
-              FSS(i,k)=SINH(waveEr(i,j)*cff2)*osinh(i,j)
+            fac2=0.5_r8*((z_w(i  ,j,k  )-z_w(i  ,j,0))*oDstp(i  ,j)+   &
+     &                   (z_w(i-1,j,k  )-z_w(i-1,j,0))*oDstp(i-1,j))
+            cff3=COSH(waveEr(i,j)*fac2)
+            FCC(i,k)=cff3*ocosh(i,j)
+            FCS(i,k)=cff3*osinh(i,j)
+            FSS(i,k)=SINH(waveEr(i,j)*fac2)*osinh(i,j)
           END DO
           cff1=waveE(i,j)-waveE(i-1,j)
           cff3=kD(i,j)-kD(i-1,j)
           cff4=1.0_r8/TANH(waveEr(i,j))
           DO k=0,N(ng)
-            cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
+            cff2=0.5_r8*((z_w(i  ,j,k)-z_w(i  ,j,0))*oDstp(i  ,j)+      &
+     &                   (z_w(i-1,j,k)-z_w(i-1,j,0))*oDstp(i-1,j))
             CF(i,k)=0.25_r8*(pm(i,j)+pm(i-1,j))*                        &
      &              (FSS(i,k)*cff1+                                     &
      &               (waveE(i,j)+waveE(i-1,j))*                         &
@@ -873,16 +887,19 @@
           END DO
           DO i=Istr,Iend
             DO k=0,N(ng)
-              cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
-              FCC(i,k)=COSH(waveEr(i,j)*cff2)*ocosh(i,j)
-              FCS(i,k)=COSH(waveEr(i,j)*cff2)*osinh(i,j)
-              FSS(i,k)=SINH(waveEr(i,j)*cff2)*osinh(i,j)
+              fac2=0.5_r8*((z_w(i,j  ,k  )-z_w(i,j  ,0))*oDstp(i,j  )+  &
+     &                     (z_w(i,j-1,k  )-z_w(i,j-1,0))*oDstp(i,j-1))
+              cff3=COSH(waveEr(i,j)*fac2)
+              FCC(i,k)=cff3*ocosh(i,j)
+              FCS(i,k)=cff3*osinh(i,j)
+              FSS(i,k)=SINH(waveEr(i,j)*fac2)*osinh(i,j)
             END DO
             cff1=waveE(i,j)-waveE(i,j-1)
             cff3=kD(i,j)-kD(i,j-1)
             cff4=1.0_r8/TANH(waveEr(i,j))
             DO k=0,N(ng)
-              cff2=1.0_r8+SCALARS(ng)%Cs_w(k)
+              cff2=0.5_r8*((z_w(i,j  ,k)-z_w(i,j  ,0))*oDstp(i,j  )+    &
+     &                     (z_w(i,j-1,k)-z_w(i,j-1,0))*oDstp(i,j-1))
               CF(i,k)=0.25_r8*(pn(i,j)+pn(i,j-1))*                      &
      &                (FSS(i,k)*cff1+                                   &
      &                 (waveE(i,j)+waveE(i,j-1))*                       &
@@ -919,18 +936,18 @@
         DO i=IstrU,Iend
           cff5=0.5_r8*(Hz(i-1,j,1)+Hz(i,j,1))
           ubar_stokes(i,j)=cff5*u_stokes(i,j,1)
-          rustr2d(i,j)=cff5*rustr3d(i,j,1)
+          rustr2d(i,j)=rustr3d(i,j,1)
           rulag2d(i,j)=cff5*rulag3d(i,j,1)
           DO k=2,N(ng)
             cff5=0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
             ubar_stokes(i,j)=ubar_stokes(i,j)+cff5*u_stokes(i,j,k)
-            rustr2d(i,j)=rustr2d(i,j)+cff5*rustr3d(i,j,k)
+            rustr2d(i,j)=rustr2d(i,j)+rustr3d(i,j,k)
             rulag2d(i,j)=rulag2d(i,j)+cff5*rulag3d(i,j,k)
           END DO
-          cff3=0.25_r8*(pm(i,j)+pm(i-1,j))*(pn(i,j)+pn(i-1,j))
+!         cff3=0.25_r8*(pm(i,j)+pm(i-1,j))*(pn(i,j)+pn(i-1,j))
           cff4=2.0_r8/(Dstp(i-1,j)+Dstp(i,j))
           ubar_stokes(i,j)=ubar_stokes(i,j)*cff4
-          rustr2d(i,j)=rustr2d(i,j)*cff3*cff4
+!         rustr2d(i,j)=rustr2d(i,j)*cff4
           rulag2d(i,j)=rulag2d(i,j)*cff4
         END DO
       END DO
@@ -938,18 +955,18 @@
         DO j=JstrV,Jend
           cff5=0.5_r8*(Hz(i,j-1,1)+Hz(i,j,1))
           vbar_stokes(i,j)=cff5*v_stokes(i,j,1)
-          rvstr2d(i,j)=cff5*rvstr3d(i,j,1)
+          rvstr2d(i,j)=rvstr3d(i,j,1)
           rvlag2d(i,j)=cff5*rvlag3d(i,j,1)
           DO k=2,N(ng)
             cff5=0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))
             vbar_stokes(i,j)=vbar_stokes(i,j)+cff5*v_stokes(i,j,k)
-            rvstr2d(i,j)=rvstr2d(i,j)+cff5*rvstr3d(i,j,k)
+            rvstr2d(i,j)=rvstr2d(i,j)+rvstr3d(i,j,k)
             rvlag2d(i,j)=rvlag2d(i,j)+cff5*rvlag3d(i,j,k)
           END DO
-          cff3=0.25_r8*(pm(i,j-1)+pm(i,j))*(pn(i,j-1)+pn(i,j))
+!         cff3=0.25_r8*(pm(i,j-1)+pm(i,j))*(pn(i,j-1)+pn(i,j))
           cff4=2.0_r8/(Dstp(i,j-1)+Dstp(i,j))
           vbar_stokes(i,j)=vbar_stokes(i,j)*cff4
-          rvstr2d(i,j)=rvstr2d(i,j)*cff3*cff4
+!         rvstr2d(i,j)=rvstr2d(i,j)*cff4
           rvlag2d(i,j)=rvlag2d(i,j)*cff4
         END DO
       END DO
@@ -1039,6 +1056,28 @@
      &        (Sxyl_psi(i,j+1)-                                         &
      &         Sxyl_psi(i,j  ))*om_u(i,j)
           rustr2d(i,j)=cff
+        END DO
+      END DO
+#  if defined CURVGRID
+!
+!-----------------------------------------------------------------------
+!  Add in curvilinear transformation terms.
+!-----------------------------------------------------------------------
+!
+      DO j=Jstr,Jend
+        DO i=IstrU-1,Iend
+          UFx(i,j)=Dstp(i,j)*                                           &
+     &             (Sxyl(i,j)*dmde(i,j)-                                &
+     &              Syyl(i,j)*dndx(i,j))
+        END DO
+        DO i=IstrU,Iend
+          cff=0.5_r8*(UFx(i,j)+UFx(i-1,j))
+          rustr2d(i,j)=rustr2d(i,j)+cff
+        END DO
+      END DO
+#  endif
+      DO j=Jstr,Jend
+        DO i=IstrU,Iend
 !
 !  Convert units to m2/s2 for output purposes.
 !
@@ -1059,7 +1098,7 @@
 !  Compute ubar_stokes from wave energy and store old value to compute
 !  tendency term.
 !
-          rulag2d(i,j)=ubar_stokes(i,j)
+!         rulag2d(i,j)=ubar_stokes(i,j)
           ubar_stokes(i,j)=cff3*cff5*(waveE(i-1,j)+waveE(i,j))
 
 #  if defined ROLLER_SVENDSEN
@@ -1080,7 +1119,7 @@
 !  Finalize computation of stokes tendency term.
 !
           cff=fac1*om_u(i,j)*on_u(i,j)
-          rulag2d(i,j)=(ubar_stokes(i,j)-rulag2d(i,j))*cff
+!         rulag2d(i,j)=(ubar_stokes(i,j)-rulag2d(i,j))*cff
         END DO
       END DO
 !
@@ -1094,6 +1133,28 @@
      &        (Sxyl_psi(i+1,j)-                                         &
      &         Sxyl_psi(i  ,j))*on_u(i,j)
           rvstr2d(i,j)=cff
+        END DO
+      END DO
+#  if defined CURVGRID
+!
+!-----------------------------------------------------------------------
+!  Add in curvilinear transformation terms.
+!-----------------------------------------------------------------------
+!
+      DO i=Istr,Iend
+        DO j=JstrV-1,Jend
+          UFe(i,j)=Dstp(i,j)*                                           &
+     &             (Sxyl(i,j)*dndx(i,j)-                                &
+     &              Sxxl(i,j)*dmde(i,j))
+        END DO
+        DO j=JstrV,Jend
+          cff=0.5_r8*(UFe(i,j)+UFe(i,j-1))
+          rvstr2d(i,j,k)=rvstr2d(i,j,k)+cff
+        END DO
+       ND DO
+#  endif
+      DO j=JstrV,Jend
+        DO i=Istr,Iend
 !
 !  Convert units to m2/s2 for output purposes.
 !
@@ -1114,7 +1175,7 @@
 !  Compute vbar_stokes from wave energy and store old value to compute
 !  tendency term.
 !
-          rvlag2d(i,j)=vbar_stokes(i,j)
+!         rvlag2d(i,j)=vbar_stokes(i,j)
           vbar_stokes(i,j)=cff3*cff5*(waveE(i,j-1)+waveE(i,j))
 
 #  if defined ROLLER_SVENDSEN
@@ -1135,7 +1196,7 @@
 !  Finalize computation of stokes tendency term.
 !
           cff=fac1*om_v(i,j)*on_v(i,j)
-          rvlag2d(i,j)=(vbar_stokes(i,j)-rvlag2d(i,j))*cff
+!         rvlag2d(i,j)=(vbar_stokes(i,j)-rvlag2d(i,j))*cff
         END DO
       END DO
 !
