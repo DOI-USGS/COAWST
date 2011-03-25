@@ -93,4 +93,14 @@
 #  undef TKE_WAVEDISS
 # endif
 
+# undef LMD_MIXING
+# ifdef LMD_MIXING
+#  undef LMD_RIMIX
+#  undef LMD_CONVEC
+#  undef LMD_DDMIX
+#  define LMD_SKPP
+#  define LMD_BKPP
+#  undef LMD_NONLOCAL
+# endif
+
 #endif

@@ -194,7 +194,7 @@
  ZOS_HSIG_ALPHA == 0.5d0            ! roughness from wave amplitude
        SZ_ALPHA == 0.25d0           ! roughness from wave dissipation
       CRGBAN_CW == 100.0d0          ! Craig and Banner wave breaking
-      WEC_ALPHA == 1.0d0            ! 0: all wave dissip goes to break and none to roller.
+      WEC_ALPHA == 0.0d0            ! 0: all wave dissip goes to break and none to roller.
                                     ! 1: all wave dissip goes to roller and none to breaking.
 
 ! Constants used in momentum stress computation.
@@ -464,8 +464,8 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == Projects/Duck/duck94_08302010.nc
-     ININAME == Projects/Duck/duck94_init_08302010.nc
+     GRDNAME == Projects/Ducknc/duck94_08302010.nc
+     ININAME == Projects/Ducknc/duck94_init_08302010.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
@@ -486,8 +486,8 @@ Hout(idBott) == T T T T T T T T T F F F F F T F
 
      NFFILES == 2                          ! number of forcing files
 
-     FRCNAME == Projects/Duck/duck94_wind_08302010.nc \
-                Projects/Duck/wave_forcing_duck_02132011.nc
+     FRCNAME == Projects/Ducknc/duck94_wind_08302010.nc \
+                Projects/Ducknc/wave_forcing_duck_02132011.nc
 ! Output NetCDF file names, [1:Ngrids].
 
      GSTNAME == ocean_gst.nc
