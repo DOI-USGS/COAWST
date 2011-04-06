@@ -52,8 +52,8 @@
 ! Grid dimension parameters. See notes below in the Glossary for how to set
 ! these parameters correctly.
 
-          Lm == 75 145        ! Number of I-direction INTERIOR RHO-points
-          Mm == 70  75        ! Number of J-direction INTERIOR RHO-points
+          Lm == 75 150        ! Number of I-direction INTERIOR RHO-points
+          Mm == 70  80        ! Number of J-direction INTERIOR RHO-points
            N == 8    8        ! Number of vertical levels
           ND == 11            ! Number of wave directional bins
 

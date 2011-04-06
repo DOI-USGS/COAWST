@@ -141,7 +141,7 @@
 #endif
       integer :: i, ised, j, k
       real(r8) :: cff1, cff2, cff3, cff4, Kvisc, phinot
-
+      real(r8), parameter :: absolute_zoMIN = 5.0d-5  ! in Harris-Wiberg
 #include "set_bounds.h"
 
 #if defined BBL_MODEL && !defined SEDIMENT
@@ -330,7 +330,7 @@
           bottom(i,j,idens)=cff2
           bottom(i,j,iwsed)=cff3
           bottom(i,j,itauc)=cff4
-          bottom(i,j,izNik)=2.5_r8*cff1/30.0_r8
+          bottom(i,j,izNik)=MAX(2.5_r8*cff1/30.0_r8, absolute_zoMIN)
 #  ifdef SED_BIODIFF
           bottom(i,j,idoff)=0.0_r8
           bottom(i,j,idslp)=0.0_r8

@@ -64,32 +64,32 @@
 
 ! Median sediment grain diameter (mm).
 
-    MUD_SD50 == 0.1d0  0.06d0  0.10d0
+    MUD_SD50 == 0.1d0  0.10d0
 
 ! Sediment concentration (kg/m3).
 
-    MUD_CSED == 0.0d0  0.0d0  0.0d0
+    MUD_CSED == 0.0d0  0.0d0
 
 ! Sediment grain density (kg/m3).
 
-    MUD_SRHO == 2650.0d0  2650.0d0  2650.0d0
+    MUD_SRHO == 2650.0d0  2650.0d0
 
 ! Particle settling velocity (mm/s).
 
-    MUD_WSED == 10.0d0  1.0d0  2.0d0
+    MUD_WSED == 1.0d0  1.0d0
 
 ! Surface erosion rate (kg/m2/s).
 
-   MUD_ERATE == 5.0d-3  5.0d-5  5.0d-5
+   MUD_ERATE == 5.0d-3  5.0d-3
 
 ! Critical shear for erosion and deposition (N/m2).
 
-  MUD_TAU_CE == 0.1d0  0.05d0  0.05d0
-  MUD_TAU_CD == 0.01d0 0.01d0  0.01d0
+  MUD_TAU_CE == 0.10d0 0.10d0
+  MUD_TAU_CD == 0.01d0 0.01d0
 
 ! Porosity (nondimensional: 0.0-1.0):  Vwater/(Vwater+Vsed).
 
-   MUD_POROS == 0.0d0  0.0d0  0.0d0
+   MUD_POROS == 0.0d0  0.0d0
 
 ! Lateral, harmonic and biharmonic, constant, diffusion coefficient.
 
