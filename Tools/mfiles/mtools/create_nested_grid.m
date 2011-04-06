@@ -14,10 +14,11 @@
 %%%%%%%%%%%%% START OF USER SECTION %%%%%%%%%%%%%%%%
 
 %1) ENTER NAME OF EXISITNG COARSE GRID FILE
-ncfile_coarse='D:\data\models\COAWST\Projects\Inlet_test\Refined\inlet_test_grid.nc';
+%ncfile_coarse='D:\data\models\COAWST\Projects\Inlet_test\Refined\inlet_test_grid.nc';
+ncfile_coarse='C:\work\models\COAWST_tests\2way\Projects\Inlet_test\Refined\inlet_test_grid.nc';
 
 %2) ENTER NAME OF NEW FINE GRID FILE
-ncfile_fine='inlet_test_grid_ref5.nc';
+ncfile_fine='C:\work\models\COAWST_tests\2way\Projects\Inlet_test\Refined\inlet_test_grid_ref5.nc';
 
 %3) ENTER THE START AND END INDICES OF THE PSI POINTS OF THE COARSE GRID
 %   THAT IDENTIFY THE OUTER BOUNDS OF THE FINE GRID
@@ -37,16 +38,17 @@ msize1=5;      %marker size for plots
 %get the coarser grid
 ncload(ncfile_coarse)
 
-%size of coarse grid section to have increased resolution
+%number of rho points in coarse grid section to have increased resolution
 Ilen_c=Iend-Istr;
 Jlen_c=Jend-Jstr;
 
+%Now set dimensions for fine grid.
 %xi direction (left-right)
-LP = Ilen_c*scale+2;   %rho dimension
+LP = Ilen_c*scale+7;   %rho dimension
 L = LP-1;              %psi dimension
 
 %eta direction (up-down)
-MP = Jlen_c*scale+2;   % rho dimension
+MP = Jlen_c*scale+7;   % rho dimension
 M = MP-1;              % psi dimension
 
 %sizes for fine grid
@@ -60,113 +62,78 @@ eta_rho = MP;
 eta_u = MP;
 eta_v = M;
 
-%set some arrays for interpolation here
+%set some arrays for interpolation here, psi points
 % _c for coarse, _f for fine
-xc_c=[1:scale:xi_psi];
-xc_c=repmat(xc_c,Jlen_c+1,1);
-yc_c=[1:scale:eta_psi];
-yc_c=repmat(yc_c',1,Ilen_c+1);
+offset=ceil(4/scale);  % need 4 points to the left, 3 to the right
+numx_c=((Iend+1)-(Istr-offset))+1;
+numy_c=((Jend+1)-(Jstr-offset))+1;
+numx_f=scale*(numx_c-1)+1;
+numy_f=scale*(numy_c-1)+1;
 
-xc_f=[1:xi_psi];
-xc_f=repmat(xc_f,eta_psi,1);
-yc_f=[1:eta_psi];
-yc_f=repmat(yc_f',1,xi_psi);
+xc_c=[1:numx_c];
+xc_c=repmat(xc_c,numy_c,1);
+yc_c=[1:numy_c];
+yc_c=repmat(yc_c',1,numx_c);
 
+xc_f=[1:1/scale:numx_c];
+xc_f=repmat(xc_f,numy_f,1);
+yc_f=[1:1/scale:numy_c];
+yc_f=repmat(yc_f',1,numx_f);
 
 %%%%%%%%%  Lon Lat SPACE  %%%%%%%%%%%
-%interpolate the psi points
-fine.lon.psi=interp2(xc_c, yc_c, lon_psi(Jstr:Jend,Istr:Iend), xc_f, yc_f);
-fine.lat.psi=interp2(xc_c, yc_c, lat_psi(Jstr:Jend,Istr:Iend), xc_f, yc_f);
+%establish a full grid of psi points, including an extra row and column
+x_full_grid=interp2(xc_c, yc_c, lon_psi(Jstr-offset:Jend+1,Istr-offset:Iend+1), xc_f, yc_f);
+y_full_grid=interp2(xc_c, yc_c, lat_psi(Jstr-offset:Jend+1,Istr-offset:Iend+1), xc_f, yc_f);
 
-%now make up a fake set of psi points that includes one extra bounding
-%row and column on all sides.
-  x_full_grid=ones(size(fine.lon.psi)+2);
-  x_full_grid(2:end-1,2:end-1)=fine.lon.psi;
-  x_full_grid(2:end-1,1)=fine.lon.psi(:,1)-(fine.lon.psi(:,2)-fine.lon.psi(:,1));
-  x_full_grid(2:end-1,end)=fine.lon.psi(:,end)+(fine.lon.psi(:,end)-fine.lon.psi(:,end-1));
-  x_full_grid(1,2:end-1)=fine.lon.psi(1,:)-(fine.lon.psi(2,:)-fine.lon.psi(1,:));
-  x_full_grid(end,2:end-1)=fine.lon.psi(end,:)+(fine.lon.psi(end,:)-fine.lon.psi(end-1,:));
-  x_full_grid(1,1)=x_full_grid(1,2)-(x_full_grid(1,3)-x_full_grid(1,2));
-  x_full_grid(1,end)=x_full_grid(1,end-1)+(x_full_grid(1,end-1)-x_full_grid(1,end-2));
-  x_full_grid(end,1)=x_full_grid(end,2)-(x_full_grid(end,3)-x_full_grid(end,2));
-  x_full_grid(end,end)=x_full_grid(end,end-1)+(x_full_grid(end,end-1)-x_full_grid(end,end-2));
-%
-  y_full_grid=ones(size(fine.lat.psi)+2);
-  y_full_grid(2:end-1,2:end-1)=fine.lat.psi;
-  y_full_grid(2:end-1,1)=fine.lat.psi(:,1)-(fine.lat.psi(:,2)-fine.lat.psi(:,1));
-  y_full_grid(2:end-1,end)=fine.lat.psi(:,end)+(fine.lat.psi(:,end)-fine.lat.psi(:,end-1));
-  y_full_grid(1,2:end-1)=fine.lat.psi(1,:)-(fine.lat.psi(2,:)-fine.lat.psi(1,:));
-  y_full_grid(end,2:end-1)=fine.lat.psi(end,:)+(fine.lat.psi(end,:)-fine.lat.psi(end-1,:));
-  y_full_grid(1,1)=y_full_grid(1,2)-(y_full_grid(1,3)-y_full_grid(1,2));
-  y_full_grid(1,end)=y_full_grid(1,end-1)+(y_full_grid(1,end-1)-y_full_grid(1,end-2));
-  y_full_grid(end,1)=y_full_grid(end,2)-(y_full_grid(end,3)-y_full_grid(end,2));
-  y_full_grid(end,end)=y_full_grid(end,end-1)+(y_full_grid(end,end-1)-y_full_grid(end,end-2));
+%set the psi points
+fine.lon.psi=x_full_grid(offset+2:end-(scale-3+1),offset+2:end-(scale-3+1));
+fine.lat.psi=y_full_grid(offset+2:end-(scale-3+1),offset+2:end-(scale-3+1));
 
 %set the rho points
-ztemp=interp2(x_full_grid,1);
+ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.lon.rho=ztemp(2:2:end-1,2:2:end-1);
-ztemp=interp2(y_full_grid,1);
+ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.lat.rho=ztemp(2:2:end-1,2:2:end-1);
 
 %set the u points
-ztemp=interp2(x_full_grid,1);
+ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.lon.u=ztemp(2:2:end-1,3:2:end-2);
-ztemp=interp2(y_full_grid,1);
+ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.lat.u=ztemp(2:2:end-1,3:2:end-2);
 
 %set the v points
-ztemp=interp2(x_full_grid,1);
+ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.lon.v=ztemp(3:2:end-2,2:2:end-1);
-ztemp=interp2(y_full_grid,1);
+ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.lat.v=ztemp(3:2:end-2,2:2:end-1);
 
-
 %%%%%%%%%  X Y SPACE  %%%%%%%%%%%
-%interpolate the psi points
-fine.x.psi=interp2(xc_c, yc_c, x_psi(Jstr:Jend,Istr:Iend), xc_f, yc_f);
-fine.y.psi=interp2(xc_c, yc_c, y_psi(Jstr:Jend,Istr:Iend), xc_f, yc_f);
+%establish a full grid of psi points, including an extra row and column
+x_full_grid=interp2(xc_c, yc_c, x_psi(Jstr-offset:Jend+1,Istr-offset:Iend+1), xc_f, yc_f);
+y_full_grid=interp2(xc_c, yc_c, y_psi(Jstr-offset:Jend+1,Istr-offset:Iend+1), xc_f, yc_f);
 
-%now make up a fake set of psi points that includes one extra bounding
-%row and column on all sides.
-  x_full_grid=ones(size(fine.x.psi)+2);
-  x_full_grid(2:end-1,2:end-1)=fine.x.psi;
-  x_full_grid(2:end-1,1)=fine.x.psi(:,1)-(fine.x.psi(:,2)-fine.x.psi(:,1));
-  x_full_grid(2:end-1,end)=fine.x.psi(:,end)+(fine.x.psi(:,end)-fine.x.psi(:,end-1));
-  x_full_grid(1,2:end-1)=fine.x.psi(1,:)-(fine.x.psi(2,:)-fine.x.psi(1,:));
-  x_full_grid(end,2:end-1)=fine.x.psi(end,:)+(fine.x.psi(end,:)-fine.x.psi(end-1,:));
-  x_full_grid(1,1)=x_full_grid(1,2)-(x_full_grid(1,3)-x_full_grid(1,2));
-  x_full_grid(1,end)=x_full_grid(1,end-1)+(x_full_grid(1,end-1)-x_full_grid(1,end-2));
-  x_full_grid(end,1)=x_full_grid(end,2)-(x_full_grid(end,3)-x_full_grid(end,2));
-  x_full_grid(end,end)=x_full_grid(end,end-1)+(x_full_grid(end,end-1)-x_full_grid(end,end-2));
-%
-  y_full_grid=ones(size(fine.y.psi)+2);
-  y_full_grid(2:end-1,2:end-1)=fine.y.psi;
-  y_full_grid(2:end-1,1)=fine.y.psi(:,1)-(fine.y.psi(:,2)-fine.y.psi(:,1));
-  y_full_grid(2:end-1,end)=fine.y.psi(:,end)+(fine.y.psi(:,end)-fine.y.psi(:,end-1));
-  y_full_grid(1,2:end-1)=fine.y.psi(1,:)-(fine.y.psi(2,:)-fine.y.psi(1,:));
-  y_full_grid(end,2:end-1)=fine.y.psi(end,:)+(fine.y.psi(end,:)-fine.y.psi(end-1,:));
-  y_full_grid(1,1)=y_full_grid(1,2)-(y_full_grid(1,3)-y_full_grid(1,2));
-  y_full_grid(1,end)=y_full_grid(1,end-1)+(y_full_grid(1,end-1)-y_full_grid(1,end-2));
-  y_full_grid(end,1)=y_full_grid(end,2)-(y_full_grid(end,3)-y_full_grid(end,2));
-  y_full_grid(end,end)=y_full_grid(end,end-1)+(y_full_grid(end,end-1)-y_full_grid(end,end-2));
+%set the psi points
+fine.x.psi=x_full_grid(offset+2:end-(scale-3+1),offset+2:end-(scale-3+1));
+fine.y.psi=y_full_grid(offset+2:end-(scale-3+1),offset+2:end-(scale-3+1));
 
 %set the rho points
-ztemp=interp2(x_full_grid,1);
+ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.x.rho=ztemp(2:2:end-1,2:2:end-1);
-ztemp=interp2(y_full_grid,1);
+ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.y.rho=ztemp(2:2:end-1,2:2:end-1);
 
 %set the u points
-ztemp=interp2(x_full_grid,1);
+ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.x.u=ztemp(2:2:end-1,3:2:end-2);
-ztemp=interp2(y_full_grid,1);
+ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.y.u=ztemp(2:2:end-1,3:2:end-2);
 
 %set the v points
-ztemp=interp2(x_full_grid,1);
+ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.x.v=ztemp(3:2:end-2,2:2:end-1);
-ztemp=interp2(y_full_grid,1);
+ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.y.v=ztemp(3:2:end-2,2:2:end-1);
+
 
 %%%%%% GRID Metrics  %%%%%%%%%
 
@@ -175,11 +142,11 @@ fine.y.v=ztemp(3:2:end-2,2:2:end-1);
 %ZI=griddata(x_rho,y_rho,h,XI,YI);
 ZI=interp2(x_rho,y_rho,h,XI,YI);
 fine.h=interp2(XI,YI,ZI,fine.x.rho,fine.y.rho);
-ZI=griddata(x_rho,y_rho,f,XI,YI);
-%ZI=interp2(x_rho,y_rho,f,XI,YI);
+%ZI=griddata(x_rho,y_rho,f,XI,YI);
+ZI=interp2(x_rho,y_rho,f,XI,YI);
 fine.f=interp2(XI,YI,ZI,fine.x.rho,fine.y.rho);
-ZI=griddata(x_rho,y_rho,mask_rho,XI,YI);
-%ZI=interp2(x_rho,y_rho,mask_rho,XI,YI);
+%ZI=griddata(x_rho,y_rho,mask_rho,XI,YI);
+ZI=interp2(x_rho,y_rho,mask_rho,XI,YI);
 fine.mask.rho=interp2(XI,YI,ZI,fine.x.rho,fine.y.rho);
 
 %force masking to = 0 if it is less than 1.
@@ -336,6 +303,7 @@ plot(fine.x.psi',fine.y.psi','k')
 plot(fine.x.rho,fine.y.rho,'ro')
 plot(fine.x.u,fine.y.u,'kx')
 plot(fine.x.v,fine.y.v,'ms')
+plot(x_rho,y_rho,'bo')
  
 %to create swan grid then use:
 disp(['Created swan grid + bathy files:'])
