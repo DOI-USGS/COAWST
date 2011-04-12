@@ -1,8 +1,10 @@
-function loaddap_ww3_2TPAR(modelgrid)
-t=datestr(now-1,'yyyymmdd');
+function loaddap_ww3_2TPAR_3(modelgrid)
+load D:\Temporary\COAWST_2.4\timefile.mat
+t=tm.force;
+% t=datestr(now,'yyyymmdd');
 dirt=['wna',t];
-loc=['http://nomads.ncep.noaa.gov:9090/dods/wave/wna/',dirt,'/wna',t,'_00z'];
-%loc=['http://nomads.ncep.noaa.gov:9090/dods/wave/nww3/nww3',t,'/nww3',t,'_00z'];
+%loc=['http://nomads.ncep.noaa.gov:9090/dods/wave/wna/',dirt,'/wna',t,'_00z'];
+loc=['http://nomads.ncep.noaa.gov:9090/dods/wave/nww3/nww3',t,'/nww3',t,'_00z'];
 %check to see if data is updated
 [s,status]=urlread(loc);
 
@@ -15,13 +17,14 @@ if length(s)>1000
     time=loaddap([loc,'?time']);%time interval 3 hours, length 8 days from next day, not now
     
     %determine spec pts from grid
-    [specpts]=specpoints(modelgrid,50);
+    [specpts]=specpoints_4_v2(modelgrid,25);
+    [specptsij]=specpoints_ij_v2(modelgrid,25);
     
     for i=1:length(specpts)
         gx=specpts(i,1);
         gy=specpts(i,2);
-        xl=gx-0.5;xr=gx+0.5;
-        yb=gy-0.5;yt=gy+0.5;
+        xl=gx-1;xr=gx+1;
+        yb=gy-1;yt=gy+1;
 
         %determine dimensions of hycom data needed for interpolation
         [ym xm]=size(xg);
@@ -33,7 +36,7 @@ if length(s)>1000
         clear ii jj;
 
         %dp=loaddap([loc,'?dirpwsfc.dirpwsfc']);
-        dp=loaddap([loc '?dirpwsfc.dirpwsfc[0:' num2str(length(time.time)-1) ']' jrg irg ]);
+        dp=loaddap([loc '?dirpwsfc.dirpwsfc[0:' num2str(length(time.time)-1) ']' irg jrg ]);
         dp=dp.dirpwsfc;
         %hs=loaddap([loc,'?htsgwsfc.htsgwsfc']);
         hs=loaddap('+v',[loc '?htsgwsfc.htsgwsfc[0:' num2str(length(time.time)-1) ']' irg jrg ]);
@@ -46,7 +49,8 @@ if length(s)>1000
         for wavet=1:length(time.time)
                 hst=squeeze(hs(:,:,wavet));
                 zz=hst>1000;
-                hst(zz)=0; %make bad data 0, swan not like NaNs
+                hst(zz)=NaN; %make bad data 0, swan not like NaNs
+                hst=maplev(hst);
                 %Z1=interp2(lon2,lat2,hs,specpts(r,1),specpts(r,2));
                 Z1=griddata(dap.lon,dap.lat,hst,specpts(i,1),specpts(i,2));
                 TPAR(wavet,2)=Z1;
@@ -54,17 +58,26 @@ if length(s)>1000
             for wavet=1:length(time.time)
                 tpt=squeeze(tp(:,:,wavet));
                 zz=tpt>1000;
-                tpt(zz)=0; %make bad data 0, swan not like NaNs
+                tpt(zz)=NaN; %make bad data 0, swan not like NaNs
+                tpt=maplev(tpt);
                 %Z1=interp2(lon2,lat2,tp,specpts(r,1),specpts(r,2));
-                Z1=griddata(dap.lon,dap.lat,tpt,specpts(i,1),specpts(i,2));
+                Z1=griddata(dap.lon,dap.lat,tpt,specpts(i,1),specpts(i,2));                  
                 TPAR(wavet,3)=Z1;
             end
             for wavet=1:length(time.time)
                 dpt=squeeze(dp(:,:,wavet));
                 zz=dpt>1000;
-                dpt(zz)=0; %make bad data 0, swan not like NaNs
+                dpt(zz)=NaN; %make bad data 0, swan does not like NaNs
+                dpt=maplev(dpt);
+                Dwave_Ax=1*cos((90-dpt)*pi/180);%grid of x
+                Dwave_Ay=1*sin((90-dpt)*pi/180);%grid of y
+                Z1x=griddata(dap.lon,dap.lat,Dwave_Ax,specpts(i,1),specpts(i,2));%interpolate x
+                Z1y=griddata(dap.lon,dap.lat,Dwave_Ay,specpts(i,1),specpts(i,2));%interpolate y
+                Z1=90 - atan2(Z1y,Z1x)*180/pi; %calculate direction
+                if Z1<0
+                    Z1=Z1+360;
+                end
                 %Z1=interp2(lon2,lat2,dp,specpts(r,1),specpts(r,2));
-                Z1=griddata(dap.lon,dap.lat,dpt,specpts(i,1),specpts(i,2));
                 TPAR(wavet,4)=Z1;
             end
             TPAR(1:length(time.time),1)=str2num(datestr(time.time+datenum(0000,12,30,0,0,0),'yyyymmdd.HHMM'));
