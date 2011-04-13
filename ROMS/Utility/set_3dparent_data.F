@@ -4,19 +4,10 @@
 # ifdef REFINED_GRID
 !
 !svn $Id: set_data.F 1405 2008-02-20 01:44:07Z jcwarner $
-!================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
-!    Licensed under a MIT/X style license                              !
-!    See License_ROMS.txt                                              !
-!=======================================================================
+!================================================== John C. Warner =====
 !                                                                      !
-!  This routine acquires date from a parent grid.                      !
-!  If there is more than one time-record,                              !
-!  data  is loaded  into global two-time record arrays.  The actual    !
-!  interpolation is carried elsewhere.                                 !
-!                                                                      !
-!  Currently,  this routine is only executed in serial mode by the     !
-!  main thread.                                                        !
+!  This routine interpolates the parent data and places it             !
+!  into the perimeter of the child grid.                               !
 !                                                                      !
 !=======================================================================
 !
@@ -116,8 +107,6 @@
 #  endif
 !
 #  include "set_bounds.h"
-      ngp=myparent(ng)
-!
 
 #  ifdef PROFILE
 !
@@ -127,7 +116,11 @@
 !
       CALL wclock_on (ng, iNLM, 3)
 #  endif
-!set the parent grid to get data from.
+!
+!
+!  Set the parent grid to get data from.
+!
+      ngp=myparent(ng)
 !
       fac1=time(ngp)+dt(ngp)-time(ng)-dt(ng)
       fac2=time(ng)-time(ngp)+dt(ng)
@@ -135,8 +128,6 @@
       fac1=fac*fac1
       fac2=fac*fac2
 
-!      fac1=0.0_r8
-!      fac2=1.0_r8
       IF (iic(1).eq.ntstart(1)) THEN
         t1=1
         t2=2
@@ -144,10 +135,6 @@
         t1=nstp(ngp)
         t2=nnew(ngp)
       END IF
-
-!      if (myrank.eq.mymaster) then
-!      write(*,*) 'set3dp ',t1,t2,fac1,fac2
-!      end if
 !
 ! tracer
 !
@@ -162,9 +149,8 @@
 #  ifdef MASKING
                 my_val=my_val*GRID(ng)%rmask(i,j)
 #  endif
+                OCEAN(ng)%t(i,j,k,nnew(ng),itrc)=my_val
                 OCEAN(ng)%t(i,j,k,3,itrc)=my_val
-                OCEAN(ng)%t(i,j,k,2,itrc)=my_val
-                OCEAN(ng)%t(i,j,k,1,itrc)=my_val
                END DO
             END DO
           END DO
@@ -181,9 +167,8 @@
 #  ifdef MASKING
                 my_val=my_val*GRID(ng)%rmask(i,j)
 #  endif
+                OCEAN(ng)%t(i,j,k,nnew(ng),itrc)=my_val
                 OCEAN(ng)%t(i,j,k,3,itrc)=my_val
-                OCEAN(ng)%t(i,j,k,2,itrc)=my_val
-                OCEAN(ng)%t(i,j,k,1,itrc)=my_val
               END DO
             END DO
           END DO
@@ -200,9 +185,8 @@
 #  ifdef MASKING
                 my_val=my_val*GRID(ng)%rmask(i,j)
 #  endif
+                OCEAN(ng)%t(i,j,k,nnew(ng),itrc)=my_val
                 OCEAN(ng)%t(i,j,k,3,itrc)=my_val
-                OCEAN(ng)%t(i,j,k,2,itrc)=my_val
-                OCEAN(ng)%t(i,j,k,1,itrc)=my_val
               END DO
             END DO
           END DO
@@ -219,9 +203,8 @@
 #  ifdef MASKING
                 my_val=my_val*GRID(ng)%rmask(i,j)
 #  endif
+                OCEAN(ng)%t(i,j,k,nnew(ng),itrc)=my_val
                 OCEAN(ng)%t(i,j,k,3,itrc)=my_val
-                OCEAN(ng)%t(i,j,k,2,itrc)=my_val
-                OCEAN(ng)%t(i,j,k,1,itrc)=my_val
               END DO
             END DO
           END DO
@@ -240,8 +223,7 @@
 #  ifdef MASKING
               my_val=my_val*GRID(ng)%umask(i,j)
 #  endif
-              OCEAN(ng)%u(i,j,k,2)=my_val
-              OCEAN(ng)%u(i,j,k,1)=my_val
+              OCEAN(ng)%u(i,j,k,nnew(ng))=my_val
             END DO
           END DO
         END DO
@@ -256,8 +238,7 @@
 #  ifdef MASKING
               my_val=my_val*GRID(ng)%umask(i,j)
 #  endif
-              OCEAN(ng)%u(i,j,k,1)=my_val
-              OCEAN(ng)%u(i,j,k,2)=my_val
+              OCEAN(ng)%u(i,j,k,nnew(ng))=my_val
             END DO
           END DO
         END DO
@@ -272,8 +253,7 @@
 #  ifdef MASKING
               my_val=my_val*GRID(ng)%umask(i,j)
 #  endif
-              OCEAN(ng)%u(i,j,k,1)=my_val
-              OCEAN(ng)%u(i,j,k,2)=my_val
+              OCEAN(ng)%u(i,j,k,nnew(ng))=my_val
             END DO
           END DO
         END DO
@@ -288,8 +268,7 @@
 #  ifdef MASKING
               my_val=my_val*GRID(ng)%umask(i,j)
 #  endif
-              OCEAN(ng)%u(i,j,k,1)=my_val
-              OCEAN(ng)%u(i,j,k,2)=my_val
+              OCEAN(ng)%u(i,j,k,nnew(ng))=my_val
             END DO
           END DO
         END DO
@@ -372,8 +351,7 @@
 #  ifdef MASKING
               my_val=my_val*GRID(ng)%vmask(i,j)
 #  endif
-              OCEAN(ng)%v(i,j,k,2)=my_val
-              OCEAN(ng)%v(i,j,k,1)=my_val
+              OCEAN(ng)%v(i,j,k,nnew(ng))=my_val
             END DO
           END DO
         END DO
@@ -388,8 +366,7 @@
 #  ifdef MASKING
               my_val=my_val*GRID(ng)%vmask(i,j)
 #  endif
-              OCEAN(ng)%v(i,j,k,1)=my_val
-              OCEAN(ng)%v(i,j,k,2)=my_val
+              OCEAN(ng)%v(i,j,k,nnew(ng))=my_val
             END DO
           END DO
         END DO
@@ -404,8 +381,7 @@
 #  ifdef MASKING
               my_val=my_val*GRID(ng)%vmask(i,j)
 #  endif
-              OCEAN(ng)%v(i,j,k,1)=my_val
-              OCEAN(ng)%v(i,j,k,2)=my_val
+              OCEAN(ng)%v(i,j,k,nnew(ng))=my_val
             END DO
           END DO
         END DO
@@ -420,8 +396,7 @@
 #  ifdef MASKING
               my_val=my_val*GRID(ng)%vmask(i,j)
 #  endif
-              OCEAN(ng)%v(i,j,k,1)=my_val
-              OCEAN(ng)%v(i,j,k,2)=my_val
+              OCEAN(ng)%v(i,j,k,nnew(ng))=my_val
             END DO
           END DO
         END DO
@@ -494,29 +469,17 @@
 !
 #  ifdef DISTRIBUTE
 #   if !defined TS_FIXED
-      CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
+      CALL mp_exchange4d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    OCEAN(ng)%t(:,:,:,1,:))
-      CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    OCEAN(ng)%t(:,:,:,2,:))
-      CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    OCEAN(ng)%t(:,:,:,nnew(ng),:),                &
      &                    OCEAN(ng)%t(:,:,:,3,:))
 #   endif
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    OCEAN(ng)%u(:,:,:,1),                         &
-     &                    OCEAN(ng)%u(:,:,:,2))
-      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
-     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    OCEAN(ng)%v(:,:,:,1),                         &
-     &                    OCEAN(ng)%v(:,:,:,2))
+     &                    OCEAN(ng)%u(:,:,:,nnew(ng)),                  &
+     &                    OCEAN(ng)%v(:,:,:,nnew(ng)))
 #   ifdef WEC
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &

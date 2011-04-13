@@ -29,6 +29,134 @@
 
       CONTAINS
 
+      SUBROUTINE quadterp2d_ref (ng, LBx, UBx, LBy, UBy,                 &
+     &                      Xinp, Yinp, Finp, Amask,                    &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      Istr, Iend, Jstr, Jend,                     &
+     &                      Iout, Jout,                                 &
+     &                      Xout, Yout,                                 &
+     &                      Fout, Fmin, Fmax)
+!
+!=======================================================================
+!                                                                      !
+!  Given any gridded 2D field, Finp, this routine linearly interpolate !
+!  to locations (Xout,Yout).  To facilitate the  interpolation  within !
+!  any irregularly gridded 2D field,  the fractional grid cell indices !
+!  (Iout,Jout) with respect Finp are needed at input.  Notice that the !
+!  routine "hindices" can be used to compute these indices.            !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     LBx        I-dimension lower bound of gridded field, Finp.       !
+!     UBx        I-dimension upper bound of gridded field, Finp.       !
+!     LBy        J-dimension lower bound of gridded field, Finp.       !
+!     UBy        J-dimension upper bound of gridded field, Finp.       !
+!     Xinp       X-locations of gridded field, Finp.                   !
+!     Yinp       Y-locations of gridded field, Finp.                   !
+!     Finp       2D field to interpolate from.                         !
+!     LBi        I-dimension Lower bound of data to interpolate, Fout. !
+!     UBi        I-dimension Upper bound of data to interpolate, Fout. !
+!     LBj        J-dimension Lower bound of data to interpolate, Fout. !
+!     UBj        J-dimension Upper bound of data to interpolate, Fout. !
+!     Istr       Starting data I-index to interpolate, Fout.           !
+!     Iend       Ending   data I-index to interpolate, Fout.           !
+!     Jstr       Starting data J-index to interpolate, Fout.           !
+!     Jend       Ending   data J-index to interpolate, Fout.           !
+!     Iout       I-fractional Xinp grid cell containing Xout.          !
+!     Jout       J-fractional Yinp grid cell containing Yout.          !
+!     Xout       X-locations to interpolate, Fout.                     !
+!     Yout       Y-locations to interpolate, Fout.                     !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     Fout       Interpolated 2D field.                                !
+!     Fmin       Interpolated field minimum value.                     !
+!     Fmax       Interpolated field maximum value.                     !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_scalars
+      USE mod_grid
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, LBx, UBx, LBy, UBy
+      integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: Istr, Iend, Jstr, Jend
+!
+      real(r8), intent(in) :: Xinp(LBx:UBx,LBy:UBy)
+      real(r8), intent(in) :: Yinp(LBx:UBx,LBy:UBy)
+      real(r8), intent(in) :: Finp(LBx:UBx,LBy:UBy)
+      real(r8), intent(in) :: Amask(LBx:UBx,LBy:UBy)
+
+      real(r8), intent(in) :: Iout(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Jout(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Xout(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Yout(LBi:UBi,LBj:UBj)
+
+      real(r8), intent(out) :: Fout(LBi:UBi,LBj:UBj)
+!
+      real(r8), intent(out) :: Fmin, Fmax
+!
+!  Local variable declarations.
+!
+      integer :: i, i1, i2, j, j1, j2
+
+      real(r8) :: p1, p2, q1, q2, alpha, ref_scale
+      real(r8) :: cff7, cff8, cff9
+!
+!-----------------------------------------------------------------------
+!  Linearly interpolate requested field
+!-----------------------------------------------------------------------
+!
+      ref_scale=5.0_r8
+      alpha=((1.0_r8/ref_scale)**2.0_r8-1.0_r8)/24.0_r8
+      Fmin=1.0E+35_r8
+      Fmax=-1.0E+35_r8
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          i1=INT(Iout(i,j))
+          i2=i1+1
+          j1=INT(Jout(i,j))
+          j2=j1+1
+          IF (((LBx.le.i1).and.(i1.le.UBx)).and.                        &
+     &        ((LBy.le.j1).and.(j1.le.UBy))) THEN
+!            epp=
+!            Em=
+
+
+            p2=REAL(i2-i1,r8)*(Iout(i,j)-REAL(i1,r8))
+            q2=REAL(j2-j1,r8)*(Jout(i,j)-REAL(j1,r8))
+            p1=1.0_r8-p2
+            q1=1.0_r8-q2
+
+#  ifdef MASKING
+            cff7=p1*q1*Finp(i1,j1)*Amask(i1,j1)+               &
+     &           p2*q1*Finp(i2,j1)*Amask(i2,j1)+               &
+     &           p1*q2*Finp(i1,j2)*Amask(i1,j2)+               &
+     &           p2*q2*Finp(i2,j2)*Amask(i2,j2)
+            cff8=p1*q1*Amask(i1,j1)+                           &
+     &           p2*q1*Amask(i2,j1)+                           &
+     &           p1*q2*Amask(i1,j2)+                           &
+     &           p2*q2*Amask(i2,j2)
+            cff9=0.0_r8
+            IF (cff8.gt.0.0_r8) cff9=cff7/cff8
+#  else
+            cff9=p1*q1*Finp(i1,j1)+                                     &
+     &           p2*q1*Finp(i2,j1)+                                     &
+     &           p1*q2*Finp(i1,j2)+                                     &
+     &           p2*q2*Finp(i2,j2)
+#  endif
+            Fout(i,j)=cff9
+            Fmin=MIN(Fmin,Fout(i,j))
+            Fmax=MAX(Fmax,Fout(i,j))
+          END IF
+        END DO
+      END DO
+      END SUBROUTINE quadterp2d_ref
+
       SUBROUTINE linterp2d_ref (ng, LBx, UBx, LBy, UBy,                 &
      &                      Xinp, Yinp, Finp, Amask,                    &
      &                      LBi, UBi, LBj, UBj,                         &
@@ -162,7 +290,6 @@
           END IF
         END DO
       END DO
-
       END SUBROUTINE linterp2d_ref
 
       SUBROUTINE linterp3d_ref (ng, LBx, UBx, LBy, UBy, LBz, UBz,       &

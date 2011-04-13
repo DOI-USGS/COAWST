@@ -1925,6 +1925,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' READ_WATER,'
 #endif
+#ifdef REFINED_GRID
+      IF (Master) WRITE (stdout,20) 'REFINED_GRID',                     &
+     &   'Refined grid .'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' REFINED_GRID,'
+#endif
 #ifdef R_SYMMETRY
       IF (Master) WRITE (stdout,20) 'REP_MATRIX',                       &
      &   'Representers Matrix Symmetry Test.'

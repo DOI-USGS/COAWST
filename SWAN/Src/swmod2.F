@@ -1057,9 +1057,13 @@
       INTEGER, SAVE :: WAV_COMM_WORLD
       INTEGER :: Numspecl
       INTEGER :: NBGRPT_last
+      INTEGER, SAVE, ALLOCATABLE :: BGRIDPG(:,:)
+# ifdef REFINED_GRID
       INTEGER, SAVE, ALLOCATABLE :: Numspec(:)
       INTEGER, SAVE, ALLOCATABLE :: ac2size(:)
-      INTEGER, SAVE, ALLOCATABLE :: BGRIDPG(:,:)
+      INTEGER, SAVE, ALLOCATABLE :: sstp(:)
+      INTEGER, SAVE, ALLOCATABLE :: snew(:)
+# endif
 !
       INTEGER, POINTER :: MCGRDGL
       INTEGER, SAVE, TARGET, ALLOCATABLE :: MCGRDGL_G(:)
@@ -1261,8 +1265,7 @@
         REAL, POINTER :: AC1_G(:,:,:)
         REAL, POINTER :: COMPDA_G(:,:)
         REAL, POINTER :: OURQT_G(:)
-        REAL, POINTER :: AC2_parent_G(:)
-        REAL, POINTER :: AC2_child_G(:)
+        REAL, POINTER :: AC2_parent_G(:,:)
       END TYPE T_PARALL2_MOD
       TYPE (T_PARALL2_MOD), ALLOCATABLE :: PARALL2_MOD(:)
 
@@ -1272,8 +1275,7 @@
       REAL, POINTER :: AC1(:,:,:)
       REAL, POINTER :: COMPDA(:,:)
       REAL, POINTER :: OURQT(:)
-      REAL, POINTER :: AC2_parent(:)
-      REAL, POINTER :: AC2_child(:)
+      REAL, POINTER :: AC2_parent(:,:)
 #else
       REAL, SAVE,    ALLOCATABLE :: BSPECS(:,:,:,:)
       INTEGER, SAVE, ALLOCATABLE :: CROSS(:)

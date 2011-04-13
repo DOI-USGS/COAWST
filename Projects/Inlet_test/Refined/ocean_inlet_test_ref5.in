@@ -206,6 +206,12 @@
      LEVSFRC == 15 15
      LEVBFRC == 1  1
 
+! Set vertical, terrain-following coordinates transformation equation and
+! stretching function (see below for details), [1:Ngrids].
+
+  Vtransform == 1                          ! transformation equation
+ Vstretching == 1                          ! stretching function
+
 ! Vertical S-coordinates parameters, [1:Ngrids].
 
      THETA_S == 1.0d0 1.0d0                      ! 0 < THETA_S < 20
@@ -319,8 +325,8 @@ Hout(idUair) == F F                        ! Uwind       surface U-wind
 Hout(idVair) == F F                        ! Vwind       surface V-wind
 Hout(idUsms) == F F                        ! sustr       surface U-stress
 Hout(idVsms) == F F                        ! svstr       surface V-stress
-Hout(idUbms) == F F                        ! bustr       bottom U-stress
-Hout(idVbms) == F F                        ! bvstr       bottom V-stress
+Hout(idUbms) == T T                        ! bustr       bottom U-stress
+Hout(idVbms) == T T                        ! bvstr       bottom V-stress
 
 Hout(idUbrs) == T T                        ! bustrc      bottom U-current stress
 Hout(idVbrs) == T T                        ! bvstrc      bottom V-current stress

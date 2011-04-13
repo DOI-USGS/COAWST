@@ -64,7 +64,7 @@
 
 ! Median sediment grain diameter (mm).
 
-    MUD_SD50 == 0.1d0  0.10d0
+    MUD_SD50 == 0.10d0  0.10d0
 
 ! Sediment concentration (kg/m3).
 
@@ -84,7 +84,7 @@
 
 ! Critical shear for erosion and deposition (N/m2).
 
-  MUD_TAU_CE == 0.10d0 0.10d0
+  MUD_TAU_CE == 0.05d0 0.05d0
   MUD_TAU_CD == 0.01d0 0.01d0
 
 ! Porosity (nondimensional: 0.0-1.0):  Vwater/(Vwater+Vsed).
@@ -108,7 +108,7 @@
 ! Morphological time scale factor (greater than or equal to 1.0). A 
 ! value of 1.0 has no scale effect.
 
-   MUD_MORPH_FAC == 10.0d0 1.0d0 1.0d0              ! nondimensional
+   MUD_MORPH_FAC == 1.0d0 1.0d0 1.0d0              ! nondimensional
 
 ! Logical switch (TRUE/FALSE) to activate writing of cohesive sediment
 ! into HISTORY output file.

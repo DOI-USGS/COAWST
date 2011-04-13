@@ -225,19 +225,33 @@
 !-----------------------------------------------------------------------
 !
 # ifdef REFINED_GRID
-! get data from parent grid at time of parent. Only need to 
+!
+! Get data from parent grid at time of parent. Only need to 
 ! do this once per child loop.
+!
         IF (ng.gt.1) THEN
           IF (time(ng).eq.time(ngp)) THEN
             CALL get_2dparent_data (ng, TILE)
             CALL get_3dparent_data (ng, TILE)
           END IF
         END IF
-! put child data back to parent 
-        IF ((ng.gt.Ngrids).and.(iic(ng).gt.1)) THEN
-!          CALL set_2dchild_data (ng, TILE)
-!          CALL set_3dchild_data (ng, TILE)
+#  if !defined REFINED_GRID_BC
+!
+!  Put the child data back into the parent grid.
+!
+        IF ((ng.lt.Ngrids).and.(iic(ng).gt.1)) THEN
+          CALL set_2dchild_data (ng, TILE)
+!
+          DO thread=0,numthreads-1
+            subs=NtileX(ng)*NtileE(ng)/numthreads
+            DO tile=subs*(thread+1)-1,subs*thread,-1
+              CALL set_depth (ng, TILE)
+            END DO
+          END DO
+!
+          CALL set_3dchild_data (ng, TILE)
         END IF
+#  endif
 # endif
 !
 # if defined W4DPSAS || defined NLM_OUTER || \
@@ -624,8 +638,8 @@
 # ifdef REFINED_GRID
 ! interpolate the parent data to child time.
         IF (ng.gt.1) THEN
-          CALL set_2dparent_data (ng, TILE)
-          CALL set_3dparent_data (ng, TILE)
+!          CALL set_2dparent_data (ng, TILE)
+           CALL set_3dparent_data (ng, TILE)
         END IF
 # endif
 !
@@ -700,7 +714,13 @@
               END DO
             END DO
 !$OMP END PARALLEL DO
+          END IF
+# ifdef REFINED_GRID
+! interpolate the parent data to child time.
+        IF (ng.gt.1) THEN
+          CALL set_2dparent_data (ng, TILE)
         END IF
+# endif
 # if !defined REFINED_GRID
         END DO
 # endif
@@ -736,6 +756,12 @@
             END DO
 !$OMP END PARALLEL DO
           END IF
+# ifdef REFINED_GRID
+! interpolate the parent data to child time.
+        IF (ng.gt.1) THEN
+          CALL set_2dparent_data (ng, TILE)
+        END IF
+# endif
 # if !defined REFINED_GRID
         END DO
 # endif

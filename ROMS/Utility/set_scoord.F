@@ -175,6 +175,11 @@
       ELSE IF (Vtransform(ng).eq.2) THEN
         hc(ng)=Tcline(ng)
       END IF
+# ifdef REFINED_GRID
+      IF (ng.eq.Ngrids) THEN
+        ! need to recompute hc for all grids  !!!!
+      END IF
+# endif
 !
 !-----------------------------------------------------------------------
 !  Original vertical strectching function, Song and Haidvogel (1994).

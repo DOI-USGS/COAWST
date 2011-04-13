@@ -65,6 +65,8 @@
       CALL initialize_param
       IF (.not.allocated(Numspec)) allocate (Numspec(Ngrids))
       IF (.not.allocated(ac2size)) allocate (ac2size(Ngrids))
+      IF (.not.allocated(sstp)) allocate (sstp(Ngrids))
+      IF (.not.allocated(snew)) allocate (snew(Ngrids))
 #endif
 !
 !  Establish MPI rank.
@@ -101,6 +103,8 @@
 #ifdef REFINED_GRID
         ngp=myparent(ng)
         ngc=mychild(ng)
+        sstp(ng)=1
+        snew(ng)=3-sstp(ng)
 #else
         ngp=1
         ngc=1
@@ -166,14 +170,16 @@
 !
         DO ng=1,Ngrids
           IF (run_grid(ng).eq..TRUE.) THEN
+            count(ng)=count(ng)+1
 #ifdef REFINED_GRID
             ngp=myparent(ng)
             ngc=mychild(ng)
+            sstp(ng)=1+MOD(count(ng),2)
+            snew(ng)=3-sstp(ng)
 #else
             ngp=1
             ngc=1
 #endif
-            count(ng)=count(ng)+1
             CALL SWAN_RUN (CouplingTime, count(ng), ng, ngc, ngp,       &
      &                     1, Ngrids)
             run_grid(ng)=.FALSE.

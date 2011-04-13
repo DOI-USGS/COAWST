@@ -3,14 +3,10 @@
 #ifdef REFINED_GRID
 !
 !svn $Id: set_data.F 1405 2008-02-20 01:44:07Z jcwarner $
-!================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
-!    Licensed under a MIT/X style license                              !
-!    See License_ROMS.txt                                              !
-!=======================================================================
+!================================================== John C. Warner =====
 !                                                                      !
-!  This routine acquires date from a child grid.                       !
-!  That data is interpolated to the parent grid.                       !
+!  This routine acquires data from a child grid.                       !
+!  That data is averaged and placed into the parent grid.              !
 !                                                                      !
 !=======================================================================
 !
@@ -154,8 +150,6 @@
 !  Fill local arrays from the BC data.
 !-----------------------------------------------------------------------
 
-#define YESUSE
-#ifdef YESUSE
 !
 ! loop thru rho, u2, v2 points
 !
@@ -317,12 +311,11 @@
               my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
 # ifdef SOLVE3D
-!              COUPLING(ng)%Zt_avg1(i,j)=my_val
+              COUPLING(ng)%Zt_avg1(i,j)=my_val
 # else
               OCEAN(ng)%zeta(i,j,1)=my_val
               OCEAN(ng)%zeta(i,j,2)=my_val
-              OCEAN(ng)%zeta(i,j,3)=my_val
-#endif
+# endif
             END DO
           END DO
         ELSE IF (ii.eq.2) THEN
@@ -368,12 +361,9 @@
           END DO
           DO j=Jmin+2,Jmax-2
             DO i=Imin+2,Imax-2
-              A(i,j)=0.04_r8*                                           &
-     &     (AA(i-2,j+2)+AA(i-1,j+2)+AA(i  ,j+2)+AA(i+1,j+2)+AA(i+2,j+2)+&
-     &      AA(i-2,j+1)+AA(i-1,j+1)+AA(i  ,j+1)+AA(i+1,j+1)+AA(i+2,j+1)+&
-     &      AA(i-2,j  )+AA(i-1,j  )+AA(i  ,j  )+AA(i+1,j  )+AA(i+2,j  )+&
-     &      AA(i-2,j-1)+AA(i-1,j-1)+AA(i  ,j-1)+AA(i+1,j-1)+AA(i+2,j-1)+&
-     &      AA(i-2,j-2)+AA(i-1,j-2)+AA(i  ,j-2)+AA(i+1,j-2)+AA(i+2,j-2))
+              A(i,j)=1.0_r8/5.0_r8*                                     &
+     &               (AA(i,j-2)+AA(i,j-1)+AA(i,j)+                      &
+                      AA(i,j+1)+AA(i,j+2))
             END DO
           END DO
 !
@@ -412,7 +402,6 @@
 # endif
               OCEAN(ng)%ubar(i,j,1)=my_val
               OCEAN(ng)%ubar(i,j,2)=my_val
-              OCEAN(ng)%ubar(i,j,3)=my_val
             END DO
           END DO
 
@@ -459,12 +448,9 @@
           END DO
           DO j=Jmin+2,Jmax-2
             DO i=Imin+2,Imax-2
-              A(i,j)=0.04_r8*                                           &
-     &     (AA(i-2,j+2)+AA(i-1,j+2)+AA(i  ,j+2)+AA(i+1,j+2)+AA(i+2,j+2)+&
-     &      AA(i-2,j+1)+AA(i-1,j+1)+AA(i  ,j+1)+AA(i+1,j+1)+AA(i+2,j+1)+&
-     &      AA(i-2,j  )+AA(i-1,j  )+AA(i  ,j  )+AA(i+1,j  )+AA(i+2,j  )+&
-     &      AA(i-2,j-1)+AA(i-1,j-1)+AA(i  ,j-1)+AA(i+1,j-1)+AA(i+2,j-1)+&
-     &      AA(i-2,j-2)+AA(i-1,j-2)+AA(i  ,j-2)+AA(i+1,j-2)+AA(i+2,j-2))
+              A(i,j)=1.0_r8/5.0_r8*                                     &
+     &               (AA(i-2,j)+AA(i-1,j)+AA(i,j)+                     &
+                      AA(i+1,j)+AA(i+2,j))
             END DO
           END DO
 !
@@ -503,7 +489,6 @@
 # endif
               OCEAN(ng)%vbar(i,j,1)=my_val
               OCEAN(ng)%vbar(i,j,2)=my_val
-              OCEAN(ng)%vbar(i,j,3)=my_val
             END DO
           END DO
         END IF
@@ -524,143 +509,59 @@
           deallocate (A2)
         END IF
       END DO
-#endif
-
-#undef SOLITON_HACK
-#ifdef SOLITON_HACK
-!  Replace parent data with child data.
-!  This is a hack for SOLITON test case
-!
-! zeta
-        DO jp=Jstrc,Jendc
-          DO ip=Istrc,Iendc
-            DO j=Jstr,Jend
-              DO i=Istr,Iend
-                IF ((GRID(ngc)%xr(ip,jp).eq.GRID(ng)%xr(i,j)).and.      &
-     &              (GRID(ngc)%yr(ip,jp).eq.GRID(ng)%yr(i,j))) THEN
-!                    my_val=OCEAN(ng)%zeta(i,j,1)
-!# ifdef MASKING
-!                    my_val=my_val*GRID(ngp)%rmask(ip,jp)
-!# endif
-!                    OCEAN(ngp)%zeta(ip,jp,1)=my_val
-!                    OCEAN(ngp)%zeta(ip,jp,2)=my_val
-!                    OCEAN(ngp)%zeta(ip,jp,3)=my_val
-!if call from the top
-                    my_val=OCEAN(2)%zeta(ip,jp,1)
-                    OCEAN(1)%zeta(i,j,1)=my_val
-                    OCEAN(1)%zeta(i,j,2)=my_val
-                    OCEAN(1)%zeta(i,j,3)=my_val
-                END IF
-              END DO
-            END DO
-          END DO
-        END DO
-! ubar
-        DO jp=Jstrc,Jendc
-          DO ip=Istrc+1,Iendc
-            DO j=Jstr,Jend
-              DO i=IstrU,Iend
-                IF ((GRID(ngc)%xu(ip,jp).eq.GRID(ng)%xu(i,j)).and.      &
-     &              (GRID(ngc)%yu(ip,jp).eq.GRID(ng)%yu(i,j))) THEN
-!                    my_val=OCEAN(ng)%ubar(i,j,1)
-!# ifdef MASKING
-!                    my_val=my_val*GRID(ngp)%umask(ip,jp)
-!# endif
-!                    OCEAN(ngp)%ubar(ip,jp,1)=my_val
-!                    OCEAN(ngp)%ubar(ip,jp,2)=my_val
-!                    OCEAN(ngp)%ubar(ip,jp,3)=my_val
-                    my_val=OCEAN(2)%ubar(ip,jp,1)
-                    OCEAN(1)%ubar(i,j,1)=my_val
-                    OCEAN(1)%ubar(i,j,2)=my_val
-                    OCEAN(1)%ubar(i,j,3)=my_val
-                END IF
-              END DO
-            END DO
-          END DO
-        END DO
-! vbar
-        DO jp=Jstrc+1,Jendc
-          DO ip=Istrc,Iendc
-            DO j=JstrV,Jend
-              DO i=Istr,Iend
-                IF ((GRID(ngc)%xv(ip,jp).eq.GRID(ng)%xv(i,j)).and.      &
-     &              (GRID(ngc)%yv(ip,jp).eq.GRID(ng)%yv(i,j))) THEN
-!                    my_val=OCEAN(ng)%vbar(i,j,1)
-!# ifdef MASKING
-!                    my_val=my_val*GRID(ngp)%vmask(ip,jp)
-!# endif
-!                    OCEAN(ngp)%vbar(ip,jp,1)=my_val
-!                    OCEAN(ngp)%vbar(ip,jp,2)=my_val
-!                    OCEAN(ngp)%vbar(ip,jp,3)=my_val
-                     my_val=OCEAN(2)%vbar(ip,jp,1)
-                    OCEAN(1)%vbar(i,j,1)=my_val
-                    OCEAN(1)%vbar(i,j,2)=my_val
-                    OCEAN(1)%vbar(i,j,3)=my_val
-                END IF
-              END DO
-            END DO
-          END DO
-        END DO
-#endif
-
-
 # if defined EW_PERIODIC || defined NS_PERIODIC
 !
 !-----------------------------------------------------------------------
 !  Exchange boundary information.
 !-----------------------------------------------------------------------
 !
-      CALL exchange_u2d_tile (ng, tile,                                 &
+      CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(ng)%zeta(:,:,1))
-      CALL exchange_u2d_tile (ng, tile,                                 &
+      CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(ng)%zeta(:,:,2))
       CALL exchange_u2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%zeta(:,:,3))
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(ng)%ubar(:,:,1))
-      CALL exchange_v2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%vbar(:,:,1))
       CALL exchange_u2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(ng)%ubar(:,:,2))
       CALL exchange_v2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%vbar(:,:,2))
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%ubar(:,:,3))
+     &                        OCEAN(ng)%vbar(:,:,1))
       CALL exchange_v2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%vbar(:,:,3))
+     &                        OCEAN(ng)%vbar(:,:,2))
+#   ifdef SOLVE3D
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        COUPLING(ng)%Zt_avg1(:,:))
+#   endif
 #  endif
 #  ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    OCEAN(ng)%zeta(:,:,1),                        &
-     &                    OCEAN(ng)%zeta(:,:,2),                        &
-     &                    OCEAN(ng)%zeta(:,:,3))
-      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
+     &                    OCEAN(ng)%zeta(:,:,2))
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    OCEAN(ng)%ubar(:,:,1),                        &
-     &                    OCEAN(ng)%ubar(:,:,2),                        &
-     &                    OCEAN(ng)%ubar(:,:,3))
-      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
+     &                    OCEAN(ng)%ubar(:,:,2))
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    OCEAN(ng)%vbar(:,:,1),                        &
-     &                    OCEAN(ng)%vbar(:,:,2),                        &
-     &                    OCEAN(ng)%vbar(:,:,3))
+     &                    OCEAN(ng)%vbar(:,:,2))
+#   ifdef SOLVE3D
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    COUPLING(ng)%Zt_avg1(:,:))
+#   endif
 #  endif
-
-
-
 !
 # ifdef PROFILE
 !

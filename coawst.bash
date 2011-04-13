@@ -1,16 +1,18 @@
 #!/bin/bash
 #
-# svn $Id: build.bash 429 2009-12-20 17:30:26Z arango $
+# svn $Id: build.bash 429 2009-12-20 17:30:26Z jcwarner $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
+#::::::::::::::::::::::::::::::::::::::::::::::::::::: John C. Warner   :::
 #                                                                       :::
 # ROMS/TOMS Compiling Script                                            :::
+# Modified to configure the COAWST Modeling System                      :::
 #                                                                       :::
-# Script to compile an user application where the application-specific  :::
-# files are kept separate from the ROMS source code.                    :::
+# Script to identify locations of application-specific files for        :::
+# compiling the modeling sytem.                                         :::
 #                                                                       :::
 # Q: How/why does this script work?                                     :::
 #                                                                       :::

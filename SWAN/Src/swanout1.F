@@ -554,12 +554,12 @@
       REAL, INTENT(IN) :: AC2(MDC,MSC,MCGRD), COMPDA(MCGRD,MCMVAR)
       INTEGER, INTENT(IN) :: KGRPNT(MXC,MYC)
       INTEGER, INTENT(IN) :: ng, ngc
-      REAL, INTENT(INOUT) :: AC2_parent(MSC*MDC*Numspec(ngc))
+      REAL, INTENT(INOUT) :: AC2_parent(MSC*MDC*Numspec(ngc),2)
 !
       INTEGER :: spcount, offset
       INTEGER MySize, MyError, MyTag
       INTEGER ISTAT(MPI_STATUS_SIZE)
-      INTEGER IS, ID, ISIGM
+      INTEGER IS, ID, ISIGM, TIDX
       REAL :: IX, IY
       LOGICAL EXCPT
       INTEGER, ALLOCATABLE :: CROSS(:)
@@ -577,7 +577,11 @@
           ACL(ID,ISIGM)=0.
         END DO
       END DO
-      AC2_parent=0.
+!
+!     Determine which tme index to fill AC2 data.
+!
+      TIDX=sstp(ng)
+      AC2_parent(:,TIDX)=0.
 !
 ! Set no cross obstacles.
 !
@@ -599,7 +603,9 @@
 !  Store AC2 spectra into parent array for transfer to child.
 !
               offset=MSC*MDC*(spcount-1)+(ISIGM-1)*MDC+ID
-              AC2_parent(offset)=ACL(ID,ISIGM)
+
+!  Fill the appropriate time level.
+              AC2_parent(offset,TIDX)=ACL(ID,ISIGM)
  100        END DO
  110      END DO
         END IF
@@ -619,13 +625,13 @@
           CALL MPI_RECV(AC_EXCH,ac2size(ngc),SWREAL,ID,             &
      &                  MyTag,WAV_COMM_WORLD,ISTAT,MyError)
           DO ID=1,ac2size(ngc)
-            AC2_parent(ID)=AC2_parent(ID)+AC_EXCH(ID)
+            AC2_parent(ID,TIDX)=AC2_parent(ID,TIDX)+AC_EXCH(ID)
           END DO
         END DO
       ELSE
         MyTag=INODE
         DO ID=1,ac2size(ngc)
-          AC_EXCH(ID)=AC2_parent(ID)
+          AC_EXCH(ID)=AC2_parent(ID,TIDX)
         END DO
         CALL MPI_SEND(AC_EXCH,ac2size(ngc),SWREAL,0,MyTag,          &
      &                WAV_COMM_WORLD,MyError)
@@ -637,14 +643,13 @@
       CALL SWSYNC
       IF (INODE.EQ.MASTER) THEN
         DO ID=1,ac2size(ngc)
-          AC_EXCH(ID)=AC2_parent(ID)
+          AC_EXCH(ID)=AC2_parent(ID,TIDX)
         END DO
       ENDIF
       CALL MPI_BCAST(AC_EXCH,ac2size(ngc),SWREAL,0,                   &
      &               WAV_COMM_WORLD,MyError)
       DO ID=1,ac2size(ngc)
-!       PARALL2_MOD(ngc)%AC2_parent2_G(ID)=AC_EXCH(ID)
-        AC2_parent(ID)=AC_EXCH(ID)
+        AC2_parent(ID,TIDX)=AC_EXCH(ID)
       END DO
 
       DEALLOCATE(ACL, CROSS, AC_EXCH)

@@ -4,19 +4,10 @@
 # ifdef REFINED_GRID
 !
 !svn $Id: set_data.F 1405 2008-02-20 01:44:07Z jcwarner $
-!================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
-!    Licensed under a MIT/X style license                              !
-!    See License_ROMS.txt                                              !
-!=======================================================================
+!================================================== John C. Warner =====
 !                                                                      !
-!  This routine acquires date from a parent grid.                      !
-!  If there is more than one time-record,                              !
-!  data  is loaded  into global two-time record arrays.  The actual    !
-!  interpolation is carried elsewhere.                                 !
-!                                                                      !
-!  Currently,  this routine is only executed in serial mode by the     !
-!  main thread.                                                        !
+!  This routine acquires data from a parent grid and                   !
+!  loaded into global two-time record arrays.                          !
 !                                                                      !
 !=======================================================================
 !
@@ -219,8 +210,8 @@
 !
           DO itrc=1,NT(ng)
             Npts=MySize
-            CALL mp_gather3d (ngp, model, LBip, UBip, LBjp, UBjp,         &
-     &                      1, N(ngp), 0, gtype, 1.0_r8,                   &
+            CALL mp_gather3d (ngp, model, LBip, UBip, LBjp, UBjp,       &
+     &                      1, N(ngp), 0, gtype, 1.0_r8,                &
 #  ifdef MASKING
      &                      GRID(ngp) % rmask(LBip:UBip,LBjp:UBjp),     &
 #  endif

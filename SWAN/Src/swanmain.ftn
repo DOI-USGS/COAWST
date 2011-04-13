@@ -5675,7 +5675,7 @@
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
      &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
      &                   UYB   , NPLAF,  WXI   , WYI   , ng    ,
-     &                   ngp   , ITjcw,  AC2_child)
+     &                   ngp   , ITjcw,  AC2_parent)
 #else
       SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
@@ -5789,10 +5789,10 @@
       INTEGER offset, spcount, IX, IY
       INTEGER, intent(in) :: ng, ngp, ITjcw
 # ifdef REFINED_GRID
-      REAL, INTENT(IN) :: AC2_child(MSC*MDC*Numspec(ng))
+      REAL, INTENT(IN) :: AC2_parent(MSC*MDC*Numspec(ng))
       REAL        AC2LOC(MCGRD)                                           40.31
 # else
-      REAL, INTENT(IN) :: AC2_child
+      REAL, INTENT(IN) :: AC2_parent
 # endif
 #endif
       INTEGER  BGRIDP(*), XYTST(*), KGRPNT(MXC,MYC)
@@ -5961,7 +5961,7 @@
             DO IS = 1, MSC
               DO ID = 1, MDC
                 offset=MSC*MDC*(spcount-1)+(IS-1)*MDC+ID
-                AC2(ID,IS,INDXGR)=AC2_child(offset)
+                AC2(ID,IS,INDXGR)=AC2_parent(offset)
               END DO
             END DO
           END IF

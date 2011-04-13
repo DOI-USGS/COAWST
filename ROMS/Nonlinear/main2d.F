@@ -191,12 +191,12 @@
             CALL get_2dparent_data (ng, TILE)
           END IF
         END IF
-# endif
-# ifdef REFINED_GRID
+#  if !defined REFINED_GRID_BC
 ! put child data back to parent 
-        IF ((ng.gt.Ngrids).and.(iic(ng).gt.1)) THEN
+        IF ((ng.lt.Ngrids).and.(iic(ng).gt.1)) THEN
           CALL set_2dchild_data (ng, TILE)
         END IF
+#  endif
 # endif
 !
 !-----------------------------------------------------------------------
@@ -419,12 +419,6 @@
 # if !defined REFINED_GRID
       END DO
 # endif
-# ifdef REFINED_GRID
-! Interpolate the parent data to child time.
-      IF (ng.gt.1) THEN
-        CALL set_2dparent_data (ng, TILE)
-      END IF
-# endif
 !
 !-----------------------------------------------------------------------
 !  Solve the vertically integrated primitive equations for the
@@ -468,6 +462,12 @@
 # ifdef COMPOSED_GRID
       CALL nesting (100)
 # endif
+# ifdef REFINED_GRID
+! Interpolate the parent data to child time.
+      IF (ng.gt.1) THEN
+        CALL set_2dparent_data (ng, TILE)
+      END IF
+# endif
 !
 !  Set time indices for corrector step.
 !
@@ -502,7 +502,12 @@
 # ifdef COMPOSED_GRID
       CALL nesting (100)
 # endif
-
+# ifdef REFINED_GRID
+! Interpolate the parent data to child time.
+      IF (ng.gt.1) THEN
+        CALL set_2dparent_data (ng, TILE)
+      END IF
+# endif
 # ifdef ASSIMILATION
 !
 !-----------------------------------------------------------------------

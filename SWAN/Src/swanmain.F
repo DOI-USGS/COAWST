@@ -600,11 +600,11 @@
 
 # ifdef REFINED_GRID
 !
-!     AC2_parent is the action density array filled for each parent
-!     tile. 
+!     AC2_parent is the action density array filled for each grid that is 
+!     a parent.
 !
-      IF (first.eq.0) THEN
-        ALLOCATE (PARALL2_MOD(ng)%AC2_parent_G(MSC*MDC*Numspec(ngc)))
+      IF ((first.eq.0).and.(ng.lt.Ngrids)) THEN
+        ALLOCATE (PARALL2_MOD(ng)%AC2_parent_G(MSC*MDC*Numspec(ngc),2))
         AC2_parent=0.
       END IF
       AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
@@ -638,8 +638,6 @@
 !           --- update boundary conditions and input fields
 !
 !TIMG            CALL SWTSTA(7)                                                40.23
-!
-!  This needs revisiting when i do the 2-way.
 !
 # ifdef REFINED_GRID
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
@@ -712,11 +710,12 @@
 
 !TIMG            CALL SWTSTA(9)                                                    40.23
 
-!           --- couple models during output computations
-
             CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
      &                    KGRPNT, XCGRID, YCGRID, OURQT , ng)
+
 # ifdef MODEL_COUPLING
+!           --- couple models during output computations
+
             nWAV_steps=MAX(1,INT(CouplingTime/DT))
             IF (MOD(IT, nWAV_steps).eq.0) THEN
               CALL SWOUTC ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
@@ -725,10 +724,20 @@
             END IF
 # endif
 # ifdef REFINED_GRID
+!
+!  Determine the AC data in this current grid, acting as a parent.
+!
             IF (ng.lt.Ngrids) THEN
               CALL SWOUTR ( AC2   , COMPDA,
      &                      KGRPNT, ng, ngc, AC2_parent)
             END IF
+!
+!  Interpolate child AC data back to parent.
+!
+!            IF (ng.gt.1) THEN
+!              CALL AC_CHILD2PAR ( AC2   , COMPDA,
+!     &                      KGRPNT, ng, ngc, AC2_parent)
+!            END IF
 # endif
 !TIMG            CALL SWTSTO(9)                                                     40.23
             IF (STPNOW()) RETURN                                          40.30
@@ -5675,7 +5684,7 @@
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
      &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
      &                   UYB   , NPLAF,  WXI   , WYI   , ng    ,
-     &                   ngp   , ITjcw,  AC2_child)
+     &                   ngp   , ITjcw,  AC2_parent)
 #else
       SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
@@ -5789,10 +5798,10 @@
       INTEGER offset, spcount, IX, IY
       INTEGER, intent(in) :: ng, ngp, ITjcw
 # ifdef REFINED_GRID
-      REAL, INTENT(IN) :: AC2_child(MSC*MDC*Numspec(ng))
+      REAL, INTENT(IN) :: AC2_parent(MSC*MDC*Numspec(ng),2)
       REAL        AC2LOC(MCGRD)                                           40.31
 # else
-      REAL, INTENT(IN) :: AC2_child
+      REAL, INTENT(IN) :: AC2_parent
 # endif
 #endif
       INTEGER  BGRIDP(*), XYTST(*), KGRPNT(MXC,MYC)
@@ -5864,6 +5873,10 @@
 !
       INTEGER     IERR
       REAL        TSTVAL(10)                                              40.00
+# ifdef REFINED_GRID
+      REAL        fac, fac1, fac2, fac3
+      INTEGER     TIDX1, TIDX2
+# endif
       TYPE(BSPCDAT), POINTER :: CURBFL                                    40.31
       LOGICAL LPB                                                         40.80
       SAVE  IENT
@@ -5907,7 +5920,6 @@
            IF (STPNOW()) RETURN                                           34.01
            IF (.NOT.ASSOCIATED(CURBFL%NEXTBSPC)) EXIT                     40.31
            CURBFL => CURBFL%NEXTBSPC                                      40.31
-
          END DO
         END IF
 
@@ -5953,6 +5965,21 @@
         BOUNDHINDPR =>REFINED_MOD(ng)%BOUNDHINDPR_G
         BOUNDHINDIX =>REFINED_MOD(ng)%BOUNDHINDIX_G
         BOUNDHINDIY =>REFINED_MOD(ng)%BOUNDHINDIY_G
+!
+!     Determine scales for time interp.  Time is one dt less.
+!
+        fac3=0.
+        IF (ITjcw.eq.MTC_G(ngp)) fac3=DT_G(ngp)
+        fac1=(TIMCO_G(ngp)-DT_G(ngp)+fac3)-TIMCO_G(ng)
+        fac2=TIMCO_G(ng)-(TIMCO_G(ngp)-2.0*DT_G(ngp)+fac3)
+        fac=1.0_r8/(fac1+fac2)
+        fac1=fac*fac1
+        fac2=fac*fac2
+        IF (ITjcw.eq.0) fac1=1.0
+        IF (ITjcw.eq.0) fac2=0.0
+        TIDX1=snew(ngp)
+        TIDX2=sstp(ngp)
+!
         DO spcount=1,Numspec(ng)
           IF (BOUNDHINDPR(spcount).eq.INODE) THEN
             IX=BOUNDHINDIX(spcount)-MXF+1
@@ -5961,7 +5988,8 @@
             DO IS = 1, MSC
               DO ID = 1, MDC
                 offset=MSC*MDC*(spcount-1)+(IS-1)*MDC+ID
-                AC2(ID,IS,INDXGR)=AC2_child(offset)
+                AC2(ID,IS,INDXGR)=fac1*AC2_parent(offset,TIDX1)+        &
+     &                            fac2*AC2_parent(offset,TIDX2)
               END DO
             END DO
           END IF

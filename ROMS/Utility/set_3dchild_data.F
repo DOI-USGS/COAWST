@@ -3,16 +3,10 @@
 #if defined REFINED_GRID && defined SOLVE3D
 !
 !svn $Id: set_data.F 1405 2008-02-20 01:44:07Z jcwarner $
-!================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
-!    Licensed under a MIT/X style license                              !
-!    See License_ROMS.txt                                              !
-!=======================================================================
+!================================================== John C. Warner =====
 !                                                                      !
-!  This routine acquires date from a parent grid.                      !
-!  If there is more than one time-record,                              !
-!  data  is loaded  into global two-time record arrays.  The actual    !
-!  interpolation is carried elsewhere.                                 !
+!  This routine acquires date from a child grid.                       !
+!  That data is averaged and placed into the parent grid.              !
 !                                                                      !
 !=======================================================================
 !
@@ -327,7 +321,6 @@
 # ifdef MASKING
                   my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
-!                  OCEAN(ng)%t(i,j,k,1,itrc)=my_val
                   OCEAN(ng)%t(i,j,k,nstp(ng),itrc)=my_val
                 END DO
               END DO
@@ -380,14 +373,9 @@
           DO k=Kmin,Kmax
             DO j=Jmin+2,Jmax-2
               DO i=Imin+2,Imax-2
-                A(i,j,k)=0.04_r8*                                       &
-     &         (AA(i-2,j+2,k)+AA(i-1,j+2,k)+AA(i  ,j+2,k)+AA(i+1,j+2,k)+&
-     &          AA(i+2,j+2,k)+AA(i-2,j+1,k)+AA(i-1,j+1,k)+AA(i  ,j+1,k)+&
-     &          AA(i+1,j+1,k)+AA(i+2,j+1,k)+AA(i-2,j  ,k)+AA(i-1,j  ,k)+&
-     &          AA(i  ,j  ,k)+AA(i+1,j  ,k)+AA(i+2,j  ,k)+AA(i-2,j-1,k)+&
-     &          AA(i-1,j-1,k)+AA(i  ,j-1,k)+AA(i+1,j-1,k)+AA(i+2,j-1,k)+&
-     &          AA(i-2,j-2,k)+AA(i-1,j-2,k)+AA(i  ,j-2,k)+AA(i+1,j-2,k)+&
-     &          AA(i+2,j-2,k))
+                A(i,j,k)=1.0_r8/5.0_r8*                                     &
+     &               (AA(i,j-2,k)+AA(i,j-1,k)+AA(i,j,k)+                    &
+                      AA(i,j+1,k)+AA(i,j+2,k))
               END DO
             END DO
           END DO
@@ -428,7 +416,6 @@
 # ifdef MASKING
                 my_val=my_val*GRID(ng)%umask(i,j)
 # endif
-!                OCEAN(ng)%u(i,j,k,1)=my_val
                 OCEAN(ng)%u(i,j,k,nstp(ng))=my_val
               END DO
             END DO
@@ -481,14 +468,9 @@
           DO k=Kmin,Kmax
             DO j=Jmin+2,Jmax-2
               DO i=Imin+2,Imax-2
-                A(i,j,k)=0.04_r8*                                       &
-     &         (AA(i-2,j+2,k)+AA(i-1,j+2,k)+AA(i  ,j+2,k)+AA(i+1,j+2,k)+&
-     &          AA(i+2,j+2,k)+AA(i-2,j+1,k)+AA(i-1,j+1,k)+AA(i  ,j+1,k)+&
-     &          AA(i+1,j+1,k)+AA(i+2,j+1,k)+AA(i-2,j  ,k)+AA(i-1,j  ,k)+&
-     &          AA(i  ,j  ,k)+AA(i+1,j  ,k)+AA(i+2,j  ,k)+AA(i-2,j-1,k)+&
-     &          AA(i-1,j-1,k)+AA(i  ,j-1,k)+AA(i+1,j-1,k)+AA(i+2,j-1,k)+&
-     &          AA(i-2,j-2,k)+AA(i-1,j-2,k)+AA(i  ,j-2,k)+AA(i+1,j-2,k)+&
-     &          AA(i+2,j-2,k))
+                A(i,j,k)=1.0_r8/5.0_r8*                                 &
+     &               (AA(i-2,j,k)+AA(i-1,j,k)+AA(i,j,k)+                &
+                      AA(i+1,j,k)+AA(i+2,j,k))
               END DO
             END DO
           END DO
@@ -530,7 +512,6 @@
                 my_val=my_val*GRID(ng)%vmask(i,j)
 # endif
                 OCEAN(ng)%v(i,j,k,nstp(ng))=my_val
-!                OCEAN(ng)%v(i,j,k,2)=my_val
               END DO
             END DO
           END DO
@@ -559,39 +540,28 @@
 !  Exchange boundary information.
 !-----------------------------------------------------------------------
 !
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        OCEAN(ng)%t(:,:,:,1,itrc))
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        OCEAN(ng)%t(:,:,:,2,itrc))
+      DO itrc=1,NT(ng)
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          OCEAN(ng)%t(:,:,:,nstp(ng),itrc))
+      END DO
       CALL exchange_u3d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        OCEAN(ng)%u(:,:,:,1))
+     &                        OCEAN(ng)%u(:,:,:,nstp(ng)))
       CALL exchange_u3d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        OCEAN(ng)%u(:,:,:,2))
-      CALL exchange_u3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        OCEAN(ng)%v(:,:,:,1))
-      CALL exchange_u3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        OCEAN(ng)%v(:,:,:,2))
+     &                        OCEAN(ng)%v(:,:,:,nstp(ng)))
 #  endif
 #  ifdef DISTRIBUTE
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    OCEAN(ng)%t(:,:,:,1,:))
-      CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    OCEAN(ng)%t(:,:,:,2,:))
+     &                    OCEAN(ng)%t(:,:,:,nstp(ng),:))
       CALL mp_exchange3d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    OCEAN(ng)%u(:,:,:,1), OCEAN(ng)%u(:,:,:,2),   &
-     &                    OCEAN(ng)%v(:,:,:,1), OCEAN(ng)%v(:,:,:,2))
+     &                    OCEAN(ng)%u(:,:,:,nstp(ng)),                  &
+     &                    OCEAN(ng)%v(:,:,:,nstp(ng)))
 #  endif
 !
 # ifdef PROFILE

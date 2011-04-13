@@ -51,7 +51,7 @@ h(land_values) = 9999;
 %Print the depths to the bathy file
 [m,n] = size(h);
 
-fid = fopen('roms_bathy.bot','w');
+fid = fopen('swan_bathy.bot','w');
 for index = 1:m;
     for index2 = 1:n;
         fprintf(fid,'   ');
@@ -61,11 +61,11 @@ for index = 1:m;
 end
 
 %Print the grid coordinates to the grid file
-fid = fopen('grid_coord.grd','w');
+fid = fopen('swan_coord.grd','w');
 fprintf(fid,'%12.6f\n',x_rho');
 fprintf(fid,'%12.6f\n',y_rho');
 
 fclose('all');
 
-disp('I created grid_coord.grd and roms_bathy.bot:  these are part of INPUT.');
+disp('I created swan_coord.grd and swan_bathy.bot:  these are part of INPUT.');
 
