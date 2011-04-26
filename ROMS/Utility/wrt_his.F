@@ -2383,6 +2383,7 @@
           ioerror=status
           RETURN
         END IF
+        deallocate (wrk)
       END IF
 !
 !  Write out 3D W-momentum stokes velocity.
