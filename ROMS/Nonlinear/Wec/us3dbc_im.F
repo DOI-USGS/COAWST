@@ -162,7 +162,7 @@
           END DO
         END DO
 
-#  elif defined WEST_M3SGRADIENT
+#  else
 !
 !  Western edge, gradient boundary condition.
 !
@@ -177,16 +177,6 @@
             u_stokes(Istr,j,k)=u_stokes(Istr,j,k)*                      &
      &                         GRID(ng)%umask_wet(Istr,j)
 #   endif
-          END DO
-        END DO
-
-#  else
-!
-!  Western edge, closed boundary condition.
-!
-        DO k=1,N(ng)
-          DO j=Jstr,Jend
-            u_stokes(Istr,j,k)=0.0_r8
           END DO
         END DO
 #  endif
@@ -259,31 +249,21 @@
           END DO
         END DO
 
-#  elif defined EAST_M3SGRADIENT
+#  else
 !
 !  Eastern edge, gradient boundary condition.
 !
-      DO k=1,N(ng)
-        DO j=Jstr,Jend
-          u_stokes(Iend+1,j,k)=u_stokes(Iend,j,k)
-#   ifdef MASKING
-          u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*                    &
-     &                         GRID(ng)%umask(Iend+1,j)
-#   endif
-#   ifdef WET_DRY
-          u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*                    &
-     &                         GRID(ng)%umask_wet(Iend+1,j)
-#   endif
-        END DO
-      END DO
-
-#  else
-!
-!  Eastern edge, closed boundary condition.
-!
         DO k=1,N(ng)
           DO j=Jstr,Jend
-            u_stokes(Iend+1,j,k)=0.0_r8
+            u_stokes(Iend+1,j,k)=u_stokes(Iend,j,k)
+#   ifdef MASKING
+            u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*                  &
+     &                           GRID(ng)%umask(Iend+1,j)
+#   endif
+#   ifdef WET_DRY
+            u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*                  &
+     &                           GRID(ng)%umask_wet(Iend+1,j)
+#   endif
           END DO
         END DO
 #  endif
@@ -348,24 +328,6 @@
         DO k=1,N(ng)
           DO i=IstrU,Iend
             u_stokes(i,Jstr-1,k)=BOUNDARY(ng)%ustokes_south(i,k)
-#   ifdef MASKING
-            u_stokes(i,Jstr-1,k)=u_stokes(i,Jstr-1,k)*                  &
-     &                           GRID(ng)%umask(i,Jstr-1)
-#   endif
-#   ifdef WET_DRY
-            u_stokes(i,Jstr-1,k)=u_stokes(i,Jstr-1,k)*                  &
-     &                           GRID(ng)%umask_wet(i,Jstr-1)
-#   endif
-          END DO
-        END DO
-
-#  elif defined SOUTH_M3SGRADIENT
-!
-!  Southern edge, gradient boundary condition.
-!
-        DO k=1,N(ng)
-          DO i=IstrU,Iend
-            u_stokes(i,Jstr-1,k)=u_stokes(i,Jstr,k)
 #   ifdef MASKING
             u_stokes(i,Jstr-1,k)=u_stokes(i,Jstr-1,k)*                  &
      &                           GRID(ng)%umask(i,Jstr-1)
@@ -460,24 +422,6 @@
         DO k=1,N(ng)
           DO i=IstrU,Iend
             u_stokes(i,Jend+1,k)=BOUNDARY(ng)%ustokes_north(i,k)
-#   ifdef MASKING
-            u_stokes(i,Jend+1,k)=u_stokes(i,Jend+1,k)*                  &
-     &                           GRID(ng)%umask(i,Jend+1)
-#   endif
-#   ifdef WET_DRY
-            u_stokes(i,Jend+1,k)=u_stokes(i,Jend+1,k)*                  &
-     &                           GRID(ng)%umask_wet(i,Jend+1)
-#   endif
-          END DO
-        END DO
-
-#  elif defined NORTH_M3SGRADIENT
-!
-!  Northern edge, gradient boundary condition.
-!
-        DO k=1,N(ng)
-          DO i=IstrU,Iend
-            u_stokes(i,Jend+1,k)=u_stokes(i,Jend,k)
 #   ifdef MASKING
             u_stokes(i,Jend+1,k)=u_stokes(i,Jend+1,k)*                  &
      &                           GRID(ng)%umask(i,Jend+1)

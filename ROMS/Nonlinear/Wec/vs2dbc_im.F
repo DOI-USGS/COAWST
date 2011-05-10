@@ -165,7 +165,7 @@
 #   endif
         END DO
 
-#  elif defined SOUTH_M2SGRADIENT
+#  else
 !
 !  Southern edge, gradient boundary condition.
 !
@@ -179,14 +179,6 @@
           vbar_stokes(i,Jstr)=vbar_stokes(i,Jstr)*                      &
      &                        GRID(ng)%vmask_wet(i,Jstr)
 #   endif
-        END DO
-
-#  else
-!
-!  Southern edge, closed boundary condition.
-!
-        DO i=Istr,Iend
-          vbar_stokes(i,Jstr)=0.0_r8
         END DO
 #  endif
       END IF
@@ -254,7 +246,7 @@
 #   endif
         END DO
 
-#  elif defined NORTH_M2SGRADIENT
+#  else
 !
 !  Northern edge, gradient boundary condition.
 !
@@ -268,14 +260,6 @@
           vbar_stokes(i,Jend+1)=vbar_stokes(i,Jend+1)*                  &
      &                          GRID(ng)%vmask_wet(i,Jend+1)
 #   endif
-        END DO
-
-#  else
-!
-!  Northern edge, closed boundary condition.
-!
-        DO i=Istr,Iend
-          vbar_stokes(i,Jend+1)=0.0_r8
         END DO
 #  endif
       END IF
@@ -336,22 +320,6 @@
 !
         DO j=JstrV,Jend
           vbar_stokes(Istr-1,j)=BOUNDARY(ng)%vbarstokes_west(j)
-#   ifdef MASKING
-          vbar_stokes(Istr-1,j)=vbar_stokes(Istr-1,j)*                  &
-     &                          GRID(ng)%vmask(Istr-1,j)
-#   endif
-#   ifdef WET_DRY
-          vbar_stokes(Istr-1,j)=vbar_stokes(Istr-1,j)*                  &
-     &                          GRID(ng)%vmask_wet(Istr-1,j)
-#   endif
-        END DO
-
-#  elif defined WEST_M2SGRADIENT
-!
-!  Western edge, gradient boundary condition.
-!
-        DO j=JstrV,Jend
-          vbar_stokes(Istr-1,j)=vbar_stokes(Istr,j)
 #   ifdef MASKING
           vbar_stokes(Istr-1,j)=vbar_stokes(Istr-1,j)*                  &
      &                          GRID(ng)%vmask(Istr-1,j)
@@ -440,22 +408,6 @@
 !
         DO j=JstrV,Jend
           vbar_stokes(Iend+1,j)=BOUNDARY(ng)%vbarstokes_east(j)
-#   ifdef MASKING
-          vbar_stokes(Iend+1,j)=vbar_stokes(Iend+1,j)*                  &
-     &                          GRID(ng)%vmask(Iend+1,j)
-#   endif
-#   ifdef WET_DRY
-          vbar_stokes(Iend+1,j)=vbar_stokes(Iend+1,j)*                  &
-     &                          GRID(ng)%vmask_wet(Iend+1,j)
-#   endif
-        END DO
-
-#  elif defined EAST_M2SGRADIENT
-!
-!  Eastern edge, gradient boundary condition.
-!
-        DO j=JstrV,Jend
-          vbar_stokes(Iend+1,j)=vbar_stokes(Iend,j)
 #   ifdef MASKING
           vbar_stokes(Iend+1,j)=vbar_stokes(Iend+1,j)*                  &
      &                          GRID(ng)%vmask(Iend+1,j)

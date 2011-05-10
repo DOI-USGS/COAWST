@@ -164,7 +164,7 @@
 #   endif
         END DO
 
-# elif defined WEST_M2SGRADIENT
+# else
 !
 !  Western edge, gradient boundary condition.
 !
@@ -178,14 +178,6 @@
           ubar_stokes(Istr,j)=ubar_stokes(Istr,j)*                      &
      &                        GRID(ng)%umask_wet(Istr,j)
 #   endif
-        END DO
-
-#  else
-!
-!  Western edge, closed boundary condition.
-!
-        DO j=Jstr,Jend
-          ubar_stokes(Istr,j)=0.0_r8
         END DO
 #  endif
       END IF
@@ -253,7 +245,7 @@
 #   endif
         END DO
 
-#  elif defined EAST_M2SGRADIENT
+#  else
 !
 !  Eastern edge, gradient boundary condition.
 !
@@ -267,14 +259,6 @@
           ubar_stokes(Iend+1,j)=ubar_stokes(Iend+1,j)*                  &
      &                          GRID(ng)%umask_wet(Iend+1,j)
 #   endif
-        END DO
-
-#  else
-!
-!  Eastern edge, closed boundary condition.
-!
-        DO j=Jstr,Jend
-          ubar_stokes(Iend+1,j)=0.0_r8
         END DO
 #  endif
       END IF
@@ -334,22 +318,6 @@
 !
         DO i=IstrU,Iend
           ubar_stokes(i,Jstr-1)=BOUNDARY(ng)%ubarstokes_south(i)
-#   ifdef MASKING
-          ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr-1)*                  &
-     &                          GRID(ng)%umask(i,Jstr-1)
-#   endif
-#   ifdef WET_DRY
-          ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr-1)*                  &
-     &                          GRID(ng)%umask_wet(i,Jstr-1)
-#   endif
-        END DO
-
-#  elif defined SOUTH_M2SGRADIENT
-!
-!  Southern edge, gradient boundary condition.
-!
-        DO i=IstrU,Iend
-          ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr)
 #   ifdef MASKING
           ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr-1)*                  &
      &                          GRID(ng)%umask(i,Jstr-1)
@@ -438,22 +406,6 @@
 !
         DO i=IstrU,Iend
           ubar_stokes(i,Jend+1)=BOUNDARY(ng)%ubarstokes_north(i)
-#   ifdef MASKING
-          ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend+1)*                  &
-     &                          GRID(ng)%umask(i,Jend+1)
-#   endif
-#   ifdef WET_DRY
-          ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend+1)*                  &
-     &                          GRID(ng)%umask_wet(i,Jend+1)
-#   endif
-        END DO
-
-#  elif defined NORTH_M2SGRADIENT
-!
-!  Northern edge, gradient boundary condition.
-!
-        DO i=IstrU,Iend
-          ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend)
 #   ifdef MASKING
           ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend+1)*                  &
      &                          GRID(ng)%umask(i,Jend+1)

@@ -364,10 +364,6 @@
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: shear1
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: shear2
       real(r8), dimension(IminS:ImaxS,N(ng)) :: Hzk
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ustux
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ustuy
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: vstvx
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: vstvy
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFx
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: VFx
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFe
@@ -407,7 +403,7 @@
 !
 !  Compute wave celerity and nonlinear water depth
 !
-          kD(i,j)=MIN(waven(i,j)*Dstp(i,j)+eps, kDmax)
+          kD(i,j)=MIN(waven(i,j)*Dstp(i,j), kDmax)
           wavec(i,j)=SQRT(g*owaven(i,j)*TANH(kD(i,j)))          
 !
 !  Compute metrics for vertical dissipation distribution.
@@ -432,7 +428,7 @@
 !  symbol cursive K in Eqn. 5.
 !---------------------------------------------------------------------------
 !
-      J_LOOP1 : DO j=Jstr,Jend
+      DO j=Jstr,Jend
 !
 ! Compute k*u and k*v at rho pts.
 !
@@ -511,7 +507,7 @@
      &                   2.0_r8*waven(i,j)*TANH(kD(i,j))*               &
      &                   (ku(i,N(ng))+kv(i,N(ng))))
         END DO
-      END DO J_LOOP1
+      END DO
 !
 !---------------------------------------------------------------------------
 ! Evaluate geopotential function (Eqn. 33, Uchiyama et al., 2010)
@@ -527,7 +523,7 @@
 !
 !  Compute barotropic component of geopotential function, without zeta_c.
 !  This gets sent to prsgrd functions.  The zeta_c is already included in
-!  those algoritms. Also send individual zetaw, qsp, and bh to step2d for
+!  those algorithms. Also send individual zetaw, qsp, and bh to step2d for
 !  computation of total pressure gradient.
 !
           zetat(i,j)=-g*zetaw(i,j)-(g*qsp(i,j)-bh(i,j))
@@ -539,78 +535,105 @@
 ! This next section needs to be re-written for piped J.
 !---------------------------------------------------------------------------
 !
+      J_LOOP : DO j=JstrV-1,Jend
+
+! Compute avg u and v at rho pts. Notice reuse of ku and kv.
+!
+        DO k=1,N(ng)
+          DO i=IstrU-1,Iend
+            ku(i,k)=0.5_r8*(u(i,j,k,nrhs)+u(i+1,j,k,nrhs))
+            kv(i,k)=0.5_r8*(v(i,j,k,nrhs)+v(i,j+1,k,nrhs))
+          END DO
+        END DO
+!
+!  Compute gradients for shear du/dz at cell faces. notice reuse of 
+!  shear1 and shear2.
+!
+        DO k=1,N(ng)-1
+          DO i=IstrU-1,Iend
+            cff=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
+            shear1(i,k)=cff*(ku(i,k+1)-ku(i,k))
+            shear2(i,k)=cff*(kv(i,k+1)-kv(i,k))
+          END DO
+        END DO
+        DO i=IstrU-1,Iend
+          shear1(i,0)=0.0_r8
+          shear1(i,N(ng))=0.0_r8
+          shear2(i,0)=0.0_r8
+          shear2(i,N(ng))=0.0_r8
+        END DO
+!
+!  Compute avg of shear1 at rho points.
+!
+        DO k=1,N(ng)
+          DO i=IstrU-1,Iend
+            cff1=0.5_r8*(u_stokes(i,j,k)+u_stokes(i+1,j  ,k))
+            cff2=0.5_r8*(v_stokes(i,j,k)+v_stokes(i  ,j+1,k))
+            shearuv(i,j,k)=(0.5_r8*cff1*(shear1(i,k-1)+shear1(i,k))+    &
+     &                     0.5_r8*cff2*(shear2(i,k-1)+shear2(i,k)))*    &
+     &                     Hz(i,j,k)
+          END DO
+        END DO
+      END DO J_LOOP
+!
+! Compute contribution to rhs tersm.
+!
       DO j=Jstr,Jend
-        DO i=Istr,Iend
-          rukvf2d(i,j)=0.0_r8
-          rvkvf2d(i,j)=0.0_r8
-        END DO
-      END DO
-      DO j=Jstr-1,Jend
-        DO i=Istr-1,Iend
-          DO k=1,N(ng)-1
-            cff1=0.5_r8*(u_stokes(i,j,k+1)+u_stokes(i,j,k))
-            cff2=0.5_r8*(u_stokes(i+1,j,k+1)+u_stokes(i+1,j,k))
-            cff3=0.5_r8*(v_stokes(i,j,k+1)+v_stokes(i,j,k))
-            cff4=0.5_r8*(v_stokes(i,j+1,k+1)+v_stokes(i,j+1,k))
-            shearuv(i,j,k)=(cff1*(u(i  ,j,k+1,nrhs)-u(i  ,j  ,k,nrhs))+ &
-     &                      cff2*(u(i+1,j,k+1,nrhs)-u(i+1,j  ,k,nrhs)))+&
-     &                     (cff3*(v(i,j  ,k+1,nrhs)-v(i  ,j  ,k,nrhs))+ &
-     &                      cff4*(v(i,j+1,k+1,nrhs)-v(i  ,j+1,k,nrhs)))
-          END DO
-          shearuv(i,j,0)=shearuv(i,j,1)
-          shearuv(i,j,N(ng))=shearuv(i,j,N(ng)-1)
-        END DO
-      END DO
-      J_LOOP : DO j=Jstr,Jend
-        DO i=IstrU,Iend
-          CF(i)=0.0_r8
-          DO k=1,N(ng)
-            Hzk(i,k)=0.5_r8*(Hz(i-1,j,k)+                               &
-     &                       Hz(i  ,j,k))
-            CF(i)=CF(i)+Hzk(i,k)
-          END DO
-        END DO
         DO k=1,N(ng)
           DO i=IstrU,Iend
-            cff=0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))*on_u(i,j)
-            VF=0.5_r8*cff*((shearuv(i,j,k)+shearuv(i,j,k-1))-           &
-     &                     (shearuv(i-1,j,k)+shearuv(i-1,j,k-1)))
+            Hzk(i,k)=0.5_r8*(Hz(i-1,j,k)+                               &
+     &                       Hz(i  ,j,k))
+          END DO
+        END DO
+        DO i=IstrU,Iend
+          cff=Hzk(i,1)*on_u(i,j)
+          VF=cff*(shearuv(i,j,1)-shearuv(i-1,j,1))
+          rustr3d(i,j,1)=-VF
+          rukvf2d(i,j)=VF
+# ifdef DIAGNOSTICS_UV
+          DiaRU(i,j,1,nrhs,M3kvrf)=VF
+# endif
+        END DO
+        DO k=2,N(ng)
+          DO i=IstrU,Iend
+            cff=Hzk(i,k)*on_u(i,j)
+            VF=cff*(shearuv(i,j,k)-shearuv(i-1,j,k))
             rustr3d(i,j,k)=-VF
-            rukvf2d(i,j)=rukvf2d(i,j)+VF*Hzk(i,k)
+            rukvf2d(i,j)=rukvf2d(i,j)+VF
 # ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3kvrf)=VF
 # endif
           END DO
         END DO
-        DO i=IstrU,Iend
-          rukvf2d(i,j)=rukvf2d(i,j)/CF(i)
-        END DO
         IF (j.ge.JstrV) THEN
-          DO i=Istr,Iend
-            CF(i)=0.0_r8
-            DO k=1,N(ng)
-              Hzk(i,k)=0.5_r8*(Hz(i,j  ,k)+                             &
-     &                         Hz(i,j-1,k))
-              CF(i)=CF(i)+Hzk(i,k)
-            END DO
-          END DO
           DO k=1,N(ng)
             DO i=Istr,Iend
-              cff=0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))*om_v(i,j)
-              VF=0.5_r8*cff*((shearuv(i,j,k)+shearuv(i,j,k-1))-         &
-     &                       (shearuv(i,j-1,k)+shearuv(i,j-1,k-1)))
+              Hzk(i,k)=0.5_r8*(Hz(i,j  ,k)+                             &
+     &                         Hz(i,j-1,k))
+            END DO
+          END DO
+          DO i=Istr,Iend
+            cff=Hzk(i,1)*om_v(i,j)
+            VF=cff*(shearuv(i,j,1)-shearuv(i,j-1,1))
+            rvstr3d(i,j,1)=-VF
+            rvkvf2d(i,j)=VF
+# ifdef DIAGNOSTICS_UV
+            DiaRV(i,j,1,nrhs,M3kvrf)=VF
+# endif
+          END DO
+          DO k=2,N(ng)
+            DO i=Istr,Iend
+              cff=Hzk(i,k)*om_v(i,j)
+              VF=cff*(shearuv(i,j,k)-shearuv(i,j-1,k))
               rvstr3d(i,j,k)=-VF
-              rvkvf2d(i,j)=rvkvf2d(i,j)+VF*Hz(i,j,k)
+              rvkvf2d(i,j)=rvkvf2d(i,j)+VF
 # ifdef DIAGNOSTICS_UV
               DiaRV(i,j,k,nrhs,M3kvrf)=VF
 # endif
             END DO
           END DO
-          DO i=Istr,Iend
-            rvkvf2d(i,j)=rvkvf2d(i,j)/CF(i)
-          END DO
         END IF
-      END DO J_LOOP
+      END DO
 !
 !------------------------------------------------------------------------
 ! Compute non conservative wave acceleration terms here
@@ -648,8 +671,6 @@
 !
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-            Hzk(i,k)=0.5_r8*(Hz(i-1,j,k)+                               &
-     &                       Hz(i  ,j,k))
             cff=0.5_r8*(BBXbrk(i  ,j)*Hz(i  ,j,k)+                      &
      &                  BBXbrk(i-1,j)*Hz(i-1,j,k))*                     &
      &                  om_u(i,j)*on_u(i,j)
@@ -660,7 +681,7 @@
             cff=cff*umask_wet(i,j)
 # endif
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
-            rubrk2d(i,j)=rubrk2d(i,j)+cff*Hzk(i,k)
+            rubrk2d(i,j)=rubrk2d(i,j)+cff
 # ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3wbrk)=cff
 # endif
@@ -675,7 +696,7 @@
             cff=cff*umask_wet(i,j)
 # endif
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
-            rurol2d(i,j)=rurol2d(i,j)+cff*Hzk(i,k)
+            rurol2d(i,j)=rurol2d(i,j)+cff
 #  ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3wrol)=cff
 #  endif
@@ -686,8 +707,6 @@
 ! Compute contribution to V-momentum
 !
             DO i=Istr,Iend
-              Hzk(i,k)=0.5_r8*(Hz(i,j-1,k)+                             &
-     &                         Hz(i  ,j,k))
               cff=0.5_r8*(BBYbrk(i,j  )*Hz(i,j  ,k)+                    &
      &                    BBYbrk(i,j-1)*Hz(i,j-1,k))*                   &
      &                    om_v(i,j)*on_v(i,j)
@@ -698,7 +717,7 @@
               cff=cff*vmask_wet(i,j)
 # endif
               rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
-              rvbrk2d(i,j)=rvbrk2d(i,j)+cff*Hzk(i,k)
+              rvbrk2d(i,j)=rvbrk2d(i,j)+cff
 # ifdef DIAGNOSTICS_UV
               DiaRV(i,j,k,nrhs,M3wbrk)=cff
 # endif
@@ -713,7 +732,7 @@
               cff=cff*vmask_wet(i,j)
 # endif
               rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
-              rvrol2d(i,j)=rvrol2d(i,j)+cff*Hzk(i,k)
+              rvrol2d(i,j)=rvrol2d(i,j)+cff
 #  ifdef DIAGNOSTICS_UV
               DiaRV(i,j,k,nrhs,M3wrol)=cff
 #  endif
@@ -722,25 +741,9 @@
           END IF
         END DO
       END DO
-      DO j=Jstr,Jend
-        DO i=IstrU,Iend
-          cff=0.5_r8*(Dstp(i,j)+Dstp(i-1,j))
-          rubrk2d(i,j)=rubrk2d(i,j)/cff
-# ifdef WEC_ROLLER
-          rurol2d(i,j)=rurol2d(i,j)/cff
-# endif
-!
-          IF (j.ge.JstrV) THEN
-            cff=0.5_r8*(Dstp(i,j)+Dstp(i,j-1))
-            rvbrk2d(i,j)=rvbrk2d(i,j)/cff
-# ifdef WEC_ROLLER
-            rvrol2d(i,j)=rvrol2d(i,j)/cff
-# endif
-          END IF
-        END DO
-      END DO
       K_LOOP : DO k=1,N(ng)
-# ifdef DIAGNOSTICS_UV
+# ifdef UV_ADV
+#  ifdef DIAGNOSTICS_UV
 !
 !---------------------------------------------------------------------------
 !  To obtain the full horizotal 'J' vortex force term: 
@@ -799,7 +802,7 @@
             DiaRV(i,j,k,nrhs,M3hjvf)=-cff
           END DO
         END DO
-# endif
+#  endif
 !
 !---------------------------------------------------------------------------
 ! Contribution of a term corresponding to product of 
@@ -821,7 +824,7 @@
             UFx(i,j)=0.5_r8*(u(i  ,j  ,k,nrhs)+                         &
                              u(i+1,j  ,k,nrhs))
             VFx(i,j)=0.5_r8*(v(i  ,j  ,k,nrhs)+                         &
-     &                       v(i  ,j+1,k,nrhs))           
+     &                       v(i  ,j+1,k,nrhs))
           END DO
         END DO
         DO j=JstrV,Jend
@@ -851,11 +854,11 @@
             cff3=Huston(i,j)*cff1
             cff4=Hvston(i,j)*cff2
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff3-cff4
-# ifdef DIAGNOSTICS_UV
+#  ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3xadv)=DiaRU(i,j,k,nrhs,M3xadv)+cff3
             DiaRU(i,j,k,nrhs,M3hadv)=DiaRU(i,j,k,nrhs,M3hadv)+cff3
             DiaRU(i,j,k,nrhs,M3hjvf)=DiaRU(i,j,k,nrhs,M3hjvf)+cff4
-# endif
+#  endif
 !
 !  Conversion to m2/s2.
 !
@@ -870,11 +873,11 @@
             cff3=Hustom(i,j)*cff1
             cff4=Hvstom(i,j)*cff2 
             rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff3-cff4
-# ifdef DIAGNOSTICS_UV
+#  ifdef DIAGNOSTICS_UV
             DiaRV(i,j,k,nrhs,M3yadv)=DiaRV(i,j,k,nrhs,M3yadv)+cff4
             DiaRV(i,j,k,nrhs,M3hadv)=DiaRV(i,j,k,nrhs,M3hadv)+cff4
             DiaRV(i,j,k,nrhs,M3hjvf)=DiaRV(i,j,k,nrhs,M3hjvf)+cff3
-# endif
+#  endif
 !
 !  Conversion to m2/s2.
 !
@@ -882,6 +885,23 @@
             rvstr3d(i,j,k)=rvstr3d(i,j,k)*cff1
           END DO
         END DO
+# else
+!
+!  Conversion to m2/s2.
+!
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff1=0.25_r8*(pm(i,j)+pm(i-1,j))*(pn(i,j)+pn(i-1,j))
+            rustr3d(i,j,k)=rustr3d(i,j,k)*cff1
+          END DO
+          IF (j.ge.JstrV) THEN
+            DO i=Istr,Iend
+              cff1=0.25_r8*(pm(i,j)+pm(i,j-1))*(pn(i,j)+pn(i,j-1))
+              rvstr3d(i,j,k)=rvstr3d(i,j,k)*cff1
+            END DO
+          END IF
+        END DO
+# endif
       END DO K_LOOP
 !
 !  Apply boundary conditions.
@@ -929,12 +949,12 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rubrk2d, rvbrk2d)
-# ifdef WEC_ROLLER
+#  ifdef WEC_ROLLER
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    rurol2d, rvrol2d)
-# endif
+#  endif
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &

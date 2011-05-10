@@ -1565,7 +1565,14 @@
       CALL exchange_v3d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
      &                        v(:,:,:,nnew))
-
+#  ifdef WEC
+      CALL exchange_u3d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        u_stokes(:,:,:))
+      CALL exchange_v3d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        v_stokes(:,:,:))
+#  endif
       CALL exchange_u3d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
      &                        Huon)
@@ -1588,6 +1595,12 @@
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    u(:,:,:,nnew), v(:,:,:,nnew),                 &
      &                    Huon, Hvom)
+#   ifdef WEC
+      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    u_stokes(:,:,:), v_stokes(:,:,:))
+#   endif
 !
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &

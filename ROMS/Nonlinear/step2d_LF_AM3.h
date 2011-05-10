@@ -2202,7 +2202,8 @@
           END DO
         END IF
       END DO
-#  ifdef DIAGNOSTICS_UV
+#  ifdef UV_ADV
+#   ifdef DIAGNOSTICS_UV
 !
 !---------------------------------------------------------------------------
 !  To obtain the full horizotal 'J' vortex force term: 
@@ -2259,7 +2260,7 @@
             DiaV2rhs(i,j,M2hjvf)=-cff
           END DO
         END DO
-#  endif
+#   endif
 !
 !---------------------------------------------------------------------------
 ! Contribution of a term corresponding to product of 
@@ -2312,11 +2313,11 @@
             cff4=DVSon(i,j)*cff2
             rhs_ubar(i,j)=rhs_ubar(i,j)+cff3+cff4
 !           rustr2d(i,j)=rustr2d(i,j)-cff3-cff4
-#  ifdef DIAGNOSTICS_UV
+#   ifdef DIAGNOSTICS_UV
             DiaU2rhs(i,j,M2xadv)=DiaU2rhs(i,j,M2xadv)+cff3
             DiaU2rhs(i,j,M2hadv)=DiaU2rhs(i,j,M2hadv)+cff3
             DiaU2rhs(i,j,M2hjvf)=DiaU2rhs(i,j,M2hjvf)+cff4
-#  endif
+#   endif
           END DO
         END DO
         DO i=Istr,Iend
@@ -2327,13 +2328,14 @@
             cff4=DVSom(i,j)*cff2
             rhs_vbar(i,j)=rhs_vbar(i,j)+cff3+cff4
 !           rvstr2d(i,j)=rvstr2d(i,j,k)-cff3-cff4
-#  ifdef DIAGNOSTICS_UV
+#   ifdef DIAGNOSTICS_UV
             DiaV2rhs(i,j,M2yadv)=DiaV2rhs(i,j,M2yadv)+cff4
             DiaV2rhs(i,j,M2hadv)=DiaV2rhs(i,j,M2hadv)+cff4
             DiaV2rhs(i,j,M2hjvf)=DiaV2rhs(i,j,M2hjvf)+cff3
-#  endif
+#   endif
           END DO
         END DO
+#  endif
 # endif
 # ifndef SOLVE3D
 !

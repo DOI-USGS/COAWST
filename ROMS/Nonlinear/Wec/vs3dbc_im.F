@@ -162,7 +162,7 @@
           END DO
         END DO
 
-#  elif defined SOUTH_M3SGRADIENT
+#  else
 !
 !  Southern edge, gradient boundary condition.
 !
@@ -177,15 +177,6 @@
             v_stokes(i,Jstr,k)=v_stokes(i,Jstr,k)*                      &
      &                         GRID(ng)%vmask_wet(i,Jstr)
 #   endif
-          END DO
-        END DO
-#  else
-!
-!  Southern edge, closed boundary condition.
-!
-        DO k=1,N(ng)
-          DO i=Istr,Iend
-            v_stokes(i,Jstr,k)=0.0_r8
           END DO
         END DO
 #  endif
@@ -258,7 +249,7 @@
           END DO
         END DO
 
-#  elif defined NORTH_M3SGRADIENT
+#  else
 !
 !  Northern edge, gradient boundary condition.
 !
@@ -273,16 +264,6 @@
             v_stokes(i,Jend+1,k)=v_stokes(i,Jend+1,k)*                  &
      &                           GRID(ng)%vmask_wet(i,Jend+1)
 #   endif
-          END DO
-        END DO
-
-#  else
-!
-!  Northern edge, closed boundary condition.
-!
-        DO k=1,N(ng)
-          DO i=Istr,Iend
-            v_stokes(i,Jend+1,k)=0.0_r8
           END DO
         END DO
 #  endif
@@ -347,24 +328,6 @@
         DO k=1,N(ng)
           DO j=JstrV,Jend
             v_stokes(Istr-1,j,k)=BOUNDARY(ng)%vstokes_west(j,k)
-#   ifdef MASKING
-            v_stokes(Istr-1,j,k)=v_stokes(Istr-1,j,k)*                  &
-     &                           GRID(ng)%vmask(Istr-1,j)
-#   endif
-#   ifdef WET_DRY
-            v_stokes(Istr-1,j,k)=v_stokes(Istr-1,j,k)*                  &
-     &                           GRID(ng)%vmask_wet(Istr-1,j)
-#   endif
-          END DO
-        END DO
-
-#  elif defined WEST_M3SGRADIENT
-!
-!  Western edge, gradient boundary condition.
-!
-        DO k=1,N(ng)
-          DO j=JstrV,Jend
-            v_stokes(Istr-1,j,k)=v_stokes(Istr,j,k)
 #   ifdef MASKING
             v_stokes(Istr-1,j,k)=v_stokes(Istr-1,j,k)*                  &
      &                           GRID(ng)%vmask(Istr-1,j)
@@ -459,24 +422,6 @@
         DO k=1,N(ng)
           DO j=JstrV,Jend
             v_stokes(Iend+1,j,k)=BOUNDARY(ng)%vstokes_east(j,k)
-#   ifdef MASKING
-            v_stokes(Iend+1,j,k)=v_stokes(Iend+1,j,k)*                  &
-     &                           GRID(ng)%vmask(Iend+1,j)
-#   endif
-#   ifdef WET_DRY
-            v_stokes(Iend+1,j,k)=v_stokes(Iend+1,j,k)*                  &
-     &                           GRID(ng)%vmask_wet(Iend+1,j)
-#   endif
-          END DO
-        END DO
-
-#  elif defined EAST_M3SGRADIENT
-!
-!  Eastern edge, gradient boundary condition.
-!
-        DO k=1,N(ng)
-          DO j=JstrV,Jend
-            v_stokes(Iend+1,j,k)=v_stokes(Iend,j,k)
 #   ifdef MASKING
             v_stokes(Iend+1,j,k)=v_stokes(Iend+1,j,k)*                  &
      &                           GRID(ng)%vmask(Iend+1,j)

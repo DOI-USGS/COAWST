@@ -56,6 +56,9 @@
 #ifdef WAVES_UB
      &                     FORCES(ng) % Uwave_rms,                      &
 #endif
+#ifdef TKE_WAVEDISS
+     &                     FORCES(ng) % wave_dissip,                    &
+#endif
      &                     GRID(ng) % angler,                           &
      &                     GRID(ng) % h)
 !
@@ -104,6 +107,9 @@
 #endif
 #ifdef WAVES_UB
      &                           Uwave_rms,                             &
+#endif
+#ifdef TKE_WAVEDISS
+     &                           Dissip_break,                          &
 #endif
      &                           angler, h)
 !***********************************************************************
@@ -157,6 +163,9 @@
 # ifdef WAVES_UB
       real(r8), intent(inout) :: Uwave_rms(LBi:,LBj:)
 # endif
+# ifdef TKE_WAVEDISS
+      real(r8), intent(inout) :: wave_dissip(LBi:,LBj:)
+# endif
 
 #else
 
@@ -192,6 +201,9 @@
 # ifdef WAVES_UB
       real(r8), intent(inout) :: Uwave_rms(LBi:UBi,LBj:UBj)
 # endif
+# ifdef TKE_WAVEDISS
+      real(r8), intent(inout) :: wave_dissip(LBi:UBi,LBj:UBj)
+# endif
 #endif
 !
 !  Local variable declarations.
@@ -221,56 +233,16 @@
 !  period (s) at RHO-points.
 !-----------------------------------------------------------------------
 !
-#if defined BL_TEST
-      wdir=210.0_r8*deg2rad
+#if defined LENTZ_TEST
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-          Hwave(i,j)=0.5_r8
-          Dwave(i,j)=wdir
-          Pwave_bot(i,j)=8.0_r8
-        END DO
-      END DO
-#elif defined LAKE_SIGNELL
-      mxst=0.25_r8         ! Wave amplitude (1/2 wave height) (meters)
-      ramp_u=15.0_r8       ! start ramp UP at RAMP_UP (hours)
-      ramp_time=10.0_r8    ! ramp from 0 to 1 over RAMP_TIME (hours)
-      ramp_d=50.0_r8       ! start ramp DOWN at RAMP_DOWN (hours)
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
-          Dwave(i,j)=270.0_r8*deg2rad
-          Pwave_bot(i,j)=5.0_r8    ! wave period (seconds)
-           cff1=MIN((0.5_r8*(TANH((time(ng)/3600.0_r8-ramp_u)/          &
-     &                            (ramp_time/5.0_r8))+1.0_r8)),         &
-     &              (1.0_r8-(0.5_r8*(TANH((time(ng)/3600.0_r8-ramp_d)/  &
-     &                                    (ramp_time/5.0_r8))+1.0_r8))))
-# ifdef WAVES_HEIGHT
-          Hwave(i,j)=MAX((cff1*mxst),0.01_r8)
-# endif
-        END DO
-      END DO
-#elif defined NJ_BIGHT
-!!    wdir=210.0_r8*deg2rad
-      wdir=150.0_r8*deg2rad
-      IF ((tdays(ng)-dstart).lt.1.5_r8) THEN
-        cff=TANH(0.5_r8*(tdays(ng)-dstart))
-        cff=1.0_r8
-      ELSE
-        cff=1.0_r8
-      END IF
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          Hwave(i,j)=0.12_r8
-          Dwave(i,j)=wdir-angler(i,j)
-          Pwave_bot(i,j)=10.0_r8
-        END DO
-      END DO
-#elif defined SED_TOY
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+          Dwave(i,j)=180.0_r8*deg2rad
+!         Dissip_fric(i,j)=0.0_r8
+          Dissip_break(i,j)=0.0_r8
+          Dissip_wcap(i,j)=0.0_r8
           Hwave(i,j)=2.0_r8
-          Dwave(i,j)=90.0_r8*deg2rad
-          Pwave_bot(i,j)=8.0_r8
           Lwave(i,j)=20.0_r8
+          Pwave_top(i,j)=7.0_r8
         END DO
       END DO
 #else
