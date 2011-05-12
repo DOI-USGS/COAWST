@@ -1,5 +1,5 @@
 /*
-** svn $Id: upwelling.h 25 2007-04-09 23:43:58Z arango $
+** svn $Id: joe_tc.h 25 2007-04-09 23:43:58Z jcwarner $
 *******************************************************************************
 ** Copyright (c) 2002-2007 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **

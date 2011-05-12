@@ -17,7 +17,7 @@
  end_second                          = 00,   00,   00,
  interval_seconds                    = 86400
  input_from_file                     = .true.,.false.,.false.,
- history_interval                    = 360,  60,   60,
+ history_interval                    = 60,  60,   60,
  frames_per_outfile                  = 10000000, 1000, 1000,
  restart                             = .false.,
  restart_interval                    = 10000000,
@@ -25,6 +25,7 @@
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
+ io_form_auxinput4                   = 2
  debug_level                         = 0
  /
 
@@ -63,7 +64,7 @@
  sf_surface_physics                  = 0,     1,     1,
  bl_pbl_physics                      = 2,     1,     1,
  bldt                                = 0,     0,     0,
- cu_physics                          = 1,     1,     0,
+ cu_physics                          = 0,     1,     0,
  cudt                                = 5,     5,     5,
  isfflx                              = 1,
  ifsnow                              = 0,
