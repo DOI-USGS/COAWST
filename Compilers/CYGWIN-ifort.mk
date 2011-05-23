@@ -80,7 +80,7 @@ endif
 ifdef USE_DEBUG
            FFLAGS += /debug:full /traceback /Od /Zi /check:bounds
 else
-           FFLAGS += /Ox /fp:precise
+           FFLAGS += /fp:precise /fp:source /O3
 endif
 
 ifdef USE_MPI
