@@ -12,10 +12,15 @@ LIBPATHS =
 
 include ../configure.wrf
 
+ifndef WRF_COUPLING
+$(SOLVER)_wrf : wrf.o ../main/module_wrf_top.o
+	$(RANLIB) $(LIBWRFLIB)
+	$(LD) -o wrf.exe $(LDFLAGS) wrf.o ../main/module_wrf_top.o $(LIBWRFLIB) $(LIB)
+else
 $(SOLVER)_wrf : wrf.o ../main/module_wrf_top.o
 	$(RANLIB) $(LIBWRFLIB)
 #	$(LD) -o wrf.exe $(LDFLAGS) wrf.o ../main/module_wrf_top.o $(LIBWRFLIB) $(LIB)
-#jcw
+endif
 
 $(SOLVER)_wrf_SST_ESMF : wrf_ESMFMod.o wrf_SST_ESMF.o ../main/module_wrf_top.o
 	$(RANLIB) $(LIBWRFLIB)

@@ -56,10 +56,19 @@
 #endif
 
 /*
+** Include ROMS Model.
+*/
+#ifdef ROMS_MODEL
+  USE_ROMS := on
+#else
+  USE_ROMS :=
+#endif 
+
+/*
 ** Process WRF Atmospheric model.
 */
 
-#ifdef WRF_COUPLING
+#ifdef WRF_MODEL
   USE_WRF := on
 #else
   USE_WRF :=
@@ -69,7 +78,7 @@
 ** Process SWAN wave model.
 */
 
-#ifdef SWAN_COUPLING
+#ifdef SWAN_MODEL
   USE_SWAN := on
 #else
   USE_SWAN :=

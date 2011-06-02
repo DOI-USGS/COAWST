@@ -381,9 +381,11 @@ endif
 #  Build target directories.
 #--------------------------------------------------------------------------
 
+ifdef USE_ROMS
 .PHONY: all
 
 all: $(SCRATCH_DIR) $(SCRATCH_DIR)/MakeDepend $(BIN) rm_macros
+endif
 
  modules  :=
 ifdef USE_ADJOINT
@@ -401,6 +403,7 @@ ifdef USE_TANGENT
  modules  +=	ROMS/Tangent \
 		ROMS/Tangent/Biology
 endif
+ifdef USE_ROMS
  modules  +=	ROMS/Nonlinear \
 		ROMS/Nonlinear/Biology \
 		ROMS/Nonlinear/Sediment \
@@ -408,7 +411,7 @@ endif
 		ROMS/Functionals \
 		ROMS/Utility \
 		ROMS/Modules
-
+endif
  includes :=	ROMS/Include
 ifdef MY_ANALYTICAL
  includes +=	$(MY_ANALYTICAL_DIR)
@@ -428,13 +431,15 @@ ifdef USE_TANGENT
  includes +=	ROMS/Tangent \
 		ROMS/Tangent/Biology
 endif
+ifdef USE_ROMS
  includes +=	ROMS/Nonlinear \
 		ROMS/Nonlinear/Biology \
 		ROMS/Nonlinear/Sediment \
 		ROMS/Nonlinear/Wec \
 		ROMS/Utility \
 		ROMS/Drivers \
-        ROMS/Functionals
+		ROMS/Functionals
+endif
 ifdef MY_HEADER_DIR
  includes +=	$(MY_HEADER_DIR)
 endif
@@ -454,8 +459,10 @@ ifdef USE_INWAVE
  includes +=	InWave
 endif
 
+ifdef USE_ROMS
  modules  +=	Master
  includes +=	Master Compilers
+endif
 
 vpath %.F $(modules)
 vpath %.h $(includes)
@@ -531,6 +538,12 @@ ifdef USE_WRF
 	./compile em_real;                                        \
 	echo "";                                                  \
 	echo "-------- Finished compiling WRF ------------"
+ ifndef USE_ROMS
+  ifndef USE_SWAN
+	ln -sf WRF/main/wrf.exe coawstM;
+  endif
+ endif
+	echo "";
 endif
 
 #--------------------------------------------------------------------------
@@ -570,7 +583,7 @@ endif
 
 tarfile:
 #		tar --exclude=".svn" --exclude Output -cvf coawst_v1.1.tar *
-		tar --exclude=".svn" -cvf coawst_v3.0.tar *.bash run_* *.TBL RRTM* makefile ROMS/ SWAN/ WRF/ Master/ Tools/ Compilers/ Data/ Projects/JOE_TCs Projects/JOE_TCd Projects/Rip_current Projects/wetdry Projects/Visser Projects/Griz_Bay Projects/Dogbone Projects/Inlet_test Projects/coawst Projects/lentz_test
+		tar --exclude=".svn" -cvf coawst_v3.0.tar *.bash run_* *.TBL RRTM* makefile ROMS/ SWAN/ WRF/ WPS/ Master/ Tools/ Compilers/ Data/ Projects/JOE_TCs Projects/JOE_TCd Projects/Rip_current Projects/wetdry Projects/Visser Projects/Griz_Bay Projects/Dogbone Projects/Inlet_test Projects/coawst Projects/lentz_test
 
 .PHONY: zipfile
 

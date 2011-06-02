@@ -31,9 +31,11 @@
 !
       USE m_MCTWorld, ONLY : MCTWorld_clean => clean
 
+#if defined ROMS_COUPLING
       USE ocean_control_mod, ONLY : ROMS_initialize
       USE ocean_control_mod, ONLY : ROMS_run
       USE ocean_control_mod, ONLY : ROMS_finalize
+#endif
 #if defined SWAN_COUPLING
       USE waves_control_mod, ONLY : SWAN_driver_init
       USE waves_control_mod, ONLY : SWAN_driver_run
@@ -101,15 +103,17 @@
 !
 !  Assign processors to the models.
 !
+#ifdef ROMS_COUPLING
       peOCN_frst=0
       peOCN_last=peOCN_frst+NnodesOCN-1
       pelast=peOCN_last
-#ifdef WAVES_OCEAN
+#endif
+#ifdef SWAN_COUPLING
       peWAV_frst=peOCN_last+1
       peWAV_last=peWAV_frst+NnodesWAV-1
       pelast=peWAV_last
 #endif
-#ifdef AIR_OCEAN
+#ifdef WRF_COUPLING
       peATM_frst=pelast+1
       peATM_last=peATM_frst+NnodesATM-1
       pelast=peATM_last
@@ -123,16 +127,19 @@
         STOP
       ELSE
         IF (MyRank.eq.0) THEN
+          WRITE (stdout,19)
+ 19       FORMAT (/,' Model Coupling: ',/)
+#ifdef ROMS_COUPLING
           WRITE (stdout,20) peOCN_frst, peOCN_last
- 20       FORMAT (/,' Model Coupling: ',/,                              &
-     &            /,7x,'Ocean Model MPI nodes: ',i3.3,' - ', i3.3)
-#ifdef WAVES_OCEAN
+ 20       FORMAT (/,7x,'Ocean Model MPI nodes: ',i3.3,' - ', i3.3)
+#endif
+#ifdef SWAN_COUPLING
           WRITE (stdout,21) peWAV_frst, peWAV_last
  21       FORMAT (/,7x,'Waves Model MPI nodes: ',i3.3,' - ', i3.3)
 #endif
-#ifdef AIR_OCEAN
+#ifdef WRF_COUPLING
           WRITE (stdout,22) peATM_frst, peATM_last
- 22       FORMAT (/,7x,'ATM Model MPI nodes: ',i3.3,' - ', i3.3)
+ 22       FORMAT (/,7x,'Atmos Model MPI nodes: ',i3.3,' - ', i3.3)
 #endif
         END IF
       END IF
@@ -144,15 +151,17 @@
       Ocncolor=OCNid
       Wavcolor=WAVid
       MyKey=0
+#ifdef ROMS_COUPLING
       IF ((peOCN_frst.le.MyRank).and.(MyRank.le.peOCN_last)) THEN
         MyColor=OCNcolor
       END IF
-#ifdef WAVES_OCEAN
+#endif
+#ifdef SWAN_COUPLING
       IF ((peWAV_frst.le.MyRank).and.(MyRank.le.peWAV_last)) THEN
         MyColor=WAVcolor
       END IF
 #endif
-#ifdef AIR_OCEAN
+#ifdef WRF_COUPLING
       IF ((peATM_frst.le.MyRank).and.(MyRank.le.peATM_last)) THEN
         MyColor=ATMcolor
       END IF
@@ -188,6 +197,7 @@
         CALL module_wrf_top_wrf_finalize
       END IF
 #endif
+#ifdef ROMS_COUPLING
       IF (MyColor.eq.OCNcolor) THEN
         first=.TRUE.
         Nrun=1
@@ -202,13 +212,14 @@
           CALL ROMS_run (Tstr, Tend)
         END IF
         CALL ROMS_finalize
-#if defined SWAN_COUPLING || defined REFDIF_COUPLING
+# if defined SWAN_COUPLING || defined REFDIF_COUPLING
         CALL finalize_ocn2wav_coupling
-#endif
-#ifdef WRF_COUPLING
+# endif
+# ifdef WRF_COUPLING
         CALL finalize_ocn2atm_coupling
-#endif
+# endif
       END IF
+#endif
 !
 !-----------------------------------------------------------------------
 !  Terminates all the mpi-processing and coupling.

@@ -21,6 +21,6 @@
 # endif
 #elif defined INWAVE_COUPLING_notyet
 # include "inwave.h"
-#else
+#elif defined ROMS_MODEL
 # include "ocean.h"
 #endif

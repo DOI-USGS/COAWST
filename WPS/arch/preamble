@@ -36,7 +36,9 @@ PERL			=	perl
 
 RANLIB			=	echo
 
-WRF_DIR			=	../WRFV3
+# jcw
+#WRF_DIR			=	../WRFV3
+WRF_DIR			=	../WRF
 
 WRF_INCLUDE     =       -I$(WRF_DIR)/external/io_netcdf \
                         -I$(WRF_DIR)/external/io_grib_share \
@@ -48,7 +50,7 @@ WRF_LIB         =       -L$(WRF_DIR)/external/io_grib1 -lio_grib1 \
                         -L$(WRF_DIR)/external/io_grib_share -lio_grib_share \
                         -L$(WRF_DIR)/external/io_int -lwrfio_int \
                         -L$(WRF_DIR)/external/io_netcdf -lwrfio_nf \
-                        -L$(NETCDF)/lib CONFIGURE_NETCDFF_LIB -lnetcdf
+                        -L$(NETCDF)/lib CONFIGURE_NETCDFF_LIB -lnetcdf $(shell nc-config --libs)
 
 #### Architecture specific settings ####
 

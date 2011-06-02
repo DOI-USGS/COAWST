@@ -96,7 +96,7 @@
 #  include "rp_ocean.h"
 # elif defined ADM_DRIVER
 #  include "ad_ocean.h"
-# else
+# elif defined ROMS_MODEL
 #  include "nl_ocean.h"
 # endif
 #endif
