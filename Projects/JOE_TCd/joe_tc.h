@@ -71,10 +71,14 @@
 # define COARE_TAYLOR_YELLAND
 # define WEC_VF
 # define SSW_BBL
-# define MCT_INTERP_WV2AT
-# define MCT_INTERP_OC2AT
 #endif
 
+#ifdef WRF_MODEL
+# define MCT_INTERP_OC2AT
+#endif
+#ifdef SWAN_MODEL
+# define MCT_INTERP_WV2AT
+#endif
 
 /* Physics + numerics */
 #define UV_ADV
