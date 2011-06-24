@@ -86,7 +86,6 @@ CONTAINS
    USE module_parallel
    USE ATM_COUPLER_MOD, ONLY: initialize_atm_coupling
    USE ATM_COUPLER_MOD, ONLY: atm2ocn_coupling
-   integer, intent(in) :: MyComm_r
 #else
    SUBROUTINE wrf_init( no_init1 )
 !<DESCRIPTION>
@@ -98,6 +97,9 @@ CONTAINS
 #endif
 #ifdef _ACCEL
      use accel_lib
+#endif
+#ifdef WRF_COUPLING
+     integer, intent(in) :: MyComm_r
 #endif
      LOGICAL, OPTIONAL, INTENT(IN) :: no_init1
      INTEGER i, myproc, nproc, hostid, loccomm, ierr, buddcounter, mydevice
