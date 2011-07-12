@@ -18,7 +18,7 @@
       USE mod_netcdf
       USE mod_scalars
       USE mod_ncparam
-      USE mod_coupler
+      USE mct_coupler_params
 !
       implicit none
 !

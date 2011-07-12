@@ -21,5 +21,5 @@ NPROCS=`wc -l < $PBS_NODEFILE`
 
 cd /raid1/jcwarner/Models/COAWST_regress/15apr2010_coawstv3
 
-###/usr/local/mpi/bin/mpirun -np 2 -machinefile $PBS_NODEFILE ./coawstM Projects/JOE_TCd/coupling_joe_tc.in > joe_tc.out
-/usr/local/mpi/bin/mpirun -np 8 -machinefile $PBS_NODEFILE ./coawstM Projects/Inlet_test/Coupled/coupling_inlet_test.in > cwstv3.out
+###mpirun -np 2 -machinefile $PBS_NODEFILE ./coawstM Projects/JOE_TCd/coupling_joe_tc.in > joe_tc.out
+mpirun -np 8 -machinefile $PBS_NODEFILE ./coawstM Projects/Inlet_test/Coupled/coupling_inlet_test.in > cwstv3.out
