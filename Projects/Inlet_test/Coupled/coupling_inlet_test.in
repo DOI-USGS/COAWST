@@ -3,6 +3,7 @@
 !
 !==============================================================================
 !  Copyright (c) 2005 ROMS/TOMS Group, version 3.0                          ===
+!                                                          John C. Warner   ===
 !========================================================= Hernan G. Arango ===
 !                                                                             !
 ! Input parameters can be entered in ANY order, provided that the parameter   !
@@ -42,9 +43,9 @@
 
 ! Time interval (seconds) between coupling of models.
 
- TI_ATM_WAV =     0.0d0              ! atmosphere-wave coupling interval
- TI_ATM_OCN =     0.0d0              ! atmosphere-ocean coupling interval
- TI_WAV_OCN =   600.0d0              ! wave-ocean coupling interval
+  TI_ATM_WAV =     0.0d0              ! atmosphere-wave coupling interval
+  TI_ATM_OCN =     0.0d0              ! atmosphere-ocean coupling interval
+  TI_WAV_OCN =   600.0d0              ! wave-ocean coupling interval
 
 ! Enter names of Atm, Wav, and Ocn input files.
 ! The Wav program needs multiple input files, one for each grid.
@@ -55,13 +56,21 @@
 
 ! Sparse matrix interpolation weights files.
 
-   W2ONAME == Projects/Inlet_test/DiffGrid/swan2roms_weights.nc
+   W2ONAME == swan2roms_weights.nc
    W2ANAME == wav2atm_weights.nc
    A2ONAME == atm2ocn_weights.nc
    A2WNAME == atm2wav_weights.nc
    O2ANAME == ocn2atm_weights.nc
-   O2WNAME == Projects/Inlet_test/DiffGrid/roms2swan_weights.nc
+   O2WNAME == roms2swan_weights.nc
 
+!
+!  If you are running a simulation using WRF + either ROMS or SWAN, 
+!  then this featuere sets the WRF grid that will exchange fileds to 
+!  ROMS and/or SWAN. In the future, we will have more options
+!  to couple various levels of R/S grids to various WRF grids. But we 
+!  need to start somewhere, and for now you can only choose 1 WRF grid.
+!
+   WRF_CPL_GRID == 1                       ! 1 = parent
 !
 !  GLOSSARY:
 !  =========
@@ -73,13 +82,6 @@
 ! NnodesATM     Number of processes allocated to the atmospheric model.
 ! NnodesWAV     Number of processes allocated to the wave model.
 ! NnodesOCN     Number of processes allocated to the ocean model.
-!
-! The total sum of active coupled model must be equal to the total number
-! of processors. Currently, ROMS/TOMS supports the following modes of
-! coupling with CPP-options (see Drivers/master.F):
-!
-!               AIR_OCEAN      Atmosphere-ocean coupling
-!               WAVES_OCEAN    Waves-ocean coupling
 !
 !------------------------------------------------------------------------------
 ! Time interval between coupling of models.
@@ -96,7 +98,25 @@
 ! Coupled models standard input file names.
 !------------------------------------------------------------------------------
 !
-!  ATM_name     Atmospheric model standand input.
-!  WAV_name     Wave model standard input.
-!  OCN_name     Ocean model standard input.
+! ATM_name     Atmospheric model standand input.
+! WAV_name     Wave model standard input.
+! OCN_name     Ocean model standard input.
+!
+!------------------------------------------------------------------------------
+! Sparse matrix interpolation weights files.
+!------------------------------------------------------------------------------
+!
+! W2ONAME      Wave to ocean netcdf sparse matrix grid file.
+! W2ANAME      Wave to atmosphere netcdf sparse matrix grid file.
+! A2ONAME      Atmosphere to ocean netcdf sparse matrix grid file.
+! A2WNAME      Atmosphere to wave netcdf sparse matrix grid file.
+! O2ANAME      Ocean to atmosphere netcdf sparse matrix grid file.
+! O2WNAME      Ocean to wave netcdf sparse matrix grid file.
+!
+!------------------------------------------------------------------------------
+! WRF grid nesting level to be used for coupling to ROMS and/or SWAN 
+! grid(s).
+!------------------------------------------------------------------------------
+!
+!   WRF_COUPLED_GRID  WRF grid number to be used for the coupling. Default 1.
 !
