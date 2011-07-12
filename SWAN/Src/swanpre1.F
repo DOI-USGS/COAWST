@@ -3694,8 +3694,10 @@
          ASTDF=>M_GENARR_MOD(ng)%ASTDF_G
          CALL SWCOPR( TARR, ASTDF, MXG(IGR1)*MYG(IGR1) )                  40.31
       ELSE IF (IGR1.EQ.11) THEN                                           40.55
-         IF (.NOT.ALLOCATED(NPLAF)) ALLOCATE(NPLAF(MXG(IGR1)*MYG(IGR1)))  40.55
-         CALL SWCOPR( TARR, NPLAF, MXG(IGR1)*MYG(IGR1) )                  40.55
+         DEALLOCATE(M_GENARR_MOD(ng)%NPLAF_G)
+         ALLOCATE (M_GENARR_MOD(ng)%NPLAF_G(MXG(IGR1)*MYG(IGR1)))
+         NPLAF=>M_GENARR_MOD(ng)%NPLAF_G
+         CALL SWCOPR( TARR, NPLAF, MXG(IGR1)*MYG(IGR1) )                  40.31
       END IF                                                              40.31
 #else
       IF (IGR1.EQ.1) THEN                                                 40.31

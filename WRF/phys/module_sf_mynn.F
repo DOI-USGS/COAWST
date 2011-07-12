@@ -838,17 +838,19 @@ CONTAINS
 #if defined SWAN_COUPLING 
 # if defined COARE_TAYLOR_YELLAND
           ZNT(I)=MAX(1200.0*HWAVE(I)*                                   &
-     &           (HWAVE(I)/LWAVEP(I))**4.5+                             &
+     &           (HWAVE(I)/(LWAVEP(I)+0.001))**4.5+                     &
      &            0.11*VISC/(UST(I)+0.001),1.59E-5)
 # elif defined DRENNAN
-          CWAVE=LWAVEP(I)/PWAVE(I)
+          CWAVE=MAX(LWAVEP(I)/(PWAVE(I)+0.001),0.1)
           ZNT(I)=MAX(3.35*HWAVE(I)*(MIN(UST(I)/CWAVE,0.1))**3.4+        &
      &           0.11*VISC/(UST(I)+0.001),1.59E-5)
 # elif defined COARE_OOST
-          CWAVE=LWAVEP(I)/PWAVE(I)
+          CWAVE=MAX(LWAVEP(I)/(PWAVE(I)+0.001),0.1)
           ZNT(I)=MAX(25.0/3.141593*LWAVEP(I)*                           &
      &           (MIN(UST(I)/CWAVE,0.1))**4.5+                          &
      &           0.11*VISC/(UST(I)+0.001),1.59E-5)
+# else
+          ZNT(I)=CZO*UST(I)*UST(I)/G+bvisc/ust(i)                                   
 # endif
 #else
           ZNT(I)=CZO*UST(I)*UST(I)/G+bvisc/ust(i)                                   

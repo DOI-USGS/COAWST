@@ -47,6 +47,8 @@
       USE m_Transfer, ONLY : MCT_Send => send
       USE m_Transfer, ONLY : MCT_Recv => recv
 !
+      USE mct_coupler_params
+!
       implicit none
 !
       PRIVATE
@@ -69,16 +71,6 @@
       TYPE(AttrVect) :: wav2atm_AV            ! AttrVect variables
       type(Router) :: RoutWRFtoSWAN           ! Router variables
 # endif
-
-
-# if defined SWAN_COUPLING
-      integer :: ncomps = 3
-# else
-      integer :: ncomps = 2
-# endif
-      integer :: OCNid = 1
-      integer :: ATMid = 2
-      integer :: WAVid = 3
 
       CONTAINS
 
@@ -123,7 +115,8 @@
 !
 !  Initialize MCT coupled model registry.
 !
-      CALL MCTWorld_init (ncomps,MPI_COMM_WORLD,ATM_COMM_WORLD,AtmId)
+      CALL MCTWorld_init (N_mctmodels,MPI_COMM_WORLD,                   &
+     &                    ATM_COMM_WORLD,ATMid)
 !
 !  Initialize a Global Segment Map for non-haloed transfer of data out
 !  of WRF. Determine non-haloed start and length arrays for this

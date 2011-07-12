@@ -7,7 +7,7 @@ MODULE module_integrate
 CONTAINS
 
 #ifdef WRF_COUPLING
-RECURSIVE SUBROUTINE integrate ( grid, TI_ATM_OCN, last_step )
+RECURSIVE SUBROUTINE integrate ( grid, last_step )
 #else
 RECURSIVE SUBROUTINE integrate ( grid )
 #endif
@@ -21,6 +21,8 @@ RECURSIVE SUBROUTINE integrate ( grid )
    USE module_utility
 #ifdef WRF_COUPLING
    USE atm_coupler_mod, ONLY: atm2ocn_coupling
+   USE atm_coupler_mod, ONLY: initialize_atm_coupling
+   USE mct_coupler_params
 #endif
 
    IMPLICIT NONE
@@ -29,7 +31,6 @@ RECURSIVE SUBROUTINE integrate ( grid )
 
    TYPE(domain) , POINTER :: grid
 #ifdef WRF_COUPLING
-   REAL, intent(in) :: TI_ATM_OCN
    INTEGER, intent(inout) :: last_step
 #endif
 
@@ -308,6 +309,13 @@ RECURSIVE SUBROUTINE integrate ( grid )
                                                  kid        = kid        )
                CALL Setup_Timekeeping (new_nest)
                CALL med_nest_initial ( grid , new_nest , config_flags )
+#ifdef WRF_COUPLING
+               !jcw Here we init a child grid for the coupling.
+               IF (grid%id.EQ.WRF_CPL_GRID-1) THEN
+                 CALL initialize_atm_coupling (new_nest)
+                 CALL atm2ocn_coupling (new_nest)
+               END IF
+#endif
             END DO
             IF ( a_nest_was_opened ) THEN
                CALL set_overlaps ( grid )   ! find overlapping and set pointers
@@ -329,7 +337,8 @@ RECURSIVE SUBROUTINE integrate ( grid )
                CALL domain_time_test( grid_ptr, 'domain_clockadvance' )
                grid_ptr => grid_ptr%sibling
 #ifdef WRF_COUPLING
-              IF ( grid%id .EQ. 1 ) THEN               ! head_grid
+              !jcw  WRF_CPL_GRID is read in from the coupling input file.
+              IF ( grid%id .EQ. WRF_CPL_GRID ) THEN
                 CALL domain_clock_get( grid, minutesSinceSimulationStart=minutesSinceSimulationStart )
                 num_steps=minutesSinceSimulationStart*60.0/grid%dt
                 nATM_steps=MAX(1,INT(TI_ATM_OCN/grid%dt))
@@ -357,7 +366,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
                    grid_ptr%nests(kid)%ptr%stop_subtime = &
                      domain_get_current_time(grid)
 #ifdef WRF_COUPLING
-                   CALL integrate ( grid_ptr%nests(kid)%ptr, TI_ATM_OCN, last_step )
+                   CALL integrate ( grid_ptr%nests(kid)%ptr, last_step )
 #else
                    CALL integrate ( grid_ptr%nests(kid)%ptr ) 
 #endif

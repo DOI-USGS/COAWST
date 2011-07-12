@@ -92,8 +92,9 @@ done
 
 export   ROMS_APPLICATION=SHOREFACE
 
-# Set number of nested/composed/mosaic grids.  Currently, only one grid
-# is supported.
+# Set number of Nested grids for ROMS and or SWAN. This feature is activated
+# with the cpp option REFINED_GRID. If you are using both ROMS and SWAN, 
+# you need to have the same number of grids for both models.
 
 export     NestedGrids=1
 

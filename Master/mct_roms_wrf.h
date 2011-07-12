@@ -24,8 +24,7 @@
 !
       USE mod_param
       USE mod_parallel
-      USE mod_coupler
-      USE mod_forces
+      USE mct_coupler_params
       USE mod_kinds
       USE mod_scalars
       USE mod_iounits
@@ -114,14 +113,8 @@
 !  Initialize MCT coupled model registry.
 !
 # ifdef REFINED_GRID
-      allocate ( ocnids(Ngrids) )
-      allocate ( wavids(Ngrids) )
-      DO i=1,Ngrids
-        ocnids(i)=i
-      END DO
-      OCNid=ocnids(ng)
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                &
-     &                    OCN_COMM_WORLD,OCNid, myids=ocnids)
+     &                    OCN_COMM_WORLD,OCNid, myids=OCNid)
 # else
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, OCN_COMM_WORLD,  &
      &                    OCNid)

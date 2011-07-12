@@ -641,9 +641,8 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_param
+      USE mct_coupler_params
       USE mod_parallel
-!     USE mod_coupler
       USE mod_iounits
       USE mod_scalars
 
@@ -744,6 +743,8 @@
             Npts=load_r(Nval, Rval, 1, TI_ATM_OCN)
           ELSE IF (TRIM(KeyWord).eq.'TI_WAV_OCN') THEN
             Npts=load_r(Nval, Rval, 1, TI_WAV_OCN)
+          ELSE IF (TRIM(KeyWord).eq.'WRF_CPL_GRID') THEN
+            Npts=load_i(Nval, Rval, 1, WRF_CPL_GRID)
           ELSE IF (TRIM(KeyWord).eq.'OCN_name') THEN
             DO i=1,LEN(Iname)
               Iname(i:i)=blank
@@ -832,6 +833,9 @@
       USE mod_strings
 #ifdef INWAVE_COUPLING
       USE mod_inwave_params
+#endif
+#ifdef WAVES_OCEAN
+      USE mct_coupler_params
 #endif
 !
       implicit none
@@ -2546,6 +2550,10 @@
      &          'Time interval (s) between coupling WAV-OCN models.'
           WRITE (out,120) nOCN_WAV(ng), 'nOCN_WAV',                     &
      &          'Number of OCN timesteps between coupling to WAV.'
+#endif
+#ifdef WRF_COUPLING
+          WRITE (out,120) WRF_CPL_GRID, 'WRF_CPLG_GRID',                &
+     &          'WRF grid number that roms/swan will couple to.'
 #endif
           WRITE (out,120) ERstr, 'ERstr',                               &
      &          'Starting ensemble/perturbation run number.'

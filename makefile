@@ -532,6 +532,8 @@ endif
 
 wrf:
 ifdef USE_WRF
+	cp -p $(BIN) $(BIN).backup;                               \
+	$(RM) -r $(BIN);                                          \
 	cd $(WRF_DIR); ls;                                        \
 	echo " "; echo " ";                                       \
 	echo "Compiling wrf";                                     \

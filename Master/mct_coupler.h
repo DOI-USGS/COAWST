@@ -28,6 +28,7 @@
       USE mod_parallel
       USE mod_iounits
       USE mod_scalars
+      USE mct_coupler_params
 !
       USE m_MCTWorld, ONLY : MCTWorld_clean => clean
 
@@ -89,16 +90,34 @@
 !
 !  Allocate several coupling variables.
 !
-#ifdef REFINED_GRID
-# if defined AIR_OCEAN && !defined WAVES_OCEAN
-      N_mctmodels=Ngrids+1
-# elif defined AIR_OCEAN && defined WAVES_OCEAN
-      N_mctmodels=Ncouple*Ngrids+1
+      N_mctmodels=0
+#ifdef ROMS_COUPLING
+# ifdef REFINED_GRID
+      DO ng=1,Ngrids
+        N_mctmodels=N_mctmodels+1
+        OCNid(ng)=N_mctmodels
+      END DO
 # else
-      N_mctmodels=Ncouple*Ngrids
+      N_mctmodels=N_mctmodels+1
+      OCNid=N_mctmodels
 # endif
-#else
-      N_mctmodels=Ncouple
+#endif
+#ifdef SWAN_COUPLING
+# ifdef REFINED_GRID
+      DO ng=1,Ngrids
+        N_mctmodels=N_mctmodels+1
+        WAVid(ng)=N_mctmodels
+      END DO
+# else
+      N_mctmodels=N_mctmodels+1
+      WAVid=N_mctmodels
+# endif
+#endif
+#ifdef WRF_COUPLING
+!     DO ng=1,max_dom
+      N_mctmodels=N_mctmodels+1
+      ATMid=N_mctmodels
+!     END DO
 #endif
 !
 !  Assign processors to the models.
@@ -189,12 +208,23 @@
 #endif
 #ifdef WRF_COUPLING
       IF (MyColor.eq.ATMcolor) THEN
-!!      CALL module_wrf_top_mp_wrf_init (MyCOMM)
-!!      CALL module_wrf_top_mp_wrf_run (REAL(TI_ATM_OCN))
-!!      CALL module_wrf_top_mp_wrf_finalize
-        CALL module_wrf_top_wrf_init (MyCOMM)
-        CALL module_wrf_top_wrf_run (REAL(TI_ATM_OCN))
+# if defined IFORT || defined IFC || defined FTN
+        CALL module_wrf_top_mp_wrf_init (MyCOMM, N_mctmodels,           &
+     &                                   OCNid, ATMid, WAVid,           &
+     &                                   WRF_CPL_GRID,                  &
+     &                                   REAL(TI_ATM_OCN),              &
+     &                                   REAL(TI_ATM_WAV))
+        CALL module_wrf_top_mp_wrf_run
+        CALL module_wrf_top_mp_wrf_finalize
+# else
+        CALL module_wrf_top_wrf_init (MyCOMM, N_mctmodels,              &
+     &                                OCNid, ATMid, WAVid,              &
+     &                                WRF_CPL_GRID,                     &
+     &                                REAL(TI_ATM_OCN),                 &
+     &                                REAL(TI_ATM_WAV))
+        CALL module_wrf_top_wrf_run
         CALL module_wrf_top_wrf_finalize
+# endif
       END IF
 #endif
 #ifdef ROMS_COUPLING

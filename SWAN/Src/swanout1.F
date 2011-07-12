@@ -995,12 +995,16 @@
      &               XCGRID              ,YCGRID              ,           30.21
      &               CROSS                                    )           40.86 40.00
 !
+        ALLOCATE(FORCE(0,0))                                              40.80
+!
 !       call SWOEXD to interpolate quantities which are computed during the
 !       SWAN computation, such as Qb, Dissipation, Ursell etc.
 !
         CALL SWOEXD (OQPROC, MIP, VOQ(1+2*MIP),                           40.31 30.90
      &               VOQ(1+3*MIP), VOQR, VOQ(1),                          40.31 30.90
      &               COMPDA, KGRPNT, FORCE, CROSS, IONOD)                 40.86 40.80 40.31
+!
+        DEALLOCATE(FORCE)                                                 40.80
 !
         IF (BKC .GT. 0) THEN
 !

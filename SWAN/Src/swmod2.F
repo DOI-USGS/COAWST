@@ -844,6 +844,7 @@
         REAL, POINTER :: WYI_G(:)
         REAL, POINTER :: WLEVL_G(:)
         REAL, POINTER :: ASTDF_G(:)
+        REAL, POINTER :: NPLAF_G(:)
 # ifdef WRF_COUPLING
         REAL, POINTER :: CosAngler_G(:)
         REAL, POINTER :: SinAngler_G(:)
@@ -867,6 +868,7 @@
       REAL   , POINTER :: WYI(:)
       REAL   , POINTER :: WLEVL(:)
       REAL   , POINTER :: ASTDF(:)
+      REAL   , POINTER :: NPLAF(:)
 # ifdef WRF_COUPLING
       REAL  , POINTER :: CosAngler(:)
       REAL  , POINTER :: SinAngler(:)
@@ -881,8 +883,8 @@
       REAL   , SAVE, ALLOCATABLE :: UXB(:)   , UYB(:)
       REAL   , SAVE, ALLOCATABLE :: WXI(:)   , WYI(:)
       REAL   , SAVE, ALLOCATABLE :: WLEVL(:) , ASTDF(:)
-#endif
       REAL   , SAVE, ALLOCATABLE :: NPLAF(:)
+#endif
       REAL   , SAVE, ALLOCATABLE :: LAYH(:), VEGDIL(:), VEGDRL(:),
      &                              VEGNSL(:)
 

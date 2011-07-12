@@ -1350,7 +1350,7 @@
 #endif
 #ifdef WEC_VF
       IF (Master) WRITE (stdout,20) 'WEC_VF',                           &
-     &   'Vortex Force wave current interaction terms.'
+     &   'Vortex Force wave current interaction- UNDER DEVELOPMENT!!!!.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+8)=' WEC_VF,'
 #endif
@@ -2406,7 +2406,7 @@
 #endif
 #ifdef SWAN_COUPLING
       IF (Master) WRITE (stdout,20) 'SWAN_COUPLING',                    &
-     &   'Two-way SWAN/ROMS coupling.'
+     &   'SWAN model coupling.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' SWAN_COUPLING,'
 #endif
@@ -3097,7 +3097,7 @@
 #endif
 #ifdef WRF_COUPLING
       IF (Master) WRITE (stdout,20) 'WRF_COUPLING',                     &
-     &   'Two-way WRF/ROMS coupling.'
+     &   'WRF model coupling.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' WRF_COUPLING,'
 #endif

@@ -61,7 +61,9 @@ LIB             +=   -L$(MCT_LIBDIR) -lmct -lmpeu
 LIB             +=   $(shell nc-config --libs)
 LDFLAGS         =    $(OMP) $(FCFLAGS) $(LDFLAGS_LOCAL) CONFIGURE_LDFLAGS
 ENVCOMPDEFS     =    CONFIGURE_COMPILEFLAGS
-CPPFLAGS        =    -D'PROJECT_HEADER="$(MY_HEADER_DIR)/$(HEADER)"'
+CPPFLAGS        =    -D$(ROMS_APPLICATION)
+CPPFLAGS       +=    -DNestedGrids=$(NestedGrids)
+CPPFLAGS       +=    -D'PROJECT_HEADER="$(MY_HEADER_DIR)/$(HEADER)"'
 CPPFLAGS       +=    -D'ROMS_GLOBAL_DEFS="$(MY_SRC_DIR)/ROMS/Include/globaldefs.h"'
 CPPFLAGS       +=    $(ARCHFLAGS) $(ENVCOMPDEFS) -I$(LIBINCLUDE) $(TRADFLAG) CONFIGURE_COMMS_INCLUDE
 NETCDFPATH      =    CONFIGURE_NETCDF_PATH

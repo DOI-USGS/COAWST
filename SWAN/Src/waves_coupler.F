@@ -148,6 +148,7 @@
       USE M_PARALL
       USE mod_scalars
       USE mod_iounits
+      USE mct_coupler_params
 !
       include 'mpif.h'
       integer, intent(in) :: ng
@@ -192,18 +193,8 @@
       END IF
 !
 # ifdef REFINED_GRID
-      CALL initialize_param
-
-      allocate ( wavids(Ngrids) )
-      allocate ( ocnids(Ngrids) )
-      DO j=1,Ngrids
-        ocnids(j)=j
-        wavids(j)=Ngrids+j
-      END DO
-      WAVid=wavids(ng)
-      OCNid=ocnids(ng)
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                  &
-     &                    WAV_COMM_WORLD, myids=wavids)
+     &                    WAV_COMM_WORLD, myids=WAVid)
 # else
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                  &
      &                    WAV_COMM_WORLD, WAVid)
@@ -371,7 +362,7 @@
       deallocate (start)
       deallocate (length)
 !# endif
-      call mpi_barrier(WAV_COMM_WORLD)
+      call mpi_barrier(WAV_COMM_WORLD, MyError)
 !# ifdef MCT_INTERP_WV2AT
 !
 ! Create ATM sparse matrix plus for interpolation.

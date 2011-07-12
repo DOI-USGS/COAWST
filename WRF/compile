@@ -340,6 +340,7 @@ else
   echo "."
   echo " "
 
+#jcw
   setenv MY_HEADER_DIR "${MY_HEADER_DIR}"
   set HEADPRE = '$(shell echo ${ROMS_APPLICATION} | tr [A-Z] [a-z])'
   setenv HEADER "${HEADPRE}.h"

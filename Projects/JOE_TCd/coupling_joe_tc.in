@@ -36,15 +36,15 @@
 ! Number of parallel nodes assigned to each model in the coupled system.
 ! Their sum must be equal to the total number of processors.
 
-  NnodesATM =  1                    ! atmospheric model
-  NnodesWAV =  1                    ! wave model
-  NnodesOCN =  1                    ! ocean model
+   NnodesATM =  1                    ! atmospheric model
+   NnodesWAV =  1                    ! wave model
+   NnodesOCN =  1                    ! ocean model
 
 ! Time interval (seconds) between coupling of models.
 
- TI_ATM_WAV =   600.0d0              ! atmosphere-wave coupling interval
- TI_ATM_OCN =   600.0d0              ! atmosphere-ocean coupling interval
- TI_WAV_OCN =   600.0d0              ! wave-ocean coupling interval
+   TI_ATM_WAV =   600.0d0              ! atmosphere-wave coupling interval
+   TI_ATM_OCN =   600.0d0              ! atmosphere-ocean coupling interval
+   TI_WAV_OCN =   600.0d0              ! wave-ocean coupling interval
 
 ! Coupled model standard input file name.
 
@@ -72,13 +72,6 @@
 ! NnodesATM     Number of processes allocated to the atmospheric model.
 ! NnodesWAV     Number of processes allocated to the wave model.
 ! NnodesOCN     Number of processes allocated to the ocean model.
-!
-! The total sum of active coupled model must be equal to the total number
-! of processors. Currently, ROMS/TOMS supports the following modes of
-! coupling with CPP-options (see Drivers/master.F):
-!
-!               AIR_OCEAN      Atmosphere-ocean coupling
-!               WAVES_OCEAN    Waves-ocean coupling
 !
 !------------------------------------------------------------------------------
 ! Time interval between coupling of models.

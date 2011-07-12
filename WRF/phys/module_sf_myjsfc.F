@@ -481,16 +481,18 @@ CONTAINS
 #if defined SWAN_COUPLING
 # if defined COARE_TAYLOR_YELLAND
           Z0=MAX(1200.0*HWAVE*                                          &
-     &                 (HWAVE/LWAVEP)**4.5+                             &
+     &                 (HWAVE/(LWAVEP+0.001))**4.5+                     &
      &                  0.11*VISC/(USTAR+0.001),1.59E-5)
 # elif defined DRENNAN
-          CWAVE=LWAVEP/PWAVE
+          CWAVE=MAX(LWAVEP/(PWAVE+0.001),0.1)
           Z0=MAX(3.35*HWAVE*(MIN(USTAR/CWAVE,0.1))**3.4+                &
      &           0.11*VISC/(USTAR+0.001),1.59E-5)
 # elif defined COARE_OOST
-          CWAVE=LWAVEP/PWAVE
+          CWAVE=MAX(LWAVEP/(PWAVE+0.001),0.1)
           Z0=MAX(25.0/3.141593*LWAVEP*(MIN(USTAR/CWAVE,0.1))**4.5+      &
      &           0.11*VISC/(USTAR+0.001),1.59E-5)
+# else
+          Z0=MAX(USTFC*USTAR*USTAR,1.59E-5)
 # endif
 #else
           Z0=MAX(USTFC*USTAR*USTAR,1.59E-5)

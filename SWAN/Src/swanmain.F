@@ -272,6 +272,7 @@
       ALLOCATE (M_GENARR_MOD(ng)%WYI_G(1))
       ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(1))
       ALLOCATE (M_GENARR_MOD(ng)%ASTDF_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%NPLAF_G(1))
       ALLOCATE (COMPT_MOD(ng)%NCOMPT_G)
       NCOMPT=>COMPT_MOD(ng)%NCOMPT_G
       ALLOCATE (COMPT_MOD(ng)%RCOMPT_G(50,5))
@@ -571,6 +572,7 @@
       WYI=>   M_GENARR_MOD(ng)%WYI_G
       WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
       ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
+      NPLAF=> M_GENARR_MOD(ng)%NPLAF_G
 # ifdef WRF_COUPLING
       CosAngler=>M_GENARR_MOD(ng)%CosAngler_G
       SinAngler=>M_GENARR_MOD(ng)%SinAngler_G
@@ -816,6 +818,7 @@
       WYI=>   M_GENARR_MOD(ng)%WYI_G
       WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
       ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
+      NPLAF=> M_GENARR_MOD(ng)%NPLAF_G
 # ifdef WRF_COUPLING
       CosAngler=>M_GENARR_MOD(ng)%CosAngler_G
       SinAngler=>M_GENARR_MOD(ng)%SinAngler_G
@@ -8129,6 +8132,7 @@
       DEALLOCATE(WYI   )
       DEALLOCATE(WLEVL )
       DEALLOCATE(ASTDF )
+      DEALLOCATE(NPLAF )
 # ifdef WRF_COUPLING
       DEALLOCATE(CosAngler)
       DEALLOCATE(SinAngler)

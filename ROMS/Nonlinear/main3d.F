@@ -23,6 +23,7 @@
       USE mod_parallel
 # ifdef MODEL_COUPLING
       USE mod_coupler
+      USE mct_coupler_params
 # endif
       USE mod_iounits
       USE mod_scalars
