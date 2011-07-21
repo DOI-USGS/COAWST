@@ -236,7 +236,7 @@
             CALL get_3dparent_data (ng, TILE)
           END IF
         END IF
-#  if !defined REFINED_GRID_BC
+!#  if !defined REFINED_GRID_BC
 !
 !  Put the child data back into the parent grid.
 !
@@ -252,7 +252,7 @@
 !
           CALL set_3dchild_data (ng, TILE)
         END IF
-#  endif
+!#  endif
 # endif
 !
 # if defined W4DPSAS || defined NLM_OUTER || \
@@ -639,7 +639,7 @@
 # ifdef REFINED_GRID
 ! interpolate the parent data to child time.
         IF (ng.gt.1) THEN
-!          CALL set_2dparent_data (ng, TILE)
+           CALL set_2dparent_data (ng, TILE)
            CALL set_3dparent_data (ng, TILE)
         END IF
 # endif
@@ -716,12 +716,6 @@
             END DO
 !$OMP END PARALLEL DO
           END IF
-# ifdef REFINED_GRID
-! interpolate the parent data to child time.
-        IF (ng.gt.1) THEN
-          CALL set_2dparent_data (ng, TILE)
-        END IF
-# endif
 # if !defined REFINED_GRID
         END DO
 # endif
@@ -757,12 +751,6 @@
             END DO
 !$OMP END PARALLEL DO
           END IF
-# ifdef REFINED_GRID
-! interpolate the parent data to child time.
-        IF (ng.gt.1) THEN
-          CALL set_2dparent_data (ng, TILE)
-        END IF
-# endif
 # if !defined REFINED_GRID
         END DO
 # endif

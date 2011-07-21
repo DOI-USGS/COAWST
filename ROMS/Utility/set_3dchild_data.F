@@ -103,7 +103,7 @@
       integer :: Ilen, Jlen, IJlen, Klen, MyType, status
       integer :: MyError, MySize, ncvarid
       integer :: Xmin, Xmax, Ymin, Ymax
-      integer :: Istrp, Iendp, Jstrp, Jendp
+      integer :: Istrp, Iendp, Jstrp, Jendp, ref_scale
       real(r8) :: my_min, my_max
 !
       real(r8), allocatable :: Aout(:)
@@ -246,17 +246,20 @@
 ! get tracer
 !
             CALL mp_gather3d (ngc, model, LBic, UBic, LBjc, UBjc,       &
-     &                      1, N(ngc), 0, gtype, 1.0_r8,                &
+     &          1, N(ngc), 0, gtype, 1.0_r8,                            &
 # ifdef MASKING
-     &                      GRID(ngc) % rmask(LBic:UBic,LBjc:UBjc),     &
+     &          GRID(ngc) % rmask(LBic:UBic,LBjc:UBjc),                 &
 # endif
      &          OCEAN(ngc) % t(LBic:UBic,LBjc:UBjc,1,NOUTC,itrc),       &
-     &                      Npts, Aout)
+     &          Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes for ng=2
+!
             CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,           &
      &                      OCN_COMM_WORLD, MyError)
+!
 ! unpack and place in global ng=1 2D array
+!
             ic=0
             DO k=Kmin,Kmax
               DO j=Jmin,Jmax
@@ -267,27 +270,51 @@
                 END DO
               END DO
             END DO
+!
+!  Compute ref_scale ratio, expecting 3 or 5.
+!
+          Xmin=OCEAN(ng)%hindcr(1)
+          Xmax=OCEAN(ng)%hindcr(2)
+          Ymin=OCEAN(ng)%hindcr(3)
+          Ymax=OCEAN(ng)%hindcr(4)
+          ref_scale=(imax-imin+1-7)/(xmax-xmin+1)
+!
+!  Average the child data back to parent resolution.
+!
+          IF (ref_scale.eq.3) THEN
             DO k=Kmin,Kmax
-            DO j=Jmin+2,Jmax-2
-              DO i=Imin+2,Imax-2
-                A(i,j,k)=0.04_r8*                                       &
-     &         (AA(i-2,j+2,k)+AA(i-1,j+2,k)+AA(i  ,j+2,k)+AA(i+1,j+2,k)+&
-     &          AA(i+2,j+2,k)+AA(i-2,j+1,k)+AA(i-1,j+1,k)+AA(i  ,j+1,k)+&
-     &          AA(i+1,j+1,k)+AA(i+2,j+1,k)+AA(i-2,j  ,k)+AA(i-1,j  ,k)+&
-     &          AA(i  ,j  ,k)+AA(i+1,j  ,k)+AA(i+2,j  ,k)+AA(i-2,j-1,k)+&
-     &          AA(i-1,j-1,k)+AA(i  ,j-1,k)+AA(i+1,j-1,k)+AA(i+2,j-1,k)+&
-     &          AA(i-2,j-2,k)+AA(i-1,j-2,k)+AA(i  ,j-2,k)+AA(i+1,j-2,k)+&
-     &          AA(i+2,j-2,k))
+              DO j=Jmin+1,Jmax-1
+                DO i=Imin+1,Imax-1
+                  A(i,j,k)=1.0_r8/9.0_r8*                               &
+     &                     (AA(i-1,j+1,k)+AA(i  ,j+1,k)+AA(i+1,j+1,k)+  &
+     &                      AA(i-1,j  ,k)+AA(i  ,j  ,k)+AA(i+1,j  ,k)+  &
+     &                      AA(i-1,j-1,k)+AA(i  ,j-1,k)+AA(i+1,j-1,k))
+                END DO
               END DO
             END DO
+          ELSE
+            DO k=Kmin,Kmax
+              DO j=Jmin+2,Jmax-2
+                DO i=Imin+2,Imax-2
+                  A(i,j,k)=1.0_r8/25.0_r8*                              &
+     &                     (AA(i-2,j+2,k)+AA(i-1,j+2,k)+AA(i  ,j+2,k)+  &
+     &                      AA(i+1,j+2,k)+AA(i+2,j+2,k)+                &
+     &                      AA(i-2,j+1,k)+AA(i-1,j+1,k)+AA(i  ,j+1,k)+  &
+     &                      AA(i+1,j+1,k)+AA(i+2,j+1,k)+                &
+     &                      AA(i-2,j  ,k)+AA(i-1,j  ,k)+AA(i  ,j  ,k)+  &
+     &                      AA(i+1,j  ,k)+AA(i+2,j  ,k)+                &
+     &                      AA(i-2,j-1,k)+AA(i-1,j-1,k)+AA(i  ,j-1,k)+  &
+     &                      AA(i+1,j-1,k)+AA(i+2,j-1,k)+                &
+     &                      AA(i-2,j-2,k)+AA(i-1,j-2,k)+AA(i  ,j-2,k)+  &
+     &                      AA(i+1,j-2,k)+AA(i+2,j-2,k))
+                END DO
+              END DO
             END DO
+          ENDIF
 !
-! Now interpolate the child data to the parent grid.
+! Now interpolate the child data to the parent grid. This will not
+! really be an interp, since the points are coincident.
 !
-            Xmin=OCEAN(ng)%hindcr(1)
-            Xmax=OCEAN(ng)%hindcr(2)
-            Ymin=OCEAN(ng)%hindcr(3)
-            Ymax=OCEAN(ng)%hindcr(4)
             IF (spherical) THEN
               CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,           &
      &                            Kmin, Kmax,                           &
@@ -357,9 +384,12 @@
      &                    Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes for ng=2
+!
           CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,             &
      &                    OCN_COMM_WORLD, MyError)
+!
 ! unpack and place in global ng=1 2D array
+!
           ic=0
           DO k=Kmin,Kmax
             DO j=Jmin,Jmax
@@ -370,22 +400,51 @@
               END DO
             END DO
           END DO
-          DO k=Kmin,Kmax
-            DO j=Jmin+2,Jmax-2
-              DO i=Imin+2,Imax-2
-                A(i,j,k)=1.0_r8/5.0_r8*                                     &
-     &               (AA(i,j-2,k)+AA(i,j-1,k)+AA(i,j,k)+                    &
-                      AA(i,j+1,k)+AA(i,j+2,k))
-              END DO
-            END DO
-          END DO
 !
-! Now interpolate the child data to the parent grid.
+!  Compute ref_scale ratio, expecting 3 or 5.
 !
           Xmin=OCEAN(ng)%hindcu(1)
           Xmax=OCEAN(ng)%hindcu(2)
           Ymin=OCEAN(ng)%hindcu(3)
           Ymax=OCEAN(ng)%hindcu(4)
+          ref_scale=(imax-imin+1-7)/(xmax-xmin+1)
+!
+!  Average the child data back to parent resolution.
+!
+          IF (ref_scale.eq.3) THEN
+            DO k=Kmin,Kmax
+              DO j=Jmin+1,Jmax-1
+                DO i=Imin+1,Imax-1
+                  A(i,j,k)=1.0_r8/9.0_r8*                               &
+     &                     (AA(i-1,j+1,k)+AA(i  ,j+1,k)+AA(i+1,j+1,k)+  &
+     &                      AA(i-1,j  ,k)+AA(i  ,j  ,k)+AA(i+1,j  ,k)+  &
+     &                      AA(i-1,j-1,k)+AA(i  ,j-1,k)+AA(i+1,j-1,k))
+                END DO
+              END DO
+            END DO
+          ELSE
+            DO k=Kmin,Kmax
+              DO j=Jmin+2,Jmax-2
+                DO i=Imin+2,Imax-2
+                  A(i,j,k)=1.0_r8/25.0_r8*                              &
+     &                     (AA(i-2,j+2,k)+AA(i-1,j+2,k)+AA(i  ,j+2,k)+  &
+     &                      AA(i+1,j+2,k)+AA(i+2,j+2,k)+                &
+     &                      AA(i-2,j+1,k)+AA(i-1,j+1,k)+AA(i  ,j+1,k)+  &
+     &                      AA(i+1,j+1,k)+AA(i+2,j+1,k)+                &
+     &                      AA(i-2,j  ,k)+AA(i-1,j  ,k)+AA(i  ,j  ,k)+  &
+     &                      AA(i+1,j  ,k)+AA(i+2,j  ,k)+                &
+     &                      AA(i-2,j-1,k)+AA(i-1,j-1,k)+AA(i  ,j-1,k)+  &
+     &                      AA(i+1,j-1,k)+AA(i+2,j-1,k)+                &
+     &                      AA(i-2,j-2,k)+AA(i-1,j-2,k)+AA(i  ,j-2,k)+  &
+     &                      AA(i+1,j-2,k)+AA(i+2,j-2,k))
+                END DO
+              END DO
+            END DO
+          ENDIF
+!
+! Now interpolate the child data to the parent grid. This will not
+! really be an interp, since the points are coincident.
+!
           IF (spherical) THEN
             CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,             &
      &                          Kmin, Kmax,                             &
@@ -452,9 +511,12 @@
      &                    Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes for ng=2
+!
           CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,             &
      &                    OCN_COMM_WORLD, MyError)
+!
 ! unpack and place in global ng=1 2D array
+!
           ic=0
           DO k=Kmin,Kmax
             DO j=Jmin,Jmax
@@ -465,22 +527,51 @@
               END DO
             END DO
           END DO
-          DO k=Kmin,Kmax
-            DO j=Jmin+2,Jmax-2
-              DO i=Imin+2,Imax-2
-                A(i,j,k)=1.0_r8/5.0_r8*                                 &
-     &               (AA(i-2,j,k)+AA(i-1,j,k)+AA(i,j,k)+                &
-                      AA(i+1,j,k)+AA(i+2,j,k))
-              END DO
-            END DO
-          END DO
 !
-! Now interpolate the child data to the parent grid.
+!  Compute ref_scale ratio, expecting 3 or 5.
 !
           Xmin=OCEAN(ng)%hindcv(1)
           Xmax=OCEAN(ng)%hindcv(2)
           Ymin=OCEAN(ng)%hindcv(3)
           Ymax=OCEAN(ng)%hindcv(4)
+          ref_scale=(imax-imin+1-7)/(xmax-xmin+1)
+!
+!  Average the child data back to parent resolution.
+!
+          IF (ref_scale.eq.3) THEN
+            DO k=Kmin,Kmax
+              DO j=Jmin+1,Jmax-1
+                DO i=Imin+1,Imax-1
+                  A(i,j,k)=1.0_r8/9.0_r8*                               &
+     &                     (AA(i-1,j+1,k)+AA(i  ,j+1,k)+AA(i+1,j+1,k)+  &
+     &                      AA(i-1,j  ,k)+AA(i  ,j  ,k)+AA(i+1,j  ,k)+  &
+     &                      AA(i-1,j-1,k)+AA(i  ,j-1,k)+AA(i+1,j-1,k))
+                END DO
+              END DO
+            END DO
+          ELSE
+            DO k=Kmin,Kmax
+              DO j=Jmin+2,Jmax-2
+                DO i=Imin+2,Imax-2
+                  A(i,j,k)=1.0_r8/25.0_r8*                              &
+     &                     (AA(i-2,j+2,k)+AA(i-1,j+2,k)+AA(i  ,j+2,k)+  &
+     &                      AA(i+1,j+2,k)+AA(i+2,j+2,k)+                &
+     &                      AA(i-2,j+1,k)+AA(i-1,j+1,k)+AA(i  ,j+1,k)+  &
+     &                      AA(i+1,j+1,k)+AA(i+2,j+1,k)+                &
+     &                      AA(i-2,j  ,k)+AA(i-1,j  ,k)+AA(i  ,j  ,k)+  &
+     &                      AA(i+1,j  ,k)+AA(i+2,j  ,k)+                &
+     &                      AA(i-2,j-1,k)+AA(i-1,j-1,k)+AA(i  ,j-1,k)+  &
+     &                      AA(i+1,j-1,k)+AA(i+2,j-1,k)+                &
+     &                      AA(i-2,j-2,k)+AA(i-1,j-2,k)+AA(i  ,j-2,k)+  &
+     &                      AA(i+1,j-2,k)+AA(i+2,j-2,k))
+                END DO
+              END DO
+            END DO
+          ENDIF
+!
+! Now interpolate the child data to the parent grid. This will not
+! really be an interp, since the points are coincident.
+!
           IF (spherical) THEN
             CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,             &
      &                          Kmin, Kmax,                             &

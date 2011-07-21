@@ -2540,6 +2540,10 @@
           WRITE (out,130) ndtfast(ng), 'ndtfast',                       &
      &          'Number of timesteps for 2-D equations between',        &
      &          'each 3D timestep.'
+#ifdef REFINED_GRID
+          WRITE (out,120) NestedGrids, 'Numgrids',                      &
+     &          'Number of refined grids.'
+#endif
 #ifdef AIR_OCEAN
           WRITE (out,140) TI_ATM_OCN, 'TI_ATM_OCN',                     &
      &          'Time interval (s) between coupling ATM-OCN models.'

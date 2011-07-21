@@ -14,18 +14,17 @@
 %%%%%%%%%%%%% START OF USER SECTION %%%%%%%%%%%%%%%%
 
 %1) ENTER NAME OF EXISITNG COARSE GRID FILE
-%ncfile_coarse='D:\data\models\COAWST\Projects\Inlet_test\Refined\inlet_test_grid.nc';
-ncfile_coarse='C:\work\models\COAWST_tests\2way\Projects\Inlet_test\Refined\inlet_test_grid.nc';
+ncfile_coarse='refined_chan_grid.nc';
 
 %2) ENTER NAME OF NEW FINE GRID FILE
-ncfile_fine='C:\work\models\COAWST_tests\2way\Projects\Inlet_test\Refined\inlet_test_grid_ref5.nc';
+ncfile_fine='refined_chan_grid_ref5.nc';
 
 %3) ENTER THE START AND END INDICES OF THE PSI POINTS OF THE COARSE GRID
 %   THAT IDENTIFY THE OUTER BOUNDS OF THE FINE GRID
-Istr=24;
-Iend=54;
-Jstr=40;
-Jend=56;
+Istr=30;
+Iend=50;
+Jstr=2;
+Jend=5;
 
 %4) ENTER SCALE FACTOR FOR INCREASED RESOLUTION (use 3 or 5)
 scale=5;

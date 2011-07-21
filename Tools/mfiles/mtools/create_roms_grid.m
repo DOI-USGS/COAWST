@@ -21,7 +21,8 @@
 JOE_TC=0;
 JOE_TC_coarse=0;
 inlet_test=0;
-inlet_test_diff=1;
+inlet_test_diff=0;
+refined_chan=1;
 MY_APP=0;
 
 if (JOE_TC)
@@ -128,6 +129,28 @@ elseif (inlet_test_diff)
     f=zeros(size(depth))+4.988e-5;
   %7) enter output file name
     fname='inlet_test_roms_bigger_grid.nc';
+elseif (refined_chan)
+  %2) enter x and y coordinates of rho points
+    ncellsx=102; dx=100;
+    ncellsy=7;   dy=50;
+    xx=[-dx/2:dx:dx*(ncellsx-1)-dx/2];
+    yy=[-dy/2:dy:dy*(ncellsy-1)-dy/2];
+  % 
+    x=repmat(xx,length(yy),1);
+    y=repmat(yy',1,length(xx));
+  %3) set depth
+    depth=10+0.4040.*[0:ncellsx-1]./(ncellsx-1);
+    depth=repmat(depth,ncellsy,1);
+  %4) set grid angle
+    roms_angle=zeros(size(depth));
+  %5) set masking
+    mask_rho=ones(size(depth));
+    mask_rho(1:2,:)=0;
+    mask_rho(end-1:end,:)=0;
+  %6) set coriolis f
+    f=zeros(size(depth));
+  %7) enter output file name
+    fname='refined_chan_grid.nc';
 elseif (MY_APP)
   disp('set MY_APP=1 and then put your stuff in here')
 end

@@ -29,18 +29,22 @@
 
       CONTAINS
 
-      SUBROUTINE quadterp2d_ref (ng, LBx, UBx, LBy, UBy,                 &
-     &                      Xinp, Yinp, Finp, Amask,                    &
+      SUBROUTINE consrvterp2d (ng, LBx, UBx, LBy, UBy,                  &
+     &                      Finp, Amask,                                &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      Istr, Iend, Jstr, Jend,                     &
      &                      Iout, Jout,                                 &
-     &                      Xout, Yout,                                 &
      &                      Fout, Fmin, Fmax)
 !
 !=======================================================================
+!  Based on Clark and Farley, (1984), Severe downslope windstorm       !
+!  calculations in two and three spatial dimensions using anelastic    !
+!  interactive grid nesting, Journal of Atmospheric Sciences, 41,      !
+!  p. 329-350.                                                         !
 !                                                                      !
-!  Given any gridded 2D field, Finp, this routine linearly interpolate !
-!  to locations (Xout,Yout).  To facilitate the  interpolation  within !
+!  Given any gridded 2D field, Finp, this routine provides a           !
+!  conservative interpolation to locations (Xout,Yout).                !
+!  To facilitate the  interpolation  within                            !
 !  any irregularly gridded 2D field,  the fractional grid cell indices !
 !  (Iout,Jout) with respect Finp are needed at input.  Notice that the !
 !  routine "hindices" can be used to compute these indices.            !
@@ -52,8 +56,6 @@
 !     UBx        I-dimension upper bound of gridded field, Finp.       !
 !     LBy        J-dimension lower bound of gridded field, Finp.       !
 !     UBy        J-dimension upper bound of gridded field, Finp.       !
-!     Xinp       X-locations of gridded field, Finp.                   !
-!     Yinp       Y-locations of gridded field, Finp.                   !
 !     Finp       2D field to interpolate from.                         !
 !     LBi        I-dimension Lower bound of data to interpolate, Fout. !
 !     UBi        I-dimension Upper bound of data to interpolate, Fout. !
@@ -65,8 +67,6 @@
 !     Jend       Ending   data J-index to interpolate, Fout.           !
 !     Iout       I-fractional Xinp grid cell containing Xout.          !
 !     Jout       J-fractional Yinp grid cell containing Yout.          !
-!     Xout       X-locations to interpolate, Fout.                     !
-!     Yout       Y-locations to interpolate, Fout.                     !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
@@ -76,9 +76,7 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_param
-      USE mod_scalars
-      USE mod_grid
+      USE mod_kinds
 !
 !  Imported variable declarations.
 !
@@ -86,15 +84,11 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: Istr, Iend, Jstr, Jend
 !
-      real(r8), intent(in) :: Xinp(LBx:UBx,LBy:UBy)
-      real(r8), intent(in) :: Yinp(LBx:UBx,LBy:UBy)
       real(r8), intent(in) :: Finp(LBx:UBx,LBy:UBy)
       real(r8), intent(in) :: Amask(LBx:UBx,LBy:UBy)
 
       real(r8), intent(in) :: Iout(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Jout(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: Xout(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: Yout(LBi:UBi,LBj:UBj)
 
       real(r8), intent(out) :: Fout(LBi:UBi,LBj:UBj)
 !
@@ -102,60 +96,234 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, i1, i2, j, j1, j2
+      integer :: i, j, i0, im, ip, j0, jm, jp
 
-      real(r8) :: p1, p2, q1, q2, alpha, ref_scale
-      real(r8) :: cff7, cff8, cff9
+      real(r8) :: alpha, ref_scale, epp
+      real(r8) :: Em, E0, Ep, cff1, cff2, cff7, cff8, cff9
 !
 !-----------------------------------------------------------------------
-!  Linearly interpolate requested field
+!  Conservatively interpolate requested field
 !-----------------------------------------------------------------------
 !
-      ref_scale=5.0_r8
-      alpha=((1.0_r8/ref_scale)**2.0_r8-1.0_r8)/24.0_r8
+      ref_scale=Iout(2,1)-Iout(1,1)
+      alpha=(ref_scale**2.0_r8-1.0_r8)/24.0_r8
       Fmin=1.0E+35_r8
       Fmax=-1.0E+35_r8
       DO j=Jstr,Jend
         DO i=Istr,Iend
-          i1=INT(Iout(i,j))
-          i2=i1+1
-          j1=INT(Jout(i,j))
-          j2=j1+1
-          IF (((LBx.le.i1).and.(i1.le.UBx)).and.                        &
-     &        ((LBy.le.j1).and.(j1.le.UBy))) THEN
-!            epp=
-!            Em=
-
-
-            p2=REAL(i2-i1,r8)*(Iout(i,j)-REAL(i1,r8))
-            q2=REAL(j2-j1,r8)*(Jout(i,j)-REAL(j1,r8))
-            p1=1.0_r8-p2
-            q1=1.0_r8-q2
-
-#  ifdef MASKING
-            cff7=p1*q1*Finp(i1,j1)*Amask(i1,j1)+               &
-     &           p2*q1*Finp(i2,j1)*Amask(i2,j1)+               &
-     &           p1*q2*Finp(i1,j2)*Amask(i1,j2)+               &
-     &           p2*q2*Finp(i2,j2)*Amask(i2,j2)
-            cff8=p1*q1*Amask(i1,j1)+                           &
-     &           p2*q1*Amask(i2,j1)+                           &
-     &           p1*q2*Amask(i1,j2)+                           &
-     &           p2*q2*Amask(i2,j2)
+          i0=NINT(Iout(i,j))
+          im=i0-1
+          ip=i0+1
+          j0=NINT(Jout(i,j))
+          jm=j0-1
+          jp=j0+1
+          IF (((LBx.le.im).and.(ip.le.UBx)).and.                        &
+     &        ((LBy.le.jm).and.(jp.le.UBy))) THEN
+!
+!  First sweep to locate interps in x_direction.
+!
+            epp=Iout(i,j)-i0
+            Em=0.5_r8*epp*(epp-1.0_r8)+alpha
+            E0=(1.0_r8-epp*epp)+alpha
+            Ep=0.5_r8*epp*(epp+1.0_r8)+alpha
+#ifdef MASKING
+            cff1=Em*Finp(im,jp)*Amask(im,jp)+                           &
+     &           E0*Finp(i0,jp)*Amask(i0,jp)+                           &
+     &           Ep*Finp(ip,jp)*Amask(ip,jp)
+            cff2=Em*Amask(im,jp)+E0*Amask(i0,jp)+Ep*Amask(ip,jp)
+            cff7=0.0_r8
+            IF (cff2.gt.0.0_r8) cff7=cff1/cff2
+!
+            cff1=Em*Finp(im,j0)*Amask(im,j0)+                           &
+     &           E0*Finp(i0,j0)*Amask(i0,j0)+                           &
+     &           Ep*Finp(ip,j0)*Amask(ip,j0)
+            cff2=Em*Amask(im,j0)+E0*Amask(i0,j0)+Ep*Amask(ip,j0)
+            cff8=0.0_r8
+            IF (cff2.gt.0.0_r8) cff8=cff1/cff2
+!
+            cff1=Em*Finp(im,jm)*Amask(im,jm)+                           &
+     &           E0*Finp(i0,jm)*Amask(i0,jm)+                           &
+     &           Ep*Finp(ip,jm)*Amask(ip,jm)
+            cff2=Em*Amask(im,jm)+E0*Amask(i0,jm)+Ep*Amask(ip,jm)
             cff9=0.0_r8
-            IF (cff8.gt.0.0_r8) cff9=cff7/cff8
-#  else
-            cff9=p1*q1*Finp(i1,j1)+                                     &
-     &           p2*q1*Finp(i2,j1)+                                     &
-     &           p1*q2*Finp(i1,j2)+                                     &
-     &           p2*q2*Finp(i2,j2)
-#  endif
-            Fout(i,j)=cff9
+            IF (cff2.gt.0.0_r8) cff9=cff1/cff2
+#else
+            cff7=Em*Finp(im,jp)+E0*Finp(i0,jp)+Ep*Finp(ip,jp)
+            cff8=Em*Finp(im,j0)+E0*Finp(i0,j0)+Ep*Finp(ip,j0)
+            cff9=Em*Finp(im,jm)+E0*Finp(i0,jm)+Ep*Finp(ip,jm)
+#endif
+!
+!  Second pass to interoplate in y-direction.
+!
+            epp=Jout(i,j)-j0
+            Em=0.5_r8*epp*(epp-1.0_r8)+alpha
+            E0=(1.0_r8-epp*epp)+alpha
+            Ep=0.5_r8*epp*(epp+1.0_r8)+alpha
+#ifdef MASKING
+            cff1=Em*cff9*Amask(i0,jm)+                           &
+     &           E0*cff8*Amask(i0,j0)+                           &
+     &           Ep*cff7*Amask(i0,jp)
+            cff2=Em*Amask(i0,jm)+E0*Amask(i0,j0)+Ep*Amask(i0,jp)
+            Fout(i,j)=0.0_r8
+            IF (cff2.gt.0.0_r8) Fout(i,j)=cff1/cff2
+#else
+            Fout(i,j)=Em*cff9+E0*cff8+Ep*cff7
+#endif
             Fmin=MIN(Fmin,Fout(i,j))
             Fmax=MAX(Fmax,Fout(i,j))
           END IF
         END DO
       END DO
-      END SUBROUTINE quadterp2d_ref
+      END SUBROUTINE consrvterp2d
+
+      SUBROUTINE consrvterp3d (ng, LBx, UBx, LBy, UBy,  LBz, UBz,       &
+     &                      Finp, Amask,                                &
+     &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
+     &                      Istr, Iend, Jstr, Jend,                     &
+     &                      Iout, Jout,                                 &
+     &                      Fout, Fmin, Fmax)
+!
+!=======================================================================
+!  Based on Clark and Farley, (1984), Severe downslope windstorm       !
+!  calculations in two and three spatial dimensions using anelastic    !
+!  interactive grid nesting, Journal of Atmospheric Sciences, 41,      !
+!  p. 329-350.                                                         !
+!                                                                      !
+!  Given any gridded 2D field, Finp, this routine provides a           !
+!  conservative interpolation to locations (Xout,Yout).                !
+!  To facilitate the  interpolation  within                            !
+!  any irregularly gridded 2D field,  the fractional grid cell indices !
+!  (Iout,Jout) with respect Finp are needed at input.  Notice that the !
+!  routine "hindices" can be used to compute these indices.            !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     LBx        I-dimension lower bound of gridded field, Finp.       !
+!     UBx        I-dimension upper bound of gridded field, Finp.       !
+!     LBy        J-dimension lower bound of gridded field, Finp.       !
+!     UBy        J-dimension upper bound of gridded field, Finp.       !
+!     Finp       2D field to interpolate from.                         !
+!     LBi        I-dimension Lower bound of data to interpolate, Fout. !
+!     UBi        I-dimension Upper bound of data to interpolate, Fout. !
+!     LBj        J-dimension Lower bound of data to interpolate, Fout. !
+!     UBj        J-dimension Upper bound of data to interpolate, Fout. !
+!     Istr       Starting data I-index to interpolate, Fout.           !
+!     Iend       Ending   data I-index to interpolate, Fout.           !
+!     Jstr       Starting data J-index to interpolate, Fout.           !
+!     Jend       Ending   data J-index to interpolate, Fout.           !
+!     Iout       I-fractional Xinp grid cell containing Xout.          !
+!     Jout       J-fractional Yinp grid cell containing Yout.          !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     Fout       Interpolated 2D field.                                !
+!     Fmin       Interpolated field minimum value.                     !
+!     Fmax       Interpolated field maximum value.                     !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_kinds
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, LBx, UBx, LBy, UBy, LBz, UBz
+      integer, intent(in) ::     LBi, UBi, LBj, UBj, LBk, UBk
+      integer, intent(in) :: Istr, Iend, Jstr, Jend
+!
+      real(r8), intent(in) :: Finp(LBx:UBx,LBy:UBy,LBz:UBz)
+      real(r8), intent(in) :: Amask(LBx:UBx,LBy:UBy)
+
+      real(r8), intent(in) :: Iout(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Jout(LBi:UBi,LBj:UBj)
+
+      real(r8), intent(out) :: Fout(LBi:UBi,LBj:UBj,LBk:UBk)
+!
+      real(r8), intent(out) :: Fmin, Fmax
+!
+!  Local variable declarations.
+!
+      integer :: i, j, k, i0, im, ip, j0, jm, jp
+
+      real(r8) :: alpha, ref_scale, epp
+      real(r8) :: Em, E0, Ep, cff1, cff2, cff7, cff8, cff9
+!
+!-----------------------------------------------------------------------
+!  Conservatively interpolate requested field
+!-----------------------------------------------------------------------
+!
+      ref_scale=Iout(2,1)-Iout(1,1)
+      alpha=(ref_scale**2.0_r8-1.0_r8)/24.0_r8
+      Fmin=1.0E+35_r8
+      Fmax=-1.0E+35_r8
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          i0=NINT(Iout(i,j))
+          im=i0-1
+          ip=i0+1
+          j0=NINT(Jout(i,j))
+          jm=j0-1
+          jp=j0+1
+          IF (((LBx.le.im).and.(ip.le.UBx)).and.                        &
+     &        ((LBy.le.jm).and.(jp.le.UBy))) THEN
+!
+!  First sweep to locate interps in x_direction.
+!
+            DO k=LBk,UBk
+              epp=Iout(i,j)-i0
+              Em=0.5_r8*epp*(epp-1.0_r8)+alpha
+              E0=(1.0_r8-epp*epp)+alpha
+              Ep=0.5_r8*epp*(epp+1.0_r8)+alpha
+#ifdef MASKING
+              cff1=Em*Finp(im,jp,k)*Amask(im,jp)+                       &
+     &             E0*Finp(i0,jp,k)*Amask(i0,jp)+                       &
+     &             Ep*Finp(ip,jp,k)*Amask(ip,jp)
+              cff2=Em*Amask(im,jp)+E0*Amask(i0,jp)+Ep*Amask(ip,jp)
+              cff7=0.0_r8
+              IF (cff2.gt.0.0_r8) cff7=cff1/cff2
+!
+              cff1=Em*Finp(im,j0,k)*Amask(im,j0)+                       &
+     &             E0*Finp(i0,j0,k)*Amask(i0,j0)+                       &
+     &             Ep*Finp(ip,j0,k)*Amask(ip,j0)
+              cff2=Em*Amask(im,j0)+E0*Amask(i0,j0)+Ep*Amask(ip,j0)
+              cff8=0.0_r8
+              IF (cff2.gt.0.0_r8) cff8=cff1/cff2
+!
+              cff1=Em*Finp(im,jm,k)*Amask(im,jm)+                       &
+     &             E0*Finp(i0,jm,k)*Amask(i0,jm)+                       &
+     &             Ep*Finp(ip,jm,k)*Amask(ip,jm)
+              cff2=Em*Amask(im,jm)+E0*Amask(i0,jm)+Ep*Amask(ip,jm)
+              cff9=0.0_r8
+              IF (cff2.gt.0.0_r8) cff9=cff1/cff2
+#else
+              cff7=Em*Finp(im,jp,k)+E0*Finp(i0,jp,k)+Ep*Finp(ip,jp,k)
+              cff8=Em*Finp(im,j0,k)+E0*Finp(i0,j0,k)+Ep*Finp(ip,j0,k)
+              cff9=Em*Finp(im,jm,k)+E0*Finp(i0,jm,k)+Ep*Finp(ip,jm,k)
+#endif
+!
+!  Second pass to interoplate in y-direction.
+!
+              epp=Jout(i,j)-j0
+              Em=0.5_r8*epp*(epp-1.0_r8)+alpha
+              E0=(1.0_r8-epp*epp)+alpha
+              Ep=0.5_r8*epp*(epp+1.0_r8)+alpha
+#ifdef MASKING
+              cff1=Em*cff9*Amask(i0,jm)+                                &
+     &             E0*cff8*Amask(i0,j0)+                                &
+     &             Ep*cff7*Amask(i0,jp)
+              cff2=Em*Amask(i0,jm)+E0*Amask(i0,j0)+Ep*Amask(i0,jp)
+              Fout(i,j,k)=0.0_r8
+              IF (cff2.gt.0.0_r8) Fout(i,j,k)=cff1/cff2
+#else
+              Fout(i,j,k)=Em*cff9+E0*cff8+Ep*cff7
+#endif
+              Fmin=MIN(Fmin,Fout(i,j,k))
+              Fmax=MAX(Fmax,Fout(i,j,k))
+            END DO
+          END IF
+        END DO
+      END DO
+      END SUBROUTINE consrvterp3d
 
       SUBROUTINE linterp2d_ref (ng, LBx, UBx, LBy, UBy,                 &
      &                      Xinp, Yinp, Finp, Amask,                    &

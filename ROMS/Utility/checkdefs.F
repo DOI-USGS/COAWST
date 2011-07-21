@@ -1939,7 +1939,7 @@
 #endif
 #ifdef REFINED_GRID
       IF (Master) WRITE (stdout,20) 'REFINED_GRID',                     &
-     &   'Refined grid .'
+     &   'Refined grids option selected.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' REFINED_GRID,'
 #endif

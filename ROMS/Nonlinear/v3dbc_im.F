@@ -655,12 +655,30 @@
             DO i=Istr,Iend+1
               grad(i,Jstr  )=v(i  ,Jstr  ,k,nstp)-                      &
      &                       v(i-1,Jstr  ,k,nstp)
+#   ifdef MASKING
+              grad(i,Jstr)=grad(i,Jstr)*GRID(ng)%vmask(i  ,Jstr)*       &
+     &                                  GRID(ng)%vmask(i-1,Jstr)
+#   endif
               grad(i,Jstr+1)=v(i  ,Jstr+1,k,nstp)-                      &
      &                       v(i-1,Jstr+1,k,nstp)
+#   ifdef MASKING
+              grad(i,Jstr+1)=grad(i,Jstr+1)*GRID(ng)%vmask(i  ,Jstr+1)* &
+     &                                      GRID(ng)%vmask(i-1,Jstr+1)
+#   endif
             END DO
             DO i=Istr,Iend
               dVdt=v(i,Jstr+1,k,nstp)-v(i,Jstr+1,k,nout)
               dVde=v(i,Jstr+1,k,nout)-v(i,Jstr+2,k,nout)
+!
+!  Set tau for nudging to parent data.
+!
+!             IF ((dVdt*dVde).lt.0.0_r8) THEN
+!               tau=M3obc_in(ng,isouth)
+!             ELSE
+!               tau=M3obc_out(ng,isouth)
+!             END IF
+!             tau=tau*dt(ng)
+              tau=1.0_r8
               IF ((dVdt*dVde).lt.0.0_r8) dVdt=0.0_r8
               IF ((dVdt*(grad(i,Jstr+1)+grad(i+1,Jstr+1))).gt.          &
      &             0.0_r8) THEN
@@ -676,9 +694,18 @@
      &                          MAX(Cx,0.0_r8)*grad(i  ,Jstr)-          &
      &                          MIN(Cx,0.0_r8)*grad(i+1,Jstr))/         &
      &                         (cff+Ce)
+              my_val=fac1*REFINED(ng)%vR_south(i,4,k,t1)+               &
+     &               fac2*REFINED(ng)%vR_south(i,4,k,t2)
+              v(i,Jstr,k,nout)=v(i,Jstr,k,nout)+                        &
+     &                         tau*(my_val-                             &
+     &                              v(i,Jstr,k,nstp))
 #   ifdef MASKING
               v(i,Jstr,k,nout)=v(i,Jstr,k,nout)*                        &
      &                         GRID(ng)%vmask(i,Jstr)
+#   endif
+#   ifdef WET_DRY
+              v(i,Jstr,k,nout)=v(i,Jstr,k,nout)*                        &
+     &                         GRID(ng)%vmask_wet(i,Jstr)
 #   endif
             END DO
           END DO
@@ -691,12 +718,30 @@
             DO i=Istr,Iend+1
               grad(i,Jend  )=v(i  ,Jend  ,k,nstp)-                      &
      &                       v(i-1,Jend  ,k,nstp)
+#   ifdef MASKING
+              grad(i,Jend)=grad(i,Jend)*GRID(ng)%vmask(i  ,Jend)*       &
+     &                                  GRID(ng)%vmask(i-1,Jend)
+#   endif
               grad(i,Jend+1)=v(i  ,Jend+1,k,nstp)-                      &
      &                       v(i-1,Jend+1,k,nstp)
+#   ifdef MASKING
+              grad(i,Jend+1)=grad(i,Jend+1)*GRID(ng)%vmask(i  ,Jend+1)* &
+         &                                  GRID(ng)%vmask(i-1,Jend+1)
+#   endif
             END DO
             DO i=Istr,Iend
               dVdt=v(i,Jend,k,nstp)-v(i,Jend  ,k,nout)
               dVde=v(i,Jend,k,nout)-v(i,Jend-1,k,nout)
+!
+!  Set tau for nudging to parent data.
+!
+!             IF ((dVdt*dVde).lt.0.0_r8) THEN
+!               tau=M3obc_in(ng,inorth)
+!             ELSE
+!               tau=M3obc_out(ng,inorth)
+!             END IF
+!             tau=tau*dt(ng)
+              tau=1.0_r8
               IF ((dVdt*dVde).lt.0.0_r8) dVdt=0.0_r8
               IF ((dVdt*(grad(i,Jend)+grad(i+1,Jend))).gt.0.0_r8) THEN
                 dVdx=grad(i  ,Jend)
@@ -711,9 +756,18 @@
      &                            MAX(Cx,0.0_r8)*grad(i  ,Jend+1)-      &
      &                            MIN(Cx,0.0_r8)*grad(i+1,Jend+1))/     &
      &                           (cff+Ce)
+              my_val=fac1*REFINED(ng)%vR_north(i,1,k,t1)+               &
+     &               fac2*REFINED(ng)%vR_north(i,1,k,t2)
+              v(i,Jend+1,k,nout)=v(i,Jend+1,k,nout)+                    &
+     &                           tau*(my_val-                           &
+     &                                v(i,Jend+1,k,nstp))
 #   ifdef MASKING
               v(i,Jend+1,k,nout)=v(i,Jend+1,k,nout)*                    &
      &                           GRID(ng)%vmask(i,Jend+1)
+#   endif
+#   ifdef WET_DRY
+              v(i,Jend+1,k,nout)=v(i,Jend+1,k,nout)*                    &
+     &                           GRID(ng)%vmask_wet(i,Jend+1)
 #   endif
             END DO
           END DO
@@ -732,6 +786,16 @@
             DO j=JstrV,Jend
               dVdt=v(Istr,j,k,nstp)-v(Istr  ,j,k,nout)
               dVdx=v(Istr,j,k,nout)-v(Istr+1,j,k,nout)
+!
+!  Set tau for nudging to parent data.
+!
+!             IF ((dVdt*dVdx).lt.0.0_r8) THEN
+!               tau=M3obc_in(ng,iwest)
+!             ELSE
+!               tau=M3obc_out(ng,iwest)
+!             END IF
+!             tau=tau*dt(ng)
+              tau=1.0_r8
               IF ((dVdt*dVdx).lt.0.0_r8) dVdt=0.0_r8
               IF ((dVdt*(grad(Istr,j-1)+grad(Istr,j))).gt.0.0_r8) THEN
                 dVde=grad(Istr,j-1)
@@ -746,9 +810,18 @@
      &                            MAX(Ce,0.0_r8)*grad(Istr-1,j-1)-      &
      &                            MIN(Ce,0.0_r8)*grad(Istr-1,j  ))/     &
      &                           (cff+Cx)
+              my_val=fac1*REFINED(ng)%vR_west(4,j,k,t1)+                &
+     &               fac2*REFINED(ng)%vR_west(4,j,k,t2)
+              v(Istr-1,j,k,nout)=v(Istr-1,j,k,nout)+                    &
+     &                           tau*(my_val-                           &
+     &                                v(Istr-1,j,k,nstp))
 #   ifdef MASKING
               v(Istr-1,j,k,nout)=v(Istr-1,j,k,nout)*                    &
      &                           GRID(ng)%vmask(Istr-1,j)
+#   endif
+#   ifdef WET_DRY
+              v(Istr-1,j,k,nout)=v(Istr-1,j,k,nout)*                    &
+     &                           GRID(ng)%vmask_wet(Istr-1,j)
 #   endif
             END DO
           END DO
@@ -767,6 +840,16 @@
             DO j=JstrV,Jend
               dVdt=v(Iend,j,k,nstp)-v(Iend  ,j,k,nout)
               dVdx=v(Iend,j,k,nout)-v(Iend-1,j,k,nout)
+!
+!  Set tau for nudging to parent data.
+!
+!             IF ((dVdt*dVdx).lt.0.0_r8) THEN
+!               tau=M3obc_in(ng,ieast)
+!             ELSE
+!               tau=M3obc_out(ng,ieast)
+!             END IF
+!             tau=tau*dt(ng)
+              tau=1.0_r8
               IF ((dVdt*dVdx).lt.0.0_r8) dVdt=0.0_r8
               IF ((dVdt*(grad(Iend,j-1)+grad(Iend,j))).gt.0.0_r8) THEN
                 dVde=grad(Iend,j-1)
@@ -781,9 +864,18 @@
      &                            MAX(Ce,0.0_r8)*grad(Iend+1,j-1)-      &
      &                            MIN(Ce,0.0_r8)*grad(Iend+1,j  ))/     &
      &                           (cff+Cx)
+              my_val=fac1*REFINED(ng)%vR_east(1,j,k,t1)+                &
+     &               fac2*REFINED(ng)%vR_east(1,j,k,t2)
+              v(Iend+1,j,k,nout)=v(Iend+1,j,k,nout)+                    &
+     &                           tau*(my_val-                           &
+     &                                v(Iend+1,j,k,nstp))
 #   ifdef MASKING
               v(Iend+1,j,k,nout)=v(Iend+1,j,k,nout)*                    &
      &                           GRID(ng)%vmask(Iend+1,j)
+#   endif
+#   ifdef WET_DRY
+              v(Iend+1,j,k,nout)=v(Iend+1,j,k,nout)*                    &
+     &                           GRID(ng)%vmask_wet(Iend+1,j)
 #   endif
             END DO
           END DO

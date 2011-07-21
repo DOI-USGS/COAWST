@@ -120,6 +120,10 @@
 ** Set number of ghost-points in the halo region.
 */
 
+#if defined EW_PERIODIC && defined REFINED_GRID
+# define EW_PERIODIC_REFINED
+#endif
+
 #if defined TS_MPDATA || defined UV_VIS4 || defined COMPOSED_GRID || \
     defined REFINED_GRID
 # define GHOST_POINTS 3

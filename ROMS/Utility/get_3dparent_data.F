@@ -1,5 +1,6 @@
 #include "cppdefs.h"
       MODULE get_3dparent_data_mod
+#undef INTERP_BILINEAR
 #ifdef SOLVE3D
 # ifdef REFINED_GRID
 !
@@ -234,6 +235,7 @@
 !
 ! Now interpolate to the local tile for ng=2.
 !
+# ifdef INTERP_BILINEAR
             IF (spherical) THEN 
               CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,           &
      &                          Kmin, Kmax,                             &
@@ -257,6 +259,15 @@
      &                          GRID(ng)%xr, GRID(ng)%yr, A2,           &
      &                          my_min, my_max)
             END IF
+# else
+            CALL consrvterp3d (ng, Imin, Imax, Jmin, Jmax,              &
+     &                         Kmin, Kmax,                              &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj, 1, N(ngp),           &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindpi_r, OCEAN(ng)%hindpj_r,  &
+     &                         A2, my_min, my_max)
+# endif
             IF (WESTERN_EDGE) THEN
               DO k=1,N(ng)
                 DO j=JstrT,JendT
@@ -342,6 +353,7 @@
 !
 ! Now interpolate to the local tile for the child grid.
 !
+# ifdef INTERP_BILINEAR
           IF (spherical) THEN
             CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax, Kmin, Kmax, &
      &                        REFINED(ng)%lonu_p(Imin:Imax,Jmin:Jmax),  &
@@ -363,6 +375,15 @@
      &                        GRID(ng)%xu, GRID(ng)%yu, A2,             &
      &                        my_min, my_max)
           END IF
+# else
+            CALL consrvterp3d (ng, Imin, Imax, Jmin, Jmax,              &
+     &                         Kmin, Kmax,                              &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj, 1, N(ngp),           &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
+     &                         A2, my_min, my_max)
+# endif
           IF (WESTERN_EDGE) THEN
             DO k=1,N(ng)
               DO j=JstrT,JendT
@@ -433,6 +454,7 @@
 !
 ! Now interpolate to the local tile for the child grid.
 !
+# ifdef INTERP_BILINEAR
           IF (spherical) THEN
             CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax, Kmin, Kmax, &
      &                        REFINED(ng)%lonu_p(Imin:Imax,Jmin:Jmax),  &
@@ -454,6 +476,15 @@
      &                        GRID(ng)%xu, GRID(ng)%yu, A2,             &
      &                        my_min, my_max)
           END IF
+# else
+            CALL consrvterp3d (ng, Imin, Imax, Jmin, Jmax,              &
+     &                         Kmin, Kmax,                              &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj, 1, N(ngp),           &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
+     &                         A2, my_min, my_max)
+# endif
           IF (WESTERN_EDGE) THEN
             DO k=1,N(ng)
               DO j=JstrT,JendT
@@ -539,6 +570,7 @@
 !
 ! Now interpolate to the local tile for ng=2.
 !
+# ifdef INTERP_BILINEAR
           IF (spherical) THEN
             CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax, Kmin, Kmax, &
      &                        REFINED(ng)%lonv_p(Imin:Imax,Jmin:Jmax),  &
@@ -560,6 +592,15 @@
      &                        GRID(ng)%xv, GRID(ng)%yv, A2,             &
      &                        my_min, my_max)
           END IF
+# else
+            CALL consrvterp3d (ng, Imin, Imax, Jmin, Jmax,              &
+     &                         Kmin, Kmax,                              &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj, 1, N(ngp),           &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,  &
+     &                         A2, my_min, my_max)
+# endif
           IF (WESTERN_EDGE) THEN
             DO k=1,N(ng)
               DO j=JstrT,JendT
@@ -630,6 +671,7 @@
 !
 ! Now interpolate to the local tile for ng=2.
 !
+# ifdef INTERP_BILINEAR
           IF (spherical) THEN
             CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax, Kmin, Kmax, &
      &                        REFINED(ng)%lonv_p(Imin:Imax,Jmin:Jmax),  &
@@ -651,6 +693,15 @@
      &                        GRID(ng)%xv, GRID(ng)%yv, A2,             &
      &                        my_min, my_max)
           END IF
+# else
+            CALL consrvterp3d (ng, Imin, Imax, Jmin, Jmax,              &
+     &                         Kmin, Kmax,                              &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj, 1, N(ngp),           &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,  &
+     &                         A2, my_min, my_max)
+# endif
           IF (WESTERN_EDGE) THEN
             DO k=1,N(ng)
               DO j=JstrT,JendT
