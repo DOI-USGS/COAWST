@@ -93,14 +93,14 @@
       integer :: i, ii, gtype, j, k, ic, jc, Npts, ngp, itrc, t1
       integer :: Imin, Imax, Jmin, Jmax, Kmin, Kmax, model
       integer :: Ilen, Jlen, Klen, IJlen, MyType, status
-      integer :: MyError, MySize, ncvarid, MyMaskSize
-      real(r8) :: Xmin, Xmax, Ymin, Ymax
+      integer :: MyError, MySize, ncvarid, MyMaskSize, refscale
       real(r8) :: my_min, my_max
 
       real(r8), allocatable :: Aout(:)
       real(r8), allocatable :: A(:,:,:)
       real(r8), allocatable :: Amask(:,:)
       real(r8), allocatable :: A2(:,:,:)
+      real(r8), allocatable :: Ipos(:,:), Jpos(:,:)
 
       logical :: rectangular
       real(r8) :: IJspv
@@ -127,6 +127,11 @@
       ELSE
         t1=nnew(ngp)
       END IF
+!
+!  Set refinement scale.
+!
+      refscale=OCEAN(ng)%ref_scale
+
 
       DO ii=1,3   ! 3 gtypes
         IF (ii.eq.1) THEN
@@ -189,6 +194,12 @@
         IF (.not.allocated(A2)) THEN
           allocate(A2(LBi:UBi,LBj:UBj,Kmin:Kmax))
         END IF
+        IF (.not.allocated(Ipos)) THEN
+          allocate(Ipos(LBi:UBi,LBj:UBj))
+        END IF
+        IF (.not.allocated(Jpos)) THEN
+          allocate(Jpos(LBi:UBi,LBj:UBj))
+        END IF
 !
         IF (ii.eq.1) THEN
 !!!!!!!!!!!!!!!!!!!
@@ -232,6 +243,12 @@
                 END DO
               END DO
             END DO
+          DO i=LBi,UBi
+            DO j=LBj,UBj
+              Ipos(i,j)=OCEAN(ng)%hindpi_r(i,j)
+              Jpos(i,j)=OCEAN(ng)%hindpj_r(i,j)
+            END DO
+          END DO
 !
 ! Now interpolate to the local tile for ng=2.
 !
@@ -262,10 +279,13 @@
 # else
             CALL consrvterp3d (ng, Imin, Imax, Jmin, Jmax,              &
      &                         Kmin, Kmax,                              &
-     &                         A, Amask,                                &
+     &                         A,                                       &
+#  ifdef MASKING
+     &                         Amask,                                   &
+#  endif
      &                         LBi, UBi, LBj, UBj, 1, N(ngp),           &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_r, OCEAN(ng)%hindpj_r,  &
+     &                         LBi, UBi, LBj, UBj, refscale,            &
+     &                         Ipos, Jpos,                              &
      &                         A2, my_min, my_max)
 # endif
             IF (WESTERN_EDGE) THEN
@@ -350,6 +370,12 @@
               END DO
             END DO
           END DO
+          DO i=LBi,UBi
+            DO j=LBj,UBj
+              Ipos(i,j)=OCEAN(ng)%hindpi_u(i,j)
+              Jpos(i,j)=OCEAN(ng)%hindpj_u(i,j)
+            END DO
+          END DO
 !
 ! Now interpolate to the local tile for the child grid.
 !
@@ -378,10 +404,13 @@
 # else
             CALL consrvterp3d (ng, Imin, Imax, Jmin, Jmax,              &
      &                         Kmin, Kmax,                              &
-     &                         A, Amask,                                &
+     &                         A,                                       &
+#  ifdef MASKING
+     &                         Amask,                                   &
+#  endif
      &                         LBi, UBi, LBj, UBj, 1, N(ngp),           &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
+     &                         LBi, UBi, LBj, UBj, refscale,            &
+     &                         Ipos, Jpos,                              &
      &                         A2, my_min, my_max)
 # endif
           IF (WESTERN_EDGE) THEN
@@ -479,10 +508,13 @@
 # else
             CALL consrvterp3d (ng, Imin, Imax, Jmin, Jmax,              &
      &                         Kmin, Kmax,                              &
-     &                         A, Amask,                                &
+     &                         A,                                       &
+#  ifdef MASKING
+     &                         Amask,                                   &
+#  endif
      &                         LBi, UBi, LBj, UBj, 1, N(ngp),           &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
+     &                         LBi, UBi, LBj, UBj, refscale,            &
+     &                         Ipos, Jpos,                              &
      &                         A2, my_min, my_max)
 # endif
           IF (WESTERN_EDGE) THEN
@@ -567,6 +599,12 @@
               END DO
             END DO
           END DO
+          DO i=LBi,UBi
+            DO j=LBj,UBj
+              Ipos(i,j)=OCEAN(ng)%hindpi_v(i,j)
+              Jpos(i,j)=OCEAN(ng)%hindpj_v(i,j)
+            END DO
+          END DO
 !
 ! Now interpolate to the local tile for ng=2.
 !
@@ -595,10 +633,13 @@
 # else
             CALL consrvterp3d (ng, Imin, Imax, Jmin, Jmax,              &
      &                         Kmin, Kmax,                              &
-     &                         A, Amask,                                &
+     &                         A,                                       &
+#  ifdef MASKING
+     &                         Amask,                                   &
+#  endif
      &                         LBi, UBi, LBj, UBj, 1, N(ngp),           &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,  &
+     &                         LBi, UBi, LBj, UBj, refscale,            &
+     &                         Ipos, Jpos,                              &
      &                         A2, my_min, my_max)
 # endif
           IF (WESTERN_EDGE) THEN
@@ -696,10 +737,13 @@
 # else
             CALL consrvterp3d (ng, Imin, Imax, Jmin, Jmax,              &
      &                         Kmin, Kmax,                              &
-     &                         A, Amask,                                &
+     &                         A,                                       &
+#  ifdef MASKING
+     &                         Amask,                                   &
+#  endif
      &                         LBi, UBi, LBj, UBj, 1, N(ngp),           &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,  &
+     &                         LBi, UBi, LBj, UBj, refscale,            &
+     &                         Ipos, Jpos,                              &
      &                         A2, my_min, my_max)
 # endif
           IF (WESTERN_EDGE) THEN
@@ -756,6 +800,12 @@
         END IF
         IF (allocated(A2)) THEN
           deallocate (A2)
+        END IF
+        IF (allocated(Ipos)) THEN
+          deallocate (Ipos)
+        END IF
+        IF (allocated(Jpos)) THEN
+          deallocate (Jpos)
         END IF
       END DO
 !

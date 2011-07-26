@@ -96,14 +96,14 @@
       integer :: i, j, ii, gtype, ic, jc, Npts, ngp, t1
       integer :: Imin, Imax, Jmin, Jmax, model
       integer :: Ilen, Jlen, IJlen, MyType, status
-      integer :: MyError, MySize, ncvarid
-      real(r8) :: Xmin, Xmax, Ymin, Ymax
+      integer :: MyError, MySize, ncvarid, refscale
+!      real(r8) :: Xmin, Xmax, Ymin, Ymax
       real(r8) :: my_min, my_max
 
       real(r8), allocatable :: Aout(:)
       real(r8), allocatable :: A(:,:)
       real(r8), allocatable :: Amask(:,:)
-      real(r8), allocatable :: A2(:,:)
+      real(r8), allocatable :: A2(:,:), Ipos(:,:), Jpos(:,:)
 
       logical :: rectangular
       real(r8) :: IJspv
@@ -134,6 +134,10 @@
         t1=kstp(ng)
 # endif
       END IF
+!
+!  Set refinement scale.
+!
+      refscale=OCEAN(ng)%ref_scale
 
 !  Loop thru 3 times. 
 !  ii=1: rho var, ii=2:u var, ii=3:v var
@@ -183,18 +187,12 @@
         IJspv=-9999.0_r8
         ncvarid=1  !not used
 
-        IF (.not.allocated(Aout)) THEN
-          allocate (Aout(IJlen))
-        END IF
-        IF (.not.allocated(A)) THEN
-          allocate(A(Imin:Imax,Jmin:Jmax))
-        END IF
-        IF (.not.allocated(Amask)) THEN
-          allocate(Amask(Imin:Imax,Jmin:Jmax))
-        END IF
-        IF (.not.allocated(A2)) THEN
-          allocate(A2(LBi:UBi,LBj:UBj))
-        END IF
+        IF (.not.allocated(Aout))  allocate(Aout(IJlen))
+        IF (.not.allocated(A))     allocate(A(Imin:Imax,Jmin:Jmax))
+        IF (.not.allocated(Amask)) allocate(Amask(Imin:Imax,Jmin:Jmax))
+        IF (.not.allocated(A2))    allocate(A2(LBi:UBi,LBj:UBj))
+        IF (.not.allocated(Ipos))  allocate(Ipos(LBi:UBi,LBj:UBj))
+        IF (.not.allocated(Jpos))  allocate(Jpos(LBi:UBi,LBj:UBj))
 !
         IF (ii.eq.1) THEN
 !!!!!!!!!!!!!!!!!!!
@@ -250,6 +248,12 @@
               A(i,j)=Aout(ic)
             END DO
           END DO
+          DO i=LBi,UBi
+            DO j=LBj,UBj
+              Ipos(i,j)=OCEAN(ng)%hindpi_r(i,j)
+              Jpos(i,j)=OCEAN(ng)%hindpj_r(i,j)
+            END DO
+          END DO
 !
 ! Now interpolate to the local tile.
 !
@@ -261,7 +265,7 @@
      &                         A, Amask,                                &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_r, OCEAN(ng)%hindpj_r,&
+     &                         Ipos, Jpos,                              &
      &                         GRID(ng)%lonr, GRID(ng)%latr, A2,        &
      &                         my_min, my_max)
           ELSE
@@ -271,16 +275,19 @@
      &                         A, Amask,                                &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_r, OCEAN(ng)%hindpj_r,&
+     &                         Ipos, Jpos,                              &
      &                         GRID(ng)%xr, GRID(ng)%yr, A2,            &
      &                         my_min, my_max)
           END IF
 # else
             CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A, Amask,                                &
+     &                         A,                                       &
+#  ifdef MASKING
+     &                         Amask,                                   &
+#  endif 
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_r, OCEAN(ng)%hindpj_r,  &
+     &                         LBi, UBi, LBj, UBj, refscale,            &
+     &                         Ipos, Jpos,                              &
      &                         A2, my_min, my_max)
 # endif
 !
@@ -349,7 +356,7 @@
      &                         A, Amask,                                &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_r, OCEAN(ng)%hindpj_r,&
+     &                         Ipos, Jpos,                              &
      &                         GRID(ng)%lonr, GRID(ng)%latr, A2,        &
      &                         my_min, my_max)
           ELSE
@@ -359,16 +366,19 @@
      &                         A, Amask,                                &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_r, OCEAN(ng)%hindpj_r,&
+     &                         Ipos, Jpos,                              &
      &                         GRID(ng)%xr, GRID(ng)%yr, A2,            &
      &                         my_min, my_max)
           END IF
 # else
             CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A, Amask,                                &
+     &                         A,                                       &
+#  ifdef MASKING
+     &                         Amask,                                   &
+#  endif 
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_r, OCEAN(ng)%hindpj_r,  &
+     &                         LBi, UBi, LBj, UBj, refscale,            &
+     &                         Ipos, Jpos,                              &
      &                         A2, my_min, my_max)
 # endif
 !
@@ -444,6 +454,12 @@
               A(i,j)=Aout(ic)
             END DO
           END DO
+          DO i=LBi,UBi
+            DO j=LBj,UBj
+              Ipos(i,j)=OCEAN(ng)%hindpi_u(i,j)
+              Jpos(i,j)=OCEAN(ng)%hindpj_u(i,j)
+            END DO
+          END DO
 !
 ! Now interpolate to the local tile for ng=2.
 !
@@ -471,10 +487,13 @@
           END IF
 # else
             CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A, Amask,                                &
+     &                         A,                                       &
+#  ifdef MASKING
+     &                         Amask,                                   &
+#  endif 
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
+     &                         LBi, UBi, LBj, UBj, refscale,            &
+     &                         Ipos, Jpos,                              &
      &                         A2, my_min, my_max)
 # endif
 !
@@ -564,10 +583,13 @@
           END IF
 # else
             CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A, Amask,                                &
+     &                         A,                                       &
+#  ifdef MASKING
+     &                         Amask,                                   &
+#  endif 
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
+     &                         LBi, UBi, LBj, UBj, refscale,            &
+     &                         Ipos, Jpos,                              &
      &                         A2, my_min, my_max)
 # endif
 !
@@ -640,7 +662,7 @@
      &                        A, Amask,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u, &
+     &                        OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,   &
      &                        GRID(ng)%lonu, GRID(ng)%latu,             &
      &                        A2, my_min, my_max)
           ELSE
@@ -650,15 +672,18 @@
      &                        A, Amask,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u, &
+     &                        OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,   &
      &                        GRID(ng)%xu, GRID(ng)%yu,                 &
      &                        A2, my_min, my_max)
 # else
             CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A, Amask,                                &
+     &                         A,                                       &
+#  ifdef MASKING
+     &                         Amask,                                   &
+#  endif 
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
+     &                         LBi, UBi, LBj, UBj, refscale,            &
+     &                         Ipos, Jpos,                              &
      &                         A2, my_min, my_max)
 # endif
           END IF
@@ -736,6 +761,12 @@
               A(i,j)=Aout(ic)
             END DO
           END DO
+          DO i=LBi,UBi
+            DO j=LBj,UBj
+              Ipos(i,j)=OCEAN(ng)%hindpi_v(i,j)
+              Jpos(i,j)=OCEAN(ng)%hindpj_v(i,j)
+            END DO
+          END DO
 !
 ! Now interpolate to the local tile for ng=2.
 !
@@ -763,10 +794,13 @@
           END IF
 # else
             CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A, Amask,                                &
+     &                         A,                                       &
+#  ifdef MASKING
+     &                         Amask,                                   &
+#  endif 
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,  &
+     &                         LBi, UBi, LBj, UBj, refscale,            &
+     &                         Ipos, Jpos,                              &
      &                         A2, my_min, my_max)
 # endif
           IF (WESTERN_EDGE) THEN
@@ -854,10 +888,13 @@
           END IF
 # else
             CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A, Amask,                                &
+     &                         A,                                       &
+#  ifdef MASKING
+     &                         Amask,                                   &
+#  endif 
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,  &
+     &                         LBi, UBi, LBj, UBj, refscale,            &
+     &                         Ipos, Jpos,                              &
      &                         A2, my_min, my_max)
 # endif
           IF (WESTERN_EDGE) THEN
@@ -928,7 +965,7 @@
      &                        A, Amask,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v, &
+     &                        OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,   &
      &                        GRID(ng)%lonv, GRID(ng)%latv,             &
      &                        A2, my_min, my_max)
           ELSE
@@ -938,16 +975,19 @@
      &                        A, Amask,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v, &
+     &                        OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,   &
      &                        GRID(ng)%xv, GRID(ng)%yv,                 &
      &                        A2, my_min, my_max)
           END IF
 # else
             CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A, Amask,                                &
+     &                         A,                                       &
+#  ifdef MASKING
+     &                         Amask,                                   &
+#  endif 
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,  &
+     &                         LBi, UBi, LBj, UBj, refscale,            &
+     &                         Ipos, Jpos,                              &
      &                         A2, my_min, my_max)
 # endif
           IF (WESTERN_EDGE) THEN
@@ -985,18 +1025,12 @@
 # endif
         END IF
 !
-        IF (allocated(Aout)) THEN
-          deallocate (Aout)
-        END IF
-        IF (allocated(A)) THEN
-          deallocate (A)
-        END IF
-        IF (allocated(Amask)) THEN
-          deallocate (Amask)
-        END IF
-        IF (allocated(A2)) THEN
-          deallocate (A2)
-        END IF
+        IF (allocated(Aout))  deallocate (Aout)
+        IF (allocated(A))     deallocate (A)
+        IF (allocated(Amask)) deallocate (Amask)
+        IF (allocated(A2))    deallocate (A2)
+        IF (allocated(Ipos))  deallocate (Ipos)
+        IF (allocated(Jpos))  deallocate (Jpos)
       END DO
 !
 # ifdef PROFILE

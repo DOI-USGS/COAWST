@@ -135,6 +135,9 @@
           integer, pointer :: hindcr(:)
           integer, pointer :: hindcu(:)
           integer, pointer :: hindcv(:)
+          integer, pointer :: hindxmin
+          integer, pointer :: hindxmax
+          integer, pointer :: ref_scale
 #endif
 #if defined COMPOSED_GRID
           real(r8), pointer :: hind2di_u(:,:)
@@ -415,6 +418,9 @@
           allocate ( OCEAN(ng) % hindcr(1:4) )
           allocate ( OCEAN(ng) % hindcu(1:4) )
           allocate ( OCEAN(ng) % hindcv(1:4) )
+          allocate ( OCEAN(ng) % hindxmin )
+          allocate ( OCEAN(ng) % hindxmax )
+          allocate ( OCEAN(ng) % ref_scale )
 #endif
 #ifdef COMPOSED_GRID
           allocate ( OCEAN(ng) % hind2di_u(LBi:UBi,LBj:UBj) )
@@ -683,30 +689,33 @@
 !  Nonlinear model state.
 !
 #if defined REFINED_GRID
-            OCEAN(ng) % hindpr(1) = IniVal
-            OCEAN(ng) % hindpr(2) = IniVal
-            OCEAN(ng) % hindpr(3) = IniVal
-            OCEAN(ng) % hindpr(4) = IniVal
-            OCEAN(ng) % hindpu(1) = IniVal
-            OCEAN(ng) % hindpu(2) = IniVal
-            OCEAN(ng) % hindpu(3) = IniVal
-            OCEAN(ng) % hindpu(4) = IniVal
-            OCEAN(ng) % hindpv(1) = IniVal
-            OCEAN(ng) % hindpv(2) = IniVal
-            OCEAN(ng) % hindpv(3) = IniVal
-            OCEAN(ng) % hindpv(4) = IniVal
-            OCEAN(ng) % hindcr(1) = IniVal
-            OCEAN(ng) % hindcr(2) = IniVal
-            OCEAN(ng) % hindcr(3) = IniVal
-            OCEAN(ng) % hindcr(4) = IniVal
-            OCEAN(ng) % hindcu(1) = IniVal
-            OCEAN(ng) % hindcu(2) = IniVal
-            OCEAN(ng) % hindcu(3) = IniVal
-            OCEAN(ng) % hindcu(4) = IniVal
-            OCEAN(ng) % hindcv(1) = IniVal
-            OCEAN(ng) % hindcv(2) = IniVal
-            OCEAN(ng) % hindcv(3) = IniVal
-            OCEAN(ng) % hindcv(4) = IniVal
+            OCEAN(ng) % hindpr(1) = 0
+            OCEAN(ng) % hindpr(2) = 0
+            OCEAN(ng) % hindpr(3) = 0
+            OCEAN(ng) % hindpr(4) = 0
+            OCEAN(ng) % hindpu(1) = 0
+            OCEAN(ng) % hindpu(2) = 0
+            OCEAN(ng) % hindpu(3) = 0
+            OCEAN(ng) % hindpu(4) = 0
+            OCEAN(ng) % hindpv(1) = 0
+            OCEAN(ng) % hindpv(2) = 0
+            OCEAN(ng) % hindpv(3) = 0
+            OCEAN(ng) % hindpv(4) = 0
+            OCEAN(ng) % hindcr(1) = 0
+            OCEAN(ng) % hindcr(2) = 0
+            OCEAN(ng) % hindcr(3) = 0
+            OCEAN(ng) % hindcr(4) = 0
+            OCEAN(ng) % hindcu(1) = 0
+            OCEAN(ng) % hindcu(2) = 0
+            OCEAN(ng) % hindcu(3) = 0
+            OCEAN(ng) % hindcu(4) = 0
+            OCEAN(ng) % hindcv(1) = 0
+            OCEAN(ng) % hindcv(2) = 0
+            OCEAN(ng) % hindcv(3) = 0
+            OCEAN(ng) % hindcv(4) = 0
+            OCEAN(ng) % hindxmin = 0
+            OCEAN(ng) % hindxmax = 0
+            OCEAN(ng) % ref_scale = 0
 #endif
       IF ((model.eq.0).or.(model.eq.iNLM)) THEN
         DO j=Jmin,Jmax

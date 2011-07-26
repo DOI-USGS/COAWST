@@ -79,6 +79,9 @@ CONTAINS
 
 #ifdef WRF_COUPLING
    SUBROUTINE wrf_init( MyComm_r, N_mctmodels_r,                        &
+# ifdef REFINED_GRID
+     &                  ocnids_r,                                       &
+# endif
      &                  OCNid_r, ATMid_r, WAVid_r,                      &
      &                  WRF_CPL_GRID_r,                                 &
      &                  TI_ATM_OCN_r, TI_ATM_WAV_r,                     &
@@ -105,6 +108,9 @@ CONTAINS
 #endif
 #ifdef WRF_COUPLING
      integer, intent(in) :: MyComm_r, N_mctmodels_r
+# ifdef REFINED_GRID
+     integer, intent(in), dimension(NestedGrids) :: ocnids_r
+# endif
      integer, intent(in) :: OCNid_r, ATMid_r, WAVid_r, WRF_CPL_GRID_r
      real, intent(in) :: TI_ATM_OCN_r, TI_ATM_WAV_r
 #endif
@@ -139,6 +145,9 @@ CONTAINS
 #ifdef WRF_COUPLING
    MyComm=MyComm_r
    N_mctmodels=N_mctmodels_r
+# ifdef REFINED_GRID
+   ocnids=ocnids_r
+# endif
    OCNid=OCNid_r
    ATMid=ATMid_r
    WAVid=WAVid_r

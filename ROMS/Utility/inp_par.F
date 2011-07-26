@@ -2541,7 +2541,7 @@
      &          'Number of timesteps for 2-D equations between',        &
      &          'each 3D timestep.'
 #ifdef REFINED_GRID
-          WRITE (out,120) NestedGrids, 'Numgrids',                      &
+          WRITE (out,120) Ngrids, 'Numgrids',                           &
      &          'Number of refined grids.'
 #endif
 #ifdef AIR_OCEAN

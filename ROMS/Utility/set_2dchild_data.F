@@ -101,7 +101,7 @@
       integer :: Ilen, Jlen, IJlen, MyType, status
       integer :: MyError, MySizer, ncvarid
       integer :: Xmin, Xmax, Ymin, Ymax
-      integer :: Istrp, Iendp, Jstrp, Jendp, ref_scale
+      integer :: Istrp, Iendp, Jstrp, Jendp
       real(r8) :: my_min, my_max
 !
       real(r8), allocatable :: Aout(:)
@@ -273,11 +273,12 @@
           Xmax=OCEAN(ng)%hindcr(2)
           Ymin=OCEAN(ng)%hindcr(3)
           Ymax=OCEAN(ng)%hindcr(4)
-          ref_scale=(imax-imin+1-7)/(xmax-xmin+1)
+          IF (Xmax.gt.-9999) THEN
+!          ref_scale=(imax-imin+1-7)/(xmax-xmin+1)
 !
 !  Average the child data back to parent resolution.
 !
-          IF (ref_scale.eq.3) THEN
+          IF (OCEAN(ngc)%ref_scale.eq.3) THEN
             DO j=Jmin+1,Jmax-1
               DO i=Imin+1,Imax-1
                 A(i,j)=1.0_r8/9.0_r8*                                   &
@@ -345,6 +346,7 @@
 # endif
             END DO
           END DO
+          END IF
         ELSE IF (ii.eq.2) THEN
 !!!!!!!!!!!!!!!!!!!
 !  ubar  !!!!!!!!!!
@@ -396,11 +398,11 @@
           Xmax=OCEAN(ng)%hindcu(2)
           Ymin=OCEAN(ng)%hindcu(3)
           Ymax=OCEAN(ng)%hindcu(4)
-          ref_scale=(imax-imin+1-7)/(xmax-xmin+1)
 !
 !  Average the child data back to parent resolution.
 !
-          IF (ref_scale.eq.3) THEN
+          IF (Xmax.gt.-9999) THEN
+          IF (OCEAN(ngc)%ref_scale.eq.3) THEN
             DO j=Jmin+1,Jmax-1
               DO i=Imin+1,Imax-1
                 A(i,j)=1.0_r8/9.0_r8*                                   &
@@ -461,7 +463,7 @@
               OCEAN(ng)%ubar(i,j,2)=my_val
             END DO
           END DO
-
+          END IF
         ELSE IF (ii.eq.3) THEN
 !!!!!!!!!!!!!!!!!!!
 !  vbar  !!!!!!!!!!
@@ -513,11 +515,11 @@
           Xmax=OCEAN(ng)%hindcv(2)
           Ymin=OCEAN(ng)%hindcv(3)
           Ymax=OCEAN(ng)%hindcv(4)
-          ref_scale=(imax-imin+1-7)/(xmax-xmin+1)
 !
 !  Average the child data back to parent resolution.
 !
-          IF (ref_scale.eq.3) THEN
+          IF (Xmax.gt.-9999) THEN
+          IF (OCEAN(ngc)%ref_scale.eq.3) THEN
             DO j=Jmin+1,Jmax-1
               DO i=Imin+1,Imax-1
                 A(i,j)=1.0_r8/9.0_r8*                                   &
@@ -578,6 +580,7 @@
               OCEAN(ng)%vbar(i,j,2)=my_val
             END DO
           END DO
+          END IF
         END IF
 !
         IF (allocated(Aout)) THEN

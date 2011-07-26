@@ -499,8 +499,8 @@
 !
 !  Scale with cell side lengths to translate into cell indices.
 !
-            dx=MIN(MAX(0.0_r8,dx/SQRT(aa2)),1.0_r8)
-            dy=MIN(MAX(0.0_r8,dy/SQRT(bb2)),1.0_r8)
+            dx=MIN(MAX(0.0,dx/SQRT(aa2)),1.0)
+            dy=MIN(MAX(0.0,dy/SQRT(bb2)),1.0)
             Ipos(mp,np)=REAL(Imin)+dx
             Jpos(mp,np)=REAL(Jmin)+dy
 !

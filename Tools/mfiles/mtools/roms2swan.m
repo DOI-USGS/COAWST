@@ -55,7 +55,7 @@ fid = fopen('swan_bathy.bot','w');
 for index = 1:m;
     for index2 = 1:n;
         fprintf(fid,'   ');
-       fprintf(fid,'%12.4f',h(index,index2));
+       fprintf(fid,'%12.8f',h(index,index2));
     end
     fprintf(fid,'\n');
 end

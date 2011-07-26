@@ -41,11 +41,7 @@
       integer :: i, ic, j, jc, nprocs
       integer :: nRows, nCols, num_sparse_elems
 !     integer, dimension(:), pointer :: points
-	integer :: ioff, joff, ieff, cid, cad
-#ifdef REFINED_GRID
-      integer, dimension(:), pointer :: ocnids
-      integer, dimension(:), pointer :: wavids
-#endif
+      integer :: ioff, joff, ieff, cid, cad
       integer, allocatable :: length(:)
       integer, allocatable :: start(:)
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
@@ -112,8 +108,10 @@
 !  Initialize MCT coupled model registry.
 !
 #ifdef REFINED_GRID
+      OCNid=ocnids(ng)
+      WAVid=wavids(ng)
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                &
-     &                    OCN_COMM_WORLD, myids=OCNid)
+     &                    OCN_COMM_WORLD, myids=ocnids)
 #else
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                &
      &                    OCN_COMM_WORLD, OCNid)
@@ -440,12 +438,8 @@
 !
 !  Initialize a router to the wave model component.
 !
-      CALL Router_init (WAVid, GlobalSegMap_G(ng)%GSMapROMS,  &
+      CALL Router_init (WAVid, GlobalSegMap_G(ng)%GSMapROMS,            &
      &                  OCN_COMM_WORLD, Router_G(ng)%ROMStoSWAN)
-#endif
-#ifdef REFINED_GRID
-      deallocate ( wavids )
-      deallocate ( ocnids )
 #endif
       RETURN
       END SUBROUTINE initialize_ocn2wav_coupling
@@ -1169,6 +1163,7 @@
 !                                                                       !
 !========================================================================
       USE mod_scalars
+      USE mct_coupler_params
 !
 !  Local variable declarations.
 !
@@ -1178,6 +1173,10 @@
 !  Deallocate MCT environment.
 !-----------------------------------------------------------------------
 !
+#ifdef REFINED_GRID
+      deallocate ( wavids )
+      deallocate ( ocnids )
+#endif
       DO ng=1,Ngrids
         CALL Router_clean (Router_G(ng)%ROMStoSWAN, MyError)
         CALL AttrVect_clean (AttrVect_G(ng)%ocn2wav_AV, MyError)

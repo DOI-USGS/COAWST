@@ -90,13 +90,23 @@
 !
 !  Allocate several coupling variables.
 !
+#ifdef REFINED_GRID
+# ifdef ROMS_COUPLING
+      allocate(ocnids(Ngrids))
+# endif
+# ifdef SWAN_COUPLING
+      allocate(wavids(Ngrids))
+# endif
+#endif
+!
       N_mctmodels=0
 #ifdef ROMS_COUPLING
 # ifdef REFINED_GRID
       DO ng=1,Ngrids
         N_mctmodels=N_mctmodels+1
-        OCNid(ng)=N_mctmodels
+        ocnids(ng)=N_mctmodels
       END DO
+      OCNid=ocnids(1)
 # else
       N_mctmodels=N_mctmodels+1
       OCNid=N_mctmodels
@@ -106,8 +116,9 @@
 # ifdef REFINED_GRID
       DO ng=1,Ngrids
         N_mctmodels=N_mctmodels+1
-        WAVid(ng)=N_mctmodels
+        wavids(ng)=N_mctmodels
       END DO
+      WAVid=wavids(1)
 # else
       N_mctmodels=N_mctmodels+1
       WAVid=N_mctmodels
@@ -166,9 +177,9 @@
 !  Split the communicator into SWAN, WRF, and ROMS subgroups based 
 !  on color and key.
 !
-      Atmcolor=ATMid
-      Ocncolor=OCNid
-      Wavcolor=WAVid
+      Atmcolor=1
+      Ocncolor=2
+      Wavcolor=3
       MyKey=0
 #ifdef ROMS_COUPLING
       IF ((peOCN_frst.le.MyRank).and.(MyRank.le.peOCN_last)) THEN
@@ -210,6 +221,9 @@
       IF (MyColor.eq.ATMcolor) THEN
 # if defined IFORT || defined IFC || defined FTN
         CALL module_wrf_top_mp_wrf_init (MyCOMM, N_mctmodels,           &
+#  ifdef REFINED_GRID
+     &                                   ocnids,                        &
+#  endif
      &                                   OCNid, ATMid, WAVid,           &
      &                                   WRF_CPL_GRID,                  &
      &                                   REAL(TI_ATM_OCN),              &
@@ -218,6 +232,9 @@
         CALL module_wrf_top_mp_wrf_finalize
 # else
         CALL module_wrf_top_wrf_init (MyCOMM, N_mctmodels,              &
+#  ifdef REFINED_GRID
+     &                                ocnids,                           &
+#  endif
      &                                OCNid, ATMid, WAVid,              &
      &                                WRF_CPL_GRID,                     &
      &                                REAL(TI_ATM_OCN),                 &

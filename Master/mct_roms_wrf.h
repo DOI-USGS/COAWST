@@ -45,10 +45,6 @@
 
       integer, allocatable  :: length(:)
       integer, allocatable  :: start(:)
-#if defined REFINED_GRID && !defined WAVES_OCEAN
-      integer, dimension(:), pointer :: ocnids
-      integer, dimension(:), pointer :: wavids
-#endif
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       character (len=70) :: nc_name
       character (len=20) :: to_add
@@ -113,8 +109,9 @@
 !  Initialize MCT coupled model registry.
 !
 # ifdef REFINED_GRID
+      OCNid=ocnids(ng)
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                &
-     &                    OCN_COMM_WORLD,OCNid, myids=OCNid)
+     &                    OCN_COMM_WORLD,OCNid, myids=ocnids)
 # else
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD, OCN_COMM_WORLD,  &
      &                    OCNid)
@@ -508,11 +505,6 @@
       CALL Router_init (ATMid, GlobalSegMap_G(ng)%GSMapROMS,            &
      &                  OCN_COMM_WORLD, Router_G(ng)%ROMStoWRF)
 #endif
-#if defined REFINED_GRID && !defined WAVES_OCEAN
-      deallocate ( wavids )
-      deallocate ( ocnids )
-#endif
-
       RETURN
       END SUBROUTINE initialize_ocn2atm_coupling
 
@@ -1143,6 +1135,7 @@
 !                                                                       !
 !========================================================================
       USE mod_scalars
+      USE mct_coupler_params
 !
 !  Local variable declarations.
 !
@@ -1152,6 +1145,10 @@
 !  Deallocate MCT environment.
 !-----------------------------------------------------------------------
 !
+#if defined REFINED_GRID && !defined WAVES_OCEAN
+      deallocate ( wavids )
+      deallocate ( ocnids )
+#endif
       DO ng=1,Ngrids
         CALL Router_clean (Router_G(ng)%ROMStoWRF, MyError)
         CALL AttrVect_clean (AttrVect_G(ng)%ocn2atm_AV, MyError)

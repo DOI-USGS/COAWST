@@ -103,7 +103,7 @@
       integer :: Ilen, Jlen, IJlen, Klen, MyType, status
       integer :: MyError, MySize, ncvarid
       integer :: Xmin, Xmax, Ymin, Ymax
-      integer :: Istrp, Iendp, Jstrp, Jendp, ref_scale
+      integer :: Istrp, Iendp, Jstrp, Jendp
       real(r8) :: my_min, my_max
 !
       real(r8), allocatable :: Aout(:)
@@ -250,7 +250,7 @@
 # ifdef MASKING
      &          GRID(ngc) % rmask(LBic:UBic,LBjc:UBjc),                 &
 # endif
-     &          OCEAN(ngc) % t(LBic:UBic,LBjc:UBjc,1,NOUTC,itrc),       &
+     &   OCEAN(ngc) % t(LBic:UBic,LBjc:UBjc,1:N(ngc),NOUTC,itrc),       &
      &          Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes for ng=2
@@ -277,11 +277,11 @@
           Xmax=OCEAN(ng)%hindcr(2)
           Ymin=OCEAN(ng)%hindcr(3)
           Ymax=OCEAN(ng)%hindcr(4)
-          ref_scale=(imax-imin+1-7)/(xmax-xmin+1)
 !
 !  Average the child data back to parent resolution.
 !
-          IF (ref_scale.eq.3) THEN
+          IF (Xmax.gt.-9999) THEN
+          IF (OCEAN(ngc)%ref_scale.eq.3) THEN
             DO k=Kmin,Kmax
               DO j=Jmin+1,Jmax-1
                 DO i=Imin+1,Imax-1
@@ -352,6 +352,7 @@
                 END DO
               END DO
             END DO
+            END IF
           END DO
         ELSE IF (ii.eq.2) THEN
 !!!!!!!!!!!!!!!!!!!
@@ -380,7 +381,7 @@
 # ifdef MASKING
      &                    GRID(ngc) % umask(LBic:UBic,LBjc:UBjc),       &
 # endif
-     &               OCEAN(ngc) % u(LBic:UBic,LBjc:UBjc,1,NOUTC),       &
+     &        OCEAN(ngc) % u(LBic:UBic,LBjc:UBjc,1:N(ngc),NOUTC),       &
      &                    Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes for ng=2
@@ -407,11 +408,11 @@
           Xmax=OCEAN(ng)%hindcu(2)
           Ymin=OCEAN(ng)%hindcu(3)
           Ymax=OCEAN(ng)%hindcu(4)
-          ref_scale=(imax-imin+1-7)/(xmax-xmin+1)
 !
 !  Average the child data back to parent resolution.
 !
-          IF (ref_scale.eq.3) THEN
+          IF (Xmax.gt.-9999) THEN
+          IF (OCEAN(ngc)%ref_scale.eq.3) THEN
             DO k=Kmin,Kmax
               DO j=Jmin+1,Jmax-1
                 DO i=Imin+1,Imax-1
@@ -479,7 +480,7 @@
               END DO
             END DO
           END DO
-
+          END IF
         ELSE IF (ii.eq.3) THEN
 !!!!!!!!!!!!!!!!!!!
 !  v     !!!!!!!!!!
@@ -507,7 +508,7 @@
 # ifdef MASKING
      &                    GRID(ngc) % vmask(LBic:UBic,LBjc:UBjc),       &
 # endif
-     &             OCEAN(ngc) % v(LBic:UBic,LBjc:UBjc,1,NOUTC),         &
+     &      OCEAN(ngc) % v(LBic:UBic,LBjc:UBjc,1:N(ngc),NOUTC),         &
      &                    Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes for ng=2
@@ -534,11 +535,11 @@
           Xmax=OCEAN(ng)%hindcv(2)
           Ymin=OCEAN(ng)%hindcv(3)
           Ymax=OCEAN(ng)%hindcv(4)
-          ref_scale=(imax-imin+1-7)/(xmax-xmin+1)
 !
 !  Average the child data back to parent resolution.
 !
-          IF (ref_scale.eq.3) THEN
+          IF (Xmax.gt.-9999) THEN
+          IF (OCEAN(ngc)%ref_scale.eq.3) THEN
             DO k=Kmin,Kmax
               DO j=Jmin+1,Jmax-1
                 DO i=Imin+1,Imax-1
@@ -606,6 +607,7 @@
               END DO
             END DO
           END DO
+          END IF
         END IF
 !
         IF (allocated(Aout)) THEN

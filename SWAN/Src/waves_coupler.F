@@ -167,10 +167,6 @@
 
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       integer, allocatable :: start(:), length(:)
-# ifdef REFINED_GRID
-      integer, dimension(:), pointer :: ocnids
-      integer, dimension(:), pointer :: wavids
-# endif
 !
 !-----------------------------------------------------------------------
 !  Begin initialization phase.
@@ -193,8 +189,10 @@
       END IF
 !
 # ifdef REFINED_GRID
+      OCNid=ocnids(ng)
+      WAVid=wavids(ng)
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                  &
-     &                    WAV_COMM_WORLD, myids=WAVid)
+     &                    WAV_COMM_WORLD, myids=wavids)
 # else
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                  &
      &                    WAV_COMM_WORLD, WAVid)
@@ -564,10 +562,6 @@
      &                   lsize=Asize)
       CALL AttrVect_zero(wav2atm_AV2)
 #  endif
-# endif
-# ifdef REFINED_GRID
-      deallocate ( wavids )
-      deallocate ( ocnids )
 # endif
 
       RETURN

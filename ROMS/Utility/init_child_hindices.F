@@ -143,11 +143,7 @@
         IJlen=Ilen*Jlen
         Npts=IJlen
 
-#ifdef INLET_TEST
-        rectangular=.TRUE.
-#else
         rectangular=.FALSE.
-#endif
         IJspv=-9999.0_r8
 !
 ! Get the grid information for the entire parent grid. 
@@ -555,8 +551,23 @@
           OCEAN(ng)%hindcv(4)=Ymax
         END IF
 !
-        deallocate ( Ipos, Jpos )
+        IF (ii.eq.1) THEN
+!
+!  Compute refined ratio for the child grids.
+!
+          CALL mpi_allreduce (OCEAN(ng)%hindcr(1), OCEAN(ng)%hindxmin,  &
+     &                        1, MPI_INTEGER, MPI_MIN, OCN_COMM_WORLD,  &
+     &                        MyError)
+          CALL mpi_allreduce (OCEAN(ng)%hindcr(2), OCEAN(ng)%hindxmax,  &
+     &                        1, MPI_INTEGER, MPI_MAX, OCN_COMM_WORLD,  &
+     &                        MyError)
+          OCEAN(ngc)%ref_scale=(Ilen-7)/                                &
+                              (OCEAN(ng)%hindxmax-OCEAN(ng)%hindxmin+1)
+        END IF
+!
+        deallocate ( Ipos, Jpos)
       END DO
+
       RETURN
       END SUBROUTINE init_child_hindices_tile
 #endif

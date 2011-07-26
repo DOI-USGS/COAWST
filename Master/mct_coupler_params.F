@@ -49,12 +49,11 @@
 !  Coupled model components IDs.
 !
 # ifdef REFINED_GRID
-      integer, dimension(NestedGrids) :: OCNid
-      integer, dimension(NestedGrids) :: WAVid
-# else
+      integer, dimension(:), pointer :: ocnids
+      integer, dimension(:), pointer :: wavids
+# endif
       integer :: OCNid
       integer :: WAVid
-# endif
       integer :: ATMid
 !
 !  WRF grid number to couple to roms and or swan grids. 

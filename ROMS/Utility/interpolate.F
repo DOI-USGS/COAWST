@@ -30,11 +30,14 @@
       CONTAINS
 
       SUBROUTINE consrvterp2d (ng, LBx, UBx, LBy, UBy,                  &
-     &                      Finp, Amask,                                &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      Istr, Iend, Jstr, Jend,                     &
-     &                      Iout, Jout,                                 &
-     &                      Fout, Fmin, Fmax)
+     &                         Finp,                                    &
+#ifdef MASKING
+     &                         Amask,                                   &
+#endif
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         Istr, Iend, Jstr, Jend, ref_scale,       &
+     &                         Iout, Jout,                              &
+     &                         Fout, Fmin, Fmax)
 !
 !=======================================================================
 !  Based on Clark and Farley, (1984), Severe downslope windstorm       !
@@ -65,6 +68,7 @@
 !     Iend       Ending   data I-index to interpolate, Fout.           !
 !     Jstr       Starting data J-index to interpolate, Fout.           !
 !     Jend       Ending   data J-index to interpolate, Fout.           !
+!     ref_scale  Refinement scale ratio (3 or 5)                       !
 !     Iout       I-fractional Xinp grid cell containing Xout.          !
 !     Jout       J-fractional Yinp grid cell containing Yout.          !
 !                                                                      !
@@ -83,10 +87,12 @@
       integer, intent(in) :: ng, LBx, UBx, LBy, UBy
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: Istr, Iend, Jstr, Jend
+      integer, intent(in) :: ref_scale
 !
       real(r8), intent(in) :: Finp(LBx:UBx,LBy:UBy)
+#ifdef MASKING
       real(r8), intent(in) :: Amask(LBx:UBx,LBy:UBy)
-
+#endif
       real(r8), intent(in) :: Iout(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Jout(LBi:UBi,LBj:UBj)
 
@@ -98,15 +104,14 @@
 !
       integer :: i, j, i0, im, ip, j0, jm, jp
 
-      real(r8) :: alpha, ref_scale, epp
+      real(r8) :: alpha, epp
       real(r8) :: Em, E0, Ep, cff1, cff2, cff7, cff8, cff9
 !
 !-----------------------------------------------------------------------
 !  Conservatively interpolate requested field
 !-----------------------------------------------------------------------
 !
-      ref_scale=Iout(2,1)-Iout(1,1)
-      alpha=(ref_scale**2.0_r8-1.0_r8)/24.0_r8
+      alpha=(REAL(ref_scale,r8)**2.0_r8-1.0_r8)/24.0_r8
       Fmin=1.0E+35_r8
       Fmax=-1.0E+35_r8
       DO j=Jstr,Jend
@@ -177,11 +182,14 @@
       END SUBROUTINE consrvterp2d
 
       SUBROUTINE consrvterp3d (ng, LBx, UBx, LBy, UBy,  LBz, UBz,       &
-     &                      Finp, Amask,                                &
-     &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
-     &                      Istr, Iend, Jstr, Jend,                     &
-     &                      Iout, Jout,                                 &
-     &                      Fout, Fmin, Fmax)
+     &                         Finp,                                    &
+#ifdef MASKING
+     &                         Amask,                                   &
+#endif
+     &                         LBi, UBi, LBj, UBj, LBk, UBk,            &
+     &                         Istr, Iend, Jstr, Jend, ref_scale,       &
+     &                         Iout, Jout,                              &
+     &                         Fout, Fmin, Fmax)
 !
 !=======================================================================
 !  Based on Clark and Farley, (1984), Severe downslope windstorm       !
@@ -212,6 +220,7 @@
 !     Iend       Ending   data I-index to interpolate, Fout.           !
 !     Jstr       Starting data J-index to interpolate, Fout.           !
 !     Jend       Ending   data J-index to interpolate, Fout.           !
+!     ref_scale  Refinement scale ratio (3 or 5)                       !
 !     Iout       I-fractional Xinp grid cell containing Xout.          !
 !     Jout       J-fractional Yinp grid cell containing Yout.          !
 !                                                                      !
@@ -230,10 +239,12 @@
       integer, intent(in) :: ng, LBx, UBx, LBy, UBy, LBz, UBz
       integer, intent(in) ::     LBi, UBi, LBj, UBj, LBk, UBk
       integer, intent(in) :: Istr, Iend, Jstr, Jend
+      integer, intent(in) :: ref_scale
 !
       real(r8), intent(in) :: Finp(LBx:UBx,LBy:UBy,LBz:UBz)
+#ifdef MASKING
       real(r8), intent(in) :: Amask(LBx:UBx,LBy:UBy)
-
+#endif
       real(r8), intent(in) :: Iout(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Jout(LBi:UBi,LBj:UBj)
 
@@ -245,15 +256,14 @@
 !
       integer :: i, j, k, i0, im, ip, j0, jm, jp
 
-      real(r8) :: alpha, ref_scale, epp
+      real(r8) :: alpha, epp
       real(r8) :: Em, E0, Ep, cff1, cff2, cff7, cff8, cff9
 !
 !-----------------------------------------------------------------------
 !  Conservatively interpolate requested field
 !-----------------------------------------------------------------------
 !
-      ref_scale=Iout(2,1)-Iout(1,1)
-      alpha=(ref_scale**2.0_r8-1.0_r8)/24.0_r8
+      alpha=(REAL(ref_scale,r8)**2.0_r8-1.0_r8)/24.0_r8
       Fmin=1.0E+35_r8
       Fmax=-1.0E+35_r8
       DO j=Jstr,Jend
@@ -1450,9 +1460,9 @@
 !  Then, interpolate to fractional cell position.
 !-----------------------------------------------------------------------
 !
-      Xmin=-9999
+      Xmin= 9999
       Xmax=-9999
-      Ymin=-9999
+      Ymin= 9999
       Ymax=-9999
       foundxy=.TRUE.
       DO np=Ns,Ne
