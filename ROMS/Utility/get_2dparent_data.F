@@ -129,7 +129,7 @@
         t1=2
       ELSE
 # ifdef SOLVE3D
-        t1=nnew(ngp)
+        t1=nnew(ng)
 # else
         t1=kstp(ng)
 # endif

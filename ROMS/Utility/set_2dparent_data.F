@@ -94,7 +94,7 @@
       integer :: ILB, IUB, JLB, JUB
 # endif
       integer :: i, j, ngp, ic, jc, t1, t2
-      real(r8) :: my_val, fac, fac1, fac2, fac3, tscale
+      real(r8) :: my_val, fac, fac1, fac2, fac3
       real(r8) :: my_valu, my_valv, my_valh1, my_valh2, cff1
 # ifdef DISTRIBUTE
 #  ifdef EW_PERIODIC
@@ -139,13 +139,8 @@
         t2=nnew(ngp)
       END IF
 # else
-      IF (PREDICTOR_2D_STEP(ng)) THEN
-        tscale=2.0_r8
-      ELSE
-        tscale=1.0_r8
-      END IF
-      fac1=time(ngp)+dt(ngp)-time(ng)-tscale*dt(ng)
-      fac2=time(ng)-time(ngp)+tscale*dt(ng)
+      fac1=time(ngp)+dt(ngp)-time(ng)-dt(ng)
+      fac2=time(ng)-time(ngp)+dt(ng)
       fac=1.0_r8/(fac1+fac2)
       fac1=fac*fac1
       fac2=fac*fac2
@@ -180,9 +175,11 @@
               my_val=Dcrit(ng)-GRID(ng)%h(i,j)
             END IF
 # endif
-            OCEAN(ng)%zeta(i,j,knew(ng))=my_val
+            OCEAN(ng)%zeta(i,j,1)=my_val
+            OCEAN(ng)%zeta(i,j,2)=my_val
+            OCEAN(ng)%zeta(i,j,3)=my_val
 # ifdef SOLVE3D
-            COUPLING(ng)%Zt_avg1(i,j)=my_val
+!            COUPLING(ng)%Zt_avg1(i,j)=my_val
 # endif
           END DO
         END DO
@@ -201,9 +198,11 @@
               my_val=Dcrit(ng)-GRID(ng)%h(i,j)
             END IF
 # endif
-            OCEAN(ng)%zeta(i,j,knew(ng))=my_val
+            OCEAN(ng)%zeta(i,j,1)=my_val
+            OCEAN(ng)%zeta(i,j,2)=my_val
+            OCEAN(ng)%zeta(i,j,3)=my_val
 # ifdef SOLVE3D
-            COUPLING(ng)%Zt_avg1(i,j)=my_val
+!            COUPLING(ng)%Zt_avg1(i,j)=my_val
 # endif
           END DO
         END DO
@@ -222,9 +221,11 @@
               my_val=Dcrit(ng)-GRID(ng)%h(i,j)
             END IF
 # endif
-            OCEAN(ng)%zeta(i,j,knew(ng))=my_val
+            OCEAN(ng)%zeta(i,j,1)=my_val
+            OCEAN(ng)%zeta(i,j,2)=my_val
+            OCEAN(ng)%zeta(i,j,3)=my_val
 # ifdef SOLVE3D
-            COUPLING(ng)%Zt_avg1(i,j)=my_val
+!            COUPLING(ng)%Zt_avg1(i,j)=my_val
 # endif
           END DO
         END DO
@@ -243,9 +244,11 @@
               my_val=Dcrit(ng)-GRID(ng)%h(i,j)
             END IF
 # endif
-            OCEAN(ng)%zeta(i,j,knew(ng))=my_val
+            OCEAN(ng)%zeta(i,j,1)=my_val
+            OCEAN(ng)%zeta(i,j,2)=my_val
+            OCEAN(ng)%zeta(i,j,3)=my_val
 # ifdef SOLVE3D
-            COUPLING(ng)%Zt_avg1(i,j)=my_val
+!           COUPLING(ng)%Zt_avg1(i,j)=my_val
 # endif
           END DO
         END DO
@@ -262,7 +265,9 @@
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
-            OCEAN(ng)%ubar(i,j,knew(ng))=my_valu
+            OCEAN(ng)%ubar(i,j,1)=my_valu
+            OCEAN(ng)%ubar(i,j,2)=my_valu
+            OCEAN(ng)%ubar(i,j,3)=my_valu
           END DO
         END DO
       END IF
@@ -275,7 +280,9 @@
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
-            OCEAN(ng)%ubar(i,j,knew(ng))=my_valu
+            OCEAN(ng)%ubar(i,j,1)=my_valu
+            OCEAN(ng)%ubar(i,j,2)=my_valu
+            OCEAN(ng)%ubar(i,j,3)=my_valu
           END DO
         END DO
       END IF
@@ -288,7 +295,9 @@
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
-            OCEAN(ng)%ubar(i,j,knew(ng))=my_valu
+            OCEAN(ng)%ubar(i,j,1)=my_valu
+            OCEAN(ng)%ubar(i,j,2)=my_valu
+            OCEAN(ng)%ubar(i,j,3)=my_valu
           END DO
         END DO
       END IF
@@ -301,7 +310,9 @@
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
-            OCEAN(ng)%ubar(i,j,knew(ng))=my_valu
+            OCEAN(ng)%ubar(i,j,1)=my_valu
+            OCEAN(ng)%ubar(i,j,2)=my_valu
+            OCEAN(ng)%ubar(i,j,3)=my_valu
           END DO
         END DO
       END IF
@@ -374,7 +385,9 @@
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
-            OCEAN(ng)%vbar(i,j,knew(ng))=my_valv
+            OCEAN(ng)%vbar(i,j,1)=my_valv
+            OCEAN(ng)%vbar(i,j,2)=my_valv
+            OCEAN(ng)%vbar(i,j,3)=my_valv
           END DO
         END DO
       END IF
@@ -387,7 +400,9 @@
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
-            OCEAN(ng)%vbar(i,j,knew(ng))=my_valv
+            OCEAN(ng)%vbar(i,j,1)=my_valv
+            OCEAN(ng)%vbar(i,j,2)=my_valv
+            OCEAN(ng)%vbar(i,j,3)=my_valv
           END DO
         END DO
       END IF
@@ -400,7 +415,9 @@
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
-            OCEAN(ng)%vbar(i,j,knew(ng))=my_valv
+            OCEAN(ng)%vbar(i,j,1)=my_valv
+            OCEAN(ng)%vbar(i,j,2)=my_valv
+            OCEAN(ng)%vbar(i,j,3)=my_valv
           END DO
         END DO
       END IF
@@ -413,7 +430,9 @@
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
-            OCEAN(ng)%vbar(i,j,knew(ng))=my_valv
+            OCEAN(ng)%vbar(i,j,1)=my_valv
+            OCEAN(ng)%vbar(i,j,2)=my_valv
+            OCEAN(ng)%vbar(i,j,3)=my_valv
           END DO
         END DO
       END IF
@@ -475,48 +494,31 @@
       END IF
 # endif
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
-!
-!-----------------------------------------------------------------------
-!  Exchange boundary information.
-!-----------------------------------------------------------------------
-!
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%zeta(:,:,knew(ng)))
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%ubar(:,:,knew(ng)))
-      CALL exchange_v2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%vbar(:,:,knew(ng)))
-#  ifdef SOLVE3D
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        COUPLING(ng)%Zt_avg1(:,:))
-#  endif
-#  ifdef WEC
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%ubar_stokes(:,:))
-      CALL exchange_v2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%vbar_stokes(:,:))
-#  endif
-# endif
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    OCEAN(ng)%zeta(:,:,knew(ng)),                 &
-     &                    OCEAN(ng)%ubar(:,:,knew(ng)),                 &
-     &                    OCEAN(ng)%vbar(:,:,knew(ng)))
-#  ifdef SOLVE3D
-      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+     &                    OCEAN(ng)%zeta(:,:,1),                        &
+     &                    OCEAN(ng)%zeta(:,:,2),                        &
+     &                    OCEAN(ng)%zeta(:,:,3))
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    COUPLING(ng)%Zt_avg1(:,:))
-#  endif
+     &                    OCEAN(ng)%ubar(:,:,1),                        &
+     &                    OCEAN(ng)%ubar(:,:,2),                        &
+     &                    OCEAN(ng)%ubar(:,:,3))
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    OCEAN(ng)%vbar(:,:,1),                        &
+     &                    OCEAN(ng)%vbar(:,:,2),                        &
+     &                    OCEAN(ng)%vbar(:,:,3))
+!#  ifdef SOLVE3D
+!      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+!     &                    LBi, UBi, LBj, UBj,                           &
+!     &                    NghostPoints, EWperiodic, NSperiodic,         &
+!     &                    COUPLING(ng)%Zt_avg1(:,:))
+!#  endif
 #  ifdef WEC
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &

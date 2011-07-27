@@ -125,7 +125,7 @@
       IF (iic(1).eq.ntstart(1)) THEN
         t1=2
       ELSE
-        t1=nnew(ngp)
+        t1=nnew(ng)
       END IF
 !
 !  Set refinement scale.
