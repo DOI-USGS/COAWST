@@ -132,6 +132,7 @@
 
       real(r8), parameter :: Large = 1.0E+20_r8
       real(r8), parameter :: eps = 1.0E-18_r8
+      real(r8), parameter :: eps2= 1.0E-10_r8
 
       real(r8) :: A, B, Tmax, Tmin, Um, Vm, X, Y, Z
       real(r8) :: cff, cff1, cff2, sig_alfa
@@ -337,7 +338,8 @@
         DO k=1,N(ng)
           DO i=I_RANGE
             IF ((Ta(i-1,j,k).le.0.0_r8).or.                             &
-     &          (Ta(i  ,j,k).le.0.0_r8)) THEN
+     &          (Ta(i  ,j,k).le.0.0_r8).or.                             &
+     &          (ABS(Ta(i-1,j,k)-Ta(i,j,k)).le.eps2)) THEN
               Ua(i,j,k)=0.0_r8
             ELSE
               A=(Ta(i,j,k)-Ta(i-1,j,k))/                                &
@@ -571,7 +573,8 @@
         DO k=1,N(ng)
           DO i=I_RANGE
             IF ((Ta(i,j-1,k).le.0.0_r8).or.                             &
-     &          (Ta(i,j  ,k).le.0.0_r8)) THEN
+     &          (Ta(i,j  ,k).le.0.0_r8).or.                             &
+     &          (ABS(Ta(i,j-1,k)-Ta(i,j,k)).le.eps2)) THEN
               Va(i,j,k)=0.0_r8
             ELSE
 # ifdef MASKING
@@ -741,7 +744,8 @@
         DO k=1,N(ng)-1
           DO i=I_RANGE
             IF ((Ta(i,j,k  ).le.0.0_r8).or.                             &
-     &          (Ta(i,j,k+1).le.0.0_r8)) THEN
+     &          (Ta(i,j,k+1).le.0.0_r8).or.                             &
+     &          (ABS(Ta(i,j,k)-Ta(i,j,k+1)).le.eps2)) THEN
               Wa(i,j,k)=0.0_r8
             ELSE
               C(i,k)=(Ta(i,j,k+1)-Ta(i,j,k))/                           &
