@@ -72,7 +72,7 @@
 #  define SUSPLOAD
 #  undef  BEDLOAD_SOULSBY
 #  undef  BEDLOAD_MPM
-#  define SED_MORPH
+#  undef  SED_MORPH
 # endif
 # if defined SEDIMENT || defined SG_BBL || defined MB_BBL || defined SSW_BBL
 #  define ANA_SEDIMENT

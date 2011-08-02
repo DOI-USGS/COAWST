@@ -55,7 +55,7 @@
 
 #ifdef REFINED_GRID
 !set this for Parent Grid ONLY
-      IF (ng.eq.1) THEN
+!      IF (ng.eq.1) THEN
 #endif
 
 #if !defined EW_PERIODIC && !defined COMPOSED_GRID
@@ -131,7 +131,7 @@
 
 #ifdef REFINED_GRID
 !set this for Parent Grid ONLY
-      END IF
+!      END IF
 #endif
 
       RETURN
@@ -172,7 +172,7 @@
 
 #ifdef REFINED_GRID
 !set this for Parent Grid ONLY
-      IF (ng.eq.1) THEN
+!      IF (ng.eq.1) THEN
 #endif
 
 #if !defined EW_PERIODIC && !defined COMPOSED_GRID
@@ -288,7 +288,7 @@
 
 #ifdef REFINED_GRID
 !set this for Parent Grid ONLY
-      END IF
+!      END IF
 #endif
 
       RETURN
@@ -329,7 +329,7 @@
 
 #ifdef REFINED_GRID
 !set this for Parent Grid ONLY
-      IF (ng.eq.1) THEN
+!      IF (ng.eq.1) THEN
 #endif
 
 #if !defined EW_PERIODIC && !defined COMPOSED_GRID
@@ -445,7 +445,7 @@
 
 #ifdef REFINED_GRID
 !set this for Parent Grid ONLY
-      END IF
+!      END IF
 #endif
 
       RETURN

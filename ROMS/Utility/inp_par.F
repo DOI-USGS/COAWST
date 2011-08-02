@@ -2543,6 +2543,11 @@
 #ifdef REFINED_GRID
           WRITE (out,120) Ngrids, 'Numgrids',                           &
      &          'Number of refined grids.'
+          IF (Ngrids.eq.1) THEN
+            WRITE(out,330) Ngrids
+            exit_flag=6
+            RETURN
+          END IF
 #endif
 #ifdef AIR_OCEAN
           WRITE (out,140) TI_ATM_OCN, 'TI_ATM_OCN',                     &
@@ -3761,7 +3766,7 @@
      &        i2.2,')',/,15x,a)
  310  FORMAT (2x,a,i2.2,a,a)
  320  FORMAT (/,' READ_PHYPAR - Invalid input parameter, ',a,i4,/,15x,a)
-
+ 330  FORMAT (/,'!!! Wrong number of grids set in coawst.bash ', i3.3)
       RETURN
       END SUBROUTINE read_PhyPar
 

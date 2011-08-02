@@ -428,27 +428,8 @@
 !
 !  Set logarithmic bottom stress.
 !
-#    if defined REFINED_GRID
-#     define I_RANGE IstrC,IendC
-      IF (ng.eq.1) THEN
-        IstrC=IstrU-1
-        IendC=Iend
-      ELSE
-        IstrC=IstrU-2
-        IendC=Iend+1
-      END IF
-#     define J_RANGE JstrC,JendC
-      IF (ng.eq.1) THEN
-        JstrC=JstrV-1
-        JendC=Jend
-      ELSE
-        JstrC=JstrV-2
-        JendC=Jend+1
-      END IF
-#    else
 #     define I_RANGE IstrU-1,Iend
 #     define J_RANGE JstrV-1,Jend
-#    endif
       DO j=J_RANGE
         DO i=I_RANGE
           cff1=1.0_r8/LOG((z_r(i,j,1)-z_w(i,j,0))/Zob(ng))
@@ -459,27 +440,8 @@
 #    undef I_RANGE
 #    undef J_RANGE
 !
-#    if defined REFINED_GRID
-#     define I_RANGE IstrC,IendC
-      IF (ng.eq.1) THEN
-        IstrC=IstrU
-        IendC=Iend
-      ELSE
-        IstrC=IstrU-1
-        IendC=Iend+1
-      END IF
-#     define J_RANGE JstrC,JendC
-      IF (ng.eq.1) THEN
-        JstrC=JstrV
-        JendC=Jend
-      ELSE
-        JstrC=JstrV-1
-        JendC=Jend+1
-      END IF
-#    else
 #     define I_RANGE IstrU,Iend
 #     define J_RANGE JstrV,Jend
-#    endif
       DO j=Jstr,Jend
         DO i=I_RANGE
           cff1=0.25_r8*(v(i  ,j  ,1,nrhs)+                              &
@@ -513,27 +475,8 @@
         END DO
       END DO
 #   elif defined UV_QDRAG
-#    if defined REFINED_GRID
-#     define I_RANGE IstrC,IendC
-      IF (ng.eq.1) THEN
-        IstrC=IstrU
-        IendC=Iend
-      ELSE
-        IstrC=IstrU-1
-        IendC=Iend+1
-      END IF
-#     define J_RANGE JstrC,JendC
-      IF (ng.eq.1) THEN
-        JstrC=JstrV
-        JendC=Jend
-      ELSE
-        JstrC=JstrV-1
-        JendC=Jend+1
-      END IF
-#    else
 #     define I_RANGE IstrU,Iend
 #     define J_RANGE JstrV,Jend
-#    endif
 !
 !  Set quadratic bottom stress.
 !
@@ -568,27 +511,8 @@
         END DO
       END DO
 #    elif defined UV_LDRAG
-#    if defined REFINED_GRID
-#     define I_RANGE IstrC,IendC
-      IF (ng.eq.1) THEN
-        IstrC=IstrU
-        IendC=Iend
-      ELSE
-        IstrC=IstrU-1
-        IendC=Iend+1
-      END IF
-#     define J_RANGE JstrC,JendC
-      IF (ng.eq.1) THEN
-        JstrC=JstrV
-        JendC=Jend
-      ELSE
-        JstrC=JstrV-1
-        JendC=Jend+1
-      END IF
-#    else
 #     define I_RANGE IstrU,Iend
 #     define J_RANGE JstrV,Jend
-#    endif
 !
 !  Set linear bottom stress.
 !
