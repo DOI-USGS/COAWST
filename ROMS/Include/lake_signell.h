@@ -50,6 +50,7 @@
 # undef  MB_Z0RIP
 #endif
 #ifdef SSW_BBL
+# define SSW_CALC_UB
 # define SSW_CALC_ZNOT
 # undef  SSW_LOGINT
 #endif
