@@ -12,30 +12,24 @@
 **
 */
 
+#define ROMS_MODEL
 #define DIAGNOSTICS_UV
-#define UV_VIS2
-#define MIX_GEO_UV
-#define SPONGE
+
+/* WEC forcings */
 #define WEC_VF
 #define ROLLER_SVENDSEN
 #define ROLLER_MONO
+
 #define UV_ADV
 #define TS_U3HADVECTION
 #define DJ_GRADPS
-#define SOLVE3D
-#define SPLINES
+#define UV_QDRAG
+
 #define EASTERN_WALL
 #define WESTERN_WALL
-/*#define WEST_M2FLATHER*/
 #define NS_PERIODIC
-#undef  UV_QDRAG
-#undef  UV_LOGDRAG
-#define SSW_BBL
-#ifdef  SSW_BBL
-# define SSW_CALC_ZNOT
-# define SSW_CALC_UB
-# define ANA_SEDIMENT
-#endif
+
+#define SOLVE3D
 #ifdef SOLVE3D
 # define ANA_STFLUX
 # define ANA_SSFLUX

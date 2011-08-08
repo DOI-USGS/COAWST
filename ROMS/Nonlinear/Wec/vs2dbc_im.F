@@ -165,6 +165,14 @@
 #   endif
         END DO
 
+#  elif defined SOUTHERN_WALL
+!
+!  Southern edge, clamped boundary condition.
+!
+        DO i=Istr,Iend
+          vbar_stokes(i,Jstr)=0.0_r8
+        END DO
+
 #  else
 !
 !  Southern edge, gradient boundary condition.
@@ -244,6 +252,14 @@
           vbar_stokes(i,Jend+1)=vbar_stokes(i,Jend+1)*                  &
      &                          GRID(ng)%vmask_wet(i,Jend+1)
 #   endif
+        END DO
+
+#  elif defined NORTHERN_WALL
+!
+!  Northern edge, clamped boundary condition.
+!
+        DO i=Istr,Iend
+          vbar_stokes(i,Jend+1)=0.0_r8
         END DO
 
 #  else

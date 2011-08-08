@@ -164,6 +164,14 @@
 #   endif
         END DO
 
+#  elif defined WESTERN_WALL
+!
+!  Western edge, clamped boundary condition.
+!
+        DO j=Jstr,Jend
+          ubar_stokes(Istr,j)=0.0_r8
+        END DO
+
 # else
 !
 !  Western edge, gradient boundary condition.
@@ -243,6 +251,14 @@
           ubar_stokes(Iend+1,j)=ubar_stokes(Iend+1,j)*                  &
      &                          GRID(ng)%umask_wet(Iend+1,j)
 #   endif
+        END DO
+
+#  elif defined EASTERN_WALL
+!
+!  Eastern edge, clamped boundary condition.
+!
+        DO j=Jstr,Jend
+          ubar_stokes(Iend+1,j)=0.0_r8
         END DO
 
 #  else

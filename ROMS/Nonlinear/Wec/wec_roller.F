@@ -226,7 +226,7 @@
       END DO
 # elif defined ROLLER_MONO
 !
-!     Here Break_Fraction is really Breaking Area
+!     Here Wave_break is really Breaking Area.
 !     Check if the calculation of Dissip Roller is Consistent
 !
       DO j=Jstr,Jend

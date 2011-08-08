@@ -72,7 +72,7 @@
 
 ! Time-Stepping parameters.
 
-      NTIMES == 40000
+      NTIMES == 20000
           DT == 0.1d0
      NDTFAST == 20
 
@@ -365,11 +365,11 @@ Hout(idWbrk) == T                          ! Wave_break      wave breaking (perc
 Hout(idUwav) == T                          ! uWave           wave-depth avgeraged U-velocity
 Hout(idVwav) == T                          ! vWave           wave-depth avgeraged V-velocity
 Hout(idWdif) == F                          ! Dissip_fric     wave dissipation due to bottom friction
-Hout(idWdib) == F                          ! Dissip_break    wave dissipation due to breaking
+Hout(idWdib) == T                          ! Dissip_break    wave dissipation due to breaking
 Hout(idWdiw) == F                          ! Dissip_wcap     wave dissipation due to white capping
-Hout(idWdis) == F                          ! Dissip_roller   wave roller dissipation
+Hout(idWdis) == T                          ! Dissip_roller   wave roller dissipation
 Hout(idWrol) == F                          ! rollA           wave roller action density
-Hout(idWztw) == F                          ! zetaw           WEC quasi-static sea level adjustment
+Hout(idWztw) == T                          ! zetaw           WEC quasi-static sea level adjustment
 Hout(idWqsp) == F                          ! qsp             WEC quasi-static pressure
 Hout(idWbeh) == F                          ! bh              WEC Bernoulli head
 
@@ -455,7 +455,7 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 
      NFFILES == 1                          ! number of forcing files
 
-     FRCNAME == Projects/Visser/roms_visser_forc2.nc
+     FRCNAME == Projects/Visser/roms_visser_forc3.nc
 
 ! Output NetCDF file names, [1:Ngrids].
 
