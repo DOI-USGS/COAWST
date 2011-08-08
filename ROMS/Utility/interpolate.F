@@ -116,6 +116,7 @@
       Fmax=-1.0E+35_r8
       DO j=Jstr,Jend
         DO i=Istr,Iend
+          Fout(i,j)=0.0_r8
           i0=NINT(Iout(i,j))
           im=i0-1
           ip=i0+1
@@ -268,6 +269,9 @@
       Fmax=-1.0E+35_r8
       DO j=Jstr,Jend
         DO i=Istr,Iend
+          DO k=LBk,UBk
+            Fout(i,j,k)=0.0_r8
+          END DO
           i0=NINT(Iout(i,j))
           im=i0-1
           ip=i0+1
