@@ -111,7 +111,7 @@
 !  Conservatively interpolate requested field
 !-----------------------------------------------------------------------
 !
-      alpha=(REAL(ref_scale,r8)**2.0_r8-1.0_r8)/24.0_r8
+      alpha=((1.0_r8/REAL(ref_scale,r8))**2.0_r8-1.0_r8)/24.0_r8
       Fmin=1.0E+35_r8
       Fmax=-1.0E+35_r8
       DO j=Jstr,Jend
@@ -130,7 +130,7 @@
 !
             epp=Iout(i,j)-i0
             Em=0.5_r8*epp*(epp-1.0_r8)+alpha
-            E0=(1.0_r8-epp*epp)+alpha
+            E0=(1.0_r8-epp*epp)-2.0_r8*alpha
             Ep=0.5_r8*epp*(epp+1.0_r8)+alpha
 #ifdef MASKING
             cff1=Em*Finp(im,jp)*Amask(im,jp)+                           &
@@ -163,7 +163,7 @@
 !
             epp=Jout(i,j)-j0
             Em=0.5_r8*epp*(epp-1.0_r8)+alpha
-            E0=(1.0_r8-epp*epp)+alpha
+            E0=(1.0_r8-epp*epp)-2.0_r8*alpha
             Ep=0.5_r8*epp*(epp+1.0_r8)+alpha
 #ifdef MASKING
             cff1=Em*cff9*Amask(i0,jm)+                           &
@@ -264,7 +264,7 @@
 !  Conservatively interpolate requested field
 !-----------------------------------------------------------------------
 !
-      alpha=(REAL(ref_scale,r8)**2.0_r8-1.0_r8)/24.0_r8
+      alpha=((1.0_r8/REAL(ref_scale,r8))**2.0_r8-1.0_r8)/24.0_r8
       Fmin=1.0E+35_r8
       Fmax=-1.0E+35_r8
       DO j=Jstr,Jend
@@ -286,7 +286,7 @@
             DO k=LBk,UBk
               epp=Iout(i,j)-i0
               Em=0.5_r8*epp*(epp-1.0_r8)+alpha
-              E0=(1.0_r8-epp*epp)+alpha
+              E0=(1.0_r8-epp*epp)-2.0_r8*alpha
               Ep=0.5_r8*epp*(epp+1.0_r8)+alpha
 #ifdef MASKING
               cff1=Em*Finp(im,jp,k)*Amask(im,jp)+                       &
@@ -319,7 +319,7 @@
 !
               epp=Jout(i,j)-j0
               Em=0.5_r8*epp*(epp-1.0_r8)+alpha
-              E0=(1.0_r8-epp*epp)+alpha
+              E0=(1.0_r8-epp*epp)-2.0_r8*alpha
               Ep=0.5_r8*epp*(epp+1.0_r8)+alpha
 #ifdef MASKING
               cff1=Em*cff9*Amask(i0,jm)+                                &
