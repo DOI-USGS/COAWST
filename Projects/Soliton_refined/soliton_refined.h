@@ -22,6 +22,5 @@
 #define UV_QDRAG
 #define ANA_INITIAL
 #define EW_PERIODIC
-#define EW_PERIODIC_REFINED
 #define ANA_SMFLUX
 

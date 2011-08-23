@@ -524,6 +524,7 @@
           END IF
 #  endif
         END DO
+#  if !defined REFINED_GRID
 !
 !  Apply boundary conditions.
 !
@@ -548,6 +549,7 @@
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   nstp, nnew,                                    &
      &                   v)
+#  endif
       END IF
 
 #  if defined EW_PERIODIC || defined NS_PERIODIC
@@ -608,6 +610,7 @@
               END DO
             END DO
           END DO
+#  if !defined REFINED_GRID
 !
 !  Apply boundary conditions.
 !
@@ -621,6 +624,7 @@
      &                     IminS, ImaxS, JminS, JmaxS,                  &
      &                     nstp, nnew,                                  &
      &                     t)
+#  endif
         END DO
       END IF
 
@@ -756,7 +760,7 @@
             END DO
           END IF
         END DO
-#  ifndef OBC_M2RADIATION
+#  if !defined OBC_M2RADIATION || !defined REFINED_GRID
 !
 !  Apply boundary conditions.
 !

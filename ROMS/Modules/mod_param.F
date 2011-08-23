@@ -246,6 +246,7 @@
 # ifdef REFINED_GRID
         integer, dimension(Ngrids) :: myparent
         integer, dimension(Ngrids) :: mychild
+        logical, dimension(Ngrids) :: get_refdata
 # endif
 !
 !-----------------------------------------------------------------------
@@ -575,7 +576,7 @@
 !
 !  Set refined grid parameters.
 !
-      myparent(1)=1  !0
+      myparent(1)=1
       mychild(1)=2
       DO ng=2,Ngrids
         myparent(ng)=ng-1

@@ -650,7 +650,7 @@
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    OCEAN(ng)%t(:,:,:,nstp(ng),:))
-      CALL mp_exchange3d (ng, tile, iNLM, 4,                            &
+      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    OCEAN(ng)%u(:,:,:,nstp(ng)),                  &

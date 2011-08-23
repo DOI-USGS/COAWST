@@ -473,8 +473,8 @@ Hout(idBott) == T T T T T T T T T T F F F F F F F F \
      GSTNAME == ocean_gst.nc
      RSTNAME == ocean_rst_ref1.nc \
                 ocean_rst_ref5.nc
-     HISNAME == ocean_his_ref1.nc \
-                ocean_his_ref5.nc
+     HISNAME == ocean_inlet_his_ref1.nc \
+                ocean_inlet_his_ref5.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc

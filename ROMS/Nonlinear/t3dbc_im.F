@@ -610,12 +610,13 @@
         fac=1.0_r8/(fac1+fac2)
         fac1=fac*fac1
         fac2=fac*fac2
-        IF (iic(1).eq.ntstart(1)) THEN
+        IF (iic(ngp).eq.ntstart(ngp)) THEN
           t1=1
           t2=2
         ELSE
-          t1=nstp
-          t2=nnew(ng)
+!         t1=nstp
+          t2=nnew(ngp)
+          t1=3-t2
         END IF
         IF (WESTERN_EDGE) THEN
 !

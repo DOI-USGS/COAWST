@@ -128,7 +128,7 @@
       fac1=fac*fac1
       fac2=fac*fac2
 
-      IF (iic(1).eq.ntstart(1)) THEN
+      IF (iic(ngp).eq.ntstart(ngp)) THEN
         t1=1
         t2=2
       ELSE

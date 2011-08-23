@@ -122,10 +122,10 @@
 #  endif
 !
 !  Lower and upper bounds of parent grid for tiled arrays.
-      IF (iic(1).eq.ntstart(1)) THEN
+      IF (iic(ngp).eq.ntstart(ngp)) THEN
         t1=2
       ELSE
-        t1=nnew(ng)
+        t1=nnew(ngp)
       END IF
 !
 !  Set refinement scale.

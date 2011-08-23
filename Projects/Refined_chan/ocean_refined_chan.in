@@ -333,7 +333,7 @@ SO_sdev(isTsur) == 1.0d0 1.0d0             ! NT surface tracer flux
 
 Hout(idUvel) == T T                        ! u           3D U-velocity
 Hout(idVvel) == T T                        ! v           3D V-velocity
-Hout(idWvel) == F F                        ! w           3D W-velocity
+Hout(idWvel) == T T                        ! w           3D W-velocity
 Hout(idOvel) == T T                        ! omega       omega vertical velocity
 Hout(idUbar) == T T                        ! ubar        2D U-velocity
 Hout(idVbar) == T T                        ! vbar        2D V-velocity

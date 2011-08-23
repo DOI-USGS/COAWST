@@ -187,16 +187,14 @@
 ! get data from parent grid at time of parent. Only need to 
 ! do this once per child loop.
         IF (ng.gt.1) THEN
-          IF (time(ng).eq.time(ngp)) THEN
+          IF (get_refdata(ng).eq..TRUE.) THEN
             CALL get_2dparent_data (ng, TILE)
           END IF
         END IF
-#  if !defined REFINED_GRID_BC
 ! put child data back to parent 
         IF ((ng.lt.Ngrids).and.(iic(ng).gt.1)) THEN
           CALL set_2dchild_data (ng, TILE)
         END IF
-#  endif
 # endif
 !
 !-----------------------------------------------------------------------

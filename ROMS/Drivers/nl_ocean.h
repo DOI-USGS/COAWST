@@ -226,8 +226,8 @@
 	integer :: ng, my_iic, MyError
 #if defined REFINED_GRID
       logical, allocatable :: run_grid(:)
-      integer, allocatable :: count(:)
-      real(r8) :: rtime, rtime_start, rtime_end, cff
+      integer, allocatable :: count(:), rcount(:)
+      integer :: ngp, ngc, rtime
 #endif
 !
 !-----------------------------------------------------------------------
@@ -238,15 +238,23 @@
 #if defined REFINED_GRID
 
       IF (.not.ALLOCATED(run_grid)) ALLOCATE (run_grid(Ngrids))
-      IF (.not.ALLOCATED(count)) ALLOCATE (count(Ngrids))
+      IF (.not.ALLOCATED(count))    ALLOCATE (count(Ngrids))
+      IF (.not.ALLOCATED(rcount))   ALLOCATE (rcount(Ngrids+1))
       DO ng=1,Ngrids
         run_grid(ng)=.TRUE.
+        get_refdata(ng)=.TRUE.
 !       count(ng)=my_iic-Tstr(1)
         count(ng)=0
       END DO
-      rtime_start=0.0_r8
-      rtime_end=9999999.0_r8
-      rtime=rtime_start
+      rtime=0
+!
+! Determine the number of time steps for each grid.
+!
+      rcount(Ngrids)=1
+      DO ng=Ngrids-1,1,-1
+        ngc=mychild(ng)
+        rcount(ng)=rcount(ng+1)*MAX(1,INT(dt(ng)/dt(ngc)))
+      END DO
 !
 !  Main job control loop here.
 !
@@ -276,15 +284,21 @@
 !
 !  Advance the time counter by the smallest dt.
 !
-        rtime=rtime+dt(Ngrids)
+        rtime=rtime+1
 !
 !  Determine what grids can be time stepped. This is determined
 !  by comparing dt(each grid) to global time rtime.
 !
         DO ng=1,Ngrids
-          cff=rtime-rtime_start
-          IF (MOD(cff,dt(ng)).lt.0.000001_r8) THEN
+          IF (MOD(rtime,rcount(ng)).eq.0) THEN
             run_grid(ng)=.TRUE.
+          END IF
+        END DO
+        DO ng=2,Ngrids
+          get_refdata(ng)=.FALSE.
+          ngp=myparent(ng)
+          IF (run_grid(ngp).eq..TRUE.) THEN
+            get_refdata(ng)=.TRUE.
           END IF
         END DO
       END DO

@@ -125,11 +125,11 @@
 # endif
 !
 !set time index to fill
-      IF (iic(1).eq.ntstart(1)) THEN
+      IF (iic(ngp).eq.ntstart(ngp)) THEN
         t1=2
       ELSE
 # ifdef SOLVE3D
-        t1=nnew(ng)
+        t1=nnew(ngp)
 # else
         t1=kstp(ng)
 # endif

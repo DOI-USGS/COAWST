@@ -106,8 +106,16 @@
       IF (WESTERN_EDGE) THEN
         DO k=1,N(ng)
           DO j=JstrR,JendR
-!           BOUNDARY(ng)%t_west(j,k,itemp)=T0(ng)
-            BOUNDARY(ng)%t_west(j,k,itemp)=MIN(T0(ng)+time(ng)/300.0_r8, T0(ng)+1)
+            IF (k.gt.1) THEN
+              IF (time(ng).le.300.0_r8) THEN
+                BOUNDARY(ng)%t_west(j,k,itemp)=T0(ng)+time(ng)/300.0_r8
+              ELSE
+                BOUNDARY(ng)%t_west(j,k,itemp)=MAX(T0(ng)+1.0_r8-time(ng)/300.0_r8,10.0_r8)
+              END IF
+            ELSE
+              BOUNDARY(ng)%t_west(j,k,itemp)=T0(ng)
+            END IF
+           
 #  if defined SEDIMENT
             DO ised=1,NST
               BOUNDARY(ng)%t_west(j,k,idsed(ised))=0.0_r8

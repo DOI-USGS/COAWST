@@ -231,7 +231,7 @@
 ! do this once per child loop.
 !
         IF (ng.gt.1) THEN
-          IF (time(ng).eq.time(ngp)) THEN
+          IF (get_refdata(ng).eq..TRUE.) THEN
             CALL get_2dparent_data (ng, TILE)
             CALL get_3dparent_data (ng, TILE)
           END IF

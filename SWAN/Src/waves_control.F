@@ -144,7 +144,7 @@
       integer :: i, ng, MyRank, MyError
       logical, allocatable :: run_grid(:)
       integer, allocatable :: count(:)
-      real :: rtime, rtime_start, rtime_end, cff
+      real :: rtime, rtime_start, cff
       integer :: ngp, ngc
       CALL mpi_comm_rank (WAV_COMM_WORLD, MyRank, MyError)
 !
@@ -157,12 +157,10 @@
         count(ng)=0
       END DO
       rtime_start=0.
-      rtime_end=9999999.00
       rtime=rtime_start
 !
 !  Main job control loop here.
 !
-!     DO WHILE (rtime.lt.rtime_end)
       DO WHILE (count(Ngrids).lt.MTC_G(Ngrids))
 !
 !  Advance grids in time that have run_grid flag == True.

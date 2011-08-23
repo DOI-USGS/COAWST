@@ -82,7 +82,7 @@
 !          DT == 0.025d0  0.008333333333d0 !ref3
 !      NTIMES == 6000     6000          !ref1
 !          DT == 0.025d0  0.025d0 !ref1
-     NDTFAST == 1       1
+      NDTFAST == 1       1
 
 ! Model iteration loops parameters.
 
