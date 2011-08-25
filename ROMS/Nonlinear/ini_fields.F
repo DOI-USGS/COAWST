@@ -760,7 +760,7 @@
             END DO
           END IF
         END DO
-#  if !defined OBC_M2RADIATION || !defined REFINED_GRID
+#  if !defined OBC_M2RADIATION || defined REFINED_GRID
 !
 !  Apply boundary conditions.
 !
