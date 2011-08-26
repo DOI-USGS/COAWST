@@ -180,7 +180,7 @@
       USE u3dbc_mod, ONLY : u3dbc_tile
       USE v3dbc_mod, ONLY : v3dbc_tile
 # endif
-# ifndef OBC_M2RADIATION
+# if !defined OBC_M2RADIATION && !defined REFINED_GRID
       USE u2dbc_mod, ONLY : u2dbc_tile
       USE v2dbc_mod, ONLY : v2dbc_tile
 # endif
@@ -404,7 +404,7 @@
           END IF
         END DO
 
-#  ifndef OBC_M2RADIATION
+#  if !defined OBC_M2RADIATION && !defined REFINED_GRID
 !
 !  Apply boundary conditions.
 !
@@ -760,7 +760,7 @@
             END DO
           END IF
         END DO
-#  if !defined OBC_M2RADIATION || defined REFINED_GRID
+#  if !defined OBC_M2RADIATION && !defined REFINED_GRID
 !
 !  Apply boundary conditions.
 !
