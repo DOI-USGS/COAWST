@@ -253,7 +253,7 @@
       rcount(Ngrids)=1
       DO ng=Ngrids-1,1,-1
         ngc=mychild(ng)
-        rcount(ng)=rcount(ng+1)*MAX(1,INT(dt(ng)/dt(ngc)))
+        rcount(ng)=rcount(ng+1)*MAX(1,NINT(dt(ng)/dt(ngc)))
       END DO
 !
 !  Main job control loop here.

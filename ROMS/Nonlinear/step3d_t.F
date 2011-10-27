@@ -49,13 +49,26 @@
 !
 !  Local variable declarations.
 !
+# ifdef REFINED_GRID
+      integer :: ngc, LBic, UBic, LBjc, UBjc
+# endif
 # include "tile.h"
+# ifdef REFINED_GRID
+      ngc=mychild(ng)
+      LBic=BOUNDS(ngc)%LBi(tile)
+      UBic=BOUNDS(ngc)%UBi(tile)
+      LBjc=BOUNDS(ngc)%LBj(tile)
+      UBjc=BOUNDS(ngc)%UBj(tile)
+# endif
 !
 # ifdef PROFILE
       CALL wclock_on (ng, iNLM, 35)
 # endif
       CALL step3d_t_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj,                           &
+# ifdef REFINED_GRID
+     &                    LBic, UBic, LBjc, UBjc,                       &
+# endif
      &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    nrhs(ng), nstp(ng), nnew(ng),                 &
 # if defined TS_PSOURCE || defined Q_PSOURCE
@@ -106,6 +119,15 @@
 # ifdef WEC_VF
      &                    OCEAN(ng) % W_stokes,                         &
 # endif
+# ifdef REFINED_GRID
+     &                    OCEAN(ng) % hindcu,    OCEAN(ng) % hindcv,    &
+     &                    OCEAN(ng) % hindci_u,  OCEAN(ng) % hindcj_u,  &
+     &                    OCEAN(ng) % hindci_v,  OCEAN(ng) % hindcj_v,  &
+     &                    OCEAN(ng) % FXp_west,  OCEAN(ng) % FXp_east,  &
+     &                    OCEAN(ng) % FEp_south, OCEAN(ng) % FEp_north, &
+     &                    OCEAN(ng) % FXc_west,  OCEAN(ng) % FXc_east,  &
+     &                    OCEAN(ng) % FEc_south, OCEAN(ng) % FEc_north, &
+# endif
 # if defined FLOATS && defined FLOAT_VWALK
      &                    MIXING(ng) % dAktdz,                          &
 # endif
@@ -122,6 +144,9 @@
 !***********************************************************************
       SUBROUTINE step3d_t_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
+# ifdef REFINED_GRID
+     &                          LBic, UBic, LBjc, UBjc,                 &
+# endif
      &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nrhs, nstp, nnew,                       &
 # if defined TS_PSOURCE || defined Q_PSOURCE
@@ -157,6 +182,15 @@
 # ifdef WEC_VF
      &                          W_stokes,                               &
 # endif
+# ifdef REFINED_GRID
+     &                          hindcu,    hindcv,                      &
+     &                          hindci_u,  hindcj_u,                    &
+     &                          hindci_v,  hindcj_v,                    &
+     &                          FXp_west,  FXp_east,                    &
+     &                          FEp_south, FEp_north,                   &
+     &                          FXc_west,  FXc_east,                    &
+     &                          FEc_south, FEc_north,                   &
+# endif
 # if defined FLOATS && defined FLOAT_VWALK
      &                          dAktdz,                                 &
 # endif
@@ -169,6 +203,9 @@
       USE mod_param
       USE mod_ncparam
       USE mod_scalars
+# ifdef REFINED_GRID
+      USE mod_refined
+# endif
 !
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_3d_mod, ONLY : exchange_r3d_tile
@@ -188,6 +225,9 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+# ifdef REFINED_GRID
+      integer, intent(in) :: LBic, UBic, LBjc, UBjc
+# endif
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs, nstp, nnew
 # if defined TS_PSOURCE || defined Q_PSOURCE
@@ -246,6 +286,22 @@
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
 #  ifdef WEC_VF
       real(r8), intent(in) :: W_stokes(LBi:,LBj:,0:)
+#  endif
+#  ifdef REFINED_GRID
+      integer, intent(in) :: hindcu(:)
+      integer, intent(in) :: hindcv(:)
+      real(r8), intent(in) :: hindci_u(LBi:,LBj:)
+      real(r8), intent(in) :: hindcj_u(LBi:,LBj:)
+      real(r8), intent(in) :: hindci_v(LBi:,LBj:)
+      real(r8), intent(in) :: hindcj_v(LBi:,LBj:)
+      real(r8), intent(inout) :: FXp_west(LBj:,:,:)
+      real(r8), intent(inout) :: FXp_east(LBj:,:,:)
+      real(r8), intent(inout) :: FEp_south(LBi:,:,:)
+      real(r8), intent(inout) :: FEp_north(LBi:,:,:)
+      real(r8), intent(inout) :: FXc_west(LBj:,:)
+      real(r8), intent(inout) :: FXc_east(LBj:,:)
+      real(r8), intent(inout) :: FEc_south(LBi:,:)
+      real(r8), intent(inout) :: FEc_north(LBi:,:)
 #  endif
 #  ifdef DIAGNOSTICS_TS
       real(r8), intent(inout) :: DiaTwrk(LBi:,LBj:,:,:,:)
@@ -309,6 +365,22 @@
 #  ifdef WEC_VF
       real(r8), intent(in) :: W_stokes(LBi:UBi,LBj:UBj,0:N(ng))
 #  endif
+#  ifdef REFINED_GRID
+      integer, intent(in) :: hindcu(4)
+      integer, intent(in) :: hindcv(4)
+      real(r8), intent(in) :: hindci_u(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: hindcj_u(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: hindci_v(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: hindcj_v(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: FXp_west(LBj:UBj,N(ng),NT(ng))
+      real(r8), intent(inout) :: FXp_east(LBj:UBj,N(ng),NT(ng))
+      real(r8), intent(inout) :: FEp_south(LBi:UBi,N(ng),NT(ng))
+      real(r8), intent(inout) :: FEp_north(LBi:UBi,N(ng),NT(ng))
+      real(r8), intent(inout) :: FXc_west(LBj:UBj,NT(ng))
+      real(r8), intent(inout) :: FXc_east(LBj:UBj,NT(ng))
+      real(r8), intent(inout) :: FEc_south(LBi:UBi,NT(ng))
+      real(r8), intent(inout) :: FEc_north(LBi:UBi,NT(ng))
+#  endif
 #  ifdef DIAGNOSTICS_TS
       real(r8), intent(inout) :: DiaTwrk(LBi:UBi,LBj:UBj,N(ng),NT(ng),  &
      &                                   NDT)
@@ -335,6 +407,10 @@
 #  endif
 # endif
       integer :: i, is, itrc, j, k, ltrc
+# ifdef REFINED_GRID
+      integer :: ie, js, je, kk
+      integer :: ngc, ref_scale, ic, jc, ref
+# endif
 # ifdef DIAGNOSTICS_TS
       integer :: idiag
 # endif
@@ -363,6 +439,10 @@
 # endif
 
 # include "set_bounds.h"
+# ifdef REFINED_GRID
+      ngc=mychild(ng)
+      ref_scale=REFINED(ngc)%ref_scale
+# endif
 !
 !-----------------------------------------------------------------------
 !  Time-step horizontal advection term.
@@ -399,6 +479,23 @@
 #  else
 #   define J_RANGE MAX(Jstr-2,0),MIN(Jend+2,Mm(ng)+1)
 #  endif
+# elif defined REFINED_GRID
+#   define I_RANGE IstrC,IendC
+        IF (ng.eq.1) THEN
+          IstrC=Istr
+          IendC=Iend
+        ELSE
+          IstrC=Istr-1
+          IendC=Iend+1
+        END IF
+#   define J_RANGE JstrC,JendC
+        IF (ng.eq.1) THEN
+          JstrC=Jstr
+          JendC=Jend
+        ELSE
+          JstrC=Jstr-1
+          JendC=Jend+1
+        END IF
 # else
 #  define I_RANGE Istr,Iend
 #  define J_RANGE Jstr,Jend
@@ -787,6 +884,120 @@
 # else
 #   define I_RANGE Istr,Iend
 #   define J_RANGE Jstr,Jend
+# endif
+# ifdef REFINED_GRID
+!
+!  Comulate in time and save vertical sum of child grid perimeter fluxes
+!  for comparison to parent at next parent time step.
+!
+          IF (ng.gt.1) THEN
+!
+!  Western edge
+!
+            IF (WESTERN_EDGE) THEN
+              DO j=Jstr,Jend
+                cff=FX(Istr,j)*dt(ng)
+                IF ((get_refdata(ng).eq..TRUE.).and.(k.eq.1)) THEN
+                  FXc_west(j,itrc)=cff
+                ELSE
+                  FXc_west(j,itrc)=FXc_west(j,itrc)+cff
+                END IF
+              END DO
+            END IF
+!
+!  Eastern edge
+!
+            IF (EASTERN_EDGE) THEN
+              DO j=Jstr,Jend
+                cff=FX(Iend+1,j)*dt(ng)
+                IF ((get_refdata(ng).eq..TRUE.).and.(k.eq.1)) THEN
+                  FXc_east(j,itrc)=cff
+                ELSE
+                  FXc_east(j,itrc)=FXc_east(j,itrc)+cff
+                END IF
+              END DO
+            END IF
+!
+!  Southern edge
+!
+            IF (SOUTHERN_EDGE) THEN
+              DO i=Istr,Iend
+                cff=FE(i,Jstr)*dt(ng)
+                IF ((get_refdata(ng).eq..TRUE.).and.(k.eq.1)) THEN
+                  FEc_south(i,itrc)=cff
+                ELSE
+                  FEc_south(i,itrc)=FEc_south(i,itrc)+cff
+                END IF
+              END DO
+            END IF
+!
+!  Northern edge
+!
+            IF (NORTHERN_EDGE) THEN
+              DO i=Istr,Iend
+                cff=FE(i,Jend+1)*dt(ng)
+                IF ((get_refdata(ng).eq..TRUE.).and.(k.eq.1)) THEN
+                  FEc_north(i,itrc)=cff
+                ELSE
+                  FEc_north(i,itrc)=FEc_north(i,itrc)+cff
+                END IF
+              END DO
+            END IF
+          END IF
+!
+!  Correct the flux of the parent grid at the location of the child boundary.
+!  Compare vertical sum from last time step of parent FXp and FEp
+!  to cumulated child fluxes FXb(ng) and FEb(ng) (these are the 
+!  child grid fluxes FXc(ngc) and FEc(ngc)).
+!
+          IF (ng.lt.Ngrids) THEN
+!
+!  western and eastern child edges.
+!
+            js=hindcu(3)
+            je=hindcu(4)
+            DO j=js,je
+!
+!  Parent grid at child WESTERN EDGE
+!
+              is=hindcu(1)-1
+              IF (((Istr.le.is).and.(is.le.Iend+1)).and.                &
+     &            ((Jstr.le.j).and.(j.le.Jend))) THEN
+                FXp_west(j,k,itrc)=FX(is,j)*dt(ng)
+              END IF
+!
+!  Parent grid at child EASTERN EDGE
+!
+              is=hindcu(2)+1
+              IF (((Istr.le.is).and.(is.le.Iend+1)).and.                &
+     &            ((Jstr.le.j).and.(j.le.Jend))) THEN
+                FXp_east(j,k,itrc)=FX(is,j)*dt(ng)
+              END IF
+            END DO
+!
+!  southern and northern child edges.
+!
+            is=hindcv(1)
+            ie=hindcv(2)
+            DO i=is,ie
+!
+!  Parent grid at child SOUTHERN EDGE
+!
+              js=hindcv(3)-1
+              IF (((Istr.le.i).and.(i.le.Iend)).and.                    &
+     &            ((Jstr.le.js).and.(js.le.Jend+1))) THEN
+                FEp_south(i,k,itrc)=FE(i,js)*dt(ng)
+              END IF
+!
+!  Parent grid at child NORTHERN EDGE
+!
+              js=hindcv(4)+1
+              IF (((Istr.le.i).and.(i.le.Iend)).and.                    &
+     &            ((Jstr.le.js).and.(js.le.Jend+1))) THEN
+                FEp_north(i,k,itrc)=FE(i,js)*dt(ng)
+              END IF
+            END DO
+          END IF
 # endif
           DO j=J_RANGE
             DO i=I_RANGE

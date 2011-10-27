@@ -9,8 +9,9 @@
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
-!  This routine initializes the horizontal indices of the child grid   !
-!  that match locations in the parent grid.                            !
+!  For the entire child grid, this routine determines the              !
+!  horizontal indices of the parent grid                               !
+!  at the locations of the child grid.                                 !
 !                                                                      !
 !=======================================================================
 !
@@ -142,12 +143,7 @@
         Jlen=Jmax-Jmin+1
         IJlen=Ilen*Jlen
         Npts=IJlen
-
-#ifdef INLET_TEST
-        rectangular=.TRUE.
-#else
         rectangular=.FALSE.
-#endif
         IJspv=-9999.0_r8
 !
 ! Get the grid information for the entire parent grid. 

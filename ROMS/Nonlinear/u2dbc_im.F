@@ -64,7 +64,6 @@
 # endif
 # ifdef REFINED_GRID
       USE mod_refined
-      USE mod_stepping
 # endif
 !
 !  Imported variable declarations.
@@ -97,8 +96,7 @@
       real(r8) :: cff, cff1, cff2, dt2d, dUde, dUdt, dUdx, tau
 
 #ifdef REFINED_GRID
-      integer :: t1, t2, ngp
-      real(r8) :: fac, fac1, fac2, my_val
+      real(r8) :: my_val, ref_scale
 #endif
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
 
@@ -804,62 +802,24 @@
       END IF
 #endif
 
-#ifdef REFINED_GRID_BC
+#ifdef REFINED_GRID
 !
-! For child grid, impose bc's to reduce noise reflections of a 
-! clamped condition.
+! For child grid, impose bc's to ensure mass flux conservation.
 !
+      ref_scale=1.0_r8/REAL(REFINED(ng)%ref_scale,r8)
       IF (ng.ge.2) THEN
-        ngp=myparent(ng)
-        fac1=time(ngp)+dt(ngp)-time(ng)-dt(ng)
-        fac2=time(ng)-time(ngp)+dt(ng)
-        fac=1.0_r8/(fac1+fac2)
-        fac1=fac*fac1
-        fac2=fac*fac2
-        IF (iic(ngp).eq.ntstart(ngp)) THEN
-          t1=1
-          t2=2
-        ELSE
-# ifdef SOLVE3D
-          t1=nstp(ngp)
-          t2=nnew(ngp)
-# else
-          IF (MOD(iic(1)*3,2).eq.0) THEN
-            t1=2
-            t2=1
-          ELSE
-            t1=1
-            t2=2
-          ENDIF
-# endif
-        END IF
         IF (WESTERN_EDGE) THEN
-!
-!  Western edge, Flather boundary condition.
-!
           DO j=Jstr,Jend
-            bry_val=fac1*REFINED(ng)%ubarR_west(4,j,t1)+                &
-     &              fac2*REFINED(ng)%ubarR_west(4,j,t2)
-# ifdef MASKING
-            bry_val=bry_val*GRID(ng)%umask(Istr,j)
-# endif
-!           bry_val=OCEAN(ng)%ubar(Istr,j,kout)
-            cff=1.0_r8/(0.5_r8*(GRID(ng)%h(Istr-1,j)+                   &
-     &                          zeta(Istr-1,j,know)+                    &
+!
+!  Mass conserving from parent to child.
+!
+            cff=0.5_r8*GRID(ng)%on_u(Istr,j)
+            cff1=         cff*((GRID(ng)%h(Istr-1,j)+                   &
+     &                          zeta(Istr-1,j,kout)+                    &
      &                          GRID(ng)%h(Istr  ,j)+                   &
-     &                          zeta(Istr  ,j,know)))
-            Cx=SQRT(g*cff)
-            my_val=0.5_r8*fac1*(REFINED(ng)%zetaR_west(4,j,t1)+         &
-     &                          REFINED(ng)%zetaR_west(5,j,t1))+        &
-     &             0.5_r8*fac2*(REFINED(ng)%zetaR_west(4,j,t2)+         &
-     &                          REFINED(ng)%zetaR_west(5,j,t2))
-# ifdef MASKING
-            my_val=my_val*GRID(ng)%umask(Istr,j)
-# endif
-            ubar(Istr,j,kout)=bry_val-                                  &
-     &                        Cx*(0.5_r8*(zeta(Istr-1,j,know)+          &
-     &                                    zeta(Istr  ,j,know))-         &
-     &                            my_val)
+     &                          zeta(Istr  ,j,kout)))
+            my_val=ref_scale*REFINED(ng)%DUavg2R_west(j)/cff1
+            ubar(Istr,j,kout)=my_val
 #  ifdef MASKING
             ubar(Istr,j,kout)=ubar(Istr,j,kout)*                        &
      &                        GRID(ng)%umask(Istr,j)
@@ -868,32 +828,16 @@
         END IF
         IF (EASTERN_EDGE) THEN
 !
-!  Eastern edge, Flather boundary condition.
+!  Mass conserving from parent to child.
 !
           DO j=Jstr,Jend
-            bry_val=fac1*REFINED(ng)%ubarR_east(1,j,t1)+                &
-     &              fac2*REFINED(ng)%ubarR_east(1,j,t2)
-# ifdef MASKING
-            bry_val=bry_val*GRID(ng)%umask(Iend+1,j)
-# endif
-!           bry_val=OCEAN(ng)%ubar(Iend+1,j,kout)
-            cff=1.0_r8/(0.5_r8*(GRID(ng)%h(Iend  ,j)+                   &
-     &                          zeta(Iend  ,j,know)+                    &
-     &                          GRID(ng)%h(Iend+1,j)+                   &
-     &                          zeta(Iend+1,j,know)))
-            Cx=SQRT(g*cff)
-            my_val=0.5_r8*fac1*(REFINED(ng)%zetaR_east(1,j,t1)+         &
-     &                          REFINED(ng)%zetaR_east(2,j,t1))+        &
-     &             0.5_r8*fac2*(REFINED(ng)%zetaR_east(1,j,t2)+         &
-     &                          REFINED(ng)%zetaR_east(2,j,t2))
-# ifdef MASKING
-            my_val=my_val*GRID(ng)%umask(Iend+1,j)
-# endif
-!           my_val=OCEAN(ng)%zeta(Iend+1,j,know)
-            ubar(Iend+1,j,kout)=bry_val+                                &
-     &                          Cx*(0.5_r8*(zeta(Iend  ,j,know)+        &
-     &                                      zeta(Iend+1,j,know))-       &
-     &                          my_val)
+            cff=0.5_r8*GRID(ng)%on_u(Iend+1,j)
+            cff1=         cff*((GRID(ng)%h(Iend,j)+                     &
+     &                          zeta(Iend,j,kout)+                      &
+     &                          GRID(ng)%h(Iend+1  ,j)+                 &
+     &                          zeta(Iend+1,j,kout)))
+            my_val=ref_scale*REFINED(ng)%DUavg2R_east(j)/cff1
+            ubar(Iend+1,j,kout)=my_val
 #  ifdef MASKING
             ubar(Iend+1,j,kout)=ubar(Iend+1,j,kout)*                    &
      &                          GRID(ng)%umask(Iend+1,j)

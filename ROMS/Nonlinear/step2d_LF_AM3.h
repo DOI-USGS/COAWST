@@ -25,6 +25,9 @@
       USE mod_mixing
 # endif
       USE mod_ocean
+# ifdef REFINED_GRID
+      USE mod_refined
+# endif
 # if defined SEDIMENT && defined SED_MORPH && defined SOLVE3D
       USE mod_sedbed
 # endif
@@ -140,6 +143,9 @@
 #  ifdef ATM_PRESS
      &                  FORCES(ng) % Pair,                              &
 #  endif
+#  ifdef REFINED_GRID
+     &                  REFINED(ng) % DU_avg2, REFINED(ng) % DV_avg2,   &
+#  endif
 # else
 #  ifdef VAR_RHO_2D
      &                  COUPLING(ng) % rhoA,    COUPLING(ng) % rhoS,    &
@@ -247,6 +253,9 @@
 #  ifdef ATM_PRESS
      &                        Pair,                                     &
 #  endif
+#  ifdef REFINED_GRID
+     &                        DU_avg2, DV_avg2,                         &
+#  endif
 # else
 #  ifdef VAR_RHO_2D
      &                        rhoA, rhoS,                               &
@@ -273,7 +282,6 @@
 # if defined SEDIMENT && defined SED_MORPH
       USE mod_sediment
 # endif
-!
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
 # endif
@@ -403,6 +411,10 @@
       real(r8), intent(in) :: bvstr(LBi:,LBj:)
 #   ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:,LBj:)
+#   endif
+#   ifdef REFINED_GRID
+      real(r8), intent(inout) :: DU_avg2(LBi:,LBj:)
+      real(r8), intent(inout) :: DV_avg2(LBi:,LBj:)
 #   endif
 #  else
 #   ifdef VAR_RHO_2D
@@ -554,6 +566,10 @@
       real(r8), intent(in) :: bvstr(LBi:UBi,LBj:UBj)
 #   ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
+#   endif
+#   ifdef REFINED_GRID
+      real(r8), intent(inout) :: DU_avg2(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: DV_avg2(LBi:UBi,LBj:UBj)
 #   endif
 #  else
 #   ifdef VAR_RHO_2D
@@ -803,14 +819,12 @@
 !  boundary conditions if no partitions in I- or J-directions.
 !
 #  if defined EW_PERIODIC || defined NS_PERIODIC
-      IF (ng.eq.1) THEN
         CALL exchange_u2d_tile (ng, tile,                               &
      &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          DUon)
         CALL exchange_v2d_tile (ng, tile,                               &
      &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          DVom)
-      END IF
 #  endif
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    IminS, ImaxS, JminS, JmaxS,                   &
@@ -950,6 +964,38 @@
 #  endif
       END IF
 # endif
+
+# if !defined SOLVE3D && defined REFINED_GRID
+!
+!-----------------------------------------------------------------------
+!  Compute time averaged fields over all short time-steps.
+!-----------------------------------------------------------------------
+!
+      IF (PREDICTOR_2D_STEP(ng)) THEN
+        DO j=JstrR,JendR
+          DO i=Istr,IendR
+            DU_avg2(i,j)=DUon(i,j)
+          END DO
+        END DO
+        DO j=Jstr,JendR
+          DO i=IstrR,IendR
+            DV_avg2(i,j)=DVom(i,j)
+          END DO
+        END DO
+      ELSE
+        DO j=JstrR,JendR
+          DO i=Istr,IendR
+            DU_avg2(i,j)=0.5_r8*(DU_avg2(i,j)+DUon(i,j))
+          END DO
+        END DO
+        DO j=Jstr,JendR
+          DO i=IstrR,IendR
+            DV_avg2(i,j)=0.5_r8*(DV_avg2(i,j)+DVom(i,j))
+          END DO
+        END DO
+      END IF
+# endif
+
 # ifdef WET_DRY
 !
 !-----------------------------------------------------------------------
@@ -1100,11 +1146,9 @@
           END DO
         END DO
 # if defined EW_PERIODIC || defined NS_PERIODIC
-        IF (ng.eq.1) THEN
           CALL exchange_r2d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            rzeta(:,:,krhs))
-        END IF
 # endif
 # ifdef DISTRIBUTE
         CALL mp_exchange2d (ng, tile, iNLM, 1,                          &
@@ -1140,11 +1184,9 @@
      &                  krhs, kstp, knew,                               &
      &                  zeta)
 # if defined EW_PERIODIC || defined NS_PERIODIC
-      IF (ng.eq.1) THEN
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          zeta(:,:,knew))
-      END IF
 # endif
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
@@ -3086,14 +3128,12 @@
 !-----------------------------------------------------------------------
 !
 #  if defined EW_PERIODIC || defined NS_PERIODIC
-      IF (ng.eq.1) THEN
       CALL exchange_u2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        ubar(:,:,knew))
       CALL exchange_v2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        vbar(:,:,knew))
-      END IF
 #  endif
 #  ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &

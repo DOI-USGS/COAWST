@@ -33,6 +33,16 @@
 !                                                                      !
 !  pH           Surface concentration of hydrogen ions.                !
 !                                                                      !
+#ifdef REFINED_GRID
+!  FXp_west      parent grid flux along location of child western edge !
+!  FXp_east      parent grid flux along location of child eastern edge !
+!  FEp_south     parent grid flux along location of child southern edge!
+!  FEp_north     parent grid flux along location of child northern edge!
+!  FXc_west      child western boundary grid flux                      !
+!  FXc_east      child eastern boundary grid flux                      !
+!  FEc_south     child southern boundary grid flux                     !
+!  FEc_north     child northern boundary grid flux                     !
+#endif
 #ifdef WEC
 !  Wave effect on currents variables                                   !
 !
@@ -137,7 +147,14 @@
           integer, pointer :: hindcv(:)
           integer, pointer :: hindxmin
           integer, pointer :: hindxmax
-          integer, pointer :: ref_scale
+          real(r8), pointer :: FXp_west(:,:,:)
+          real(r8), pointer :: FXp_east(:,:,:)
+          real(r8), pointer :: FEp_north(:,:,:)
+          real(r8), pointer :: FEp_south(:,:,:)
+          real(r8), pointer :: FXc_west(:,:)
+          real(r8), pointer :: FXc_east(:,:)
+          real(r8), pointer :: FEc_north(:,:)
+          real(r8), pointer :: FEc_south(:,:)
 #endif
 #if defined COMPOSED_GRID
           real(r8), pointer :: hind2di_u(:,:)
@@ -420,7 +437,14 @@
           allocate ( OCEAN(ng) % hindcv(1:4) )
           allocate ( OCEAN(ng) % hindxmin )
           allocate ( OCEAN(ng) % hindxmax )
-          allocate ( OCEAN(ng) % ref_scale )
+          allocate ( OCEAN(ng) % FXp_west(LBj:UBj,N(ng),NT(ng)) )
+          allocate ( OCEAN(ng) % FXp_east(LBj:UBj,N(ng),NT(ng)) )
+          allocate ( OCEAN(ng) % FEp_south(LBi:UBi,N(ng),NT(ng)) )
+          allocate ( OCEAN(ng) % FEp_north(LBi:UBi,N(ng),NT(ng)) )
+          allocate ( OCEAN(ng) % FXc_west(LBj:UBj,NT(ng)) )
+          allocate ( OCEAN(ng) % FXc_east(LBj:UBj,NT(ng)) )
+          allocate ( OCEAN(ng) % FEc_south(LBi:UBi,NT(ng)) )
+          allocate ( OCEAN(ng) % FEc_north(LBi:UBi,NT(ng)) )
 #endif
 #ifdef COMPOSED_GRID
           allocate ( OCEAN(ng) % hind2di_u(LBi:UBi,LBj:UBj) )
@@ -715,7 +739,6 @@
             OCEAN(ng) % hindcv(4) = 0
             OCEAN(ng) % hindxmin = 0
             OCEAN(ng) % hindxmax = 0
-            OCEAN(ng) % ref_scale = 0
 #endif
       IF ((model.eq.0).or.(model.eq.iNLM)) THEN
         DO j=Jmin,Jmax
@@ -843,6 +866,16 @@
 # endif
 #endif
         END DO
+#if defined REFINED_GRID
+        OCEAN(ng) % FXp_west = IniVal
+        OCEAN(ng) % FXp_east = IniVal
+        OCEAN(ng) % FEp_south = IniVal
+        OCEAN(ng) % FEp_north = IniVal
+        OCEAN(ng) % FXc_west = IniVal
+        OCEAN(ng) % FXc_east = IniVal
+        OCEAN(ng) % FEc_south = IniVal
+        OCEAN(ng) % FEc_north = IniVal
+#endif
       END IF
 
 #if defined TANGENT || defined TL_IOMS

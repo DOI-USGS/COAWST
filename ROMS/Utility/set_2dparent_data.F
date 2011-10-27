@@ -43,7 +43,8 @@
 # endif
       CALL set_2dparent_data_tile (ng, tile,                            &
      &                           LBi, UBi, LBj, UBj,                    &
-     &                           LBip, UBip, LBjp, UBjp)
+     &                           LBip, UBip, LBjp, UBjp,                &
+     &                           IminS, ImaxS, JminS, JmaxS)
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 4)
 # endif
@@ -53,13 +54,12 @@
 !***********************************************************************
       SUBROUTINE set_2dparent_data_tile (ng, tile,                      &
      &                                   LBi, UBi, LBj, UBj,            &
-     &                                   LBip, UBip, LBjp, UBjp)
+     &                                   LBip, UBip, LBjp, UBjp,        &
+     &                                   IminS, ImaxS, JminS, JmaxS)
 !***********************************************************************
 !
       USE mod_param
-      USE mod_boundary
       USE mod_grid
-      USE mod_iounits
       USE mod_ncparam
       USE mod_scalars
       USE mod_stepping
@@ -67,8 +67,9 @@
       USE mod_ocean
       USE mod_refined
       USE mod_scalars
-      USE mod_coupling
       USE interpolate_mod
+      USE u2dbc_mod, ONLY : u2dbc_tile
+      USE v2dbc_mod, ONLY : v2dbc_tile
 
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
@@ -84,6 +85,7 @@
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: LBip, UBip, LBjp, UBjp
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 !  Local variable declarations.
 !
@@ -94,8 +96,8 @@
       integer :: ILB, IUB, JLB, JUB
 # endif
       integer :: i, j, ngp, ic, jc, t1, t2
-      real(r8) :: my_val, fac, fac1, fac2, fac3
-      real(r8) :: my_valu, my_valv, my_valh1, my_valh2, cff1
+      real(r8) :: my_val, fac, fac1, fac2, fac3, ref_scale
+      real(r8) :: my_valu, my_valv, cff1, cff2
 # ifdef DISTRIBUTE
 #  ifdef EW_PERIODIC
       logical :: EWperiodic=.TRUE.
@@ -125,6 +127,12 @@
 !  Fill local arrays from the BC data.
 !-----------------------------------------------------------------------
 !
+!  Set refinement scale.
+!
+      ref_scale=REAL(REFINED(ng)%ref_scale,r8)
+!
+!  Compute time interpolation factors.
+!
 # ifdef SOLVE3D
       fac1=time(ngp)+dt(ngp)-time(ng)-dt(ng)
       fac2=time(ng)-time(ngp)+dt(ng)
@@ -144,20 +152,14 @@
       fac=1.0_r8/(fac1+fac2)
       fac1=fac*fac1
       fac2=fac*fac2
-      IF (iic(1).eq.ntstart(1)) THEN
+      IF (iic(ngp).eq.ntstart(ngp)) THEN
         t1=1
         t2=2
       ELSE
-        IF (MOD(iic(1)*3,2).eq.0) THEN
-          t1=2
-          t2=1
-        ELSE
-          t1=1
-          t2=2
-        ENDIF
+        t1=kstp(ngp)
+        t2=3-t1
       END IF
 # endif
-
 !
 ! zeta
 !
@@ -265,6 +267,9 @@
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
+# ifdef WET_DRY
+            my_valu=my_valu*GRID(ng)%umask_wet(i,j)
+# endif
             OCEAN(ng)%ubar(i,j,1)=my_valu
             OCEAN(ng)%ubar(i,j,2)=my_valu
             OCEAN(ng)%ubar(i,j,3)=my_valu
@@ -279,6 +284,9 @@
      &              fac2*REFINED(ng)%ubarR_east(ic,j,t2)
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
+# endif
+# ifdef WET_DRY
+            my_valu=my_valu*GRID(ng)%umask_wet(i,j)
 # endif
             OCEAN(ng)%ubar(i,j,1)=my_valu
             OCEAN(ng)%ubar(i,j,2)=my_valu
@@ -295,6 +303,9 @@
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
+# ifdef WET_DRY
+            my_valu=my_valu*GRID(ng)%umask_wet(i,j)
+# endif
             OCEAN(ng)%ubar(i,j,1)=my_valu
             OCEAN(ng)%ubar(i,j,2)=my_valu
             OCEAN(ng)%ubar(i,j,3)=my_valu
@@ -310,10 +321,56 @@
 # ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 # endif
+# ifdef WET_DRY
+            my_valu=my_valu*GRID(ng)%umask_wet(i,j)
+# endif
             OCEAN(ng)%ubar(i,j,1)=my_valu
             OCEAN(ng)%ubar(i,j,2)=my_valu
             OCEAN(ng)%ubar(i,j,3)=my_valu
           END DO
+        END DO
+      END IF
+!
+! DU_avg2
+!
+      IF (WESTERN_EDGE) THEN
+        DO j=Jstr,Jend
+!
+! To ensure mass flux, set ubar at west edge.
+!
+          cff1=0.5_r8*GRID(ng)%on_u(Istr,j)
+          cff2=cff1*((GRID(ng)%h(Istr-1,j)+                             &
+     &                OCEAN(ng)%zeta(Istr-1,j,indx1(ng))+               &
+     &                GRID(ng)%h(Istr  ,j)+                             &
+     &                OCEAN(ng)%zeta(Istr  ,j,indx1(ng))))
+          my_val=REFINED(ng)%DUavg2R_west(j)/(ref_scale*cff2)
+# ifdef MASKING
+          my_val=my_val*GRID(ng)%umask(Istr,j)
+# endif
+# ifdef WET_DRY
+          my_val=my_val*GRID(ng)%umask_wet(Istr,j)
+# endif
+          OCEAN(ng)%ubar(Istr,j,indx1(ng))=my_val
+        END DO
+      END IF
+      IF (EASTERN_EDGE) THEN
+        DO j=Jstr,Jend
+!
+! To ensure mass flux, set ubar at east edge.
+!
+            cff2=0.5_r8*GRID(ng)%on_u(Iend+1,j)
+            cff2=cff2*((GRID(ng)%h(Iend+1,j)+                           &
+     &                  OCEAN(ng)%zeta(Iend+1,j,indx1(ng))+             &
+     &                  GRID(ng)%h(Iend  ,j)+                           &
+     &                  OCEAN(ng)%zeta(Iend  ,j,indx1(ng))))
+            my_val=REFINED(ng)%DUavg2R_east(j)/(ref_scale*cff2)
+# ifdef MASKING
+            my_val=my_val*GRID(ng)%umask(Iend+1,j)
+# endif
+# ifdef WET_DRY
+            my_val=my_val*GRID(ng)%umask_wet(Iend+1,j)
+# endif
+            OCEAN(ng)%ubar(Iend+1,j,indx1(ng))=my_val
         END DO
       END IF
 # ifdef WEC
@@ -329,6 +386,9 @@
 #  ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 #  endif
+#  ifdef WET_DRY
+            my_valu=my_valu*GRID(ng)%umask_wet(i,j)
+#  endif
             OCEAN(ng)%ubar_stokes(i,j)=my_valu
           END DO
         END DO
@@ -341,6 +401,9 @@
      &              fac2*REFINED(ng)%ubarsR_east(ic,j,t2)
 #  ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
+#  endif
+#  ifdef WET_DRY
+            my_valu=my_valu*GRID(ng)%umask_wet(i,j)
 #  endif
             OCEAN(ng)%ubar_stokes(i,j)=my_valu
           END DO
@@ -355,6 +418,9 @@
 #  ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
 #  endif
+#  ifdef WET_DRY
+            my_valu=my_valu*GRID(ng)%umask_wet(i,j)
+#  endif
             OCEAN(ng)%ubar_stokes(i,j)=my_valu
           END DO
         END DO
@@ -367,6 +433,9 @@
      &              fac2*REFINED(ng)%ubarsR_north(i,jc,t2)
 #  ifdef MASKING
             my_valu=my_valu*GRID(ng)%umask(i,j)
+#  endif
+#  ifdef WET_DRY
+            my_valu=my_valu*GRID(ng)%umask_wet(i,j)
 #  endif
             OCEAN(ng)%ubar_stokes(i,j)=my_valu
           END DO
@@ -385,6 +454,9 @@
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
+# ifdef WET_DRY
+            my_valv=my_valv*GRID(ng)%vmask_wet(i,j)
+# endif
             OCEAN(ng)%vbar(i,j,1)=my_valv
             OCEAN(ng)%vbar(i,j,2)=my_valv
             OCEAN(ng)%vbar(i,j,3)=my_valv
@@ -399,6 +471,9 @@
      &              fac2*REFINED(ng)%vbarR_east(ic,j,t2)
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
+# endif
+# ifdef WET_DRY
+            my_valv=my_valv*GRID(ng)%vmask_wet(i,j)
 # endif
             OCEAN(ng)%vbar(i,j,1)=my_valv
             OCEAN(ng)%vbar(i,j,2)=my_valv
@@ -415,6 +490,9 @@
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
+# ifdef WET_DRY
+            my_valv=my_valv*GRID(ng)%vmask_wet(i,j)
+# endif
             OCEAN(ng)%vbar(i,j,1)=my_valv
             OCEAN(ng)%vbar(i,j,2)=my_valv
             OCEAN(ng)%vbar(i,j,3)=my_valv
@@ -430,10 +508,56 @@
 # ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 # endif
+# ifdef WET_DRY
+            my_valv=my_valv*GRID(ng)%vmask_wet(i,j)
+# endif
             OCEAN(ng)%vbar(i,j,1)=my_valv
             OCEAN(ng)%vbar(i,j,2)=my_valv
             OCEAN(ng)%vbar(i,j,3)=my_valv
           END DO
+        END DO
+      END IF
+!
+! DV_avg2
+!
+      IF (SOUTHERN_EDGE) THEN
+        DO i=IstrT,IendT
+!
+! To ensure mass flux, set vbar at southern edge.
+!
+          cff1=0.5_r8*GRID(ng)%om_v(i,Jstr)
+          cff2=cff1*((GRID(ng)%h(i,Jstr-1)+                             &
+     &                OCEAN(ng)%zeta(i,Jstr-1,indx1(ng))+               &
+     &                GRID(ng)%h(i,Jstr  )+                             &
+     &                OCEAN(ng)%zeta(i,Jstr  ,indx1(ng))))
+          my_val=REFINED(ng)%DVavg2R_south(i)/(ref_scale*cff2)
+# ifdef MASKING
+          my_val=my_val*GRID(ng)%vmask(i,Jstr)
+# endif
+# ifdef WET_DRY
+          my_val=my_val*GRID(ng)%vmask_wet(i,Jstr)
+# endif
+          OCEAN(ng)%vbar(i,Jstr,indx1(ng))=my_val
+        END DO
+      END IF
+      IF (NORTHERN_EDGE) THEN
+        DO i=IstrT,IendT
+!
+! To ensure mass flux, set vbar at southern edge.
+!
+          cff1=0.5_r8*GRID(ng)%om_v(i,Jend+1)
+          cff2=cff1*((GRID(ng)%h(i,Jend+1)+                             &
+     &                OCEAN(ng)%zeta(i,Jend+1,indx1(ng))+               &
+     &                GRID(ng)%h(i,Jend  )+                             &
+     &                OCEAN(ng)%zeta(i,Jend  ,indx1(ng))))
+          my_val=REFINED(ng)%DVavg2R_north(i)/(ref_scale*cff2)
+# ifdef MASKING
+          my_val=my_val*GRID(ng)%vmask(i,Jend+1)
+# endif
+# ifdef WET_DRY
+          my_val=my_val*GRID(ng)%vmask_wet(i,Jend+1)
+# endif
+          OCEAN(ng)%vbar(i,Jend+1,indx1(ng))=my_val
         END DO
       END IF
 # ifdef WEC
@@ -449,6 +573,9 @@
 #  ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 #  endif
+#  ifdef WET_DRY
+            my_valv=my_valv*GRID(ng)%vmask_wet(i,j)
+#  endif
             OCEAN(ng)%vbar_stokes(i,j)=my_valv
           END DO
         END DO
@@ -461,6 +588,9 @@
      &              fac2*REFINED(ng)%vbarsR_east(ic,j,t2)
 #  ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
+#  endif
+#  ifdef WET_DRY
+            my_valv=my_valv*GRID(ng)%vmask_wet(i,j)
 #  endif
             OCEAN(ng)%vbar_stokes(i,j)=my_valv
           END DO
@@ -475,6 +605,9 @@
 #  ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
 #  endif
+#  ifdef WET_DRY
+            my_valv=my_valv*GRID(ng)%vmask_wet(i,j)
+#  endif
             OCEAN(ng)%vbar_stokes(i,j)=my_valv
           END DO
         END DO
@@ -487,6 +620,9 @@
      &              fac2*REFINED(ng)%vbarsR_north(i,jc,t2)
 #  ifdef MASKING
             my_valv=my_valv*GRID(ng)%vmask(i,j)
+#  endif
+#  ifdef WET_DRY
+            my_valv=my_valv*GRID(ng)%vmask_wet(i,j)
 #  endif
             OCEAN(ng)%vbar_stokes(i,j)=my_valv
           END DO

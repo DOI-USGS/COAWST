@@ -120,7 +120,7 @@
           CALL allocate_sources (ng)
 #endif
 #ifdef REFINED_GRID
-          CALL allocate_refined (ng)
+          CALL allocate_refined (ng, LBi, UBi, LBj, UBj)
 #endif
         END DO
       END IF

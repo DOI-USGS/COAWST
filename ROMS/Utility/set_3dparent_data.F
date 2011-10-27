@@ -91,7 +91,7 @@
       integer :: ILB, IUB, JLB, JUB
 #  endif
       integer :: i, j, k, ngp, ic, jc, t1, t2, itrc
-      real(r8) :: my_val, fac, fac1, fac2
+      real(r8) :: my_val, fac, fac1, fac2, cff1, cff2, ref_scale
 
 #  ifdef DISTRIBUTE
 #   ifdef EW_PERIODIC
@@ -117,6 +117,7 @@
       CALL wclock_on (ng, iNLM, 3)
 #  endif
 !
+      ref_scale=REAL(REFINED(ng)%ref_scale,r8)
 !
 !  Set the parent grid to get data from.
 !

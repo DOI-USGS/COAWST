@@ -50,7 +50,10 @@
       integer :: i, j, k
 
 # include "set_bounds.h"
-
+# ifdef REFINED_GRID
+!  Set this for Parent Grid only.
+      IF (ng.eq.1) THEN
+# endif
 # ifdef EW_PERIODIC
 #  ifdef NS_PERIODIC
 #   define J_RANGE Jstr,Jend
@@ -203,6 +206,9 @@
 #  ifdef DISTRIBUTE
       END IF
 #  endif
+# endif
+# ifdef REFINED_GRID
+      END IF
 # endif
       RETURN
       END SUBROUTINE exchange_p3d_tile
@@ -232,7 +238,10 @@
       integer :: i, j, k
 
 # include "set_bounds.h"
-
+# ifdef REFINED_GRID
+!  Set this for Parent Grid only.
+      IF (ng.eq.1) THEN
+# endif
 # ifdef EW_PERIODIC
 #  ifdef NS_PERIODIC
 #   define J_RANGE Jstr,Jend
@@ -385,6 +394,9 @@
       END IF
 #  endif
 # endif
+# ifdef REFINED_GRID
+      END IF
+# endif
       RETURN
       END SUBROUTINE exchange_r3d_tile
 
@@ -413,7 +425,10 @@
       integer :: i, j, k
 
 # include "set_bounds.h"
-
+# ifdef REFINED_GRID
+!  Set this for Parent Grid only.
+      IF (ng.eq.1) THEN
+# endif
 # ifdef EW_PERIODIC
 #  ifdef NS_PERIODIC
 #   define J_RANGE Jstr,Jend
@@ -567,6 +582,9 @@
       END IF
 #  endif
 # endif
+# ifdef REFINED_GRID
+      END IF
+# endif
       RETURN
       END SUBROUTINE exchange_u3d_tile
 
@@ -595,7 +613,10 @@
       integer :: i, j, k
 
 # include "set_bounds.h"
-
+# ifdef REFINED_GRID
+!  Set this for Parent Grid only.
+      IF (ng.eq.1) THEN
+# endif
 # ifdef EW_PERIODIC
 #  ifdef NS_PERIODIC
 #   define J_RANGE Jstr,Jend
@@ -749,6 +770,9 @@
       END IF
 #  endif
 # endif
+# ifdef REFINED_GRID
+      END IF
+# endif
       RETURN
       END SUBROUTINE exchange_v3d_tile
 
@@ -777,7 +801,10 @@
       integer :: i, j, k
 
 # include "set_bounds.h"
-
+# ifdef REFINED_GRID
+!  Set this for Parent Grid only.
+      IF (ng.eq.1) THEN
+# endif
 # ifdef EW_PERIODIC
 #  ifdef NS_PERIODIC
 #   define J_RANGE Jstr,Jend
@@ -929,6 +956,9 @@
 #  ifdef DISTRIBUTE
       END IF
 #  endif
+# endif
+# ifdef REFINED_GRID
+      END IF
 # endif
       RETURN
       END SUBROUTINE exchange_w3d_tile

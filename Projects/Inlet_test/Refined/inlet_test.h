@@ -18,7 +18,6 @@
 #define SWAN_MODEL
 #define MCT_LIB
 #define REFINED_GRID
-#define REFINED_GRID_BC
 
 #define UV_VIS2
 #define MIX_S_UV

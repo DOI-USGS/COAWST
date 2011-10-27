@@ -128,7 +128,7 @@
 !
 !  First sweep to locate interps in x_direction.
 !
-            epp=Iout(i,j)-i0
+            epp=Iout(i,j)-REAL(i0,r8)
             Em=0.5_r8*epp*(epp-1.0_r8)+alpha
             E0=(1.0_r8-epp*epp)-2.0_r8*alpha
             Ep=0.5_r8*epp*(epp+1.0_r8)+alpha
@@ -161,7 +161,7 @@
 !
 !  Second pass to interoplate in y-direction.
 !
-            epp=Jout(i,j)-j0
+            epp=Jout(i,j)-REAL(j0,r8)
             Em=0.5_r8*epp*(epp-1.0_r8)+alpha
             E0=(1.0_r8-epp*epp)-2.0_r8*alpha
             Ep=0.5_r8*epp*(epp+1.0_r8)+alpha

@@ -12,13 +12,15 @@
 **           Just change Ngrids in the makefile, do not make any changes here.
 */
 
+#define ROMS_MODEL
 #define OUT_DOUBLE
-#undef  UV_ADV
+#define UV_ADV
 #undef  UV_VIS4
 #undef  MIX_S_UV
 #define UV_QDRAG
-#define COMPOSED_GRID
-#undef  REFINED_GRID
+#undef  COMPOSED_GRID
+#define REFINED_GRID
+
 #define ANA_SMFLUX
 #define NORTHERN_WALL
 #define SOUTHERN_WALL
@@ -29,7 +31,7 @@
 #define SOLVE3D
 #ifdef SOLVE3D
 # undef  TS_FIXED
-# define SALINITY
+# undef  SALINITY
 # define SPLINES
 # define ANA_STFLUX
 # define ANA_BTFLUX
@@ -37,16 +39,14 @@
 # define ANA_BSFLUX
 # define ANA_SPFLUX
 # define ANA_BPFLUX
-# define TS_U3HADVECTION
+# define TS_C2HADVECTION
+# undef  TS_U3HADVECTION
 # undef  TS_MPDATA
-# undef  ANA_VMIX
 # define GLS_MIXING
 # if defined GLS_MIXING
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
 # endif
-# undef SEDIMENT
-# undef SUSPLOAD
 #endif
 
 

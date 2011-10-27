@@ -128,6 +128,9 @@
 # ifndef TS_FIXED
       USE step3d_t_mod, ONLY : step3d_t
 # endif
+#if !defined TS_FIXED && defined REFINED_GRID
+      USE step3dref_t_mod, ONLY : step3dref_t
+# endif
       USE step3d_uv_mod, ONLY : step3d_uv
 # ifdef FLOATS
       USE step_floats_mod, ONLY : step_floats
@@ -236,23 +239,39 @@
             CALL get_3dparent_data (ng, TILE)
           END IF
         END IF
-!#  if !defined REFINED_GRID_BC
 !
 !  Put the child data back into the parent grid.
 !
         IF ((ng.lt.Ngrids).and.(iic(ng).gt.1)) THEN
+
+!
+!  Correct parent grid tracers with corrected child flux at boundaries.
+!
+
+#  if !defined TS_FIXED
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+          DO thread=0,numthreads-1
+            subs=NtileX(ng)*NtileE(ng)/numthreads
+            DO tile=subs*(thread+1)-1,subs*thread,-1
+              CALL step3dref_t (ng, TILE)
+            END DO
+          END DO
+!$OMP END PARALLEL DO
+#  endif
+
           CALL set_2dchild_data (ng, TILE)
 !
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
           DO thread=0,numthreads-1
             subs=NtileX(ng)*NtileE(ng)/numthreads
             DO tile=subs*(thread+1)-1,subs*thread,-1
               CALL set_depth (ng, TILE)
             END DO
           END DO
+!$OMP END PARALLEL DO
 !
           CALL set_3dchild_data (ng, TILE)
         END IF
-!#  endif
 # endif
 !
 # if defined W4DPSAS || defined NLM_OUTER || \

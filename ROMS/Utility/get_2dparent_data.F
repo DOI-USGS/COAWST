@@ -1,7 +1,5 @@
 #include "cppdefs.h"
-#undef get_DUon
-#undef get_DVom
-#undef INTERP_BILINEAR
+#define INTERP_BILINEAR
       MODULE get_2dparent_data_mod
 #ifdef REFINED_GRID
 !
@@ -62,7 +60,6 @@
       USE mod_param
       USE mod_boundary
       USE mod_grid
-      USE mod_iounits
       USE mod_ncparam
       USE mod_scalars
       USE mod_stepping
@@ -97,13 +94,12 @@
       integer :: Imin, Imax, Jmin, Jmax, model
       integer :: Ilen, Jlen, IJlen, MyType, status
       integer :: MyError, MySize, ncvarid, refscale
-!      real(r8) :: Xmin, Xmax, Ymin, Ymax
-      real(r8) :: my_min, my_max
+      real(r8) :: my_min, my_max, cff, cff1
 
       real(r8), allocatable :: Aout(:)
       real(r8), allocatable :: A(:,:)
       real(r8), allocatable :: Amask(:,:)
-      real(r8), allocatable :: A2(:,:), Ipos(:,:), Jpos(:,:)
+      real(r8), allocatable :: A2(:,:)
 
       logical :: rectangular
       real(r8) :: IJspv
@@ -131,13 +127,13 @@
 # ifdef SOLVE3D
         t1=nnew(ngp)
 # else
-        t1=kstp(ng)
+        t1=knew(ngp)
 # endif
       END IF
 !
 !  Set refinement scale.
 !
-      refscale=OCEAN(ng)%ref_scale
+      refscale=REFINED(ng)%ref_scale
 
 !  Loop thru 3 times. 
 !  ii=1: rho var, ii=2:u var, ii=3:v var
@@ -191,8 +187,6 @@
         IF (.not.allocated(A))     allocate(A(Imin:Imax,Jmin:Jmax))
         IF (.not.allocated(Amask)) allocate(Amask(Imin:Imax,Jmin:Jmax))
         IF (.not.allocated(A2))    allocate(A2(LBi:UBi,LBj:UBj))
-        IF (.not.allocated(Ipos))  allocate(Ipos(LBi:UBi,LBj:UBj))
-        IF (.not.allocated(Jpos))  allocate(Jpos(LBi:UBi,LBj:UBj))
 !
         IF (ii.eq.1) THEN
 !!!!!!!!!!!!!!!!!!!
@@ -248,12 +242,6 @@
               A(i,j)=Aout(ic)
             END DO
           END DO
-          DO i=LBi,UBi
-            DO j=LBj,UBj
-              Ipos(i,j)=OCEAN(ng)%hindpi_r(i,j)
-              Jpos(i,j)=OCEAN(ng)%hindpj_r(i,j)
-            END DO
-          END DO
 !
 ! Now interpolate to the local tile.
 !
@@ -265,7 +253,7 @@
      &                         A, Amask,                                &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         Ipos, Jpos,                              &
+     &                         OCEAN(ng)%hindpi_r, OCEAN(ng)%hindpj_r,  &
      &                         GRID(ng)%lonr, GRID(ng)%latr, A2,        &
      &                         my_min, my_max)
           ELSE
@@ -275,7 +263,7 @@
      &                         A, Amask,                                &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         Ipos, Jpos,                              &
+     &                         OCEAN(ng)%hindpi_r, OCEAN(ng)%hindpj_r,  &
      &                         GRID(ng)%xr, GRID(ng)%yr, A2,            &
      &                         my_min, my_max)
           END IF
@@ -287,7 +275,8 @@
 #  endif 
      &                         LBi, UBi, LBj, UBj,                      &
      &                         LBi, UBi, LBj, UBj, refscale,            &
-     &                         Ipos, Jpos,                              &
+     &                         OCEAN(ng)%hindpi_r(i,j),                 &
+     &                         OCEAN(ng)%hindpj_r(i,j),                 &
      &                         A2, my_min, my_max)
 # endif
 !
@@ -320,97 +309,6 @@
               DO i=IstrTU,IendT
                 jc=j-Jend+1
                 REFINED(ng)%zetaR_north(i,jc,t1)=A2(i,j)
-              END DO
-            END DO
-          END IF
-!
-! get bathymetry h
-!
-          CALL mp_gather2d (ngp, model, LBip, UBip, LBjp, UBjp, 0,      &
-     &                    gtype, 1.0_r8,                                &
-# ifdef MASKING
-     &                    GRID(ngp) % rmask(LBip:UBip,LBjp:UBjp),       &
-# endif
-     &                    GRID(ngp) % h(LBip:UBip,LBjp:UBjp),           &
-     &                    Npts, Aout)
-!
-! distribute the Aout (1D packed) field to all the nodes.
-          CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,             &
-     &                    OCN_COMM_WORLD, MyError)
-! unpack and place in global ng=1 2D array
-          ic=0
-          DO j=Jmin,Jmax
-            DO i=Imin,Imax
-              ic=ic+1
-              A(i,j)=Aout(ic)
-            END DO
-          END DO
-!
-! Now interpolate to the local tile.
-!
-# ifdef INTERP_BILINEAR
-          IF (spherical) THEN
-            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                         REFINED(ng)%lonr_p(Imin:Imax,Jmin:Jmax), &
-     &                         REFINED(ng)%latr_p(Imin:Imax,Jmin:Jmax), &
-     &                         A, Amask,                                &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         Ipos, Jpos,                              &
-     &                         GRID(ng)%lonr, GRID(ng)%latr, A2,        &
-     &                         my_min, my_max)
-          ELSE
-            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                         REFINED(ng)%xr_p(Imin:Imax,Jmin:Jmax),   &
-     &                         REFINED(ng)%yr_p(Imin:Imax,Jmin:Jmax),   &
-     &                         A, Amask,                                &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         Ipos, Jpos,                              &
-     &                         GRID(ng)%xr, GRID(ng)%yr, A2,            &
-     &                         my_min, my_max)
-          END IF
-# else
-            CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A,                                       &
-#  ifdef MASKING
-     &                         Amask,                                   &
-#  endif 
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj, refscale,            &
-     &                         Ipos, Jpos,                              &
-     &                         A2, my_min, my_max)
-# endif
-!
-          IF (WESTERN_EDGE) THEN
-            DO j=JstrTV,JendT
-              DO i=IstrT,Istr
-                ic=i+Nghostpoints+1
-                REFINED(ng)%hR_west(ic,j,t1)=A2(i,j)
-              END DO
-            END DO
-          END IF
-          IF (EASTERN_EDGE) THEN
-            DO j=JstrTV,JendT
-              DO i=Iend,IendT
-                ic=i-Iend+1
-                REFINED(ng)%hR_east(ic,j,t1)=A2(i,j)
-              END DO
-            END DO
-          END IF
-          IF (SOUTHERN_EDGE) THEN
-            DO j=JstrT,Jstr
-              DO i=IstrTU,IendT
-                jc=j+Nghostpoints+1
-                REFINED(ng)%hR_south(i,jc,t1)=A2(i,j)
-              END DO
-            END DO
-          END IF
-          IF (NORTHERN_EDGE) THEN
-            DO j=Jend,JendT
-              DO i=IstrTU,IendT
-                jc=j-Jend+1
-                REFINED(ng)%hR_north(i,jc,t1)=A2(i,j)
               END DO
             END DO
           END IF
@@ -454,12 +352,6 @@
               A(i,j)=Aout(ic)
             END DO
           END DO
-          DO i=LBi,UBi
-            DO j=LBj,UBj
-              Ipos(i,j)=OCEAN(ng)%hindpi_u(i,j)
-              Jpos(i,j)=OCEAN(ng)%hindpj_u(i,j)
-            END DO
-          END DO
 !
 ! Now interpolate to the local tile for ng=2.
 !
@@ -493,7 +385,7 @@
 #  endif 
      &                         LBi, UBi, LBj, UBj,                      &
      &                         LBi, UBi, LBj, UBj, refscale,            &
-     &                         Ipos, Jpos,                              &
+     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
      &                         A2, my_min, my_max)
 # endif
 !
@@ -529,7 +421,67 @@
               END DO
             END DO
           END IF
-
+!!!!!!!!!!!!!!!!!!!
+!  DU_avg2  !!!!!!!
+!!!!!!!!!!!!!!!!!!!
+!
+! get mask
+!
+          ic=0
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              ic=ic+1
+# ifdef MASKING
+              Amask(i,j)=REFINED(ng)%umask_p(i,j)
+# else
+              Amask(i,j)=1.0_r8
+# endif
+            END DO
+          END DO
+!
+! get DU_avg2
+!
+          CALL mp_gather2d (ngp, model, LBip, UBip, LBjp, UBjp, 0,      &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ngp) % umask(LBip:UBip,LBjp:UBjp),       &
+# endif
+# ifdef SOLVE3D
+     &                COUPLING(ngp) % DU_avg2(LBip:UBip,LBjp:UBjp),     &
+# else
+     &                REFINED(ngp) % DU_avg2(LBip:UBip,LBjp:UBjp),      &
+# endif
+     &                    Npts, Aout)
+!
+! distribute the Aout (1D packed) field to all the nodes for ng=2
+          CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,             &
+     &                    OCN_COMM_WORLD, MyError)
+! unpack and place in global ng=1 2D array
+          ic=0
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              ic=ic+1
+              A(i,j)=Aout(ic)
+            END DO
+          END DO
+          IF (WESTERN_EDGE) THEN
+            DO j=Jstr,Jend
+              ic=NINT(OCEAN(ng)%hindpi_u(1,j))
+              jc=NINT(OCEAN(ng)%hindpj_u(1,j))
+              IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
+                REFINED(ng)%DUavg2R_west(j)=A(ic,jc)
+              END IF
+            END DO
+          END IF
+          IF (EASTERN_EDGE) THEN
+            DO j=Jstr,Jend
+              ic=NINT(OCEAN(ng)%hindpi_u(Iend+1,j))
+              jc=NINT(OCEAN(ng)%hindpj_u(Iend+1,j))
+              IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
+                REFINED(ng)%DUavg2R_east(j)=A(ic,jc)
+              END IF
+            END DO
+          END IF
 # ifdef WEC
 !!!!!!!!!!!!!!!!!!!
 !  ubar_stokes !!!!
@@ -589,7 +541,7 @@
 #  endif 
      &                         LBi, UBi, LBj, UBj,                      &
      &                         LBi, UBi, LBj, UBj, refscale,            &
-     &                         Ipos, Jpos,                              &
+     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
      &                         A2, my_min, my_max)
 # endif
 !
@@ -622,100 +574,6 @@
               DO i=IstrT,IendT
                 jc=j-Jend
                 REFINED(ng)%ubarsR_north(i,jc,t1)=A2(i,j)
-              END DO
-            END DO
-          END IF
-# endif
-
-# ifdef get_DUon
-
-!
-! get DUon
-!
-          CALL mp_gather2d (ngp, model, LBip, UBip, LBjp, UBjp, 0,      &
-     &                    gtype, 1.0_r8,                                &
-#  ifdef MASKING
-     &                    GRID(ngp) % umask(LBip,LBjp),                 &
-#  endif
-     &                    OCEAN(ngp) % DUon(LBip,LBjp),                 &
-     &                    Npts, Aout)
-!
-! distribute the Aout (1D packed) field to all the nodes for ng=2
-          CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,             &
-     &                    OCN_COMM_WORLD, MyError)
-! unpack and place in global ng=1 2D array
-          ic=0
-          DO j=Jmin,Jmax
-            DO i=Imin,Imax
-              ic=ic+1
-              A(i,j)=Aout(ic)
-            END DO
-          END DO
-!
-! Now interpolate to the local tile for ng=2.
-!
-# ifdef INTERP_BILINEAR
-          IF (spherical) THEN
-          CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,               &
-     &                        REFINED(ng)%lonu_p(Imin:Imax,Jmin:Jmax),  &
-     &                        REFINED(ng)%latu_p(Imin:Imax,Jmin:Jmax),  &
-     &                        A, Amask,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,   &
-     &                        GRID(ng)%lonu, GRID(ng)%latu,             &
-     &                        A2, my_min, my_max)
-          ELSE
-          CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,               &
-     &                        REFINED(ng)%xu_p(Imin:Imax,Jmin:Jmax),    &
-     &                        REFINED(ng)%yu_p(Imin:Imax,Jmin:Jmax),    &
-     &                        A, Amask,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,   &
-     &                        GRID(ng)%xu, GRID(ng)%yu,                 &
-     &                        A2, my_min, my_max)
-# else
-            CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A,                                       &
-#  ifdef MASKING
-     &                         Amask,                                   &
-#  endif 
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj, refscale,            &
-     &                         Ipos, Jpos,                              &
-     &                         A2, my_min, my_max)
-# endif
-          END IF
-          IF (WESTERN_EDGE) THEN
-            DO j=JstrT,JendT
-              DO i=IstrT+1,Istr
-                ic=i+Nghostpoints
-                REFINED(ng)%DUonR_west(ic,j,t1)=A2(i,j)
-              END DO
-            END DO
-          END IF
-          IF (EASTERN_EDGE) THEN
-            DO j=JstrT,JendT
-              DO i=Iend+1,IendT
-                ic=i-Iend
-                REFINED(ng)%DUonR_east(ic,j,t1)=A2(i,j)
-              END DO
-            END DO
-          END IF
-          IF (SOUTHERN_EDGE) THEN
-            DO j=JstrT,Jstr-1
-              DO i=IstrT,IendT
-                jc=j+Nghostpoints+1
-                REFINED(ng)%DUonR_south(i,jc,t1)=A2(i,j)
-              END DO
-            END DO
-          END IF
-          IF (NORTHERN_EDGE) THEN
-            DO j=Jend+1,JendT
-              DO i=IstrT,IendT
-                jc=j-Jend
-                REFINED(ng)%DUonR_north(i,jc,t1)=A2(i,j)
               END DO
             END DO
           END IF
@@ -761,12 +619,6 @@
               A(i,j)=Aout(ic)
             END DO
           END DO
-          DO i=LBi,UBi
-            DO j=LBj,UBj
-              Ipos(i,j)=OCEAN(ng)%hindpi_v(i,j)
-              Jpos(i,j)=OCEAN(ng)%hindpj_v(i,j)
-            END DO
-          END DO
 !
 ! Now interpolate to the local tile for ng=2.
 !
@@ -778,7 +630,7 @@
      &                         A, Amask,                                &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,&
+     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,  &
      &                         GRID(ng)%lonv, GRID(ng)%latv, A2,        &
      &                         my_min, my_max)
           ELSE
@@ -788,7 +640,7 @@
      &                         A, Amask,                                &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,&
+     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,  &
      &                         GRID(ng)%xv, GRID(ng)%yv, A2,            &
      &                         my_min, my_max)
           END IF
@@ -800,7 +652,7 @@
 #  endif 
      &                         LBi, UBi, LBj, UBj,                      &
      &                         LBi, UBi, LBj, UBj, refscale,            &
-     &                         Ipos, Jpos,                              &
+     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,  &
      &                         A2, my_min, my_max)
 # endif
           IF (WESTERN_EDGE) THEN
@@ -833,6 +685,67 @@
                 jc=j-Jend
                 REFINED(ng)%vbarR_north(i,jc,t1)=A2(i,j)
               END DO
+            END DO
+          END IF
+!!!!!!!!!!!!!!!!!!!
+!  DV_avg2  !!!!!!!
+!!!!!!!!!!!!!!!!!!!
+!
+! get mask
+!
+          ic=0
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              ic=ic+1
+# ifdef MASKING
+              Amask(i,j)=REFINED(ng)%vmask_p(i,j)
+# else
+              Amask(i,j)=1.0_r8
+# endif
+            END DO
+          END DO
+!
+! get vbar
+!
+          CALL mp_gather2d (ngp, model, LBip, UBip, LBjp, UBjp, 0,      &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ngp) % vmask(LBip:UBip,LBjp:UBjp),       &
+# endif
+# ifdef SOLVE3D
+     &                COUPLING(ngp) % DV_avg2(LBip:UBip,LBjp:UBjp),     &
+# else
+     &                REFINED(ngp) % DV_avg2(LBip:UBip,LBjp:UBjp),      &
+# endif
+     &                    Npts, Aout)
+!
+! distribute the Aout (1D packed) field to all the nodes for ng=2
+          CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,             &
+     &                    OCN_COMM_WORLD, MyError)
+! unpack and place in global ng=1 2D array
+          ic=0
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              ic=ic+1
+              A(i,j)=Aout(ic)
+            END DO
+          END DO
+          IF (SOUTHERN_EDGE) THEN
+            DO i=Istr,Iend
+              ic=NINT(OCEAN(ng)%hindpi_v(i,1))
+              jc=NINT(OCEAN(ng)%hindpj_v(i,1))
+              IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
+                REFINED(ng)%DVavg2R_south(i)=A(ic,jc)
+              END IF
+            END DO
+          END IF
+          IF (NORTHERN_EDGE) THEN
+            DO i=Istr,Iend
+              ic=NINT(OCEAN(ng)%hindpi_v(i,Jend+1))
+              jc=NINT(OCEAN(ng)%hindpj_v(i,Jend+1))
+              IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
+                REFINED(ng)%DVavg2R_north(i)=A(ic,jc)
+              END IF
             END DO
           END IF
 # ifdef WEC
@@ -894,7 +807,7 @@
 #  endif 
      &                         LBi, UBi, LBj, UBj,                      &
      &                         LBi, UBi, LBj, UBj, refscale,            &
-     &                         Ipos, Jpos,                              &
+     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,&
      &                         A2, my_min, my_max)
 # endif
           IF (WESTERN_EDGE) THEN
@@ -931,106 +844,12 @@
           END IF
 # endif
 
-# ifdef get_DVom
-!
-! get DVom
-!
-          CALL mp_gather2d (ngp, model, LBip, UBip, LBjp, UBjp, 0,      &
-     &                        gtype, 1.0_r8,                            &
-#  ifdef MASKING
-     &                        GRID(ngp) % vmask(LBip,LBjp),             &
-#  endif
-     &                        OCEAN(ngp) % DVom(LBip,LBjp),             &
-     &                        Npts, Aout)
-!
-! distribute the Aout (1D packed) field to all the nodes for ng=2
-          CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,             &
-     &                    OCN_COMM_WORLD, MyError)
-! unpack and place in global ng=1 2D array
-          ic=0
-          DO j=Jmin,Jmax
-            DO i=Imin,Imax
-              ic=ic+1
-              A(i,j)=Aout(ic)
-            END DO
-          END DO
-!
-! Now interpolate to the local tile for ng=2.
-!
-# ifdef INTERP_BILINEAR
-          IF (spherical) THEN
-          CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,               &
-     &                        REFINED(ng)%lonv_p(Imin:Imax,Jmin:Jmax),  &
-     &                        REFINED(ng)%latv_p(Imin:Imax,Jmin:Jmax),  &
-     &                        A, Amask,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,   &
-     &                        GRID(ng)%lonv, GRID(ng)%latv,             &
-     &                        A2, my_min, my_max)
-          ELSE
-          CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,               &
-     &                        REFINED(ng)%xv_p(Imin:Imax,Jmin:Jmax),    &
-     &                        REFINED(ng)%yv_p(Imin:Imax,Jmin:Jmax),    &
-     &                        A, Amask,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,   &
-     &                        GRID(ng)%xv, GRID(ng)%yv,                 &
-     &                        A2, my_min, my_max)
-          END IF
-# else
-            CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A,                                       &
-#  ifdef MASKING
-     &                         Amask,                                   &
-#  endif 
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj, refscale,            &
-     &                         Ipos, Jpos,                              &
-     &                         A2, my_min, my_max)
-# endif
-          IF (WESTERN_EDGE) THEN
-            DO j=JstrT,JendT
-              DO i=IstrT,Istr-1
-                ic=i+Nghostpoints+1
-                REFINED(ng)%DVomR_west(ic,j,t1)=A2(i,j)
-              END DO
-            END DO
-          END IF
-          IF (EASTERN_EDGE) THEN
-            DO j=JstrT,JendT
-              DO i=Iend+1,IendT
-                ic=i-Iend
-                REFINED(ng)%DVomR_east(ic,j,t1)=A2(i,j)
-              END DO
-            END DO
-          END IF
-          IF (SOUTHERN_EDGE) THEN
-            DO j=JstrT+1,Jstr
-              DO i=IstrT,IendT
-                jc=j+Nghostpoints
-                REFINED(ng)%DVomR_south(i,jc,t1)=A2(i,j)
-              END DO
-            END DO
-          END IF
-          IF (NORTHERN_EDGE) THEN
-            DO j=Jend+1,JendT
-              DO i=IstrT,IendT
-                jc=j-Jend
-                REFINED(ng)%DVomR_north(i,jc,t1)=A2(i,j)
-              END DO
-            END DO
-          END IF
-# endif
         END IF
 !
         IF (allocated(Aout))  deallocate (Aout)
         IF (allocated(A))     deallocate (A)
         IF (allocated(Amask)) deallocate (Amask)
         IF (allocated(A2))    deallocate (A2)
-        IF (allocated(Ipos))  deallocate (Ipos)
-        IF (allocated(Jpos))  deallocate (Jpos)
       END DO
 !
 # ifdef PROFILE

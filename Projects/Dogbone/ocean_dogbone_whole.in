@@ -51,18 +51,18 @@
 ! Grid dimension parameters. See notes below in the Glossary for how to set
 ! these parameters correctly.
 
-!         Lm == 50            ! Number of I-direction INTERIOR RHO-points
-!         Mm == 23            ! Number of J-direction INTERIOR RHO-points
-          Lm == 45            ! Number of I-direction INTERIOR RHO-points
-          Mm == 18            ! Number of J-direction INTERIOR RHO-points
+          Lm == 50            ! Number of I-direction INTERIOR RHO-points
+          Mm == 23            ! Number of J-direction INTERIOR RHO-points
+!         Lm == 45            ! Number of I-direction INTERIOR RHO-points
+!         Mm == 18            ! Number of J-direction INTERIOR RHO-points
            N == 10            ! Number of vertical levels
 
         Nbed =  1             ! Number of sediment bed layers
 
-         NAT =  2             ! Number of active tracers (usually, 2)
+         NAT =  1             ! Number of active tracers (usually, 2)
          NPT =  0             ! Number of inactive passive tracers
-         NCS =  1             ! Number of cohesive (mud) sediment tracers
-         NNS =  1             ! Number of non-cohesive (sand) sediment tracers
+         NCS =  0             ! Number of cohesive (mud) sediment tracers
+         NNS =  0             ! Number of non-cohesive (sand) sediment tracers
 
 ! Domain decomposition parameters for serial, distributed-memory or
 ! shared-memory configurations used to determine tile horizontal range
@@ -74,7 +74,7 @@
 ! Time-Stepping parameters.
 
       NTIMES =  1000
-          DT == 5.0d0
+          DT == 6.0d0
      NDTFAST == 20
 
 ! Model iteration loops parameters.
@@ -206,9 +206,9 @@
 
 ! Vertical S-coordinates parameters, [1:Ngrids].
 
-     THETA_S == 3.0d0                      ! 0 < THETA_S < 20
+     THETA_S == 0.0d0                      ! 0 < THETA_S < 20
      THETA_B == 0.0d0                      ! 0 < THETA_B < 1
-      TCLINE == 50.0d0                     ! m
+      TCLINE == 0.0d0                      ! m
 
 ! Mean Density and Brunt-Vaisala frequency.
 

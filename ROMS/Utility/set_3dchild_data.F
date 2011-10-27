@@ -75,6 +75,7 @@
 # endif
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
+      USE exchange_3d_mod
 # endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
@@ -96,8 +97,8 @@
 # ifdef OBC
       integer :: ILB, IUB, JLB, JUB
 # endif
-      integer :: i, j, k, ip, jp, ngc, ic, jc, t1, t2, itrc
-      real(r8) :: my_val, fac, fac1, fac2, fac3
+      integer :: i, j, k, ngc, ic, jc, itrc
+      real(r8) :: my_val, fac, cff, cff1,cff2,cff3,cff4
       integer :: ii, gtype, Npts
       integer :: Imin, Imax, Jmin, Jmax, Kmin, Kmax, model
       integer :: Ilen, Jlen, IJlen, Klen, MyType, status
@@ -109,8 +110,8 @@
       real(r8), allocatable :: Aout(:)
       real(r8), allocatable :: A(:,:,:)
       real(r8), allocatable :: AA(:,:,:)
+      real(r8), allocatable :: Hzc(:,:,:)
       real(r8), allocatable :: Amask(:,:)
-      real(r8), allocatable :: A2(:,:,:)
 
       logical :: rectangular
       real(r8) :: IJspv
@@ -211,11 +212,12 @@
         IF (.not.allocated(AA)) THEN
           allocate(AA(Imin:Imax,Jmin:Jmax,Kmin:Kmax))
         END IF
+        IF (.not.allocated(Hzc)) THEN
+          allocate(Hzc(Imin:Imax,Jmin:Jmax,Kmin:Kmax))
+        END IF
+        Hzc=0.0_r8
         IF (.not.allocated(Amask)) THEN
           allocate(Amask(Imin:Imax,Jmin:Jmax))
-        END IF
-        IF (.not.allocated(A2)) THEN
-          allocate(A2(LBi:UBi,LBj:UBj,Kmin:Kmax))
         END IF
 !
 !-----------------------------------------------------------------------
@@ -223,16 +225,15 @@
 !-----------------------------------------------------------------------
 !
         IF (ii.eq.1) THEN
+# if !defined TS_FIXED
 !!!!!!!!!!!!!!!!!!!
 !  tracer  !!!!!!!!
 !!!!!!!!!!!!!!!!!!!
 !
 ! get mask
 !
-          ic=0
           DO j=Jmin,Jmax
             DO i=Imin,Imax
-              ic=ic+1
 # ifdef MASKING
               Amask(i,j)=REFINED(ng)%rmask_c(i,j)
 # else
@@ -240,18 +241,50 @@
 # endif
             END DO
           END DO
+!
+!  For tracers, need Hz of the child
+!
+          Npts=MySize
+!
+! get Hz
+!
+          CALL mp_gather3d (ngc, model, LBic, UBic, LBjc, UBjc,         &
+     &                    1, N(ngc), 0, gtype, 1.0_r8,                  &
+# ifdef MASKING
+     &                    GRID(ngc) % rmask(LBic:UBic,LBjc:UBjc),       &
+# endif
+     &                    GRID(ngc) % Hz(LBic:UBic,LBjc:UBjc,1:N(ngc)), &
+     &                    Npts, Aout)
+!
+! distribute the Aout (1D packed) field to all the nodes
+!
+          CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,             &
+     &                    OCN_COMM_WORLD, MyError)
+!
+! unpack and place in global ng=1 2D array
+!
+          ic=0
+          DO k=Kmin,Kmax
+            DO j=Jmin,Jmax
+              DO i=Imin,Imax
+                ic=ic+1
+                Hzc(i,j,k)=Aout(ic)
+              END DO
+            END DO
+          END DO
+!
           DO itrc=1,NT(ng)
             Npts=MySize
 !
 ! get tracer
 !
             CALL mp_gather3d (ngc, model, LBic, UBic, LBjc, UBjc,       &
-     &          1, N(ngc), 0, gtype, 1.0_r8,                            &
+     &                        1, N(ngc), 0, gtype, 1.0_r8,              &
 # ifdef MASKING
-     &          GRID(ngc) % rmask(LBic:UBic,LBjc:UBjc),                 &
+     &                        GRID(ngc) % rmask(LBic:UBic,LBjc:UBjc),   &
 # endif
      &   OCEAN(ngc) % t(LBic:UBic,LBjc:UBjc,1:N(ngc),NOUTC,itrc),       &
-     &          Npts, Aout)
+     &                        Npts, Aout)
 !
 ! distribute the Aout (1D packed) field to all the nodes for ng=2
 !
@@ -265,95 +298,101 @@
               DO j=Jmin,Jmax
                 DO i=Imin,Imax
                   ic=ic+1
-                  AA(i,j,k)=Aout(ic)
-                  A(i,j,k)=Aout(ic)
+                  AA(i,j,k)=Aout(ic)*Hzc(i,j,k)
+                  A(i,j,k)=Aout(ic)*Hzc(i,j,k)
                 END DO
               END DO
             END DO
 !
-!  Compute ref_scale ratio, expecting 3 or 5.
+!  Set limits of the parent grid to fill with child data.
 !
-          Xmin=OCEAN(ng)%hindcr(1)
-          Xmax=OCEAN(ng)%hindcr(2)
-          Ymin=OCEAN(ng)%hindcr(3)
-          Ymax=OCEAN(ng)%hindcr(4)
+            Xmin=OCEAN(ng)%hindcr(1)
+            Xmax=OCEAN(ng)%hindcr(2)
+            Ymin=OCEAN(ng)%hindcr(3)
+            Ymax=OCEAN(ng)%hindcr(4)
 !
 !  Average the child data back to parent resolution.
 !
-          IF (Xmax.gt.-9999) THEN
-          IF (OCEAN(ngc)%ref_scale.eq.3) THEN
-            DO k=Kmin,Kmax
-              DO j=Jmin+1,Jmax-1
-                DO i=Imin+1,Imax-1
-                  A(i,j,k)=1.0_r8/9.0_r8*                               &
-     &                     (AA(i-1,j+1,k)+AA(i  ,j+1,k)+AA(i+1,j+1,k)+  &
-     &                      AA(i-1,j  ,k)+AA(i  ,j  ,k)+AA(i+1,j  ,k)+  &
-     &                      AA(i-1,j-1,k)+AA(i  ,j-1,k)+AA(i+1,j-1,k))
-                END DO
-              END DO
-            END DO
-          ELSE
-            DO k=Kmin,Kmax
-              DO j=Jmin+2,Jmax-2
-                DO i=Imin+2,Imax-2
-                  A(i,j,k)=1.0_r8/25.0_r8*                              &
-     &                     (AA(i-2,j+2,k)+AA(i-1,j+2,k)+AA(i  ,j+2,k)+  &
-     &                      AA(i+1,j+2,k)+AA(i+2,j+2,k)+                &
-     &                      AA(i-2,j+1,k)+AA(i-1,j+1,k)+AA(i  ,j+1,k)+  &
-     &                      AA(i+1,j+1,k)+AA(i+2,j+1,k)+                &
-     &                      AA(i-2,j  ,k)+AA(i-1,j  ,k)+AA(i  ,j  ,k)+  &
-     &                      AA(i+1,j  ,k)+AA(i+2,j  ,k)+                &
-     &                      AA(i-2,j-1,k)+AA(i-1,j-1,k)+AA(i  ,j-1,k)+  &
-     &                      AA(i+1,j-1,k)+AA(i+2,j-1,k)+                &
-     &                      AA(i-2,j-2,k)+AA(i-1,j-2,k)+AA(i  ,j-2,k)+  &
-     &                      AA(i+1,j-2,k)+AA(i+2,j-2,k))
-                END DO
-              END DO
-            END DO
-          ENDIF
-!
-! Now interpolate the child data to the parent grid. This will not
-! really be an interp, since the points are coincident.
-!
-            IF (spherical) THEN
-              CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,           &
-     &                            Kmin, Kmax,                           &
-     &                          REFINED(ng)%lonr_c(Imin:Imax,Jmin:Jmax),&
-     &                          REFINED(ng)%latr_c(Imin:Imax,Jmin:Jmax),&
-     &                            A, Amask,                             &
-     &                            LBi, UBi, LBj, UBj, 1, N(ngc),        &
-     &                            Xmin, Xmax, Ymin, Ymax,               &
-     &                            OCEAN(ng)%hindci_r,OCEAN(ng)%hindcj_r,&
-     &                            GRID(ng)%lonr, GRID(ng)%latr, A2,     &
-     &                            my_min, my_max)
-            ELSE
-              CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,           &
-     &                            Kmin, Kmax,                           &
-     &                            REFINED(ng)%xr_c(Imin:Imax,Jmin:Jmax),&
-     &                            REFINED(ng)%yr_c(Imin:Imax,Jmin:Jmax),&
-     &                            A, Amask,                             &
-     &                            LBi, UBi, LBj, UBj, 1, N(ngc),        &
-     &                            Xmin, Xmax, Ymin, Ymax,               &
-     &                            OCEAN(ng)%hindci_r,OCEAN(ng)%hindcj_r,&
-     &                            GRID(ng)%xr, GRID(ng)%yr, A2,         &
-     &                            my_min, my_max)
-            END IF
-!
-! Set the chld data into the parent locations.
-!
-            DO k=Kmin,Kmax
-              DO j=Ymin,Ymax
-                DO i=Xmin,Xmax
-                  my_val=A2(i,j,k)
+            IF (Xmax.gt.-9999) THEN
+              IF (REFINED(ngc)%ref_scale.eq.5) THEN
+                fac=1.0_r8/25.0_r8
+                DO j=Jmin+2,Jmax-2
+                  DO i=Imin+2,Imax-2
 # ifdef MASKING
-                  my_val=my_val*GRID(ng)%rmask(i,j)
+                    cff=Amask(i-2,j+2)+Amask(i-1,j+2)+Amask(i  ,j+2)+   &
+     &                  Amask(i+1,j+2)+Amask(i+2,j+2)+                  &
+     &                  Amask(i-2,j+1)+Amask(i-1,j+1)+Amask(i  ,j+1)+   &
+     &                  Amask(i+1,j+1)+Amask(i+2,j+1)+                  &
+     &                  Amask(i-2,j  )+Amask(i-1,j  )+Amask(i  ,j  )+   &
+     &                  Amask(i+1,j  )+Amask(i+2,j  )+                  &
+     &                  Amask(i-2,j-1)+Amask(i-1,j-1)+Amask(i  ,j-1)+   &
+     &                  Amask(i+1,j-1)+Amask(i+2,j-1)+                  &
+     &                  Amask(i-2,j-2)+Amask(i-1,j-2)+Amask(i  ,j-2)+   &
+     &                  Amask(i+1,j-2)+Amask(i+2,j-2)
 # endif
-                  OCEAN(ng)%t(i,j,k,nstp(ng),itrc)=my_val
+                    DO k=Kmin,Kmax
+                      A(i,j,k)=                                         &
+     &                  (AA(i-2,j+2,k)+AA(i-1,j+2,k)+AA(i  ,j+2,k)+     &
+     &                   AA(i+1,j+2,k)+AA(i+2,j+2,k)+                   &
+     &                   AA(i-2,j+1,k)+AA(i-1,j+1,k)+AA(i  ,j+1,k)+     &
+     &                   AA(i+1,j+1,k)+AA(i+2,j+1,k)+                   &
+     &                   AA(i-2,j  ,k)+AA(i-1,j  ,k)+AA(i  ,j  ,k)+     &
+     &                   AA(i+1,j  ,k)+AA(i+2,j  ,k)+                   &
+     &                   AA(i-2,j-1,k)+AA(i-1,j-1,k)+AA(i  ,j-1,k)+     &
+     &                   AA(i+1,j-1,k)+AA(i+2,j-1,k)+                   &
+     &                   AA(i-2,j-2,k)+AA(i-1,j-2,k)+AA(i  ,j-2,k)+     &
+     &                   AA(i+1,j-2,k)+AA(i+2,j-2,k))
+# ifdef MASKING
+                      IF (cff.gt.0.0_r8) A(i,j,k)=A(i,j,k)/cff
+# else
+                      A(i,j,k)=A(i,j,k)*fac
+# endif
+                    END DO
+                  END DO
+                END DO
+              ELSE IF (REFINED(ngc)%ref_scale.eq.3) THEN
+                fac=1.0_r8/9.0_r8
+                DO j=Jmin+1,Jmax-1
+                  DO i=Imin+1,Imax-1
+# ifdef MASKING
+                    cff=Amask(i-1,j+1)+Amask(i  ,j+1)+Amask(i+1,j+1)+   &
+     &                  Amask(i-1,j  )+Amask(i  ,j  )+Amask(i+1,j  )+   &
+     &                  Amask(i-1,j-1)+Amask(i  ,j-1)+Amask(i+1,j-1)
+# endif
+                    DO k=Kmin,Kmax
+                      A(i,j,k)=                                         &
+     &                  (AA(i-1,j+1,k)+AA(i  ,j+1,k)+AA(i+1,j+1,k)+     &
+     &                   AA(i-1,j  ,k)+AA(i  ,j  ,k)+AA(i+1,j  ,k)+     &
+     &                   AA(i-1,j-1,k)+AA(i  ,j-1,k)+AA(i+1,j-1,k))
+# ifdef MASKING
+                      IF (cff.gt.0.0_r8) A(i,j,k)=A(i,j,k)/cff
+# else
+                      A(i,j,k)=A(i,j,k)*fac
+# endif
+                    END DO
+                  END DO
+                END DO
+              ENDIF
+!
+! Set the chld data into the parent locations. A is on the child grid.
+! Use hindices to obtain the parent location on the child grid.
+!
+              DO k=Kmin,Kmax
+                DO j=Ymin,Ymax
+                  DO i=Xmin,Xmax
+                    ic=NINT(OCEAN(ng)%hindci_r(i,j))
+                    jc=NINT(OCEAN(ng)%hindcj_r(i,j))
+                    my_val=A(ic,jc,k)/GRID(ng)%Hz(i,j,k)
+# ifdef MASKING
+                    my_val=my_val*GRID(ng)%rmask(i,j)
+# endif
+                    OCEAN(ng)%t(i,j,k,nstp(ng),itrc)=my_val
+                  END DO
                 END DO
               END DO
-            END DO
             END IF
           END DO
+# endif
         ELSE IF (ii.eq.2) THEN
 !!!!!!!!!!!!!!!!!!!
 !  u     !!!!!!!!!!
@@ -361,10 +400,8 @@
 !
 ! get mask
 !
-          ic=0
           DO j=Jmin,Jmax
             DO i=Imin,Imax
-              ic=ic+1
 # ifdef MASKING
               Amask(i,j)=REFINED(ng)%umask_c(i,j)
 # else
@@ -402,7 +439,7 @@
             END DO
           END DO
 !
-!  Compute ref_scale ratio, expecting 3 or 5.
+!  Set limits of the parent grid to fill with child data.
 !
           Xmin=OCEAN(ng)%hindcu(1)
           Xmax=OCEAN(ng)%hindcu(2)
@@ -412,74 +449,81 @@
 !  Average the child data back to parent resolution.
 !
           IF (Xmax.gt.-9999) THEN
-          IF (OCEAN(ngc)%ref_scale.eq.3) THEN
-            DO k=Kmin,Kmax
-              DO j=Jmin+1,Jmax-1
-                DO i=Imin+1,Imax-1
-                  A(i,j,k)=1.0_r8/9.0_r8*                               &
-     &                     (AA(i-1,j+1,k)+AA(i  ,j+1,k)+AA(i+1,j+1,k)+  &
-     &                      AA(i-1,j  ,k)+AA(i  ,j  ,k)+AA(i+1,j  ,k)+  &
-     &                      AA(i-1,j-1,k)+AA(i  ,j-1,k)+AA(i+1,j-1,k))
-                END DO
-              END DO
-            END DO
-          ELSE
-            DO k=Kmin,Kmax
+            IF (REFINED(ngc)%ref_scale.eq.5) THEN
+              fac=1.0_r8/25.0_r8
               DO j=Jmin+2,Jmax-2
                 DO i=Imin+2,Imax-2
-                  A(i,j,k)=1.0_r8/25.0_r8*                              &
-     &                     (AA(i-2,j+2,k)+AA(i-1,j+2,k)+AA(i  ,j+2,k)+  &
-     &                      AA(i+1,j+2,k)+AA(i+2,j+2,k)+                &
-     &                      AA(i-2,j+1,k)+AA(i-1,j+1,k)+AA(i  ,j+1,k)+  &
-     &                      AA(i+1,j+1,k)+AA(i+2,j+1,k)+                &
-     &                      AA(i-2,j  ,k)+AA(i-1,j  ,k)+AA(i  ,j  ,k)+  &
-     &                      AA(i+1,j  ,k)+AA(i+2,j  ,k)+                &
-     &                      AA(i-2,j-1,k)+AA(i-1,j-1,k)+AA(i  ,j-1,k)+  &
-     &                      AA(i+1,j-1,k)+AA(i+2,j-1,k)+                &
-     &                      AA(i-2,j-2,k)+AA(i-1,j-2,k)+AA(i  ,j-2,k)+  &
-     &                      AA(i+1,j-2,k)+AA(i+2,j-2,k))
+# ifdef MASKING
+                  cff=Amask(i-2,j+2)+Amask(i-1,j+2)+Amask(i  ,j+2)+     &
+     &                Amask(i+1,j+2)+Amask(i+2,j+2)+                    &
+     &                Amask(i-2,j+1)+Amask(i-1,j+1)+Amask(i  ,j+1)+     &
+     &                Amask(i+1,j+1)+Amask(i+2,j+1)+                    &
+     &                Amask(i-2,j  )+Amask(i-1,j  )+Amask(i  ,j  )+     &
+     &                Amask(i+1,j  )+Amask(i+2,j  )+                    &
+     &                Amask(i-2,j-1)+Amask(i-1,j-1)+Amask(i  ,j-1)+     &
+     &                Amask(i+1,j-1)+Amask(i+2,j-1)+                    &
+     &                Amask(i-2,j-2)+Amask(i-1,j-2)+Amask(i  ,j-2)+     &
+     &                Amask(i+1,j-2)+Amask(i+2,j-2)
+# endif
+                  DO k=Kmin,Kmax
+                    A(i,j,k)=                                           &
+     &                (AA(i-2,j+2,k)+AA(i-1,j+2,k)+AA(i  ,j+2,k)+       &
+     &                 AA(i+1,j+2,k)+AA(i+2,j+2,k)+                     &
+     &                 AA(i-2,j+1,k)+AA(i-1,j+1,k)+AA(i  ,j+1,k)+       &
+     &                 AA(i+1,j+1,k)+AA(i+2,j+1,k)+                     &
+     &                 AA(i-2,j  ,k)+AA(i-1,j  ,k)+AA(i  ,j  ,k)+       &
+     &                 AA(i+1,j  ,k)+AA(i+2,j  ,k)+                     &
+     &                 AA(i-2,j-1,k)+AA(i-1,j-1,k)+AA(i  ,j-1,k)+       &
+     &                 AA(i+1,j-1,k)+AA(i+2,j-1,k)+                     &
+     &                 AA(i-2,j-2,k)+AA(i-1,j-2,k)+AA(i  ,j-2,k)+       &
+     &                 AA(i+1,j-2,k)+AA(i+2,j-2,k))
+# ifdef MASKING
+                    IF (cff.gt.0.0_r8) A(i,j,k)=A(i,j,k)/cff
+# else
+                    A(i,j,k)=A(i,j,k)*fac
+# endif
+                  END DO
+                END DO
+              END DO
+            ELSE IF (REFINED(ngc)%ref_scale.eq.3) THEN
+              fac=1.0_r8/9.0_r8
+              DO j=Jmin+1,Jmax-1
+                DO i=Imin+1,Imax-1
+# ifdef MASKING
+                  cff=Amask(i-1,j+1)+Amask(i  ,j+1)+Amask(i+1,j+1)+     &
+     &                Amask(i-1,j  )+Amask(i  ,j  )+Amask(i+1,j  )+     &
+     &                Amask(i-1,j-1)+Amask(i  ,j-1)+Amask(i+1,j-1)
+# endif
+                  DO k=Kmin,Kmax
+                    A(i,j,k)=(AA(i-1,j+1,k)+AA(i  ,j+1,k)+AA(i+1,j+1,k)+&
+     &                        AA(i-1,j  ,k)+AA(i  ,j  ,k)+AA(i+1,j  ,k)+&
+     &                        AA(i-1,j-1,k)+AA(i  ,j-1,k)+AA(i+1,j-1,k))
+# ifdef MASKING
+                    IF (cff.gt.0.0_r8) A(i,j,k)=A(i,j,k)/cff
+# else
+                    A(i,j,k)=A(i,j,k)*fac
+# endif
+                  END DO
+                END DO
+              END DO
+            ENDIF
+!
+! Set the chld data into the parent locations. A is on the child grid.
+! Use hindices to obtain the parent location on the child grid.
+!
+            DO k=Kmin,Kmax
+              DO j=Ymin,Ymax
+                DO i=Xmin,Xmax
+                  ic=NINT(OCEAN(ng)%hindci_u(i,j))
+                  jc=NINT(OCEAN(ng)%hindcj_u(i,j))
+                  my_val=A(ic,jc,k)
+# ifdef MASKING
+                  my_val=my_val*GRID(ng)%umask(i,j)
+# endif
+                  OCEAN(ng)%u(i,j,k,nstp(ng))=my_val
                 END DO
               END DO
             END DO
-          ENDIF
-!
-! Now interpolate the child data to the parent grid. This will not
-! really be an interp, since the points are coincident.
-!
-          IF (spherical) THEN
-            CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                          Kmin, Kmax,                             &
-     &                          REFINED(ng)%lonu_c(Imin:Imax,Jmin:Jmax),&
-     &                          REFINED(ng)%latu_c(Imin:Imax,Jmin:Jmax),&
-     &                          A, Amask,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ngc),          &
-     &                          Xmin, Xmax, Ymin, Ymax,                 &
-     &                          OCEAN(ng)%hindci_u,OCEAN(ng)%hindcj_u,  &
-     &                          GRID(ng)%lonu, GRID(ng)%latu, A2,       &
-     &                          my_min, my_max)
-          ELSE
-            CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                          Kmin, Kmax,                             &
-     &                          REFINED(ng)%xu_c(Imin:Imax,Jmin:Jmax),  &
-     &                          REFINED(ng)%yu_c(Imin:Imax,Jmin:Jmax),  &
-     &                          A, Amask,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ngc),          &
-     &                          Xmin, Xmax, Ymin, Ymax,                 &
-     &                          OCEAN(ng)%hindci_u,OCEAN(ng)%hindcj_u,  &
-     &                          GRID(ng)%xu, GRID(ng)%yu, A2,           &
-     &                          my_min, my_max)
-          END IF
-          DO k=Kmin,Kmax
-            DO j=Ymin,Ymax
-              DO i=Xmin,Xmax
-                my_val=A2(i,j,k)
-# ifdef MASKING
-                my_val=my_val*GRID(ng)%umask(i,j)
-# endif
-                OCEAN(ng)%u(i,j,k,nstp(ng))=my_val
-              END DO
-            END DO
-          END DO
           END IF
         ELSE IF (ii.eq.3) THEN
 !!!!!!!!!!!!!!!!!!!
@@ -488,10 +532,8 @@
 !
 ! get mask
 !
-          ic=0
           DO j=Jmin,Jmax
             DO i=Imin,Imax
-              ic=ic+1
 # ifdef MASKING
               Amask(i,j)=REFINED(ng)%vmask_c(i,j)
 # else
@@ -529,7 +571,7 @@
             END DO
           END DO
 !
-!  Compute ref_scale ratio, expecting 3 or 5.
+!  Set limits of the parent grid to fill with child data.
 !
           Xmin=OCEAN(ng)%hindcv(1)
           Xmax=OCEAN(ng)%hindcv(2)
@@ -539,74 +581,81 @@
 !  Average the child data back to parent resolution.
 !
           IF (Xmax.gt.-9999) THEN
-          IF (OCEAN(ngc)%ref_scale.eq.3) THEN
-            DO k=Kmin,Kmax
-              DO j=Jmin+1,Jmax-1
-                DO i=Imin+1,Imax-1
-                  A(i,j,k)=1.0_r8/9.0_r8*                               &
-     &                     (AA(i-1,j+1,k)+AA(i  ,j+1,k)+AA(i+1,j+1,k)+  &
-     &                      AA(i-1,j  ,k)+AA(i  ,j  ,k)+AA(i+1,j  ,k)+  &
-     &                      AA(i-1,j-1,k)+AA(i  ,j-1,k)+AA(i+1,j-1,k))
-                END DO
-              END DO
-            END DO
-          ELSE
-            DO k=Kmin,Kmax
+            IF (REFINED(ngc)%ref_scale.eq.5) THEN
+              fac=1.0_r8/25.0_r8
               DO j=Jmin+2,Jmax-2
                 DO i=Imin+2,Imax-2
-                  A(i,j,k)=1.0_r8/25.0_r8*                              &
-     &                     (AA(i-2,j+2,k)+AA(i-1,j+2,k)+AA(i  ,j+2,k)+  &
-     &                      AA(i+1,j+2,k)+AA(i+2,j+2,k)+                &
-     &                      AA(i-2,j+1,k)+AA(i-1,j+1,k)+AA(i  ,j+1,k)+  &
-     &                      AA(i+1,j+1,k)+AA(i+2,j+1,k)+                &
-     &                      AA(i-2,j  ,k)+AA(i-1,j  ,k)+AA(i  ,j  ,k)+  &
-     &                      AA(i+1,j  ,k)+AA(i+2,j  ,k)+                &
-     &                      AA(i-2,j-1,k)+AA(i-1,j-1,k)+AA(i  ,j-1,k)+  &
-     &                      AA(i+1,j-1,k)+AA(i+2,j-1,k)+                &
-     &                      AA(i-2,j-2,k)+AA(i-1,j-2,k)+AA(i  ,j-2,k)+  &
-     &                      AA(i+1,j-2,k)+AA(i+2,j-2,k))
+# ifdef MASKING
+                  cff=Amask(i-2,j+2)+Amask(i-1,j+2)+Amask(i  ,j+2)+     &
+     &                Amask(i+1,j+2)+Amask(i+2,j+2)+                    &
+     &                Amask(i-2,j+1)+Amask(i-1,j+1)+Amask(i  ,j+1)+     &
+     &                Amask(i+1,j+1)+Amask(i+2,j+1)+                    &
+     &                Amask(i-2,j  )+Amask(i-1,j  )+Amask(i  ,j  )+     &
+     &                Amask(i+1,j  )+Amask(i+2,j  )+                    &
+     &                Amask(i-2,j-1)+Amask(i-1,j-1)+Amask(i  ,j-1)+     &
+     &                Amask(i+1,j-1)+Amask(i+2,j-1)+                    &
+     &                Amask(i-2,j-2)+Amask(i-1,j-2)+Amask(i  ,j-2)+     &
+     &                Amask(i+1,j-2)+Amask(i+2,j-2)
+# endif
+                  DO k=Kmin,Kmax
+                    A(i,j,k)=                                           &
+     &                (AA(i-2,j+2,k)+AA(i-1,j+2,k)+AA(i  ,j+2,k)+       &
+     &                 AA(i+1,j+2,k)+AA(i+2,j+2,k)+                     &
+     &                 AA(i-2,j+1,k)+AA(i-1,j+1,k)+AA(i  ,j+1,k)+       &
+     &                 AA(i+1,j+1,k)+AA(i+2,j+1,k)+                     &
+     &                 AA(i-2,j  ,k)+AA(i-1,j  ,k)+AA(i  ,j  ,k)+       &
+     &                 AA(i+1,j  ,k)+AA(i+2,j  ,k)+                     &
+     &                 AA(i-2,j-1,k)+AA(i-1,j-1,k)+AA(i  ,j-1,k)+       &
+     &                 AA(i+1,j-1,k)+AA(i+2,j-1,k)+                     &
+     &                 AA(i-2,j-2,k)+AA(i-1,j-2,k)+AA(i  ,j-2,k)+       &
+     &                 AA(i+1,j-2,k)+AA(i+2,j-2,k))
+# ifdef MASKING
+                    IF (cff.gt.0.0_r8) A(i,j,k)=A(i,j,k)/cff
+# else
+                    A(i,j,k)=A(i,j,k)*fac
+# endif
+                  END DO
+                END DO
+              END DO
+            ELSE IF (REFINED(ngc)%ref_scale.eq.3) THEN
+              fac=1.0_r8/9.0_r8
+              DO j=Jmin+1,Jmax-1
+                DO i=Imin+1,Imax-1
+# ifdef MASKING
+                  cff=Amask(i-1,j+1)+Amask(i  ,j+1)+Amask(i+1,j+1)+     &
+     &                Amask(i-1,j  )+Amask(i  ,j  )+Amask(i+1,j  )+     &
+     &                Amask(i-1,j-1)+Amask(i  ,j-1)+Amask(i+1,j-1)
+# endif
+                  DO k=Kmin,Kmax
+                    A(i,j,k)=(AA(i-1,j+1,k)+AA(i  ,j+1,k)+AA(i+1,j+1,k)+&
+     &                        AA(i-1,j  ,k)+AA(i  ,j  ,k)+AA(i+1,j  ,k)+&
+     &                        AA(i-1,j-1,k)+AA(i  ,j-1,k)+AA(i+1,j-1,k))
+# ifdef MASKING
+                    IF (cff.gt.0.0_r8) A(i,j,k)=A(i,j,k)/cff
+# else
+                    A(i,j,k)=A(i,j,k)*fac
+# endif
+                  END DO
+                END DO
+              END DO
+            ENDIF
+!
+! Set the chld data into the parent locations. A is on the child grid.
+! Use hindices to obtain the parent location on the child grid.
+!
+            DO k=Kmin,Kmax
+              DO j=Ymin,Ymax
+                DO i=Xmin,Xmax
+                  ic=NINT(OCEAN(ng)%hindci_v(i,j))
+                  jc=NINT(OCEAN(ng)%hindcj_v(i,j))
+                  my_val=A(ic,jc,k)
+# ifdef MASKING
+                  my_val=my_val*GRID(ng)%vmask(i,j)
+# endif
+                  OCEAN(ng)%v(i,j,k,nstp(ng))=my_val
                 END DO
               END DO
             END DO
-          ENDIF
-!
-! Now interpolate the child data to the parent grid. This will not
-! really be an interp, since the points are coincident.
-!
-          IF (spherical) THEN
-            CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                          Kmin, Kmax,                             &
-     &                          REFINED(ng)%lonv_c(Imin:Imax,Jmin:Jmax),&
-     &                          REFINED(ng)%latv_c(Imin:Imax,Jmin:Jmax),&
-     &                          A, Amask,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ngc),          &
-     &                          Xmin, Xmax, Ymin, Ymax,                 &
-     &                          OCEAN(ng)%hindci_v,OCEAN(ng)%hindcj_v,  &
-     &                          GRID(ng)%lonv, GRID(ng)%latv, A2,       &
-     &                          my_min, my_max)
-          ELSE
-            CALL linterp3d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                          Kmin, Kmax,                             &
-     &                          REFINED(ng)%xv_c(Imin:Imax,Jmin:Jmax),  &
-     &                          REFINED(ng)%yv_c(Imin:Imax,Jmin:Jmax),  &
-     &                          A, Amask,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ngc),          &
-     &                          Xmin, Xmax, Ymin, Ymax,                 &
-     &                          OCEAN(ng)%hindci_v,OCEAN(ng)%hindcj_v,  &
-     &                          GRID(ng)%xv, GRID(ng)%yv, A2,           &
-     &                          my_min, my_max)
-          END IF
-          DO k=Kmin,Kmax
-            DO j=Ymin,Ymax
-              DO i=Xmin,Xmax
-                my_val=A2(i,j,k)
-# ifdef MASKING
-                my_val=my_val*GRID(ng)%vmask(i,j)
-# endif
-                OCEAN(ng)%v(i,j,k,nstp(ng))=my_val
-              END DO
-            END DO
-          END DO
           END IF
         END IF
 !
@@ -619,14 +668,13 @@
         IF (allocated(AA)) THEN
           deallocate (AA)
         END IF
+        IF (allocated(Hzc)) THEN
+          deallocate (Hzc)
+        END IF
         IF (allocated(Amask)) THEN
           deallocate (Amask)
         END IF
-        IF (allocated(A2)) THEN
-          deallocate (A2)
-        END IF
       END DO
-
 # if defined EW_PERIODIC || defined NS_PERIODIC
 !
 !-----------------------------------------------------------------------
@@ -641,7 +689,7 @@
       CALL exchange_u3d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
      &                        OCEAN(ng)%u(:,:,:,nstp(ng)))
-      CALL exchange_u3d_tile (ng, tile,                                 &
+      CALL exchange_v3d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
      &                        OCEAN(ng)%v(:,:,:,nstp(ng)))
 #  endif

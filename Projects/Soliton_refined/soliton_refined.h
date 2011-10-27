@@ -14,11 +14,14 @@
 
 #define ROMS_MODEL
 #define REFINED_GRID
+#define OUT_DOUBLE
 
 #define UV_ADV
-#define UV_C4ADVECTION
-#define UV_VIS2
 #define UV_COR
+#undef  UV_C4ADVECTION
+#define UV_C2ADVECTION
+#define UV_VIS2
+
 #define UV_QDRAG
 #define ANA_INITIAL
 #define EW_PERIODIC

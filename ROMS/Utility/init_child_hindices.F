@@ -9,8 +9,9 @@
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
-!  This routine initializes the horizontal indices of the parent grid  !
-!  that match locations of the child grid.                             !
+!  For the entire parent grid, this routine determines the             !
+!  horizontal indices of the child grid                                !
+!  at the locations of the parent grid.                                !
 !                                                                      !
 !=======================================================================
 !
@@ -462,7 +463,7 @@
         IF (ii.eq.1) THEN
           IF (spherical) THEN
             CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
-     &                   Imin+4, Imax-3, Jmin+4, Jmax-3,                &
+     &                   Imin, Imax, Jmin, Jmax,                        &
      &                   REFINED(ng)%angler_c(Imin:Imax,Jmin:Jmax),     &
      &                   REFINED(ng)%lonr_c(Imin:Imax,Jmin:Jmax),       &
      &                   REFINED(ng)%latr_c(Imin:Imax,Jmin:Jmax),       &
@@ -473,7 +474,7 @@
      &                   IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
           ELSE
             CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
-     &                   Imin+4, Imax-3, Jmin+4, Jmax-3,                &
+     &                   Imin, Imax, Jmin, Jmax,                        &
      &                   REFINED(ng)%angler_c(Imin:Imax,Jmin:Jmax),     &
      &                   REFINED(ng)%xr_c(Imin:Imax,Jmin:Jmax),         &
      &                   REFINED(ng)%yr_c(Imin:Imax,Jmin:Jmax),         &
@@ -483,6 +484,30 @@
      &                   Ipos, Jpos,                                    &
      &                   IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
           END IF
+!
+!  Recompute Xmin, Xmax, Ymin, and Ymax to determine the limits for 
+!  child grid replacement into the parent.
+!
+          Xmin= 9999
+          Xmax=-9999
+          Ymin= 9999
+          Ymax=-9999
+          DO j=LBj,UBj
+            DO i=LBi,UBi
+              IF (Ipos(i,j).gt.1.0_r8) THEN
+                Xmin=MIN(Xmin,i)
+                IF (Ipos(i,j).lt.Lm(ngc)) THEN
+                  Xmax=MAX(Xmax,i)
+                END IF
+              END IF
+              IF (Jpos(i,j).gt.1.0_r8) THEN
+                Ymin=MIN(Ymin,j)
+                IF (Jpos(i,j).lt.Mm(ngc)) THEN
+                  Ymax=MAX(Ymax,j)
+                END IF
+              END IF
+            END DO
+          END DO
           OCEAN(ng)%hindci_r=IPOS
           OCEAN(ng)%hindcj_r=JPOS
           OCEAN(ng)%hindcr(1)=Xmin
@@ -492,7 +517,7 @@
         ELSE IF (ii.eq.2) THEN
           IF (spherical) THEN
             CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
-     &                   Imin+4, Imax-3, Jmin+4, Jmax-3,                &
+     &                   Imin, Imax, Jmin, Jmax,                        &
      &                   REFINED(ng)%angler_c(Imin:Imax,Jmin:Jmax),     &
      &                   REFINED(ng)%lonu_c(Imin:Imax,Jmin:Jmax),       &
      &                   REFINED(ng)%latu_c(Imin:Imax,Jmin:Jmax),       &
@@ -503,7 +528,7 @@
      &                   IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
           ELSE
             CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
-     &                   Imin+4, Imax-3, Jmin+4, Jmax-3,                &
+     &                   Imin, Imax, Jmin, Jmax,                        &
      &                   REFINED(ng)%angler_c(Imin:Imax,Jmin:Jmax),     &
      &                   REFINED(ng)%xu_c(Imin:Imax,Jmin:Jmax),         &
      &                   REFINED(ng)%yu_c(Imin:Imax,Jmin:Jmax),         &
@@ -513,6 +538,30 @@
      &                   Ipos, Jpos,                                    &
      &                   IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
           END IF
+!
+!  Recompute Xmin, Xmax, Ymin, and Ymax to determine the limits for 
+!  child grid replacement into the parent.
+!
+          Xmin= 9999
+          Xmax=-9999
+          Ymin= 9999
+          Ymax=-9999
+          DO j=LBj,UBj
+            DO i=LBi,UBi
+              IF (Ipos(i,j).gt.1.0_r8) THEN
+                Xmin=MIN(Xmin,i)
+                IF (Ipos(i,j).lt.Lm(ngc)) THEN
+                  Xmax=MAX(Xmax,i)
+                END IF
+              END IF
+              IF (Jpos(i,j).gt.1.0_r8) THEN
+                Ymin=MIN(Ymin,j)
+                IF (Jpos(i,j).lt.Mm(ngc)) THEN
+                  Ymax=MAX(Ymax,j)
+                END IF
+              END IF
+            END DO
+          END DO
           OCEAN(ng)%hindci_u=IPOS
           OCEAN(ng)%hindcj_u=JPOS
           OCEAN(ng)%hindcu(1)=Xmin
@@ -522,7 +571,7 @@
         ELSE IF (ii.eq.3) THEN
           IF (spherical) THEN
             CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
-     &                   Imin+4, Imax-3, Jmin+4, Jmax-3,                &
+     &                   Imin, Imax, Jmin, Jmax,                        &
      &                   REFINED(ng)%angler_c(Imin:Imax,Jmin:Jmax),     &
      &                   REFINED(ng)%lonv_c(Imin:Imax,Jmin:Jmax),       &
      &                   REFINED(ng)%latv_c(Imin:Imax,Jmin:Jmax),       &
@@ -533,7 +582,7 @@
      &                   IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
           ELSE
             CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
-     &                   Imin+4, Imax-3, Jmin+4, Jmax-3,                &
+     &                   Imin, Imax, Jmin, Jmax,                        &
      &                   REFINED(ng)%angler_c(Imin:Imax,Jmin:Jmax),     &
      &                   REFINED(ng)%xv_c(Imin:Imax,Jmin:Jmax),         &
      &                   REFINED(ng)%yv_c(Imin:Imax,Jmin:Jmax),         &
@@ -543,6 +592,30 @@
      &                   Ipos, Jpos,                                    &
      &                   IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
           END IF
+!
+!  Recompute Xmin, Xmax, Ymin, and Ymax to determine the limits for 
+!  child grid replacement into the parent.
+!
+          Xmin= 9999
+          Xmax=-9999
+          Ymin= 9999
+          Ymax=-9999
+          DO j=LBj,UBj
+            DO i=LBi,UBi
+              IF (Ipos(i,j).gt.1.0_r8) THEN
+                Xmin=MIN(Xmin,i)
+                IF (Ipos(i,j).lt.Lm(ngc)) THEN
+                  Xmax=MAX(Xmax,i)
+                END IF
+              END IF
+              IF (Jpos(i,j).gt.1.0_r8) THEN
+                Ymin=MIN(Ymin,j)
+                IF (Jpos(i,j).lt.Mm(ngc)) THEN
+                  Ymax=MAX(Ymax,j)
+                END IF
+              END IF
+            END DO
+          END DO
           OCEAN(ng)%hindci_v=IPOS
           OCEAN(ng)%hindcj_v=JPOS
           OCEAN(ng)%hindcv(1)=Xmin
@@ -561,7 +634,7 @@
           CALL mpi_allreduce (OCEAN(ng)%hindcr(2), OCEAN(ng)%hindxmax,  &
      &                        1, MPI_INTEGER, MPI_MAX, OCN_COMM_WORLD,  &
      &                        MyError)
-          OCEAN(ngc)%ref_scale=(Ilen-7)/                                &
+          REFINED(ngc)%ref_scale=(Ilen-7)/                              &
                               (OCEAN(ng)%hindxmax-OCEAN(ng)%hindxmin+1)
         END IF
 !

@@ -339,7 +339,10 @@
 
 #include "set_bounds.h"
 
-#ifdef EW_PERIODIC
+#ifdef EW_PERIODIC_REFINED
+# define IU_RANGE IstrTU+1,IendT
+# define IV_RANGE IstrT,IendT
+#elif EW_PERIODIC
 # define IU_RANGE Istr,Iend
 # define IV_RANGE Istr,Iend
 #elif defined COMPOSED_GRID

@@ -3,14 +3,16 @@
 
 #ifdef REFINED_GRID
 !
-!svn $Id: mod_boundary.F 429 2009-12-20 17:30:26Z arango $
-!================================================== Hernan G. Arango ===
+!svn $Id: mod_boundary.F 429 2009-12-20 17:30:26Z jcwarner $
+!================================================== John C. Warner =====
 !  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
-!  Refined grid boundary conditions.
+!  Refined grid boundary conditions.                                   !
+!  These variables will contain interpolated parent data for two       !
+!  bounding time increments.                                           !
 !                                                                      !
 !=======================================================================
 !
@@ -20,6 +22,7 @@
 
         TYPE T_REFINED
 
+          integer, pointer :: ref_scale
           real(r8), pointer :: zetaR_west(:,:,:)
           real(r8), pointer :: zetaR_east(:,:,:)
           real(r8), pointer :: zetaR_south(:,:,:)
@@ -47,14 +50,10 @@
           real(r8), pointer :: ubarsR_north(:,:,:)
           real(r8), pointer :: vbarsR_north(:,:,:)
 # endif
-          real(r8), pointer :: DUonR_west(:,:,:)
-          real(r8), pointer :: DUonR_east(:,:,:)
-          real(r8), pointer :: DUonR_south(:,:,:)
-          real(r8), pointer :: DUonR_north(:,:,:)
-          real(r8), pointer :: DVomR_west(:,:,:)
-          real(r8), pointer :: DVomR_east(:,:,:)
-          real(r8), pointer :: DVomR_north(:,:,:)
-          real(r8), pointer :: DVomR_south(:,:,:)
+          real(r8), pointer :: DUavg2R_west(:)
+          real(r8), pointer :: DUavg2R_east(:)
+          real(r8), pointer :: DVavg2R_north(:)
+          real(r8), pointer :: DVavg2R_south(:)
 
           real(r8), pointer :: uR_west(:,:,:,:)
           real(r8), pointer :: vR_west(:,:,:,:)
@@ -125,6 +124,10 @@
           real(r8), pointer :: umask_c(:,:)
           real(r8), pointer :: vmask_c(:,:)
 # endif
+# if !defined SOLVE3D
+          real(r8), pointer :: DU_avg2(:,:)
+          real(r8), pointer :: DV_avg2(:,:)
+# endif
 
         END TYPE T_REFINED
 
@@ -132,12 +135,12 @@
 
       CONTAINS
 
-      SUBROUTINE allocate_refined (ng)
+      SUBROUTINE allocate_refined (ng, LBi, UBi, LBj, UBj)
 !
 !=======================================================================
 !                                                                      !
 !  This routine initializes all variables in the module for all nested !
-!  grids.  Currently, there is not parallel tiling in boundary arrays. !
+!  grids.                                                              !
 !                                                                      !
 !=======================================================================
 !
@@ -145,7 +148,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng
+      integer, intent(in) :: ng, LBi, UBi, LBj, UBj
       integer :: ngp, ngc
       ngp=myparent(ng)
       ngc=mychild(ng)
@@ -156,6 +159,7 @@
 !
       IF (ng.eq.1) allocate ( REFINED(Ngrids) )
 
+      allocate ( REFINED(ng) % ref_scale )
       allocate ( REFINED(ng) % zetaR_west(5,ETA_DIM,2) )
       allocate ( REFINED(ng) % zetaR_east(4,ETA_DIM,2) )
       allocate ( REFINED(ng) % zetaR_south(XI_DIM,5,2) )
@@ -188,15 +192,10 @@
       allocate ( REFINED(ng) % vbarsR_north(XI_DIM,3,2) )
 # endif
 
-      allocate ( REFINED(ng) % DUonR_west(4,ETA_DIM,2) )
-      allocate ( REFINED(ng) % DUonR_east(3,ETA_DIM,2) )
-      allocate ( REFINED(ng) % DUonR_south(XI_DIM,4,2) )
-      allocate ( REFINED(ng) % DUonR_north(XI_DIM,3,2) )
-
-      allocate ( REFINED(ng) % DVomR_west(4,ETA_DIM,2) )
-      allocate ( REFINED(ng) % DVomR_east(3,ETA_DIM,2) )
-      allocate ( REFINED(ng) % DVomR_south(XI_DIM,4,2) )
-      allocate ( REFINED(ng) % DVomR_north(XI_DIM,3,2) )
+      allocate ( REFINED(ng) % DUavg2R_west(ETA_DIM) )
+      allocate ( REFINED(ng) % DUavg2R_east(ETA_DIM) )
+      allocate ( REFINED(ng) % DVavg2R_south(XI_DIM) )
+      allocate ( REFINED(ng) % DVavg2R_north(XI_DIM) )
 
       allocate ( REFINED(ng) % uR_west(4,ETA_DIM,N(ng),2) )
       allocate ( REFINED(ng) % uR_east(3,ETA_DIM,N(ng),2) )
@@ -275,6 +274,10 @@
         allocate ( REFINED(ng) % vmask_c(XI_DIMc,ETA_DIMc) )
 # endif
       END IF
+# if !defined SOLVE3D
+      allocate ( REFINED(ng) % DU_avg2(LBi:UBi,LBj:UBj) )
+      allocate ( REFINED(ng) % DV_avg2(LBi:UBi,LBj:UBj) )
+# endif
 
       RETURN
       END SUBROUTINE allocate_refined
@@ -313,6 +316,7 @@
 !
       IF ((model.eq.0).or.(model.eq.iNLM)) THEN
 
+        REFINED(ng) % ref_scale = 0
         REFINED(ng) % zetaR_west = IniVal
         REFINED(ng) % zetaR_east = IniVal
         REFINED(ng) % zetaR_north = IniVal
@@ -345,15 +349,10 @@
         REFINED(ng) % vbarsR_south = IniVal
 # endif
 
-        REFINED(ng) % DUonR_west = IniVal
-        REFINED(ng) % DUonR_east = IniVal
-        REFINED(ng) % DUonR_north = IniVal
-        REFINED(ng) % DUonR_south = IniVal
-
-        REFINED(ng) % DVomR_west = IniVal
-        REFINED(ng) % DVomR_east = IniVal
-        REFINED(ng) % DVomR_north = IniVal
-        REFINED(ng) % DVomR_south = IniVal
+        REFINED(ng) % DUavg2R_west = IniVal
+        REFINED(ng) % DUavg2R_east = IniVal
+        REFINED(ng) % DVavg2R_north = IniVal
+        REFINED(ng) % DVavg2R_south = IniVal
 
         REFINED(ng) % uR_west = IniVal
         REFINED(ng) % uR_east = IniVal
@@ -431,6 +430,11 @@
           REFINED(ng) % vmask_c = IniVal
 #endif
         END IF
+
+# if !defined SOLVE3D
+        REFINED(ng) % DU_avg2 = IniVal
+        REFINED(ng) % DV_avg2 = IniVal
+# endif
       END IF
 
       RETURN

@@ -15,7 +15,6 @@
 #define MCT_LIB
 
 #define REFINED_GRID
-#define REFINED_GRID_BC
 
 #undef  PERFECT_RESTART
 

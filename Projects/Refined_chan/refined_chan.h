@@ -15,7 +15,6 @@
 
 #define ROMS_MODEL
 #define REFINED_GRID
-#define REFINED_GRID_BC
 
 #define WRITE_GRID
 #define OUT_DOUBLE

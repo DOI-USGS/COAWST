@@ -413,9 +413,16 @@
 # endif
         CALL output (ng)
         IF ((exit_flag.ne.NoError).or.                                  &
-     &    ((iic(ng).eq.(ntend(ng)+1)).and.(ng.eq.Ngrids))) RETURN
+     &      (iic(ng).eq.(ntend(ng)+1))) RETURN
 # if !defined REFINED_GRID
       END DO
+# endif
+!
+# ifdef REFINED_GRID
+! Interpolate the parent data to child time.
+      IF (ng.gt.1) THEN
+        CALL set_2dparent_data (ng, TILE)
+      END IF
 # endif
 !
 !-----------------------------------------------------------------------
@@ -460,12 +467,6 @@
 # ifdef COMPOSED_GRID
       CALL nesting (100)
 # endif
-# ifdef REFINED_GRID
-! Interpolate the parent data to child time.
-      IF (ng.gt.1) THEN
-        CALL set_2dparent_data (ng, TILE)
-      END IF
-# endif
 !
 !  Set time indices for corrector step.
 !
@@ -499,12 +500,6 @@
 # endif
 # ifdef COMPOSED_GRID
       CALL nesting (100)
-# endif
-# ifdef REFINED_GRID
-! Interpolate the parent data to child time.
-      IF (ng.gt.1) THEN
-        CALL set_2dparent_data (ng, TILE)
-      END IF
 # endif
 # ifdef ASSIMILATION
 !
