@@ -364,7 +364,9 @@
       END IF
 #  endif
 # endif
+# ifdef REFINED_GRID
       END IF
+# endif
       RETURN
       END SUBROUTINE exchange_r2d_tile
 
