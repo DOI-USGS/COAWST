@@ -74,9 +74,6 @@
       NTIMES =  10000 30000
           DT == 6.0d0 2.0d0
      NDTFAST == 20    20
-!      NTIMES =  200000 600000
-!          DT == 0.3d0   0.1d0
-!     NDTFAST == 1       1
 
 ! Model iteration loops parameters.
 
@@ -437,8 +434,7 @@ Hout(idBott) == T T T T T T T T T F F F F F F F
 
      GRDNAME == Projects/Dogbone/ocean_dogbone_grd_whole.nc \
                 Projects/Dogbone/ocean_dogbone_grd_ref3.nc
-!     ININAME == Projects/Dogbone/ocean_dogbone_ini2_whole.nc \
-     ININAME == Projects/Dogbone/ocean_dogbone_ini2_whole.nc \
+     ININAME == Projects/Dogbone/ocean_dogbone_ini_whole.nc \
                 Projects/Dogbone/ocean_dogbone_ini_ref3.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
