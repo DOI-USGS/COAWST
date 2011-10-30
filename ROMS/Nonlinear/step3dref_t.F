@@ -507,7 +507,6 @@
             ref=(ref_scale-1)/2
             cff3=0.0_r8
             DO k=-ref,ref
-!             cff3=cff3+FXc_west(jc+k,itrc)
               cff3=cff3+FXc_west_all(jc+k)
             END DO
 !
@@ -545,7 +544,6 @@
             ref=(ref_scale-1)/2
             cff3=0.0_r8
             DO k=-ref,ref
-!             cff3=cff3+FXc_east(jc+k,itrc)
               cff3=cff3+FXc_east_all(jc+k)
             END DO
 !
@@ -590,7 +588,6 @@
             ref=(ref_scale-1)/2
             cff3=0.0_r8
             DO k=-ref,ref
-!             cff3=cff3+FEc_south(ic+k,itrc)
               cff3=cff3+FEc_south_all(ic+k)
             END DO
 !
@@ -599,8 +596,8 @@
             cff=pm(i,js-1)*pn(i,js-1)
             DO k=1,N(ng)
               cff2=(cff3-cff1)*FEp_south(i,k,itrc)/(cff1+eps)
-!              t(i,js-1,k,nstp,itrc)=t(i,js-1,k,nstp,itrc)-              &
-!     &                              cff2*cff*oHz(i,js-1,k)
+              t(i,js-1,k,nstp,itrc)=t(i,js-1,k,nstp,itrc)-              &
+     &                              cff2*cff*oHz(i,js-1,k)
 # ifdef MASKING
               t(i,js-1,k,nstp,itrc)=t(i,js-1,k,nstp,itrc)*              &
      &                              rmask(i,js-1)
@@ -628,7 +625,6 @@
             ref=(ref_scale-1)/2
             cff3=0.0_r8
             DO k=-ref,ref
-!             cff3=cff3+FEc_north(ic+k,itrc)
               cff3=cff3+FEc_north_all(ic+k)
             END DO
 !
@@ -637,8 +633,8 @@
             cff=pm(i,js)*pn(i,js)
             DO k=1,N(ng)
               cff2=(cff3-cff1)*FEp_north(i,k,itrc)/(cff1+eps)
-!              t(i,js,k,nstp,itrc)=t(i,js,k,nstp,itrc)+                  &
-!     &                            cff2*cff*oHz(i,js,k)
+              t(i,js,k,nstp,itrc)=t(i,js,k,nstp,itrc)+                  &
+     &                            cff2*cff*oHz(i,js,k)
 # ifdef MASKING
               t(i,js,k,nstp,itrc)=t(i,js,k,nstp,itrc)*                  &
      &                            rmask(i,js)
@@ -724,35 +720,11 @@
 
 # endif
 
-
-
-!#  ifdef DIAGNOSTICS_TS
-!              DiaTwrk(i,j,k,itrc,iTxadv)=-cff1
-!              DiaTwrk(i,j,k,itrc,iTyadv)=-cff2
-!              DiaTwrk(i,j,k,itrc,iThadv)=-cff3
-!#  endif
-
 !-----------------------------------------------------------------------
 !  Apply some diagnostics and exchanges.
 !-----------------------------------------------------------------------
 !
-      DO itrc=1,NT(ng)
-# ifdef DIAGNOSTICS_TS
-!
-!  Compute time-rate-of-change diagnostic term.
-!
-        DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
-!              DiaTwrk(i,j,k,itrc,iTrate)=t(i,j,k,nnew,itrc)-            &
-!     &                                   DiaTwrk(i,j,k,itrc,iTrate)
-            END DO
-          END DO
-        END DO
-# endif
-      END DO
 # ifdef DISTRIBUTE
-!
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
