@@ -110,7 +110,6 @@
       real(r8), allocatable :: Aout(:)
       real(r8), allocatable :: A(:,:,:)
       real(r8), allocatable :: AA(:,:,:)
-      real(r8), allocatable :: Hzc(:,:,:)
       real(r8), allocatable :: Amask(:,:)
 
       logical :: rectangular
@@ -212,10 +211,6 @@
         IF (.not.allocated(AA)) THEN
           allocate(AA(Imin:Imax,Jmin:Jmax,Kmin:Kmax))
         END IF
-        IF (.not.allocated(Hzc)) THEN
-          allocate(Hzc(Imin:Imax,Jmin:Jmax,Kmin:Kmax))
-        END IF
-        Hzc=0.0_r8
         IF (.not.allocated(Amask)) THEN
           allocate(Amask(Imin:Imax,Jmin:Jmax))
         END IF
@@ -241,38 +236,6 @@
 # endif
             END DO
           END DO
-!
-!  For tracers, need Hz of the child
-!
-          Npts=MySize
-!
-! get Hz
-!
-          CALL mp_gather3d (ngc, model, LBic, UBic, LBjc, UBjc,         &
-     &                    1, N(ngc), 0, gtype, 1.0_r8,                  &
-# ifdef MASKING
-     &                    GRID(ngc) % rmask(LBic:UBic,LBjc:UBjc),       &
-# endif
-     &                    GRID(ngc) % Hz(LBic:UBic,LBjc:UBjc,1:N(ngc)), &
-     &                    Npts, Aout)
-!
-! distribute the Aout (1D packed) field to all the nodes
-!
-          CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,             &
-     &                    OCN_COMM_WORLD, MyError)
-!
-! unpack and place in global ng=1 2D array
-!
-          ic=0
-          DO k=Kmin,Kmax
-            DO j=Jmin,Jmax
-              DO i=Imin,Imax
-                ic=ic+1
-                Hzc(i,j,k)=Aout(ic)
-              END DO
-            END DO
-          END DO
-!
           DO itrc=1,NT(ng)
             Npts=MySize
 !
@@ -298,8 +261,8 @@
               DO j=Jmin,Jmax
                 DO i=Imin,Imax
                   ic=ic+1
-                  AA(i,j,k)=Aout(ic)*Hzc(i,j,k)
-                  A(i,j,k)=Aout(ic)*Hzc(i,j,k)
+                  AA(i,j,k)=Aout(ic)
+                  A(i,j,k)=Aout(ic)
                 END DO
               END DO
             END DO
@@ -382,7 +345,7 @@
                   DO i=Xmin,Xmax
                     ic=NINT(OCEAN(ng)%hindci_r(i,j))
                     jc=NINT(OCEAN(ng)%hindcj_r(i,j))
-                    my_val=A(ic,jc,k)/GRID(ng)%Hz(i,j,k)
+                    my_val=A(ic,jc,k)
 # ifdef MASKING
                     my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
@@ -667,9 +630,6 @@
         END IF
         IF (allocated(AA)) THEN
           deallocate (AA)
-        END IF
-        IF (allocated(Hzc)) THEN
-          deallocate (Hzc)
         END IF
         IF (allocated(Amask)) THEN
           deallocate (Amask)
