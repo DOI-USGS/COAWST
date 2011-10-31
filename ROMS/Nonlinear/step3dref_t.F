@@ -1,5 +1,5 @@
 #include "cppdefs.h"
-#define REF_DIFFUSION
+#undef REF_DIFFUSION
       MODULE step3dref_t_mod
 #if !defined TS_FIXED && (defined NONLINEAR && defined SOLVE3D) && \
      defined REFINED_GRID
@@ -232,6 +232,7 @@
       real(r8), dimension(0:N(ng)) :: BC
       real(r8), dimension(0:N(ng)) :: DC
       real(r8), dimension(0:N(ng)) :: FC
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: oHz
       real(r8), allocatable :: FXc_west_all(:)
       real(r8), allocatable :: FXc_east_all(:)
       real(r8), allocatable :: FEc_south_all(:)
@@ -249,8 +250,17 @@
 !  Time-step horizontal advection term.
 !-----------------------------------------------------------------------
 !
+!  Compute inverse thickness.
+!
+      DO k=1,N(ng)
+        DO j=Jstr-2,Jend+2
+          DO i=Istr-2,Iend+2
+            oHz(i,j,k)=1.0_r8/Hz(i,j,k)
+          END DO
+        END DO
+      END DO
       T_LOOP : DO itrc=1,NT(ng)
-
+!
 !
 !  NOTE : this mp gather send stuff should go to another routine.
 !
@@ -510,8 +520,13 @@
             cff=pm(is-1,j)*pn(is-1,j)
             DO k=1,N(ng)
               cff2=(cff3-cff1)*FXp_west(j,k,itrc)/(cff1+eps)
+# ifdef REF_DIFFUSION
               t(is-1,j,k,nstp,itrc)=t(is-1,j,k,nstp,itrc)*Hz(is-1,j,k)- &
      &                              cff2*cff
+# else
+              t(is-1,j,k,nstp,itrc)=t(is-1,j,k,nstp,itrc)-              &
+     &                              cff2*cff*oHz(is-1,j,k)
+# endif
 # ifdef MASKING
               t(is-1,j,k,nstp,itrc)=t(is-1,j,k,nstp,itrc)*              &
      &                              rmask(is-1,j)
@@ -547,8 +562,13 @@
             cff=pm(is,j)*pn(is,j)
             DO k=1,N(ng)
               cff2=(cff3-cff1)*FXp_east(j,k,itrc)/(cff1+eps)
+# ifdef REF_DIFFUSION
               t(is,j,k,nstp,itrc)=t(is,j,k,nstp,itrc)*Hz(is,j,k)+       &
      &                            cff2*cff
+# else
+              t(is,j,k,nstp,itrc)=t(is,j,k,nstp,itrc)+                  &
+     &                            cff2*cff*oHz(is,j,k)
+# endif
 # ifdef MASKING
               t(is,j,k,nstp,itrc)=t(is,j,k,nstp,itrc)*                  &
      &                            rmask(is,j)
@@ -591,8 +611,13 @@
             cff=pm(i,js-1)*pn(i,js-1)
             DO k=1,N(ng)
               cff2=(cff3-cff1)*FEp_south(i,k,itrc)/(cff1+eps)
+# ifdef REF_DIFFUSION
               t(i,js-1,k,nstp,itrc)=t(i,js-1,k,nstp,itrc)*Hz(i,js-1,k)- &
      &                              cff2*cff
+# else
+              t(i,js-1,k,nstp,itrc)=t(i,js-1,k,nstp,itrc)-              &
+     &                              cff2*cff*oHz(i,js-1,k)
+# endif
 # ifdef MASKING
               t(i,js-1,k,nstp,itrc)=t(i,js-1,k,nstp,itrc)*              &
      &                              rmask(i,js-1)
@@ -628,8 +653,13 @@
             cff=pm(i,js)*pn(i,js)
             DO k=1,N(ng)
               cff2=(cff3-cff1)*FEp_north(i,k,itrc)/(cff1+eps)
+# ifdef REF_DIFFUSION
               t(i,js,k,nstp,itrc)=t(i,js,k,nstp,itrc)*Hz(i,js,k)+       &
      &                            cff2*cff
+# else
+              t(i,js,k,nstp,itrc)=t(i,js,k,nstp,itrc)+                  &
+     &                            cff2*cff*oHz(i,js,k)
+# endif
 # ifdef MASKING
               t(i,js,k,nstp,itrc)=t(i,js,k,nstp,itrc)*                  &
      &                            rmask(i,js)
