@@ -1,4 +1,5 @@
 #include "cppdefs.h"
+#define REF_DIFFUSION
       MODULE step3dref_t_mod
 #if !defined TS_FIXED && (defined NONLINEAR && defined SOLVE3D) && \
      defined REFINED_GRID
@@ -31,6 +32,7 @@
       USE mod_diags
 # endif
       USE mod_grid
+      USE mod_mixing
       USE mod_ocean
       USE mod_refined
       USE mod_stepping
@@ -65,7 +67,8 @@
      &                    GRID(ng) % pm,                                &
      &                    GRID(ng) % pn,                                &
      &                    GRID(ng) % Hz,                                &
-     &                    OCEAN(ng) % W,                                &
+     &                    GRID(ng) % z_r,                               &
+     &                    MIXING(ng) % Akt,                             &
      &                    OCEAN(ng) % hindcu,    OCEAN(ng) % hindcv,    &
      &                    OCEAN(ng) % hindci_u,  OCEAN(ng) % hindcj_u,  &
      &                    OCEAN(ng) % hindci_v,  OCEAN(ng) % hindcj_v,  &
@@ -95,8 +98,8 @@
      &                          rmask,                                  &
 # endif
      &                          pm, pn,                                 &
-     &                          Hz,                                     &
-     &                          W,                                      &
+     &                          Hz, z_r,                                &
+     &                          Akt,                                    &
      &                          hindcu,    hindcv,                      &
      &                          hindci_u,  hindcj_u,                    &
      &                          hindci_v,  hindcj_v,                    &
@@ -127,9 +130,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
-# ifdef REFINED_GRID
       integer, intent(in) :: LBic, UBic, LBjc, UBjc
-# endif
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs, nstp, nnew
       integer, intent(in) :: ref_scale
@@ -141,8 +142,12 @@
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
-      real(r8), intent(in) :: W(LBi:,LBj:,0:)
-#  ifdef REFINED_GRID
+      real(r8), intent(in) :: z_r(LBi:,LBj:,:)
+#  ifdef SUN
+      real(r8), intent(in) :: Akt(LBi:UBi,LBj:UBj,0:N(ng),NAT)
+#  else
+      real(r8), intent(in) :: Akt(LBi:,LBj:,0:,:)
+#  endif
       integer, intent(in) :: hindcu(:)
       integer, intent(in) :: hindcv(:)
       real(r8), intent(in) :: hindci_u(LBi:,LBj:)
@@ -157,7 +162,6 @@
       real(r8), intent(in) :: FXc_east(LBjc:,:)
       real(r8), intent(in) :: FEc_south(LBic:,:)
       real(r8), intent(in) :: FEc_north(LBic:,:)
-#  endif
 #  ifdef DIAGNOSTICS_TS
       real(r8), intent(inout) :: DiaTwrk(LBi:,LBj:,:,:,:)
 #  endif
@@ -175,8 +179,8 @@
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
-      real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
-#  ifdef REFINED_GRID
+      real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(in) :: Akt(LBi:UBi,LBj:UBj,0:N(ng),NAT)
       integer, intent(in) :: hindcu(4)
       integer, intent(in) :: hindcv(4)
       real(r8), intent(in) :: hindci_u(LBi:UBi,LBj:UBj)
@@ -191,7 +195,6 @@
       real(r8), intent(in) :: FXc_east(LBjc:UBjc,NT(ng))
       real(r8), intent(in) :: FEc_south(LBic:UBic,NT(ng))
       real(r8), intent(in) :: FEc_north(LBic:UBic,NT(ng))
-#  endif
 #  ifdef DIAGNOSTICS_TS
       real(r8), intent(inout) :: DiaTwrk(LBi:UBi,LBj:UBj,N(ng),NT(ng),  &
      &                                   NDT)
@@ -225,6 +228,9 @@
       real(r8), parameter :: eps = 1.0E-16_r8
       real(r8) :: cff, cff1, cff2, cff3
 
+      real(r8), dimension(0:N(ng)) :: CF
+      real(r8), dimension(0:N(ng)) :: BC
+      real(r8), dimension(0:N(ng)) :: DC
       real(r8), dimension(0:N(ng)) :: FC
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: oHz
       real(r8), allocatable :: FXc_west_all(:)
@@ -648,10 +654,6 @@
         deallocate (FEc_south_all)
         deallocate (FEc_north_all)
       END DO T_LOOP
-
-
-
-
 #ifdef REF_DIFFUSION
 !-----------------------------------------------------------------------
 !  Time-step vertical diffusion term.
@@ -662,62 +664,190 @@
 !  at horizontal RHO-points and vertical W-points.
 !  Also set FC at the top and bottom levels.
 !
-      DO j=Jstr,Jend
-        DO itrc=1,NT(ng)
-          ltrc=MIN(NAT,itrc)
-          cff=-dt(ng)*lambda
-          DO k=1,N(ng)-1
-            DO i=Istr,Iend
-              cff1=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
-              FC(i,k)=cff*cff1*Akt(i,j,k,ltrc)
+      DO itrc=1,NT(ng)
+        ltrc=MIN(NAT,itrc)
+        DO j=js,je
+!
+!  Parent grid at child WESTERN EDGE
+!
+          is=hindcu(1)-1
+          IF (((Istr.le.is-1).and.(is-1.le.Iend)).and.                  &
+     &        ((Jstr.le.j).and.(j.le.Jend))) THEN
+            cff=-dt(ng)*lambda
+            DO k=1,N(ng)-1
+              cff1=1.0_r8/(z_r(is-1,j,k+1)-z_r(is-1,j,k))
+              FC(k)=cff*cff1*Akt(is-1,j,k,ltrc)
             END DO
-          END DO
-          DO i=Istr,Iend
-            FC(i,0)=0.0_r8
-            FC(i,N(ng))=0.0_r8
-          END DO
+            FC(0)=0.0_r8
+            FC(N(ng))=0.0_r8
 !
 !  Compute diagonal matrix coefficients BC and load right-hand-side
 !  terms for the tracer equation into DC.
 !
-          DO k=1,N(ng)
-            DO i=Istr,Iend
-              BC(i,k)=Hz(i,j,k)-FC(i,k)-FC(i,k-1)
-              DC(i,k)=t(i,j,k,nnew,itrc)
+            DO k=1,N(ng)
+              BC(k)=Hz(is-1,j,k)-FC(k)-FC(k-1)
+              DC(k)=t(is-1,j,k,nstp,itrc)
             END DO
-          END DO
 !
 !  Solve the tridiagonal system.
 !
-          DO i=Istr,Iend
-            cff=1.0_r8/BC(i,1)
-            CF(i,1)=cff*FC(i,1)
-            DC(i,1)=cff*DC(i,1)
-          END DO
-          DO k=2,N(ng)-1
-            DO i=Istr,Iend
-              cff=1.0_r8/(BC(i,k)-FC(i,k-1)*CF(i,k-1))
-              CF(i,k)=cff*FC(i,k)
-              DC(i,k)=cff*(DC(i,k)-FC(i,k-1)*DC(i,k-1))
+            cff=1.0_r8/BC(1)
+            CF(1)=cff*FC(1)
+            DC(1)=cff*DC(1)
+            DO k=2,N(ng)-1
+              cff=1.0_r8/(BC(k)-FC(k-1)*CF(k-1))
+              CF(k)=cff*FC(k)
+              DC(k)=cff*(DC(k)-FC(k-1)*DC(k-1))
             END DO
-          END DO
 !
 !  Compute new solution by back substitution.
 !
-          DO i=Istr,Iend
-             DC(i,N(ng))=(DC(i,N(ng))-FC(i,N(ng)-1)*DC(i,N(ng)-1))/     &
-     &                   (BC(i,N(ng))-FC(i,N(ng)-1)*CF(i,N(ng)-1))
-             t(i,j,N(ng),nnew,itrc)=DC(i,N(ng))
-          END DO
-          DO k=N(ng)-1,1,-1
-            DO i=Istr,Iend
-              DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
-              t(i,j,k,nnew,itrc)=DC(i,k)
+            DC(N(ng))=(DC(N(ng))-FC(N(ng)-1)*DC(N(ng)-1))/     &
+     &                (BC(N(ng))-FC(N(ng)-1)*CF(N(ng)-1))
+            t(is-1,j,N(ng),nstp,itrc)=DC(N(ng))
+            DO k=N(ng)-1,1,-1
+              DC(k)=DC(k)-CF(k)*DC(k+1)
+              t(is-1,j,k,nstp,itrc)=DC(k)
             END DO
-          END DO
+          END IF
+!
+!  Parent grid at child EASTERN EDGE
+!
+          is=hindcu(2)+1
+          IF (((Istr.le.is).and.(is.le.Iend)).and.                      &
+     &        ((Jstr.le.j).and.(j.le.Jend))) THEN
+            cff=-dt(ng)*lambda
+            DO k=1,N(ng)-1
+              cff1=1.0_r8/(z_r(is,j,k+1)-z_r(is,j,k))
+              FC(k)=cff*cff1*Akt(is,j,k,ltrc)
+            END DO
+            FC(0)=0.0_r8
+            FC(N(ng))=0.0_r8
+!
+!  Compute diagonal matrix coefficients BC and load right-hand-side
+!  terms for the tracer equation into DC.
+!
+            DO k=1,N(ng)
+              BC(k)=Hz(is,j,k)-FC(k)-FC(k-1)
+              DC(k)=t(is,j,k,nstp,itrc)
+            END DO
+!
+!  Solve the tridiagonal system.
+!
+            cff=1.0_r8/BC(1)
+            CF(1)=cff*FC(1)
+            DC(1)=cff*DC(1)
+            DO k=2,N(ng)-1
+              cff=1.0_r8/(BC(k)-FC(k-1)*CF(k-1))
+              CF(k)=cff*FC(k)
+              DC(k)=cff*(DC(k)-FC(k-1)*DC(k-1))
+            END DO
+!
+!  Compute new solution by back substitution.
+!
+            DC(N(ng))=(DC(N(ng))-FC(N(ng)-1)*DC(N(ng)-1))/     &
+     &                (BC(N(ng))-FC(N(ng)-1)*CF(N(ng)-1))
+            t(is,j,N(ng),nstp,itrc)=DC(N(ng))
+            DO k=N(ng)-1,1,-1
+              DC(k)=DC(k)-CF(k)*DC(k+1)
+              t(is,j,k,nstp,itrc)=DC(k)
+            END DO
+          END IF
+        END DO
+!
+!  southern and northern child edges.
+!
+        is=hindcv(1)
+        ie=hindcv(2)
+        DO i=is,ie
+!
+!  Parent grid at child SOUTHERN EDGE
+!
+          js=hindcv(3)-1
+          IF (((Istr.le.i).and.(i.le.Iend)).and.                        &
+     &        ((Jstr.le.js-1).and.(js-1.le.Jend))) THEN
+            cff=-dt(ng)*lambda
+            DO k=1,N(ng)-1
+              cff1=1.0_r8/(z_r(i,js-1,k+1)-z_r(i,js-1,k))
+              FC(k)=cff*cff1*Akt(i,js-1,k,ltrc)
+            END DO
+            FC(0)=0.0_r8
+            FC(N(ng))=0.0_r8
+!
+!  Compute diagonal matrix coefficients BC and load right-hand-side
+!  terms for the tracer equation into DC.
+!
+            DO k=1,N(ng)
+              BC(k)=Hz(i,js-1,k)-FC(k)-FC(k-1)
+              DC(k)=t(i,js-1,k,nstp,itrc)
+            END DO
+!
+!  Solve the tridiagonal system.
+!
+            cff=1.0_r8/BC(1)
+            CF(1)=cff*FC(1)
+            DC(1)=cff*DC(1)
+            DO k=2,N(ng)-1
+              cff=1.0_r8/(BC(k)-FC(k-1)*CF(k-1))
+              CF(k)=cff*FC(k)
+              DC(k)=cff*(DC(k)-FC(k-1)*DC(k-1))
+            END DO
+!
+!  Compute new solution by back substitution.
+!
+            DC(N(ng))=(DC(N(ng))-FC(N(ng)-1)*DC(N(ng)-1))/     &
+     &                (BC(N(ng))-FC(N(ng)-1)*CF(N(ng)-1))
+            t(i,js-1,N(ng),nstp,itrc)=DC(N(ng))
+            DO k=N(ng)-1,1,-1
+              DC(k)=DC(k)-CF(k)*DC(k+1)
+              t(i,js-1,k,nstp,itrc)=DC(k)
+            END DO
+          END IF
+!
+!  Parent grid at child NORTHERN EDGE
+!
+          js=hindcv(4)+1
+          IF (((Istr.le.i).and.(i.le.Iend)).and.                        &
+     &        ((Jstr.le.js).and.(js.le.Jend))) THEN
+            cff=-dt(ng)*lambda
+            DO k=1,N(ng)-1
+              cff1=1.0_r8/(z_r(i,js,k+1)-z_r(i,js,k))
+              FC(k)=cff*cff1*Akt(i,js,k,ltrc)
+            END DO
+            FC(0)=0.0_r8
+            FC(N(ng))=0.0_r8
+!
+!  Compute diagonal matrix coefficients BC and load right-hand-side
+!  terms for the tracer equation into DC.
+!
+            DO k=1,N(ng)
+              BC(k)=Hz(i,js,k)-FC(k)-FC(k-1)
+              DC(k)=t(i,js,k,nstp,itrc)
+            END DO
+!
+!  Solve the tridiagonal system.
+!
+            cff=1.0_r8/BC(1)
+            CF(1)=cff*FC(1)
+            DC(1)=cff*DC(1)
+            DO k=2,N(ng)-1
+              cff=1.0_r8/(BC(k)-FC(k-1)*CF(k-1))
+              CF(k)=cff*FC(k)
+              DC(k)=cff*(DC(k)-FC(k-1)*DC(k-1))
+            END DO
+!
+!  Compute new solution by back substitution.
+!
+            DC(N(ng))=(DC(N(ng))-FC(N(ng)-1)*DC(N(ng)-1))/     &
+     &                (BC(N(ng))-FC(N(ng)-1)*CF(N(ng)-1))
+            t(i,js,N(ng),nstp,itrc)=DC(N(ng))
+            DO k=N(ng)-1,1,-1
+              DC(k)=DC(k)-CF(k)*DC(k+1)
+              t(i,js,k,nstp,itrc)=DC(k)
+            END DO
+          END IF
         END DO
       END DO
-
 # endif
 
 !-----------------------------------------------------------------------
