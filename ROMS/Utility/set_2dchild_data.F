@@ -332,6 +332,11 @@
 # ifdef MASKING
               my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
+# ifdef WET_DRY
+              IF (my_val.le.(Dcrit(ng)-GRID(ng)%h(i,j))) THEN
+                my_val=Dcrit(ng)-GRID(ng)%h(i,j)
+              END IF
+# endif
 # ifdef SOLVE3D
               COUPLING(ng)%Zt_avg1(i,j)=my_val
 # else

@@ -496,13 +496,13 @@
             DO i=LBi,UBi
               IF (Ipos(i,j).gt.1.0_r8) THEN
                 Xmin=MIN(Xmin,i)
-                IF (Ipos(i,j).lt.Lm(ngc)) THEN
+                IF (Ipos(i,j).lt.REAL(Lm(ngc),r8)) THEN
                   Xmax=MAX(Xmax,i)
                 END IF
               END IF
               IF (Jpos(i,j).gt.1.0_r8) THEN
                 Ymin=MIN(Ymin,j)
-                IF (Jpos(i,j).lt.Mm(ngc)) THEN
+                IF (Jpos(i,j).lt.REAL(Mm(ngc),r8)) THEN
                   Ymax=MAX(Ymax,j)
                 END IF
               END IF
@@ -550,13 +550,13 @@
             DO i=LBi,UBi
               IF (Ipos(i,j).gt.1.0_r8) THEN
                 Xmin=MIN(Xmin,i)
-                IF (Ipos(i,j).lt.Lm(ngc)) THEN
+                IF (Ipos(i,j).lt.REAL(Lm(ngc),r8)) THEN
                   Xmax=MAX(Xmax,i)
                 END IF
               END IF
               IF (Jpos(i,j).gt.1.0_r8) THEN
                 Ymin=MIN(Ymin,j)
-                IF (Jpos(i,j).lt.Mm(ngc)) THEN
+                IF (Jpos(i,j).lt.REAL(Mm(ngc),r8)) THEN
                   Ymax=MAX(Ymax,j)
                 END IF
               END IF
@@ -604,13 +604,13 @@
             DO i=LBi,UBi
               IF (Ipos(i,j).gt.1.0_r8) THEN
                 Xmin=MIN(Xmin,i)
-                IF (Ipos(i,j).lt.Lm(ngc)) THEN
+                IF (Ipos(i,j).lt.REAL(Lm(ngc),r8)) THEN
                   Xmax=MAX(Xmax,i)
                 END IF
               END IF
               IF (Jpos(i,j).gt.1.0_r8) THEN
                 Ymin=MIN(Ymin,j)
-                IF (Jpos(i,j).lt.Mm(ngc)) THEN
+                IF (Jpos(i,j).lt.REAL(Mm(ngc),r8)) THEN
                   Ymax=MAX(Ymax,j)
                 END IF
               END IF

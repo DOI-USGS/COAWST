@@ -397,7 +397,7 @@
             CALL MPI_RECV(fx_exch,Npts,MP_FLOAT,is,                      &
      &                    MyTag,OCN_COMM_WORLD,ISTAT,MyError)
             DO i=1,Npts
-              FEc_south_all(i)=FEc_south_all(j)+fx_exch(j)
+              FEc_south_all(i)=FEc_south_all(i)+fx_exch(i)
             END DO
           END DO
 !  add master node contribution
@@ -450,7 +450,7 @@
             CALL MPI_RECV(fx_exch,Npts,MP_FLOAT,is,                      &
      &                    MyTag,OCN_COMM_WORLD,ISTAT,MyError)
             DO i=1,Npts
-              FEc_north_all(i)=FEc_north_all(j)+fx_exch(j)
+              FEc_north_all(i)=FEc_north_all(i)+fx_exch(i)
             END DO
           END DO
 !  add master node contribution
