@@ -681,12 +681,12 @@
 !  Compute indices of children grid locations in the parent grid.
 !  For 2-way, this needs to be done for all grids, not just ng>1.
 !-----------------------------------------------------------------------
+      IF (ng.lt.NestedGrids) THEN
+        CALL init_child_hindices (ng, TILE)
+      END IF
       IF (ng.gt.1) THEN
         CALL init_parent_hindices (ng, TILE)
       END IF
-      IF (ng.lt.NestedGrids) THEN
-        CALL init_child_hindices (ng, TILE)
-      ENd IF
 !-----------------------------------------------------------------------
 !  Obtain initial boudnary conditions from the parent data.
 !-----------------------------------------------------------------------

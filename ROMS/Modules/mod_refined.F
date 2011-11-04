@@ -97,6 +97,7 @@
           real(r8), pointer :: yu_p(:,:)
           real(r8), pointer :: yv_p(:,:)
 # ifdef MASKING
+          real(r8), pointer :: pmask_p(:,:)
           real(r8), pointer :: rmask_p(:,:)
           real(r8), pointer :: umask_p(:,:)
           real(r8), pointer :: vmask_p(:,:)
@@ -120,6 +121,7 @@
           real(r8), pointer :: yu_c(:,:)
           real(r8), pointer :: yv_c(:,:)
 # ifdef MASKING
+          real(r8), pointer :: pmask_c(:,:)
           real(r8), pointer :: rmask_c(:,:)
           real(r8), pointer :: umask_c(:,:)
           real(r8), pointer :: vmask_c(:,:)
@@ -244,6 +246,7 @@
         allocate ( REFINED(ng) % yu_p(XI_DIMp,ETA_DIMp) )
         allocate ( REFINED(ng) % yv_p(XI_DIMp,ETA_DIMp) )
 # ifdef MASKING
+        allocate ( REFINED(ng) % pmask_p(XI_DIMp,ETA_DIMp) )
         allocate ( REFINED(ng) % rmask_p(XI_DIMp,ETA_DIMp) )
         allocate ( REFINED(ng) % umask_p(XI_DIMp,ETA_DIMp) )
         allocate ( REFINED(ng) % vmask_p(XI_DIMp,ETA_DIMp) )
@@ -269,6 +272,7 @@
         allocate ( REFINED(ng) % yu_c(XI_DIMc,ETA_DIMc) )
         allocate ( REFINED(ng) % yv_c(XI_DIMc,ETA_DIMc) )
 # ifdef MASKING
+        allocate ( REFINED(ng) % pmask_c(XI_DIMc,ETA_DIMc) )
         allocate ( REFINED(ng) % rmask_c(XI_DIMc,ETA_DIMc) )
         allocate ( REFINED(ng) % umask_c(XI_DIMc,ETA_DIMc) )
         allocate ( REFINED(ng) % vmask_c(XI_DIMc,ETA_DIMc) )
@@ -400,6 +404,7 @@
           REFINED(ng) % yu_p = IniVal
           REFINED(ng) % yv_p = IniVal
 #ifdef MASKING
+          REFINED(ng) % pmask_p = IniVal
           REFINED(ng) % rmask_p = IniVal
           REFINED(ng) % umask_p = IniVal
           REFINED(ng) % vmask_p = IniVal
@@ -425,6 +430,7 @@
           REFINED(ng) % yu_c = IniVal
           REFINED(ng) % yv_c = IniVal
 #ifdef MASKING
+          REFINED(ng) % pmask_c = IniVal
           REFINED(ng) % rmask_c = IniVal
           REFINED(ng) % umask_c = IniVal
           REFINED(ng) % vmask_c = IniVal

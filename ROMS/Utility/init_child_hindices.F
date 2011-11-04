@@ -64,6 +64,10 @@
       USE mod_refined
       USE interpolate_mod
 !
+# ifdef DISTRIBUTE
+      USE distribute_mod, ONLY : mp_bcasti, mp_gather2d
+# endif
+!
       implicit none
 !
 !  Imported variable declarations.
@@ -82,35 +86,37 @@
       integer :: i, ii, j, ngp, ngc, ic
       integer :: gtype, MyType, Ilen, Jlen, IJlen
       integer :: Npts
+      integer :: Iminc, Imaxc, Jminc, Jmaxc
 
-      real(r8) :: IJspv, my_min, my_max
-      integer :: Xmin, Xmax, Ymin, Ymax, MyError
+      real(r8) :: IJspv, my_min, my_max, offset
+      integer :: Xmin, Xmax, Ymin, Ymax, MyError, MySizer
 
       logical :: rectangular
-      real(r8), pointer :: Ipos(:,:)
-      real(r8), pointer :: Jpos(:,:)
       real(r8), allocatable :: A(:)
+      real(r8), allocatable :: Ipos(:,:)
+      real(r8), allocatable :: Jpos(:,:)
+      real(r8), allocatable :: lonpsi_par(:,:)
+      real(r8), allocatable :: latpsi_par(:,:)
 
       character (len=20) :: var_name
-
 !
 # include "set_bounds.h"
 !
       ngc=mychild(ng)
       model=iNLM
 !
-!  Get the full grid of my parent, and compute the indices 
-!  of the local tile in the parent grid.
-!  Loop thru 3 times. For each loop we compute:
-!  ii=1: rho var, ii=2:u var, ii=3:v var
+!  Loop thru 4 times. For each loop we compute:
+!  ii=1: rho var, ii=2:u var, ii=3:v var, ii=4:psi var
 !
-      DO ii=1,3
+      DO ii=1,4
         IF (ii.eq.1) THEN
           gtype=r2dvar
         ELSE IF (ii.eq.2) THEN
           gtype=u2dvar
         ELSE IF (ii.eq.3) THEN
           gtype=v2dvar
+        ELSE IF (ii.eq.4) THEN
+          gtype=p2dvar
         END IF
 
 !       now get the bounds
@@ -450,197 +456,377 @@
           IF (allocated(A)) THEN
             deallocate (A)
           END IF
+        ELSE IF (ii.eq.4) THEN
+!
+! Now for psi points
+!
+          IF (.not.allocated(A)) THEN
+            allocate (A(1:IJlen))
+          END IF
+          DO i=1,IJlen
+            A(i)=0.0_r8
+          END DO
+!
+! Case lon_psi
+!
+          var_name='lon_psi'
+          CALL get_gridcoords (ngc, ncGRDid(ngc), Ilen, Jlen,           &
+     &                         var_name, A)
+          CALL mpi_bcast (A, IJlen, MP_FLOAT, MyMaster,                 &
+     &                    OCN_COMM_WORLD, MyError)
+          ic=0
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              ic=ic+1
+              REFINED(ng)%lonp_c(i,j)=A(ic)
+            END DO
+          END DO
+!
+! Case lat_psi
+!
+          var_name='lat_psi'
+          CALL get_gridcoords (ngc, ncGRDid(ngc), Ilen, Jlen,           &
+     &                         var_name, A)
+          CALL mpi_bcast (A, IJlen, MP_FLOAT, MyMaster,                 &
+     &                    OCN_COMM_WORLD, MyError)
+          ic=0
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              ic=ic+1
+              REFINED(ng)%latp_c(i,j)=A(ic)
+            END DO
+          END DO
+!
+! Case x_psi
+!
+          var_name='x_psi'
+          CALL get_gridcoords (ngc, ncGRDid(ngc), Ilen, Jlen,           &
+     &                         var_name, A)
+          CALL mpi_bcast (A, IJlen, MP_FLOAT, MyMaster,                 &
+     &                    OCN_COMM_WORLD, MyError)
+          ic=0
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              ic=ic+1
+              REFINED(ng)%xp_c(i,j)=A(ic)
+            END DO
+          END DO
+!
+! Case y_psi
+!
+          var_name='y_psi'
+          CALL get_gridcoords (ngc, ncGRDid(ngc), Ilen, Jlen,           &
+     &                         var_name, A)
+          CALL mpi_bcast (A, IJlen, MP_FLOAT, MyMaster,                 &
+     &                    OCN_COMM_WORLD, MyError)
+          ic=0
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              ic=ic+1
+              REFINED(ng)%yp_c(i,j)=A(ic)
+            END DO
+          END DO
+# ifdef MASKING
+!
+! Case mask_psi
+!
+          var_name='mask_psi'
+          CALL get_gridcoords (ngc, ncGRDid(ngc), Ilen, Jlen,           &
+     &                         var_name, A)
+          CALL mpi_bcast (A, IJlen, MP_FLOAT, MyMaster,                 &
+     &                    OCN_COMM_WORLD, MyError)
+          ic=0
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              ic=ic+1
+              REFINED(ng)%pmask_c(i,j)=A(ic)
+            END DO
+          END DO
+# endif
+          IF (allocated(A)) THEN
+            deallocate (A)
+          END IF
         END IF
+      END DO
 !
-! Get the horizontal indices of the grid locations in the parent
-! grid for this local child tile.
+! Get the horizontal indices of the grid locations in the parent grid.
+! Base this on the psi points to start.
+! Gather all the lon and lat psi points of the parent and child.
+! Use hindices to determine the location of the 4 corners of the child
+! grid. Hindices is not accurate enough to give exact locations, so 
+! we use integers increments to set all the hindices.
 !
-! Set up a temp 2D array to fill the hindices for this tile.
-!
-        allocate ( Ipos(LBi:UBi,LBj:UBj) )
-        allocate ( Jpos(LBi:UBi,LBj:UBj) )
-!
-        IF (ii.eq.1) THEN
-          IF (spherical) THEN
-            CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
-     &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   REFINED(ng)%angler_c(Imin:Imax,Jmin:Jmax),     &
-     &                   REFINED(ng)%lonr_c(Imin:Imax,Jmin:Jmax),       &
-     &                   REFINED(ng)%latr_c(Imin:Imax,Jmin:Jmax),       &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   GRID(ng)%lonr, GRID(ng)%latr,                  &
-     &                   Ipos, Jpos,                                    &
-     &                   IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
-          ELSE
-            CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
-     &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   REFINED(ng)%angler_c(Imin:Imax,Jmin:Jmax),     &
-     &                   REFINED(ng)%xr_c(Imin:Imax,Jmin:Jmax),         &
-     &                   REFINED(ng)%yr_c(Imin:Imax,Jmin:Jmax),         &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   GRID(ng)%xr, GRID(ng)%yr,                      &
-     &                   Ipos, Jpos,                                    &
-     &                   IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
-          END IF
-!
-!  Recompute Xmin, Xmax, Ymin, and Ymax to determine the limits for 
-!  child grid replacement into the parent.
-!
-          Xmin= 9999
-          Xmax=-9999
-          Ymin= 9999
-          Ymax=-9999
-          DO j=LBj,UBj
-            DO i=LBi,UBi
-              IF (Ipos(i,j).gt.1.0_r8) THEN
-                Xmin=MIN(Xmin,i)
-                IF (Ipos(i,j).lt.REAL(Lm(ngc),r8)) THEN
-                  Xmax=MAX(Xmax,i)
-                END IF
-              END IF
-              IF (Jpos(i,j).gt.1.0_r8) THEN
-                Ymin=MIN(Ymin,j)
-                IF (Jpos(i,j).lt.REAL(Mm(ngc),r8)) THEN
-                  Ymax=MAX(Ymax,j)
-                END IF
-              END IF
-            END DO
-          END DO
-          OCEAN(ng)%hindci_r=IPOS
-          OCEAN(ng)%hindcj_r=JPOS
-          OCEAN(ng)%hindcr(1)=Xmin
-          OCEAN(ng)%hindcr(2)=Xmax
-          OCEAN(ng)%hindcr(3)=Ymin
-          OCEAN(ng)%hindcr(4)=Ymax
-        ELSE IF (ii.eq.2) THEN
-          IF (spherical) THEN
-            CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
-     &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   REFINED(ng)%angler_c(Imin:Imax,Jmin:Jmax),     &
-     &                   REFINED(ng)%lonu_c(Imin:Imax,Jmin:Jmax),       &
-     &                   REFINED(ng)%latu_c(Imin:Imax,Jmin:Jmax),       &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   GRID(ng)%lonu, GRID(ng)%latu,                  &
-     &                   Ipos, Jpos,                                    &
-     &                   IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
-          ELSE
-            CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
-     &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   REFINED(ng)%angler_c(Imin:Imax,Jmin:Jmax),     &
-     &                   REFINED(ng)%xu_c(Imin:Imax,Jmin:Jmax),         &
-     &                   REFINED(ng)%yu_c(Imin:Imax,Jmin:Jmax),         &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   GRID(ng)%xu, GRID(ng)%yu,                      &
-     &                   Ipos, Jpos,                                    &
-     &                   IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
-          END IF
-!
-!  Recompute Xmin, Xmax, Ymin, and Ymax to determine the limits for 
-!  child grid replacement into the parent.
-!
-          Xmin= 9999
-          Xmax=-9999
-          Ymin= 9999
-          Ymax=-9999
-          DO j=LBj,UBj
-            DO i=LBi,UBi
-              IF (Ipos(i,j).gt.1.0_r8) THEN
-                Xmin=MIN(Xmin,i)
-                IF (Ipos(i,j).lt.REAL(Lm(ngc),r8)) THEN
-                  Xmax=MAX(Xmax,i)
-                END IF
-              END IF
-              IF (Jpos(i,j).gt.1.0_r8) THEN
-                Ymin=MIN(Ymin,j)
-                IF (Jpos(i,j).lt.REAL(Mm(ngc),r8)) THEN
-                  Ymax=MAX(Ymax,j)
-                END IF
-              END IF
-            END DO
-          END DO
-          OCEAN(ng)%hindci_u=IPOS
-          OCEAN(ng)%hindcj_u=JPOS
-          OCEAN(ng)%hindcu(1)=Xmin
-          OCEAN(ng)%hindcu(2)=Xmax
-          OCEAN(ng)%hindcu(3)=Ymin
-          OCEAN(ng)%hindcu(4)=Ymax
-        ELSE IF (ii.eq.3) THEN
-          IF (spherical) THEN
-            CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
-     &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   REFINED(ng)%angler_c(Imin:Imax,Jmin:Jmax),     &
-     &                   REFINED(ng)%lonv_c(Imin:Imax,Jmin:Jmax),       &
-     &                   REFINED(ng)%latv_c(Imin:Imax,Jmin:Jmax),       &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   GRID(ng)%lonv, GRID(ng)%latv,                  &
-     &                   Ipos, Jpos,                                    &
-     &                   IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
-          ELSE
-            CALL hindices (ng, Imin, Imax, Jmin, Jmax,                  &
-     &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   REFINED(ng)%angler_c(Imin:Imax,Jmin:Jmax),     &
-     &                   REFINED(ng)%xv_c(Imin:Imax,Jmin:Jmax),         &
-     &                   REFINED(ng)%yv_c(Imin:Imax,Jmin:Jmax),         &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   GRID(ng)%xv, GRID(ng)%yv,                      &
-     &                   Ipos, Jpos,                                    &
-     &                   IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
-          END IF
-!
-!  Recompute Xmin, Xmax, Ymin, and Ymax to determine the limits for 
-!  child grid replacement into the parent.
-!
-          Xmin= 9999
-          Xmax=-9999
-          Ymin= 9999
-          Ymax=-9999
-          DO j=LBj,UBj
-            DO i=LBi,UBi
-              IF (Ipos(i,j).gt.1.0_r8) THEN
-                Xmin=MIN(Xmin,i)
-                IF (Ipos(i,j).lt.REAL(Lm(ngc),r8)) THEN
-                  Xmax=MAX(Xmax,i)
-                END IF
-              END IF
-              IF (Jpos(i,j).gt.1.0_r8) THEN
-                Ymin=MIN(Ymin,j)
-                IF (Jpos(i,j).lt.REAL(Mm(ngc),r8)) THEN
-                  Ymax=MAX(Ymax,j)
-                END IF
-              END IF
-            END DO
-          END DO
-          OCEAN(ng)%hindci_v=IPOS
-          OCEAN(ng)%hindcj_v=JPOS
-          OCEAN(ng)%hindcv(1)=Xmin
-          OCEAN(ng)%hindcv(2)=Xmax
-          OCEAN(ng)%hindcv(3)=Ymin
-          OCEAN(ng)%hindcv(4)=Ymax
+      gtype=p2dvar
+      IF (ng.eq.1) THEN
+        Imin=0
+        Imax=Lm(ng)+1
+        Jmin=0
+        Jmax=Mm(ng)+1
+        IF ((ABS(MyType).eq.p2dvar).or.(ABS(MyType).eq.u2dvar)) THEN
+          Imin=1
         END IF
+        IF ((ABS(MyType).eq.p2dvar).or.(ABS(MyType).eq.v2dvar)) THEN
+          Jmin=1
+        END IF
+      ELSE
+        Imin=LOWER_BOUND_I
+        Imax=Lm(ng)+GHOST_POINTS
+        Jmin=LOWER_BOUND_J
+        Jmax=Mm(ng)+GHOST_POINTS
+        IF ((ABS(MyType).eq.p2dvar).or.(ABS(MyType).eq.u2dvar)) THEN
+          Imin=LOWER_BOUND_I+1
+        END IF
+        IF ((ABS(MyType).eq.p2dvar).or.(ABS(MyType).eq.v2dvar)) THEN
+          Jmin=LOWER_BOUND_J+1
+        END IF
+      END IF
+      Ilen=Imax-Imin+1
+      Jlen=Jmax-Jmin+1
+      IJlen=Ilen*Jlen
+      MySizer=IJlen
+      Npts=IJlen
+      allocate (A(1:IJlen))
+      allocate (lonpsi_par(Imin:Imax,Jmin:Jmax))
+      allocate (latpsi_par(Imin:Imax,Jmin:Jmax))
+      DO i=1,IJlen
+        A(i)=0.0_r8
+      END DO
+      DO i=Imin,Imax
+        DO j=Jmin,Jmax
+          lonpsi_par(i,j)=0.0_r8
+          latpsi_par(i,j)=0.0_r8
+        END DO
+      END DO
 !
-        IF (ii.eq.1) THEN
+! Get all the parent grid lon lat psi data.
+!
+      IF (spherical) THEN
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % lonp(LBi:UBi,LBj:UBj),             &
+     &                    Npts, A)
+      ELSE
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % xp(LBi:UBi,LBj:UBj),               &
+     &                    Npts, A)
+      END IF
+!
+! distribute the A (1D packed) field to all the nodes.
+!
+      CALL mpi_bcast (A, MySizer, MP_FLOAT, MyMaster,                &
+     &                OCN_COMM_WORLD, MyError)
+!
+! unpack and place in global ng=1 2D array
+!
+      ic=0
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
+          ic=ic+1
+          lonpsi_par(i,j)=A(ic)
+        END DO
+      END DO
+      IF (spherical) THEN
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % latp(LBi:UBi,LBj:UBj),             &
+     &                    Npts, A)
+      ELSE
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % yp(LBi:UBi,LBj:UBj),               &
+     &                    Npts, A)
+      END IF
+!
+! distribute the A (1D packed) field to all the nodes.
+!
+      CALL mpi_bcast (A, MySizer, MP_FLOAT, MyMaster,                &
+     &                OCN_COMM_WORLD, MyError)
+!
+! unpack and place in global ng=1 2D array
+!
+      ic=0
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
+          ic=ic+1
+          latpsi_par(i,j)=A(ic)
+        END DO
+      END DO
+!
+!  Now use hindices to get close enough for the child corners. then
+!  int these values.
+!
+      Iminc=1                    !LOWER_BOUND_I+1
+      Imaxc=Lm(ngc)+1            !GHOST_POINTS
+      Jminc=1                    !LOWER_BOUND_J+1
+      Jmaxc=Mm(ngc)+1            !GHOST_POINTS
+!
+      allocate ( Ipos(Imin:Imax,Jmin:Jmax) )
+      allocate ( Jpos(Imin:Imax,Jmin:Jmax) )
+!
+      IF (spherical) THEN
+        CALL hindices (ng, Iminc, Imaxc, Jminc, Jmaxc,                  &
+     &                 Iminc, Imaxc, Jminc, Jmaxc,                      &
+     &                 REFINED(ng)%angler_c(Iminc:Imaxc,Jminc:Jmaxc),   &
+     &                 REFINED(ng)%lonp_c(Iminc:Imaxc,Jminc:Jmaxc),     &
+     &                 REFINED(ng)%latp_c(Iminc:Imaxc,Jminc:Jmaxc),     &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 lonpsi_par, latpsi_par,                          &
+     &                 Ipos, Jpos,                                      &
+     &                 IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
+      ELSE
+        CALL hindices (ng, Iminc, Imaxc, Jminc, Jmaxc,                  &
+     &                 Iminc, Imaxc, Jminc, Jmaxc,                      &
+     &                 REFINED(ng)%angler_c(Iminc:Imaxc,Jminc:Jmaxc),   &
+     &                 REFINED(ng)%xp_c(Iminc:Imaxc,Jminc:Jmaxc),       &
+     &                 REFINED(ng)%yp_c(Iminc:Imaxc,Jminc:Jmaxc),       &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 lonpsi_par, latpsi_par,                          &
+     &                 Ipos, Jpos,                                      &
+     &                 IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
+      END IF
+!
+!  Xmin Xmax Ymin Ymax are the psi point limits of the parent grid indices.
+!  Now find the limits for the rho points on each tile.
+!  Still global.
 !
 !  Compute refined ratio for the child grids.
 !
-          CALL mpi_allreduce (OCEAN(ng)%hindcr(1), OCEAN(ng)%hindxmin,  &
-     &                        1, MPI_INTEGER, MPI_MIN, OCN_COMM_WORLD,  &
-     &                        MyError)
-          CALL mpi_allreduce (OCEAN(ng)%hindcr(2), OCEAN(ng)%hindxmax,  &
-     &                        1, MPI_INTEGER, MPI_MAX, OCN_COMM_WORLD,  &
-     &                        MyError)
-          REFINED(ngc)%ref_scale=(Ilen-7)/                              &
-                              (OCEAN(ng)%hindxmax-OCEAN(ng)%hindxmin+1)
-        END IF
+      REFINED(ngc)%ref_scale=Lm(ngc)/(Xmax-Xmin)
 !
-        deallocate ( Ipos, Jpos)
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
+          IPOS(i,j)=-9999.0_r8
+          JPOS(i,j)=-9999.0_r8
+        END DO
       END DO
-
+      DO j=Ymin,Ymax
+        DO i=Xmin,Xmax
+          IPOS(i,j)=1.0_r8+REAL((i-Xmin),r8)*REFINED(ngc)%ref_scale
+          JPOS(i,j)=1.0_r8+REAL((j-Ymin),r8)*REFINED(ngc)%ref_scale
+        END DO
+      END DO
+      offset=(REFINED(ngc)%ref_scale-1.0_r8)/2.0_r8
+!
+!  Now do local rho points.
+!
+      OCEAN(ng)%hindcr(1)= 9999
+      OCEAN(ng)%hindcr(2)=-9999
+      OCEAN(ng)%hindcr(3)= 9999
+      OCEAN(ng)%hindcr(4)=-9999
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          IF (Ipos(i,j).ge.1.0_r8) THEN
+            OCEAN(ng)%hindcr(1)=MIN(OCEAN(ng)%hindcr(1),i)
+            IF (Ipos(i,j).lt.REAL(Lm(ngc),r8)) THEN
+              OCEAN(ng)%hindcr(2)=MAX(OCEAN(ng)%hindcr(2),i)
+            END IF
+          END IF
+          IF (Jpos(i,j).ge.1.0_r8) THEN
+            OCEAN(ng)%hindcr(3)=MIN(OCEAN(ng)%hindcr(3),j)
+            IF (Jpos(i,j).lt.REAL(Mm(ngc),r8)) THEN
+              OCEAN(ng)%hindcr(4)=MAX(OCEAN(ng)%hindcr(4),j)
+            END IF
+          END IF
+        END DO
+      END DO
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          OCEAN(ng)%hindci_r(i,j)=IJspv
+          OCEAN(ng)%hindcj_r(i,j)=IJspv
+          IF (((i.ge.Xmin).and.(i.le.Xmax-1)).and.                      &
+              ((j.ge.Ymin).and.(j.le.Ymax-1)))  THEN
+                OCEAN(ng)%hindci_r(i,j)=IPOS(i,j)+offset
+                OCEAN(ng)%hindcj_r(i,j)=JPOS(i,j)+offset
+          END IF
+        END DO
+      END DO
+!
+!  Now do local u points.
+!
+      OCEAN(ng)%hindcu(1)= 9999
+      OCEAN(ng)%hindcu(2)=-9999
+      OCEAN(ng)%hindcu(3)= 9999
+      OCEAN(ng)%hindcu(4)=-9999
+      DO j=Jstr,Jend
+        DO i=Istr,Iend+1
+          IF (Ipos(i,j).gt.1.0_r8) THEN
+            OCEAN(ng)%hindcu(1)=MIN(OCEAN(ng)%hindcu(1),i)
+            IF (Ipos(i,j).lt.REAL(Lm(ngc),r8)) THEN
+              OCEAN(ng)%hindcu(2)=MAX(OCEAN(ng)%hindcu(2),i)
+            END IF
+          END IF
+          IF (Jpos(i,j).ge.1.0_r8) THEN
+            OCEAN(ng)%hindcu(3)=MIN(OCEAN(ng)%hindcu(3),j)
+            IF (Jpos(i,j).lt.REAL(Mm(ngc),r8)) THEN
+              OCEAN(ng)%hindcu(4)=MAX(OCEAN(ng)%hindcu(4),j)
+            END IF
+          END IF
+        END DO
+      END DO
+      DO j=Jstr,Jend
+        DO i=Istr,Iend+1
+          OCEAN(ng)%hindci_u(i,j)=IJspv
+          OCEAN(ng)%hindcj_u(i,j)=IJspv
+          IF (((i.ge.Xmin).and.(i.le.Xmax)).and.                      &
+              ((j.ge.Ymin).and.(j.le.Ymax-1)))  THEN
+                OCEAN(ng)%hindci_u(i,j)=IPOS(i,j)
+                OCEAN(ng)%hindcj_u(i,j)=JPOS(i,j)+offset
+          END IF
+        END DO
+      END DO
+!
+!  Now do local v points.
+!
+      OCEAN(ng)%hindcv(1)= 9999
+      OCEAN(ng)%hindcv(2)=-9999
+      OCEAN(ng)%hindcv(3)= 9999
+      OCEAN(ng)%hindcv(4)=-9999
+      DO j=Jstr,Jend+1
+        DO i=Istr,Iend
+          IF (Ipos(i,j).ge.1.0_r8) THEN
+            OCEAN(ng)%hindcv(1)=MIN(OCEAN(ng)%hindcv(1),i)
+            IF (Ipos(i,j).lt.REAL(Lm(ngc),r8)) THEN
+              OCEAN(ng)%hindcv(2)=MAX(OCEAN(ng)%hindcv(2),i)
+            END IF
+          END IF
+          IF (Jpos(i,j).gt.1.0_r8) THEN
+            OCEAN(ng)%hindcv(3)=MIN(OCEAN(ng)%hindcv(3),j)
+            IF (Jpos(i,j).lt.REAL(Mm(ngc),r8)) THEN
+              OCEAN(ng)%hindcv(4)=MAX(OCEAN(ng)%hindcv(4),j)
+            END IF
+          END IF
+        END DO
+      END DO
+      DO j=Jstr,Jend+1
+        DO i=Istr,Iend
+          OCEAN(ng)%hindci_v(i,j)=IJspv
+          OCEAN(ng)%hindcj_v(i,j)=IJspv
+          IF (((i.ge.Xmin).and.(i.le.Xmax-1)).and.                      &
+              ((j.ge.Ymin).and.(j.le.Ymax)))  THEN
+                OCEAN(ng)%hindci_v(i,j)=IPOS(i,j)+offset
+                OCEAN(ng)%hindcj_v(i,j)=JPOS(i,j)
+          END IF
+        END DO
+      END DO
+!
+      deallocate ( Ipos, Jpos)
+      deallocate ( A, lonpsi_par, latpsi_par)
+!
       RETURN
       END SUBROUTINE init_child_hindices_tile
 #endif
