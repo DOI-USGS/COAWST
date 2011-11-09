@@ -611,12 +611,18 @@
 !  Exchange boundary information.
 !-----------------------------------------------------------------------
 !
+#   ifdef SOLVE3D
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        COUPLING(ng)%Zt_avg1(:,:))
+#   else
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(ng)%zeta(:,:,1))
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(ng)%zeta(:,:,2))
+#   endif
       CALL exchange_u2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(ng)%ubar(:,:,1))
@@ -629,18 +635,20 @@
       CALL exchange_v2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(ng)%vbar(:,:,2))
-#   ifdef SOLVE3D
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        COUPLING(ng)%Zt_avg1(:,:))
-#   endif
 #  endif
 #  ifdef DISTRIBUTE
+#   ifdef SOLVE3D
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    COUPLING(ng)%Zt_avg1(:,:))
+#   else
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    OCEAN(ng)%zeta(:,:,1),                        &
      &                    OCEAN(ng)%zeta(:,:,2))
+#   endif
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
@@ -651,12 +659,6 @@
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    OCEAN(ng)%vbar(:,:,1),                        &
      &                    OCEAN(ng)%vbar(:,:,2))
-#   ifdef SOLVE3D
-      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    COUPLING(ng)%Zt_avg1(:,:))
-#   endif
 #  endif
 !
 # ifdef PROFILE

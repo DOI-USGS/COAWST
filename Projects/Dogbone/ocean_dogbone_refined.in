@@ -97,7 +97,7 @@
         NRST == 1000  3000
         NSTA == 1     1
         NFLT == 1     1
-       NINFO == 10   10
+       NINFO == 10    30
 
 ! Output history, average, diagnostic files parameters.
 

@@ -39,8 +39,8 @@
 # define ANA_BSFLUX
 # define ANA_SPFLUX
 # define ANA_BPFLUX
-# define TS_C2HADVECTION
-# undef  TS_U3HADVECTION
+# undef  TS_C2HADVECTION
+# define TS_U3HADVECTION
 # undef  TS_MPDATA
 # define GLS_MIXING
 # if defined GLS_MIXING

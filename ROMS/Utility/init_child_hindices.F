@@ -700,9 +700,11 @@
      &                 IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
       END IF
 !
-!  Xmin Xmax Ymin Ymax are the psi point limits of the parent grid indices.
-!  Now find the limits for the rho points on each tile.
-!  Still global.
+!  Xmin Xmax Ymin Ymax are the bounding psi point limits 
+!  of the parent grid that identify the boundary of the child grid.
+!  Still working on the global parent grid (ie non-tiled).
+!  The IPOS and JPOS are values of the child indices.
+!  The XYmin maxs are the limits of the parent grid.
 !
 !  Compute refined ratio for the child grids.
 !
@@ -732,13 +734,13 @@
         DO i=Istr,Iend
           IF (Ipos(i,j).ge.1.0_r8) THEN
             OCEAN(ng)%hindcr(1)=MIN(OCEAN(ng)%hindcr(1),i)
-            IF (Ipos(i,j).lt.REAL(Lm(ngc),r8)) THEN
+            IF (Ipos(i,j).lt.REAL(Lm(ngc)+1,r8)) THEN
               OCEAN(ng)%hindcr(2)=MAX(OCEAN(ng)%hindcr(2),i)
             END IF
           END IF
           IF (Jpos(i,j).ge.1.0_r8) THEN
             OCEAN(ng)%hindcr(3)=MIN(OCEAN(ng)%hindcr(3),j)
-            IF (Jpos(i,j).lt.REAL(Mm(ngc),r8)) THEN
+            IF (Jpos(i,j).lt.REAL(Mm(ngc)+1,r8)) THEN
               OCEAN(ng)%hindcr(4)=MAX(OCEAN(ng)%hindcr(4),j)
             END IF
           END IF
@@ -763,10 +765,10 @@
       OCEAN(ng)%hindcu(3)= 9999
       OCEAN(ng)%hindcu(4)=-9999
       DO j=Jstr,Jend
-        DO i=Istr,Iend+1
+        DO i=Istr,Iend
           IF (Ipos(i,j).gt.1.0_r8) THEN
             OCEAN(ng)%hindcu(1)=MIN(OCEAN(ng)%hindcu(1),i)
-            IF (Ipos(i,j).lt.REAL(Lm(ngc),r8)) THEN
+            IF (Ipos(i,j).lt.REAL(Lm(ngc)+1,r8)) THEN
               OCEAN(ng)%hindcu(2)=MAX(OCEAN(ng)%hindcu(2),i)
             END IF
           END IF
@@ -796,7 +798,7 @@
       OCEAN(ng)%hindcv(2)=-9999
       OCEAN(ng)%hindcv(3)= 9999
       OCEAN(ng)%hindcv(4)=-9999
-      DO j=Jstr,Jend+1
+      DO j=Jstr,Jend
         DO i=Istr,Iend
           IF (Ipos(i,j).ge.1.0_r8) THEN
             OCEAN(ng)%hindcv(1)=MIN(OCEAN(ng)%hindcv(1),i)
@@ -806,7 +808,7 @@
           END IF
           IF (Jpos(i,j).gt.1.0_r8) THEN
             OCEAN(ng)%hindcv(3)=MIN(OCEAN(ng)%hindcv(3),j)
-            IF (Jpos(i,j).lt.REAL(Mm(ngc),r8)) THEN
+            IF (Jpos(i,j).lt.REAL(Mm(ngc)+1,r8)) THEN
               OCEAN(ng)%hindcv(4)=MAX(OCEAN(ng)%hindcv(4),j)
             END IF
           END IF

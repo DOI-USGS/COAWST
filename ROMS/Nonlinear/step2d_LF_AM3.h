@@ -722,7 +722,7 @@
         IstrC=IstrU
         IendC=MIN(Iend+1,Lm(ng))
       ELSE
-        IstrC=IstrU
+        IstrC=IstrU-1
         IendC=Iend+1
       END IF
 #  else
@@ -736,7 +736,7 @@
         JstrC=JstrV
         JendC=MIN(Jend+1,Mm(ng))
       ELSE
-        JstrC=JstrV
+        JstrC=JstrV-1
         JendC=Jend+1
       END IF
 #  else

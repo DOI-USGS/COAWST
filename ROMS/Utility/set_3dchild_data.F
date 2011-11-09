@@ -641,11 +641,13 @@
 !  Exchange boundary information.
 !-----------------------------------------------------------------------
 !
+#  if !defined TS_FIXED
       DO itrc=1,NT(ng)
         CALL exchange_r3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
      &                          OCEAN(ng)%t(:,:,:,nstp(ng),itrc))
       END DO
+#  endif
       CALL exchange_u3d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
      &                        OCEAN(ng)%u(:,:,:,nstp(ng)))
@@ -654,10 +656,12 @@
      &                        OCEAN(ng)%v(:,:,:,nstp(ng)))
 #  endif
 #  ifdef DISTRIBUTE
+#   if !defined TS_FIXED
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    OCEAN(ng)%t(:,:,:,nstp(ng),:))
+#   endif
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
