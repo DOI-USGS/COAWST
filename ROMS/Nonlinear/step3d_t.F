@@ -961,16 +961,18 @@
 !  Parent grid at child WESTERN EDGE
 !
               is=hindcu(1)-1
-              IF (((Istr.le.is).and.(is.le.Iend+1)).and.                &
-     &            ((Jstr.le.j).and.(j.le.Jend))) THEN
+              IF (((Istr.le.is).and.(is.le.Iend)).and.                  &
+     &            ((Jstr.le.j ).and.( j.le.Jend)).and.                  &
+     &            (NINT(hindci_u(is,j)).eq.1)) THEN
                 FXp_west(j,k,itrc)=FX(is,j)*dt(ng)
               END IF
 !
 !  Parent grid at child EASTERN EDGE
 !
               is=hindcu(2)+1
-              IF (((Istr.le.is).and.(is.le.Iend+1)).and.                &
-     &            ((Jstr.le.j).and.(j.le.Jend))) THEN
+              IF (((Istr.le.is).and.(is.le.Iend)).and.                  &
+     &            ((Jstr.le.j ).and.( j.le.Jend)).and.                  &
+     &            (NINT(hindci_u(is,j)).eq.(Lm(ngc)+1))) THEN
                 FXp_east(j,k,itrc)=FX(is,j)*dt(ng)
               END IF
             END DO
@@ -984,16 +986,18 @@
 !  Parent grid at child SOUTHERN EDGE
 !
               js=hindcv(3)-1
-              IF (((Istr.le.i).and.(i.le.Iend)).and.                    &
-     &            ((Jstr.le.js).and.(js.le.Jend+1))) THEN
+              IF (((Istr.le.i ).and.( i.le.Iend)).and.                  &
+     &            ((Jstr.le.js).and.(js.le.Jend)).and.                  &
+     &            (NINT(hindcj_v(i,js)).eq.1)) THEN
                 FEp_south(i,k,itrc)=FE(i,js)*dt(ng)
               END IF
 !
 !  Parent grid at child NORTHERN EDGE
 !
               js=hindcv(4)+1
-              IF (((Istr.le.i).and.(i.le.Iend)).and.                    &
-     &            ((Jstr.le.js).and.(js.le.Jend+1))) THEN
+              IF (((Istr.le.i ).and.( i.le.Iend)).and.                  &
+     &            ((Jstr.le.js).and.(js.le.Jend)).and.                  &
+     &            (NINT(hindcj_v(i,js)).eq.(Mm(ngc)+1))) THEN
                 FEp_north(i,k,itrc)=FE(i,js)*dt(ng)
               END IF
             END DO

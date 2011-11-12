@@ -496,7 +496,8 @@
 !
           is=hindcu(1)-1
           IF (((Istr.le.is-1).and.(is-1.le.Iend)).and.                  &
-     &        ((Jstr.le.j).and.(j.le.Jend))) THEN
+     &        ((Jstr.le.j).and.(j.le.Jend)).and.                        &
+     &        (NINT(hindci_u(is,j)).eq.1)) THEN
 !
 !    compute vertical sum of parent flux from last time step.
 !
@@ -538,7 +539,8 @@
 !
           is=hindcu(2)+1
           IF (((Istr.le.is).and.(is.le.Iend)).and.                      &
-     &        ((Jstr.le.j).and.(j.le.Jend))) THEN
+     &        ((Jstr.le.j).and.(j.le.Jend)).and.                        &
+     &        (NINT(hindci_u(is,j)).eq.(Lm(ngc)+1))) THEN
 !
 !    compute vertical sum of parent flux from last time.
 !
@@ -587,7 +589,8 @@
 !
           js=hindcv(3)-1
           IF (((Istr.le.i).and.(i.le.Iend)).and.                        &
-     &        ((Jstr.le.js-1).and.(js-1.le.Jend))) THEN
+     &        ((Jstr.le.js-1).and.(js-1.le.Jend)).and.                  &
+     &        (NINT(hindcj_v(i,js)).eq.1)) THEN
 !
 !    compute vertical sum of parent flux from last time.
 !
@@ -629,7 +632,8 @@
 !
           js=hindcv(4)+1
           IF (((Istr.le.i).and.(i.le.Iend)).and.                        &
-     &        ((Jstr.le.js).and.(js.le.Jend))) THEN
+     &        ((Jstr.le.js).and.(js.le.Jend)).and.                      &
+     &        (NINT(hindcj_v(i,js)).eq.(Mm(ngc)+1))) THEN
 !
 !    compute vertical sum of parent flux from last time.
 !

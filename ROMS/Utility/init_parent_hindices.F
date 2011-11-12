@@ -88,7 +88,7 @@
       integer :: Npts
       integer :: Iminp, Imaxp, Jminp, Jmaxp
 
-      real(r8) :: IJspv, my_min, my_max, offset
+      real(r8) :: IJspv, my_min, my_max, offset, scale
       integer :: Xmin, Xmax, Ymin, Ymax, MyError, MySizer
 
       logical :: rectangular
@@ -562,10 +562,10 @@
         Imax=Lm(ng)+1
         Jmin=0
         Jmax=Mm(ng)+1
-        IF ((ABS(MyType).eq.p2dvar).or.(ABS(MyType).eq.u2dvar)) THEN
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.u2dvar)) THEN
           Imin=1
         END IF
-        IF ((ABS(MyType).eq.p2dvar).or.(ABS(MyType).eq.v2dvar)) THEN
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.v2dvar)) THEN
           Jmin=1
         END IF
       ELSE
@@ -573,10 +573,10 @@
         Imax=Lm(ng)+GHOST_POINTS
         Jmin=LOWER_BOUND_J
         Jmax=Mm(ng)+GHOST_POINTS
-        IF ((ABS(MyType).eq.p2dvar).or.(ABS(MyType).eq.u2dvar)) THEN
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.u2dvar)) THEN
           Imin=LOWER_BOUND_I+1
         END IF
-        IF ((ABS(MyType).eq.p2dvar).or.(ABS(MyType).eq.v2dvar)) THEN
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.v2dvar)) THEN
           Jmin=LOWER_BOUND_J+1
         END IF
       END IF
@@ -683,7 +683,7 @@
      &                 REFINED(ng)%lonp_p(Iminp:Imaxp,Jminp:Jmaxp),     &
      &                 REFINED(ng)%latp_p(Iminp:Imaxp,Jminp:Jmaxp),     &
      &                 Imin, Imax, Jmin, Jmax,                          &
-     &                 1, Lm(ng), 1, Mm(ng),                            &
+     &                 1, Lm(ng)+1, 1, Mm(ng)+1,                        &
      &                 lonpsi_cld, latpsi_cld,                          &
      &                 Ipos(Imin:Imax,Jmin:Jmax),                       &
      &                 Jpos(Imin:Imax,Jmin:Jmax),                       &
@@ -709,16 +709,20 @@
 !  USe refined ratio for this child grid, computed in init_child_hind.
 !
       offset=1.0_r8/REFINED(ng)%ref_scale
-      Imin=IPOS(1,1)
-      Imax=IPOS(Lm(ng)+1,1)
-      Jmin=JPOS(1,1)
-      Jmax=JPOS(1,Mm(ng)+1)
+      scale=(REFINED(ng)%ref_scale-1.0_r8)/2.0_r8
+      Imin=NINT(IPOS(1,1))
+      Imax=NINT(IPOS(Lm(ng)+1,1))
+      Jmin=NINT(JPOS(1,1))
+      Jmax=NINT(JPOS(1,Mm(ng)+1))
+
+!
+! Global (full grid). for entire child grid at psi points.
 !
       DO j=Ymin-4,Ymax+3
         DO i=Xmin-4,Xmax+3
-          IPOS(i,j)=Imin-offset*4.0_r8+REAL((i-(Xmin-4)),r8)*           &
+          IPOS(i,j)=REAL(Imin,r8)-offset*4.0_r8+REAL((i-(Xmin-4)),r8)*  &
      &              offset
-          JPOS(i,j)=Jmin-offset*4.0_r8+REAL((j-(Ymin-4)),r8)*           &
+          JPOS(i,j)=REAL(Jmin,r8)-offset*4.0_r8+REAL((j-(Ymin-4)),r8)*  &
      &              offset
         END DO
       END DO
@@ -727,8 +731,8 @@
 !
       DO j=LBj,UBj
         DO i=LBi,UBi
-          OCEAN(ng)%hindpi_r(i,j)=IPOS(i,j)-offset
-          OCEAN(ng)%hindpj_r(i,j)=JPOS(i,j)-offset
+          OCEAN(ng)%hindpi_r(i,j)=IPOS(i,j)-scale*offset
+          OCEAN(ng)%hindpj_r(i,j)=JPOS(i,j)-scale*offset
         END DO
       END DO
 !
@@ -737,7 +741,7 @@
       DO j=LBj,UBj
         DO i=LBi,UBi
           OCEAN(ng)%hindpi_u(i,j)=IPOS(i,j)
-          OCEAN(ng)%hindpj_u(i,j)=JPOS(i,j)-offset
+          OCEAN(ng)%hindpj_u(i,j)=JPOS(i,j)-scale*offset
         END DO
       END DO
 !
@@ -745,7 +749,7 @@
 !
       DO j=LBj,UBj
         DO i=LBi,UBi
-          OCEAN(ng)%hindpi_v(i,j)=IPOS(i,j)-offset
+          OCEAN(ng)%hindpi_v(i,j)=IPOS(i,j)-scale*offset
           OCEAN(ng)%hindpj_v(i,j)=JPOS(i,j)
         END DO
       END DO

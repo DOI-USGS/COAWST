@@ -844,67 +844,6 @@
 #  endif
           END DO 
         END IF
-        IF (SOUTHERN_EDGE) THEN
-!
-!  Southern edge, Chapman boundary condition.
-!
-          DO i=IstrU,Iend
-            cff=dt2d*0.5_r8*(GRID(ng)%pn(i-1,Jstr)+                     &
-     &                       GRID(ng)%pn(i  ,Jstr))
-            cff1=SQRT(g*0.5_r8*(GRID(ng)%h(i-1,Jstr)+                   &
-     &                          zeta(i-1,Jstr,know)+                    &
-     &                          GRID(ng)%h(i  ,Jstr)+                   &
-     &                          zeta(i  ,Jstr,know)))
-            Ce=cff*cff1
-            cff2=1.0_r8/(1.0_r8+Ce)
-            ubar(i,Jstr-1,kout)=cff2*(ubar(i,Jstr-1,know)+              &
-     &                                Ce*ubar(i,Jstr,kout))
-#  ifdef MASKING
-            ubar(i,Jstr-1,kout)=ubar(i,Jstr-1,kout)*                    &
-     &                          GRID(ng)%umask(i,Jstr-1)
-#  endif
-          END DO
-        END IF
-        IF (NORTHERN_EDGE) THEN
-!
-!  Northern edge, Chapman boundary condition.
-!
-          DO i=IstrU,Iend
-            cff=dt2d*0.5_r8*(GRID(ng)%pn(i-1,Jend)+                     &
-     &                       GRID(ng)%pn(i  ,Jend))
-            cff1=SQRT(g*0.5_r8*(GRID(ng)%h(i-1,Jend)+                   &
-     &                          zeta(i-1,Jend,know)+                    &
-     &                          GRID(ng)%h(i  ,Jend)+                   &
-     &                          zeta(i  ,Jend,know)))
-            Ce=cff*cff1
-            cff2=1.0_r8/(1.0_r8+Ce)
-            ubar(i,Jend+1,kout)=cff2*(ubar(i,Jend+1,know)+              &
-     &                                Ce*ubar(i,Jend,kout))
-#  ifdef MASKING
-            ubar(i,Jend+1,kout)=ubar(i,Jend+1,kout)*                    &
-     &                          GRID(ng)%umask(i,Jend+1)
-#  endif
-          END DO
-        END IF
-!
-! Corners
-!
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          ubar(Istr,Jstr-1,kout)=0.5_r8*(ubar(Istr+1,Jstr-1,kout)+      &
-     &                                   ubar(Istr  ,Jstr  ,kout))
-        END IF
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          ubar(Iend+1,Jstr-1,kout)=0.5_r8*(ubar(Iend  ,Jstr-1,kout)+    &
-     &                                     ubar(Iend+1,Jstr  ,kout))
-        END IF
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          ubar(Istr,Jend+1,kout)=0.5_r8*(ubar(Istr  ,Jend  ,kout)+      &
-     &                                   ubar(Istr+1,Jend+1,kout))
-        END IF
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          ubar(Iend+1,Jend+1,kout)=0.5_r8*(ubar(Iend+1,Jend  ,kout)+    &
-     &                                     ubar(Iend  ,Jend+1,kout))
-        END IF
       END IF
 #endif
 !

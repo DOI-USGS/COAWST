@@ -562,10 +562,10 @@
         Imax=Lm(ng)+1
         Jmin=0
         Jmax=Mm(ng)+1
-        IF ((ABS(MyType).eq.p2dvar).or.(ABS(MyType).eq.u2dvar)) THEN
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.u2dvar)) THEN
           Imin=1
         END IF
-        IF ((ABS(MyType).eq.p2dvar).or.(ABS(MyType).eq.v2dvar)) THEN
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.v2dvar)) THEN
           Jmin=1
         END IF
       ELSE
@@ -573,10 +573,10 @@
         Imax=Lm(ng)+GHOST_POINTS
         Jmin=LOWER_BOUND_J
         Jmax=Mm(ng)+GHOST_POINTS
-        IF ((ABS(MyType).eq.p2dvar).or.(ABS(MyType).eq.u2dvar)) THEN
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.u2dvar)) THEN
           Imin=LOWER_BOUND_I+1
         END IF
-        IF ((ABS(MyType).eq.p2dvar).or.(ABS(MyType).eq.v2dvar)) THEN
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.v2dvar)) THEN
           Jmin=LOWER_BOUND_J+1
         END IF
       END IF

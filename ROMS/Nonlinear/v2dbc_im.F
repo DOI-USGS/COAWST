@@ -847,69 +847,6 @@
 #  endif
           END DO
         END IF
-        IF (WESTERN_EDGE) THEN
-!
-!  Western edge, Chapman boundary condition.
-!
-          DO j=JstrV,Jend
-            cff=dt2d*0.5_r8*(GRID(ng)%pm(Istr,j-1)+                     &
-     &                       GRID(ng)%pm(Istr,j  ))
-            cff1=SQRT(g*0.5_r8*(GRID(ng)%h(Istr,j-1)+                   &
-     &                          zeta(Istr,j-1,know)+                    &
-     &                          GRID(ng)%h(Istr,j  )+                   &
-     &                          zeta(Istr,j  ,know)))
-            Cx=cff*cff1
-            cff2=1.0_r8/(1.0_r8+Cx)
-            vbar(Istr-1,j,kout)=cff2*(vbar(Istr-1,j,know)+              &
-     &                                Cx*vbar(Istr,j,kout))
-#  ifdef MASKING
-            vbar(Istr-1,j,kout)=vbar(Istr-1,j,kout)*                    &
-     &                          GRID(ng)%vmask(Istr-1,j)
-#  endif
-          END DO
-        END IF
-        IF (EASTERN_EDGE) THEN
-!
-!  Eastern edge, Chapman boundary condition.
-!
-          DO j=JstrV,Jend
-            cff=dt2d*0.5_r8*(GRID(ng)%pm(Iend,j-1)+                     &
-     &                       GRID(ng)%pm(Iend,j  ))
-            cff1=SQRT(g*0.5_r8*(GRID(ng)%h(Iend,j-1)+                   &
-     &                          zeta(Iend,j-1,know)+                    &
-     &                          GRID(ng)%h(Iend,j  )+                   &
-     &                          zeta(Iend,j  ,know)))
-            Cx=cff*cff1
-            cff2=1.0_r8/(1.0_r8+Cx)
-            vbar(Iend+1,j,kout)=cff2*(vbar(Iend+1,j,know)+              &
-     &                                Cx*vbar(Iend,j,kout))
-#  ifdef MASKING
-            vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*                    &
-     &                          GRID(ng)%vmask(Iend+1,j)
-#  endif
-          END DO
-        END IF
-!
-!-----------------------------------------------------------------------
-!  Boundary corners.
-!-----------------------------------------------------------------------
-!
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          vbar(Istr-1,Jstr,kout)=0.5_r8*(vbar(Istr  ,Jstr  ,kout)+      &
-     &                                   vbar(Istr-1,Jstr+1,kout))
-        END IF
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          vbar(Iend+1,Jstr,kout)=0.5_r8*(vbar(Iend  ,Jstr  ,kout)+      &
-     &                                   vbar(Iend+1,Jstr+1,kout))
-        END IF
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          vbar(Istr-1,Jend+1,kout)=0.5_r8*(vbar(Istr-1,Jend  ,kout)+    &
-     &                                     vbar(Istr  ,Jend+1,kout))
-        END IF
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          vbar(Iend+1,Jend+1,kout)=0.5_r8*(vbar(Iend+1,Jend  ,kout)+    &
-     &                                     vbar(Iend  ,Jend+1,kout))
-        END IF
       END IF
 #endif
 
