@@ -646,6 +646,10 @@
 # ifdef DIAGNOSTICS_UV
       integer :: idiag
 # endif
+# if defined UV_VIS4 && defined REFINED_GRID
+	  integer :: IstrVC, IendVC, IstrUC, IendUC
+      integer :: JstrUC, JendUC, JstrVC, JendVC
+# endif
 
       real(r8) :: cff, cff1, cff2, cff3, cff4
       real(r8) :: cff5, cff6, cff7, cff8

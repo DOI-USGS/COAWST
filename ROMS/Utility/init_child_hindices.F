@@ -718,11 +718,11 @@
       END DO
       DO j=Ymin,Ymax
         DO i=Xmin,Xmax
-          IPOS(i,j)=1.0_r8+REAL((i-Xmin),r8)*REFINED(ngc)%ref_scale
-          JPOS(i,j)=1.0_r8+REAL((j-Ymin),r8)*REFINED(ngc)%ref_scale
+          IPOS(i,j)=1.0_r8+REAL((i-Xmin)*REFINED(ngc)%ref_scale,r8)
+          JPOS(i,j)=1.0_r8+REAL((j-Ymin)*REFINED(ngc)%ref_scale,r8)
         END DO
       END DO
-      offset=(REFINED(ngc)%ref_scale-1.0_r8)/2.0_r8
+      offset=(REAL(REFINED(ngc)%ref_scale,r8)-1.0_r8)/2.0_r8
 !
 !  Now do local rho points.
 !

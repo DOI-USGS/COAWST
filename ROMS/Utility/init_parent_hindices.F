@@ -708,8 +708,9 @@
 !
 !  USe refined ratio for this child grid, computed in init_child_hind.
 !
-      offset=1.0_r8/REFINED(ng)%ref_scale
-      scale=(REFINED(ng)%ref_scale-1.0_r8)/2.0_r8
+
+      offset=1.0_r8/REAL(REFINED(ng)%ref_scale,r8)
+      scale=(REAL(REFINED(ng)%ref_scale,r8)-1.0_r8)/2.0_r8
       Imin=NINT(IPOS(1,1))
       Imax=NINT(IPOS(Lm(ng)+1,1))
       Jmin=NINT(JPOS(1,1))

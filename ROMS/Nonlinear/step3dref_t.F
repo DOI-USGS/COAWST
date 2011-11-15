@@ -1,5 +1,6 @@
 #include "cppdefs.h"
 #undef REF_DIFFUSION
+#undef REF_FLUX_FILTER
       MODULE step3dref_t_mod
 #if !defined TS_FIXED && (defined NONLINEAR && defined SOLVE3D) && \
      defined REFINED_GRID
@@ -28,6 +29,9 @@
 !***********************************************************************
 !
       USE mod_param
+# ifdef CLIMATOLOGY
+      USE mod_clima
+# endif
 # ifdef DIAGNOSTICS_TS
       USE mod_diags
 # endif
@@ -61,6 +65,10 @@
      &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    nrhs(ng), nstp(ng), nnew(ng),                 &
      &                    REFINED(ngc) % ref_scale,                     &
+# if defined TCLM_NUDGING && defined TCLIMATOLOGY
+     &                    CLIMA(ng) % Tnudgcof,                         &
+     &                    CLIMA(ng) % tclm,                             &
+# endif
 # ifdef MASKING
      &                    GRID(ng) % rmask,                             &
 # endif
@@ -94,6 +102,9 @@
      &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nrhs, nstp, nnew,                       &
      &                          ref_scale,                              &
+# if defined TCLM_NUDGING && defined TCLIMATOLOGY
+     &                          Tnudgcof, tclm,                         &
+# endif
 # ifdef MASKING
      &                          rmask,                                  &
 # endif
@@ -136,6 +147,10 @@
       integer, intent(in) :: ref_scale
 !
 # ifdef ASSUMED_SHAPE
+#  if defined TCLM_NUDGING && defined TCLIMATOLOGY
+      real(r8), intent(in) :: Tnudgcof(LBi:,LBj:,:)
+      real(r8), intent(in) :: tclm(LBi:,LBj:,:,:)
+#  endif
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
 #  endif
@@ -173,6 +188,10 @@
 
 # else
 
+#  if defined TCLM_NUDGING && defined TCLIMATOLOGY
+      real(r8), intent(in) :: Tnudgcof(LBi:UBi,LBj:UBj,NT(ng))
+      real(r8), intent(in) :: tclm(LBi:UBi,LBj:UBj,N(ng),NT(ng))
+#  endif
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
 #  endif
@@ -316,6 +335,30 @@
         DO is=1,Npts
           FXc_west_all(is)=fx_exch(is)
         END DO
+# ifdef REF_FLUX_FILTER
+!
+!  Introduce some spatial averaging.
+!
+        ref=(ref_scale-1)/2
+        cff1=0.0_r8
+        DO is=1,Npts
+          cff1=cff1+FXc_west_all(is)
+        END DO
+        DO is=1+ref,Npts-ref
+          cff=0.0_r8
+          DO k=-ref,ref
+            cff=cff+FXc_west_all(is+k)
+          END DO
+          fx_exch(is)=cff/REAL(ref_scale,r8)
+        END DO
+        cff=0.0_r8
+        DO is=1,Npts
+          cff=cff+fx_exch(is)
+        END DO
+        DO is=1,Npts
+          FXc_west_all(is)=fx_exch(is)*cff1/cff
+        END DO
+# endif
         deallocate (fx_exch)
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -369,6 +412,30 @@
         DO is=1,Npts
           FXc_east_all(is)=fx_exch(is)
         END DO
+# ifdef REF_FLUX_FILTER
+!
+!  Introduce some spatial averaging.
+!
+        ref=(ref_scale-1)/2
+        cff1=0.0_r8
+        DO is=1,Npts
+          cff1=cff1+FXc_east_all(is)
+        END DO
+        DO is=1+ref,Npts-ref
+          cff=0.0_r8
+          DO k=-ref,ref
+            cff=cff+FXc_east_all(is+k)
+          END DO
+          fx_exch(is)=cff/REAL(ref_scale,r8)
+        END DO
+        cff=0.0_r8
+        DO is=1,Npts
+          cff=cff+fx_exch(is)
+        END DO
+        DO is=1,Npts
+          FXc_east_all(is)=fx_exch(is)*cff1/cff
+        END DO
+# endif
         deallocate (fx_exch)
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -422,6 +489,30 @@
         DO is=1,Npts
           FEc_south_all(is)=fx_exch(is)
         END DO
+# ifdef REF_FLUX_FILTER
+!
+!  Introduce some spatial averaging.
+!
+        ref=(ref_scale-1)/2
+        cff1=0.0_r8
+        DO is=1,Npts
+          cff1=cff1+FEc_south_all(is)
+        END DO
+        DO is=1+ref,Npts-ref
+          cff=0.0_r8
+          DO k=-ref,ref
+            cff=cff+FEc_south_all(is+k)
+          END DO
+          fx_exch(is)=cff/REAL(ref_scale,r8)
+        END DO
+        cff=0.0_r8
+        DO is=1,Npts
+          cff=cff+fx_exch(is)
+        END DO
+        DO is=1,Npts
+          FEc_south_all(is)=fx_exch(is)*cff1/cff
+        END DO
+# endif
         deallocate (fx_exch)
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -475,6 +566,30 @@
         DO is=1,Npts
           FEc_north_all(is)=fx_exch(is)
         END DO
+# ifdef REF_FLUX_FILTER
+!
+!  Introduce some spatial averaging.
+!
+        ref=(ref_scale-1)/2
+        cff1=0.0_r8
+        DO is=1,Npts
+          cff1=cff1+FEc_north_all(is)
+        END DO
+        DO is=1+ref,Npts-ref
+          cff=0.0_r8
+          DO k=-ref,ref
+            cff=cff+FEc_north_all(is+k)
+          END DO
+          fx_exch(is)=cff/REAL(ref_scale,r8)
+        END DO
+        cff=0.0_r8
+        DO is=1,Npts
+          cff=cff+fx_exch(is)
+        END DO
+        DO is=1,Npts
+          FEc_north_all(is)=fx_exch(is)*cff1/cff
+        END DO
+# endif
         deallocate (fx_exch)
 !
 !   END OF MPI GATHER NOTE
@@ -527,6 +642,15 @@
 # else
               t(is-1,j,k,nstp,itrc)=t(is-1,j,k,nstp,itrc)-              &
      &                              cff2*cff*oHz(is-1,j,k)
+#  if defined TCLM_NUDGING && defined TCLIMATOLOGY
+!
+!  Nudge towards tracer climatology.
+!
+              t(is-1,j,k,nstp,itrc)=t(is-1,j,k,nstp,itrc)+              &
+     &                              dt(ng)*Tnudgcof(i,j,itrc)*          &
+     &                              (tclm(i,j,k,itrc)-                  &
+     &                               t(is-1,j,k,nstp,itrc))
+#  endif
 # endif
 # ifdef MASKING
               t(is-1,j,k,nstp,itrc)=t(is-1,j,k,nstp,itrc)*              &
@@ -570,6 +694,15 @@
 # else
               t(is,j,k,nstp,itrc)=t(is,j,k,nstp,itrc)+                  &
      &                            cff2*cff*oHz(is,j,k)
+#  if defined TCLM_NUDGING && defined TCLIMATOLOGY
+!
+!  Nudge towards tracer climatology.
+!
+              t(is,j,k,nstp,itrc)=t(is,j,k,nstp,itrc)+                  &
+     &                              dt(ng)*Tnudgcof(i,j,itrc)*          &
+     &                              (tclm(i,j,k,itrc)-                  &
+     &                               t(is,j,k,nstp,itrc))
+#  endif
 # endif
 # ifdef MASKING
               t(is,j,k,nstp,itrc)=t(is,j,k,nstp,itrc)*                  &
@@ -620,6 +753,15 @@
 # else
               t(i,js-1,k,nstp,itrc)=t(i,js-1,k,nstp,itrc)-              &
      &                              cff2*cff*oHz(i,js-1,k)
+#  if defined TCLM_NUDGING && defined TCLIMATOLOGY
+!
+!  Nudge towards tracer climatology.
+!
+              t(i,js-1,k,nstp,itrc)=t(i,js-1,k,nstp,itrc)+              &
+     &                              dt(ng)*Tnudgcof(i,j,itrc)*          &
+     &                              (tclm(i,j,k,itrc)-                  &
+     &                               t(i,js-1,k,nstp,itrc))
+#  endif
 # endif
 # ifdef MASKING
               t(i,js-1,k,nstp,itrc)=t(i,js-1,k,nstp,itrc)*              &
@@ -663,6 +805,15 @@
 # else
               t(i,js,k,nstp,itrc)=t(i,js,k,nstp,itrc)+                  &
      &                            cff2*cff*oHz(i,js,k)
+#  if defined TCLM_NUDGING && defined TCLIMATOLOGY
+!
+!  Nudge towards tracer climatology.
+!
+              t(i,js,k,nstp,itrc)=t(i,js,k,nstp,itrc)+                  &
+     &                              dt(ng)*Tnudgcof(i,j,itrc)*          &
+     &                              (tclm(i,j,k,itrc)-                  &
+     &                               t(i,js,k,nstp,itrc))
+#  endif
 # endif
 # ifdef MASKING
               t(i,js,k,nstp,itrc)=t(i,js,k,nstp,itrc)*                  &
