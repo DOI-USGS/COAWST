@@ -61,7 +61,7 @@
 # define WRF_MODEL
 # define SWAN_MODEL
 # define COARE_TAYLOR_YELLAND
-# define WEC_VF
+# undef  WEC_VF
 # define SSW_BBL
 #endif
 
@@ -69,7 +69,7 @@
 # define WRF_MODEL
 # define SWAN_MODEL
 # define COARE_TAYLOR_YELLAND
-# define WEC_VF
+# undef  WEC_VF
 # define SSW_BBL
 #endif
 
