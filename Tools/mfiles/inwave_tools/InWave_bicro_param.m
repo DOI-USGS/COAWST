@@ -18,24 +18,24 @@ make_InWave_bnd=1;
 %%%%%        GENERAL PARAMETERS: THESE NEED TO BE DEFINED ALWAYS       %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Lm= 61;                % number of total rho points in the xi direction
-Mm= 20;                % number of total rho points in the eta direction
-TA= 10;                % representative absolute wave period (sec)
+Lm= 180;               % number of total rho points in the xi direction
+Mm= 18;                % number of total rho points in the eta direction
+% TA= 10;                % representative absolute wave period (sec)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%                GRID AND BATHYMETRY DEFINITION                   %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-filepath='..\..\..\Projects\Inwave_tests\soliton\south\';
+filepath='..\..\..\Projects\Inwave_tests\bicro\';
 
 if (make_InWave_grd)
     
   grd_file=strcat(filepath,'InWave_grd.nc');  % name of the grid file
-  
+    
   % Grid characteristics
 
-  dx=100;                % grid cell size in xi direction
-  dy=100;                % grid cell size in eta direction 
+  dx=0.1;                % grid cell size in xi direction
+  dy=0.05;                % grid cell size in eta direction 
 
   % enter x and y coordinates of rho points
 
@@ -46,17 +46,30 @@ if (make_InWave_grd)
   y=repmat(y',1,length(x));
 
   % Bathymetry characteristics
-  depth0= 15;            % water depth in the study domain (m)
+  depth0= 0.8;            % water depth in the study domain (m)
+  angle= 0.1;
 
   % set depth 
   depth=zeros(size(x))+depth0;
+  %depth=depth0-x.*angle;
+
+  for ii=57:Lm
+      depth(:,ii)=0.8-(ii-57)*dx*angle;
+  end
+  
+  pcolor(depth)
+  shading flat
+  colorbar 'vertical'
 
   % set grid angle
   roms_angle=zeros(size(depth));
 
   % set masking
   mask_rho=ones(size(depth));
-
+  dum=find(depth<-0.1);
+%   depth(dum)=-2;
+  mask_rho(dum)=0;
+  
   % set coriolis f
   f=zeros(size(depth))+4.988e-5; %20N
 
@@ -97,13 +110,13 @@ if (make_InWave_bnd)
 
   % Duration of the simulation and time increment for the boundaries
   
-  dt= 10;                % time increment for the boundaries (seconds)
-  drtn= 3600*3;          % total duration of the simulation (seconds)
+  dt= 1.000;              % time increment for the boundaries (seconds)
+  drtn= 3600;            % total duration of the simulation (seconds)
 
   time=[0:dt:drtn];
   
   % Specify by 1 the open boundary: S E N W
-  obc=[1 0 0 0];
+  obc=[0 0 0 1];
 
 %    Nbins_bnd= 20;         % number of directional bins with energy at the boundaries
 %    dir_bnd= Bindirs;      % center angle (degrees of the bin containing energy at the boudaries
@@ -112,7 +125,7 @@ if (make_InWave_bnd)
  % least 2)
  
   Nbins_bnd= 1;         % number of directional bins with energy at the boundaries
-  dir_bnd=  180;         % center angle (degrees of the bin containing energy at the boudaries)
+  dir_bnd= 270;         % center angle (degrees of the bin containing energy at the boudaries)
 
   if sum(ismember(dir_bnd,Bindirs)) ~= Nbins_bnd; 
   bin_error=1;
@@ -120,46 +133,57 @@ if (make_InWave_bnd)
   bin_error=0;
   end      
 
-  if obc(3)==1
+  if obc(1)==1
     Ac_north=zeros(length(time),Nbins_bnd,Lm);
-    Ac_north(6:6*10,1,:)=100;
-    for i=1:Lm
-    Ac_north(:,1,i)=100.*(sech(2*3.14159/6000*(-9.65*(time(:)-500)))).^2;
-    end
   end
   if obc(2)==1
     Ac_east=zeros(length(time),Nbins_bnd,Mm);
-    Ac_east(6:6*10,1,:)=100;   
-    for i=1:Mm
-    Ac_east(:,1,i)=100.*(sech(2*3.14159/6000*(-9.65*(time(:)-500)))).^2;
-    end  
   end
-  if obc(1)==1
+  if obc(3)==1
     Ac_south=zeros(length(time),Nbins_bnd,Lm);
-    Ac_south(6:6*10,1,:)=100;
-    for i=1:Lm
-    Ac_south(:,1,i)=100.*(sech(2*3.14159/6000*(-9.65*(time(:)-500)))).^2;
-    end
   end
   if obc(4)==1
     Ac_west=zeros(length(time),Nbins_bnd,Mm);
-    Ac_west(6:6*10,1,:)=100;   
+   % Ac_west(6:6*10,1,:)=100;
+   
+a1=0.025;
+a2=0.025;
+f1=1.025;
+T1=1./f1;
+f2=0.928;
+T2=1./f2;
+Tm=(T1+T2)./2;
+TA=Tm;
+
+eta=a1*cos(2*pi*f1*time)+a2*cos(2*pi*f2*time);
+
+en=hilbert(eta);
+
+E=1/8*1025*9.81*(2.*abs(hilbert(eta))).^2;
+Ac1=E./Tm;
+
+% plot(time,Ac1)
+% hold on
+plot(time,2.*abs(hilbert(eta)),'g')
+
+    
     for i=1:Mm
-    Ac_west(:,1,i)=100.*(sech(2*3.14159/6000*(-9.65*(time(:)-500)))).^2;
-    end    
+    Ac_west(:,1,i)=Ac1(:);
+    end
+    
   end
 
   if obc(1)==1
-    TA_south=TA;
+    TA_west=TA;
   end
   if obc(2)==1
     TA_east=TA;
   end
   if obc(3)==1
-    TA_north=TA;
+    TA_south=TA;
   end
   if obc(4)==1
-    TA_west=TA;
+    TA_north=TA;
   end
 
 end

@@ -1,4 +1,4 @@
-function create_inwave_ini(Lp,Mp,Nbins,Bindir,pd,Ac,Cx,Cy,Ct,TA,inifile)
+function create_inwave_ini(Lp,Mp,Nbins,Bindir,Bindir_c,pd,Ac,Cx,Cy,Ct,TA,inifile)
 
 disp(' ')
 disp(['## Creating the file : ',inifile])
@@ -28,6 +28,7 @@ nc('eta_v') = M;
 nc('eta_rho') = Mp;
 nc('energy_time') = length(initime);
 nc('energy_angle') = Nbins;
+nc('energy_angle_c') = Nbins+1;
 nc('TA_dim') = 1;
 
 %
@@ -45,6 +46,12 @@ nc{'energy_angle'}.long_name = ncchar('direction respect to the north of the bin
 nc{'energy_angle'}.long_name = 'direction respect to the north of the bin';
 nc{'energy_angle'}.units = ncchar('degrees');
 nc{'energy_angle'}.units = 'degrees';
+
+nc{'energy_angle_c'} = ncdouble('energy_angle_c') ;
+nc{'energy_angle_c'}.long_name = ncchar('direction respect to the north of the bin');
+nc{'energy_angle_c'}.long_name = 'direction respect to the north of the bin';
+nc{'energy_angle_c'}.units = ncchar('degrees');
+nc{'energy_angle_c'}.units = 'degrees';
 
 nc{'TA_dim'} = ncdouble('TA_dim') ;
 nc{'TA_dim'}.long_name = ncchar('representative absolute peak period');
@@ -70,7 +77,7 @@ nc{'cy'}.long_name = 'y component of the group celerity';
 nc{'cy'}.units = ncchar('m/s');
 nc{'cy'}.units = 'm/s';
 
-nc{'ct'} = ncdouble('energy_angle','eta_rho','xi_rho') ;
+nc{'ct'} = ncdouble('energy_angle_c','eta_rho','xi_rho') ;
 nc{'ct'}.long_name = ncchar('directional component of the group celerity');
 nc{'ct'}.long_name = 'directional component of the group celerity';
 nc{'ct'}.units = ncchar('rad/s');
@@ -104,7 +111,8 @@ result = endef(nc);
 %
 
 nc{'energy_time'}(:) =  initime; 
-nc{'energy_angle'}(:) = Bindir; 
+nc{'energy_angle'}(1:Nbins) = Bindir(1,1:Nbins); 
+nc{'energy_angle_c'}(1:Nbins+1) = Bindir_c(1,1:Nbins+1); 
 nc{'TA_dim'}(:) = 1; 
 
 

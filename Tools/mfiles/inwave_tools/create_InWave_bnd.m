@@ -29,6 +29,8 @@ nc('energy_time') = length(time);
 nc('energy_angle') = Nangle_bnd;
 nc('TA_dim') = 1;
 
+NT=length(time);
+
 %
 %  Create variables and attributes
 %
@@ -57,7 +59,7 @@ if obc(1)==1
 
 %   Southern boundary
 
-  nc{'AC_south'} = ncdouble('energy_angle','ocean_time','xi_rho') ;
+  nc{'AC_south'} = ncdouble('energy_time','energy_angle','xi_rho') ;
   nc{'AC_south'}.long_name = ncchar('southern boundary wave action envelope');
   nc{'AC_south'}.long_name = 'southern boundary wave action envelope';
   nc{'AC_south'}.units = ncchar('Joules');
@@ -75,12 +77,12 @@ if obc(2)==1
 
 %   Eastern boundary
 
-  nc{'AC_east'} = ncdouble('energy_angle','ocean_time','eta_rho') ;
+  nc{'AC_east'} = ncdouble('energy_time','energy_angle','eta_rho') ;
   nc{'AC_east'}.long_name = ncchar('eastern boundary wave action envelope');
   nc{'AC_east'}.long_name = 'eastern boundary wave action envelope';
   nc{'AC_east'}.units = ncchar('Joules');
   nc{'AC_east'}.units = 'Joules';
-  
+    
   nc{'TA_east'} = ncdouble('TA_dim') ;
   nc{'TA_east'}.long_name = ncchar('eastern boundary representative absolute peak period');
   nc{'TA_east'}.long_name = 'eastern boundary representative absolute peak period';
@@ -93,7 +95,7 @@ if obc(3)==1
 %
 %   Northern boundary
 %
-  nc{'AC_north'} = ncdouble('energy_angle','ocean_time','xi_rho') ;
+  nc{'AC_north'} = ncdouble('energy_time','energy_angle','xi_rho') ;
   nc{'AC_north'}.long_name = ncchar('northern boundary wave action envelope');
   nc{'AC_north'}.long_name = 'northern boundary wave action envelope';
   nc{'AC_north'}.units = ncchar('Joules');
@@ -147,12 +149,12 @@ result = endef(nc);
 % Write variables
 %
 
-nc{'energy_time'}(:) =  time; 
+nc{'energy_time'}(1:NT) =  time(1,1:NT); 
 nc{'energy_angle'}(:) =  dir; 
 nc{'TA_dim'}(:) = 1; 
 
 if obc(1)==1
-   nc{'AC_south'}(:,:,:) =Ac(:,:,:); 
+   nc{'AC_south'}(:,:,:) =Ac(:,:,:);
    nc{'TA_south'}(:)=TA;
 end
 

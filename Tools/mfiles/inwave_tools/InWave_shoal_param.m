@@ -26,10 +26,11 @@ TA= 10;                % representative absolute wave period (sec)
 %%%%%                GRID AND BATHYMETRY DEFINITION                   %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+filepath='..\..\..\Projects\Inwave_tests\shoal\';
+
 if (make_InWave_grd)
     
-% grd_file='..\..\..\Projects\Inwave_tests\shoal\InWave_grd.nc';  % name of the grid file
-  grd_file='InWave_grd.nc';  % name of the grid file
+  grd_file=strcat(filepath,'InWave_grd.nc');  % name of the grid file
     
   % Grid characteristics
 
@@ -87,18 +88,18 @@ if (make_InWave_ini || make_InWave_bnd )
   Nbins= 20;                               % number of directional bins considered in the simulation
   Bindirs = [0:360/Nbins:360-360/Nbins];   % center angles of the directional bins.
   pd=ones(size(Bindirs)).*360./(Nbins);
+  Bindirs_c = [0-(360/Nbins)/2:360/Nbins:360-360/Nbins+(360/Nbins)/2];
 
 end  
 
 if (make_InWave_ini)  
     
-% ini_file='..\..\..\Projects\Inwave_tests\shoal\InWave_ini.nc';  % name of the initial file
-  ini_file='InWave_ini.nc';  % name of the initial file
+  ini_file=strcat(filepath,'InWave_ini.nc');  % name of the initial file
 
   Ac=ones(Nbins,Mm,Lm).*0;
   Cx=ones(Nbins,Mm,Lm-1).*0;
   Cy=ones(Nbins,Mm-1,Lm).*0;
-  Ct=ones(Nbins,Mm,Lm).*0;
+  Ct=ones(Nbins+1,Mm,Lm).*0;
   
   Ac(16,:,:)=100;
 
@@ -111,8 +112,8 @@ end
 
 if (make_InWave_bnd)
 
-% bnd_file='..\..\..\Projects\Inwave_tests\shoal\InWave_bnd.nc';  % name of the boundary file
-  bnd_file='InWave_bnd.nc';  % name of the boundary file
+
+  bnd_file=strcat(filepath,'InWave_bnd.nc');  % name of the boundary file
 
   % Duration of the simulation and time increment for the boundaries
   

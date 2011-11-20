@@ -20,15 +20,17 @@ make_InWave_bnd=1;
 
 Lm= 61;                % number of total rho points in the xi direction
 Mm= 20;                % number of total rho points in the eta direction
-TA= 10;                % representative absolute wave period (sec)
+TA= 15;                % representative absolute wave period (sec)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%                GRID AND BATHYMETRY DEFINITION                   %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+filepath='..\..\..\Projects\Inwave_tests\step\case6\';
+
 if (make_InWave_grd)
     
-  grd_file='InWave_grd.nc';  % name of the grid file
+  grd_file=strcat(filepath,'InWave_grd.nc');  % name of the grid file
     
   % Grid characteristics
 
@@ -68,18 +70,19 @@ if (make_InWave_ini || make_InWave_bnd )
 
   Nbins= 20;                               % number of directional bins considered in the simulation
   Bindirs = [0:360/Nbins:360-360/Nbins];   % center angles of the directional bins.
+  Bindirs_c = [0-(360/Nbins)/2:360/Nbins:360-360/Nbins+(360/Nbins)/2];   % center angles of the directional bins.
   pd=ones(size(Bindirs)).*360./(Nbins);
 
 end  
 
 if (make_InWave_ini)  
     
-  ini_file='InWave_ini.nc';  % name of the initial file
-
+  ini_file=strcat(filepath,'InWave_ini.nc');  % name of the initial file
+  
   Ac=ones(Nbins,Mm,Lm).*0;
   Cx=ones(Nbins,Mm,Lm-1).*0;
   Cy=ones(Nbins,Mm-1,Lm).*0;
-  Ct=ones(Nbins,Mm,Lm).*0;
+  Ct=ones(Nbins+1,Mm,Lm).*0;
 
 end
 
@@ -88,9 +91,9 @@ end
 %%%%%                 BOUNDARY CONDITION DEFINITION                   %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if (make_InWave_bnd)
-
-  bnd_file='InWave_bnd.nc';  % name of the boundary file
+if (make_InWave_bnd) 
+  
+  bnd_file=strcat(filepath,'InWave_bnd.nc');  % name of the boundary file
 
   % Duration of the simulation and time increment for the boundaries
   
@@ -108,8 +111,8 @@ if (make_InWave_bnd)
  % Specify number of directions at the boundaries (we have to specify at
  % least 2)
  
-  Nbins_bnd= 3;         % number of directional bins with energy at the boundaries
-  dir_bnd= [252,270,288];         % center angle (degrees of the bin containing energy at the boudaries)
+  Nbins_bnd= 1;         % number of directional bins with energy at the boundaries
+  dir_bnd= [270];         % center angle (degrees of the bin containing energy at the boudaries)
 
   if sum(ismember(dir_bnd,Bindirs)) ~= Nbins_bnd; 
   bin_error=1;
@@ -128,7 +131,7 @@ if (make_InWave_bnd)
   end
   if obc(4)==1
     Ac_west=zeros(length(time),Nbins_bnd,Mm);
-    Ac_west(6:6*10,2,:)=100;
+    Ac_west(6:6*10,1,:)=100;
     
   end
 
