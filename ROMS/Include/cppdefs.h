@@ -692,6 +692,7 @@
 ** WDISS_THORGUZA      activate wave dissipation from Thorton/Guza.          **
 ** WDISS_CHURTHOR      activate wave dissipation from Church/Thorton.        **
 ** WDISS_WAVEMOD       activate wave dissipation from a wave model           **
+** WDISS_INWAVE        activate wave dissipation from a InWave model         **
 ** ROLLER_SVENDSEN     activate wave roller based on Svendsen                **
 ** ROLLER_MONO         activate wave roller for monchromatic waves           **
 ** ROLLER_RENIERS      activate wave roller based on Reniers                 **
@@ -813,3 +814,7 @@
 */
 
 #include "globaldefs.h"
+
+#ifdef INWAVE_COUPLING
+# include "../../InWave/Include/inwave.h"
+#endif

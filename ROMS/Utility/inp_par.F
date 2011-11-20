@@ -1949,7 +1949,8 @@
             Npts=load_l(Nval, Cval, Ngrids, Hout(idWdif,1:Ngrids))
 #endif
 #if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
-    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
+    defined WDISS_INWAVE
           ELSE IF (TRIM(KeyWord).eq.'Hout(idWdib)') THEN
             IF (idWdib.eq.0) THEN
               IF (Master) WRITE (out,280) 'idWdib'

@@ -240,7 +240,7 @@
 
 #if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
     defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
-    defined WAVES_DISS
+    defined WAVES_DISS || defined WDISS_INWAVE
           real(r8), pointer :: Dissip_break(:,:)
           real(r8), pointer :: Dissip_wcap(:,:)
 # ifndef ANA_WWAVE
@@ -576,7 +576,7 @@
 
 #if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
     defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
-    defined WAVES_DISS
+    defined WAVES_DISS || defined WDISS_INWAVE
       allocate ( FORCES(ng) % Dissip_break(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % Dissip_wcap(LBi:UBi,LBj:UBj) )
 # ifndef ANA_WWAVE
@@ -981,7 +981,7 @@
 
 #if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
     defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
-    defined WAVES_DISS
+    defined WAVES_DISS || defined WDISS_INWAVE
             FORCES(ng) % Dissip_break(i,j) = IniVal
             FORCES(ng) % Dissip_wcap(i,j) = IniVal
 # ifndef ANA_WWAVE

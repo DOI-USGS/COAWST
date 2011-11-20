@@ -53,16 +53,16 @@
 #ifdef ADJUST_BOUNDARY
       integer :: IorJdim, brecdim
 #endif
-      integer :: DimIDs(32), t2dgrd(3), u2dgrd(3), v2dgrd(3)
+      integer :: t2dgrd(3), u2dgrd(3), v2dgrd(3)
 #ifdef ADJUST_BOUNDARY
       integer :: t2dobc(4)
 #endif
 
-!#ifdef INWAVE_COUPLING
-!      integer :: DimIDs(30)
-!#else
-!      integer :: DimIDs(29)
-!#endif
+#ifdef INWAVE_COUPLING
+      integer :: DimIDs(33)
+#else
+      integer :: DimIDs(32)
+#endif
       integer :: Vsize(4)
 
       integer :: def_dim
@@ -172,6 +172,10 @@
         status=def_dim(ng, iNLM, ncHISid(ng), ncname, 'xy_v',           &
      &                 IOBOUNDS(ng)%xy_v, DimIDs(19))
         IF (exit_flag.ne.NoError) RETURN
+#endif
+#ifdef INWAVE_COUPLING
+        status=def_dim(ng, iNLM, ncHISid(ng), ncname,'ND',              &
+                       ND(ng), DimIDs(33))
 #endif
 
 #ifdef SOLVE3D
@@ -360,22 +364,22 @@
 !
         r3degrd(1)=DimIDs( 1)
         r3degrd(2)=DimIDs( 5)
-        r3degrd(3)=DimIDs(30)
+        r3degrd(3)=DimIDs(33)
         r3degrd(4)=DimIDs(12)
 
         u3degrd(1)=DimIDs( 2)
         u3degrd(2)=DimIDs( 6)
-        u3degrd(3)=DimIDs(30)
+        u3degrd(3)=DimIDs(33)
         u3degrd(4)=DimIDs(12)
 
         v3degrd(1)=DimIDs( 3)
         v3degrd(2)=DimIDs( 7)
-        v3degrd(3)=DimIDs(30)
+        v3degrd(3)=DimIDs(33)
         v3degrd(4)=DimIDs(12)
 
         t3degrd(1)=DimIDs( 1)
         t3degrd(2)=DimIDs( 5)
-        t3degrd(3)=DimIDs(30)
+        t3degrd(3)=DimIDs(33)
         t3degrd(4)=DimIDs(12)
 # endif
 #endif
@@ -1524,8 +1528,8 @@
 # endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r3dvar,r8)
-          status=def_var(ncHISid(ng),hisVid(idACen,ng),NF_FOUT,         &
-     &                   nvd4,r3degrd,Aval,Vinfo,ncname)
+          status=def_var(ng, iNLM, ncHISid(ng), hisVid(idACen,ng),      &
+     &                   NF_FOUT, nvd4, r3degrd, Aval, Vinfo, ncname)
 !        END IF
 !
 !  Define 3D wave celerity xi-direction.
@@ -1541,8 +1545,8 @@
 # endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(u3dvar,r8)
-          status=def_var(ncHISid(ng),hisVid(idACcx,ng),NF_FOUT,         &
-     &                   nvd4,u3degrd,Aval,Vinfo,ncname)
+          status=def_var(ng, iNLM, ncHISid(ng), hisVid(idACcx,ng),      &
+     &                   NF_FOUT, nvd4, u3degrd, Aval, Vinfo, ncname)
 !        END IF
 !
 !  Define 3D wave celerity eta-direction.
@@ -1558,8 +1562,8 @@
 # endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(v3dvar,r8)
-          status=def_var(ncHISid(ng),hisVid(idACcy,ng),NF_FOUT,         &
-     &                   nvd4,v3degrd,Aval,Vinfo,ncname)
+          status=def_var(ng, iNLM, ncHISid(ng), hisVid(idACcy,ng),      &
+     &                   NF_FOUT, nvd4,v3degrd, Aval, Vinfo, ncname)
 !        END IF
 !
 !  Define 3D wave celerity theta-direction.
@@ -1575,8 +1579,8 @@
 # endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r3dvar,r8)
-          status=def_var(ncHISid(ng),hisVid(idACct,ng),NF_FOUT,         &
-     &                   nvd4,t3degrd,Aval,Vinfo,ncname)
+          status=def_var(ng, iNLM, ncHISid(ng),hisVid(idACct,ng),       &
+     &                   NF_FOUT, nvd4, t3degrd, Aval, Vinfo, ncname)
 !        END IF
 #endif
 #ifdef SOLVE3D
@@ -2441,7 +2445,8 @@
         END IF
 #endif
 #if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
-    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
+    defined WDISS_INWAVE
 !
 !  Define wave dissipation due to breaking.
 !

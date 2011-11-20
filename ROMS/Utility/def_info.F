@@ -49,6 +49,7 @@
 !                DimIDs(30) => Number of 3D variables time levels (2). !
 !                DimIDs(31) => Number of 2D variables time levels (3). !
 !                DimIDs(32) => Number of sediment tracers.             !
+!                DimIDs(33) => Number of wave directions.              !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
@@ -79,7 +80,11 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, model, ncid
+#ifdef INWAVE_COUPLING
+      integer, intent(in) :: DimIDs(33)
+#else
       integer, intent(in) :: DimIDs(32)
+#endif
       character (*), intent(in) :: ncname
 !
 !  Local variable declarations.

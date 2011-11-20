@@ -190,7 +190,7 @@
       END IF
 # endif
 #endif
-#if !defined ANA_WWAVE && defined WAVE_DATA
+#if !defined ANA_WWAVE && defined WAVE_DATA && !defined INWAVE_COUPLING
 !
 !-----------------------------------------------------------------------
 !  Surface wind induced wave amplitude, direction and period.

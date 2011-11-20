@@ -206,6 +206,7 @@
   #define PRIVATE_2D_SCRATCH_ARRAY LBi-1:UBi+1,LBj-1:UBj+1 */
 #define PRIVATE_1D_SCRATCH_ARRAY IminS:ImaxS
 #define PRIVATE_2D_SCRATCH_ARRAY IminS:ImaxS,JminS:JmaxS
+#define PRIVATE_2D_SCRATCH_ARRAY_THETA IminS:ImaxS,0:ND(ng)+1
 /*
 ** Set switch for distributed-memory applications to gather and scatter
 ** I/O data in 2D slabs. This is necessary on some platforms to conserve
@@ -998,7 +999,8 @@
 
 #if (defined TKE_WAVEDISS || defined WEC_VF) && \
   (!defined WDISS_THORGUZA && \
-   !defined WDISS_CHURTHOR && !defined WDISS_WAVEMOD)
+   !defined WDISS_CHURTHOR && !defined WDISS_WAVEMOD \
+   && !defined WDISS_INWAVE)
 # define WAVES_DISS
 #endif
 
@@ -1057,7 +1059,7 @@
     ( defined SEDIMENT     && !defined ANA_SPFLUX)   || \
     ( defined SEDIMENT     && !defined ANA_BPFLUX)   || \
     ( defined WAVE_DATA    && (!defined ANA_WWAVE    && \
-     !defined WAVES_OCEAN))
+     !defined WAVES_OCEAN  && !defined INWAVE_COUPLING))
 #  define FRC_FILE
 # endif
 #else

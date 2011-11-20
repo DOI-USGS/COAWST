@@ -156,7 +156,7 @@
       END DO
 #ifdef INWAVE_COUPLING
         DO ng=1,Ngrids
-	CALL inwave_init (ng, TILE)
+          CALL inwave_init (ng, TILE)
         END DO
 #endif
 !
@@ -223,7 +223,7 @@
 !
 !  Local variable declarations.
 !
-	integer :: ng, my_iic, MyError
+      integer :: ng, my_iic, MyError
 #if defined REFINED_GRID
       logical, allocatable :: run_grid(:)
       integer, allocatable :: count(:), rcount(:)

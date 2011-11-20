@@ -585,7 +585,7 @@
      &                     update)
 #   endif
 #  endif
-# ifdef WAVE_DATA
+# if defined WAVE_DATA && !defined INWAVE_COUPLING
 !
 !-----------------------------------------------------------------------
 !  Set surface wind-induced wave amplitude, direction and period.

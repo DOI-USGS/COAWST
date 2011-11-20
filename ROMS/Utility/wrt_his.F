@@ -1843,9 +1843,13 @@
      &                     tHISindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
 # ifdef MASKING
+#  ifdef WET_DRY
+     &                     GRID(ng) % rmask_full,                       &
+#  else
      &                     GRID(ng) % rmask,                            &
+#  endif
 # endif
-     &                     WAVEP(ng) % AC(LBi,LBj,1,NOUT))
+     &                     WAVEP(ng) % AC(:,:,:,NOUT))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idACen)), tHISindx(ng)
@@ -1865,9 +1869,13 @@
      &                     tHISindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
 # ifdef MASKING
+#  ifdef WET_DRY
+     &                     GRID(ng) % umask_full,                       &
+#  else
      &                     GRID(ng) % umask,                            &
+#  endif
 # endif
-     &                     WAVEP(ng) % cx(LBi,LBj,1))
+     &                     WAVEP(ng) % cx)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idACcx)), tHISindx(ng)
@@ -1888,9 +1896,13 @@
      &                     tHISindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
 # ifdef MASKING
+#  ifdef WET_DRY
+     &                     GRID(ng) % vmask_full,                       &
+#  else
      &                     GRID(ng) % vmask,                            &
+#  endif
 # endif
-     &                     WAVEP(ng) % cy(LBi,LBj,1))
+     &                     WAVEP(ng) % cy)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idACcy)), tHISindx(ng)
@@ -1911,9 +1923,13 @@
      &                     tHISindx(ng), gtype,                         &
      &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
 # ifdef MASKING
+#  ifdef WET_DRY
+     &                     GRID(ng) % rmask_full,                       &
+#  else
      &                     GRID(ng) % rmask,                            &
+#  endif
 # endif
-     &                     WAVEP(ng) % ct(LBi,LBj,1))
+     &                     WAVEP(ng) % ct)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idACct)), tHISindx(ng)
@@ -2606,7 +2622,8 @@
       END IF
 #endif
 #if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
-    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
+    defined WDISS_INWAVE
 !
 !  Write out wave dissipation due to breaking.
 !

@@ -16,6 +16,8 @@
 !  Aname       Atmosphere model stadard input file name.               !
 !  BLKname     Input bulk fluxes file name.                            !
 !  BRYname     Input boundary data file name.                          !
+!  IWBNDname     Input boundary data file name for InWave model        !
+!  IWSWNname     Input spectral SWAN data file name for InWave model   !
 !  CLMname     Input climatology file name.                            !
 !  DIAbase     Output diagnostics base file name.                      !
 !  DIAname     Output diagnostics file name.                           !
@@ -167,6 +169,13 @@
         character (len=80), dimension(4,Ngrids) :: NRMname
         character (len=80), dimension(4,Ngrids) :: STDname
 
+#ifdef INWAVE_COUPLING
+        character (len=80), dimension(Ngrids) :: IWINIname
+        character (len=80), dimension(Ngrids) :: IWBNDname
+# ifdef INWAVE_COUPLING
+        character (len=80), dimension(Ngrids) :: IWSWNname
+# endif
+#endif
         character (len=80) :: Iname
         character (len=80) :: MyAppCPP
         character (len=80) :: USRname
