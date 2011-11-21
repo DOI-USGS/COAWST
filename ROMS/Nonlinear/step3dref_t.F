@@ -252,6 +252,7 @@
       real(r8), dimension(0:N(ng)) :: DC
       real(r8), dimension(0:N(ng)) :: FC
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: oHz
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: oDstp
       real(r8), allocatable :: FXc_west_all(:)
       real(r8), allocatable :: FXc_east_all(:)
       real(r8), allocatable :: FEc_south_all(:)
@@ -271,10 +272,12 @@
 !
 !  Compute inverse thickness.
 !
-      DO k=1,N(ng)
-        DO j=Jstr-2,Jend+2
-          DO i=Istr-2,Iend+2
+      DO j=Jstr-2,Jend+2
+        DO i=Istr-2,Iend+2
+          oDstp(i,j)=0.0_r8
+          DO k=1,N(ng)
             oHz(i,j,k)=1.0_r8/Hz(i,j,k)
+            oDstp(i,j)=oDstp(i,j)+oHz(i,j,k)
           END DO
         END DO
       END DO
@@ -635,7 +638,8 @@
 !
             cff=pm(is-1,j)*pn(is-1,j)
             DO k=1,N(ng)
-              cff2=(cff3-cff1)*FXp_west(j,k,itrc)/(cff1+eps)
+!             cff2=(cff3-cff1)*FXp_west(j,k,itrc)/(cff1+eps)
+              cff2=(cff3-cff1)*Hz(i,j,k)*oDstp(i,j)
 # ifdef REF_DIFFUSION
               t(is-1,j,k,nstp,itrc)=t(is-1,j,k,nstp,itrc)*Hz(is-1,j,k)- &
      &                              cff2*cff
@@ -647,8 +651,8 @@
 !  Nudge towards tracer climatology.
 !
               t(is-1,j,k,nstp,itrc)=t(is-1,j,k,nstp,itrc)+              &
-     &                              dt(ng)*Tnudgcof(i,j,itrc)*          &
-     &                              (tclm(i,j,k,itrc)-                  &
+     &                              dt(ng)*Tnudgcof(is-1,j,itrc)*       &
+     &                              (tclm(is-1,j,k,itrc)-               &
      &                               t(is-1,j,k,nstp,itrc))
 #  endif
 # endif
@@ -687,7 +691,8 @@
 !
             cff=pm(is,j)*pn(is,j)
             DO k=1,N(ng)
-              cff2=(cff3-cff1)*FXp_east(j,k,itrc)/(cff1+eps)
+!             cff2=(cff3-cff1)*FXp_east(j,k,itrc)/(cff1+eps)
+              cff2=(cff3-cff1)*Hz(i,j,k)*oDstp(i,j)
 # ifdef REF_DIFFUSION
               t(is,j,k,nstp,itrc)=t(is,j,k,nstp,itrc)*Hz(is,j,k)+       &
      &                            cff2*cff
@@ -699,8 +704,8 @@
 !  Nudge towards tracer climatology.
 !
               t(is,j,k,nstp,itrc)=t(is,j,k,nstp,itrc)+                  &
-     &                              dt(ng)*Tnudgcof(i,j,itrc)*          &
-     &                              (tclm(i,j,k,itrc)-                  &
+     &                              dt(ng)*Tnudgcof(is,j,itrc)*         &
+     &                              (tclm(is,j,k,itrc)-                 &
      &                               t(is,j,k,nstp,itrc))
 #  endif
 # endif
@@ -746,7 +751,9 @@
 !
             cff=pm(i,js-1)*pn(i,js-1)
             DO k=1,N(ng)
-              cff2=(cff3-cff1)*FEp_south(i,k,itrc)/(cff1+eps)
+!             cff2=(cff3-cff1)*FEp_south(i,k,itrc)/(cff1+eps)
+              cff2=(cff3-cff1)*Hz(i,j,k)*oDstp(i,j)
+
 # ifdef REF_DIFFUSION
               t(i,js-1,k,nstp,itrc)=t(i,js-1,k,nstp,itrc)*Hz(i,js-1,k)- &
      &                              cff2*cff
@@ -758,8 +765,8 @@
 !  Nudge towards tracer climatology.
 !
               t(i,js-1,k,nstp,itrc)=t(i,js-1,k,nstp,itrc)+              &
-     &                              dt(ng)*Tnudgcof(i,j,itrc)*          &
-     &                              (tclm(i,j,k,itrc)-                  &
+     &                              dt(ng)*Tnudgcof(i,js-1,itrc)*       &
+     &                              (tclm(i,js-1,k,itrc)-               &
      &                               t(i,js-1,k,nstp,itrc))
 #  endif
 # endif
@@ -798,7 +805,8 @@
 !
             cff=pm(i,js)*pn(i,js)
             DO k=1,N(ng)
-              cff2=(cff3-cff1)*FEp_north(i,k,itrc)/(cff1+eps)
+!             cff2=(cff3-cff1)*FEp_north(i,k,itrc)/(cff1+eps)
+              cff2=(cff3-cff1)*Hz(i,j,k)*oDstp(i,j)
 # ifdef REF_DIFFUSION
               t(i,js,k,nstp,itrc)=t(i,js,k,nstp,itrc)*Hz(i,js,k)+       &
      &                            cff2*cff
@@ -810,8 +818,8 @@
 !  Nudge towards tracer climatology.
 !
               t(i,js,k,nstp,itrc)=t(i,js,k,nstp,itrc)+                  &
-     &                              dt(ng)*Tnudgcof(i,j,itrc)*          &
-     &                              (tclm(i,j,k,itrc)-                  &
+     &                              dt(ng)*Tnudgcof(i,js,itrc)*         &
+     &                              (tclm(i,js,k,itrc)-                 &
      &                               t(i,js,k,nstp,itrc))
 #  endif
 # endif
