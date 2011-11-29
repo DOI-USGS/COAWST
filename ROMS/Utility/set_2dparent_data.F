@@ -521,7 +521,7 @@
 ! DV_avg2
 !
       IF (SOUTHERN_EDGE) THEN
-        DO i=IstrT,IendT
+        DO i=Istr,Iend
 !
 ! To ensure mass flux, set vbar at southern edge.
 !
@@ -541,7 +541,7 @@
         END DO
       END IF
       IF (NORTHERN_EDGE) THEN
-        DO i=IstrT,IendT
+        DO i=Istr,Iend
 !
 ! To ensure mass flux, set vbar at southern edge.
 !

@@ -94,7 +94,7 @@
       integer :: Imin, Imax, Jmin, Jmax, model
       integer :: Ilen, Jlen, IJlen, MyType, status
       integer :: MyError, MySize, ncvarid, refscale
-      real(r8) :: my_min, my_max, cff, cff1
+      real(r8) :: my_min, my_max, cff, cff1, ic1, jc1
 
       real(r8), allocatable :: Aout(:)
       real(r8), allocatable :: A(:,:)
@@ -464,12 +464,21 @@
               A(i,j)=Aout(ic)
             END DO
           END DO
+!
+! Vary the child depth avg flux within each parent block. Use a 
+! linear variation to ensure the child sum equals the parent.
+!
           IF (WESTERN_EDGE) THEN
             DO j=Jstr,Jend
               ic=NINT(OCEAN(ng)%hindpi_u(1,j))
               jc=NINT(OCEAN(ng)%hindpj_u(1,j))
+              ic1=OCEAN(ng)%hindpi_u(1,j)
+              jc1=OCEAN(ng)%hindpj_u(1,j)
               IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
-                REFINED(ng)%DUavg2R_west(j)=A(ic,jc)
+!               REFINED(ng)%DUavg2R_west(j)=A(ic,jc)
+                cff=0.5_r8*(A(ic,jc+1)-A(ic,jc-1))
+                REFINED(ng)%DUavg2R_west(j)=A(ic,jc)+                   &
+     &                                      (jc1-REAL(jc,r8))*cff
               END IF
             END DO
           END IF
@@ -477,8 +486,13 @@
             DO j=Jstr,Jend
               ic=NINT(OCEAN(ng)%hindpi_u(Iend+1,j))
               jc=NINT(OCEAN(ng)%hindpj_u(Iend+1,j))
+              ic1=OCEAN(ng)%hindpi_u(Iend+1,j)
+              jc1=OCEAN(ng)%hindpj_u(Iend+1,j)
               IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
-                REFINED(ng)%DUavg2R_east(j)=A(ic,jc)
+!               REFINED(ng)%DUavg2R_east(j)=A(ic,jc)
+                cff=0.5_r8*(A(ic,jc+1)-A(ic,jc-1))
+                REFINED(ng)%DUavg2R_east(j)=A(ic,jc)+                   &
+     &                                      (jc1-REAL(jc,r8))*cff
               END IF
             END DO
           END IF
@@ -734,8 +748,13 @@
             DO i=Istr,Iend
               ic=NINT(OCEAN(ng)%hindpi_v(i,1))
               jc=NINT(OCEAN(ng)%hindpj_v(i,1))
+              ic1=OCEAN(ng)%hindpi_v(i,1)
+              jc1=OCEAN(ng)%hindpj_v(i,1)
               IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
-                REFINED(ng)%DVavg2R_south(i)=A(ic,jc)
+!               REFINED(ng)%DVavg2R_south(i)=A(ic,jc)
+                cff=0.5_r8*(A(ic+1,jc)-A(ic-1,jc))
+                REFINED(ng)%DVavg2R_south(i)=A(ic,jc)+                  &
+     &                                      (ic1-REAL(ic,r8))*cff
               END IF
             END DO
           END IF
@@ -743,8 +762,13 @@
             DO i=Istr,Iend
               ic=NINT(OCEAN(ng)%hindpi_v(i,Jend+1))
               jc=NINT(OCEAN(ng)%hindpj_v(i,Jend+1))
+              ic1=OCEAN(ng)%hindpi_v(i,Jend+1)
+              jc1=OCEAN(ng)%hindpj_v(i,Jend+1)
               IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
-                REFINED(ng)%DVavg2R_north(i)=A(ic,jc)
+!               REFINED(ng)%DVavg2R_north(i)=A(ic,jc)
+                cff=0.5_r8*(A(ic+1,jc)-A(ic-1,jc))
+                REFINED(ng)%DVavg2R_south(i)=A(ic,jc)+                  &
+     &                                      (ic1-REAL(ic,r8))*cff
               END IF
             END DO
           END IF

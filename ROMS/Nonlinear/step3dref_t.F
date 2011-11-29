@@ -251,7 +251,6 @@
       real(r8), dimension(0:N(ng)) :: BC
       real(r8), dimension(0:N(ng)) :: DC
       real(r8), dimension(0:N(ng)) :: FC
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: oHz
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: oDstp
       real(r8), allocatable :: FXc_west_all(:)
       real(r8), allocatable :: FXc_east_all(:)
@@ -274,13 +273,14 @@
 !
       DO j=Jstr-2,Jend+2
         DO i=Istr-2,Iend+2
-          oDstp(i,j)=0.0_r8
-          DO k=1,N(ng)
-            oHz(i,j,k)=1.0_r8/Hz(i,j,k)
-            oDstp(i,j)=oDstp(i,j)+oHz(i,j,k)
+          cff=Hz(i,j,1)
+          DO k=2,N(ng)
+            cff=cff+Hz(i,j,k)
           END DO
+          oDstp(i,j)=1.0_r8/cff
         END DO
       END DO
+!
       T_LOOP : DO itrc=1,NT(ng)
 !
 !
@@ -639,13 +639,13 @@
             cff=pm(is-1,j)*pn(is-1,j)
             DO k=1,N(ng)
 !             cff2=(cff3-cff1)*FXp_west(j,k,itrc)/(cff1+eps)
-              cff2=(cff3-cff1)*Hz(i,j,k)*oDstp(i,j)
+              cff2=(cff3-cff1)*oDstp(is-1,j)
 # ifdef REF_DIFFUSION
-              t(is-1,j,k,nstp,itrc)=t(is-1,j,k,nstp,itrc)*Hz(is-1,j,k)- &
-     &                              cff2*cff
+              t(is-1,j,k,nstp,itrc)=(t(is-1,j,k,nstp,itrc)-cff*cff2)*   &
+     &                              Hz(is-1,j,k)
 # else
               t(is-1,j,k,nstp,itrc)=t(is-1,j,k,nstp,itrc)-              &
-     &                              cff2*cff*oHz(is-1,j,k)
+     &                              cff*cff2
 #  if defined TCLM_NUDGING && defined TCLIMATOLOGY
 !
 !  Nudge towards tracer climatology.
@@ -692,13 +692,13 @@
             cff=pm(is,j)*pn(is,j)
             DO k=1,N(ng)
 !             cff2=(cff3-cff1)*FXp_east(j,k,itrc)/(cff1+eps)
-              cff2=(cff3-cff1)*Hz(i,j,k)*oDstp(i,j)
+              cff2=(cff3-cff1)*oDstp(is,j)
 # ifdef REF_DIFFUSION
-              t(is,j,k,nstp,itrc)=t(is,j,k,nstp,itrc)*Hz(is,j,k)+       &
-     &                            cff2*cff
+              t(is,j,k,nstp,itrc)=(t(is,j,k,nstp,itrc)+cff*cff2)*       &
+     &                            Hz(is,j,k)
 # else
               t(is,j,k,nstp,itrc)=t(is,j,k,nstp,itrc)+                  &
-     &                            cff2*cff*oHz(is,j,k)
+     &                            cff*cff2
 #  if defined TCLM_NUDGING && defined TCLIMATOLOGY
 !
 !  Nudge towards tracer climatology.
@@ -752,14 +752,14 @@
             cff=pm(i,js-1)*pn(i,js-1)
             DO k=1,N(ng)
 !             cff2=(cff3-cff1)*FEp_south(i,k,itrc)/(cff1+eps)
-              cff2=(cff3-cff1)*Hz(i,j,k)*oDstp(i,j)
+              cff2=(cff3-cff1)*oDstp(i,js-1)
 
 # ifdef REF_DIFFUSION
-              t(i,js-1,k,nstp,itrc)=t(i,js-1,k,nstp,itrc)*Hz(i,js-1,k)- &
-     &                              cff2*cff
+              t(i,js-1,k,nstp,itrc)=(t(i,js-1,k,nstp,itrc)-cff*cff2)*   &
+     &                              Hz(i,js-1,k)
 # else
               t(i,js-1,k,nstp,itrc)=t(i,js-1,k,nstp,itrc)-              &
-     &                              cff2*cff*oHz(i,js-1,k)
+     &                              cff*cff2
 #  if defined TCLM_NUDGING && defined TCLIMATOLOGY
 !
 !  Nudge towards tracer climatology.
@@ -806,13 +806,13 @@
             cff=pm(i,js)*pn(i,js)
             DO k=1,N(ng)
 !             cff2=(cff3-cff1)*FEp_north(i,k,itrc)/(cff1+eps)
-              cff2=(cff3-cff1)*Hz(i,j,k)*oDstp(i,j)
+              cff2=(cff3-cff1)*oDstp(i,js)
 # ifdef REF_DIFFUSION
-              t(i,js,k,nstp,itrc)=t(i,js,k,nstp,itrc)*Hz(i,js,k)+       &
-     &                            cff2*cff
+              t(i,js,k,nstp,itrc)=(t(i,js,k,nstp,itrc)+cff*cff2)*       &
+     &                            Hz(i,js,k)
 # else
               t(i,js,k,nstp,itrc)=t(i,js,k,nstp,itrc)+                  &
-     &                            cff2*cff*oHz(i,js,k)
+     &                            cff*cff2
 #  if defined TCLM_NUDGING && defined TCLIMATOLOGY
 !
 !  Nudge towards tracer climatology.
