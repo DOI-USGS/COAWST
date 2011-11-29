@@ -767,7 +767,7 @@
               IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
 !               REFINED(ng)%DVavg2R_north(i)=A(ic,jc)
                 cff=0.5_r8*(A(ic+1,jc)-A(ic-1,jc))
-                REFINED(ng)%DVavg2R_south(i)=A(ic,jc)+                  &
+                REFINED(ng)%DVavg2R_north(i)=A(ic,jc)+                  &
      &                                      (ic1-REAL(ic,r8))*cff
               END IF
             END DO
