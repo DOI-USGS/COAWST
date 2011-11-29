@@ -3582,11 +3582,17 @@
      &                    TRIM(fname)
 #endif
 #ifdef OBC_DATA
+# ifdef REFINED_GRID
+          IF (ng.eq.1) THEN
+# endif
           fname=BRYname(ng)
           INQUIRE (FILE=TRIM(fname), EXIST=inhere)
           IF (.not.inhere) GO TO 30
           WRITE (out,230) '           Input Boundary File:  ',          &
      &                    TRIM(fname)
+# ifdef REFINED_GRID
+          END IF
+# endif
 #endif
 #ifdef STATIONS
           fname=sposnam
