@@ -1,8 +1,8 @@
       SUBROUTINE ana_srflux (ng, tile, model)
 !
-!! svn $Id: ana_srflux.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id: ana_srflux.h 1368 2011-01-21 00:34:18Z kate $
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2011 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -32,6 +32,7 @@
      &                      FORCES(ng) % cloud,                         &
      &                      FORCES(ng) % Hair,                          &
      &                      FORCES(ng) % Tair,                          &
+     &                      FORCES(ng) % Pair,                          &
 #endif
      &                      FORCES(ng) % srflx)
 !
@@ -53,8 +54,8 @@
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            lonr, latr,                           &
-#ifdef ALBEDO
-     &                            cloud, Hair, Tair,                    &
+#ifdef ALBEDO 
+     &                            cloud, Hair, Tair, Pair,              &
 #endif
      &                            srflx)
 !***********************************************************************
@@ -82,6 +83,7 @@
       real(r8), intent(in) :: cloud(LBi:,LBj:)
       real(r8), intent(in) :: Hair(LBi:,LBj:)
       real(r8), intent(in) :: Tair(LBi:,LBj:)
+      real(r8), intent(in) :: Pair(LBi:,LBj:)
 # endif
       real(r8), intent(out) :: srflx(LBi:,LBj:)
 #else
@@ -91,6 +93,7 @@
       real(r8), intent(in) :: cloud(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Hair(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Tair(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
 # endif
       real(r8), intent(out) :: srflx(LBi:UBi,LBj:UBj)
 #endif
@@ -191,7 +194,12 @@
             cff=(0.7859_r8+0.03477_r8*Tair(i,j))/                       &
      &          (1.0_r8+0.00412_r8*Tair(i,j))
             e_sat=10.0_r8**cff    ! saturation vapor pressure (hPa=mbar)
-            vap_p=e_sat*Hair(i,j) ! water vapor pressure (hPa=mbar)
+#  ifdef SPECIFIC_HUMIDITY
+!  With this directive specific humidity is input as kg/kg
+            vap_p=Pair(i,j)*Hair(i,j)/(0.62197_r8+0.378_r8*Hair(i,j))
+#  else
+            vap_p=e_sat*Hair(i,j) ! water vapor pressure (hPa=mbar) 
+#  endif
             srflx(i,j)=Rsolar*zenith*zenith*                            &
      &                 (1.0_r8-0.6_r8*cloud(i,j)**3)/                   &
      &                 ((zenith+2.7_r8)*vap_p*1.0E-3_r8+                &
@@ -209,8 +217,9 @@
 !
 !  Normalization = (1/2*pi)*INTEGRAL{ABS(a+b*COS(t)) dt}  from 0 to 2*pi
 !                = (a*ARCCOS(-a/b)+SQRT(b**2-a**2))/pi    for |a| < |b|
-!
-          IF (ABS(cff1).gt.ABS(cff2)) THEN
+!  
+          srflx(i,j)=MAX(0.0_r8, srflx(i,j))
+          IF (ABS(cff1) > ABS(cff2)) THEN
             IF (cff1*cff2.gt.0.0_r8) THEN
               cff=cff1                                 ! All day case
               srflx(i,j)=MAX(0.0_r8,                                    &
@@ -220,10 +229,14 @@
               srflx(i,j)=0.0_r8                        ! All night case
             END IF
           ELSE
-            cff=(cff1*ACOS(-cff1/cff2)+SQRT(cff2*cff2-cff1*cff1))/pi
-            srflx(i,j)=MAX(0.0_r8,                                      &
+            cff=(cff1*ACOS(-cff1/cff2)+SQRT((cff2+cff1)*(cff2-cff1)))/pi
+	    IF (cff .lt. 10.e-10) THEN
+              srflx(i,j)=0.0_r8
+            ELSE
+              srflx(i,j)=MAX(0.0_r8,                                      &
      &                     srflx(i,j)/cff*                              &
      &                     (cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad)))
+            END IF
           END IF
 # endif
         END DO

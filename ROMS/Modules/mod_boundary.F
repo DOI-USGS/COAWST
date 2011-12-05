@@ -622,6 +622,140 @@
 #  endif
 # endif
 
+#ifdef ICE_MODEL
+          real(r8), pointer :: ai_west(:)
+          real(r8), pointer :: ai_east(:)
+          real(r8), pointer :: ai_south(:)
+          real(r8), pointer :: ai_north(:)
+
+# ifndef ANA_AIOBC
+          real(r8), pointer :: aiG_west(:,:)
+          real(r8), pointer :: aiG_east(:,:)
+          real(r8), pointer :: aiG_south(:,:)
+          real(r8), pointer :: aiG_north(:,:)
+# endif
+
+          real(r8), pointer :: hi_west(:)
+          real(r8), pointer :: hi_east(:)
+          real(r8), pointer :: hi_south(:)
+          real(r8), pointer :: hi_north(:)
+
+# ifndef ANA_HIOBC
+          real(r8), pointer :: hiG_west(:,:)
+          real(r8), pointer :: hiG_east(:,:)
+          real(r8), pointer :: hiG_south(:,:)
+          real(r8), pointer :: hiG_north(:,:)
+# endif
+
+          real(r8), pointer :: hsn_west(:)
+          real(r8), pointer :: hsn_east(:)
+          real(r8), pointer :: hsn_south(:)
+          real(r8), pointer :: hsn_north(:)
+
+# ifndef ANA_HSNOBC
+          real(r8), pointer :: hsnG_west(:,:)
+          real(r8), pointer :: hsnG_east(:,:)
+          real(r8), pointer :: hsnG_south(:,:)
+          real(r8), pointer :: hsnG_north(:,:)
+# endif
+
+          real(r8), pointer :: ti_west(:)
+          real(r8), pointer :: ti_east(:)
+          real(r8), pointer :: ti_south(:)
+          real(r8), pointer :: ti_north(:)
+
+# ifndef ANA_TIOBC
+          real(r8), pointer :: tiG_west(:,:)
+          real(r8), pointer :: tiG_east(:,:)
+          real(r8), pointer :: tiG_south(:,:)
+          real(r8), pointer :: tiG_north(:,:)
+# endif
+
+          real(r8), pointer :: sfwat_west(:)
+          real(r8), pointer :: sfwat_east(:)
+          real(r8), pointer :: sfwat_south(:)
+          real(r8), pointer :: sfwat_north(:)
+
+# ifndef ANA_SFWATOBC
+          real(r8), pointer :: sfwatG_west(:,:)
+          real(r8), pointer :: sfwatG_east(:,:)
+          real(r8), pointer :: sfwatG_south(:,:)
+          real(r8), pointer :: sfwatG_north(:,:)
+# endif
+
+          real(r8), pointer :: ageice_west(:)
+          real(r8), pointer :: ageice_east(:)
+          real(r8), pointer :: ageice_south(:)
+          real(r8), pointer :: ageice_north(:)
+
+# ifndef ANA_AGEICEOBC
+          real(r8), pointer :: ageiceG_west(:,:)
+          real(r8), pointer :: ageiceG_east(:,:)
+          real(r8), pointer :: ageiceG_south(:,:)
+          real(r8), pointer :: ageiceG_north(:,:)
+# endif
+
+          real(r8), pointer :: sig11_west(:)
+          real(r8), pointer :: sig11_east(:)
+          real(r8), pointer :: sig11_south(:)
+          real(r8), pointer :: sig11_north(:)
+
+# ifndef ANA_SIG11OBC
+          real(r8), pointer :: sig11G_west(:,:)
+          real(r8), pointer :: sig11G_east(:,:)
+          real(r8), pointer :: sig11G_south(:,:)
+          real(r8), pointer :: sig11G_north(:,:)
+# endif
+
+          real(r8), pointer :: sig22_west(:)
+          real(r8), pointer :: sig22_east(:)
+          real(r8), pointer :: sig22_south(:)
+          real(r8), pointer :: sig22_north(:)
+
+# ifndef ANA_SIG22OBC
+          real(r8), pointer :: sig22G_west(:,:)
+          real(r8), pointer :: sig22G_east(:,:)
+          real(r8), pointer :: sig22G_south(:,:)
+          real(r8), pointer :: sig22G_north(:,:)
+# endif
+
+          real(r8), pointer :: sig12_west(:)
+          real(r8), pointer :: sig12_east(:)
+          real(r8), pointer :: sig12_south(:)
+          real(r8), pointer :: sig12_north(:)
+
+# ifndef ANA_SIG12OBC
+          real(r8), pointer :: sig12G_west(:,:)
+          real(r8), pointer :: sig12G_east(:,:)
+          real(r8), pointer :: sig12G_south(:,:)
+          real(r8), pointer :: sig12G_north(:,:)
+# endif
+
+          real(r8), pointer :: ui_west(:)
+          real(r8), pointer :: ui_east(:)
+          real(r8), pointer :: ui_south(:)
+          real(r8), pointer :: ui_north(:)
+
+# ifndef ANA_MIOBC
+          real(r8), pointer :: uiG_west(:,:)
+          real(r8), pointer :: uiG_east(:,:)
+          real(r8), pointer :: uiG_south(:,:)
+          real(r8), pointer :: uiG_north(:,:)
+# endif
+
+          real(r8), pointer :: vi_west(:)
+          real(r8), pointer :: vi_east(:)
+          real(r8), pointer :: vi_south(:)
+          real(r8), pointer :: vi_north(:)
+
+# ifndef ANA_MIOBC
+          real(r8), pointer :: viG_west(:,:)
+          real(r8), pointer :: viG_east(:,:)
+          real(r8), pointer :: viG_south(:,:)
+          real(r8), pointer :: viG_north(:,:)
+# endif
+#endif
+
 # if defined TANGENT || defined TL_IOMS
 !
 !  Tangent linear model state.
@@ -1080,6 +1214,139 @@
 #  endif
 # endif
 
+#ifdef ICE_MODEL
+      allocate ( BOUNDARY(ng) % ai_west(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % ai_east(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % ai_south(XI_DIM) )
+      allocate ( BOUNDARY(ng) % ai_north(XI_DIM) )
+
+# ifndef ANA_AIOBC
+      allocate ( BOUNDARY(ng) % aiG_west(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % aiG_east(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % aiG_south(XI_DIM,2) )
+      allocate ( BOUNDARY(ng) % aiG_north(XI_DIM,2) )
+# endif
+
+      allocate ( BOUNDARY(ng) % hi_west(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % hi_east(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % hi_south(XI_DIM) )
+      allocate ( BOUNDARY(ng) % hi_north(XI_DIM) )
+
+# ifndef ANA_HIOBC
+      allocate ( BOUNDARY(ng) % hiG_west(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % hiG_east(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % hiG_south(XI_DIM,2) )
+      allocate ( BOUNDARY(ng) % hiG_north(XI_DIM,2) )
+# endif
+
+      allocate ( BOUNDARY(ng) % hsn_west(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % hsn_east(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % hsn_south(XI_DIM) )
+      allocate ( BOUNDARY(ng) % hsn_north(XI_DIM) )
+
+# ifndef ANA_HSNOBC
+      allocate ( BOUNDARY(ng) % hsnG_west(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % hsnG_east(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % hsnG_south(XI_DIM,2) )
+      allocate ( BOUNDARY(ng) % hsnG_north(XI_DIM,2) )
+# endif
+
+      allocate ( BOUNDARY(ng) % ti_west(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % ti_east(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % ti_south(XI_DIM) )
+      allocate ( BOUNDARY(ng) % ti_north(XI_DIM) )
+
+# ifndef ANA_TIOBC
+      allocate ( BOUNDARY(ng) % tiG_west(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % tiG_east(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % tiG_south(XI_DIM,2) )
+      allocate ( BOUNDARY(ng) % tiG_north(XI_DIM,2) )
+# endif
+
+      allocate ( BOUNDARY(ng) % sfwat_west(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % sfwat_east(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % sfwat_south(XI_DIM) )
+      allocate ( BOUNDARY(ng) % sfwat_north(XI_DIM) )
+
+# ifndef ANA_SFWATOBC
+      allocate ( BOUNDARY(ng) % sfwatG_west(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % sfwatG_east(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % sfwatG_south(XI_DIM,2) )
+      allocate ( BOUNDARY(ng) % sfwatG_north(XI_DIM,2) )
+# endif
+
+      allocate ( BOUNDARY(ng) % ageice_west(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % ageice_east(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % ageice_south(XI_DIM) )
+      allocate ( BOUNDARY(ng) % ageice_north(XI_DIM) )
+
+# ifndef ANA_AGEICEOBC
+      allocate ( BOUNDARY(ng) % ageiceG_west(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % ageiceG_east(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % ageiceG_south(XI_DIM,2) )
+      allocate ( BOUNDARY(ng) % ageiceG_north(XI_DIM,2) )
+# endif
+
+      allocate ( BOUNDARY(ng) % sig11_west(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % sig11_east(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % sig11_south(XI_DIM) )
+      allocate ( BOUNDARY(ng) % sig11_north(XI_DIM) )
+
+# ifndef ANA_SIG11OBC
+      allocate ( BOUNDARY(ng) % sig11G_west(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % sig11G_east(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % sig11G_south(XI_DIM,2) )
+      allocate ( BOUNDARY(ng) % sig11G_north(XI_DIM,2) )
+# endif
+
+      allocate ( BOUNDARY(ng) % sig22_west(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % sig22_east(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % sig22_south(XI_DIM) )
+      allocate ( BOUNDARY(ng) % sig22_north(XI_DIM) )
+
+# ifndef ANA_SIG22OBC
+      allocate ( BOUNDARY(ng) % sig22G_west(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % sig22G_east(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % sig22G_south(XI_DIM,2) )
+      allocate ( BOUNDARY(ng) % sig22G_north(XI_DIM,2) )
+# endif
+
+      allocate ( BOUNDARY(ng) % sig12_west(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % sig12_east(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % sig12_south(XI_DIM) )
+      allocate ( BOUNDARY(ng) % sig12_north(XI_DIM) )
+
+# ifndef ANA_SIG12OBC
+      allocate ( BOUNDARY(ng) % sig12G_west(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % sig12G_east(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % sig12G_south(XI_DIM,2) )
+      allocate ( BOUNDARY(ng) % sig12G_north(XI_DIM,2) )
+# endif
+
+      allocate ( BOUNDARY(ng) % ui_west(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % ui_east(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % ui_south(XI_DIM) )
+      allocate ( BOUNDARY(ng) % ui_north(XI_DIM) )
+
+# ifndef ANA_MIOBC
+      allocate ( BOUNDARY(ng) % uiG_west(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % uiG_east(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % uiG_south(XI_DIM,2) )
+      allocate ( BOUNDARY(ng) % uiG_north(XI_DIM,2) )
+# endif
+
+      allocate ( BOUNDARY(ng) % vi_west(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % vi_east(ETA_DIM) )
+      allocate ( BOUNDARY(ng) % vi_south(XI_DIM) )
+      allocate ( BOUNDARY(ng) % vi_north(XI_DIM) )
+
+# ifndef ANA_MIOBC
+      allocate ( BOUNDARY(ng) % viG_west(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % viG_east(ETA_DIM,2) )
+      allocate ( BOUNDARY(ng) % viG_south(XI_DIM,2) )
+      allocate ( BOUNDARY(ng) % viG_north(XI_DIM,2) )
+# endif
+#endif
 # if defined TANGENT || defined TL_IOMS
 !
 !  Tangent linear model state.
@@ -1577,7 +1844,195 @@
         END IF
 #  endif
 # endif
+# ifdef ICE_MODEL
+        IF (NORTH_WEST_TEST) THEN
+          BOUNDARY(ng) % ai_west = IniVal
+#  ifndef ANA_AIOBC
+          BOUNDARY(ng) % aiG_west = IniVal
+#  endif
+          BOUNDARY(ng) % hi_west = IniVal
+#  ifndef ANA_HIOBC
+          BOUNDARY(ng) % hiG_west = IniVal
+#  endif
+          BOUNDARY(ng) % hsn_west = IniVal
+#  ifndef ANA_HSNOBC
+          BOUNDARY(ng) % hsnG_west = IniVal
+#  endif
+          BOUNDARY(ng) % ti_west = IniVal
+#  ifndef ANA_TIOBC
+          BOUNDARY(ng) % tiG_west = IniVal
+#  endif
+          BOUNDARY(ng) % sfwat_west = IniVal
+#  ifndef ANA_SFWATOBC
+          BOUNDARY(ng) % sfwatG_west = IniVal
+#  endif
+          BOUNDARY(ng) % ageice_west = IniVal
+#ifndef ANA_AGEICEOBC
+          BOUNDARY(ng) % ageiceG_west = IniVal
+#endif
+          BOUNDARY(ng) % sig11_west = IniVal
+#  ifndef ANA_SIG11OBC
+          BOUNDARY(ng) % sig11G_west = IniVal
+#  endif
+          BOUNDARY(ng) % sig22_west = IniVal
+#  ifndef ANA_SIG22OBC
+          BOUNDARY(ng) % sig22G_west = IniVal
+#  endif
+          BOUNDARY(ng) % sig12_west = IniVal
+#  ifndef ANA_SIG12OBC
+          BOUNDARY(ng) % sig12G_west = IniVal
+#  endif
+          BOUNDARY(ng) % ui_west = IniVal
+#  ifndef ANA_MIOBC
+          BOUNDARY(ng) % uiG_west = IniVal
+#  endif
+          BOUNDARY(ng) % vi_west = IniVal
+#  ifndef ANA_MIOBC
+          BOUNDARY(ng) % viG_west = IniVal
+#  endif
+        END IF
 
+        IF (SOUTH_EAST_TEST) THEN
+          BOUNDARY(ng) % ai_east = IniVal
+#  ifndef ANA_AIOBC
+          BOUNDARY(ng) % aiG_east = IniVal
+#  endif
+          BOUNDARY(ng) % hi_east = IniVal
+#  ifndef ANA_HIOBC
+          BOUNDARY(ng) % hiG_east = IniVal
+#  endif
+          BOUNDARY(ng) % hsn_east = IniVal
+#  ifndef ANA_HSNOBC
+          BOUNDARY(ng) % hsnG_east = IniVal
+#  endif
+          BOUNDARY(ng) % ti_east = IniVal
+#  ifndef ANA_TIOBC
+          BOUNDARY(ng) % tiG_east = IniVal
+#  endif
+          BOUNDARY(ng) % sfwat_east = IniVal
+#  ifndef ANA_SFWATOBC
+          BOUNDARY(ng) % sfwatG_east = IniVal
+#  endif
+          BOUNDARY(ng) % ageice_east = IniVal
+#ifndef ANA_AGEICEOBC
+          BOUNDARY(ng) % ageiceG_east = IniVal
+#endif
+
+          BOUNDARY(ng) % sig11_east = IniVal
+#  ifndef ANA_SIG11OBC
+          BOUNDARY(ng) % sig11G_east = IniVal
+#  endif
+          BOUNDARY(ng) % sig22_east = IniVal
+#  ifndef ANA_SIG22OBC
+          BOUNDARY(ng) % sig22G_east = IniVal
+#  endif
+          BOUNDARY(ng) % sig12_east = IniVal
+#  ifndef ANA_SIG12OBC
+          BOUNDARY(ng) % sig12G_east = IniVal
+#  endif
+          BOUNDARY(ng) % ui_east = IniVal
+#  ifndef ANA_MIOBC
+          BOUNDARY(ng) % uiG_east = IniVal
+#  endif
+          BOUNDARY(ng) % vi_east = IniVal
+#  ifndef ANA_MIOBC
+          BOUNDARY(ng) % viG_east = IniVal
+#  endif
+        END IF
+        IF (SOUTH_WEST_TEST) THEN
+          BOUNDARY(ng) % ai_south = IniVal
+#  ifndef ANA_AIOBC
+          BOUNDARY(ng) % aiG_south = IniVal
+#  endif
+          BOUNDARY(ng) % hi_south = IniVal
+#  ifndef ANA_HIOBC
+          BOUNDARY(ng) % hiG_south = IniVal
+#  endif
+          BOUNDARY(ng) % hsn_south = IniVal
+#  ifndef ANA_HSNOBC
+          BOUNDARY(ng) % hsnG_south = IniVal
+#  endif
+          BOUNDARY(ng) % ti_south = IniVal
+#  ifndef ANA_TIOBC
+          BOUNDARY(ng) % tiG_south = IniVal
+#  endif
+          BOUNDARY(ng) % sfwat_south = IniVal
+#  ifndef ANA_SFWATOBC
+          BOUNDARY(ng) % sfwatG_south = IniVal
+#  endif
+          BOUNDARY(ng) % ageice_south = IniVal
+#ifndef ANA_AGEICEOBC
+          BOUNDARY(ng) % ageiceG_south = IniVal
+#endif
+          BOUNDARY(ng) % sig11_south = IniVal
+#  ifndef ANA_SIG11OBC
+          BOUNDARY(ng) % sig11G_south = IniVal
+#  endif
+          BOUNDARY(ng) % sig22_south = IniVal
+#  ifndef ANA_SIG22OBC
+          BOUNDARY(ng) % sig22G_south = IniVal
+#  endif
+          BOUNDARY(ng) % sig12_south = IniVal
+#  ifndef ANA_SIG12OBC
+          BOUNDARY(ng) % sig12G_south = IniVal
+#  endif
+          BOUNDARY(ng) % ui_south = IniVal
+#  ifndef ANA_MIOBC
+          BOUNDARY(ng) % uiG_south = IniVal
+#  endif
+          BOUNDARY(ng) % vi_south = IniVal
+#  ifndef ANA_MIOBC
+          BOUNDARY(ng) % viG_south = IniVal
+#  endif
+        END IF
+
+        IF (NORTH_EAST_TEST) THEN
+          BOUNDARY(ng) % ai_north = IniVal
+#  ifndef ANA_AIOBC
+          BOUNDARY(ng) % aiG_north = IniVal
+#  endif
+          BOUNDARY(ng) % hi_north = IniVal
+#  ifndef ANA_HIOBC
+          BOUNDARY(ng) % hiG_north = IniVal
+#  endif
+          BOUNDARY(ng) % hsn_north = IniVal
+#  ifndef ANA_HSNOBC
+          BOUNDARY(ng) % hsnG_north = IniVal
+#  endif
+          BOUNDARY(ng) % ti_north = IniVal
+#  ifndef ANA_TIOBC
+          BOUNDARY(ng) % tiG_north = IniVal
+#  endif
+          BOUNDARY(ng) % sfwat_north = IniVal
+#  ifndef ANA_SFWATOBC
+          BOUNDARY(ng) % sfwatG_north = IniVal
+#  endif
+          BOUNDARY(ng) % ageice_north = IniVal
+#ifndef ANA_AGEICEOBC
+          BOUNDARY(ng) % ageiceG_north = IniVal
+#endif
+          BOUNDARY(ng) % sig11_north = IniVal
+#  ifndef ANA_SIG11OBC
+          BOUNDARY(ng) % sig11G_north = IniVal
+#  endif
+          BOUNDARY(ng) % sig22_north = IniVal
+#  ifndef ANA_SIG22OBC
+          BOUNDARY(ng) % sig22G_north = IniVal
+#  endif
+          BOUNDARY(ng) % sig12_north = IniVal
+#  ifndef ANA_SIG12OBC
+          BOUNDARY(ng) % sig12G_north = IniVal
+#  endif
+          BOUNDARY(ng) % ui_north = IniVal
+#  ifndef ANA_MIOBC
+          BOUNDARY(ng) % uiG_north = IniVal
+#  endif
+          BOUNDARY(ng) % vi_north = IniVal
+#  ifndef ANA_MIOBC
+          BOUNDARY(ng) % viG_north = IniVal
+#  endif
+        END IF
+# endif
       END IF
 
 # if defined TANGENT || defined TL_IOMS

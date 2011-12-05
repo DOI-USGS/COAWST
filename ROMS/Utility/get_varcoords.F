@@ -4,9 +4,9 @@
      &                          Xmin, Xmax, X, Ymin, Ymax, Y,           &
      &                          rectangular)
 !
-!svn $Id: get_varcoords.F 1336 2008-01-24 02:45:56Z jcwarner $
+!svn $Id: get_varcoords.F 1420 2011-07-06 17:59:33Z kate $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2011 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -88,6 +88,9 @@
       DO i=1,n_vatt
         IF (TRIM(var_Aname(i)).eq.'coordinates') THEN
           alen=LEN_TRIM(var_Achar(i))
+          IF (INDEX(var_Achar(i),CHAR(0)).ne.0) THEN
+            alen=alen-1
+          END IF
           blank=INDEX(var_Achar(i)(1:alen),' ')
           Xname=var_Achar(i)(1:blank-1)
           Yname=var_Achar(i)(blank+1:alen)
@@ -114,16 +117,33 @@
      &                        Xwrk,                                     &
      &                        ncid = ncid,                              &
      &                        start = (/1/),                            &
+#ifdef GLOBAL_PERIODIC
+     &                        total = (/Nx-2/))
+#else
      &                        total = (/Nx/))
+#endif
         IF (exit_flag.ne.NoError) RETURN
 
         rectangular=.TRUE.
         jc=0
+#ifdef GLOBAL_PERIODIC
+! KLUDGE: Assume degrees longitude!
+        DO j=1,Ny
+          DO i=1,Nx-2
+            X(i+1,j)=Xwrk(i)
+          END DO
+        END DO
+        DO j=1,Ny
+          X(1,j) = X(Nx-1,j) - 360.0
+          X(Nx,j) = X(2,j) + 360.0
+        END DO
+#else
         DO j=1,Ny
           DO i=1,Nx
             X(i,j)=Xwrk(i)
           END DO
         END DO
+#endif
       ELSE
         CALL netcdf_get_fvar (ng, model, ncname, Xname,                 &
      &                        X,                                        &
@@ -153,16 +173,31 @@
      &                        Ywrk,                                     &
      &                        ncid = ncid,                              &
      &                        start = (/1/),                            &
+#ifdef GLOBAL_PERIODIC
+     &                        total = (/Ny-1/))
+#else
      &                        total = (/Ny/))
+#endif
         IF (exit_flag.ne.NoError) RETURN
 
         rectangular=.TRUE.
         ic=0
+#ifdef GLOBAL_PERIODIC
+        DO j=1,Ny-1
+          DO i=1,Nx
+            Y(i,j)=Ywrk(j)
+          END DO
+        END DO
+        DO i=1,Nx
+          Y(i,Ny)=MAX(180.-Y(i,Ny-1),Y(i,Ny-1))
+        END DO
+#else
         DO j=1,Ny
           DO i=1,Nx
             Y(i,j)=Ywrk(j)
           END DO
         END DO
+#endif
       ELSE
         CALL netcdf_get_fvar (ng, model, ncname, Yname,                 &
      &                        Y,                                        &

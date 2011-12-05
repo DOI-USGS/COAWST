@@ -396,9 +396,6 @@ ifdef USE_REPRESENTER
  modules  +=	ROMS/Representer \
 		ROMS/Representer/Biology
 endif
-ifdef USE_SEAICE
- modules  +=	ROMS/SeaIce
-endif
 ifdef USE_TANGENT
  modules  +=	ROMS/Tangent \
 		ROMS/Tangent/Biology
@@ -412,6 +409,10 @@ ifdef USE_ROMS
 		ROMS/Utility \
 		ROMS/Modules
 endif
+ifdef USE_SEAICE
+ modules  +=	ROMS/SeaIce
+endif
+
  includes :=	ROMS/Include
 ifdef MY_ANALYTICAL
  includes +=	$(MY_ANALYTICAL_DIR)

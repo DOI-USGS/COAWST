@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_strings
 !
-!svn $Id: mod_strings.F 1589 2008-07-24 04:02:51Z jcwarner $
+!svn $Id: mod_strings.F 1368 2011-01-21 00:34:18Z kate $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2011 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -22,7 +22,7 @@
         character (len=80)   :: title
         character (len=2048) :: Coptions
 
-        integer, parameter :: Nregion = 48
+        integer, parameter :: Nregion = 54
 
         character (len=55), dimension(11) :: StateMsg =                 &
      &    (/'Read state initial conditions,               ',            &
@@ -85,7 +85,13 @@
      &      'Message Passage: data scattering..................',       &
      &      'Message Passage: boundary data gathering .........',       &
      &      'Message Passage: point data gathering ............',       &
-     &      'Message Passage: multi-model coupling ............'/)
+     &      'Message Passage: multi-model coupling ............',       &
+     &      'Ice thermodynamics................................',       &
+     &      'Ice rheology coefficients.........................',       &
+     &      'Generate coefficients for ice dynamics solver.....',       &
+     &      'Generate RHS for ice dynamics solver..............',       &
+     &      'Iterative solver of ice dynamics..................',       &
+     &      'Advection of ice tracers..........................'/)
 
         character (len=80) :: my_os = MY_OS
         character (len=80) :: my_cpu = MY_CPU

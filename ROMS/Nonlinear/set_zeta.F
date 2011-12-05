@@ -29,6 +29,9 @@
       USE mod_param
       USE mod_coupling
       USE mod_ocean
+#if defined EMINUSP && defined EMINUSP_SSH
+      USE mod_forces
+#endif
 !
 !  Imported variable declarations.
 !
@@ -45,6 +48,10 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    COUPLING(ng) % Zt_avg1,                       &
+# if defined EMINUSP && defined EMINUSP_SSH
+     &                    FORCES(ng) % rain,                            &
+     &                    FORCES(ng) % evap,                            &
+# endif
      &                    OCEAN(ng) % zeta)
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 12)
@@ -56,7 +63,11 @@
       SUBROUTINE set_zeta_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          IminS, ImaxS, JminS, JmaxS,             &
-     &                          Zt_avg1, zeta)
+     &                          Zt_avg1,                                &
+# if defined EMINUSP && defined EMINUSP_SSH
+     &                          rain, evap,                             & 
+# endif
+     &                          zeta)
 !***********************************************************************
 !
       USE mod_param
@@ -77,12 +88,22 @@
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 # ifdef ASSUMED_SHAPE
+# if defined EMINUSP && defined EMINUSP_SSH
+      real(r8), intent(in) :: rain(LBi:,LBj:)
+      real(r8), intent(in) :: evap(LBi:,LBj:)
+      real(r8), intent(inout) :: Zt_avg1(LBi:,LBj:)
+# else
       real(r8), intent(in) :: Zt_avg1(LBi:,LBj:)
-
+# endif
       real(r8), intent(out) :: zeta(LBi:,LBj:,:)
 # else
+# if defined EMINUSP && defined EMINUSP_SSH
+      real(r8), intent(in) :: rain(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: evap(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: Zt_avg1(LBi:UBi,LBj:UBj)
+# else
       real(r8), intent(in) :: Zt_avg1(LBi:UBi,LBj:UBj)
-
+# endif
       real(r8), intent(out) :: zeta(LBi:UBi,LBj:UBj,3)
 # endif
 !
@@ -100,9 +121,25 @@
       logical :: NSperiodic=.FALSE.
 #  endif
 # endif
+# if defined EMINUSP && defined EMINUSP_SSH
+      real(r8) :: cff
+#endif
       integer :: i, j
 
 # include "set_bounds.h"
+!
+# if defined EMINUSP && defined EMINUSP_SSH
+!
+! Correct sea level for evaporation - precipitation
+! Apply to fast-time averaged free-surface height
+!
+      cff = dt(ng)/rhow
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          Zt_avg1(i,j) = Zt_avg1(i,j) - cff*(evap(i,j)-rain(i,j))
+        END DO
+      END DO
+# endif
 !
 !-----------------------------------------------------------------------
 !  Prepare to time-step 2D equations:  set initial free-surface

@@ -352,6 +352,60 @@
   'v3dvar'
   1.0d0
 
+'temp_tide'                                        ! Input/Output
+  'time-accumulated potential temperature tide harmonics'
+  'Celsius'                                        ! [Celsius]
+  'temp_tide, scalar'
+  'ocean_time'
+  'idTrcH(itemp)'
+  'r3dvar'
+  1.0d0
+
+'temp_detided'                                     ! Output
+  'detided potential temperature'
+  'Celsius'                                        ! [Celsius]
+  'v_detided, scalar, series'
+  'ocean_time'
+  'idTrcD(itemp)'
+  'r3dvar'
+  1.0d0
+
+'temp_tide'                                        ! Input/Output
+  'time-accumulated potential temperature tide harmonics'
+  'Celsius'                                        ! [Celsius]
+  'temp_tide, scalar'
+  'ocean_time'
+  'idTrcH(itemp)'
+  'r3dvar'
+  1.0d0
+
+'temp_detided'                                     ! Output
+  'detided potential temperature'
+  'Celsius'                                        ! [Celsius]
+  'temp_detided, scalar, series'
+  'ocean_time'
+  'idTrcD(itemp)'
+  'r3dvar'
+  1.0d0
+
+'salt_tide'                                        ! Input/Output
+  'time-accumulated salinity tide harmonics'
+  'nondimensional'                                 ! [PSU]
+  'salt_tide, scalar'
+  'ocean_time'
+  'idTrcH(isalt)'
+  'r3dvar'
+  1.0d0
+
+'salt_detided'                                     ! Output
+  'detided potential temperature'
+  'nondimensional'                                 ! [PSU]
+  'salt_detided, scalar, series'
+  'ocean_time'
+  'idTrcD(isalt)'
+  'r3dvar'
+  1.0d0
+
 !
 !------------------------------------------------------------------------------
 !  Momentum stress variables.
@@ -641,7 +695,7 @@
 
 'tisrf'
   'temperature of ice surface'
-  'degrees Kelvin'
+  'degrees Celcius'
   'surface temperature, scalar, series'
   'ocean_time'
   'idTice'
@@ -693,6 +747,51 @@
   'r2dvar'
   1.0d0
 
+'wfr'
+  'rate of frazil ice growth'
+  'm^3 s-1'
+  'freeze rate, scalar, series'
+  'ocean_time'
+  'idWfr'
+  'r2dvar'
+  1.0d0
+
+'wai'
+  'rate of ice melt on top'
+  'm^3 s-1'
+  'freeze/melt rate, scalar, series'
+  'ocean_time'
+  'idWai'
+  'r2dvar'
+  1.0d0
+
+'wao'
+  'rate of ice growth in leads'
+  'm^3 s-1'
+  'freeze/melt rate, scalar, series'
+  'ocean_time'
+  'idWao'
+  'r2dvar'
+  1.0d0
+
+'wio'
+  'rate of ice growth under ice'
+  'm^3 s-1'
+  'freeze rate, scalar, series'
+  'ocean_time'
+  'idWio'
+  'r2dvar'
+  1.0d0
+
+'wro'
+  'rate of ice melt runoff'
+  'm^3 s-1'
+  'melt runoff rate, scalar, series'
+  'ocean_time'
+  'idWro'
+  'r2dvar'
+  1.0d0
+
 'sfwat'
   'surface melt water thickness on ice'
   'meter'
@@ -708,6 +807,15 @@
   'ice-ocean mass flux, scalar, series'
   'ocean_time'
   'idIomflx'
+  'r2dvar'
+  1.0d0
+
+'ageice'
+  'age of the ice'
+  'sec'
+  'ice age, scalar, series'
+  'ocean_time'
+  'idAgeice'
   'r2dvar'
   1.0d0
 
@@ -735,6 +843,15 @@
   'ice stress 12, scalar, series'
   'ocean_time'
   'idSig12'
+  'r2dvar'
+  1.0d0
+
+'Runoff'
+  'Fresh water runoff from land'
+  'kg/s/m^2'
+  'runoff, scalar, series'
+  'runoff_time'
+  'idRunoff'
   'r2dvar'
   1.0d0
 
@@ -1170,6 +1287,366 @@
   'salt_north, scalar, series'
   'salt_time'
   'idTbry(inorth,isalt)'
+  'nulvar'
+  1.0d0
+
+'aice_west'
+  'ice concentration western boundary condition'
+  ' '
+  'aice_west, scalar, series'
+  'bry_time'
+  'idAibc(iwest)'
+  'nulvar'
+  1.0d0
+
+'aice_east'
+  'ice concentration eastern boundary condition'
+  ' '
+  'aice_east, scalar, series'
+  'bry_time'
+  'idAibc(ieast)'
+  'nulvar'
+  1.0d0
+
+'aice_north'
+  'ice concentration northern boundary condition'
+  ' '
+  'aice_north, scalar, series'
+  'bry_time'
+  'idAibc(inorth)'
+  'nulvar'
+  1.0d0
+
+'aice_south'
+  'ice concentration southern boundary condition'
+  ' '
+  'aice_south, scalar, series'
+  'bry_time'
+  'idAibc(isouth)'
+  'nulvar'
+  1.0d0
+
+'hice_west'
+  'ice thickness western boundary condition'
+  'meter'
+  'hice_west, scalar, series'
+  'bry_time'
+  'idHibc(iwest)'
+  'nulvar'
+  1.0d0
+
+'hice_east'
+  'ice thickness eastern boundary condition'
+  'meter'
+  'hice_east, scalar, series'
+  'bry_time'
+  'idHibc(ieast)'
+  'nulvar'
+  1.0d0
+
+'hice_north'
+  'ice thickness northern boundary condition'
+  'meter'
+  'hice_north, scalar, series'
+  'bry_time'
+  'idHibc(inorth)'
+  'nulvar'
+  1.0d0
+
+'hice_south'
+  'ice thickness southern boundary condition'
+  'meter'
+  'hice_south, scalar, series'
+  'bry_time'
+  'idHibc(isouth)'
+  'nulvar'
+  1.0d0
+
+'snow_thick_west'
+  'snow thickness western boundary condition'
+  'meter'
+  'snow_thick_west, scalar, series'
+  'bry_time'
+  'idHsnbc(iwest)'
+  'nulvar'
+  1.0d0
+
+'snow_thick_east'
+  'snow thickness eastern boundary condition'
+  'meter'
+  'snow_thick_east, scalar, series'
+  'bry_time'
+  'idHsnbc(ieast)'
+  'nulvar'
+  1.0d0
+
+'snow_thick_north'
+  'snow thickness northern boundary condition'
+  'meter'
+  'snow_thick_north, scalar, series'
+  'bry_time'
+  'idHsnbc(inorth)'
+  'nulvar'
+  1.0d0
+
+'snow_thick_south'
+  'snow thickness southern boundary condition'
+  'meter'
+  'snow_thick_south, scalar, series'
+  'bry_time'
+  'idHsnbc(isouth)'
+  'nulvar'
+  1.0d0
+
+'ti_west'
+  'ice interior temperature western boundary condition'
+  'Celsius'
+  'ti_west, scalar, series'
+  'bry_time'
+  'idTibc(iwest)'
+  'nulvar'
+  1.0d0
+
+'ti_east'
+  'ice interior temperature eastern boundary condition'
+  'Celsius'
+  'ti_east, scalar, series'
+  'bry_time'
+  'idTibc(ieast)'
+  'nulvar'
+  1.0d0
+
+'ti_north'
+  'ice interior temperature northern boundary condition'
+  'Celsius'
+  'ti_north, scalar, series'
+  'bry_time'
+  'idTibc(inorth)'
+  'nulvar'
+  1.0d0
+
+'ti_south'
+  'ice interior temperature southern boundary condition'
+  'Celsius'
+  'ti_south, scalar, series'
+  'bry_time'
+  'idTibc(isouth)'
+  'nulvar'
+  1.0d0
+
+'sfwat_west'
+  'surface meltwater thickness western boundary condition'
+  'meter'
+  'sfwat_west, scalar, series'
+  'bry_time'
+  'idSfwbc(iwest)'
+  'nulvar'
+  1.0d0
+
+'sfwat_east'
+  'surface meltwater thickness eastern boundary condition'
+  'meter'
+  'sfwat_east, scalar, series'
+  'bry_time'
+  'idSfwbc(ieast)'
+  'nulvar'
+  1.0d0
+
+'sfwat_north'
+  'surface meltwater thickness northern boundary condition'
+  'meter'
+  'sfwat_north, scalar, series'
+  'bry_time'
+  'idSfwbc(inorth)'
+  'nulvar'
+  1.0d0
+
+'sfwat_south'
+  'surface meltwater thickness southern boundary condition'
+  'meter'
+  'sfwat_south, scalar, series'
+  'bry_time'
+  'idSfwbc(isouth)'
+  'nulvar'
+  1.0d0
+
+'sig11_west'
+  'ice stress component 11 western boundary condition'
+  'N meter-1'
+  'sig11_west, scalar, series'
+  'bry_time'
+  'idS11bc(iwest)'
+  'nulvar'
+  1.0d0
+
+'sig11_east'
+  'ice stress component 11 eastern boundary condition'
+  'N meter-1'
+  'sig11_east, scalar, series'
+  'bry_time'
+  'idS11bc(ieast)'
+  'nulvar'
+  1.0d0
+
+'sig11_north'
+  'ice stress component 11 northern boundary condition'
+  'N meter-1'
+  'sig11_north, scalar, series'
+  'bry_time'
+  'idS11bc(inorth)'
+  'nulvar'
+  1.0d0
+
+'sig11_south'
+  'ice stress component 22 southern boundary condition'
+  'N meter-1'
+  'sig11_south, scalar, series'
+  'bry_time'
+  'idS11bc(isouth)'
+  'nulvar'
+  1.0d0
+
+'sig22_west'
+  'ice stress component 22 western boundary condition'
+  'N meter-1'
+  'sig22_west, scalar, series'
+  'bry_time'
+  'idS22bc(iwest)'
+  'nulvar'
+  1.0d0
+
+'sig22_east'
+  'ice stress component 22 eastern boundary condition'
+  'N meter-1'
+  'sig22_east, scalar, series'
+  'bry_time'
+  'idS22bc(ieast)'
+  'nulvar'
+  1.0d0
+
+'sig22_north'
+  'ice stress component 22 northern boundary condition'
+  'N meter-1'
+  'sig22_north, scalar, series'
+  'bry_time'
+  'idS22bc(inorth)'
+  'nulvar'
+  1.0d0
+
+'sig22_south'
+  'ice stress component 12 southern boundary condition'
+  'N meter-1'
+  'sig22_south, scalar, series'
+  'bry_time'
+  'idS22bc(isouth)'
+  'nulvar'
+  1.0d0
+
+'sig12_west'
+  'ice stress component 12 western boundary condition'
+  'N meter-1'
+  'sig12_west, scalar, series'
+  'bry_time'
+  'idS12bc(iwest)'
+  'nulvar'
+  1.0d0
+
+'sig12_east'
+  'ice stress component 12 eastern boundary condition'
+  'N meter-1'
+  'sig12_east, scalar, series'
+  'bry_time'
+  'idS12bc(ieast)'
+  'nulvar'
+  1.0d0
+
+'sig12_north'
+  'ice stress component 12 northern boundary condition'
+  'N meter-1'
+  'sig12_north, scalar, series'
+  'bry_time'
+  'idS12bc(inorth)'
+  'nulvar'
+  1.0d0
+
+'sig12_south'
+  'ice stress component 12 southern boundary condition'
+  'N meter-1'
+  'sig12_south, scalar, series'
+  'bry_time'
+  'idS12bc(isouth)'
+  'nulvar'
+  1.0d0
+
+'uice_west'
+  'ice u-momentum western boundary condition'
+  'meter second-1'
+  'uice_west, scalar, series'
+  'bry_time'
+  'idUibc(iwest)'
+  'nulvar'
+  1.0d0
+
+'uice_east'
+  'ice u-momentum eastern boundary condition'
+  'meter second-1'
+  'uice_east, scalar, series'
+  'bry_time'
+  'idUibc(ieast)'
+  'nulvar'
+  1.0d0
+
+'uice_north'
+  'ice u-momentum northern boundary condition'
+  'meter second-1'
+  'uice_north, scalar, series'
+  'bry_time'
+  'idUibc(inorth)'
+  'nulvar'
+  1.0d0
+
+'uice_south'
+  'ice u-momentum southern boundary condition'
+  'meter second-1'
+  'uice_south, scalar, series'
+  'bry_time'
+  'idUibc(isouth)'
+  'nulvar'
+  1.0d0
+
+'vice_west'
+  'ice v-momentum western boundary condition'
+  'meter second-1'
+  'vice_west, scalar, series'
+  'bry_time'
+  'idVibc(iwest)'
+  'nulvar'
+  1.0d0
+
+'vice_east'
+  'ice v-momentum eastern boundary condition'
+  'meter second-1'
+  'vice_east, scalar, series'
+  'bry_time'
+  'idVibc(ieast)'
+  'nulvar'
+  1.0d0
+
+'vice_north'
+  'ice v-momentum northern boundary condition'
+  'meter second-1'
+  'vice_north, scalar, series'
+  'bry_time'
+  'idVibc(inorth)'
+  'nulvar'
+  1.0d0
+
+'vice_south'
+  'ice v-momentum southern boundary condition'
+  'meter second-1'
+  'vice_south, scalar, series'
+  'bry_time'
+  'idVibc(isouth)'
   'nulvar'
   1.0d0
 
@@ -1689,6 +2166,24 @@
   'r2dvar'
   1.0d0
 
+'tide_Pamp'                                        ! Input
+  'tidal potential elevation amplitude'
+  'meter'                                          ! [m]
+  'SSH_Pamp, scalar, series'
+  'tide_period'
+  'idTpam'
+  'r2dvar'
+  1.0d0
+
+'tide_Pphase'                                      ! Input
+  'tidal potential elevation phase angle'
+  'degrees'                                        ! [radians]
+  'SSH_Pphase, scalar, series'
+  'tide_period'
+  'idTpph'
+  'r2dvar'
+  0.017453292519943295                             ! pi/180
+
 !
 !------------------------------------------------------------------------------
 !  River forcing variables.
@@ -1771,7 +2266,7 @@
   'river runoff dye concentration'
   'kilogram meter-3'                               ! [kg/m3]
   'river_dye, scalar, series'
-  'ocean_time'
+  'river_time'
   'idRtrc(inert(i))'
   'nulvar'
   1.0d0
@@ -1809,6 +2304,69 @@
   'river_NO3, scalar, series'
   'river_time'
   'idRtrc(iNO3_)'
+  'nulvar'
+  1.0d0
+
+'river_nanophytoplankton'                          ! Input
+  'river runoff nanophytoplankton'
+  'millimole_nitrogen meter-3'                     ! [millimole/m3]
+  'river_nanophytoplankton, scalar, series'
+  'river_time'
+  'idRtrc(iSphy)'
+  'nulvar'
+  1.0d0
+
+'river_diatom'                                     ! Input
+  'river runoff diatom'
+  'millimole_nitrogen meter-3'                     ! [millimole/m3]
+  'river_diatom, scalar, series'
+  'river_time'
+  'idRtrc(iLphy)'
+  'nulvar'
+  1.0d0
+
+'river_microzooplankton'                           ! Input
+  'river runoff microzooplankton'
+  'millimole_nitrogen meter-3'                     ! [millimole/m3]
+  'river_microzooplankton, scalar, series'
+  'river_time'
+  'idRtrc(iSzoo)'
+  'nulvar'
+  1.0d0
+
+'river_mesozooplankton'                            ! Input
+  'river runoff mesozooplankton'
+  'millimole_nitrogen meter-3'                     ! [millimole/m3]
+  'river_mesozooplankton, scalar, series'
+  'river_time'
+  'idRtrc(iLzoo)'
+  'nulvar'
+  1.0d0
+
+'river_SiOH4'                                      ! Input
+  'river runoff SiOH4'
+  'millimole_silica meter-3'                       ! [millimole/m3]
+  'river_SiOH4, scalar, series'
+  'river_time'
+  'idRtrc(iSiOH)'
+  'nulvar'
+  1.0d0
+
+'river_opal'                                       ! Input
+  'river runoff opal'
+  'millimole_silica meter-3'                       ! [millimole/m3]
+  'river_opal, scalar, series'
+  'river_time'
+  'idRtrc(iopal)'
+  'nulvar'
+  1.0d0
+
+'river_PO4'                                        ! Input
+  'river runoff PO4'
+  'millimole_P meter-3'                            ! [millimole/m3]
+  'river_PO4, scalar, series'
+  'river_time'
+  'idRtrc(iPO4_)'
   'nulvar'
   1.0d0
 
@@ -1968,12 +2526,30 @@
   'v3dvar'
   1.0d0
 
+'omega'
+  'S-coordinate vertical momentum climatology'
+  'meter3 second-1'
+  'omega, scalar, series'
+  'ocean_time'
+  'idOclm'
+  'w3dvar'
+  1.0d0
+
 'SSS'                                              ! Input
   'sea surface salinity climatology'
   'nondimensional'                                 ! [PSU]
   'SSS, scalar, series'
   'sss_time'
   'idSSSc'
+  'r2dvar'
+  1.0d0
+
+'SSSflx'                                          ! Input
+  'sea surface salinity flux correction'
+  'PSU meter second-1'                            ! [PSU meter second-1]
+  'SSSflx, scalar, series'
+  'SSSflx_time'
+  'idSSSf'
   'r2dvar'
   1.0d0
 
@@ -2674,8 +3250,35 @@
   'r2dvar'
   1.0d0
 
+'rdrag'                                            ! Input/Output
+  'linear bottom drag coefficient'
+  'meter second-1'                                 ! [m/s]
+  'rdrag, scalar, series'
+  'ocean_time'
+  'idragL'
+  'r2dvar'
+  1.0d0
+
+'rdrag2'                                           ! Input/Output
+  'quadratic bottom drag coefficient'
+  'nondimensional'                                 ! [nondimensional]
+  'rdrag2, scalar, series'
+  'ocean_time'
+  'idragQ'
+  'r2dvar'
+  1.0d0
+
+'ZoBot'                                            ! Input/Output
+  'time invariant, bottom roughness length'
+  'meter'                                          ! [m]
+  'ZoBot, scalar, series'
+  'ocean_time'
+  'idZoBL'
+  'r2dvar'
+  1.0d0
+
 'Zo_def'                                           ! Input/Output
-  'default bottom roughness'
+  'default bottom roughness length'
   'meter'                                          ! [m]
   'Zo_def, scalar, series'
   'ocean_time'
@@ -2684,7 +3287,7 @@
   1.0d0
 
 'Zo_app'                                           ! Input/Output
-  'apparent bottom roughness'
+  'apparent bottom roughness length'
   'meter'                                          ! [m]
   'Zo_app, scalar, series'
   'ocean_time'
@@ -2693,7 +3296,7 @@
   1.0d0
 
 'Zo_Nik'                                           ! Input/Output
-  'Nikaradse bottom roughness'
+  'Nikaradse bottom roughness length'
   'meter'                                          ! [m]
   'Zo_Nik, scalar, series'
   'ocean_time'
@@ -2702,7 +3305,7 @@
   1.0d0
 
 'Zo_bio'                                           ! Input/Output
-  'biological bottom roughness'
+  'biological bottom roughness length'
   'meter'                                          ! [m]
   'Zo_bio, scalar, series'
   'ocean_time'
@@ -2711,7 +3314,7 @@
   1.0d0
 
 'Zo_bedform'                                       ! Input/Output
-  'bed form bottom roughness'
+  'bed form bottom roughness length'
   'meter'                                          ! [m]
   'Zo_bedform, scalar, series'
   'ocean_time'
@@ -2720,7 +3323,7 @@
   1.0d0
 
 'Zo_bedload'                                       ! Input/Output
-  'bed load bottom roughness'
+  'bed load bottom roughness length'
   'meter'                                          ! [m]
   'Zo_bedload, scalar, series'
   'ocean_time'
@@ -2729,7 +3332,7 @@
   1.0d0
 
 'Zo_wbl'                                           ! Input/Output
-  'wave bottom boundary layer roughness'
+  'wave bottom boundary layer roughness length'
   'meter'                                          ! [m]
   'Zo_wbl, scalar, series'
   'ocean_time'
@@ -2952,7 +3555,7 @@
 !
 !---------------------------------------------------------------------
 !  Define names of variables associated with Fennel et al (2006),
-!  NEMURO or NPZD ecosystem models.
+!  NEMURO, NPZD or UMaine ecosystem models.
 !---------------------------------------------------------------------
 !
 
@@ -3025,6 +3628,15 @@
   'silica, scalar, series'
   'ocean_time'
   'idTvar(iopal)'
+  'r3dvar'
+  1.0d0
+
+'PO4'                                              ! Input/Output
+  'phosphate concentration'
+  'millimole_PO4 meter-3'                          ! [millimole/m3]
+  'PO4, scalar, series'
+  'ocean_time'
+  'idTvar(iPO4_)'
   'r3dvar'
   1.0d0
 
@@ -3217,6 +3829,33 @@
   'r3dvar'
   1.0d0
 
+'FeSp'                                             ! Input/Output
+  'small phytop. iron concentration'
+  'millimole_iron  meter-3'                        ! [millimole/m3]
+  'iron, scalar, series'
+  'ocean_time'
+  'idTvar(iFeSp)'
+  'r3dvar'
+  1.0d0
+
+'FeLp'                                            ! Input/Output
+  'large phytop. iron concentration'
+  'millimole_iron  meter-3'                       ! [millimole/m3]
+  'iron, scalar, series'
+  'ocean_time'
+  'idTvar(iFeLp)'
+  'r3dvar'
+  1.0d0
+
+'FeD'                                             ! Input/Output
+  'dissolved iron concentration'
+  'millimole_iron  meter-3'                       ! [millimole/m3]
+  'iron, scalar, series'
+  'ocean_time'
+  'idTvar(iFeD_)'
+  'r3dvar'
+  1.0d0
+
 'TIC'                                              ! Input/Output
   'total inorganic carbon'
   'millimole_carbon meter-3'                       ! [millimole/m3]
@@ -3331,7 +3970,7 @@
 
 'pCO2'                                             ! Input/Output
   'partial pressure of CO2'
-  'microatmophere'                                 ! [microatmosphere]
+  'atm'                                            ! [atm]
   'pCO2, scalar, series'
   'ocean_time'
   'iDbio2(ipCO2)'
@@ -3405,6 +4044,42 @@
   'nulvar'
   1.0d0
 
+'PO4_east'                                         ! Input
+  'phosphate eastern boundary condition'
+  'millimole_P meter-3'                     ! [millimole/m3]
+  'PO4_east, scalar, series'
+  'PO4_time'
+  'idTbry(ieast,iPO4_)'
+  'nulvar'
+  1.0d0
+
+'PO4_west'                                         ! Input
+  'phosphate western boundary condition'
+  'millimole_P meter-3'                     ! [millimole/m3]
+  'PO4_west, scalar, series'
+  'PO4_time'
+  'idTbry(iwest,iPO4_)'
+  'nulvar'
+  1.0d0
+
+'PO4_south'                                        ! Input
+  'phosphate southern boundary condition'
+  'millimole_P meter-3'                     ! [millimole/m3]
+  'PO4_south, scalar, series'
+  'PO4_time'
+  'idTbry(isouth,iPO4_)'
+  'nulvar'
+  1.0d0
+
+'PO4_north'                                        ! Input
+  'phosphate northern boundary condition'
+  'millimole_P meter-3'                     ! [millimole/m3]
+  'PO4_north, scalar, series'
+  'PO4_time'
+  'idTbry(inorth,iPO4_)'
+  'nulvar'
+  1.0d0
+
 'TIC_east'                                         ! Input
   'TIC eastern boundary condition'
   'millimole_carbon meter-3'                       ! [millimole/m3]
@@ -3443,7 +4118,7 @@
 
 'oxygen_east'                                      ! Input
   'oxygen eastern boundary condition'
-  'millimole_carbon meter-3'                       ! [millimole/m3]
+  'millimole_oxygen meter-3'                       ! [millimole/m3]
   'oxygen_east, scalar, series'
   'oxygen_time'
   'idTbry(ieast,iOxyg)'
@@ -3452,7 +4127,7 @@
 
 'oxygen_west'                                      ! Input
   'oxygen western boundary condition'
-  'millimole_carbon meter-3'                       ! [millimole/m3]
+  'millimole_oxygen meter-3'                       ! [millimole/m3]
   'oxygen_west, scalar, series'
   'oxygen_time'
   'idTbry(iwest,iOxyg)'
@@ -3461,7 +4136,7 @@
 
 'oxygen_north'                                     ! Input
   'oxygen northern boundary condition'
-  'millimole_carbon meter-3'                       ! [millimole/m3]
+  'millimole_oxygen meter-3'                       ! [millimole/m3]
   'oxygen_north, scalar, series'
   'oxygen_time'
   'idTbry(inorth,iOxyg)'
@@ -3470,7 +4145,7 @@
 
 'oxygen_south'                                     ! Input
   'oxygen southern boundary condition'
-  'millimole_carbon meter-3'                       ! [millimole/m3]
+  'millimole_oxygen meter-3'                       ! [millimole/m3]
   'oxygen_south, scalar, series'
   'oxygen_time'
   'idTbry(isouth,iOxyg)'
@@ -3690,6 +4365,114 @@
   'opal_north, scalar, series'
   'opal_time'
   'idTbry(inorth,iopal)'
+  'nulvar'
+  1.0d0
+
+'FeSp_east'                                        ! Input
+  'small phytop. iron eastern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'FeSp_east, scalar, series'
+  'bio_time'
+  'idTbry(ieast,iFeSp)'
+  'nulvar'
+  1.0d0
+
+'FeSp_west'                                        ! Input
+  'small phytop. iron western boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'FeSp_west, scalar, series'
+  'bio_time'
+  'idTbry(iwest,iFeSp)'
+  'nulvar'
+  1.0d0
+
+'FeSp_north'                                       ! Input
+  'small phytop. iron northern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'FeSp_north, scalar, series'
+  'bio_time'
+  'idTbry(inorth,iFeSp)'
+  'nulvar'
+  1.0d0
+
+'FeSp_south'                                       ! Input
+  'small phytop. iron southern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'FeSp_south, scalar, series'
+  'bio_time'
+  'idTbry(isouth,iFeSp)'
+  'nulvar'
+  1.0d0
+
+'FeLp_east'                                        ! Input
+  'large phytop. iron eastern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'FeLp_east, scalar, series'
+  'bio_time'
+  'idTbry(ieast,iFeLp)'
+  'nulvar'
+  1.0d0
+
+'FeLp_west'                                        ! Input
+  'large phytop. iron western boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'FeLp_west, scalar, series'
+  'bio_time'
+  'idTbry(iwest,iFeLp)'
+  'nulvar'
+  1.0d0
+
+'FeLp_north'                                       ! Input
+  'large phytop. iron northern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'FeLp_north, scalar, series'
+  'bio_time'
+  'idTbry(inorth,iFeLp)'
+  'nulvar'
+  1.0d0
+
+'FeLp_south'                                       ! Input
+  'large phytop. iron southern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'FeLp_south, scalar, series'
+  'bio_time'
+  'idTbry(isouth,iFeLp)'
+  'nulvar'
+  1.0d0
+
+'FeD_east'                                         ! Input
+  'dissolved iron eastern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'FeD_east, scalar, series'
+  'bio_time'
+  'idTbry(ieast,iFeD_)'
+  'nulvar'
+  1.0d0
+
+'FeD_west'                                         ! Input
+  'dissolved iron western boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'FeD_west, scalar, series'
+  'bio_time'
+  'idTbry(iwest,iFeD_)'
+  'nulvar'
+  1.0d0
+
+'FeD_north'                                        ! Input
+  'dissolved iron northern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'FeD_north, scalar, series'
+  'bio_time'
+  'idTbry(inorth,iFeD_)'
+  'nulvar'
+  1.0d0
+
+'FeD_south'                                        ! Input
+  'dissolved iron southern boundary condition'
+  'millimole_iron meter-3'                         ! [millimole/m3]
+  'FeD_south, scalar, series'
+  'bio_time'
+  'idTbry(isouth,iFeD_)'
   'nulvar'
   1.0d0
 
@@ -5086,7 +5869,7 @@
   1.0d0
 
 'rvorticity'                                       ! Input/Output
-  'relative vorticity'
+  'relative vorticity, vertical component'
   'second-1'                                       ! [1/s]
   'rvorticity, scalar, series'
   'ocean_time'
@@ -5859,4 +6642,574 @@
   'datum'
   'idMOMf'
   'nulvar'
+  1.0d0
+
+!-------------------------------------------------------------
+! GOANPZ variables
+!-------------------------------------------------------------
+
+'NO3'
+  'nitrate concentration'
+  'millimole nitrogen meter-3'
+  'nitrate, scalar, series'
+  'bio_time'
+  'idTvar(iNO3)'
+  'r3dvar'
+  1.0d0
+
+'no3_west'
+  'nitrate western boundary condition'
+  'mmol N per m3'
+  'no3_west, scalar, series'
+  'bio_time'
+  'idTbry(iwest,iNO3)'
+  'nulvar'
+  1.0d0
+
+'no3_east'
+  'nitrate eastern boundary condition'
+  'mmol N per m3'
+  'no3_east, scalar, series'
+  'bio_time'
+  'idTbry(ieast,iNO3)'
+  'nulvar'
+  1.0d0
+
+'no3_south'
+  'nitrate southern boundary condition'
+  'mmol N per m3'
+  'no3_south, scalar, series'
+  'bio_time'
+  'idTbry(isouth,iNO3)'
+  'nulvar'
+  1.0d0
+
+'no3_north'
+  'nitrate northern boundary condition'
+  'mmol N per m3'
+  'no3_north, scalar, series'
+  'bio_time'
+  'idTbry(inorth,iNO3)'
+  'nulvar'
+  1.0d0
+!---------------------------------------------------------------------------
+'NH4'
+  'ammonia concentration'
+  'millimole nitrogen meter-3'
+  'ammonia, scalar, series'
+  'bio_time'
+  'idTvar(iNH4)'
+  'r3dvar'
+  1.0d0
+
+'nh4_west'
+  'ammonia western boundary condition'
+  'mmol N per m3'
+  'nh4_west, scalar, series '
+  'bio_time'
+  'idTbry(iwest,iNH4)'
+  'nulvar'
+  1.0d0
+
+'nh4_east'
+  'ammonia eastern boundary condition'
+  'mmol N per m3'
+  'nh4_east, scalar, series'
+  'bio_time'
+  'idTbry(ieast,iNH4)'
+  'nulvar'
+  1.0d0
+
+'nh4_south'
+  'ammonia southern boundary condition'
+  'mmol N per m3'
+  'nh4_south, scalar, series'
+  'bio_time'
+  'idTbry(isouth,iNH4)'
+  'nulvar'
+  1.0d0
+
+'nh4_north'
+  'ammonia northern boundary condition'
+  'mmol N per m3'
+  'nh4_north, scalar, series'
+  'bio_time'
+  'idTbry(inorth,iNH4)'
+  'nulvar'
+  1.0d0
+
+!------------------------------------------------------------------
+'PhS'
+  'small phytoplankton concentration'
+  'milligram carbon meter-3  '
+  'small phytoplankton, scalar, series   '
+  'bio_time'
+  'idTvar(iPhS)'
+  'r3dvar'
+  1.0d0
+
+'phs_west'
+  'small phytoplankton western boundary condition'
+  'mg C per m3'
+  'phs_west, scalar, series '
+  'bio_time'
+  'idTbry(iwest,iPhS)'
+  'nulvar'
+  1.0d0
+
+'phs_east'
+  'small phytoplankton eastern boundary condition'
+  'mg C per m3'
+  'phs_east, scalar, series '
+  'bio_time'
+  'idTbry(ieast,iPhS)'
+  'nulvar'
+  1.0d0
+
+'phs_south'
+  'small phytoplankton southern boundary condition'
+  'mg C per m3'
+  'phs_south, scalar, series'
+  'bio_time'
+  'idTbry(isouth,iPhS)'
+  'nulvar'
+  1.0d0
+
+'phs_north'
+  'small phytoplankton northern boundary condition'
+  'mg C per m3'
+  'phs_north, scalar, series'
+  'bio_time'
+  'idTbry(inorth,iPhS)'
+  'nulvar'
+  1.0d0
+
+!-------------------------------------------------------------
+'PhL'
+  'large phytoplankton concentration'
+  'milligram carbon meter-3'
+  'large phytoplankton, scalar, series'
+  'bio_time'
+  'idTvar(iPhL)'
+  'r3dvar'
+  1.0d0
+
+'phl_west'
+  'large phytoplankton western boundary condition'
+  'mg C per m3'
+  'phl_west, scalar, series'
+  'bio_time'
+  'idTbry(iwest,iPhL)'
+  'nulvar'
+  1.0d0
+
+'phl_east'
+  'large phytoplankton eastern boundary condition'
+  'mg C per m3'
+  'phl_east, scalar, series'
+  'bio_time'
+  'idTbry(ieast,iPhL)'
+  'nulvar'
+  1.0d0
+
+'phl_south'
+  'large phytoplankton southern boundary condition'
+  'mg C per m3'
+  'phl_south, scalar, series'
+  'bio_time'
+  'idTbry(isouth,iPhL)'
+  'nulvar'
+  1.0d0
+
+'phl_north'
+  'large phytoplankton northern boundary condition'
+  'mg C per m3'
+  'phl_north, scalar, series'
+  'bio_time'
+  'idTbry(inorth,iPhL)'
+  'nulvar'
+  1.0d0
+!--------------------------------------------------------
+'MZS'
+  'small microzooplankton concentration'
+  'milligram carbon meter-3'
+  'small microzooplankton, scalar, series'
+  'bio_time'
+  'idTvar(iMZS)'
+  'r3dvar'
+  1.0d0
+
+'mzs_west'
+  'large microzooplankton western boundary condition'
+  'mg C per m3'
+  'mzl_west, scalar, series'
+  'bio_time'
+  'idTbry(iwest,iMZS)'
+  'nulvar'
+  1.0d0
+
+'mzs_east'
+  'large microzooplankton eastern boundary condition'
+  'mg C per m3'
+  'mzl_east, scalar, series'
+  'bio_time'
+  'idTbry(ieast,iMZS)'
+  'nulvar'
+  1.0d0
+
+'mzs_south'
+  'large microzooplankton southern boundary condition'
+  'mg C per m3'
+  'mzl_south, scalar, series'
+  'bio_time'
+  'idTbry(isouth,iMZS)'
+  'nulvar'
+  1.0d0
+
+'mzs_north'
+  'large microzooplankton northern boundary condition'
+  'mg C per m3'
+  'mzl_north, scalar, series'
+  'bio_time'
+  'idTbry(inorth,iMZS)'
+  'nulvar'
+  1.0d0
+!---------------------------------------------------------
+'MZL'
+  'large microzooplankton concentration'
+  'milligram carbon meter-3'
+  'large microzooplankton, scalar, series'
+  'bio_time'
+  'idTvar(iMZL)'
+  'r3dvar'
+  1.0d0
+
+'mzl_west'
+  'large microzooplankton western boundary condition'
+  'mg C per m3'
+  'mzl_west, scalar, series'
+  'bio_time'
+  'idTbry(iwest,iMZL)'
+  'nulvar'
+  1.0d0
+
+'mzl_east'
+  'large microzooplankton eastern boundary condition'
+  'mg C per m3'
+  'mzl_east, scalar, series'
+  'bio_time'
+  'idTbry(ieast,iMZL)'
+  'nulvar'
+  1.0d0
+
+'mzl_south'
+  'large microzooplankton southern boundary condition'
+  'mg C per m3'
+  'mzl_south, scalar, series'
+  'bio_time'
+  'idTbry(isouth,iMZL)'
+  'nulvar'
+  1.0d0
+
+'mzl_north'
+  'large microzooplankton northern boundary condition'
+  'mg C per m3'
+  'mzl_north, scalar, series'
+  'bio_time'
+  'idTbry(inorth,iMZL)'
+  'nulvar'
+  1.0d0
+
+!----------------------------------------------------------
+'Cop'
+  'small coastal copepod concentration'
+  'milligram carbon meter-3'
+  'copepod, scalar, series'
+  'bio_time'
+  'idTvar(iCop)'
+  'r3dvar'
+  1.0d0
+
+'cop_west'
+  'copepods western boundary condition'
+  'mg C per m3'
+  'cop_west, scalar, series'
+  'bio_time'
+  'idTbry(iwest,iCop)'
+  'nulvar'
+  1.0d0
+
+'cop_east'
+  'copepods eastern boundary condition'
+  'mg C per m3'
+  'cop_east, scalar, series'
+  'bio_time'
+  'idTbry(ieast,iCop)'
+  'nulvar'
+  1.0d0
+
+'cop_south'
+  'copepods southern boundary condition'
+  'mg C per m3'
+  'cop_south, scalar, series'
+  'bio_time'
+  'idTbry(isouth,iCop)'
+  'nulvar'
+  1.0d0
+
+'cop_north'
+  'copepods northern boundary condition'
+  'mg C per m3'
+  'cop_north, scalar, series'
+  'bio_time'
+  'idTbry(inorth,iCop)'
+  'nulvar'
+  1.0d0
+
+!----------------------------------------------------------
+'NCa'
+  'neocalanus spp. concentration'
+  'milligram carbon meter-3'
+  'neocalanus, scalar, series'
+  'bio_time'
+  'idTvar(iNCa)'
+  'r3dvar'
+  1.0d0
+
+'nca_west'
+  'neocalanus western boundary condition'
+  'mg C per m3'
+  'nca_west, scalar, series'
+  'bio_time'
+  'idTbry(iwest,iNCa)'
+  'nulvar'
+  1.0d0
+
+'nca_east'
+  'neocalanus eastern boundary condition'
+  'mg C per m3'
+  'nca_east, scalar, series'
+  'bio_time'
+  'idTbry(ieast,iNCa)'
+  'nulvar'
+  1.0d0
+
+'nca_south'
+  'neocalanus southern boundary condition'
+  'mg C per m3'
+  'nca_south, scalar, series'
+  'bio_time'
+  'idTbry(isouth,iNCa)'
+  'nulvar'
+  1.0d0
+
+'nca_north'
+  'neocalanus northern boundary condition'
+  'mg C per m3'
+  'nca_north, scalar, series'
+  'bio_time'
+  'idTbry(inorth,iNCa)'
+  'nulvar'
+  1.0d0
+
+!-----------------------------------------------------------
+'Eup'
+  'euphausiid concentration'
+  'milligram carbon meter-3'
+  'euphausiid, scalar, series'
+  'bio_time'
+  'idTvar(iEup)'
+  'r3dvar'
+  1.0d0
+
+'eup_west'
+  'euphausiids western boundary condition'
+  'mg C per m3'
+  'eup_west, scalar, series'
+  'bio_time'
+  'idTbry(iwest,iEup)'
+  'nulvar'
+  1.0d0
+
+'eup_east'
+  'euphausiids eastern boundary condition'
+  'mg C per m3'
+  'eup_east, scalar, series'
+  'bio_time'
+  'idTbry(ieast,iEup)'
+  'nulvar'
+  1.0d0
+
+'eup_south'
+  'euphausiids southern boundary condition'
+  'mg C per m3'
+  'eup_south, scalar, series'
+  'bio_time'
+  'idTbry(isouth,iEup)'
+  'nulvar'
+  1.0d0
+
+'eup_north'
+  'euphausiids northern boundary condition'
+  'mg C per m3'
+  'eup_north, scalar, series'
+  'bio_time'
+  'idTbry(inorth,iEup)'
+  'nulvar'
+  1.0d0
+
+!-------------------------------------------------------
+'Det'
+  'detritus concentration'
+  'milligram carbon meter-3'
+  'detritus, scalar, series'
+  'bio_time'
+  'idTvar(iDet)'
+  'r3dvar'
+  1.0d0
+
+'det_west'
+  'detritus western boundary condition'
+  'mg C per m3'
+  'det_west, scalar, series'
+  'bio_time'
+  'idTbry(iwest,iDet)'
+  'nulvar'
+  1.0d0
+
+'det_east'
+  'detritus eastern boundary condition'
+  'mg C per m3'
+  'det_east, scalar, series'
+  'bio_time'
+  'idTbry(ieast,iDet)'
+  'nulvar'
+  1.0d0
+
+'det_south'
+  'detritus southern boundary condition'
+  'mg C per m3'
+  'det_south, scalar, series'
+  'bio_time'
+  'idTbry(isouth,iDet)'
+  'nulvar'
+  1.0d0
+
+'det_north'
+  'detritus northern boundary condition'
+  'mg C per m3'
+  'det_north, scalar, series'
+  'bio_time'
+  'idTbry(inorth,iDet)'
+  'nulvar'
+  1.0d0
+
+!-------------------------------------------------------------------
+'Iron'
+  'iron concentration'
+  'micromol Fe m-3'
+  'iron, scalar, series'
+  'bio_time'
+  'idTvar(iFe)'
+  'r3dvar'
+  1.0d0
+
+'iron_west'
+  'iron western boundary condition'
+  'micromol Fe m-3'
+  'iron_west, scalar, series'
+  'bio_time'
+  'idTbry(iwest,iFe)'
+  'nulvar'
+  1.0d0
+
+'iron_east'
+  'iron eastern boundary condition'
+  'micromol Fe m-3'
+  'iron_east, scalar, series'
+  'bio_time'
+  'idTbry(ieast,iFe)'
+  'nulvar'
+  1.0d0
+
+'iron_south'
+  'iron southern boundary condition'
+  'micromol Fe m-3'
+  'iron_south, scalar, series'
+  'bio_time'
+  'idTbry(isouth,iFe)'
+  'nulvar'
+  1.0d0
+
+'iron_north'
+  'iron northern boundary condition'
+  'micromol Fe m-3'
+  'iron_north, scalar, series'
+  'bio_time'
+  'idTbry(inorth,iFe)'
+  'nulvar'
+  1.0d0
+
+!------------------------------------------------------------
+'prod_PhS'
+  'primary production small phytoplankton'
+  'milligram carbon meter-3 d-1'
+  'PrimProd scalar series'
+  'bio_time'
+  'idTSvar(iPhSprd)'
+  'r3dvar'
+  1.0d0
+
+'prod_PhL'
+  'primary production large phytoplankton'
+  'milligram carbon meter-3 d-1'
+  'PrimProd scalar series'
+  'bio_time'
+  'idTSvar(iPhLprd)'
+  'r3dvar'
+  1.0d0
+
+'prod_MZS'
+  'secondary production small microzooplankton'
+  'milligram carbon meter-3 d-1'
+  'PrimProd scalar series'
+  'bio_time'
+  'idTSvar(iMZSprd)'
+  'r3dvar'
+  1.0d0
+
+'prod_MZL'
+  'secondary production large microzooplankton'
+  'milligram carbon meter-3 d-1'
+  'PrimProd scalar series'
+  'bio_time'
+  'idTSvar(iMZLprd)'
+  'r3dvar'
+  1.0d0
+
+'prod_Cop'
+  'secondary production copepods'
+  'milligram carbon meter-3 d-1'
+  'PrimProd scalar series'
+  'bio_time'
+  'idTSvar(iCopPrd)'
+  'r3dvar'
+  1.0d0
+
+'prod_NCa'
+  'secondary production Neocalanus'
+  'milligram carbon meter-3 d-1'
+  'PrimProd scalar series'
+  'bio_time'
+  'idTSvar(iNCaPrd)'
+  'r3dvar'
+  1.0d0
+
+'prod_Eup'
+  'secondary production Euphausiids'
+  'milligram carbon meter-3 d-1'
+  'PrimProd scalar series'
+  'bio_time'
+  'idTSvar(iEupPrd)'
+  'r3dvar'
   1.0d0

@@ -477,6 +477,16 @@
 
       CALL read_BioPar (model, 15, out, Lwrite)
 #endif
+#ifdef ICE_MODEL
+!
+!-----------------------------------------------------------------------
+!  Read in ice model input parameters.
+!-----------------------------------------------------------------------
+!
+      OPEN (inp, FILE=TRIM(iparnam), FORM='formatted', STATUS='old')
+
+      CALL read_IcePar (inp, out, Lwrite)
+#endif
 #ifdef SEDIMENT
 !
 !-----------------------------------------------------------------------
@@ -579,6 +589,9 @@
 !  Convert momentum stresses and tracer flux scales to kinematic
 !  Values. Recall, that all the model fluxes are kinematic.
 !
+#ifdef NCEP_FLUXES
+        cff=1.0_r8
+#else
         cff=1.0_r8/rho0
         Fscale(idUsms,ng)=cff*Fscale(idUsms,ng)
         Fscale(idVsms,ng)=cff*Fscale(idVsms,ng)
@@ -590,6 +603,10 @@
         Fscale(idVbws,ng)=cff*Fscale(idVbws,ng)
         Fscale(idUbcs,ng)=cff*Fscale(idUbcs,ng)
         Fscale(idVbcs,ng)=cff*Fscale(idVbcs,ng)
+#endif
+#ifdef NCEP_FLUXES
+        cff=1.0_r8
+#else
         cff=1.0_r8/(rho0*Cp)
         Fscale(idTsur(itemp),ng)=cff*Fscale(idTsur(itemp),ng)
         Fscale(idTbot(itemp),ng)=cff*Fscale(idTbot(itemp),ng)
@@ -599,6 +616,7 @@
         Fscale(idLhea,ng)=cff*Fscale(idLhea,ng)
         Fscale(idShea,ng)=cff*Fscale(idShea,ng)
         Fscale(iddQdT,ng)=cff*Fscale(iddQdT,ng)
+#endif
       END DO
 !
 !-----------------------------------------------------------------------
@@ -1346,10 +1364,10 @@
             Npts=load_i(Nval, Rval, Ngrids, Vstretching)
             DO ng=1,Ngrids
               IF ((Vstretching(ng).lt.0).or.                              &
-     &            (Vstretching(ng).gt.3)) THEN
+     &            (Vstretching(ng).gt.4)) THEN
                 IF (Master) WRITE (out,260) 'Vstretching = ',             &
      &                                      Vstretching(ng),              &
-     &                                      'Must between 1 and 3'
+     &                                      'Must between 1 and 4'
                 exit_flag=5
                 RETURN
               END IF
@@ -2158,6 +2176,162 @@
               END DO
             END DO
 #endif
+#ifdef ICE_MODEL
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idUice)') THEN
+            IF (idUice.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idUice'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idUice,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idVice)') THEN
+            IF (idVice.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idVice'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idVice,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idAice)') THEN
+            IF (idAice.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idAice'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idAice,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idHice)') THEN
+            IF (idHice.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idHice'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idHice,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idHsno)') THEN
+            IF (idHsno.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idHsno'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idHsno,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idTice)') THEN
+            IF (idTice.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idTice'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idTice,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idTimid)') THEN
+            IF (idTimid.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idTimid'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idTimid,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idTauiw)') THEN
+            IF (idTauiw.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idTauiw'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idTauiw,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idChuiw)') THEN
+            IF (idChuiw.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idChuiw'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idChuiw,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idSfwat)') THEN
+            IF (idSfwat.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idSfwat'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idSfwat,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idAgeice)') THEN
+            IF (idAgeice.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idAgeice'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idAgeice,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idIomflx)') THEN
+            IF (idIomflx.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idIomflx'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idIomflx,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idSig11)') THEN
+            IF (idSig11.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idSig11'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idSig11,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idSig12)') THEN
+            IF (idSig12.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idSig12'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idSig12,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idSig22)') THEN
+            IF (idSig22.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idSig22'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idSig22,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idT0mk)') THEN
+            IF (idT0mk.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idT0mk'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idT0mk,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idS0mk)') THEN
+            IF (idS0mk.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idS0mk'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idS0mk,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWfr)') THEN
+            IF (idWfr.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idWfr'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWfr,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWai)') THEN
+            IF (idWai.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idWai'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWai,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWao)') THEN
+            IF (idWao.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idWao'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWao,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWio)') THEN
+            IF (idWio.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idWio'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWio,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idWro)') THEN
+            IF (idWro.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idWro'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idWro,1:Ngrids))
+#endif
 #if defined SOLVE3D && (defined BBL_MODEL || defined SEDIMENT)
           ELSE IF (TRIM(KeyWord).eq.'Hout(idBott)') THEN
             IF (MAXVAL(idBott).eq.0) THEN
@@ -2172,6 +2346,15 @@
                 Hout(i,ng)=Lbottom(itrc,ng)
               END DO
             END DO
+#endif
+#ifdef WRT_SSSFLX
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idSSSf)') THEN
+            IF (idSSSf.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idSSSf'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idSSSf,1:Ngrids))
 #endif
           ELSE IF (TRIM(KeyWord).eq.'NUSER') THEN
             Npts=load_i(Nval, Rval, 1, Nuser)
@@ -2351,6 +2534,11 @@
               bparnam(i:i)=blank
             END DO
             bparnam=TRIM(ADJUSTL(Cval(Nval)))
+          ELSE IF (TRIM(KeyWord).eq.'IPARNAM') THEN
+            DO i=1,LEN(iparnam)
+              iparnam(i:i)=blank
+            END DO
+            iparnam=TRIM(ADJUSTL(Cval(Nval)))
           ELSE IF (TRIM(KeyWord).eq.'SPARNAM') THEN
             DO i=1,LEN(sparnam)
               sparnam(i:i)=blank
@@ -2958,7 +3146,7 @@
 #endif
           WRITE (out,140) dstart, 'dstart',                             &
      &          'Time-stamp assigned to model initialization (days).'
-#if defined SSH_TIDES || defined UV_TIDES
+#if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
           WRITE (out,140) tide_start, 'tide_start',                     &
      &          'Reference time origin for tidal forcing (days).'
 #endif
@@ -3153,6 +3341,74 @@
      &          Hout(idTvar(itrc),ng), 'Hout(idTvar)',                  &
      &          'Write out tracer ', itrc, TRIM(Vname(1,idTvar(itrc)))
           END DO
+#endif
+#ifdef ICE_MODEL
+          IF (Hout(idUice,ng)) WRITE (out,170) Hout(idUice,ng),         &
+     &       'Hout(idUice)',                                            &
+     &       'Write out U-component ice velocity.'
+          IF (Hout(idVice,ng)) WRITE (out,170) Hout(idVice,ng),         &
+     &       'Hout(idVice)',                                            &
+     &       'Write out V-component ice velocity.'
+          IF (Hout(idAice,ng)) WRITE (out,170) Hout(idAice,ng),         &
+     &       'Hout(idAice)',                                            &
+     &       'Write out ice concentration.'
+          IF (Hout(idHice,ng)) WRITE (out,170) Hout(idHice,ng),         &
+     &       'Hout(idHice)',                                            &
+     &       'Write out average ice thickness.'
+          IF (Hout(idHsno,ng)) WRITE (out,170) Hout(idHsno,ng),         &
+     &       'Hout(idHsno)',                                            &
+     &       'Write out snow thickness.'
+          IF (Hout(idTice,ng)) WRITE (out,170) Hout(idTice,ng),         &
+     &       'Hout(idTice)',                                            &
+     &       'Write out ice/snow surface temperature.'
+          IF (Hout(idTimid,ng)) WRITE (out,170) Hout(idTimid,ng),       &
+     &       'Hout(idTimid)',                                           &
+     &       'Write out interior ice temperature.'
+          IF (Hout(idSfwat,ng)) WRITE (out,170) Hout(idSfwat,ng),       &
+     &       'Hout(idSfwat)',                                           &
+     &       'Write out surface water (on ice) thickness.'
+          IF (Hout(idAgeice,ng)) WRITE (out,170) Hout(idAgeice,ng),     &
+     &       'Hout(idAgeice)',                                          &
+     &       'Write out ice age.'
+          IF (Hout(idIomflx,ng)) WRITE (out,170) Hout(idIomflx,ng),     &
+     &       'Hout(idIomflx)',                                          &
+     &       'Write out ice-ocean mass flux'
+          IF (Hout(idSig11,ng)) WRITE (out,170) Hout(idSig11,ng),       &
+     &       'Hout(idSig11)',                                           &
+     &       'Write out internal ice stress component 11.'
+          IF (Hout(idSig12,ng)) WRITE (out,170) Hout(idSig12,ng),       &
+     &       'Hout(idSig12)',                                           &
+     &       'Write out internal ice stress component 12.'
+          IF (Hout(idSig22,ng)) WRITE (out,170) Hout(idSig22,ng),       &
+     &       'Hout(idSig22)',                                           &
+     &       'Write out internal ice stress component 22.'
+          IF (Hout(idTauiw,ng)) WRITE (out,170) Hout(idTauiw,ng),       &
+     &       'Hout(idTauiw)',                                           &
+     &       'Write out ice-water friction velocity.'
+          IF (Hout(idChuiw,ng)) WRITE (out,170) Hout(idChuiw,ng),       &
+     &       'Hout(idChuiw)',                                           &
+     &       'Write out ice-water momentum transfer coefficient.'
+          IF (Hout(idT0mk,ng)) WRITE (out,170) Hout(idT0mk,ng),         &
+     &       'Hout(idT0mk)',                                            &
+     &       'Write out temperature of molecular sublayer under ice.'
+          IF (Hout(idS0mk,ng)) WRITE (out,170) Hout(idS0mk,ng),         &
+     &       'Hout(idS0mk)',                                            &
+     &       'Write out salinity of molecular sublayer under ice.'
+          IF (Hout(idWfr,ng)) WRITE (out,170) Hout(idWfr,ng),           &
+     &       'Hout(idWfr)',                                             &
+     &       'Write out frazil ice growth rate.'
+          IF (Hout(idWai,ng)) WRITE (out,170) Hout(idWai,ng),           &
+     &       'Hout(idWai)',                                             &
+     &       'Write out ice growth/melt rate.'
+          IF (Hout(idWao,ng)) WRITE (out,170) Hout(idWao,ng),           &
+     &       'Hout(idWao)',                                             &
+     &       'Write out ice growth/melt rate.'
+          IF (Hout(idWio,ng)) WRITE (out,170) Hout(idWio,ng),           &
+     &       'Hout(idWio)',                                             &
+     &       'Write out ice growth/melt rate.'
+          IF (Hout(idWro,ng)) WRITE (out,170) Hout(idWro,ng),           &
+     &       'Hout(idWro)',                                             &
+     &       'Write out ice melt runoff rate.'
 #endif
           IF (Hout(idUair,ng)) WRITE (out,170) Hout(idUair,ng),         &
      &       'Hout(idUair)',                                            &
@@ -3360,6 +3616,11 @@
           IF (Hout(idSrad,ng)) WRITE (out,170) Hout(idSrad,ng),         &
      &       'Hout(idSrad)',                                            &
      &       'Write out shortwave radiation flux.'
+# endif
+# ifdef WRT_SSSFLX
+          IF (Hout(idSSSf,ng)) WRITE (out,170) Hout(idSSSf,ng),         &
+     &       'Hout(idSSSf)',                                            &
+     &       'Write out sea surface salinity correction flux.'
 # endif
 # ifdef BULK_FLUXES
           IF (Hout(idLrad,ng)) WRITE (out,170) Hout(idLrad,ng),         &
@@ -3622,6 +3883,13 @@
           WRITE (out,230) '       Biology Parameters File:  ',          &
      &                    TRIM(fname)
 #endif
+#ifdef ICE_MODEL
+          fname=iparnam
+          INQUIRE (FILE=TRIM(fname), EXIST=inhere)
+          IF (.not.inhere) GO TO 30
+          WRITE (out,230) '       Ice Model Parameters File:  ',        &
+     &                    TRIM(fname)
+#endif
           fname=varname
           INQUIRE (FILE=TRIM(fname), EXIST=inhere)
           IF (.not.inhere) GO TO 30
@@ -3776,6 +4044,195 @@
  330  FORMAT (/,'!!! Wrong number of grids set in coawst.bash ', i3.3)
       RETURN
       END SUBROUTINE read_PhyPar
+
+#ifdef ICE_MODEL
+      SUBROUTINE read_IcePar (inp, out, Lwrite)
+!
+!=======================================================================
+!  Copyright (c) 2002 ROMS/TOMS Group                                  !
+!================================================== Hernan G. Arango ===
+!                                                                      !
+!  This routine reads in ice model input parameters.                   !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_ncparam
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations
+!
+      logical, intent(in) :: Lwrite
+      integer, intent(in) :: inp, out
+!
+!  Local variable declarations.
+!
+      integer :: Lstr, Lval, Npts, Nval, i, ng, itrc, status
+
+      integer :: decode_line, lenstr, load_i, load_l, load_r
+
+      real(r8), dimension(100) :: Rval
+
+      character (len=40) :: KeyWord
+      character (len=80) :: line
+      character (len=80), dimension(100) :: Cval
+
+!
+!-----------------------------------------------------------------------
+!  Read in ice model parameters.
+!-----------------------------------------------------------------------
+!
+      DO WHILE (.true.)
+        READ (inp,'(a)',ERR=10,END=20) line
+        status=decode_line(line, KeyWord, Nval, Cval, Rval)
+        IF (status.gt.0) THEN
+          IF (TRIM(KeyWord).eq.'Lice') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Lice)
+          ELSE IF (TRIM(KeyWord).eq.'DTICE') THEN
+            Npts=load_r(Nval, Rval, Ngrids, dtice)
+          ELSE IF (TRIM(KeyWord).eq.'DTICE_EQ') THEN
+            Npts=load_r(Nval, Rval, Ngrids, dtice_eq)
+          ELSE IF (TRIM(KeyWord).eq.'nstrs') THEN
+            Npts=load_i(Nval, Rval, Ngrids, nstrs)
+          ELSE IF (TRIM(KeyWord).eq.'nevp') THEN
+            Npts=load_i(Nval, Rval, Ngrids, nevp)
+          ELSE IF (TRIM(KeyWord).eq.'rhoice') THEN
+            Npts=load_r(Nval, Rval, Ngrids, rhoice)
+          ELSE IF (TRIM(KeyWord).eq.'cdiw') THEN
+            Npts=load_r(Nval, Rval, Ngrids, cdiw)
+          ELSE IF (TRIM(KeyWord).eq.'cdai') THEN
+            Npts=load_r(Nval, Rval, Ngrids, cdai)
+          ELSE IF (TRIM(KeyWord).eq.'rho_air') THEN
+            Npts=load_r(Nval, Rval, Ngrids, rho_air)
+          ELSE IF (TRIM(KeyWord).eq.'rhosnow_dry') THEN
+            Npts=load_r(Nval, Rval, Ngrids, rhosnow_dry)
+          ELSE IF (TRIM(KeyWord).eq.'rhosnow_wet') THEN
+            Npts=load_r(Nval, Rval, Ngrids, rhosnow_wet)
+          ELSE IF (TRIM(KeyWord).eq.'pstar') THEN
+            Npts=load_r(Nval, Rval, Ngrids, pstar)
+          ELSE IF (TRIM(KeyWord).eq.'astren') THEN
+            Npts=load_r(Nval, Rval, Ngrids, astren)
+          ELSE IF (TRIM(KeyWord).eq.'zetamax') THEN
+            Npts=load_r(Nval, Rval, Ngrids, zetamax)
+          ELSE IF (TRIM(KeyWord).eq.'zetamin') THEN
+            Npts=load_r(Nval, Rval, Ngrids, zetamin)
+          ELSE IF (TRIM(KeyWord).eq.'ellip_sq') THEN
+            Npts=load_r(Nval, Rval, Ngrids, ellip_sq)
+          ELSE IF (TRIM(KeyWord).eq.'alphai') THEN
+            Npts=load_r(Nval, Rval, Ngrids, alphai)
+            do ng=1,Ngrids
+               alphai(ng) = alphai(ng)*deg2rad
+            enddo
+          ELSE IF (TRIM(KeyWord).eq.'tol') THEN
+            Npts=load_r(Nval, Rval, 1, tol)
+          ELSE IF (TRIM(KeyWord).eq.'min_h') THEN
+            Npts=load_r(Nval, Rval, Ngrids, min_h)
+          ELSE IF (TRIM(KeyWord).eq.'min_a') THEN
+            Npts=load_r(Nval, Rval, Ngrids, min_a)
+          ELSE IF (TRIM(KeyWord).eq.'max_a') THEN
+            Npts=load_r(Nval, Rval, Ngrids, max_a)
+          ELSE IF (TRIM(KeyWord).eq.'stressang') THEN
+            Npts=load_r(Nval, Rval, Ngrids, stressang)
+            do ng=1,Ngrids
+               stressang(ng) = stressang(ng)*deg2rad
+            enddo
+          ELSE IF (TRIM(KeyWord).eq.'ice_emiss') THEN
+            Npts=load_r(Nval, Rval, 1, ice_emiss)
+          ELSE IF (TRIM(KeyWord).eq.'spec_heat_air') THEN
+            Npts=load_r(Nval, Rval, 1, spec_heat_air)
+          ELSE IF (TRIM(KeyWord).eq.'trans_coeff') THEN
+            Npts=load_r(Nval, Rval, 1, trans_coeff)
+          ELSE IF (TRIM(KeyWord).eq.'sublim_latent_heat') THEN
+            Npts=load_r(Nval, Rval, 1, sublim_latent_heat)
+          ELSE IF (TRIM(KeyWord).eq.'t0deg') THEN
+            Npts=load_r(Nval, Rval, 1, t0deg)
+          END IF
+        END IF
+      END DO
+  10  IF (Master) WRITE (out,30) line
+      exit_flag=4
+      RETURN
+  20  CLOSE (inp)
+
+! Set ice time step to ocean time step
+ 
+      DO ng = 1,Ngrids
+        dtice(ng) = dt(ng)
+      END DO
+!
+!-----------------------------------------------------------------------
+!  Report input parameters.
+!-----------------------------------------------------------------------
+!
+      IF (Lwrite) THEN
+        DO ng=1,Ngrids
+          IF (Lice(ng)) THEN
+            WRITE (out,40) ng
+            WRITE(out,*) 'Ice time step = ocean time step'
+            WRITE (out,100) dtice(ng), 'DTICE',                         &
+     &            'Ice model time step (s).'
+            WRITE (out,100) dtice_eq(ng), 'DTICE_EQ',                   &
+     &            'Ice drift update (equilibrium) time step (s).'
+            WRITE (out,50) nstrs(ng), 'nstrs',                          &
+     &            'Number of iterations for nonlinear ice dynamics.'
+            WRITE (out,50) nevp(ng), 'nevp',                            &
+     &            'Number of elastic steps per plastic step in EVP.'
+            WRITE (out,100) rhoice(ng), 'rhoice',                       &
+     &            'Density of sea ice (kg/m3).'
+            WRITE (out,100) cdiw(ng), 'cdiw',                           &
+     &            'Ice-water drag coefficient (nondimensional).'
+            WRITE (out,100) cdai(ng), 'cdai',                           &
+     &            'Air-ice drag coefficient (nondimensional).'
+            WRITE (out,100) rho_air(ng), 'rho_air',                     &
+     &            'Air density (kg/m3).'
+            WRITE (out,100) rhosnow_dry(ng), 'rhosnow_dry',             &
+     &            'Dry snow density (kg/m3).'
+            WRITE (out,100) rhosnow_wet(ng), 'rhosnow_wet',             &
+     &            'Wet snow density (kg/m3).'
+            WRITE (out,100) alphai(ng)*rad2deg, 'alphai',               &
+     &            'Mohr-Coulomb stress angle (degrees).'
+            WRITE (out,100) min_h(ng), 'min_h',                         &
+     &            'Minimum average ice thickness (m).'
+            WRITE (out,100) min_a(ng), 'min_a',                         &
+     &            'Minimum ice concentration (nondimensional).'
+            WRITE (out,100) max_a(ng), 'max_a',                         &
+     &            'Maximum ice concentration (nondimensional).'
+            WRITE (out,100) stressang(ng)*rad2deg, 'stressang',         &
+     &            'Turning angle for ice-water drag (degrees).'
+            WRITE (out,100) tol, 'tol',                                 &
+     &            'Numerical tolerance in rheology calculations .'
+            WRITE (out,100) ice_emiss, 'ice_emiss',                     &
+     &            'Ice emissivity.'
+            WRITE (out,100) spec_heat_air, 'spec_heat_air',             &
+     &            'Specific heat of air.'
+            WRITE (out,100) trans_coeff, 'trans_coeff',                 &
+     &            'Transfer coefficient.'
+            WRITE (out,100) sublim_latent_heat, 'sublim_latent_heat',   &
+     &            'Latent_heat of sublimation.'
+            WRITE (out,100) t0deg, 't0deg',                             &
+     &            'Zero degrees Celsius in degrees Kelvin.'
+          END IF
+        END DO
+      END IF
+
+  30  FORMAT (/,' READ_IcePar - Error while processing line: ',/,a)
+  40  FORMAT (/,/,' Ice Parameters, Grid: ',i2.2,                   &
+     &        /,' ============================',/)
+  50  FORMAT (1x,i10,2x,a,t28,a)
+  60  FORMAT (10x,l1,2x,a,t28,a,i2.2,':',1x,a)
+  70  FORMAT (f11.3,2x,a,t28,a)
+  80  FORMAT (f11.3,2x,a,t28,a,/,t30,a)
+  90  FORMAT (1p,e11.4,2x,a,'(',i2.2,')',t28,a,/,t30,a,i2.2,':',1x,a)
+ 100  FORMAT (1p,e11.4,2x,a,t28,a)
+ 110  FORMAT (1p,e11.4,2x,a,t28,a,/,t30,a)
+ 120  FORMAT (10x,l1,2x,a,t28,a)
+ 280  FORMAT (/,' READ_IcePar - variable info not yet loaded, ', a)
+      RETURN
+      END SUBROUTINE read_IcePar
+#endif
 
 #if defined ASSIMILATION || defined FOUR_DVAR || defined NUDGING || \
     defined VERIFICATION
@@ -5690,6 +6147,52 @@
               END DO
             END DO
 # endif
+# if defined SOLVE3D && defined ICE_MODEL
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idUice)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idUice,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idVice)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idVice,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idAice)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idAice,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idHice)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idHice,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idTice)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idTice,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idTimid)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idTimid,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idSfwat)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idSfwat,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idAgeice)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idAgeice,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idIomflx)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idIomflx,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idSig11)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idSig11,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idSig12)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idSig12,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idSig22)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idSig22,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWfr)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWfr,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idTauiw)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idTauiw,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idChuiw)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idChuiw,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idT0mk)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idT0mk,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idS0mk)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idS0mk,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWfr)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWfr,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWai)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWai,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWao)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWao,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWio)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWio,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idWro)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idWro,:))
+# endif
           ELSE IF (TRIM(KeyWord).eq.'NSTATION') THEN
             Npts=load_i(Nval, Rval, Ngrids, Nstation)
           ELSE IF (TRIM(KeyWord).eq.'POS') THEN
@@ -6021,6 +6524,75 @@
      &          'Write out turbulent generic length-scale.'
 #  endif
 # endif
+# ifdef ICE_MODEL
+          IF (Sout(idUice,ng)) WRITE (out,80) Sout(idUice,ng),          &
+     &       'Sout(idUice)',                                            &
+     &       'Write out U-component ice velocity.'
+          IF (Sout(idVice,ng)) WRITE (out,80) Sout(idVice,ng),          &
+     &       'Sout(idVice)',                                            &
+     &       'Write out V-component ice velocity.'
+          IF (Sout(idAice,ng)) WRITE (out,80) Sout(idAice,ng),          &
+     &       'Sout(idAice)',                                            &
+     &       'Write out ice concentration.'
+          IF (Sout(idHice,ng)) WRITE (out,80) Sout(idHice,ng),          &
+     &       'Sout(idHice)',                                            &
+     &       'Write out average ice thickness.'
+          IF (Sout(idHsno,ng)) WRITE (out,80) Sout(idHsno,ng),          &
+     &       'Sout(idHsno)',                                            &
+     &       'Write out snow thickness.'
+          IF (Sout(idTice,ng)) WRITE (out,80) Sout(idTice,ng),          &
+     &       'Sout(idTice)',                                            &
+     &       'Write out ice/snow surface temperature.'
+          IF (Sout(idTimid,ng)) WRITE (out,80) Sout(idTimid,ng),        &
+     &       'Sout(idTimid)',                                           &
+     &       'Write out interior ice temperature.'
+          IF (Sout(idSfwat,ng)) WRITE (out,80) Sout(idSfwat,ng),        &
+     &       'Sout(idSfwat)',                                           &
+     &       'Write out surface water (on ice) thickness.'
+          IF (Sout(idAgeice,ng)) WRITE (out,80) Sout(idAgeice,ng),      &
+     &       'Sout(idAgeice)',                                          &
+     &       'Write out surface water (on ice) thickness.'
+          IF (Sout(idIomflx,ng)) WRITE (out,80) Sout(idIomflx,ng),      &
+     &       'Sout(idIomflx)',                                          &
+     &       'Write out ice-ocean mass flux.'
+          IF (Sout(idSig11,ng)) WRITE (out,80) Sout(idSig11,ng),        &
+     &       'Sout(idSig11)',                                           &
+     &       'Write out internal ice stress component 11.'
+          IF (Sout(idSig12,ng)) WRITE (out,80) Sout(idSig12,ng),        &
+     &       'Sout(idSig12)',                                           &
+     &       'Write out internal ice stress component 12.'
+          IF (Sout(idSig22,ng)) WRITE (out,80) Sout(idSig22,ng),        &
+     &       'Sout(idSig22)',                                           &
+     &       'Write out internal ice stress component 22.'
+          IF (Sout(idTauiw,ng)) WRITE (out,80) Sout(idTauiw,ng),        &
+     &       'Sout(idTauiw)',                                           &
+     &       'Write out ice-water friction velocity.'
+          IF (Sout(idChuiw,ng)) WRITE (out,80) Sout(idChuiw,ng),        &
+     &       'Hout(idChuiw)',                                           &
+     &       'Write out ice-water momentum transfer coefficient.'
+          IF (Sout(idT0mk,ng)) WRITE (out,80) Sout(idT0mk,ng),          &
+     &       'Sout(idT0mk)',                                            &
+     &       'Write out temperature of molecular sublayer under ice.'
+          IF (Sout(idS0mk,ng)) WRITE (out,80) Sout(idS0mk,ng),          &
+     &       'Sout(idS0mk)',                                            &
+     &       'Write out salinity of molecular sublayer under ice.'
+          IF (Sout(idWfr,ng)) WRITE (out,80) Sout(idWfr,ng),            &
+     &       'Sout(idWfr)',                                             &
+     &       'Write out frazil ice growth rate.'
+          IF (Sout(idWai,ng)) WRITE (out,80) Sout(idWai,ng),            &
+     &       'Sout(idWai)',                                             &
+     &       'Write out ice growth/melt rate.'
+          IF (Sout(idWao,ng)) WRITE (out,80) Sout(idWao,ng),            &
+     &       'Sout(idWao)',                                             &
+     &       'Write out ice growth/melt rate.'
+          IF (Sout(idWio,ng)) WRITE (out,80) Sout(idWio,ng),            &
+     &       'Sout(idWio)',                                             &
+     &       'Write out ice growth/melt rate.'
+          IF (Sout(idWro,ng)) WRITE (out,80) Sout(idWro,ng),            &
+     &       'Sout(idWro)',                                             &
+     &       'Write out ice melt runoff rate.'
+# endif
+
             WRITE (out,*)
             DO i=1,Nstation(ng)
               WRITE (out,100) i, SCALARS(ng)%Sflag(i),                  &

@@ -59,7 +59,7 @@
 
         Nbed =  1    1        ! Number of sediment bed layers
 
-         NAT =  2    2        ! Number of active tracers (usually, 2)
+         NAT =  1    1        ! Number of active tracers (usually, 2)
          NPT =  0    0        ! Number of inactive passive tracers
          NCS =  1    1        ! Number of cohesive (mud) sediment tracers
          NNS =  0    0        ! Number of non-cohesive (sand) sediment tracers
@@ -104,7 +104,7 @@
 ! Output history, average, diagnostic files parameters.
 
      LDEFOUT == T       T
-        NHIS == 60      300
+        NHIS == 1       5  !5    25  !60      300
      NDEFHIS == 0       0
       NTSAVG == 1       1
         NAVG == 3600 3600
@@ -319,7 +319,7 @@ Hout(idVbar) == T T                        ! vbar        2D V-velocity
 Hout(idFsur) == T T                        ! zeta        free-surface
 Hout(idBath) == T T                        ! bath        time-dependent bathymetry
 
-Hout(idTvar) == T F T F                    ! temp, salt  temperature and salinity
+Hout(idTvar) == T T                        ! temp, salt  temperature and salinity
 
 Hout(idUair) == F F                        ! Uwind       surface U-wind
 Hout(idVair) == F F                        ! Vwind       surface V-wind

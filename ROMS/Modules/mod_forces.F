@@ -147,6 +147,10 @@
 !  sssG         Latest two-time snapshots of input "sss" grided        !
 !                 data used for interpolation.                         !
 !                                                                      !
+!  sssflx       Sea surface salinity flux correction.                  !
+!  sssflxG      Latest two-time snapshots of input "sssflx" grided     !
+!                 data used for interpolation.                         !
+!                                                                      !
 !  Surface spectral downwelling irradiance.                            !
 !                                                                      !
 !  SpecIr       Spectral irradiance (NBands) from 400-700 nm at        !
@@ -164,6 +168,59 @@
 !
 !  Nonlinear model state.
 !
+#ifdef NCEP_FLUXES
+          real(r8), pointer :: sustr(:,:)
+          real(r8), pointer :: svstr(:,:)
+          real(r8), pointer :: nustr(:,:)
+          real(r8), pointer :: nvstr(:,:)
+          real(r8), pointer :: nustrG(:,:,:)
+          real(r8), pointer :: nvstrG(:,:,:)
+          real(r8), pointer :: bustr(:,:)
+          real(r8), pointer :: bvstr(:,:)
+          real(r8), pointer :: srflx(:,:)
+          real(r8), pointer :: srflxG(:,:,:)
+          real(r8), pointer :: cloud(:,:)
+          real(r8), pointer :: cloudG(:,:,:)
+          real(r8), pointer :: lhflx(:,:)
+          real(r8), pointer :: lhflxG(:,:,:)
+          real(r8), pointer :: lrflx(:,:)
+          real(r8), pointer :: lrflxG(:,:,:)
+          real(r8), pointer :: shflx(:,:)
+          real(r8), pointer :: shflxG(:,:,:)
+          real(r8), pointer :: Pair(:,:)
+          real(r8), pointer :: PairG(:,:,:)
+          real(r8), pointer :: rain(:,:)
+          real(r8), pointer :: rainG(:,:,:)
+# ifdef RUNOFF
+          real(r8), pointer :: runoff(:,:)
+          real(r8), pointer :: runoffG(:,:,:)
+# endif
+          real(r8), pointer :: skt(:,:)
+          real(r8), pointer :: sktG(:,:,:)
+          real(r8), pointer :: icec(:,:)
+          real(r8), pointer :: icecG(:,:,:)
+          real(r8), pointer :: snow_n(:,:)
+          real(r8), pointer :: p_e_n(:,:)
+          real(r8), pointer :: wg2_d(:,:)
+          real(r8), pointer :: cd_d(:,:)
+          real(r8), pointer :: ch_d(:,:)
+          real(r8), pointer :: ce_d(:,:)
+          real(r8), pointer :: wg2_m(:,:)
+          real(r8), pointer :: cd_m(:,:)
+          real(r8), pointer :: ch_m(:,:)
+          real(r8), pointer :: ce_m(:,:)
+          real(r8), pointer :: rhoa_n(:,:)
+          real(r8), pointer :: cawdir(:,:)
+          real(r8), pointer :: qao_n(:,:)
+          real(r8), pointer :: qai_n(:,:)
+          real(r8), pointer :: tau_awx_n(:,:)
+          real(r8), pointer :: tau_awy_n(:,:)
+          real(r8), pointer :: tau_aix_n(:,:)
+          real(r8), pointer :: tau_aiy_n(:,:)
+          real(r8), pointer :: sustr_aw(:,:)
+          real(r8), pointer :: svstr_aw(:,:)
+#else
+
           real(r8), pointer :: sustr(:,:)
           real(r8), pointer :: svstr(:,:)
 #if !defined ANA_SMFLUX     && !defined BULK_FLUXES || \
@@ -178,6 +235,7 @@
 #ifdef ADJUST_WSTRESS
           real(r8), pointer :: ustr(:,:,:,:)
           real(r8), pointer :: vstr(:,:,:,:)
+#endif
 #endif
           real(r8), pointer :: bustr(:,:)
           real(r8), pointer :: bvstr(:,:)
@@ -280,7 +338,21 @@
 #  ifndef ANA_SRFLUX
           real(r8), pointer :: srflxG(:,:,:)
 #  endif
+#  if defined ALBEDO
+          real(r8), pointer :: cawdir(:,:)
+#  endif
 # endif
+
+# if defined ICE_BULK_FLUXES && !defined NCEP_FLUXES
+          real(r8), pointer :: sustr_aw(:,:)
+          real(r8), pointer :: svstr_aw(:,:)
+          real(r8), pointer :: tau_aix_n(:,:)
+          real(r8), pointer :: tau_aiy_n(:,:)
+          real(r8), pointer :: qai_n(:,:)
+          real(r8), pointer :: qao_n(:,:)
+          real(r8), pointer :: snow_n(:,:)
+          real(r8), pointer :: p_e_n(:,:)
+# endif 
 
 # ifdef CLOUDS
           real(r8), pointer :: cloud(:,:)
@@ -332,6 +404,10 @@
           real(r8), pointer :: EminusP(:,:)
           real(r8), pointer :: evap(:,:)
 #  endif
+#  ifdef RUNOFF
+          real(r8), pointer :: runoff(:,:)
+          real(r8), pointer :: runoffG(:,:,:)
+#  endif
 # endif
 
           real(r8), pointer :: stflx(:,:,:)
@@ -361,6 +437,13 @@
           real(r8), pointer :: sss(:,:)
 #  ifndef ANA_SSS
           real(r8), pointer :: sssG(:,:,:)
+#  endif
+# endif
+
+# if defined SSSFLX
+          real(r8), pointer :: sssflx(:,:)
+#  ifndef ANA_SSSFLX
+          real(r8), pointer :: sssflxG(:,:,:)
 #  endif
 # endif
 
@@ -500,6 +583,60 @@
 !
 !  Nonlinear model state
 !
+#ifdef NCEP_FLUXES
+      allocate ( FORCES(ng) % sustr(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % svstr(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % nustr(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % nvstr(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % nustrG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % nvstrG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % bustr(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % bvstr(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % stflx(LBi:UBi,LBj:UBj,NT(ng)) )
+      allocate ( FORCES(ng) % btflx(LBi:UBi,LBj:UBj,NT(ng)) )
+      allocate ( FORCES(ng) % srflx(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % srflxG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % cloud(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % cloudG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % lhflx(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % lhflxG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % lrflx(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % lrflxG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % shflx(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % shflxG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % Pair(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % PairG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % rain(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % rainG(LBi:UBi,LBj:UBj,2) )
+# ifdef RUNOFF
+      allocate ( FORCES(ng) % runoff(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % runoffG(LBi:UBi,LBj:UBj,2) )
+# endif
+      allocate ( FORCES(ng) % skt(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % sktG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % icec(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % icecG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % wg2_d(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % cd_d(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % ch_d(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % ce_d(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % wg2_m(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % cd_m(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % ch_m(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % ce_m(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % rhoa_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % cawdir(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % snow_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % p_e_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % qao_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % qai_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % tau_awx_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % tau_awy_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % tau_aix_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % tau_aiy_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % sustr_aw(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % svstr_aw(LBi:UBi,LBj:UBj) )
+#else
       allocate ( FORCES(ng) % sustr(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % svstr(LBi:UBi,LBj:UBj) )
 #ifdef ATM2OCN_FLUXES
@@ -514,6 +651,7 @@
 #ifdef ADJUST_WSTRESS
       allocate ( FORCES(ng) % ustr(LBi:UBi,LBj:UBj,Nfrec(ng),2) )
       allocate ( FORCES(ng) % vstr(LBi:UBi,LBj:UBj,Nfrec(ng),2) )
+#endif
 #endif
       allocate ( FORCES(ng) % bustr(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % bvstr(LBi:UBi,LBj:UBj) )
@@ -618,6 +756,20 @@
 #  ifndef ANA_SRFLUX
       allocate ( FORCES(ng) % srflxG(LBi:UBi,LBj:UBj,2) )
 #  endif
+#  if defined ALBEDO
+      allocate ( FORCES(ng) % cawdir(LBi:UBi,LBj:UBj) )
+#  endif
+# endif
+
+# if defined ICE_BULK_FLUXES && !defined NCEP_FLUXES
+      allocate ( FORCES(ng) % sustr_aw(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % svstr_aw(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % tau_aix_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % tau_aiy_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % qai_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % qao_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % snow_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % p_e_n(LBi:UBi,LBj:UBj) )
 # endif
 
 # ifdef CLOUDS
@@ -679,6 +831,10 @@
       allocate ( FORCES(ng) % EminusP(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % evap(LBi:UBi,LBj:UBj) )
 #  endif
+#  ifdef RUNOFF
+      allocate ( FORCES(ng) % runoff(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % runoffG(LBi:UBi,LBj:UBj,2) )
+#  endif
 # endif
 
       allocate ( FORCES(ng) % stflx(LBi:UBi,LBj:UBj,NT(ng)) )
@@ -713,6 +869,14 @@
 
 #  ifndef ANA_SSS
       allocate ( FORCES(ng) % sssG(LBi:UBi,LBj:UBj,2) )
+#  endif
+# endif
+
+# if defined SSSFLX
+      allocate ( FORCES(ng) % sssflx(LBi:UBi,LBj:UBj) )
+
+#  ifndef ANA_SSSFLX
+      allocate ( FORCES(ng) % sssflxG(LBi:UBi,LBj:UBj,2) )
 #  endif
 # endif
 
@@ -896,10 +1060,90 @@
 !
 !  Nonlinear model state.
 !
+#ifdef NCEP_FLUXES
       IF ((model.eq.0).or.(model.eq.iNLM)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
-#ifdef ADJUST_WSTRESS
+            FORCES(ng) % sustr(i,j) = IniVal
+            FORCES(ng) % svstr(i,j) = IniVal
+            FORCES(ng) % nustr(i,j) = IniVal
+            FORCES(ng) % nvstr(i,j) = IniVal
+            FORCES(ng) % nustrG(i,j,1) = IniVal
+            FORCES(ng) % nustrG(i,j,2) = IniVal
+            FORCES(ng) % nvstrG(i,j,1) = IniVal
+            FORCES(ng) % nvstrG(i,j,2) = IniVal
+            FORCES(ng) % bustr(i,j) = IniVal
+            FORCES(ng) % bvstr(i,j) = IniVal
+            FORCES(ng) % srflx(i,j) = IniVal
+            FORCES(ng) % srflxG(i,j,1) = IniVal
+            FORCES(ng) % srflxG(i,j,2) = IniVal
+            FORCES(ng) % cloud(i,j) = IniVal
+            FORCES(ng) % cloudG(i,j,1) = IniVal
+            FORCES(ng) % cloudG(i,j,2) = IniVal
+            FORCES(ng) % lhflx(i,j) = IniVal
+            FORCES(ng) % lhflxG(i,j,1) = IniVal
+            FORCES(ng) % lhflxG(i,j,2) = IniVal
+            FORCES(ng) % lrflx(i,j) = IniVal
+            FORCES(ng) % lrflxG(i,j,1) = IniVal
+            FORCES(ng) % lrflxG(i,j,2) = IniVal
+            FORCES(ng) % shflx(i,j) = IniVal
+            FORCES(ng) % shflxG(i,j,1) = IniVal
+            FORCES(ng) % shflxG(i,j,2) = IniVal
+            FORCES(ng) % Pair(i,j) = IniVal
+            FORCES(ng) % PairG(i,j,1) = IniVal
+            FORCES(ng) % PairG(i,j,2) = IniVal
+            FORCES(ng) % rain(i,j) = IniVal
+            FORCES(ng) % rainG(i,j,1) = IniVal
+            FORCES(ng) % rainG(i,j,2) = IniVal
+# ifdef RUNOFF
+            FORCES(ng) % runoff(i,j) = IniVal
+            FORCES(ng) % runoffG(i,j,1) = IniVal
+            FORCES(ng) % runoffG(i,j,2) = IniVal
+# endif
+            FORCES(ng) % skt(i,j) = IniVal
+            FORCES(ng) % sktG(i,j,1) = IniVal
+            FORCES(ng) % sktG(i,j,2) = IniVal
+            FORCES(ng) % icec(i,j) = IniVal
+            FORCES(ng) % icecG(i,j,1) = IniVal
+            FORCES(ng) % icecG(i,j,2) = IniVal
+            DO itrc=1,NT(ng)
+              FORCES(ng) % stflx(i,j,itrc) = IniVal
+              FORCES(ng) % btflx(i,j,itrc) = IniVal
+            END DO
+            FORCES(ng) % wg2_d(i,j) = IniVal
+            FORCES(ng) % cd_d(i,j) = IniVal
+            FORCES(ng) % ch_d(i,j) = IniVal
+            FORCES(ng) % ce_d(i,j) = IniVal
+            FORCES(ng) % wg2_m(i,j) = IniVal
+            FORCES(ng) % cd_m(i,j) = IniVal
+            FORCES(ng) % ch_m(i,j) = IniVal
+            FORCES(ng) % ce_m(i,j) = IniVal
+            FORCES(ng) % rhoa_n(i,j) = IniVal
+            FORCES(ng) % cawdir(i,j) = IniVal
+            FORCES(ng) % snow_n(i,j) = IniVal
+            FORCES(ng) % p_e_n(i,j) = IniVal
+            FORCES(ng) % qao_n(i,j) = IniVal
+            FORCES(ng) % qai_n(i,j) = IniVal
+            FORCES(ng) % tau_awx_n(i,j) = IniVal
+            FORCES(ng) % tau_awy_n(i,j) = IniVal
+            FORCES(ng) % tau_aix_n(i,j) = IniVal
+            FORCES(ng) % tau_aiy_n(i,j) = IniVal
+            FORCES(ng) % sustr_aw(i,j) = IniVal
+            FORCES(ng) % svstr_aw(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+
+       IF ((model.eq.0).or.(model.eq.iNLM)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+#else
+# ifndef NCEP
+       IF ((model.eq.0).or.(model.eq.iNLM)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+# endif
+# ifdef ADJUST_WSTRESS
             DO k=1,Nfrec(ng)
               FORCES(ng) % ustr(i,j,k,1) = IniVal
               FORCES(ng) % ustr(i,j,k,2) = IniVal
@@ -919,6 +1163,7 @@
             FORCES(ng) % sustrG(i,j,2) = IniVal
             FORCES(ng) % svstrG(i,j,1) = IniVal
             FORCES(ng) % svstrG(i,j,2) = IniVal
+#endif
 #endif
             FORCES(ng) % bustr(i,j) = IniVal
             FORCES(ng) % bvstr(i,j) = IniVal
@@ -1026,6 +1271,19 @@
             FORCES(ng) % srflxG(i,j,1) = IniVal
             FORCES(ng) % srflxG(i,j,2) = IniVal
 #  endif
+#  if defined ALBEDO
+            FORCES(ng) % cawdir(i,j) = IniVal
+#  endif
+# endif
+# if defined ICE_BULK_FLUXES && !defined NCEP_FLUXES
+            FORCES(ng) % sustr_aw(i,j) = IniVal
+            FORCES(ng) % svstr_aw(i,j) = IniVal
+            FORCES(ng) % tau_aix_n(i,j) = IniVal
+            FORCES(ng) % tau_aiy_n(i,j) = IniVal
+            FORCES(ng) % qai_n(i,j) = IniVal
+            FORCES(ng) % qao_n(i,j) = IniVal
+            FORCES(ng) % snow_n(i,j) = IniVal
+            FORCES(ng) % p_e_n(i,j) = IniVal
 # endif
 # ifdef CLOUDS
             FORCES(ng) % cloud(i,j) = IniVal
@@ -1053,6 +1311,11 @@
 #  ifdef EMINUSP
             FORCES(ng) % EminusP(i,j) = IniVal
             FORCES(ng) % evap(i,j) = IniVal
+#  endif
+#  ifdef RUNOFF
+            FORCES(ng) % runoff(i,j) = IniVal
+            FORCES(ng) % runoffG(i,j,1) = IniVal
+            FORCES(ng) % runoffG(i,j,2) = IniVal
 #  endif
 # endif
 # if !defined LONGWAVE && defined BULK_FLUXES
@@ -1096,6 +1359,13 @@
 #  ifndef ANA_SSS
             FORCES(ng) % sssG(i,j,1) = IniVal
             FORCES(ng) % sssG(i,j,2) = IniVal
+#  endif
+# endif
+# if defined SSSFLX
+            FORCES(ng) % sssflx(i,j) = IniVal
+#  ifndef ANA_SSSFLX
+            FORCES(ng) % sssflxG(i,j,1) = IniVal
+            FORCES(ng) % sssflxG(i,j,2) = IniVal
 #  endif
 # endif
             DO itrc=1,NT(ng)

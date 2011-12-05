@@ -127,6 +127,141 @@
 
 # include "set_bounds.h"
 
+# ifdef NCEP_FLUXES
+#  ifdef ANA_NCEP
+      CALL ana_ncep_tile (ng, tile, model,                              &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       FORCES(ng) % nustr,                        &
+     &                       FORCES(ng) % nvstr,                        &
+     &                       FORCES(ng) % cloud,                        &
+     &                       FORCES(ng) % srflx,                        &
+     &                       FORCES(ng) % lrflx,                        &
+     &                       FORCES(ng) % shflx,                        &
+     &                       FORCES(ng) % lhflx,                        &
+     &                       FORCES(ng) % Pair,                         &
+     &                       FORCES(ng) % rain,                         &
+     &                       FORCES(ng) % runoff,                       &
+     &                       FORCES(ng) % skt,                          &
+     &                       FORCES(ng) % icec                          &
+     &                   )
+#  else
+      CALL set_2dfld_tile (ng, tile, iNLM, idCfra,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%cloudG,                           &
+     &                     FORCES(ng)%cloud,                            &
+     &                     update)
+      CALL set_2dfld_tile (ng, tile, iNLM, idSrad,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%srflxG,                           &
+     &                     FORCES(ng)%srflx,                            &
+     &                     update)
+      CALL set_2dfld_tile (ng, tile, iNLM, idLrad,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%lrflxG,                           &
+     &                     FORCES(ng)%lrflx,                            &
+     &                     update)
+      CALL set_2dfld_tile (ng, tile, iNLM, idShea,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%shflxG,                           &
+     &                     FORCES(ng)%shflx,                            &
+     &                     update)
+      CALL set_2dfld_tile (ng, tile, iNLM, idLhea,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%lhflxG,                           &
+     &                     FORCES(ng)%lhflx,                            &
+     &                     update)
+      CALL set_2dfld_tile (ng, tile, iNLM, idPair,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%PairG,                            &
+     &                     FORCES(ng)%Pair,                             &
+     &                     update)
+      CALL set_2dfld_tile (ng, tile, iNLM, idRain,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%rainG,                            &
+     &                     FORCES(ng)%rain,                             &
+     &                     update)
+#ifdef RUNOFF
+      CALL set_2dfld_tile (ng, tile, iNLM, idRunoff,                    &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%runoffG,                          &
+     &                     FORCES(ng)%runoff,                           &
+     &                     update)
+#endif
+      CALL set_2dfld_tile (ng, tile, iNLM, idSkt,                       &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%sktG,                             &
+     &                     FORCES(ng)%skt,                              &
+     &                     update)
+      CALL set_2dfld_tile (ng, tile, iNLM, idIcec,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%icecG,                            &
+     &                     FORCES(ng)%icec,                             &
+     &                     update)
+      CALL set_2dfld_tile (ng, tile, iNLM, idUnms,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%nustrG,                           &
+     &                     FORCES(ng)%nustr,                            &
+     &                     update)
+      CALL set_2dfld_tile (ng, tile, iNLM, idVnms,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%nvstrG,                           &
+     &                     FORCES(ng)%nvstr,                            &
+     &                     update)
+#   if defined SCORRECTION || defined SRELAXATION
+!
+!-----------------------------------------------------------------------
+!  Set surface salinity for freshwater flux correction.
+!-----------------------------------------------------------------------
+!
+#    ifdef ANA_SSS
+      CALL ana_sss (ng, tile, iNLM)
+#    else
+      CALL set_2dfld_tile (ng, tile, iNLM, idSSSc,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%sssG,                             &
+     &                     FORCES(ng)%sss,                              &
+     &                     update)
+#    endif
+#   endif
+
+#    ifdef CURVGRID
+!
+!  If input point surface winds or interpolated from coarse data, rotate
+!  to curvilinear grid.
+!
+      IF (.not.Linfo(1,idUsms,ng).or.                                   &
+     &    (Iinfo(5,idUsms,ng).ne.Lm(ng)+2).or.                          &
+     &    (Iinfo(6,idUsms,ng).ne.Mm(ng)+2)) THEN
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            cff1=FORCES(ng)%nustr(i,j)*GRID(ng)%CosAngler(i,j)+         &
+     &           FORCES(ng)%nvstr(i,j)*GRID(ng)%SinAngler(i,j)
+            cff2=FORCES(ng)%nvstr(i,j)*GRID(ng)%CosAngler(i,j)-         &
+     &           FORCES(ng)%nustr(i,j)*GRID(ng)%SinAngler(i,j)
+            FORCES(ng)%nustr(i,j)=cff1
+            FORCES(ng)%nvstr(i,j)=cff2
+          END DO
+        END DO
+#     if defined EW_PERIODIC || defined NS_PERIODIC
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          FORCES(ng)%nustr)
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          FORCES(ng)%nvstr)
+#     endif
+#     ifdef DISTRIBUTE
+        CALL mp_exchange2d (ng, tile, iNLM, 2,                          &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      NghostPoints, EWperiodic, NSperiodic,       &
+     &                      FORCES(ng)%nustr,                           &
+     &                      FORCES(ng)%nvstr)
+#     endif
+      END IF
+#    endif
+#  endif
+# else
+
 # ifdef SOLVE3D
 
 #  if defined CLOUDS && !defined AIR_OCEAN
@@ -307,6 +442,18 @@
      &                     LBi, UBi, LBj, UBj,                          &
      &                     FORCES(ng)%rainG,                            &
      &                     FORCES(ng)%rain,                             &
+     &                     update)
+#   endif
+!
+!-----------------------------------------------------------------------
+! Fresh water runoff (kg/m2/s)
+!-----------------------------------------------------------------------
+!
+#   ifdef RUNOFF
+      CALL set_2dfld_tile (ng, tile, iNLM, idRunoff,                    &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%runoffG,                          &
+     &                     FORCES(ng)%runoff,                           &
      &                     update)
 #   endif
 #  endif
@@ -545,6 +692,7 @@
 #   endif
 #  endif
 # endif
+# endif
 
 # if !defined AIR_OCEAN   && defined FOUR_DVAR      && \
       defined BULK_FLUXES && defined NL_BULK_FLUXES
@@ -689,6 +837,14 @@
      &                     update)
 #   endif
 #  endif
+# endif
+
+# if defined SSSFLX && defined SOLVE3D
+      CALL set_2dfld_tile (ng, tile, iNLM, idSSSf,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%sssflxG,                          &
+     &                     FORCES(ng)%sssflx,                           &
+     &                     update)
 # endif
 
 # if defined ECOSIM && defined SOLVE3D
@@ -933,6 +1089,380 @@
 #   endif
       END IF
 #  endif
+
+#ifdef ICE_MODEL
+# ifdef ANA_AIOBC
+      CALL ana_aiobc (ng, tile)
+# else
+      IF (SOUTH_WEST_TEST) THEN
+#  ifdef WEST_AIOBC
+        CALL set_ngfld (ng, iNLM, idAibc(iwest), JLB, JUB, 1,           &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % aiG_west(JLB,1),                 &
+     &                  BOUNDARY(ng) % ai_west(JLB),                    &
+     &                  update)
+#  endif
+#  ifdef EAST_AIOBC
+        CALL set_ngfld (ng, iNLM, idAibc(ieast), JLB, JUB, 1,           &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % aiG_east(JLB,1),                 &
+     &                  BOUNDARY(ng) % ai_east(JLB),                    &
+     &                  update)
+#  endif
+#  ifdef SOUTH_AIOBC
+        CALL set_ngfld (ng, iNLM, idAibc(isouth), ILB, IUB, 1,          &
+     &                  0, Lm(ng)+1 ,1,                                 &
+     &                  BOUNDARY(ng) % aiG_south(ILB,1),                &
+     &                  BOUNDARY(ng) % ai_south(ILB),                   &
+     &                  update)
+#  endif
+#  ifdef NORTH_AIOBC
+        CALL set_ngfld (ng, iNLM, idAibc(inorth), ILB, IUB, 1,          &
+     &                  0, Lm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % aiG_north(ILB,1),                &
+     &                  BOUNDARY(ng) % ai_north(ILB),                   &
+     &                  update)
+#  endif
+      END IF
+# endif
+
+# ifdef ANA_HIOBC
+      CALL ana_hiobc (ng, tile)
+# else
+      IF (SOUTH_WEST_TEST) THEN
+#  ifdef WEST_HIOBC
+        CALL set_ngfld (ng, iNLM, idHibc(iwest), JLB, JUB, 1,           &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % hiG_west(JLB,1),                 &
+     &                  BOUNDARY(ng) % hi_west(JLB),                    &
+     &                  update)
+#  endif
+#  ifdef EAST_HIOBC
+        CALL set_ngfld (ng, iNLM, idHibc(ieast), JLB, JUB, 1,           &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % hiG_east(JLB,1),                 &
+     &                  BOUNDARY(ng) % hi_east(JLB),                    &
+     &                  update)
+#  endif
+#  ifdef SOUTH_HIOBC
+        CALL set_ngfld (ng, iNLM, idHibc(isouth), ILB, IUB, 1,          &
+     &                  0, Lm(ng)+1 ,1,                                 &
+     &                  BOUNDARY(ng) % hiG_south(ILB,1),                &
+     &                  BOUNDARY(ng) % hi_south(ILB),                   &
+     &                  update)
+#  endif
+#  ifdef NORTH_HIOBC
+        CALL set_ngfld (ng, iNLM, idHibc(inorth), ILB, IUB, 1,          &
+     &                  0, Lm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % hiG_north(ILB,1),                &
+     &                  BOUNDARY(ng) % hi_north(ILB),                   &
+     &                  update)
+#  endif
+      END IF
+# endif
+
+# ifdef ANA_HSNOBC
+      CALL ana_hsnobc (ng, tile)
+# else
+      IF (SOUTH_WEST_TEST) THEN
+#  ifdef WEST_HSNOBC
+        CALL set_ngfld (ng, iNLM, idHsnbc(iwest), JLB, JUB, 1,          &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % hsnG_west(JLB,1),                &
+     &                  BOUNDARY(ng) % hsn_west(JLB),                   &
+     &                  update)
+#  endif
+#  ifdef EAST_HSNOBC
+        CALL set_ngfld (ng, iNLM, idHsnbc(ieast), JLB, JUB, 1,          &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % hsnG_east(JLB,1),                &
+     &                  BOUNDARY(ng) % hsn_east(JLB),                   &
+     &                  update)
+#  endif
+#  ifdef SOUTH_HSNOBC
+        CALL set_ngfld (ng, iNLM, idHsnbc(isouth), ILB, IUB, 1,         &
+     &                  0, Lm(ng)+1 ,1,                                 &
+     &                  BOUNDARY(ng) % hsnG_south(ILB,1),               &
+     &                  BOUNDARY(ng) % hsn_south(ILB),                  &
+     &                  update)
+#  endif
+#  ifdef NORTH_HSNOBC
+        CALL set_ngfld (ng, iNLM, idHsnbc(inorth), ILB, IUB, 1,         &
+     &                  0, Lm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % hsnG_north(ILB,1),               &
+     &                  BOUNDARY(ng) % hsn_north(ILB),                  &
+     &                  update)
+#  endif
+      END IF
+# endif
+
+# ifdef ANA_TIOBC
+      CALL ana_tiobc (ng, tile, iNLM)
+# else
+      IF (SOUTH_WEST_TEST) THEN
+#  ifdef WEST_TIOBC
+        CALL set_ngfld (ng, iNLM, idTibc(iwest), JLB, JUB, 1,           &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % tiG_west(JLB,1),                 &
+     &                  BOUNDARY(ng) % ti_west(JLB),                    &
+     &                  update)
+#  endif
+#  ifdef EAST_TIOBC
+        CALL set_ngfld (ng, iNLM, idTibc(ieast), JLB, JUB, 1,           &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % tiG_east(JLB,1),                 &
+     &                  BOUNDARY(ng) % ti_east(JLB),                    &
+     &                  update)
+#  endif
+#  ifdef SOUTH_TIOBC
+        CALL set_ngfld (ng, iNLM, idTibc(isouth), ILB, IUB, 1,          &
+     &                  0, Lm(ng)+1 ,1,                                 &
+     &                  BOUNDARY(ng) % tiG_south(ILB,1),                &
+     &                  BOUNDARY(ng) % ti_south(ILB),                   &
+     &                  update)
+#  endif
+#  ifdef NORTH_TIOBC
+        CALL set_ngfld (ng, iNLM, idTibc(inorth), ILB, IUB, 1,          &
+     &                  0, Lm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % tiG_north(ILB,1),                &
+     &                  BOUNDARY(ng) % ti_north(ILB),                   &
+     &                  update)
+#  endif
+      END IF
+# endif
+
+# ifdef ANA_SFWATOBC
+      CALL ana_sfwatobc (ng, tile)
+# else
+      IF (SOUTH_WEST_TEST) THEN
+#  ifdef WEST_SFWATOBC
+        CALL set_ngfld (ng, iNLM, idSfwbc(iwest), JLB, JUB, 1,          &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % sfwatG_west(JLB,1),              &
+     &                  BOUNDARY(ng) % sfwat_west(JLB),                 &
+     &                  update)
+#  endif
+#  ifdef EAST_SFWATOBC
+        CALL set_ngfld (ng, iNLM, idSfwbc(ieast), JLB, JUB, 1,          &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % sfwatG_east(JLB,1),              &
+     &                  BOUNDARY(ng) % sfwat_east(JLB),                 &
+     &                  update)
+#  endif
+#  ifdef SOUTH_SFWATOBC
+        CALL set_ngfld (ng, iNLM, idSfwbc(isouth), ILB, IUB, 1,         &
+     &                  0, Lm(ng)+1 ,1,                                 &
+     &                  BOUNDARY(ng) % sfwatG_south(ILB,1),             &
+     &                  BOUNDARY(ng) % sfwat_south(ILB),                &
+     &                  update)
+#  endif
+#  ifdef NORTH_SFWATOBC
+        CALL set_ngfld (ng, iNLM, idSfwbc(inorth), ILB, IUB, 1,         &
+     &                  0, Lm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % sfwatG_north(ILB,1),             &
+     &                  BOUNDARY(ng) % sfwat_north(ILB),                &
+     &                  update)
+#  endif
+      END IF
+# endif
+
+# ifdef ANA_AGEICEOBC
+      CALL ana_ageiceobc (ng, tile)
+# else
+      IF (SOUTH_WEST_TEST) THEN
+#  ifdef WEST_AGEICEOBC
+        CALL set_ngfld (ng, iNLM, idSfwbc(iwest), JLB, JUB, 1,          &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % ageiceG_west(JLB,1),              &
+     &                  BOUNDARY(ng) % ageice_west(JLB),                 &
+     &                  update)
+#  endif
+#  ifdef EAST_AGEICEOBC
+        CALL set_ngfld (ng, iNLM, idSfwbc(ieast), JLB, JUB, 1,          &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % ageiceG_east(JLB,1),              &
+     &                  BOUNDARY(ng) % ageice_east(JLB),                 &
+     &                  update)
+#  endif
+#  ifdef SOUTH_AGEICEOBC
+        CALL set_ngfld (ng, iNLM, idSfwbc(isouth), ILB, IUB, 1,         &
+     &                  0, Lm(ng)+1 ,1,                                 &
+     &                  BOUNDARY(ng) % ageiceG_south(ILB,1),             &
+     &                  BOUNDARY(ng) % ageice_south(ILB),                &
+     &                  update)
+#  endif
+#  ifdef NORTH_AGEICEOBC
+        CALL set_ngfld (ng, iNLM, idSfwbc(inorth), ILB, IUB, 1,         &
+     &                  0, Lm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % ageiceG_north(ILB,1),             &
+     &                  BOUNDARY(ng) % ageice_north(ILB),                &
+     &                  update)
+#  endif
+      END IF
+# endif
+
+# ifdef ANA_SIG11OBC
+      CALL ana_sig11obc (ng, tile, iNLM)
+# else
+      IF (SOUTH_WEST_TEST) THEN
+#  ifdef WEST_SIG11OBC
+        CALL set_ngfld (ng, iNLM, idS11bc(iwest), JLB, JUB, 1,          &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % sig11G_west(JLB,1),              &
+     &                  BOUNDARY(ng) % sig11_west(JLB),                 &
+     &                  update)
+#  endif
+#  ifdef EAST_SIG11OBC
+        CALL set_ngfld (ng, iNLM, idS11bc(ieast), JLB, JUB, 1,          &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % sig11G_east(JLB,1),              &
+     &                  BOUNDARY(ng) % sig11_east(JLB),                 &
+     &                  update)
+#  endif
+#  ifdef SOUTH_SIG11OBC
+        CALL set_ngfld (ng, iNLM, idS11bc(isouth), ILB, IUB, 1,         &
+     &                  0, Lm(ng)+1 ,1,                                 &
+     &                  BOUNDARY(ng) % sig11G_south(ILB,1),             &
+     &                  BOUNDARY(ng) % sig11_south(ILB),                &
+     &                  update)
+#  endif
+#  ifdef NORTH_SIG11OBC
+        CALL set_ngfld (ng, iNLM, idS11bc(inorth), ILB, IUB, 1,         &
+     &                  0, Lm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % sig11G_north(ILB,1),             &
+     &                  BOUNDARY(ng) % sig11_north(ILB),                &
+     &                  update)
+#  endif
+      END IF
+# endif
+
+# ifdef ANA_SIG22OBC
+      CALL ana_sig22obc (ng, tile, iNLM)
+# else
+      IF (SOUTH_WEST_TEST) THEN
+#  ifdef WEST_SIG22OBC
+        CALL set_ngfld (ng, iNLM, idS22bc(iwest), JLB, JUB, 1,          &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % sig22G_west(JLB,1),              &
+     &                  BOUNDARY(ng) % sig22_west(JLB),                 &
+     &                  update)
+#  endif
+#  ifdef EAST_SIG22OBC
+        CALL set_ngfld (ng, iNLM, idS22bc(ieast), JLB, JUB, 1,          &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % sig22G_east(JLB,1),              &
+     &                  BOUNDARY(ng) % sig22_east(JLB),                 &
+     &                  update)
+#  endif
+#  ifdef SOUTH_SIG22OBC
+        CALL set_ngfld (ng, iNLM, idS22bc(isouth), ILB, IUB, 1,         &
+     &                  0, Lm(ng)+1 ,1,                                 &
+     &                  BOUNDARY(ng) % sig22G_south(ILB,1),             &
+     &                  BOUNDARY(ng) % sig22_south(ILB),                &
+     &                  update)
+#  endif
+#  ifdef NORTH_SIG22OBC
+        CALL set_ngfld (ng, iNLM, idS22bc(inorth), ILB, IUB, 1,         &
+     &                  0, Lm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % sig22G_north(ILB,1),             &
+     &                  BOUNDARY(ng) % sig22_north(ILB),                &
+     &                  update)
+#  endif
+      END IF
+# endif
+
+# ifdef ANA_SIG12OBC
+      CALL ana_sig12obc (ng, tile, iNLM)
+# else
+      IF (SOUTH_WEST_TEST) THEN
+#  ifdef WEST_SIG12OBC
+        CALL set_ngfld (ng, iNLM, idS12bc(iwest), JLB, JUB, 1,          &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % sig12G_west(JLB,1),              &
+     &                  BOUNDARY(ng) % sig12_west(JLB),                 &
+     &                  update)
+#  endif
+#  ifdef EAST_SIG12OBC
+        CALL set_ngfld (ng, iNLM, idS12bc(ieast), JLB, JUB, 1,          &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % sig12G_east(JLB,1),              &
+     &                  BOUNDARY(ng) % sig12_east(JLB),                 &
+     &                  update)
+#  endif
+#  ifdef SOUTH_SIG12OBC
+        CALL set_ngfld (ng, iNLM, idS12bc(isouth), ILB, IUB, 1,         &
+     &                  0, Lm(ng)+1 ,1,                                 &
+     &                  BOUNDARY(ng) % sig12G_south(ILB,1),             &
+     &                  BOUNDARY(ng) % sig12_south(ILB),                &
+     &                  update)
+#  endif
+#  ifdef NORTH_SIG12OBC
+        CALL set_ngfld (ng, iNLM, idS12bc(inorth), ILB, IUB, 1,         &
+     &                  0, Lm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % sig12G_north(ILB,1),             &
+     &                  BOUNDARY(ng) % sig12_north(ILB),                &
+     &                  update)
+#  endif
+      END IF
+# endif
+
+# ifdef ANA_MIOBC
+      CALL ana_miobc (ng, tile, iNLM)
+# else
+      IF (SOUTH_WEST_TEST) THEN
+#  ifdef WEST_MIOBC
+        CALL set_ngfld (ng, iNLM, idUibc(iwest), JLB, JUB, 1,           &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % uiG_west(JLB,1),                 &
+     &                  BOUNDARY(ng) % ui_west(JLB),                    &
+     &                  update)
+        CALL set_ngfld (ng, iNLM, idVibc(iwest), JLB, JUB, 1,           &
+     &                  1, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % viG_west(JLB,1),                 &
+     &                  BOUNDARY(ng) % vi_west(JLB),                    &
+     &                  update)
+#  endif
+#  ifdef EAST_MIOBC
+        CALL set_ngfld (ng, iNLM, idUibc(ieast), JLB, JUB, 1,           &
+     &                  0, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % uiG_east(JLB,1),                 &
+     &                  BOUNDARY(ng) % ui_east(JLB),                    &
+     &                  update)
+        CALL set_ngfld (ng, iNLM, idVibc(ieast), JLB, JUB, 1,           &
+     &                  1, Mm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % viG_east(JLB,1),                 &
+     &                  BOUNDARY(ng) % vi_east(JLB),                    &
+     &                  update)
+
+#  endif
+#  ifdef SOUTH_MIOBC
+        CALL set_ngfld (ng, iNLM, idUibc(isouth), ILB, IUB, 1,          &
+     &                  1, Lm(ng)+1 ,1,                                 &
+     &                  BOUNDARY(ng) % uiG_south(ILB,1),                &
+     &                  BOUNDARY(ng) % ui_south(ILB),                   &
+     &                  update)
+        CALL set_ngfld (ng, iNLM, idVibc(isouth), ILB, IUB, 1,          &
+     &                  0, Lm(ng)+1 ,1,                                 &
+     &                  BOUNDARY(ng) % viG_south(ILB,1),                &
+     &                  BOUNDARY(ng) % vi_south(ILB),                   &
+     &                  update)
+#  endif
+#  ifdef NORTH_MIOBC
+        CALL set_ngfld (ng, iNLM, idUibc(inorth), ILB, IUB, 1,          &
+     &                  1, Lm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % uiG_north(ILB,1),                &
+     &                  BOUNDARY(ng) % ui_north(ILB),                   &
+     &                  update)
+        CALL set_ngfld (ng, iNLM, idVibc(inorth), ILB, IUB, 1,          &
+     &                  0, Lm(ng)+1, 1,                                 &
+     &                  BOUNDARY(ng) % viG_north(ILB,1),                &
+     &                  BOUNDARY(ng) % vi_north(ILB),                   &
+     &                  update)
+#  endif
+      END IF
+# endif
+#endif
+
 #  ifdef SOLVE3D
 #   ifdef ANA_M3OBC
       CALL ana_m3obc (ng, tile, iNLM)

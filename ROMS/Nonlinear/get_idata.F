@@ -29,7 +29,7 @@
       USE mod_sources
 # endif
       USE mod_stepping
-# if defined SSH_TIDES || defined UV_TIDES
+# if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
       USE mod_tides
 # endif
 !
@@ -92,7 +92,7 @@
       END DO
 # endif
 
-# if defined SSH_TIDES || defined UV_TIDES
+# if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
 !
 !-----------------------------------------------------------------------
 !  Tide period, amplitude, phase, and currents.
@@ -401,6 +401,38 @@
             WRITE (stdout,30) TRIM(Vname(2,idv3dH)), Fmin, Fmax
           END IF
         END IF
+      END IF
+# endif
+# ifdef POT_TIDES
+!
+!  Tidal potential amplitude and phase. In order to read data as a
+!  function of tidal period, we need to reset the model time variables
+!  temporarily.
+!
+      IF (iic(ng).eq.0) THEN
+        time_save=time(ng)
+        time(ng)=8640000.0_r8
+        tdays(ng)=time(ng)*sec2day
+        CALL get_2dfld (ng, iNLM, idTpam, ncFRCid(idTpam,ng),           &
+     &                  nFfiles(ng), FRCname(1,ng), update(1),          &
+     &                  LBi, UBi, LBj, UBj, MTC, NTC(ng),               &
+#  ifdef MASKING
+     &                  GRID(ng) % rmask(LBi,LBj),                      &
+#  endif
+     &                  TIDES(ng) % POT_Tamp(LBi,LBj,1))
+        IF (exit_flag.ne.NoError) RETURN
+
+        CALL get_2dfld (ng, iNLM, idTpph, ncFRCid(idTpph,ng),           &
+     &                  nFfiles(ng), FRCname(1,ng), update(1),          &
+     &                  LBi, UBi, LBj, UBj, MTC, NTC(ng),               &
+#  ifdef MASKING
+     &                  GRID(ng) % rmask(LBi,LBj),                      &
+#  endif
+     &                  TIDES(ng) % POT_Tphase(LBi,LBj,1))
+        IF (exit_flag.ne.NoError) RETURN
+
+        time(ng)=time_save
+        tdays(ng)=time(ng)*sec2day
       END IF
 # endif
 

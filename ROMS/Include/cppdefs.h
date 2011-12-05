@@ -147,11 +147,14 @@
 **   sea surface temperature; (3) provide net longwave radiation (default).  **
 **                                                                           **
 ** BULK_FLUXES         use if bulk fluxes computation                        **
+** CCSM_FLUXES         use if CCSM version of bulk fluxes computation        **
+** NCEP_FLUXES         use if NCEP forcing files are used                    **
 ** NL_BULK_FLUXES      use bulk fluxes computed by nonlinear model           **
 ** COOL_SKIN           use if cool skin correction                           **
 ** LONGWAVE            use if computing net longwave radiation               **
 ** LONGWAVE_OUT        use if computing outgoing longwave radiation          **
 ** EMINUSP             use if computing E-P                                  **
+** EMINUSP_SSH         use if computing changes in SSH due to E-P
 **                                                                           **
 ** OPTIONS for wave roughness formulation in bulk fluxes:                    **
 **                                                                           **
@@ -168,6 +171,7 @@
 **   which is a function longitude, latitude and day-of-year.                **
 **                                                                           **
 ** ALBEDO              use if albedo equation for shortwave radiation        **
+** ALBEDO_CURVE        use if albedo function of lat from Large and Yeager   **
 ** DIURNAL_SRFLUX      use to impose shortwave radiation local diurnal cycle **
 **                                                                           **
 ** Model configuration OPTIONS:                                              **
@@ -220,6 +224,7 @@
 ** ANA_FSOBC           use if analytical free-surface boundary conditions    **
 ** ANA_GRID            use if analytical model grid set-up                   **
 ** ANA_HUMIDITY        use if analytical surface air humidity                **
+** ANA_ICE             use for analytic ice initial conditions               **
 ** ANA_INITIAL         use if analytical initial conditions                  **
 ** ANA_M2CLIMA         use if analytical 2D momentum climatology             **
 ** ANA_M2OBC           use if analytical 2D momentum boundary conditions     **
@@ -646,6 +651,15 @@
 ** OCMIP_OXYGEN_SC     use if Schmidt number from Keeling et al. (1998)      **
 ** TALK_NONCONSERV     use if nonconservative computation of alkalinity      **
 **                                                                           **
+** Bering Sea biology model OPTIONS:                                         **
+**                                                                           **
+** BEST_NPZ            use if Gibson et al. Bering Sea model                 **
+** STATIONARY          use if ??                                             **
+** BENTHIC             use if benthic components                             **
+** ICE_BIO             use if ice algae                                      **
+** JELLY               use if jellyfish                                      **
+** CLIM_ICE_1D         use if one-D with ice                                 **
+**                                                                           **
 ** NPZD biology model OPTIONS:                                               **
 **                                                                           **
 ** NPZD_FRANKS         use if NPZD Biology model, Franks et al. (1986)       **
@@ -723,6 +737,22 @@
 **                                                                           **
 ** INLINE_2DIO         use if processing 3D IO level by level                **
 **                                                                           **
+** Sea ice options
+**
+** ICE_MODEL           use for sea-ice model
+** ICE_THERMO          use for thermodynamic component
+** ICE_MK              use for Mellor-Kantha thermodynamics (no other choice)
+** ICE_SMOOTH          use for smoothing some ice fields
+** ICE_ALB_EC92        use for albedo computation from Ebert and Curry
+** ICE_MOMENTUM        use for momentum component
+** ICE_MOM_BULK        hmmm, some option for ice-water stress computation
+** ICE_EVP             use for elastic-viscous-plastic rheology
+** ICE_ADVECT          use for advection of ice tracers
+** ICE_SMOLAR          use for MPDATA advection scheme
+** ICE_UPWIND          use for upwind advection scheme
+** ICE_BULK_FLUXES     use for ice part of bulk flux computation
+** ICE_CONVSNOW        use for conversion of flooded snow to ice
+**
 ** OPTION to avoid writing current date and CPP options to NetCDF file       **
 ** headers. This is used to compare serial and parallel solutions where      **
 ** the UNIX command "diff" is used between NetCDF files. It will only        **

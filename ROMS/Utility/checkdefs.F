@@ -160,6 +160,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+8)=' ALBEDO,'
 #endif
+#if defined ALBEDO_CURVE && defined ANA_SRFLUX
+      IF (Master) WRITE (stdout,20) 'ALBEDO_CURVE',                           &
+     &   'Shortwave radiation adjusted by albedo curve.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' ALBEDO_CURVE,'
+#endif
 #ifdef ATM_PRESS
       IF (Master) WRITE (stdout,20) 'ATM_PRESS',                        &
      &   'Impose atmospheric pressure onto sea surface.'
@@ -255,6 +261,12 @@
      &   'Analytical surface air humidity.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' ANA_HUMIDITY,'
+#endif
+#ifdef ANA_ICE
+      IF (Master) WRITE (stdout,20) 'ANA_ICE',                          &
+     &   'Analytical ice initial conditions.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+9)=' ANA_ICE,'
 #endif
 #ifdef ANA_INITIAL
       IF (Master) WRITE (stdout,20) 'ANA_INITIAL',                      &
@@ -589,6 +601,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+8)=' CARBON,'
 #endif
+#ifdef CCSM_FLUXES
+      IF (Master) WRITE (stdout,20) 'CCSM_FLUXES',                      &
+     &   'Surface bulk fluxes parametererization.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+13)=' CCSM_FLUXES,'
+#endif
 #if defined CELERITY_READ && defined FORWARD_READ
       IF (Master) WRITE (stdout,20) 'CELERITY_READ',                    &
      &   'Read in radiation celerity from forward file.'
@@ -649,6 +667,12 @@
      &   'Surface cool skin correction.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+11)=' COOL_SKIN,'
+#endif
+#ifdef CORE_FORCING
+      IF (Master) WRITE (stdout,20) 'CORE_FORCING',                      &
+     &   'Humidity from CORE forcing files.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' CORE_FORCING,'
 #endif
 #if defined COSINE2 && defined SOLVE3D
       IF (Master) WRITE (stdout,20) 'COSINE2',                          &
@@ -1071,6 +1095,72 @@
      &   'Holling-type s-shaped grazing algorithm, Implicit.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' HOLLING_GRAZING,'
+#endif
+#ifdef ICE_ADVECT
+      IF (Master) WRITE (stdout,20) 'ICE_ADVECT',                       &
+     &   'Advection of ice tracers.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' ICE_ADVECT,'
+#endif
+#ifdef ICE_ALB_EC92
+      IF (Master) WRITE (stdout,20) 'ICE_ALB_EC92',                     &
+     &   'Ebert and Curry albedo formula.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' ICE_ALB_EC92,'
+#endif
+#ifdef ICE_BULK_FLUXES
+      IF (Master) WRITE (stdout,20) 'ICE_BULK_FLUXES',                  &
+     &   'Ice bulk fluxes from the atmosphere.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' ICE_BULK_FLUXES,'
+#endif
+#ifdef ICE_EVP
+      IF (Master) WRITE (stdout,20) 'ICE_EVP',                          &
+     &   'Elastic-viscous-plastic ice rheology.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+9)=' ICE_EVP,'
+#endif
+#ifdef ICE_MK
+      IF (Master) WRITE (stdout,20) 'ICE_MK',                           &
+     &   'Mellor-Kantha ice thermodynamics.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+8)=' ICE_MK,'
+#endif
+#ifdef ICE_MODEL
+      IF (Master) WRITE (stdout,20) 'ICE_MODEL',                        &
+     &   'Include sea ice model.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' ICE_MODEL,'
+#endif
+#ifdef ICE_MOMENTUM
+      IF (Master) WRITE (stdout,20) 'ICE_MOMENTUM',                     &
+     &   'Compute ice momentum equations.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' ICE_MOMENTUM,'
+#endif
+#ifdef ICE_SHOREFAST
+      IF (Master) WRITE (stdout,20) 'ICE_SHOREFAST',                    &
+     &   'Motionless shorefast ice.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+15)=' ICE_SHOREFAST,'
+#endif
+#ifdef ICE_SMOLAR
+      IF (Master) WRITE (stdout,20) 'ICE_SMOLAR',                       &
+     &   'Advect ice tracers with MPDATA scheme.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' ICE_SMOLAR,'
+#endif
+#ifdef ICE_SMOOTH
+      IF (Master) WRITE (stdout,20) 'ICE_SMOOTH',                       &
+     &   'Include smoothing of ice.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' ICE_SMOOTH,'
+#endif
+#ifdef ICE_THERMO
+      IF (Master) WRITE (stdout,20) 'ICE_THERMO',                       &
+     &   'Include ice thermodynamics.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' ICE_THERMO,'
 #endif
 #ifdef ICESHELF
       IF (Master) WRITE (stdout,20) 'ICESHELF',                         &
@@ -1834,6 +1924,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' PJ_GRADPQ4,'
 #endif
+#ifdef POT_TIDES
+      IF (Master) WRITE (stdout,20) 'POT_TIDES',                        &
+     &   'Add tidal potential terms to the forcing.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' POT_TIDES,'
+#endif
 #if defined POSTERIOR_EOFS && defined WEAK_CONSTRAINT
       IF (Master) WRITE (stdout,20) 'POSTERIOR_EOFS',                   &
      &   'Estimating posterior analysis error covariace matrix EOFs.'
@@ -1888,6 +1984,12 @@
      &   'Mass point sources, volume influx.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' Q_PSOURCE,'
+#endif
+#if defined RUNOFF
+      IF (Master) WRITE (stdout,20) 'RUNOFF',                           &
+     &   'Surface flux of ungauged river runoff.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+8)=' RUNOFF,'
 #endif
 #if defined GLS_MIXING || defined MY25_MIXING
 # if defined K_C2ADVECTION
@@ -2440,6 +2542,12 @@
      &   'Nudging toward tracer climatology.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' TCLM_NUDGING,'
+#endif
+#if defined TIDES_ASTRO
+      IF (Master) WRITE (stdout,20) 'TIDES_ASTRO',                        &
+     &   'Compute astronomical (long-period tide) corrections.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+13)=' TIDES_ASTRO,'
 #endif
 #ifdef TLM_DRIVER
       IF (Master) WRITE (stdout,20) 'TLM_DRIVER',                       &

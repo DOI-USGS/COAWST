@@ -39,7 +39,17 @@
       USE bbl_mod, ONLY : bblm
 # endif
 # ifdef BULK_FLUXES
+#  ifdef CCSM_FLUXES
+      USE ccsm_flux_mod, ONLY : ccsm_flux
+#  else
       USE bulk_flux_mod, ONLY : bulk_flux
+#  endif
+# endif
+# if (defined ALBEDO || defined NCEP_FLUXES) && !defined BENCHMARK
+      USE cawdir_eval_mod, ONLY : cawdir_eval
+# endif
+# if defined NCEP_FLUXES
+      USE ncep_flux_mod, ONLY : ncep_flux
 # endif
 # ifdef ATM2OCN_FLUXES
       USE atm2ocn_flux_mod, ONLY : atm2ocn_flux
@@ -115,11 +125,14 @@
 # if defined AVERAGES && !defined ADJOINT
       USE set_avg_mod, ONLY : set_avg
 # endif
+# if defined ICE_MODEL && defined ICE_THERMO
+      USE ice_frazil_mod, ONLY : ice_frazil
+# endif
 # ifdef MOVE_SET_DEPTH
       USE set_depth_mod, ONLY : set_depth
 # endif
       USE set_massflux_mod, ONLY : set_massflux
-# if defined SSH_TIDES || defined UV_TIDES
+# if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
       USE set_tides_mod, ONLY : set_tides
 # endif
       USE set_vbc_mod, ONLY : set_vbc
@@ -307,7 +320,6 @@
 !  Initialize all time levels and compute other initial fields.
 !-----------------------------------------------------------------------
 !
-!
 !  Initialize free-surface.
 !
 !$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
@@ -380,8 +392,7 @@
 # ifdef AIR_OCEAN
 !
 !-----------------------------------------------------------------------
-!  Couple ocean to atmosphere model every "CoupleSteps(Iatmos)"
-!  timesteps: get air/sea fluxes.
+!  Couple ocean to atmosphere model every nOCN_ATM timesteps.
 !-----------------------------------------------------------------------
 !
 #  if !defined REFINED_GRID
@@ -406,8 +417,7 @@
 # ifdef WAVES_OCEAN
 !
 !-----------------------------------------------------------------------
-!  Couple to ocean to waves model every "CoupleSteps(Iwaves)"
-!  timesteps: get waves/ocean fluxes.
+!  Couple to ocean to waves model every  nOCN_WAV timesteps.
 !-----------------------------------------------------------------------
 !
 #  if !defined REFINED_GRID
@@ -503,11 +513,21 @@
         DO thread=0,numthreads-1
           subs=NtileX(ng)*NtileE(ng)/numthreads
           DO tile=subs*thread,subs*(thread+1)-1,+1
+# if (defined ALBEDO || defined NCEP_FLUXES) && !defined BENCHMARK
+            CALL cawdir_eval(ng, TILE)
+# endif
 # ifdef BULK_FLUXES
-#  if defined FOUR_DVAR && defined NL_BULK_FLUXES
-            IF (Nrun.eq.1) CALL bulk_flux (ng, TILE)
+#  ifdef CCSM_FLUXES
+            CALL ccsm_flux (ng, TILE)
 #  else
+#   if defined FOUR_DVAR && defined NL_BULK_FLUXES
+            IF (Nrun.eq.1) CALL bulk_flux (ng, TILE)
+#   else
             CALL bulk_flux (ng, TILE)
+#   endif
+#  endif
+#  ifdef NCEP_FLUXES
+            CALL ncep_flux(ng, TILE)
 #  endif
 
 # elif defined ATM2OCN_FLUXES
@@ -517,7 +537,7 @@
             CALL bblm (ng, TILE)
 # endif
             CALL set_vbc (ng, TILE)
-# if defined SSH_TIDES || defined UV_TIDES
+# if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
             CALL set_tides (ng, TILE)
 # endif
           END DO
@@ -526,9 +546,23 @@
       END DO
 # endif
 !$OMP END PARALLEL DO
-#  ifdef COMPOSED_GRID
+# ifdef COMPOSED_GRID
       CALL nesting (9)
+# endif
+# if defined ICE_MODEL
+!
+!-----------------------------------------------------------------------
+!  Run ice model for one step
+!-----------------------------------------------------------------------
+!
+#  if !defined REFINED_GRID
+      DO ng=1,Ngrids
 #  endif
+        CALL seaice(ng)
+#  if !defined REFINED_GRID
+      END DO
+#  endif
+# endif
 # ifdef ADJUST_BOUNDARY
 !
 !-----------------------------------------------------------------------
@@ -605,10 +639,9 @@
       END DO
 # endif
 !$OMP END PARALLEL DO
-#  ifdef COMPOSED_GRID
+# ifdef COMPOSED_GRID
       CALL nesting (10)
-#  endif
-
+# endif
 !
 !-----------------------------------------------------------------------
 !  Set free-surface to it time-averaged value.  If applicable,
@@ -878,6 +911,9 @@
           subs=NtileX(ng)*NtileE(ng)/numthreads
           DO tile=subs*(thread+1)-1,subs*thread,-1
             CALL step3d_t (ng, TILE)
+#  if defined ICE_MODEL && defined ICE_THERMO
+          CALL ice_frazil(ng, TILE)
+#  endif
           END DO
         END DO
 # if !defined REFINED_GRID

@@ -172,6 +172,30 @@
 #  ifdef AVERAGES_AKV
           real(r8), pointer :: avgAKv(:,:,:)
 #  endif
+#  ifdef ICE_MODEL
+          real(r8), pointer :: avguice(:,:)
+          real(r8), pointer :: avgvice(:,:)
+          real(r8), pointer :: avgaice(:,:)
+          real(r8), pointer :: avghice(:,:)
+          real(r8), pointer :: avgtice(:,:)
+          real(r8), pointer :: avgtimid(:,:)
+          real(r8), pointer :: avghsno(:,:)
+          real(r8), pointer :: avgsfwat(:,:)
+          real(r8), pointer :: avgiomflx(:,:)
+          real(r8), pointer :: avgageice(:,:)
+          real(r8), pointer :: avgsig11(:,:)
+          real(r8), pointer :: avgsig12(:,:)
+          real(r8), pointer :: avgsig22(:,:)
+          real(r8), pointer :: avgT0mk(:,:)
+          real(r8), pointer :: avgS0mk(:,:)
+          real(r8), pointer :: avgWfr(:,:)
+          real(r8), pointer :: avgWai(:,:)
+          real(r8), pointer :: avgWao(:,:)
+          real(r8), pointer :: avgWio(:,:)
+          real(r8), pointer :: avgWro(:,:)
+          real(r8), pointer :: avgchu_iw(:,:)
+          real(r8), pointer :: avgutau_iw(:,:)
+#  endif
 #  ifdef AVERAGES_FLUXES
           real(r8), pointer :: avgstf(:,:)
           real(r8), pointer :: avgswf(:,:)
@@ -314,6 +338,30 @@
       allocate ( AVERAGE(ng) % avgsrf(LBi:UBi,LBj:UBj) )
 #   endif
 #  endif
+# ifdef ICE_MODEL
+        allocate ( AVERAGE(ng) % avguice(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgvice(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgaice(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avghice(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgtice(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgtimid(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avghsno(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgsfwat(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgiomflx(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgageice(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgsig11(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgsig12(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgsig22(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgT0mk(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgS0mk(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgWfr(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgWai(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgWao(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgWio(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgWro(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgutau_iw(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE(ng) % avgchu_iw(LBi:UBi,LBj:UBj) )
+# endif
 
 #  ifdef LMD_BKPP
       allocate ( AVERAGE(ng) % avghbbl(LBi:UBi,LBj:UBj) )
@@ -517,6 +565,119 @@
         END DO
 # endif
       END DO
+
+# ifdef ICE_MODEL
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avguice(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgvice(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgaice(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avghice(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgtice(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgtimid(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avghsno(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgsfwat(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgiomflx(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgageice(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgsig11(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgsig12(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgsig22(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgT0mk(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgS0mk(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgWfr(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgWai(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgWao(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgWio(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgWro(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgutau_iw(i,j) = IniVal
+          END DO
+        END DO
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgchu_iw(i,j) = IniVal
+          END DO
+        END DO
+# endif
 
       RETURN
       END SUBROUTINE initialize_average

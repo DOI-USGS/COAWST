@@ -2,9 +2,9 @@
 #ifdef SOLVE3D
       SUBROUTINE set_scoord (ng)
 !
-!svn $Id: set_scoord.F 1601 2008-07-25 15:02:43Z jcwarner $
+!svn $Id: set_scoord.F 1398 2011-04-05 16:44:31Z kate $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2011 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -154,7 +154,8 @@
 
       real(r8) :: Aweight, Bweight, Cweight, Cbot, Csur, Hscale
       real(r8) :: ds, exp_bot, exp_sur, sc_r, sc_w
-      real(r8) :: cff, cff1, cff2, cff3
+      real(r8) :: cff, cff1, cff2
+      real(r8) :: zhc, z1, z2, z3
 !
 !-----------------------------------------------------------------------
 !  Set thickness controlling vertical coordinate stretching.
@@ -195,7 +196,7 @@
 !
 !  where the stretching parameters (a, b) are specify at input:
 !
-!         a = theta_s               0 < theta_s  <= 8
+!         a = theta_s               0 <  theta_s <= 8
 !         b = theta_b               0 <= theta_b <= 1
 !
 !  If theta_b=0, the refinement is surface intensified as theta_s is
@@ -237,7 +238,8 @@
         END DO
 !
 !-----------------------------------------------------------------------
-!  A. Shchepetkin new vertical stretching function.
+!  A. Shchepetkin vertical stretching function. This function was
+!  improved further to allow bottom refiment (see Vstretching=4).
 !-----------------------------------------------------------------------
 !
       ELSE IF (Vstretching(ng).eq.2) THEN
@@ -387,6 +389,93 @@
           Cweight=0.5_r8*(1.0_r8-TANH(Hscale*(sc_r+0.5_r8)))
           SCALARS(ng)%Cs_r(k)=Cweight*Cbot+(1.0_r8-Cweight)*Csur
         END DO
+!
+!-----------------------------------------------------------------------
+!  A. Shchepetkin improved double vertical stretching functions with
+!  bottom refiment.
+!-----------------------------------------------------------------------
+!
+      ELSE IF (Vstretching(ng).eq.4) THEN
+!
+!  The range of meaningful values for the control parameters are:
+!
+!       0 <  theta_s <= 10.0
+!       0 <= theta_b <=  3.0
+!
+!  Users need to pay attention to extreme r-factor (rx1) values near
+!  the bottom.
+!
+!  This vertical stretching function is defined, in the simplest form,
+!  as:
+!
+!      C(s) = [1.0 - COSH(theta_s * s)] / [COSH(theta_s) - 1.0]
+!
+!  it is similar in meaning to the original vertical stretcing function
+!  (Song and Haidvogel, 1994), but note that hyperbolic functions are
+!  COSH, and not SINH.
+!
+!  Note that the above definition results in
+!
+!         -1 <= C(s) <= 0
+!
+!  as long as
+!
+!         -1 <= s <= 0
+!
+!  and
+!
+!         d[C(s)]/ds  -->  0      if  s -->  0
+!
+!  For the purpose of bottom boundary layer C(s) is further modified
+!  to allow near-bottom refinement by using a continuous, second
+!  stretching function
+!
+!         C(s) = [EXP(theta_b * C(s)) - 1.0] / [1.0 - EXP(-theta_b)]
+!
+!  This double transformation is continuous with respect to "theta_s"
+!  and "theta_b", as both values approach to zero.
+!
+        ds=1.0_r8/REAL(N(ng),r8)
+!
+        SCALARS(ng)%sc_w(N(ng))=0.0_r8
+        SCALARS(ng)%Cs_w(N(ng))=0.0_r8
+        DO k=N(ng)-1,1,-1
+          sc_w=ds*REAL(k-N(ng),r8)
+          SCALARS(ng)%sc_w(k)=sc_w
+          IF (theta_s(ng).gt.0.0_r8) THEN
+            Csur=(1.0_r8-COSH(theta_s(ng)*sc_w))/                       &
+     &           (COSH(theta_s(ng))-1.0_r8)
+          ELSE
+            Csur=-sc_w**2
+          END IF
+          IF (theta_b(ng).gt.0.0_r8) THEN
+            Cbot=(EXP(theta_b(ng)*Csur)-1.0_r8)/                        &
+     &           (1.0_r8-EXP(-theta_b(ng)))
+            SCALARS(ng)%Cs_w(k)=Cbot
+          ELSE
+            SCALARS(ng)%Cs_w(k)=Csur
+          END IF
+        END DO
+        SCALARS(ng)%sc_w(0)=-1.0_r8
+        SCALARS(ng)%Cs_w(0)=-1.0_r8
+!
+        DO k=1,N(ng)
+          sc_r=ds*(REAL(k-N(ng),r8)-0.5_r8)
+          SCALARS(ng)%sc_r(k)=sc_r
+          IF (theta_s(ng).gt.0.0_r8) THEN
+            Csur=(1.0_r8-COSH(theta_s(ng)*sc_r))/                       &
+     &           (COSH(theta_s(ng))-1.0_r8)
+          ELSE
+            Csur=-sc_r**2
+          END IF
+          IF (theta_b(ng).gt.0.0_r8) THEN
+            Cbot=(EXP(theta_b(ng)*Csur)-1.0_r8)/                        &
+     &           (1.0_r8-EXP(-theta_b(ng)))
+            SCALARS(ng)%Cs_r(k)=Cbot
+          ELSE
+            SCALARS(ng)%Cs_r(k)=Csur
+          END IF
+        END DO
       END IF
 !
 !-----------------------------------------------------------------------
@@ -395,35 +484,36 @@
 !
       IF (Master.and.LwrtInfo(ng)) THEN
         WRITE (stdout,10)
+        cff=0.5_r8*(hmax(ng)+hmin(ng))
         DO k=N(ng),0,-1
-          IF (Vstretching(ng).eq.2) THEN
-            cff=0.5_r8*(hmax(ng)+hmin(ng))
-            cff1=hmin(ng)*(SCALARS(ng)%sc_w(k)*hc(ng)+                  &
-     &                     SCALARS(ng)%Cs_w(k)*hmin(ng))/               &
-     &                    (hc(ng)+hmin(ng))
-            cff2=cff     *(SCALARS(ng)%sc_w(k)*hc(ng)+                  &
-     &                     SCALARS(ng)%Cs_w(k)*cff)/                    &
-     &                    (hc(ng)+cff)
-            cff3=hmax(ng)*(SCALARS(ng)%sc_w(k)*hc(ng)+                  &
-     &                     SCALARS(ng)%Cs_w(k)*hmax(ng))/               &
-     &                    (hc(ng)+hmax(ng))
-          ELSE
-            cff1=SCALARS(ng)%sc_w(k)*hc(ng)+                            &
-     &           (hmin(ng)-hc(ng))*SCALARS(ng)%Cs_w(k)
-            cff2=SCALARS(ng)%sc_w(k)*hc(ng)+                            &
-     &           (0.5*(hmin(ng)+hmax(ng))-hc(ng))*SCALARS(ng)%Cs_w(k)
-            cff3=SCALARS(ng)%sc_w(k)*hc(ng)+                            &
-     &           (hmax(ng)-hc(ng))*SCALARS(ng)%Cs_w(k)
+          IF (Vtransform(ng).eq.1) THEN
+            zhc=hc(ng)*SCALARS(ng)%sc_w(k)
+            z1=zhc+(hmin(ng)-hc(ng))*SCALARS(ng)%Cs_w(k)
+            z2=zhc+(cff     -hc(ng))*SCALARS(ng)%Cs_w(k)
+            z3=zhc+(hmax(ng)-hc(ng))*SCALARS(ng)%Cs_w(k)
+          ELSE IF (Vtransform(ng).eq.2) THEN
+            z1=hmin(ng)*(hc(ng)  *SCALARS(ng)%sc_w(k)+                  &
+     &                   hmin(ng)*SCALARS(ng)%Cs_w(k))/(hc(ng)+hmin(ng))
+            z2=cff     *(hc(ng)  *SCALARS(ng)%sc_w(k)+                  &
+     &                   cff     *SCALARS(ng)%Cs_w(k))/(hc(ng)+cff)
+            z3=hmax(ng)*(hc(ng)  *SCALARS(ng)%sc_w(k)+                  &
+     &                   hmax(ng)*SCALARS(ng)%Cs_w(k))/(hc(ng)+hmax(ng))
+            IF (hc(ng).gt.hmax(ng)) THEN
+              zhc=z3      ! same as hmax, other values do not make sense
+            ELSE
+              zhc=0.5_r8*hc(ng)*(SCALARS(ng)%sc_w(k)+                   &
+     &                           SCALARS(ng)%Cs_w(k))
+            END IF
           END IF
           WRITE (stdout,20) k, SCALARS(ng)%sc_w(k),                     &
-     &                         SCALARS(ng)%Cs_w(k), cff1, cff2, cff3
+     &                         SCALARS(ng)%Cs_w(k), z1, zhc, z2, z3
         END DO
       END IF
 
   10  FORMAT (/,' Vertical S-coordinate System: ',/,/,                  &
-     &          ' level   S-coord     Cs-curve',10x,                    &
-     &          'at_hmin  over_slope     at_hmax',/)
-  20  FORMAT (i6,2f12.7,4x,3f12.3)
+     &          ' level   S-coord     Cs-curve   Z',3x,                 &
+     &          'at hmin       at hc    half way     at hmax',/)
+  20  FORMAT (i6,2f12.7,1x,4f12.3)
 
       RETURN
       END SUBROUTINE set_scoord

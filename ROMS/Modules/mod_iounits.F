@@ -65,6 +65,7 @@
 !  bparnam     Input biology parameters file name.                     !
 !  fposnam     Input initial floats positions file name.               !
 !  ioerror     IO error flag.                                          !
+!  iparnam     Input ice parameters file name.                         !
 !  ncfile      Current NetCDF file name being processed.               !
 !  nFfiles     Number of forcing files.                                !
 !  sparnam     Input sediment transport parameters file name.          !
@@ -182,6 +183,7 @@
         character (len=80) :: aparnam
         character (len=80) :: bparnam
         character (len=80) :: fposnam
+        character (len=80) :: iparnam
         character (len=80) :: ncfile
         character (len=80) :: sparnam
         character (len=80) :: sposnam

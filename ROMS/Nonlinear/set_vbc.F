@@ -53,6 +53,9 @@
      &                   GRID(ng) % z_r,                                &
      &                   GRID(ng) % z_w,                                &
 #  endif
+#  ifdef MASKING
+     &                   GRID(ng) % rmask,                              &
+#  endif
 #  if defined ICESHELF
      &                   GRID(ng) % zice,                               &
 #  endif
@@ -67,6 +70,9 @@
 #  endif
 #  if defined SCORRECTION || defined SRELAXATION
      &                   FORCES(ng) % sss,                              &
+#  endif
+#  if defined SSSFLX || defined WRT_SSSFLX
+     &                   FORCES(ng) % sssflx,                           &
 #  endif
 #  if defined ICESHELF
 #   ifdef SHORTWAVE
@@ -96,6 +102,9 @@
 #  if !defined BBL_MODEL || defined ICESHELF
      &                         z_r, z_w,                                &
 #  endif
+#  if defined MASKING
+     &                         rmask,                                   &
+#  endif
 #  if defined ICESHELF
      &                         zice,                                    &
 #  endif
@@ -108,6 +117,9 @@
 #  endif
 #  if defined SCORRECTION || defined SRELAXATION
      &                         sss,                                     &
+#  endif
+#  if defined SSSFLX || defined WRT_SSSFLX
+     &                         sssflx,                                  &
 #  endif
 #  if defined ICESHELF
 #   ifdef SHORTWAVE
@@ -142,6 +154,9 @@
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
 #   endif
+#   if defined MASKING
+      real(r8), intent(in) :: rmask(LBi:,LBj:)
+#   endif
 #   if defined ICESHELF
       real(r8), intent(in) :: zice(LBi:,LBj:)
 #   endif
@@ -156,6 +171,9 @@
 #   endif
 #   if defined SCORRECTION || defined SRELAXATION
       real(r8), intent(in) :: sss(LBi:,LBj:)
+#   endif
+#   if defined SSSFLX || defined WRT_SSSFLX
+      real(r8), intent(inout) :: sssflx(LBi:,LBj:)
 #   endif
 #   if defined ICESHELF
 #    ifdef SHORTWAVE
@@ -176,6 +194,9 @@
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
 #   endif
+#   if defined MASKING
+      real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
+#   endif
 #   if defined ICESHELF
       real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
 #   endif
@@ -190,6 +211,9 @@
 #   endif
 #   if defined SCORRECTION || defined SRELAXATION
       real(r8), intent(in) :: sss(LBi:UBi,LBj:UBj)
+#   endif
+#   if defined SSSFLX || defined WRT_SSSFLX
+      real(r8), intent(inout) :: sssflx(LBi:UBi,LBj:UBj)
 #   endif
 #   if defined ICESHELF
 #    ifdef SHORTWAVE
@@ -258,14 +282,60 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
 #   if defined SCORRECTION
+#     ifdef ICE_THERMO
+          stflx(i,j,isalt)=stflx(i,j,isalt) -                           &
+     &                     Tnudg(isalt,ng)*Hz(i,j,N(ng))*               &
+#ifdef NEP5
+!  60 days from Tnudg of 360 days
+     &                     6.0_r8*                                      &
+#endif
+     &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
+#     ifdef MASKING
+          stflx(i,j,isalt) = rmask(i,j)*stflx(i,j,isalt)
+#     endif
+#    else
           stflx(i,j,isalt)=stflx(i,j,isalt)*t(i,j,N(ng),nrhs,isalt)-    &
      &                     Tnudg(isalt,ng)*Hz(i,j,N(ng))*               &
+#ifdef NEP5
+!  60 days from Tnudg of 360 days
+     &                     6.0_r8*                                      &
+#endif
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
+#     endif
 #   elif defined SRELAXATION
           stflx(i,j,isalt)=-Tnudg(isalt,ng)*Hz(i,j,N(ng))*              &
+#ifdef NEP5
+!  60 days from Tnudg of 360 days
+     &                     6.0_r8*                                      &
+#endif
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
+#     ifdef MASKING
+          stflx(i,j,isalt) = rmask(i,j)*stflx(i,j,isalt)
+#     endif
 #   else
+#     ifdef ICE_THERMO
+          stflx(i,j,isalt)=stflx(i,j,isalt)
+#     else
           stflx(i,j,isalt)=stflx(i,j,isalt)*t(i,j,N(ng),nrhs,isalt)
+#     endif
+#     ifdef MASKING
+          stflx(i,j,isalt) = rmask(i,j)*stflx(i,j,isalt)
+#     endif
+#   endif
+#   ifdef SSSFLX
+          stflx(i,j,isalt)=stflx(i,j,isalt)+sssflx(i,j)
+#     ifdef MASKING
+          stflx(i,j,isalt) = rmask(i,j)*stflx(i,j,isalt)
+#     endif
+
+#   endif
+#   if (defined SCORRECTION || defined SRELAXATION) && \
+        defined WRT_SSSFLX
+          sssflx(i,j) = -Tnudg(isalt,ng)*Hz(i,j,N(ng))*                 &
+     &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
+#     ifdef MASKING
+          sssflx(i,j) = rmask(i,j)*sssflx(i,j)
+#     endif
 #   endif
           btflx(i,j,isalt)=btflx(i,j,isalt)*t(i,j,1,nrhs,isalt)
         END DO

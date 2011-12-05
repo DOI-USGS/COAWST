@@ -234,6 +234,10 @@
         logical, dimension(Ngrids) :: PerfectRST
         logical, dimension(Ngrids) :: PREDICTOR_2D_STEP
 
+#ifdef TIDES_ASTRO
+        logical, dimension(Ngrids) :: FIRST_TIDES_ASTRO
+#endif
+
         integer, dimension(Ngrids) :: indx1
         integer, dimension(Ngrids) :: iic
         integer, dimension(Ngrids) :: iif
@@ -254,6 +258,7 @@
         real(r8) :: dstart = 0.0_r8                      ! days
         real(r8) :: tide_start = 0.0_r8                  ! days
         real(r8) :: time_ref = 0.0_r8                    ! YYYYMMDD.dd
+        real(r8) :: days_year = 365.25_r8                ! days per year
 
         character (len=14) :: time_code(Ngrids)          ! DD HH:MM:SS
         character (len=19) :: r_text
@@ -342,6 +347,9 @@
         logical, dimension(Ngrids) :: Lassimilate
         logical, dimension(Ngrids) :: Lbiology
         logical, dimension(Ngrids) :: Lfloats
+#ifdef ICE_MODEL
+        logical, dimension(Ngrids) :: Lice
+#endif
         logical, dimension(Ngrids) :: Lsediment
         logical, dimension(Ngrids) :: Lstations
 !
@@ -422,6 +430,7 @@
         integer, parameter :: cubic  = 1        ! cubic  interpolation
 !
         integer :: InterpFlag = linear          ! interpolation flag
+!        integer :: InterpFlag = cubic          ! interpolation flag
 !
 !  Shallowest and Deepest levels to apply bottom momemtum stresses as
 !  a bodyforce
@@ -1645,6 +1654,38 @@
 !
         real(r8) :: err_fct
 #endif
+#ifdef ICE_MODEL
+        integer, dimension(Ngrids) :: nstrs
+        integer, dimension(Ngrids) :: nevp
+        integer, dimension(Ngrids) :: ievp
+
+        real(r8) :: tol     =  1.0E-16
+        real(r8) :: ice_emiss =  0.97_r8
+        real(r8) :: spec_heat_air =  1004._r8
+        real(r8) :: trans_coeff = 1.75E-3
+        real(r8) :: sublim_latent_heat = 2.834E+6
+        real(r8) :: t0deg = 273.15_r8
+
+        real(r8), dimension(Ngrids) :: dtice
+        real(r8), dimension(Ngrids) :: dtice_eq
+        real(r8), dimension(Ngrids) :: dte
+        real(r8), dimension(Ngrids) :: rhoice
+        real(r8), dimension(Ngrids) :: cdiw
+        real(r8), dimension(Ngrids) :: cdai
+        real(r8), dimension(Ngrids) :: rho_air
+        real(r8), dimension(Ngrids) :: rhosnow_dry
+        real(r8), dimension(Ngrids) :: rhosnow_wet
+        real(r8), dimension(Ngrids) :: pstar
+        real(r8), dimension(Ngrids) :: zetamax
+        real(r8), dimension(Ngrids) :: zetamin
+        real(r8), dimension(Ngrids) :: ellip_sq
+        real(r8), dimension(Ngrids) :: astren
+        real(r8), dimension(Ngrids) :: alphai
+        real(r8), dimension(Ngrids) :: min_h
+        real(r8), dimension(Ngrids) :: min_a
+        real(r8), dimension(Ngrids) :: max_a
+        real(r8), dimension(Ngrids) :: stressang
+#endif
 
       CONTAINS
 
@@ -1966,8 +2007,14 @@
         LcycleRST(ng)=.FALSE.
         LcycleTLM(ng)=.FALSE.
         Lfloats(ng)=.TRUE.
+#ifdef ICE_MODEL
+        Lice(ng)=.TRUE.
+#endif
         Lsediment(ng)=.TRUE.
         Lstations(ng)=.TRUE.
+#ifdef TIDES_ASTRO
+        FIRST_TIDES_ASTRO(ng) = .TRUE.
+#endif
       END DO
 
 #ifdef ADJUST_BOUNDARY

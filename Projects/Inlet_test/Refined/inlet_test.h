@@ -25,6 +25,7 @@
 #define UV_ADV
 #undef  UV_COR
 #define TS_MPDATA
+#undef  TS_U3HADVECTION
 #define DJ_GRADPS
 
 #define SOUTHERN_WALL

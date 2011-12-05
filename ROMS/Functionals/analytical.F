@@ -2,9 +2,9 @@
       MODULE analytical_mod
 #ifdef ANALYTICAL
 !
-!svn $Id: analytical.F 440 2010-01-25 06:36:07Z arango $
+!svn $Id: analytical.F 1372 2011-01-21 00:38:29Z kate $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2011 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -20,9 +20,10 @@
 !!                       tracers.                                      !
 !! ana_btflux.h        Analytical kinematic bottom flux of tracer      !
 !!                       type variables.                               !
-!! ana_bmflux.h        Analytical spatially varying bottom roughness   !
 !! ana_cloud.h         Analytical cloud fraction.                      !
 !! ana_diag.h          Customized diagnostics.                         !
+!! ana_drag.h          Analytical spatially varying bottom friction    !
+!!                       parameters.                                   !
 !! ana_fsobc.h         Analytical free-surface boundary conditions.    !
 !! ana_grid.h          Analytical model grid set-up.                   !
 !! ana_humid.h         Analytical surface air humidity.                !
@@ -42,6 +43,7 @@
 !! ana_perturb.h       Peturb analytical initial conditions with       !
 !!                       analytical expressions.                       !
 !! ana_psource.h       Analytical mass/tracer point sources/sinks.     !
+!! ana_trc_psource.h   Analytical mass/tracer point sources/sinks.     !
 !! ana_rain.h          Analytical rain fall rate.                      !
 !! ana_scope.h         Analytical adjoint sensitivity spatial scope    !
 !!                       mask.                                         !
@@ -80,12 +82,12 @@
 
       CONTAINS
 
-# if defined ANA_BIOLOGY && defined BIOLOGY
-#  include <ana_biology.h>
+# if defined ANA_AIOBC && defined ICE_MODEL
+#  include <ana_aiobc.h>
 # endif
 
-# if defined ANA_BMFLUX && defined SEDIMENT && !defined ANA_SEDIMENT
-#  include <ana_bmflux.h>
+# if defined ANA_BIOLOGY && defined BIOLOGY
+#  include <ana_biology.h>
 # endif
 
 # ifdef SOLVE3D
@@ -102,12 +104,30 @@
 #  include <ana_diag.h>
 # endif
 
+# if defined ANA_DRAG && defined UV_DRAG_GRID
+#  include <ana_drag.h>
+# endif
+
 # ifdef ANA_FSOBC
 #  include <ana_fsobc.h>
 # endif
 
 # ifdef ANA_GRID
 #  include <ana_grid.h>
+# endif
+
+# if defined ANA_HIOBC && defined ICE_MODEL
+#  include <ana_hiobc.h>
+# endif
+
+# if defined ANA_HSNOBC && defined ICE_MODEL
+#  include <ana_hsnobc.h>
+# endif
+
+# if defined ANA_ICEBIOBC && defined ICE_BIO
+#  include <ana_IcePhLbc.h>
+#  include <ana_IceNO3bc.h>
+#  include <ana_IceNH4bc.h>
 # endif
 
 # if defined ANA_HUMIDITY && \
@@ -118,6 +138,10 @@
 
 # if defined VISC_GRID || defined DIFF_GRID || defined SPONGE
 #  include <ana_hmixcoef.h>
+# endif
+
+# if defined ANA_ICE && defined ICE_MODEL
+#  include <ana_ice.h>
 # endif
 
 # ifdef ANA_INITIAL
@@ -144,6 +168,10 @@
 #  include <ana_mask.h>
 # endif
 
+# if defined ANA_NCEP && defined NCEP_FLUXES
+#  include "ana_ncep.h"
+# endif
+
 # if defined NUDGING_COFF
 #  include <ana_nudgcoef.h>
 # endif
@@ -164,6 +192,10 @@
 # if (defined TS_PSOURCE || defined UV_PSOURCE || defined Q_PSOURCE) && \
      defined ANA_PSOURCE
 #  include <ana_psource.h>
+# endif
+
+# if defined TRC_PSOURCE  && defined ANA_TRC_PSOURCE
+#  include <ana_trc_psource.h>
 # endif
 
 # if defined ANA_RAIN && defined BULK_FLUXES

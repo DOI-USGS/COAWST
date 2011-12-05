@@ -39,6 +39,9 @@
       USE mod_grid
       USE mod_ocean
       USE mod_stepping
+#ifdef POT_TIDES
+      USE mod_tides
+#endif
 !
 !  Imported variable declarations.
 !
@@ -75,6 +78,9 @@
 #ifdef ATM_PRESS
      &                  FORCES(ng) % Pair,                              &
 #endif
+#ifdef POT_TIDES
+     &                  TIDES(ng) % Ptide,                              &
+#endif
 #ifdef DIAGNOSTICS_UV
      &                  DIAGS(ng) % DiaRU,                              &
      &                  DIAGS(ng) % DiaRV,                              &
@@ -106,6 +112,9 @@
 #endif
 #ifdef ATM_PRESS
      &                        Pair,                                     &
+#endif
+#ifdef POT_TIDES
+     &                        Ptide,                                    &
 #endif
 #ifdef DIAGNOSTICS_UV
      &                        DiaRU, DiaRV,                             &
@@ -144,6 +153,9 @@
 # ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:,LBj:)
 # endif
+# ifdef POT_TIDES
+      real(r8), intent(in) :: Ptide(LBi:,LBj:)
+# endif
 # ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: DiaRV(LBi:,LBj:,:,:,:)
@@ -170,6 +182,9 @@
 #endif
 # ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
+# endif
+# ifdef POT_TIDES
+      real(r8), intent(in) :: Ptide(LBi:UBi,LBj:UBj)
 # endif
 # ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
@@ -250,6 +265,9 @@
 #endif
 #ifdef ATM_PRESS
      &                 fac*(Pair(i,j)-OneAtm)+                          &
+#endif
+#ifdef POT_TIDES
+     &                 (-g)*Ptide(i,j)+                                 &
 #endif
      &                 GRho*(rho(i,j,N(ng))+cff2)*                      &
      &                 (z_w(i,j,N(ng))-z_r(i,j,N(ng)))

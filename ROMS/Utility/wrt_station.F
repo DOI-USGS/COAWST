@@ -18,6 +18,9 @@
 # ifdef BBL_MODEL
       USE mod_bbl
 # endif
+#ifdef ICE_MODEL
+      USE mod_ice
+#endif
       USE mod_forces
       USE mod_grid
       USE mod_iounits
@@ -1486,6 +1489,376 @@
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
      &                        ncid = ncSTAid(ng),                       &
      &                        varid = staVid(idWbeh,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+# endif
+# ifdef ICE_MODEL
+!
+!  Write out ice 2D momentum component (m/s) in the XI-direction.
+!
+      IF (Sout(idUice,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idUice, u2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%ui(:,:,IUOUT),               &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idUice)), psta,              &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idUice,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out ice 2D momentum component (m/s) in the ETA-direction.
+!
+      IF (Sout(idVice,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idVice, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%vi(:,:,IUOUT),               &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idVice)), psta,              &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idVice,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out ice concentration
+!
+      IF (Sout(idAice,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idAice, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%ai(:,:,IOUT),                &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idAice)), psta,              &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idAice,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out ice average thickness
+!
+      IF (Sout(idHice,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idHice, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%hi(:,:,IOUT),                &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idHice)), psta,              &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idHice,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out snow average thickness
+!
+      IF (Sout(idHsno,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idHsno, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%hsn(:,:,IOUT),               &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idHsno)), psta,              &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idHsno,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out surface water thickness (on ice)
+!
+      IF (Sout(idSfwat,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idSfwat, r2dvar,           &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%sfwat(:,:,IOUT),             &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idSfwat)), psta,             &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idSfwat,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out ice age.
+!
+      IF (Sout(idAgeice,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idAgeice, r2dvar,          &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%ageice(:,:,IOUT),            &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idAgeice)), psta,            &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idAgeice,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out ice-ocean mass flux
+!
+      IF (Sout(idIomflx,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idIomflx, r2dvar,          &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%io_mflux(:,:),               &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idIomflx)), psta,            &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idIomflx,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out ice/snow surface temperature
+!
+      IF (Sout(idTice,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idTice, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%tis,                         &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idTice)), psta,              &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idTice,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out ice interior temperature
+!
+      IF (Sout(idTimid,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idTimid, r2dvar,           &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%ti(:,:,IOUT),                &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idTimid)), psta,             &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idTimid,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out ice-water friction velocity
+!
+      IF (Sout(idTauiw,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idTauiw, r2dvar,           &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%utau_iw,                     &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idTauiw)), psta,             &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idTauiw,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out ice-water momentum transfer coefficient
+!
+      IF (Sout(idChuiw,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idChuiw, r2dvar,           &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%chu_iw,                      &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idChuiw)), psta,             &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idChuiw,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out under-ice temperature
+!
+      IF (Sout(idT0mk,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idT0mk, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%t0mk,                        &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idT0mk)), psta,              &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idT0mk,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out under-ice salinity
+!
+      IF (Sout(idS0mk,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idS0mk, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%s0mk,                        &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idS0mk)), psta,              &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idS0mk,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out frazil ice growth rate
+!
+      IF (Sout(idWfr,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idWfr, r2dvar,             &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%wfr,                         &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idWfr)), psta,               &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idWfr,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out ice growth/melt rate
+!
+      IF (Sout(idWai,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idWfr, r2dvar,             &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%wai,                         &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idWai)), psta,               &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idWai,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out ice growth/melt rate
+!
+      IF (Sout(idWao,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idWao, r2dvar,             &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%wao,                         &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idWao)), psta,               &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idWao,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out ice growth/melt rate
+!
+      IF (Sout(idWio,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idWio, r2dvar,             &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%wio,                         &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idWio)), psta,               &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idWio,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out ice melt runoff rate
+!
+      IF (Sout(idWro,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idWro, r2dvar,             &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%wro,                         &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idWro)), psta,               &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idWro,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out internal ice stress sig11
+!
+      IF (Sout(idSig11,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idSig11, r2dvar,           &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%sig11(:,:,IEOUT),            &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idSig11)), psta,             &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idSig11,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out internal ice stress sig12
+!
+      IF (Sout(idSig12,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idSig12, r2dvar,           &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%sig12(:,:,IEOUT),            &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idSig12)), psta,             &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idSig12,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out internal ice stress sig22
+!
+      IF (Sout(idSig22,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idSig22, r2dvar,           &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%sig22(:,:,IEOUT),            &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idSig22)), psta,             &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idSig22,ng))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out freezing water wfr
+!
+      IF (Sout(idWfr,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idWfr, r2dvar,             &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%wfr(:,:),                    &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+     &                        TRIM(Vname(1,idWfr)), psta,               &
+     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        ncid = ncSTAid(ng),                       &
+     &                        varid = staVid(idWfr,ng))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 # endif

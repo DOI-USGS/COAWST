@@ -37,6 +37,9 @@
       USE mod_grid
       USE mod_mixing
 # endif
+# ifdef ICE_MODEL
+      USE mod_ice
+# endif
       USE mod_ocean
       USE mod_stepping
 # if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
@@ -62,6 +65,9 @@
 # endif
      &                   KOUT,                                          &
 # ifdef SOLVE3D
+#  ifdef ICE_MODEL
+     &                   IOUT, IUOUT, IEOUT,                            &
+#  endif
      &                   NOUT,                                          &
      &                   GRID(ng) % pm,                                 &
      &                   GRID(ng) % pn,                                 &
@@ -101,6 +107,25 @@
 #  endif
 #  ifdef LMD_BKPP
      &                   MIXING(ng) % hbbl,                             &
+#  endif
+#  ifdef WRT_SSSFLX
+     &                   FORCES(ng) % sssflx,                           &
+#  endif
+#  ifdef ICE_MODEL
+     &                   ICE(ng)%ui, ICE(ng)%vi,                        &
+     &                   ICE(ng)%ai, ICE(ng)%hi,                        &
+     &                   ICE(ng)%hsn, ICE(ng)%tis,                      &
+     &                   ICE(ng)%ti, ICE(ng)%sfwat,                     &
+     &                   ICE(ng)%ageice,                                &
+     &                   ICE(ng)%io_mflux,                              &
+     &                   ICE(ng)%sig11, ICE(ng)%sig12,                  &
+     &                   ICE(ng)%sig22,                                 &
+     &                   ICE(ng)%t0mk, ICE(ng)%s0mk,                    &
+     &                   ICE(ng)%wfr, ICE(ng)%wai,                      &
+     &                   ICE(ng)%wao, ICE(ng)%wio,                      &
+     &                   ICE(ng)%wro,                                   &
+     &                   ICE(ng)%utau_iw,                               &
+     &                   ICE(ng)%chu_iw,                                &
 #  endif
 #  ifdef AVERAGES_AKV
      &                   MIXING(ng) % Akv,                              &
@@ -195,6 +220,33 @@
 #  ifdef LMD_BKPP
      &                   AVERAGE(ng) % avghbbl,                         &
 #  endif
+#  ifdef WRT_SSSFLX
+     &                   AVERAGE(ng) % avgsssflx,                       &
+#  endif
+#  ifdef ICE_MODEL
+     &                   AVERAGE(ng) % avguice,                         &
+     &                   AVERAGE(ng) % avgvice,                         &
+     &                   AVERAGE(ng) % avgaice,                         &
+     &                   AVERAGE(ng) % avghice,                         &
+     &                   AVERAGE(ng) % avghsno,                         &
+     &                   AVERAGE(ng) % avgtice,                         &
+     &                   AVERAGE(ng) % avgtimid,                        &
+     &                   AVERAGE(ng) % avgsfwat,                        &
+     &                   AVERAGE(ng) % avgageice,                       &
+     &                   AVERAGE(ng) % avgiomflx,                       &
+     &                   AVERAGE(ng) % avgsig11,                        &
+     &                   AVERAGE(ng) % avgsig12,                        &
+     &                   AVERAGE(ng) % avgsig22,                        &
+     &                   AVERAGE(ng) % avgT0mk,                         &
+     &                   AVERAGE(ng) % avgS0mk,                         &
+     &                   AVERAGE(ng) % avgWfr,                          &
+     &                   AVERAGE(ng) % avgWai,                          &
+     &                   AVERAGE(ng) % avgWao,                          &
+     &                   AVERAGE(ng) % avgWio,                          &
+     &                   AVERAGE(ng) % avgWro,                          &
+     &                   AVERAGE(ng) % avgutau_iw,                      &
+     &                   AVERAGE(ng) % avgchu_iw,                       &
+#  endif
 #  ifdef AVERAGES_AKV
      &                   AVERAGE(ng) % avgAKv,                          &
 #  endif
@@ -272,6 +324,9 @@
 # endif
      &                         Kout,                                    &
 # ifdef SOLVE3D
+#  ifdef ICE_MODEL
+     &                         Iout, Iuout, Ieout,                      &
+#  endif
      &                         Nout,                                    &
      &                         pm, pn,                                  &
 #  ifdef AVERAGES_QUADRATIC
@@ -296,6 +351,15 @@
 #  endif
 #  ifdef LMD_BKPP
      &                         hbbl,                                    &
+#  endif
+#  ifdef WRT_SSSFLX
+     &                         sssflx,                                  &
+#  endif
+#  ifdef ICE_MODEL
+     &                         ui, vi, ai, hi, hsn, tis, ti, sfwat,     &
+     &                         ageice, io_mflux, sig11, sig12, sig22,   &
+     &                         t0mk, s0mk, wfr, wai, wao,               &
+     &                         wio, wro, utau_iw, chu_iw,               &
 #  endif
 #  ifdef AVERAGES_AKV
      &                         Akv,                                     &
@@ -362,6 +426,17 @@
 #  ifdef LMD_BKPP
      &                         avghbbl,                                 &
 #  endif
+#  ifdef WRT_SSSFLX
+     &                         avgsssflx,                               &
+#  endif
+#  ifdef ICE_MODEL
+     &                         avguice, avgvice, avgaice, avghice,      &
+     &                         avghsno, avgtice, avgtimid, avgsfwat,    &
+     &                         avgageice, avgiomflx, avgsig11,          &
+     &                         avgsig12, avgsig22, avgT0mk, avgS0mk,    &
+     &                         avgWfr, avgWai, avgWao, avgWio,          &
+     &                         avgWro, avgutau_iw, avgchu_iw,           &
+#  endif
 #  ifdef AVERAGES_AKV
      &                         avgAKv,                                  &
 #  endif
@@ -417,6 +492,9 @@
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: Kout
 # ifdef SOLVE3D
+#  ifdef ICE_MODEL
+      integer, intent(in) :: Iout, Iuout, Ieout
+#  endif
       integer, intent(in) :: Nout
 # endif
 # if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
@@ -463,6 +541,33 @@
 #   endif
 #   ifdef LMD_BKPP
       real(r8), intent(in) :: hbbl(LBi:,LBj:)
+#   endif
+#   ifdef WRT_SSSFLX
+      real(r8), intent(in) :: sssflx(LBi:,LBj:)
+#   endif
+#   ifdef ICE_MODEL
+      real(r8), intent(in) :: ui(LBi:,LBj:,:)
+      real(r8), intent(in) :: vi(LBi:,LBj:,:)
+      real(r8), intent(in) :: ai(LBi:,LBj:,:)
+      real(r8), intent(in) :: hi(LBi:,LBj:,:)
+      real(r8), intent(in) :: hsn(LBi:,LBj:,:)
+      real(r8), intent(in) :: tis(LBi:,LBj:)
+      real(r8), intent(in) :: ti(LBi:,LBj:,:)
+      real(r8), intent(in) :: sfwat(LBi:,LBj:,:)
+      real(r8), intent(in) :: ageice(LBi:,LBj:,:)
+      real(r8), intent(in) :: io_mflux(LBi:,LBj:)
+      real(r8), intent(in) :: sig11(LBi:,LBj:,:)
+      real(r8), intent(in) :: sig12(LBi:,LBj:,:)
+      real(r8), intent(in) :: sig22(LBi:,LBj:,:)
+      real(r8), intent(in) :: t0mk(LBi:,LBj:)
+      real(r8), intent(in) :: s0mk(LBi:,LBj:)
+      real(r8), intent(in) :: wfr(LBi:,LBj:)
+      real(r8), intent(in) :: wai(LBi:,LBj:)
+      real(r8), intent(in) :: wao(LBi:,LBj:)
+      real(r8), intent(in) :: wio(LBi:,LBj:)
+      real(r8), intent(in) :: wro(LBi:,LBj:)
+      real(r8), intent(in) :: utau_iw(LBi:,LBj:)
+      real(r8), intent(in) :: chu_iw(LBi:,LBj:)
 #   endif
 #   ifdef AVERAGES_AKV
       real(r8), intent(in) :: Akv(LBi:,LBj:,0:)
@@ -560,6 +665,33 @@
 #   endif
 #   ifdef LMD_BKPP
       real(r8), intent(inout) :: avghbbl(LBi:,LBj:)
+#   endif
+#   ifdef WRT_SSSFLX
+      real(r8), intent(inout) :: avgsssflx(LBi:,LBj:)
+#   endif
+#   ifdef ICE_MODEL
+      real(r8), intent(inout) :: avguice(LBi:,LBj:)
+      real(r8), intent(inout) :: avgvice(LBi:,LBj:)
+      real(r8), intent(inout) :: avgaice(LBi:,LBj:)
+      real(r8), intent(inout) :: avghice(LBi:,LBj:)
+      real(r8), intent(inout) :: avghsno(LBi:,LBj:)
+      real(r8), intent(inout) :: avgtice(LBi:,LBj:)
+      real(r8), intent(inout) :: avgtimid(LBi:,LBj:)
+      real(r8), intent(inout) :: avgsfwat(LBi:,LBj:)
+      real(r8), intent(inout) :: avgageice(LBi:,LBj:)
+      real(r8), intent(inout) :: avgiomflx(LBi:,LBj:)
+      real(r8), intent(inout) :: avgsig11(LBi:,LBj:)
+      real(r8), intent(inout) :: avgsig12(LBi:,LBj:)
+      real(r8), intent(inout) :: avgsig22(LBi:,LBj:)
+      real(r8), intent(inout) :: avgT0mk(LBi:,LBj:)
+      real(r8), intent(inout) :: avgS0mk(LBi:,LBj:)
+      real(r8), intent(inout) :: avgWfr(LBi:,LBj:)
+      real(r8), intent(inout) :: avgWai(LBi:,LBj:)
+      real(r8), intent(inout) :: avgWao(LBi:,LBj:)
+      real(r8), intent(inout) :: avgWio(LBi:,LBj:)
+      real(r8), intent(inout) :: avgWro(LBi:,LBj:)
+      real(r8), intent(inout) :: avgutau_iw(LBi:,LBj:)
+      real(r8), intent(inout) :: avgchu_iw(LBi:,LBj:)
 #   endif
 #   ifdef AVERAGES_AKV
       real(r8), intent(inout) :: avgAKv(LBi:,LBj:,0:)
@@ -661,6 +793,33 @@
 #   ifdef LMD_BKPP
       real(r8), intent(in) :: hbbl(LBi:UBi,LBj:UBj)
 #   endif
+#   ifdef WRT_SSSFLX
+      real(r8), intent(in) :: sssflx(LBi:UBi,LBj:UBj)
+#   endif
+#   ifdef ICE_MODEL
+      real(r8), intent(in) :: ui(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(in) :: vi(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(in) :: ai(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(in) :: hi(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(in) :: hsn(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(in) :: tis(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: ti(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(in) :: sfwat(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(in) :: ageice(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(in) :: io_mflux(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: sig11(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(in) :: sig12(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(in) :: sig22(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(in) :: t0mk(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: s0mk(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: wfr(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: wai(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: wao(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: wio(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: wro(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: utau_iw(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: chu_iw(LBi:UBi,LBj:UBj)
+#   endif
 #   ifdef AVERAGES_AKV
       real(r8), intent(in) :: Akv(LBi:UBi,LBj:UBj,0:N(ng))
 #   endif
@@ -753,6 +912,33 @@
 #   endif
 #   ifdef LMD_BKPP
       real(r8), intent(inout) :: avghbbl(LBi:UBi,LBj:UBj)
+#   endif
+#   ifdef WRT_SSSFLX
+      real(r8), intent(inout) :: avgsssflx(LBi:UBi,LBj:UBj)
+#   endif
+#   ifdef ICE_MODEL
+      real(r8), intent(inout) :: avguice(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgvice(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgaice(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avghice(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avghsno(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgtice(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgtimid(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgsfwat(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgageice(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgiomflx(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgsig11(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgsig12(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgsig22(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgT0mk(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgS0mk(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgWfr(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgWai(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgWao(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgWio(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgWro(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgutau_iw(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: avgchu_iw(LBi:UBi,LBj:UBj)
 #   endif
 #   ifdef AVERAGES_AKV
       real(r8), intent(inout) :: avgAKv(LBi:UBi,LBj:UBj,0:N(ng))
@@ -935,6 +1121,33 @@
 #  endif
 #  ifdef LMD_BKPP
             avghbbl(i,j)=hbbl(i,j)
+#  endif
+#  ifdef WRT_SSSFLX
+            avgsssflx(i,j)=sssflx(i,j)
+#  endif
+#  ifdef ICE_MODEL
+            avguice(i,j)=ui(i,j,Iuout)
+            avgvice(i,j)=vi(i,j,Iuout)
+            avgaice(i,j)=ai(i,j,Iout)
+            avghice(i,j)=hi(i,j,Iout)
+            avghsno(i,j)=hsn(i,j,Iout)
+            avgtice(i,j)=tis(i,j)
+            avgtimid(i,j)=ti(i,j,Iout)
+            avgsfwat(i,j)=sfwat(i,j,Iout)
+            avgageice(i,j)=ageice(i,j,Iout)
+            avgiomflx(i,j)=io_mflux(i,j)
+            avgsig11(i,j)=sig11(i,j,Ieout)
+            avgsig12(i,j)=sig12(i,j,Ieout)
+            avgsig22(i,j)=sig22(i,j,Ieout)
+            avgT0mk(i,j)=t0mk(i,j)
+            avgS0mk(i,j)=s0mk(i,j)
+            avgWfr(i,j)=wfr(i,j)
+            avgWai(i,j)=wai(i,j)
+            avgWao(i,j)=wao(i,j)
+            avgWio(i,j)=wio(i,j)
+            avgWro(i,j)=wro(i,j)
+            avgutau_iw(i,j)=utau_iw(i,j)
+            avgchu_iw(i,j)=chu_iw(i,j)
 #  endif
 #  ifdef AVERAGES_FLUXES
             avgstf(i,j)=stflx(i,j,itemp)
@@ -1154,6 +1367,33 @@
 #  endif
 #  ifdef LMD_BKPP
             avghbbl(i,j)=avghbbl(i,j)+hbbl(i,j)
+#  endif
+#  ifdef WRT_SSSFLX
+            avgsssflx(i,j)=avgsssflx(i,j)+sssflx(i,j)
+#  endif
+#  ifdef ICE_MODEL
+            avguice(i,j)=avguice(i,j)+ui(i,j,Iuout)
+            avgvice(i,j)=avgvice(i,j)+vi(i,j,Iuout)
+            avgaice(i,j)=avgaice(i,j)+ai(i,j,Iout)
+            avghice(i,j)=avghice(i,j)+hi(i,j,Iout)
+            avghsno(i,j)=avghsno(i,j)+hsn(i,j,Iout)
+            avgtice(i,j)=avgtice(i,j)+tis(i,j)
+            avgtimid(i,j)=avgtimid(i,j)+ti(i,j,Iout)
+            avgsfwat(i,j)=avgsfwat(i,j)+sfwat(i,j,Iout)
+            avgageice(i,j)=avgageice(i,j)+ageice(i,j,Iout)
+            avgiomflx(i,j)=avgiomflx(i,j)+io_mflux(i,j)
+            avgsig11(i,j)=avgsig11(i,j)+sig11(i,j,Ieout)
+            avgsig12(i,j)=avgsig12(i,j)+sig12(i,j,Ieout)
+            avgsig22(i,j)=avgsig22(i,j)+sig22(i,j,Ieout)
+            avgT0mk(i,j)=avgT0mk(i,j)+t0mk(i,j)
+            avgS0mk(i,j)=avgS0mk(i,j)+s0mk(i,j)
+            avgWfr(i,j)=avgWfr(i,j)+wfr(i,j)
+            avgWai(i,j)=avgWai(i,j)+wai(i,j)
+            avgWao(i,j)=avgWao(i,j)+wao(i,j)
+            avgWio(i,j)=avgWio(i,j)+wio(i,j)
+            avgWro(i,j)=avgWro(i,j)+wro(i,j)
+            avgutau_iw(i,j)=avgutau_iw(i,j)+utau_iw(i,j)
+            avgchu_iw(i,j)=avgchu_iw(i,j)+chu_iw(i,j)
 #  endif
 #  ifdef AVERAGES_FLUXES
             avgstf(i,j)=avgstf(i,j)+stflx(i,j,itemp)
@@ -1457,6 +1697,33 @@
 #  endif
 #  ifdef LMD_BKPP
             avghbbl(i,j)=fac*avghbbl(i,j)
+#  endif
+#  ifdef WRT_SSSFLX
+            avgsssflx(i,j)=fac*avgsssflx(i,j)
+#  endif
+#  ifdef ICE_MODEL
+            avguice(i,j)=fac*avguice(i,j)
+            avgvice(i,j)=fac*avgvice(i,j)
+            avgaice(i,j)=fac*avgaice(i,j)
+            avghice(i,j)=fac*avghice(i,j)
+            avghsno(i,j)=fac*avghsno(i,j)
+            avgtice(i,j)=fac*avgtice(i,j)
+            avgtimid(i,j)=fac*avgtimid(i,j)
+            avgsfwat(i,j)=fac*avgsfwat(i,j)
+            avgageice(i,j)=fac*avgageice(i,j)
+            avgiomflx(i,j)=fac*avgiomflx(i,j)
+            avgsig11(i,j)=fac*avgsig11(i,j)
+            avgsig12(i,j)=fac*avgsig12(i,j)
+            avgsig22(i,j)=fac*avgsig22(i,j)
+            avgT0mk(i,j)=fac*avgT0mk(i,j)
+            avgS0mk(i,j)=fac*avgS0mk(i,j)
+            avgWfr(i,j)=fac*avgWfr(i,j)
+            avgWai(i,j)=fac*avgWai(i,j)
+            avgWao(i,j)=fac*avgWao(i,j)
+            avgWio(i,j)=fac*avgWio(i,j)
+            avgWro(i,j)=fac*avgWro(i,j)
+            avgutau_iw(i,j)=fac*avgutau_iw(i,j)
+            avgchu_iw(i,j)=fac*avgchu_iw(i,j)
 #  endif
 #  ifdef AVERAGES_FLUXES
             avgstf(i,j)=fac*avgstf(i,j)

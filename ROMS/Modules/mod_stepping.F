@@ -72,7 +72,16 @@
         integer, dimension(Ngrids) :: nfm1 = (/ (4, ig=1,Ngrids) /)
 #endif
 
-#if defined SSH_TIDES || defined UV_TIDES
+#ifdef ICE_MODEL
+        integer, dimension(Ngrids) :: linew = (/ (1, ig=1,Ngrids) /)
+        integer, dimension(Ngrids) :: liold = (/ (1, ig=1,Ngrids) /)
+        integer, dimension(Ngrids) :: liunw = (/ (1, ig=1,Ngrids) /)
+        integer, dimension(Ngrids) :: liuol = (/ (1, ig=1,Ngrids) /)
+        integer, dimension(Ngrids) :: lienw = (/ (1, ig=1,Ngrids) /)
+        integer, dimension(Ngrids) :: lieol = (/ (1, ig=1,Ngrids) /)
+#endif
+
+#if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
         integer, dimension(Ngrids) :: NTC
 #endif
 #ifdef ADJUST_BOUNDARY

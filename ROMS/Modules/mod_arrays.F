@@ -46,11 +46,14 @@
 #if defined UV_PSOURCE || defined TS_PSOURCE || defined Q_PSOURCE
       USE mod_sources, ONLY : allocate_sources
 #endif
-#if defined SSH_TIDES || defined UV_TIDES
+#if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
       USE mod_tides, ONLY : allocate_tides, initialize_tides
 #endif
 #ifdef BBL_MODEL
       USE mod_bbl, ONLY : allocate_bbl, initialize_bbl
+#endif
+#ifdef ICE_MODEL
+      USE mod_ice, ONLY : allocate_ice, initialize_ice
 #endif
 #ifdef REFINED_GRID
       USE mod_refined, ONLY : allocate_refined, initialize_refined
@@ -92,6 +95,9 @@
 #ifdef BBL_MODEL
           CALL allocate_bbl (ng, LBi, UBi, LBj, UBj)
 #endif
+#ifdef ICE_MODEL
+          CALL allocate_ice (ng, LBi, UBi, LBj, UBj)
+#endif
 #if defined AD_SENSITIVITY      || defined CLIMATOLOGY      || \
     defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS || \
     defined SENSITIVITY_4DVAR   || defined SO_SEMI
@@ -113,7 +119,7 @@
 #if defined SEDIMENT || defined BBL_MODEL
           CALL allocate_sedbed (ng, LBi, UBi, LBj, UBj)
 #endif
-#if defined SSH_TIDES || defined UV_TIDES
+#if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
           CALL allocate_tides (ng, LBi, UBi, LBj, UBj)
 #endif
 #if defined UV_PSOURCE || defined TS_PSOURCE || defined Q_PSOURCE
@@ -144,6 +150,9 @@
 #ifdef BBL_MODEL
             CALL initialize_bbl (ng, TILE)
 #endif
+#ifdef ICE_MODEL
+            CALL initialize_ice (ng, TILE)
+#endif
 #ifdef OBC
             CALL initialize_boundary (ng, TILE, model)
 #endif
@@ -168,7 +177,7 @@
 #if defined SEDIMENT || defined BBL_MODEL
             CALL initialize_sedbed (ng, TILE, model)
 #endif
-#if defined SSH_TIDES || defined UV_TIDES
+#if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
             CALL initialize_tides (ng, TILE)
 #endif
 #ifdef REFINED_GRID
