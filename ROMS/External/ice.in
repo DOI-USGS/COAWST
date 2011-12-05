@@ -1,0 +1,158 @@
+!  Ice model parameters
+!
+!==============================================================================
+!  Copyright (c) 2002 ROMS/TOMS Group, version 2.0                          ===
+!========================================================= Hernan G. Arango ===
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  All comments will ignored during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+! Switch to control the computation of ice within nested and/or multiple
+! connected grids.
+
+    Lice == T
+
+!
+!   Time step for sea ice model [s]
+
+     DTICE == 600.d0
+
+!
+!   Time step for updating (equilibrium) ice drift in sea ice model [s]
+
+     DTICE_EQ == 10800.d0
+
+! Maximum number of iterations to achieve convergence of the nonlinear
+! ice dynamics solution
+
+     nstrs == 1
+
+! Number of elastic time steps per viscous step in EVP dynamics
+
+     nevp == 60
+
+! Density of sea ice [kg/m3]
+
+     rhoice == 900.d0
+
+! Ice-water bulk drag coefficient
+! (nondimensional).
+
+     cdiw == 7.5d-3
+
+! Air-ice bulk drag coefficient
+! (nondimensional).
+
+     cdai == 3.0d-3
+
+! Slipperiness parameter for ice: 1.0 (free slip) or -1.0 (no slip)
+
+      GAMMA2 =  -1.0d0
+
+! Density of air [kg/m3]
+
+     rho_air = 1.267d0
+
+! Density of dry snow [kg/m3]
+
+     rhosnow_dry == 330.d0
+
+! Density of wet snow [kg/m3]
+
+     rhosnow_wet == 450.d0
+
+! Ice strength coefficient [N/m2]
+
+     pstar == 5.0d+03
+
+! Ice strength exponential weighting coefficient on concentration
+! (nondimensional)
+
+     astren == 20.d0
+
+! Maximum shear strength [N/m2]
+
+     zetamax == 1.0d+14
+
+! Minimum shear strength [N/m2]
+
+     zetamin == 0.d0
+
+! Ellipticity squared of yield curve
+! (nondimensional)
+
+     ellip_sq == 4.d0
+
+! Mohr-Coulomb stress angle [degrees]
+
+     alphai == 45.d0
+
+! Tolerance against zero-divide
+
+     tol = 1.d-16
+
+! Minimum average ice thickness [m]
+
+     min_h == 0.00d0
+
+! Minimum ice concentration
+! (nondimensional)
+
+     min_a = 0.00d0
+
+! Maximum ice concentration
+! (nondimensional)
+
+     max_a == 1.0d0
+
+! Ice-water turning angle [degrees]
+
+     stressang = 0.d0
+
+! Ice emissivity
+! (nondimensional)
+
+     ice_emiss = 0.97d0
+
+! Specific heat of air
+
+     spec_heat_air = 1004.d0
+
+
+! Transfer coefficient
+! (nondimensional)
+
+     trans_coeff = 1.75d-3
+
+! Latent heat of sublimation
+
+     sublim_latent_heat = 2.834d6
+
+! Zero degree Celsius in Kelvin
+
+     t0deg = 273.15d0
