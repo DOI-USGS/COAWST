@@ -670,9 +670,6 @@
       cff=2.0_r8*pi*(time(ng)-tide_start*day2sec)
       DO itide=1,NTC
         IF (Tperiod(itide).gt.0.0_r8) THEN
-#  ifdef TIDES_ASTRO
-          tide_time = time(ng)-tide_start*day2sec
-#  endif
           omega=cff/Tperiod(itide)
           DO j=JstrR,JendR
             DO i=IstrR,IendR
@@ -722,9 +719,6 @@
 !
       DO itide=1,NTC
         IF (Tperiod(itide).gt.0.0_r8) THEN
-# ifdef TIDES_ASTRO
-          tide_time = time(ng)-tide_start*day2sec
-# endif
           omega=cff/Tperiod(itide)
           DO j=MIN(JstrR,Jstr-1),JendR
             DO i=MIN(IstrR,Istr-1),IendR
@@ -811,9 +805,6 @@
 #   endif
         DO itide=1,NTC
           IF (Tperiod(itide).gt.0.0_r8) THEN
-# ifdef TIDES_ASTRO
-            tide_time = time(ng)-tide_start*day2sec
-# endif
             omega=cff/Tperiod(itide)
             DO j=MIN(JstrR,Jstr-1),JendR
               DO i=Istr-1,Istr
@@ -883,9 +874,6 @@
 #   endif
         DO itide=1,NTC
           IF (Tperiod(itide).gt.0.0_r8) THEN
-# ifdef TIDES_ASTRO
-            tide_time = time(ng)-tide_start*day2sec
-# endif
             omega=cff/Tperiod(itide)
             DO j=MIN(JstrR,Jstr-1),JendR
               DO i=Iend,Iend+1
@@ -955,9 +943,6 @@
 #   endif
         DO itide=1,NTC
           IF (Tperiod(itide).gt.0.0_r8) THEN
-# ifdef TIDES_ASTRO
-            tide_time = time(ng)-tide_start*day2sec
-# endif
             omega=cff/Tperiod(itide)
             DO j=Jstr-1,Jstr
               DO i=MIN(IstrR,Istr-1),IendR
@@ -1027,9 +1012,6 @@
 #   endif
         DO itide=1,NTC
           IF (Tperiod(itide).gt.0.0_r8) THEN
-# ifdef TIDES_ASTRO
-            tide_time = time(ng)-tide_start*day2sec
-# endif
             omega=cff/Tperiod(itide)
             DO j=Jend,Jend+1
               DO i=MIN(IstrR,Istr-1),IendR
