@@ -622,7 +622,9 @@
 !-----------------------------------------------------------------------
 !
       IF (Lstiffness) THEN
-        Lstiffness=.FALSE.
+        IF (ng.eq.Ngrids) THEN
+          Lstiffness=.FALSE.
+        END IF
 !$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
         DO thread=0,numthreads-1
           subs=NtileX(ng)*NtileE(ng)/numthreads
