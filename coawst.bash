@@ -96,7 +96,7 @@ export   ROMS_APPLICATION=INLET_TEST
 # with the cpp option REFINED_GRID. If you are using both ROMS and SWAN, 
 # you need to have the same number of grids for both models.
 
-export     NestedGrids=2
+export     NestedGrids=1
 
 # Set a local environmental variable to define the path to the directories
 # where all this project's files are kept.
@@ -371,10 +371,8 @@ fi
 # customized biology model header file (like fennel.h, nemuro.h, ecosim.h,
 # etc).
 
-#  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/ROMS/Include
-#  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/ROMS/Functionals
-  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Refined
-  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Refined
+  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/ROMS/Include
+  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/ROMS/Functionals
 
 # Put the binary to execute in the following directory.
 
