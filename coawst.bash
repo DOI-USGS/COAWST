@@ -90,7 +90,7 @@ done
 # determine the name of the ".h" header file with the application
 # CPP definitions.
 
-export   ROMS_APPLICATION=INLET_TEST
+export   ROMS_APPLICATION=SHOREFACE
 
 # Set number of Nested grids for ROMS and or SWAN. This feature is activated
 # with the cpp option REFINED_GRID. If you are using both ROMS and SWAN, 
@@ -101,7 +101,7 @@ export     NestedGrids=1
 # Set a local environmental variable to define the path to the directories
 # where all this project's files are kept.
 
-export     MY_ROOT_DIR=/cygdrive/c/work/models/COAWST
+export     MY_ROOT_DIR=/cygdrive/d/data/models/COAWST
 export     MY_PROJECT_DIR=${MY_ROOT_DIR}
 
 # The path to the user's local current ROMS source code.
@@ -141,7 +141,7 @@ export        MY_ROMS_SRC=${MY_ROOT_DIR}/
 # out. Any string value (including off) will evaluate to TRUE in
 # conditional if-stamentents.
 
- export           USE_MPI=on
+ export           USE_MPI=
  export        USE_MPIF90=
  export              FORT=ifort
 #export              FORT=pgi
