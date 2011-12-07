@@ -243,8 +243,8 @@
       DO ng=1,Ngrids
         run_grid(ng)=.TRUE.
         get_refdata(ng)=.TRUE.
-!       count(ng)=my_iic-Tstr(1)
-        count(ng)=0
+        count(ng)=Tstr(ng)-1
+!       count(ng)=0
       END DO
       rtime=0
 !
