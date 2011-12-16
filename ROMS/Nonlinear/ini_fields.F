@@ -98,6 +98,10 @@
      &                      OCEAN(ng) % u,                              &
      &                      OCEAN(ng) % v,                              &
 # endif
+# if defined WEC && defined REFINED_GRID
+     &                      OCEAN(ng) % ubar_stokes,                    &
+     &                      OCEAN(ng) % vbar_stokes,                    &
+# endif
      &                      OCEAN(ng) % ubar,                           &
      &                      OCEAN(ng) % vbar,                           &
      &                      OCEAN(ng) % zeta)
@@ -144,6 +148,9 @@
      &                            z_r, z_w,                             &
      &                            Zt_avg1,                              &
      &                            t, u, v,                              &
+# endif
+# if defined WEC && defined REFINED_GRID
+     &                            ubar_stokes, vbar_stokes,             &
 # endif
      &                            ubar, vbar, zeta)
 !***********************************************************************
@@ -227,6 +234,10 @@
       real(r8), intent(inout) :: vmask_wet(LBi:,LBj:)
 #  endif
       real(r8), intent(in) :: zeta(LBi:,LBj:,:)
+#  if defined WEC && defined REFINED_GRID
+      real(r8), intent(in) :: ubar_stokes(LBi:,LBj:)
+      real(r8), intent(in) :: vbar_stokes(LBi:,LBj:)
+#  endif
 #  ifdef SOLVE3D
       real(r8), intent(in) :: Zt_avg1(LBi:,LBj:)
 #   ifdef ICESHELF
@@ -281,6 +292,10 @@
       real(r8), intent(inout) :: vmask_wet(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
+#  if defined WEC && defined REFINED_GRID
+      real(r8), intent(in) :: ubar_stokes(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vbar_stokes(LBi:UBi,LBj:UBj)
+#  endif
 #  ifdef SOLVE3D
       real(r8), intent(in) :: Zt_avg1(LBi:UBi,LBj:UBj)
 #   ifdef ICESHELF
@@ -467,21 +482,33 @@
      &                   LBi, UBi, LBj, UBj,                            &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   krhs, kstp, kstp,                              &
+# if defined WEC && defined REFINED_GRID
+     &                   ubar_stokes,                                   &
+# endif
      &                   ubar, vbar, zeta)
         CALL v2dbc_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   krhs, kstp, kstp,                              &
+# if defined WEC && defined REFINED_GRID
+     &                   vbar_stokes,                                   &
+# endif
      &                   ubar, vbar, zeta)
         CALL u2dbc_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   krhs, kstp, krhs,                              &
+# if defined WEC && defined REFINED_GRID
+     &                   ubar_stokes,                                   &
+# endif
      &                   ubar, vbar, zeta)
         CALL v2dbc_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   krhs, kstp, krhs,                              &
+# if defined WEC && defined REFINED_GRID
+     &                   vbar_stokes,                                   &
+# endif
      &                   ubar, vbar, zeta)
 #  endif
       END IF
@@ -835,21 +862,33 @@
      &                   LBi, UBi, LBj, UBj,                            &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   krhs, kstp, kstp,                              &
+# if defined WEC && defined REFINED_GRID
+     &                   ubar_stokes,                                   &
+# endif
      &                   ubar, vbar, zeta)
         CALL v2dbc_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   krhs, kstp, kstp,                              &
+# if defined WEC && defined REFINED_GRID
+     &                   vbar_stokes,                                   &
+# endif
      &                   ubar, vbar, zeta)
         CALL u2dbc_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   krhs, kstp, knew,                              &
+# if defined WEC && defined REFINED_GRID
+     &                   ubar_stokes,                                   &
+# endif
      &                   ubar, vbar, zeta)
         CALL v2dbc_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   krhs, kstp, knew,                              &
+# if defined WEC && defined REFINED_GRID
+     &                   vbar_stokes,                                   &
+# endif
      &                   ubar, vbar, zeta)
 #  endif
       END IF

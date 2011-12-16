@@ -40,6 +40,9 @@
      &                 LBi, UBi, LBj, UBj,                              &
      &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 krhs(ng), kstp(ng), kout,                        &
+#if defined WEC && defined REFINED_GRID
+     &                 OCEAN(ng) % ubar_stokes,                         &
+#endif
      &                 OCEAN(ng) % ubar,                                &
      &                 OCEAN(ng) % vbar,                                &
      &                 OCEAN(ng) % zeta)
@@ -51,6 +54,9 @@
      &                       LBi, UBi, LBj, UBj,                        &
      &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       krhs, kstp, kout,                          &
+#if defined WEC && defined REFINED_GRID
+     &                       ubar_stokes,                               &
+#endif
      &                       ubar, vbar, zeta)
 !***********************************************************************
 !
@@ -59,12 +65,12 @@
       USE mod_forces
       USE mod_grid
       USE mod_scalars
-# ifdef WET_DRY
+#ifdef WET_DRY
       USE mod_grid
-# endif
-# ifdef REFINED_GRID
+#endif
+#ifdef REFINED_GRID
       USE mod_refined
-# endif
+#endif
 !
 !  Imported variable declarations.
 !
@@ -74,11 +80,17 @@
       integer, intent(in) :: krhs, kstp, kout
 
 #ifdef ASSUMED_SHAPE
+# if defined WEC && defined REFINED_GRID
+      real(r8), intent(in) :: ubar_stokes(LBi:,LBj:)
+# endif
       real(r8), intent(in) :: vbar(LBi:,LBj:,:)
       real(r8), intent(in) :: zeta(LBi:,LBj:,:)
 
       real(r8), intent(inout) :: ubar(LBi:,LBj:,:)
 #else
+# if defined WEC && defined REFINED_GRID
+      real(r8), intent(in) :: ubar_stokes(LBi:UBi,LBj:UBj)
+# endif
       real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
 
@@ -819,11 +831,14 @@
      &                          GRID(ng)%h(Istr  ,j)+                   &
      &                          zeta(Istr  ,j,kout)))
             my_val=ref_scale*REFINED(ng)%DUavg2R_west(j)/cff1
+# if defined WEC && defined REFINED_GRID
+            my_val=my_val-ubar_stokes(Istr,j)
+# endif
             ubar(Istr,j,kout)=my_val
-#  ifdef MASKING
+# ifdef MASKING
             ubar(Istr,j,kout)=ubar(Istr,j,kout)*                        &
      &                        GRID(ng)%umask(Istr,j)
-#  endif
+# endif
           END DO
         END IF
         IF (EASTERN_EDGE) THEN
@@ -837,11 +852,14 @@
      &                          GRID(ng)%h(Iend+1  ,j)+                 &
      &                          zeta(Iend+1,j,kout)))
             my_val=ref_scale*REFINED(ng)%DUavg2R_east(j)/cff1
+# if defined WEC && defined REFINED_GRID
+            my_val=my_val-ubar_stokes(Iend+1,j)
+# endif
             ubar(Iend+1,j,kout)=my_val
-#  ifdef MASKING
+# ifdef MASKING
             ubar(Iend+1,j,kout)=ubar(Iend+1,j,kout)*                    &
      &                          GRID(ng)%umask(Iend+1,j)
-#  endif
+# endif
           END DO 
         END IF
       END IF

@@ -1,4 +1,5 @@
 #include "cppdefs.h"
+#undef VARY_AVG2
 #define INTERP_BILINEAR
       MODULE get_2dparent_data_mod
 #ifdef REFINED_GRID
@@ -475,10 +476,13 @@
               ic1=OCEAN(ng)%hindpi_u(1,j)
               jc1=OCEAN(ng)%hindpj_u(1,j)
               IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
-!               REFINED(ng)%DUavg2R_west(j)=A(ic,jc)
+# ifdef VARY_AVG2
                 cff=0.5_r8*(A(ic,jc+1)-A(ic,jc-1))
                 REFINED(ng)%DUavg2R_west(j)=A(ic,jc)+                   &
      &                                      (jc1-REAL(jc,r8))*cff
+# else
+                REFINED(ng)%DUavg2R_west(j)=A(ic,jc)
+# endif
               END IF
             END DO
           END IF
@@ -489,10 +493,13 @@
               ic1=OCEAN(ng)%hindpi_u(Iend+1,j)
               jc1=OCEAN(ng)%hindpj_u(Iend+1,j)
               IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
-!               REFINED(ng)%DUavg2R_east(j)=A(ic,jc)
+# ifdef VARY_AVG2
                 cff=0.5_r8*(A(ic,jc+1)-A(ic,jc-1))
                 REFINED(ng)%DUavg2R_east(j)=A(ic,jc)+                   &
      &                                      (jc1-REAL(jc,r8))*cff
+# else
+                REFINED(ng)%DUavg2R_east(j)=A(ic,jc)
+# endif
               END IF
             END DO
           END IF
@@ -751,10 +758,13 @@
               ic1=OCEAN(ng)%hindpi_v(i,1)
               jc1=OCEAN(ng)%hindpj_v(i,1)
               IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
-!               REFINED(ng)%DVavg2R_south(i)=A(ic,jc)
+# ifdef VARY_AVG2
                 cff=0.5_r8*(A(ic+1,jc)-A(ic-1,jc))
                 REFINED(ng)%DVavg2R_south(i)=A(ic,jc)+                  &
      &                                      (ic1-REAL(ic,r8))*cff
+# else
+                REFINED(ng)%DVavg2R_south(i)=A(ic,jc)
+# endif
               END IF
             END DO
           END IF
@@ -765,10 +775,13 @@
               ic1=OCEAN(ng)%hindpi_v(i,Jend+1)
               jc1=OCEAN(ng)%hindpj_v(i,Jend+1)
               IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
-!               REFINED(ng)%DVavg2R_north(i)=A(ic,jc)
+# ifdef VARY_AVG2
                 cff=0.5_r8*(A(ic+1,jc)-A(ic-1,jc))
                 REFINED(ng)%DVavg2R_north(i)=A(ic,jc)+                  &
      &                                      (ic1-REAL(ic,r8))*cff
+# else
+                REFINED(ng)%DVavg2R_north(i)=A(ic,jc)
+# endif
               END IF
             END DO
           END IF

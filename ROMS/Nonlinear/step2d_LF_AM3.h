@@ -3079,11 +3079,17 @@
      &                 LBi, UBi, LBj, UBj,                              &
      &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 krhs, kstp, knew,                                &
+#if defined WEC && defined REFINED_GRID
+     &                 ubar_stokes,                                     &
+#endif
      &                 ubar, vbar, zeta)
       CALL v2dbc_tile (ng, tile,                                        &
      &                 LBi, UBi, LBj, UBj,                              &
      &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 krhs, kstp, knew,                                &
+#if defined WEC && defined REFINED_GRID
+     &                 vbar_stokes,                                     &
+#endif
      &                 ubar, vbar, zeta)
 # ifdef OBC_VOLCONS
 !

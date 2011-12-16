@@ -68,8 +68,6 @@
       USE mod_refined
       USE mod_scalars
       USE interpolate_mod
-      USE u2dbc_mod, ONLY : u2dbc_tile
-      USE v2dbc_mod, ONLY : v2dbc_tile
 
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
@@ -330,49 +328,6 @@
           END DO
         END DO
       END IF
-!
-! DU_avg2
-!
-      IF (WESTERN_EDGE) THEN
-        DO j=Jstr,Jend
-!
-! To ensure mass flux, set ubar at west edge.
-!
-          cff1=0.5_r8*GRID(ng)%on_u(Istr,j)
-          cff2=cff1*((GRID(ng)%h(Istr-1,j)+                             &
-     &                OCEAN(ng)%zeta(Istr-1,j,indx1(ng))+               &
-     &                GRID(ng)%h(Istr  ,j)+                             &
-     &                OCEAN(ng)%zeta(Istr  ,j,indx1(ng))))
-          my_val=REFINED(ng)%DUavg2R_west(j)/(ref_scale*cff2)
-# ifdef MASKING
-          my_val=my_val*GRID(ng)%umask(Istr,j)
-# endif
-# ifdef WET_DRY
-          my_val=my_val*GRID(ng)%umask_wet(Istr,j)
-# endif
-          OCEAN(ng)%ubar(Istr,j,indx1(ng))=my_val
-        END DO
-      END IF
-      IF (EASTERN_EDGE) THEN
-        DO j=Jstr,Jend
-!
-! To ensure mass flux, set ubar at east edge.
-!
-            cff2=0.5_r8*GRID(ng)%on_u(Iend+1,j)
-            cff2=cff2*((GRID(ng)%h(Iend+1,j)+                           &
-     &                  OCEAN(ng)%zeta(Iend+1,j,indx1(ng))+             &
-     &                  GRID(ng)%h(Iend  ,j)+                           &
-     &                  OCEAN(ng)%zeta(Iend  ,j,indx1(ng))))
-            my_val=REFINED(ng)%DUavg2R_east(j)/(ref_scale*cff2)
-# ifdef MASKING
-            my_val=my_val*GRID(ng)%umask(Iend+1,j)
-# endif
-# ifdef WET_DRY
-            my_val=my_val*GRID(ng)%umask_wet(Iend+1,j)
-# endif
-            OCEAN(ng)%ubar(Iend+1,j,indx1(ng))=my_val
-        END DO
-      END IF
 # ifdef WEC
 !
 ! ubar_stokes
@@ -442,6 +397,55 @@
         END DO
       END IF
 # endif
+!
+! DU_avg2
+!
+      IF (WESTERN_EDGE) THEN
+        DO j=Jstr,Jend
+!
+! To ensure mass flux, set ubar at west edge.
+!
+          cff1=0.5_r8*GRID(ng)%on_u(Istr,j)
+          cff2=cff1*((GRID(ng)%h(Istr-1,j)+                             &
+     &                OCEAN(ng)%zeta(Istr-1,j,indx1(ng))+               &
+     &                GRID(ng)%h(Istr  ,j)+                             &
+     &                OCEAN(ng)%zeta(Istr  ,j,indx1(ng))))
+          my_val=REFINED(ng)%DUavg2R_west(j)/(ref_scale*cff2)
+# ifdef WEC
+          my_val=my_val-OCEAN(ng)%ubar_stokes(Istr,j)
+# endif
+# ifdef MASKING
+          my_val=my_val*GRID(ng)%umask(Istr,j)
+# endif
+# ifdef WET_DRY
+          my_val=my_val*GRID(ng)%umask_wet(Istr,j)
+# endif
+          OCEAN(ng)%ubar(Istr,j,indx1(ng))=my_val
+        END DO
+      END IF
+      IF (EASTERN_EDGE) THEN
+        DO j=Jstr,Jend
+!
+! To ensure mass flux, set ubar at east edge.
+!
+          cff2=0.5_r8*GRID(ng)%on_u(Iend+1,j)
+          cff2=cff2*((GRID(ng)%h(Iend+1,j)+                             &
+     &                OCEAN(ng)%zeta(Iend+1,j,indx1(ng))+               &
+     &                GRID(ng)%h(Iend  ,j)+                             &
+     &                OCEAN(ng)%zeta(Iend  ,j,indx1(ng))))
+          my_val=REFINED(ng)%DUavg2R_east(j)/(ref_scale*cff2)
+# ifdef WEC
+          my_val=my_val-OCEAN(ng)%ubar_stokes(Iend+1,j)
+# endif
+# ifdef MASKING
+          my_val=my_val*GRID(ng)%umask(Iend+1,j)
+# endif
+# ifdef WET_DRY
+          my_val=my_val*GRID(ng)%umask_wet(Iend+1,j)
+# endif
+          OCEAN(ng)%ubar(Iend+1,j,indx1(ng))=my_val
+        END DO
+      END IF
 !
 ! vbar
 !
@@ -517,49 +521,6 @@
           END DO
         END DO
       END IF
-!
-! DV_avg2
-!
-      IF (SOUTHERN_EDGE) THEN
-        DO i=Istr,Iend
-!
-! To ensure mass flux, set vbar at southern edge.
-!
-          cff1=0.5_r8*GRID(ng)%om_v(i,Jstr)
-          cff2=cff1*((GRID(ng)%h(i,Jstr-1)+                             &
-     &                OCEAN(ng)%zeta(i,Jstr-1,indx1(ng))+               &
-     &                GRID(ng)%h(i,Jstr  )+                             &
-     &                OCEAN(ng)%zeta(i,Jstr  ,indx1(ng))))
-          my_val=REFINED(ng)%DVavg2R_south(i)/(ref_scale*cff2)
-# ifdef MASKING
-          my_val=my_val*GRID(ng)%vmask(i,Jstr)
-# endif
-# ifdef WET_DRY
-          my_val=my_val*GRID(ng)%vmask_wet(i,Jstr)
-# endif
-          OCEAN(ng)%vbar(i,Jstr,indx1(ng))=my_val
-        END DO
-      END IF
-      IF (NORTHERN_EDGE) THEN
-        DO i=Istr,Iend
-!
-! To ensure mass flux, set vbar at southern edge.
-!
-          cff1=0.5_r8*GRID(ng)%om_v(i,Jend+1)
-          cff2=cff1*((GRID(ng)%h(i,Jend+1)+                             &
-     &                OCEAN(ng)%zeta(i,Jend+1,indx1(ng))+               &
-     &                GRID(ng)%h(i,Jend  )+                             &
-     &                OCEAN(ng)%zeta(i,Jend  ,indx1(ng))))
-          my_val=REFINED(ng)%DVavg2R_north(i)/(ref_scale*cff2)
-# ifdef MASKING
-          my_val=my_val*GRID(ng)%vmask(i,Jend+1)
-# endif
-# ifdef WET_DRY
-          my_val=my_val*GRID(ng)%vmask_wet(i,Jend+1)
-# endif
-          OCEAN(ng)%vbar(i,Jend+1,indx1(ng))=my_val
-        END DO
-      END IF
 # ifdef WEC
 !
 ! vbar_stokes
@@ -629,6 +590,55 @@
         END DO
       END IF
 # endif
+!
+! DV_avg2
+!
+      IF (SOUTHERN_EDGE) THEN
+        DO i=Istr,Iend
+!
+! To ensure mass flux, set vbar at southern edge.
+!
+          cff1=0.5_r8*GRID(ng)%om_v(i,Jstr)
+          cff2=cff1*((GRID(ng)%h(i,Jstr-1)+                             &
+     &                OCEAN(ng)%zeta(i,Jstr-1,indx1(ng))+               &
+     &                GRID(ng)%h(i,Jstr  )+                             &
+     &                OCEAN(ng)%zeta(i,Jstr  ,indx1(ng))))
+          my_val=REFINED(ng)%DVavg2R_south(i)/(ref_scale*cff2)
+# ifdef WEC
+          my_val=my_val-OCEAN(ng)%vbar_stokes(i,Jstr)
+# endif
+# ifdef MASKING
+          my_val=my_val*GRID(ng)%vmask(i,Jstr)
+# endif
+# ifdef WET_DRY
+          my_val=my_val*GRID(ng)%vmask_wet(i,Jstr)
+# endif
+          OCEAN(ng)%vbar(i,Jstr,indx1(ng))=my_val
+        END DO
+      END IF
+      IF (NORTHERN_EDGE) THEN
+        DO i=Istr,Iend
+!
+! To ensure mass flux, set vbar at southern edge.
+!
+          cff1=0.5_r8*GRID(ng)%om_v(i,Jend+1)
+          cff2=cff1*((GRID(ng)%h(i,Jend+1)+                             &
+     &                OCEAN(ng)%zeta(i,Jend+1,indx1(ng))+               &
+     &                GRID(ng)%h(i,Jend  )+                             &
+     &                OCEAN(ng)%zeta(i,Jend  ,indx1(ng))))
+          my_val=REFINED(ng)%DVavg2R_north(i)/(ref_scale*cff2)
+# ifdef WEC
+          my_val=my_val-OCEAN(ng)%vbar_stokes(i,Jend+1)
+# endif
+# ifdef MASKING
+          my_val=my_val*GRID(ng)%vmask(i,Jend+1)
+# endif
+# ifdef WET_DRY
+          my_val=my_val*GRID(ng)%vmask_wet(i,Jend+1)
+# endif
+          OCEAN(ng)%vbar(i,Jend+1,indx1(ng))=my_val
+        END DO
+      END IF
 !
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
