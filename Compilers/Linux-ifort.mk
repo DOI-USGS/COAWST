@@ -52,7 +52,7 @@ else
 endif
              LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
 ifdef USE_NETCDF4
-             LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
+             LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz -lnetcdff
 endif
 
 ifdef USE_ARPACK

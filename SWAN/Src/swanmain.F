@@ -56,7 +56,15 @@
       USE M_CVMESH
 !
       IMPLICIT NONE
+
+!     Tell the compiler about the optional parameter for SWINITMPI
+!     (required for the xlf compiler).
 !
+      INTERFACE
+        SUBROUTINE SWINITMPI(MyCOMM)
+          integer, intent(in), optional :: MyCOMM
+        END SUBROUTINE
+      END INTERFACE
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
