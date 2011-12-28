@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       MODULE nesting_mod
-#ifdef COMPOSED_GRID
+#ifdef COMPOSED_GRID_NOUSE
 
       implicit none
 

@@ -157,28 +157,15 @@
           real(r8), pointer :: FEc_south(:,:)
 #endif
 #if defined COMPOSED_GRID
-          real(r8), pointer :: hind2di_u(:,:)
-          real(r8), pointer :: hind2dj_u(:,:)
-          real(r8), pointer :: hind2di_v(:,:)
-          real(r8), pointer :: hind2dj_v(:,:)
-          real(r8), pointer :: hind2di_r(:,:)
-          real(r8), pointer :: hind2dj_r(:,:)
-          integer, pointer :: hindr(:)
-          integer, pointer :: hindu(:)
-          integer, pointer :: hindv(:)
-          logical, pointer :: hind_init(:)
-          real(r8), pointer :: hind3di_u(:,:)
-          real(r8), pointer :: hind3dj_u(:,:)
-          real(r8), pointer :: hind3di_v(:,:)
-          real(r8), pointer :: hind3dj_v(:,:)
-          real(r8), pointer :: hind3di_r(:,:)
-          real(r8), pointer :: hind3dj_r(:,:)
-          real(r8), pointer :: hind4di_u(:,:)
-          real(r8), pointer :: hind4dj_u(:,:)
-          real(r8), pointer :: hind4di_v(:,:)
-          real(r8), pointer :: hind4dj_v(:,:)
-          real(r8), pointer :: hind4di_r(:,:)
-          real(r8), pointer :: hind4dj_r(:,:)
+          real(r8), pointer :: hindi_u(:,:)
+          real(r8), pointer :: hindj_u(:,:)
+          real(r8), pointer :: hindi_v(:,:)
+          real(r8), pointer :: hindj_v(:,:)
+          real(r8), pointer :: hindi_r(:,:)
+          real(r8), pointer :: hindj_r(:,:)
+          integer, pointer :: hindr(:,:)
+          integer, pointer :: hindu(:,:)
+          integer, pointer :: hindv(:,:)
 #endif
 
 #if defined TANGENT || defined TL_IOMS
@@ -447,28 +434,15 @@
           allocate ( OCEAN(ng) % FEc_north(LBi:UBi,NT(ng)) )
 #endif
 #ifdef COMPOSED_GRID
-          allocate ( OCEAN(ng) % hind2di_u(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind2dj_u(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind2di_v(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind2dj_v(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind2di_r(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind2dj_r(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindr(1:4) )
-          allocate ( OCEAN(ng) % hindu(1:4) )
-          allocate ( OCEAN(ng) % hindv(1:4) )
-          allocate ( OCEAN(ng) % hind_init(1:12) )
-          allocate ( OCEAN(ng) % hind3di_u(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind3dj_u(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind3di_v(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind3dj_v(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind3di_r(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind3dj_r(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind4di_u(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind4dj_u(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind4di_v(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind4dj_v(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind4di_r(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hind4dj_r(LBi:UBi,LBj:UBj) )
+          allocate ( OCEAN(ng) % hindi_u(LBi:UBi,LBj:UBj) )
+          allocate ( OCEAN(ng) % hindj_u(LBi:UBi,LBj:UBj) )
+          allocate ( OCEAN(ng) % hindi_v(LBi:UBi,LBj:UBj) )
+          allocate ( OCEAN(ng) % hindj_v(LBi:UBi,LBj:UBj) )
+          allocate ( OCEAN(ng) % hindi_r(LBi:UBi,LBj:UBj) )
+          allocate ( OCEAN(ng) % hindj_r(LBi:UBi,LBj:UBj) )
+          allocate ( OCEAN(ng) % hindr(1:4,Ngrids-1) )
+          allocate ( OCEAN(ng) % hindu(1:4,Ngrids-1) )
+          allocate ( OCEAN(ng) % hindv(1:4,Ngrids-1) )
 #endif
 
 #if defined TANGENT || defined TL_IOMS
@@ -740,6 +714,11 @@
             OCEAN(ng) % hindxmin = 0
             OCEAN(ng) % hindxmax = 0
 #endif
+#ifdef COMPOSED_GRID
+            OCEAN(ng) % hindr = 0
+            OCEAN(ng) % hindu = 0
+            OCEAN(ng) % hindv = 0
+#endif
       IF ((model.eq.0).or.(model.eq.iNLM)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
@@ -842,26 +821,13 @@
           END DO
 # endif
 # ifdef COMPOSED_GRID
-          OCEAN(ng) % hind_init(1:12)=.FALSE.
           DO i=Imin,Imax
-            OCEAN(ng) % hind2di_u(i,j) = IniVal
-            OCEAN(ng) % hind2dj_u(i,j) = IniVal
-            OCEAN(ng) % hind2di_v(i,j) = IniVal
-            OCEAN(ng) % hind2dj_v(i,j) = IniVal
-            OCEAN(ng) % hind2di_r(i,j) = IniVal
-            OCEAN(ng) % hind2dj_r(i,j) = IniVal
-            OCEAN(ng) % hind3di_u(i,j) = IniVal
-            OCEAN(ng) % hind3dj_u(i,j) = IniVal
-            OCEAN(ng) % hind3di_v(i,j) = IniVal
-            OCEAN(ng) % hind3dj_v(i,j) = IniVal
-            OCEAN(ng) % hind3di_r(i,j) = IniVal
-            OCEAN(ng) % hind3dj_r(i,j) = IniVal
-            OCEAN(ng) % hind4di_u(i,j) = IniVal
-            OCEAN(ng) % hind4dj_u(i,j) = IniVal
-            OCEAN(ng) % hind4di_v(i,j) = IniVal
-            OCEAN(ng) % hind4dj_v(i,j) = IniVal
-            OCEAN(ng) % hind4di_r(i,j) = IniVal
-            OCEAN(ng) % hind4dj_r(i,j) = IniVal
+            OCEAN(ng) % hindi_u(i,j) = IniVal
+            OCEAN(ng) % hindj_u(i,j) = IniVal
+            OCEAN(ng) % hindi_v(i,j) = IniVal
+            OCEAN(ng) % hindj_v(i,j) = IniVal
+            OCEAN(ng) % hindi_r(i,j) = IniVal
+            OCEAN(ng) % hindj_r(i,j) = IniVal
           END DO
 # endif
 #endif

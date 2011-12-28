@@ -55,6 +55,9 @@
 #ifdef AIR_OCEAN
       USE ocean_coupler_mod, ONLY : ocn2atm_coupling
 #endif
+#ifdef COMPOSED_GRID
+      USE init_comp_hindices_mod, ONLY : init_comp_hindices
+#endif
 #ifdef REFINED_GRID
       USE init_child_hindices_mod, ONLY : init_child_hindices
       USE init_parent_hindices_mod, ONLY : init_parent_hindices
@@ -677,6 +680,12 @@
       END DO
 !$OMP END PARALLEL DO
       IF (Master) WRITE (stdout,'(/)')
+#endif
+#ifdef COMPOSED_GRID
+!-----------------------------------------------------------------------
+!  Compute indices of children grid locations in the parent grid.
+!-----------------------------------------------------------------------
+        CALL init_comp_hindices (ng, TILE)
 #endif
 #ifdef REFINED_GRID
 !-----------------------------------------------------------------------

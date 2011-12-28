@@ -59,7 +59,7 @@
 
         Nbed =  1 1           ! Number of sediment bed layers
 
-         NAT =  2 2           ! Number of active tracers (usually, 2)
+         NAT =  1 1           ! Number of active tracers (usually, 2)
          NPT =  0 0           ! Number of inactive passive tracers
          NCS =  1 1           ! Number of cohesive (mud) sediment tracers
          NNS =  1 1           ! Number of non-cohesive (sand) sediment tracers
@@ -208,9 +208,9 @@ ZOS_HSIG_ALPHA == 0.5d0       0.5d0        ! roughness from wave amplitude
 
 ! Vertical S-coordinates parameters, [1:Ngrids].
 
-     THETA_S == 3.0d0    3.0d0             ! 0 < THETA_S < 20
+     THETA_S == 0.0d0    0.0d0             ! 0 < THETA_S < 20
      THETA_B == 0.0d0    0.0d0             ! 0 < THETA_B < 1
-      TCLINE == 50.0d0  50.0d0             ! m
+      TCLINE == 0.0d0    0.0d0             ! m
 
 ! Mean Density and Brunt-Vaisala frequency.
 

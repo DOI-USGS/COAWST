@@ -72,12 +72,10 @@
 
 # ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti, mp_gather2d
+      USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
-# endif
-# ifdef DISTRIBUTE
-      USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
 !
       implicit none
@@ -635,20 +633,20 @@
       CALL exchange_v2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(ng)%vbar(:,:,2))
-#  endif
-#  ifdef DISTRIBUTE
-#   ifdef SOLVE3D
+# endif
+# ifdef DISTRIBUTE
+#  ifdef SOLVE3D
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    COUPLING(ng)%Zt_avg1(:,:))
-#   else
+#  else
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    OCEAN(ng)%zeta(:,:,1),                        &
      &                    OCEAN(ng)%zeta(:,:,2))
-#   endif
+#  endif
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
@@ -659,7 +657,7 @@
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    OCEAN(ng)%vbar(:,:,1),                        &
      &                    OCEAN(ng)%vbar(:,:,2))
-#  endif
+# endif
 !
 # ifdef PROFILE
 !

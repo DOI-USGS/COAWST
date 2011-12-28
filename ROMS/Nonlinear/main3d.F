@@ -153,7 +153,8 @@
       USE wstvelocity_mod, ONLY : wstvelocity
 # endif
 # ifdef COMPOSED_GRID
-      USE nesting_mod, ONLY : nesting
+      USE composed_2d_mod, ONLY : composed_2d
+      USE composed_3d_mod, ONLY : composed_3d
 # endif
 # ifdef REFINED_GRID
       USE get_2dparent_data_mod, ONLY : get_2dparent_data
@@ -385,9 +386,9 @@
 # endif
 !$OMP END PARALLEL DO
       IF (exit_flag.ne.NoError) RETURN
-#  ifdef COMPOSED_GRID
-      CALL nesting (5)
-#  endif
+!#  ifdef COMPOSED_GRID
+!      CALL composed (5)
+!#  endif
 
 # ifdef AIR_OCEAN
 !
@@ -472,9 +473,9 @@
       END DO
 #  endif
 !$OMP END PARALLEL DO
-#  ifdef COMPOSED_GRID
-      CALL nesting (8)
-#  endif
+!#  ifdef COMPOSED_GRID
+!      CALL composed_2d (TILE, 8)
+!#  endif
 # endif
 # ifdef WEC_MELLOR
 !
@@ -496,9 +497,9 @@
       END DO
 #  endif
 !$OMP END PARALLEL DO
-#  ifdef COMPOSED_GRID
-      CALL nesting (8)
-#  endif
+!#  ifdef COMPOSED_GRID
+!      CALL composed_2d (TILE, 8)
+!#  endif
 # endif
 !
 !-----------------------------------------------------------------------
@@ -547,7 +548,7 @@
 # endif
 !$OMP END PARALLEL DO
 # ifdef COMPOSED_GRID
-      CALL nesting (9)
+      CALL composed_2d (TILE, 9)
 # endif
 # if defined ICE_MODEL
 !
@@ -639,9 +640,10 @@
       END DO
 # endif
 !$OMP END PARALLEL DO
-# ifdef COMPOSED_GRID
-      CALL nesting (10)
-# endif
+!#  ifdef COMPOSED_GRID
+!      CALL composed (10)
+!#  endif
+
 !
 !-----------------------------------------------------------------------
 !  Set free-surface to it time-averaged value.  If applicable,
@@ -670,7 +672,7 @@
 # endif
 !$OMP END PARALLEL DO
 #  ifdef COMPOSED_GRID
-      CALL nesting (11)
+      CALL composed_2d (TILE, 11)
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -720,7 +722,7 @@
 # endif
 !$OMP END PARALLEL DO
 #  ifdef COMPOSED_GRID
-      CALL nesting (12)
+      CALL composed_3d (TILE, 12)
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -773,7 +775,7 @@
 # endif
 
 # ifdef COMPOSED_GRID
-        CALL nesting (14)
+        CALL composed_2d (TILE, 14)
 # endif
 !
 !  Set time indices for corrector step.
@@ -807,11 +809,11 @@
         END DO
 # endif
 # ifdef COMPOSED_GRID
-        CALL nesting (15)
+        CALL composed_2d (TILE, 15)
 # endif
       END DO
 # ifdef COMPOSED_GRID
-      CALL nesting (21)
+      CALL composed_2d (TILE, 21)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -856,7 +858,8 @@
 # endif
 !$OMP END PARALLEL DO
 # ifdef COMPOSED_GRID
-      CALL nesting (16)
+      CALL composed_2d (TILE, 16)
+      CALL composed_3d (TILE, 16)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -894,7 +897,7 @@
 # endif
 !$OMP END PARALLEL DO
 # ifdef COMPOSED_GRID
-      CALL nesting (17)
+      CALL composed_3d (TILE, 17)
 # endif
 
 # ifndef TS_FIXED
@@ -921,7 +924,7 @@
 # endif
 !$OMP END PARALLEL DO
 #  ifdef COMPOSED_GRID
-      CALL nesting (18)
+      CALL composed_3d (TILE, 18)
 #  endif
 # endif
 

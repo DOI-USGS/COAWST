@@ -254,7 +254,7 @@
             CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,           &
      &                      OCN_COMM_WORLD, MyError)
 !
-! unpack and place in global ng=1 2D array
+! unpack and place in global 3D array
 !
             ic=0
             DO k=Kmin,Kmax

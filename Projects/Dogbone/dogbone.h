@@ -30,6 +30,7 @@
 
 #define SOLVE3D
 #ifdef SOLVE3D
+# define DJ_GRADPS
 # undef  TS_FIXED
 # undef  SALINITY
 # define SPLINES

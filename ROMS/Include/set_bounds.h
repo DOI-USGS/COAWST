@@ -40,7 +40,7 @@
       Jend =BOUNDS(ng)%Jend (tile)
       JendR=BOUNDS(ng)%JendR(tile)
       JendT=BOUNDS(ng)%JendT(tile)
-#ifdef REFINED_GRID
+#if defined REFINED_GRID || defined COMPOSED_GRID
       IstrTU=BOUNDS(ng)%IstrTU(tile)
       JstrTV=BOUNDS(ng)%JstrTV(tile)
       IendTU=BOUNDS(ng)%IendTU(tile)

@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       MODULE mod_nesting
-#ifdef COMPOSED_GRID
+#ifdef COMPOSED_GRID_NOUSE
 !
 !svn $Id: mod_nesting.F 737 2008-09-07 02:06:44Z jcwarner $
 !================================================== Hernan G. Arango ===

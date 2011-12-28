@@ -58,6 +58,9 @@
 #ifdef REFINED_GRID
       USE mod_refined, ONLY : allocate_refined, initialize_refined
 #endif
+#ifdef COMPOSED_GRID
+      USE mod_composed, ONLY : allocate_composed, initialize_composed
+#endif
 !
       implicit none
 !
@@ -128,6 +131,9 @@
 #ifdef REFINED_GRID
           CALL allocate_refined (ng, LBi, UBi, LBj, UBj)
 #endif
+#ifdef COMPOSED_GRID
+          CALL allocate_composed (ng, LBi, UBi, LBj, UBj)
+#endif
         END DO
       END IF
 !
@@ -182,6 +188,9 @@
 #endif
 #ifdef REFINED_GRID
             CALL initialize_refined (ng, TILE, model)
+#endif
+#ifdef COMPOSED_GRID
+            CALL initialize_composed (ng, TILE, model)
 #endif
           END DO
         END DO

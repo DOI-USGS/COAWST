@@ -157,10 +157,6 @@
 !
       USE mod_param
       USE mod_scalars
-# ifdef COMPOSED_GRID
-      USE mod_ncparam
-      USE mod_nesting
-# endif
 # if defined SEDIMENT || defined BBL_MODEL
       USE mod_sediment
 # endif
@@ -180,13 +176,6 @@
       (defined EW_PERIODIC || defined NS_PERIODIC)
       USE mp_exchange_mod, ONLY : mp_exchange3d
 #   endif
-#  endif
-# endif
-# ifdef COMPOSED_GRID
-      USE nesting_mod, ONLY : allocate_nesting2d, interp_nesting2d
-#  ifdef SOLVE3D
-      USE nesting_mod, ONLY : allocate_nesting3d, interp_nesting3d
-      USE nesting_mod, ONLY : allocate_nesting4d, interp_nesting4d
 #  endif
 # endif
 # ifdef SOLVE3D
@@ -349,13 +338,6 @@
 # ifdef SOLVE3D
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
-# endif
-# ifdef COMPOSED_GRID
-      TYPE (T_NEST2D), pointer :: field2d(:)
-#  ifdef SOLVE3D
-      TYPE (T_NEST3D), pointer :: field3d(:)
-      TYPE (T_NEST4D), pointer :: field4d(:)
-#  endif
 # endif
 
 # include "set_bounds.h"
@@ -550,16 +532,6 @@
      &                      ubar(:,:,knew), vbar(:,:,knew))
       END IF
 #  endif
-#  ifdef COMPOSED_GRID
-      IF ((ng.eq.Ngrids).and.(Ngrids.gt.1)) THEN
-        DO i=1,3
-          CALL allocate_nesting2d (field2d, idUbar, u2dvar, i)
-          CALL interp_nesting2d (field2d)
-          CALL allocate_nesting2d (field2d, idVbar, v2dvar, i)
-          CALL interp_nesting2d (field2d)
-        END DO
-      END IF
-#  endif
 
 # else
 !
@@ -664,16 +636,6 @@
      &                    u(:,:,:,nstp), v(:,:,:,nstp),                 &
      &                    u(:,:,:,nnew), v(:,:,:,nnew))
 #  endif
-#  ifdef COMPOSED_GRID
-      IF ((ng.eq.Ngrids).and.(Ngrids.gt.1)) THEN
-        DO i=1,2
-          CALL allocate_nesting3d (field3d, idUvel, u3dvar, i)
-          CALL interp_nesting3d (field3d)
-          CALL allocate_nesting3d (field3d, idVvel, v3dvar, i)
-          CALL interp_nesting3d (field3d)
-        END DO
-      END IF
-#  endif
 !
 !-----------------------------------------------------------------------
 !  Initialize other tracers time-levels.
@@ -733,16 +695,6 @@
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    t(:,:,:,nstp,:),                              &
      &                    t(:,:,:,nnew,:))
-#  endif
-#  ifdef COMPOSED_GRID
-      IF ((ng.eq.Ngrids).and.(Ngrids.gt.1)) THEN
-!       DO itrc=1,NT(ng)
-          DO i=1,2
-            CALL allocate_nesting4d (field4d, idTvar(itemp), r3dvar, i)
-            CALL interp_nesting4d (field4d)
-          END DO
-!       END DO
-      END IF
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -915,16 +867,6 @@
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    ubar(:,:,kstp), vbar(:,:,kstp),               &
      &                    ubar(:,:,knew), vbar(:,:,knew))
-#  endif
-#  ifdef COMPOSED_GRID
-      IF ((ng.eq.Ngrids).and.(Ngrids.gt.1)) THEN
-        DO i=1,3
-          CALL allocate_nesting2d (field2d, idUbar, u2dvar, i)
-          CALL interp_nesting2d (field2d)
-          CALL allocate_nesting2d (field2d, idVbar, v2dvar, i)
-          CALL interp_nesting2d (field2d)
-        END DO
-      END IF
 #  endif
 #  if defined BBL_MODEL || defined SEDIMENT
 !
@@ -1112,10 +1054,6 @@
 !
       USE mod_param
       USE mod_scalars
-# ifdef COMPOSED_GRID
-      USE mod_ncparam
-      USE mod_nesting
-# endif
 !
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
@@ -1125,13 +1063,6 @@
 # endif
 # ifndef OBC_FSRADIATION
       USE zetabc_mod, ONLY : zetabc_tile
-# endif
-# ifdef COMPOSED_GRID
-      USE nesting_mod, ONLY : allocate_nesting2d, interp_nesting2d
-#  ifdef SOLVE3D
-      USE nesting_mod, ONLY : allocate_nesting3d, interp_nesting3d
-      USE nesting_mod, ONLY : allocate_nesting4d, interp_nesting4d
-#  endif
 # endif
 !
 !  Imported variable declarations.
@@ -1186,9 +1117,6 @@
       integer :: i, j
 
       real(r8) :: cff1, cff2
-# ifdef COMPOSED_GRID
-      TYPE (T_NEST2D), pointer :: field2d(:)
-# endif
 # include "set_bounds.h"
 !
 !-----------------------------------------------------------------------
@@ -1315,14 +1243,6 @@
      &                      rmask_wet)
 #  endif
 # endif
-# ifdef COMPOSED_GRID
-      IF ((ng.eq.Ngrids).and.(Ngrids.gt.1)) THEN
-        DO i=1,3
-          CALL allocate_nesting2d (field2d, idFsur, r2dvar, i)
-          CALL interp_nesting2d (field2d)
-        END DO
-      END IF
-# endif
 # ifdef SOLVE3D
 !
 !-----------------------------------------------------------------------
@@ -1347,12 +1267,6 @@
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    Zt_avg1)
 #  endif
-# endif
-# ifdef COMPOSED_GRID
-      IF ((ng.eq.Ngrids).and.(Ngrids.gt.1)) THEN
-        CALL allocate_nesting2d (field2d, idZavg, r2dvar)
-        CALL interp_nesting2d (field2d)
-      END IF
 # endif
 
       RETURN

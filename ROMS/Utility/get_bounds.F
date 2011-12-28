@@ -93,6 +93,17 @@
      &        (MyType.eq.p3dvar).or.(MyType.eq.v3dvar))                 &
      &         Jmin=LOWER_BOUND_J+1
         END IF
+# elif defined COMPOSED_GRID
+        Imin=LOWER_BOUND_I
+        Imax=Lm(ng)+GHOST_POINTS
+        Jmin=LOWER_BOUND_J
+        Jmax=Mm(ng)+GHOST_POINTS
+        IF ((MyType.eq.p2dvar).or.(MyType.eq.u2dvar).or.                &
+     &      (MyType.eq.p3dvar).or.(MyType.eq.u3dvar))                   &
+     &       Imin=LOWER_BOUND_I+1
+        IF ((MyType.eq.p2dvar).or.(MyType.eq.v2dvar).or.                &
+     &      (MyType.eq.p3dvar).or.(MyType.eq.v3dvar))                   &
+     &       Jmin=LOWER_BOUND_J+1
 # else
         Imin=0
         Imax=Lm(ng)+1

@@ -1563,11 +1563,7 @@
 
       integer, intent(in) :: ng, model, tindex, gtype
       integer, intent(in) :: LBi, UBi, LBj, UBj
-!# ifdef REFINED_GRID
-!     integer, intent(inout) :: Npts
-!# else
       integer, intent(inout) :: Npts
-!# endif
 
       real(r8), intent(in) :: Ascl
 
@@ -1575,12 +1571,7 @@
       real(r8), intent(in) :: Amask(LBi:UBi,LBj:UBj)
 # endif
       real(r8), intent(in)  :: A(LBi:UBi,LBj:UBj)
-!# ifdef REFINED_GRID
-!      real(r8), intent(out) :: Aout(Npts)
-!# else
       real(r8), intent(out) :: Aout(:)
-!     real(r8), intent(out) :: Aout((Lm(ng)+2)*(Mm(ng)+2))
-!# endif
 !
 !  Local variable declarations.
 !
@@ -1642,6 +1633,9 @@
             Ioff=3
             Joff=-2
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=3
+          Joff=-2
 # else
           Ioff=0
           Joff=1
@@ -1659,6 +1653,9 @@
             Ioff=4
             Joff=-3
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=4
+          Joff=-3
 # else
           Ioff=1
           Joff=0
@@ -1676,6 +1673,9 @@
             Ioff=3
             Joff=-3
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=3
+          Joff=-3
 # else
           Ioff=0
           Joff=0
@@ -1693,6 +1693,9 @@
             Ioff=4
             Joff=-2
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=4
+          Joff=-2
 # else
           Ioff=1
           Joff=1
@@ -1710,6 +1713,9 @@
             Ioff=4
             Joff=-3
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=4
+          Joff=-3
 # else
           Ioff=1
           Joff=0
@@ -1960,13 +1966,7 @@
       real(r8), intent(in) :: Amask(LBi:UBi,LBj:UBj)
 # endif
       real(r8), intent(in)  :: A(LBi:UBi,LBj:UBj,LBk:UBk)
-!# ifdef REFINED_GRID
-!      real(r8), intent(out) :: Aout(:)
-!      real(r8), intent(out) :: Aout(Npts)
-!# else
       real(r8), intent(out) :: Aout(:)
-!     real(r8), intent(out) :: Aout((Lm(ng)+2)*(Mm(ng)+2)*(UBk-LBk+1))
-!# endif
 !
 !  Local variable declarations.
 !
@@ -2027,6 +2027,9 @@
             Ioff=3
             Joff=-2
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=3
+          Joff=-2
 # else
           Ioff=0
           Joff=1
@@ -2044,6 +2047,9 @@
             Ioff=4
             Joff=-3
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=4
+          Joff=-3
 # else
           Ioff=1
           Joff=0
@@ -2061,6 +2067,9 @@
             Ioff=3
             Joff=-3
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=3
+          Joff=-3
 # else
           Ioff=0
           Joff=0
@@ -2078,6 +2087,9 @@
             Ioff=4
             Joff=-2
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=4
+          Joff=-2
 # else
           Ioff=1
           Joff=1
@@ -2095,6 +2107,9 @@
             Ioff=4
             Joff=-3
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=4
+          Joff=-3
 # else
           Ioff=1
           Joff=0
@@ -3378,7 +3393,7 @@
       integer :: Lstr, MyError, MySize, MyType, Serror, ghost
       integer :: i, ic, ij, j, jc, mc, nc
 
-# ifdef REFINED_GRID
+# if defined REFINED_GRID || defined COMPOSED_GRID
       real(r8) :: Arecv(Npts)
 # else
       real(r8), dimension((Lm(ng)+2)*(Mm(ng)+2)) :: Arecv
@@ -3422,6 +3437,9 @@
             Ioff=3
             Joff=-2
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=3
+          Joff=-2
 # else
           Ioff=0
           Joff=1
@@ -3439,6 +3457,9 @@
             Ioff=4
             Joff=-3
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=4
+          Joff=-3
 # else
           Ioff=1
           Joff=0
@@ -3456,6 +3477,9 @@
             Ioff=3
             Joff=-3
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=3
+          Joff=-3
 # else
           Ioff=0
           Joff=0
@@ -3473,6 +3497,9 @@
             Ioff=4
             Joff=-2
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=4
+          Joff=-2
 # else
           Ioff=1
           Joff=1
@@ -3490,6 +3517,9 @@
             Ioff=4
             Joff=-3
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=4
+          Joff=-3
 # else
           Ioff=1
           Joff=0
@@ -3703,11 +3733,11 @@
       integer :: Lstr, MyError, MySize, MyType, Serror, ghost
       integer :: i, ic, ij, j, jc, k, kc, mc, nc
 
-# ifdef REFINED_GRID
+# if defined REFINED_GRID || defined COMPOSED_GRID
       real(r8) :: Arecv(Npts)
 # else
       real(r8), dimension((Lm(ng)+2)*(Mm(ng)+2)*(UBk-LBk+1)) :: Arecv
-#endif
+# endif
 
       character (len=MPI_MAX_ERROR_STRING) :: string
 
@@ -3746,6 +3776,9 @@
             Ioff=3
             Joff=-2
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=3
+          Joff=-2
 # else
           Ioff=0
           Joff=1
@@ -3763,6 +3796,9 @@
             Ioff=4
             Joff=-3
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=4
+          Joff=-3
 # else
           Ioff=1
           Joff=0
@@ -3780,6 +3816,9 @@
             Ioff=3
             Joff=-3
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=3
+          Joff=-3
 # else
           Ioff=0
           Joff=0
@@ -3797,6 +3836,9 @@
             Ioff=4
             Joff=-2
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=4
+          Joff=-2
 # else
           Ioff=1
           Joff=1
@@ -3814,6 +3856,9 @@
             Ioff=4
             Joff=-3
           ENDIF
+# elif defined COMPOSED_GRID
+          Ioff=4
+          Joff=-3
 # else
           Ioff=1
           Joff=0
