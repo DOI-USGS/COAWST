@@ -346,7 +346,9 @@
 # define IU_RANGE Istr,Iend
 # define IV_RANGE Istr,Iend
 #elif defined COMPOSED_GRID
-# define IU_RANGE IstrT+1,IendT
+!# define IU_RANGE IstrT+1,IendT
+!# define IV_RANGE IstrT,IendT
+# define IU_RANGE IstrTU+1,IendT
 # define IV_RANGE IstrT,IendT
 #elif defined REFINED_GRID
 !# define IU_RANGE IstrT+1,IendT
@@ -360,8 +362,11 @@
 # define JU_RANGE Jstr,Jend
 # define JV_RANGE Jstr,Jend
 #elif defined COMPOSED_GRID
+!# define JU_RANGE JstrT,JendT
+!# define JV_RANGE JstrT+1,JendT
 # define JU_RANGE JstrT,JendT
-# define JV_RANGE JstrT+1,JendT
+!# define JV_RANGE JstrT+1,JendT
+# define JV_RANGE JstrTV+1,JendT
 #elif defined REFINED_GRID
 # define JU_RANGE JstrT,JendT
 !# define JV_RANGE JstrT+1,JendT

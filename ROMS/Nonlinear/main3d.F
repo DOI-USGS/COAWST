@@ -723,6 +723,9 @@
 !$OMP END PARALLEL DO
 #  ifdef COMPOSED_GRID
       CALL composed_3d (TILE, 12)
+#   ifdef TS_MPDATA
+      CALL composed_3d (TILE, 18)
+#   endif
 #  endif
 !
 !-----------------------------------------------------------------------

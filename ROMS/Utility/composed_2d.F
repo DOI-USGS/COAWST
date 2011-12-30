@@ -52,7 +52,7 @@
       integer :: MyError
       integer :: Xmin, Xmax, Ymin, Ymax
 
-      real :: my_val
+      real(r8) :: my_val, IJspv
       real(r8), allocatable :: Aout(:)
       real(r8), allocatable :: A(:,:)
 
@@ -72,6 +72,7 @@
 # endif
 
       model=iNLM
+      IJspv=-9999.0_r8
 
 
 
@@ -185,11 +186,13 @@
                   DO i=Xmin,Xmax
                     ic=NINT(OCEAN(ng)%hindi_u(i,j))
                     jc=NINT(OCEAN(ng)%hindj_u(i,j))
-                    my_val=A(ic,jc)
+                    IF ((ic.ne.IJspv).and.(jc.ne.IJspv)) THEN
+                      my_val=A(ic,jc)
 # ifdef MASKING
-                    my_val=my_val*GRID(ng)%umask(i,j)
+                      my_val=my_val*GRID(ng)%umask(i,j)
 # endif
-                    FORCES(ng)%bustr(i,j)=my_val
+                      FORCES(ng)%bustr(i,j)=my_val
+                    END IF
                   END DO
                 END DO
               END IF
@@ -295,11 +298,13 @@
                   DO i=Xmin,Xmax
                     ic=NINT(OCEAN(ng)%hindi_v(i,j))
                     jc=NINT(OCEAN(ng)%hindj_v(i,j))
-                    my_val=A(ic,jc)
+                    IF ((ic.ne.IJspv).and.(jc.ne.IJspv)) THEN
+                      my_val=A(ic,jc)
 # ifdef MASKING
-                    my_val=my_val*GRID(ng)%vmask(i,j)
+                      my_val=my_val*GRID(ng)%vmask(i,j)
 # endif
-                    FORCES(ng)%bvstr(i,j)=my_val
+                      FORCES(ng)%bvstr(i,j)=my_val
+                    END IF
                   END DO
                 END DO
               END IF
@@ -413,16 +418,18 @@
                   DO i=Xmin,Xmax
                     ic=NINT(OCEAN(ng)%hindi_r(i,j))
                     jc=NINT(OCEAN(ng)%hindj_r(i,j))
-                    my_val=A(ic,jc)
+                    IF ((ic.ne.IJspv).and.(jc.ne.IJspv)) THEN
+                      my_val=A(ic,jc)
 # ifdef MASKING
-                    my_val=my_val*GRID(ng)%rmask(i,j)
+                      my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
 # ifdef WET_DRY
-                    IF (my_val.le.(Dcrit(ng)-GRID(ng)%h(i,j))) THEN
-                      my_val=Dcrit(ng)-GRID(ng)%h(i,j)
-                    END IF
+                      IF (my_val.le.(Dcrit(ng)-GRID(ng)%h(i,j))) THEN
+                        my_val=Dcrit(ng)-GRID(ng)%h(i,j)
+                      END IF
 # endif
-                    OCEAN(ng)%zeta(i,j,idtim)=my_val
+                      OCEAN(ng)%zeta(i,j,idtim)=my_val
+                    END IF
                   END DO
                 END DO
               END IF
@@ -528,11 +535,13 @@
                   DO i=Xmin,Xmax
                     ic=NINT(OCEAN(ng)%hindi_r(i,j))
                     jc=NINT(OCEAN(ng)%hindj_r(i,j))
-                    my_val=A(ic,jc)
+                    IF ((ic.ne.IJspv).and.(jc.ne.IJspv)) THEN
+                      my_val=A(ic,jc)
 # ifdef MASKING
-                    my_val=my_val*GRID(ng)%rmask(i,j)
+                      my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
-                    OCEAN(ng)%rzeta(i,j,idtim)=my_val
+                      OCEAN(ng)%rzeta(i,j,idtim)=my_val
+                    END IF
                   END DO
                 END DO
               END IF
@@ -638,11 +647,13 @@
                   DO i=Xmin,Xmax
                     ic=NINT(OCEAN(ng)%hindi_r(i,j))
                     jc=NINT(OCEAN(ng)%hindj_r(i,j))
-                    my_val=A(ic,jc)
+                    IF ((ic.ne.IJspv).and.(jc.ne.IJspv)) THEN
+                      my_val=A(ic,jc)
 # ifdef MASKING
-                    my_val=my_val*GRID(ng)%rmask(i,j)
+                      my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
-                    COUPLING(ng)%Zt_avg1(i,j)=my_val
+                      COUPLING(ng)%Zt_avg1(i,j)=my_val
+                    END IF
                   END DO
                 END DO
               END IF
@@ -757,11 +768,13 @@
                   DO i=Xmin,Xmax
                     ic=NINT(OCEAN(ng)%hindi_u(i,j))
                     jc=NINT(OCEAN(ng)%hindj_u(i,j))
-                    my_val=A(ic,jc)
+                    IF ((ic.ne.IJspv).and.(jc.ne.IJspv)) THEN
+                      my_val=A(ic,jc)
 # ifdef MASKING
-                    my_val=my_val*GRID(ng)%umask(i,j)
+                      my_val=my_val*GRID(ng)%umask(i,j)
 # endif
-                    OCEAN(ng)%ubar(i,j,idtim)=my_val
+                      OCEAN(ng)%ubar(i,j,idtim)=my_val
+                    END IF
                   END DO
                 END DO
               END IF
@@ -867,11 +880,13 @@
                   DO i=Xmin,Xmax
                     ic=NINT(OCEAN(ng)%hindi_u(i,j))
                     jc=NINT(OCEAN(ng)%hindj_u(i,j))
-                    my_val=A(ic,jc)
+                    IF ((ic.ne.IJspv).and.(jc.ne.IJspv)) THEN
+                      my_val=A(ic,jc)
 # ifdef MASKING
-                    my_val=my_val*GRID(ng)%umask(i,j)
+                      my_val=my_val*GRID(ng)%umask(i,j)
 # endif
-                    COUPLING(ng)%DU_avg1(i,j)=my_val
+                      COUPLING(ng)%DU_avg1(i,j)=my_val
+                    END IF
                   END DO
                 END DO
               END IF
@@ -986,11 +1001,13 @@
                   DO i=Xmin,Xmax
                     ic=NINT(OCEAN(ng)%hindi_v(i,j))
                     jc=NINT(OCEAN(ng)%hindj_v(i,j))
-                    my_val=A(ic,jc)
+                    IF ((ic.ne.IJspv).and.(jc.ne.IJspv)) THEN
+                      my_val=A(ic,jc)
 # ifdef MASKING
-                    my_val=my_val*GRID(ng)%vmask(i,j)
+                      my_val=my_val*GRID(ng)%vmask(i,j)
 # endif
-                    OCEAN(ng)%vbar(i,j,idtim)=my_val
+                      OCEAN(ng)%vbar(i,j,idtim)=my_val
+                    END IF
                   END DO
                 END DO
               END IF
@@ -1096,11 +1113,13 @@
                   DO i=Xmin,Xmax
                     ic=NINT(OCEAN(ng)%hindi_v(i,j))
                     jc=NINT(OCEAN(ng)%hindj_v(i,j))
-                    my_val=A(ic,jc)
+                    IF ((ic.ne.IJspv).and.(jc.ne.IJspv)) THEN
+                      my_val=A(ic,jc)
 # ifdef MASKING
-                    my_val=my_val*GRID(ng)%vmask(i,j)
+                      my_val=my_val*GRID(ng)%vmask(i,j)
 # endif
-                    COUPLING(ng)%DV_avg1(i,j)=my_val
+                      COUPLING(ng)%DV_avg1(i,j)=my_val
+                    END IF
                   END DO
                 END DO
               END IF

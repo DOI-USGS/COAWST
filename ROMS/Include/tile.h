@@ -12,7 +12,7 @@
 !  Set horizontal starting and ending indices for automatic private storage
 !  arrays.
 !
-#ifdef REFINED_GRID
+#if defined REFINED_GRID || defined COMPOSED_GRID
       IminS=BOUNDS(ng)%Istr(tile)-4
       ImaxS=BOUNDS(ng)%Iend(tile)+3
       JminS=BOUNDS(ng)%Jstr(tile)-4

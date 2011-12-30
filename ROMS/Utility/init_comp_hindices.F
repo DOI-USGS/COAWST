@@ -392,80 +392,100 @@
      &                ((y_p(i,j)+eps).gt.(y_c(ic,jc)))) THEN
                     Ipos(i,j)=ic
                     Jpos(i,j)=jc
-                    Xmin=MIN(Xmin,i)
-                    Ymin=MIN(Ymin,j)
-                    Xmax=MAX(Xmax,i)
-                    Ymax=MAX(Ymax,j)
                   END IF
                 END IF
               END DO
             END DO
           END DO
         END DO
-!        CALL hindices (ng, Iminc, Imaxc, Jminc, Jmaxc,                  &
-!     &                 Iminc, Imaxc, Jminc, Jmaxc,                      &
-!     &                 angler_c(Iminc:Imaxc,Jminc:Jmaxc),               &
-!     &                 x_c(Iminc:Imaxc,Jminc:Jmaxc),                    &
-!     &                 y_c(Iminc:Imaxc,Jminc:Jmaxc),                    &
-!     &                 Imin, Imax, Jmin, Jmax,                          &
-!     &                 Imin, Imax, Jmin, Jmax,                          &
-!     &                 x_p, y_p,                                        &
-!     &                 Ipos, Jpos,                                      &
-!     &                 IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
 !
-!  Xmin Xmax Ymin Ymax are the bounding point limits 
+!  Xmin Xmax Ymin Ymax are the bounding indices
 !  of the parent grid that identify the boundary of the child grid.
 !  Still working on the global parent grid (ie non-tiled).
-!  The IPOS and JPOS are values of the child indices.
-!  The XY min maxs are the limits of the parent grid that should be
-!  replaced with values from the child grid.
 !
-!  Determine the range that you want to get data from another grid.
-!
-        OCEAN(ng)%hindr(1,ngg)= 9999
-        OCEAN(ng)%hindr(2,ngg)=-9999
-        OCEAN(ng)%hindr(3,ngg)= 9999
-        OCEAN(ng)%hindr(4,ngg)=-9999
-!
-        DO j=JstrT,JendT
-          DO i=IstrT,IendT
-            IF (Ipos(i,j).ne.IJspv) THEN
-              OCEAN(ng)%hindr(1,ngg)=MIN(OCEAN(ng)%hindr(1,ngg),i)
-              OCEAN(ng)%hindr(2,ngg)=MAX(OCEAN(ng)%hindr(2,ngg),i)
-            END IF
-            IF (Jpos(i,j).ne.IJspv) THEN
-              OCEAN(ng)%hindr(3,ngg)=MIN(OCEAN(ng)%hindr(3,ngg),j)
-              OCEAN(ng)%hindr(4,ngg)=MAX(OCEAN(ng)%hindr(4,ngg),j)
-            END IF
-          END DO
-        END DO
-!
-! Limit to external edges of the tile
-!
-        IF (OCEAN(ng)%hindr(1,ngg).gt.0) THEN
-          OCEAN(ng)%hindr(1,ngg)=MAX(OCEAN(ng)%hindr(1,ngg),Lm(ng)+1)
-        END IF
-        IF (OCEAN(ng)%hindr(2,ngg).lt.(Lm(ng)+1)) THEN
-          OCEAN(ng)%hindr(2,ngg)=MIN(OCEAN(ng)%hindr(2,ngg),0)
-        END IF
-        IF (OCEAN(ng)%hindr(3,ngg).gt.0) THEN
-          OCEAN(ng)%hindr(3,ngg)=MAX(OCEAN(ng)%hindr(3,ngg),Mm(ng)+1)
-        END IF
-        IF (OCEAN(ng)%hindr(4,ngg).lt.(Mm(ng)+1)) THEN
-          OCEAN(ng)%hindr(4,ngg)=MIN(OCEAN(ng)%hindr(4,ngg),0)
-        END IF
+!  The IPOS and JPOS are values of the child indices. Only 
+!  identify locations around the parent perimeter to be 
+!  replaced with child data.
 !
         DO j=JstrT,JendT
           DO i=IstrT,IendT
             OCEAN(ng)%hindi_r(i,j)=IJspv
             OCEAN(ng)%hindj_r(i,j)=IJspv
-            IF (((i.ge.Xmin).and.(i.le.Xmax)).and.                      &
-                ((j.ge.Ymin).and.(j.le.Ymax)))  THEN
-                  OCEAN(ng)%hindi_r(i,j)=Ipos(i,j)
-                  OCEAN(ng)%hindj_r(i,j)=Jpos(i,j)
+          END DO
+        END DO
+!
+! Southern Edge.
+!
+        DO j=JstrT,Jstr-1
+          DO i=IstrT,IendT
+            OCEAN(ng)%hindi_r(i,j)=Ipos(i,j)
+            OCEAN(ng)%hindj_r(i,j)=Jpos(i,j)
+            IF (Ipos(i,j).ne.IJspv) THEN
+              Xmin=MIN(Xmin,i)
+              Xmax=MAX(Xmax,i)
+            END IF
+            IF (Jpos(i,j).ne.IJspv) THEN
+              Ymin=MIN(Ymin,j)
+              Ymax=MAX(Ymax,j)
             END IF
           END DO
         END DO
+!
+! Northern Edge.
+!
+        DO j=Jend+1,JendT
+          DO i=IstrT,IendT
+            OCEAN(ng)%hindi_r(i,j)=Ipos(i,j)
+            OCEAN(ng)%hindj_r(i,j)=Jpos(i,j)
+            IF (Ipos(i,j).ne.IJspv) THEN
+              Xmin=MIN(Xmin,i)
+              Xmax=MAX(Xmax,i)
+            END IF
+            IF (Jpos(i,j).ne.IJspv) THEN
+              Ymin=MIN(Ymin,j)
+              Ymax=MAX(Ymax,j)
+            END IF
+          END DO
+        END DO
+!
+! Western Edge.
+!
+        DO j=JstrT,JendT
+          DO i=IstrT,Istr-1
+            OCEAN(ng)%hindi_r(i,j)=Ipos(i,j)
+            OCEAN(ng)%hindj_r(i,j)=Jpos(i,j)
+            IF (Ipos(i,j).ne.IJspv) THEN
+              Xmin=MIN(Xmin,i)
+              Xmax=MAX(Xmax,i)
+            END IF
+            IF (Jpos(i,j).ne.IJspv) THEN
+              Ymin=MIN(Ymin,j)
+              Ymax=MAX(Ymax,j)
+            END IF
+          END DO
+        END DO
+!
+! Eastern Edge.
+!
+        DO j=JstrT,JendT
+          DO i=Iend+1,IendT
+            OCEAN(ng)%hindi_r(i,j)=Ipos(i,j)
+            OCEAN(ng)%hindj_r(i,j)=Jpos(i,j)
+            IF (Ipos(i,j).ne.IJspv) THEN
+              Xmin=MIN(Xmin,i)
+              Xmax=MAX(Xmax,i)
+            END IF
+            IF (Jpos(i,j).ne.IJspv) THEN
+              Ymin=MIN(Ymin,j)
+              Ymax=MAX(Ymax,j)
+            END IF
+          END DO
+        END DO
+!
+        OCEAN(ng)%hindr(1,ngg)=Xmin
+        OCEAN(ng)%hindr(2,ngg)=Xmax
+        OCEAN(ng)%hindr(3,ngg)=Ymin
+        OCEAN(ng)%hindr(4,ngg)=Ymax
 !
         deallocate ( Ipos, Jpos)
         deallocate ( x_c, y_c)
@@ -707,10 +727,6 @@
      &                ((y_p(i,j)+eps).gt.(y_c(ic,jc)))) THEN
                     Ipos(i,j)=ic
                     Jpos(i,j)=jc
-                    Xmin=MIN(Xmin,i)
-                    Ymin=MIN(Ymin,j)
-                    Xmax=MAX(Xmax,i)
-                    Ymax=MAX(Ymax,j)
                   END IF
                 END IF
               END DO
@@ -718,55 +734,93 @@
           END DO
         END DO
 !
-!  Xmin Xmax Ymin Ymax are the bounding point limits 
+!  Xmin Xmax Ymin Ymax are the bounding indices
 !  of the parent grid that identify the boundary of the child grid.
 !  Still working on the global parent grid (ie non-tiled).
-!  The IPOS and JPOS are values of the child indices.
-!  The XYmin maxs are the limits of the parent grid.
 !
-        OCEAN(ng)%hindu(1,ngg)= 9999
-        OCEAN(ng)%hindu(2,ngg)=-9999
-        OCEAN(ng)%hindu(3,ngg)= 9999
-        OCEAN(ng)%hindu(4,ngg)=-9999
-        DO j=JstrT,JendT
-          DO i=IstrTU+1,IendT
-            IF (Ipos(i,j).ne.IJspv) THEN
-              OCEAN(ng)%hindu(1,ngg)=MIN(OCEAN(ng)%hindu(1,ngg),i)
-              OCEAN(ng)%hindu(2,ngg)=MAX(OCEAN(ng)%hindu(2,ngg),i)
-            END IF
-            IF (Jpos(i,j).ne.IJspv) THEN
-              OCEAN(ng)%hindu(3,ngg)=MIN(OCEAN(ng)%hindu(3,ngg),j)
-              OCEAN(ng)%hindu(4,ngg)=MAX(OCEAN(ng)%hindu(4,ngg),j)
-            END IF
-          END DO
-        END DO
-!
-! Limit to external edges of the tile
-!
-        IF (OCEAN(ng)%hindu(1,ngg).gt.0) THEN
-          OCEAN(ng)%hindu(1,ngg)=MAX(OCEAN(ng)%hindu(1,ngg),Lm(ng)+1)
-        END IF
-        IF (OCEAN(ng)%hindu(2,ngg).lt.(Lm(ng)+1)) THEN
-          OCEAN(ng)%hindu(2,ngg)=MIN(OCEAN(ng)%hindu(2,ngg),0)
-        END IF
-        IF (OCEAN(ng)%hindu(3,ngg).gt.0) THEN
-          OCEAN(ng)%hindu(3,ngg)=MAX(OCEAN(ng)%hindu(3,ngg),Mm(ng)+1)
-        END IF
-        IF (OCEAN(ng)%hindu(4,ngg).lt.(Mm(ng)+1)) THEN
-          OCEAN(ng)%hindu(4,ngg)=MIN(OCEAN(ng)%hindu(4,ngg),0)
-        END IF
+!  The IPOS and JPOS are values of the child indices. Only 
+!  identify locations around the parent perimeter to be 
+!  replaced with child data.
 !
         DO j=JstrT,JendT
-          DO i=IstrTU,IendT
+          DO i=IstrT,IendT
             OCEAN(ng)%hindi_u(i,j)=IJspv
             OCEAN(ng)%hindj_u(i,j)=IJspv
-            IF (((i.ge.Xmin).and.(i.le.Xmax)).and.                      &
-                ((j.ge.Ymin).and.(j.le.Ymax)))  THEN
-                  OCEAN(ng)%hindi_u(i,j)=Ipos(i,j)
-                  OCEAN(ng)%hindj_u(i,j)=Jpos(i,j)
+          END DO
+        END DO
+!
+! Southern Edge.
+!
+        DO j=JstrT,Jstr-1
+          DO i=IstrTU+1,IendT
+            OCEAN(ng)%hindi_u(i,j)=Ipos(i,j)
+            OCEAN(ng)%hindj_u(i,j)=Jpos(i,j)
+            IF (Ipos(i,j).ne.IJspv) THEN
+              Xmin=MIN(Xmin,i)
+              Xmax=MAX(Xmax,i)
+            END IF
+            IF (Jpos(i,j).ne.IJspv) THEN
+              Ymin=MIN(Ymin,j)
+              Ymax=MAX(Ymax,j)
             END IF
           END DO
         END DO
+!
+! Northern Edge.
+!
+        DO j=Jend+1,JendT
+          DO i=IstrTU+1,IendT
+            OCEAN(ng)%hindi_u(i,j)=Ipos(i,j)
+            OCEAN(ng)%hindj_u(i,j)=Jpos(i,j)
+            IF (Ipos(i,j).ne.IJspv) THEN
+              Xmin=MIN(Xmin,i)
+              Xmax=MAX(Xmax,i)
+            END IF
+            IF (Jpos(i,j).ne.IJspv) THEN
+              Ymin=MIN(Ymin,j)
+              Ymax=MAX(Ymax,j)
+            END IF
+          END DO
+        END DO
+!
+! Western Edge.
+!
+        DO j=JstrT,JendT
+          DO i=IstrTU+1,Istr-1
+            OCEAN(ng)%hindi_u(i,j)=Ipos(i,j)
+            OCEAN(ng)%hindj_u(i,j)=Jpos(i,j)
+            IF (Ipos(i,j).ne.IJspv) THEN
+              Xmin=MIN(Xmin,i)
+              Xmax=MAX(Xmax,i)
+            END IF
+            IF (Jpos(i,j).ne.IJspv) THEN
+              Ymin=MIN(Ymin,j)
+              Ymax=MAX(Ymax,j)
+            END IF
+          END DO
+        END DO
+!
+! Eastern Edge.
+!
+        DO j=JstrT,JendT
+          DO i=Iend+1,IendT
+            OCEAN(ng)%hindi_u(i,j)=Ipos(i,j)
+            OCEAN(ng)%hindj_u(i,j)=Jpos(i,j)
+            IF (Ipos(i,j).ne.IJspv) THEN
+              Xmin=MIN(Xmin,i)
+              Xmax=MAX(Xmax,i)
+            END IF
+            IF (Jpos(i,j).ne.IJspv) THEN
+              Ymin=MIN(Ymin,j)
+              Ymax=MAX(Ymax,j)
+            END IF
+          END DO
+        END DO
+!
+        OCEAN(ng)%hindu(1,ngg)=Xmin
+        OCEAN(ng)%hindu(2,ngg)=Xmax
+        OCEAN(ng)%hindu(3,ngg)=Ymin
+        OCEAN(ng)%hindu(4,ngg)=Ymax
 !
         deallocate ( Ipos, Jpos)
         deallocate ( x_c, y_c)
@@ -1007,10 +1061,6 @@
      &                ((y_p(i,j)+eps).gt.(y_c(ic,jc)))) THEN
                     Ipos(i,j)=ic
                     Jpos(i,j)=jc
-                    Xmin=MIN(Xmin,i)
-                    Ymin=MIN(Ymin,j)
-                    Xmax=MAX(Xmax,i)
-                    Ymax=MAX(Ymax,j)
                   END IF
                 END IF
               END DO
@@ -1018,67 +1068,100 @@
           END DO
         END DO
 !
-!  Xmin Xmax Ymin Ymax are the bounding point limits 
+!
+!  Xmin Xmax Ymin Ymax are the bounding indices
 !  of the parent grid that identify the boundary of the child grid.
 !  Still working on the global parent grid (ie non-tiled).
-!  The IPOS and JPOS are values of the child indices.
-!  The XYmin maxs are the limits of the parent grid.
 !
-        OCEAN(ng)%hindv(1,ngg)= 9999
-        OCEAN(ng)%hindv(2,ngg)=-9999
-        OCEAN(ng)%hindv(3,ngg)= 9999
-        OCEAN(ng)%hindv(4,ngg)=-9999
-        DO j=JstrTV+1,JendT
-          DO i=IstrT,IendT
-            IF (Ipos(i,j).ne.IJspv) THEN
-              OCEAN(ng)%hindv(1,ngg)=MIN(OCEAN(ng)%hindv(1,ngg),i)
-              OCEAN(ng)%hindv(2,ngg)=MAX(OCEAN(ng)%hindv(2,ngg),i)
-            END IF
-            IF (Jpos(i,j).ne.IJspv) THEN
-              OCEAN(ng)%hindv(3,ngg)=MIN(OCEAN(ng)%hindv(3,ngg),j)
-              OCEAN(ng)%hindv(4,ngg)=MAX(OCEAN(ng)%hindv(4,ngg),j)
-            END IF
-          END DO
-        END DO
+!  The IPOS and JPOS are values of the child indices. Only 
+!  identify locations around the parent perimeter to be 
+!  replaced with child data.
 !
-! Limit to external edges of the tile
-!
-        IF (OCEAN(ng)%hindv(1,ngg).gt.0) THEN
-          OCEAN(ng)%hindv(1,ngg)=MAX(OCEAN(ng)%hindv(1,ngg),Lm(ng)+1)
-        END IF
-        IF (OCEAN(ng)%hindv(2,ngg).lt.(Lm(ng)+1)) THEN
-          OCEAN(ng)%hindv(2,ngg)=MIN(OCEAN(ng)%hindv(2,ngg),0)
-        END IF
-        IF (OCEAN(ng)%hindv(3,ngg).gt.0) THEN
-          OCEAN(ng)%hindv(3,ngg)=MAX(OCEAN(ng)%hindv(3,ngg),Mm(ng)+1)
-        END IF
-        IF (OCEAN(ng)%hindv(4,ngg).lt.(Mm(ng)+1)) THEN
-          OCEAN(ng)%hindv(4,ngg)=MIN(OCEAN(ng)%hindv(4,ngg),0)
-        END IF
-!
-        DO j=JstrTV+1,JendT
+        DO j=JstrT,JendT
           DO i=IstrT,IendT
             OCEAN(ng)%hindi_v(i,j)=IJspv
             OCEAN(ng)%hindj_v(i,j)=IJspv
-            IF (((i.ge.Xmin).and.(i.le.Xmax)).and.                      &
-                ((j.ge.Ymin).and.(j.le.Ymax)))  THEN
-                  OCEAN(ng)%hindi_v(i,j)=Ipos(i,j)
-                  OCEAN(ng)%hindj_v(i,j)=Jpos(i,j)
+          END DO
+        END DO
+!
+! Southern Edge.
+!
+        DO j=JstrTV+1,Jstr-1
+          DO i=IstrT,IendT
+            OCEAN(ng)%hindi_v(i,j)=Ipos(i,j)
+            OCEAN(ng)%hindj_v(i,j)=Jpos(i,j)
+            IF (Ipos(i,j).ne.IJspv) THEN
+              Xmin=MIN(Xmin,i)
+              Xmax=MAX(Xmax,i)
+            END IF
+            IF (Jpos(i,j).ne.IJspv) THEN
+              Ymin=MIN(Ymin,j)
+              Ymax=MAX(Ymax,j)
             END IF
           END DO
         END DO
+!
+! Northern Edge.
+!
+        DO j=Jend+1,JendT
+          DO i=IstrT,IendT
+            OCEAN(ng)%hindi_v(i,j)=Ipos(i,j)
+            OCEAN(ng)%hindj_v(i,j)=Jpos(i,j)
+            IF (Ipos(i,j).ne.IJspv) THEN
+              Xmin=MIN(Xmin,i)
+              Xmax=MAX(Xmax,i)
+            END IF
+            IF (Jpos(i,j).ne.IJspv) THEN
+              Ymin=MIN(Ymin,j)
+              Ymax=MAX(Ymax,j)
+            END IF
+          END DO
+        END DO
+!
+! Western Edge.
+!
+        DO j=JstrTV+1,JendT
+          DO i=IstrT,Istr-1
+            OCEAN(ng)%hindi_v(i,j)=Ipos(i,j)
+            OCEAN(ng)%hindj_v(i,j)=Jpos(i,j)
+            IF (Ipos(i,j).ne.IJspv) THEN
+              Xmin=MIN(Xmin,i)
+              Xmax=MAX(Xmax,i)
+            END IF
+            IF (Jpos(i,j).ne.IJspv) THEN
+              Ymin=MIN(Ymin,j)
+              Ymax=MAX(Ymax,j)
+            END IF
+          END DO
+        END DO
+!
+! Eastern Edge.
+!
+        DO j=JstrTV+1,JendT
+          DO i=Iend+1,IendT
+            OCEAN(ng)%hindi_v(i,j)=Ipos(i,j)
+            OCEAN(ng)%hindj_v(i,j)=Jpos(i,j)
+            IF (Ipos(i,j).ne.IJspv) THEN
+              Xmin=MIN(Xmin,i)
+              Xmax=MAX(Xmax,i)
+            END IF
+            IF (Jpos(i,j).ne.IJspv) THEN
+              Ymin=MIN(Ymin,j)
+              Ymax=MAX(Ymax,j)
+            END IF
+          END DO
+        END DO
+!
+        OCEAN(ng)%hindv(1,ngg)=Xmin
+        OCEAN(ng)%hindv(2,ngg)=Xmax
+        OCEAN(ng)%hindv(3,ngg)=Ymin
+        OCEAN(ng)%hindv(4,ngg)=Ymax
 !
         deallocate ( Ipos, Jpos)
         deallocate ( angler_c, x_c, y_c)
 !
       END DO
       deallocate ( x_p, y_p)
-
-
-
-      write(*,*) 'hinds ', OCEAN(ng)%hindr, OCEAN(ng)%hindu, OCEAN(ng)%hindv
-
-
 
       RETURN
       END SUBROUTINE init_comp_hindices_tile

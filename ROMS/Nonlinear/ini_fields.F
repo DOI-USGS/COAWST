@@ -540,7 +540,7 @@
 !-----------------------------------------------------------------------
 !
       IF (.not.PerfectRST(ng)) THEN
-#  ifdef REFINED_GRID
+#  if defined REFINED_GRID || defined COMPOSED_GRID
         DO j=JstrT,JendT
           DO k=1,N(ng)
             DO i=IstrT,IendT
@@ -560,7 +560,7 @@
               u(i,j,k,nnew)=cff1
             END DO
           END DO
-#  ifdef REFINED_GRID
+#  if defined REFINED_GRID || defined COMPOSED_GRID
             DO k=1,N(ng)
               DO i=IstrT,IendT
 #  else
@@ -579,7 +579,7 @@
                 v(i,j,k,nnew)=cff2
               END DO
             END DO
-#  ifdef REFINED_GRID
+#  if defined REFINED_GRID || defined COMPOSED_GRID
 #  else
           END IF
 #  endif
@@ -644,7 +644,7 @@
       IF (.not.PerfectRST(ng)) THEN
         DO itrc=1,NT(ng)
           DO k=1,N(ng)
-#  ifdef REFINED_GRID
+#  if defined REFINED_GRID || defined COMPOSED_GRID
             DO j=JstrT,JendT
               DO i=IstrT,IendT
 #  else
@@ -725,7 +725,7 @@
 !  the water column, and CF(i,0) is the vertical integral.
 !
       IF (.not.PerfectRST(ng)) THEN
-#  ifdef REFINED_GRID
+#  if defined REFINED_GRID || defined COMPOSED_GRID
         DO j=JstrTV,JendT
           DO i=IstrTU+1,IendT
 #  else
@@ -736,7 +736,7 @@
             CF(i,0)=0.0_r8
           END DO
           DO k=1,N(ng)
-#  ifdef REFINED_GRID
+#  if defined REFINED_GRID || defined COMPOSED_GRID
             DO i=IstrTU+1,IendT
 #  else
             DO i=IstrU,Iend
@@ -746,7 +746,7 @@
               CF(i,0)=CF(i,0)+DC(i,k)*u(i,j,k,nstp)
             END DO
           END DO
-#  ifdef REFINED_GRID
+#  if defined REFINED_GRID || defined COMPOSED_GRID
           DO i=IstrTU+1,IendT
 #  else
           DO i=IstrU,Iend
@@ -767,7 +767,7 @@
 !  DC(i,1:N) are the thicknesses of V-boxes, DC(i,0) is total depth of
 !  the water column, and CF(i,0) is the vertical integral.
 !
-#  ifdef REFINED_GRID
+#  if defined REFINED_GRID || defined COMPOSED_GRID
           IF (j.ge.JstrTV+1) THEN
             DO i=IstrTU,IendT
 #  else
@@ -778,7 +778,7 @@
               CF(i,0)=0.0_r8
             END DO
             DO k=1,N(ng)
-#  ifdef REFINED_GRID
+#  if defined REFINED_GRID || defined COMPOSED_GRID
               DO i=IstrTU,IendT
 #  else
               DO i=Istr,Iend
@@ -788,7 +788,7 @@
                 CF(i,0)=CF(i,0)+DC(i,k)*v(i,j,k,nstp)
               END DO
             END DO
-#  ifdef REFINED_GRID
+#  if defined REFINED_GRID || defined COMPOSED_GRID
             DO i=IstrTU,IendT
 #  else
             DO i=Istr,Iend
