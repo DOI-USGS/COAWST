@@ -80,7 +80,7 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, model, ncid
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
       integer, intent(in) :: DimIDs(33)
 #else
       integer, intent(in) :: DimIDs(32)

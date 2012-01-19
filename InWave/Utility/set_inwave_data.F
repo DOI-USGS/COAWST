@@ -1,5 +1,5 @@
 #include "cppdefs.h"
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
       SUBROUTINE set_inwave_data (ng, tile)
 !
 !svn $Id: set_data.F 799 2008-10-20 20:38:55Z jcwarner $

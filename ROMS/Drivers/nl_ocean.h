@@ -51,7 +51,7 @@
 #ifdef WAVES_OCEAN
       USE ocean_coupler_mod, ONLY : initialize_ocn2wav_coupling
 #endif
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
       USE driver_inwave_mod, ONLY : inwave_init
 #endif
 !
@@ -154,7 +154,7 @@
         CALL mpi_barrier(OCN_COMM_WORLD, MyError)
 #endif
       END DO
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
         DO ng=1,Ngrids
           CALL inwave_init (ng, TILE)
         END DO
@@ -212,7 +212,7 @@
 #endif
       USE mod_iounits
       USE mod_scalars
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
       USE driver_inwave_mod, ONLY : inwave_run
 #endif
 !
@@ -341,9 +341,9 @@
 !         CALL main2d (ng)
           CALL main2d
 # endif
-#ifdef INWAVE_COUPLING
+# ifdef INWAVE_MODEL
           CALL inwave_run (ng)
-#endif
+# endif
           IF (exit_flag.ne.NoError) THEN
             IF (Master) THEN
               WRITE (stdout,'(/,a,i3,/)') Rerror(exit_flag), exit_flag

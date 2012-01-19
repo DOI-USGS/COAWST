@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       MODULE dispersion_inw_mod
-#if defined INWAVE_COUPLING
+#if defined INWAVE_MODEL
 !
 !svn $Id: dispersion_inw.F 732 2008-09-07 01:55:51Z jcwarner $
 
@@ -213,10 +213,10 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    h_tot)
-      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    kwc,cwc)
+     &                    kwc, cwc)
 # endif
 
       RETURN

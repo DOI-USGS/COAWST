@@ -9,7 +9,7 @@
      &                     Fout)
 !***********************************************************************
 !
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
 !
 !svn $Id: swan_reader.F 1336 2008-01-24 02:45:56Z jcwarner $
 ! LAST CHANGE: mai 12/28/2010

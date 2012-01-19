@@ -850,7 +850,7 @@
       USE mod_storage
 #endif
       USE mod_strings
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
       USE mod_inwave_params
 #endif
 #ifdef WAVES_OCEAN
@@ -955,7 +955,7 @@
                 RETURN
               END IF
             END DO
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
           ELSE IF (TRIM(KeyWord).eq.'ND') THEN
             Npts=load_i(Nval, Rval, Ngrids, ND)
             DO ng=1,Ngrids
@@ -2047,7 +2047,39 @@
               STOP
             END IF
             Npts=load_l(Nval, Cval, Ngrids, Hout(idVwav,1:Ngrids))
-#endif 
+#endif
+
+#if defined INWAVE_MODEL
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idACen)') THEN
+            IF (idACen.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idACen'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idACen,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idACcx)') THEN
+            IF (idACcx.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idACcx'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idACcx,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idACcy)') THEN
+            IF (idACcy.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idACcy'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idACcy,1:Ngrids))
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idACct)') THEN
+            IF (idACct.eq.0) THEN
+              IF (Master) WRITE (out,280) 'idACct'
+              exit_flag=5
+              RETURN
+            END IF
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idACct,1:Ngrids))
+#endif
+
           ELSE IF (TRIM(KeyWord).eq.'Hout(idTsur)') THEN
             IF (idTsur(itemp).eq.0) THEN
               IF (Master) WRITE (out,280) 'idTsur'
@@ -2490,7 +2522,7 @@
               BRYname(Nval)(i:i)=blank
             END DO
             BRYname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
           ELSE IF (TRIM(KeyWord).eq.'IWININAME') THEN
             DO i=1,LEN(IWINIname(Nval))
               IWINIname(Nval)(i:i)=blank
@@ -3589,6 +3621,22 @@
      &       'Hout(idWbeh)',                                            &
      &       'Write out WEC Bernoulli head.'
 #endif
+
+#ifdef INWAVE_MODEL
+          IF (Hout(idACen,ng)) WRITE (out,170) Hout(idACen,ng),         &
+     &       'Hout(idACen)',                                            &
+     &       'Write out 3D wave action'
+          IF (Hout(idACcx,ng)) WRITE (out,170) Hout(idACcx,ng),         &
+     &       'Hout(idACcx)',                                            &
+     &       'Wave group celerity in the xi coordinate.'
+          IF (Hout(idACcy,ng)) WRITE (out,170) Hout(idACcy,ng),         &
+     &       'Hout(idACcy)',                                            &
+     &       'Wave group celerity in the etai coordinate.'
+          IF (Hout(idACct,ng)) WRITE (out,170) Hout(idACct,ng),         &
+     &       'Hout(idACct)',                                            &
+     &       'Wave group celerity in the directional space.'
+#endif
+
 #if defined SOLVE3D && defined T_PASSIVE
           DO itrc=1,NPT
             IF (Hout(idTvar(inert(itrc)),ng)) WRITE (out,180)           &
@@ -6099,6 +6147,16 @@
             Npts=load_l(Nval, Cval, Ngrids, Sout(idWqsp,:))
           ELSE IF (TRIM(KeyWord).eq.'Sout(idWbeh)') THEN
             Npts=load_l(Nval, Cval, Ngrids, Sout(idWbeh,:))
+# endif
+# ifdef INWAVE_MODEL
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idACen)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idACen,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idACcx)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idACcx,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idACcy)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idACcy,:))
+          ELSE IF (TRIM(KeyWord).eq.'Sout(idACct)') THEN
+            Npts=load_l(Nval, Cval, Ngrids, Sout(idACct,:))
 # endif
           ELSE IF (TRIM(KeyWord).eq.'Sout(idTsur)') THEN
             Npts=load_l(Nval, Cval, NAT*Ngrids, Lsta)

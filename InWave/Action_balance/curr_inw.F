@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       MODULE curr_inw_mod
-#if defined INWAVE_COUPLING
+#if defined INWAVE_MODEL
 # if defined DOPPLER
 !
 !svn $Id: celer_inw.F 732 2008-09-07 01:55:51Z jcwarner $

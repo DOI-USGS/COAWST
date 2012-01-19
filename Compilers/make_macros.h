@@ -98,7 +98,7 @@
 ** Process InWave wave model.
 */
 
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
   USE_INWAVE := on
 #else
   USE_INWAVE :=

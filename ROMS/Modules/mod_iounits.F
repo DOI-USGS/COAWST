@@ -150,7 +150,7 @@
         character (len=80), dimension(Ngrids) :: SWAN_infile
         character (len=80), dimension(Ngrids) :: Wname
         character (len=80) :: Aname
-# ifdef INWAVE_COUPLING
+# ifdef INWAVE_MODEL
         character (len=80), dimension(Ngrids) :: IWINIname
         character (len=80), dimension(Ngrids) :: IWBNDname
 # endif
@@ -170,12 +170,10 @@
         character (len=80), dimension(4,Ngrids) :: NRMname
         character (len=80), dimension(4,Ngrids) :: STDname
 
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
         character (len=80), dimension(Ngrids) :: IWINIname
         character (len=80), dimension(Ngrids) :: IWBNDname
-# ifdef INWAVE_COUPLING
         character (len=80), dimension(Ngrids) :: IWSWNname
-# endif
 #endif
         character (len=80) :: Iname
         character (len=80) :: MyAppCPP

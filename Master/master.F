@@ -19,7 +19,7 @@
 # elif defined ESMF_LIB
 #  include "esmf_coupler.h"
 # endif
-#elif defined INWAVE_COUPLING_notyet
+#elif defined INWAVE_MODEL_notyet
 # include "inwave.h"
 #elif defined ROMS_MODEL
 # include "ocean.h"

@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       MODULE driver_inwave_mod
-#if defined INWAVE_COUPLING
+#if defined INWAVE_MODEL
 !
 !svn $Id: driver_inwave.F 732 2008-09-07 01:55:51Z jcwarner $
 ! LAST CHANGE: mai 03/24/2011
@@ -46,7 +46,6 @@
 !
 # include "tile.h"
 !
-
       CALL allocate_inwave_vars (ng, LBi, UBi, LBj, UBj)
 
       CALL initialize_inwave_vars (ng, LBi, UBi, LBj, UBj, tile)
@@ -56,6 +55,7 @@
 # if defined INWAVE_SWAN_COUPLING
       CALL allocate_inwave_spectra (ng)
 # endif
+
       CALL initialize_inwave_bound (ng, tile)
 
 # if !defined INWAVE_SWAN_COUPLING
@@ -63,6 +63,7 @@
 # else
       CALL inwave_swan_run (ng)
 # endif
+
       RETURN
       END SUBROUTINE inwave_init
 
@@ -145,6 +146,7 @@
 # endif
           END DO
         END DO
+
 !$OMP END PARALLEL DO
 !
 !-----------------------------------------------------------------------
@@ -211,6 +213,7 @@
             CALL prestep_inw (ng, TILE)
           END DO
         END DO
+
 !$OMP END PARALLEL DO
 !
 !-----------------------------------------------------------------------
@@ -251,7 +254,7 @@
 # endif
 
 !-----------------------------------------------------------------------
-! Compute the wave number change thru the eikonal equation
+! Compute the wave number change thru the eikonal equation (need to check)
 !-----------------------------------------------------------------------
 !
 !$OMP PARALLEL DO PRIVATE(thread,subs,tile)                             &

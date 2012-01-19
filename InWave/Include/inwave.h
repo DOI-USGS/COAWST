@@ -1,4 +1,4 @@
-#if defined INWAVE_COUPLING
+#if defined INWAVE_MODEL
 
 # if defined WEST_AC_WALL
 #  define WEST_CX_WALL

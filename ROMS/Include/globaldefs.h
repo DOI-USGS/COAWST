@@ -1242,7 +1242,7 @@
     ( defined SEDIMENT     && !defined ANA_SPFLUX)   || \
     ( defined SEDIMENT     && !defined ANA_BPFLUX)   || \
     ( defined WAVE_DATA    && (!defined ANA_WWAVE    && \
-     !defined WAVES_OCEAN  && !defined INWAVE_COUPLING))
+     !defined WAVES_OCEAN  && !defined INWAVE_MODEL))
 #  define FRC_FILE
 # endif
 #else

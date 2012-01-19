@@ -1,10 +1,10 @@
 #include "cppdefs.h"
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
 
 !
 !************************************************************************
       SUBROUTINE get_inwave_ini(ng, LBi, UBi, LBj, UBj, ncname, AC_ini, &
-     &                      cx_ini, cy_ini, ct_ini,Ta)
+     &                          Ta)
 !************************************************************************
 !
 !svn $Id: get_inwave_ini.F 1336 2008-01-24 02:45:56Z jcwarner $
@@ -39,9 +39,6 @@
       integer :: LBi, UBi, LBj, UBj
 
       real(r8) :: ac_ini(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8) :: cx_ini(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8) :: cy_ini(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8) :: ct_ini(LBi:UBi,LBj:UBj,ND(ng)+1)
       real(r8) :: Ta
       real(r8) :: Amin,Amax
       
@@ -79,7 +76,6 @@
         exit_flag=2
          ioerror=status
       ENDIF
-
 !
 !-----------------------------------------------------------------------
 !  Read the absolute period
@@ -91,14 +87,13 @@
         exit_flag=2
          ioerror=status
       ENDIF
-
       status=nf90_get_var(ncIWINIid(ng),varid,Ta)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30)TRIM(Vname(1,idTA))
         exit_flag=2
          ioerror=status
       ENDIF
-
+     
 !
 !-----------------------------------------------------------------------
 !  Read dimensions
@@ -112,8 +107,9 @@
       status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nync)
       status=nf90_inq_dimid(ncIWINIid(ng),'eta_v', varid)
       status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nyvnc)
-      status=nf90_inq_dimid(ncIWINIid(ng),'energy_angle', varid)
+      status=nf90_inq_dimid(ncIWINIid(ng),'energy_angle_c', varid)
       status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=ndnc)
+
 !
 !-----------------------------------------------------------------------
 !  Read initial wave energy
@@ -125,7 +121,7 @@
         exit_flag=2
          ioerror=status
       ENDIF
-
+      gtype=var_flag(varid)*r3dvar
 
       status= nf_fread3d (ng, iNLM, TRIM(ncname), ncIWINIid(ng),        &
      &            TRIM(Vname(1,idACen)),varid, tindex, gtype,           &
@@ -136,81 +132,13 @@
 #endif
      &            AC_ini)
 
-
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30)TRIM(Vname(1,idACen))
         exit_flag=2
          ioerror=status
       ENDIF
 
-
 !
-!-----------------------------------------------------------------------
-!  Read the initial wave celerity in xi direction
-!-----------------------------------------------------------------------
-!
-!      status=nf90_inq_varid(ncIWINIid(ng),TRIM(Vname(1,idACcx)),varid)
-!      IF (status.ne.nf90_noerr) THEN
-!        WRITE (stdout,20)TRIM(Vname(1,idACcx))
-!        exit_flag=2
-!         ioerror=status
-!      ENDIF
-!      gtype=var_flag(varid)*u3dvar
-
-
-!      status= nf_fread3d (ng, iNLM, TRIM(ncname), ncIWINIid(ng),        &
-!     &            TRIM(Vname(1,idACcx)), varid, tindex, gtype,          &
-!     &            Vsize, LBi, UBi, LBj, UBj, 1, ND(ng), Ascl,           &
-!     &            Amin, Amax,                                           &
-!#ifdef MASKING
-!     &            GRID (ng)% umask,                                     &
-!#endif
-!     &            cx_ini)
-!
-!-----------------------------------------------------------------------
-!  Read the initial wave celerity in etai direction
-!-----------------------------------------------------------------------
-!
-!      status=nf90_inq_varid(ncIWINIid(ng),TRIM(Vname(1,idACcy)),varid)
-!      IF (status.ne.nf90_noerr) THEN
-!        WRITE (stdout,20)TRIM(Vname(1,idACcy))
-!        exit_flag=2
-!         ioerror=status
-!      ENDIF
-!      gtype=var_flag(varid)*v3dvar
-
-!      status= nf_fread3d (ng, iNLM, TRIM(ncname), ncIWINIid(ng),        &
-!     &            TRIM(Vname(1,idACcy)),varid, tindex, gtype,           &
-!     &            Vsize, LBi, UBi, LBj, UBj, 1, ND(ng), Ascl,           &
-!     &            Amin, Amax,                                           &
-!#ifdef MASKING
-!     &            GRID (ng)% vmask,                                     &
-!#endif
-!     &            cy_ini)
-
-!
-!-----------------------------------------------------------------------
-!  Read the initial wave celerity in theta direction
-!-----------------------------------------------------------------------
-!
-!      status=nf90_inq_varid(ncIWINIid(ng),TRIM(Vname(1,idACct)),varid)
-!      IF (status.ne.nf90_noerr) THEN
-!        WRITE (stdout,20)TRIM(Vname(1,idACct))
-!        exit_flag=2
-!         ioerror=status
-!      ENDIF
-
-!      gtype=var_flag(varid)*r3dvar
-
-!      status= nf_fread3d (ng, iNLM, TRIM(ncname), ncIWINIid(ng),        &
-!     &            TRIM(Vname(1,idACct)), varid, tindex, gtype,          &
-!     &            Vsize, LBi, UBi, LBj, UBj, 1, ND(ng)+1, Ascl,         &
-!     &            Amin, Amax,                                           &
-!#ifdef MASKING
-!     &            GRID (ng)% rmask,                                     &
-!#endif
-!     &            ct_ini)
-
 !
 !-----------------------------------------------------------------------
 ! Close GRID NetCDF file.

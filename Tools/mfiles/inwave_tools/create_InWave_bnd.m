@@ -1,5 +1,5 @@
 function create_inwave_bnd(Lp, Mp, Nangle_bnd, Dir_bnd, obc, ...
-    Ac, TA, time, bndfile)
+    AcN, AcE, AcS, AcW, TA, time, bndfile)
 
 disp(' ')
 disp(['## Creating the file : ',bndfile])
@@ -26,7 +26,7 @@ nc('xi_rho') = Lp;
 nc('eta_v') = M;
 nc('eta_rho') = Mp;
 nc('energy_time') = length(time);
-nc('energy_angle') = Nangle_bnd;
+nc('energy_angle_c') = Nangle_bnd;
 nc('TA_dim') = 1;
 
 NT=length(time);
@@ -41,11 +41,11 @@ nc{'energy_time'}.long_name = 'time for energy envelope';
 nc{'energy_time'}.units = ncchar('seconds');
 nc{'energy_time'}.units = 'seconds';
 
-nc{'energy_angle'} = ncdouble('energy_angle') ;
-nc{'energy_angle'}.long_name = ncchar('direction respect to the north of the bin');
-nc{'energy_angle'}.long_name = 'direction respect to the north of the bin';
-nc{'energy_angle'}.units = ncchar('degrees');
-nc{'energy_angle'}.units = 'degrees';
+nc{'energy_angle_c'} = ncdouble('energy_angle_c') ;
+nc{'energy_angle_c'}.long_name = ncchar('direction respect to the north of the bin');
+nc{'energy_angle_c'}.long_name = 'direction respect to the north of the bin';
+nc{'energy_angle_c'}.units = ncchar('degrees');
+nc{'energy_angle_c'}.units = 'degrees';
 
 nc{'TA_dim'} = ncdouble('TA_dim') ;
 nc{'TA_dim'}.long_name = ncchar('representative absolute peak period');
@@ -55,11 +55,11 @@ nc{'TA_dim'}.units = 'Seconds';
 
 %
 
-if obc(1)==1
+if obc(3)==1
 
 %   Southern boundary
 
-  nc{'AC_south'} = ncdouble('energy_time','energy_angle','xi_rho') ;
+  nc{'AC_south'} = ncdouble('energy_time','energy_angle_c','xi_rho') ;
   nc{'AC_south'}.long_name = ncchar('southern boundary wave action envelope');
   nc{'AC_south'}.long_name = 'southern boundary wave action envelope';
   nc{'AC_south'}.units = ncchar('Joules');
@@ -77,7 +77,7 @@ if obc(2)==1
 
 %   Eastern boundary
 
-  nc{'AC_east'} = ncdouble('energy_time','energy_angle','eta_rho') ;
+  nc{'AC_east'} = ncdouble('energy_time','energy_angle_c','eta_rho') ;
   nc{'AC_east'}.long_name = ncchar('eastern boundary wave action envelope');
   nc{'AC_east'}.long_name = 'eastern boundary wave action envelope';
   nc{'AC_east'}.units = ncchar('Joules');
@@ -91,11 +91,11 @@ if obc(2)==1
 
 end
 
-if obc(3)==1
+if obc(1)==1
 %
 %   Northern boundary
 %
-  nc{'AC_north'} = ncdouble('energy_time','energy_angle','xi_rho') ;
+  nc{'AC_north'} = ncdouble('energy_time','energy_angle_c','xi_rho') ;
   nc{'AC_north'}.long_name = ncchar('northern boundary wave action envelope');
   nc{'AC_north'}.long_name = 'northern boundary wave action envelope';
   nc{'AC_north'}.units = ncchar('Joules');
@@ -113,7 +113,7 @@ if obc(4)==1
 %
 %   Western boundary
 %
-  nc{'AC_west'} = ncdouble('energy_time','energy_angle','eta_rho') ;
+  nc{'AC_west'} = ncdouble('energy_time','energy_angle_c','eta_rho') ;
   nc{'AC_west'}.long_name = ncchar('western boundary wave action envelope');
   nc{'AC_west'}.long_name = 'western boundary wave action envelope';
   nc{'AC_west'}.units = ncchar('Joules');
@@ -150,26 +150,28 @@ result = endef(nc);
 %
 
 nc{'energy_time'}(1:NT) =  time(1,1:NT); 
-nc{'energy_angle'}(:) =  dir; 
+nc{'energy_angle_c'}(:) =  dir; 
 nc{'TA_dim'}(:) = 1; 
 
-if obc(1)==1
-   nc{'AC_south'}(:,:,:) =Ac(:,:,:);
+if obc(3)==1
+   nc{'AC_south'}(:,:,:) =AcS(:,:,:);
    nc{'TA_south'}(:)=TA;
 end
 
 if obc(2)==1
-   nc{'AC_east'}(:,:,:) =Ac(:,:,:); 
+   nc{'AC_east'}(:,:,:) =AcE(:,:,:); 
    nc{'TA_east'}(:)=TA;
 end
 
-if obc(3)==1
-   nc{'AC_north'}(:,:,:) =Ac(:,:,:); 
+if obc(1)==1
+   nc{'AC_north'}(:,:,:) =AcN(:,:,:); 
    nc{'TA_north'}(:)=TA;
 end
 
+clear AcN AcE AcS Ac_east Ac Ac1
+
 if obc(4)==1
-   nc{'AC_west'}(:,:,:) =Ac(:,:,:); 
+   nc{'AC_west'}(:,:,:) =AcW(:,:,:); 
    nc{'TA_west'}(:)=TA;
 end
 

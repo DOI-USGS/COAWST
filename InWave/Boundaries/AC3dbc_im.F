@@ -160,29 +160,21 @@
 !
 !  Western edge, clamped boundary condition.
 !
-      DO d_bnd=1,WAVEB(ng)%ND_BND
-        DO k=1,ND(ng)
-        IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%WD(k))then
-          DO j=Jstr-1,Jend+1
-            AC(Istr-1,j,k,nout)=WAVEB(ng)%AC_west(j,d_bnd)
+      DO k=1,ND(ng)
+       DO d_bnd=1,WAVEB(ng)%ND_BND
+        IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k))then
+            DO j=Jstr-1,Jend+1
+              AC(Istr-1,j,k,nout)=WAVEB(ng)%AC_west(j,d_bnd)
 #   ifdef MASKING
-            AC(Istr-1,j,k,nout)=AC(Istr-1,j,k,nout)*                    &
+              AC(Istr-1,j,k,nout)=AC(Istr-1,j,k,nout)*                  &
      &                          GRID(ng)%rmask(Istr-1,j)
 #   endif
-          END DO
-        ELSE
-          DO j=Jstr-1,Jend+1
-            AC(Istr-1,j,k,nout)=0.0_r8
-#   ifdef MASKING
-            AC(Istr-1,j,k,nout)=AC(Istr-1,j,k,nout)*                    &
-     &                          GRID(ng)%rmask(Istr-1,j)
-#   endif
-          END DO
-        ENDIF
+            END DO
+          ENDIF
         END DO
       ENDDO
 
-#  elif defined WEST_TGRADIENT
+#  elif defined WEST_AC_GRADIENT
 !
 !  Western edge, gradient boundary condition.
 !
@@ -270,17 +262,9 @@
 !
       DO d_bnd=1,WAVEB(ng)%ND_BND
         DO k=1,ND(ng)
-        IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%WD(k))then
+        IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k))then
           DO j=Jstr-1,Jend+1
             AC(Iend+1,j,k,nout)=WAVEB(ng)%AC_east(j,d_bnd)
-#   ifdef MASKING
-            AC(Iend+1,j,k,nout)=AC(Iend+1,j,k,nout)*                    &
-     &                          GRID(ng)%rmask(Iend+1,j)
-#   endif
-          END DO
-        ELSE
-          DO j=Jstr-1,Jend+1
-            AC(Iend+1,j,k,nout)=0.0_r8
 #   ifdef MASKING
             AC(Iend+1,j,k,nout)=AC(Iend+1,j,k,nout)*                    &
      &                          GRID(ng)%rmask(Iend+1,j)
@@ -381,17 +365,9 @@
 !
       DO d_bnd=1,WAVEB(ng)%ND_BND
         DO k=1,ND(ng)
-        IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%WD(k))then
+        IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k))then
           DO i=Istr-1,Iend+1
             AC(i,Jstr-1,k,nout)=WAVEB(ng)%AC_south(i,d_bnd)
-#   ifdef MASKING
-            AC(i,Jstr-1,k,nout)=AC(i,Jstr-1,k,nout)*                    &
-     &                          GRID(ng)%rmask(i,Jstr-1)
-#   endif
-            END DO
-         ELSE
-          DO i=Istr-1,Iend+1
-            AC(i,Jstr-1,k,nout)=0.0_r8
 #   ifdef MASKING
             AC(i,Jstr-1,k,nout)=AC(i,Jstr-1,k,nout)*                    &
      &                          GRID(ng)%rmask(i,Jstr-1)
@@ -488,17 +464,9 @@
 !
       DO d_bnd=1,WAVEB(ng)%ND_BND
         DO k=1,ND(ng)
-        IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%WD(k))then
+        IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k))then
           DO i=Istr-1,Iend+1
             AC(i,Jend+1,k,nout)=WAVEB(ng)%AC_north(i,d_bnd)
-#   ifdef MASKING
-            AC(i,Jend+1,k,nout)=AC(i,Jend+1,k,nout)*                    &
-     &                          GRID(ng)%rmask(i,Jend+1)
-#   endif
-          END DO
-        ELSE
-          DO i=Istr,Iend
-            AC(i,Jend+1,k,nout)=0.0_r8
 #   ifdef MASKING
             AC(i,Jend+1,k,nout)=AC(i,Jend+1,k,nout)*                    &
      &                          GRID(ng)%rmask(i,Jend+1)

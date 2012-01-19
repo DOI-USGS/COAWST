@@ -171,8 +171,6 @@
       Jmin=LBj
       Jmax=UBj
 #endif
-
-
 !
 !-----------------------------------------------------------------------
 ! Compute degree bins. This may need to be moved.
@@ -191,7 +189,6 @@
       DO d=1,ND(ng)
         WAVEG(ng)%wd(d)=ndirs(d)*cnvrad
       END DO
-
 !
 !-----------------------------------------------------------------------
 ! Compute the angle increment
@@ -222,7 +219,6 @@
         exit_flag=4
       ENDIF
 #endif
-
 !
 ! need to distribute pd and wd
 !
@@ -238,10 +234,8 @@
       allocate (ct_ini(LBi:UBi,LBj:UBj,ND(ng)+1))
 !
       ncini_name=IWINIname(ng)
-
       call get_inwave_ini(ng, LBi, UBi, LBj, UBj, ncini_name, ac_ini,   &
-     &                    cx_ini, cy_ini, ct_ini, Ta_ini)
-
+     &                    Ta_ini)
 !
 !-----------------------------------------------------------------------
 !  Initialize module variables.
@@ -249,7 +243,6 @@
 !
 !  Nonlinear model state.
 !
-
       DO j=Jmin,Jmax
         DO i=Imin,Imax
           WAVEP(ng) % u_rho(i,j) = IniVal
@@ -259,9 +252,9 @@
             WAVEP(ng) % AC(i,j,d,1) = AC_ini(i,j,d)
             WAVEP(ng) % AC(i,j,d,2) = AC_ini(i,j,d)
             WAVEP(ng) % AC(i,j,d,3) = AC_ini(i,j,d)
-            WAVEP(ng) % cx(i,j,d) = cx_ini(i,j,d)
-            WAVEP(ng) % cy(i,j,d) = cy_ini(i,j,d)
-            WAVEP(ng) % ct(i,j,d) = ct_ini(i,j,d)
+            WAVEP(ng) % cx(i,j,d) = IniVal
+            WAVEP(ng) % cy(i,j,d) = IniVal
+            WAVEP(ng) % ct(i,j,d) = IniVal
             WAVEP(ng) % Ta(i,j,d) = Ta_ini
             WAVEP(ng) % Tr(i,j,d) = Ta_ini
             WAVEP(ng) % kwc(i,j,d) = IniVal
@@ -269,13 +262,12 @@
           END DO
         END DO
       END DO
-
+      
       DO j=Jmin,Jmax
         DO i=Imin,Imax
           WAVEP(ng) % ct(i,j,ND(ng)+1) = ct_ini(i,j,ND(ng)+1)
         END DO
       END DO
-
       IF (allocated(ac_ini)) deallocate(ac_ini)
       IF (allocated(cx_ini)) deallocate(cx_ini)
       IF (allocated(cy_ini)) deallocate(cy_ini)

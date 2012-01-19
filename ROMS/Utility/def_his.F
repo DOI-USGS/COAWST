@@ -28,7 +28,7 @@
 #if defined SEDIMENT || defined BBL_MODEL
       USE mod_sediment
 #endif
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
       USE mod_inwave_params
 #endif
 !
@@ -58,7 +58,7 @@
       integer :: t2dobc(4)
 #endif
 
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
       integer :: DimIDs(33)
 #else
       integer :: DimIDs(32)
@@ -67,7 +67,7 @@
 
       integer :: def_dim
 
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
       integer :: r3degrd(4)
       integer :: u3degrd(4)
       integer :: v3degrd(4)
@@ -173,7 +173,7 @@
      &                 IOBOUNDS(ng)%xy_v, DimIDs(19))
         IF (exit_flag.ne.NoError) RETURN
 #endif
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
         status=def_dim(ng, iNLM, ncHISid(ng), ncname,'ND',              &
                        ND(ng), DimIDs(33))
 #endif
@@ -358,7 +358,7 @@
         v3dgrd(3)=DimIDs( 9)
         v3dgrd(4)=DimIDs(12)
 # endif
-# ifdef INWAVE_COUPLING
+# ifdef INWAVE_MODEL
 !
 !  Define dimension vector for energy wave layer type variables.
 !
@@ -1512,12 +1512,12 @@
      &                   NF_FOUT, nvd3, v2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
-#ifdef INWAVE_COUPLING
-
+        
+#ifdef INWAVE_MODEL
 !
 !  Define 3D Action density wave energy.
 !
-!        IF (Hout(idACen,ng)) THEN
+        IF (Hout(idACen,ng)) THEN
           Vinfo( 1)=Vname(1,idACen)
           Vinfo( 2)=Vname(2,idACen)
           Vinfo( 3)=Vname(3,idACen)
@@ -1530,11 +1530,11 @@
           Aval(5)=REAL(r3dvar,r8)
           status=def_var(ng, iNLM, ncHISid(ng), hisVid(idACen,ng),      &
      &                   NF_FOUT, nvd4, r3degrd, Aval, Vinfo, ncname)
-!        END IF
+        END IF
 !
 !  Define 3D wave celerity xi-direction.
 !
-!        IF (Hout(idACen,ng)) THEN
+        IF (Hout(idACcx,ng)) THEN
           Vinfo( 1)=Vname(1,idACcx)
           Vinfo( 2)=Vname(2,idACcx)
           Vinfo( 3)=Vname(3,idACcx)
@@ -1547,11 +1547,11 @@
           Aval(5)=REAL(u3dvar,r8)
           status=def_var(ng, iNLM, ncHISid(ng), hisVid(idACcx,ng),      &
      &                   NF_FOUT, nvd4, u3degrd, Aval, Vinfo, ncname)
-!        END IF
+        END IF
 !
 !  Define 3D wave celerity eta-direction.
 !
-!        IF (Hout(idACen,ng)) THEN
+        IF (Hout(idACcy,ng)) THEN
           Vinfo( 1)=Vname(1,idACcy)
           Vinfo( 2)=Vname(2,idACcy)
           Vinfo( 3)=Vname(3,idACcy)
@@ -1564,11 +1564,11 @@
           Aval(5)=REAL(v3dvar,r8)
           status=def_var(ng, iNLM, ncHISid(ng), hisVid(idACcy,ng),      &
      &                   NF_FOUT, nvd4,v3degrd, Aval, Vinfo, ncname)
-!        END IF
+        END IF
 !
 !  Define 3D wave celerity theta-direction.
 !
-!        IF (Hout(idACct,ng)) THEN
+        IF (Hout(idACct,ng)) THEN
           Vinfo( 1)=Vname(1,idACct)
           Vinfo( 2)=Vname(2,idACct)
           Vinfo( 3)=Vname(3,idACct)
@@ -1581,7 +1581,7 @@
           Aval(5)=REAL(r3dvar,r8)
           status=def_var(ng, iNLM, ncHISid(ng),hisVid(idACct,ng),       &
      &                   NF_FOUT, nvd4, t3degrd, Aval, Vinfo, ncname)
-!        END IF
+        END IF
 #endif
 #ifdef SOLVE3D
 # ifdef UV_KIRBY

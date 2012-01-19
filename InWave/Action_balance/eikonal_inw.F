@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       MODULE eikonal_inw_mod
-#if defined INWAVE_COUPLING
+#if defined INWAVE_MODEL
 !
 !svn $Id: eikonal_inw.F 732 2008-09-07 01:55:51Z jcwarner $
 

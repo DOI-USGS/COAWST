@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE dissip_inw_mod
 
-#if defined INWAVE_COUPLING
+#if defined INWAVE_MODEL
 # if defined ENERGY_DISSIPATION
 !
 !=======================================================================
@@ -166,7 +166,7 @@
           TRM=0.0_r8
           DO d=1,ND(ng)
 !=======================================================================
-!  Compute the energy from the action balance and the wave height
+!  Compute the energy from action balance and wave heigth
 !=======================================================================
             EN(d)=AC(i,j,d,nout)*twopi/(Tr(i,j,d))
 !=======================================================================
@@ -192,16 +192,20 @@
 !  Compute the energy dissipation
 !=======================================================================
 #  ifdef ROELVINK
-          if (h_tot(i,j).ge.Dcrit(ng))then
-          Hmax_r=break/KM*tanh(KM*h_tot(i,j))
+        if (h_tot(i,j).ge.Dcrit(ng))then
+          Hmax_r=break*(max(h_tot(i,j),0.0_r8))
           Qb=min(1.0_r8,1.0_r8-exp(-(H/Hmax_r)**n_r))
 #   if defined WDISS_INWAVE
-          Dissip_break(i,j)=alfa/pi*Qb*TRM*EW*dt(ng)
+          if(TRM.gt.0.0_r8)then
+            Dissip_break(i,j)=2.0_r8*alfa*1./TRM*EW*Qb*dt(ng)
+          endif
 #    ifdef MASKING
           Dissip_break(i,j)=Dissip_break(i,j)*rmask(i,j)
 #    endif
 #   else
-          Db=alfa/pi*Qb*TRM*EW*dt(ng)
+          if(TRM.gt.0.0_r8)then
+            Db=2.0_r8*alfa*1./TRM*EW*Qb*dt(ng)
+          endif
 #   endif
          else
 #   if defined WDISS_INWAVE
@@ -257,11 +261,11 @@
 
 #   if defined WDISS_INWAVE
           Dissip_break(i,j)=Dissip_break(i,j)/(dt(ng)*rho0)
-#    endif
+#   endif
 
         ENDDO
       ENDDO
-      
+
 
 # if defined WDISS_INWAVE
 !

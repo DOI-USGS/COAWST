@@ -845,6 +845,6 @@
 
 #include "globaldefs.h"
 
-#ifdef INWAVE_COUPLING
-# include "../../InWave/Include/inwave.h"
+#ifdef INWAVE_MODEL
+#include "../../InWave/Include/inwave.h"
 #endif

@@ -1,5 +1,5 @@
 #include "cppdefs.h"
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
 !
 !************************************************************************
       SUBROUTINE get_inwave_grid(ng, nc_name, WD)
@@ -61,7 +61,7 @@
 ! Determine number of directions.
 !-----------------------------------------------------------------------
 !
-      status=nf90_inq_varid(ncSPSid(ng),'energy_angle', varid)
+      status=nf90_inq_varid(ncSPSid(ng),'energy_angle_c', varid)
       status=nf90_inquire_variable(ncSPSid(ng),varid,dimids = dimIDs)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('num energy bins')

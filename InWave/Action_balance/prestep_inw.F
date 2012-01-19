@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       MODULE prestep_inw_mod
-#if defined INWAVE_COUPLING
+#if defined INWAVE_MODEL
 !
 !=======================================================================
 !                                                                      !
@@ -434,6 +434,12 @@
      &                   cff2*AC(i,j,d,nnew))-                          &
      &                   cff*pd(d)*                                     &
      &                  (FD(i,d+1)-FD(i,d))
+          END DO
+        END DO
+        
+        DO i=Istr,Iend
+          DO d=1,ND(ng)
+            AC(i,j,d,3)=MAX(0.0_r8,AC(i,j,d,3))
           END DO
         END DO
 

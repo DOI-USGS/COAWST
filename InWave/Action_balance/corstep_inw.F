@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       MODULE corstep_inw_mod
-#if defined INWAVE_COUPLING
+#if defined INWAVE_MODEL
 !
 !=======================================================================
 !                                                                      !
@@ -404,6 +404,12 @@
             cff=dt(ng)*pd(d)
             AC(i,j,d,nnew)=AC(i,j,d,nnew)-                              &
      &                     cff*(FD(i,d+1)-FD(i,d))
+          END DO
+        END DO
+
+        DO i=Istr,Iend
+          DO d=1,ND(ng)
+            AC(i,j,d,nnew)=MAX(0.0_r8,AC(i,j,d,nnew))
           END DO
         END DO
 

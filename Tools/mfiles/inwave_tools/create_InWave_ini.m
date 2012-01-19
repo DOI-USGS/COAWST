@@ -27,8 +27,8 @@ nc('xi_rho') = Lp;
 nc('eta_v') = M;
 nc('eta_rho') = Mp;
 nc('energy_time') = length(initime);
-nc('energy_angle') = Nbins;
-nc('energy_angle_c') = Nbins+1;
+nc('energy_angle') = Nbins+1;
+nc('energy_angle_c') = Nbins;
 nc('TA_dim') = 1;
 
 %
@@ -59,25 +59,25 @@ nc{'TA_dim'}.long_name = 'representative absolute peak period';
 nc{'TA_dim'}.units = ncchar('Seconds');
 nc{'TA_dim'}.units = 'Seconds';
 
-nc{'AC'} = ncdouble('energy_angle','eta_rho','xi_rho') ;
+nc{'AC'} = ncdouble('energy_angle_c','eta_rho','xi_rho') ;
 nc{'AC'}.long_name = ncchar('wave energy envelope');
 nc{'AC'}.long_name = 'wave energy envelope';
 nc{'AC'}.units = ncchar('Joules');
 nc{'AC'}.units = 'Joules';
 
-nc{'cx'} = ncdouble('energy_angle','eta_rho','xi_u') ;
+nc{'cx'} = ncdouble('energy_angle_c','eta_rho','xi_u') ;
 nc{'cx'}.long_name = ncchar('x component of the group celerity');
 nc{'cx'}.long_name = 'x component of the group celerity';
 nc{'cx'}.units = ncchar('m/s');
 nc{'cx'}.units = 'm/s';
 
-nc{'cy'} = ncdouble('energy_angle','eta_v','xi_rho') ;
+nc{'cy'} = ncdouble('energy_angle_c','eta_v','xi_rho') ;
 nc{'cy'}.long_name = ncchar('y component of the group celerity');
 nc{'cy'}.long_name = 'y component of the group celerity';
 nc{'cy'}.units = ncchar('m/s');
 nc{'cy'}.units = 'm/s';
 
-nc{'ct'} = ncdouble('energy_angle_c','eta_rho','xi_rho') ;
+nc{'ct'} = ncdouble('energy_angle','eta_rho','xi_rho') ;
 nc{'ct'}.long_name = ncchar('directional component of the group celerity');
 nc{'ct'}.long_name = 'directional component of the group celerity';
 nc{'ct'}.units = ncchar('rad/s');
@@ -111,8 +111,8 @@ result = endef(nc);
 %
 
 nc{'energy_time'}(:) =  initime; 
-nc{'energy_angle'}(1:Nbins) = Bindir(1,1:Nbins); 
-nc{'energy_angle_c'}(1:Nbins+1) = Bindir_c(1,1:Nbins+1); 
+nc{'energy_angle'}(1:Nbins+1) = Bindir(1,1:Nbins+1); 
+nc{'energy_angle_c'}(1:Nbins) = Bindir_c(1,1:Nbins); 
 nc{'TA_dim'}(:) = 1; 
 
 

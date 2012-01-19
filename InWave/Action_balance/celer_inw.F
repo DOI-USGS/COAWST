@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       MODULE celer_inw_mod
-#if defined INWAVE_COUPLING
+#if defined INWAVE_MODEL
 !
 !svn $Id: celer_inw.F 732 2008-09-07 01:55:51Z jcwarner $
 !======================================================================!
@@ -166,7 +166,7 @@
 # endif
 !
       integer :: i, j, k, d
-      real(r8) :: twopi, otwopi
+      real(r8) :: twopi, otwopi, halfpi
       real(r8) :: alfa_wave, kx, ky, kh, wa, wr
       real(r8) :: theta_cur, u_dir, u_block
       real(r8) :: cff1
@@ -183,7 +183,9 @@
 # include "set_bounds.h"
 !
       twopi=2.0_r8*pi
+      halfpi=0.5_r8*pi
       otwopi=1.0_r8/twopi
+
 
       DO d=1,ND(ng)
         DO j=Jstr-1,Jend+1
@@ -194,6 +196,7 @@
 !=======================================================================
 !
             alfa_wave =(1.5_r8*pi-wd(d))-angler(i,j)
+
             kx= kwc(i,j,d)*cos(alfa_wave)
             ky= kwc(i,j,d)*sin(alfa_wave)
 # ifdef DOPPLER
@@ -283,9 +286,7 @@
 
 !  Note: change in angle convention to solve blah blah blah.
 
-             dir_edge=-wd(d)+otwopi
-
-!! GRADIENTS ARE NOT CORRECTLY COMPUTED NEED TO CHANGE
+             dir_edge=-(wd(d)-halfpi)
 
 #  ifdef DOPPLER
              dudx=pm(i,j)*(u_rho(i+1,j)-u_rho(i-1,j))/2.0_r8
@@ -301,12 +302,17 @@
      &             (v_rho(i+1,j)-v_rho(i-1,j)))
              dvdy=pn(i,j)*(v_rho(i,j+1)-v_rho(i,j))
 #  endif
+            dhdx=(pm(i+1,j)+pm(i,j))*(h_tot(i+1,j)-h_tot(i-1,j))
+            dhdy=(pn(i,j+1)+pn(i,j))*(h_tot(i,j+1)-h_tot(i,j-1))
 
-             dhdx=0.5_r8*pm(i,j)*(h_tot(i+1,j)-h_tot(i-1,j))
-             dhdy=0.5_r8*pn(i,j)*(h_tot(i,j+1)-h_tot(i,j-1))
+            if (i.eq.Iend)dhdx=(pm(i,j))*(h_tot(i,j)-h_tot(i-1,j))
+            if (j.eq.Jend)dhdy=(pn(i,j))*(h_tot(i,j)-h_tot(i,j-1))
+            if (i.eq.Istr)dhdx=(pm(i,j))*(h_tot(i+1,j)-h_tot(i,j))
+            if (j.eq.Jstr)dhdy=(pn(i,j))*(h_tot(i,j+1)-h_tot(i,j))
 
-             ct_r(i,j,d)=Tr(i,j,d)/sinh(2.0_r8*kh*                      &
-     &                   (sin(dir_edge)*dhdx-cos(dir_edge)*dhdy))
+            ct_r(i,j,d)=twopi/(Tr(i,j,d)*sinh(2.0_r8*kh))*              &
+     &                 (sin(dir_edge)*dhdx-cos(dir_edge)*dhdy)
+
 #  ifdef DOPPLER
              cosde=cos(dir_edge)
              sinde=sin(dir_edge)
@@ -321,7 +327,7 @@
             ENDIF
           ENDDO
         ENDDO
-      ENDDO
+       ENDDO
 
 # endif
 
@@ -405,25 +411,25 @@
         END DO
       ENDDO
       
-      DO j=Jstr,Jend
-        DO i=Istr,Iend
-          ct(i,j,1)=ct_r(i,j,ND(ng))
-#  ifdef MASKING
-!  Apply Land/Sea mask
-          ct(i,j,1)=ct(i,j,1)*rmask(i,j)
-#  endif
-        END DO
-      END DO
-     
-      DO j=Jstr,Jend
-        DO i=Istr,Iend
-          ct(i,j,ND(ng)+1)=ct_r(i,j,ND(ng))
-#  ifdef MASKING
-!  Apply Land/Sea mask
-          ct(i,j,ND(ng)+1)=ct(i,j,ND(ng)+1)*rmask(i,j)
-#  endif
-        END DO
-      END DO
+!      DO j=Jstr,Jend
+!        DO i=Istr,Iend
+!          ct(i,j,1)=ct_r(i,j,ND(ng))
+!#  ifdef MASKING
+!!  Apply Land/Sea mask
+!          ct(i,j,1)=ct(i,j,1)*rmask(i,j)
+!#  endif
+!        END DO
+!      END DO
+!     
+!      DO j=Jstr,Jend
+!        DO i=Istr,Iend
+!          ct(i,j,ND(ng)+1)=ct_r(i,j,ND(ng))
+!#  ifdef MASKING
+!!  Apply Land/Sea mask
+!          ct(i,j,ND(ng)+1)=ct(i,j,ND(ng)+1)*rmask(i,j)
+!#  endif
+!        END DO
+!      END DO
 # endif
 
 !  Apply nonperiodic boundary conditions in xi and etai space.

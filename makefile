@@ -456,8 +456,16 @@ ifdef USE_REFDIF
 endif
 
 ifdef USE_INWAVE
- modules  +=	InWave
- includes +=	InWave
+ modules  +=	InWave/Drivers \
+             InWave/Action_balance \
+             InWave/Boundaries \
+             InWave/Modules \
+             InWave/Utility
+ includes +=	InWave/Drivers \
+             InWave/Action_balance \
+             InWave/Boundaries \
+             InWave/Modules \
+             InWave/Utility
 endif
 
 ifdef USE_ROMS

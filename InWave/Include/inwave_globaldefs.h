@@ -8,7 +8,7 @@ Global params file for InWave
 /***********************************   USER DEFINED OPTIONS   *******************************************/
 /********************************************************************************************************/
 
-*# define INWAVE_COUPLING       use to turn ON or OFF InWave model
+*# define INWAVE_MODEL       use to turn ON or OFF InWave model
 *# define INWAVE_SWAN_COUPLING       use to turn ON or OFF InWave SWAN coupling
 *# define DOPPLER               use to turn ON or OFF the effect of currents on the dispersion relation
 *# define ACX_ADVECTION         use to turn ON or OFF advection of Ac in the xi direction
@@ -95,7 +95,7 @@ Global params file for InWave
 /**********************************   DO NOT MODIFY: SET DEFAULT   **************************************/
 /********************************************************************************************************/
 
-#if defined INWAVE_COUPLING
+#if defined INWAVE_MODEL
 
 # if defined WEST_AC_WALL
 #  define WEST_CX_WALL

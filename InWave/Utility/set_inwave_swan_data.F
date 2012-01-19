@@ -1,5 +1,5 @@
 #include "cppdefs.h"
-#if defined INWAVE_COUPLING & defined INWAVE_SWAN_COUPLING
+#if defined INWAVE_MODEL & defined INWAVE_SWAN_COUPLING
       SUBROUTINE set_inwave_swan_data (ng, tile)
 !
 !svn $Id: set_inwave_swan_data.F 799 2009-12-08 20:38:55Z jcwarner $

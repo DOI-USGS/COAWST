@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       MODULE dispersion_wr_inw_mod
-#if defined INWAVE_COUPLING
+#if defined INWAVE_MODEL
 !
 !svn $Id: dispersion_inw.F 732 2008-09-07 01:55:51Z jcwarner $
 
@@ -192,16 +192,14 @@
 !
 !  Exchange boundary data.
 !
-      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    Tr)
-
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    h_tot)
-
+      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
+     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    Tr)
 # endif
 
 

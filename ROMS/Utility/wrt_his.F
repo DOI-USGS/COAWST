@@ -55,7 +55,7 @@
       USE bulk_flux_mod, ONLY : rotate_wind
 # endif
 #endif
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
       USE mod_inwave_params
       USE mod_inwave_vars
 #endif
@@ -2389,12 +2389,12 @@
       END DO
 # endif
 #endif
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
 
 !
 !  Write out AC wave energy density.
 !
-!      IF (Hout(idW3xx,ng)) THEN
+      IF (Hout(idACen,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, ncHISid(ng), hisVid(idACen,ng),    &
@@ -2416,11 +2416,11 @@
           ioerror=status
           RETURN
         END IF
-!      END IF
+      END IF
 !
 !  Write out energy celerity xi-direction.
 !
-!      IF (Hout(idW3xx,ng)) THEN
+      IF (Hout(idACcx,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*u3dvar
         status=nf_fwrite3d(ng, iNLM, ncHISid(ng), hisVid(idACcx,ng),    &
@@ -2442,12 +2442,12 @@
           ioerror=status
           RETURN
         END IF
-!      END IF
+      END IF
 
 !
 !  Write out energy celerity eta-direction.
 !
-!      IF (Hout(idW3xx,ng)) THEN
+      IF (Hout(idACcy,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*v3dvar
         status=nf_fwrite3d(ng, iNLM, ncHISid(ng), hisVid(idACcy,ng),    &
@@ -2469,12 +2469,12 @@
           ioerror=status
           RETURN
         END IF
-!      END IF
+      END IF
 
 !
 !  Write out energy celerity xi-direction.
 !
-!      IF (Hout(idW3xx,ng)) THEN
+      IF (Hout(idACct,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, ncHISid(ng), hisVid(idACct,ng),    &
@@ -2496,7 +2496,7 @@
           ioerror=status
           RETURN
         END IF
-!      END IF
+      END IF
 
 #endif
 #ifdef WEC_MELLOR

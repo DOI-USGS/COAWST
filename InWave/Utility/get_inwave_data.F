@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       SUBROUTINE get_inwave_data (ng)
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
 !
 !svn $Id: get_inwave_data.F 790 2008-10-14 19:32:07Z jcwarner $
 !================================================== John C. Warner =====

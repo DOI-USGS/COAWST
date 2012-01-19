@@ -108,7 +108,7 @@
 !
         DO d=1,ND
          DO j=Jstr,Jend
-          ct(Istr-1,j,d)=ct(Istr,j,d)
+          ct(Istr-1,j,d)=0.0_r8
 #   ifdef MASKING
           ct(Istr-1,j,d)=ct(Istr-1,j,d)*                                &
      &                   GRID(ng)%rmask(Istr-1,j)
@@ -144,7 +144,7 @@
 !
         DO d=1,ND
          DO j=Jstr,Jend
-          ct(Iend+1,j,d)=ct(Iend,j,d)
+          ct(Iend+1,j,d)=0.0_r8
 #   ifdef MASKING
           ct(Iend+1,j,d)=ct(Iend+1,j,d)*                                &
      &                   GRID(ng)%rmask(Iend+1,j)
@@ -183,7 +183,7 @@
 !
         DO d=1,ND
          DO i=Istr,Iend
-          ct(i,Jstr-1,d)=ct(i,Jstr,d)
+          ct(i,Jstr-1,d)=0.0_r8
 #   ifdef MASKING
           ct(i,Jstr-1,d)=ct(i,Jstr-1,d)*                                &
      &                   GRID(ng)%rmask(i,Jstr-1)
@@ -219,7 +219,7 @@
 !
         DO d=1,ND
          DO i=Istr,Iend
-          ct(i,Jend+1,d)=ct(i,Jend,d)
+          ct(i,Jend+1,d)=0.0_r8
 #   ifdef MASKING
           ct(i,Jend+1,d)=ct(i,Jend+1,d)*                                &
      &                   GRID(ng)%rmask(i,Jend+1)

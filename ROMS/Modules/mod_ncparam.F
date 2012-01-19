@@ -402,14 +402,10 @@
         integer  :: idV2bc(4)      ! 2D V-velocity boundary conditions
         integer  :: idV3bc(4)      ! 3D V-velocity boundary conditions
         integer  :: idZbry(4)      ! free-surface boundary conditions
-#ifdef INWAVE_COUPLING
         integer  :: idACbc(4)      ! wave energy boundary condition
-        integer  :: idTa           ! absolute peak period
-        integer  :: idACen         ! wave energy
-        integer  :: idACcx         ! wave energy celerity in xi dir
-        integer  :: idACcy         ! wave energy celerity in etai dir
-        integer  :: idACct         ! wave energy celerity in theta dir
-#endif
+
+
+
 !
 !  Time-averaged quadratic terms IDs.
 !
@@ -478,7 +474,7 @@
         integer  :: ncAVGid(Ngrids)     ! output averages
         integer  :: ncBLKid(Ngrids)     ! Basic state surface fluxes
         integer  :: ncBRYid(Ngrids)     ! input boundary conditions
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
         integer  :: ncIWBRYid(Ngrids)     ! input boundary conditions for Ac
         integer  :: ncIWINIid(Ngrids)     ! input initial conditions for Ac,cx,cy,ct
 #endif
@@ -997,7 +993,7 @@
           ncTOBSid(ng)=-1
           ncVOBSid(ng)=-1
           ncVSURid(ng)=-1
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
           ncIWBRYid(ng)=-1
           ncIWINIid(ng)=-1
 #endif
@@ -1574,7 +1570,7 @@
                 idRtrc(itemp)=varid
               CASE ('idRtrc(isalt)')
                 idRtrc(isalt)=varid
-#ifdef INWAVE_COUPLING
+#ifdef INWAVE_MODEL
               CASE ('idACen')
                 idACen=varid
               CASE ('idACcx')

@@ -1,6 +1,6 @@
 #include "cppdefs.h"
       MODULE frc_inw_mod
-#if defined INWAVE_COUPLING
+#if defined INWAVE_MODEL
 # if defined WEC_MELLOR || defined WEC_VF
 !
 !svn $Id: celer_inw.F 732 2008-09-07 01:55:51Z jcwarner $
@@ -202,7 +202,7 @@
              TRM=TRM+Tr(i,j,d)*EN
              DIRM=DIRM+WD(d)*EN
             ENDDO
-            IF(EW.ge.0.0_r8)then
+            IF(EW.ge.0.001_r8)then
               KM=KM/EW
               Lwave(i,j)=twopi/KM
               Dwave(i,j)=DIRM/EW
@@ -218,7 +218,6 @@
 #  endif
 #  if defined WAVES_BOT_PERIOD
               Pwave_bot(i,j)=TRM/EW
-
 #  endif
             ELSE
               Hwave(i,j)=0.0_r8
@@ -272,10 +271,10 @@
 !
 !   Exchange boundary data.
 !
-      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    Hwave,Dwave,Lwave)
+     &                    Hwave, Dwave, Lwave)
 #  if defined WAVES_UB
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
