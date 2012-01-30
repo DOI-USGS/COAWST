@@ -2127,7 +2127,7 @@
               exit_flag=5
               RETURN
             END IF
-            Npts=load_l(Nval, Cval, Ngrids, Hout(idSrad,1:Ngrids))
+            Npts=load_l(Nval, Cval, Ngrids, Hout(idEmPf,1:Ngrids))
           ELSE IF (TRIM(KeyWord).eq.'Hout(idevap)') THEN
             IF (idevap.eq.0) THEN
               IF (Master) WRITE (out,280) 'idevap'
