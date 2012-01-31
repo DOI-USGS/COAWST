@@ -1570,26 +1570,26 @@
                 idRtrc(itemp)=varid
               CASE ('idRtrc(isalt)')
                 idRtrc(isalt)=varid
-#ifdef INWAVE_MODEL
-              CASE ('idACen')
-                idACen=varid
-              CASE ('idACcx')
-                idACcx=varid
-              CASE ('idACcy')
-                idACcy=varid
-              CASE ('idACct')
-                idACct=varid
-              CASE ('idACbc(iwest)')
-                idACbc(iwest)=varid
-              CASE ('idACbc(ieast)')
-                idACbc(ieast)=varid
-              CASE ('idACbc(isouth)')
-                idACbc(isouth)=varid
-              CASE ('idACbc(inorth)')
-                idACbc(inorth)=varid
-              CASE ('idTa')
-                idTa=varid
-#endif
+!#ifdef INWAVE_MODEL
+!              CASE ('idACen')
+!                idACen=varid
+!              CASE ('idACcx')
+!                idACcx=varid
+!              CASE ('idACcy')
+!                idACcy=varid
+!              CASE ('idACct')
+!                idACct=varid
+!              CASE ('idACbc(iwest)')
+!                idACbc(iwest)=varid
+!              CASE ('idACbc(ieast)')
+!                idACbc(ieast)=varid
+!              CASE ('idACbc(isouth)')
+!                idACbc(isouth)=varid
+!              CASE ('idACbc(inorth)')
+!                idACbc(inorth)=varid
+!              CASE ('idTa')
+!                idTa=varid
+!#endif
               CASE ('idHsbl')
                 idHsbl=varid
               CASE ('idHbbl')

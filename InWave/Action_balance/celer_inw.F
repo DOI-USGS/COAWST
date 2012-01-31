@@ -355,6 +355,7 @@
       CALL Tr3dbc_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, ND(ng),                     &
      &                  Ta(:,:,:))
+# ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
@@ -363,6 +364,7 @@
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    Ta(:,:,:))
+# endif
 
 !
 !=======================================================================
