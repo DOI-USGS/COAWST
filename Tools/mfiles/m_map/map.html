@@ -1,0 +1,524 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.05 [en] (X11; I; Linux 2.0.34 i686) [Netscape]">
+   <TITLE> M_Map: A Mapping package for Matlab  </TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFF5EE">
+
+<CENTER>
+<H1>
+M_Map: A mapping package for <A HREF="http://www.mathworks.com">Matlab</A></H1></CENTER>
+
+<HR>
+<CENTER><IMG SRC="./private/mlogo.gif" NOSAVE HEIGHT=216 WIDTH=216></CENTER>
+
+
+<P>
+<HR>
+
+<P>You have collected your data, loaded it into <A HREF="http://www.mathworks.com">Matlab
+</A>, analyzed everything to death, and now you want to make a simple map
+showing how it relates to the world.
+
+<P>But you can't.
+
+<P>Instead you have to figure out how to save all your data, and then read
+it into another program (like, for example <A HREF="http://imina.soest.hawaii.edu/gmt/">GMT
+</A>), and then spend all that extra time figuring out why it doesn't give
+you what you expected it would...
+
+<P>No more!
+
+<P><hr, width=.5>
+<CENTER>
+<H4>
+Announcing M_Map v1.3g!</H4></CENTER>
+<hr, width=.5>M_Map is a set of mapping tools written for Matlab v5. These
+include:
+<OL>
+<LI>
+Routines to project data in 18 different spherical projections (and determine
+inverse mappings)</LI>
+
+<LI>
+A grid generation routine to make nice axes with limits either in lat/long
+terms or in planar X/Y terms.</LI>
+
+<LI>
+A coastline database (with 1/4 degree resolution)</LI>
+
+<LI>
+A global elevation database (1 degree resolution)</LI>
+
+<LI>
+Hooks into freely available high-resolution coastline and bathymetry databases</LI>
+</OL>
+
+<CENTER>
+<H4>
+M_Map is now use at more than 2700 locations around the world!</H4></CENTER>
+<IMG SRC="./private/usermap.gif" >
+
+<P>New in release 1.3g are
+<OL>
+<LI>
+Links to Jan Even Nilsen's m_namebox routines. This is a slick database-driven
+routine that can be used to add names to your maps, more or less automatically.</LI>
+</OL>
+New in release 1.3f are
+<OL>
+<LI>
+m_xydist and m_lldist to estimate distances between points in either geographic
+or map coordinates.</LI>
+
+<LI>
+m_legend (create a legend box!).</LI>
+
+<LI>
+m_plot</LI>
+
+<LI>
+Many minor bug fixes.</LI>
+</OL>
+New in release 1.3e are
+<OL>
+<LI>
+m_range_rings primitive to draw range rings (just great for nuclear weapon
+destruction radii and seismic travel-time data - see <A HREF="#e11">example
+11</A>).</LI>
+
+<LI>
+Extended usefullness of m_ungrid to allow removal of any specific plot
+element by a command line option.</LI>
+</OL>
+New in release 1.3d are
+<OL>
+<LI>
+m_patch primitive</LI>
+
+<LI>
+m_scale primitive to allow drawing of maps at a required scale</LI>
+
+<LI>
+True elliptical UTM projection (thanks to P. Lemmond)</LI>
+
+<LI>
+m_track for drawing tracklines with time/date annotation (thanks to P.
+Lemmond)(<A HREF="#e10">example 10</A>)</LI>
+
+<LI>
+m_plotbndry - hooks into an online database of political boundaries (Thanks
+to M. Mann)</LI>
+</OL>
+New in release 1.3 are
+<OL>
+<LI>
+High-resolution coastlines! (through hooks into the nested set of coastlines
+at different resolutions making up the <A HREF="http://www.ngdc.noaa.gov/mgg/shorelines/gshhs.html">Global
+Self-consistent Hierarchical High-resolution Shoreline Database (GSHHS)
+</A>used by GMT (see <A HREF="map.html#e9">example 9</A>)</LI>
+
+<LI>
+Instructions on how to use the new <A HREF="http://topex.ucsd.edu/marine_topo/text/topo.html">Sandwell
+and Smith </A>bathymetry</LI>
+
+<LI>
+Hammer-Aitoff (<A HREF="#e11">example 11</A>) and Mollweide projections
+(<A HREF="#e4">example 4</A>)</LI>
+</OL>
+New in release 1.2 are
+<OL>
+<LI>
+Built-in functions for drawing lines, text, and quiver plots in long/lat
+coords</LI>
+
+<LI>
+Built-in functions for contouring data (filled and line contours) in long/lat
+coords</LI>
+
+<LI>
+Hooks into a 5-minute global bathymetry (<A HREF="http://www.scd.ucar.edu/dss/datasets/ds759.2.html">
+TerrainBase </A>) available from the net.</LI>
+
+<LI>
+Fancy quiver plots, thanks to E. Firing (see <A HREF="map.html#e8">example
+8</A>)</LI>
+
+<LI>
+Gall-Peters projection (handy for large tropical areas)</LI>
+
+<LI>
+Fancy outline boxes! (see <A HREF="map.html#e2">example 2</A> and <A HREF="map.html#e6">example
+6</A>)</LI>
+</OL>
+
+<HR>
+<H2>
+<A NAME="download"></A>How to get M_Map</H2>
+You can download the M_Map toolbox either as a <A HREF="http://www.ocgy.ubc.ca/~rich/m_map1.3.tar.gz">gzipped
+tar-file </A>, or as <A HREF="http://www.ocgy.ubc.ca/~rich/m_map1.3.zip">zip
+archive </A>(Click on these links to download). Both are around 250k in
+size. Once you have this archive, read the <A HREF="private/mapug.html#p1">Getting
+started </A>section of the <A HREF="private/mapug.html">User's guide </A>to
+correctly install this toolbox, and sections <A HREF="private/mapug.html#p9">9</A>
+and <A HREF="private/mapug.html#p9.6">10.1</A> to install TerrainBase and
+GSHHS respectively.
+
+<P>A number of <A HREF="#examples">examples</A> have been given to highlight
+the various capabilities of M_Map.
+
+<P>You can also get&nbsp; <B>m_namebox </B>(a set of utilities for automatically
+adding names to you map), either through its home page <A HREF="http://www.gfi.uib.no/~even/matlab/m_namebox/m_namebox.html">http://www.gfi.uib.no/~even/matlab/m_namebox/m_namebox.html
+</A>or directly as a <A HREF="http://www.gfi.uib.no/~even/matlab/m_namebox.zip">zip
+file</A>
+
+<P>
+<HR>
+<H2>
+<A HREF="private/mapug.html">User's guide</A></H2>
+
+<OL>
+<LI>
+<A HREF="private/mapug.html#p1">Getting started</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p2">Specifying projections</A></LI>
+
+<OL>
+<LI>
+<A HREF="private/mapug.html#p2.1">Azimuthal projections</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p2.2">Cylindrical and Pseudo-cylindrical projections</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p2.3">Conic projections</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p2.4">Miscellaneous global projections</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p2.5">Yeah, but which projection should I use?</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p2.6">Map scales</A></LI>
+</OL>
+
+<LI>
+<A HREF="private/mapug.html#p3">Coastlines and Bathymetry</A></LI>
+
+<OL>
+<LI>
+<A HREF="private/mapug.html#p3.1">Coastline options</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p3.2">Topography/Bathymetry options</A></LI>
+</OL>
+
+<LI>
+<A HREF="private/mapug.html#p4">Customizing the axes</A></LI>
+
+<OL>
+<LI>
+<A HREF="private/mapug.html#p4.1">Grid lines and labels</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p4.2">Titles and x/ylabels</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p4.3">Legend Boxes&nbsp;</A><A HREF="private/mapug.html#p4.3"><IMG SRC="./private/new.gif" ></A></LI>
+</OL>
+
+<LI>
+<A HREF="private/mapug.html#p5">Adding your own data</A></LI>
+
+<OL>
+<LI>
+<A HREF="private/mapug.html#p5.3">Drawing lines, text, arrows, patches
+and contours&nbsp;</A><A HREF="private/mapug.html#p5.3"><IMG SRC="./private/new.gif" ></A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p5.4">Drawing tracklines</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p5.5">Drawing range rings</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p5.1">Converting longitude/latitude to projection
+coordinates</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p5.2">Converting projection coordinates to
+longitude/latitude</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p5.6">Computing distances between points&nbsp;</A><A HREF="private/mapug.html#p5.6"><IMG SRC="./private/new.gif" ></A></LI>
+</OL>
+
+<LI>
+<A HREF="private/mapug.html#p6">More complex plots</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p13">Removing data from a plot</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p7">Adding your own coastlines</A></LI>
+
+<OL>
+<LI>
+<A HREF="private/mapug.html#p7.1">DCW political boundaries</A></LI>
+</OL>
+
+<LI>
+<A HREF="private/mapug.html#p8">Adding your own topography/bathymetry</A></LI>
+
+<OL>
+<LI>
+<A HREF="private/mapug.html#p8.1">Sandwell and Smith Bathymetry</A></LI>
+</OL>
+
+<LI>
+<A HREF="private/mapug.html#p9">Using TerrainBase 5-minute global bathymetry/topography</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p9.5">Using the GSHHS high-resolution coastline
+database</A></LI>
+
+<OL>
+<LI>
+<A HREF="private/mapug.html#p9.6">Installing GSHHS</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p9.7">Using GSHHS effectively</A></LI>
+</OL>
+
+<LI>
+<A HREF="private/mapug.html#p10">M_Map toolbox contents and description</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p11">Known Problems and Bugs</A></LI>
+
+<LI>
+<A HREF="private/mapug.html#p12">Changes since last release&nbsp;</A><A HREF="private/mapug.html#p12"><IMG SRC="./private/new.gif" ></A></LI>
+</OL>
+For information, help, suggestions, or bug reports, contact <A HREF="http://www.eos.ubc.ca/people/faculty/pawlowicz/">Rich
+Pawlowicz </A>, (<A HREF="mailto:rich@ocgy.ubc.ca"> rich@ocgy.ubc.ca </A>)
+<BR>
+<HR>
+<BR>&nbsp;
+<H2>
+Acknowledgements</H2>
+&nbsp;A number of people have helped out with suggestions, code fixes,
+etc.&nbsp; I am especially grateful for the work done by E. Firing, D.
+Byrne,&nbsp; M. Mann,&nbsp; J. Pringle, and J. E. Nilsen who have all contributed
+code.
+
+<P>
+<HR>
+<H2>
+<A NAME="examples"></A>Examples</H2>
+
+<H4>
+1. M_Map Logo</H4>
+
+<PRE>m_proj('ortho','lat',48','long',-123');
+m_coast('patch','r');
+m_grid('linest','-','xticklabels',[],'yticklabels',[]);
+patch(.55*[-1 1 1 -1],.25*[-1 -1 1 1]-.55,'w');
+text(0,-.55,'M\_Map','fontsize',25,'color','b',...
+&nbsp;&nbsp; 'vertical','middle','horizontal','center');
+set(gcf,'units','inches','position',[2 2 3 3]);
+set(gcf,'paperposition',[3 3 3 3]);</PRE>
+
+<CENTER><IMG SRC="./private/mlogo.gif" ></CENTER>
+&nbsp;
+<H4>
+<A NAME="e2"></A>2. Lambert Conformal Conic projection of North American
+Topography</H4>
+
+<PRE>m_proj('lambert','long',[-160 -40],'lat',[30 80]);
+m_coast('patch',[1 .85 .7]);
+m_elev('contourf',[500:500:6000]);
+m_grid('box','fancy','tickdir','in');
+colormap(flipud(copper));</PRE>
+
+<CENTER><IMG SRC="./private/exlamber.gif" ></CENTER>
+&nbsp;
+<H4>
+3. Stereographic projection of North Polar regions</H4>
+
+<PRE>% Note that coastline is drawn OVER the grid because of the order in which
+% the two routines are called
+
+m_proj('stereographic','lat',90,'long',30,'radius',25);
+m_elev('contour',[-3500:1000:-500],'edgecolor','b');
+m_grid('xtick',12,'tickdir','out','ytick',[70 80],'linest','-');
+m_coast('patch',[.7 .7 .7],'edgecolor','r');</PRE>
+
+<CENTER><IMG SRC="./private/exster.gif" ></CENTER>
+&nbsp;
+<H4>
+<A NAME="e4"></A>4. Two Interrupted Projections of the World's Oceans</H4>
+
+<PRE>subplot(211);
+Slongs=[-100 0;-75 25;-5 45; 25 145;45 100;145 295;100 290];
+Slats= [&nbsp; 8 80;-80&nbsp; 8; 8 80;-80&nbsp;&nbsp; 8; 8&nbsp; 80;-80&nbsp;&nbsp; 0;&nbsp; 0&nbsp; 80];
+for l=1:7,
+&nbsp;m_proj('sinusoidal','long',Slongs(l,:),'lat',Slats(l,:));
+&nbsp;m_grid('fontsize',6,'xticklabels',[],'xtick',[-180:30:360],...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'ytick',[-80:20:80],'yticklabels',[],'linest','-','color',[.9 .9 .9]);
+&nbsp;m_coast('patch','g');
+end;
+xlabel('Interrupted Sinusoidal Projection of World Oceans');
+% In order to see all the maps we must undo the axis limits set by m_grid calls:
+set(gca,'xlimmode','auto','ylimmode','auto');
+
+subplot(212);
+Slongs=[-100 43;-75 20; 20 145;43 100;145 295;100 295];
+Slats= [&nbsp; 0&nbsp; 90;-90&nbsp; 0;-90&nbsp;&nbsp; 0; 0&nbsp; 90;-90&nbsp;&nbsp; 0;&nbsp; 0&nbsp; 90];
+for l=1:6,
+&nbsp;m_proj('mollweide','long',Slongs(l,:),'lat',Slats(l,:));
+&nbsp;m_grid('fontsize',6,'xticklabels',[],'xtick',[-180:30:360],...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'ytick',[-80:20:80],'yticklabels',[],'linest','-','color','k');
+&nbsp;m_coast('patch',[.6 .6 .6]);
+end;
+xlabel('Interrupted Mollweide Projection of World Oceans');
+set(gca,'xlimmode','auto','ylimmode','auto');</PRE>
+
+<CENTER><IMG SRC="./private/exsinus.gif" ></CENTER>
+&nbsp;
+<H4>
+5. Oblique Mercator Projection with quiver and contour data</H4>
+
+<PRE>%% Nice looking data
+[lon,lat]=meshgrid([-136:2:-114],[36:2:54]);
+u=sin(lat/6);
+v=sin(lon/6);
+
+m_proj('oblique','lat',[56 30],'lon',[-132 -120],'aspect',.8);
+
+subplot(121);
+m_coast('patch',[.9 .9 .9],'edgecolor','none');
+m_grid('tickdir','out','yaxislocation','right',...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'xaxislocation','top','xlabeldir','end','ticklen',.02);
+hold on;
+m_quiver(lon,lat,u,v);
+xlabel('Simulated surface winds');
+
+subplot(122);
+m_coast('patch',[.9 .9 .9],'edgecolor','none');
+m_grid('tickdir','out','yticklabels',[],...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'xticklabels',[],'linestyle','none','ticklen',.02);
+hold on;
+[cs,h]=m_contour(lon,lat,sqrt(u.*u+v.*v));
+clabel(cs,h,'fontsize',8);
+xlabel('Simulated something else');</PRE>
+
+<CENTER><IMG SRC="./private/exquiv.gif" ></CENTER>
+&nbsp;
+<H4>
+<A NAME="e6"></A>6. Miller Projection with Great Circle</H4>
+
+<PRE>% Plot a circular orbit
+lon=[-180:180];
+lat=atan(tan(60*pi/180)*cos((lon-30)*pi/180))*180/pi;
+
+m_proj('miller','lat',82);
+m_coast('color',[0 .6 0]);
+m_line(lon,lat,'linewi',3,'color','r');
+m_grid('linestyle','none','box','fancy','tickdir','out');</PRE>
+
+<CENTER><IMG SRC="./private/exmiller.gif" ></CENTER>
+&nbsp;
+<H4>
+7. Lambert Conformal Projection with high-resolution bathymetry of Western
+Mediterranean</H4>
+
+<PRE>m_proj('lambert','lon',[-10 20],'lat',[33 48]);
+m_tbase('contourf');
+m_grid('linestyle','none','tickdir','out','linewidth',3);</PRE>
+
+<CENTER><IMG SRC="./private/extbase.gif" ></CENTER>
+&nbsp;
+<H4>
+<A NAME="e8"></A>8. Demonstration of fancy vectors</H4>
+
+<PRE>m_vec&nbsp;&nbsp; % See code in m_vec.m for details</PRE>
+
+<CENTER><IMG SRC="./private/exvec.gif" ></CENTER>
+&nbsp;
+<H4>
+<A NAME="e9"></A>9. Zoom in on Prince Edward Island to show different coastline
+resolutions</H4>
+
+<PRE>% Example showing the default coastline and all of the different resolutions&nbsp;
+% of GSHHS coastlines as we zoom in on a section of Prince Edward Island.
+
+clf
+axes('position',[.35 .6 .37 .37]);
+m_proj('albers equal-area','lat',[40 60],'long',[-90 -50],'rect','on');
+m_coast('patch',[0 1 0]);
+m_grid('linest','none','linewidth',2,'tickdir','out','xaxisloc','top','yaxisloc','right');
+m_text(-69,41,'Standard coastline','color','r','fontweight','bold');
+
+axes('position',[.09 .5 .37 .37]);
+m_proj('albers equal-area','lat',[40 54],'long',[-80 -55],'rect','on');
+m_gshhs_c('patch',[.2 .8 .2]);
+m_grid('linest','none','linewidth',2,'tickdir','out','xaxisloc','top');
+m_text(-80,52.5,'GSHHS\_C (crude)','color','m','fontweight','bold','fontsize',14);
+
+axes('position',[.13 .2 .37 .37]);
+m_proj('albers equal-area','lat',[43 48],'long',[-67 -59],'rect','on');
+m_gshhs_l('patch',[.4 .6 .4]);
+m_grid('linest','none','linewidth',2,'tickdir','out');
+m_text(-66.5,43.5,'GSHHS\_L (low)','color','m','fontweight','bold','fontsize',14);
+
+axes('position',[.35 .05 .37 .37]);
+m_proj('albers equal-area','lat',[45.8 47.2],'long',[-64.5 -62],'rect','on');
+m_gshhs_i('patch',[.5 .6 .5]);
+m_grid('linest','none','linewidth',2,'tickdir','out','yaxisloc','right');
+m_text(-64.4,45.9,'GSHHS\_I (intermediate)','color','m','fontweight','bold','fontsize',14);
+
+axes('position',[.55 .23 .37 .37]);
+m_proj('albers equal-area','lat',[46.375 46.6],'long',[-64.2 -63.7],'rect','on');
+m_gshhs_h('patch',[.6 .6 .6]);
+m_grid('linest','none','linewidth',2,'tickdir','out','xaxisloc','top','yaxisloc','right');
+m_text(-64.18,46.58,'GSHHS\_H (high)','color','m','fontweight','bold','fontsize',14);</PRE>
+
+<CENTER><IMG SRC="./private/exgshhs.gif" ></CENTER>
+&nbsp;
+<H4>
+<A NAME="e10"></A>10. Tracklines and UTM projection</H4>
+
+<PRE>m_proj('UTM','long',[-72 -68],'lat',[40 44]);
+m_gshhs_i('color','k');
+m_grid('box','fancy','tickdir','in');
+
+% fake up a trackline
+lons=[-71:.1:-67];
+lats=60*cos((lons+115)*pi/180);
+dates=datenum(1997,10,23,15,1:41,zeros(1,41));
+
+m_track(lons,lats,dates,'ticks',0,'times',4,'dates',8,...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'clip','off','color','r','orient','upright');</PRE>
+
+<CENTER><IMG SRC="./private/track1.gif" ></CENTER>
+&nbsp;
+<H4>
+<A NAME="e11"></A>11. Range rings</H4>
+
+<PRE>&nbsp;&nbsp;&nbsp; m_proj('hammer','clong',170);
+&nbsp;&nbsp;&nbsp; m_grid('xtick',[],'ytick',[],'linestyle','-');
+&nbsp;&nbsp;&nbsp; m_coast('patch','g');
+&nbsp;&nbsp;&nbsp; m_line(100.5,13.5,'marker','square','color','r');
+&nbsp;&nbsp;&nbsp; m_range_ring(100.5,13.5,[1000:1000:15000],'color','b','linewi',2);
+&nbsp;&nbsp;&nbsp; xlabel('1000km range rings from Bangkok');</PRE>
+
+<CENTER><IMG SRC="./private/rring.gif" ></CENTER>
+
+
+<P>
+<HR><I>Last changed 19/Dec/2000. Questions and comments to <A HREF="mailto:rich@ocgy.ubc.ca">rich@ocgy.ubc.ca</A></I>
+</BODY>
+</HTML>
