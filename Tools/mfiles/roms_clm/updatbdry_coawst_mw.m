@@ -1,4 +1,4 @@
-function updatbdry_coawst_MW(fn,gn,bdy,wdr)
+function updatbdry_coawst_mw(fn,gn,bdy,wdr)
 
 % written by Mingkui Li, May 2008
 % further adaptions by jcw, April 18, 2009

@@ -1,4 +1,4 @@
-function var_u=rho2u_2d(var_rho);
+function var_u=rho2u_2d_mw(var_rho);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % function var_u=rho2u_2d(var_rho);

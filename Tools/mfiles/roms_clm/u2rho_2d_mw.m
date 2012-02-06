@@ -1,4 +1,4 @@
-function [var_rho]=u2rho_2d_MW(var_u)
+function [var_rho]=u2rho_2d_mw(var_u)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % transfert a field at u points to a field at rho points

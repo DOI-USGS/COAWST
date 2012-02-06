@@ -1,4 +1,4 @@
-function roms = roms_from_stdlev_MW(lon,lat,zlev,data,grd,CgridPos,do_interp2)
+function roms = roms_from_stdlev_mw(lon,lat,zlev,data,grd,CgridPos,do_interp2)
 % Interpolate a 3D gridded (e.g. climatology or synthetic t(z),s(z) analysis
 % to a 3D ROMS grid
 %

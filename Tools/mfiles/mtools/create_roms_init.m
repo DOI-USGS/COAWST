@@ -11,6 +11,7 @@
 % Users can adapt this file to their own application.
 %
 % jcw 7-8-2008
+% updated for 
 %
 
 %!         W-level  RHO-level                                           !
@@ -371,7 +372,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %create init file
-create_roms_netcdf_init_3_3.m  (rename to _mw)
+gn.lon_rho=lon_rho;
+gn.N=N;
+create_roms_netcdf_init_mw(init_file,gn,Nbed,NNS,NCS)
 
 %now write the data from the arrays to the netcdf file
 disp(' ## Filling Variables in netcdf file with data...')

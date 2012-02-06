@@ -1,4 +1,4 @@
-function create_roms_netcdf_clm_3_3bi(fn,gn)
+function create_roms_netcdf_clm_mw(fn,gn)
 
 [xi eta]=size(gn.lon_rho);
 %Write NetCDF file using netcdf builtins for 2010a

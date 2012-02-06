@@ -1,4 +1,4 @@
-function create_roms_netcdf_bndry_3_3(fn,gn,t_clim)
+function create_roms_netcdf_bndry_mw(fn,gn,t_clim)
 %
 % create the boundary file for US East
 % so this is special and only has certain arrays.

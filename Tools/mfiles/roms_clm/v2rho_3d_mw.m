@@ -1,4 +1,4 @@
-function [var_rho]=v2rho_3d_MW(var_v)
+function [var_rho]=v2rho_3d_mw(var_v)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Copyright (c) 2000 IRD
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

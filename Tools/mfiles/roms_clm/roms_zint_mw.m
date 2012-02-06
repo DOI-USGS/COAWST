@@ -1,4 +1,4 @@
-function [vint,varargout] = roms_zint_MW(data,grd,varargin)
+function [vint,varargout] = roms_zint_mw(data,grd,varargin)
 % $Id$
 % ROMS_ZINT:  vertical integral at rho points from depth z1 to z2
 %

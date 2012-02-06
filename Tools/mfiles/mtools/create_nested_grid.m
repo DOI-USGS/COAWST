@@ -23,8 +23,14 @@ ncfile_fine='inlet_test_grid_ref5_test.nc';
 
 %3) ENTER THE START AND END INDICES OF THE PSI POINTS OF THE COARSE GRID
 %   THAT IDENTIFY THE OUTER BOUNDS OF THE FINE GRID
+%   Mathworks netcdf is Fortran convention. To determine these locations, use:
+%   netcdf_load (ncfile_coarse)
+%   figure; plot(x_psi,y_psi,'k'); hold on; plot(x_psi', y_psi','k')
+%   and select [Istr, Iend] as the lower left and lower right horizontal indices
+%   and select [Jstr, Jend] as the lower left and upper left vertical indices.
+% 
 %Istr=30; Iend=50; Jstr=2; Jend=5;  % test_chan_refined
-Istr=24; Iend=54; Jstr=40; Jend=56;  % inlet_test_refined
+Istr=40; Iend=56; Jstr=24; Jend=54;  % inlet_test_refined
 
 %4) ENTER SCALE FACTOR FOR INCREASED RESOLUTION (use 3 or 5)
 scale=5;
@@ -84,72 +90,17 @@ yc_f=repmat(yc_f',1,numx_f);
 x_full_grid=interp2(xc_c, yc_c, lon_psi(Jstr-offset:Jend+1,Istr-offset:Iend+1), xc_f, yc_f);
 y_full_grid=interp2(xc_c, yc_c, lat_psi(Jstr-offset:Jend+1,Istr-offset:Iend+1), xc_f, yc_f);
 
-%set the psi points
-fine.lon.psi=x_full_grid(offset+2:end-(scale-3+1),offset+2:end-(scale-3+1));
-fine.lat.psi=y_full_grid(offset+2:end-(scale-3+1),offset+2:end-(scale-3+1));
-
 %set the rho points
 ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.lon.rho=ztemp(2:2:end-1,2:2:end-1);
 ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.lat.rho=ztemp(2:2:end-1,2:2:end-1);
 
-%set the u points
-ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
-fine.lon.u=ztemp(2:2:end-1,3:2:end-2);
-ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
-fine.lat.u=ztemp(2:2:end-1,3:2:end-2);
-
-%set the v points
-ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
-fine.lon.v=ztemp(3:2:end-2,2:2:end-1);
-ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
-fine.lat.v=ztemp(3:2:end-2,2:2:end-1);
-
-% compute dx and dy at u and v points for future computation of
-% pm, pn, dmde, dndx
-xtemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
-ytemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
-dx = earthdist(xtemp(:, 2:end), ytemp(:, 2:end), xtemp(:, 1:end-1), ytemp(:, 1:end-1));
-dy = earthdist(xtemp(2:end, :), ytemp(2:end, :), xtemp(1:end-1, :), ytemp(1:end-1, :));
-sx = 0.5*(dx(1:end-1, :) + dx(2:end, :));
-sy = 0.5*(dy(:, 1:end-1) + dy(:, 2:end));
-sx= sx(1:2:end-1,1:2:end-1);
-sy= sy(2:2:end,2:2:end);
-fine.pm = 1 ./ sx;
-fine.pn = 1 ./ sy;
-fine.pm(isinf( fine.pm))=0.999e-3;
-fine.pn(isinf( fine.pn))=0.999e-3;
-fine.pm(isnan( fine.pm))=0.999e-3;
-fine.pn(isnan( fine.pn))=0.999e-3;
-fine.dmde = zeros(size(fine.pm));
-fine.dndx = zeros(size(fine.pn));
-fine.dmde(2:end-1, :) = 0.5*(1./fine.pm(3:end, :) - 1./fine.pm(1:end-2, :));
-fine.dndx(:, 2:end-1) = 0.5*(1./fine.pn(:, 3:end) - 1./fine.pn(:, 1:end-2));
-fine.dmde(isinf(fine.dmde))=0;
-fine.dndx(isinf(fine.dndx))=0;
-fine.dmde(isnan(fine.dmde))=0;
-fine.dndx(isnan(fine.dndx))=0;
-% Grid-cell orientation, degrees counter-clockwise from
-%  east, presently based on flat-earth approximation.
-RCF=180/pi;
-dlon_temp = diff(xtemp.').';
-dlat_temp = diff(ytemp.').';
-clat = cos(ytemp / RCF);
-clat(:, end) = [];
-ang = atan2(dlat_temp, dlon_temp .* clat);
-temp = 0.5*(ang(1:end-1, :) + ang(2:end, :));
-temp(isnan(temp))=0; % doesn't like NaN
-fine.angle= temp(1:2:end,1:2:end);
 
 %%%%%%%%%  X Y SPACE  %%%%%%%%%%%
 %establish a full grid of psi points, including an extra row and column
 x_full_grid=interp2(xc_c, yc_c, x_psi(Jstr-offset:Jend+1,Istr-offset:Iend+1), xc_f, yc_f);
 y_full_grid=interp2(xc_c, yc_c, y_psi(Jstr-offset:Jend+1,Istr-offset:Iend+1), xc_f, yc_f);
-
-%set the psi points
-fine.x.psi=x_full_grid(offset+2:end-(scale-3+1),offset+2:end-(scale-3+1));
-fine.y.psi=y_full_grid(offset+2:end-(scale-3+1),offset+2:end-(scale-3+1));
 
 %set the rho points
 ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
@@ -157,33 +108,16 @@ fine.x.rho=ztemp(2:2:end-1,2:2:end-1);
 ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.y.rho=ztemp(2:2:end-1,2:2:end-1);
 
-%set the u points
-ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
-fine.x.u=ztemp(2:2:end-1,3:2:end-2);
-ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
-fine.y.u=ztemp(2:2:end-1,3:2:end-2);
-
-%set the v points
-ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
-fine.x.v=ztemp(3:2:end-2,2:2:end-1);
-ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
-fine.y.v=ztemp(3:2:end-2,2:2:end-1);
-
-
-%%%%%% GRID Metrics  %%%%%%%%%
-
+%%%%%% GRID h and masking  %%%%%%%%%
 [XI,YI]=meshgrid([min(x_psi(:)):min(1./pm(:))/2:max(x_psi(:))], ...
                  [min(y_psi(:)):min(1./pn(:))/2:max(y_psi(:))]);
 ZI=griddata(x_rho,y_rho,h,XI,YI);
 %ZI=interp2(x_rho,y_rho,h,XI,YI);
 fine.h=interp2(XI,YI,ZI,fine.x.rho,fine.y.rho);
-ZI=griddata(x_rho,y_rho,f,XI,YI);
-%ZI=interp2(x_rho,y_rho,f,XI,YI);
-fine.f=interp2(XI,YI,ZI,fine.x.rho,fine.y.rho);
+
 ZI=griddata(x_rho,y_rho,mask_rho,XI,YI);
 %ZI=interp2(x_rho,y_rho,mask_rho,XI,YI);
 fine.mask.rho=interp2(XI,YI,ZI,fine.x.rho,fine.y.rho);
-
 %force masking to = 0 if it is less than 1.
 [js,is]=size(fine.mask.rho);
 for i=1:is
@@ -193,115 +127,107 @@ for i=1:is
     end
   end
 end
-for i = 2:LP
-  for j = 1:MP
-    fine.mask.u(j, i-1) = fine.mask.rho(j, i) * fine.mask.rho(j, i-1);
-  end
-end
-for i = 1:LP
-  for j = 2:MP
-    fine.mask.v(j-1, i) = fine.mask.rho(j, i) * fine.mask.rho(j-1, i);
-  end
-end
-for i = 2:LP
-  for j = 2:MP
-    fine.mask.psi(j-1, i-1) = fine.mask.rho(j, i) * fine.mask.rho(j, i-1) * ...
-                              fine.mask.rho(j-1, i) *fine.mask.rho(j-1, i-1);
-  end
-end
 %%%%%%%%%%%%%%%%%%% finished creating grid %%%%%%%%%%%%%%%%
 
 %call routine to create netcdf file
-save('test.mat','-struct','fine')
 
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Plot new grid inside old grid
-figure(1)
-plot(x_psi,y_psi,'c')
-hold on
-plot(x_psi',y_psi','c')
-plot(fine.x.psi,fine.y.psi,'k')
-plot(fine.x.psi',fine.y.psi','k')
-plot(fine.x.rho,fine.y.rho,'ro')
-plot(fine.x.u,fine.y.u,'kx')
-plot(fine.x.v,fine.y.v,'ms')
-plot(x_rho,y_rho,'bo')
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Bathymetry
-figure(2)
-subplot(2,1,1);
-pcolor(x_rho,y_rho,h)
-shading flat
-colorbar
-title('Parent grid - bathymetry (m)');
-subplot(2,1,2);
-pcolor(fine.x.rho,fine.y.rho,fine.h)
-shading flat
-colorbar
-title('Child grid - bathymetry (m)');
-% PM
-figure(3)
-subplot(2,1,1);
-pcolor(x_rho,y_rho,pm)
-shading flat
-colorbar
-title('Parent grid - pm');
-subplot(2,1,2);
-pcolor(fine.x.rho,fine.y.rho,fine.pm)
-shading flat
-colorbar
-title('Child grid - pm');
-% PN
-figure(4)
-subplot(2,1,1);
-pcolor(x_rho,y_rho,pn)
-shading flat
-colorbar
-title('Parent grid - pn');
-subplot(2,1,2);
-pcolor(fine.x.rho,fine.y.rho,fine.pn)
-shading flat
-colorbar
-title('Child grid - pn');
-% dndx
-figure(5)
-subplot(2,1,1);
-pcolor(x_rho,y_rho,dndx)
-shading flat
-colorbar
-title('Parent grid - dndx');
-subplot(2,1,2);
-pcolor(fine.x.rho,fine.y.rho,fine.dndx)
-shading flat
-colorbar
-title('Child grid - dndx');
-% dmde
-figure(6)
-subplot(2,1,1);
-pcolor(x_rho,y_rho,dmde)
-shading flat
-colorbar
-title('Parent grid - dmde');
-subplot(2,1,2);
-pcolor(fine.x.rho,fine.y.rho,fine.dmde)
-shading flat
-colorbar
-title('Child grid - dmde');
-% angle
-figure(7)
-subplot(2,1,1);
-pcolor(x_rho,y_rho,angle)
-shading flat
-colorbar
-title('Parent grid - angle (rad)');
-subplot(2,1,2);
-pcolor(fine.x.rho,fine.y.rho,fine.angle)
-shading flat
-colorbar
-title('Child grid - angle (rad)');
+  projection='mercator';
+  rho.x=fine.x.rho;
+  rho.y=fine.y.rho;  
+  rho.lon=fine.lon.rho;  
+  rho.lat=fine.lat.rho;  
+  rho.depth=fine.h;
+  rho.mask = fine.mask.rho;
+ 
+  save temp_jcw33.mat rho spherical projection
+  eval(['mat2roms_mw(''temp_jcw33.mat'',''',ncfile_fine,''');'])
+  !del temp_jcw33.mat
+  disp(['Created roms grid -->   ',ncfile_fine])
+  disp([' '])
+  disp(['you really need to look at the masking and bathy in the new file '])
+  
 
 %to create swan grid then use:
-disp(['Created swan grid + bathy files:'])
-roms2swan(fine.x.rho,fine.y.rho,fine.h,fine.mask.rho);
+  disp(['Created swan grid + bathy files:'])
+  roms2swan(fine.x.rho,fine.y.rho,fine.h,fine.mask.rho);
+
+%%%%%%%%%%%%% END OF USER SECTION %%%%%%%%%%%%%%%%
+
+% Plot new grid points inside old grid
+for mm=1:2
+  if (mm==1); netcdf_load(ncfile_coarse); end
+  if (mm==2); netcdf_load(ncfile_fine); end
+
+% Grid lines
+  figure(1)
+  if (mm==1) 
+    plot(x_psi,y_psi,'c')
+    hold on
+    plot(x_psi',y_psi','c')
+    x_rhoc=x_rho; y_rhoc=y_rho;
+  else
+    plot(x_psi,y_psi,'k')
+    plot(x_psi',y_psi','k')
+    plot(x_rho,y_rho,'ro')
+    plot(x_u,y_u,'kx')
+    plot(x_v,y_v,'ms')
+    plot(x_rhoc,y_rhoc,'bo')
+  end
+
+% Bathymetry
+  figure(2)
+  subplot(2,1,mm);
+  pcolor(x_rho,y_rho,h)
+  shading flat
+  colorbar
+  if (mm==1); title('Parent grid - bathymetry (m)'); end
+  if (mm==2); title(' Child grid - bathymetry (m)'); end
+
+% PM
+  figure(3)
+  subplot(2,1,mm);
+  pcolor(x_rho,y_rho,pm)
+  shading flat
+  colorbar
+  if (mm==1); title('Parent grid - pm'); end
+  if (mm==2); title(' Child grid - pm'); end
+
+
+% PN
+  figure(4)
+  subplot(2,1,mm);
+  pcolor(x_rho,y_rho,pn)
+  shading flat
+  colorbar
+  if (mm==1); title('Parent grid - pn'); end
+  if (mm==2); title(' Child grid - pn'); end
+
+
+% dndx
+  figure(5)
+  subplot(2,1,mm);
+  pcolor(x_rho,y_rho,dndx)
+  shading flat
+  colorbar
+  if (mm==1); title('Parent grid - dndx'); end
+  if (mm==2); title(' Child grid - dndx'); end
+
+% dmde
+  figure(6)
+  subplot(2,1,mm);
+  pcolor(x_rho,y_rho,dmde)
+  shading flat
+  colorbar
+  if (mm==1); title('Parent grid - dmde'); end
+  if (mm==2); title(' Child grid - dmde'); end
+
+% angle
+  figure(7)
+  subplot(2,1,mm);
+  pcolor(x_rho,y_rho,angle)
+  shading flat
+  colorbar
+  if (mm==1); title('Parent grid - angle'); end
+  if (mm==2); title(' Child grid - angle'); end
+end
+

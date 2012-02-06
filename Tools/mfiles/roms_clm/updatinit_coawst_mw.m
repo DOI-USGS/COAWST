@@ -1,4 +1,4 @@
-function updatinit_coawst_3_3bi(fn,gn,ini,wdr)
+function updatinit_coawst_mw(fn,gn,ini,wdr)
 % script create_roms_init
 %
 % Create a netcdf file that contains initialization data for ROMS.
@@ -235,8 +235,8 @@ nc_init=netcdf.open(init_file,'NC_WRITE');
 disp(' ## Filling Variables in netcdf file with data...')
 
 % copy clm time to init time
-  tempid = netcdf.inqVarID(nc_init,'ocean_time');%get id
-  netcdf.putVar(nc_init,tempid,ocean_time);%set variable
+  tempid = netcdf.inqVarID(nc_init,'ocean_time');  %get id
+  netcdf.putVar(nc_init,tempid,ocean_time);        %set variable
 
 %
 % *** Init values, ONLY WORKS FOR VALUES ON SAME GRID ****************
@@ -260,20 +260,12 @@ for i=1:length(vars3d)
 end
 
 
-
 morvars={'theta_s','theta_b','Tcline','Cs_r','Cs_w','sc_w','sc_r','hc','bed_thickness',...
     'bed_age','bed_porosity','bed_biodiff','grain_diameter','grain_density','settling_vel','erosion_stress',...
     'ripple_height','ripple_length','dmix_offset','dmix_slope','dmix_time','ocean_time'};
 for i=1:length(morvars)
     eval(['tempid = netcdf.inqVarID(nc_init,''',morvars{i},''');']);%get id
-    test=netcdf.getVar(nc_init,tempid);
-    eval(['testb=size(',morvars{i},');']);
-%     if size(test)~=testb;
-%         
-%         eval(['netcdf.putVar(nc_init,tempid,',morvars{i},');']);%set variable
-%     else
     eval(['netcdf.putVar(nc_init,tempid,',morvars{i},');']);%set variable
-% end
     eval(['clear ',morvars{i},';']);
 end
 

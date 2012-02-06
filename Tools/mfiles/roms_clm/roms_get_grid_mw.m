@@ -1,4 +1,4 @@
-function grd = roms_get_grid_new(grd_file,scoord,tindex,calc_zuv)
+function grd = roms_get_grid_mw(grd_file,scoord,tindex,calc_zuv)
 % $Id$
 % grd = roms_get_grid(grd_file)
 % grd = roms_get_grid(grd_file,scoord);
