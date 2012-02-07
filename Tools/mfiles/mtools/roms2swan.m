@@ -25,13 +25,12 @@ function ROMS2SWAN(varargin);
 %
 
 if nargin == 1;
-    ncid = netcdf(varargin{1});
-    x_rho = ncid{'lon_rho'}(:);
-    y_rho = ncid{'lat_rho'}(:);
-%   x_rho = ncid{'x_rho'}(:,:);
-%   y_rho = ncid{'y_rho'}(:,:);
-    h = ncid{'h'}(:);
-    mask_rho = ncid{'mask_rho'}(:);
+    x_rho = ncread(varargin{1},'lon_rho');
+    y_rho = ncread(varargin{1},'lat_rho');
+%   x_rho = ncread(varargin{1},'x_rho');
+%   y_rho = ncread(varargin{1},'y_rho');
+    h = ncread(varargin{1},'h');
+    mask_rho = ncread(varargin{1},'mask_rho');
 elseif nargin == 4;
     x_rho = varargin{1};
     y_rho = varargin{2};
@@ -49,21 +48,21 @@ land_values = find(mask_rho == 0);
 h(land_values) = 9999;
 
 %Print the depths to the bathy file
-[m,n] = size(h);
+[n,m] = size(h);
 
 fid = fopen('swan_bathy.bot','w');
-for index = 1:m;
+for index1 = 1:m;
     for index2 = 1:n;
         fprintf(fid,'   ');
-       fprintf(fid,'%12.8f',h(index,index2));
+       fprintf(fid,'%12.8f',h(index2,index1));
     end
     fprintf(fid,'\n');
 end
 
 %Print the grid coordinates to the grid file
 fid = fopen('swan_coord.grd','w');
-fprintf(fid,'%12.6f\n',x_rho');
-fprintf(fid,'%12.6f\n',y_rho');
+fprintf(fid,'%12.6f\n',x_rho);
+fprintf(fid,'%12.6f\n',y_rho);
 
 fclose('all');
 
