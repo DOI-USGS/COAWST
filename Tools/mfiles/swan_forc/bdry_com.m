@@ -9,7 +9,7 @@ fid=fopen(ofile,'w');
 
 fprintf(fid,'& **   COPY THESE LINES TO SWAN INPUT FILE   ********\n');
 fprintf(fid,'& Boundary files  ***********************************\n');
-fprintf(fid,'BOUND SHAPESPEC JONSWAP PEAK DSPR DEGREES\n');
+fprintf(fid,'BOUND SHAPESPEC JONSWAP MEAN DSPR DEGREES\n');
 for bd=1:lth
    fprintf(fid,'BOUNDSPEC SEGMENT XY '); 
    fprintf(fid,'%3.4f %3.4f %3.4f %3.4f ',specpts(bd,:));
