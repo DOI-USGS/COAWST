@@ -1,12 +1,12 @@
-function ww3gb_2TPAR(modelgrid,yearww3,mmww3,working_dir,working_drive,ww3_area,ddww3,specres)
+function ww3gb_2TPAR(modelgrid,yearww3,mmww3,ww3_area,ddww3,specres)
 
 %this assumes data is historical data and is already downloaded to working
 %directory
-eval(['dpname=''',working_drive,'\',working_dir,ww3_area,'.dp.',yearww3,mmww3,'.grb'';']);
-eval(['hsname=''',working_drive,'\',working_dir,ww3_area,'.hs.',yearww3,mmww3,'.grb'';']);
-eval(['tpname=''',working_drive,'\',working_dir,ww3_area,'.tp.',yearww3,mmww3,'.grb'';']);
+eval(['dpname=''',ww3_area,'.dp.',yearww3,mmww3,'.grb2'';']);
+eval(['hsname=''',ww3_area,'.hs.',yearww3,mmww3,'.grb2'';']);
+eval(['tpname=''',ww3_area,'.tp.',yearww3,mmww3,'.grb2'';']);
 
-dpnc=mDataset(dpname);
+dpnc=ncgeodataset(dpname);
 xg=dpnc{'lon'}(:);%lat of ww3 data
 xg(xg>0)=xg(xg>0)-360;
 yg=dpnc{'lat'}(:);%lon of ww3 data
@@ -14,6 +14,10 @@ yg=dpnc{'lat'}(:);%lon of ww3 data
 time=dpnc{'time'}(:);%time interval 3 hours
 time2=datenum(str2num(yearww3),str2num(mmww3),str2num(ddww3)+1):3/24:datenum(str2num(yearww3),str2num(mmww3),str2num(ddww3)+((length(time)-1)/(24/3))+1);
 time=time2;
+%  limit the length of time.  Could use better logic here
+%  for user to set this in ww3_swan_input file.
+tstart=1; tend=length(time);
+time=time(tstart:tend);
 close(dpnc)
 
 %determine spec pts from grid
@@ -35,43 +39,37 @@ for i=1:length(specpts)
     daplon=xg(ig0:ig1,jg0:jg1); daplat=yg(ig0:ig1,jg0:jg1);
     clear ii jj;
     
-    %import data from grib files using nc convention using njTBx
-    dpnc=mDataset(dpname);
-    eval(['dp=dpnc{''Primary_wave_direction''}(:,',irg,',',jrg,');']);
-    close(dpnc);
-
-    hsnc=mDataset(hsname);
-    eval(['hs=hsnc{''Sig_height_of_wind_waves_and_swell''}(:,',irg,',',jrg,');']);
-    close(hsnc);
-
-    tpnc=mDataset(tpname);
-    eval(['tp=tpnc{''Primary_wave_mean_period''}(:,',irg,',',jrg,');']);
-    close(tpnc);
-    
-    ncclose
-    
     %Interpolate the data to each point and create/write TPAR file
+    hsnc=ncgeodataset(hsname);
     for wavet=1:length(time)
-        hst=squeeze(hs(wavet,:,:));
+        eval(['hst=squeeze(hsnc{''Significant_height_of_combined_wind_waves_and_swell''}(wavet,',irg,',',jrg,'));']);
         zz=hst>1000;
         hst(zz)=0; %make bad data 0, swan not like NaNs
         Z1=interp2(daplon,daplat,hst,gx,gy);
         TPAR(wavet,2)=Z1;
     end
+    close(hsnc);
+%
+    tpnc=ncgeodataset(tpname);
     for wavet=1:length(time)
-        tpt=squeeze(tp(wavet,:,:));
+        eval(['tpt=squeeze(tpnc{''Primary_wave_mean_period''}(wavet,',irg,',',jrg,'));']);
         zz=tpt>1000;
         tpt(zz)=0; %make bad data 0, swan not like NaNs
         Z1=interp2(daplon,daplat,tpt,gx,gy);
         TPAR(wavet,3)=Z1;
     end
+    close(tpnc);
+%
+    dpnc=ncgeodataset(dpname);
     for wavet=1:length(time)
-        dpt=squeeze(dp(wavet,:,:));
+        eval(['dpt=squeeze(dpnc{''Primary_wave_direction''}(wavet,',irg,',',jrg,'));']);
         zz=dpt>1000;
         dpt(zz)=0; %make bad data 0, swan not like NaNs
         Z1=interp2(daplon,daplat,dpt,gx,gy);
         TPAR(wavet,4)=Z1;
     end
+    close(dpnc);
+%
     TPAR(1:length(time),5)=20;
     TPAR_time(1:length(time),1)=str2num(datestr(time,'yyyymmdd.HHMM'));
     l=num2str(i);
