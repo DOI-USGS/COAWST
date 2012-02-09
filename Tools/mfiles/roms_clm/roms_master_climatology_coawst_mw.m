@@ -37,6 +37,10 @@ gn=roms_get_grid_mw(gridname,[theta_s theta_b Tcline N]);
 
 tic
 
+%call to get Hycom indices for YOUR ROMS grid.
+disp('getting hycom indices')
+get_ijrg(gn)
+
 % call to create clm file
 disp('going to create clm file')
 fn=updatclim_coawst_mw(T1,gn,'coawst_clm.nc',wdr)

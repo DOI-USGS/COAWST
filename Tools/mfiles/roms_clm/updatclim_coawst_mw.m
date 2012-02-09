@@ -7,133 +7,19 @@ function [fn]=updatclim_coawst_mw(T1,gn,clmname,wdr)
 %wdr = the working directory
 %gname_pre = grid name prefix for climatology filenames
 
-% Url of the global climate data
-% url='http://hycom.coaps.fsu.edu/thredds/dodsC/glb_analysis';
 Time1=datestr(T1,'yyyymmdd');
 Time_before=datestr(T1-1,'yyyymmdd');
 
 %%
-%try using fsu data first, rtofs data if fsu data is unavailable
-url=['http://nomads.ncep.noaa.gov:9090/dods/ofs/ofs',Time_before,'/daily/rtofs_native_024_atl'];
-url1=['http://nomad1.ncep.noaa.gov:9090/dods/rtofs_native/daily/ofs.',Time_before,'/rtofs_DODS_atl'];
-%%
-try
-    url2='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9'; %/2011';
-    nc=ncgeodataset(url2);
-    lontest=nc.variable('Longitude');
-    if size(lontest)==0
-        clear lontest;close(nc);lever=0;
-    else
-        lever=1;clear lontest;close(nc);
-    end
-catch
-    lever=0;close(nc);
-end
-%***************************************************************
+lever=1;
+%url for hycom data
+url2='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9'; %/2011';
+nc=ncgeodataset(url2);
+load hycom_info.mat
 %% 
-% get user grid lat and lon
-disp('getting roms grid dimensions ...');
-xl=min(min(gn.lon_rho));xr=max(max(gn.lon_rho));
-yb=min(min(gn.lat_rho));yt=max(max(gn.lat_rho));
-
-%download hycom dimensions
-disp('get hycom dimensions ...');
-if lever==0;
-    try
-        nc=ncgeodataset(url);
-        lon=nc.variable('lon'); 
-        xg=lon;clear lon;
-        lat=nc.variable('lat'); 
-        yg=lat;clear lat;
-        [xg yg]=meshgrid(xg,yg);
-        firstidx=[1 1 547 24];
-        lastidx=[1 1 1087 391];
-        eval(['tmp=nc.data(''wtmpcdsl'',firstidx,lastidx);']);
-        clear tmp;
-        display('using http://nomads.ncep.noaa.gov:9090/dods/ofs');
-    catch
-        close(nc)
-        nc=ncgeodataset(url1);        
-        lon=nc.variable('lon'); 
-        xg=lon;clear lon;
-        lat=nc.variable('lat'); 
-        yg=lat;clear lat;
-        [xg yg]=meshgrid(xg,yg);
-        display('using http://nomad1.ncep.noaa.gov:9090/dods/rtofs_native');
-    end
-end
-if lever==1;
-    %*****************************special fsu hycom
-    display('using user input to import a selected area of HYCOM data');
-    load irg.mat %i values for fsu data that covers USeast
-    load jrg.mat %j values for fsu data that covers USeast
-    firstidx=['[',num2str(str2num(irg(2:5))),' ' num2str(str2num(jrg(2:5))),']'];%for nc.data
-    lastidx =['[',num2str(str2num(irg(7:10))),' ',num2str(str2num(jrg(7:10))),']'];%for nc.data
-    load hycom_info.mat% general hycom info
-
-    irg2=irg;jrg2=jrg;
-
-%     irg=['[' num2str(str2num(irg(2:5))-1) ':' num2str(str2num(irg(7:10))-1) ']'];
-%     jrg=['[' num2str(str2num(jrg(2:5))-1) ':' num2str(str2num(jrg(7:10))-1) ']'];
-
-    %******************************
-    
-    display('using http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.8/2011');
-    nc=ncgeodataset(url2);
-    eval(['lon=nc.data(''Longitude'',',firstidx,',',lastidx,');']);
-    xg=lon;
-    xg(xg>=180)=(xg(xg>=180)-360);
-    clear lon
-    eval(['lat=nc.data(''Latitude'',',firstidx,',',lastidx,');']);
-    yg=lat;
-    clear lat
-    
-end
-
-if lever==0;
-    lev=nc.data('lev');
-    clm.z=lev; clear lev;
-end
-if lever==1;
-    lev=nc.data('Depth');
-    clm.z=lev; clear lev;
-end
-
-%determine dimensions of hycom data needed for interpolation
-disp('optimizing grid dimensions ...');
-[ym xm]=size(xg);
-ii=find(xg>=xl & xg<=xr & yg>=yb & yg<=yt);jj=fix((ii-1)/ym)+1;ii=mod(ii,ym);
-ig0=(min(ii)-1); ig1=(max(ii)+1); jg0=(min(jj)-1); jg1=(max(jj)+1);
-
-
-if lever==0;
-
-%     %********************************
-%     irg=['[' num2str(ig0-1) ':' num2str(ig1-1) ']'];
-%     jrg=['[' num2str(jg0-1) ':' num2str(jg1-1) ']'];
-
-
-    irg2=[num2str(ig0) ':' num2str(ig1)];
-    jrg2=[num2str(jg0) ':' num2str(jg1)];
-    firstidx=[num2str(ig0),' ',num2str(jg0)]; 
-    lastidx=[num2str(ig1),' ',num2str(jg1)];
-   
-    %*********************************
-clm.lon=xg(ig0:ig1,jg0:jg1); clm.lat=yg(ig0:ig1,jg0:jg1);
-
-end
-
-clear xg yg ii jj;
-
 
 %determine indices for time period of interpolation
 disp('getting the number of time records ...');
-if lever==0;
-    % get hycom times rtofs
-    time=nc.data('time');
-    tg=time+datenum(0000,12,30,0,0,0);
-    tg2=julian(str2num(datestr(tg,'yyyy')),str2num(datestr(tg,'mm')),str2num(datestr(tg,'dd')),str2num(datestr(tg,'HH')))-2400001; %% 1 element.
-end
 if lever==1;
     %get hycom time fsu
     t0=datenum(1900,12,31); tr0=datenum(1858,11,17);
@@ -448,6 +334,7 @@ tempid=netcdf.inqVarID(RN,'salt');
 netcdf.putVar(RN,tempid,shiftdim(salt,1));
 netcdf.close(RN);
 clear salt;
+close(nc)
 
 disp(['Finished creating clim file at ' datestr(now)]);
 %%
