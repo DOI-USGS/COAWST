@@ -1941,7 +1941,10 @@
 !-----------------------------------------------------------------------
 !
       IF (PRESENT(start).and.PRESENT(total)) THEN
-        Asize=total
+        Asize(1)=1
+        DO i=1,SIZE(total)              ! this logic is for the case
+          Asize(1)=Asize(1)*total(i)    ! of reading multidimensional
+        END DO                          ! data into a compact 1D array
       ELSE
         Asize(1)=UBOUND(A, DIM=1)
       END IF
@@ -2151,7 +2154,8 @@
 !-----------------------------------------------------------------------
 !
       IF (PRESENT(start).and.PRESENT(total)) THEN
-        Asize=total
+        Asize(1)=total(1)
+        Asize(2)=total(2)
       ELSE
         Asize(1)=UBOUND(A, DIM=1)
         Asize(2)=UBOUND(A, DIM=2)
@@ -2360,7 +2364,9 @@
 !-----------------------------------------------------------------------
 !
       IF (PRESENT(start).and.PRESENT(total)) THEN
-        Asize=total
+        Asize(1)=total(1)
+        Asize(2)=total(2)
+        Asize(3)=total(3)
       ELSE
         Asize(1)=UBOUND(A, DIM=1)
         Asize(2)=UBOUND(A, DIM=2)
@@ -2573,7 +2579,10 @@
 !-----------------------------------------------------------------------
 !
       IF (PRESENT(start).and.PRESENT(total)) THEN
-        Asize=total
+        Asize(1)=total(1)
+        Asize(2)=total(2)
+        Asize(3)=total(3)
+        Asize(4)=total(4)
       ELSE
         Asize(1)=UBOUND(A, DIM=1)
         Asize(2)=UBOUND(A, DIM=2)
