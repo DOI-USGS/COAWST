@@ -2508,12 +2508,11 @@
             k=0
             DO ng=1,Ngrids
               DO i=1,nFfiles(ng)
-                k=k+i
-!               IF (Nval.eq.(i+(ng-1)*nFfiles(ng))) THEN
-                IF (Nval.eq.k) THEN
+                IF (Nval.eq.(i+k)) THEN
                   FRCname(i,ng)=TRIM(ADJUSTL(Cval(Nval)))
                 END IF
               END DO
+              k=k+nFfiles(ng)
             END DO
           ELSE IF (TRIM(KeyWord).eq.'CLMNAME') THEN
             DO i=1,LEN(CLMname(Nval))
