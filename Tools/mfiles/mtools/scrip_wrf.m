@@ -11,8 +11,7 @@
 grid_file = 'wrfinput_d01';
 
 %2) Enter name of netcdf output file to use by scrip.
-%out_file = 'joe_tc_wrf_scrip.nc';
-out_file = 'test.nc';
+out_file = 'joe_tc_wrf_scrip.nc';
 
 %%%%%%%%%% END user input   %%%%%%%%%%%%
 
@@ -37,7 +36,7 @@ nc = netcdf.create(out_file, 'clobber');
 %% Global attributes:
 disp(' ## Defining Global Attributes...')
 
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','SCRIP file');
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title','Scrip file');
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history',['Created by ', mfilename ', on ', datestr(now)]);
 
 L = LP-1;       % The psi dimension.
