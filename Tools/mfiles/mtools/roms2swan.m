@@ -44,8 +44,8 @@ clear ncid varargin
 
 %Replace the land positions with the flag for land (defined in the SWAN
 %input file)
-land_values = find(mask_rho == 0);
-h(land_values) = 9999;
+%land_values = find(mask_rho == 0);
+%h(land_values) = 9999;
 
 %Print the depths to the bathy file
 [n,m] = size(h);
