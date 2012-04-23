@@ -11,6 +11,8 @@
 ** Application flag:   WETDRY_SLOPE_CHAN
 */
 
+#define ROMS_MODEL
+
 #define WET_DRY
 #define UV_ADV
 #define TS_U3HADVECTION

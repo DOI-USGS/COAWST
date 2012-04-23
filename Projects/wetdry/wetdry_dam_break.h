@@ -10,6 +10,7 @@
 **
 ** Application flag:   WETDRY_DAM_BREAK
 */
+#define ROMS_MODEL
 
 #define WET_DRY
 #define MASKING

@@ -8,13 +8,14 @@
 % something else.
 %
 % jcwarner 21Feb2009
+% updated to matlab netcdf 27Mar2012
 %
 
 %%%%%%%%%%%%% START OF USER SECTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% Select your app and then fill in steps 2-7 for that application.
+% Select your app and then fill in steps 2-5 for that application.
 % Required values are :
-% x, y, dx, dy, depth, angle, mask, f, and file name.
+% x, y, depth, mask, and file name.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %1) set your case here to = 1.
@@ -28,17 +29,13 @@ if (WET_DRY_SLOPE_CHAN)
     x=[-dx/2:dx:dx*(ncellsx-1)];
     y=[-dy/2:dy:dy*(ncellsy-1)];
   % 
-    x=repmat(x,length(y),1);
-    y=repmat(y',1,length(x));
+    x=repmat(x,length(y),1)';
+    y=repmat(y',1,length(x))';
   %3) set depth 
     depth=10*x/25250;
-  %4) set grid angle
-    roms_angle=zeros(size(depth));
-  %5) set masking
+  %4) set masking
     mask_rho=ones(size(depth));
-  %6) set coriolis f
-    f=zeros(size(depth));
-  %7) enter output file name
+  %5) enter output file name
     fname='wetdry_slope_chan_grd.nc';
 elseif (MY_APP)
   disp('set MY_APP=1 and then put your stuff in here')
@@ -49,15 +46,12 @@ end
 %create roms grid
   rho.x=x;
   rho.y=y;  
-  rho.dx=dx;
-  rho.dy=dy;
   rho.depth=depth;
-  rho.angle = roms_angle;
   rho.mask = mask_rho
-  rho.f = f;
   projection='mercator';
+  spherical='F';
   save temp_jcw33.mat
-  eval(['mat2roms_jcw(''temp_jcw33.mat'',''',fname,''');'])
+  eval(['mat2roms_mw(''temp_jcw33.mat'',''',fname,''');'])
   !del temp_jcw33.mat
   disp(['Created roms grid -->   ',fname])
 

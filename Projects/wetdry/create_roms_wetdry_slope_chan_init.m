@@ -11,6 +11,7 @@
 % Users can adapt this file to their own application.
 %
 % jcw 7-8-2008
+% jcw 23Apr2012 - update to use matlab native netcdf
 %
 
 %!         W-level  RHO-level                                           !
@@ -76,10 +77,8 @@
 %
 % Get some grid info, do not change this.
 % 
-      nc=netcdf(grid_file);
-      h=nc{'h'}(:);
-      [MP,LP]=size(h);
-      close(nc);
+      h=ncread(grid_file,'h');
+      [LP,MP]=size(h);
 %
     else
       Lm=100;       %<--- else put size of grid here, from mod_param.F
@@ -112,7 +111,7 @@
 % Don't change this either.  This is from set_scoord.F
 % Go to step 6 now.
 %
-   hmin=0;
+   hmin=min(h(:));
    hc=min([hmin,Tcline]);
    if (theta_s~=0.0)
      cff1=1.0/sinh(theta_s);
@@ -143,20 +142,9 @@
     for j=1:eta_rho
       for i=1:xi_rho
         for time=1:length(init_time)
-          zeta(time,j,i) = -10.0;
+          zeta(i,j,time) = -10.0;
         end
       end
-    end
-%
-%  Calc z at rho and w points.
-%  Don't change this.
-%
-    for  k = 1:N+1
-      z_w(k,:,:) = squeeze(zeta(1,:,:)).*(1+sc_w(k)*hc./h-hc*Cs_w(k)./h+Cs_w(k))+hc*sc_w(k)+(h - hc)*Cs_w(k);
-    end
-    for  k = 1:N
-      z_r(k,:,:) = squeeze(zeta(1,:,:)).*(1+sc_r(k)*hc./h-hc*Cs_r(k)./h+Cs_r(k))+hc*sc_r(k)+(h - hc)*Cs_r(k);
-      Hz(k,:,:) = z_w(k+1,:,:)-z_w(k,:,:);
     end
 %
 % Init values for u, ubar, v, and vbar.
@@ -166,9 +154,9 @@
     for i=1:xi_u
       for time=1:length(init_time)
         for k=1:N 
-          u(time,k,j,i) = 0;
+          u(i,j,k,time) = 0;
         end
-        ubar(time,j,i) = 0;
+        ubar(i,j,time) = 0;
       end
     end
   end
@@ -177,9 +165,9 @@
     for i=1:xi_v
       for time=1:length(init_time)
         for k=1:N
-          v(time,k,j,i)  = 0;
+          v(i,j,k,time)  = 0;
         end
-        vbar(time,j,i) = 0;
+        vbar(i,j,time) = 0;
       end
     end
   end
@@ -193,8 +181,8 @@
       for i=1:xi_rho
         for time=1:length(init_time)
           for k=1:N
-            salt(time,k,j,i) = 30;
-            temp(time,k,j,i) = 10;
+            salt(i,j,k,time) = 30;
+            temp(i,j,k,time) = 10;
           end
         end
       end
@@ -245,15 +233,7 @@
 for idmud=1:NCS
   count=['0',num2str(idmud)];
   count=count(end-1:end);
-  for k=1:N
-    for j=1:eta_rho
-      for i=1:xi_rho
-        for time=1:length(init_time)
-          eval(['mud_',count,'(time,k,j,i) = 0;'])               %mud conc in water column
-        end
-      end
-    end
-  end
+  eval(['mud_',count,'(1:xi_rho,1:eta_rho,1:N,1:length(init_time)) = 0;'])               %mud conc in water column
 end
 %
 % sand.
@@ -261,15 +241,7 @@ end
 for isand=1:NNS
   count=['0',num2str(isand)];
   count=count(end-1:end);
-  for k=1:N
-    for j=1:eta_rho
-      for i=1:xi_rho
-        for time=1:length(init_time)
-          eval(['sand_',count,'(time,k,j,i) = 0;'])               %sand conc in water column
-        end
-      end
-    end
-  end
+  eval(['sand_',count,'(1:xi_rho,1:eta_rho,1:N,1:length(init_time)) = 0;'])               %mud conc in water column
 end
 
 %10) Provide initial sediment properties in bed.
@@ -281,10 +253,10 @@ for k=1:Nbed
   for j=1:eta_rho
     for i=1:xi_rho
       for time=1:length(init_time)
-        bed_thickness(time,k,j,i) = 1.0;
-        bed_age(time,k,j,i)       = init_time(1);
-        bed_porosity(time,k,j,i)  = 0.5;
-        bed_biodiff(time,k,j,i)   = 0.0;
+        bed_thickness(i,j,k,time) = 1.0;
+        bed_age(i,j,k,time)       = init_time(1);
+        bed_porosity(i,j,k,time)  = 0.5;
+        bed_biodiff(i,j,k,time)   = 0.0;
       end
     end
   end
@@ -299,8 +271,8 @@ for idsed=1:NCS
     for j=1:eta_rho
       for i=1:xi_rho
         for time=1:length(init_time)
-          eval(['mudfrac_',count,'(time,k,j,i) = 1/NST;'])      %fraction of each sed class in each bed cell
-          eval(['mudmass_',count,'(time,k,j,i) = bed_thickness(time,k,j,i)*Srho(idsed)*(1.0-bed_porosity(time,k,j,i))*mudfrac_',count,'(time,k,j,i);'])          %mass of each sed class in each bed cell
+          eval(['mudfrac_',count,'(i,j,k,time) = 1/NST;'])      %fraction of each sed class in each bed cell
+          eval(['mudmass_',count,'(i,j,k,time) = bed_thickness(i,j,k,time)*Srho(idsed)*(1.0-bed_porosity(i,j,k,time))*mudfrac_',count,'(i,j,k,time);'])          %mass of each sed class in each bed cell
         end
       end
     end
@@ -316,8 +288,8 @@ for idsed=1:NNS
     for j=1:eta_rho
       for i=1:xi_rho
         for time=1:length(init_time)
-          eval(['sandfrac_',count,'(time,k,j,i) = 1/NST;'])      %fraction of each sed class in each bed cell
-          eval(['sandmass_',count,'(time,k,j,i) = bed_thickness(time,k,j,i)*Srho(idsed)*(1.0-bed_porosity(time,k,j,i))*sandfrac_',count,'(time,k,j,i);'])          %mass of each sed class in each bed cell
+          eval(['sandfrac_',count,'(i,j,k,time) = 1/NST;'])      %fraction of each sed class in each bed cell
+          eval(['sandmass_',count,'(i,j,k,time) = bed_thickness(i,j,k,time)*Srho(idsed)*(1.0-bed_porosity(i,j,k,time))*sandfrac_',count,'(i,j,k,time);'])          %mass of each sed class in each bed cell
         end
       end
     end
@@ -338,335 +310,94 @@ for j=1:eta_rho
     for ised=1:NCS
       count=['0',num2str(ised)];
       count=count(end-1:end);
-      eval(['cff1=cff1*mud_Sd50(ised)^squeeze(mudfrac_',count,'(1,1,j,i));'])
-      eval(['cff2=cff2*mud_Srho(ised)^squeeze(mudfrac_',count,'(1,1,j,i));'])
-      eval(['cff3=cff3*mud_Wsed(ised)^squeeze(mudfrac_',count,'(1,1,j,i));'])
-      eval(['cff4=cff4*mud_tau_ce(ised)^squeeze(mudfrac_',count,'(1,1,j,i));'])
+      eval(['cff1=cff1*mud_Sd50(ised)^squeeze(mudfrac_',count,'(i,j,1,1));'])
+      eval(['cff2=cff2*mud_Srho(ised)^squeeze(mudfrac_',count,'(i,j,1,1));'])
+      eval(['cff3=cff3*mud_Wsed(ised)^squeeze(mudfrac_',count,'(i,j,1,1));'])
+      eval(['cff4=cff4*mud_tau_ce(ised)^squeeze(mudfrac_',count,'(i,j,1,1));'])
     end
     for ised=1:NNS
       count=['0',num2str(ised)];
       count=count(end-1:end);
-      eval(['cff1=cff1*sand_Sd50(ised)^squeeze(sandfrac_',count,'(1,1,j,i));'])
-      eval(['cff2=cff2*sand_Srho(ised)^squeeze(sandfrac_',count,'(1,1,j,i));'])
-      eval(['cff3=cff3*sand_Wsed(ised)^squeeze(sandfrac_',count,'(1,1,j,i));'])
-      eval(['cff4=cff4*sand_tau_ce(ised)^squeeze(sandfrac_',count,'(1,1,j,i));'])
+      eval(['cff1=cff1*sand_Sd50(ised)^squeeze(sandfrac_',count,'(i,j,1,1));'])
+      eval(['cff2=cff2*sand_Srho(ised)^squeeze(sandfrac_',count,'(i,j,1,1));'])
+      eval(['cff3=cff3*sand_Wsed(ised)^squeeze(sandfrac_',count,'(i,j,1,1));'])
+      eval(['cff4=cff4*sand_tau_ce(ised)^squeeze(sandfrac_',count,'(i,j,1,1));'])
     end
-    grain_diameter(time,j,i)=cff1;
-    grain_density(time,j,i)=cff2;
-    settling_vel(time,j,i)=cff3;
-    erosion_stress(time,j,i)=cff4;
-    ripple_length(time,j,i)=0.10;
-    ripple_height(time,j,i)=0.01;
-    dmix_offset(time,j,i)=0.0;
-    dmix_slope(time,j,i)=0.0;
-    dmix_time(time,j,i)=0.0;
+    grain_diameter(i,j,time)=cff1;
+    grain_density(i,j,time)=cff2;
+    settling_vel(i,j,time)=cff3;
+    erosion_stress(i,j,time)=cff4;
+    ripple_length(i,j,time)=0.10;
+    ripple_height(i,j,time)=0.01;
+    dmix_offset(i,j,time)=0.0;
+    dmix_slope(i,j,time)=0.0;
+    dmix_time(i,j,time)=0.0;
   end
 end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  END of USER INPUT                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
 %create init file
-nc_init=netcdf(init_file,'clobber');
-if isempty(nc_init), return, end
- 
-%% Global attributes:
-
-disp(' ## Defining Global Attributes...')
-nc_init.history = ncchar(['Created by "' mfilename '" on ' datestr(now)]);
-nc_init.type = ncchar('Initialization file from create_roms_init.m');
-
-%% Dimensions:
-
-disp(' ## Defining Dimensions...')
- 
-nc_init('xi_psi') = L;
-nc_init('xi_rho') = LP;
-nc_init('xi_u') = L;
-nc_init('xi_v') = LP;
-
-nc_init('eta_psi') = M;
-nc_init('eta_rho') = MP;
-nc_init('eta_u') = MP;
-nc_init('eta_v') = M;
-
-nc_init('s_rho') = N;
-nc_init('s_w') = N+1;
-nc_init('tracer') = NT;
-nc_init('Nbed') = Nbed;
-%nc('boundary') = 4;
-nc_init('time')=length(init_time);
-
-nc_init('one') = 1;
-nc_init('two') = 2;
-
- 
-%% Variables and attributes:
-disp(' ## Defining Dimensions, Variables, and Attributes...')
- 
-nc_init{'theta_b'} = ncdouble; %% 1 element.
-nc_init{'theta_b'}.long_name = ncchar('S-coordinate bottom control parameter');
-nc_init{'theta_b'}.units = ncchar('1');
- 
-nc_init{'theta_s'} = ncdouble; %% 1 element.
-nc_init{'theta_s'}.long_name = ncchar('S-coordinate surface control parameter');
-nc_init{'theta_s'}.units = ncchar('1');
-
-nc_init{'Tcline'} = ncdouble; %% 1 element.
-nc_init{'Tcline'}.long_name = ncchar('S-coordinate surface/bottom layer width');
-nc_init{'Tcline'}.units = ncchar('meter');
- 
-nc_init{'hc'} = ncdouble; %% 1 element.
-nc_init{'hc'}.long_name = ncchar('S-coordinate parameter, critical depth');
-nc_init{'hc'}.units = ncchar('meter');
-
-nc_init{'Cs_r'} = ncdouble('s_rho');
-nc_init{'Cs_r'}.long_name = ncchar('S-coordinate stretching curves at RHO-points');
-nc_init{'Cs_r'}.units = ncchar('1');
-nc_init{'Cs_r'}.valid_min = ncdouble(-1);
-nc_init{'Cs_r'}.valid_max = ncdouble(0);
-nc_init{'Cs_r'}.field = ncchar('Cs_r, scalar');
- 
-nc_init{'Cs_w'} = ncdouble('s_w');
-nc_init{'Cs_w'}.long_name = ncchar('S-coordinate stretching curves at W-points');
-nc_init{'Cs_w'}.units = ncchar('1');
-nc_init{'Cs_w'}.valid_min = ncdouble(-1);
-nc_init{'Cs_w'}.valid_max = ncdouble(0);
-nc_init{'Cs_w'}.field = ncchar('Cs_w, scalar');
-
-nc_init{'sc_r'} = ncdouble('s_rho');
-nc_init{'sc_r'}.long_name = ncchar('S-coordinate at RHO-points');
-nc_init{'sc_r'}.units = ncchar('1');
-nc_init{'sc_r'}.valid_min = ncdouble(-1);
-nc_init{'sc_r'}.valid_max = ncdouble(0);
-nc_init{'sc_r'}.field = ncchar('sc_r, scalar');
- 
-nc_init{'sc_w'} = ncdouble('s_w');
-nc_init{'sc_w'}.long_name = ncchar('S-coordinate at W-points');
-nc_init{'sc_w'}.units = ncchar('1');
-nc_init{'sc_w'}.valid_min = ncdouble(-1);
-nc_init{'sc_w'}.valid_max = ncdouble(0);
-nc_init{'sc_w'}.field = ncchar('sc_w, scalar');
-
-nc_init{'ocean_time'} = ncdouble('time'); %% 1 element.
-nc_init{'ocean_time'}.long_name = ncchar('time since initialization');
-nc_init{'ocean_time'}.units = ncchar('second');
-nc_init{'ocean_time'}.field = ncchar('ocean_time, scalar, series');
-
-nc_init{'salt'} = ncfloat('time', 's_rho', 'eta_rho', 'xi_rho');
-nc_init{'salt'}.long_name = ncchar('salinity');
-nc_init{'salt'}.units = ncchar('PSU');
-nc_init{'salt'}.field = ncchar('salinity, scalar, series');
- 
-nc_init{'temp'} = ncfloat('time', 's_rho', 'eta_rho', 'xi_rho'); 
-nc_init{'temp'}.long_name = ncchar('temperature');
-nc_init{'temp'}.units = ncchar('C');
-nc_init{'temp'}.field = ncchar('temperature, scalar, series');
- 
-nc_init{'u'} = ncfloat('time', 's_rho', 'eta_u', 'xi_u');
-nc_init{'u'}.long_name = ncchar('u-momentum component');
-nc_init{'u'}.units = ncchar('meter second-1');
-nc_init{'u'}.field = ncchar('u-velocity, scalar, series');
-
-nc_init{'ubar'} = ncfloat('time', 'eta_u', 'xi_u');
-nc_init{'ubar'}.long_name = ncchar('vertically integrated u-momentum component');
-nc_init{'ubar'}.units = ncchar('meter second-1');
-nc_init{'ubar'}.field = ncchar('ubar-velocity, scalar, series');
- 
-nc_init{'v'} = ncfloat('time', 's_rho', 'eta_v', 'xi_v');
-nc_init{'v'}.long_name = ncchar('v-momentum component');
-nc_init{'v'}.units = ncchar('meter second-1');
-nc_init{'v'}.field = ncchar('v-velocity, scalar, series');
- 
-nc_init{'vbar'} = ncfloat('time', 'eta_v', 'xi_v');
-nc_init{'vbar'}.long_name = ncchar('vertically integrated v-momentum component');
-nc_init{'vbar'}.units = ncchar('meter second-1');
-nc_init{'vbar'}.field = ncchar('vbar-velocity, scalar, series');
- 
-nc_init{'zeta'} = ncfloat('time', 'eta_rho', 'xi_rho');
-nc_init{'zeta'}.long_name = ncchar('free-surface');
-nc_init{'zeta'}.units = ncchar('meter');
-nc_init{'zeta'}.field = ncchar('free-surface, scalar, series');
- 
-for mm=1:NCS
-  count=['00',num2str(mm)];
-  count=count(end-1:end);
-
-  eval(['nc_init{''mud_',count,'''} = ncdouble(''time'', ''s_rho'', ''eta_rho'', ''xi_rho'');'])
-  eval(['nc_init{''mud_',count,'''}.long_name = ncchar(''suspended cohesive sediment, size class ',count,''');'])
-  eval(['nc_init{''mud_',count,'''}.units = ncchar(''kilogram meter-3'');'])
-  eval(['nc_init{''mud_',count,'''}.time = ncchar(''ocean_time'');'])
-  eval(['nc_init{''mud_',count,'''}.field = ncchar(''mud_',count,', scalar, series'');'])
-
-  eval(['nc_init{''mudfrac_',count,'''} = ncdouble(''time'', ''Nbed'', ''eta_rho'', ''xi_rho'');'])
-  eval(['nc_init{''mudfrac_',count,'''}.long_name = ncchar(''cohesive sediment fraction, size class ',count,''');'])
-  eval(['nc_init{''mudfrac_',count,'''}.units = ncchar(''nondimensional'');'])
-  eval(['nc_init{''mudfrac_',count,'''}.time = ncchar(''ocean_time'');'])
-  eval(['nc_init{''mudfrac_',count,'''}.field = ncchar(''mudfrac_',count,', scalar, series'');'])
-
-  eval(['nc_init{''mudmass_',count,'''} = ncdouble(''time'', ''Nbed'', ''eta_rho'', ''xi_rho'');'])
-  eval(['nc_init{''mudmass_',count,'''}.long_name = ncchar(''cohesive sediment mass, size class ',count,''');'])
-  eval(['nc_init{''mudmass_',count,'''}.units = ncchar(''kilogram meter-2'');'])
-  eval(['nc_init{''mudmass_',count,'''}.time = ncchar(''ocean_time'');'])
-  eval(['nc_init{''mudmass_',count,'''}.field = ncchar(''mudmass_',count,', scalar, series'');'])
-end
-for mm=1:NNS
-  count=['00',num2str(mm)];
-  count=count(end-1:end);
-
-  eval(['nc_init{''sand_',count,'''} = ncdouble(''time'', ''s_rho'', ''eta_rho'', ''xi_rho'');'])
-  eval(['nc_init{''sand_',count,'''}.long_name = ncchar(''suspended noncohesive sediment, size class ',count,''');'])
-  eval(['nc_init{''sand_',count,'''}.units = ncchar(''kilogram meter-3'');'])
-  eval(['nc_init{''sand_',count,'''}.time = ncchar(''ocean_time'');'])
-  eval(['nc_init{''sand_',count,'''}.field = ncchar(''sand_',count,', scalar, series'');'])
-
-  eval(['nc_init{''sandfrac_',count,'''} = ncdouble(''time'', ''Nbed'', ''eta_rho'', ''xi_rho'');'])
-  eval(['nc_init{''sandfrac_',count,'''}.long_name = ncchar(''noncohesive sediment fraction, size class ',count,''');'])
-  eval(['nc_init{''sandfrac_',count,'''}.units = ncchar(''nondimensional'');'])
-  eval(['nc_init{''sandfrac_',count,'''}.time = ncchar(''ocean_time'');'])
-  eval(['nc_init{''sandfrac_',count,'''}.field = ncchar(''sandfrac_',count,', scalar, series'');'])
-
-  eval(['nc_init{''sandmass_',count,'''} = ncdouble(''time'', ''Nbed'', ''eta_rho'', ''xi_rho'');'])
-  eval(['nc_init{''sandmass_',count,'''}.long_name = ncchar(''noncohesive sediment mass, size class ',count,''');'])
-  eval(['nc_init{''sandmass_',count,'''}.units = ncchar(''kilogram meter-2'');'])
-  eval(['nc_init{''sandmass_',count,'''}.time = ncchar(''ocean_time'');'])
-  eval(['nc_init{''sandmass_',count,'''}.field = ncchar(''sandmass_',count,', scalar, series'');'])
-end
-
-nc_init{'bed_thickness'} = ncdouble ('time', 'Nbed', 'eta_rho', 'xi_rho') ;
-nc_init{'bed_thickness'}.long_name = ncchar('sediment layer thickness');
-nc_init{'bed_thickness'}.units = ncchar('meter');
-nc_init{'bed_thickness'}.time = ncchar('ocean_time');
-nc_init{'bed_thickness'}.field = ncchar('bed_thickness, scalar, series');
-
-nc_init{'bed_age'} = ncdouble ('time', 'Nbed', 'eta_rho', 'xi_rho') ;
-nc_init{'bed_age'}.long_name = ncchar('sediment layer age');
-nc_init{'bed_age'}.units = ncchar('day');
-nc_init{'bed_age'}.time = ncchar('ocean_time');
-nc_init{'bed_age'}.field = ncchar('bed_age, scalar, series');
-
-nc_init{'bed_porosity'} = ncdouble ('time', 'Nbed', 'eta_rho', 'xi_rho') ;
-nc_init{'bed_porosity'}.long_name = ncchar('sediment layer porosity');
-nc_init{'bed_porosity'}.units = ncchar('nondimensional');
-nc_init{'bed_porosity'}.time = ncchar('ocean_time');
-nc_init{'bed_porosity'}.field = ncchar('bed_porosity, scalar, series');
-
-nc_init{'bed_biodiff'} = ncdouble ('time', 'Nbed', 'eta_rho', 'xi_rho') ;
-nc_init{'bed_biodiff'}.long_name = ncchar('biodiffusivity at bottom of each layer');
-nc_init{'bed_biodiff'}.units = ncchar('meter2 second-1');
-nc_init{'bed_biodiff'}.time = ncchar('ocean_time');
-nc_init{'bed_biodiff'}.field = ncchar('bed_biodiff, scalar, series');
-
-nc_init{'grain_diameter'} = ncdouble ('time', 'eta_rho', 'xi_rho') ;
-nc_init{'grain_diameter'}.long_name = ncchar('sediment median grain diameter size');
-nc_init{'grain_diameter'}.units = ncchar('meter');
-nc_init{'grain_diameter'}.time = ncchar('ocean_time');
-nc_init{'grain_diameter'}.field = ncchar('grain_diameter, scalar, series');
-
-nc_init{'grain_density'} = ncdouble ('time', 'eta_rho', 'xi_rho') ;
-nc_init{'grain_density'}.long_name = ncchar('sediment median grain density');
-nc_init{'grain_density'}.units = ncchar('kilogram meter-3');
-nc_init{'grain_density'}.time = ncchar('ocean_time');
-nc_init{'grain_density'}.field = ncchar('grain_density, scalar, series');
-
-nc_init{'settling_vel'} = ncdouble ('time', 'eta_rho', 'xi_rho') ;
-nc_init{'settling_vel'}.long_name = ncchar('sediment median grain settling velocity');
-nc_init{'settling_vel'}.units = ncchar('meter second-1');
-nc_init{'settling_vel'}.time = ncchar('ocean_time');
-nc_init{'settling_vel'}.field = ncchar('settling_vel, scalar, series');
-
-nc_init{'erosion_stress'} = ncdouble ('time', 'eta_rho', 'xi_rho') ;
-nc_init{'erosion_stress'}.long_name = ncchar('sediment median critical erosion stress');
-nc_init{'erosion_stress'}.units = ncchar('meter2 second-2');
-nc_init{'erosion_stress'}.time = ncchar('ocean_time');
-nc_init{'erosion_stress'}.field = ncchar('erosion_stress, scalar, series');
-
-nc_init{'ripple_length'} = ncdouble ('time', 'eta_rho', 'xi_rho') ;
-nc_init{'ripple_length'}.long_name = ncchar('bottom ripple length');
-nc_init{'ripple_length'}.units = ncchar('meter');
-nc_init{'ripple_length'}.time = ncchar('ocean_time');
-nc_init{'ripple_length'}.field = ncchar('ripple length, scalar, series');
-
-nc_init{'ripple_height'} = ncdouble ('time', 'eta_rho', 'xi_rho') ;
-nc_init{'ripple_height'}.long_name = ncchar('bottom ripple height');
-nc_init{'ripple_height'}.units = ncchar('meter');
-nc_init{'ripple_height'}.time = ncchar('ocean_time');
-nc_init{'ripple_height'}.field = ncchar('ripple height, scalar, series');
-
-nc_init{'dmix_offset'} = ncdouble ('time', 'eta_rho', 'xi_rho') ;
-nc_init{'dmix_offset'}.long_name = ncchar('dmix erodibility profile offset');
-nc_init{'dmix_offset'}.units = ncchar('meter');
-nc_init{'dmix_offset'}.time = ncchar('ocean_time');
-nc_init{'dmix_offset'}.field = ncchar('dmix_offset, scalar, series');
-
-nc_init{'dmix_slope'} = ncdouble ('time', 'eta_rho', 'xi_rho') ;
-nc_init{'dmix_slope'}.long_name = ncchar('dmix erodibility profile slope');
-nc_init{'dmix_slope'}.units = ncchar('_');
-nc_init{'dmix_slope'}.time = ncchar('ocean_time');
-nc_init{'dmix_slope'}.field = ncchar('dmix_slope, scalar, series');
-
-nc_init{'dmix_time'} = ncdouble ('time', 'eta_rho', 'xi_rho') ;
-nc_init{'dmix_time'}.long_name = ncchar('dmix erodibility profile time scale');
-nc_init{'dmix_time'}.units = ncchar('seconds');
-nc_init{'dmix_time'}.time = ncchar('ocean_time');
-nc_init{'dmix_time'}.field = ncchar('dmix_time, scalar, series');
+gn.lon_rho=h;   %only used to get size
+gn.N=N;
+create_roms_netcdf_init_mw(init_file,gn,Nbed,NNS,NCS)
 
 %now write the data from the arrays to the netcdf file
 disp(' ## Filling Variables in netcdf file with data...')
 
-nc_init{'theta_s'}(:) = theta_s;
-nc_init{'theta_b'}(:) = theta_b;
-nc_init{'Tcline'}(:)  = Tcline;
-nc_init{'Cs_r'}(:) = Cs_r;
-nc_init{'Cs_w'}(:) = Cs_w;
-nc_init{'sc_w'}(:) = sc_w;
-nc_init{'sc_r'}(:) = sc_r;
-nc_init{'hc'}(:) = hc;
+ncwrite(init_file,'theta_s',theta_s);
+ncwrite(init_file,'theta_b',theta_b);
+ncwrite(init_file,'Tcline',Tcline);
+ncwrite(init_file,'Cs_r',Cs_r);
+ncwrite(init_file,'Cs_w',Cs_w);
+ncwrite(init_file,'sc_w',sc_w);
+ncwrite(init_file,'sc_r',sc_r);
+ncwrite(init_file,'hc',hc);
 
-nc_init{'ocean_time'}(:) = init_time;
-nc_init{'temp'}(:) = temp;
-nc_init{'salt'}(:) = salt;
-nc_init{'u'}(:)    = u;
-nc_init{'ubar'}(:) = ubar;
-nc_init{'v'}(:)    = v;
-nc_init{'vbar'}(:) = vbar;
-nc_init{'zeta'}(:) = zeta;
+ncwrite(init_file,'ocean_time',init_time);
+
+ncwrite(init_file,'zeta',zeta);
+ncwrite(init_file,'ubar',ubar);
+ncwrite(init_file,'vbar',vbar);
+ncwrite(init_file,'u',u);
+ncwrite(init_file,'v',v);
+ncwrite(init_file,'temp',temp);
+ncwrite(init_file,'salt',salt);
+
 
 for mm=1:NCS
   count=['00',num2str(mm)];
   count=count(end-1:end);
-  eval(['nc_init{''mud_',count,'''}(:)     = mud_',count,';'])           %sed conc in water column
-  eval(['nc_init{''mudfrac_',count,'''}(:) = mudfrac_',count,';'])       %fraction of each sed class in each bed cell
-  eval(['nc_init{''mudmass_',count,'''}(:) = mudmass_',count,';'])       %mass of each sed class in each bed cell
+  eval(['ncwrite(init_file,''mud_',count,''',mud_',count,');'])           %sed conc in water column
+  eval(['ncwrite(init_file,''mudfrac_',count,''',mudfrac_',count,');'])           %sed conc in water column
+  eval(['ncwrite(init_file,''mudmass_',count,''',mudmass_',count,');'])           %sed conc in water column
 end
 for mm=1:NNS
-  count=['00',num2str(mm)];
-  count=count(end-1:end);
-  eval(['nc_init{''sand_',count,'''}(:)     = sand_',count,';'])           %sed conc in water column
-  eval(['nc_init{''sandfrac_',count,'''}(:) = sandfrac_',count,';'])       %fraction of each sed class in each bed cell
-  eval(['nc_init{''sandmass_',count,'''}(:) = sandmass_',count,';'])       %mass of each sed class in each bed cell
+ % count=['00',num2str(mm)];
+ % count=count(end-1:end);
+  eval(['ncwrite(init_file,''sand_',count,''',sand_',count,');'])           %sed conc in water column
+  eval(['ncwrite(init_file,''sandfrac_',count,''',sandfrac_',count,');'])           %sed conc in water column
+  eval(['ncwrite(init_file,''sandmass_',count,''',sandmass_',count,');'])           %sed conc in water column
 end
 
-nc_init{'bed_thickness'}(:) = bed_thickness;
-nc_init{'bed_age'}(:)       = bed_age;
-nc_init{'bed_porosity'}(:)  = bed_porosity;
-nc_init{'bed_biodiff'}(:)   = bed_biodiff;
+ncwrite(init_file,'bed_thickness',bed_thickness);
+ncwrite(init_file,'bed_age',bed_age);
+ncwrite(init_file,'bed_porosity',bed_porosity);
+ncwrite(init_file,'bed_biodiff',bed_biodiff);
 
-nc_init{'grain_diameter'}(:) = grain_diameter;
-nc_init{'grain_density'}(:)  = grain_density;
-nc_init{'settling_vel'}(:)   = settling_vel;
-nc_init{'erosion_stress'}(:) = erosion_stress;
-nc_init{'ripple_height'}(:) = ripple_height;
-nc_init{'ripple_length'}(:) = ripple_length;
-nc_init{'dmix_offset'}(:) = dmix_offset;
-nc_init{'dmix_slope'}(:) = dmix_slope;
-nc_init{'dmix_time'}(:) = dmix_time;
+ncwrite(init_file,'grain_diameter',grain_diameter);
+ncwrite(init_file,'grain_density',grain_density);
+ncwrite(init_file,'settling_vel',settling_vel);
+ncwrite(init_file,'erosion_stress',erosion_stress);
+ncwrite(init_file,'ripple_height',ripple_height);
+ncwrite(init_file,'ripple_length',ripple_length);
+ncwrite(init_file,'dmix_offset',dmix_offset);
+ncwrite(init_file,'dmix_slope',dmix_slope);
+ncwrite(init_file,'dmix_time',dmix_time);
 
 %close file
-close(nc_init)
 disp(['created ', init_file])
+
 
 

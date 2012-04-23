@@ -72,9 +72,9 @@
 
 ! Time-Stepping parameters.
 
-      NTIMES == 43200 !4320
-          DT == 1.0d0 !10.0d0
-     NDTFAST == 1     !20
+      NTIMES == 43200
+          DT == 1.0d0
+     NDTFAST == 1
 
 ! Model iteration loops parameters.
 
@@ -103,7 +103,7 @@
 ! Output history, average, diagnostic files parameters.
 
      LDEFOUT == T
-        NHIS == 4320 !432
+        NHIS == 4320
      NDEFHIS == 0
       NTSAVG == 1
         NAVG == 720
@@ -199,7 +199,7 @@
 
 ! Constants used in momentum stress computation.
 
-        RDRG == 0.0025d0   !0.0025d0   !0.01d0         ! m/s
+        RDRG == 0.0025d0   !0.01d0         ! m/s
        RDRG2 == 0.0015d0                   ! nondimensional
          Zob == 0.015d0                    ! m
          Zos == 0.02d0                     ! m

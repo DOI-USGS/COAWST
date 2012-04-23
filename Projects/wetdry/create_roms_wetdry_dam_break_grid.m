@@ -8,13 +8,14 @@
 % something else.
 %
 % jcwarner 21Feb2009
+% updated to matlab netcdf 27Mar2012
 %
 
 %%%%%%%%%%%%% START OF USER SECTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% Select your app and then fill in steps 2-7 for that application.
+% Select your app and then fill in steps 2-5 for that application.
 % Required values are :
-% x, y, dx, dy, depth, angle, mask, f, and file name.
+% x, y, depth, mask, and file name.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %1) set your case here to = 1.
@@ -24,27 +25,24 @@ MY_APP=0;
 if (WET_DRY_DAM_BREAK)
   %2) enter x and y coordinates of rho points
     ncellsx=102;  dx=0.04;
-    ncellsy=27;    dy=0.08;
+    ncellsy=27;   dy=0.08;
     x=[-dx/2:dx:dx*(ncellsx-1)];
     y=[-dy/2:dy:dy*(ncellsy-1)];
   % 
-    x=repmat(x,length(y),1);
-    y=repmat(y',1,length(x));
-  %3) set depth
+    x=repmat(x,length(y),1)';
+    y=repmat(y',1,length(x))';
+  %3) set depth 
     depth=x*0+0.001;
-  %4) set grid angle
-    roms_angle=zeros(size(depth));
-  %5) set masking
+  %4) set masking
     mask_rho=ones(size(depth));
-    mask_rho(:,1)=0;
-    mask_rho(1,1:26)=0;
-    mask_rho(end,1:26)=0;
-    mask_rho(1:11,26)=0;
-    mask_rho(17:end,26)=0;
-  %6) set coriolis f
-    f=zeros(size(depth));
-  %7) enter output file name
+    mask_rho(1,:)=0;
+    mask_rho(1:26,1)=0;
+    mask_rho(1:26,end)=0;
+    mask_rho(26,1:11)=0;
+    mask_rho(26,17:end)=0;
+  %5) enter output file name
     fname='wetdry_dam_break_grd.nc';
+
 elseif (MY_APP)
   disp('set MY_APP=1 and then put your stuff in here')
 end
@@ -54,15 +52,12 @@ end
 %create roms grid
   rho.x=x;
   rho.y=y;  
-  rho.dx=dx;
-  rho.dy=dy;
   rho.depth=depth;
-  rho.angle = roms_angle;
   rho.mask = mask_rho
-  rho.f = f;
   projection='mercator';
+  spherical='F';
   save temp_jcw33.mat
-  eval(['mat2roms_jcw(''temp_jcw33.mat'',''',fname,''');'])
+  eval(['mat2roms_mw(''temp_jcw33.mat'',''',fname,''');'])
   !del temp_jcw33.mat
   disp(['Created roms grid -->   ',fname])
 
