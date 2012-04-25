@@ -118,7 +118,7 @@
 # ifdef OBC
       integer :: ILB, IUB, JLB, JUB
 # endif
-      integer :: i, itrc, j, k, order
+      integer :: i, itrc, j, k, order, offset
 
       real(r8) :: Zr, cff, cff1, cff2
 
@@ -223,15 +223,23 @@
      &                     update)
 #    endif
 #   endif
-
-#    ifdef CURVGRID
+#   ifdef CURVGRID
+#    ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+        offset = 0
+      ELSE
+        offset = 5
+      END IF
+#    else
+        offset = 0
+#    endif
 !
 !  If input point surface winds or interpolated from coarse data, rotate
 !  to curvilinear grid.
 !
       IF (.not.Linfo(1,idUsms,ng).or.                                   &
-     &    (Iinfo(5,idUsms,ng).ne.Lm(ng)+2).or.                          &
-     &    (Iinfo(6,idUsms,ng).ne.Mm(ng)+2)) THEN
+     &    (Iinfo(5,idUsms,ng).ne.Lm(ng)+2+offset).or.                   &
+     &    (Iinfo(6,idUsms,ng).ne.Mm(ng)+2+offset)) THEN
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             cff1=FORCES(ng)%nustr(i,j)*GRID(ng)%CosAngler(i,j)+         &
@@ -258,7 +266,7 @@
      &                      FORCES(ng)%nvstr)
 #     endif
       END IF
-#    endif
+#   endif
 #  endif
 # else
 
@@ -392,13 +400,22 @@
      &                     FORCES(ng)%Vwind,                            &
      &                     update)
 #    ifdef CURVGRID
+#     ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+        offset = 0
+      ELSE
+        offset = 5
+      END IF
+#     else
+        offset = 0
+#     endif
 !
 !  If input point surface winds or interpolated from coarse data, rotate
 !  to curvilinear grid.
 !
       IF (.not.Linfo(1,idUair,ng).or.                                   &
-     &    (Iinfo(5,idUair,ng).ne.Lm(ng)+2).or.                          &
-     &    (Iinfo(6,idUair,ng).ne.Mm(ng)+2)) THEN
+     &    (Iinfo(5,idUair,ng).ne.Lm(ng)+2+offset).or.                   &
+     &    (Iinfo(6,idUair,ng).ne.Mm(ng)+2+offset)) THEN
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             cff1=FORCES(ng)%Uwind(i,j)*GRID(ng)%CosAngler(i,j)+         &
@@ -659,9 +676,18 @@
 !  If input point wind stress, rotate to curvilinear grid.  Notice
 !  that rotation is done at RHO-points. It does not matter.
 !
+#    ifdef REFINED_GRID
+      IF (ng.eq.1) THEN
+        offset = 0
+      ELSE
+        offset = 5
+      END IF
+#    else
+        offset = 0
+#    endif
       IF (.not.Linfo(1,idUsms,ng).or.                                   &
-     &    (Iinfo(5,idUsms,ng).ne.Lm(ng)+1).or.                          &
-     &    (Iinfo(6,idUsms,ng).ne.Mm(ng)+2)) THEN
+     &    (Iinfo(5,idUsms,ng).ne.Lm(ng)+1+offset).or.                   &
+     &    (Iinfo(6,idUsms,ng).ne.Mm(ng)+2+offset)) THEN
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             cff1=FORCES(ng)%sustr(i,j)*GRID(ng)%CosAngler(i,j)+         &
@@ -748,32 +774,6 @@
      &                     FORCES(ng)%DwaveG,                           &
      &                     FORCES(ng)%Dwave,                            &
      &                     update)
-#    ifdef CURVGRID
-!
-!  If input point-data, rotate direction to curvilinear coordinates.
-!
-      IF (.not.Linfo(1,idWdir,ng).or.                                   &
-     &    (Iinfo(5,idWdir,ng).ne.Lm(ng)+2).or.                          &
-     &    (Iinfo(6,idWdir,ng).ne.Mm(ng)+2)) THEN
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
-            FORCES(ng)%Dwave(i,j)=FORCES(ng)%Dwave(i,j)-                &
-     &                            GRID(ng)%angler(i,j)
-          END DO
-        END DO
-      END IF
-#     if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        FORCES(ng)%Dwave)
-#     endif
-#     ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    FORCES(ng)%Dwave)
-#     endif
-#    endif
 #   endif
 #   ifdef WAVES_HEIGHT
       CALL set_2dfld_tile (ng, tile, iNLM, idWamp,                      &
