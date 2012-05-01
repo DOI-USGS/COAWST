@@ -15,7 +15,7 @@
 #define WET_DRY
 #define MASKING
 #define UV_ADV
-#define TS_U3HADVECTION
+#define TS_FIXED
 #define DJ_GRADPS
 #undef  SOLVE3D
 #define SPLINES
@@ -34,7 +34,7 @@
 #define ANA_SMFLUX
 #define UV_QDRAG
 #define UV_VIS2
-#define MIX_GEO_UV
+#define MIX_S_UV
 
 #ifdef SOLVE3D
 # define ANA_STFLUX

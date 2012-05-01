@@ -15,7 +15,7 @@ forc_name='wetdry_slope_chan_forc.nc';
 
 %3) enter time series of zeta_east
 zeta_times=[0:10:43200*1]/(3600*24);            %days
-zeta_east=10.0*sin(2*pi/1*zeta_times)-10+0.1;   %m
+zeta_east=10.0*sin(2*pi/1*zeta_times)-10.0;   %m
 
 %%%%%%%%%%%%%%%%%  END of USER SECTION %%%%%%%%%%%%%%%%%
 

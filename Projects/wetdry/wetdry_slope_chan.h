@@ -15,7 +15,7 @@
 
 #define WET_DRY
 #define UV_ADV
-#define TS_U3HADVECTION
+#define TS_FIXED
 #define NORTHERN_WALL
 #define SOUTHERN_WALL
 #define WESTERN_WALL
