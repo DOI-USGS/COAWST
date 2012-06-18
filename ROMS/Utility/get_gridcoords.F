@@ -89,7 +89,8 @@
  30   FORMAT (/,' GET_GRIDCOORDS - cannot inquire ID for variable: ', a)
  40   FORMAT (/,' GET_GRIDCOORDS - error while inquiring dimensions',   &
      &          ' for variable: ', a)
- 50   FORMAT (/,' GET_GRIDCOORDS - error while reading variable: ', a)
+ 50   FORMAT (/,' GET_GRIDCOORDS - error while reading variable: ', a,  &
+     &          ' Check sizes of Lm and Mm in the input file.')
 
       RETURN
       END SUBROUTINE get_gridcoords
