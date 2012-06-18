@@ -707,6 +707,10 @@
         CALL get_3dparent_data (ng, TILE)
 # endif
       END IF
+# ifdef DISTRIBUTE
+      CALL mp_bcasti (ng, iNLM, exit_flag)
+# endif
+      IF (exit_flag.ne.NoError) RETURN
 #endif
 
 #ifdef PROFILE
