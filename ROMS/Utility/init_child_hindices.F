@@ -83,7 +83,7 @@
 # endif
       integer :: LBip, UBip, LBjp, UBjp
       integer :: Imin, Imax, Jmin, Jmax, model
-      integer :: i, ii, j, ngp, ngc, ic
+      integer :: i, ii, j, ngp, ngc, ic, jc
       integer :: gtype, MyType, Ilen, Jlen, IJlen
       integer :: Npts
       integer :: Iminc, Imaxc, Jminc, Jmaxc
@@ -91,6 +91,7 @@
       real(r8) :: IJspv, my_min, my_max, offset
       integer :: Xmin, Xmax, Ymin, Ymax, MyError, MySizer
 
+      real(r8), parameter :: eps = 1.0E-6_r8
       logical :: rectangular
       real(r8), allocatable :: A(:)
       real(r8), allocatable :: Ipos(:,:)
@@ -667,6 +668,8 @@
 !
 !  Now use hindices to get close enough for the child corners. then
 !  int these values.
+!  Decided not to use hindices. This is not accurate enough.
+!  Use alternate method below.
 !
       Iminc=1                    !LOWER_BOUND_I+1
       Imaxc=Lm(ngc)+1            !GHOST_POINTS
@@ -676,46 +679,122 @@
       allocate ( Ipos(Imin:Imax,Jmin:Jmax) )
       allocate ( Jpos(Imin:Imax,Jmin:Jmax) )
 !
-      IF (spherical) THEN
-        CALL hindices (ng, Iminc, Imaxc, Jminc, Jmaxc,                  &
-     &                 Iminc, Imaxc, Jminc, Jmaxc,                      &
-     &                 REFINED(ng)%angler_c(Iminc:Imaxc,Jminc:Jmaxc),   &
-     &                 REFINED(ng)%lonp_c(Iminc:Imaxc,Jminc:Jmaxc),     &
-     &                 REFINED(ng)%latp_c(Iminc:Imaxc,Jminc:Jmaxc),     &
-     &                 Imin, Imax, Jmin, Jmax,                          &
-     &                 Imin, Imax, Jmin, Jmax,                          &
-     &                 lonpsi_par, latpsi_par,                          &
-     &                 Ipos, Jpos,                                      &
-     &                 IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
-      ELSE
-        CALL hindices (ng, Iminc, Imaxc, Jminc, Jmaxc,                  &
-     &                 Iminc, Imaxc, Jminc, Jmaxc,                      &
-     &                 REFINED(ng)%angler_c(Iminc:Imaxc,Jminc:Jmaxc),   &
-     &                 REFINED(ng)%xp_c(Iminc:Imaxc,Jminc:Jmaxc),       &
-     &                 REFINED(ng)%yp_c(Iminc:Imaxc,Jminc:Jmaxc),       &
-     &                 Imin, Imax, Jmin, Jmax,                          &
-     &                 Imin, Imax, Jmin, Jmax,                          &
-     &                 lonpsi_par, latpsi_par,                          &
-     &                 Ipos, Jpos,                                      &
-     &                 IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
-      END IF
+!      IF (spherical) THEN
+!        CALL hindices (ng, Iminc, Imaxc, Jminc, Jmaxc,                  &
+!     &                 Iminc, Imaxc, Jminc, Jmaxc,                      &
+!     &                 REFINED(ng)%angler_c(Iminc:Imaxc,Jminc:Jmaxc),   &
+!     &                 REFINED(ng)%lonp_c(Iminc:Imaxc,Jminc:Jmaxc),     &
+!     &                 REFINED(ng)%latp_c(Iminc:Imaxc,Jminc:Jmaxc),     &
+!     &                 Imin, Imax, Jmin, Jmax,                          &
+!     &                 Imin, Imax, Jmin, Jmax,                          &
+!     &                 lonpsi_par, latpsi_par,                          &
+!     &                 Ipos, Jpos,                                      &
+!     &                 IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
+!      ELSE
+!        CALL hindices (ng, Iminc, Imaxc, Jminc, Jmaxc,                  &
+!     &                 Iminc, Imaxc, Jminc, Jmaxc,                      &
+!     &                 REFINED(ng)%angler_c(Iminc:Imaxc,Jminc:Jmaxc),   &
+!     &                 REFINED(ng)%xp_c(Iminc:Imaxc,Jminc:Jmaxc),       &
+!     &                 REFINED(ng)%yp_c(Iminc:Imaxc,Jminc:Jmaxc),       &
+!     &                 Imin, Imax, Jmin, Jmax,                          &
+!     &                 Imin, Imax, Jmin, Jmax,                          &
+!     &                 lonpsi_par, latpsi_par,                          &
+!     &                 Ipos, Jpos,                                      &
+!     &                 IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
+!      END IF
 !
 !  Xmin Xmax Ymin Ymax are the bounding psi point limits 
 !  of the parent grid that identify the boundary of the child grid.
 !  Still working on the global parent grid (ie non-tiled).
-!  The IPOS and JPOS are values of the child indices.
-!  The XYmin maxs are the limits of the parent grid.
+!  The XYmin maxs are the limits of the parent psi points that coincide 
+!  with the corners of the child grid.
+!
+!
+      Xmin= 9999
+      Xmax=-9999
+      Ymin= 9999
+      Ymax=-9999
+      IF (spherical) THEN
+        DO j=Jmin,Jmax         ! parent grid
+          DO i=Imin,Imax       ! parent grid
+            Ipos(i,j)=-9999.0_r8
+            Jpos(i,j)=-9999.0_r8
+            jc=Jminc          ! child grid lower left
+            ic=Iminc          ! child grid lower left
+            IF (((lonpsi_par(i,j)-eps).lt.                              &
+     &                                (REFINED(ng)%lonp_c(ic,jc))).and. &
+     &          ((lonpsi_par(i,j)+eps).gt.                              &
+     &                                (REFINED(ng)%lonp_c(ic,jc)))) THEN
+               IF (((latpsi_par(i,j)-eps).lt.                           &
+     &                                (REFINED(ng)%latp_c(ic,jc))).and. &
+     &            ((latpsi_par(i,j)+eps).gt.                            &
+     &                                (REFINED(ng)%latp_c(ic,jc)))) THEN
+                 Xmin=MIN(Xmin,i)
+                 Ymin=MIN(Ymin,j)
+               END IF
+            END IF
+!
+            jc=Jmaxc          ! child grid upper right
+            ic=Imaxc          ! child grid upper right
+            IF (((lonpsi_par(i,j)-eps).lt.                              &
+     &                                (REFINED(ng)%lonp_c(ic,jc))).and. &
+     &          ((lonpsi_par(i,j)+eps).gt.                              &
+     &                                (REFINED(ng)%lonp_c(ic,jc)))) THEN
+               IF (((latpsi_par(i,j)-eps).lt.                           &
+     &                                (REFINED(ng)%latp_c(ic,jc))).and. &
+     &            ((latpsi_par(i,j)+eps).gt.                            &
+     &                                (REFINED(ng)%latp_c(ic,jc)))) THEN
+                 Xmax=MAX(Xmax,i)
+                 Ymax=MAX(Ymax,j)
+               END IF
+            END IF
+          END DO
+        END DO
+      ELSE
+        DO j=Jmin,Jmax         ! parent grid
+          DO i=Imin,Imax       ! parent grid
+            Ipos(i,j)=-9999.0_r8
+            Jpos(i,j)=-9999.0_r8
+            jc=Jminc          ! child grid lower left
+            ic=Iminc          ! child grid lower left
+            IF (((lonpsi_par(i,j)-eps).lt.                              &
+     &                                (REFINED(ng)%xp_c(ic,jc))).and.   &
+     &          ((lonpsi_par(i,j)+eps).gt.                              &
+     &                                (REFINED(ng)%xp_c(ic,jc)))) THEN
+               IF (((latpsi_par(i,j)-eps).lt.                           &
+     &                                (REFINED(ng)%yp_c(ic,jc))).and.   &
+     &            ((latpsi_par(i,j)+eps).gt.                            &
+     &                                (REFINED(ng)%yp_c(ic,jc)))) THEN
+                 Xmin=MIN(Xmin,i)
+                 Ymin=MIN(Ymin,j)
+               END IF
+            END IF
+!
+            jc=Jmaxc          ! child grid upper right
+            ic=Imaxc          ! child grid upper right
+            IF (((lonpsi_par(i,j)-eps).lt.                              &
+     &                                (REFINED(ng)%xp_c(ic,jc))).and.   &
+     &          ((lonpsi_par(i,j)+eps).gt.                              &
+     &                                (REFINED(ng)%xp_c(ic,jc)))) THEN
+               IF (((latpsi_par(i,j)-eps).lt.                           &
+     &                                (REFINED(ng)%yp_c(ic,jc))).and.   &
+     &            ((latpsi_par(i,j)+eps).gt.                            &
+     &                                (REFINED(ng)%yp_c(ic,jc)))) THEN
+                 Xmax=MAX(Xmax,i)
+                 Ymax=MAX(Ymax,j)
+               END IF
+            END IF
+          END DO
+        END DO
+      END IF
 !
 !  Compute refined ratio for the child grids.
 !
       REFINED(ngc)%ref_scale=Lm(ngc)/(Xmax-Xmin)
 !
-      DO j=Jmin,Jmax
-        DO i=Imin,Imax
-          IPOS(i,j)=-9999.0_r8
-          JPOS(i,j)=-9999.0_r8
-        END DO
-      END DO
+!  The IPOS and JPOS are values of the child indices at the locations
+!  on the parent grid.
+!
       DO j=Ymin,Ymax
         DO i=Xmin,Xmax
           IPOS(i,j)=1.0_r8+REAL((i-Xmin)*REFINED(ngc)%ref_scale,r8)
@@ -752,8 +831,8 @@
           OCEAN(ng)%hindcj_r(i,j)=IJspv
           IF (((i.ge.Xmin).and.(i.le.Xmax-1)).and.                      &
               ((j.ge.Ymin).and.(j.le.Ymax-1)))  THEN
-                OCEAN(ng)%hindci_r(i,j)=IPOS(i,j)+offset
-                OCEAN(ng)%hindcj_r(i,j)=JPOS(i,j)+offset
+                OCEAN(ng)%hindci_r(i,j)=Ipos(i,j)+offset
+                OCEAN(ng)%hindcj_r(i,j)=Jpos(i,j)+offset
           END IF
         END DO
       END DO
@@ -786,8 +865,8 @@
           OCEAN(ng)%hindcj_u(i,j)=IJspv
           IF (((i.ge.Xmin).and.(i.le.Xmax)).and.                      &
               ((j.ge.Ymin).and.(j.le.Ymax-1)))  THEN
-                OCEAN(ng)%hindci_u(i,j)=IPOS(i,j)
-                OCEAN(ng)%hindcj_u(i,j)=JPOS(i,j)+offset
+                OCEAN(ng)%hindci_u(i,j)=Ipos(i,j)
+                OCEAN(ng)%hindcj_u(i,j)=Jpos(i,j)+offset
           END IF
         END DO
       END DO
@@ -820,8 +899,8 @@
           OCEAN(ng)%hindcj_v(i,j)=IJspv
           IF (((i.ge.Xmin).and.(i.le.Xmax-1)).and.                      &
               ((j.ge.Ymin).and.(j.le.Ymax)))  THEN
-                OCEAN(ng)%hindci_v(i,j)=IPOS(i,j)+offset
-                OCEAN(ng)%hindcj_v(i,j)=JPOS(i,j)
+                OCEAN(ng)%hindci_v(i,j)=Ipos(i,j)+offset
+                OCEAN(ng)%hindcj_v(i,j)=Jpos(i,j)
           END IF
         END DO
       END DO
