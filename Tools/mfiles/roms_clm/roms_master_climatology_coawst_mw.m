@@ -1,58 +1,71 @@
-
+% roms_master_climatology_coawst_mw
 %
-% Driver to create 3 files for roms: clim, bndry, and init.
+% This routine :
+%  - creates climatology, boundary, and initial condition files for ROMS: coawst_clm.nc ; coawst_bdy.nc ; coawst_ini.nc 
+% on a user-defined grid for a user-defined date.
 %
 % This is currently set up to use opendap calls to acquire data
-% from HYCOM and interp to US_East grid.
+% from HYCOM + NCODA Global 1/12 Degree Analysis and interp to US_East grid.
 %
+% Before running this routine, user needs to setup "nctoolbox" within Matlab.
+%  
 % based on efforts by:
 % written by Mingkui Li, May 2008
 % Modified by Brandy Armstrong March 2009
 % jcwarner April 20, 2009
-%
+% Ilgar Safak modified on June 27, 2012 such that now:
+% - HYCOM url is a user-definition
+% - "hc" is called from the stucture "gn".(still needs to be tested with wet/dry).
+% - updatinit_coawst_mw.m modified to get desired time (T1) as a variable;
+%    ocean_time=T1-datenum(1858,11,17,0,0,0)
 
-warning off
+%%%%%%%%%%%%%%%%%%%%%   START OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%1) Enter start and end dates to get climatology data here.
-%(time step is 1 day).
-T1=floor(now+1); %start date
+% (1) Enter start date (T1) to get climatology data 
+T1=datenum(2010,1,1,0,0,0); %start date
 
-%2) Enter working directory here.
-wdr='d:/data/models/COAWST/Tools/mfiles';
+
+% (2) Enter URL of the HYCOM catalog for the requested time, T1; see http://tds.hycom.org/thredds/catalog.html
+ url='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';      % Jan 2011 - Present
+
+
+% (3) Enter working directory (wdr)
+wdr='/home/isafak-pr/Models/COAWST/Tools/mfiles/roms_clm';
 eval(['cd ',wdr])
 
-%3) Enter path\grid_name here.
+% (4) Enter path and name of the ROMS grid (modelgrid)
 modelgrid='D:\data\Carolinas\modeling\Grids\USeast_grd17.nc'
 eval(['gridname=''',modelgrid,''';']);
 
-%4) Set grid vertical coordinate params here.
+% (5) Enter grid vertical coordinate parameters --These need to be consistent with the ROMS setup. 
 theta_s=5;
 theta_b=0.4;
 Tcline=50;
 N=16;
 
-%***********  END USER INPUT *******************************
+%%%%%%%%%%%%%%%%%%%%%   END OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
+
 disp('getting roms grid dimensions ...');
 gn=roms_get_grid_mw(gridname,[theta_s theta_b Tcline N]);
 
 tic
 
-%call to get Hycom indices for YOUR ROMS grid.
+% Call to get HYCOM indices for the defined ROMS grid
 disp('getting hycom indices')
-get_ijrg(gn)
+get_ijrg(gn,url)
 
-% call to create clm file
+% Call to create the climatology (clm) file
 disp('going to create clm file')
-fn=updatclim_coawst_mw(T1,gn,'coawst_clm.nc',wdr)
+fn=updatclim_coawst_mw(T1,gn,'coawst_clm.nc',wdr,url)
 
-% call to create boundary file
+% Call to create the boundary (bdy) file
 disp('going to create bndry file')
-% fn = filename from updatclim, we should change this later as we see fit.
+
 updatbdry_coawst_mw(fn,gn,'coawst_bdy.nc',wdr)
 
-% call to create init file
+% Call to create the initial (ini) file
 disp('going to create init file')
-updatinit_coawst_mw(fn,gn,'coawst_ini.nc',wdr)
+updatinit_coawst_mw(fn,gn,'coawst_ini.nc',wdr,T1)
     
 toc
 

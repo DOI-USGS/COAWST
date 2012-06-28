@@ -1,4 +1,4 @@
-function [fn]=updatclim_coawst_mw(T1,gn,clmname,wdr)
+function [fn]=updatclim_coawst_mw(T1,gn,clmname,wdr,url2)
 % Modified by Brandy Armstrong January 2012 to use only NCTOOLBOX 
 % and Matlab builtin functions to read and write netcdf files
 
@@ -13,7 +13,7 @@ Time_before=datestr(T1-1,'yyyymmdd');
 %%
 lever=1;
 %url for hycom data
-url2='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9'; %/2011';
+%url2='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9'; %/2011';
 nc=ncgeodataset(url2);
 load hycom_info.mat
 %% 

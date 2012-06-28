@@ -1,4 +1,4 @@
-function updatinit_coawst_mw(fn,gn,ini,wdr)
+function updatinit_coawst_mw(fn,gn,ini,wdr,T1)
 % script create_roms_init
 %
 % Create a netcdf file that contains initialization data for ROMS.
@@ -31,7 +31,7 @@ t_clim=netcdf.getVar(nc_clm,timeid);
 %   This time needs to be consistent with model time (ie dstart and time_ref).
 %   See *.in files for more detail. 
     tidx=1;
-    ocean_time=t_clim(tidx);
+    ocean_time=T1-datenum(1858,11,17,0,0,0);%ocean_time=t_clim(tidx);
 
 %3) Enter number of vertical sigma levels in model.
 %   This will be same value as entered in mod_param.F
@@ -61,7 +61,7 @@ t_clim=netcdf.getVar(nc_clm,timeid);
 
 %5)
    hmin=0;
-   hc=min([hmin,Tcline]);
+   hc=gn.hc;
    if (theta_s~=0.0)
      cff1=1.0/sinh(theta_s);
      cff2=0.5/tanh(0.5*theta_s);

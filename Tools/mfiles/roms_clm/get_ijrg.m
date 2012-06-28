@@ -1,9 +1,9 @@
-function get_ijrg(gn)
+function get_ijrg(gn,url2)
 
 if (0)
   % This is what i did to get the indices for the entire HYCOM grid.
-  url2='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9'; %/2011';
-  display('using http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.8/2011');
+  % url2='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9'; %/2011';
+  display(url2);
   nc=ncgeodataset(url2);
   hycom_lon=zeros(3298,4500);
   hycom_lat=zeros(3298,4500);
@@ -59,7 +59,7 @@ jrg2=[num2str(jg0) ':' num2str(jg1)];
 firstidx=['[',num2str(str2num(irg(2:5))),' ' num2str(str2num(jrg(2:5))),']'];%for nc.data
 lastidx =['[',num2str(str2num(irg(7:10))),' ',num2str(str2num(jrg(7:10))),']'];%for nc.data
 
-url2='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9'; %/2011';
+%url2='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9'; %/2011';
 nc=ncgeodataset(url2);
 eval(['lon=nc.data(''Longitude'',',firstidx,',',lastidx,');']);
 xg=lon;
@@ -71,7 +71,7 @@ clear lat
 clm.lon=double(xg);
 clm.lat=double(yg);
 lev=nc.data('Depth');
-clm.z=lev; clear lev;
+clm.z=double(lev); clear lev;
 save hycom_info.mat clm irg2 jrg2 firstidx lastidx
 
 close(nc)

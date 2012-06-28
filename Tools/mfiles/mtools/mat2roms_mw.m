@@ -390,7 +390,11 @@ netcdf.putVar(nc,v11,pn);
 dmde = zeros(LP, MP);
 dndx = zeros(LP, MP);
 dmde(:,2:end-1) = 0.5*(dx(:,3:end) - dx(:,1:end-2));
+dmde(:,1)=dmde(:,2);
+dmde(:,end)=dmde(:,end-1);
 dndx(2:end-1,:) = 0.5*(dy(3:end,:) - dy(1:end-2,:));
+dmde(1,:)=dmde(2,:);
+dmde(end,:)=dmde(end-1,:);
 netcdf.putVar(nc,v12,dndx);
 netcdf.putVar(nc,v13,dmde);
 
@@ -411,7 +415,5 @@ netcdf.putVar(nc,v33,double(psi_mask));
 
 % Angle.
 netcdf.putVar(nc,v34,ang);  % Degrees.
-
-close all
 
 netcdf.close(nc)
