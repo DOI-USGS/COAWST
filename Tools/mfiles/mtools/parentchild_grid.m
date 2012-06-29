@@ -93,7 +93,11 @@ fine.mask.rho(fine.mask.rho<0.96)=0;
 
 %to create swan grid then use:
   disp([' '])
-  roms2swan(fine.x.rho,fine.y.rho,fine.h,fine.mask.rho);
+  if (spherical)
+    roms2swan(fine.lon.rho,fine.lat.rho,fine.h,fine.mask.rho);
+  else
+    roms2swan(fine.x.rho,fine.y.rho,fine.h,fine.mask.rho);
+  end
   disp(['Created swan grid + bathy files: swan_bathy.bot and swan_coord.grd'])
   disp(['You should probably rename these so they dont get overwritten. '])
 

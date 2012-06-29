@@ -38,8 +38,10 @@ h_fine_new=h_fine;
 %%
 
 % loop on parent cells: [X,Y] is the cell polygon determined by psi (corner) points
-for j=LLj+2:ULj-1
-  for i=LLi+2:LRi-1
+%for j=LLj+2:ULj-1
+%  for i=LLi+2:LRi-1
+for j=LLj+1:ULj
+  for i=LLi+1:LRi
     X=[lon_psi_coarse(i-1,j-1) lon_psi_coarse(i,j-1) lon_psi_coarse(i,j) lon_psi_coarse(i-1,j)];
     Y=[lat_psi_coarse(i-1,j-1) lat_psi_coarse(i,j-1) lat_psi_coarse(i,j) lat_psi_coarse(i-1,j)];
     %find child cells within parent cell
@@ -49,71 +51,68 @@ for j=LLj+2:ULj-1
     end
   end
 end
-%%
 disp('finished averaging loop')
-%left strip
-for j=LLj:ULj+1
-  for i=LLi:LLi+1
-    X=[lon_psi_coarse(i-1,j-1) lon_psi_coarse(i,j-1) lon_psi_coarse(i,j) lon_psi_coarse(i-1,j)];
-    Y=[lat_psi_coarse(i-1,j-1) lat_psi_coarse(i,j-1) lat_psi_coarse(i,j) lat_psi_coarse(i-1,j)];
-    %find child cells within parent cell
-    ind=find(inpolygon(lon_rho_fine(:),lat_rho_fine(:),X,Y));
-    if ~isempty(ind),
-      h_fine_new(ind)=h_coarse_new(i,j);  % assign child depth as parent depth
+%
+if (0)
+    %left strip
+    for j=LLj:ULj+1
+      for i=LLi:LLi %+1
+        X=[lon_psi_coarse(i-1,j-1) lon_psi_coarse(i,j-1) lon_psi_coarse(i,j) lon_psi_coarse(i-1,j)];
+        Y=[lat_psi_coarse(i-1,j-1) lat_psi_coarse(i,j-1) lat_psi_coarse(i,j) lat_psi_coarse(i-1,j)];
+        %find child cells within parent cell
+        ind=find(inpolygon(lon_rho_fine(:),lat_rho_fine(:),X,Y));
+        if ~isempty(ind),
+          h_fine_new(ind)=h_coarse_new(i,j);  % assign child depth as parent depth
+        end
+      end
     end
-  end
-end
-disp('finished left strip')
-%right strip
-for j=LRj:URj+1
-  for i=LRi:LRi+1
-    X=[lon_psi_coarse(i-1,j-1) lon_psi_coarse(i,j-1) lon_psi_coarse(i,j) lon_psi_coarse(i-1,j)];
-    Y=[lat_psi_coarse(i-1,j-1) lat_psi_coarse(i,j-1) lat_psi_coarse(i,j) lat_psi_coarse(i-1,j)];
-    %find child cells within parent cell
-    ind=find(inpolygon(lon_rho_fine(:),lat_rho_fine(:),X,Y));
-    if ~isempty(ind),
-      h_fine_new(ind)=h_coarse_new(i,j);  % assign child depth as parent depth
+    disp('finished left strip')
+    %right strip
+    for j=LRj:URj+1
+      for i=LRi+1:LRi+1
+        X=[lon_psi_coarse(i-1,j-1) lon_psi_coarse(i,j-1) lon_psi_coarse(i,j) lon_psi_coarse(i-1,j)];
+        Y=[lat_psi_coarse(i-1,j-1) lat_psi_coarse(i,j-1) lat_psi_coarse(i,j) lat_psi_coarse(i-1,j)];
+        %find child cells within parent cell
+        ind=find(inpolygon(lon_rho_fine(:),lat_rho_fine(:),X,Y));
+        if ~isempty(ind),
+          h_fine_new(ind)=h_coarse_new(i,j);  % assign child depth as parent depth
+        end
+      end
     end
-  end
-end
-disp('finished right strip')
-%top strip
-for j=URj:URj+1
-  for i=ULi:URi+1
-    X=[lon_psi_coarse(i-1,j-1) lon_psi_coarse(i,j-1) lon_psi_coarse(i,j) lon_psi_coarse(i-1,j)];
-    Y=[lat_psi_coarse(i-1,j-1) lat_psi_coarse(i,j-1) lat_psi_coarse(i,j) lat_psi_coarse(i-1,j)];
-    %find child cells within parent cell
-    ind=find(inpolygon(lon_rho_fine(:),lat_rho_fine(:),X,Y));
-    if ~isempty(ind),
-      h_fine_new(ind)=h_coarse_new(i,j);  % assign child depth as parent depth
+    disp('finished right strip')
+    %top strip
+    for j=URj+1:URj+1
+      for i=ULi:URi+1
+        X=[lon_psi_coarse(i-1,j-1) lon_psi_coarse(i,j-1) lon_psi_coarse(i,j) lon_psi_coarse(i-1,j)];
+        Y=[lat_psi_coarse(i-1,j-1) lat_psi_coarse(i,j-1) lat_psi_coarse(i,j) lat_psi_coarse(i-1,j)];
+        %find child cells within parent cell
+        ind=find(inpolygon(lon_rho_fine(:),lat_rho_fine(:),X,Y));
+        if ~isempty(ind),
+          h_fine_new(ind)=h_coarse_new(i,j);  % assign child depth as parent depth
+        end
+      end
     end
-  end
-end
-disp('finished top strip')
-%bottom strip
-for j=LLj:LLj+1
-  for i=LLi:LRi+1
-    X=[lon_psi_coarse(i-1,j-1) lon_psi_coarse(i,j-1) lon_psi_coarse(i,j) lon_psi_coarse(i-1,j)];
-    Y=[lat_psi_coarse(i-1,j-1) lat_psi_coarse(i,j-1) lat_psi_coarse(i,j) lat_psi_coarse(i-1,j)];
-    %find child cells within parent cell
-    ind=find(inpolygon(lon_rho_fine(:),lat_rho_fine(:),X,Y));
-    if ~isempty(ind),
-      h_fine_new(ind)=h_coarse_new(i,j);  % assign child depth as parent depth
+    disp('finished top strip')
+    %bottom strip
+    for j=LLj:LLj %+1
+      for i=LLi:LRi+1
+        X=[lon_psi_coarse(i-1,j-1) lon_psi_coarse(i,j-1) lon_psi_coarse(i,j) lon_psi_coarse(i-1,j)];
+        Y=[lat_psi_coarse(i-1,j-1) lat_psi_coarse(i,j-1) lat_psi_coarse(i,j) lat_psi_coarse(i-1,j)];
+        %find child cells within parent cell
+        ind=find(inpolygon(lon_rho_fine(:),lat_rho_fine(:),X,Y));
+        if ~isempty(ind),
+          h_fine_new(ind)=h_coarse_new(i,j);  % assign child depth as parent depth
+        end
+      end
     end
-  end
+    disp('finished bottom strip')
+%   write new depths to child
+    ncwrite(ncfile_fine,'h',h_fine_new);
 end
-disp('finished bottom strip')
-%new bathymetries are:
-%child: h_fine_new
-%parent: h_coarse_new
-%need to add in native matlab command to save new bathymetries.
 
 %%
 % write new depths to parent
 ncwrite(ncfile_coarse,'h',h_coarse_new)
-
-% write new depths to child
-ncwrite(ncfile_fine,'h',h_fine_new);
 
 %%
 % plot the new bathy

@@ -1,4 +1,4 @@
-function create_roms_forcings_southcar(lon,lat,time,fn,varargin)
+function create_roms_forcings(lon,lat,time,fn,varargin)
 % 
 % Create NetCDF file using native netcdf builtins for bulk fluxes from NAM 3-hourly output  
 % 
