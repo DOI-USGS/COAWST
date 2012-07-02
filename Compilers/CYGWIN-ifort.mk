@@ -208,26 +208,28 @@ endif
 
 ifdef USE_SWAN
 
-$(SCRATCH_DIR)/ocpcre.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/ocpids.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/ocpmix.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swancom1.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swancom2.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swancom3.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swancom4.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swancom5.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swanmain.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swanout1.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swanout2.o: FFLAGS += -nofree
+$(SCRATCH_DIR)/ocpcre.o:    FFLAGS += -nofree
+$(SCRATCH_DIR)/ocpids.o:    FFLAGS += -nofree
+$(SCRATCH_DIR)/ocpmix.o:    FFLAGS += -nofree
+$(SCRATCH_DIR)/swancom1.o:  FFLAGS += -nofree
+$(SCRATCH_DIR)/swancom2.o:  FFLAGS += -nofree
+$(SCRATCH_DIR)/swancom3.o:  FFLAGS += -nofree
+$(SCRATCH_DIR)/swancom4.o:  FFLAGS += -nofree
+$(SCRATCH_DIR)/swancom5.o:  FFLAGS += -nofree
+$(SCRATCH_DIR)/swanmain.o:  FFLAGS += -nofree
+$(SCRATCH_DIR)/swanout1.o:  FFLAGS += -nofree
+$(SCRATCH_DIR)/swanout2.o:  FFLAGS += -nofree
 $(SCRATCH_DIR)/swanparll.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swanpre1.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swanpre2.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swanser.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swmod1.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swmod2.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/m_constants.o: FFLAGS += -free
-$(SCRATCH_DIR)/m_fileio.o: FFLAGS += -free
-$(SCRATCH_DIR)/mod_xnl4v5.o: FFLAGS += -free
-$(SCRATCH_DIR)/serv_xnl4v5.o: FFLAGS += -free
+$(SCRATCH_DIR)/swanpre1.o:  FFLAGS += -nofree
+$(SCRATCH_DIR)/swanpre2.o:  FFLAGS += -nofree
+$(SCRATCH_DIR)/swanser.o:   FFLAGS += -nofree
+$(SCRATCH_DIR)/swmod1.o:    FFLAGS += -nofree
+$(SCRATCH_DIR)/swmod2.o:    FFLAGS += -nofree
+$(SCRATCH_DIR)/SwanCompdata.o: FFLAGS += -free
+$(SCRATCH_DIR)/SwanGriddata.o: FFLAGS += -free
+$(SCRATCH_DIR)/m_constants.o:  FFLAGS += -free
+$(SCRATCH_DIR)/m_fileio.o:     FFLAGS += -free
+$(SCRATCH_DIR)/mod_xnl4v5.o:   FFLAGS += -free
+$(SCRATCH_DIR)/serv_xnl4v5.o:  FFLAGS += -free
 
 endif
