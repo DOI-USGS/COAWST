@@ -137,7 +137,6 @@ for mm=1:2
     plot(x_rhoc,y_rhoc,'bo') %replot coarse rhos points on top
   end
   title('grid lines and rho, u, v, points')
-  
 % Bathymetry
   figure(2)
   pcolorjw(xr,yr,h.*maskr)

@@ -38,8 +38,7 @@ h_fine_new=h_fine;
 %%
 
 % loop on parent cells: [X,Y] is the cell polygon determined by psi (corner) points
-%for j=LLj+2:ULj-1
-%  for i=LLi+2:LRi-1
+% and replace parent bathy with avg child bathy.
 for j=LLj+1:ULj
   for i=LLi+1:LRi
     X=[lon_psi_coarse(i-1,j-1) lon_psi_coarse(i,j-1) lon_psi_coarse(i,j) lon_psi_coarse(i-1,j)];
@@ -53,7 +52,9 @@ for j=LLj+1:ULj
 end
 disp('finished averaging loop')
 %
-if (0)
+if (1)
+% loop on the perimeter edges of the child grid and replace with parent
+% bathy.
     %left strip
     for j=LLj:ULj+1
       for i=LLi:LLi %+1
