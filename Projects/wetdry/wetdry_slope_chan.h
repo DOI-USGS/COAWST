@@ -14,7 +14,7 @@
 #define ROMS_MODEL
 
 #define WET_DRY
-#define UV_ADV
+#undef  UV_ADV
 #define TS_FIXED
 #define NORTHERN_WALL
 #define SOUTHERN_WALL
