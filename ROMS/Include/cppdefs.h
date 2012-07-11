@@ -130,11 +130,6 @@
 **                                                                           **
 ** ATM_PRESS           use to impose atmospheric pressure onto sea surface   **
 **                                                                           **
-** Model coupling OPTIONS:                                                   **
-**                                                                           **
-** SWAN_COUPLING       use if two-way coupling to SWAN                       **
-** WRF_COUPLING        use if two-way coupling to WRF                        **
-**                                                                           **
 ** OPTIONS for surface fluxes formutalion using atmospheric boundary layer   **
 ** (Fairall et al, 1996):                                                    **
 **                                                                           **
@@ -160,6 +155,7 @@
 **                                                                           **
 ** COARE_TAYLOR_YELLAND  use Taylor and Yelland (2001) relation              **
 ** COARE_OOST            use Oost et al (2002) relation                      **
+** DRENNAN               use Drennan (2003) relation                         **
 ** DEEPWATER_WAVES       use Deep water waves approximation                  **
 **                                                                           **
 ** OPTIONS for shortwave radiation:                                          **
@@ -490,7 +486,6 @@
 ** WEST_M3SRADIATION    use if 3D stokes radiation condition                 **
 ** WEST_M3SCLAMPED      use if 3D stokes clamped condition                   **
 ** WEST_M3SGRADIENT     use if 3D stokes gradient condition                  **
-** -NO_OPTION_DEFINED-  DEFALUT is closed                                    **
 **                                                                           **
 ** Western edge open boundary conditions OPTIONS:                            **
 **                                                                           **
@@ -500,7 +495,6 @@
 ** EAST_M3SRADIATION    use if 3D stokes radiation condition                 **
 ** EAST_M3SCLAMPED      use if 3D stokes clamped condition                   **
 ** EAST_M3SGRADIENT     use if 3D stokes gradient condition                  **
-** -NO_OPTION_DEFINED-  DEFALUT is closed                                    **
 **                                                                           **
 ** Western edge open boundary conditions OPTIONS:                            **
 **                                                                           **
@@ -510,7 +504,6 @@
 ** SOUTH_M3SRADIATION    use if 3D stokes radiation condition                **
 ** SOUTH_M3SCLAMPED      use if 3D stokes clamped condition                  **
 ** SOUTH_M3SGRADIENT     use if 3D stokes gradient condition                 **
-** -NO_OPTION_DEFINED-   DEFALUT is closed                                   **
 **                                                                           **
 ** Western edge open boundary conditions OPTIONS:                            **
 **                                                                           **
@@ -520,7 +513,6 @@
 ** NORTH_M3SRADIATION    use if 3D stokes radiation condition                **
 ** NORTH_M3SCLAMPED      use if 3D stokes clamped condition                  **
 ** NORTH_M3SGRADIENT     use if 3D stokes gradient condition                 **
-** -NO_OPTION_DEFINED-   DEFALUT is closed                                   **
 **                                                                           **
 ** OPTIONS for tidal forcing at open boundaries:                             **
 **                                                                           **
@@ -691,12 +683,6 @@
 ** SED_DENS            use to activate sediment to affect equation of state  **
 ** SED_MORPH           use to allow bottom model elevation to evolve         **
 ** SUSPLOAD            use to activate suspended load transport              **
-**                                                                           **
-** OPTIONS for two-way coupling to other models:                             **
-**                                                                           **
-** REFDIF_COUPLING     use if coupling to REFDIT wave model                  **
-** SWAN_COUPLING       use if coupling to SWAN wave model                    **
-** WRF_COUPLING        use if coupling to WRF atmospheric model              **
 **                                                                           **
 ** Wave effoct on currents (WEC) and shallow water OPTIONS:                  **
 **                                                                           **
