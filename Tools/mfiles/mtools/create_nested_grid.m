@@ -33,9 +33,9 @@ ncfile_fine='Carolinas_grd6_train.nc';
 %   Select (Istr,Jstr) to locate the lower left corner of the new grid and
 %   and    (Iend,Jend) as the upper right corner uisng
 %   netcdf_load (ncfile_coarse)
-%   figure; plot(x_psi,y_psi,'k'); hold on; plot(x_psi', y_psi','k')
-%   plot(x_psi(Istr,Jstr),y_psi(Istr,Jstr),'r+')
-%   plot(x_psi(Iend,Jend),y_psi(Iend,Jend),'r+')
+%   figure; plot(lon_psi,lat_psi,'k'); hold on; plot(lon_psi', lat_psi','k')
+%   plot(lon_psi(Istr,Jstr),lat_psi(Istr,Jstr),'r+')
+%   plot(lon_psi(Iend,Jend),lat_psi(Iend,Jend),'r+')
 % 
 %Istr=30; Iend=50; Jstr=2; Jend=5;        % test_chan_refined
 %Istr=24; Iend=54; Jstr=40; Jend=56;       % inlet_test_refined
@@ -44,16 +44,27 @@ Istr=411; Iend=549; Jstr=210; Jend=259;    % car_grd6 from useast
 %4) ENTER SCALE FACTOR FOR INCREASED RESOLUTION (use 3 or 5)
 scale=5;
 
+%5) ENTER THE PROCEDURE THAT YOU WANT TO DO (1 = YES, 0 = NO)
+create_chid_grid=1
+merge_par_child_bathy=0
+merge_par_child_mask=0
+
+
 %%%%%%%%%%%%% END OF USER SECTION %%%%%%%%%%%%%%%%
 
 %Call to create the child grid
-parentchild_grid
+if (create_chid_grid)
+  parentchild_grid
+end
 
 %call to correct the bathy in both the parent and child
-parentchild_bathy
+if (merge_par_child_bathy)
+  parentchild_bathy
+end
 
 %call to correct masking
-parentchild_mask
-
+if (merge_par_child_mask)
+  parentchild_mask
+end
 
 

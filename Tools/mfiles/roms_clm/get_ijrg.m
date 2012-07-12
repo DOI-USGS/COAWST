@@ -39,13 +39,20 @@ yg=hycom_lat_small;
 clear hycom_lon_small hycom_lat_small
 
 [ym xm]=size(xg);
-ii=find(xg>=xl & xg<=xr & yg>=yb & yg<=yt);jj=fix((ii-1)/ym)+1;ii=mod(ii,ym);
+%ii=find(xg>=xl & xg<=xr & yg>=yb & yg<=yt);jj=fix((ii-1)/ym)+1;ii=mod(ii,ym);
+[ii,jj] = find(xg>=xl & xg<=xr & yg>=yb & yg<=yt);
+
 ig0=(min(ii)-1); ig1=(max(ii)+1); jg0=(min(jj)-1); jg1=(max(jj)+1);
 %multiply all these *4 since i saved every 4th point.
 ig0=(ig0-1)*4;
 ig1=(ig1+1)*4;
 jg0=(jg0-1)*4;
 jg1=(jg1+1)*4;
+% Constrain indexes to lie within the full HYCOM grid.
+ig0 = max(ig0, 1);
+jg0 = max(jg0, 1);
+ig1 = min(ig1, 3298);
+jg1 = min(jg1, 4000);
 
 irg=['[',num2str(ig0),':',num2str(ig1),']'];
 jrg=['[',num2str(jg0),':',num2str(jg1),']'];
