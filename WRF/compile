@@ -341,10 +341,18 @@ else
   echo " "
 
 #jcw
-  setenv MY_HEADER_DIR "${MY_HEADER_DIR}"
-  set HEADPRE = '$(shell echo ${ROMS_APPLICATION} | tr [A-Z] [a-z])'
-  setenv HEADER "${HEADPRE}.h"
-  setenv MY_SRC_DIR "${MY_ROMS_SRC}"
+  if ( $?MY_HEADER_DIR ) then
+    setenv MY_HEADER_DIR "${MY_HEADER_DIR}"
+    set HEADPRE = '$(shell echo ${ROMS_APPLICATION} | tr [A-Z] [a-z])'
+    setenv HEADER "${HEADPRE}.h"
+    setenv GLOBAL_DEFS_FILE "${MY_ROMS_SRC}/ROMS/Include/globaldefs.h"
+  else
+    setenv MY_HEADER_DIR "."
+    cat > empty_head.h &
+    setenv HEADER "empty_head.h"
+    setenv GLOBAL_DEFS_FILE "empty_head.h"
+    setenv ROMS_APPLICATION "WRF_ONLY"
+  endif
 
   if ( ! $?WRF_SRC_ROOT_DIR ) setenv WRF_SRC_ROOT_DIR `pwd`
 
