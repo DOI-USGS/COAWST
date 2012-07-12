@@ -83,6 +83,10 @@ else
            FFLAGS += /fp:precise /fp:source /O3
 endif
 
+ifdef USE_SWAN
+           FFLAGS += /noextend_source -assume:byterecl
+endif
+
 ifdef USE_MPI
        MPI_INCDIR ?= c:\\work\\models\\MPICH2\\include
        MPI_LIBDIR ?= c:\\work\\models\\MPICH2\\lib
@@ -96,7 +100,6 @@ ifdef USE_MCT
        MCT_INCDIR ?= c:\\work\\models\\MCT_v2.2\\include
          CPPFLAGS += -traditional-cpp
            FFLAGS += -I$(MCT_INCDIR)
-           FFLAGS += /noextend_source -assume:byterecl
        LIBS_WIN32 += "$(MCT_LIBDIR)\libmct.a" "$(MCT_LIBDIR)\libmpeu.a"
 endif
 

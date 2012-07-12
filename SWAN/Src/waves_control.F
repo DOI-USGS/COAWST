@@ -37,9 +37,8 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_param
-      USE mod_iounits
-      USE mod_scalars
+      USE swan_iounits
+      USE mod_swan_kinds
       USE M_PARALL
       USE M_PARALL2
       USE SWCOMM3
@@ -52,7 +51,7 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: MyCOMM
-      real(r4), intent(in)  :: CouplingTime             ! single precision
+      real(s4), intent(in)  :: CouplingTime             ! single precision
 !
 !  Local variable declarations.
 !
@@ -60,30 +59,50 @@
       integer :: ngp, ngc
 #ifdef REFINED_GRID
 !
+!  Set refined grid parameters.
+!
+      mysparent(1)=1
+      myschild(1)=2
+      DO ng=2,Ngridss
+        mysparent(ng)=ng-1
+        myschild(ng)=ng+1
+      END DO
+      myschild(Ngridss)=Ngridss
+!
 ! Allocate some arrays for refinement.
 !
-      CALL initialize_param
-      IF (.not.allocated(Numspec)) allocate (Numspec(Ngrids))
-      IF (.not.allocated(ac2size)) allocate (ac2size(Ngrids))
-      IF (.not.allocated(sstp)) allocate (sstp(Ngrids))
-      IF (.not.allocated(snew)) allocate (snew(Ngrids))
+
+      IF (.not.allocated(Numspec)) allocate (Numspec(Ngridss))
+      IF (.not.allocated(ac2size)) allocate (ac2size(Ngridss))
+      IF (.not.allocated(sstp)) allocate (sstp(Ngridss))
+      IF (.not.allocated(snew)) allocate (snew(Ngridss))
 #endif
+#if !defined MODEL_COUPLING
 !
 !  Establish MPI rank.
 !
       CALL mpi_comm_rank (MyCOMM, MyRank, MyError)
 !
+!     here we need to get name of wname.
+!
+      DO ng=1,Ngridss
+        IF (MyRank.eq.0) CALL getarg (ng,Wname(ng))
+      END DO
+      i=IOnamesize*ng
+      CALL mpi_bcast (Wname, i, MPI_BYTE, 0, MyCOMM, MyError)
+#endif
+!
 !  Initialize the grids.
 !
-      DO ng=1,Ngrids
+      DO ng=1,Ngridss
 #ifdef REFINED_GRID
-        ngp=myparent(ng)
-        ngc=mychild(ng)
+        ngp=mysparent(ng)
+        ngc=myschild(ng)
 #else
         ngp=1
         ngc=1
 #endif
-        CALL SWAN_INITIALIZE (ng, ngc, ngp, Ngrids, MyCOMM, Wname(ng))
+        CALL SWAN_INITIALIZE (ng, ngc, ngp, Ngridss, MyCOMM, Wname(ng))
 #ifdef REFINED_GRID
 !
 ! Call routine to initialize the child refined grid bc arrays.
@@ -98,11 +117,11 @@
 !  The call to run here does not do a time step, it fills the bc arrays,
 !  fill AC2 array of bound spec data for child grids, and enters into MCT.
 !
-      DO ng=1,Ngrids
+      DO ng=1,Ngridss
         CALL SWSYNC
 #ifdef REFINED_GRID
-        ngp=myparent(ng)
-        ngc=mychild(ng)
+        ngp=mysparent(ng)
+        ngc=myschild(ng)
         sstp(ng)=1
         snew(ng)=3-sstp(ng)
 #else
@@ -110,7 +129,7 @@
         ngc=1
 #endif
 !
-        CALL SWAN_RUN (CouplingTime, 0, ng, ngc, ngp, 0, Ngrids)
+        CALL SWAN_RUN (CouplingTime, 0, ng, ngc, ngp, 0, Ngridss)
 !
       END DO
 
@@ -126,9 +145,8 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_param
-      USE mod_iounits
-      USE mod_scalars
+      USE swan_iounits
+      USE mod_swan_kinds
       USE M_PARALL
       USE M_PARALL2
       USE SWCOMM3
@@ -137,7 +155,7 @@
 !
 !  Imported variable declarations.
 !
-      real(r4), intent(in)  :: CouplingTime             ! single precision
+      real(s4), intent(in)  :: CouplingTime             ! single precision
 !
 !  Local variable declarations.
 !
@@ -150,9 +168,9 @@
 !
 !  Set some initial run time parameters here.
 !
-      IF (.not.ALLOCATED(run_grid)) ALLOCATE (run_grid(Ngrids))
-      IF (.not.ALLOCATED(count)) ALLOCATE (count(Ngrids))
-      DO ng=1,Ngrids
+      IF (.not.ALLOCATED(run_grid)) ALLOCATE (run_grid(Ngridss))
+      IF (.not.ALLOCATED(count)) ALLOCATE (count(Ngridss))
+      DO ng=1,Ngridss
         run_grid(ng)=.TRUE.
         count(ng)=0
       END DO
@@ -161,17 +179,17 @@
 !
 !  Main job control loop here.
 !
-      DO WHILE (count(Ngrids).lt.MTC_G(Ngrids))
+      DO WHILE (count(Ngridss).lt.MTC_G(Ngridss))
 !
 !  Advance grids in time that have run_grid flag == True.
 !  For the first entry, all grids step individual dts.
 !
-        DO ng=1,Ngrids
+        DO ng=1,Ngridss
           IF (run_grid(ng).eq..TRUE.) THEN
             count(ng)=count(ng)+1
 #ifdef REFINED_GRID
-            ngp=myparent(ng)
-            ngc=mychild(ng)
+            ngp=mysparent(ng)
+            ngc=myschild(ng)
             sstp(ng)=1+MOD(count(ng),2)
             snew(ng)=3-sstp(ng)
 #else
@@ -179,19 +197,19 @@
             ngc=1
 #endif
             CALL SWAN_RUN (CouplingTime, count(ng), ng, ngc, ngp,       &
-     &                     1, Ngrids)
+     &                     1, Ngridss)
             run_grid(ng)=.FALSE.
           END IF
         END DO
 !
 !  Advance the time counter by the smallest dt.
 !
-        rtime=rtime+DT_G(Ngrids)
+        rtime=rtime+DT_G(Ngridss)
 !
 !  Determine what grids can be time stepped. This is determined
 !  by comparing dt(each grid) to global time rtime.
 !
-        DO ng=1,Ngrids
+        DO ng=1,Ngridss
           cff=rtime-rtime_start
           IF (MOD(cff,REAL(DT_G(ng))).eq.0) THEN
             run_grid(ng)=.TRUE.
@@ -212,18 +230,14 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_ncparam
-      USE mod_scalars
+      USE swan_iounits
 !
 !  Local variable declarations.
 !
       integer :: ng
 
-      DO ng=1,Ngrids
-        CALL SWAN_FINALIZE (ng, Ngrids)
+      DO ng=1,Ngridss
+        CALL SWAN_FINALIZE (ng, Ngridss)
       END DO
 
       RETURN

@@ -387,6 +387,12 @@ ifdef USE_ROMS
 all: $(SCRATCH_DIR) $(SCRATCH_DIR)/MakeDepend $(BIN) rm_macros
 endif
 
+ifdef USE_SWAN
+.PHONY: all
+
+all: $(SCRATCH_DIR) $(SCRATCH_DIR)/MakeDepend $(BIN) rm_macros
+endif
+
  modules  :=
 ifdef USE_ADJOINT
  modules  +=	ROMS/Adjoint \
@@ -468,7 +474,7 @@ ifdef USE_INWAVE
              InWave/Utility
 endif
 
-ifdef USE_ROMS
+ifndef USE_WRF
  modules  +=	Master
  includes +=	Master Compilers
 endif

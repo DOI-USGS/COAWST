@@ -43,8 +43,8 @@
       USE M_GENARR                                                        40.31
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
-# ifdef WAVES_OCEAN
       USE M_PARALL2
+# ifdef WAVES_OCEAN
       USE WAVES_COUPLER_MOD, ONLY: INITIALIZE_WAV2OCN_COUPLING
 # endif
 # ifdef WRF_COUPLING
@@ -787,7 +787,9 @@
       USE M_COUPLING
       USE SWPOINT_MOD, ONLY: INIT_POINTERS, DEALLOCATE_SWAN_ARRAYS
 !
+# ifdef MODEL_COUPLING
       USE WAVES_COUPLER_MOD, ONLY : finalize_wav2ocn_coupling
+# endif
 !# if defined WRF_COUPLING
 !      USE WAVES_COUPLER_MOD, ONLY : finalize_wav2atm_coupling
 !# endif
@@ -5716,7 +5718,7 @@
       USE SwanGriddata                                                    40.80
 #ifdef SWAN_MODEL
       USE M_MPI
-      USE mod_param
+      USE mod_swan_kinds
 #endif
 #ifdef REFINED_GRID
       USE M_SREFINED
@@ -5983,7 +5985,7 @@
         IF (ITjcw.eq.MTC_G(ngp)) fac3=DT_G(ngp)
         fac1=(TIMCO_G(ngp)-DT_G(ngp)+fac3)-TIMCO_G(ng)
         fac2=TIMCO_G(ng)-(TIMCO_G(ngp)-2.0*DT_G(ngp)+fac3)
-        fac=1.0_r8/(fac1+fac2)
+        fac=1.0_s8/(fac1+fac2)
         fac1=fac*fac1
         fac2=fac*fac2
         IF (ITjcw.eq.0) fac1=1.0

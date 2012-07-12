@@ -144,6 +144,8 @@
         ALLOCATE (LORQ_G(Numgrids))
 !       LORQ_G(ng)=.FALSE.
         ALLOCATE (OUTP_FILES_G(Numgrids,1:MAX_OUTP_REQ))
+        ALLOCATE (IREC(MAX_OUTP_REQ))
+        ALLOCATE (IREC_G(Numgrids,MAX_OUTP_REQ))
 !
 !       ALLOCATE (ORQDATZ_MOD(ng)%FORQ)
 !
@@ -303,6 +305,7 @@
       LOPS=>LOPS_G(ng)
 !     LORQ=>LORQ_G(ng)
       OUTP_FILES=>OUTP_FILES_G(ng,:)
+      IREC=>IREC_G(ng,:)
 !
 !  SWANCOMM2
 !
@@ -458,6 +461,8 @@
         DEALLOCATE (LORQ_G)
 !       LORQ_G(ng)=.FALSE.
         DEALLOCATE (OUTP_FILES_G)
+        DEALLOCATE (IREC)
+        DEALLOCATE (IREC_G)
 !
 !       ALLOCATE (ORQDATZ_MOD(ng)%FORQ)
 !

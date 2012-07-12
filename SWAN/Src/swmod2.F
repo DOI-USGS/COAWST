@@ -289,6 +289,9 @@
       LOGICAL, POINTER, SAVE :: LORQ
       LOGICAL, POINTER, SAVE :: LORQ_G(:)
 
+      INTEGER, SAVE, POINTER :: IREC(:)
+      INTEGER, SAVE, POINTER :: IREC_G(:,:)
+
 #else
       INTEGER, SAVE :: NREOQ = 0         ! actual number of requests saved
 

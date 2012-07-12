@@ -46,9 +46,6 @@
       USE OUTP_DATA                                                       40.31
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
-#ifdef SWAN_MODEL
-      USE mod_param
-#endif
 !
 !
 !
@@ -441,8 +438,13 @@
              CALL SWBLKP ( CORQ%OQI, CORQ%IVTYP, MXK, MYK, VOQR,          40.31
      &                     VOQ(1), IONOD )                                40.51 40.31
           ELSE                                                            40.31
+#ifdef SWAN_MODEL
+             CALL SWBLOK ( RTYPE, CORQ%OQI, CORQ%IVTYP, CORQ%FAC,         40.31
+     &                     SNAME, MXK, MYK, IRQ, VOQR, VOQ(1), ng)        40.51 40.31
+#else
              CALL SWBLOK ( RTYPE, CORQ%OQI, CORQ%IVTYP, CORQ%FAC,         40.31
      &                     SNAME, MXK, MYK, IRQ, VOQR, VOQ(1) )           40.51 40.31
+#endif
           END IF                                                          40.31
           IF (STPNOW()) RETURN                                            34.01
           GOTO 68                                                         40.00
@@ -681,7 +683,6 @@
       USE SwanGriddata                                                    40.80
       USE M_MPI
       USE WAVES_COUPLER_MOD, ONLY: WAV2OCN_COUPLING
-      USE mod_param
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |

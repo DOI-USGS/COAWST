@@ -147,8 +147,6 @@
         character (len=80), dimension(Ngrids) :: W2Oname
         character (len=80), dimension(Ngrids) :: A2Wname
         character (len=80), dimension(Ngrids) :: A2Oname
-        character (len=80), dimension(Ngrids) :: SWAN_infile
-        character (len=80), dimension(Ngrids) :: Wname
         character (len=80) :: Aname
 # ifdef INWAVE_MODEL
         character (len=80), dimension(Ngrids) :: IWINIname

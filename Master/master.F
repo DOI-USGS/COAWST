@@ -23,4 +23,6 @@
 # include "inwave.h"
 #elif defined ROMS_MODEL
 # include "ocean.h"
+#elif defined SWAN_MODEL
+# include "waves.h"
 #endif

@@ -662,6 +662,9 @@
       USE mct_coupler_params
       USE mod_parallel
       USE mod_iounits
+# ifdef SWAN_MODEL
+      USE swan_iounits
+# endif
       USE mod_scalars
 
 # ifdef DISTRIBUTE

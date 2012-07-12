@@ -18,7 +18,7 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_kinds
+      USE mod_swan_kinds
 
       implicit none
 
@@ -339,8 +339,7 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_param
-      USE mod_scalars
+       USE mod_swan_kinds
 !
 !  Imported variable declarations.
 !
@@ -469,8 +468,8 @@
               xpp=(Xpos(mp,np)-Xgrd(Imin,Jmin))*xfac
               ypp=(Ypos(mp,np)-Ygrd(Imin,Jmin))*yfac
             ELSE
-              xfac=1.0_r8
-              yfac=1.0_r8
+              xfac=1.0_s8
+              yfac=1.0_s8
               xpp=Xpos(mp,np)-Xgrd(Imin,Jmin)
               ypp=Ypos(mp,np)-Ygrd(Imin,Jmin)
             END IF
@@ -483,7 +482,7 @@
      &          ((Ygrd(Imin,Jmin)-Ygrd(Imin+1,Jmin))*yfac)**2
             bb2=((Xgrd(Imin,Jmin)-Xgrd(Imin,Jmin+1))*xfac)**2+          &
      &          ((Ygrd(Imin,Jmin)-Ygrd(Imin,Jmin+1))*yfac)**2
-            phi=ASIN((diag2-aa2-bb2)/(2.0_r8*SQRT(aa2*bb2)))
+            phi=ASIN((diag2-aa2-bb2)/(2.0_s8*SQRT(aa2*bb2)))
 !
 !  Transform float position into curvilinear coordinates. Assume the
 !  cell is rectanglar, for now.
@@ -535,7 +534,6 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_param
 !
 !  Imported variable declarations.
 !
@@ -715,7 +713,7 @@
       DO kk=0,Nb-1,Nstep
         nc=0
         DO k=kk+1,MIN(kk+Nstep,Nb)
-          IF (((Xb(k+1)-Xo)*(Xo-Xb(k)).ge.0.0_r8).and.                  &
+          IF (((Xb(k+1)-Xo)*(Xo-Xb(k)).ge.0.0_s8).and.                  &
      &        (Xb(k).ne.Xb(k+1))) THEN
             nc=nc+1
             Sindex(nc)=k
@@ -731,11 +729,11 @@
             IF ((Xb(k).eq.Xo).and.(Yb(k).eq.Yo)) THEN
               crossings=1
               goto 10
-            ELSE IF (((dx1.eq.0.0_r8).and.(Yo.ge.Yb(k  ))).or.          &
-     &              ((dx2.eq.0.0_r8).and.(Yo.ge.Yb(k+1)))) THEN
+            ELSE IF (((dx1.eq.0.0_s8).and.(Yo.ge.Yb(k  ))).or.          &
+     &              ((dx2.eq.0.0_s8).and.(Yo.ge.Yb(k+1)))) THEN
               inc=1
-            ELSE IF ((dx1*dx2.gt.0.0_r8).and.                           &
-     &              ((Xb(k+1)-Xb(k))*dxy.ge.0.0_r8)) THEN  ! see note 1
+            ELSE IF ((dx1*dx2.gt.0.0_s8).and.                           &
+     &              ((Xb(k+1)-Xb(k))*dxy.ge.0.0_s8)) THEN  ! see note 1
               inc=2
             END IF
             IF (Xb(k+1).gt.Xb(k)) THEN
