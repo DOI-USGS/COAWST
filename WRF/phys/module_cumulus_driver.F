@@ -15,15 +15,17 @@ CONTAINS
                      ,p,pi,rho                                        &
                  ! --Other arguments
                      ,itimestep,dt,dx,cudt,curr_secs,adapt_step_flag  &
+                     ,cudtacttime                                     & 
                      ,rainc,raincv,pratec,nca                         &
-                     ,dz8w,p8w,forcet,forceq                          &
-                     ,w0avg,stepcu,gsw                                &
+                     ,z,z_at_w,dz8w,mavail,pblh,p8w,psfc,tsk          &
+                     ,tke_pbl, ust                                    &
+                     ,forcet,forceq,w0avg,stepcu,gsw                  &
                      ,cldefi,lowlyr,xland,cu_act_flag,warm_rain       &
-                     ,htop,hbot,kpbl,ht                               &  
+                     ,hfx,qfx,cldfra,tpert2d,htop,hbot,kpbl,ht&
                      ,ensdim,maxiens,maxens,maxens2,maxens3           &
                      ,periodic_x,periodic_y                           &
-                 ! Package selection variable
-                     ,cu_physics                                      &
+                 ! Package selection variables
+                     ,cu_physics, bl_pbl_physics, sf_sfclay_physics   &
                  ! Optional moisture tracers 
                      ,qv_curr, qc_curr, qr_curr                       &
                      ,qi_curr, qs_curr, qg_curr                       & 
@@ -35,21 +37,37 @@ CONTAINS
                      ,mass_flux,xf_ens,pr_ens,cugd_avedx,imomentum    &
                      ,ishallow,cugd_tten,cugd_qvten,cugd_qcten        &
                      ,cugd_ttens,cugd_qvtens                          &
-                     ,gd_cloud,gd_cloud2      &
+                     ,gd_cloud,gd_cloud2                              &
+                 ! Optional output arguments for CAMZM scheme
+                     ,cape, zmmu, zmmd, zmdt, zmdq, dlf, rliq         &
+                     ,pconvb, pconvt                                  &
+                     ,evaptzm, fzsntzm, evsntzm, evapqzm, zmflxprc    &
+                     ,zmflxsnw, zmntprpd, zmntsnpd, zmeiheat          &
+                     ,cmfmc, cmfmcdzm, preccdzm, precz                &
+                     ,zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu, zmvpgd    &
+                     ,zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq  &
                      ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
+                 ! Optional arguments for SAS scheme
+                     ,pgcon,sas_mass_flux                             &
+                     ,shalconv,shal_pgcon                             &
+                     ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon for SAS2010 shallow convection
+                 ! Optional arguments for NSAS scheme
+                     ,mp_physics                                      &
                  ! Optional moisture and other tendencies
                      ,rqvcuten,rqccuten,rqrcuten                      &
                      ,rqicuten,rqscuten,rqgcuten                      &
                      ,rqvblten,rqvften                                &
+                     ,rucuten,rvcuten                                 &
                      ,rthcuten,rthraten,rthblten,rthften              &
-#if (NMM_CORE==1)
-                 ! for hwrf-sas                      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
-                     ,rucuten,rvcuten,mommix,store_rand               &
-#endif
+                     ,mommix,store_rand                               &
+! Optional variables for tiedtke scheme - add by ZCX&YQW 
+                     ,znu                                             &
                  ! Optional moisture tracer flags 
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
                      ,CFU1,CFD1,DFU1,EFU1,DFD1,EFD1,f_flux            &
+                 ! Optional trigger function activation variable
+                     ,kfeta_trigger                                   &
 #if ( WRF_DFI_RADAR == 1 )
                  ! Optional CAP suppress option      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
                      ,do_capsuppress                                  &
@@ -61,7 +79,10 @@ CONTAINS
                                           ,KFETASCHEME,GDSCHEME       &
                                           ,G3SCHEME                   &
                                           ,P_QC,P_QI,Param_FIRST_SCALAR &
-                                          ,SASSCHEME
+                                          ,CAMZMSCHEME, SASSCHEME     &
+                                          ,OSASSCHEME                 &
+                                          ,NSASSCHEME                 &
+                                          ,TIEDTKESCHEME
 
 ! *** add new modules of schemes here
 
@@ -78,12 +99,22 @@ CONTAINS
    USE module_cu_gd     , ONLY : grelldrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas
+   USE module_cu_osas   
+   USE module_cu_camzm_driver, ONLY : camzm_driver
+   USE module_cu_tiedtke, ONLY : cu_tiedtke
+   USE module_cu_nsas   , ONLY : cu_nsas
    USE module_wrf_error , ONLY : wrf_err_message
 
    !  This driver calls subroutines for the cumulus parameterizations.
    !
    !  1. Kain & Fritsch (1993)
    !  2. Betts-Miller-Janjic (Janjic, 1994)
+   !  3. Grell-Devenyi (Grell and Devenyi, 2002)
+   !  4. Simplified Arakawa-Schubert scheme (NCEP)
+   !     (adapted by Zhang and Wang to work with ARW in V3.3)
+   !  5. Grell 3D ensemble scheme
+   !  6. Modified Tiedtke scheme (Zhang and Wang 2010)
+   ! 14. New simplified Arakawa-Schubert scheme (NCEP, YSU)
    !
 !----------------------------------------------------------------------
    IMPLICIT NONE
@@ -132,6 +163,10 @@ CONTAINS
 !-- DX            horizontal space interval (m)
 !-- rr            dry air density (kg/m^3)
 !
+!-- RUCUTEN       Zonal wind tendency due to 
+!                 cumulus scheme precipitation (m/s/s)
+!-- RVCUTEN       Meridional wind tendency due to 
+!                 cumulus scheme precipitation (m/s/s)
 !-- RTHCUTEN      Theta tendency due to 
 !                 cumulus scheme precipitation (K/s)
 !-- RQVCUTEN      Qv tendency due to 
@@ -146,7 +181,7 @@ CONTAINS
 !                 cumulus scheme precipitation (kg/kg/s)
 !
 !-- RAINC         accumulated total cumulus scheme precipitation (mm)
-!-- RAINCV        cumulus scheme precipitation (mm)
+!-- RAINCV        time-step cumulus scheme precipitation (mm)
 !-- PRATEC        precipitiation rate from cumulus scheme (mm/s)
 !-- NCA           counter of the cloud relaxation 
 !                 time in KF cumulus scheme (integer)
@@ -154,13 +189,23 @@ CONTAINS
 !-- v_phy         v-velocity interpolated to theta points (m/s)
 !-- th_phy        potential temperature (K)
 !-- t_phy         temperature (K)
+!-- tsk           skin temperature (K)
+!-- tke_pbl       turbulent kinetic energy from PBL scheme (m2/s2)
+!-- ust           u* in similarity theory (m/s)
 !-- w             vertical velocity (m/s)
 !-- moist         moisture array (4D - last index is species) (kg/kg)
+!-- z             height above sea level at middle of layers (m)
+!-- z_at_w        height above sea level at layer interfaces (m)
 !-- dz8w          dz between full levels (m)
-!-- p8w           pressure at full levels (Pa)  
+!-- pblh          planetary boundary layer height (m)
+!-- mavail        soil moisture availability
+!-- p8w           pressure at full levels (Pa)
+!-- psfc          surface pressure (Pa)
 !-- p_phy         pressure (Pa)
 !-- pi_phy        exner function (dimensionless)
 !                 points (dimensionless)
+!-- hfx           upward heat flux at surface (W/m2)
+!-- qfx           upward moisture flux at surface (kg/m2/s)
 !-- RTHRATEN      radiative temp forcing for Grell-Devenyi scheme
 !-- RTHBLTEN      PBL temp forcing for Grell-Devenyi scheme
 !-- RQVBLTEN      PBL moisture forcing for Grell-Devenyi scheme
@@ -170,8 +215,10 @@ CONTAINS
 !-- XF_ENS
 !-- PR_ENS
 !-- warm_rain
+!-- cldfra        cloud fraction
 !-- CU_ACT_FLAG
 !-- W0AVG         average vertical velocity, (for KF scheme) (m/s)
+!-- kfeta_trigger namelist for KF trigger (=1, default; =2, moisture-advection-dependent trigger)
 !-- rho           density (kg/m^3)
 !-- CLDEFI        precipitation efficiency (for BMJ scheme) (dimensionless)
 !-- STEPCU        # of fundamental timesteps between convection calls
@@ -236,18 +283,22 @@ CONTAINS
                   ensdim,maxiens,maxens,maxens2,maxens3
 
    INTEGER, OPTIONAL,     INTENT(IN   )    ::                    &
-                   cugd_avedx,clos_choice
+                   cugd_avedx,clos_choice,bl_pbl_physics,sf_sfclay_physics
 
-   INTEGER,      INTENT(IN   )    ::   cu_physics
+   INTEGER,      INTENT(IN   )    ::                 cu_physics  
    INTEGER,      INTENT(IN   )    ::   STEPCU
    LOGICAL,      INTENT(IN   )    ::   warm_rain
+
+   REAL, INTENT(IN), OPTIONAL :: pgcon,shal_pgcon,sas_mass_flux
+   INTEGER, INTENT(IN), OPTIONAL :: shalconv
 
    INTEGER,DIMENSION( ims:ime, jms:jme ),                        &
            INTENT(IN ) ::                                LOWLYR
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(IN ) ::                                          &
-                                                           dz8w  &
+                                                              z  &
+                                                      ,    dz8w  &
                                                       ,     p8w  &
                                                       ,       p  &
                                                       ,      pi  &
@@ -256,14 +307,19 @@ CONTAINS
                                                       ,      th  &
                                                       ,       t  &
                                                       ,     rho  &
-                                                      ,       w
+                                                      ,       w  
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
+         INTENT(IN ),OPTIONAL ::                         z_at_w  &
+                                                      ,  cldfra  &
+                                                      , tke_pbl  
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(INOUT)  ::                                       &
                                                           W0AVG
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           &
-                                                 GSW,HT,XLAND
+          GSW,HT,XLAND
 
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
           INTENT(INOUT) ::                                RAINC  &
@@ -271,19 +327,22 @@ CONTAINS
                                                     ,       NCA  & 
                                                     ,      HTOP  & 
                                                     ,      HBOT  &
-                                                    ,    CLDEFI 
+                                                    ,    CLDEFI
  
+   REAL, DIMENSION( kms:kme ), OPTIONAL, INTENT(IN   ) ::        &
+                                                            znu
 
    REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT),OPTIONAL :: &
-        PRATEC
+        PRATEC,MAVAIL,PBLH,PSFC,TSK,TPERT2D,UST,HFX,QFX
    REAL, DIMENSION( ims:ime , jms:jme ) :: tmppratec
                                                     
    INTEGER, DIMENSION( ims:ime , jms:jme ),                      &
                     INTENT(IN) ::                          KPBL
 
-
    LOGICAL, DIMENSION( ims:ime , jms:jme ),                      &
           INTENT(INOUT) :: CU_ACT_FLAG
+
+   INTEGER, INTENT(IN   ), OPTIONAL        ::   kfeta_trigger
 
    REAL,  INTENT(IN   ) :: DT, DX
    INTEGER,      INTENT(IN   ),OPTIONAL    ::                             &
@@ -291,17 +350,20 @@ CONTAINS
    REAL,  INTENT(IN   ),OPTIONAL :: CUDT
    REAL,  INTENT(IN   ),OPTIONAL :: CURR_SECS
    LOGICAL,INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
-   REAL   :: cudt_pass, curr_secs_pass
+   REAL,  INTENT(INOUT ),OPTIONAL :: cudtacttime                 
+   REAL   :: cudt_pass, curr_secs_pass,cudtacttime_pass          
    LOGICAL :: adapt_step_flag_pass
 
-#if (NMM_CORE==1)
+   INTEGER,      INTENT(IN   ), OPTIONAL    ::   mp_physics
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN) ::  STORE_RAND
+!
+   REAL, OPTIONAL,  INTENT(INOUT) :: mommix
+
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    !Kwon for sas2010 shallow convection
+                    INTENT(INOUT) ::  HPBL2D, EVAP2D, HEAT2D
+!
    REAL, DIMENSION( ims:ime, jms:jme, kms:kme ),                 &
                    INTENT(INOUT) :: rucuten,rvcuten
-   REAL, DIMENSION( ims:ime , jms:jme ),                         &
-                    INTENT(IN) ::  STORE_RAND
-   REAL,            INTENT(INOUT) :: mommix
-#endif
-
 !
 ! optional arguments
 !
@@ -323,8 +385,7 @@ CONTAINS
                      ,rthraten,rthblten                          &
                      ,cugd_tten,cugd_qvten,cugd_qcten            &
                      ,cugd_ttens,cugd_qvtens                     &
-                                                      ,   forcet &
-                                                      ,   forceq &
+                     ,forcet, forceq                             &
                      ,rthften,rthcuten
 
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
@@ -332,10 +393,17 @@ CONTAINS
                     INTENT(INOUT) ::                             &
                 apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma      &
                ,apr_capme,apr_capmi,edt_out,xmb_shallow          &
-                                                    , MASS_FLUX
+                                                    , MASS_FLUX  &
+               ,cape, pconvb, pconvt, preccdzm, precz, rliq
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          OPTIONAL, INTENT(INOUT) ::                              &
-                  GD_CLOUD,GD_CLOUD2
+                  GD_CLOUD,GD_CLOUD2,                            &
+                  zmmd, zmmu, zmdt, zmdq, dlf,                   &
+                  evaptzm, fzsntzm, evsntzm, evapqzm, zmflxprc,  &
+                  zmflxsnw, zmntprpd, zmntsnpd, zmeiheat,        &
+                  cmfmc, cmfmcdzm,                               &
+                  zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu, zmvpgd,  &
+                  zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq
    REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
           OPTIONAL,                                              &
           INTENT(INOUT) ::                       XF_ENS, PR_ENS
@@ -378,7 +446,7 @@ CONTAINS
 
 ! LOCAL  VAR
 
-   INTEGER :: i,j,k,its,ite,jts,jte,ij
+   INTEGER :: i,j,k,its,ite,jts,jte,ij,trigger_kf
    logical :: l_flux
 
 !-----------------------------------------------------------------
@@ -393,8 +461,10 @@ CONTAINS
 
    if (.not. PRESENT(CUDT)) then
       cudt_pass = -1
+      cudtacttime_pass = -1
    else
       cudt_pass = cudt
+      cudtacttime_pass = cudtacttime
    endif
 
    if (.not. PRESENT(adapt_step_flag)) then
@@ -411,7 +481,14 @@ CONTAINS
       tmppratec(:,:) = 0.
    end if
 
+   if (.not. PRESENT(kfeta_trigger)) then
+      trigger_kf = 1
+   else
+      trigger_kf = kfeta_trigger
+   endif
+
    IF (cu_physics .eq. 0) return
+
 #if  ( EM_CORE == 1 )
       if(cu_physics .eq. 5 ) then
       !$OMP PARALLEL DO   &
@@ -433,11 +510,14 @@ CONTAINS
        enddo
       ENDDO
       !$OMP END PARALLEL DO
+      endif
+
+      IF ( cu_physics == G3SCHEME .OR. cu_physics == KFETASCHEME ) THEN
 #ifdef DM_PARALLEL
 #include "HALO_CUP_G3_IN.inc"
 #endif
-      endif
-#endif 
+      ENDIF
+#endif
 
 ! DON'T JUDGE TIME STEP HERE, SINCE KF NEEDS ACCUMULATED W FIELD.
 ! DO IT INSIDE THE INDIVIDUAL CUMULUS SCHEME
@@ -463,6 +543,7 @@ CONTAINS
                 DT=dt ,KTAU=itimestep ,DX=dx , CUDT=cudt_pass   &
                ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,RHO=rho                                         &
                ,U=u ,V=v ,TH=th ,T=t ,W=w                       &
                ,PCPS=p ,PI=pi                                   &
@@ -496,6 +577,7 @@ CONTAINS
                ,CUDT=cudt_pass                                  &
                ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,CUTOP=htop, CUBOT=hbot, KPBL=kpbl               &
                ,DZ8W=dz8w ,PINT=p8w, PMID=p, PI=pi              &
                ,CP=cp ,R=r_d ,ELWV=xlv ,ELIV=xls ,G=g           &
@@ -517,6 +599,7 @@ CONTAINS
                ,CUDT=cudt_pass                                  &
                ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,RAINCV=raincv, PRATEC=tmppratec, NCA=nca        &
                ,DZ8W=dz8w                                       &
                ,PCPS=p, PI=pi ,W0AVG=W0AVG                      &
@@ -531,11 +614,12 @@ CONTAINS
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+               ,trigger=trigger_kf                              &
               ! optionals
                ,RTHCUTEN=rthcuten                               &
                ,RQVCUTEN=rqvcuten ,RQCCUTEN=rqccuten            &
                ,RQRCUTEN=rqrcuten ,RQICUTEN=rqicuten            &
-               ,RQSCUTEN=rqscuten                               &
+               ,RQSCUTEN=rqscuten, RQVFTEN=RQVFTEN              &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
                                                                 )
@@ -591,9 +675,7 @@ CONTAINS
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
-#if (NMM_CORE==1)
                ,RUCUTEN=RUCUTEN, RVCUTEN=RVCUTEN                &
-#endif
                ,RAINCV=RAINCV,PRATEC=tmpPRATEC,HTOP=HTOP,HBOT=HBOT &
                ,U3D=u,V3D=v,W=w,T3D=t                           &
                ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
@@ -601,14 +683,45 @@ CONTAINS
                ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
                ,CU_ACT_FLAG=CU_ACT_FLAG                         &
                ,P_QC=p_qc                                       &
-#if (NMM_CORE==1)
-               ,store_rand=store_rand  &
                ,MOMMIX=MOMMIX  &
-#endif
+               ,pgcon=pgcon,sas_mass_flux=sas_mass_flux         &
+               ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
+               ,hpbl2d=hpbl2d,evap2d=evap2d,heat2d=heat2d       &
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
                ,CUDT=cudt_pass                                  &
                ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,CUDTACTTIME=cudtacttime_pass                    & 
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+                                                                )
+     CASE (OSASSCHEME)
+                                                                                                                                           
+          IF ( adapt_step_flag_pass ) THEN
+            WRITE( wrf_err_message , * ) 'The SAS cumulus option will not work properly with an adaptive time step'
+            CALL wrf_error_fatal ( wrf_err_message )
+          END IF
+          CALL wrf_debug(100,'in cu_osas')
+          CALL CU_OSAS(                                          &
+                DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
+               ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
+               ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
+               ,RUCUTEN=RUCUTEN, RVCUTEN=RVCUTEN                &
+               ,RAINCV=RAINCV,PRATEC=tmpPRATEC,HTOP=HTOP,HBOT=HBOT &
+               ,U3D=u,V3D=v,W=w,T3D=t                           &
+               ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
+               ,PI3D=pi,RHO3D=rho                               &
+               ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
+               ,CU_ACT_FLAG=CU_ACT_FLAG                         &
+               ,P_QC=p_qc                                       &
+               ,store_rand=store_rand  &
+               ,MOMMIX=MOMMIX  &
+               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
+               ,CUDT=cudt_pass                                  &
+               ,CURR_SECS=curr_secs_pass                        &
+               ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
@@ -673,6 +786,123 @@ CONTAINS
               ,cap_suppress_loc=cap_suppress_loc                &
 #endif                                 
                                                                 )
+     CASE (CAMZMSCHEME)
+          IF (PRESENT(z_at_w) .AND. PRESENT(mavail)                 &
+                 .AND. PRESENT(pblh) .AND. PRESENT(psfc))THEN
+          CALL wrf_debug(100,'in camzm_cps')
+      IF(.not.f_qi)THEN
+         WRITE( wrf_err_message , * ) 'This cumulus option requires ice microphysics option: f_qi = ', f_qi
+         CALL wrf_error_fatal ( wrf_err_message )
+      ENDIF
+          CALL CAMZM_DRIVER(                                        &
+                IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde     &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme     &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte     &
+               ,ITIMESTEP=itimestep, BL_PBL_PHYSICS=bl_pbl_physics  &
+               ,SF_SFCLAY_PHYSICS=sf_sfclay_physics                 &
+               ,TH=th, T_PHY=t, TSK=tsk, TKE_PBL=tke_pbl, UST=ust   &
+               ,QV=qv_curr, QC=qc_curr, QI=qi_curr, MAVAIL=mavail   &
+               ,KPBL=kpbl, PBLH=pblh, XLAND=xland                   & 
+               ,Z=z, Z_AT_W=z_at_w                                  &
+               ,DZ8W=dz8w, HT=ht                                    &
+               ,P=p, P8W=p8w, PI_PHY=pi, PSFC=psfc                  &
+               ,U_PHY=u, V_PHY=v, HFX=hfx, QFX=qfx, CLDFRA=cldfra   &
+               ,TPERT_CAMUWPBL=tpert2d                              &
+               ,DX=dx, DT=dt, STEPCU=stepcu, CUDT=cudt              &
+               ,CURR_SECS=curr_secs                                 &
+               ,ADAPT_STEP_FLAG=adapt_step_flag                     &
+               ,CUDTACTTIME=cudtacttime_pass                        & 
+               ,CAPE_OUT=cape                                       &
+               ,MU_OUT=zmmu, MD_OUT=zmmd                            &
+               ,ZMDT=zmdt, ZMDQ=zmdq, DLF_OUT=dlf, RLIQ_OUT=rliq    &
+               ,PCONVT=pconvt, PCONVB=pconvb, CUBOT=hbot, CUTOP=htop&
+               ,RAINCV=raincv, PRATEC=tmppratec                     &
+               ,RUCUTEN=rucuten, RVCUTEN=rvcuten                    &
+               ,RTHCUTEN=rthcuten, RQVCUTEN=rqvcuten                &
+               ,RQCCUTEN=rqccuten, RQICUTEN=rqicuten                &
+               ,EVAPTZM=evaptzm, FZSNTZM=fzsntzm, EVSNTZM=evsntzm   &
+               ,EVAPQZM=evapqzm, ZMFLXPRC=zmflxprc                  &
+               ,ZMFLXSNW=zmflxsnw, ZMNTPRPD=zmntprpd                &
+               ,ZMNTSNPD=zmntsnpd, ZMEIHEAT=zmeiheat                &
+               ,CMFMC=cmfmc, CMFMCDZM=cmfmcdzm                      &
+               ,PRECCDZM=preccdzm, PRECZ=precz                      &
+               ,ZMMTU=zmmtu, ZMMTV=zmmtv, ZMUPGU=zmupgu             &
+               ,ZMUPGD=zmupgd, ZMVPGU=zmvpgu, ZMVPGD=zmvpgd         &
+               ,ZMICUU=zmicuu, ZMICUD=zmicud, ZMICVU=zmicvu         &
+               ,ZMICVD=zmicvd, ZMDICE=zmdice, ZMDLIQ=zmdliq         &
+                                                                    )
+          ELSE
+             WRITE( wrf_err_message , * ) 'Insufficient arguments to call CAMZM cu scheme'
+             CALL wrf_error_fatal ( wrf_err_message )
+          ENDIF
+
+! TIEDTKE SCHEME - ZCX&YQW (U of Hawaii)
+     CASE (TIEDTKESCHEME)
+
+        IF ( PRESENT ( QFX ) .AND. PRESENT( ZNU ) ) THEN
+
+          CALL wrf_debug(100,'in cu_tiedtke')
+          CALL CU_TIEDTKE(                                      &
+                DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU,HFX=hfx &
+               ,RAINCV=RAINCV,PRATEC=tmppratec,QFX=qfx,ZNU=znu  &
+               ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
+               ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
+               ,QVFTEN=RQVFTEN,QVPBLTEN=RQVBLTEN                &
+               ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
+               ,CU_ACT_FLAG=CU_ACT_FLAG                         &
+               ,CUDT=cudt_pass                                  &
+               ,CURR_SECS=curr_secs_pass                        &
+               ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,CUDTACTTIME=cudtacttime_pass                    & 
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+              ! optionals
+               ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
+               ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
+               ,RUCUTEN = RUCUTEN,RVCUTEN = RVCUTEN             &
+               ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
+               ,F_QI=f_qi,F_QS=f_qs                             &
+                                                             )
+        ELSE
+          CALL wrf_error_fatal('Lacking arguments for CU_TIEDTKE in cumulus driver')
+        ENDIF
+
+! New GFS SAS SCHEME - (Yonsei Univ., South Korea)
+     CASE (NSASSCHEME)
+        IF ( PRESENT ( QFX ) .AND. PRESENT( HFX ) ) THEN
+          CALL wrf_debug(100,'in nsas_cps')
+          CALL CU_NSAS(                                         &
+                DT=dt,P3DI=p8w,P3D=p,PI3D=pi,                   &
+                QC3D=QC_CURR,QI3D=QI_CURR,RHO3D=rho,            &
+                ITIMESTEP=itimestep,STEPCU=STEPCU,              &
+                HBOT=HBOT,HTOP=HTOP,                            &
+                CU_ACT_FLAG=CU_ACT_FLAG,CUDT=cudt_pass,         &
+                CURR_SECS=curr_secs_pass,                       &
+                ADAPT_STEP_FLAG=adapt_step_flag_pass,           &
+                CUDTACTTIME=cudtacttime_pass,                   & 
+                RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN,            &
+                RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN,            &
+                RUCUTEN=RUCUTEN,RVCUTEN=RVCUTEN,                &
+                QV3D=QV_CURR,T3D=t,                             &
+                RAINCV=RAINCV,PRATEC=tmpPRATEC,                 &
+                XLAND=XLAND,DZ8W=dz8w,W=w,U3D=u,V3D=v,          &
+                HPBL=pblh,HFX=hfx,QFX=qfx,                      & 
+                MP_PHYSICS=mp_physics,                          & 
+                pgcon=pgcon,                                    &
+                P_QC=p_qc,P_QI=p_qi,                            &
+                P_FIRST_SCALAR=param_first_scalar               &
+               ,CP=cp,CLIQ=cliq,CPV=cpv,G=g,XLV=xlv,R_D=r_d     &
+               ,R_V=r_v,EP_1=ep_1,EP_2=EP_2                     &
+               ,CICE=cice,XLS=xls,PSAT=psat                     &
+               ,F_QI=f_qi,F_QC=f_qc                             & 
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+                                                                )
+        ELSE
+          CALL wrf_error_fatal('Lacking arguments for CU_NSAS in cumulus driver')
+        ENDIF
 
      CASE DEFAULT 
 
@@ -713,13 +943,21 @@ CONTAINS
    endif
 #endif
 
-      !
-      ! Copy pratec back to output array, if necessary.
-      !
-      if (PRESENT(PRATEC)) then
-         pratec(:,:) = tmppratec(:,:)
-      endif
-          CALL wrf_debug(200,'returning from cumulus_driver')
+
+   ! Copy pratec back to output array, if necessary.
+
+   if (PRESENT(PRATEC)) then
+      pratec(:,:) = tmppratec(:,:)
+   endif
+
+   ! Copy cudtacttime back if necessary
+
+   if ( PRESENT(CUDTACTTIME) ) then
+      cudtacttime = cudtacttime_pass
+   end if
+
+   CALL wrf_debug(200,'returning from cumulus_driver')
+
    END SUBROUTINE cumulus_driver
 
 END MODULE module_cumulus_driver

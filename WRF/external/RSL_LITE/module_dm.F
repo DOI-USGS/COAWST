@@ -80,6 +80,34 @@ CONTAINS
    RETURN
    END SUBROUTINE MPASPECT
 
+   SUBROUTINE compute_mesh( ntasks , ntasks_x, ntasks_y )
+     IMPLICIT NONE
+     INTEGER, INTENT(IN)  :: ntasks
+     INTEGER, INTENT(OUT) :: ntasks_x, ntasks_y
+     CALL nl_get_nproc_x ( 1, ntasks_x )
+     CALL nl_get_nproc_y ( 1, ntasks_y )
+! check if user has specified in the namelist
+     IF ( ntasks_x .GT. 0 .OR. ntasks_y .GT. 0 ) THEN
+       ! if only ntasks_x is specified then make it 1-d decomp in i
+       IF      ( ntasks_x .GT. 0 .AND. ntasks_y .EQ. -1 ) THEN
+         ntasks_y = ntasks / ntasks_x
+       ! if only ntasks_y is specified then make it 1-d decomp in j
+       ELSE IF ( ntasks_x .EQ. -1 .AND. ntasks_y .GT. 0 ) THEN
+         ntasks_x = ntasks / ntasks_y
+       ENDIF
+       ! make sure user knows what they're doing
+       IF ( ntasks_x * ntasks_y .NE. ntasks ) THEN
+         WRITE( wrf_err_message , * )'WRF_DM_INITIALIZE (RSL_LITE): nproc_x * nproc_y in namelist ne ',ntasks
+         CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+     ELSE
+       ! When neither is specified, work out mesh with MPASPECT
+       ! Pass nproc_ln and nproc_nt so that number of procs in
+       ! i-dim (nproc_ln) is equal or lesser.
+       CALL mpaspect ( ntasks, ntasks_x, ntasks_y, 1, 1 )
+     ENDIF
+   END SUBROUTINE compute_mesh
+
    SUBROUTINE wrf_dm_initialize
       IMPLICIT NONE
 #ifndef STUBMPI
@@ -93,30 +121,8 @@ CONTAINS
 
       CALL wrf_get_dm_communicator ( local_comm )
       CALL mpi_comm_size( local_comm, ntasks, ierr )
-      CALL nl_get_nproc_x ( 1, ntasks_x )
-      CALL nl_get_nproc_y ( 1, ntasks_y )
       CALL nl_get_reorder_mesh( 1, reorder_mesh )
-
-! check if user has specified in the namelist
-      IF ( ntasks_x .GT. 0 .OR. ntasks_y .GT. 0 ) THEN
-        ! if only ntasks_x is specified then make it 1-d decomp in i
-        IF      ( ntasks_x .GT. 0 .AND. ntasks_y .EQ. -1 ) THEN
-          ntasks_y = ntasks / ntasks_x
-        ! if only ntasks_y is specified then make it 1-d decomp in j
-        ELSE IF ( ntasks_x .EQ. -1 .AND. ntasks_y .GT. 0 ) THEN
-          ntasks_x = ntasks / ntasks_y
-        ENDIF
-        ! make sure user knows what they're doing
-        IF ( ntasks_x * ntasks_y .NE. ntasks ) THEN
-          WRITE( wrf_err_message , * )'WRF_DM_INITIALIZE (RSL_LITE): nproc_x * nproc_y in namelist ne ',ntasks
-          CALL wrf_error_fatal ( wrf_err_message )
-        ENDIF
-      ELSE
-        ! When neither is specified, work out mesh with MPASPECT
-        ! Pass nproc_ln and nproc_nt so that number of procs in
-        ! i-dim (nproc_ln) is equal or lesser.
-        CALL mpaspect ( ntasks, ntasks_x, ntasks_y, 1, 1 )
-      ENDIF
+      CALL compute_mesh( ntasks, ntasks_x, ntasks_y )
       WRITE( wrf_err_message , * )'Ntasks in X ',ntasks_x,', ntasks in Y ',ntasks_y
       CALL wrf_message( wrf_err_message )
 
@@ -207,7 +213,7 @@ CONTAINS
                                       sp3y , ep3y , sm3y , em3y , &
                                 bdx , bdy )
 
-      USE module_domain, ONLY : domain, head_grid, find_grid_by_id
+      USE module_domain, ONLY : domain, head_grid, find_grid_by_id, alloc_space_field
 
       IMPLICIT NONE
       INTEGER, INTENT(IN)   :: sd1 , ed1 , sd2 , ed2 , sd3 , ed3 , bdx , bdy
@@ -560,7 +566,7 @@ CONTAINS
          ALLOCATE ( intermediate_grid )
          ALLOCATE ( intermediate_grid%parents( max_parents ) )
          ALLOCATE ( intermediate_grid%nests( max_nests ) )
-
+         intermediate_grid%allocated=.false.
          NULLIFY( intermediate_grid%sibling )
          DO i = 1, max_nests
             NULLIFY( intermediate_grid%nests(i)%ptr )
@@ -625,11 +631,12 @@ CONTAINS
          intermediate_grid%sm33y                           = c_sm3y
          intermediate_grid%em33y                           = c_em3y
 
-#if defined(SGIALTIX) && (! defined(MOVE_NESTS) )
+#if ( defined(SGIALTIX) && (! defined(MOVE_NESTS) ) ) || ( defined(FUJITSU_FX10) && (! defined(MOVE_NESTS) ) )
          ! allocate space for the intermediate domain
          CALL alloc_space_field ( intermediate_grid, intermediate_grid%id , 1, 2 , .TRUE., &   ! use same id as nest
                                c_sd1, c_ed1, c_sd2, c_ed2, c_sd3, c_ed3,       &
                                c_sm1,  c_em1,  c_sm2,  c_em2,  c_sm3,  c_em3,  &
+                               c_sp1,  c_ep1,  c_sp2,  c_ep2,  c_sp3,  c_ep3,  &
                                c_sm1x, c_em1x, c_sm2x, c_em2x, c_sm3x, c_em3x, &
                                c_sm1y, c_em1y, c_sm2y, c_em2y, c_sm3y, c_em3y, &
                                c_sm1x, c_em1x, c_sm2x, c_em2x, c_sm3x, c_em3x, &   ! x-xpose
@@ -1084,6 +1091,93 @@ CONTAINS
 #endif
    END FUNCTION wrf_dm_sum_integer
 
+#ifdef HWRF
+   SUBROUTINE wrf_dm_minloc_real ( val, lat, lon, z, idex, jdex )
+      IMPLICIT NONE
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+      REAL val, lat, lon, z
+      INTEGER idex, jdex, ierr
+      INTEGER dex(2)
+      REAL vll(4)
+      INTEGER dex_all (2,ntasks)
+      REAL vll_all(4,ntasks)
+      INTEGER i
+
+      vll= (/ val, lat, lon, z /)
+
+      dex(1) = idex ; dex(2) = jdex
+      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, local_communicator, ierr )
+      CALL mpi_allgather ( vll, 4, getrealmpitype(), vll_all , 4, getrealmpitype(), local_communicator, ierr )
+      val = vll_all(1,1) ; lat = vll_all(2,1)
+      lon = vll_all(3,1) ; z = vll_all(4,1)
+      idex = dex_all(1,1) ; jdex = dex_all(2,1)
+      DO i = 2, ntasks
+        IF ( vll_all(1,i) .LT. val ) THEN
+           val = vll_all(1,i)
+           lat = vll_all(2,i)
+           lon = vll_all(3,i)
+           z = vll_all(4,i)
+           idex = dex_all(1,i)
+           jdex = dex_all(2,i)
+        ENDIF
+      ENDDO
+#else
+      REAL val,lat,lon,z
+      INTEGER idex, jdex, ierr
+#endif
+   END SUBROUTINE wrf_dm_minloc_real
+   SUBROUTINE wrf_dm_maxloc_real ( val, lat, lon, z, idex, jdex )
+      IMPLICIT NONE
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+      REAL val, lat, lon, z
+      INTEGER idex, jdex, ierr
+      INTEGER dex(2)
+      REAL vll(4)
+      INTEGER dex_all (2,ntasks)
+      REAL vll_all(4,ntasks)
+      INTEGER i
+
+      vll= (/ val, lat, lon, z /)
+
+      dex(1) = idex ; dex(2) = jdex
+      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, local_communicator, ierr )
+      CALL mpi_allgather ( vll, 4, getrealmpitype(), vll_all , 4, getrealmpitype(), local_communicator, ierr )
+      val = vll_all(1,1) ; lat = vll_all(2,1)
+      lon = vll_all(3,1) ; z = vll_all(4,1)
+      idex = dex_all(1,1) ; jdex = dex_all(2,1)
+      DO i = 2, ntasks
+        IF ( vll_all(1,i) .GT. val ) THEN
+           val = vll_all(1,i)
+           lat = vll_all(2,i)
+           lon = vll_all(3,i)
+           z = vll_all(4,i)
+           idex = dex_all(1,i)
+           jdex = dex_all(2,i)
+        ENDIF
+      ENDDO
+#else
+      REAL val,lat,lon,z
+      INTEGER idex, jdex, ierr
+#endif
+   END SUBROUTINE wrf_dm_maxloc_real
+#endif
+
+   INTEGER FUNCTION wrf_dm_bxor_integer ( inval )
+      IMPLICIT NONE
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+      INTEGER inval, retval
+      INTEGER ierr
+      CALL mpi_allreduce ( inval, retval , 1, MPI_INTEGER, MPI_BXOR, local_communicator, ierr )
+      wrf_dm_bxor_integer = retval
+#else
+      INTEGER inval
+      wrf_dm_bxor_integer = inval
+#endif
+   END FUNCTION wrf_dm_bxor_integer
+
    SUBROUTINE wrf_dm_maxval_real ( val, idex, jdex )
       IMPLICIT NONE
 #ifndef STUBMPI
@@ -1307,17 +1401,10 @@ CONTAINS
       CALL wrf_set_dm_communicator ( ATM_COMM_WORLD )
 # endif
       CALL wrf_get_dm_communicator( mpi_comm_here )
-!# if !defined WRF_COUPLING
       CALL wrf_termio_dup( mpi_comm_here )
-!# endif
+
       CALL MPI_Comm_rank ( mpi_comm_here, mytask, ierr ) ;
       CALL mpi_comm_size ( mpi_comm_here, ntasks, ierr ) ;
-#if (DA_CORE == 1)
-      CALL mpi_comm_split( MPI_COMM_WORLD , 4 , 1 , mpi_comm_local, ierr )
-      CALL wrf_set_dm_communicator( mpi_comm_local )
-      CALL wrf_get_dm_communicator( mpi_comm_here )
-      CALL wrf_termio_dup( mpi_comm_here ) 
-#endif
 
       IF ( mytask .EQ. 0 ) THEN
         OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )
@@ -1370,7 +1457,6 @@ CONTAINS
         CALL wrf_set_dm_communicator ( mpi_comm_here )
       ENDIF
       CALL wrf_get_dm_communicator( mpi_comm_local )
-! jcw WRF_COUPLING
       CALL wrf_termio_dup( mpi_comm_local )
 #endif
    END SUBROUTINE init_module_dm
@@ -3736,7 +3822,11 @@ END
       USE module_configure, ONLY : grid_config_rec_type
       USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
                             ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
+#ifdef HWRF
+      USE module_comm_dm, ONLY : HALO_NMM_FORCE_DOWN1_sub, HALO_NMM_FORCE_DOWN_SST_sub
+#else
       USE module_comm_dm, ONLY : HALO_NMM_FORCE_DOWN1_sub
+#endif
       IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -3789,6 +3879,12 @@ integer myproc
                                 ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe    )
+
+#ifdef HWRF
+      IF(ngrid%force_sst(1) == 1) then
+#include "HALO_NMM_FORCE_DOWN_SST.inc"
+      ENDIF
+#endif
 
 #include "HALO_NMM_FORCE_DOWN1.inc"
 
@@ -4354,7 +4450,7 @@ integer myproc
       CALL mpi_allgatherv( MPI_IN_PLACE,                                  &
 #  else
       DO i = 1,elemsize*(km_e-km_s+1)
-        v_local(i) = v(i+km_s-1)
+        v_local(i) = v(i+elemsize*km_s-1)
       ENDDO
       CALL mpi_allgatherv( v_local,                                       &
 #  endif
@@ -4396,7 +4492,7 @@ integer myproc
       CALL mpi_allgatherv( MPI_IN_PLACE,                                  &
 #  else
       DO i = 1,elemsize*(km_e-km_s+1)
-        v_local(i) = v(i+km_s-1)
+        v_local(i) = v(i+elemsize*km_s-1)
       ENDDO
       CALL mpi_allgatherv( v_local,                                       &
 #  endif
@@ -4473,3 +4569,4 @@ END SUBROUTINE tfp_message
     LOGICAL arg
     arg = dm_debug_flag
    END SUBROUTINE get_dm_debug
+

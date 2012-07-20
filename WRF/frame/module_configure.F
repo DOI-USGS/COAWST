@@ -119,13 +119,21 @@ CONTAINS
 
 #ifndef NO_NAMELIST_PRINT
       OPEN ( UNIT   = nml_write_unit    ,      &
+#if (DA_CORE == 1)
+             FILE   = "namelist.output.da" ,      &
+#else
              FILE   = "namelist.output" ,      &
+#endif
              FORM   = "FORMATTED"      ,      &
              STATUS = "REPLACE"        ,      &
              IOSTAT = io_status         )
 
       IF ( io_status .NE. 0 ) THEN
+#if (DA_CORE == 1)
+        CALL WRF_ERROR_FATAL ( 'ERROR OPENING namelist.output.da' )
+#else
         CALL WRF_ERROR_FATAL ( 'ERROR OPENING namelist.output' )
+#endif
       ENDIF
 #endif
 
@@ -182,9 +190,6 @@ CONTAINS
       ENDIF
 #endif
 
-#if (EM_CORE == 1 && DA_CORE == 0)
-#  include "../dyn_em/namelist_remappings_em.h"
-#endif
 #ifdef _WIN32
       model_config_rec%nocolons = .TRUE.   ! always no colons for Windows
 #endif
@@ -484,7 +489,13 @@ CONTAINS
 
 !---------------------------------- error -------------------------------
      else
-        CALL wrf_debug(0, TRIM(nml_name)//" is not a valid namelist name")
+         IF ( &
+#include "namelist_nametest.inc"
+              ) THEN
+            nml_error = 0
+         ELSE
+            CALL wrf_debug(0, TRIM(nml_name)//" is not a valid namelist name")
+         ENDIF
      end if
 
      IF ( nml_error .NE. 0 ) then    ! Still failed

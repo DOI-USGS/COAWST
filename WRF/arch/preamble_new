@@ -31,7 +31,7 @@ MAX_DOMAINS	=	21
 
 #### DM buffer length for the configuration flags.
 
-CONFIG_BUF_LEN	=	32768
+CONFIG_BUF_LEN	=	65536
 
 #### Size of bitmasks (in 4byte integers) of stream masks for WRF I/O
 
@@ -80,6 +80,9 @@ ESMF_MOD_INC        = ESMFMODINC $(ESMF_IO_INC)
 ESMF_IO_DEFS        = ESMFIODEFS
 # select build target for external/io_esmf vs. external/esmf_time_f90
 ESMF_TARGET         = ESMFTARGET
+
+# ESMFINCLUDEGOESHERE
+
 
 ##############################################################################
 

@@ -162,7 +162,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
    INTEGER                                :: fid , rid
    LOGICAL                                :: lbc_opened
    REAL                                   :: time, btime, bfrq
-   CHARACTER*256                          :: message, message2
+   CHARACTER*256                          :: message, message2,message3
    TYPE (grid_config_rec_type)            :: config_flags
    LOGICAL , EXTERNAL                     :: wrf_dm_on_monitor
    INTEGER                                :: idum1 , idum2 , ierr , open_status
@@ -309,6 +309,9 @@ RECURSIVE SUBROUTINE integrate ( grid )
                                                  kid        = kid        )
                CALL Setup_Timekeeping (new_nest)
                CALL med_nest_initial ( grid , new_nest , config_flags )
+               IF ( grid%dfi_stage == DFI_STARTFWD ) THEN
+                  CALL wrf_dfi_startfwd_init(new_nest)
+               ENDIF
 #ifdef WRF_COUPLING
                !jcw Here we init a child grid for the coupling.
                IF (grid%id.EQ.WRF_CPL_GRID-1) THEN
@@ -371,9 +374,13 @@ RECURSIVE SUBROUTINE integrate ( grid )
                    CALL integrate ( grid_ptr%nests(kid)%ptr ) 
 #endif
                    CALL wrf_debug( 100 , 'module_integrate: back from recursive call to integrate ' )
-                   CALL wrf_debug( 100 , 'module_integrate: calling med_nest_feedback ' )
-                   CALL med_nest_feedback ( grid_ptr , grid_ptr%nests(kid)%ptr , config_flags )
-                   CALL wrf_debug( 100 , 'module_integrate: back from med_nest_feedback ' )
+                   IF ( .NOT. ( domain_clockisstoptime(head_grid              ) .OR. &
+                                domain_clockisstoptime(grid                   ) .OR. &
+                                domain_clockisstoptime(grid_ptr%nests(kid)%ptr) ) )  THEN
+                     CALL wrf_debug( 100 , 'module_integrate: calling med_nest_feedback ' )
+                     CALL med_nest_feedback ( grid_ptr , grid_ptr%nests(kid)%ptr , config_flags )
+                     CALL wrf_debug( 100 , 'module_integrate: back from med_nest_feedback ' )
+                   END IF
 #ifdef MOVE_NESTS
                    IF ( .NOT. domain_clockisstoptime( head_grid ) ) THEN
                      CALL med_nest_move ( grid_ptr , grid_ptr%nests(kid)%ptr )
@@ -413,10 +420,14 @@ RECURSIVE SUBROUTINE integrate ( grid )
             should_do_last_io = domain_clockisstoptime( head_grid )
             grid_ptr => grid 
             DO WHILE ( grid_ptr%id .NE. 1 )
-               IF ( domain_clockisstoptime( grid_ptr ) ) should_do_last_io = .TRUE. 
+               IF ( domain_clockisstoptime( grid_ptr ) ) THEN
+                  should_do_last_io = .TRUE. 
+               END IF
                grid_ptr => grid_ptr%parents(1)%ptr
             ENDDO
             IF ( should_do_last_io ) THEN 
+               grid_ptr => grid 
+               CALL med_nest_feedback ( grid_ptr%parents(1)%ptr, grid , config_flags )
                CALL med_last_solve_io ( grid , config_flags )
             ENDIF
          ENDIF

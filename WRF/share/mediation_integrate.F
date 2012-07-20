@@ -46,7 +46,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    TYPE(WRFU_Time) :: currTime, startTime
 #ifdef HWRF
 !zhang's doing
-   TYPE(WRFU_Time) :: CurrTime  !zhang new
+!   TYPE(WRFU_Time) :: CurrTime  !zhang new
    INTEGER :: hr, min, sec, ms,julyr,julday
    REAL :: GMT
 !end of zhang's doing
@@ -54,19 +54,27 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
    CHARACTER*256          :: message
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
        (grid%dfi_write_dfi_history .OR. grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI) ) THEN
-#else
-   IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
-#endif
+! #else
+!   IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
+! #endif
      IF  ( (config_flags%restart) .AND. ( currTime .EQ. startTime ) ) THEN
-       !  no history output on the first time of the restart
+       !  output history at beginning of restart if alarm is ringing
+       CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
      ELSE
        CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
      END IF
      CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
+#if (EM_CORE == 1)
+   ELSE IF  ( (config_flags%restart) .AND. ( currTime .EQ. startTime ) .AND. &
+              ( config_flags%write_hist_at_0h_rst ) ) THEN
+     !  output history at beginning of restart even if alarm is not ringing
+     CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
+     CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
+#endif
    ENDIF
 
    IF( WRFU_AlarmIsRinging( grid%alarms( INPUTOUT_ALARM ), rc=rc ) ) THEN
@@ -95,6 +103,20 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
            CALL med_read_wrf_chem_emiss ( grid , config_flags )
            CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
            call wrf_debug(15,' Back from CALL med_read_wrf_chem_emiss ')
+         ENDIF
+       ELSE
+         IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+           CALL med_auxinput_in ( grid, ialarm, config_flags )
+           CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
+         ENDIF
+       ENDIF
+     ELSE IF( ialarm .EQ. AUXINPUT13_ALARM .AND. config_flags%chem_opt > 0 ) THEN
+       IF( config_flags%emiss_opt_vol /= 0 ) THEN
+         IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+           call wrf_debug(15,' CALL med_read_wrf_volc_emiss ')
+           CALL med_read_wrf_volc_emiss ( grid , config_flags )
+           CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
+           call wrf_debug(15,' Back from CALL med_read_wrf_volc_emiss ')
          ENDIF
        ELSE
          IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
@@ -163,6 +185,9 @@ SUBROUTINE med_after_solve_io ( grid , config_flags )
    ! Compute time series variables
    CALL calc_ts(grid)
 
+   ! Compute track variables 
+   CALL track_driver(grid)
+
    RETURN
 END SUBROUTINE med_after_solve_io
 
@@ -173,7 +198,11 @@ SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
 #else
    USE module_domain	, ONLY : domain
 #endif
+#ifdef ESMFIO
+   USE module_utility   , ONLY : WRFU_Time 
+#else
    USE module_utility   , ONLY : WRFU_Time, WRFU_TimeEQ
+#endif
    USE module_timing
    USE module_io_domain
    USE module_configure	, ONLY : grid_config_rec_type
@@ -198,7 +227,11 @@ SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
    CALL domain_clock_get( parent, current_timestr=timestr, start_time=strt_time, current_time=cur_time )
    CALL construct_filename2a ( rstname , config_flags%rst_inname , newid , 2 , timestr )
 
+#ifdef ESMFIO
+    IF ( config_flags%restart .AND. (cur_time .EQ. strt_time) ) THEN
+#else
     IF ( config_flags%restart .AND. WRFU_TimeEQ(cur_time,strt_time) ) THEN
+#endif
      WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading header information only'
      CALL wrf_message ( message )
   ! note that the parent pointer is not strictly correct, but nest is not allocated yet and
@@ -246,6 +279,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
    TYPE (grid_config_rec_type)                :: nest_config_flags
 
   ! Local
+   LOGICAL, EXTERNAL      :: wrf_dm_on_monitor
    TYPE(WRFU_Time)        :: strt_time, cur_time
    CHARACTER * 80         :: rstname , timestr
    CHARACTER * 256        :: message
@@ -334,6 +368,12 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                             ips , ipe , jps , jpe , kps , kpe
      END SUBROUTINE input_terrain_rsmas
 
+     SUBROUTINE wrf_tsin ( grid , ierr )
+        USE module_domain
+        TYPE ( domain ), INTENT(INOUT) :: grid
+        INTEGER, INTENT(INOUT) :: ierr
+     END SUBROUTINE wrf_tsin
+
    END INTERFACE
 
    CALL domain_clock_get( parent, start_time=strt_time, current_time=cur_time )
@@ -352,6 +392,9 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      where ( parent%nest_pos .gt. 0. ) parent%nest_pos = parent%nest_pos + 500.  ! make a cliff
 #endif
 
+! initialize some other constants (and 1d arrays in z)
+     CALL init_domain_constants ( parent, nest )
+
 ! fill in entire fine grid domain with interpolated coarse grid data
      CALL med_interp_domain( parent, nest )
 
@@ -361,9 +404,6 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                ims, ime, jms, jme, kms, kme,    &
                                ips, ipe, jps, jpe, kps, kpe    )
   
-! initialize some other constants (and 1d arrays in z)
-     CALL init_domain_constants ( parent, nest )
-
 ! get the nest config flags
      CALL model_to_grid_config_rec ( nest%id , model_config_rec , nest_config_flags )
 
@@ -377,23 +417,20 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 ! data is from a pristine, un-cycled model input file.  For the original topo from
 ! the real program, we will need to adjust the terrain (and a couple of other base-
 ! state fields) so reflect the smoothing and matching between the parent and child
-! domains.  For cycled forecasts, the topo has already been adjusted, and we skip
-! over this step.
+! domains.
 
-       IF ( nest%save_topo_from_real == 1 ) THEN
-          CALL  copy_3d_field ( nest%ht_int  , nest%ht , &
-                                ids , ide , jds , jde , 1   , 1   , &
-                                ims , ime , jms , jme , 1   , 1   , &
-                                ips , ipe , jps , jpe , 1   , 1   )
-          CALL  copy_3d_field ( nest%mub_fine , nest%mub , &
-                                ids , ide , jds , jde , 1   , 1   , &
-                                ims , ime , jms , jme , 1   , 1   , &
-                                ips , ipe , jps , jpe , 1   , 1   )
-          CALL  copy_3d_field ( nest%phb_fine , nest%phb , &
-                                ids , ide , jds , jde , kds , kde , &
-                                ims , ime , jms , jme , kms , kme , &
-                                ips , ipe , jps , jpe , kps , kpe )
-       END IF
+       CALL  copy_3d_field ( nest%ht_int  , nest%ht , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+       CALL  copy_3d_field ( nest%mub_fine , nest%mub , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+       CALL  copy_3d_field ( nest%phb_fine , nest%phb , &
+                             ids , ide , jds , jde , kds , kde , &
+                             ims , ime , jms , jme , kms , kme , &
+                             ips , ipe , jps , jpe , kps , kpe )
 
        IF ( nest_config_flags%input_from_file ) THEN
 ! read input from dataset
@@ -449,6 +486,12 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                      ' by horizontally interpolating parent domain #' ,parent%id, &
                                      '. ***'
        CALL wrf_debug ( 0 , message )
+
+#if (DA_CORE != 1)
+       ! For nests without an input file, we still need to read time series locations
+       !   from the tslist file
+       CALL wrf_tsin( nest , ierr )
+#endif
      END IF
 
 
@@ -518,6 +561,8 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
   ELSE  ! restart
 
+     IF ( wrf_dm_on_monitor() ) CALL start_timing
+
      CALL domain_clock_get( nest, current_timestr=timestr )
      CALL construct_filename2a ( rstname , config_flags%rst_inname , nest%id , 2 , timestr )
 
@@ -531,6 +576,11 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      ENDIF
      CALL input_restart ( fid,   nest , nest_config_flags , ierr )
      CALL close_dataset ( fid , nest_config_flags , "DATASET=RESTART" )
+
+     IF ( wrf_dm_on_monitor() ) THEN
+       WRITE ( message , FMT = '("processing restart file for domain ",I8)' ) nest%id
+       CALL end_timing ( TRIM(message) )
+     ENDIF
 
      nest%imask_nostag = 1
      nest%imask_xstag = 1
@@ -1044,8 +1094,7 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
    END INTERFACE
 
 ! feedback nest to the parent
-    IF ( .NOT. WRFU_ClockIsStopTime(nest%domain_clock ,rc=rc) .AND. &
-         config_flags%feedback .NE. 0 ) THEN
+    IF ( config_flags%feedback .NE. 0 ) THEN
       CALL med_feedback_domain( parent, nest )
 #ifdef MOVE_NESTS
       CALL get_ijk_from_grid (  parent ,                         &
@@ -1096,12 +1145,12 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
 !end of zhang's doing
 #endif
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
        (grid%dfi_write_dfi_history .OR. grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI) ) THEN
-#else
-   IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
-#endif
+! #else
+!    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
+! #endif
      CALL med_hist_out ( grid , HISTORY_ALARM , config_flags )
    ENDIF
 
@@ -1191,15 +1240,30 @@ SUBROUTINE med_analysis_in ( grid , config_flags )
                          config_flags , "DATASET=RESTART", ierr )
 
    IF ( ierr .NE. 0 ) THEN
-!    CALL WRF_message( message )
-     CALL WRF_ERROR_FATAL('NESTED DOMAIN ERROR: FOR ANALYSIS SET TO TRUE, YOU NEED wrfanal FILE')
+      ! Could not open the analysis file, so notify user.
+
+      write(message,'(A,I0,A,A,A)') 'WARNING: Domain ',grid%id,' analysis file ',trim(rstname),' is missing.'
+      call wrf_message(message)
+      write(message,'(A,I0,A)') '-------> Domain ',grid%id,' running as a cold start (interp from parent).'
+      call wrf_message(message)
+
+      IF ( wrf_dm_on_monitor() ) THEN
+         WRITE (message, '("Failing to read restart for domain ",I8)') grid%id
+         CALL end_timing ( TRIM(message) )
+      END IF
+
+      return
+   ELSE
+      ! Was able to open the analysis file.  Read it as a restart file.
+
+      CALL input_restart ( rid, grid , config_flags , ierr )
+      IF ( wrf_dm_on_monitor() ) THEN
+         WRITE ( message , FMT = '("Reading restart for domain ",I8)' ) grid%id
+         CALL end_timing ( TRIM(message) )
+      END IF
+      CALL close_dataset ( rid , config_flags , "DATASET=RESTART" )
    ENDIF
-   CALL input_restart ( rid, grid , config_flags , ierr )
-   IF ( wrf_dm_on_monitor() ) THEN
-     WRITE ( message , FMT = '("Reading restart for domain ",I8)' ) grid%id
-     CALL end_timing ( TRIM(message) )
-   END IF
-   CALL close_dataset ( rid , config_flags , "DATASET=RESTART" )
+
    RETURN
 
 END SUBROUTINE med_analysis_in
@@ -1269,7 +1333,7 @@ RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
    USE module_timing
    USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
-   USE module_bc_time_utilities
+!   USE module_bc_time_utilities
    USE module_utility
 
    IMPLICIT NONE
@@ -1395,7 +1459,7 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
    USE module_timing
    USE module_io_domain
    USE module_configure	, ONLY : grid_config_rec_type
-   USE module_bc_time_utilities
+!   USE module_bc_time_utilities
    USE module_utility
 
    IMPLICIT NONE
@@ -1472,7 +1536,7 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
    USE module_io_domain
   ! Model layer
    USE module_configure	, ONLY : grid_config_rec_type
-   USE module_bc_time_utilities
+!   USE module_bc_time_utilities
    USE module_utility
 
    IMPLICIT NONE
@@ -1573,7 +1637,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
    USE module_timing
    USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
-   USE module_bc_time_utilities
+!   USE module_bc_time_utilities
    USE module_utility
 
    IMPLICIT NONE
@@ -1599,11 +1663,11 @@ integer myproc,i,j,k
 
    CALL wrf_debug ( 200 , 'in med_latbound_in' )
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    ! Avoid trying to re-read the boundary conditions if we are doing DFI integration
    !    and do not expect to find boundary conditions for the current time
    IF ( (grid%dfi_opt .EQ. DFI_DDFI .OR. grid%dfi_opt .EQ. DFI_TDFI) .AND. grid%dfi_stage .EQ. DFI_FWD ) RETURN
-#endif
+! #endif
 
    IF ( grid%id .EQ. 1 .AND. config_flags%specified .AND. config_flags%io_form_boundary .GT. 0 ) THEN
 
@@ -1612,12 +1676,19 @@ integer myproc,i,j,k
                                   stop_time=stopTime,       &
                                   time_step=stepTime )
 
-     IF ( ( lbc_read_time( currentTime ) ) .AND. &
-          ( currentTime + stepTime .GE. stopTime ) .AND. &
-          ( currentTime .NE. startTime ) ) THEN
-       CALL wrf_debug( 100 , 'med_latbound_in: Skipping attempt to read lateral boundary file during last time step ' )
-
-     ELSE IF ( WRFU_AlarmIsRinging( grid%alarms( BOUNDARY_ALARM ), rc=rc ) ) THEN
+!jm 20110828
+!jm The test below never worked because set_time_time_read_again is never called to store a 
+!jm time that lbc_read_time can compare with currentTime (see module_bc_time_utilities). This means 
+!jm lbc_read_time will never return anything but false -- will also generate an ESMF error that the 
+!jm stored time was never initialized.  Removing that branch from the conditional.
+!jm     IF ( ( lbc_read_time( currentTime ) ) .AND. &
+!jm          ( currentTime + stepTime .GE. stopTime ) .AND. &
+!jm          ( currentTime .NE. startTime ) ) THEN
+!jm       CALL wrf_debug( 100 , 'med_latbound_in: Skipping attempt to read lateral boundary file during last time step ' )
+!jm
+!jm     ELSE IF ( WRFU_AlarmIsRinging( grid%alarms( BOUNDARY_ALARM ), rc=rc ) ) THEN
+!jm 20110828
+     IF ( WRFU_AlarmIsRinging( grid%alarms( BOUNDARY_ALARM ), rc=rc ) ) THEN
        CALL wrf_debug ( 100 , 'in med_latbound_in preparing to read' )
        CALL WRFU_AlarmRingerOff( grid%alarms( BOUNDARY_ALARM ), rc=rc )
        IF ( wrf_dm_on_monitor() ) CALL start_timing
@@ -1647,12 +1718,12 @@ integer myproc,i,j,k
        CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
        CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
        IF ( (config_flags%dfi_opt .NE. DFI_NODFI) .AND. (head_grid%dfi_stage .NE. DFI_FST) ) THEN
           CALL wrf_debug( 100 , 'med_latbound_in: closing boundary file ' )
           CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
        END IF
-#endif
+! #endif
 
        CALL domain_clock_get( grid, current_time=currentTime )
        DO WHILE (currentTime .GE. grid%next_bdy_time )         ! next_bdy_time is set by input_boundary from bdy file
@@ -1749,7 +1820,7 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
    USE module_io_domain
   ! Model layer
    USE module_configure	, ONLY : grid_config_rec_type
-   USE module_bc_time_utilities
+!   USE module_bc_time_utilities
    USE module_utility
 
    IMPLICIT NONE
@@ -1785,16 +1856,16 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
      ENDIF
      CALL construct_filename2a ( fname , auxinput_inname, &
                                  grid%id , 2 , timestr )
-     IF      ( stream .EQ. 10 ) THEN
+     IF      ( stream-first_input .EQ. 10 ) THEN
        WRITE(n2,'("DATASET=AUXINPUT10")')
-     ELSE IF ( stream .EQ. 11 ) THEN
+     ELSE IF ( stream-first_input .EQ. 11 ) THEN
        WRITE(n2,'("DATASET=AUXINPUT11")')
-     ELSE IF ( stream .GE. 10 ) THEN
+     ELSE IF ( stream-first_input .GE. 10 ) THEN
        WRITE(n2,'("DATASET=AUXINPUT",I2)')stream-first_input
      ELSE
        WRITE(n2,'("DATASET=AUXINPUT",I1)')stream-first_input
      ENDIF
-     WRITE ( message , '("open_aux_u : opening ",A," for reading. ")') TRIM ( fname )
+     WRITE ( message , '("open_aux_u : opening ",A," for reading. DATASET ",A)') TRIM ( fname ),TRIM(n2)
      CALL wrf_debug( 1, message )
 !<DESCRIPTION>
 !
@@ -1822,7 +1893,7 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    USE module_io_domain
   ! Model layer
    USE module_configure	, ONLY : grid_config_rec_type
-   USE module_bc_time_utilities
+!   USE module_bc_time_utilities
    USE module_utility
 
    IMPLICIT NONE
@@ -1860,17 +1931,13 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    ENDIF
    CALL construct_filename2a ( fname , hist_outname, &
                                grid%id , 2 , timestr )
-   IF ( stream .EQ. history_only ) THEN
+   IF ( stream-first_history .EQ. history_only ) THEN
      WRITE(n2,'("DATASET=HISTORY")')
-   ELSE IF ( stream .GE. 10 ) THEN
+   ELSE IF ( stream-first_history .GE. 10 ) THEN
      WRITE(n2,'("DATASET=AUXHIST",I2)')stream-first_history
    ELSE
      WRITE(n2,'("DATASET=AUXHIST",I1)')stream-first_history
    ENDIF
-#if (DA_CORE == 1)
-   len_n2 = LEN_TRIM(n2)
-   WRITE(n2(len_n2+1:len_n2+19),'(",REAL_OUTPUT_SIZE=4")')
-#endif
    IF ( oid .eq. 0 ) THEN
      WRITE ( message , '("open_hist_w : opening ",A," for writing. ")') TRIM ( fname )
      CALL wrf_debug( 1, message )
@@ -1897,6 +1964,70 @@ END SUBROUTINE open_hist_w
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #ifdef WRF_CHEM
+
+SUBROUTINE med_read_wrf_chem_input ( grid , config_flags )
+  ! Driver layer
+   USE module_domain	, ONLY : domain , domain_clock_get
+   USE module_io_domain
+   USE module_timing
+   USE module_configure	, ONLY : grid_config_rec_type
+  ! Model layer
+   USE module_bc_time_utilities
+#ifdef DM_PARALLEL
+   USE module_dm
+#endif
+   USE module_date_time
+   USE module_utility
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+  ! Local data
+   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
+
+   INTEGER                                :: ierr, efid
+   REAL                                   :: time, tupdate
+   real, allocatable :: dumc0(:,:,:)
+   CHARACTER (LEN=256)                    :: message, current_date_char, date_string
+   CHARACTER (LEN=80)                     :: inpname
+
+#include <wrf_io_flags.h>
+!   IF ( grid%id .EQ. 1 ) THEN
+
+      CALL domain_clock_get( grid, current_timestr=current_date_char )
+
+      CALL construct_filename1 ( inpname , config_flags%auxinput12_inname , grid%id , 2 )
+      WRITE(message,*)'mediation_integrate: med_read_wrf_chem_input: Open file ',TRIM(inpname)
+      CALL wrf_message( TRIM(message) )
+
+     if( grid%auxinput12_oid .NE. 0 ) then
+       CALL close_dataset ( grid%auxinput12_oid , config_flags , "DATASET=AUXINPUT12" )
+     endif
+
+      CALL open_r_dataset ( grid%auxinput12_oid, TRIM(inpname) , grid , config_flags, &
+                              "DATASET=AUXINPUT12", ierr )
+        IF ( ierr .NE. 0 ) THEN
+           WRITE( message , * ) 'med_read_wrf_chem_input error opening ', TRIM( inpname )
+           CALL wrf_error_fatal( TRIM( message ) )
+        ENDIF
+
+         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_input: Read chemistry from wrfout at time ',&
+         TRIM(current_date_char)
+         CALL wrf_message( TRIM(message) )
+
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput12' )
+         CALL input_auxinput12 ( grid%auxinput12_oid, grid , config_flags , ierr )
+
+         CALL close_dataset ( grid%auxinput12_oid , config_flags , "DATASET=AUXINPUT12" )
+
+!  ENDIF
+   CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_input: exit' )
+
+END SUBROUTINE med_read_wrf_chem_input
 !------------------------------------------------------------------------
 ! Chemistry emissions input control. Three options are available and are
 ! set via the namelist variable io_style_emissions:
@@ -1906,13 +2037,12 @@ END SUBROUTINE open_hist_w
 !       (Intended for debugging of chem code)
 !
 !   1 = Emissions are read in from two 12 hour files that are cycled.
-!       With this choice, emi_inname and emi_outname should be set to
-!       the value "wrfchemi_d<domain>". The value of frames_per_emissfile
-!       is ignored.
+!       With this choice, auxinput5_inname should be set to
+!       the value "wrfchemi_hhZ_d<domain>". 
 !
 !   2 = Emissions are read in from files identified by date and that have
-!       a length defined by frames_per_emissfile (in hours). Both
-!       emi_inname and emi_outname should be set to 
+!       a length defined by frames_per_auxinput5. Both
+!       auxinput5_inname should be set to 
 !       "wrfchemi_d<domain>_<date>".
 !------------------------------------------------------------------------
 SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
@@ -2062,7 +2192,7 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
 
 !---
 ! io_style_emissions option 2: use dated emission files whose length is
-!                             set via frames_per_emissfile...
+!                             set via frames_per_auxinput5...
 !---
       else if( config_flags%io_style_emissions == 2 ) then
          WRITE(message,*)'mediation_integrate: med_read_wrf_chem_emissions: Read emissions for time ',TRIM(current_date_char)
@@ -2090,7 +2220,7 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
 ! If reached the indicated number of frames in the emissions file, close it.
 !
          grid%emissframes = grid%emissframes + 1
-         IF ( grid%emissframes >= config_flags%frames_per_emissfile ) THEN
+         IF ( grid%emissframes >= config_flags%frames_per_auxinput5 ) THEN
             CALL close_dataset ( grid%auxinput5_oid , config_flags , "DATASET=AUXINPUT5" )
             grid%emissframes = 0
             grid%auxinput5_oid = 0
@@ -2177,323 +2307,6 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
    CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_bioemissions: exit' )
 
 END SUBROUTINE med_read_wrf_chem_bioemiss
-
-SUBROUTINE med_read_wrf_chem_gocartbg ( grid , config_flags )
-  ! Driver layer
-   USE module_domain	, ONLY : domain , domain_clock_get
-   USE module_io_domain
-   USE module_timing
-   USE module_configure	, ONLY : grid_config_rec_type
-  ! Model layer
-   USE module_bc_time_utilities
-#ifdef DM_PARALLEL
-   USE module_dm
-#endif
-   USE module_date_time
-   USE module_utility
-
-   IMPLICIT NONE
-
-  ! Arguments
-   TYPE(domain)                               :: grid
-
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-
-  ! Local data
-   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
-
-   INTEGER                                :: ierr, efid
-   REAL                                   :: time, tupdate
-   real, allocatable :: dumc0(:,:,:)
-   CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
-
-#include <wrf_io_flags.h>
-!   IF ( grid%id .EQ. 1 ) THEN
-
-      CALL domain_clock_get( grid, current_timestr=current_date_char )
-
-      CALL construct_filename1 ( inpname , 'wrfchemi_gocart_bg' , grid%id , 2 )
-      WRITE(message,*)'mediation_integrate: med_read_wrf_chem_gocartbg: Open file ',TRIM(inpname)
-      CALL wrf_message( TRIM(message) )
-
-     if( grid%auxinput8_oid .NE. 0 ) then
-       CALL close_dataset ( grid%auxinput8_oid , config_flags , "DATASET=AUXINPUT8" )
-     endif
-
-      CALL open_r_dataset ( grid%auxinput8_oid, TRIM(inpname) , grid , config_flags, &
-                              "DATASET=AUXINPUT8", ierr )
-        IF ( ierr .NE. 0 ) THEN
-           WRITE( message , * ) 'med_read_wrf_chem_gocartbg error opening ', TRIM( inpname )
-           CALL wrf_error_fatal( TRIM( message ) )
-        ENDIF
-
-         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_gocartbg: Read fire emissions at time ',&
-         TRIM(current_date_char)
-         CALL wrf_message( TRIM(message) )
-
-         CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput8' )
-         CALL input_auxinput8 ( grid%auxinput8_oid, grid , config_flags , ierr )
-
-         CALL close_dataset ( grid%auxinput8_oid , config_flags , "DATASET=AUXINPUT8" )
-
-!  ENDIF
-   CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_gocartbg: exit' )
-
-END SUBROUTINE med_read_wrf_chem_gocartbg
-SUBROUTINE med_read_wrf_chem_emissopt3 ( grid , config_flags )
-  ! Driver layer
-   USE module_domain	, ONLY : domain , domain_clock_get
-   USE module_io_domain
-   USE module_timing
-   USE module_configure	, ONLY : grid_config_rec_type
-  ! Model layer
-   USE module_bc_time_utilities
-#ifdef DM_PARALLEL
-   USE module_dm
-#endif
-   USE module_date_time
-   USE module_utility
-
-   IMPLICIT NONE
-
-  ! Arguments
-   TYPE(domain)                               :: grid
-
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-
-  ! Local data
-   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
-
-   INTEGER                                :: ierr, efid
-   REAL                                   :: time, tupdate
-   real, allocatable :: dumc0(:,:,:)
-   CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
-
-#include <wrf_io_flags.h>
-!   IF ( grid%id .EQ. 1 ) THEN
-
-      CALL domain_clock_get( grid, current_timestr=current_date_char )
-
-      CALL construct_filename1 ( inpname , 'wrffirechemi' , grid%id , 2 )
-      WRITE(message,*)'mediation_integrate: med_read_wrf_chem_fireemissions: Open file ',TRIM(inpname)
-      CALL wrf_message( TRIM(message) )
-
-     if( grid%auxinput7_oid .NE. 0 ) then
-       CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
-     endif
-
-      CALL open_r_dataset ( grid%auxinput7_oid, TRIM(inpname) , grid , config_flags, &
-                              "DATASET=AUXINPUT7", ierr )
-        IF ( ierr .NE. 0 ) THEN
-           WRITE( message , * ) 'med_read_wrf_chem_fireemissions: error opening ', TRIM( inpname )
-           CALL wrf_error_fatal( TRIM( message ) )
-        ENDIF
-
-         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_fireemissions: Read fire emissions at time ',&
-         TRIM(current_date_char)
-         CALL wrf_message( TRIM(message) )
-
-         CALL wrf_debug (00 , 'mediation_integrate: calling input_auxinput7' )
-         CALL input_auxinput7 ( grid%auxinput7_oid, grid , config_flags , ierr )
-
-         CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
-
-!  ENDIF
-   CALL wrf_debug (00 , 'mediation_integrate: med_read_wrf_chem_fireemissions: exit' )
-
-END SUBROUTINE med_read_wrf_chem_emissopt3
-!------------------------------------------------------------------------
-! Biomass burn emissions input control. Three options are available and are
-! set via the namelist variable io_style_fireemissions:
-!
-!   0 = Emissions are not read in from a file. They will contain their
-!       default values, which can be set in the Registry.
-!       (Intended for debugging of chem code)
-!
-!   1 = Emissions are read in from two 12 hour files that are cycled.
-!       With this choice, emi_inname and emi_outname should be set to
-!       the value "wrffirechemi_d<domain>". The value of frames_per_fireemissfile
-!       is ignored.
-!
-!   2 = Emissions are read in from files identified by date and that have
-!       a length defined by frames_per_fireemissfile (in hours). Both
-!       fireemis_inname and fireemis_outname should be set to
-!       "wrffirechemi_d<domain>_<date>".
-!------------------------------------------------------------------------
-SUBROUTINE med_read_wrf_chem_fireemiss ( grid , config_flags )
-  ! Driver layer
-   USE module_domain	, ONLY : domain , domain_clock_get
-   USE module_io_domain
-   USE module_timing
-   USE module_configure	, ONLY : grid_config_rec_type
-  ! Model layer
-   USE module_bc_time_utilities
-#ifdef DM_PARALLEL
-   USE module_dm
-#endif
-   USE module_date_time
-   USE module_utility
-
-   IMPLICIT NONE
-
-  ! Arguments
-   TYPE(domain)                               :: grid
-
-!  TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   TYPE (grid_config_rec_type)            :: config_flags
-   Type (WRFU_Time )                      :: stopTime, currentTime
-   Type (WRFU_TimeInterval )              :: stepTime
-
-  ! Local data
-   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
-
-   INTEGER                                :: ierr, efid, ihr
-   REAL                                   :: time, tupdate
-   real, allocatable :: dumc0(:,:,:)
-   CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
-
-#include <wrf_io_flags.h>
-
-     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-
-! This "if" should be commented out when using emission files for nested
-! domains. Also comment out the "ENDIF" line noted below.
-!    IF ( grid%id .EQ. 1 ) THEN
-
-      CALL domain_clock_get( grid, current_time=currentTime,          &
-                                   current_timestr=current_date_char, &
-                                   stop_time=stopTime,                &
-                                   time_step=stepTime )
-
-      time = float(grid%itimestep) * grid%dt
-
-!---
-! io_style_emissions option 0: no emissions read in...
-!---
-      if( config_flags%io_style_fireemissions == 0 ) then
-         ! Do nothing.
-!---
-! io_style_emissions option 1: cycle through two 12 hour input files...
-!---
-      else if( config_flags%io_style_fireemissions == 1 ) then
-
-         tupdate = mod( time, (12. * 3600.) )
-         IF( tupdate .LT. grid%dt ) THEN
-            tupdate = 0.
-         ENDIF
-         IF( currentTime + stepTime .GE. stopTime .AND. &
-              grid%auxinput7_oid .NE. 0 ) THEN
-            CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
-            tupdate = 1.
-         ENDIF
-
-         IF ( tupdate .EQ. 0. ) THEN
-          read( current_date_char(12:13),'(i2)') ihr
-          IF ( ihr .LT. 12  .AND. ihr .GE. 0 ) THEN
-            CALL construct_filename1 ( inpname , 'wrffirechemi_00z' , grid%id , 2 )
-            WRITE(message,*)'mediation_integrate: med_read_wrf_chem_fireemiss: Open file ',TRIM(inpname)
-            CALL wrf_message( TRIM(message) )
-
-            if( grid%auxinput7_oid .NE. 0 ) then
-               CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
-            endif
-
-            CALL open_r_dataset ( grid%auxinput7_oid, TRIM(inpname) , grid , config_flags, &
-                 "DATASET=AUXINPUT7", ierr )
-            IF ( ierr .NE. 0 ) THEN
-               WRITE( message , * ) 'med_read_wrf_chem_fireemiss: error opening ', TRIM( inpname )
-               CALL wrf_error_fatal( TRIM( message ) )
-            ENDIF
-          ELSE IF ( ihr .LT. 24  .AND. ihr .GE. 12 ) THEN
-            CALL construct_filename1 ( inpname , 'wrffirechemi_12z' , grid%id , 2 )
-            WRITE(message,*)'mediation_integrate: med_read_wrf_chem_fireemiss: Open file ',TRIM(inpname)
-            CALL wrf_message( TRIM(message) )
-
-            if( grid%auxinput7_oid .NE. 0 ) then
-               CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
-            endif
-
-            CALL open_r_dataset ( grid%auxinput7_oid, TRIM(inpname) , grid , config_flags, &
-                 "DATASET=AUXINPUT7", ierr )
-            IF ( ierr .NE. 0 ) THEN
-               WRITE( message , * ) 'med_read_wrf_chem_fireemiss: error opening ', TRIM( inpname )
-               CALL wrf_error_fatal( TRIM( message ) )
-            ENDIF
-          ELSE 
-             WRITE( message , '(A,I10)' ) 'med_read_wrf_chem_fireemiss: error in fire emissions file time ', ihr
-             CALL wrf_error_fatal( TRIM( message ) )
-          ENDIF
-         ENDIF
-
-         WRITE( message, '(A,2F10.1)' ) ' FIRE EMISSIONS UPDATE TIME ',time,mod(time,3600.)
-         CALL wrf_message( TRIM(message) )
-!
-! updates to fire emissions
-         IF ( ( mod( time, 3600. ) .LT. grid%dt   ) .AND. &
-              ( currentTime + stepTime .LT. stopTime ) ) THEN
-
-            WRITE(message,'(A,A)')'mediation_integrate: med_read_wrf_chem_fireemiss: Read emissions for time ',TRIM(current_date_char)
-            CALL wrf_message( TRIM(message) )
-            CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput7' )
-            CALL input_auxinput7 ( grid%auxinput7_oid, grid , config_flags , ierr )
-         ELSE
-            CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_fireemiss: Do not read emissions' )
-         ENDIF
-
-
-!---
-! io_style_emissions option 2: use dated emission files whose length is
-!                             set via frames_per_fireemissfile...
-!---
-      else if( config_flags%io_style_fireemissions == 2 ) then
-         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_fireemiss: Read emissions for time ',TRIM(current_date_char)
-         CALL wrf_message( TRIM(message) )
-!
-! Code to read fire emission files...
-!
-         if( grid%auxinput7_oid == 0 ) then
-            CALL construct_filename2a(inpname , grid%fireemi_inname, grid%id , 2, current_date_char)
-            WRITE(message,*)'mediation_integrate: med_read_wrf_chem_fireemiss: Open file ',TRIM(inpname)
-            CALL wrf_message( TRIM(message) )
-            CALL open_r_dataset ( grid%auxinput7_oid, TRIM(inpname) , grid , config_flags, &
-                 "DATASET=AUXINPUT7", ierr )
-            IF ( ierr .NE. 0 ) THEN
-               WRITE( message , * ) 'med_read_wrf_chem_fireemiss: error opening ', TRIM( inpname )
-               CALL wrf_error_fatal( TRIM( message ) )
-            ENDIF
-         end if
-!
-! Read the emissions data.
-!
-         CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput7' )
-         CALL input_auxinput7 ( grid%auxinput7_oid, grid , config_flags , ierr )
-!
-! If reached the indicated number of frames in the emissions file, close it.
-!
-         grid%fireemissframes = grid%fireemissframes + 1
-         IF ( grid%fireemissframes >= config_flags%frames_per_fireemissfile ) THEN
-            CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
-            grid%fireemissframes = 0
-            grid%auxinput7_oid = 0
-         ENDIF
-
-! unknown io_style_emissions option...
-!---
-      else
-         call wrf_error_fatal("Unknown emission style selected via io_style_emissions.")
-      end if
-
-! The following line should be commented out when using emission files
-! for nested domains. Also comment out the "if" noted above.
-!   ENDIF
-
-   CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_fireemiss: exit' )
-
-END SUBROUTINE med_read_wrf_chem_fireemiss
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE med_read_wrf_chem_emissopt4 ( grid , config_flags )
   ! Driver layer
@@ -2558,73 +2371,6 @@ SUBROUTINE med_read_wrf_chem_emissopt4 ( grid , config_flags )
    CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_emissions: exit' )
 
 END SUBROUTINE med_read_wrf_chem_emissopt4
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-SUBROUTINE med_read_wrf_chem_dust_emiss ( grid , config_flags )
-  ! Driver layer
-   USE module_domain	, ONLY : domain , domain_clock_get
-   USE module_io_domain
-   USE module_timing
-   USE module_configure	, ONLY : grid_config_rec_type
-  ! Model layer
-   USE module_bc_time_utilities
-#ifdef DM_PARALLEL
-   USE module_dm
-#endif
-   USE module_date_time
-   USE module_utility
-
-   IMPLICIT NONE
-
-  ! Arguments
-   TYPE(domain)                               :: grid
-
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-
-  ! Local data
-   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
-
-   INTEGER                                :: ierr, efid
-   REAL                                   :: time, tupdate
-   real, allocatable :: dumc0(:,:,:)
-   CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
-
-#include <wrf_io_flags.h>
-!   IF ( grid%id .EQ. 1 ) THEN
-
-      CALL domain_clock_get( grid, current_timestr=current_date_char )
-
-      CALL construct_filename1 ( inpname , 'wrfchemi_dust' , grid%id , 2 )
-      WRITE(message,*)'mediation_integrate: med_read_wrf_chem_dust_emiss: Open file ',TRIM(inpname)
-      CALL wrf_message( TRIM(message) )
-
-     if( grid%auxinput8_oid .NE. 0 ) then
-       CALL close_dataset ( grid%auxinput8_oid , config_flags , "DATASET=AUXINPUT8" )
-     endif
-
-      CALL open_r_dataset ( grid%auxinput8_oid, TRIM(inpname) , grid , config_flags, &
-                              "DATASET=AUXINPUT8", ierr )
-        IF ( ierr .NE. 0 ) THEN
-           WRITE( message , * ) 'med_read_wrf_chem_dust_emiss: error opening ', TRIM( inpname )
-           CALL wrf_error_fatal( TRIM( message ) )
-        ENDIF
-
-         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_dust_emiss: Read dust errosion factor at time ',&
-         TRIM(current_date_char)
-         CALL wrf_message( TRIM(message) )
-
-         CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput8' )
-         CALL input_auxinput8 ( grid%auxinput8_oid, grid , config_flags , ierr )
-
-         CALL close_dataset ( grid%auxinput8_oid , config_flags , "DATASET=AUXINPUT8" )
-
-!  ENDIF
-   CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_dust_emiss: exit' )
- 
-END SUBROUTINE  med_read_wrf_chem_dust_emiss
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2765,7 +2511,133 @@ SUBROUTINE med_read_wrf_chem_gocart_bg ( grid , config_flags )
    CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_gocart_bg: exit' )
  
 END SUBROUTINE  med_read_wrf_chem_gocart_bg
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+SUBROUTINE med_read_wrf_volc_emiss ( grid , config_flags )
+  ! Driver layer
+   USE module_domain	, ONLY : domain , domain_clock_get
+   USE module_io_domain
+   USE module_timing
+   USE module_configure	, ONLY : grid_config_rec_type
+  ! Model layer
+   USE module_bc_time_utilities
+#ifdef DM_PARALLEL
+   USE module_dm
+#endif
+   USE module_date_time
+   USE module_utility
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+  ! Local data
+   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
+
+   INTEGER                                :: ierr, efid
+   REAL                                   :: time, tupdate
+   real, allocatable :: dumc0(:,:,:)
+   CHARACTER (LEN=256)                    :: message, current_date_char, date_string
+   CHARACTER (LEN=80)                     :: inpname
+
+#include <wrf_io_flags.h>
+      CALL domain_clock_get( grid, current_timestr=current_date_char )
+
+      CALL construct_filename1 ( inpname , 'wrfchemv' , grid%id , 2 )
+      WRITE(message,*)'mediation_integrate: med_read_wrf_volc_emiss: Open file ',TRIM(inpname)
+      CALL wrf_message( TRIM(message) )
+
+     if( grid%auxinput13_oid .NE. 0 ) then
+       CALL close_dataset ( grid%auxinput13_oid , config_flags , "DATASET=AUXINPUT13" )
+     endif
+
+      CALL open_r_dataset ( grid%auxinput13_oid, TRIM(inpname) , grid , config_flags, &
+                              "DATASET=AUXINPUT13", ierr )
+        IF ( ierr .NE. 0 ) THEN
+           WRITE( message , * ) 'med_read_wrf_volc_emiss: error opening ', TRIM( inpname )
+           CALL wrf_error_fatal( TRIM( message ) )
+        ENDIF
+
+         WRITE(message,*)'mediation_integrate: med_read_wrf_volc_emiss: Read volcanic ash emissions',&
+         TRIM(current_date_char)
+         CALL wrf_message( TRIM(message) )
+
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput13' )
+         CALL input_auxinput13 ( grid%auxinput13_oid, grid , config_flags , ierr )
+
+         CALL close_dataset ( grid%auxinput13_oid , config_flags , "DATASET=AUXINPUT13" )
+
+   CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_volc_emiss: exit' )
+ 
+END SUBROUTINE  med_read_wrf_volc_emiss
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE med_read_wrf_chem_emissopt3 ( grid , config_flags )
+  ! Driver layer
+   USE module_domain	, ONLY : domain , domain_clock_get
+   USE module_io_domain
+   USE module_timing
+   USE module_configure	, ONLY : grid_config_rec_type
+  ! Model layer
+   USE module_bc_time_utilities
+#ifdef DM_PARALLEL
+   USE module_dm
+#endif
+   USE module_date_time
+   USE module_utility
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+  ! Local data
+   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
+
+   INTEGER                                :: ierr, efid
+   REAL                                   :: time, tupdate
+   real, allocatable :: dumc0(:,:,:)
+   CHARACTER (LEN=256)                    :: message, current_date_char, date_string
+   CHARACTER (LEN=80)                     :: inpname
+
+#include <wrf_io_flags.h>
+!   IF ( grid%id .EQ. 1 ) THEN
+
+      CALL domain_clock_get( grid, current_timestr=current_date_char )
+
+      CALL construct_filename1 ( inpname , 'wrffirechemi' , grid%id , 2 )
+      WRITE(message,*)'mediation_integrate: med_read_wrf_chem_fireemissions: Open file ',TRIM(inpname)
+      CALL wrf_message( TRIM(message) )
+
+     if( grid%auxinput7_oid .NE. 0 ) then
+       CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
+     endif
+
+      CALL open_r_dataset ( grid%auxinput7_oid, TRIM(inpname) , grid , config_flags, &
+                              "DATASET=AUXINPUT7", ierr )
+        IF ( ierr .NE. 0 ) THEN
+           WRITE( message , * ) 'med_read_wrf_chem_fireemissions: error opening ', TRIM( inpname )
+           CALL wrf_error_fatal( TRIM( message ) )
+        ENDIF
+
+         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_fireemissions: Read fire emissions at time ',&
+         TRIM(current_date_char)
+         CALL wrf_message( TRIM(message) )
+
+         CALL wrf_debug (00 , 'mediation_integrate: calling input_auxinput7' )
+         CALL input_auxinput7 ( grid%auxinput7_oid, grid , config_flags , ierr )
+
+         CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
+
+!  ENDIF
+   CALL wrf_debug (00 , 'mediation_integrate: med_read_wrf_chem_fireemissions: exit' )
+
+END SUBROUTINE med_read_wrf_chem_emissopt3
 #endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2802,11 +2674,6 @@ RECURSIVE SUBROUTINE med_namelist_out ( grid , config_flags )
    LOGICAL,EXTERNAL :: wrf_dm_on_monitor
 
    TYPE (grid_config_rec_type)            :: kid_config_flags
-
-!zhang new
-   IF ( wrf_dm_on_monitor() ) THEN
-     CALL start_timing
-   END IF
 
    prefix = "wrfnamelist_d<domain>_<date>"
    nout = 99

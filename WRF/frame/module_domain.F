@@ -68,6 +68,8 @@ MODULE module_domain
      MODULE PROCEDURE get_ijk_from_grid1, get_ijk_from_grid2
    END INTERFACE
 
+   INTEGER, PARAMETER :: max_hst_mods = 200
+
 CONTAINS
 
    SUBROUTINE adjust_domain_dims_for_move( grid , dx, dy )
@@ -921,6 +923,23 @@ CONTAINS
       grid%ntsloc        = 0
       grid%ntsloc_domain = 0
 
+#if (EM_CORE == 1)
+! Allocate storage for track metadata
+      ALLOCATE( grid%track_time_in( grid%track_loc_in ) )
+      ALLOCATE( grid%track_lat_in( grid%track_loc_in ) )
+      ALLOCATE( grid%track_lon_in( grid%track_loc_in ) )
+
+      ALLOCATE( grid%track_time_domain( grid%track_loc_in ) )
+      ALLOCATE( grid%track_lat_domain( grid%track_loc_in ) )
+      ALLOCATE( grid%track_lon_domain( grid%track_loc_in ) )
+      ALLOCATE( grid%track_i( grid%track_loc_in ) )
+      ALLOCATE( grid%track_j( grid%track_loc_in ) )
+
+      grid%track_loc        = 0
+      grid%track_loc_domain = 0
+      grid%track_have_calculated = .FALSE.
+      grid%track_have_input      = .FALSE.
+#endif
 #ifdef DM_PARALLEL
       CALL wrf_get_dm_communicator ( grid%communicator )
       CALL wrf_dm_define_comms( grid )
@@ -940,6 +959,7 @@ CONTAINS
      INTEGER, PARAMETER :: MAX_DEXES = 100
      INTEGER I, PREV, IDEX
      INTEGER DEXES(MAX_DEXES)
+     outstr = ""
      prev = 1
      dexes(1) = 1
      DO i = 2,MAX_DEXES
@@ -996,9 +1016,13 @@ CONTAINS
       CHARACTER*256      :: fieldlst
       CHARACTER*1        :: op, strmtyp
       CHARACTER*3        :: strmid
+      CHARACTER*10       :: strmtyp_name
       INTEGER            :: io_status
+      INTEGER            :: strmtyp_int, count_em
       INTEGER            :: lineno, fieldno, istrm, retval, itrace
       LOGICAL            :: keepgoing, noerr, gavewarning, ignorewarning, found
+      LOGICAL, SAVE      :: you_warned_me = .FALSE.
+      LOGICAL, SAVE      :: you_warned_me2(max_hst_mods,max_domains) = .FALSE.
 
       gavewarning = .FALSE.
 
@@ -1016,176 +1040,99 @@ CONTAINS
         IF ( io_status .EQ. 0 ) THEN   ! only on success
           keepgoing = .TRUE.
           lineno = 0
+          count_em = 0    ! Count the total number of fields
           DO WHILE ( keepgoing )
             READ(UNIT=read_unit,FMT='(A)',IOSTAT=io_status) inln
-            keepgoing = io_status .EQ. 0
-            lineno = lineno + 1
-            IF ( .NOT. LEN(TRIM(inln)) .LT. LEN(inln) ) THEN
-              WRITE(mess,*)'W A R N I N G : Line ',lineno,' of ',TRIM(fname),' is too long. Limit is ',LEN(inln),' characters.' 
-              gavewarning = .TRUE.
-            ENDIF
-            IF ( INDEX(inln,'#') .EQ. 0 ) THEN   ! skip comments, which is a # anywhere on line
-              IF ( keepgoing ) THEN
-                noerr = .TRUE.
-                CALL get_fieldstr(1,':',inln,op,1,noerr)          ! + is add, - is remove
-                IF ( TRIM(op) .NE. '+' .AND. TRIM(op) .NE. '-' ) THEN
-                  WRITE(mess,*)'W A R N I N G : unknown operation ',TRIM(op),' (should be + or -). Line ',lineno
-                  gavewarning = .TRUE.
-                ENDIF
-                CALL get_fieldstr(2,':',inln,t1,1,noerr)          ! i is input, h is history
-                CALL change_to_lower_case(t1,strmtyp) 
-                CALL get_fieldstr(3,':',inln,strmid,3,noerr)      ! number of stream (main input and hist are 0)
-                READ(strmid,'(I3)') istrm
-                IF ( istrm .LT. 0 .OR. istrm .GT. last_history ) THEN
-                  WRITE(mess,*)'W A R N I N G : invalid stream id ',istrm,' (should be 0 <= id <= ',last_history,'). Line ',lineno
-                  gavewarning = .TRUE.
-                ENDIF
-                CALL get_fieldstr(4,':',inln,fieldlst,1024,noerr) ! get list of fields
-                IF ( noerr ) THEN
-                  fieldno = 1
-                  CALL get_fieldstr(fieldno,',',fieldlst,t1,256,noerr)
-                  CALL change_to_lower_case(t1,lookee)
-                  DO WHILE ( noerr )    ! linear search, blargh...
-                    p => grid%head_statevars
-                    found = .FALSE.
-                    DO WHILE ( ASSOCIATED( p ) )
+            keepgoing = (io_status .EQ. 0) .AND. (LEN(TRIM(inln)) .GT. 0)  
+            IF ( keepgoing ) THEN
+              lineno = lineno + 1
+              IF ( .NOT. LEN(TRIM(inln)) .LT. LEN(inln) ) THEN
+                WRITE(mess,*)'W A R N I N G : Line ',lineno,' of ',TRIM(fname),' is too long. Limit is ',LEN(inln),' characters.' 
+                gavewarning = .TRUE.
+              ENDIF
+              IF ( INDEX(inln,'#') .EQ. 0 ) THEN   ! skip comments, which is a # anywhere on line
+                IF ( keepgoing ) THEN
+                  noerr = .TRUE.
+                  CALL get_fieldstr(1,':',inln,op,1,noerr)          ! + is add, - is remove
+                  IF ( TRIM(op) .NE. '+' .AND. TRIM(op) .NE. '-' ) THEN
+                    WRITE(mess,*)'W A R N I N G : unknown operation ',TRIM(op),' (should be + or -). Line ',lineno
+                    gavewarning = .TRUE.
+                  ENDIF
+                  CALL get_fieldstr(2,':',inln,t1,1,noerr)          ! i is input, h is history
+                  CALL change_to_lower_case(t1,strmtyp) 
 
-                      IF ( p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
+                  SELECT CASE (TRIM(strmtyp))
+                  CASE ('h')
+                     strmtyp_name = 'history'
+                     strmtyp_int  = first_history
+                  CASE ('i')
+                     strmtyp_name = 'input'
+                     strmtyp_int  = first_input
+                  CASE DEFAULT
+                     WRITE(mess,*)'W A R N I N G : unknown stream type ',TRIM(strmtyp),'. Line ',lineno
+                     gavewarning = .TRUE.
+                  END SELECT
 
-                        DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
-                          CALL change_to_lower_case( p%dname_table( grid%id, itrace ) , dname ) 
-                          IF ( TRIM(dname) .EQ. TRIM(lookee) ) THEN
-                            found = .TRUE.
-                            IF      ( TRIM(strmtyp) .EQ. 'h' ) THEN
-                              IF      ( TRIM(op) .EQ. '+' ) THEN
-                                CALL get_mask( p%streams_table(grid%id,itrace)%stream, first_history + istrm - 1, retval )
-                                IF ( retval .NE. 0 ) THEN
-                                  WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already on history stream ',istrm, &
-                                               '.  File: ', TRIM(fname),' at line ',lineno
-                                  gavewarning = .TRUE.
-                                ELSE
-                                  WRITE(mess,*)'Setting history stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess)
-                                  CALL set_mask( p%streams_table(grid%id,itrace)%stream, first_history + istrm - 1 )
-                                ENDIF
-                              ELSE IF ( TRIM(op) .EQ. '-' ) THEN
-                                CALL get_mask( p%streams_table(grid%id,itrace)%stream, first_history + istrm - 1, retval )
-                                IF ( retval .EQ. 0 ) THEN
-                                  WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already off history stream ',istrm, &
-                                               '. File: ',TRIM(fname),' at line ',lineno
-                                  gavewarning = .TRUE.
-                                ELSE
-                                  WRITE(mess,*)'Resetting history stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
-                                  CALL reset_mask( p%streams_table(grid%id,itrace)%stream, first_history + istrm - 1)
-                                ENDIF
-                              ENDIF
-                            ELSE IF ( TRIM(strmtyp) .EQ. 'i' ) THEN
-                              IF      ( TRIM(op) .EQ. '+' ) THEN
-                                CALL get_mask( p%streams_table(grid%id,itrace)%stream, first_input + istrm - 1, retval )
-                                IF ( retval .NE. 0 ) THEN
-                                  WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already on input stream ',istrm, &
-                                               '. File: ',TRIM(fname),' at line ',lineno
-                                  gavewarning = .TRUE.
-                                ELSE
-                                  WRITE(mess,*)'Setting input stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
-                                  CALL set_mask( p%streams_table(grid%id,itrace)%stream, first_input + istrm - 1)
-                                ENDIF
-                              ELSE IF ( TRIM(op) .EQ. '-' ) THEN
-                                CALL get_mask( p%streams_table(grid%id,itrace)%stream, first_input + istrm - 1, retval )
-                                IF ( retval .EQ. 0 ) THEN
-                                  WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already off input stream ',istrm, &
-                                               '. File: ',TRIM(fname),' at line ',lineno
-                                  gavewarning = .TRUE.
-                                ELSE
-                                  WRITE(mess,*)'Resetting input stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess)
-                                  CALL reset_mask( p%streams_table(grid%id,itrace)%stream, first_input + istrm - 1)
-                                ENDIF
-                              ENDIF
-                            ELSE
-                              WRITE(mess,*)'W A R N I N G : unknown stream type ',TRIM(strmtyp),'. Line ',lineno
-                              CALL wrf_debug(1,mess)
-                              gavewarning = .TRUE.
-                            ENDIF
-                          ENDIF
-                        ENDDO
-                      ELSE 
-                        IF ( p%Ntl .GT. 0 ) THEN
-                          CALL change_to_lower_case(p%DataName(1:LEN(TRIM(p%DataName))-2),dname)
-                        ELSE
-                          CALL change_to_lower_case(p%DataName,dname)
-                        ENDIF
-
-                        IF ( TRIM(dname) .EQ. TRIM(lookee) ) THEN
-                          found = .TRUE.
-                          IF      ( TRIM(strmtyp) .EQ. 'h' ) THEN
-                            IF      ( TRIM(op) .EQ. '+' ) THEN
-                              CALL get_mask( p%streams, first_history + istrm - 1, retval )
-                              IF ( retval .NE. 0 ) THEN
-                                WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already on history stream ',istrm, &
-                                             '.  File: ', TRIM(fname),' at line ',lineno
-                                gavewarning = .TRUE.
-                              ELSE
-                                WRITE(mess,*)'Setting history stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
-                                CALL set_mask( p%streams, first_history + istrm - 1 )
-                              ENDIF
-                            ELSE IF ( TRIM(op) .EQ. '-' ) THEN
-                              CALL get_mask( p%streams, first_history + istrm - 1, retval )
-                              IF ( retval .EQ. 0 ) THEN
-                                WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already off history stream ',istrm, &
-                                             '. File: ',TRIM(fname),' at line ',lineno
-                                gavewarning = .TRUE.
-                              ELSE
-                                WRITE(mess,*)'Resetting history stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
-                                CALL reset_mask( p%streams, first_history + istrm - 1)
-                              ENDIF
-                            ENDIF
-                          ELSE IF ( TRIM(strmtyp) .EQ. 'i' ) THEN
-                            IF      ( TRIM(op) .EQ. '+' ) THEN
-                              CALL get_mask( p%streams, first_input + istrm - 1, retval )
-                              IF ( retval .NE. 0 ) THEN
-                                WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already on input stream ',istrm, &
-                                             '. File: ',TRIM(fname),' at line ',lineno
-                                gavewarning = .TRUE.
-                              ELSE
-                                WRITE(mess,*)'Setting input stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
-                                CALL set_mask( p%streams, first_input + istrm - 1)
-                              ENDIF
-                            ELSE IF ( TRIM(op) .EQ. '-' ) THEN
-                              CALL get_mask( p%streams, first_input + istrm - 1, retval )
-                              IF ( retval .EQ. 0 ) THEN
-                                WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already off input stream ',istrm, &
-                                             '. File: ',TRIM(fname),' at line ',lineno
-                                gavewarning = .TRUE.
-                              ELSE
-                                WRITE(mess,*)'Resetting input stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
-                                CALL reset_mask( p%streams, first_input + istrm - 1)
-                              ENDIF
-                            ENDIF
-                          ELSE
-                            WRITE(mess,*)'W A R N I N G : unknown stream type ',TRIM(strmtyp),'. Line ',lineno
-                            CALL wrf_debug(1,mess)
-                            gavewarning = .TRUE.
-                          ENDIF
-                        ENDIF
-                      ENDIF
-                      p => p%next
-                    ENDDO
-                    IF ( .NOT. found ) THEN
-                      WRITE(mess,*)'W A R N I N G : Unable to modify mask for ',TRIM(lookee),&
-                                   '.  Variable not found. File: ',TRIM(fname),' at line ',lineno
-                      CALL wrf_message(mess)
-                      gavewarning = .TRUE.
-                    ENDIF
-                    fieldno = fieldno + 1
+                  CALL get_fieldstr(3,':',inln,strmid,3,noerr)      ! number of stream (main input and hist are 0)
+                  READ(strmid,'(I3)') istrm
+                  IF ( istrm .LT. 0 .OR. istrm .GT. last_history ) THEN
+                    WRITE(mess,*)'W A R N I N G : invalid stream id ',istrm,' (should be 0 <= id <= ',last_history,'). Line ',lineno
+                    gavewarning = .TRUE.
+                  ENDIF
+                  CALL get_fieldstr(4,':',inln,fieldlst,1024,noerr) ! get list of fields
+                  IF ( noerr ) THEN
+                    fieldno = 1
                     CALL get_fieldstr(fieldno,',',fieldlst,t1,256,noerr)
                     CALL change_to_lower_case(t1,lookee)
-                  ENDDO
-                ELSE
-                  WRITE(mess,*)'W A R N I N G : Problem reading ',TRIM(fname),' at line ',lineno
-                  CALL wrf_message(mess)
-                  gavewarning = .TRUE.
-                ENDIF
-              ENDIF  ! keepgoing
-            ENDIF  ! skip comments
+                    DO WHILE ( noerr )    ! linear search, blargh...
+                      p => grid%head_statevars
+                      found = .FALSE.
+                      count_em = count_em + 1
+                      DO WHILE ( ASSOCIATED( p ) )
+  
+                        IF ( p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
+  
+                          DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+                            CALL change_to_lower_case( p%dname_table( grid%id, itrace ) , dname ) 
+
+                            IF ( TRIM(dname) .EQ. TRIM(lookee) ) &
+                            CALL warn_me_or_set_mask (id, istrm, lineno, strmtyp_int, count_em, op, &
+                                                      strmtyp_name, dname, fname, lookee,      &
+                                                      p%streams_table(grid%id,itrace)%stream,  &
+                                                      mess, found, you_warned_me2)
+                          ENDDO
+                        ELSE 
+                          IF ( p%Ntl .GT. 0 ) THEN
+                            CALL change_to_lower_case(p%DataName(1:LEN(TRIM(p%DataName))-2),dname)
+                          ELSE
+                            CALL change_to_lower_case(p%DataName,dname)
+                          ENDIF
+  
+                          IF ( TRIM(dname) .EQ. TRIM(lookee) ) &
+                          CALL warn_me_or_set_mask (id, istrm, lineno, strmtyp_int, count_em, op, &
+                                                    strmtyp_name, dname, fname, lookee,      &
+                                                    p%streams, mess, found, you_warned_me2)
+                        ENDIF
+                        p => p%next
+                      ENDDO
+                      IF ( .NOT. found ) THEN
+                        WRITE(mess,*)'W A R N I N G : Unable to modify mask for ',TRIM(lookee),&
+                                     '.  Variable not found. File: ',TRIM(fname),' at line ',lineno
+                        CALL wrf_message(mess)
+                        gavewarning = .TRUE.
+                      ENDIF
+                      fieldno = fieldno + 1
+                      CALL get_fieldstr(fieldno,',',fieldlst,t1,256,noerr)
+                      CALL change_to_lower_case(t1,lookee)
+                    ENDDO
+                  ELSE
+                    WRITE(mess,*)'W A R N I N G : Problem reading ',TRIM(fname),' at line ',lineno
+                    CALL wrf_message(mess)
+                    gavewarning = .TRUE.
+                  ENDIF
+                ENDIF  ! keepgoing
+              ENDIF    ! skip comments
+            ENDIF      ! keepgoing
           ENDDO
         ELSE
           WRITE(mess,*)'W A R N I N G : Problem opening ',TRIM(fname)
@@ -1196,13 +1143,19 @@ CONTAINS
         IF ( gavewarning ) THEN
           CALL nl_get_ignore_iofields_warning(1,ignorewarning)
           IF ( .NOT. ignorewarning ) THEN
+            CALL wrf_message(mess)
             WRITE(mess,*)'modify_io_masks: problems reading ',TRIM(fname) 
             CALL wrf_message(mess)
             CALL wrf_error_fatal('Set ignore_iofields_warn to true in namelist to ignore')
           ELSE
-            WRITE(mess,*)'Ignoring problems reading ',TRIM(fname) 
-            CALL wrf_message(mess)
-            CALL wrf_message('Continuing.  To make this a fatal error, set ignore_iofields_warn to false in namelist' )
+            IF ( .NOT. you_warned_me ) THEN
+              if ( .NOT. you_warned_me2(count_em,id) ) CALL wrf_message(mess)  ! Don't repeat the W A R N I N G message
+              WRITE(mess,*)'Ignoring problems reading ',TRIM(fname) 
+              CALL wrf_message(mess)
+              CALL wrf_message('Continuing.  To make this a fatal error, set ignore_iofields_warn to false in namelist' )
+              CALL wrf_message(' ')
+              you_warned_me = .TRUE.
+            ENDIF
           ENDIF
         ENDIF
       ENDIF  ! wrf_dm_on_monitor
@@ -1225,6 +1178,63 @@ CONTAINS
 #endif
       
    END SUBROUTINE modify_io_masks1
+
+   SUBROUTINE warn_me_or_set_mask (id, istrm, lineno, strmtyp_int, count_em, op, &
+                                   strmtyp_name, dname, fname, lookee,      &
+                                   p_stream, mess, found, you_warned_me2)
+
+      IMPLICIT NONE
+
+! See if a field that is requested to be added to or removed from the I/O stream
+!    is already present or absent
+! If the requested action has already been done, write a warning message
+! If not, satisfy the request
+
+     INTEGER,       INTENT(IN )   :: id, istrm, lineno, strmtyp_int
+     INTEGER,       INTENT(IN )   :: p_stream(*), count_em
+     CHARACTER*1,   INTENT(IN )   :: op
+     CHARACTER*10,  INTENT(IN )   :: strmtyp_name
+     CHARACTER*256, INTENT(IN )   :: dname, fname, lookee
+     CHARACTER*256, INTENT(OUT)   :: mess
+     LOGICAL,       INTENT(OUT)   :: found
+     LOGICAL,       INTENT(INOUT) :: you_warned_me2(max_hst_mods,max_domains)
+   ! Local
+     INTEGER                      :: retval
+
+     found = .TRUE.
+     IF      ( TRIM(op) .EQ. '+' ) THEN
+       CALL get_mask( p_stream, strmtyp_int + istrm - 1, retval )
+       IF ( retval .NE. 0 ) THEN
+         WRITE(mess,*) 'Domain ',id, ' W A R N I N G : Variable ',TRIM(lookee),' already on ', &
+                       TRIM(strmtyp_name), ' stream ',istrm, '.  File: ', TRIM(fname),' at line ',lineno
+       ELSE
+         WRITE(mess,*) 'Domain ', id, ' Setting ', TRIM(strmtyp_name), ' stream ',istrm,' for ', &
+                                  TRIM(DNAME)  ; CALL wrf_debug(1,mess)
+         CALL set_mask( p_stream, strmtyp_int + istrm - 1 )
+       ENDIF
+     ELSE IF ( TRIM(op) .EQ. '-' ) THEN
+       CALL get_mask( p_stream, strmtyp_int + istrm - 1, retval )
+       IF ( retval .EQ. 0 ) THEN
+         WRITE(mess,*) 'Domain ',id, ' W A R N I N G : Variable ',TRIM(lookee),' already off ', &
+                       TRIM(strmtyp_name), ' stream ',istrm, '. File: ',TRIM(fname),' at line ',lineno
+       ELSE
+         WRITE(mess,*) 'Domain ', id, ' Resetting ', TRIM(strmtyp_name), ' stream ',istrm,' for ', &
+                                    TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
+         CALL reset_mask( p_stream, strmtyp_int + istrm - 1)
+       ENDIF
+     ENDIF
+     IF ( count_em > max_hst_mods ) THEN
+       WRITE(mess,*)'ERROR module_domain:  Array size for you_warned_me2 is fixed at ',max_hst_mods
+       CALL wrf_message(mess)
+       CALL wrf_error_fatal('Did you really type > max_hst_mods fields into ', TRIM(fname) ,' ?')
+     ELSE
+       IF ( .NOT. you_warned_me2(count_em,id) ) THEN
+         CALL wrf_message(mess)     ! Write warning message once for each field
+         you_warned_me2(count_em,id) = .TRUE.
+       ENDIF
+     ENDIF
+
+   END SUBROUTINE warn_me_or_set_mask 
 
 !  This routine ALLOCATEs the required space for the meteorological fields
 !  for a specific domain.  The fields are simply ALLOCATEd as an -1.  They
@@ -1278,7 +1288,7 @@ CONTAINS
       LOGICAL , INTENT(IN)            :: inter_domain_in
 
       ! Local
-      INTEGER  num_bytes_allocated
+      INTEGER(KIND=8)  num_bytes_allocated
       INTEGER  idum1, idum2
 
 #if (EM_CORE == 1)
@@ -1389,7 +1399,111 @@ CONTAINS
         grid%have_displayed_alloc_stats = .TRUE.   
       ENDIF
 
+
+      grid%alloced_sd31=sd31
+      grid%alloced_ed31=ed31
+      grid%alloced_sd32=sd32
+      grid%alloced_ed32=ed32
+      grid%alloced_sd33=sd33
+      grid%alloced_ed33=ed33
+      grid%alloced_sm31=sm31
+      grid%alloced_em31=em31
+      grid%alloced_sm32=sm32
+      grid%alloced_em32=em32
+      grid%alloced_sm33=sm33
+      grid%alloced_em33=em33
+      grid%alloced_sm31x=sm31x
+      grid%alloced_em31x=em31x
+      grid%alloced_sm32x=sm32x
+      grid%alloced_em32x=em32x
+      grid%alloced_sm33x=sm33x
+      grid%alloced_em33x=em33x
+      grid%alloced_sm31y=sm31y
+      grid%alloced_em31y=em31y
+      grid%alloced_sm32y=sm32y
+      grid%alloced_em32y=em32y
+      grid%alloced_sm33y=sm33y
+      grid%alloced_em33y=em33y
+
+      grid%allocated=.TRUE.
+
    END SUBROUTINE alloc_space_field
+
+   ! Ensure_space_field allocates a grid's arrays if they are not yet
+   ! allocated.  If they were already allocated, then it deallocates and
+   ! reallocates them if they were allocated with different dimensions.
+   ! If they were already allocated with the requested dimensions, then
+   ! ensure_space_field does nothing.
+
+   SUBROUTINE ensure_space_field ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
+                                  sd31, ed31, sd32, ed32, sd33, ed33, &
+                                  sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                  sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                  sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                  sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                  sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                  sm31y, em31y, sm32y, em32y, sm33y, em33y )
+
+      IMPLICIT NONE
+
+      !  Input data.
+
+      TYPE(domain)               , POINTER          :: grid
+      INTEGER , INTENT(IN)            :: id
+      INTEGER , INTENT(IN)            :: setinitval_in   ! 3 = everything, 1 = arrays only, 0 = none
+      INTEGER , INTENT(IN)            :: sd31, ed31, sd32, ed32, sd33, ed33
+      INTEGER , INTENT(IN)            :: sm31, em31, sm32, em32, sm33, em33
+      INTEGER , INTENT(IN)            :: sp31, ep31, sp32, ep32, sp33, ep33
+      INTEGER , INTENT(IN)            :: sp31x, ep31x, sp32x, ep32x, sp33x, ep33x
+      INTEGER , INTENT(IN)            :: sp31y, ep31y, sp32y, ep32y, sp33y, ep33y
+      INTEGER , INTENT(IN)            :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+      INTEGER , INTENT(IN)            :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+
+      ! this argument is a bitmask. First bit is time level 1, second is time level 2, and so on.
+      ! e.g. to set both 1st and second time level, use 3
+      !      to set only 1st                        use 1
+      !      to set only 2st                        use 2
+      INTEGER , INTENT(IN)            :: tl_in
+  
+      ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated
+      ! false otherwise (all allocated, modulo tl above)
+      LOGICAL , INTENT(IN)            :: inter_domain_in
+      LOGICAL                         :: size_changed
+
+      size_changed=         .not. ( &
+         grid%alloced_sd31 .eq. sd31 .and. grid%alloced_ed31 .eq. ed31 .and. &
+         grid%alloced_sd32 .eq. sd32 .and. grid%alloced_ed32 .eq. ed32 .and. &
+         grid%alloced_sd33 .eq. sd33 .and. grid%alloced_ed33 .eq. ed33 .and. &
+         grid%alloced_sm31 .eq. sm31 .and. grid%alloced_em31 .eq. em31 .and. &
+         grid%alloced_sm32 .eq. sm32 .and. grid%alloced_em32 .eq. em32 .and. &
+         grid%alloced_sm33 .eq. sm33 .and. grid%alloced_em33 .eq. em33 .and. &
+         grid%alloced_sm31x .eq. sm31x .and. grid%alloced_em31x .eq. em31x .and. &
+         grid%alloced_sm32x .eq. sm32x .and. grid%alloced_em32x .eq. em32x .and. &
+         grid%alloced_sm33x .eq. sm33x .and. grid%alloced_em33x .eq. em33x .and. &
+         grid%alloced_sm31y .eq. sm31y .and. grid%alloced_em31y .eq. em31y .and. &
+         grid%alloced_sm32y .eq. sm32y .and. grid%alloced_em32y .eq. em32y .and. &
+         grid%alloced_sm33y .eq. sm33y .and. grid%alloced_em33y .eq. em33y &
+      )
+      if(.not. grid%allocated .or. size_changed) then
+         if(.not. grid%allocated) then
+            call wrf_debug(1,'ensure_space_field: calling alloc_space_field because a grid was not allocated.')
+         else
+            if(size_changed) &
+                 call wrf_debug(1,'ensure_space_field: deallocating and reallocating a grid because grid size changed.')
+         end if
+         if(grid%allocated) &
+              call dealloc_space_field( grid )
+         call alloc_space_field ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
+                                  sd31, ed31, sd32, ed32, sd33, ed33, &
+                                  sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                  sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                  sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                  sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                  sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                  sm31y, em31y, sm32y, em32y, sm33y, em33y )
+      end if
+
+   END SUBROUTINE ensure_space_field
 
 !  This routine is used to DEALLOCATE space for a single domain and remove 
 !  it from the linked list.  First the pointers in the linked list are fixed 
@@ -1496,6 +1610,39 @@ CONTAINS
       IF ( ASSOCIATED( grid%ts_filename ) ) THEN
         DEALLOCATE( grid%ts_filename )
       ENDIF 
+#if (EM_CORE == 1)
+      IF ( ASSOCIATED( grid%track_time_in ) ) THEN
+        DEALLOCATE( grid%track_time_in )
+      ENDIF
+ 
+      IF ( ASSOCIATED( grid%track_lat_in ) ) THEN
+        DEALLOCATE( grid%track_lat_in )
+      ENDIF
+ 
+      IF ( ASSOCIATED( grid%track_lon_in ) ) THEN
+        DEALLOCATE( grid%track_lon_in )
+      ENDIF
+ 
+      IF ( ASSOCIATED( grid%track_i ) ) THEN
+        DEALLOCATE( grid%track_i )
+      ENDIF
+ 
+      IF ( ASSOCIATED( grid%track_j ) ) THEN
+        DEALLOCATE( grid%track_j )
+      ENDIF
+
+      IF ( ASSOCIATED( grid%track_time_domain ) ) THEN
+        DEALLOCATE( grid%track_time_domain )
+      ENDIF
+ 
+      IF ( ASSOCIATED( grid%track_lat_domain ) ) THEN
+        DEALLOCATE( grid%track_lat_domain )
+      ENDIF
+ 
+      IF ( ASSOCIATED( grid%track_lon_domain ) ) THEN
+        DEALLOCATE( grid%track_lon_domain )
+      ENDIF
+#endif
       DEALLOCATE( grid )
       NULLIFY( grid )
 
@@ -1506,15 +1653,17 @@ CONTAINS
       TYPE(domain), POINTER :: grid
       TYPE(fieldlist), POINTER :: p, q
       p => grid%head_statevars
-      DO WHILE ( ASSOCIATED( p%next ) )
+      DO WHILE ( ASSOCIATED( p ) )
          q => p ; p => p%next ; DEALLOCATE(q)
       ENDDO
       NULLIFY(grid%head_statevars) ; NULLIFY( grid%tail_statevars)
+#if (DA_CORE != 1)
       IF ( .NOT. grid%is_intermediate ) THEN
         ALLOCATE( grid%head_statevars )
         NULLIFY( grid%head_statevars%next)
         grid%tail_statevars => grid%head_statevars
       ENDIF
+#endif
    END SUBROUTINE dealloc_linked_lists
 
    RECURSIVE SUBROUTINE show_nest_subtree ( grid )
@@ -2764,10 +2913,18 @@ END SUBROUTINE get_current_grid_name
            ds(1) = grid%sd31 ; de(1) = grid%ed31 ; ds(2) = grid%sd32 ; de(2) = grid%ed32 ; ds(3) = grid%sd33 ; de(3) = grid%ed33 ;
            ms(1) = grid%sm31 ; me(1) = grid%em31 ; ms(2) = grid%sm32 ; me(2) = grid%em32 ; ms(3) = grid%sm33 ; me(3) = grid%em33 ;
            ps(1) = grid%sp31 ; pe(1) = grid%ep31 ; ps(2) = grid%sp32 ; pe(2) = grid%ep32 ; ps(3) = grid%sp33 ; pe(3) = grid%ep33 ;
-           mxs(1) = grid%sm31x ; mxe(1) = grid%em31x ; mxs(2) = grid%sm32x ; mxe(2) = grid%em32x ; mxs(3) = grid%sm33x ; mxe(3) = grid%em33x ;
-           pxs(1) = grid%sp31x ; pxe(1) = grid%ep31x ; pxs(2) = grid%sp32x ; pxe(2) = grid%ep32x ; pxs(3) = grid%sp33x ; pxe(3) = grid%ep33x ;
-           mys(1) = grid%sm31y ; mye(1) = grid%em31y ; mys(2) = grid%sm32y ; mye(2) = grid%em32y ; mys(3) = grid%sm33y ; mye(3) = grid%em33y ;
-           pys(1) = grid%sp31y ; pye(1) = grid%ep31y ; pys(2) = grid%sp32y ; pye(2) = grid%ep32y ; pys(3) = grid%sp33y ; pye(3) = grid%ep33y ;
+           mxs(1) = grid%sm31x ; mxe(1) = grid%em31x 
+           mxs(2) = grid%sm32x ; mxe(2) = grid%em32x 
+           mxs(3) = grid%sm33x ; mxe(3) = grid%em33x 
+           pxs(1) = grid%sp31x ; pxe(1) = grid%ep31x 
+           pxs(2) = grid%sp32x ; pxe(2) = grid%ep32x 
+           pxs(3) = grid%sp33x ; pxe(3) = grid%ep33x
+           mys(1) = grid%sm31y ; mye(1) = grid%em31y 
+           mys(2) = grid%sm32y ; mye(2) = grid%em32y 
+           mys(3) = grid%sm33y ; mye(3) = grid%em33y 
+           pys(1) = grid%sp31y ; pye(1) = grid%ep31y 
+           pys(2) = grid%sp32y ; pye(2) = grid%ep32y 
+           pys(3) = grid%sp33y ; pye(3) = grid%ep33y 
      ELSE
         WRITE(mess,*)'internal error: get_ijk_from_grid_id: no such grid id:',id
         CALL wrf_error_fatal(TRIM(mess))

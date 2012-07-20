@@ -543,6 +543,9 @@ SUBROUTINE ext_int_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , St
         BACKSPACE ( unit=DataHandle )
         Status = 0
         GOTO 7717
+      else
+          WRITE(mess,*)'skipping a code=',code,' in ext_int_get_var_info'
+          CALL wrf_message(mess)
       ENDIF
     ELSE
       Status = 1
@@ -1195,7 +1198,7 @@ SUBROUTINE ext_int_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Coun
            Status = 1
            return
         ENDIF
-        CALL int_get_ti_header_integer_varname( hdrbuf, hdrbufsize, itypesize, 4, &
+        CALL int_get_ti_header_integer_varna( hdrbuf, hdrbufsize, itypesize, 4, &
              locDataHandle, locElement, locVarName, Data, Outcount, code )
      ELSE
         Status = 1
@@ -1224,7 +1227,7 @@ SUBROUTINE ext_int_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Coun
   INTEGER ,       INTENT(OUT) :: Status
   IF ( int_valid_handle (DataHandle) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
-      CALL int_gen_ti_header_integer_varname( hdrbuf, hdrbufsize, itypesize,4,  &
+      CALL int_gen_ti_header_integer_varna( hdrbuf, hdrbufsize, itypesize,4,  &
                               DataHandle, TRIM(Element), TRIM(VarName), Data, Count, &
                               int_var_ti_integer )
       WRITE( unit=DataHandle ) hdrbuf

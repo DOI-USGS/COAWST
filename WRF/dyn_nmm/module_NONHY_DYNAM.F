@@ -22,12 +22,14 @@
 !
 !***********************************************************************
       SUBROUTINE EPS(NTSD,DT,HYDRO,DX,DY,FAD                            &
-                    ,DETA1,DETA2,PDTOP,PT                               &
+                    ,AETA1,DETA1,DETA2,PDTOP,PT                               &
                     ,HBM2,HBM3                                          &
                     ,PDSL,PDSLO,PINT,RTOP,PETDT,PDWDT                   &
                     ,DWDT,DWDTMN,DWDTMX                                 &
                     ,FNS,FEW,FNE,FSE                                    &
-                    ,T,U,V,W,Q,CWM                                      &
+                    ,T,U,V,W,W_TOT,Q,CWM                                      &
+                    ,DEF3D,HDAC,BARO                                    &
+                    ,WP                                                 &    
                     ,IHE,IHW,IVE,IVW                                    &
                     ,IDS,IDE,JDS,JDE,KDS,KDE                            &
                     ,IMS,IME,JMS,JME,KMS,KME                            &
@@ -80,15 +82,16 @@
 !
       INTEGER,INTENT(IN) :: NTSD
 !
-      REAL,INTENT(IN) :: DT,DY,PDTOP,PT
+      REAL,INTENT(IN) :: DT,DY,PDTOP,PT,WP
 !
-      REAL,DIMENSION(KMS:KME-1),INTENT(IN) :: DETA1,DETA2
+      REAL,DIMENSION(KMS:KME-1),INTENT(IN) :: DETA1,DETA2,AETA1
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DWDTMN,DWDTMX,DX    &
                                                    ,FAD,HBM2,HBM3       &
-                                                   ,PDSL,PDSLO
+                                                   ,PDSL,PDSLO          &
+                                                   ,HDAC,BARO
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PETDT
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PETDT,DEF3D
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: CWM         &
                                                            ,FEW,FNE     &
@@ -102,6 +105,8 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: PINT,W
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT)   :: W_TOT
+!
       LOGICAL,INTENT(IN) :: HYDRO
 !
 !-----------------------------------------------------------------------
@@ -112,14 +117,16 @@
 !
       INTEGER,PARAMETER :: NTSHY=2
 !
-      REAL,PARAMETER :: WGHT=0.35,WP=0.
+      REAL,PARAMETER :: WGHT=0.35
+      REAL,PARAMETER :: SLPD=1500.
+      REAL,PARAMETER :: PI=3.14159
 !
       INTEGER,DIMENSION(KTS:KTE) :: LA
 !
-      INTEGER :: I,J,K,LMP
+      INTEGER :: I,J,K,LMP,LSLTP,L
 !
       REAL,DIMENSION(KTS:KTE) :: B1,B2,B3,C0,CWM_K,DWDT_K,Q_K,RDPP      &
-                                ,RTOP_K,T_K
+                                ,RTOP_K,T_K,WHY
 !
       REAL,DIMENSION(ITS:ITE) :: DPTU_I,PNP1_I,PSTRUP_I
 !
@@ -135,10 +142,12 @@
       REAL :: ADDT,DELP,DETAL,DP,DPDE,DPPL,DPSTR,DPTL,DPTU              &
              ,DWDTT,EPSN,FCT,FFC,GDT,GDT2                               &
              ,PNP,PP1,PSTRDN,PSTRUP,RDP,RDPDN,RDPUP,RDT                 &
-             ,TFC,TMP,TTAL,TTFC
+             ,TFC,TMP,TTAL,TTFC,HKNE_IJ,HKSE_IJ,ADVEC,ARG,SLTP,PAVG
 !
-      LOGICAL :: BOT,TOP
+      LOGICAL :: BOT,TOP,DIFFW
 !
+      CHARACTER(LEN=255) :: message
+
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -190,6 +199,36 @@
         ENDDO
         ENDDO
       ENDDO
+
+
+      IF (DT > 0 .and. WP .ge. 0.001) THEN
+         DIFFW=.TRUE.
+      ELSE
+         DIFFW=.FALSE.
+      ENDIF
+
+      IF(DIFFW) THEN
+
+        DO K=KTS,KTE
+         DO J=MYJS_P1,MYJE1_P1
+          DO I=MYIS_P1,MYIE1_P1
+            HKNE_IJ=(DEF3D(I,J,K)+DEF3D(I+IHE(J),J+1,K))
+            HKSE_IJ=(DEF3D(I+IHE(J),J-1,K)+DEF3D(I,J,K))
+            WNE(I,J)=(W (I+IHE(J),J+1,K)-W (I,J,K))*HKNE_IJ
+            WSE(I,J)=(W (I+IHE(J),J-1,K)-W (I,J,K))*HKSE_IJ
+          ENDDO 
+         ENDDO 
+
+         DO J=MYJS2,MYJE2
+          DO I=MYIS,MYIE
+              DWDT(I,J,K)= DWDT(I,J,K) - ( WNE (I,J)-WNE (I+IHW(J),J-1) +  &
+                                           WSE (I,J)-WSE (I+IHW(J),J+1) ) * &
+                                           HDAC(I,J)*HBM2(I,J)*RDT 
+          ENDDO 
+         ENDDO 
+        ENDDO
+
+       ENDIF
 !
 !-----------------------------------------------------------------------
 !***
@@ -276,25 +315,83 @@
         DO J=MYJS3,MYJE3
         DO I=MYIS2,MYIE2
           DPDE=DETA1(K)*PDTOP+DETA2(K)*PDSLO(I,J)
-          DWDT(I,J,K)=-(WEW(I+IHW(J),J)      +WEW(I+IHE(J),J)           &
+          ADVEC=-(WEW(I+IHW(J),J)      +WEW(I+IHE(J),J)           &
                        +WNS(I,J-1)           +WNS(I,J+1)                &
                        +WNE(I+IHW(J),J-1)    +WNE(I,J)                  &
                        +WSE(I,J)             +WSE(I+IHW(J),J+1))        &
-                       *FAD(I,J)*2.0*HBM3(I,J)/(DPDE*DT)                &
-                       +DWDT(I,J,K)
+                       *FAD(I,J)*2.0*HBM3(I,J)/(DPDE*DT)
+          DWDT(I,J,K)= ADVEC + DWDT(I,J,K)
         ENDDO
         ENDDO
-!
-!-----------------------------------------------------------------------
-!
+
       ENDDO main_horizontal
-!
+
 !-----------------------------------------------------------------------
 !***
 !***  END OF HORIZONTAL ADVECTION
 !***
 !-----------------------------------------------------------------------
+
+      IF (WP .ge. 0.001) then
+
+        do l=1,KTE
+          why(l)=-99.
+        enddo
 !
+        lsltp=0
+        SLTP=(PT+AETA1(KTE-1)*PDTOP+PT+AETA1(KTE)*PDTOP)*0.5
+        DO L=KTE,2,-1
+          PAVG=PT+PDTOP*(AETA1(L)+AETA1(L-1))*0.5
+          ARG=( PAVG-SLTP )/SLPD
+          if(arg.gt.1.) exit
+          why(l)=1.-cos(arg*pi*0.5)**2
+          lsltp=l
+        enddo
+
+
+!
+      DO l=lsltp,KTE
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+            dwdt(i,j,l)=dwdt(i,j,l)*why(l)
+        ENDDO
+       ENDDO
+      ENDDO
+
+!-----------------------------------------------------------------------
+!---taking external mode out--------------------------------------------
+!-----------------------------------------------------------------------
+
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+          TTB(I,J)=0.
+        ENDDO
+       ENDDO
+!
+      DO K=KTS,KTE
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+            DPDE=DETA1(K)*PDTOP+DETA2(K)*PDSLO(I,J)
+            TTB(I,J)=DPDE*DWDT(I,J,K)+TTB(I,J)
+        ENDDO
+       ENDDO
+      ENDDO
+!
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+          TTB(I,J)=TTB(I,J)/(PDSLO(I,J)+PDTOP)
+        ENDDO
+       ENDDO
+!
+      DO K=KTS,KTE
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+            DWDT(I,J,K)=DWDT(I,J,K)-TTB(I,J)
+        ENDDO
+       ENDDO
+      ENDDO
+     endif
+
 !$omp parallel do                                                       &
 !$omp& private(dwdtt,i,j,k)
       DO K=KTS,KTE
@@ -309,7 +406,46 @@
       ENDDO
       ENDDO
 !-----------------------------------------------------------------------
+!---setting dwdt (epsilon at this point) on h points to 1. along bdy ---
+!-----------------------------------------------------------------------
+      IF (WP .ge. 0.001) THEN
+
+        do K=KTS,KTE
+          if (JDS .eq. JTS) then
+            do J=jts,jts+1
+              do I=its,ite
+                DWDT(I,J,K)=1.
+              enddo
+            enddo
+          endif
 !
+          if (JTE .ge. JDE-2) then
+            do j=jte-1,jte
+              do i=its,ite
+                DWDT(I,J,K)=1.
+              enddo
+            enddo
+          endif
+!
+          if(ITS .eq. IDS)then
+            do j=jts,jte
+              do i=its,its+1
+                DWDT(I,J,K)=1.
+              enddo
+            enddo
+          endif
+!
+          if(ITE .ge. IDE-2)then
+            do j=jts,jte
+              do i=ite-1,ite
+                DWDT(I,J,K)=1.
+              enddo
+            enddo
+          endif
+        enddo
+
+        ENDIF
+ 
       GDT=G*DT
       GDT2=GDT*GDT
       FFC=-R_D/GDT2
@@ -322,6 +458,8 @@
 !$omp&        pint_ik,pnp1_i,pp1,pstr_ik,pstrdn,pstrup_i,q_ik,          &
 !$omp&        rdpdn,rdpup,rtop_ik,t_ik,tfc,tmp,ttfc,w_ik)
 !
+
+
       final_update:  DO J=MYJS3,MYJE3
 !
 !-----------------------------------------------------------------------
@@ -513,6 +651,28 @@
 !-----------------------------------------------------------------------
 !
       ENDDO final_update
+!
+!-----------------------------------------------------------------------
+!***  DEFINE OUTPUT W FIELD
+!-----------------------------------------------------------------------
+!
+        IF (WP .ge. 0.001) THEN
+            DO K=KTS,KTE+1
+            DO J=MYJS,MYJE
+            DO I=MYIS,MYIE
+               W_TOT(I,J,K)=W(I,J,K)+BARO(I,J)
+            ENDDO
+            ENDDO
+            ENDDO
+        ELSE
+            DO K=KTS,KTE+1
+            DO J=MYJS,MYJE
+            DO I=MYIS,MYIE
+               W_TOT(I,J,K)=W(I,J,K)
+            ENDDO
+            ENDDO
+            ENDDO
+        ENDIF
 !
 !-----------------------------------------------------------------------
 !
@@ -733,7 +893,7 @@
       SUBROUTINE HADZ(NTSD,DT,HYDRO,HBM2,DETA1,DETA2,PDTOP              &
                      ,DX,DY,FAD                                         &
                      ,FEW,FNS,FNE,FSE                                   &
-                     ,PDSL,U,V,W,Z                                      &
+                     ,PDSL,U,V,W,Z,WP,BARO                              &
                      ,IHE,IHW,IVE,IVW                                   &
                      ,IDS,IDE,JDS,JDE,KDS,KDE                           &
                      ,IMS,IME,JMS,JME,KMS,KME                           &
@@ -791,11 +951,13 @@
 !
 !-----------------------------------------------------------------------
 !
-      REAL,INTENT(IN) :: DT,DY,PDTOP
+      REAL,INTENT(IN) :: DT,DY,PDTOP,WP
 !
       REAL,DIMENSION(KMS:KME-1),INTENT(IN) :: DETA1,DETA2
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX,FAD,HBM2,PDSL
+
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: BARO
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: U,V
 !
@@ -817,7 +979,7 @@
       REAL :: FEWP,FNEP,FNSP,FSEP,UDY,VDX
 !
       REAL,DIMENSION(ITS-5:ITE+5,JTS-5:JTE+5) :: DPDE,UNED,USED         &
-     &                                          ,ZEW,ZNE,ZNS,ZSE
+     &                                          ,ZEW,ZNE,ZNS,ZSE,TTB
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -923,18 +1085,55 @@
 !
         DO J=MYJS2_P1,MYJE2_P1
         DO I=MYIS1_P1,MYIE1_P1
+
           W(I,J,K)=-(ZEW(I+IHW(J),J)  +ZEW(I+IHE(J),J)                  &
                     +ZNS(I,J-1)       +ZNS(I,J+1)                       &
                     +ZNE(I+IHW(J),J-1)+ZNE(I,J)                         &
                     +ZSE(I,J)         +ZSE(I+IHW(J),J+1))               &
                     *FAD(I,J)*2.0*HBM2(I,J)/(DPDE(I,J)*DT)              &
                     +W(I,J,K)
+
         ENDDO
         ENDDO
-!
-!-----------------------------------------------------------------------
-!
+
       ENDDO main_integration
+
+      IF (WP .ge. 0.001) then
+!-----------------------------------------------------------------------
+!---taking external mode out--------------------------------------------
+!-----------------------------------------------------------------------
+	
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+          BARO(I,J)=0.
+        ENDDO
+       ENDDO
+!
+      DO K=KTS,KTE
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+            DPDE(I,J)=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J)
+            BARO(I,J)=(DPDE(I,J))*W(I,J,K)+BARO(I,J)
+        ENDDO
+       ENDDO
+      ENDDO
+!
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+          BARO(I,J)=BARO(I,J)/(PDSL(I,J)+PDTOP)
+        ENDDO
+       ENDDO
+!
+
+      DO K=KTS,KTE
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+            W(I,J,K)=W(I,J,K)-BARO(I,J)
+        ENDDO
+       ENDDO
+      ENDDO
+ 
+      ENDIF
 !
 !-----------------------------------------------------------------------
 !

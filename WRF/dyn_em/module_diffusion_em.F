@@ -2,12 +2,10 @@
  
     MODULE module_diffusion_em
 
-    USE module_configure
-    USE module_bc
-    USE module_state_description
-    USE module_big_step_utilities_em
+    USE module_bc, only: set_physical_bc3d
+    USE module_state_description, only: p_m23, p_m13, p_m22, p_m33, p_r23, p_r13, p_r12, p_m12, p_m11
+    USE module_big_step_utilities_em, only: grid_config_rec_type, param_first_scalar, p_qv, p_qi, p_qc
     USE module_model_constants    
-    USE module_wrf_error
 
     CONTAINS
 
@@ -3466,7 +3464,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
    :: nba_mij
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(IN   )   :: rho  
-   REAL , DIMENSION( ims:ime, jms:jme), INTENT(IN   )            :: hfx,  &
+   REAL , DIMENSION( ims:ime, jms:jme), INTENT(INOUT)            :: hfx,  &
                                                                     qfx
    REAL , DIMENSION( ims:ime, jms:jme), INTENT(IN   )            :: ust
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::    thp
@@ -3653,6 +3651,8 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                             ! set in namelist.input
     DO j = j_start, j_end
     DO i = i_start, i_end
+       cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV)) 
+       hfx(i,j)=heat_flux*cp*rho(i,1,j)         ! provided for output only
        rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
             +mu(i,j)*heat_flux*rdzw(i,kts,j)
     ENDDO
@@ -4871,6 +4871,8 @@ END SUBROUTINE vertical_diffusion_s
 SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                     defor12,defor13,defor23,xkmh,xkmv,xkhh,xkhv,tke,       &
                     RUBLTEN, RVBLTEN,                                      &
+                    RUCUTEN, RVCUTEN,                                      &
+                    RUSHTEN, RVSHTEN,                                      &
                     ids, ide, jds, jde, kds, kde,                          &
                     ims, ime, jms, jme, kms, kme,                          &
                     ips, ipe, jps, jpe, kps, kpe,                          &
@@ -4890,6 +4892,10 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::RUBLTEN, &
                                                                  RVBLTEN, &
+                                                                 RUCUTEN, &
+                                                                 RVCUTEN, &
+                                                                 RUSHTEN, &
+                                                                 RVSHTEN, &
                                                                  defor11, &
                                                                  defor22, &
                                                                  defor33, &
@@ -4915,6 +4921,38 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                                 its, ite, jts, jte, kts, kte              )
 
         CALL set_physical_bc3d( RVBLTEN , 't', config_flags,              &
+                                ids, ide, jds, jde, kds, kde,             &
+                                ims, ime, jms, jme, kms, kme,             &
+                                ips, ipe, jps, jpe, kps, kpe,             &
+                                its, ite, jts, jte, kts, kte              )
+
+   ENDIF
+
+   IF(config_flags%cu_physics .GT. 0) THEN
+
+        CALL set_physical_bc3d( RUCUTEN , 't', config_flags,              &
+                                ids, ide, jds, jde, kds, kde,             &
+                                ims, ime, jms, jme, kms, kme,             &
+                                ips, ipe, jps, jpe, kps, kpe,             &
+                                its, ite, jts, jte, kts, kte              )
+
+        CALL set_physical_bc3d( RVCUTEN , 't', config_flags,              &
+                                ids, ide, jds, jde, kds, kde,             &
+                                ims, ime, jms, jme, kms, kme,             &
+                                ips, ipe, jps, jpe, kps, kpe,             &
+                                its, ite, jts, jte, kts, kte              )
+
+   ENDIF
+
+   IF(config_flags%shcu_physics .GT. 0) THEN
+
+        CALL set_physical_bc3d( RUSHTEN , 't', config_flags,              &
+                                ids, ide, jds, jde, kds, kde,             &
+                                ims, ime, jms, jme, kms, kme,             &
+                                ips, ipe, jps, jpe, kps, kpe,             &
+                                its, ite, jts, jte, kts, kte              )
+
+        CALL set_physical_bc3d( RVSHTEN , 't', config_flags,              &
                                 ids, ide, jds, jde, kds, kde,             &
                                 ims, ime, jms, jme, kms, kme,             &
                                 ips, ipe, jps, jpe, kps, kpe,             &

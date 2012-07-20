@@ -4,7 +4,7 @@ MODULE module_optional_input
               flag_snow     , flag_snowh    , flag_tsk      , flag_pinterp
 
    INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , &
-              flag_qg       , flag_qni      , flag_sh
+              flag_qg       , flag_qh       , flag_qni      , flag_sh
 
    INTEGER :: flag_soil_levels, flag_soil_layers
 
@@ -23,13 +23,17 @@ MODULE module_optional_input
 
    INTEGER :: flag_icedepth , flag_icefrac
 
+   INTEGER :: flag_ptheta
+
+   INTEGER :: flag_excluded_middle
+
    INTEGER                  :: num_soil_levels_input
    INTEGER                  :: num_st_levels_input , num_sm_levels_input , num_sw_levels_input
    INTEGER                  :: num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc
    INTEGER , DIMENSION(100) ::     st_levels_input ,     sm_levels_input ,     sw_levels_input
    REAL , ALLOCATABLE , DIMENSION(:,:,:) :: st_input , sm_input , sw_input
 
-   CHARACTER (LEN=8) , PRIVATE :: flag_name
+   CHARACTER (LEN=80) , PRIVATE :: flag_name
  
    LOGICAL :: already_been_here
 
@@ -189,6 +193,16 @@ CONTAINS
                                  ims, ime, jms, jme, kms, kme, &
                                  its, ite, jts, jte, kts, kte  )
 
+      CALL optional_ptheta     ( grid , fid , &
+                                 ids, ide, jds, jde, kds, kde, &
+                                 ims, ime, jms, jme, kms, kme, &
+                                 its, ite, jts, jte, kts, kte  )
+
+      CALL optional_excl_middle( grid , fid , &
+                                 ids, ide, jds, jde, kds, kde, &
+                                 ims, ime, jms, jme, kms, kme, &
+                                 its, ite, jts, jte, kts, kte  )
+
       flag_soil_levels = 0 
       flag_soil_layers = 0 
 
@@ -228,7 +242,9 @@ CONTAINS
       IF (  ( model_config_rec%sf_surface_physics(grid%id) .EQ. 1 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 2 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 3 ) .OR. &
+            ( model_config_rec%sf_surface_physics(grid%id) .EQ. 4 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 7 ) .OR. &
+            ( model_config_rec%sf_surface_physics(grid%id) .EQ. 8 ) .OR. & !fds 
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 88 ) ) THEN
    
          CALL optional_lsm_levels ( grid , fid , &
@@ -263,12 +279,15 @@ USE module_io_domain
 
       INTEGER :: itmp , icnt , ierr
 
+      flag_name = '                                                                                '
+
       flag_qv       = 0
       flag_qc       = 0
       flag_qr       = 0
       flag_qi       = 0
       flag_qs       = 0
       flag_qg       = 0
+      flag_qh       = 0
       flag_qni      = 0
       flag_sh       = 0
 
@@ -301,6 +320,11 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
          flag_qg       = itmp
+      END IF
+      flag_name(1:8) = 'QH      '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qh       = itmp
       END IF
       flag_name(1:8) = 'QNI      '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
@@ -337,6 +361,8 @@ USE module_io_domain
                  its, ite, jts, jte, kts, kte
 
       INTEGER :: itmp , icnt , ierr
+
+      flag_name = '                                                                                '
 
       flag_metgrid = 0 
 
@@ -389,6 +415,8 @@ USE module_io_domain
 
       INTEGER :: itmp , icnt , ierr
 
+      flag_name = '                                                                                '
+
       flag_sst      = 0 
 
       flag_name(1:8) = 'SST     '
@@ -421,6 +449,8 @@ USE module_io_domain
                  its, ite, jts, jte, kts, kte
 
       INTEGER :: itmp , icnt , ierr
+
+      flag_name = '                                                                                '
 
       flag_tsk      = 0 
 
@@ -455,6 +485,8 @@ USE module_io_domain
 
       INTEGER :: itmp , icnt , ierr
 
+      flag_name = '                                                                                '
+
       flag_tavgsfc  = 0 
 
       flag_name(1:8) = 'TAVGSFC '
@@ -487,6 +519,8 @@ USE module_io_domain
                  its, ite, jts, jte, kts, kte
 
       INTEGER :: itmp , icnt , ierr
+
+      flag_name = '                                                                                '
 
       flag_snowh    = 0 
 
@@ -529,6 +563,8 @@ USE module_io_domain
                  its, ite, jts, jte, kts, kte
 
       INTEGER :: itmp , icnt , ierr
+
+      flag_name = '                                                                                '
 
       flag_psfc     = 0 
       flag_soilhgt  = 0 
@@ -587,6 +623,8 @@ USE module_io_domain
 
       INTEGER :: itmp , icnt , ierr
 
+      flag_name = '                                                                                '
+
       flag_icedepth = 0 
       flag_icefrac  = 0 
 
@@ -603,6 +641,76 @@ USE module_io_domain
       END IF
     
    END SUBROUTINE optional_ice
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE optional_ptheta ( grid , fid , &
+                                ids, ide, jds, jde, kds, kde, &
+                                ims, ime, jms, jme, kms, kme, &
+                                its, ite, jts, jte, kts, kte  )
+
+      USE module_io_wrf
+      USE module_domain	, ONLY : domain
+      USE module_configure , ONLY : grid_config_rec_type
+      USE module_io_domain
+
+      IMPLICIT NONE 
+
+      TYPE ( domain ) :: grid
+      INTEGER , INTENT(IN) :: fid
+
+      INTEGER :: ids, ide, jds, jde, kds, kde, &
+                 ims, ime, jms, jme, kms, kme, &
+                 its, ite, jts, jte, kts, kte
+
+      INTEGER :: itmp , icnt , ierr
+
+      flag_name = '                                                                                '
+
+      flag_ptheta = 0 
+
+      flag_name(1:8) = 'PTHETA  '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_ptheta = itmp
+      END IF
+
+   END SUBROUTINE optional_ptheta
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE optional_excl_middle ( grid , fid , &
+                                     ids, ide, jds, jde, kds, kde, &
+                                     ims, ime, jms, jme, kms, kme, &
+                                     its, ite, jts, jte, kts, kte  )
+
+      USE module_io_wrf
+      USE module_domain	, ONLY : domain
+      USE module_configure , ONLY : grid_config_rec_type
+      USE module_io_domain
+
+      IMPLICIT NONE 
+
+      TYPE ( domain ) :: grid
+      INTEGER , INTENT(IN) :: fid
+
+      INTEGER :: ids, ide, jds, jde, kds, kde, &
+                 ims, ime, jms, jme, kms, kme, &
+                 its, ite, jts, jte, kts, kte
+
+      INTEGER :: itmp , icnt , ierr
+
+      flag_name = '                                                                                '
+
+      flag_excluded_middle = 0 
+
+      flag_name(1:16) = 'EXCLUDED_MIDDLE '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_excluded_middle = itmp
+      END IF
+
+   END SUBROUTINE optional_excl_middle
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -630,6 +738,8 @@ USE module_io_domain
       CHARACTER (LEN=132) :: message
     
       !  Initialize the soil temp and moisture flags to "field not found".
+
+      flag_name = '                                                                                '
 
       flag_st000010 = 0 
       flag_st010040 = 0

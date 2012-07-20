@@ -34,6 +34,7 @@
 #		Intel  1.2 GHz (4-pe) :  3.0 hours (empty)
 #		IBM            P4     :  2.0 hours (empty)
 
+setenv HWRF 0
 #	Do we keep running even when there are BAD failures?
 
 set KEEP_ON_RUNNING = FALSE
@@ -113,7 +114,7 @@ else if ( ( `hostname | cut -c 1-2` == bs ) || ( `hostname` == tempest ) || ( `h
           ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == be ) ) then
 	set WRFREGDATAEM = /mmm/users/gill/WRF-data-EM
 	set WRFREGDATAEM = /mmm/users/gill/WRF_regression_data/processed
-	set WRFREGDATANMM = /rap/dtc/WRF-data-NMM
+	set WRFREGDATANMM = /glade/proj2/ral/RJNTB/dtc//WRF-data-NMM
 else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
                                   ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) ) then
 	set WRFREGDATAEM = /nbns/meso/wx22tb/regression_tests/WRF-data-EM
@@ -124,7 +125,7 @@ else
 		set WRFREGDATANMM = /users/gill/WRF-data-NMM
 	else if ( ( -d /mmm/users/gill/WRF-data-EM ) && ( -d /mmm/users/gill/WRF-data-NMM ) ) then
 		set WRFREGDATAEM = /mmm/users/gill/WRF-data-EM
-		set WRFREGDATANMM = /rap/dtc/WRF-data-NMM
+		set WRFREGDATANMM = /glade/proj2/ral/RJNTB/dtc//WRF-data-NMM
 	else
 		echo "stick the WRF em and nmm data somewhere, and then fill in the shell vars"
 		echo "inside this script, you NEED WRFREGDATAEM and WRFREGDATANMM set"
@@ -2540,7 +2541,7 @@ banner 19a
 
 			sed -e 's/^ run_days *= *[0-9]*/ run_days = 0 /' \
 			    -e 's/^ run_seconds *= *[0-9]*/ run_seconds = 900 /' \
-			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 15 /' \
+			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 15,15 /' \
 			    -e 's/^ frames_per_outfile *= [0-9]*/ frames_per_outfile = 200/g' \
 			    namelist.input.temp >! namelist.input
 
@@ -2694,7 +2695,7 @@ banner 22
 						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 						$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-						if ( if ( $KEEP_ON_RUNNING == FALSE ) && ( $tries == 2 ) ) exit ( 6 )
+						if ( ( $KEEP_ON_RUNNING == FALSE ) && ( $tries == 2 ) ) exit ( 6 )
 					endif
 					mv wrfout_d01_${filetag} $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.${compopt}_${n}p
 #DAVE###################################################
@@ -2736,7 +2737,7 @@ banner 19a
 
 			sed -e 's/^ run_hours *= *[0-9]*/ run_hours = 0 /' \
 			    -e 's/^ run_seconds *= *[0-9]*/ run_seconds = 900 /' \
-			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 15 /' \
+			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 15,15 /' \
 			    -e 's/^ frames_per_outfile *= [0-9]*/ frames_per_outfile = 200/g' \
 			    namelist.input.temp >! namelist.input
 

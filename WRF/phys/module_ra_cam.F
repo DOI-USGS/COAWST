@@ -1,5 +1,7 @@
 MODULE module_ra_cam
   use module_ra_cam_support
+  use module_cam_support, only: endrun
+
   implicit none
 ! 
 ! A. Slingo's data for cloud particle radiative properties (from 'A GCM
@@ -203,6 +205,11 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                      GSW,GLW,XLAT,XLONG,                           &
                      ALBEDO,t_phy,TSK,EMISS,                       &
                      QV3D,QC3D,QR3D,QI3D,QS3D,QG3D,                &
+                     ALSWVISDIR,ALSWVISDIF,                        & !ssib  
+                     ALSWNIRDIR,ALSWNIRDIF,                        & !ssib 
+                     SWVISDIR,SWVISDIF,                            & !ssib 
+                     SWNIRDIR,SWNIRDIF,                            & !ssib 
+                     sf_surface_physics,                           & !ssib 
                      F_QV,F_QC,F_QR,F_QI,F_QS,F_QG,                &
                      f_ice_phy,f_rain_phy,                         &
                      p_phy,p8w,z,pi_phy,rho_phy,dz8w,               &
@@ -220,6 +227,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                      its,ite, jts,jte, kts,kte                     )
 
    USE module_wrf_error
+   USE module_state_description, ONLY : SSIBSCHEME              !ssib
 
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -290,6 +298,20 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          INTENT(INOUT)  ::                                   GSW, GLW
 
+!---------SSiB variables (fds 06/2010)----------------
+   REAL, DIMENSION( ims:ime, jms:jme ),                           &
+         INTENT(IN)     ::                            ALSWVISDIR, &
+                                                      ALSWVISDIF, &
+                                                      ALSWNIRDIR, &
+                                                      ALSWNIRDIF
+
+   REAL, DIMENSION( ims:ime, jms:jme ),                           &
+         INTENT(OUT)    ::                              SWVISDIR, &
+                                                        SWVISDIF, &
+                                                        SWNIRDIR, &
+                                                        SWNIRDIF
+   INTEGER, INTENT(IN) :: sf_surface_physics
+!--------------------------------------
 ! saving arrays for doabsems reduction of radiation calcs
 
    REAL, DIMENSION( ims:ime, kms:kme, cam_abs_dim2 , jms:jme ),           &
@@ -608,6 +630,35 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       call param_cldoptics_calc(ncol, pcols, pver, pverp, pverr, pverrp, ppcnst, q, cld, landfrac, landm,icefrac, &
                                 pdel, t, ps, pmid, pint, cicewp, cliqwp, emis, rel, rei, pmxrgn, nmxrgn, snowh)
 
+!-----fds (06/2010)----------------------------
+   SELECT CASE(sf_surface_physics)
+   CASE (SSIBSCHEME)
+   if (xtime .gt. 1.0) then
+!      call wrf_message("using SSiB albedoes for land points")
+      do i = its,ite
+         ii = i - its + 1
+         if (xland(i,j).lt.1.5) then   !land points only
+           asdir(ii) = ALSWVISDIR(i,j) ! SSiB visdir albedo
+           asdif(ii) = ALSWVISDIF(i,j) ! SSiB visdif albedo
+           aldir(ii) = ALSWNIRDIR(i,j) ! SSiB nirdir albedo
+           aldif(ii) = ALSWNIRDIF(i,j) ! SSiB nirdif albedo
+         else
+           asdir(ii) = albedo(i,j)
+           asdif(ii) = albedo(i,j)
+           aldir(ii) = albedo(i,j)
+           aldif(ii) = albedo(i,j)
+         endif
+      enddo
+   else
+      do i = its,ite
+         ii = i - its + 1
+         asdir(ii) = albedo(i,j)
+         asdif(ii) = albedo(i,j)
+         aldir(ii) = albedo(i,j)
+         aldif(ii) = albedo(i,j)
+      enddo
+   endif
+   CASE DEFAULT
       do i = its,ite
       ii = i - its + 1
 ! use same albedo for direct and diffuse
@@ -617,6 +668,8 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       aldir(ii) = albedo(i,j)
       aldif(ii) = albedo(i,j)
       enddo
+   END SELECT
+!-----------------------------------------------
 
 ! WRF allocate space here (not needed if oznini is called)
 !  allocate (ozmix(pcols,levsiz,begchunk:endchunk)) ! This line from oznini.F90
@@ -745,6 +798,21 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
         coszr(i,j) = coszrs(ii)
       endif
       enddo
+!-------fds (06/2010)---------
+   SELECT CASE(sf_surface_physics)
+   CASE (SSIBSCHEME)
+!   call wrf_message("CAM using ssib albedo2")
+      if(dosw)then
+      do i = its,ite
+        ii = i - its + 1
+        SWVISDIR(I,J) = sols(ii)  !SSiB 
+        SWVISDIF(I,J) = solsd(ii) !SSiB 
+        SWNIRDIR(I,J) = soll(ii)  !SSiB 
+        SWNIRDIF(I,J) = solld(ii) !SSiB 
+      enddo
+      endif
+   END SELECT
+!-----------------------------
 
     enddo    ! j-loop
 
@@ -1112,7 +1180,7 @@ subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosolj
             if (AEROSOLt(i, k, m) < speciesmin(m)) then
                write(6,*) 'AEROSOL_INTERPOLATE: negative mass mixing ratio, exiting'
                write(6,*) 'm, column, pver',m, i, k ,AEROSOLt(i, k, m)
-!              call endrun ()
+               call endrun ()
             end if
          end do
       end do
@@ -6812,7 +6880,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                npasses = npasses + 1
                if (npasses >= 2 ) then
                   write(6,*)'RADCSWMX: Maximum overlap of column ','failed'
-!                 call endrun
+                  call endrun
                endif
                nmxrgn(i)=1
                pmxrgn(i,1)=1.0e30
@@ -7819,7 +7887,7 @@ subroutine radozn (lchnk, ncol, pcols, pver,pmid, pin, levsiz, ozmix, o3vmr)
       end do
 
       if (kount.gt.ncol) then
-!        call endrun ('RADOZN: Bad ozone data: non-monotonicity suspected')
+         call endrun ('RADOZN: Bad ozone data: non-monotonicity suspected')
       end if
 35    continue
    end do

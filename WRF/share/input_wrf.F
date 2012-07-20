@@ -89,6 +89,13 @@
     TYPE(WRFU_TimeInterval) :: interval, interval2
     integer s, iring
 
+    !  Local variables: are we are using the correct hypsometric option for ARW ideal cases.
+
+    CHARACTER (LEN=80) :: input_name
+    LOGICAL :: this_is_an_ideal_run
+    INTEGER :: loop, hypsometric_opt
+
+
 !<DESCRIPTION>
 !
 ! Core wrf input routine for all input data streams. Part of mediation layer.
@@ -122,10 +129,32 @@
 
     dryrun        = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
 
-    WRITE(wrf_err_message,*)'input_wrf: dryrun = ',dryrun
+    WRITE(wrf_err_message,*)'input_wrf: dryrun = ',dryrun,' switch ',switch
     CALL wrf_debug( 300 , wrf_err_message )
 
     check_if_dryrun : IF ( .NOT. dryrun ) THEN
+
+#if (EM_CORE == 1)
+      IF ( switch .EQ. input_only ) THEN
+
+        !  Make sure for ARW ideal cases that the hypsometric option, the
+        !  way that we integrate the heigh field, is set to 1.  This is the
+        !  method that is used in all of the "ideal" programs to get the
+        !  base-state height (phb).
+
+        CALL wrf_get_dom_ti_char ( fid , 'TITLE' , input_name , ierr )
+        this_is_an_ideal_run = INDEX(TRIM(input_name) , 'IDEAL' ) .NE. 0
+        IF ( this_is_an_ideal_run ) THEN
+          grid%hypsometric_opt = 1
+          config_flags%hypsometric_opt = 1
+	  DO loop = 1 , grid%max_dom
+            CALL nl_set_hypsometric_opt ( loop , 1 ) 
+          END DO
+          WRITE(wrf_err_message,*)'Ideal cases do not support the hypsometric option.'
+          CALL wrf_debug( 0 , wrf_err_message )
+        END IF
+      END IF
+#endif
 
 ! simulation start time is a Singleton maintained by head_grid
     IF ( ( switch .EQ.     input_only  ) .OR. &
@@ -232,7 +261,8 @@
       CALL wrf_debug ( 100, TRIM(wrf_err_message) )
     ELSE IF ( switch .EQ. auxinput1_only ) then
       CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , first_date_input , ierr )
-      print *,'metgrid input_wrf.F first_date_input = ',first_date_input
+      WRITE(wrf_err_message,*)'metgrid input_wrf.F first_date_input = ',first_date_input
+      CALL wrf_message(wrf_err_message)
       CALL nl_get_start_year   ( 1 , first_date_start_year   )
       CALL nl_get_start_month  ( 1 , first_date_start_month  )
       CALL nl_get_start_day    ( 1 , first_date_start_day    )
@@ -262,6 +292,26 @@
        IF ( ierr3 .NE. 0 ) CALL wrf_error_fatal( 'wrf_get_dom_ti_integer getting dimension information from dataset' )
 
 #if (EM_CORE == 1)
+
+       IF ( ( switch .EQ. input_only ) .AND. ( config_flags%io_form_input .EQ. 2 ) ) THEN
+
+        !  For backward compatibility.  If we do not find the hypsometric_opt defined
+        !  in the input data, this is pre version 3.4.  Most likely, the hypsometric_opt
+        !  was the default value, 1.  
+
+        hypsometric_opt = -1
+        CALL wrf_get_dom_ti_integer ( fid , 'HYPSOMETRIC_OPT' , hypsometric_opt , 1 , icnt , ierr )
+        IF ( ( hypsometric_opt .NE. 1 ) .AND. ( hypsometric_opt .NE. 2 ) ) THEN
+          grid%hypsometric_opt = 1
+          config_flags%hypsometric_opt = 1
+	  DO loop = 1 , grid%max_dom
+            CALL nl_set_hypsometric_opt ( loop , 1 ) 
+          END DO
+          WRITE(wrf_err_message,*)'Resetting the hypsometric_opt from default value of 2 to 1'
+          CALL wrf_debug( 0 , wrf_err_message )
+        END IF
+       END IF
+
        !  Test to make sure that the grid distances are the right size.
 
        CALL wrf_get_dom_ti_real ( fid , 'DX' ,  dx_compare , 1 , icnt , ierr )
@@ -272,12 +322,42 @@
              WRITE(wrf_err_message,*)'input_wrf: DX and DY from input file expected to be wrong'
              CALL wrf_debug ( 1 , wrf_err_message )
           ELSE
-             print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
-             CALL wrf_error_fatal( 'DX and DY do not match from the namelist and the input file' )
+             WRITE(wrf_err_message,*)'dx and dy from file     ',dx_compare,dy_compare
+             CALL wrf_message(wrf_err_message)
+             WRITE(wrf_err_message,*)'dx and dy from namelist ',config_flags%dx,config_flags%dy
+             CALL wrf_message(wrf_err_message)
+             CALL wrf_error_fatal( 'DX and DY do not match comparing namelist to the input file' )
           END IF
        END IF
 #endif
     END IF
+
+#if (EM_CORE == 1)
+    IF ( switch .EQ. auxinput2_only ) THEN
+       ierr = 0
+       CALL wrf_get_dom_ti_integer ( fid , 'I_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
+       ierr = max( ierr, ierr3 )
+       IF ( itmp .NE. config_flags%i_parent_start ) THEN
+          ierr = 1
+          WRITE(wrf_err_message,*)'i_parent_start from namelist.input file = ',config_flags%i_parent_start
+          CALL wrf_message(wrf_err_message)
+          WRITE(wrf_err_message,*)'i_parent_start from gridded input file  = ',itmp
+          CALL wrf_message(wrf_err_message)
+       END IF
+       CALL wrf_get_dom_ti_integer ( fid , 'J_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
+       ierr = max( ierr, ierr3 )
+       IF ( itmp .NE. config_flags%j_parent_start ) THEN
+          ierr = 1
+          WRITE(wrf_err_message,*)'j_parent_start from namelist.input file = ',config_flags%j_parent_start
+          CALL wrf_message(wrf_err_message)
+          WRITE(wrf_err_message,*)'j_parent_start from gridded input file  = ',itmp
+          CALL wrf_message(wrf_err_message)
+       END IF
+       IF ( ierr .NE. 0 ) THEN
+          CALL wrf_error_fatal( 'Nest start locations do not match: namelist.input vs gridded input file' )
+       END IF
+    END IF
+#endif
 
     ! do the check later (see check_if_dryrun below)
 
@@ -420,6 +500,12 @@
     IF ( ( switch .EQ. auxinput1_only ) .AND. &
          ( first_date_nml .EQ. first_date_input ) )  THEN
        CALL wrf_get_dom_ti_integer ( fid, 'NUM_METGRID_SOIL_LEVELS', itmp, 1, icnt, ierr )
+
+#if (EM_CORE == 1)
+       IF ( itmp .EQ. 1 ) THEN
+             call wrf_error_fatal("NUM_METGRID_SOIL_LEVELS must be greater than 1")
+       END IF
+#endif
    
        IF ( ierr .EQ. 0 ) THEN
           WRITE(wrf_err_message,*)'input_wrf: global attribute NUM_METGRID_SOIL_LEVELS returns ', itmp
@@ -439,6 +525,27 @@
        END IF
     END IF
 
+#if 0
+#ifdef WRF_CHEM
+    !  Dust erosion static data.
+
+    CALL wrf_get_dom_ti_integer ( fid, 'EROSION_DIM', itmp, 1, icnt, ierr )
+
+    IF ( ierr .EQ. 0 ) THEN
+       WRITE(wrf_err_message,*)'input_wrf: global attribute EROSION_DIM returns ', itmp
+       CALL wrf_debug ( 300 , wrf_err_message )
+       IF ( config_flags%erosion_dim /= itmp ) THEN
+          call wrf_message("----------------- ERROR -------------------")
+          WRITE(wrf_err_message,'("namelist    : erosion_dim = ",I10)') config_flags%erosion_dim
+          call wrf_message(wrf_err_message)
+          WRITE(wrf_err_message,'("input files : EROSION_DIM = ",I10, " (from met_em files).")') itmp
+          call wrf_message(wrf_err_message)
+          call wrf_error_fatal("Mismatch between namelist and global attribute EROSION_DIM")
+       END IF
+    END IF
+#endif
+#endif
+
     ! Test here to check that config_flags%sf_surface_physics in namelist
     ! is equal to what is in the global attributes of the wrfinput files
 
@@ -448,12 +555,18 @@
           WRITE(wrf_err_message,*)'input_wrf: global attribute SF_SURFACE_PHYSICS returns ', itmp
           CALL wrf_debug ( 300 , wrf_err_message )
           IF ( config_flags%sf_surface_physics /= itmp ) THEN
-             call wrf_message("----------------- ERROR -------------------")
-             WRITE(wrf_err_message,'("namelist    : sf_surface_physics = ",I10)') config_flags%sf_surface_physics
-             call wrf_message(wrf_err_message)
-             WRITE(wrf_err_message,'("input files : SF_SURFACE_PHYSICS = ",I10, " (from wrfinput files).")') itmp
-             call wrf_message(wrf_err_message)
-             call wrf_error_fatal("Mismatch between namelist and global attribute SF_SURFACE_PHYSICS")
+             IF ( ( config_flags%sf_surface_physics == LSMSCHEME ) .and. ( itmp == NOAHMPSCHEME ) ) then
+                ! All is well.  Noah-MP and Noah have compatible wrfinput files.
+             ELSE IF ( ( config_flags%sf_surface_physics == NOAHMPSCHEME ) .and. ( itmp == LSMSCHEME ) ) then
+                ! All is well.  Noah-MP and Noah have compatible wrfinput files.
+             ELSE
+                call wrf_message("----------------- ERROR -------------------")
+                WRITE(wrf_err_message,'("namelist    : sf_surface_physics = ",I10)') config_flags%sf_surface_physics
+                call wrf_message(wrf_err_message)
+                WRITE(wrf_err_message,'("input files : SF_SURFACE_PHYSICS = ",I10, " (from wrfinput files).")') itmp
+                call wrf_message(wrf_err_message)
+                call wrf_error_fatal("Mismatch between namelist and global attribute SF_SURFACE_PHYSICS")
+             END IF
           END IF
        END IF
     END IF
@@ -470,6 +583,7 @@
          ENDIF
     ENDIF
     CALL nl_set_iswater ( grid%id , config_flags%iswater )
+    grid%iswater = config_flags%iswater
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISLAKE' ,  config_flags%islake , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISLAKE returns ',config_flags%islake
@@ -478,6 +592,7 @@
          config_flags%islake = -1
     ENDIF
     CALL nl_set_islake ( grid%id , config_flags%islake )
+    grid%islake = config_flags%islake
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISICE' ,  config_flags%isice , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISICE returns ',config_flags%isice
@@ -490,6 +605,7 @@
          ENDIF
     ENDIF
     CALL nl_set_isice ( grid%id , config_flags%isice )
+    grid%isice = config_flags%isice
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISURBAN' ,  config_flags%isurban , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISURBAN returns ',config_flags%isurban
@@ -502,6 +618,7 @@
          ENDIF
     ENDIF
     CALL nl_set_isurban ( grid%id , config_flags%isurban )
+    grid%isurban = config_flags%isurban
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISOILWATER returns ',config_flags%isoilwater
@@ -510,6 +627,7 @@
          config_flags%isoilwater = 14
     ENDIF
     CALL nl_set_isoilwater ( grid%id , config_flags%isoilwater )
+    grid%isoilwater = config_flags%isoilwater
 
 #ifdef MOVE_NESTS
 ! Added these fields for restarting of moving nests, JM
@@ -600,6 +718,28 @@
 
 #endif
 
+#if (DA_CORE == 1)
+    ! Test here to check that config_flags%hypsometric_opt in namelist
+    ! is equal to what is in the global attributes of the wrfinput files
+
+    IF ( switch .EQ. input_only  ) THEN
+       CALL wrf_get_dom_ti_integer ( fid, 'HYPSOMETRIC_OPT', itmp, 1, icnt, ierr )
+       IF ( ierr .EQ. 0 ) THEN
+          WRITE(wrf_err_message,*)'input_wrf: global attribute HYPSOMETRIC_OPT returns ', itmp
+          CALL wrf_debug ( 300 , wrf_err_message )
+          IF ( config_flags%hypsometric_opt /= itmp ) THEN
+             call wrf_message("----------------- WARNING  -------------------")
+             WRITE(wrf_err_message,'("namelist    : hypsometric_opt = ",I10)') config_flags%hypsometric_opt
+             call wrf_message(wrf_err_message)
+             WRITE(wrf_err_message,'("input files : HYPSOMETRIC_OPT = ",I10, " (from wrfinput files).")') itmp
+             call wrf_message(wrf_err_message)
+             call wrf_error_fatal("Mismatch between namelist and global attribute HYPSOMETRIC_OPT")
+          END IF
+       END IF
+    END IF
+
+#endif
+
     ENDIF check_if_dryrun
 
 !
@@ -681,10 +821,12 @@
         CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
         CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
         CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+#if (DA_CORE != 1)
         IF( currentTime .GE. grid%next_bdy_time ) THEN
           IF ( wrf_dm_on_monitor() ) write(0,*) 'THIS TIME ',this_datestr(1:19),'NEXT TIME ',next_datestr(1:19)
           RETURN
         ENDIF
+#endif
     ENDIF
 
 #if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
@@ -914,7 +1056,10 @@
             ENDIF
           ELSE IF ( p%Ndim .EQ. 2 ) THEN
             IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams,newswitch)) THEN
-              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
+              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) .AND.  &
+                   ( .NOT. p%subgrid_x .OR. (p%subgrid_x .AND. grid%sr_x .GT. 0) ) .AND. &
+                   ( .NOT. p%subgrid_y .OR. (p%subgrid_y .AND. grid%sr_y .GT. 0) )       &
+                 ) THEN
                 IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
                   dname = p%DataName
                   IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
@@ -997,7 +1142,10 @@
             ENDIF
           ELSE IF ( p%Ndim .EQ. 3 ) THEN
             IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams,newswitch)) THEN
-              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
+              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) .AND.  &
+                   ( .NOT. p%subgrid_x .OR. (p%subgrid_x .AND. grid%sr_x .GT. 0) ) .AND. &
+                   ( .NOT. p%subgrid_y .OR. (p%subgrid_y .AND. grid%sr_y .GT. 0) )       &
+                 ) THEN
                 IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
                   dname = p%DataName
                   IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
@@ -1242,6 +1390,11 @@
 
 #if (DA_CORE != 1)
     CALL wrf_tsin( grid , ierr )
+#if (EM_CORE == 1)
+    if (config_flags%track_loc_in > 0 ) then
+       call track_input( grid , ierr )
+    end if
+#endif
 #endif
 
     WRITE(wrf_err_message,*)'input_wrf: end, fid = ',fid

@@ -48,11 +48,11 @@ CONTAINS
 
 
 ! NOOP
-   SUBROUTINE ESMF_Initialize( vm, defaultCalendar, rc )
+   SUBROUTINE ESMF_Initialize( vm, defaultcalkind, rc )
       USE esmf_basemod
       USE esmf_calendarmod
       TYPE(ESMF_VM),           INTENT(IN   ), OPTIONAL :: vm
-      TYPE(ESMF_CalendarType), INTENT(IN   ), OPTIONAL :: defaultCalendar
+      TYPE(ESMF_CalendarType), INTENT(IN   ), OPTIONAL :: defaultcalkind
       INTEGER,                 INTENT(  OUT), OPTIONAL :: rc
 
       TYPE(ESMF_CalendarType) :: defaultCalType
@@ -60,8 +60,8 @@ CONTAINS
 
       IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
       ! Initialize the default time manager calendar
-      IF ( PRESENT(defaultCalendar) )THEN
-         defaultCalType = defaultCalendar
+      IF ( PRESENT(defaultcalkind) )THEN
+         defaultCalType = defaultcalkind
       ELSE
          defaultCalType = ESMF_CAL_NOLEAP
       END IF
@@ -95,13 +95,20 @@ CONTAINS
 #if (defined SPMD) || (defined COUP_CSM)
 #include <mpif.h>
 #endif
+      LOGICAL :: flag
       INTEGER :: ier
 
       IF ( PRESENT( rc ) ) rc = ESMF_SUCCESS
 #if (defined SPMD) || (defined COUP_CSM)
-      CALL MPI_Finalize( ier ) 
+      CALL MPI_Finalized( flag, ier )
       IF ( ier .ne. mpi_success )THEN
         IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
+      END IF
+      IF ( .NOT. flag ) THEN
+        CALL MPI_Finalize( ier ) 
+        IF ( ier .ne. mpi_success )THEN
+          IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
+        END IF
       END IF
 #endif
    END SUBROUTINE ESMF_Finalize

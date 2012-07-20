@@ -41,7 +41,7 @@
 
       IMPLICIT NONE
 
-      INTEGER :: i
+      INTEGER :: i, oops
 
 !-----------------------------------------------------------------------
 ! Check that all values of sf_surface_physics are the same for all domains
@@ -82,6 +82,64 @@
             CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          END IF
       ENDDO
+
+#if (EM_CORE == 1)
+
+!-----------------------------------------------------------------------
+! Check for consistency in the Noah-MP options
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
+
+            ! Noah-MP does not work with the urban schemes
+
+            IF ( model_config_rec%sf_urban_physics(i) /= 0 ) THEN
+               WRITE(wrf_err_message, '(" --- ERROR:   Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
+               CALL wrf_message ( TRIM ( wrf_err_message ) )
+               WRITE(wrf_err_message, '("              does not work with urban physics schemes")')
+               CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
+            ENDIF
+
+         END IF
+      END DO
+
+!------------------------------------------------------------------------
+! Mills (2011) sea-ice albedo treatment only for Noah LSM and Noah-MP LSM
+!------------------------------------------------------------------------
+      IF ( model_config_rec%seaice_albedo_opt == 1 ) THEN
+         DO i = 1, model_config_rec % max_dom
+            IF ( ( model_config_rec%sf_surface_physics(i) /= LSMSCHEME ) .AND. &
+                 ( model_config_rec%sf_surface_physics(i) /= NOAHMPSCHEME ) ) THEN
+
+               write (wrf_err_message, '(" --- ERROR:   seaice_albedo_opt == 1 works only with ")')
+               CALL wrf_message ( TRIM ( wrf_err_message ) )
+               write (wrf_err_message, '("              sf_surface_physics == ", I2, " (Noah) or ", I2, " (Noah-MP).")') LSMSCHEME, NOAHMPSCHEME
+               call wrf_error_fatal ( TRIM ( wrf_err_message ) )
+
+            END IF
+            
+         END DO
+
+      END IF
+
+
+#endif
+
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+! Check that if stochastic perturbations are turned on in any domain, 
+! if so, set grid%stoch_force_global_opt=1 
+!-----------------------------------------------------------------------
+
+   model_config_rec % stoch_force_global_opt=0  !also set in registry.stoch
+ ! check if stochastic perturbations are turned on in any domain
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % stoch_force_opt(i) .EQ. 1)  then 
+           model_config_rec % stoch_force_global_opt=1 
+         endif
+   ENDDO 
+#endif
 
 !-----------------------------------------------------------------------
 ! If sst_update = 0, set io_form_auxinput4 to 0 so WRF will not try to
@@ -196,6 +254,23 @@
       ENDDO      ! Loop over domains
 
 !-----------------------------------------------------------------------
+!  Only implement the mfshconv option if the QNSE PBL is activated.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. QNSEPBLSCHEME ) .AND. &
+              ( model_config_rec%mfshconv(i) .NE. 0 ) ) THEN
+            model_config_rec%mfshconv(i) = 0
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'bl_pbl_physics /= 4, implies mfshconv must be 0, resetting'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 !  If analysis FDDA is turned off, reset the io_forms to zero so that
 !  there is no chance that WRF tries to input the data.
 !-----------------------------------------------------------------------
@@ -220,6 +295,13 @@
             CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          END IF
       END IF
+
+!-----------------------------------------------------------------------
+!  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
+!  Relocated here so that the remappings are after checking the namelist for inconsistencies.
+!-----------------------------------------------------------------------
+
+#     include "../dyn_em/namelist_remappings_em.h"
 
 #endif
 
@@ -268,6 +350,8 @@
       IF ( model_config_rec % sf_surface_physics(1) .EQ. SLABSCHEME  ) &
            model_config_rec % num_soil_layers = 5
       IF ( model_config_rec % sf_surface_physics(1) .EQ. LSMSCHEME   ) &
+           model_config_rec % num_soil_layers = 4
+      IF ( model_config_rec % sf_surface_physics(1) .EQ. NOAHMPSCHEME   ) &
            model_config_rec % num_soil_layers = 4
       IF ( model_config_rec % sf_surface_physics(1) .EQ. RUCLSMSCHEME) &
            model_config_rec % num_soil_layers = 6

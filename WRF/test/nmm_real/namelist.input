@@ -71,17 +71,17 @@
  trdlw                               = 6,        6,
  tsrfc                               = 6,        6,
  pcpflg                              = .false.,  .false.,
- isfflx                              = 0,
- ifsnow                              = 0,
- icloud                              = 0,
  num_soil_layers                     = 4,
  mp_zero_out                         = 0
  gwd_opt                             = 0
  /
 
  &dynamics
- euler_adv                           = .false.,
- idtadt                              = 1,
+ coac                                = 1.6,
+ codamp                              = 6.4,
+ slophc                              = 0.0064,
+ euler_adv                           = .true.,
+ idtadt                              = 2,
  idtadc                              = 1
  /
 

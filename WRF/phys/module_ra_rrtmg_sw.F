@@ -8544,7 +8544,13 @@
              taucmcl ,ssacmcl ,asmcmcl ,fsfcmcl , &
              ciwpmcl ,clwpmcl ,reicmcl ,relqmcl , &
              tauaer  ,ssaaer  ,asmaer  ,ecaer   , &
-             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc)
+             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc,  &
+! --------- Add the following four compenants for ssib shortwave down radiation ---!
+! -------------------      by Zhenxin 2011-06-20      --------------------------------!
+             sibvisdir, sibvisdif, sibnirdir, sibnirdif          &
+                                                                )
+! ----------------------  End,  Zhenxin 2011-06-20    --------------------------------!
+
 
 ! ------- Description -------
 
@@ -8743,6 +8749,14 @@
                                                       !    Dimensions: (ncol,nlay+1)
       real(kind=rb), intent(out) :: swdflx(:,:)       ! Total sky shortwave downward flux (W/m2)
                                                       !    Dimensions: (ncol,nlay+1)
+      real(kind=rb), intent(out) :: sibvisdir(:,:)    ! visible direct downward flux  (W/m2)
+                                                      !    Dimensions: (ncol,nlay+1) Zhenxin (2011/06/20)
+      real(kind=rb), intent(out) :: sibvisdif(:,:)    ! visible diffusion downward flux  (W/m2)
+                                                      !    Dimensions: (ncol,nlay+1) Zhenxin (2011/06/20)
+      real(kind=rb), intent(out) :: sibnirdir(:,:)    ! Near IR direct downward flux  (W/m2)
+                                                      !    Dimensions: (ncol,nlay+1)  Zhenxin (2011/06/20)
+      real(kind=rb), intent(out) :: sibnirdif(:,:)    ! Near IR diffusion downward flux  (W/m2)
+                                                      !    Dimensions: (ncol,nlay+1) Zhenxin (2011/06/20)
       real(kind=rb), intent(out) :: swhr(:,:)         ! Total sky shortwave radiative heating rate (K/d)
                                                       !    Dimensions: (ncol,nlay)
       real(kind=rb), intent(out) :: swuflxc(:,:)      ! Clear sky shortwave upward flux (W/m2)
@@ -9142,15 +9156,24 @@
             swdflx(iplon,i) = zbbfd(i)
             uvdflx(i) = zuvfd(i)
             nidflx(i) = znifd(i)
+
 !  Direct/diffuse fluxes
             dirdflux(i) = zbbfddir(i)
             difdflux(i) = swdflx(iplon,i) - dirdflux(i)
 !  UV/visible direct/diffuse fluxes
             dirdnuv(i) = zuvfddir(i)
             difdnuv(i) = zuvfd(i) - dirdnuv(i)
+!  ------- Zhenxin add vis/uv downwards dir or dif here --!
+            sibvisdir(iplon,i) = dirdnuv(i)
+            sibvisdif(iplon,i) = difdnuv(i)
+!  ----- End of Zhenxin addition  ------------!
 !  Near-IR direct/diffuse fluxes
             dirdnir(i) = znifddir(i)
             difdnir(i) = znifd(i) - dirdnir(i)
+!  ---------Zhenxin add nir downwards dir and dif here --!
+            sibnirdir(iplon,i) = dirdnir(i)
+            sibnirdif(iplon,i) = difdnir(i)
+!  --------    End of Zhenxin addition 2011-05  ---------!
          enddo
 
 !  Total and clear sky net fluxes
@@ -9578,7 +9601,19 @@ CONTAINS
                        xland, xice, snow,                         &
                        qv3d, qc3d, qr3d,                          &
                        qi3d, qs3d, qg3d,                          &
+                       alswvisdir, alswvisdif,                    &  !Zhenxin ssib alb comp (06/20/2011)
+                       alswnirdir, alswnirdif,                    &  !Zhenxin ssib alb comp (06/20/2011)
+                       swvisdir, swvisdif,                        &  !Zhenxin ssib swr comp (06/20/2011)
+                       swnirdir, swnirdif,                        &  !Zhenxin ssib swi comp (06/20/2011)
+                       sf_surface_physics,                        &  !Zhenxin
                        f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,        &
+                       tauaer300,tauaer400,tauaer600,tauaer999,   & ! czhao 
+                       gaer300,gaer400,gaer600,gaer999,           & ! czhao 
+                       waer300,waer400,waer600,waer999,           & ! czhao 
+                       aer_ra_feedback,                           &
+!jdfcz                 progn,prescribe,                           &
+                       progn,                                     &
+                       qndrop3d,f_qndrop,                         & !czhao
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
@@ -9625,6 +9660,22 @@ CONTAINS
                                                              TSK, &
                                                           ALBEDO
 !
+!!! -------------------  Zhenxin (2011-06/20) ------------------
+   REAL, DIMENSION( ims:ime, jms:jme )                         , &
+         INTENT(IN)     ::                            ALSWVISDIR, &     ! ssib albedo of sw and lw
+                                                      ALSWVISDIF, &
+                                                      ALSWNIRDIR, &
+                                                      ALSWNIRDIF
+
+   REAL, DIMENSION( ims:ime, jms:jme )                         , &
+         INTENT(OUT)    ::                              SWVISDIR, &
+                                                        SWVISDIF, &
+                                                        SWNIRDIR, &
+                                                        SWNIRDIF        ! ssib sw dir and diff rad
+   INTEGER, INTENT(IN) :: sf_surface_physics                            ! ssib para
+
+!  ----------------------- end Zhenxin --------------------------
+!
    REAL, INTENT(IN  )   ::                                   R,G
 !
 ! Optional
@@ -9638,7 +9689,10 @@ CONTAINS
                                                             QR3D, &
                                                             QI3D, &
                                                             QS3D, &
-                                                            QG3D
+                                                            QG3D, &
+                                                        QNDROP3D
+
+   real pi,third,relconst,lwpmin,rhoh2o
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          OPTIONAL                                               , &
@@ -9647,7 +9701,29 @@ CONTAINS
                                                       F_RAIN_PHY
 
    LOGICAL, OPTIONAL, INTENT(IN)   ::                             &
-                                   F_QV,F_QC,F_QR,F_QI,F_QS,F_QG
+                                F_QV,F_QC,F_QR,F_QI,F_QS,F_QG,F_QNDROP
+
+! Optional
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
+         INTENT(IN    ) :: tauaer300,tauaer400,tauaer600,tauaer999, & ! czhao 
+                                 gaer300,gaer400,gaer600,gaer999, & ! czhao 
+                                 waer300,waer400,waer600,waer999    ! czhao 
+
+   INTEGER,    INTENT(IN  ), OPTIONAL   ::       aer_ra_feedback
+!jdfcz   INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn,prescribe
+   INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn
+
+      !wavelength corresponding to wavenum1 and wavenum2 (cm-1)
+      real, save :: wavemin(nbndsw) ! Min wavelength (um) of 14 intervals
+      data wavemin /3.077,2.500,2.150,1.942,1.626,1.299, &
+      1.242,0.778,0.625,0.442,0.345,0.263,0.200,3.846/
+      real, save :: wavemax(nbndsw) ! Max wavelength (um) of interval
+      data wavemax/3.846,3.077,2.500,2.150,1.942,1.626, &
+      1.299,1.242,0.778,0.625,0.442,0.345,0.263,12.195/
+      real wavemid(nbndsw) ! Mid wavelength (um) of interval
+      real, parameter :: thresh=1.e-9
+      real ang,slope
+      character(len=200) :: msg
 
 ! Top of atmosphere and surface shortwave fluxes (W m-2)
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
@@ -9676,7 +9752,8 @@ CONTAINS
                                                             QR1D, &
                                                             QI1D, &
                                                             QS1D, &
-                                                            QG1D
+                                                            QG1D, &
+                                                          qndrop1d 
 
 ! Added local arrays for RRTMG
     integer ::                                              ncol, &
@@ -9732,7 +9809,11 @@ CONTAINS
     real, dimension( 1, kts:kte+2 )  ::                   swuflx, &
                                                           swdflx, &
                                                          swuflxc, &
-                                                         swdflxc
+                                                         swdflxc, &
+                                                       sibvisdir, &  ! Zhenxin 2011-06-20
+                                                       sibvisdif, &
+                                                       sibnirdir, &
+                                                       sibnirdif     ! Zhenxin 2011-06-20
     real, dimension( 1, kts:kte+1 )  ::                     swhr, &
                                                            swhrc
 
@@ -9815,6 +9896,26 @@ CONTAINS
     LOGICAL :: predicate
 
 !------------------------------------------------------------------
+#ifdef WRF_CHEM
+      IF ( aer_ra_feedback == 1) then
+      IF ( .NOT. &
+      ( PRESENT(tauaer300) .AND. &
+        PRESENT(tauaer400) .AND. &
+        PRESENT(tauaer600) .AND. &
+        PRESENT(tauaer999) .AND. &
+        PRESENT(gaer300) .AND. &
+        PRESENT(gaer400) .AND. &
+        PRESENT(gaer600) .AND. &
+        PRESENT(gaer999) .AND. &
+        PRESENT(waer300) .AND. &
+        PRESENT(waer400) .AND. &
+        PRESENT(waer600) .AND. &
+        PRESENT(waer999) ) ) THEN
+      CALL wrf_error_fatal  &
+      ('Warning: missing fields required for aerosol radiation' )
+      ENDIF
+      ENDIF
+#endif
 
 !-----CALCULATE SHORT WAVE RADIATION
 !                                                              
@@ -9861,6 +9962,7 @@ CONTAINS
             QI1D(K)=0.
             QS1D(K)=0.
             CLDFRA1D(k)=0.
+            QNDROP1D(k)=0.
          ENDDO
 
          DO K=kts,kte
@@ -9900,6 +10002,14 @@ CONTAINS
                     QR1D(K)=max(0.,QR1D(K))
                  ENDDO
               ENDIF
+            ENDIF
+
+            IF ( PRESENT(F_QNDROP).AND.PRESENT(QNDROP3D)) THEN
+             IF (F_QNDROP) THEN
+              DO K=kts,kte
+               qndrop1d(K)=qndrop3d(I,K,J)
+              ENDDO
+             ENDIF
             ENDIF
 
 ! This logic is tortured because cannot test F_QI unless
@@ -10047,10 +10157,30 @@ CONTAINS
 
 ! Set surface albedo for direct and diffuse radiation in UV/visible and
 ! near-IR spectral regions
+! -------------- Zhenxin 2011-06-20 ----------- !
+
+! ------- 1.  Commented by Zhenxin 2011-06-20 for SSiB coupling modified ---- !
+!         asdir(ncol) = albedo(i,j)
+!         asdif(ncol) = albedo(i,j)
+!         aldir(ncol) = albedo(i,j)
+!         aldif(ncol) = albedo(i,j)
+! -------    End of Comments    ------ !
+
+! ------- 2. New Addiation  ------ !
+    IF ( sf_surface_physics .eq. 8 .AND. XLAND(i,j) .LT. 1.5) THEN
+         asdir(ncol) = ALSWVISDIR(I,J)
+         asdif(ncol) = ALSWVISDIF(I,J)
+         aldir(ncol) = ALSWNIRDIR(I,J)
+         aldif(ncol) = ALSWNIRDIF(I,J)
+    ELSE
          asdir(ncol) = albedo(i,j)
          asdif(ncol) = albedo(i,j)
          aldir(ncol) = albedo(i,j)
          aldif(ncol) = albedo(i,j)
+    ENDIF
+
+! ---------- End of Addiation ------!
+! ----------  End of fds_Zhenxin 2011-06-20   --------------!
 
 ! Define cloud optical properties for radiation (inflgsw = 0)
 ! This option is not currently active
@@ -10108,11 +10238,58 @@ CONTAINS
                cliqwp(ncol,k) = gliqwp / max(0.01,cldfrac(ncol,k))               ! In-cloud liquid water path.
             end do
 
+!link the aerosol feedback to cloud  -czhao
+  if( PRESENT( progn ) ) then
+    if (progn == 1) then
+!jdfcz     if(prescribe==0) then
+
+      pi = 4.*atan(1.0)
+      third=1./3.
+      rhoh2o=1.e3
+      relconst=3/(4.*pi*rhoh2o)
+!     minimun liquid water path to calculate rel
+!     corresponds to optical depth of 1.e-3 for radius 4 microns.
+      lwpmin=3.e-5
+      do k = kts, kte
+         reliq(ncol,k) = 10.
+         if( PRESENT( F_QNDROP ) ) then
+            if( F_QNDROP ) then
+              if ( qc1d(k)*pdel(ncol,k).gt.lwpmin.and. &
+                   qndrop1d(k).gt.1000. ) then
+               reliq(ncol,k)=(relconst*qc1d(k)/qndrop1d(k))**third ! effective radius in m
+!           apply scaling from Martin et al., JAS 51, 1830.
+               reliq(ncol,k)=1.1*reliq(ncol,k)
+               reliq(ncol,k)=reliq(ncol,k)*1.e6 ! convert from m to microns
+               reliq(ncol,k)=max(reliq(ncol,k),4.)
+               reliq(ncol,k)=min(reliq(ncol,k),20.)
+              end if
+            end if
+         end if
+      end do
+!jdfcz     else ! prescribe 
 ! following Kiehl
-            call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+      call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+!      write(0,*) 'sw prescribe aerosol',maxval(qndrop3d)
+!jdfcz     endif
+    else  ! progn   
+      call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+    endif
+  else   !progn 
+      call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+  endif
 
 ! following Kristjansson and Mitchell
-            call reicalc(ncol, pcols, pver, tlay, reice)
+      call reicalc(ncol, pcols, pver, tlay, reice)
+
+#if 0
+      if (i==80.and.j==30) then
+#if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
+      if( PRESENT( progn ) ) write(0,*) 'aerosol indirect',progn
+      write(0,*)'sw water eff radius',reliq(ncol,10),reliq(ncol,20),reliq(ncol,25)
+      write(0,*)'sw ice eff radius',reice(ncol,10),reice(ncol,20),reice(ncol,25)
+#endif
+      endif
+#endif
 
 ! Limit upper bound of reice for Fu ice parameterization and convert
 ! from effective radius to generalized effective size (*1.0315; Fu, 1996)
@@ -10166,16 +10343,110 @@ CONTAINS
                        cldfmcl, ciwpmcl, clwpmcl, reicmcl, relqmcl, &
                        taucmcl, ssacmcl, asmcmcl, fsfcmcl)
 
-! Aerosol optical depth, single scattering albedo and asymmetry parameter
+!--------------------------------------------------------------------------
+! Aerosol optical depth, single scattering albedo and asymmetry parameter -czhao 03/2010
+!--------------------------------------------------------------------------
 ! by layer for each RRTMG shortwave band
 ! No aerosols in top layer above model top (kte+1).
-         do nb = 1, nbndsw
-            do k = kts, kte+1
-               tauaer(ncol,k,nb) = 0.
-               ssaaer(ncol,k,nb) = 1.
-               asmaer(ncol,k,nb) = 0.
-            enddo
-         enddo
+!cz        do nb = 1, nbndsw
+!cz           do k = kts, kte+1
+!cz              tauaer(ncol,k,nb) = 0.
+!cz              ssaaer(ncol,k,nb) = 1.
+!cz              asmaer(ncol,k,nb) = 0.
+!cz           enddo
+!cz        enddo
+
+! ... Aerosol effects. Added aerosol feedbacks from Chem , 03/2010 -czhao
+!
+      do nb = 1, nbndsw
+      do k = kts,kte+1
+         tauaer(ncol,k,nb) = 0.
+         ssaaer(ncol,k,nb) = 1.
+         asmaer(ncol,k,nb) = 0.
+      end do
+      end do
+
+#ifdef WRF_CHEM
+   IF ( AER_RA_FEEDBACK == 1) then
+      do nb = 1, nbndsw
+         wavemid(nb)=0.5*(wavemin(nb)+wavemax(nb))  ! um
+      do k = kts,kte      !wig
+
+! convert optical properties at 300,400,600, and 999 to conform to the band wavelengths
+! tauaer - use angstrom exponent
+        if(tauaer300(i,k,j).gt.thresh .and. tauaer999(i,k,j).gt.thresh) then
+           ang=alog(tauaer300(i,k,j)/tauaer999(i,k,j))/alog(999./300.)
+           tauaer(ncol,k,nb)=tauaer400(i,k,j)*(0.4/wavemid(nb))**ang
+           !tauaer(ncol,k,nb)=tauaer600(i,k,j)*(0.6/wavemid(nb))**ang 
+           if (i==30.and.j==49.and.k==2.and.nb==12) then
+            write(0,*) 'TAU from 600 vs 400 in RRTMG',tauaer600(i,k,j),tauaer400(i,k,j)
+            print*, 'TAU from 600 vs 400 in RRTMG',tauaer600(i,k,j),tauaer400(i,k,j)
+            write(0,*) tauaer600(i,k,j)*(0.6/wavemid(nb))**ang,tauaer400(i,k,j)*(0.4/wavemid(nb))**ang
+            print*, tauaer600(i,k,j)*(0.6/wavemid(nb))**ang,tauaer400(i,k,j)*(0.4/wavemid(nb))**ang
+           endif
+! ssa - linear interpolation; extrapolation
+           slope=(waer600(i,k,j)-waer400(i,k,j))/.2
+           ssaaer(ncol,k,nb) = slope*(wavemid(nb)-.6)+waer600(i,k,j)
+           if(ssaaer(ncol,k,nb).lt.0.4) ssaaer(ncol,k,nb)=0.4
+           if(ssaaer(ncol,k,nb).ge.1.0) ssaaer(ncol,k,nb)=1.0
+! g - linear interpolation;extrapolation
+           slope=(gaer600(i,k,j)-gaer400(i,k,j))/.2
+           asmaer(ncol,k,nb) = slope*(wavemid(nb)-.6)+gaer600(i,k,j) ! notice reversed varaibles
+           if(asmaer(ncol,k,nb).lt.0.5) asmaer(ncol,k,nb)=0.5
+           if(asmaer(ncol,k,nb).ge.1.0) asmaer(ncol,k,nb)=1.0
+        endif
+      end do ! k
+      end do ! nb
+
+!wig beg
+      do nb = 1, nbndsw
+         slope = 0.  !use slope as a sum holder
+         do k = kts,kte
+            slope = slope + tauaer(ncol,k,nb)
+         end do
+         if( slope < 0. ) then
+            write(msg,'("ERROR: Negative total optical depth of ",f8.2," at point i,j,nb=",3i5)') slope,i,j,nb
+            call wrf_error_fatal(msg)
+         else if( slope > 6. ) then
+            call wrf_message("-------------------------")
+            write(msg,'("WARNING: Large total sw optical depth of ",f8.2," at point i,j,nb=",3i5)') slope,i,j,nb
+            call wrf_message(msg)
+
+            call wrf_message("Diagnostics 1: k, tauaer300, tauaer400, tauaer600, tauaer999, tauaer")
+            do k=kts,kte
+               write(msg,'(i4,5f8.2)') k, tauaer300(i,k,j), tauaer400(i,k,j), &
+                    tauaer600(i,k,j), tauaer999(i,k,j),tauaer(ncol,k,nb)
+               call wrf_message(msg)
+               !czhao set an up-limit here to avoid segmentation fault 
+               !from extreme AOD
+               tauaer(ncol,k,nb)=tauaer(ncol,k,nb)*6.0/slope 
+            end do
+
+            call wrf_message("Diagnostics 2: k, gaer300, gaer400, gaer600, gaer999")
+            do k=kts,kte
+               write(msg,'(i4,4f8.2)') k, gaer300(i,k,j), gaer400(i,k,j), &
+                    gaer600(i,k,j), gaer999(i,k,j)
+               call wrf_message(msg)
+            end do
+
+            call wrf_message("Diagnostics 3: k, waer300, waer400, waer600, waer999")
+            do k=kts,kte
+               write(msg,'(i4,4f8.2)') k, waer300(i,k,j), waer400(i,k,j), &
+                    waer600(i,k,j), waer999(i,k,j)
+               call wrf_message(msg)
+            end do
+
+            call wrf_message("Diagnostics 4: k, ssaal, asyal, taual")
+            do k=kts-1,kte
+               write(msg,'(i4,3f8.2)') k, ssaaer(i,k,nb), asmaer(i,k,nb), tauaer(i,k,nb)
+               call wrf_message(msg)
+            end do
+            call wrf_message("-------------------------")
+         endif
+      enddo  ! nb
+      endif  ! aer_ra_feedback
+#endif
+
 
 ! Zero array for input of aerosol optical thickness for use with
 ! ECMWF aerosol types (not used)
@@ -10197,7 +10468,11 @@ CONTAINS
              taucmcl ,ssacmcl ,asmcmcl ,fsfcmcl , &
              ciwpmcl ,clwpmcl ,reicmcl ,relqmcl , &
              tauaer  ,ssaaer  ,asmaer  ,ecaer   , &
-             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc)
+             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, &
+! -----          Zhenxin added for ssib coupiling 2011-06-20 --------!
+             sibvisdir, sibvisdif, sibnirdir, sibnirdif          &
+                                                        )
+! --------------------   End of addiation by Zhenxin 2011-06-20 ------!
 
 ! Output net absorbed shortwave surface flux and shortwave cloud forcing
 ! at the top of atmosphere (W/m2)
@@ -10214,6 +10489,12 @@ CONTAINS
             swupb(i,j)     = swuflx(1,1)
             swupbc(i,j)    = swuflxc(1,1)
             swdnb(i,j)     = swdflx(1,1)
+! Added by Zhenxin for 4 compenants of swdown radiation
+            swvisdir(i,j)  = sibvisdir(1,1)
+            swvisdif(i,j)  = sibvisdif(1,1)
+            swnirdir(i,j)  = sibnirdir(1,1)
+            swnirdif(i,j)  = sibnirdif(1,1)
+!  Ended, Zhenxin (2011/06/20)
             swdnbc(i,j)    = swdflxc(1,1)
          endif
 
@@ -10246,6 +10527,10 @@ CONTAINS
             swupbc(i,j)    = 0.
             swdnb(i,j)     = 0.
             swdnbc(i,j)    = 0.
+            swvisdir(i,j)  = 0.  ! Add by Zhenxin (2011/06/20)
+            swvisdif(i,j)  = 0.
+            swnirdir(i,j)  = 0.
+            swnirdif(i,j)  = 0.  ! Add by Zhenxin (2011/06/20)
          endif
 
       endif

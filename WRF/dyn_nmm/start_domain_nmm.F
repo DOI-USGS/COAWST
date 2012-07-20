@@ -3,6 +3,57 @@
 !#define NO_UPSTREAM_ADVECTION
 !----------------------------------------------------------------------
 !
+#ifdef HWRF
+        SUBROUTINE GUESS_COUPLING_TIMESTEP(gridid,DTC)
+          USE module_configure
+          implicit none
+          real, intent(out) :: DTC
+          integer, intent(in) :: gridid
+          type(grid_config_rec_type) :: config_flags
+          character*255 :: message
+
+          real :: dt
+          integer :: nphs,movemin
+          if(model_config_rec%max_dom>=2) then
+             ! Normally, in an HWRF simulation, domain 2 has
+             ! dt*nphs*movemin = coupling timestep
+             ! So if there is a domain 2, we'll use that to
+             ! guess the coupling timestep.
+             if(gridid==1) then
+                ! The first time this routine is called, it is for domain 1,
+                ! and domain 2 has not been created yet.  That means domain
+                ! 2 still has its dt set to the internal WRF default of 2.
+                ! To get domain 2's correct dt, we get domain 1's dt and
+                ! divide by 3
+                call wrf_message('Guessing coupling timestep from d01''s dt/3 and d02''s nphs and movemin...')
+                call model_to_grid_config_rec(1,model_config_rec,config_flags)
+                dt=config_flags%dt/3
+                call model_to_grid_config_rec(2,model_config_rec,config_flags)
+             else
+                call wrf_message('Guessing coupling timestep from d02 settings...')
+                call model_to_grid_config_rec(2,model_config_rec,config_flags)
+                dt=config_flags%dt
+             endif
+          else
+             ! Someone is doing a single domain run, so guess the
+             ! coupling timestep using the
+             call wrf_message('Guessing coupling timestep from d01 settings because there is no d02...')
+             call model_to_grid_config_rec(1,model_config_rec,config_flags)
+          endif
+          nphs=config_flags%nphs
+          movemin=config_flags%movemin
+
+          dtc = dt*nphs*movemin
+388       format("dtc=dt*nphs*movemin = ",F0.3,"=",F0.3,"*",I0,"*",I0)
+          write(message,388) dtc,dt,nphs,movemin
+          call wrf_message(message)
+        END SUBROUTINE GUESS_COUPLING_TIMESTEP
+#endif
+!
+!----------------------------------------------------------------------
+!
+!----------------------------------------------------------------------
+!
       SUBROUTINE START_DOMAIN_NMM(GRID, allowed_to_read                &
 !
 #include <dummy_new_args.inc>
@@ -10,7 +61,12 @@
      &           )
 !----------------------------------------------------------------------
 !
+      USE MODULE_TIMING
+#ifdef HWRF
+      USE MODULE_HIFREQ, only : hifreq_open
+#endif
       USE MODULE_DOMAIN
+      USE MODULE_RANDOM, only : srand_grid, rand_grid_r4
       USE MODULE_DRIVER_CONSTANTS
       USE module_model_constants
       USE MODULE_CONFIGURE
@@ -69,6 +125,11 @@
 #ifdef HWRF
   LOGICAL :: ANAL   !zhang's doing, added for analysis option
 #endif
+
+  integer(kind=4) :: random_seed
+  INTEGER :: parent_id, nestid, max_dom,one
+  LOGICAL :: grid_allowed, nestless
+
       INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,IPS,IPE,JPS,JPE,KPS,KPE
@@ -111,6 +172,15 @@
       REAL :: TSTART
 !zhang's doing ends
 #endif
+#ifdef HWRF
+!     gopal's doing for the moving nest (MSLP computation)
+!-----------------------------------------------------------------------------------------------------
+      REAL, PARAMETER                                       :: LAPSR=6.5E-3, GI=1./G,D608=0.608
+      REAL, PARAMETER                                       :: COEF3=287.05*GI*LAPSR, COEF2=-1./COEF3
+      REAL, PARAMETER                                       :: TRG=2.0*R_D*GI,LAPSI=1.0/LAPSR
+      REAL                                                  :: RTOPP,APELP,DZ,SFCT,A
+!-----------------------------------------------------------------------------------------------------
+#endif
 
 !
 !!!   REAL,ALLOCATABLE,DIMENSION(:,:) :: RAINBL,RAINNC,RAINNC           &
@@ -122,12 +192,18 @@
      &                                    ,RUBLTEN,RVBLTEN              &
      &                                    ,RQCCUTEN,RQICUTEN,RQRCUTEN   &
      &                                    ,RQSCUTEN,RQVCUTEN,RTHCUTEN   &
+     &                                    ,RUSHTEN,RVSHTEN              &
+     &                                    ,RQCSHTEN,RQISHTEN,RQRSHTEN   &
+     &                                    ,RQSSHTEN,RQVSHTEN,RTHSHTEN   &
+     &                                    ,RQGSHTEN                     &
      &                                    ,RTHRATEN                     &
      &                                    ,RTHRATENLW,RTHRATENSW
       REAL,ALLOCATABLE,DIMENSION(:,:) :: EMISS,EMTEMP,GLW,HFX           &
      &                                  ,NCA                            &
      &                                  ,QFX,RAINBL,RAINC,RAINNC        &
      &                                  ,RAINNCV                        &
+     &                                  ,SNOWNC,SNOWNCV                 &
+     &                                  ,GRAUPELNC,GRAUPELNCV           &
      &                                  ,SNOWC,THC,TMN,TSFC
 
       REAL,ALLOCATABLE,DIMENSION(:,:) :: Z0_DUM, ALBEDO_DUM
@@ -144,6 +220,7 @@
       LOGICAL :: E_BDY,N_BDY,S_BDY,W_BDY,WARM_RAIN,ADV_MOIST_COND
       LOGICAL :: START_OF_SIMULATION
       LOGICAL :: LRESTART
+      LOGICAL :: ETAMP_Regional, ICE1_indx, ICE2_indx
 
 
       integer :: jam,retval
@@ -182,6 +259,15 @@
 !**********************************************************************
 !----------------------------------------------------------------------
 !
+      call start_timing
+
+#ifdef HWRF
+      if(grid%id==3) then
+         grid%force_sst=1
+      else
+         grid%force_sst=2
+      endif
+#endif
 
       CALL GET_IJK_FROM_GRID(GRID,                                     &
      &                       IDS,IDE,JDS,JDE,KDS,KDE,                  &
@@ -194,6 +280,11 @@
       JTE=JPE
       KTS=KPS
       KTE=KPE
+
+#ifdef HWRF
+      call guess_coupling_timestep(grid%id,grid%guessdtc)
+      grid%dtc=0
+#endif
 
       CALL model_to_grid_config_rec(grid%id,model_config_rec           &
      &                             ,config_flags)
@@ -251,6 +342,12 @@
          CALL WRF_ERROR_FATAL(wrf_err_message)
       END IF
 
+#if (HWRF==1)
+      if(grid%vortex_tracker<1 .or. grid%vortex_tracker>3) then
+         write(wrf_err_message,*)' domain ',grid%id,' has an invalid value ',grid%vortex_tracker,' for grid%vortex_tracker.  It must be 1, 2 or 3.'
+      endif
+#endif
+      
 !!!!!!tlb
 !!!! For now, set NPES to 1
       NPES=1
@@ -455,6 +552,63 @@
       JFS=JPS
       JFE=MIN(JPE,JDE-1)
       IFE=MIN(IPE,IDE-1)
+
+      if((allowed_to_read.and..not.(restrt)) .or. .not.allowed_to_read) then
+         randif: IF(in_use_for_config(grid%id,'random'))THEN
+            ! Reset random number generator at first initialization,
+            ! or after a nest move.  (Need to reset after a nest move
+            ! or the leading edge will be filled with 3x3 areas with
+            ! the same random number generator state.)
+            random_seed=config_flags%random_seed + grid%ntsd
+            
+            write(message,'(A,I0,A,I0)') 'Resetting random number for domain ',grid%id,' with seed ',random_seed
+            call wrf_message(message)
+            one=1
+            call srand_grid(grid%randstate1,grid%randstate2, &
+                            grid%randstate3,grid%randstate4, &
+                            IDS,IDE,JDS,JDE,one,one, &
+                            IMS,IME,JMS,JME,one,one, &
+                            IPS,IPE,JPS,JPE,one,one,random_seed)
+            call rand_grid_r4(grid%randstate1,grid%randstate2, &
+                              grid%randstate3,grid%randstate4, &
+                              grid%random, &
+                              IDS,IDE,JDS,JDE,one,one, &
+                              IMS,IME,JMS,JME,one,one, &
+                              IPS,IPE,JPS,JPE,one,one)
+         else
+            grid%random = 0.0
+         endif randif
+      endif
+! Begin HWRF update for high-frequency output
+#ifdef HWRF
+      if(allowed_to_read .and. config_flags%high_freq) then
+        if(grid%id==config_flags%high_dom) then
+           call HIFREQ_OPEN(grid,config_flags)
+        elseif(config_flags%high_dom==-99) then
+          nestless=.true.
+           CALL nl_get_max_dom( 1, max_dom )
+           nestdo: do nestid=2,max_dom
+              call nl_get_grid_allowed(nestid,grid_allowed)
+              if(grid_allowed) then
+                 call nl_get_parent_id(nestid,parent_id)
+                 if(parent_id==grid%id) then
+                    write(message,'("Domain ",I0," does not have hifreq out (can have a child).")') grid%id
+                    nestless=.false.
+                    exit nestdo
+                 endif
+              endif
+           enddo nestdo
+           if(nestless) then
+              call HIFREQ_OPEN(grid,config_flags)
+           endif
+        else
+           write(message,'("Domain ",I0," does not have hifreq out.")') grid%id
+        endif
+      else
+        write(message,'("Domain ",I0," is not being initialized.")') grid%id
+      endif
+! end of high-freq output
+#endif
 !
 #ifdef HWRF
 !zhang's doing
@@ -739,7 +893,6 @@
       NSTART = INT(grid%TSTART*TSPH+0.5)
 !
       grid%ntsd = NSTART
-
 
 !! want non-zero values for grid%nprec, grid%nheat type vars to avoid problems
 !! with mod statements below.
@@ -1413,6 +1566,9 @@
           grid%pint(I,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
           grid%z(I,J,K)=grid%pint(I,J,K)
           grid%w(I,J,K)=0.
+#ifdef IDEAL_NMM_TC
+             grid%f(I,J)=0.5*GRID%DT*3.15656e-5 ! IDEAL CASE 0.5*DT*f (and not f!)
+#endif
         ENDDO
         ENDDO
         ENDDO
@@ -1433,6 +1589,55 @@
 #ifdef HWRF
       ENDIF    !zhang 
 #endif
+
+#ifdef HWRF
+      hwrfx_mslp: if(grid%vortex_tracker /= 1) then
+! XUEJIN's doing
+! add to output MSLP at the initial time
+!
+!    COMPUTATION OF MSLP         ! This is gopal's doing
+!
+
+
+     DO J=JFS,JFE
+      DO I=IFS,IFE
+         grid%Z(I,J,1)=grid%FIS(I,J)*GI
+      ENDDO
+     ENDDO
+
+     DO K=KPS,2
+      DO J=JFS,JFE
+       DO I=IFS,IFE
+          APELP      = (grid%PINT(I,J,K+1)+grid%PINT(I,J,K))
+          RTOPP      = TRG*grid%T(I,J,K)*(1.0+grid%Q(I,J,K)*P608)/APELP
+          DZ         = RTOPP*(grid%DETA1(K)*grid%PDTOP+grid%DETA2(K)*grid%PD(I,J))
+          grid%Z(I,J,K+1) = grid%Z(I,J,K) + DZ
+       ENDDO
+      ENDDO
+     ENDDO
+
+     grid%MSLP=-9999.99
+     DO J=JFS,JFE
+      DO I=IFS,IFE
+         SFCT      = grid%T(I,J,1)*(1.+D608*grid%Q(I,J,1)) + LAPSR*(grid%Z(I,J,1)+grid%Z(I,J,2))*0.5
+         A         = LAPSR*grid%Z(I,J,1)/SFCT
+         grid%MSLP(I,J) = grid%PINT(I,J,1)*(1-A)**COEF2
+      ENDDO
+     ENDDO
+
+! SET BACK Z AS IN ORIGINAL CODE
+
+     DO K=KPS,KPE
+      DO J=JFS,JFE
+       DO I=IFS,IFE
+         grid%Z(I,J,K)=grid%PINT(I,J,K)
+       ENDDO
+      ENDDO
+     ENDDO
+
+  endif hwrfx_mslp
+#endif
+
 
 #ifndef NO_RESTRICT_ACCEL
 !----------------------------------------------------------------------
@@ -1530,6 +1735,10 @@
       ALLOCATE(RAINC(IMS:IME,JMS:JME),STAT=I)   ; RAINC    = 0.
       ALLOCATE(RAINNC(IMS:IME,JMS:JME),STAT=I)  ; RAINNC   = 0.
       ALLOCATE(RAINNCV(IMS:IME,JMS:JME),STAT=I) ; RAINNCV  = 0.
+      ALLOCATE(SNOWNC(IMS:IME,JMS:JME),STAT=I)  ; SNOWNC   = 0.
+      ALLOCATE(SNOWNCV(IMS:IME,JMS:JME),STAT=I) ; SNOWNCV  = 0.
+      ALLOCATE(GRAUPELNC(IMS:IME,JMS:JME),STAT=I)  ; GRAUPELNC   = 0.
+      ALLOCATE(GRAUPELNCV(IMS:IME,JMS:JME),STAT=I) ; GRAUPELNCV  = 0.
 
       ALLOCATE(ZS(KMS:KME),STAT=I)              ; ZS       = 0.
       ALLOCATE(SNOWC(IMS:IME,JMS:JME),STAT=I)   ; SNOWC    = 0.
@@ -1552,6 +1761,15 @@
       ALLOCATE(RQSCUTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQSCUTEN = 0.
       ALLOCATE(RQVCUTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQVCUTEN = 0.
       ALLOCATE(RTHCUTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RTHCUTEN = 0.
+      ALLOCATE(RUSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)     ; RUSHTEN = 0.
+      ALLOCATE(RVSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)     ; RVSHTEN = 0.
+      ALLOCATE(RQCSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQCSHTEN = 0.
+      ALLOCATE(RQISHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQISHTEN  = 0.
+      ALLOCATE(RQRSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQRSHTEN = 0.
+      ALLOCATE(RQSSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQSSHTEN = 0.
+      ALLOCATE(RQGSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQGSHTEN = 0.
+      ALLOCATE(RQVSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQVSHTEN = 0.
+      ALLOCATE(RTHSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RTHSHTEN = 0.
       ALLOCATE(RTHRATEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RTHRATEN  = 0.
       ALLOCATE(RTHRATENLW(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; RTHRATENLW = 0.
       ALLOCATE(RTHRATENSW(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; RTHRATENSW = 0.
@@ -1717,13 +1935,18 @@
 
       CALL PHY_INIT(GRID%ID,CONFIG_FLAGS,GRID%DT,LRESTART,SFULL,SMID    &
      &             ,grid%pt,TSFC,GRID%RADT,GRID%BLDT,GRID%CUDT,GRID%GSMDT    &
+     &             ,grid%DUCUDT, grid%DVCUDT                            &
      &             ,RTHCUTEN, RQVCUTEN, RQRCUTEN                        &
      &             ,RQCCUTEN, RQSCUTEN, RQICUTEN                        &
+     &             ,RUSHTEN,  RVSHTEN,  RTHSHTEN                        &
+     &             ,RQVSHTEN, RQRSHTEN, RQCSHTEN                        &
+     &             ,RQSSHTEN, RQISHTEN, RQGSHTEN                        &
      &             ,RUBLTEN,RVBLTEN,RTHBLTEN                            &
      &             ,RQVBLTEN,RQCBLTEN,RQIBLTEN                          &
      &             ,RTHRATEN,RTHRATENLW,RTHRATENSW                      &
      &             ,STEPBL,STEPRA,STEPCU                                &
      &             ,grid%w0avg, RAINNC, RAINC, grid%raincv, RAINNCV               &
+     &             ,SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV              &
      &             ,NCA,GRID%SWRAD_SCAT                                 &
      &             ,grid%cldefi,LOWLYR                                       &
      &             ,grid%mass_flux                                           &
@@ -1735,10 +1958,9 @@
      &             ,grid%xlat,grid%xlong,grid%albedo,grid%albbck                            &
      &             ,GRID%GMT,GRID%JULYR,GRID%JULDAY                     &
      &             ,GRID%LEVSIZ, NUM_OZMIXM, NUM_AEROSOLC, GRID%PAERLEV &
-     &             ,TMN,grid%xland,grid%znt,grid%z0,grid%ustar,grid%mol,grid%pblh,grid%tke_myj             &
-     &             ,grid%DUCUDT, grid%DVCUDT                                      &
+     &             ,TMN,grid%xland,grid%znt,grid%z0,grid%ustar,grid%mol,grid%pblh,grid%tke_pbl             &
      &             ,grid%exch_h,THC,SNOWC,grid%mavail,HFX,QFX,RAINBL              &
-     &             ,grid%stc,ZS,DZS,GRID%NUM_SOIL_LAYERS,WARM_RAIN           &
+     &             ,grid%stc,grid%sldpth,grid%DZSoil,GRID%NUM_SOIL_LAYERS,WARM_RAIN           &
      &             ,ADV_MOIST_COND                                      &
      &             ,grid%apr_gr,grid%apr_w,grid%apr_mc,grid%apr_st,grid%apr_as                   &
      &             ,grid%apr_capma,grid%apr_capme,grid%apr_capmi                       &
@@ -1749,12 +1971,26 @@
      &             ,grid%SNOALB                                         &
      &             ,GRID%DX,GRID%DY,grid%f_ice_phy,grid%f_rain_phy,grid%f_rimef_phy    &
      &             ,grid%mp_restart_state,grid%tbpvs_state,grid%tbpvs0_state           &
-     &             ,.TRUE.,grid%moved,START_OF_SIMULATION                    &
+     &             ,ALLOWED_TO_READ,grid%moved,START_OF_SIMULATION                    &
      &             ,1                                                   & ! lagday
      &             ,IDS, IDE, JDS, JDE, KDS, KDE                        &
      &             ,IMS, IME, JMS, JME, KMS, KME                        &
      &             ,ITS, ITE, JTS, JTE, KTS, KTE                        &
      &             ,NUM_URBAN_LAYERS                                    &
+     &             ,GRID%RAINCV_A,GRID%RAINCV_B                         &
+     &               ,ISNOWXY=grid%ISNOWXY, ZSNSOXY=grid%ZSNSOXY, TSNOXY=grid%TSNOXY,    & ! Optional Noah-MP
+     &                SNICEXY=grid%SNICEXY, SNLIQXY=grid%SNLIQXY, TVXY=grid%TVXY,        & ! Optional Noah-MP
+     &                TGXY=grid%TGXY, CANICEXY=grid%CANICEXY,                            & ! Optional Noah-MP
+     &                CANLIQXY=grid%CANLIQXY, EAHXY=grid%EAHXY,                          & ! Optional Noah-MP
+     &                TAHXY=grid%TAHXY, CMXY=grid%CMXY,                                  & ! Optional Noah-MP
+     &                CHXY=grid%CHXY, FWETXY=grid%FWETXY, SNEQVOXY=grid%SNEQVOXY,        & ! Optional Noah-MP
+     &                ALBOLDXY=grid%ALBOLDXY, QSNOWXY=grid%QSNOWXY,                      & ! Optional Noah-MP
+     &                WSLAKEXY=grid%WSLAKEXY, ZWTXY=grid%ZWTXY, WAXY=grid%WAXY,          & ! Optional Noah-MP
+     &                WTXY=grid%WTXY, LFMASSXY=grid%LFMASSXY, RTMASSXY=grid%RTMASSXY,    & ! Optional Noah-MP
+     &                STMASSXY=grid%STMASSXY, WOODXY=grid%WOODXY,                        & ! Optional Noah-MP
+     &                STBLCPXY=grid%STBLCPXY, FASTCPXY=grid%FASTCPXY,                    & ! Optional Noah-MP
+     &                XSAIXY=grid%XSAIXY,                                                & ! Optional Noah-MP
+     &                T2MVXY=grid%T2MVXY, T2MBXY=grid%T2MBXY, CHSTARXY=grid%CHSTARXY     & ! Optional Noah-MP
      &                )
 
 #ifdef HWRF
@@ -1812,7 +2048,7 @@
 !
 !mp replace F*_PHY with values defined in module_initialize_real.F?
 #ifdef HWRF
-      IF (.NOT. RESTRT) THEN   !zhang
+      IF (.NOT. RESTRT .and. ALLOWED_TO_READ) THEN   !zhang
         moist = 0.0
         grid%f_ice = grid%f_ice_phy
         grid%f_rimef = grid%f_rimef_phy
@@ -1820,7 +2056,7 @@
       ENDIF                  !zhang
 #endif
 
-      IF (.NOT. RESTRT) THEN
+      IF (.NOT. RESTRT .and. ALLOWED_TO_READ) THEN
 ! Added by Greg Thompson, NCAR-RAL, for initializing water vapor
 ! mixing ratio (from NMM's specific humidity var) into moist array.
 
@@ -1854,21 +2090,26 @@
           enddo
 
           IF (.not. ( (maxval(grid%f_ice)+maxval(grid%f_rain)) .gt. EPSQ) ) THEN
+            ETAMP_Regional=.FALSE.    !-- Regional NAM or HRW (Ferrier) microphysics
+            if (model_config_rec%mp_physics(grid%id).EQ.ETAMPOLD .OR.          &
+     &          model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW )             &
+     &          ETAMP_Regional=.TRUE.
             CALL wrf_message(' computing grid%f_ice')
             do i_m = 2, num_moist
+               ICE1_indx=.FALSE.
+               IF (i_m==P_qi .or. i_m==P_qg ) ICE1_indx=.TRUE.
+               ICE2_indx=ICE1_indx
+               IF (i_m==P_qs) ICE2_indx=.TRUE.
             DO J=JFS,JFE
             DO K=KPS,KPE
             DO I=IFS,IFE
-              IF ( (moist(I,J,K,i_m).gt.EPSQ) .and. &
-     &               ( (i_m.eq.p_qi).or.(i_m.eq.p_qs).or.(i_m.eq.p_qg) ) ) THEN
+              IF (ETAMP_Regional .AND. ICE1_indx) THEN
+                 moist(I,J,K,p_qs)=moist(I,J,K,p_qs)+moist(I,J,K,i_m)
+                 moist(I,J,K,i_m) =0.
+              ENDIF
+              IF ( moist(I,J,K,i_m)>EPSQ .AND. ICE2_indx) THEN
                  grid%f_ice(I,K,J) = grid%f_ice(I,K,J) + moist(I,J,K,i_m)
               ENDIF
-              if (model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW) then
-                if ((i_m.eq.p_qi).or.(i_m.eq.p_qg) ) then
-                  moist(I,J,K,p_qs)=moist(I,J,K,p_qs)+moist(I,J,K,i_m)
-                  moist(I,J,K,i_m) =0.
-                endif
-              endif
             enddo
             enddo
             enddo
@@ -2015,7 +2256,7 @@
                 IDS,IDE, JDS,JDE, KDS,KDE,                                  &
                 IMS,IME, JMS,JME, KMS,KME,                                  &
                 ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
-        CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_KPP)
+        CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP)
 !!!       write(0,*)'sum pm '
            CALL SUM_PM_SORGAM (                                             &
                 RRI, CHEM, H2OAJ, H2OAI,                              &
@@ -2072,6 +2313,15 @@
       DEALLOCATE(RQSCUTEN)
       DEALLOCATE(RQVCUTEN)
       DEALLOCATE(RTHCUTEN)
+      DEALLOCATE(RUSHTEN)
+      DEALLOCATE(RVSHTEN)
+      DEALLOCATE(RQCSHTEN)
+      DEALLOCATE(RQISHTEN)
+      DEALLOCATE(RQRSHTEN)
+      DEALLOCATE(RQSSHTEN)
+      DEALLOCATE(RQGSHTEN)
+      DEALLOCATE(RQVSHTEN)
+      DEALLOCATE(RTHSHTEN)
       DEALLOCATE(RTHRATEN)
       DEALLOCATE(RTHRATENLW)
       DEALLOCATE(RTHRATENSW)
@@ -2146,6 +2396,9 @@
 #endif
 !#define COPY_OUT
 !#include <scalar_derefs.inc>
+
+   write(message,*) "Timing for start_domain on d",grid%id
+   call end_timing(message)
 
    RETURN
 

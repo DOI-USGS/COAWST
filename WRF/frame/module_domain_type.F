@@ -50,6 +50,7 @@ MODULE module_domain_type
       CHARACTER*80    :: MemberOf   ! only for 4+D tracer arrays
       INTEGER :: Ndim
       INTEGER :: Ntl                ! 0 single; 1, 2, ... if multi
+      LOGICAL                                             :: subgrid_x, subgrid_y  ! true if has a subgrid dimension
 
       INTEGER, POINTER :: num_table(:)
       INTEGER, POINTER :: index_table(:,:)
@@ -130,6 +131,7 @@ MODULE module_domain_type
       TYPE(domain_ptr) , DIMENSION( : ) , POINTER         :: parents                            
       TYPE(domain_ptr) , DIMENSION( : ) , POINTER         :: nests                            
       TYPE(domain) , POINTER                              :: sibling ! overlapped domains at same lev
+      LOGICAL                                             :: allocated        ! has alloc_space_field been called on this domain?
       TYPE(domain) , POINTER                              :: intermediate_grid
       LOGICAL                                             :: is_intermediate
       INTEGER :: nids, nide, njds, njde  ! for intermediate domains, carry around the nest dimensions 
@@ -167,6 +169,21 @@ MODULE module_domain_type
                     sp21y,  ep21y,  sp22y,  ep22y,                        &
                     sm31y,  em31y,  sm32y,  em32y,  sm33y,  em33y,        &
                     sm21y,  em21y,  sm22y,  em22y
+
+      ! currently allocated domain dimesions
+      INTEGER    :: alloced_sd31, alloced_ed31, &
+                    alloced_sd32, alloced_ed32, &
+                    alloced_sd33, alloced_ed33, &
+                    alloced_sm31, alloced_em31, &
+                    alloced_sm32, alloced_em32, &
+                    alloced_sm33, alloced_em33, &
+                    alloced_sm31x, alloced_em31x, &
+                    alloced_sm32x, alloced_em32x, &
+                    alloced_sm33x, alloced_em33x, &
+                    alloced_sm31y, alloced_em31y, &
+                    alloced_sm32y, alloced_em32y, &
+                    alloced_sm33y, alloced_em33y
+
       Type(WRFU_Clock), POINTER                           :: domain_clock
       Type(WRFU_Time)                                     :: start_subtime, stop_subtime
       Type(WRFU_Time)                                     :: this_bdy_time, next_bdy_time
@@ -188,6 +205,7 @@ MODULE module_domain_type
 !
       REAL :: max_cfl_val
       REAL :: last_max_vert_cfl
+      REAL :: last_max_horiz_cfl
       REAL :: max_vert_cfl
       REAL :: max_horiz_cfl
       Type(WRFU_TimeInterval) :: last_dtInterval
@@ -203,5 +221,18 @@ MODULE module_domain_type
       LOGICAL :: have_calculated_tslocs
       LOGICAL :: have_displayed_alloc_stats   ! used in module_alloc_space to display alloc stats; only do it once.
 
+! Track location information
+      CHARACTER (LEN=19), POINTER, DIMENSION(:) ::  track_time_in
+      REAL, POINTER, DIMENSION(:) :: track_lat_in, track_lon_in
+
+      INTEGER :: track_loc, track_loc_domain
+      INTEGER :: track_next_time
+      INTEGER, POINTER, DIMENSION(:) :: track_i, track_j
+
+      CHARACTER (LEN=19), POINTER, DIMENSION(:) ::  track_time_domain
+      REAL, POINTER, DIMENSION(:) :: track_lat_domain, track_lon_domain
+
+      LOGICAL :: track_have_calculated
+      LOGICAL :: track_have_input
    END TYPE domain
 END MODULE module_domain_type

@@ -7,6 +7,7 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
    USE module_timing
    USE module_configure
    USE module_dm
+   USE module_comm_dm
    USE module_timing
    IMPLICIT NONE
   ! Arguments
@@ -53,7 +54,7 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
    CALL wrf_message(trim(message))
 
    grid%imask_nostag=0
-
+#if 1
    IF ( disp_x > 0 ) THEN
       IF ( E_BDY ) THEN 
          DO J=jps,min(jde-1,jpe)
@@ -68,8 +69,26 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
          END DO
          END DO
       END IF
-   END IF
-   IF ( disp_x < 0 ) THEN
+!
+   IF ( disp_y > 0 ) THEN
+      IF ( N_BDY ) THEN
+         DO J=min(jde-1,jpe-2),max(jde-1,jpe)
+         DO I=ips,min(ide-1,ipe)
+            grid%imask_nostag(i,j) = 0
+         END DO
+         END DO
+      ENDIF
+   ELSEIF ( disp_y < 0 ) THEN
+      IF ( S_BDY ) THEN
+         DO J=jps,jps+1
+         DO I=ips,min(ide-1,ipe)
+            grid%imask_nostag(i,j) = 0
+         END DO
+         END DO
+      ENDIF
+   ENDIF      !disp_y
+!      
+   ELSEIF ( disp_x < 0 ) THEN
       IF ( W_BDY ) THEN 
          DO J=jps,min(jde-1,jpe)
          DO I=ips+1,min(ide-1,ipe)
@@ -83,7 +102,27 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
          END DO
          END DO
       END IF
-   END IF
+!
+   IF ( disp_y > 0 ) THEN
+      IF ( N_BDY ) THEN
+         DO J=min(jde-1,jpe-2),max(jde-1,jpe)
+         DO I=ips,min(ide-1,ipe)
+            grid%imask_nostag(i,j) = 0
+         END DO
+         END DO
+      ENDIF
+   ELSEIF ( disp_y < 0 ) THEN
+      IF ( S_BDY ) THEN
+         DO J=jps,jps+1
+         DO I=ips,min(ide-1,ipe)
+            grid%imask_nostag(i,j) = 0
+         END DO
+         END DO
+      ENDIF
+   ENDIF      !disp_y
+!      
+   ELSE                            ! disp_x = 0
+!
    IF ( disp_y > 0 ) THEN
       IF ( N_BDY ) THEN 
          DO J=jps,min(jde-1,jpe-3)
@@ -114,36 +153,32 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
          END DO
       END IF
    END IF
+!
+   END IF
+!
 
-!   grid%imask_nostag(ips:min(ide-4,ipe),jps:min(jde-1,jpe)) = 1
+#else
+    grid%imask_nostag(ips:min(ide-4,ipe),jps:min(jde-1,jpe)) = 1
 !   grid%imask_nostag(ips+1:min(ide-2,ipe),jps+1:min(jde-2,jpe)) = 1
 !   grid%imask_nostag(ips+1:min(ide-1,ipe-1),jps+2:min(jde-1,jpe-2)) = 1
+#endif
 
    px = isign(grid%parent_grid_ratio,disp_x)
    py = isign(grid%parent_grid_ratio,disp_y)
 
-   if (grid%id==2.and.ims<30.and.30<ime.and.jms<44.and.44<jme) then
-     write(message,*)' before shift rlwin ', grid%rlwin(30,44),px,py,disp_x,disp_y
-     CALL wrf_message(trim(message))
-   endif
-
+#ifdef DM_PARALLEL
 ! shift the nest domain in x
    do ii = 1,abs(disp_x)
-!#include <../nmm_shift_inc/shiftx.inc>
+#include <../inc/SHIFT_HALO_X_HALO.inc>
 #include <../frame/loop_based_x_shift_code.h>
    enddo
 
-
 ! shift the nest domain in y
    do ii = 1,abs(disp_y)
-!#include <../nmm_shift_inc/shifty.inc>
+#include <../inc/SHIFT_HALO_Y_HALO.inc>
 #include <../frame/loop_based_y_shift_code.h>
    enddo
-
-   if (grid%id==2.and.ims<30.and.30<ime.and.jms<44.and.44<jme) then
-     write(message,*)' after  shift rlwin ', grid%rlwin(30,44),px,py
-     CALL wrf_message(trim(message))
-   endif
+#endif
 
 !#define COPY_OUT
 !#include <scalar_derefs.inc>

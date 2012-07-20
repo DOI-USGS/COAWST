@@ -20,10 +20,10 @@ SUBROUTINE Setup_Timekeeping ( grid )
 !end of zhang's doing
 #endif
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    INTEGER :: dfi_fwdstop_year,dfi_fwdstop_month,dfi_fwdstop_day,dfi_fwdstop_hour,dfi_fwdstop_minute,dfi_fwdstop_second
    INTEGER :: dfi_bckstop_year,dfi_bckstop_month,dfi_bckstop_day,dfi_bckstop_hour,dfi_bckstop_minute,dfi_bckstop_second
-#endif
+! #endif
 
    INTEGER :: restart_interval_d
    INTEGER :: inputout_interval_d
@@ -76,9 +76,9 @@ SUBROUTINE Setup_Timekeeping ( grid )
                          __FILE__ , &
                          __LINE__  )
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    IF ( (grid%dfi_opt .EQ. DFI_NODFI) .OR. (grid%dfi_stage .EQ. DFI_SETUP) ) THEN
-#endif
+! #endif
       CALL nl_get_start_year(grid%id,start_year)
       CALL nl_get_start_month(grid%id,start_month)
       CALL nl_get_start_day(grid%id,start_day)
@@ -100,7 +100,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             'WRFU_TimeSet(startTime) FAILED', &
                             __FILE__ , &
                             __LINE__  )
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    ELSE
       IF ( grid%dfi_opt .EQ. DFI_DFL ) THEN
          IF ( grid%dfi_stage .EQ. DFI_FWD ) THEN
@@ -165,7 +165,15 @@ SUBROUTINE Setup_Timekeeping ( grid )
             CALL nl_get_dfi_bckstop_minute(grid%id,start_minute)
             CALL nl_get_dfi_bckstop_second(grid%id,start_second)
 
-            run_length = grid%start_subtime - grid%stop_subtime
+            ! Here, we look at head_grid to determine run_length.
+            !   Since start_subtime and stop_subtime were
+            !   updated for nesting, they no longer bound the dfi
+            !   time window, so, start_subtime and stop_subtime from
+            !   from the grid structure won't work.  However, we can use
+            !   head_grid since the dfi time window is the same for all 
+            !   domains.
+
+            run_length = head_grid%start_subtime - head_grid%stop_subtime
             CALL WRFU_TimeIntervalGet( run_length, S=run_seconds, rc=rc )
 ! What about fractional seconds?
             run_seconds = run_seconds / 2
@@ -191,31 +199,43 @@ SUBROUTINE Setup_Timekeeping ( grid )
             CALL nl_get_start_hour(grid%id,start_hour)
             CALL nl_get_start_minute(grid%id,start_minute)
             CALL nl_get_start_second(grid%id,start_second)
+         ELSE IF ( grid%dfi_stage .EQ. DFI_STARTFWD ) THEN
+            CALL nl_get_start_year(grid%id,start_year)
+            CALL nl_get_start_month(grid%id,start_month)
+            CALL nl_get_start_day(grid%id,start_day)
+            CALL nl_get_start_hour(grid%id,start_hour)
+            CALL nl_get_start_minute(grid%id,start_minute)
+            CALL nl_get_start_second(grid%id,start_second)
          END IF
       END IF
-      CALL WRFU_TimeSet(startTime, YY=start_year, MM=start_month, DD=start_day, &
-                                   H=start_hour, M=start_minute, S=start_second,&
-                                   rc=rc)
+
+      IF ( grid%dfi_stage .EQ. DFI_STARTBCK ) THEN
+         CALL WRFU_ClockGet( grid%domain_clock, CurrTime=startTime, rc=rc)
+      ELSE
+         CALL WRFU_TimeSet(startTime, YY=start_year, MM=start_month, DD=start_day, &
+              H=start_hour, M=start_minute, S=start_second,&
+              rc=rc)
+      ENDIF
       CALL wrf_check_error( WRFU_SUCCESS, rc, &
                             'WRFU_TimeSet(startTime) FAILED', &
                             __FILE__ , &
                             __LINE__  )
    END IF
-#endif
+! #endif
 
    CALL nl_get_run_days(1,run_days)
    CALL nl_get_run_hours(1,run_hours)
    CALL nl_get_run_minutes(1,run_minutes)
    CALL nl_get_run_seconds(1,run_seconds)
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    IF ( (grid%dfi_opt .EQ. DFI_NODFI) .OR. (grid%dfi_stage .EQ. DFI_SETUP) .OR. (grid%dfi_stage .EQ. DFI_FST)) THEN
-#endif
+! #endif
 
       IF ( grid%id .EQ. head_grid%id .AND. &
            ( run_days .gt. 0 .or. run_hours .gt. 0 .or. run_minutes .gt. 0 .or. run_seconds .gt. 0 )) THEN
         CALL WRFU_TimeIntervalSet ( run_length , D=run_days, H=run_hours, M=run_minutes, S=run_seconds, rc=rc )
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
         IF ( grid%dfi_stage .EQ. DFI_FST .AND. grid%dfi_opt .EQ. DFI_DFL ) THEN
            CALL nl_get_start_year(grid%id,start_year)
            CALL nl_get_start_month(grid%id,start_month)
@@ -229,7 +249,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
            dfl_length = startTime - initialTime
            run_length = run_length - dfl_length
         END IF
-#endif
+! #endif
         CALL wrf_check_error( WRFU_SUCCESS, rc, &
                            'WRFU_TimeIntervalSet(run_length) FAILED', &
                            __FILE__ , &
@@ -252,9 +272,20 @@ SUBROUTINE Setup_Timekeeping ( grid )
         run_length = stopTime - startTime
       ENDIF
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
+   ELSE IF ( grid%dfi_stage .EQ. DFI_STARTFWD ) THEN
+      CALL nl_get_time_step ( 1, time_step )
+      CALL nl_get_time_step_fract_num( 1, time_step_fract_num )
+      CALL nl_get_time_step_fract_den( 1, time_step_fract_den )
+      CALL WRFU_TimeIntervalSet( run_length, S=time_step, Sn=time_step_fract_num, Sd=time_step_fract_den, rc=rc)
+      stopTime = startTime + run_length
+   ELSE IF ( grid%dfi_stage .EQ. DFI_STARTBCK ) THEN
+      CALL nl_get_time_step ( 1, time_step )
+      CALL nl_get_time_step_fract_num( 1, time_step_fract_num )
+      CALL nl_get_time_step_fract_den( 1, time_step_fract_den )
+      CALL WRFU_TimeIntervalSet( run_length, S=time_step, Sn=time_step_fract_num, Sd=time_step_fract_den, rc=rc)
+      stopTime = startTime + run_length
    ELSE
-
       IF ( grid%dfi_opt .EQ. DFI_DFL ) THEN 
          IF ( grid%dfi_stage .EQ. DFI_FWD ) THEN
             CALL nl_get_dfi_fwdstop_year(grid%id,end_year)
@@ -311,7 +342,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       run_length = stopTime - startTime
 
    END IF
-#endif
+! #endif
 
    IF ( run_length .GT. zero_time ) THEN
      padding_interval = forever
@@ -522,17 +553,23 @@ SUBROUTINE Setup_Timekeeping ( grid )
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #endif
 
-   CALL domain_alarm_create( grid, BOUNDARY_ALARM )
-   CALL WRFU_AlarmEnable( grid%alarms( BOUNDARY_ALARM ), rc=rc )
-   CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                         'WRFU_AlarmEnable(BOUNDARY_ALARM) FAILED', &
-                         __FILE__ , &
-                         __LINE__  )
-   CALL WRFU_AlarmRingerOn( grid%alarms( BOUNDARY_ALARM ), rc=rc )
-   CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                         'WRFU_AlarmRingerOn(BOUNDARY_ALARM) FAILED', &
-                         __FILE__ , &
-                         __LINE__  )
+! without this test, it's possible for the value of the WRF_ALARM_SECS_TIL_NEXT_RING
+! that is written as metadata to a restart file to be garbage for BOUNDARY_ALARM for 
+! the nests.  Parallel NetCDF does a header check on all the metadata being written
+! from multiple processors and if it differs, it throws up an error. This avoids that.
+   IF ( grid%id .EQ. 1 ) THEN   ! only moad can have specified boundaries
+     CALL domain_alarm_create( grid, BOUNDARY_ALARM )
+     CALL WRFU_AlarmEnable( grid%alarms( BOUNDARY_ALARM ), rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_AlarmEnable(BOUNDARY_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+     CALL WRFU_AlarmRingerOn( grid%alarms( BOUNDARY_ALARM ), rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_AlarmRingerOn(BOUNDARY_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ENDIF
 
 ! This is the interval at which the code in time_for_move in share/mediation_integrate.F
 ! will recompute the center of the Vortex.  Other times, it will use the last position.

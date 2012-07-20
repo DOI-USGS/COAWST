@@ -12,11 +12,10 @@
 
 MODULE module_big_step_utilities_em
 
-   USE module_domain, ONLY : domain
    USE module_model_constants
-   USE module_state_description
+   USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, kfetascheme, g3scheme, &
+   p_qv, param_first_scalar, p_qr, p_qc
    USE module_configure, ONLY : grid_config_rec_type
-   USE module_wrf_error
 
 CONTAINS
 
@@ -953,9 +952,9 @@ END SUBROUTINE calc_alt
 
 !----------------------------------------------------------------------
 
-SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
-                            al, alb, mu, muts, ph, p, pb,  &
-                            t, p0, t0, znu, dnw, rdnw,     &
+SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
+                            al, alb, mu, muts, ph, phb, p, pb,     &
+                            t, p0, t0, ptop, znu, znw, dnw, rdnw,  &
                             rdn, non_hydrostatic,          &
                             ids, ide, jds, jde, kds, kde,  &
                             ims, ime, jms, jme, kms, kme,  &
@@ -972,6 +971,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
                                       its, ite, jts, jte, kts, kte 
 
   INTEGER ,          INTENT(IN   ) :: n_moist
+  INTEGER ,          INTENT(IN   ) :: hypsometric_opt
 
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: alb,  &
                                                                    pb,   &
@@ -981,20 +981,20 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
 
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(  OUT) :: al, p
 
-  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: ph
+  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: ph, phb
 
   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN   ) :: mu, muts
 
-  REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: znu, dnw, rdnw, rdn
+  REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: znu, znw, dnw, rdnw, rdn
 
-  REAL,   INTENT(IN   ) :: t0, p0
+  REAL,   INTENT(IN   ) :: t0, p0, ptop
 
   ! Local stuff
 
   INTEGER :: i, j, k, itf, jtf, ktf, ispe
   REAL    :: qvf, qtot, qf1, qf2
   REAL, DIMENSION( its:ite) :: temp,cpovcv_v
-
+  REAL    :: pfu, phm, pfd
 
 !<DESCRIPTION>
 !
@@ -1019,16 +1019,44 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
 
   IF (non_hydrostatic) THEN
 
+      IF (hypsometric_opt == 1) THEN
+        DO j=jts,jtf
+        DO k=kts,ktf
+        DO i=its,itf
+          al(i,k,j)=-1./muts(i,j)*(alb(i,k,j)*mu(i,j) + rdnw(k)*(ph(i,k+1,j)-ph(i,k,j)))
+        END DO
+        END DO
+        END DO
+      ELSE IF (hypsometric_opt == 2) THEN
+
+        ! The relation used to get specific volume, al, is: al = -dZ/dp,
+        ! where dp = mut * d(eta). The pressure depth, dp, is replaced with
+        ! p*(dp/p) ~ p*LOG((p+0.5dp)/(p-0.5dp)). Difference between dp and p*dLOG(p)
+        ! is as follows: p*dLOG(p) - dp = 1/12*(dp/p)**3 + 1/90*(dp/p)**5 + ...
+        ! Therefore, p*dLOG(p) is always larger than dp and the difference is
+        ! in proportion to dp/p. TKW, 02/16/2010
+
+        DO j=jts,jtf
+        DO k=kts,ktf
+        DO i=its,itf
+          pfu = muts(i,j)*znw(k+1)+ptop
+          pfd = muts(i,j)*znw(k)  +ptop
+          phm = muts(i,j)*znu(k)  +ptop
+          al(i,k,j) = (ph(i,k+1,j)-ph(i,k,j)+phb(i,k+1,j)-phb(i,k,j))/phm/LOG(pfd/pfu)-alb(i,k,j)
+        END DO
+        END DO
+        END DO
+      ELSE
+        CALL wrf_error_fatal ( 'calc_p_rho_phi: hypsometric_opt should be 1 or 2' )
+      END IF
+
       IF (n_moist >= PARAM_FIRST_SCALAR ) THEN  
 
         DO j=jts,jtf
         DO k=kts,ktf
         DO i=its,itf
           qvf = 1.+rvovrd*moist(i,k,j,P_QV)
-          al(i,k,j)=-1./muts(i,j)*(alb(i,k,j)*mu(i,j)  &
-                     +rdnw(k)*(ph(i,k+1,j)-ph(i,k,j)))
-          temp(i)=(r_d*(t0+t(i,k,j))*qvf)/                 &
-                        (p0*(al(i,k,j)+alb(i,k,j)))
+          temp(i)=(r_d*(t0+t(i,k,j))*qvf)/(p0*(al(i,k,j)+alb(i,k,j)))
         ENDDO
 #ifdef INTELMKL
         CALL VPOWX ( itf-its+1, temp(its), cpovcv, p(its,k,j) )
@@ -1047,8 +1075,6 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
         DO j=jts,jtf
         DO k=kts,ktf
         DO i=its,itf
-          al(i,k,j)=-1./muts(i,j)*(alb(i,k,j)*mu(i,j)  &
-                     +rdnw(k)*(ph(i,k+1,j)-ph(i,k,j)))
           p(i,k,j)=p0*( (r_d*(t0+t(i,k,j)))/                     &
                         (p0*(al(i,k,j)+alb(i,k,j))) )**cpovcv  &
                            -pb(i,k,j)
@@ -1074,7 +1100,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
             DO ispe=PARAM_FIRST_SCALAR,n_moist
               qtot = qtot + moist(i,k,j,ispe)
             ENDDO
-            qf2 = 1./(1.+qtot)
+            qf2 = 1.
             qf1 = qtot*qf2
 
             p(i,k,j) = - 0.5*(mu(i,j)+qf1*muts(i,j))/rdnw(k)/qf2
@@ -1091,27 +1117,13 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
             DO ispe=PARAM_FIRST_SCALAR,n_moist
               qtot = qtot + 0.5*(  moist(i,k  ,j,ispe) + moist(i,k+1,j,ispe) )
             ENDDO
-            qf2 = 1./(1.+qtot)
+            qf2 = 1.
             qf1 = qtot*qf2
 
             p(i,k,j) = p(i,k+1,j) - (mu(i,j) + qf1*muts(i,j))/qf2/rdn(k+1)
             qvf = 1.+rvovrd*moist(i,k,j,P_QV)
             al(i,k,j) = (r_d/p1000mb)*(t(i,k,j)+t0)*qvf* &
                         (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm) - alb(i,k,j)
-            ENDDO
-          ENDDO
-
-          DO k=2,ktf+1  ! integrate hydrostatic equation for geopotential
-            DO i=its,itf
-
-!              ph(i,k,j) = ph(i,k-1,j) - (1./rdnw(k-1))*(       &
-!                           (muts(i,j)+mu(i,j))*al(i,k-1,j)+    &
-!                            mu(i,j)*alb(i,k-1,j)  )
-              ph(i,k,j) = ph(i,k-1,j) - (dnw(k-1))*(           &
-                           (muts(i,j))*al(i,k-1,j)+            &
-                            mu(i,j)*alb(i,k-1,j)  )
-                                                   
-
             ENDDO
           ENDDO
 
@@ -1125,7 +1137,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
           DO i=its,itf
 
             qtot = 0.
-            qf2 = 1./(1.+qtot)
+            qf2 = 1.
             qf1 = qtot*qf2
 
             p(i,k,j) = - 0.5*(mu(i,j)+qf1*muts(i,j))/rdnw(k)/qf2
@@ -1139,7 +1151,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
             DO i=its,itf
 
             qtot = 0.
-            qf2 = 1./(1.+qtot)
+            qf2 = 1.
             qf1 = qtot*qf2
 
             p(i,k,j) = p(i,k+1,j) - (mu(i,j) + qf1*muts(i,j))/qf2/rdn(k+1)
@@ -1149,21 +1161,44 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
             ENDDO
           ENDDO
 
+        ENDDO
+
+     END IF
+
+     IF (hypsometric_opt == 1) THEN
+        DO j=jts,jtf
           DO k=2,ktf+1  ! integrate hydrostatic equation for geopotential
             DO i=its,itf
-
-!              ph(i,k,j) = ph(i,k-1,j) - (1./rdnw(k-1))*(       &
-!                           (muts(i,j)+mu(i,j))*al(i,k-1,j)+    &
-!                            mu(i,j)*alb(i,k-1,j)  )
               ph(i,k,j) = ph(i,k-1,j) - (dnw(k-1))*(           &
                            (muts(i,j))*al(i,k-1,j)+            &
                             mu(i,j)*alb(i,k-1,j)  )
-                                                   
-
             ENDDO
           ENDDO
-
         ENDDO
+     ELSE 
+
+     ! Revised hypsometric eq.: dZ=-al*p*dLOG(p), where p is dry pressure
+
+      DO j=jts,jtf
+        DO i=its,itf
+           ph(i,kts,j) = phb(i,kts,j)
+        END DO
+
+        DO k=kts+1,ktf+1
+          DO i=its,itf
+            pfu = muts(i,j)*znw(k)  +ptop
+            pfd = muts(i,j)*znw(k-1)+ptop
+            phm = muts(i,j)*znu(k-1)+ptop
+            ph(i,k,j) = ph(i,k-1,j) + (al(i,k-1,j)+alb(i,k-1,j))*phm*LOG(pfd/pfu)
+          ENDDO
+        ENDDO
+
+        DO k=kts,ktf+1
+          DO i=its,itf
+             ph(i,k,j) = ph(i,k,j) - phb(i,k,j)
+          END DO
+        END DO
+      END DO
 
      END IF
 
@@ -2586,12 +2621,12 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    IF ( some .GT. 0 ) THEN
      CALL get_current_time_string( time_str )
      CALL get_current_grid_name( grid_str )
-     WRITE(wrf_err_message,*)some,                                            &
+     WRITE(temp,*)some,                                            &
             ' points exceeded cfl=2 in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
-     CALL wrf_debug ( 0 , TRIM(wrf_err_message) )
-     WRITE(wrf_err_message,*)'MAX AT i,j,k: ',maxi,maxj,maxk,' vert_cfl,w,d(eta)=',max_vert_cfl, &
+     CALL wrf_debug ( 0 , TRIM(temp) )
+     WRITE(temp,*)'MAX AT i,j,k: ',maxi,maxj,maxk,' vert_cfl,w,d(eta)=',max_vert_cfl, &
                              maxdub,maxdeta
-     CALL wrf_debug ( 0 , TRIM(wrf_err_message) )
+     CALL wrf_debug ( 0 , TRIM(temp) )
    ENDIF
 
 END SUBROUTINE w_damp
@@ -3595,31 +3630,32 @@ SUBROUTINE coriolis ( ru, rv, rw, ru_tend, rv_tend, rw_tend, &
    ENDDO
    ENDDO
 
-   IF ( (config_flags%open_xs) .and. (its == ids) ) THEN
+! boundary loops for coriolis not needed for open bdy  (commented out 20100611 JD)
+!  IF ( (config_flags%open_xs) .and. (its == ids) ) THEN
 
-     DO k=kts,ktf
-   
-       ru_tend(its,k,j)=ru_tend(its,k,j) + (msfux(its,j)/msfuy(its,j))*0.5*(f(its,j)+f(its,j))   &
-         *0.25*(rv(its,k,j+1)+rv(its,k,j+1)+rv(its,k,j)+rv(its,k,j)) &
-             - 0.5*(e(its,j)+e(its,j))*0.5*(cosa(its,j)+cosa(its,j)) &
-         *0.25*(rw(its,k+1,j)+rw(its,k,j)+rw(its,k+1,j)+rw(its,k,j))
+!    DO k=kts,ktf
+!  
+!      ru_tend(its,k,j)=ru_tend(its,k,j) + (msfux(its,j)/msfuy(its,j))*0.5*(f(its,j)+f(its,j))   &
+!        *0.25*(rv(its,k,j+1)+rv(its,k,j+1)+rv(its,k,j)+rv(its,k,j)) &
+!            - 0.5*(e(its,j)+e(its,j))*0.5*(cosa(its,j)+cosa(its,j)) &
+!        *0.25*(rw(its,k+1,j)+rw(its,k,j)+rw(its,k+1,j)+rw(its,k,j))
 
-     ENDDO
+!    ENDDO
 
-   ENDIF
+!  ENDIF
 
-   IF ( (config_flags%open_xe) .and. (ite == ide) ) THEN
+!  IF ( (config_flags%open_xe) .and. (ite == ide) ) THEN
 
-     DO k=kts,ktf
-   
-       ru_tend(ite,k,j)=ru_tend(ite,k,j) + (msfux(ite,j)/msfuy(ite,j))*0.5*(f(ite-1,j)+f(ite-1,j)) &
-         *0.25*(rv(ite-1,k,j+1)+rv(ite-1,k,j+1)+rv(ite-1,k,j)+rv(ite-1,k,j)) &
-             - 0.5*(e(ite-1,j)+e(ite-1,j))*0.5*(cosa(ite-1,j)+cosa(ite-1,j)) &
-         *0.25*(rw(ite-1,k+1,j)+rw(ite-1,k,j)+rw(ite-1,k+1,j)+rw(ite-1,k,j))
+!    DO k=kts,ktf
+!  
+!      ru_tend(ite,k,j)=ru_tend(ite,k,j) + (msfux(ite,j)/msfuy(ite,j))*0.5*(f(ite-1,j)+f(ite-1,j)) &
+!        *0.25*(rv(ite-1,k,j+1)+rv(ite-1,k,j+1)+rv(ite-1,k,j)+rv(ite-1,k,j)) &
+!            - 0.5*(e(ite-1,j)+e(ite-1,j))*0.5*(cosa(ite-1,j)+cosa(ite-1,j)) &
+!        *0.25*(rw(ite-1,k+1,j)+rw(ite-1,k,j)+rw(ite-1,k+1,j)+rw(ite-1,k,j))
 
-     ENDDO
+!    ENDDO
 
-   ENDIF
+!  ENDIF
 
    ENDDO
 
@@ -3640,20 +3676,21 @@ SUBROUTINE coriolis ( ru, rv, rw, ru_tend, rv_tend, rw_tend, &
    IF ( config_flags%open_ye .or. specified .or. &
         config_flags%nested .or. config_flags%polar) j_end   = MIN(jde-1,jte)
 
-   IF ( (config_flags%open_ys) .and. (jts == jds) ) THEN
+! boundary loops for coriolis not needed for open bdy  (commented out 20100611 JD)
+!  IF ( (config_flags%open_ys) .and. (jts == jds) ) THEN
 
-     DO k=kts,ktf
-     DO i=its,MIN(ide-1,ite)
-   
-        rv_tend(i,k,jts)=rv_tend(i,k,jts) - (msfvy(i,jts)/msfvx(i,jts))*0.5*(f(i,jts)+f(i,jts))    &
-         *0.25*(ru(i,k,jts)+ru(i+1,k,jts)+ru(i,k,jts)+ru(i+1,k,jts))   &
-             + (msfvy(i,jts)/msfvx(i,jts))*0.5*(e(i,jts)+e(i,jts))*0.5*(sina(i,jts)+sina(i,jts))   &
-             *0.25*(rw(i,k+1,jts)+rw(i,k,jts)+rw(i,k+1,jts)+rw(i,k,jts)) 
+!    DO k=kts,ktf
+!    DO i=its,MIN(ide-1,ite)
+!  
+!       rv_tend(i,k,jts)=rv_tend(i,k,jts) - (msfvy(i,jts)/msfvx(i,jts))*0.5*(f(i,jts)+f(i,jts))    &
+!        *0.25*(ru(i,k,jts)+ru(i+1,k,jts)+ru(i,k,jts)+ru(i+1,k,jts))   &
+!            + (msfvy(i,jts)/msfvx(i,jts))*0.5*(e(i,jts)+e(i,jts))*0.5*(sina(i,jts)+sina(i,jts))   &
+!            *0.25*(rw(i,k+1,jts)+rw(i,k,jts)+rw(i,k+1,jts)+rw(i,k,jts)) 
 
-     ENDDO
-     ENDDO
+!    ENDDO
+!    ENDDO
 
-   ENDIF
+!  ENDIF
 
    DO j=j_start, j_end
    DO k=kts,ktf
@@ -3669,20 +3706,21 @@ SUBROUTINE coriolis ( ru, rv, rw, ru_tend, rv_tend, rw_tend, &
    ENDDO
 
 
-   IF ( (config_flags%open_ye) .and. (jte == jde) ) THEN
+! boundary loops for coriolis not needed for open bdy  (commented out 20100611 JD)
+!  IF ( (config_flags%open_ye) .and. (jte == jde) ) THEN
 
-     DO k=kts,ktf
-     DO i=its,MIN(ide-1,ite)
-   
-        rv_tend(i,k,jte)=rv_tend(i,k,jte) - (msfvy(i,jte)/msfvx(i,jte))*0.5*(f(i,jte-1)+f(i,jte-1))        &
-         *0.25*(ru(i,k,jte-1)+ru(i+1,k,jte-1)+ru(i,k,jte-1)+ru(i+1,k,jte-1))   &
-             + (msfvy(i,jte)/msfvx(i,jte))*0.5*(e(i,jte-1)+e(i,jte-1))*0.5*(sina(i,jte-1)+sina(i,jte-1))   &
-             *0.25*(rw(i,k+1,jte-1)+rw(i,k,jte-1)+rw(i,k+1,jte-1)+rw(i,k,jte-1)) 
+!    DO k=kts,ktf
+!    DO i=its,MIN(ide-1,ite)
+!  
+!       rv_tend(i,k,jte)=rv_tend(i,k,jte) - (msfvy(i,jte)/msfvx(i,jte))*0.5*(f(i,jte-1)+f(i,jte-1))        &
+!        *0.25*(ru(i,k,jte-1)+ru(i+1,k,jte-1)+ru(i,k,jte-1)+ru(i+1,k,jte-1))   &
+!            + (msfvy(i,jte)/msfvx(i,jte))*0.5*(e(i,jte-1)+e(i,jte-1))*0.5*(sina(i,jte-1)+sina(i,jte-1))   &
+!            *0.25*(rw(i,k+1,jte-1)+rw(i,k,jte-1)+rw(i,k+1,jte-1)+rw(i,k,jte-1)) 
 
-     ENDDO
-     ENDDO
+!    ENDDO
+!    ENDDO
 
-   ENDIF
+!  ENDIF
 
 ! coriolis term for w-mometum 
 
@@ -3870,6 +3908,7 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
      ENDDO
    ENDDO
 
+! boundary loops for perturbation coriolis is needed for open bdy  (20110225 JD)
    IF ( (config_flags%open_xs) .and. (its == ids) ) THEN
 
      DO k=kts,ktf
@@ -3963,6 +4002,7 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
 !  compute coriolis forcing for v momentum equation
 !  Map scale factors: see comments above for Coriolis
 
+! boundary loops for perturbation coriolis is needed for open bdy  (20110225 JD)
    IF ( (config_flags%open_ys) .and. (jts == jds) ) THEN
 
      DO k=kts,ktf
@@ -3992,6 +4032,7 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
    ENDDO
 
 
+! boundary loops for perturbation coriolis is needed for open bdy  (20110225 JD)
    IF ( (config_flags%open_ye) .and. (jte == jde) ) THEN
 
      DO k=kts,ktf
@@ -4550,13 +4591,17 @@ END SUBROUTINE pole_point_bc
                          rho, th_phy, p_phy , pi_phy ,                &  ! output
                          u_phy, v_phy, p8w, t_phy, t8w,               &  ! output
                          z, z_at_w, dz8w,                             &  ! output
-                         p_hyd, p_hyd_w,                              &  ! output
+                         p_hyd, p_hyd_w, dnw,                         &  ! output
                          fzm, fzp, znw, p_top,                        &  ! params
                          RTHRATEN,                                    &
                          RTHBLTEN, RUBLTEN, RVBLTEN,                  &
                          RQVBLTEN, RQCBLTEN, RQIBLTEN,                &
-                         RTHCUTEN, RQVCUTEN, RQCCUTEN,                &
-                         RQRCUTEN, RQICUTEN, RQSCUTEN,                &
+                         RUCUTEN,  RVCUTEN,  RTHCUTEN,                &
+                         RQVCUTEN, RQCCUTEN, RQRCUTEN,                &
+                         RQICUTEN, RQSCUTEN,                          &
+                         RUSHTEN,  RVSHTEN,  RTHSHTEN,                &
+                         RQVSHTEN, RQCSHTEN, RQRSHTEN,                &
+                         RQISHTEN, RQSSHTEN, RQGSHTEN,                &
                          RTHFTEN,  RQVFTEN,                           &
                          RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN,            &
                          RPHNDGDTEN,RQVNDGDTEN, RMUNDGDTEN,           &
@@ -4613,18 +4658,30 @@ END SUBROUTINE pole_point_bc
    REAL , DIMENSION( kms:kme ) ,           INTENT(IN   ) ::     fzm,   &
                                                                 fzp
 
-   REAL , DIMENSION( kms:kme ) ,           INTENT(IN   ) ::     znw
+   REAL , DIMENSION( kms:kme ) ,           INTENT(IN   ) ::     znw, &
+                                                                dnw
 
    REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
           INTENT(INOUT)   ::                               RTHRATEN  
 
    REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
-          INTENT(INOUT)   ::                               RTHCUTEN, &
+          INTENT(INOUT)   ::                                RUCUTEN, &
+                                                            RVCUTEN, &
+                                                           RTHCUTEN, &
                                                            RQVCUTEN, &
                                                            RQCCUTEN, &
                                                            RQRCUTEN, &
                                                            RQICUTEN, &
-                                                           RQSCUTEN
+                                                           RQSCUTEN, &
+                                                            RUSHTEN, &
+                                                            RVSHTEN, &
+                                                           RTHSHTEN, &
+                                                           RQVSHTEN, &
+                                                           RQCSHTEN, &
+                                                           RQRSHTEN, &
+                                                           RQISHTEN, &
+                                                           RQSSHTEN, &
+                                                           RQGSHTEN
 
    REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
           INTENT(INOUT)   ::                                RUBLTEN, &
@@ -4651,7 +4708,8 @@ END SUBROUTINE pole_point_bc
    INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, j_startv
    INTEGER :: i, j, k
    REAL    :: w1, w2, z0, z1, z2
-   REAL    :: e_vapor
+   REAL    :: qtot
+   INTEGER :: n
 
 !-----------------------------------------------------------------------
 
@@ -4778,13 +4836,15 @@ END SUBROUTINE pole_point_bc
     enddo
     enddo
 
-    e_vapor = 0.
     do j = j_start,j_end
     do k = kte-1, k_start, -1
     do i = i_start, i_end
-!      e_vapor = 1./alt(i,k,j)*moist(i,k,j,P_QV)*g*dz8w(i,k,j) 
-!      p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j)+e_vapor
-       p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j)+1./alt(i,k,j)*(1.+moist(i,k,j,P_QV))*g*dz8w(i,k,j)
+       qtot = 0.
+       do n = PARAM_FIRST_SCALAR,n_moist
+              qtot = qtot + moist(i,k,j,n)
+       enddo
+       p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j) - (1.+qtot)*mu(i,j)*dnw(k)
+!      p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j)+1./alt(i,k,j)*(1.+moist(i,k,j,P_QV))*g*dz8w(i,k,j)
     enddo
     enddo
     enddo
@@ -4818,6 +4878,8 @@ END SUBROUTINE pole_point_bc
       DO J=j_start,j_end
       DO I=i_start,i_end
       DO K=k_start,k_end
+         RUCUTEN(I,K,J) =RUCUTEN(I,K,J)/mu(I,J)
+         RVCUTEN(I,K,J) =RVCUTEN(I,K,J)/mu(I,J)
          RTHCUTEN(I,K,J)=RTHCUTEN(I,K,J)/mu(I,J)
       ENDDO
       ENDDO
@@ -4875,6 +4937,80 @@ END SUBROUTINE pole_point_bc
 
    ENDIF
 
+   IF (config_flags%shcu_physics .gt. 0) THEN
+
+      DO J=j_start,j_end
+      DO I=i_start,i_end
+      DO K=k_start,k_end
+         RUSHTEN(I,K,J) =RUSHTEN(I,K,J)/mu(I,J)
+         RVSHTEN(I,K,J) =RVSHTEN(I,K,J)/mu(I,J)
+         RTHSHTEN(I,K,J)=RTHSHTEN(I,K,J)/mu(I,J)
+      ENDDO
+      ENDDO
+      ENDDO
+
+      IF (P_QV .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=j_start,j_end
+         DO I=i_start,i_end
+         DO K=k_start,k_end
+            RQVSHTEN(I,K,J)=RQVSHTEN(I,K,J)/mu(I,J)
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+      IF (P_QC .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=j_start,j_end
+         DO I=i_start,i_end
+         DO K=k_start,k_end
+            RQCSHTEN(I,K,J)=RQCSHTEN(I,K,J)/mu(I,J)
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+      IF (P_QR .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=j_start,j_end
+         DO I=i_start,i_end
+         DO K=k_start,k_end
+            RQRSHTEN(I,K,J)=RQRSHTEN(I,K,J)/mu(I,J)
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+      IF (P_QI .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=j_start,j_end
+         DO I=i_start,i_end
+         DO K=k_start,k_end
+            RQISHTEN(I,K,J)=RQISHTEN(I,K,J)/mu(I,J)
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+      IF(P_QS .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=j_start,j_end
+         DO I=i_start,i_end
+         DO K=k_start,k_end
+            RQSSHTEN(I,K,J)=RQSSHTEN(I,K,J)/mu(I,J)
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+      IF(P_QG .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=j_start,j_end
+         DO I=i_start,i_end
+         DO K=k_start,k_end
+            RQGSHTEN(I,K,J)=RQGSHTEN(I,K,J)/mu(I,J)
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+   ENDIF
+
    IF (config_flags%bl_pbl_physics .gt. 0) THEN
 
       DO J=j_start,j_end
@@ -4922,7 +5058,9 @@ END SUBROUTINE pole_point_bc
 !  decouple advective forcing required by Grell-Devenyi scheme
 
    if(( config_flags%cu_physics == GDSCHEME ) .OR.    &
-      ( config_flags%cu_physics == G3SCHEME )) then
+      ( config_flags%cu_physics == G3SCHEME ) .OR.    &
+      ( config_flags%cu_physics == KFETASCHEME ) .OR. &
+      ( config_flags%cu_physics == TIEDTKESCHEME ) ) then  ! Tiedtke ZCX&YQW
 
       DO J=j_start,j_end
       DO I=i_start,i_end
@@ -5236,11 +5374,12 @@ END SUBROUTINE phy_prep
     k_end = min( kte, kde-1 )
 
 #if ( WRF_DFI_RADAR == 1 )
-         if ( PRESENT(dfi_stage) .and.  dfi_stage ==DFI_FWD            &
-             .and. PRESENT(dfi_tten_rad) ) then
-             WRITE(wrf_err_message,*)'Add radar tendency: i_start,j_start: ', i_start, j_start
-             CALL wrf_debug ( 50 , TRIM(wrf_err_message) )
-         endif
+         IF ( PRESENT(dfi_stage) .and.  PRESENT(dfi_tten_rad) ) THEN
+            IF ( dfi_stage ==DFI_FWD ) THEN
+               WRITE(wrf_err_message,*)'Add radar tendency: i_start,j_start: ', i_start, j_start
+               CALL wrf_debug ( 100 , TRIM(wrf_err_message) )
+            ENDIF
+         ENDIF
      dfi_tten_max=-999
      old_max=-999
 #endif
@@ -5273,17 +5412,17 @@ END SUBROUTINE phy_prep
          if(old_max < (th_phy(i,k,j)-h_diabatic(i,k,j)) ) old_max=th_phy(i,k,j)-h_diabatic(i,k,j)
        endif
 
-       if ( PRESENT(dfi_stage) .and.                                   &
-          dfi_stage == DFI_FWD .and. PRESENT(dfi_tten_rad) .and.       &
-          dfi_tten_rad(i,k,j) >= -0.1 .and. dfi_tten_rad(i,k,j) <= 0.1 &
-          .and. k < k_end ) then
+       IF ( PRESENT(dfi_stage) .and. PRESENT(dfi_tten_rad) ) THEN
+          IF ( dfi_stage == DFI_FWD .and. dfi_tten_rad(i,k,j) >= -0.1 .and. &
+               dfi_tten_rad(i,k,j) <= 0.1 .and. k < k_end ) THEN
 ! add radar temp tendency
 ! there is radar coverage
-           t_new(i,k,j) = t_new(i,k,j) + (dfi_tten_rad(i,k,j))*dt
-       else
+               t_new(i,k,j) = t_new(i,k,j) + (dfi_tten_rad(i,k,j))*dt
+          ELSE
 ! no radar coverage
-           t_new(i,k,j) = t_new(i,k,j) + mpten
-       endif
+               t_new(i,k,j) = t_new(i,k,j) + mpten
+          ENDIF
+       ENDIF
 #else
          t_new(i,k,j) = t_new(i,k,j) + mpten
 #endif
@@ -5621,6 +5760,109 @@ END SUBROUTINE set_tend
 !-----------------------------------------------------------------------
 
     END SUBROUTINE rk_rayleigh_damp
+
+!==============================================================================
+!==============================================================================
+
+ SUBROUTINE theta_relaxation( t_tendf, t, t_init,              &
+                              mut, ph, phb,                    &
+                              t_base, z_base,                  &
+                              ids, ide, jds, jde, kds, kde,    &
+                              ims, ime, jms, jme, kms, kme,    &
+                              its, ite, jts, jte, kts, kte   )
+
+! Purpose:  Newtonian relaxation on potential temperature.  Serves two 
+!           purposes:  1) to mimic atmospheric radiation in a simple 
+!           manner, and 2) to keep the vertical profile of temperature 
+!           close to the initial (base-state) profile, which is useful 
+!           for certain idealized applications. 
+
+! Reference:  Rotunno and Emanuel, 1987, JAS, p. 546
+
+!-----------------------------------------------------------------------
+! Begin declarations.
+
+    IMPLICIT NONE
+
+    INTEGER, INTENT( IN )  &
+    :: ids, ide, jds, jde, kds, kde,  &
+       ims, ime, jms, jme, kms, kme,  &
+       its, ite, jts, jte, kts, kte
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
+    :: t_tendf
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )  &
+    :: t, t_init, ph, phb
+
+    REAL, DIMENSION( ims:ime, jms:jme ),  INTENT( IN )  &
+    :: mut
+
+    REAL, DIMENSION( kms:kme ) ,  INTENT(IN   )  &
+    :: t_base, z_base
+
+! Local variables.
+
+    INTEGER :: i, j, k, ktf, k2
+    REAL :: tau_r , rmax , rmin , inv_tau_r , inv_g , rterm
+    REAL, DIMENSION( kms:kme ) :: z00,t00
+
+! End declarations.
+!-----------------------------------------------------------------------
+
+    ! set tau_r to 12 h, following RE87
+    tau_r = 12.0*3600.0
+
+    ! limit rterm to +/- 2 K/day
+    rmax =  2.0/86400.0
+    rmin = -rmax
+
+    ktf = MIN( kte,   kde-1 )
+    inv_tau_r = 1.0/tau_r
+    inv_g = 1.0/g
+
+!-----------------------------------------------------------------------
+! Adjust potential temperature to base state.
+
+    DO j = jts, MIN( jte,   jde-1 )
+    DO i = its, MIN( ite,   ide-1 )
+
+      ! Get height of model levels:
+      DO k = kts, ktf
+        z00(k) = 0.5 * ( phb(i,k,j) + phb(i,k+1,j) +  &
+                          ph(i,k,j) +  ph(i,k+1,j) ) * inv_g
+      ENDDO
+
+      ! Get reference state:
+      DO k = kts, ktf
+        k2 = ktf
+        DO WHILE( z_base(k2) .gt. z00(k)  .and.  k2 .gt. 1 )
+          k2 = k2 - 1
+        ENDDO
+        if(k2+1.gt.ktf)then
+          t00(k) = t_base(k2) + ( t_base(k2) - t_base(k2-1) )   &
+                              * (     z00(k) - z_base(k2)   )   &
+                              / ( z_base(k2) - z_base(k2-1) )
+        else
+          t00(k) = t_base(k2) + ( t_base(k2+1) - t_base(k2) )   &
+                              * (       z00(k) - z_base(k2) )   &
+                              / ( z_base(k2+1) - z_base(k2) )
+        endif
+      ENDDO
+
+      ! Apply the RE87 R term:
+      DO k = kts, ktf
+        rterm = -( t(i,k,j) - t00(k) )*inv_tau_r
+        ! limit rterm:
+        rterm = min( rterm , rmax )
+        rterm = max( rterm , rmin )
+        t_tendf(i,k,j) = t_tendf(i,k,j) + mut(i,j)*rterm
+      END DO
+
+    END DO
+    END DO
+
+ END SUBROUTINE theta_relaxation
 
 !==============================================================================
 !==============================================================================

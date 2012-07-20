@@ -248,11 +248,13 @@ gen_set_timekeeping_alarms ( FILE * fp )
     fprintf(fp,"     interval =  padding_interval\n") ;
 #endif
     fprintf(fp,"   ENDIF\n") ;
+    fprintf(fp,"   CALL nl_get_%s%s%s_begin  ( grid%%id, %s%s%s_begin   )\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"   CALL nl_get_%s%s%s_begin_y( grid%%id, %s%s%s_begin_y )\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"   CALL nl_get_%s%s%s_begin_d( grid%%id, %s%s%s_begin_d )\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"   CALL nl_get_%s%s%s_begin_h( grid%%id, %s%s%s_begin_h )\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"   CALL nl_get_%s%s%s_begin_m( grid%%id, %s%s%s_begin_m )\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"   CALL nl_get_%s%s%s_begin_s( grid%%id, %s%s%s_begin_s )\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
+    fprintf(fp,"   IF ( %s%s%s_begin_m .EQ. 0 ) %s%s%s_begin_m = %s%s%s_begin\n",aux,streamtype,streamno,aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"   IF ( MAX( %s%s%s_begin_y, %s%s%s_begin_d,   &\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"             %s%s%s_begin_h, %s%s%s_begin_m , %s%s%s_begin_s   ) .GT. 0 ) THEN\n",aux,streamtype,streamno,aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"      CALL WRFU_TimeIntervalSet( begin_time , D=%s%s%s_begin_d, &\n",aux,streamtype,streamno) ;
@@ -264,11 +266,13 @@ gen_set_timekeeping_alarms ( FILE * fp )
     fprintf(fp,"   ELSE\n") ;
     fprintf(fp,"      begin_time = zero_time\n") ;
     fprintf(fp,"   ENDIF\n") ;
+    fprintf(fp,"   CALL nl_get_%s%s%s_end( grid%%id, %s%s%s_end )\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"   CALL nl_get_%s%s%s_end_y( grid%%id, %s%s%s_end_y )\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"   CALL nl_get_%s%s%s_end_d( grid%%id, %s%s%s_end_d )\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"   CALL nl_get_%s%s%s_end_h( grid%%id, %s%s%s_end_h )\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"   CALL nl_get_%s%s%s_end_m( grid%%id, %s%s%s_end_m )\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"   CALL nl_get_%s%s%s_end_s( grid%%id, %s%s%s_end_s )\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
+    fprintf(fp,"   IF ( %s%s%s_end_m .EQ. 0 ) %s%s%s_end_m = %s%s%s_end\n",aux,streamtype,streamno,aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"   IF ( MAX( %s%s%s_end_y, %s%s%s_end_d,   &\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"             %s%s%s_end_h, %s%s%s_end_m , %s%s%s_end_s   ) .GT. 0 ) THEN\n",aux,streamtype,streamno,aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"      CALL WRFU_TimeIntervalSet( end_time , D=%s%s%s_end_d, &\n",aux,streamtype,streamno) ;
@@ -515,7 +519,7 @@ gen_med_open_esmf_calls ( FILE *fp )
   {
      fprintf(fp,"CALL nl_get_io_form_auxinput%d( 1, io_form )\n",i) ;
      fprintf(fp,"IF ( use_package( io_form ) == IO_ESMF ) THEN\n") ;
-     fprintf(fp,"  stream = %d\n",i) ;
+     fprintf(fp,"  stream = first_auxinput + %d\n",i-1) ;
      fprintf(fp,"  CALL open_aux_u( grid, config_flags, stream, AUXINPUT%d_ALARM,       &\n",i) ;
      fprintf(fp,"                   config_flags%%auxinput%d_inname, grid%%auxinput%d_oid, &\n",i,i) ;
      fprintf(fp,"                   input_auxinput%d, ierr )\n",i) ;
@@ -527,7 +531,7 @@ gen_med_open_esmf_calls ( FILE *fp )
   {
      fprintf(fp,"CALL nl_get_io_form_auxhist%d( 1, io_form )\n",i) ;
      fprintf(fp,"IF ( use_package( io_form ) == IO_ESMF ) THEN\n") ;
-     fprintf(fp,"  stream = %d\n",i) ;
+     fprintf(fp,"  stream = first_auxhist + %d\n",i-1) ;
      fprintf(fp,"  CALL open_hist_w( grid, config_flags, stream, AUXHIST%d_ALARM,       &\n",i) ;
      fprintf(fp,"                    config_flags%%auxhist%d_outname, grid%%auxhist%d_oid, &\n",i,i) ;
      fprintf(fp,"                    output_auxhist%d, fname, n2, ierr )\n",i) ;

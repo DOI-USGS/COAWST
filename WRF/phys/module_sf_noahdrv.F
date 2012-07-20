@@ -168,6 +168,8 @@ CONTAINS
 !  important note: here RUNOFF2 is actually the sum of RUNOFF2 and RUNOFF3
 !-- RUNOFF3     numerical trunctation in excess of porosity (smcmax)
 !                  for a given soil layer at the end of a time step (m s-1).
+!SFCRUNOFF     Surface Runoff (mm)
+!UDRUNOFF      Total Underground Runoff (mm), which is the sum of RUNOFF2 and RUNOFF3
 ! ----------------------------------------------------------------------
 !-- RC          canopy resistance (s m-1)
 !-- PC          plant coefficient (unitless fraction, 0-1) where PC*ETP = actual transp
@@ -566,7 +568,7 @@ CONTAINS
      SLDPTH(NS)=DZS(NS)
      ENDDO
 
-   DO J=jts,jte
+     JLOOP : DO J=jts,jte
 
       IF(ITIMESTEP.EQ.1)THEN
         DO 50 I=its,ite
@@ -610,7 +612,7 @@ CONTAINS
       ENDIF                                                               ! end of initialization over ocean
 
 !-----------------------------------------------------------------------
-      DO 100 I=its,ite
+      ILOOP : DO I=its,ite
 ! surface pressure
         PSFC=P8w3D(i,1,j)
 ! pressure in middle of lowest layer
@@ -755,11 +757,11 @@ CONTAINS
         RIBB=RIB(I,J)
 !FEI: temporaray arrays above need to be changed later by using SI
 
-          DO 70 NS=1,NSOIL
+          DO NS=1,NSOIL
             SMC(NS)=SMOIS(I,NS,J)
             STC(NS)=TSLB(I,NS,J)                                          !STEMP
             SWC(NS)=SH2O(I,NS,J)
-   70     CONTINUE
+          ENDDO
 !
           if ( (SNEQV.ne.0..AND.SNOWHK.eq.0.).or.(SNOWHK.le.SNEQV) )THEN
             SNOWHK= 5.*SNEQV
@@ -823,12 +825,26 @@ CONTAINS
            endif
 #endif
 
-
           IF (rdlai2d) THEN
              xlai = lai(i,j)
           endif
 
-       CALL SFLX (FFROZP, ICE, ISURBAN, DT,ZLVL,NSOIL,SLDPTH,     &    !C
+    IF ( XICE(I,J) >= XICE_THRESHOLD ) THEN
+
+       ! Sea-ice case
+
+       DO NS = 1, NSOIL
+          SH2O(I,NS,J) = 1.0
+       ENDDO
+       LAI(I,J) = 0.01
+
+       CYCLE ILOOP
+
+    ELSE
+
+       ! Land and glacial land.
+
+       CALL SFLX (I,J,ICE,FFROZP, ISURBAN, DT,ZLVL,NSOIL,SLDPTH,  &    !C
                  LOCAL,                                           &    !L
                  LUTYPE, SLTYPE,                                  &    !CL
                  LWDN,SOLDN,SOLNET,SFCPRS,PRCP,SFCTMP,Q2K,DUMMY,         &    !F
@@ -849,7 +865,7 @@ CONTAINS
                  SNOTIME1,                                        &
                  RIBB,                                            &
                  SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT)
-
+    ENDIF
 
        lai(i,j) = xlai
 
@@ -890,8 +906,8 @@ CONTAINS
           Z0(I,J)=Z0BRD
           EMISS(I,J) = EMISSI
           EMISS_RURAL(I,J) = EMISSI
-! MEK Nov2006 turn off
-!          ZNT(I,J)=Z0K
+! Noah: activate time-varying roughness length (V3.3 Feb 2011)
+          ZNT(I,J)=Z0K
           TSK(I,J)=T1
           TSK_RURAL(I,J)=T1
           HFX(I,J)=SHEAT
@@ -1148,7 +1164,7 @@ CONTAINS
           ENDDO
 !         Convert the water unit into mm
           SFCRUNOFF(I,J)=SFCRUNOFF(I,J)+RUNOFF1*DT*1000.0
-          UDRUNOFF(I,J)=UDRUNOFF(I,J)+(RUNOFF2+RUNOFF3)*DT*1000.0
+          UDRUNOFF(I,J)=UDRUNOFF(I,J)+RUNOFF2*DT*1000.0
 ! snow defined when fraction of frozen precip (FFROZP) > 0.5,
           IF(FFROZP.GT.0.5)THEN
             ACSNOW(I,J)=ACSNOW(I,J)+PRCP*DT
@@ -1161,9 +1177,8 @@ CONTAINS
 
         ENDIF                                                           ! endif of land-sea test
 
-  100 CONTINUE                                                          ! of I loop
-
-   ENDDO                                                                ! of J loop
+      ENDDO ILOOP                                                       ! of I loop
+   ENDDO JLOOP                                                          ! of J loop
 
       IF (SF_URBAN_PHYSICS == 2) THEN
 
@@ -1416,6 +1431,7 @@ CONTAINS
 !
    do I=1,NSLTYPE
       porosity(i)=maxsmc(i)
+      drypoint(i)=drysmc(i)
    enddo
 #endif
 
@@ -1679,7 +1695,7 @@ CONTAINS
           CALL wrf_error_fatal ( message )
         END IF
 
-        WRITE(mess,*) 'INPUT SOIL TEXTURE CLASSIFICAION = ', TRIM ( MMINSL )
+        WRITE(mess,*) 'INPUT SOIL TEXTURE CLASSIFICATION = ', TRIM ( MMINSL )
         CALL wrf_message( mess )
 
         LUMATCH=0

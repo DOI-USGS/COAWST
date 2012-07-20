@@ -4,6 +4,10 @@ LN      =       ln -s
 MAKE    =       make -i -r
 MV	=	/bin/mv
 RM      =       /bin/rm -f
+CHEM_FILES =	../chem/module_aerosols_sorgam.o \
+		../chem/module_gocart_aerosols.o \
+		../chem/module_mosaic_driver.o \
+		../chem/module_input_tracer.o
 
 deflt :
 		@ echo Please compile the code using ./compile
@@ -25,9 +29,6 @@ DA_CONVERTOR_MODULES = $(DA_CONVERTOR_MOD_DIR) $(INCLUDE_MODULES)
 #EXP_MODULE_DIR = -I../dyn_exp
 #EXP_MODULES =  $(EXP_MODULE_DIR)
 
-# set this in the compile script now
-#J = -j 6
-
 NMM_MODULE_DIR = -I../dyn_nmm
 NMM_MODULES =  $(NMM_MODULE_DIR)
 
@@ -41,17 +42,15 @@ ALL_MODULES =                           \
                $(EXP_MODULES)           \
                $(INCLUDE_MODULES)       \
                $(MCT_MODULES)
-#CPPFLAGS += -D'PROJECT_HEADER="$(MY_HEADER_DIR)/$(HEADER)"'
-#CPPFLAGS += -D'ROMS_GLOBAL_DEFS="$(MY_SRC_DIR)/ROMS/Include/globaldefs.h"'
-#jcw
 
 configcheck:
 	@if [ "$(A2DCASE)" -a "$(DMPARALLEL)" ] ; then \
 	 echo "------------------------------------------------------------------------------" ; \
 	 echo "WRF CONFIGURATION ERROR                                                       " ; \
-	 echo "The $(A2DCASE) case cannot be used on distributed memory parallel systems." ; \
-	 echo "Only 3D WRF cases will run on these systems." ; \
-	 echo "Please chose a different case or rerun configure and chose a different option."  ; \
+	 echo "The $(A2DCASE) case requires a build for only single domain.                  " ; \
+	 echo "The $(A2DCASE) case cannot be used on distributed memory parallel systems.    " ; \
+	 echo "Only 3D WRF cases will run with the options that you selected.                " ; \
+	 echo "Please choose a different case, or rerun configure and choose a different set of options."  ; \
 	 echo "------------------------------------------------------------------------------" ; \
          exit 2 ; \
 	fi
@@ -82,15 +81,21 @@ all_wrfvar :
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
 	if [ $(CRTM) ] ; then \
 	  (cd var/external/crtm; \
-	  . configure/$(SFC).setup; make ) ; \
+	   export ABI_CRTM="${ABI_CRTM}"; . configure/$(SFC_CRTM).setup; $(MAKE) $(J) ) ; \
 	fi
 	if [ $(BUFR) ] ; then \
 	  (cd var/external/bufr;  \
-	  $(MAKE) FC="$(SFC)" CC="$(SCC)" CPP="$(CPP)" CFLAGS="$(CFLAGS)" FFLAGS="$(FCDEBUG) $(FORMAT_FIXED)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ) ; \
+	  $(MAKE) $(J) FC="$(SFC)" CC="$(SCC)" CPP="$(CPP)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FCDEBUG) $(FORMAT_FIXED)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ) ; \
+	fi
+### Use 'make' to avoid '-i -r' above:
+	if [ $(WAVELET) ] ; then \
+	  ( cd var/external/wavelet; \
+		make CC="$(SC99) -DNOUNDERSCORE" RM="$(RM)" libWavelet.a; \
+		make FC="$(FC)" RM="$(RM)" lib_wavelet.a ) ; \
 	fi
 #	( cd var/build; touch depend.txt; make links; make depend; $(MAKE) $(J) all_wrfvar )
 	( cd var/build; make depend; $(MAKE) $(J) all_wrfvar )
-	( cd var/obsproc; $(MAKE) BUFR_CPP="$(BUFR_CPP)" )
+	( cd var/obsproc; $(MAKE) $(J) BUFR_CPP="$(BUFR_CPP)" )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
@@ -117,6 +122,7 @@ em_fire : wrf
 	( cd test/em_fire ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_fire ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
 	( cd test/em_fire ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
+	( cd test/em_fire ; /bin/sh create_links.sh )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
@@ -221,6 +227,20 @@ em_seabreeze2d_x : wrf
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
+em_tropical_cyclone : wrf
+	@ echo '--------------------------------------'
+	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=tropical_cyclone em_ideal )
+	( cd test/em_tropical_cyclone ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	( cd test/em_tropical_cyclone ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
+	( cd test/em_tropical_cyclone ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
+	( cd run ; if test -f namelist.input ; then \
+		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_tropical_cyclone/namelist.input . )
+	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_tropical_cyclone/input_sounding . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
+
 em_scm_xy : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=scm_xy em_ideal )
@@ -255,8 +275,9 @@ em_real : wrf
 	  ( cd test/em_esmf_exp ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../../main/wrf_SST_ESMF.exe . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f real.exe ; ln -s ../../main/real.exe . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ) ; \
-	  ( cd test/em_esmf_exp ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ; \
                ln -sf ../../run/ETAMPNEW_DATA . ;                      \
+               ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;                      \
                ln -sf ../../run/RRTM_DATA . ;                          \
                ln -sf ../../run/RRTMG_LW_DATA . ;                      \
                ln -sf ../../run/RRTMG_SW_DATA . ;                      \
@@ -267,6 +288,7 @@ em_real : wrf
                ln -sf ../../run/ozone_plev.formatted . ;               \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
+                  ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
                   ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA         ;   \
                   ln -sf ../../run/RRTMG_LW_DATA_DBL RRTMG_LW_DATA ;   \
                   ln -sf ../../run/RRTMG_SW_DATA_DBL RRTMG_SW_DATA ;   \
@@ -276,6 +298,7 @@ em_real : wrf
 	  ( cd test/em_esmf_exp ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f URBPARM.TBL ; ln -s ../../run/URBPARM.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f MPTABLE.TBL ; ln -s ../../run/MPTABLE.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . ) ; \
@@ -287,8 +310,9 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f ndown.exe ; ln -s ../../main/ndown.exe . )
 	( cd test/em_real ; /bin/rm -f nup.exe ; ln -s ../../main/nup.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
+	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
              ln -sf ../../run/ETAMPNEW_DATA . ;                     \
+             ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;                     \
              ln -sf ../../run/RRTM_DATA . ;                         \
              ln -sf ../../run/RRTMG_LW_DATA . ;                      \
              ln -sf ../../run/RRTMG_SW_DATA . ;                      \
@@ -299,6 +323,7 @@ em_real : wrf
              ln -sf ../../run/ozone_plev.formatted . ;                         \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
+                ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
                 ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;          \
                 ln -sf ../../run/RRTMG_LW_DATA_DBL RRTMG_LW_DATA ;  \
                 ln -sf ../../run/RRTMG_SW_DATA_DBL RRTMG_SW_DATA ;  \
@@ -308,6 +333,7 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f URBPARM.TBL ; ln -s ../../run/URBPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . )
+	( cd test/em_real ; /bin/rm -f MPTABLE.TBL ; ln -s ../../run/MPTABLE.TBL . )
 	( cd test/em_real ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . )
 	( cd test/em_real ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . )
 	( cd test/em_real ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . )
@@ -450,23 +476,40 @@ gocart_conv : wrf
 
 #### nmm converter
 
+### Idealized NMM tropical cyclone case
+nmm_tropical_cyclone : nmm_wrf
+	@ echo '--------------------------------------'
+	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=nmm IDEAL_CASE=tropical_cyclone nmm_ideal )
+	( cd test/nmm_tropical_cyclone ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	( cd test/nmm_tropical_cyclone ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
+	( cd test/nmm_tropical_cyclone ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
+	( cd run ; if test -f namelist.input ; then \
+		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
+		/bin/rm -f namelist.input ; ln -s ../test/nmm_tropical_cyclone/namelist.input . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
+
 nmm_real : nmm_wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=nmm IDEAL_CASE=real real_nmm )
 	( cd test/nmm_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/nmm_real ; /bin/rm -f real_nmm.exe ; ln -s ../../main/real_nmm.exe . )
 	( cd test/nmm_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/nmm_real ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA ;    \
+	( cd test/nmm_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA ;    \
 	     ln -sf ../../run/ETAMPNEW_DATA . ;                     \
+	     ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;                     \
 	     ln -sf ../../run/RRTM_DATA . ;                         \
 	     if [ $(RWORDSIZE) -eq 8 ] ; then                       \
 	        ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
+                ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
 	        ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;          \
 	     fi )
 	( cd test/nmm_real ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . )
 	( cd test/nmm_real ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . )
 	( cd test/nmm_real ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . )
 	( cd test/nmm_real ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . )
+	( cd test/nmm_real ; /bin/rm -f MPTABLE.TBL ; ln -s ../../run/MPTABLE.TBL . )
 	( cd test/nmm_real ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . )
 	( cd test/nmm_real ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . )
 	( cd test/nmm_real ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . )
@@ -526,7 +569,12 @@ physics :
 
 em_core :
 	@ echo '--------------------------------------'
-	( cd dyn_em ; $(MAKE) $(J) )
+	if [ $(WRF_CHEM) -eq 0 ] ; then \
+		CF= ; \
+	else \
+		CF="$(CHEM_FILES)" ; \
+	fi
+	( cd dyn_em ; $(MAKE) $(J) CF="$(CF)" )
 
 # rule used by configure to test if this will compile with MPI 2 calls MPI_Comm_f2c and _c2f
 mpi2_test :

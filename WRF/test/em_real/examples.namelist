@@ -35,6 +35,38 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  &physics
  sst_update                          = 1,
 
+** Using Noah-MP option (Use sf_surface_physics option = 4, and add
+   &noah_mp namelist record)
+
+&physics
+   sf_surface_physics = 4
+
+&noah_mp
+ dveg                               = 2,
+ opt_crs                            = 1,
+ opt_btr                            = 1,
+ opt_sfc                            = 1,
+ opt_run                            = 1,
+ opt_frz                            = 1,
+ opt_inf                            = 1,
+ opt_rad                            = 1,
+ opt_alb                            = 2,
+ opt_snf                            = 1,
+ opt_tbot                           = 2,
+ opt_stc                            = 1,
+ /
+
+
+** Using stochastic backscatter scheme
+
+&physics
+ stoch_force_opt                     = 1,      1,      1,
+ stoch_vertstruc_opt                 = 0,      0,      0,
+ tot_backscat_t                      = 1.0E-6, 1.0E-6, 1.0E-6
+ tot_backscat_psi                    = 1.0E-5, 1.0E-5, 1.0E-5
+ nens                                = 1,
+
+
 ** Using DFI options (note this is a separate namelist record):
 
  &dfi_control
@@ -57,7 +89,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  dfi_fwdstop_second                  = 00,
  /
 
- &time_control
+ &domains
  time_step_dfi                       = 60.
 
 ** Using gridded nudging option (note this is a separate namelist record) for
@@ -135,6 +167,36 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  obs_ipf_errob                       = .true.
  obs_ipf_nudob                       = .true.
  obs_ipf_in4dob                      = .true
+ obs_no_pbl_nudge_uv                 = 0
+ obs_no_pbl_nudge_t                  = 0
+ obs_no_pbl_nudge_q                  = 0
+ obs_sfc_scheme_horiz                = 0
+ obs_sfc_scheme_vert                 = 0
+ obs_max_sndng_gap                   = 20
+ obs_nudgezfullr1_uv                 = 50
+ obs_nudgezrampr1_uv                 = 50
+ obs_nudgezfullr2_uv                 = 50
+ obs_nudgezrampr2_uv                 = 50
+ obs_nudgezfullr4_uv                 = -5000
+ obs_nudgezrampr4_uv                 = 50  
+ obs_nudgezfullr1_t                  = 50 
+ obs_nudgezrampr1_t                  = 50
+ obs_nudgezfullr2_t                  = 50
+ obs_nudgezrampr2_t                  = 50
+ obs_nudgezfullr4_t                  = -5000
+ obs_nudgezrampr4_t                  = 50  
+ obs_nudgezfullr1_q                  = 50 
+ obs_nudgezrampr1_q                  = 50
+ obs_nudgezfullr2_q                  = 50
+ obs_nudgezrampr2_q                  = 50
+ obs_nudgezfullr4_q                  = -5000
+ obs_nudgezrampr4_q                  = 50
+ obs_nudgezfullmin                   = 50
+ obs_nudgezrampmin                   = 50
+ obs_nudgezmax                       = 3000
+ obs_sfcfact                         = 1.0
+ obs_sfcfacr                         = 1.0
+ obs_dpsmx                           = 7.5
  /
 
 ** Using spectral nudging option 
@@ -172,6 +234,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  use_adaptive_time_step              = .true.,
  step_to_output_time                 = .true.,
  target_cfl                          = 1.2, 1.2, 1.2,
+ target_hcfl                         = .84, .84, .84,
  max_step_increase_pct               = 5,   51,  51,
  starting_time_step                  = -1,  -1,  -1,
  max_time_step                       = 360, 120, 40,
@@ -210,17 +273,6 @@ Setting threashold value for defining seaice if seaice is not in the input file:
 Switching off latent heating from a microphysics scheme (must also set cu_physics = 0):
 
  no_mp_heating                       = 0,
-
-** Using CAM long and short wave radiation schemes: Since 3.2, these variables will be
-   set in the model automatically if either long- or short-wave CAM radiation option is
-   chosen
-
- cam_abs_freq_s                      = 21600
- levsiz                              = 59
- paerlev                             = 29
- cam_abs_dim1                        = 4
- cam_abs_dim2                        = 28
- (cam_abs_dim2 should be the same as e_vert)
 
 ** Using precipiatiion bucket in a time interval (minutes):
 
@@ -261,4 +313,28 @@ For a tropical channel configuration, set the following:
  &namelist_quilt
  nio_tasks_per_group = 2,
  nio_groups = 1,
+
+** for tc bogusing:
+
+ &tc
+ insert_bogus_storm                  = .true.,
+ remove_storm                        = .true.,
+ num_storm                           = 1,
+ latc_loc                            = 15.,
+ lonc_loc                            = -90.,
+ vmax_meters_per_second              = 30,
+ rmax                                = 50000,
+ vmax_ratio                          = 0.5,
+ /
+
+** for regional climate surface diagnostics such as max/min/mean/std of T2/Q2/wind/rainfall
+between selected output times (e.g. daily) in auxhist3
+
+ &time_control
+ output_diagnostics      = 1
+ auxhist3_outname        = 'wrfxtrm_d<domain>_<date>'
+ io_form_auxhist3        = 2
+ auxhist3_interval       = 1440
+ frames_per_auxhist3     = 1
+
  /
