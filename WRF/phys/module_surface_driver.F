@@ -1590,6 +1590,9 @@ CONTAINS
                u10,v10,th2,t2,q2,                                  &
                gz1oz0,wspd,br,isfflx,dx,                           &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
+#ifdef SWAN_COUPLING
+               HWAVE, LWAVEP, PWAVE,                               &
+#endif
                &itimestep,ch,th_phy,pi_phy,qc_curr,&
                &tsq,qsq,cov,qcg,&
                XICE,SST,TSK_SEA,                                   &
@@ -3140,6 +3143,9 @@ CONTAINS
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
+#ifdef SWAN_COUPLING
+               HWAVE, LWAVEP, PWAVE,                               &
+#endif
                &itimestep,ch,th3d,pi3d,qc3d,                       &
                &tsq,qsq,cov,qcg,                                   &
 XICE,SST,TSK_SEA,                                                  &
