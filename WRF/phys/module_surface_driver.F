@@ -3167,6 +3167,11 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
      REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
      REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN,EOMEG,STBOLT
 
+#ifdef SWAN_COUPLING
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)   :: HWAVE
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)   :: LWAVEP
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)   :: PWAVE
+#endif
      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                INTENT(IN   )   ::                           dz8w
 
