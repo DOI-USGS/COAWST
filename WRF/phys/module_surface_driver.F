@@ -3386,6 +3386,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                U10,V10,TH2,T2,Q2,                                  &
                GZ1OZ0,WSPD,BR,ISFFLX,DX,                           &
                SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,EOMEG,STBOLT,   &
+#ifdef SWAN_COUPLING
+               HWAVE, LWAVEP, PWAVE,                               &
+#endif
                &itimestep,ch,th3d,pi3d,qc3d,                       &
                &tsq,qsq,cov,qcg,                                   &
                ids,ide, jds,jde, kds,kde,                          &
@@ -3470,6 +3473,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                GZ1OZ0_SEA,WSPD_SEA,BR_SEA,                         &
                ISFFLX,DX,                                          &
                SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,EOMEG,STBOLT,   &
+#ifdef SWAN_COUPLING
+               HWAVE, LWAVEP, PWAVE,                               &
+#endif
                &itimestep,CH_SEA,th3d,pi3d,qc3d,                   &
                &tsq,qsq,cov,qcg,                                   &
                ids,ide, jds,jde, kds,kde,                          &
