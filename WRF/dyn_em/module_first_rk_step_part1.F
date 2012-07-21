@@ -1,5 +1,5 @@
 !WRF:MEDIATION_LAYER:SOLVER
-
+#include "wrfcpp.h"
 #define BENCH_START(A)
 #define BENCH_END(A)
 
@@ -389,6 +389,9 @@ BENCH_START(surf_driver_tim)
      &        ,DZ8W=dz8w          ,DZS=grid%dzs            ,FLHC=grid%flhc          &
      &        ,FLQC=grid%flqc          ,GLW=grid%glw            ,GRDFLX=grid%grdflx      &
      &        ,GSW=grid%gsw    ,SWDOWN=grid%swdown        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx              &
+#ifdef SWAN_COUPLING
+     &        ,HWAVE=grid%hwave, LWAVEP=grid%lwavep, PWAVE=grid%pwave   &
+#endif
      &        ,HT=grid%ht              ,IFSNOW=config_flags%ifsnow      ,ISFFLX=config_flags%isfflx      &
      &        ,FRACTIONAL_SEAICE=config_flags%fractional_seaice           &
      &        ,SEAICE_ALBEDO_OPT=config_flags%seaice_albedo_opt           &
