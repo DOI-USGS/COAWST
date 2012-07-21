@@ -85,14 +85,15 @@ CONTAINS
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
+#ifdef SWAN_COUPLING
+                     HWAVE, LWAVEP, PWAVE,                         &
+#endif
                      itimestep,ch,th3d,pi3d,qc3d,                  &
                      tsq,qsq,cov,qcg,                              &
 !JOE-add zo/zt
 !                     z0zt_ratio,BulkRi,wstar,&
 !JOE-end z0/zt
-#ifdef SWAN_COUPLING
-                     HWAVE, LWAVEP, PWAVE,                         &
-#endif
+
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
