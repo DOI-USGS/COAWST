@@ -178,7 +178,7 @@ CONTAINS
    CALL init_modules(1)
 !  IF ( .NOT. PRESENT( no_init1 ) ) THEN
      ! Initialize utilities (time manager, etc.)
-     CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN )
+     CALL WRFU_Initialize( defaultCalKind=WRFU_CAL_GREGORIAN )
 !  ENDIF
 #else
    ! Initialize WRF modules:  
