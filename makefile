@@ -474,7 +474,10 @@ ifdef USE_INWAVE
              InWave/Utility
 endif
 
-ifndef USE_WRF
+ifdef USE_ROMS
+ modules  +=	Master
+ includes +=	Master Compilers
+else ifdef USE_SWAN
  modules  +=	Master
  includes +=	Master Compilers
 endif
