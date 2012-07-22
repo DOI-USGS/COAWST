@@ -3,9 +3,7 @@
 !                                                                             !
   use table
   use gridinfo
-  use storage_module
   use filelist
-  use datarray
   implicit none
   interface
      subroutine parse_args(err, a1, h1, i1, l1, a2, h2, i2, l2,&
@@ -151,7 +149,6 @@ end program g2print
       use params
       use table          ! Included to define g2code
       use gridinfo       ! Included to define map%
-      use storage_module ! Included sub put_storage
 
       real, allocatable, dimension(:) :: hold_array
       parameter(msk1=32000,msk2=4000)
@@ -171,11 +168,9 @@ end program g2print
       integer :: currlen
       logical :: unpack, expand
       type(gribfield) :: gfld
-      ! For subroutine put_storage
       real :: level
       real :: scale_factor
       integer :: iplvl, lvl2
-      character (len=9) :: my_field
       ! For subroutine outout
       integer , parameter :: maxlvl = 100
       real , dimension(maxlvl) :: plvl
@@ -188,6 +183,7 @@ end program g2print
       character(len=40) :: string
       character(len=13) :: pstring = ',t50,":",i14)'
       character(len=15) :: rstring = ',t50,":",f14.5)'
+      character(len=13) :: astring = ',t50,":",a14)'
 
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  SET ARGUMENTS
@@ -437,6 +433,8 @@ end program g2print
                map%source = 'NCEP RUC Model'    ! 40 km
              elseif (iprocess.eq.105) then
                map%source = 'NCEP RUC Model'    ! 20 km
+             elseif (iprocess.eq.107) then
+               map%source = 'NCEP GEFS'
              elseif (iprocess.eq.109) then
                map%source = 'NCEP RTMA'
              elseif (iprocess.eq.140) then
@@ -621,7 +619,7 @@ end program g2print
            write(*,'(5x,"Length of Section 2"'//pstring) gfld%locallen
            if ( associated(gfld%local).AND.gfld%locallen.gt.0 ) then
            do j = 1, gfld%locallen
-             write(*,'(5x,"Local value "'//pstring) gfld%local(j)
+             write(*,'(5x,"Local value "'//astring) gfld%local(j)
            enddo
 !             print *,'G2 SECTION 2: ',(gfld%local(j),j=1,gfld%locallen)
            endif

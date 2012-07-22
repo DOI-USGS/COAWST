@@ -255,7 +255,7 @@ end subroutine parse_args
 ! This routine contains the tables for the various grib parameters
 ! Each individual parameter contains the info to identify itself.
 ! We don't have the complete tables here, just enough for normal wrf use.
-! wgrib has more complete NCEP tables.
+! wgrib has more complete NCEP tables. (look in WRFV3/external/io_grib1/WGRIB)
 !
 !  ptv - parameter table version
 !  centerid - id number ofthe originating center
@@ -268,8 +268,8 @@ end subroutine parse_args
     logical :: first=.true.
     character (len=5), intent(out) :: field
     character(len=5) :: table2(255), table129(255), afwa(255), ecmwf(255), &
-      table131(255)
-    common /paramids/ table2, table129, table131, afwa, ecmwf
+      table130(255), table131(255), table132(255)
+    common /paramids/ table2, table129, table130, table131, table132, afwa, ecmwf
 
      field = '     '
      if (first) call init_tables
@@ -278,8 +278,12 @@ end subroutine parse_args
        field = table2(param)
      else if ( centerid .eq. 7 .and. ptv .eq. 129 ) then
        field = table129(param)
+     else if ( centerid .eq. 7 .and. ptv .eq. 130 ) then
+       field = table130(param)
      else if ( centerid .eq. 7 .and. ptv .eq. 131 ) then
        field = table131(param)
+     else if ( centerid .eq. 7 .and. ptv .eq. 132 ) then
+       field = table132(param)
      else if ( centerid .eq. 57 ) then
        field = afwa(param)
      else if ( centerid .eq. 58 .and. ptv .eq. 2 ) then    ! navysst
@@ -300,8 +304,8 @@ end subroutine fieldname
 !
      subroutine init_tables
     character(len=5) :: table2(255), table129(255), afwa(255), ecmwf(255), &
-      table131(255)
-    common /paramids/ table2, table129, table131, afwa, ecmwf
+      table130(255), table131(255),  table132(255)
+    common /paramids/ table2, table129, table130, table131, table132, afwa, ecmwf
 
        ! afwa
        do i = 1, 127
@@ -348,15 +352,26 @@ end subroutine fieldname
        afwa(235) = 'SSRUN'
 
      ! ECMWF
-! from http://www.ecmwf.int/products/data/technical/GRIB_tables/table_128.html
+! from http://www.ecmwf.int/services/archive/d/parameters/order=grib_parameter/table=128/
        do i = 1, 254
          ecmwf(i) = '     '
        enddo
+         ecmwf(1) = 'STRF '
+         ecmwf(2) = 'VPOT '
+         ecmwf(3) = 'PT   '
+         ecmwf(4) = 'EQPT '
+         ecmwf(5) = 'SEPT '
+         ecmwf(8) = 'SRO  '
+         ecmwf(9) = 'SSRO '
+         ecmwf(10) = 'WS   '
+         ecmwf(26) = 'CL   '
          ecmwf(27) = 'CVL  '
          ecmwf(28) = 'CVH  '
          ecmwf(29) = 'TVL  '
          ecmwf(30) = 'TVH  '
          ecmwf(31) = 'CI   '
+         ecmwf(32) = 'ASN  '
+         ecmwf(33) = 'RSN  '
          ecmwf(34) = 'SSTK '
          ecmwf(35) = 'ISTL1'
          ecmwf(36) = 'ISTL2'
@@ -366,9 +381,22 @@ end subroutine fieldname
          ecmwf(40) = 'SWVL2'
          ecmwf(41) = 'SWVL3'
          ecmwf(42) = 'SWVL4'
+         ecmwf(43) = 'SLT  '
          ecmwf(44) = 'ES   '
          ecmwf(45) = 'SMLT '
          ecmwf(60) = 'PV   '
+         ecmwf(74) = 'SDFOR'
+         ecmwf(75) = 'CRWC '
+         ecmwf(76) = 'CSWC '
+         ecmwf(77) = 'ETADT'
+         ecmwf(78) = 'TCLW '
+         ecmwf(79) = 'TCIW '
+         ecmwf(121) = 'MX2T6'
+         ecmwf(122) = 'MN2T6'
+         ecmwf(123) = '10FG6'
+         ecmwf(124) = 'EMIS '
+         ecmwf(127) = 'AT   '
+         ecmwf(128) = 'BV   '
          ecmwf(129) = 'Z    '
          ecmwf(130) = 'T    '
          ecmwf(131) = 'U    '
@@ -388,9 +416,15 @@ end subroutine fieldname
          ecmwf(145) = 'BLD  '
          ecmwf(146) = 'SSHF '
          ecmwf(147) = 'SLHF '
+         ecmwf(148) = 'CHNK '
+         ecmwf(149) = 'SNR  '
+         ecmwf(150) = 'TNR  '
          ecmwf(151) = 'MSL  '
          ecmwf(152) = 'LNSP '
+         ecmwf(153) = 'SWHR '
+         ecmwf(154) = 'LWHR '
          ecmwf(155) = 'D    '
+         ecmwf(156) = 'GH   '
          ecmwf(157) = 'R    '
          ecmwf(159) = 'BLH  '
          ecmwf(160) = 'SDOR '
@@ -423,8 +457,15 @@ end subroutine fieldname
          ecmwf(187) = 'MCC  '
          ecmwf(188) = 'HCC  '
          ecmwf(189) = 'SUND '
+         ecmwf(194) = 'BTMP '
          ecmwf(195) = 'LGWS '
          ecmwf(196) = 'MGWS '
+         ecmwf(197) = 'GWD  '
+         ecmwf(198) = 'SRC  '
+         ecmwf(199) = 'VEG  '
+         ecmwf(200) = 'VSO  '
+         ecmwf(201) = 'MX2T '
+         ecmwf(202) = 'MN2T '
          ecmwf(203) = 'O3   '
          ecmwf(204) = 'PAW  '
          ecmwf(205) = 'RO   '
@@ -432,8 +473,12 @@ end subroutine fieldname
          ecmwf(207) = '10SI '
          ecmwf(208) = 'TSRC '
          ecmwf(209) = 'TTRC '
-         ecmwf(210) = 'STRC '
+         ecmwf(210) = 'SSRC '
          ecmwf(211) = 'STRC '
+         ecmwf(212) = 'TISR '
+         ecmwf(213) = 'VIMD '
+         ecmwf(214) = 'DHR  '
+         ecmwf(227) = 'CRNH '
          ecmwf(229) = 'IEWS '
          ecmwf(230) = 'INSS '
          ecmwf(231) = 'ISHF '
@@ -442,13 +487,17 @@ end subroutine fieldname
          ecmwf(234) = 'LSRH '
          ecmwf(235) = 'SKT  '
          ecmwf(236) = 'STL4 '
+         ecmwf(237) = 'SWL4 '
          ecmwf(238) = 'TSN  '
+         ecmwf(239) = 'CSF  '
+         ecmwf(240) = 'LSF  '
+         ecmwf(248) = 'CC   '
 end subroutine init_tables
 
     block data  ptables
     character(len=5) :: table2(255), table129(255), afwa(255), ecmwf(255), &
-      table131(255)
-    common /paramids/ table2, table129, table131, afwa, ecmwf
+      table130(255), table131(255), table132(255)
+    common /paramids/ table2, table129, table130, table131, table132, afwa, ecmwf
 
   data table2 /'PRES','PRMSL','PTEND','PVORT','ICAHT','GP','HGT','DIST',&
        'HSTDV','TOZNE','TMP','VTMP','POT','EPOT','T MAX','T MIN','DPT',&
@@ -508,9 +557,40 @@ end subroutine init_tables
        'CDUVB','THFLX','UVAR','VVAR','UVVCC','MCLS','LAPP','LOPP','     ','REFO',&
        'REFD','REFC','SBT22','SBT23','SBT24','SBT25','MINRH','MAXRH','CEIL',&
        'PBLRE','SBC23','SBC24','RPRAT','SPRAT','FPRAT','IPRAT','UPHL','SURGE',&
-       'ETSRG','RHPW','231 ','232','233','234 ','235 ','236 ','237  ',&
-       '238','239','240','241','242','243','244','245','246',&
-       '247','248','249','250','251','252','253','254','255'/
+       'ETSRG','RHPW','OZMAX1','OZMAX8','PDMAX1','PDMAX24','MAXREF','MXUPHL','MAXUVV',&
+       'MAXDVV','MAXVIG','RETOP','VRATE','TCSRG20','TCSRG30','TCSRG40','TCSRG50','TCSRG60',&
+       'TCSRG70','TCSRG80','TCSRG90','HINDX','DIFTEN','PSPCP','MAXUW','MAXVW','255'/
+  data table130 /'PRES','PRMSL','PTEND','PVORT','ICAHT','GP','HGT','DIST',&
+       'HSTDV','TOZNE','TMP','VTMP','POT','EPOT','T MAX','T MIN','DPT',&
+       'DEPR','LAPR','VIS','RDSP1','RDSP2','RDSP3','PLI','TMP A','PRESA',&
+       'GP A','WVSP1','WVSP2','WVSP3','WDIR','WIND','U GRD','V GRD','STRM',&
+       'V POT','MNTSF','SGCVV','V VEL','DZDT','ABS V','ABD D','REL V','REL D',&
+       'VUCSH','VVCSG','DIR C','SP C','UOGRD','VOGRD','SPF H','R H','MIXR',&
+       'P WAT','VAPP','SAT D','EVP','C ICE','PRATE','TSTM','A PCP','NCPCP',&
+       'ACPCP','SRWEQ','WEASD','SNO D','MIXHT','TTHDP','MTHD','MTH A','T CDC',&
+       'CDCON','L CDC','M CDC','H CDC','C WAT','BLI','SNO C','SNO L','WTMP',&
+       'LAND','DSL M','SFC R','ALBDO','TSOIL','SOILM','VEG','SALTY','DEN',&
+       'WATR','ICE C','ICETK','DICED','SICED','U ICE','V ICE','ICE G','ICE D',&
+       'SNO M','HTSGW','WVDIR','WVHGT','WVPER','SWDIR','SWELL','SWPER','DIRPW',&
+       'PERPW','DIRSW','PERSW','NSWRS','NLWRS','NSWRT','NLWRT','LWAVR','SWAVR',&
+       'GRAD','BRTMP','LWRAD','SWRAD','LHTFL','SHTFL','BLYDP','U FLX','V FLX',&
+       'WMIXE','IMG D',&
+! Table 130    LSM 
+! 128-143 not yet assigned
+       '     ','     ','     ','     ','     ','   ','   ','     ','     ',&
+       '     ','     ','     ','     ','     ','     ','     ','SOILW',&
+       'PEVPR','VEGT ','BARET','AVSFT','RADT','SSTOR','LSOIL','EWATR','     ',&
+       'LSPA ','GFLUX','CIN','CAPE','TKE','MXSAL','SOILL','ASNOW','ARAIN',&
+       'GWREC','QREC ','SNOWT','VBDSF','VDDSF','NBDSF','NDDSF','SNFALB',&
+       'RLYRS','M FLX','   ','   ','     ','NLAT','ELON','FLDCAP','ACOND','SNOAG',&
+       'CCOND','LAI','SFCRH','SALBD','    ','    ','NDVI','DRIP','VBSALB','VWSALB',&
+       'NBSALB','NWSALB','FRZR','FROZR','TSNOW','MTERH','   ','SBSNO','EVBS','EVCW',&
+       'VTCIN','VTCAPE','RSMIN','DSWRF','DLWRF','   ','MSTAV','SFEXC','     ','TRANS',&
+       'USWRF','ULWRF','     ','     ','     ','     ','     ','     ','WILT',&
+       'FLDCP','HPBL','SLTYP','CNWAT','SOTYP','VGTYP','BMIXL','AMIXL','PEVAP',&
+       'SNOHF','SMREF','SMDRY','    ','    ','BGRUN','SSRUN','    ','     ',&
+       'SNOWC','SNOT','POROS','SBT112','SBT113','SBT114','SBT115','     ','RCS',&
+       'RCT','RCQ','RCSOL','    ','    ','CD','FRICV','RI','  '/
   data table131 /'PRES','PRMSL','PTEND','PVORT','ICAHT','GP','HGT','DIST',&
        'HSTDV','TOZNE','TMP','VTMP','POT','EPOT','T MAX','T MIN','DPT',&
        'DEPR','LAPR','VIS','RDSP1','RDSP2','RDSP3','PLI','TMP A','PRESA',&
@@ -541,4 +621,35 @@ end subroutine init_tables
        'SNOHF','SMREF','SMDRY','WVINC','WCINC','BGRUN','SSRUN','    ','WVCON',&
        'SNOWC','SNOT','POROS','WCCON','WVUFL','WVVFL','WCUFL','WCVFL','RCS  ',&
        'RCT','RCQ','RCSOL','SWHR','LWHR','CD','FRICV','RI','  '/
+  data table132 /'PRES','PRMSL','PTEND','PVORT','ICAHT','GP','HGT','DIST',&
+       'HSTDV','TOZNE','TMP','VTMP','POT','EPOT','T MAX','T MIN','DPT',&
+       'DEPR','LAPR','VIS','RDSP1','RDSP2','RDSP3','PLI','TMP A','PRESA',&
+       'GP A','WVSP1','WVSP2','WVSP3','WDIR','WIND','U GRD','V GRD','STRM',&
+       'V POT','MNTSF','SGCVV','V VEL','DZDT','ABS V','ABD D','REL V','REL D',&
+       'VUCSH','VVCSG','DIR C','SP C','UOGRD','VOGRD','SPF H','R H','MIXR',&
+       'P WAT','VAPP','SAT D','EVP','C ICE','PRATE','TSTM','A PCP','NCPCP',&
+       'ACPCP','SRWEQ','WEASD','SNO D','MIXHT','TTHDP','MTHD','MTH A','T CDC',&
+       'CDCON','L CDC','M CDC','H CDC','C WAT','BLI','SNO C','SNO L','WTMP',&
+       'LAND','DSL M','SFC R','ALBDO','TSOIL','SOILM','VEG','SALTY','DEN',&
+       'WATR','ICE C','ICETK','DICED','SICED','U ICE','V ICE','ICE G','ICE D',&
+       'SNO M','HTSGW','WVDIR','WVHGT','WVPER','SWDIR','SWELL','SWPER','DIRPW',&
+       'PERPW','DIRSW','PERSW','NSWRS','NLWRS','NSWRT','NLWRT','LWAVR','SWAVR',&
+       'GRAD','BRTMP','LWRAD','SWRAD','LHTFL','SHTFL','BLYDP','U FLX','V FLX',&
+       'WMIXE','IMG D',&
+! Table 132    NCEP2  originally the same as table 2, but they diverged.
+       'MSLSA','MSLMA','MSLET','LFT X','4LFTX','K X','S X','MCONV','VW SH',&
+       'TSLSA','BVF 2','PV MW','CRAIN','CFRZR','CICEP','CSNOW','SOILW',&
+       'PEVPR','CWORK','U-GWD','V-GWD','PV','     ','     ','     ','MFXDV',&
+       '    ','GFLUX','CIN','CAPE','TKE','CONDP','CSUSF','CSDSF','CSULF',&
+       'CSDLF','CFNSF','CFNLF','VBDSF','VDDSF','NBDSF','NDDSF','USTR',&
+       'VSTR','M FLX','LMH','LMV','SGLYR','NLAT','ELON','UMAS','VMAS','XPRATE',&
+       'LPS X','LPS Y','HGT X','HGT Y','STDZ','STDU','STDV','STDQ','STDTP','CBUW',&
+       'CBVW','CBUQN','CBVQ','CBTW ','CBQW ','CBMZW','CBTZW','CBTMW','STDRH','SDTZ',&
+       'ICWAT','SDTU','SDTV','DSWRF','DLWRF','SDTQ','MSTAV','SFEXC','MIXLY','SDTT',&
+       'USWRF','ULWRF','CDLYR','CPRAT','TTDIA','TTRAD','TTPHY','PREIX','TSD1D',&
+       'NLGSP','SDTRH','5WAVH','CNWAT','PLTRS','RHCLD','BMIXL','AMIXL','PEVAP',&
+       'SNOHF','SNOEV','MFLUX','DTRF','UTRF','BGRUN','SSRUN','    ','O3TOT',&
+       'SNOWC','SNOT','GLCR ','LRGHR','CNVHR','CNVMR','SHAHR','SHAMR','VDFHR',&
+       'VDFUA','VDFVA','VDFMR','SWHR','LWHR','CD','FRICV','RI','  '/
+
     end

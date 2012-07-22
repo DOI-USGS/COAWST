@@ -161,6 +161,8 @@ SUBROUTINE rd_grib1(IUNIT, gribflnm, level, field, hdate,  &
       map%source = 'NCEP NMM '
     elseif (iprocess.eq.96) then
       map%source = 'NCEP GFS Model'
+    elseif (iprocess.eq.107) then
+      map%source = 'NCEP GEFS'
     elseif (iprocess.eq.109) then
       map%source = 'NCEP RTMA'
     elseif (iprocess.eq.86 .or. iprocess.eq.100) then
@@ -198,10 +200,13 @@ SUBROUTINE rd_grib1(IUNIT, gribflnm, level, field, hdate,  &
   else if (icenter .eq. 58) then
     map%source = 'US Navy FNOC'
   else if (icenter .eq. 59) then
-      if (iprocess .eq. 120) then
+      if (iprocess .eq. 125) then
         map%source = 'NOAA GSD Rapid Refresh'
-      else
+      else if (iprocess .eq. 105) then
         map%source = 'NOAA GSD'
+      else 
+        print *,'Unknown GSD source'
+        stop
       endif
   else if (icenter .eq. 60) then
         map%source = 'NCAR'
@@ -308,6 +313,8 @@ SUBROUTINE rd_grib1(IUNIT, gribflnm, level, field, hdate,  &
                     level = 201500.
                  elseif (ktype .eq. 237 .or. ktype .eq. 238 ) then  ! depth of ocean layer
                     level = 201600.
+                 elseif (ktype .eq. 200 ) then  !column variable (TCDC,PWAT,etc.)
+                    level = lvl1                !
                  endif
                  if (level .lt. -998. ) then
                    write(6,*) 'Could not find a level for this Vtable entry'
@@ -366,8 +373,15 @@ SUBROUTINE rd_grib1(IUNIT, gribflnm, level, field, hdate,  &
 
   map%startloc = 'SWCORNER'
   map%grid_wind = .true.
-! NCEP's grib1 messages say they use 6367.47, but they really use 6371.229. Hardcode it.
-  map%r_earth = 6371.229   
+! NCEP's grib1 messages (in GDS Octet 17, the Resolution and Component Flags)
+! all have '0' for the earth radius flag which the documentation (written by NCEP)
+! says is 6367.47, but they really use 6371.229. Hardcode it.
+! It's not clear what ECMWF uses. One place says 6367.47 and another 6371.229.
+  if ( index(map%source,'NCEP') .ne. 0 ) then
+    map%r_earth = 6371.229   
+  else
+    map%r_earth = 6367.47   
+  endif
 
   if (ksec2(4).eq.0) then ! Lat/Lon grid
      map%igrid = 0
@@ -411,6 +425,20 @@ SUBROUTINE rd_grib1(IUNIT, gribflnm, level, field, hdate,  &
 !    print *, "CE map stuff", map%igrid, map%nx, map%ny, map%dx, &
 !    map%dy, map%lat1, map%lon1
 
+  elseif (ksec2(4).eq.1) then ! Mercator Grid
+     map%igrid = 1
+     map%nx = infogrid(1)
+     map%ny = infogrid(2)
+     map%dx = ginfo(8)  ! km
+     map%dy = ginfo(9)
+     map%truelat1 = ginfo(5)
+     map%truelat2 = 0.
+     map%lov = 0.
+     map%lat1 = ginfo(3)
+     map%lon1 = ginfo(4)
+     write(tmp8,'(b8.8)') infogrid(5)
+     if (tmp8(5:5) .eq. '0') map%grid_wind = .false.
+
   elseif (ksec2(4).eq.3) then ! Lambert Conformal Grid
      map%igrid = 3
      map%nx = infogrid(1)
@@ -453,7 +481,8 @@ SUBROUTINE rd_grib1(IUNIT, gribflnm, level, field, hdate,  &
      if (tmp8(5:5) .eq. '0') map%grid_wind = .false.
 
   else
-     print*, 'Unknown ksec2(4): ', ksec2(4)
+     print*, 'Unknown Data Representation Type, ksec2(4)= ', ksec2(4)
+     stop 'rd_grib1'
   endif
 
 111  format(' igrid      : ', i3, /, &

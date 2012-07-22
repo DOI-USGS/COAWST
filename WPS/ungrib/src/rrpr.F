@@ -43,7 +43,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
 
   character (LEN=25) :: units
   character (LEN=46) :: Desc
-  real, allocatable, dimension(:,:) :: scr2d
+  real, allocatable, dimension(:,:) :: scr2d, tmp2d
   real, pointer, dimension(:,:) :: ptr2d
 
   integer :: k, kk, mm, n, ierr, ifv
@@ -63,8 +63,6 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
 
 ! Decide the length of date strings to use for output file names.  
 ! DATELEN is 13 for hours, 16 for minutes, and 19 for seconds.
-
-  write(0,*) 'Begin rrpr'
 
   if (mod(interval,3600) == 0) then
      datelen = 13
@@ -109,7 +107,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
        end if
        if (filedates(n)(1:datelen).ne.hdate(1:datelen)) cycle FILELOOP
        if (debug_level .gt. 50 ) then
-	 call mprintf(.true.,INFORM, &
+         call mprintf(.true.,INFORM, &
             "RRPR Processing : %s",s1=filedates(n)(1:datelen))
        endif
        open(iunit, file=trim(get_path(prefix))//'PFILE:'//filedates(n)(1:datelen), &
@@ -156,7 +154,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
              read (iunit) map%startloc, map%lat1, map%lon1, map%dx, map%dy, &
                 map%lov, map%truelat1
           case default
-	     call mprintf(.true.,ERROR, &  
+             call mprintf(.true.,ERROR, &  
                 "Unrecognized map%%igrid: %i in RRPR 2",i1=map%igrid)
           end select
 
@@ -176,7 +174,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
            case (1)      ! Mercator
               read (iunit) map%lat1, map%lon1, map%dy, map%dx, map%truelat1
            case default
-	     call mprintf(.true.,ERROR, &  
+             call mprintf(.true.,ERROR, &  
                 "Unrecognized map%%igrid: %i in RRPR 3",i1=map%igrid)
            end select
         else
@@ -189,6 +187,8 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
         call refw_storage(nint(level), field, ptr2d, map%nx, map%ny)
         nullify (ptr2d)
      enddo rdloop
+
+   write (0,*) 'Name of source model =>',map%source
 !
 ! We have reached the end of file, so time to close it.
 !
@@ -333,7 +333,8 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
 
         do k = 1, nlvl
            if (plvl(k).lt.200000.) then
-              if (.not. is_there(nint(plvl(k)), 'RH').and. &
+              if (.not. is_there(nint(plvl(k)), 'RH') .and. &
+                   is_there(nint(plvl(k)), 'TT') .and. &
                    is_there(nint(plvl(k)), 'SPECHUMD')) then
                  call get_dims(nint(plvl(k)), 'TT')
                  call compute_rh_spechumd_upa(map%nx, map%ny, plvl(k))
@@ -347,6 +348,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
         do k = 1, nlvl
            if (plvl(k).lt.200000.) then
               if (.not. is_there(nint(plvl(k)),'RH').and. &
+                   is_there(nint(plvl(k)), 'TT') .and. &
                    is_there(nint(plvl(k)),'VAPP')) then
                  call get_dims(nint(plvl(k)),'TT')
                  call compute_rh_vapp_upa(map%nx, map%ny, plvl(k))
@@ -359,6 +361,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
         do k = 1, nlvl
            if (plvl(k).lt.200000.) then
               if (.not. is_there(nint(plvl(k)),'RH').and. &
+                   is_there(nint(plvl(k)), 'TT') .and. &
                    is_there(nint(plvl(k)),'DEPR')) then
                  call get_dims(nint(plvl(k)),'TT')
                  call compute_rh_depr(map%nx, map%ny, plvl(k))
@@ -432,7 +435,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
                 is_there(200100, 'SPECHUMD')) then
               call get_dims(200100, 'TT')
               call compute_rh_spechumd(map%nx, map%ny)
-	      call mprintf(.true.,DEBUG, &
+              call mprintf(.true.,DEBUG, &
                 "RRPR:   SURFACE RH is computed")
            elseif (is_there(200100, 'TT'       ).and. &
                 is_there(200100, 'DEWPT')) then
@@ -458,6 +461,43 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
            call put_storage(200100, 'SNOW',   scr2d, map%nx, map%ny)
            deallocate(scr2d)
         endif
+
+! compute snow water equivalent (SNOW) for NCEP RUC  models
+! As of Sept. 14  2011
+        if ( index(map%source,'NCEP RUC Model') .ne. 0) then
+          if (is_there(200100, 'SNOWH') .and. .not. is_there(200100, 'SNOW')) then
+          call get_dims(200100, 'SNOWH')
+          allocate(scr2d(map%nx,map%ny))
+          call get_storage(200100, 'SNOWH', scr2d, map%nx, map%ny)
+          call mprintf(.true.,DEBUG, &
+             "RRPR:   Computing SNOWH from SNOW")
+            if (is_there(200100, 'RHOSN')) then        ! If we have snow density, use it to compute snowh
+              call get_dims(200100, 'RHOSN')
+              allocate(tmp2d(map%nx,map%ny))
+              call get_storage(200100, 'RHOSN', tmp2d, map%nx, map%ny)
+              scr2d = scr2d * tmp2d
+              deallocate(tmp2d)
+            else
+              scr2d = scr2d * 200.0          ! Assume 200:1 ratio
+            endif
+          call put_storage(200100, 'SNOW', scr2d, map%nx, map%ny)
+          deallocate(scr2d)
+          endif
+        endif
+
+! Add residual soil moisture to SOILM* if initialized from the GSD RUC model or from NCEP RUC
+      if (index(map%source,'NOAA GSD') .ne. 0 .or.    &
+          index(map%source,'NCEP RUC Model') .ne. 0) then
+            if ( .not. is_there(200100, 'SOILM000') .and.& 
+                       is_there(200100, 'SM000ruc') ) then
+           call get_dims(200100, 'SM000ruc')
+             print *,'Adjust RUC soil moisture'
+          call mprintf(.true.,DEBUG, &
+             "RRPR:   Adjusting RUC soil moisture ")
+              call fix_ruc_soilm (map%nx, map%ny)
+            endif
+       endif
+
 !
 ! Check to see if we need to fill SOILHGT from SOILGEO.
 ! (From Wei Wang, 2007 June 21)
@@ -483,6 +523,21 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
            deallocate(scr2d)
         endif
 
+! For NCEP RR (using the same ID as for RUC) native-level input, 
+! may need to move PSFC from level 1 to 2001.
+! From TGS 8 Sept. 2011
+        if ( index(map%source,'NCEP RUC Model') .ne. 0) then
+        if (.not. is_there(200100, 'PSFC') .and. &
+             is_there(1, 'PRESSURE')) then
+    print *,'Process PSFC for NCEP RR'
+           call get_dims(1, 'PRESSURE')
+           allocate(scr2d(map%nx,map%ny))
+           call get_storage(1, 'PRESSURE', scr2d, map%nx, map%ny)
+           call put_storage(200100, 'PSFC', scr2d, map%nx, map%ny)
+           deallocate(scr2d)
+        endif
+        endif
+
 ! For ECMWF hybrid-level input, may need to move psfc from level 1 to 2001.
         if ( index(map%source,'ECMWF') .ne. 0) then
         if (.not. is_there(200100, 'PSFC') .and. &
@@ -495,23 +550,78 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
         endif
         endif
 
-! ECMWF snow depth is in meters (Table 128). Convert to kg/m2 
+! ECMWF snow depth in meters of water equivalent (Table 128). Convert to kg/m2 
 ! 
         if (is_there(200100, 'SNOW_EC')) then
            call get_dims(200100, 'SNOW_EC')
            allocate(scr2d(map%nx,map%ny))
            call get_storage(200100, 'SNOW_EC', scr2d, map%nx, map%ny)
-	   scr2d = scr2d * 1000.
+           scr2d = scr2d * 1000.
            call put_storage(200100, 'SNOW', scr2d, map%nx, map%ny)
            deallocate(scr2d)
         endif
 
-! If we've got a SEAICE field, make sure that it is all Zeros and Ones:
+! Convert the ECMWF LANDSEA mask from a fraction to a flag
 
-        if (is_there(200100, 'SEAICE')) then
-           call get_dims(200100, 'SEAICE')
-           call make_zero_or_one(map%nx, map%ny)
+        if ( index(map%source,'ECMWF') .ne. 0) then
+        if (is_there(200100, 'LANDSEA')) then
+           call get_dims(200100, 'LANDSEA')
+           call make_zero_or_one(map%nx, map%ny, 'LANDSEA')
         endif
+        endif
+
+! NCEP GFS weasd is one-half of the NAM value. Increase it for use in WRF.
+! The GFS-based reanalyses values should be OK as is.
+        if ((index(map%source,'NCEP GFS') .ne. 0 .or. &
+            index(map%source,'NCEP GEFS') .ne. 0) .and. &
+            is_there(200100, 'SNOW')) then
+           call mprintf(.true.,DEBUG, &
+              "RRPR:   Recomputing SNOW for NCEP GFS")
+           call get_dims(200100, 'SNOW')
+           allocate(scr2d(map%nx,map%ny))
+           call get_storage(200100, 'SNOW', scr2d, map%nx, map%ny)
+           scr2d = scr2d * 2.
+           call put_storage(200100, 'SNOW', scr2d, map%nx, map%ny)
+           deallocate(scr2d)
+        endif
+
+! compute physical snow depth (SNOWH) for various models
+! As of March 2011, this is done here instead of real because we have model
+! source information.
+        if (is_there(200100, 'SNOW') .and. .not. is_there(200100, 'SNOWH')) then
+          call get_dims(200100, 'SNOW')
+          allocate(scr2d(map%nx,map%ny))
+          call get_storage(200100, 'SNOW', scr2d, map%nx, map%ny)
+          call mprintf(.true.,DEBUG, &
+             "RRPR:   Computing SNOWH from SNOW")
+          if ( index(map%source,'NCEP ') .ne. 0) then
+            scr2d = scr2d * 0.005          ! Assume 200:1 ratio as used at NCEP and in NOAH
+          else if (index(map%source,'ECMWF') .ne. 0) then
+            if (is_there(200100, 'SNOW_DEN')) then        ! If we have snow density, use it to compute snowh
+              call get_dims(200100, 'SNOW_DEN')
+              allocate(tmp2d(map%nx,map%ny))
+              call get_storage(200100, 'SNOW_DEN', tmp2d, map%nx, map%ny)
+              scr2d = scr2d / tmp2d 
+              deallocate(tmp2d)
+            else
+              scr2d = scr2d * 0.004     ! otherwise, assume a density of 250 mm/m (i.e. 250:1 ratio).
+            endif
+          else                       ! Other models
+            scr2d = scr2d * 0.005    ! Use real's default method (200:1)
+          endif
+          call put_storage(200100, 'SNOWH', scr2d, map%nx, map%ny)
+          deallocate(scr2d)
+        endif
+
+! As of March 2011, SEAICE can be a flag or a fraction. It will be converted
+! to the appropriate values in real depending on whether or not the polar mods are used.
+
+!! If we've got a SEAICE field, make sure that it is all Zeros and Ones:
+
+!       if (is_there(200100, 'SEAICE')) then
+!          call get_dims(200100, 'SEAICE')
+!          call make_zero_or_one(map%nx, map%ny, 'SEAICE')
+!       endif
 
 ! If we've got an ICEMASK field, re-flag it for output to met_em and real:
 !     Field  | GRIB In  |  Out
@@ -530,13 +640,13 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
            call get_dims(200100, 'ICEFRAC')
            allocate(scr2d(map%nx,map%ny))
            call get_storage(200100, 'ICEFRAC', scr2d, map%nx, map%ny)
-	   scr2d = scr2d / 100.
+           scr2d = scr2d / 100.
            call put_storage(200100, 'ICEFRAC', scr2d, map%nx, map%ny)
            deallocate(scr2d)
         endif
 
 
-	call mprintf(.true.,INFORM, &
+        call mprintf(.true.,INFORM, &
            "RRPR: hdate = %s ",s1=hdate)
         call output(hdate, nlvl, maxlvl, plvl, interval, 2, out_format, prefix, debug_level)
         call clear_storage
@@ -545,20 +655,21 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, debug_level, out_f
    enddo TIMELOOP
 end subroutine rrpr
 
-subroutine make_zero_or_one(ix, jx)
-! Make sure the SEAICE field is zero or one.
+subroutine make_zero_or_one(ix, jx, infield)
+! Make sure the input field (SEAICE or LANDSEA) is zero or one.
   use storage_module
   implicit none
   integer :: ix, jx
   real, dimension(ix,jx) :: seaice
+  character(len=*) :: infield
 
-  call get_storage(200100, 'SEAICE',seaice, ix, jx)
+  call get_storage(200100, infield, seaice, ix, jx)
   where(seaice > 0.5)
      seaice = 1.0
   elsewhere
      seaice = 0.0
   end where
-  call put_storage(200100, 'SEAICE',seaice, ix, jx)
+  call put_storage(200100, infield, seaice, ix, jx)
 end subroutine make_zero_or_one
 
 subroutine re_flag_ice_mask(ix, jx)
@@ -667,7 +778,11 @@ subroutine compute_rh_spechumd_upa(ix, jx, plvl)
   real, parameter :: eps = 0.622
 
   IF ( nint(plvl).LT. 200) THEN
-    call get_storage(nint(plvl), 'PRESSURE', P, ix, jx)
+    if (is_there(nint(plvl), 'PRESSURE')) then
+      call get_storage(nint(plvl), 'PRESSURE', P, ix, jx)
+    else
+      return     ! if we don't have pressure on model levels, return
+    endif
   ELSE
     P = plvl
   ENDIF
@@ -698,7 +813,15 @@ subroutine compute_rh_vapp_upa(ix, jx, plvl)
 
   allocate(RH(ix,jx))
 
-  P = plvl
+  IF ( nint(plvl).LT. 200) THEN
+    if (is_there(nint(plvl), 'PRESSURE')) then
+      call get_storage(nint(plvl), 'PRESSURE', P, ix, jx)
+    else
+      return     ! if we don't have pressure on model levels, return
+    endif
+  ELSE
+    P = plvl
+  ENDIF
   call refr_storage(nint(plvl), 'TT',    T, ix, jx)
   call refr_storage(nint(plvl), 'VAPP', E, ix, jx)
 
@@ -802,7 +925,7 @@ subroutine fix_gfs_rh (ix, jx, plvl)
 
       ews = 6.112 * exp(17.67 * (tt(i,j)-273.15) / ((tt(i,j)-273.15)+243.5))
       if ( tt(i,j) .gt. 253.15 ) then
-	! A linear approximation to the GFS blending region ( -20 > T < 0 )
+        ! A linear approximation to the GFS blending region ( -20 > T < 0 )
         r = ((273.15 - tt(i,j)) / 20.)
         r = (r * eis) + ((1-r)*ews)
       else
@@ -816,3 +939,65 @@ subroutine fix_gfs_rh (ix, jx, plvl)
   deallocate (rh)
   deallocate (tt)
 end subroutine fix_gfs_rh
+
+
+subroutine fix_ruc_soilm (ix, jx)
+! This routine adds residual soil moisture if initialized fron RUC
+  use storage_module
+  implicit none
+  integer :: ix, jx, i, j
+  REAL , DIMENSION(100) :: lqmi
+  real, allocatable, dimension(:,:) :: soilm000, soilm005, soilm020, &
+                     soilm040, soilm160, soilm300,soilcat
+  allocate(soilm000(ix,jx))
+  allocate(soilm005(ix,jx))
+  allocate(soilm020(ix,jx))
+  allocate(soilm040(ix,jx))
+  allocate(soilm160(ix,jx))
+  allocate(soilm300(ix,jx))
+  allocate(soilcat(ix,jx))
+  call get_storage(200100, 'SM000ruc', soilm000, ix, jx)
+  call get_storage(200100, 'SM005ruc', soilm005, ix, jx)
+  call get_storage(200100, 'SM020ruc', soilm020, ix, jx)
+  call get_storage(200100, 'SM040ruc', soilm040, ix, jx)
+  call get_storage(200100, 'SM160ruc', soilm160, ix, jx)
+  call get_storage(200100, 'SM300ruc', soilm300, ix, jx)
+
+  call get_storage(200100, 'SOILCAT', soilcat, ix, jx)
+
+      lqmi(1:16) = &
+      (/0.045, 0.057, 0.065, 0.067, 0.034, 0.078, 0.10,     &
+        0.089, 0.095, 0.10,  0.070, 0.068, 0.078, 0.0,      &
+        0.004, 0.065 /)
+
+  do j = 1, jx
+  do i = 1, ix
+
+         SOILM000(i,j)=SOILM000(i,j) + lqmi(nint(soilcat(i,j)))
+         SOILM005(i,j)=SOILM005(i,j) + lqmi(nint(soilcat(i,j)))
+         SOILM020(i,j)=SOILM020(i,j) + lqmi(nint(soilcat(i,j)))
+         SOILM040(i,j)=SOILM040(i,j) + lqmi(nint(soilcat(i,j)))
+         SOILM160(i,j)=SOILM160(i,j) + lqmi(nint(soilcat(i,j)))
+         SOILM300(i,j)=SOILM300(i,j) + lqmi(nint(soilcat(i,j)))
+  enddo
+  enddo
+  call put_storage(200100, 'SOILM000', soilm000, ix, jx)
+  call put_storage(200100, 'SOILM005', soilm005, ix, jx)
+  call put_storage(200100, 'SOILM020', soilm020, ix, jx)
+  call put_storage(200100, 'SOILM040', soilm040, ix, jx)
+  call put_storage(200100, 'SOILM160', soilm160, ix, jx)
+  call put_storage(200100, 'SOILM300', soilm300, ix, jx)
+
+ print *,'fix_ruc_soilm is done!'
+
+  deallocate(soilm000)
+  deallocate(soilm005)
+  deallocate(soilm020)
+  deallocate(soilm040)
+  deallocate(soilm160)
+  deallocate(soilm300)
+  deallocate(soilcat)
+
+end subroutine fix_ruc_soilm
+ 
+
