@@ -339,7 +339,9 @@
 !                                                                      !
 !=======================================================================
 !
-       USE mod_swan_kinds
+      USE mod_swan_kinds
+      USE SWCOMM3
+      USE SWCOMM4
 !
 !  Imported variable declarations.
 !
@@ -368,7 +370,7 @@
 
       integer :: Imax, Imin, Jmax, Jmin, i, i0, j, j0, mp, np
 
-      real :: aa2, ang, bb2, diag2, dx, dy, phi
+      real :: aa2, ang, bb2, diag2, dxx, dyy, phi
       real :: xfac, xpp, yfac, ypp
 !
 !-----------------------------------------------------------------------
@@ -462,9 +464,9 @@
 !  to meters first.
 !
           IF (found) THEN
-            IF (spherical) THEN
-              yfac=Eradius*deg2rad
-              xfac=yfac*COS(Ypos(mp,np)*deg2rad)
+            IF (KSPHER.gt.0) THEN
+              yfac=REARTH*DEGRAD
+              xfac=yfac*COS(Ypos(mp,np)*DEGRAD)
               xpp=(Xpos(mp,np)-Xgrd(Imin,Jmin))*xfac
               ypp=(Ypos(mp,np)-Ygrd(Imin,Jmin))*yfac
             ELSE
@@ -488,20 +490,20 @@
 !  cell is rectanglar, for now.
 !
             ang=angler(Imin,Jmin)
-            dx=xpp*COS(ang)+ypp*SIN(ang)
-            dy=ypp*COS(ang)-xpp*SIN(ang)
+            dxx=xpp*COS(ang)+ypp*SIN(ang)
+            dyy=ypp*COS(ang)-xpp*SIN(ang)
 !
 !  Correct for parallelogram.
 !
-            dx=dx+dy*TAN(phi)
-            dy=dy/COS(phi)
+            dxx=dxx+dyy*TAN(phi)
+            dyy=dyy/COS(phi)
 !
 !  Scale with cell side lengths to translate into cell indices.
 !
-            dx=MIN(MAX(0.0,dx/SQRT(aa2)),1.0)
-            dy=MIN(MAX(0.0,dy/SQRT(bb2)),1.0)
-            Ipos(mp,np)=REAL(Imin)+dx
-            Jpos(mp,np)=REAL(Jmin)+dy
+            dxx=MIN(MAX(0.0,dxx/SQRT(aa2)),1.0)
+            dyy=MIN(MAX(0.0,dyy/SQRT(bb2)),1.0)
+            Ipos(mp,np)=REAL(Imin)+dxx
+            Jpos(mp,np)=REAL(Jmin)+dyy
 !
 ! Set min and max indices
 !
