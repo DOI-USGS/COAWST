@@ -18,7 +18,7 @@ state   real   landmask            ij    misc          1     -     i0125rh05d=(i
 #state    real   SST              ij    misc        1         -     i01245rh05d=(interp_mask_water_field:lu_index,iswater)f=(p2c_mask:lu_index,tslb,num_soil_layers,iswater)   "SST"              "SEA SURFACE TEMPERATURE" "K"
 # Simple SST interpolation from the CG
 #state    real   SST              ij    misc        1         -     i01245rh05d=(interp_mask_water_field:lu_index,iswater)f=(p2c)   "SST"              "SEA SURFACE TEMPERATURE" "K"
-state    real   SST              ij     misc        1         -     i01245rh05d=(interp_mask_water_field:lu_index,iswater)   "SST"              "SEA SURFACE TEMPERATURE" "K"
+#state    real   SST              ij     misc        1         -     i01245rh05d=(interp_mask_water_field:lu_index,iswater)   "SST"              "SEA SURFACE TEMPERATURE" "K"
 
 
 # Registry entries that are exclusive to Registry.EM
