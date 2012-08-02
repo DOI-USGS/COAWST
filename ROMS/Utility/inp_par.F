@@ -771,11 +771,13 @@
               Iname(i:i)=blank
             END DO
             Iname=TRIM(ADJUSTL(Cval(Nval)))
+# ifdef SWAN_MODEL
           ELSE IF (TRIM(KeyWord).eq.'WAV_name') THEN
             DO i=1,LEN(Wname(Nval))
               Wname(Nval)(i:i)=blank
             END DO
             Wname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
+# endif
           ELSE IF (TRIM(KeyWord).eq.'ATM_name') THEN
             DO i=1,LEN(Aname)
               Aname(i:i)=blank
