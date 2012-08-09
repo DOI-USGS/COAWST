@@ -37,25 +37,86 @@ yc_f=repmat(yc_f,numx_f,1);
 
 %%%%%%%%%  Lon Lat SPACE  %%%%%%%%%%%
 %establish a full grid of psi points, including an extra row and column
-x_full_grid=interp2(xc_c', yc_c', lon_psi(Istr-offset:Iend+1,Jstr-offset:Jend+1)', xc_f, yc_f);
-y_full_grid=interp2(xc_c', yc_c', lat_psi(Istr-offset:Iend+1,Jstr-offset:Jend+1)', xc_f, yc_f);
+lon_full_grid=interp2(xc_c', yc_c', lon_psi(Istr-offset:Iend+1,Jstr-offset:Jend+1)', xc_f, yc_f);
+lat_full_grid=interp2(xc_c', yc_c', lat_psi(Istr-offset:Iend+1,Jstr-offset:Jend+1)', xc_f, yc_f);
+
+%set the psi points
+fine.lon.psi=lon_full_grid(offset+2:end-(scale-3+1),offset+2:end-(scale-3+1)); 
+fine.lat.psi=lat_full_grid(offset+2:end-(scale-3+1),offset+2:end-(scale-3+1)); 
 
 %set the rho points
-ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
+ztemp=interp2(lon_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.lon.rho=ztemp(2:2:end-1,2:2:end-1);
-ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
+ztemp=interp2(lat_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.lat.rho=ztemp(2:2:end-1,2:2:end-1);
+
+%set the u points 
+ztemp=interp2(lon_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1); 
+fine.lon.u=ztemp(3:2:end-2,2:2:end-1); 
+ztemp=interp2(lat_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1); 
+fine.lat.u=ztemp(3:2:end-2,2:2:end-1); 
+
+%set the v points 
+ztemp=interp2(lon_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1); 
+fine.lon.v=ztemp(2:2:end-1,3:2:end-2); 
+ztemp=interp2(lat_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1); 
+fine.lat.v=ztemp(2:2:end-1,3:2:end-2); 
 
 %%%%%%%%%  X Y SPACE  %%%%%%%%%%%
 %establish a full grid of psi points, including an extra row and column
 x_full_grid=interp2(xc_c', yc_c', x_psi(Istr-offset:Iend+1,Jstr-offset:Jend+1)', xc_f, yc_f);
 y_full_grid=interp2(xc_c', yc_c', y_psi(Istr-offset:Iend+1,Jstr-offset:Jend+1)', xc_f, yc_f);
 
+%set the psi points
+fine.x.psi=x_full_grid(offset+2:end-(scale-3+1),offset+2:end-(scale-3+1)); 
+fine.y.psi=y_full_grid(offset+2:end-(scale-3+1),offset+2:end-(scale-3+1)); 
+
 %set the rho points
 ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.x.rho=ztemp(2:2:end-1,2:2:end-1);
 ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1);
 fine.y.rho=ztemp(2:2:end-1,2:2:end-1);
+
+%set the u points 
+ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1); 
+fine.x.u=ztemp(3:2:end-2,2:2:end-1); 
+ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1); 
+fine.y.u=ztemp(3:2:end-2,2:2:end-1); 
+
+%set the v points 
+ztemp=interp2(x_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1); 
+fine.x.v=ztemp(2:2:end-1,3:2:end-2); 
+ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1)+1),1); 
+fine.y.v=ztemp(2:2:end-1,3:2:end-2); 
+
+%%%%%%%  now need grid metrics %%%%%%%%%%%
+fine.pm=zeros(size(fine.lon.rho));
+fine.pn=zeros(size(fine.lat.rho));
+for j=Jstr-1:Jend+1
+  for i=Istr-1:Iend+1
+    X=[lon_psi(i-1,j-1) lon_psi(i,j-1) lon_psi(i,j) lon_psi(i-1,j)];
+    Y=[lat_psi(i-1,j-1) lat_psi(i,j-1) lat_psi(i,j) lat_psi(i-1,j)];
+    %find child cells within parent cell
+    ind=find(inpolygon(fine.lon.rho(:),fine.lat.rho(:),X,Y));
+    if ~isempty(ind),
+      fine.pm(ind)=pm(i,j)*scale;
+      fine.pn(ind)=pn(i,j)*scale;
+    end
+  end
+end
+
+fine.dmde = zeros(size(fine.pm));
+fine.dndx = zeros(size(fine.pn));
+fine.dndx(2:end-1, :) = 0.5*(1./fine.pn(3:end, :) - 1./fine.pn(1:end-2, :));
+fine.dmde(:, 2:end-1) = 0.5*(1./fine.pm(:, 3:end) - 1./fine.pm(:, 1:end-2));
+fine.dmde(:,1)=fine.dmde(:,2);
+fine.dmde(:,end)=fine.dmde(:,end-1);
+fine.dndx(1,:)=fine.dndx(2,:);
+fine.dndx(end,:)=fine.dndx(end-1,:);
+
+% Grid-cell orientation, degrees counter-clockwise from 
+fine.angle=griddata(lon_rho,lat_rho,angle,fine.lon.rho,fine.lat.rho);
+fine.f=griddata(lon_rho,lat_rho,f,fine.lon.rho,fine.lat.rho);
 
 %%%%%% GRID h and masking  %%%%%%%%%
 [XI,YI]=meshgrid([min(x_psi(:)):min(1./pm(:))/2:max(x_psi(:))], ...
@@ -74,22 +135,136 @@ fine.mask.rho(fine.mask.rho<0.96)=0;
 %%%%%%%%%%%%%%%%%%% finished creating grid %%%%%%%%%%%%%%%%
 
 %call routine to create netcdf file
+[LP, MP] = size(fine.h);
+create_roms_netcdf_grid_file(ncfile_fine,LP,MP)
 
-  projection='mercator';
-  rho.x=fine.x.rho;
-  rho.y=fine.y.rho;  
-  rho.lon=fine.lon.rho;  
-  rho.lat=fine.lat.rho;  
-  rho.depth=fine.h;
-  rho.mask = fine.mask.rho;
- 
-  save temp_jcw33.mat rho spherical projection
-  eval(['mat2roms_mw(''temp_jcw33.mat'',''',ncfile_fine,''');'])
-  !del temp_jcw33.mat
-  disp(['Created roms grid -->   ',ncfile_fine])
-  disp([' '])
-  disp(['you really need to look at the masking and bathy in the new file '])
-  
+%now open that file and prep for writing.
+nc=netcdf.open(ncfile_fine,'NC_WRITE');
+
+v1 = netcdf.inqVarID(nc,'xl');
+v2 = netcdf.inqVarID(nc,'el');
+v3 = netcdf.inqVarID(nc,'JPRJ');
+v4 = netcdf.inqVarID(nc,'spherical');
+v5 = netcdf.inqVarID(nc,'depthmin');
+v6 = netcdf.inqVarID(nc,'depthmax');
+v7 = netcdf.inqVarID(nc,'hraw');
+v8 = netcdf.inqVarID(nc,'h');
+v9 = netcdf.inqVarID(nc,'f');
+v10 = netcdf.inqVarID(nc,'pm');
+v11 = netcdf.inqVarID(nc,'pn');
+v12 = netcdf.inqVarID(nc,'dndx');
+v13 = netcdf.inqVarID(nc,'dmde');
+v14 = netcdf.inqVarID(nc,'x_rho');
+v15 = netcdf.inqVarID(nc,'y_rho');
+v16 = netcdf.inqVarID(nc,'x_psi');
+v17 = netcdf.inqVarID(nc,'y_psi');
+v18 = netcdf.inqVarID(nc,'x_u');
+v19 = netcdf.inqVarID(nc,'y_u');
+v20 = netcdf.inqVarID(nc,'x_v');
+v21 = netcdf.inqVarID(nc,'y_v');
+v22 = netcdf.inqVarID(nc,'lat_rho');
+v23 = netcdf.inqVarID(nc,'lon_rho');
+v24 = netcdf.inqVarID(nc,'lat_psi');
+v25 = netcdf.inqVarID(nc,'lon_psi');
+v26 = netcdf.inqVarID(nc,'lat_u');
+v27 = netcdf.inqVarID(nc,'lon_u');
+v28 = netcdf.inqVarID(nc,'lat_v');
+v29 = netcdf.inqVarID(nc,'lon_v');
+v30 = netcdf.inqVarID(nc,'mask_rho');
+v31 = netcdf.inqVarID(nc,'mask_u');
+v32 = netcdf.inqVarID(nc,'mask_v');
+v33 = netcdf.inqVarID(nc,'mask_psi');
+v34 = netcdf.inqVarID(nc,'angle');
+
+% Fill the variables with data.
+
+disp(' ## Filling Variables...')
+if (exist('JPRJ','var'))
+  projection=JPRJ;
+else
+  projection='';
+end
+switch lower(projection)
+case 'mercator'
+	theProjection = 'ME';
+case 'stereographic'
+	theProjection = 'ST';
+case 'lambert conformal conic'
+	theProjection = 'LC';
+otherwise
+	theProjection = '??';
+end
+netcdf.putVar(nc,v3,theProjection)
+netcdf.putVar(nc,v4,spherical)
+
+xl = max(fine.x.rho(:)) - min(fine.x.rho(:));
+el = max(fine.y.rho(:)) - min(fine.y.rho(:));
+netcdf.putVar(nc,v1,xl)
+netcdf.putVar(nc,v2,el)
+
+% Depths at RHO points.
+bathymetry = fine.h;
+if ~isempty(bathymetry)
+  netcdf.putVar(nc,v5,min(min(bathymetry)));
+  netcdf.putVar(nc,v6,max(max(bathymetry)));
+  netcdf.putVar(nc,v7,[0 0 0],[LP MP 1],bathymetry);
+  netcdf.putVar(nc,v8,bathymetry);
+end
+
+% Coriolis
+netcdf.putVar(nc,v9,fine.f)
+
+% Locations.
+netcdf.putVar(nc,v14,fine.x.rho);
+netcdf.putVar(nc,v15,fine.y.rho);
+
+netcdf.putVar(nc,v16,fine.x.psi);
+netcdf.putVar(nc,v17,fine.y.psi);
+
+netcdf.putVar(nc,v18,fine.x.u);
+netcdf.putVar(nc,v19,fine.y.u);
+
+netcdf.putVar(nc,v20,fine.x.v);
+netcdf.putVar(nc,v21,fine.y.v);
+
+netcdf.putVar(nc,v22,fine.lat.rho);
+netcdf.putVar(nc,v23,fine.lon.rho);
+
+netcdf.putVar(nc,v24,fine.lat.psi);
+netcdf.putVar(nc,v25,fine.lon.psi);
+
+netcdf.putVar(nc,v26,fine.lat.u);
+netcdf.putVar(nc,v27,fine.lon.u);
+
+netcdf.putVar(nc,v28,fine.lat.v);
+netcdf.putVar(nc,v29,fine.lon.v);
+
+netcdf.putVar(nc,v10,fine.pm);
+netcdf.putVar(nc,v11,fine.pn);
+
+netcdf.putVar(nc,v12,fine.dndx);
+netcdf.putVar(nc,v13,fine.dmde);
+
+% Masking.
+mask = fine.mask.rho;
+
+water = double(mask);
+netcdf.putVar(nc,v30,water);
+
+u_mask = water(1:end-1,:) & water(2:end,:);
+netcdf.putVar(nc,v31,double(u_mask));
+
+v_mask= water(:,1:end-1) & water(:,2:end);
+netcdf.putVar(nc,v32,double(v_mask));
+
+psi_mask= water(1:end-1,1:end-1) & water(1:end-1,2:end) & water(2:end,1:end-1) & water(2:end,2:end);
+netcdf.putVar(nc,v33,double(psi_mask));
+
+% Angle.
+netcdf.putVar(nc,v34,fine.angle);  % Degrees.
+
+netcdf.close(nc)
+
 
 %to create swan grid then use:
   disp([' '])
