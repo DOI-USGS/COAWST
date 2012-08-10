@@ -6,6 +6,7 @@
 % jcw Feb 5, 2012 convert to matlab netcdf interface
 %
 
+clear
 %%%%%%%%%% BEGIN user input   %%%%%%%%%%%%
 %
 %1) Enter name of roms netcdf grid file.

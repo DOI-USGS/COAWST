@@ -5,6 +5,7 @@
 % jcw 14Sep2008, 20Feb2009
 % jcw 05Feb2012  update to matlab netcdf interface
 
+clear
 %%%%%%%%%% BEGIN user input   %%%%%%%%%%%%
 %
 %1) Enter name of file with WRF grid info.
