@@ -160,7 +160,7 @@
 !  Local variable declarations.
 !
       integer :: i, ng, MyRank, MyError
-      logical, allocatable :: run_grid(:)
+      integer, allocatable :: run_grid(:)
       integer, allocatable :: count(:)
       real :: rtime, rtime_start, cff
       integer :: ngp, ngc
@@ -171,7 +171,7 @@
       IF (.not.ALLOCATED(run_grid)) ALLOCATE (run_grid(Ngridss))
       IF (.not.ALLOCATED(count)) ALLOCATE (count(Ngridss))
       DO ng=1,Ngridss
-        run_grid(ng)=.TRUE.
+        run_grid(ng)=1
         count(ng)=0
       END DO
       rtime_start=0.
@@ -181,11 +181,11 @@
 !
       DO WHILE (count(Ngridss).lt.MTC_G(Ngridss))
 !
-!  Advance grids in time that have run_grid flag == True.
+!  Advance grids in time that have run_grid flag == 1
 !  For the first entry, all grids step individual dts.
 !
         DO ng=1,Ngridss
-          IF (run_grid(ng).eq..TRUE.) THEN
+          IF (run_grid(ng).eq.1) THEN
             count(ng)=count(ng)+1
 #ifdef REFINED_GRID
             ngp=mysparent(ng)
@@ -198,7 +198,7 @@
 #endif
             CALL SWAN_RUN (CouplingTime, count(ng), ng, ngc, ngp,       &
      &                     1, Ngridss)
-            run_grid(ng)=.FALSE.
+            run_grid(ng)=0
           END IF
         END DO
 !
@@ -212,7 +212,7 @@
         DO ng=1,Ngridss
           cff=rtime-rtime_start
           IF (MOD(cff,REAL(DT_G(ng))).eq.0) THEN
-            run_grid(ng)=.TRUE.
+            run_grid(ng)=1
           END IF
         END DO
       END DO

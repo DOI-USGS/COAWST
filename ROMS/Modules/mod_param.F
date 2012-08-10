@@ -246,7 +246,7 @@
 # ifdef REFINED_GRID
         integer, dimension(Ngrids) :: myparent
         integer, dimension(Ngrids) :: mychild
-        logical, dimension(Ngrids) :: get_refdata
+        integer, dimension(Ngrids) :: get_refdata
 # endif
 !
 !-----------------------------------------------------------------------

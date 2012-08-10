@@ -897,7 +897,7 @@
             IF (WESTERN_EDGE) THEN
               DO j=Jstr,Jend
                 cff=FX(Istr,j)*dt(ng)
-                IF ((get_refdata(ng).eq..TRUE.).and.(k.eq.1)) THEN
+                IF ((get_refdata(ng).eq.1).and.(k.eq.1)) THEN
                   FXc_west(j,itrc)=cff
                 ELSE
                   FXc_west(j,itrc)=FXc_west(j,itrc)+cff
@@ -910,7 +910,7 @@
             IF (EASTERN_EDGE) THEN
               DO j=Jstr,Jend
                 cff=FX(Iend+1,j)*dt(ng)
-                IF ((get_refdata(ng).eq..TRUE.).and.(k.eq.1)) THEN
+                IF ((get_refdata(ng).eq.1).and.(k.eq.1)) THEN
                   FXc_east(j,itrc)=cff
                 ELSE
                   FXc_east(j,itrc)=FXc_east(j,itrc)+cff
@@ -923,7 +923,7 @@
             IF (SOUTHERN_EDGE) THEN
               DO i=Istr,Iend
                 cff=FE(i,Jstr)*dt(ng)
-                IF ((get_refdata(ng).eq..TRUE.).and.(k.eq.1)) THEN
+                IF ((get_refdata(ng).eq.1).and.(k.eq.1)) THEN
                   FEc_south(i,itrc)=cff
                 ELSE
                   FEc_south(i,itrc)=FEc_south(i,itrc)+cff
@@ -936,7 +936,7 @@
             IF (NORTHERN_EDGE) THEN
               DO i=Istr,Iend
                 cff=FE(i,Jend+1)*dt(ng)
-                IF ((get_refdata(ng).eq..TRUE.).and.(k.eq.1)) THEN
+                IF ((get_refdata(ng).eq.1).and.(k.eq.1)) THEN
                   FEc_north(i,itrc)=cff
                 ELSE
                   FEc_north(i,itrc)=FEc_north(i,itrc)+cff

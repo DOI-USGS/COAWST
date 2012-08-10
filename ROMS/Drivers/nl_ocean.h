@@ -225,7 +225,7 @@
 !
       integer :: ng, my_iic, MyError
 #if defined REFINED_GRID
-      logical, allocatable :: run_grid(:)
+      integer, allocatable :: run_grid(:)
       integer, allocatable :: count(:), rcount(:)
       integer :: ngp, ngc, rtime
 #endif
@@ -241,8 +241,8 @@
       IF (.not.ALLOCATED(count))    ALLOCATE (count(Ngrids))
       IF (.not.ALLOCATED(rcount))   ALLOCATE (rcount(Ngrids+1))
       DO ng=1,Ngrids
-        run_grid(ng)=.TRUE.
-        get_refdata(ng)=.TRUE.
+        run_grid(ng)=1
+        get_refdata(ng)=1
         count(ng)=Tstr(ng)-1
 !       count(ng)=0
       END DO
@@ -260,11 +260,11 @@
 !
         DO WHILE (count(Ngrids).lt.Tend(Ngrids))
 !
-!  Advance grids in time that have run_grid flag == True.
+!  Advance grids in time that have run_grid flag == 1
 !  For the first entry, all grids step individual dts.
 !
         DO ng=1,Ngrids
-          IF (run_grid(ng).eq..TRUE.) THEN
+          IF (run_grid(ng).eq.1) THEN
             count(ng)=count(ng)+1
             iic(ng)=count(ng)
 # ifdef SOLVE3D
@@ -273,7 +273,7 @@
             CALL main2d (ng)
 # endif
           END IF
-          run_grid(ng)=.FALSE.
+          run_grid(ng)=0
           IF (exit_flag.ne.NoError) THEN
             IF (Master) THEN
               WRITE (stdout,'(/,a,i3,/)') Rerror(exit_flag), exit_flag
@@ -291,14 +291,14 @@
 !
         DO ng=1,Ngrids
           IF (MOD(rtime,rcount(ng)).eq.0) THEN
-            run_grid(ng)=.TRUE.
+            run_grid(ng)=1
           END IF
         END DO
         DO ng=2,Ngrids
-          get_refdata(ng)=.FALSE.
+          get_refdata(ng)=0
           ngp=myparent(ng)
-          IF (run_grid(ngp).eq..TRUE.) THEN
-            get_refdata(ng)=.TRUE.
+          IF (run_grid(ngp).eq.1) THEN
+            get_refdata(ng)=1
           END IF
         END DO
       END DO

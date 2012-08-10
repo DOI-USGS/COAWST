@@ -615,7 +615,7 @@
 !
       IF ((first.eq.0).and.(ng.lt.Ngrids)) THEN
         ALLOCATE (PARALL2_MOD(ng)%AC2_parent_G(MSC*MDC*Numspec(ngc),2))
-        AC2_parent=0.
+        PARALL2_MOD(ng)%AC2_parent_G=0.
       END IF
       AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
 
