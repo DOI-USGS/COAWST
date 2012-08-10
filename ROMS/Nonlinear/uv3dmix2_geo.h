@@ -1,23 +1,8 @@
-#ifdef EW_PERIODIC
-# define IV_RANGE Istr-1,Iend+1
-# define IU_RANGE Istr-1,Iend+1
-#else
-# define IV_RANGE MAX(1,Istr-1),MIN(Iend+1,Lm(ng))
-# define IU_RANGE MAX(2,IstrU-1),MIN(Iend+1,Lm(ng))
-#endif
-#ifdef NS_PERIODIC
-# define JU_RANGE Jstr-1,Jend+1
-# define JV_RANGE Jstr-1,Jend+1
-#else
-# define JU_RANGE MAX(1,Jstr-1),MIN(Jend+1,Mm(ng))
-# define JV_RANGE MAX(2,JstrV-1),MIN(Jend+1,Mm(ng))
-#endif
-
       SUBROUTINE uv3dmix2 (ng, tile)
 !
-!svn $Id: uv3dmix2_geo.h 732 2008-09-07 01:55:51Z jcwarner $
+!svn $Id: uv3dmix2_geo.h 585 2012-01-03 18:44:28Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2012 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -77,7 +62,6 @@
      &                    GRID(ng) % umask,                             &
      &                    GRID(ng) % vmask,                             &
 #endif
-     &                    GRID(ng) % Hz,                                &
      &                    GRID(ng) % om_p,                              &
      &                    GRID(ng) % om_r,                              &
      &                    GRID(ng) % om_u,                              &
@@ -88,6 +72,7 @@
      &                    GRID(ng) % on_v,                              &
      &                    GRID(ng) % pm,                                &
      &                    GRID(ng) % pn,                                &
+     &                    GRID(ng) % Hz,                                &
      &                    GRID(ng) % z_r,                               &
 #ifdef VISC_3DCOEF
      &                    MIXING(ng) % visc3d_r,                        &
@@ -101,10 +86,10 @@
      &                    DIAGS(ng) % DiaU3wrk,                         &
      &                    DIAGS(ng) % DiaV3wrk,                         &
 #endif
-     &                    COUPLING(ng) % rufrc,                         &
-     &                    COUPLING(ng) % rvfrc,                         &
      &                    OCEAN(ng) % u,                                &
-     &                    OCEAN(ng) % v)
+     &                    OCEAN(ng) % v,                                &
+     &                    COUPLING(ng) % rufrc,                         &
+     &                    COUPLING(ng) % rvfrc)
 #ifdef PROFILE
       CALL wclock_off (ng, iNLM, 31)
 #endif
@@ -119,10 +104,10 @@
 #ifdef MASKING
      &                          pmask, rmask, umask, vmask,             &
 #endif
-     &                          Hz,                                     &
      &                          om_p, om_r, om_u, om_v,                 &
      &                          on_p, on_r, on_u, on_v,                 &
-     &                          pm, pn, z_r,                            &
+     &                          pm, pn,                                 &
+     &                          Hz, z_r,                                &
 #ifdef VISC_3DCOEF
      &                          visc3d_r,                               &
 #else
@@ -132,7 +117,8 @@
      &                          DiaRUfrc, DiaRVfrc,                     &
      &                          DiaU3wrk, DiaV3wrk,                     &
 #endif
-     &                          rufrc, rvfrc, u, v)
+     &                          u, v,                                   &
+     &                          rufrc, rvfrc)
 !***********************************************************************
 !
       USE mod_param
@@ -152,7 +138,6 @@
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 # endif
-      real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: om_p(LBi:,LBj:)
       real(r8), intent(in) :: om_r(LBi:,LBj:)
       real(r8), intent(in) :: om_u(LBi:,LBj:)
@@ -163,6 +148,7 @@
       real(r8), intent(in) :: on_v(LBi:,LBj:)
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
+      real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
 # ifdef VISC_3DCOEF
       real(r8), intent(in) :: visc3d_r(LBi:,LBj:,:)
@@ -187,7 +173,6 @@
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 # endif
-      real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: om_p(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_r(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
@@ -198,6 +183,7 @@
       real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
 # ifdef VISC_3DCOEF
       real(r8), intent(in) :: visc3d_r(LBi:UBi,LBj:UBj,N(ng))
@@ -233,8 +219,10 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFx
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: VFx
 
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: UFse, UFsx
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: VFse, VFsx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: UFse
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: UFsx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: VFse
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: VFsx
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dmUde
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dmVde
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dnUdx
@@ -272,8 +260,8 @@
 !
 !  Compute slopes (nondimensional) at RHO- and PSI-points.
 !
-          DO j=-1+JU_RANGE+1
-            DO i=IV_RANGE+1
+          DO j=Jstr-1,Jend+1
+            DO i=IstrU-1,Iend+1
               cff=0.5_r8*(pm(i-1,j)+pm(i,j))
 #ifdef MASKING
               cff=cff*umask(i,j)
@@ -281,13 +269,9 @@
               UFx(i,j)=cff*(z_r(i  ,j,k+1)-                             &
      &                      z_r(i-1,j,k+1))
             END DO
-            DO i=IV_RANGE
-              dZdx_r(i,j,k2)=0.5_r8*(UFx(i  ,j)+                        &
-     &                               UFx(i+1,j))
-            END DO
           END DO
-          DO j=JU_RANGE+1
-            DO i=-1+IV_RANGE+1
+          DO j=JstrV-1,Jend+1
+            DO i=Istr-1,Iend+1
               cff=0.5_r8*(pn(i,j-1)+pn(i,j))
 #ifdef MASKING
               cff=cff*vmask(i,j)
@@ -295,15 +279,20 @@
               VFe(i,j)=cff*(z_r(i,j  ,k+1)-                             &
      &                      z_r(i,j-1,k+1))
             END DO
-            DO i=IV_RANGE+1
-              dZde_p(i,j,k2)=0.5_r8*(VFe(i-1,j)+                        &
-     &                               VFe(i  ,j))
+          END DO
+!
+          DO j=Jstr,Jend+1
+            DO i=Istr,Iend+1
               dZdx_p(i,j,k2)=0.5_r8*(UFx(i,j-1)+                        &
      &                               UFx(i,j  ))
+              dZde_p(i,j,k2)=0.5_r8*(VFe(i-1,j)+                        &
+     &                               VFe(i  ,j))
             END DO
           END DO
-          DO j=JU_RANGE
-            DO i=-1+IV_RANGE+1
+          DO j=JstrV-1,Jend
+            DO i=IstrU-1,Iend
+              dZdx_r(i,j,k2)=0.5_r8*(UFx(i  ,j)+                        &
+     &                               UFx(i+1,j))
               dZde_r(i,j,k2)=0.5_r8*(VFe(i,j  )+                        &
      &                               VFe(i,j+1))
             END DO
@@ -311,8 +300,8 @@
 !
 !  Compute momentum horizontal (1/m/s) and vertical (1/s) gradients.
 !
-          DO j=-1+JV_RANGE
-            DO i=-1+IU_RANGE
+          DO j=JstrV-1,Jend
+            DO i=IstrU-1,Iend
               cff=0.5_r8*pm(i,j)
 #ifdef MASKING
               cff=cff*rmask(i,j)
@@ -321,18 +310,11 @@
      &                           u(i+1,j,k+1,nrhs)-                     &
      &                           (pn(i-1,j)+pn(i  ,j))*                 &
      &                           u(i  ,j,k+1,nrhs))
-              cff=0.5_r8*pn(i,j)
-#ifdef MASKING
-              cff=cff*rmask(i,j)
-#endif
-              dmVde(i,j,k2)=cff*((pm(i,j  )+pm(i,j+1))*                 &
-     &                           v(i,j+1,k+1,nrhs)-                     &
-     &                           (pm(i,j-1)+pm(i,j  ))*                 &
-     &                           v(i,j  ,k+1,nrhs))
             END DO
           END DO
-          DO j=JU_RANGE+1
-            DO i=IV_RANGE+1
+
+          DO j=Jstr,Jend+1
+            DO i=Istr,Iend+1
               cff=0.125_r8*(pn(i-1,j  )+pn(i,j  )+                      &
      &                      pn(i-1,j-1)+pn(i,j-1))
 #ifdef MASKING
@@ -342,6 +324,11 @@
      &                           u(i,j  ,k+1,nrhs)-                     &
      &                           (pm(i-1,j-1)+pm(i,j-1))*               &
      &                           u(i,j-1,k+1,nrhs))
+            END DO
+          END DO
+
+          DO j=Jstr,Jend+1
+            DO i=Istr,Iend+1
               cff=0.125_r8*(pm(i-1,j  )+pm(i,j  )+                      &
      &                      pm(i-1,j-1)+pm(i,j-1))
 #ifdef MASKING
@@ -353,33 +340,57 @@
      &                           v(i-1,j,k+1,nrhs))
             END DO
           END DO
-        END IF
-        IF ((k.eq.0).or.(k.eq.N(ng))) THEN
-          DO j=JU_RANGE
-            DO i=-1+IU_RANGE+1
-              dUdz(i,j,k2)=0.0_r8
-              UFse(i,j,k2)=0.0_r8
-              UFsx(i,j,k2)=0.0_r8
+
+          DO j=JstrV-1,Jend
+            DO i=IstrU-1,Iend
+              cff=0.5_r8*pn(i,j)
+#ifdef MASKING
+              cff=cff*rmask(i,j)
+#endif
+              dmVde(i,j,k2)=cff*((pm(i,j  )+pm(i,j+1))*                 &
+     &                           v(i,j+1,k+1,nrhs)-                     &
+     &                           (pm(i,j-1)+pm(i,j  ))*                 &
+     &                           v(i,j  ,k+1,nrhs))
             END DO
           END DO
-          DO j=-1+JV_RANGE+1
-            DO i=IV_RANGE
+        END IF
+
+        IF ((k.eq.0).or.(k.eq.N(ng))) THEN
+          DO j=Jstr-1,Jend+1
+            DO i=IstrU-1,Iend+1
+              dUdz(i,j,k2)=0.0_r8
+            END DO
+          END DO
+          DO j=JstrV-1,Jend+1
+            DO i=Istr-1,Iend+1
               dVdz(i,j,k2)=0.0_r8
-              VFse(i,j,k2)=0.0_r8
+            END DO
+          END DO
+
+          DO j=Jstr,Jend
+            DO i=IstrU,Iend
+              UFsx(i,j,k2)=0.0_r8
+              UFse(i,j,k2)=0.0_r8
+            END DO
+          END DO
+          DO j=JstrV,Jend
+            DO i=Istr,Iend
               VFsx(i,j,k2)=0.0_r8
+              VFse(i,j,k2)=0.0_r8
             END DO
           END DO
         ELSE
-          DO j=JU_RANGE
-            DO i=-1+IU_RANGE+1
+          DO j=Jstr-1,Jend+1
+            DO i=IstrU-1,Iend+1
               cff=1.0_r8/(0.5_r8*(z_r(i-1,j,k+1)-z_r(i-1,j,k)+          &
      &                            z_r(i  ,j,k+1)-z_r(i  ,j,k)))
               dUdz(i,j,k2)=cff*(u(i,j,k+1,nrhs)-                        &
      &                          u(i,j,k  ,nrhs))
             END DO
           END DO
-          DO j=-1+JV_RANGE+1
-            DO i=IV_RANGE
+
+          DO j=JstrV-1,Jend+1
+            DO i=Istr-1,Iend+1
               cff=1.0_r8/(0.5_r8*(z_r(i,j-1,k+1)-z_r(i,j-1,k)+          &
      &                            z_r(i,j  ,k+1)-z_r(i,j  ,k)))
               dVdz(i,j,k2)=cff*(v(i,j,k+1,nrhs)-                        &
@@ -392,8 +403,8 @@
 !  geopotential surfaces in the XI- and ETA-directions.
 !
         IF (k.gt.0) THEN
-          DO j=-1+JV_RANGE
-            DO i=-1+IU_RANGE
+          DO j=JstrV-1,Jend
+            DO i=IstrU-1,Iend
               cff1=MIN(dZdx_r(i,j,k1),0.0_r8)
               cff2=MAX(dZdx_r(i,j,k1),0.0_r8)
               cff3=MIN(dZde_r(i,j,k1),0.0_r8)
@@ -423,8 +434,9 @@
 #endif
             END DO
           END DO
-          DO j=JU_RANGE+1
-            DO i=IV_RANGE+1
+
+          DO j=Jstr,Jend+1
+            DO i=Istr,Iend+1
               pm_p=0.25_r8*(pm(i-1,j-1)+pm(i-1,j)+                      &
      &                      pm(i  ,j-1)+pm(i  ,j))
               pn_p=0.25_r8*(pn(i-1,j-1)+pn(i-1,j)+                      &
@@ -436,24 +448,25 @@
               cff=0.25_r8*                                              &
      &            (Hz(i-1,j  ,k)+Hz(i,j  ,k)+                           &
      &             Hz(i-1,j-1,k)+Hz(i,j-1,k))*                          &
-     &             (on_p(i,j)*(dnVdx(i,j,k1)-                           &
-     &                         0.5_r8*pn_p*                             &
-     &                         (cff1*(dVdz(i-1,j,k1)+                   &
-     &                                dVdz(i  ,j,k2))+                  &
-     &                          cff2*(dVdz(i-1,j,k2)+                   &
-     &                                dVdz(i  ,j,k1))))+                &
-     &              om_p(i,j)*(dmUde(i,j,k1)-                           &
-     &                         0.5_r8*pm_p*                             &
-     &                         (cff3*(dUdz(i,j-1,k1)+                   &
-     &                                dUdz(i,j  ,k2))+                  &
-     &                          cff4*(dUdz(i,j-1,k2)+                   &
-     &                                dUdz(i,j  ,k1)))))
+     &            (on_p(i,j)*(dnVdx(i,j,k1)-                            &
+     &                        0.5_r8*pn_p*                              &
+     &                        (cff1*(dVdz(i-1,j,k1)+                    &
+     &                               dVdz(i  ,j,k2))+                   &
+     &                         cff2*(dVdz(i-1,j,k2)+                    &
+     &                               dVdz(i  ,j,k1))))+                 &
+     &             om_p(i,j)*(dmUde(i,j,k1)-                            &
+     &                        0.5_r8*pm_p*                              &
+     &                        (cff3*(dUdz(i,j-1,k1)+                    &
+     &                               dUdz(i,j  ,k2))+                   &
+     &                         cff4*(dUdz(i,j-1,k2)+                    &
+     &                               dUdz(i,j  ,k1)))))
 #ifdef MASKING
               cff=cff*pmask(i,j)
 #endif
 #ifdef VISC_3DCOEF
-              visc_p=0.25_r8*(visc3d_r(i-1,j-1,k)+visc3d_r(i-1,j,k)+    &
-     &                        visc3d_r(i  ,j-1,k)+visc3d_r(i  ,j,k))
+              visc_p=0.25_r8*                                           &
+     &               (visc3d_r(i-1,j-1,k)+visc3d_r(i-1,j,k)+            &
+     &                visc3d_r(i  ,j-1,k)+visc3d_r(i  ,j,k))
               UFe(i,j)=om_p(i,j)*om_p(i,j)*visc_p*cff
               VFx(i,j)=on_p(i,j)*on_p(i,j)*visc_p*cff
 #else
@@ -470,13 +483,16 @@
             DO j=Jstr,Jend
               DO i=IstrU,Iend
 #ifdef VISC_3DCOEF
-                cff=0.125_r8*(visc3d_r(i-1,j,k  )+visc3d_r(i,j,k  )+    &
-     &                        visc3d_r(i-1,j,k+1)+visc3d_r(i,j,k+1))
-#else
-                cff=0.25_r8*(visc2_r(i-1,j)+visc2_r(i,j))
-#endif
+                cff=0.125_r8*                                           &
+     &              (visc3d_r(i-1,j,k  )+visc3d_r(i,j,k  )+             &
+     &               visc3d_r(i-1,j,k+1)+visc3d_r(i,j,k+1))
                 fac1=cff*on_u(i,j)
                 fac2=cff*om_u(i,j)
+#else
+                cff=0.25_r8*(visc2_r(i-1,j)+visc2_r(i,j))
+                fac1=cff*on_u(i,j)
+                fac2=cff*om_u(i,j)
+#endif
                 cff=0.5_r8*(pn(i-1,j)+pn(i,j))
                 dnUdz=cff*dUdz(i,j,k2)
                 dnVdz=cff*0.25_r8*(dVdz(i-1,j+1,k2)+                    &
@@ -489,6 +505,7 @@
      &                             dVdz(i  ,j+1,k2)+                    &
      &                             dVdz(i-1,j  ,k2)+                    &
      &                             dVdz(i  ,j  ,k2))
+
                 cff1=MIN(dZdx_r(i-1,j,k1),0.0_r8)
                 cff2=MIN(dZdx_r(i  ,j,k2),0.0_r8)
                 cff3=MAX(dZdx_r(i-1,j,k2),0.0_r8)
@@ -498,6 +515,7 @@
      &                        cff2*(cff2*dnUdz-dnUdx(i  ,j,k2))+        &
      &                        cff3*(cff3*dnUdz-dnUdx(i-1,j,k2))+        &
      &                        cff4*(cff4*dnUdz-dnUdx(i  ,j,k1)))
+
                 cff1=MIN(dZde_p(i,j  ,k1),0.0_r8)
                 cff2=MIN(dZde_p(i,j+1,k2),0.0_r8)
                 cff3=MAX(dZde_p(i,j  ,k2),0.0_r8)
@@ -507,6 +525,7 @@
      &                        cff2*(cff2*dmUdz-dmUde(i,j+1,k2))+        &
      &                        cff3*(cff3*dmUdz-dmUde(i,j  ,k2))+        &
      &                        cff4*(cff4*dmUdz-dmUde(i,j+1,k1)))
+
                 cff1=MIN(dZde_p(i,j  ,k1),0.0_r8)
                 cff2=MIN(dZde_p(i,j+1,k2),0.0_r8)
                 cff3=MAX(dZde_p(i,j  ,k2),0.0_r8)
@@ -521,6 +540,7 @@
      &                        cff2*(cff6*dnVdz-dnVdx(i,j+1,k2))+        &
      &                        cff3*(cff7*dnVdz-dnVdx(i,j  ,k2))+        &
      &                        cff4*(cff8*dnVdz-dnVdx(i,j+1,k1)))
+
                 cff1=MIN(dZdx_r(i-1,j,k1),0.0_r8)
                 cff2=MIN(dZdx_r(i  ,j,k2),0.0_r8)
                 cff3=MAX(dZdx_r(i-1,j,k2),0.0_r8)
@@ -541,13 +561,16 @@
             DO j=JstrV,Jend
               DO i=Istr,Iend
 #ifdef VISC_3DCOEF
-                cff=0.125_r8*(visc3d_r(i,j-1,k  )+visc3d_r(i,j,k  )+    &
-     &                        visc3d_r(i,j-1,k+1)+visc3d_r(i,j,k+1))
-#else
-                cff=0.25_r8*(visc2_r(i,j-1)+visc2_r(i,j))
-#endif
+                cff=0.125_r8*                                           &
+     &              (visc3d_r(i,j-1,k  )+visc3d_r(i,j,k  )+             &
+     &               visc3d_r(i,j-1,k+1)+visc3d_r(i,j,k+1))
                 fac1=cff*on_v(i,j)
                 fac2=cff*om_v(i,j)
+#else
+                cff=0.25_r8*(visc2_r(i,j-1)+visc2_r(i,j))
+                fac1=cff*on_v(i,j)
+                fac2=cff*om_v(i,j)
+#endif
                 cff=0.5_r8*(pn(i,j-1)+pn(i,j))
                 dnUdz=cff*0.25_r8*(dUdz(i  ,j  ,k2)+                    &
      &                             dUdz(i+1,j  ,k2)+                    &
@@ -560,6 +583,7 @@
      &                             dUdz(i  ,j-1,k2)+                    &
      &                             dUdz(i+1,j-1,k2))
                 dmVdz=cff*dVdz(i,j,k2)
+
                 cff1=MIN(dZdx_p(i  ,j,k1),0.0_r8)
                 cff2=MIN(dZdx_p(i+1,j,k2),0.0_r8)
                 cff3=MAX(dZdx_p(i  ,j,k2),0.0_r8)
@@ -569,6 +593,7 @@
      &                        cff2*(cff2*dnVdz-dnVdx(i+1,j,k2))+        &
      &                        cff3*(cff3*dnVdz-dnVdx(i  ,j,k2))+        &
      &                        cff4*(cff4*dnVdz-dnVdx(i+1,j,k1)))
+
                 cff1=MIN(dZde_r(i,j-1,k1),0.0_r8)
                 cff2=MIN(dZde_r(i,j  ,k2),0.0_r8)
                 cff3=MAX(dZde_r(i,j-1,k2),0.0_r8)
@@ -578,6 +603,7 @@
      &                        cff2*(cff2*dmVdz-dmVde(i,j  ,k2))+        &
      &                        cff3*(cff3*dmVdz-dmVde(i,j-1,k2))+        &
      &                        cff4*(cff4*dmVdz-dmVde(i,j  ,k1)))
+
                 cff1=MIN(dZde_r(i,j-1,k1),0.0_r8)
                 cff2=MIN(dZde_r(i,j  ,k2),0.0_r8)
                 cff3=MAX(dZde_r(i,j-1,k2),0.0_r8)
@@ -592,6 +618,7 @@
      &                        cff2*(cff6*dnUdz-dnUdx(i,j  ,k2))+        &
      &                        cff3*(cff7*dnUdz-dnUdx(i,j-1,k2))+        &
      &                        cff4*(cff8*dnUdz-dnUdx(i,j  ,k1)))
+
                 cff1=MIN(dZdx_p(i  ,j,k1),0.0_r8)
                 cff2=MIN(dZdx_p(i+1,j,k2),0.0_r8)
                 cff3=MAX(dZdx_p(i  ,j,k2),0.0_r8)
@@ -640,6 +667,7 @@
 #endif
             END DO
           END DO
+
           DO j=JstrV,Jend
             DO i=Istr,Iend
               cff=dt(ng)*0.25_r8*(pm(i,j)+pm(i,j-1))*(pn(i,j)+pn(i,j-1))
@@ -664,9 +692,5 @@
           END DO
         END IF
       END DO K_LOOP
-#undef IU_RANGE
-#undef IV_RANGE
-#undef JU_RANGE
-#undef JV_RANGE
       RETURN
       END SUBROUTINE uv3dmix2_tile
