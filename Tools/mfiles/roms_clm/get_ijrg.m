@@ -54,17 +54,13 @@ jg0 = max(jg0, 1);
 ig1 = min(ig1, 3298);
 jg1 = min(jg1, 4000);
 
-irg=['[',num2str(ig0),':',num2str(ig1),']'];
-jrg=['[',num2str(jg0),':',num2str(jg1),']'];
 %save irg.mat irg
 %save jrg.mat jrg
 
 irg2=[num2str(ig0) ':' num2str(ig1)];
 jrg2=[num2str(jg0) ':' num2str(jg1)];
-%firstidx=[num2str(ig0),' ',num2str(jg0)]; 
-%lastidx=[num2str(ig1),' ',num2str(jg1)];
-firstidx=['[',num2str(str2num(irg(2:5))),' ' num2str(str2num(jrg(2:5))),']'];%for nc.data
-lastidx =['[',num2str(str2num(irg(7:10))),' ',num2str(str2num(jrg(7:10))),']'];%for nc.data
+firstidx=['[',num2str(ig0),' ',num2str(jg0),']']; 
+lastidx=['[',num2str(ig1),' ',num2str(jg1),']'];
 
 %url2='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9'; %/2011';
 nc=ncgeodataset(url2);
