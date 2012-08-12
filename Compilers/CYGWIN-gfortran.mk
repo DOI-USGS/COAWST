@@ -62,7 +62,18 @@ ifdef USE_ARPACK
              LIBS += -L$(ARPACK_LIBDIR) -larpack
 endif
 
+ifdef USE_MCT
+       MCT_INCDIR ?= /usr/local/mct/include
+       MCT_LIBDIR ?= /usr/local/mct/lib
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+endif
+
 ifdef USE_MPI
+       MPI_INCDIR ?= c:\\work\\models\\MPICH2\\include
+       MPI_LIBDIR ?= c:\\work\\models\\MPICH2\\lib
+       LIBS       += $(MPI_LIBDIR)/fmpich2g.lib
+           FFLAGS += -I$(MPI_INCDIR)
          CPPFLAGS += -DMPI
  ifdef USE_MPIF90
                FC := mpif90
@@ -83,13 +94,6 @@ ifdef USE_DEBUG
            FFLAGS += -g -fbounds-check -fbacktrace
 else
            FFLAGS += -O3 -ffast-math
-endif
-
-ifdef USE_MCT
-       MCT_INCDIR ?= /usr/local/mct/include
-       MCT_LIBDIR ?= /usr/local/mct/lib
-           FFLAGS += -I$(MCT_INCDIR)
-             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
 endif
 
 ifdef USE_ESMF
