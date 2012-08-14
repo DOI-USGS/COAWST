@@ -90,7 +90,7 @@ done
 # determine the name of the ".h" header file with the application
 # CPP definitions.
 
-export   ROMS_APPLICATION=SHOREFACE
+export   ROMS_APPLICATION=SEDBED_TOY
 
 # Set number of Nested grids for ROMS and or SWAN. This feature is activated
 # with the cpp option REFINED_GRID. If you are using both ROMS and SWAN, 
@@ -101,7 +101,7 @@ export     NestedGrids=1
 # Set a local environmental variable to define the path to the directories
 # where all this project's files are kept.
 
-export     MY_ROOT_DIR=/cygdrive/d/data/models/COAWST
+export     MY_ROOT_DIR=/cygdrive/e/data/models/COAWST
 export     MY_PROJECT_DIR=${MY_ROOT_DIR}
 
 # The path to the user's local current ROMS source code.
@@ -371,8 +371,8 @@ fi
 # customized biology model header file (like fennel.h, nemuro.h, ecosim.h,
 # etc).
 
-  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/ROMS/Include
-  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/ROMS/Functionals
+  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Sedbed_toy
+  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Sedbed_toy
 
 # Put the binary to execute in the following directory.
 

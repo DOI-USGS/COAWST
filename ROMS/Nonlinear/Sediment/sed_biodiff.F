@@ -1,83 +1,37 @@
 #include "cppdefs.h"
-! DB_PROFILE is local definition for use when SED_BIODIFF is defined
-! If DB_PROFILE is defined, depth-varying biodiffusivity profile is used
-! Otherwise, constant biodiffusivity profile is used 
-#define DB_PROFILE
 
-      MODULE bedbiodiff_mod
+      MODULE sed_biodiff_mod
+
 #if defined NONLINEAR && defined SEDIMENT && defined SED_BIODIFF
 !
-!svn $Id: bedbiodiff.F 1618 2008-08-03 03:05:47Z jcwarner $
+!svn $Id: sed_bed_mod.F 2011 2009-12-20 17:34:23Z arango $
+!==================================================== C. R. Sherwood ===
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group      Hernan G. Arango   !
+!    Licensed under a MIT/X style license                              !
+!    See License_ROMS.txt                                              !
 !=======================================================================
-!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
-!    Licensed under a MIT/X style license           Hernan G. Arango   !
-!    See License_ROMS.txt                   Alexander F. Shchepetkin   !
-!==================================================== John C. Warner ===
 !                                                                      !
-!  This  routine computes the sediment sources and sinks and adds      !
-!  then the global sediment tracer fields. Currently, it includes      !
-!  the following:                                                      !
+!  This routine computes sediment bed layer mixing (biodiffusion)      !
 !                                                                      !
-!  * Vertical settling of sediment in the water column.                !
-!  * Erosive and depositional flux interactions of sediment            !
-!    between water column and the bed.                                 !
-!  * Transport of multiple grain sizes.                                !
-!  * Bed layer stratigraphy.                                           !
-!  * Bed morphology.                                                   !
-!  * Bedload based on Meyer Peter Mueller.                             !
-!  * Bedload based on Soulsby combined waves + currents                !
-!    (p166 Soulsby 1997)                                               !
-!  * Bedload slope term options: Nemeth et al, 2006, Coastal           !
-!    Engineering, v 53, p 265-275; Lesser et al, 2004, Coastal         !
-!    Engineering, v 51, p 883-915.                                     !
-!                                                                      !
-!  * Seawater/sediment vertical level distribution:                    !
-!                                                                      !
-!         W-level  RHO-level                                           !
-!                                                                      !
-!            N     _________                                           !
-!                 |         |                                          !
-!                 |    N    |                                          !
-!          N-1    |_________|  S                                       !
-!                 |         |  E                                       !
-!                 |   N-1   |  A                                       !
-!            2    |_________|  W                                       !
-!                 |         |  A                                       !
-!                 |    2    |  T                                       !
-!            1    |_________|  E                                       !
-!                 |         |  R                                       !
-!                 |    1    |                                          !
-!            0    |_________|_____ bathymetry                          !
-!                 |/////////|                                          !
-!                 |    1    |                                          !
-!            1    |_________|  S                                       !
-!                 |         |  E                                       !
-!                 |    2    |  D                                       !
-!            2    |_________|  I                                       !
-!                 |         |  M                                       !
-!                 |  Nbed-1 |  E                                       !
-!        Nbed-1   |_________|  N                                       !
-!                 |         |  T                                       !
-!                 |  Nbed   |                                          !
-!         Nbed    |_________|                                          !
 !                                                                      !
 !=======================================================================
 !
       implicit none
 
       PRIVATE
-      PUBLIC  :: bed_biodiff
+      PUBLIC  :: sed_biodiff
 
       CONTAINS
 !
 !***********************************************************************
-      SUBROUTINE bed_biodiff (ng, tile)
+      SUBROUTINE sed_biodiff (ng, tile)
 !***********************************************************************
 !
       USE mod_param
       USE mod_forces
       USE mod_grid
       USE mod_ocean
+      USE mod_sedbed
       USE mod_stepping
 # ifdef BBL_MODEL
       USE mod_bbl
@@ -94,25 +48,41 @@
 # ifdef PROFILE
       CALL wclock_on (ng, iNLM, 16)
 # endif
-      CALL sediment_tile (ng, tile,                                     &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    nstp(ng), nnew(ng),                           &
-     &                    OCEAN(ng) % bed,                              &
-     &                    OCEAN(ng) % bed_frac,                         &
-     &                    OCEAN(ng) % bed_mass,                         &
-     &                    OCEAN(ng) % bottom)
+      CALL sed_biodiff_tile (ng, tile,                                  &
+     &                   LBi, UBi, LBj, UBj,                            &
+     &                   IminS, ImaxS, JminS, JmaxS,                    &
+     &                   nstp(ng), nnew(ng),                            &
+# ifdef WET_DRY
+     &                   GRID(ng) % rmask_wet,                          &
+# endif
+     &                   OCEAN(ng) % t,                                 &
+# if defined SED_MORPH
+     &                   SEDBED(ng) % bed_thick,                        &
+# endif
+     &                   SEDBED(ng) % bed,                              &
+     &                   SEDBED(ng) % bed_frac,                         &
+     &                   SEDBED(ng) % bed_mass,                         &
+     &                   SEDBED(ng) % bottom)
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 16)
 # endif
       RETURN
-      END SUBROUTINE sediment
+      END SUBROUTINE sed_biodiff
 !
 !***********************************************************************
-      SUBROUTINE sediment_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          nstp, nnew,                             &
-     &                          bed, bed_frac, bed_mass,                &
-     &                          bottom)
+      SUBROUTINE sed_biodiff_tile (ng, tile,                            &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
+     &                         nstp, nnew,                              &
+# ifdef WET_DRY
+     &                         rmask_wet,                               &
+# endif
+     &                         t,                                       &
+# if defined SED_MORPH
+     &                         bed_thick,                               &
+# endif
+     &                         bed, bed_frac, bed_mass,                 &
+     &                         bottom)
 !***********************************************************************
 !
       USE mod_param
@@ -131,14 +101,29 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nstp, nnew
 !
 # ifdef ASSUMED_SHAPE
+#  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+#  endif
+#  if defined SED_MORPH
+      real(r8), intent(inout):: bed_thick(LBi:,LBj:,:)
+#  endif
+      real(r8), intent(inout) :: t(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: bed(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: bed_frac(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: bed_mass(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: bottom(LBi:,LBj:,:)
 # else
+#  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
+#  endif
+#  if defined SED_MORPH
+      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,2)
+#  endif
+      real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(inout) :: bed(LBi:UBi,LBj:UBj,Nbed,MBEDP)
       real(r8), intent(inout) :: bed_frac(LBi:UBi,LBj:UBj,Nbed,NST)
       real(r8), intent(inout) :: bed_mass(LBi:UBi,LBj:UBj,Nbed,1:2,NST)
@@ -159,77 +144,84 @@
       logical :: NSperiodic=.FALSE.
 #  endif
 # endif
-      integer :: Ksed, i, indx, ised, j, k, ks
+      integer :: i, j, k, ised
+      real(r8), parameter :: eps = 1.0E-14_r8
+      real(r8), parameter :: cmy2ms = 3.1688765E-12_r8 ! multiply cm2/yr by this to get m2/s
 
-      real(r8) :: cff3
+      real(r8) :: cff, cff1, cff2, cff3
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: Qb
-# if defined MIXED_BED
-      real(r8) :: pcoh 
-# endif
-# if defined COHESIVE_BED || defined MIXED_BED
-      real(r8) :: alpha, bzactv, frt, tcb_temp, tcb_top, tcb_bot
-      real(r8), dimension(Nbed) :: tcr
-# endif
-      real(r8), dimension(Nbed) :: bmz
-      real(r8), dimension(Nbed) :: bz
+      real(r8), dimension(IminS:ImaxS,NST) :: dep_mass
 
       integer :: iu,il,lp,ii
-      real(r8) :: rtemp, Dbmx, Dbmm, zs, zm, zp
-
+!      real(r8) :: rtemp, Dbmx, Dbmm, zs, zm, zp
+      real(r8) :: rtemp
+      real(r8), dimension(Nbed) :: zb
+      real(r8), dimension(Nbed) :: zc
       real(r8), dimension(Nbed) :: dzui
       real(r8), dimension(Nbed) :: dzli
       real(r8), dimension(Nbed) :: dzmi
       real(r8), dimension(Nbed) :: Db
-      real(r8), dimension(Nbed) :: KlDb
-      real(r8), dimension(Nbed) :: KuDb
-      real(r8), dimension(Nbed) :: aDb
-      real(r8), dimension(Nbed) :: dDb
-      real(r8), dimension(Nbed) :: bDb
-      real(r8), dimension(Nbed) :: ccDb
-      real(r8), dimension(Nbed) :: ddDb
+      real(r8), dimension(Nbed) :: Dc
+      real(r8), dimension(Nbed) :: a
+      real(r8), dimension(Nbed) :: d
+      real(r8), dimension(Nbed) :: b
+      real(r8), dimension(Nbed) :: cc
+      real(r8), dimension(Nbed) :: dd
+
 
 # include "set_bounds.h"
 
-# ifdef BEDLOAD
-      bnew=nnew
-# else
-      bnew=nstp
-# endif
-
-      J_LOOP : DO j=Jstr,Jend
-        I_LOOP_BD : DO i=Istr,Iend
 !
-!  Typical biodiffusion rates are order 3.17e-11 m2/s (10 cm2/day)
-!  TODO - Only mix when dtmix*DB > some threshold; increment dtmix counter
-          IF( bottom(i,j,idbmx) .GT. 0.0_r8 ) THEN ! do the mixing
+!-----------------------------------------------------------------------
+! Compute sediment bed layer stratigraphy.
+!-----------------------------------------------------------------------
+!
+!      print *, 'Mixing...'
+      J_LOOP : DO j=Jstr,Jend
+        I_LOOP : DO i=Istr,Iend
+!
+!  Set mixing coefficient profile
+!  (hardwire uniform mixing)
+!
+!          DO k=1,Nbed
+!             Db(k)=1.0E-8_r8
+!          ENDDO
+
+          IF (Nbed.GT.2) THEN
 !  Compute cumulative depth 
-            bz(1)=bed(i,j,1,ithck)
+            zb(1)=bed(i,j,1,ithck)
             DO k=2,Nbed
-              bz(k)=bz(k-1)+bed(i,j,k,ithck)
+              zb(k)=zb(k-1)+bed(i,j,k,ithck)
+            END DO
+!  Compute depths of bed centers 
+            zc(1)=0.5_r8*(bed(i,j,1,ithck))
+            DO k=2,Nbed
+              zc(k)=zb(k-1)+0.5_r8*bed(i,j,k,ithck)
             END DO
 !
 !  Set biodiffusivity profile
 #  if defined DB_PROFILE
 !  Depth-varying biodiffusivity profile
 !   
-            Dbmx = bottom(i,j,idbmx)
-            Dbmm = bottom(i,j,idbmm)
-            zs = bottom(i,j,idbzs)
-            zm = bottom(i,j,idbzm)
-            zp = bottom(i,j,idbzp)
+!ALF            Dbmx = bottom(i,j,idbmx)
+!ALF            Dbmm = bottom(i,j,idbmm)
+!ALF            zs = bottom(i,j,idbzs)
+!ALF            zm = bottom(i,j,idbzm)
+!ALF            zp = bottom(i,j,idbzp)
             DO k=1,Nbed
-              Db(k)= Dbmx
-              IF( bz(k).GT.zp)THEN          ! should be .GE. ?
+              Db(k)= Dbmx(ng)
+!              IF( zb(k).GT.Dbzp(ng))THEN          ! should be .GE. ?
+              IF( zb(k).GE.Dbzp(ng))THEN          
                 Db(k)=0.0_r8
               ELSE
-                IF((bz(k) .GT. zs).AND.                                 &
-     &           (bz(k) .LE. zm)) THEN
-                  rtemp= LOG(Dbmm/Dbmx)/(-zm-zs)
-                  Db(k)=Dbmx*exp(rtemp*(-bz(k)-zs))
-                ELSEIF((bz(k).GT.zm).AND.                               &
-     &           (bz(k).LT.zp) ) THEN
-                  Db(k)=(Dbmm-(Dbmm/(zp-zm)))*(bz(k)-zm)
+                IF((zb(k) .GT. Dbzs(ng)).AND.                                 &
+     &           (zb(k) .LE. Dbzm(ng))) THEN
+                  rtemp= LOG(Dbmm(ng)/Dbmx(ng))/(-Dbzm(ng)-Dbzs(ng))
+                  Db(k)=Dbmx(ng)*exp(rtemp*(-zb(k)-Dbzs(ng)))
+                ELSEIF((zb(k).GT.Dbzm(ng)).AND.                               &
+     &           (zb(k).LT.Dbzp(ng)) ) THEN
+                  Db(k)=(Dbmm(ng)-(Dbmm(ng)/(Dbzp(ng)-Dbzm(ng))))*            &
+     &                  (zb(k)-Dbzm(ng))
                 ENDIF
               ENDIF
             END DO
@@ -237,40 +229,44 @@
 !    Uniform biodiffusivity profile at max value 
 !
             DO k=1,Nbed
-              Db(k)=bottom(i,j,idbmx)
+              Db(k)=Dbmx(ng)
+!              Db(k)=bottom(i,j,idbmx)
             ENDDO
 #  endif /* defined DB_PROFILE */
-!
+!           write(*,*) 'Db',Db
 !  Calculate finite differences
+            dzui(1)=1.0_r8/(zc(2)-zc(1))
+            dzli(1)=1.E35_r8       ! should not be needed
+            dzmi(1)=1.0_r8/bed(i,j,1,ithck)
             DO k=2,Nbed-1
-              if( bz(k+1).LE.bz(k))then
- 	        write(*,*) 'error in SED_BIODIFF: ',i,j,bz(k+1)-bz(k)
-                stop
-              endif
-              dzui(k)=1.0_r8/(bz(k+1)-bz(k))
-              dzli(k)=1.0_r8/(bz(k)-bz(k-1))
-              dzmi(k)=1.0_r8/(bz(k+1)-bz(k-1))
-              KuDb(k)=0.50_r8*(Db(k+1)+Db(k))
-              KlDb(k)=0.50_r8*(Db(k)+Db(k-1))
-!   Tridiagonal terms
-              bDb(k)= -dt(ng)*dzmi(k)*KlDb(k)*dzli(k)
-              dDb(k)=1.0_r8+                                            &
-     &         dt(ng)*dzmi(k)*(KlDb(k)*dzli(k)+KuDb(k)*dzui(k))
-              aDb(k)= -dt(ng)*dzmi(k)*KuDb(k)*dzui(k)
+              dzui(k)=1.0_r8/(zc(k+1)-zc(k))
+              dzli(k)=1.0_r8/(zc(k)-zc(k-1))
+              !dzmi(k)=1.0_r8/(zb(k+1)-zb(k))
+              ! equivalent:
+              dzmi(k)=1.0/bed(i,j,k,ithck)
+!  Tridiagonal terms
+              b(k)= -dt(ng)*dzmi(k)*Db(k-1)*dzli(k)
+              d(k)=1.0_r8+dt(ng)*dzmi(k)*                               &
+     &          ( Db(k-1)*dzli(k)+Db(k)*dzui(k) )
+              a(k)= -dt(ng)*dzmi(k)*Db(k)*dzui(k)
             ENDDO
-!   No-flux boundary conditions
-            dDb(1)= 1.0_r8 + dt(ng)*dzmi(2)*KuDb(2)*dzui(2)
-            aDb(1)= -dt(ng)*dzmi(2)*KuDb(2)*dzui(2)
-            bDb(Nbed)=  -dt(ng)*dzmi(Nbed-1)*KlDb(Nbed-1)*dzli(Nbed-1)
-            dDb(Nbed)=1.0_r8+dt(ng)*dzmi(Nbed-1)*KlDb(Nbed-1)*          &
-     &       dzli(Nbed-1)
+            dzui(Nbed)=1.0E35_r8 ! should not be needed
+            dzli(Nbed)=1.0_r8/(zc(Nbed)-zc(Nbed-1))
+            dzmi(Nbed)=1.0_r8/bed(i,j,Nbed,ithck)
+!  No-flux boundary conditions
+            b(1) = 999.9_r8  ! should not be needed
+            d(1)=   1.0_r8 +dt(ng)*dzmi(1)*Db(1)*dzui(1)
+            a(1)=      -dt(ng)*dzmi(1)*Db(1)*dzui(1)
+            b(Nbed)=   -dt(ng)*dzmi(Nbed)*Db(Nbed-1)*dzli(Nbed)
+            d(Nbed)=1.0_r8+dt(ng)*dzmi(Nbed)*Db(Nbed-1)*dzli(Nbed)
+            a(Nbed)=999.9_r8 ! should not be needed
 !
 !   Calculate mixing for each size fraction
             DO ised=1,NST
 !   ...make working copies 
               DO k=1,Nbed
-                ccDb(k) = bed_frac(i,j,k,ised)
-                ddDb(k)= dDb(k)
+                cc(k) = bed_frac(i,j,k,ised)
+                dd(k)= d(k)
               ENDDO
 !   Solve a tridiagonal system of equations using Thomas' algorithm
 !   Anderson, Tannehill, and Pletcher (1984) pp. 549-550
@@ -279,23 +275,24 @@
               iu = Nbed
               lp = il+1
               DO k = lp,iu
-                rtemp = bDb(k)/ddDb(k-1)
-                ddDb(k)= ddDb(k)-rtemp*aDb(k-1);
-                ccDb(k)= ccDb(k)-rtemp*ccDb(k-1);
+                rtemp = b(k)/dd(k-1)
+                dd(k)= dd(k)-rtemp*a(k-1);
+                cc(k)= cc(k)-rtemp*cc(k-1);
               ENDDO
 !   ...back substitution
-              ccDb(iu) = ccDb(iu)/ddDb(iu)
+              cc(iu) = cc(iu)/dd(iu)
               DO k  = lp,iu
                 ii = iu-k+il;
-                ccDb(ii) = (ccDb(ii)-aDb(ii)*ccDb(ii+1))/ddDb(ii);
+                cc(ii) = (cc(ii)-a(ii)*cc(ii+1))/dd(ii);
               ENDDO
-!   ...solution stored in ccDb; copy out
+!   ...solution stored in cc; copy out
               DO k = 1,Nbed
-                bed_frac(i,j,k,ised)=ccDb(k)
+                bed_frac(i,j,k,ised)=cc(k)
               ENDDO           
             ENDDO
-! TODO - Should mix porosity or assign it as f(depth)?
-! TODO - should mix age
+! TODO - Mix porosity or assign it as f(depth)?
+! TODO - Mix age?
+
 ! Recompute bed masses
             DO k=1,Nbed
 !             write(*,*) i,j,k,(bed_frac(i,j,k,ised),ised=1,NST)
@@ -314,10 +311,11 @@
                 bed_mass(i,j,k,nnew,ised)=bed_frac(i,j,k,ised)*cff3
               ENDDO
             ENDDO
-          ENDIF ! Mixing coef .GT. eps
-        ENDDO I_LOOP_BD
-      END DO J_LOOP2
 
+
+          END IF !NBED.GT.2
+        END DO I_LOOP
+      END DO J_LOOP
 !
 !-----------------------------------------------------------------------
 !  Apply periodic or gradient boundary conditions to property arrays.
@@ -352,6 +350,6 @@
 # endif
 
       RETURN
-      END SUBROUTINE bedbiodiff_tile
+      END SUBROUTINE sed_biodiff_tile
 #endif
-      END MODULE bedbiodiff_mod
+      END MODULE sed_biodiff_mod

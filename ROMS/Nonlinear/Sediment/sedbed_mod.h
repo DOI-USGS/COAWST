@@ -49,9 +49,33 @@
 !                   bottom(:,:,izdef) => default bottom roughness      !
 !                   bottom(:,:,iactv) => active layer thickness        !
 !                   bottom(:,:,ishgt) => saltation height              !
+#if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
+!                   bottom(:,:,idoff) => tau critical offset           !
+!                   bottom(:,:,idslp) => tau critical slope            !
+!                   bottom(:,:,idtim) => erodibility time scale        !
+!                   bottom(:,:,idbmx) => diffusivity db_max            !
+!                   bottom(:,:,idbmm) => diffusivity db_m              !
+!                   bottom(:,:,idbzs) => diffusivity db_zs             !
+!                   bottom(:,:,idbzm) => diffusivity db_zm             !
+!                   bottom(:,:,idbzp) => diffusivity db_zphi           !
+#endif
+#if defined MIXED_BED
+!                   bottom(:,:,idprp) => cohesive behavior             !
+#endif
 #if defined SEDIMENT && defined SUSPLOAD
 !  ero_flux       Flux from erosion.                                   !
 !  settling_flux  Flux from settling.                                  !
+#endif
+#if defined COHESIVE_BED || defined MIXED_BED
+!  tcr_min         minimum shear for erosion
+!  tcr_max         maximum shear for erosion
+!  tcr_slp         Tau_crit profile slope
+!  tcr_off         Tau_crit profile offset
+!  tcr_tim         Tau_crit consolidation rate
+#endif
+#if defined MIXED_BED
+!  transC          cohesive transition
+!  transN          noncohesive transition
 #endif
 !                                                                      !
 !=======================================================================

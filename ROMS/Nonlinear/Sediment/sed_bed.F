@@ -2,7 +2,8 @@
 
       MODULE sed_bed_mod
 
-#if defined NONLINEAR && defined SEDIMENT && !defined COHESIVE_BED
+#if defined NONLINEAR && defined SEDIMENT  && !defined COHESIVE_BED \
+                     && !defined MIXED_BED && !defined NONCOHESIVE_BED2
 !
 !svn $Id: sed_bed.F 429 2009-12-20 17:30:26Z arango $
 !==================================================== John C. Warner ===

@@ -61,7 +61,10 @@
       integer :: ivelHadv = 0
       integer :: ivelVadv = 0
       integer :: ivmix = 0
-
+#ifdef SEDIMENT
+      integer :: sbed_load = 0
+      integer :: sbed_type = 0
+#endif
       integer :: is, lstr, ng
 !
 !-----------------------------------------------------------------------
@@ -543,12 +546,14 @@
      &   'Activate bed load sediment transport Meyer-Peter-Mueller.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' BEDLOAD_MPM,'
+      sbed_load=sbed_load+1
 #endif
 #if defined SEDIMENT && defined BEDLOAD_SOULSBY
       IF (Master) WRITE (stdout,20) 'BEDLOAD_SOULSBY',                  &
      &   'Activate bed load sediment transport Soulsby formula.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' BEDLOAD_SOULSBY,'
+      sbed_load=sbed_load+1
 #endif
 #ifdef BIO_FENNEL
       IF (Master) WRITE (stdout,20) 'BIO_FENNEL',                       &
@@ -2139,6 +2144,41 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+10)=' SUSPLOAD,'
 # endif
+# ifdef SED_BIODIFF
+      IF (Master) WRITE (stdout,20) 'SED_BIODIFF',                      &
+     &   'Activate sediment bed biodiffusivity.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+13)=' SED_BIODIFF,'
+# endif
+# ifdef MIXED_BED
+      IF (Master) WRITE (stdout,20) 'MIXED_BED',                        &
+     &   'Activate mixed sediment bed.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' MIXED_BED,'
+      sbed_type=sbed_type+1
+# endif
+# ifdef COHESIVE_BED
+      IF (Master) WRITE (stdout,20) 'COHESIVE_BED',                     &
+     &   'Activate cohesive sediment bed.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' COHESIVE_BED,'
+      sbed_type=sbed_type+1
+# endif
+# if defined NONCOHESIVE_BED1  || (!defined MIXED_BED && \
+    !defined NONCOHESIVE_BED2  && !defined COHESIVE_BED)
+      IF (Master) WRITE (stdout,20) 'NONCOHESIVE_BED1',                 &
+     &   'Activate non-cohesive (original) sediment bed.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' NONCOHESIVE_BED1,'
+      sbed_type=sbed_type+1
+# endif
+# ifdef NONCOHESIVE_BED2
+      IF (Master) WRITE (stdout,20) 'NONCOHESIVE_BED2',                 &
+     &   'Activate non-cohesive (modified) sediment bed.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' NONCOHESIVE_BED2,'
+      sbed_type=sbed_type+1
+# endif
 #endif
 #ifdef SG_BBL
       IF (Master) WRITE (stdout,20) 'SG_BBL',                           &
@@ -3542,8 +3582,8 @@
 #endif
 #if defined BULK_FLUXES && defined ATM2OCN_FLUXES
       IF (Master) THEN
-        WRITE (stdout,130)
- 130    FORMAT (/,' CHECKDEFS - More than one surface flux method ',    &
+        WRITE (stdout,135)
+ 135    FORMAT (/,' CHECKDEFS - More than one surface flux method ',    &
      &            ' selected.')
         exit_flag=5
       END IF
@@ -3607,6 +3647,20 @@
         exit_flag=5
       END IF
 # endif
+#endif
+#ifdef SEDIMENT
+      IF (Master.and.(sbed_type.gt.1)) THEN
+        WRITE (stdout,170)
+ 170    FORMAT (/,' CHECKDEFS - More than one sediment bed type   ',    &
+     &            ' selected.')
+        exit_flag=5
+      END IF
+      IF (Master.and.(sbed_load.gt.1)) THEN
+        WRITE (stdout,180)
+ 180    FORMAT (/,' CHECKDEFS - More than one sediment bed load   ',    &
+     &            ' selected.')
+        exit_flag=5
+      END IF
 #endif
 
       RETURN

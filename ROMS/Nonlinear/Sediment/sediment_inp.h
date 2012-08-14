@@ -38,8 +38,8 @@
       real(r8), dimension(100) :: Rval
 
       character (len=40) :: KeyWord
-      character (len=160) :: line
-      character (len=160), dimension(100) :: Cval
+      character (len=256) :: line
+      character (len=256), dimension(100) :: Cval
 !
 !-----------------------------------------------------------------------
 !  Read in cohesive and non-cohesive model parameters.
@@ -78,6 +78,33 @@
             DO ng=1,Ngrids
               bedload_coeff(ng)=Rbed(ng)
             END DO
+#ifdef SED_BIODIFF
+	  ELSE IF (TRIM(KeyWord).eq.'DBMAX') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, Rbed)
+	    DO ng=1,Ngrids
+	      Dbmx(ng)=Rbed(ng)
+            END DO	    
+	  ELSE IF (TRIM(KeyWord).eq.'DBMIN') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, Rbed)
+	    DO ng=1,Ngrids
+	      Dbmm(ng)=Rbed(ng)
+            END DO
+	  ELSE IF (TRIM(KeyWord).eq.'DBZS') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, Rbed)
+	    DO ng=1,Ngrids
+	      Dbzs(ng)=Rbed(ng)
+            END DO
+	  ELSE IF (TRIM(KeyWord).eq.'DBZM') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, Rbed)
+	    DO ng=1,Ngrids
+	      Dbzm(ng)=Rbed(ng)
+            END DO
+	  ELSE IF (TRIM(KeyWord).eq.'DBZP') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, Rbed)
+	    DO ng=1,Ngrids
+	      Dbzp(ng)=Rbed(ng)
+            END DO
+#endif
           ELSE IF (TRIM(KeyWord).eq.'MUD_SD50') THEN
             IF (.not.allocated(Sd50)) allocate (Sd50(NST,Ngrids))
             Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)

@@ -77,8 +77,10 @@
       SUBROUTINE sediment (ng, tile)
 !***********************************************************************
 !
-# if defined COHESIVE_BED
-!!    USE sed_bed_cohesive_mod, ONLY : sed_bed_cohesive
+# if defined COHESIVE_BED  || defined MIXED_BED
+      USE sed_bed_cohesive_mod, ONLY : sed_bed_cohesive
+# elif defined NONCOHESIVE_BED2
+      USE sed_bed_mod2, ONLY : sed_bed2
 # else
       USE sed_bed_mod, ONLY : sed_bed
 # endif
@@ -86,7 +88,7 @@
       USE sed_bedload_mod, ONLY : sed_bedload
 # endif
 # if defined SED_BIODIFF
-!!    USE sed_biodiff_mod, ONLY : sed_biodiff
+    USE sed_biodiff_mod, ONLY : sed_biodiff
 # endif
 # ifdef SUSPLOAD
       USE sed_fluxes_mod, ONLY : sed_fluxes
@@ -126,19 +128,20 @@
 !  Compute sediment bed stratigraphy.
 !-----------------------------------------------------------------------
 !
-# if defined COHESIVE_BED
-!!    CALL sed_bed_cohesive (ng, tile)
+# if defined COHESIVE_BED || defined MIXED_BED
+      CALL sed_bed_cohesive (ng, tile)
+# elif defined NONCOHESIVE_BED2
+      CALL sed_bed2 (ng, tile)
 # else
       CALL sed_bed (ng, tile)
 # endif
-
-# if defined SED_BIODIFF
 !
 !-----------------------------------------------------------------------
 !  Compute sediment bed biodiffusivity.
 !-----------------------------------------------------------------------
 !
-!!    CALL sed_biodiff (ng, tile)
+# if defined SED_BIODIFF
+      CALL sed_biodiff (ng, tile)
 # endif
 !
 !-----------------------------------------------------------------------

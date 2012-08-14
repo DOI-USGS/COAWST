@@ -1,11 +1,10 @@
       SUBROUTINE ana_grid (ng, tile, model)
 !
-!! svn $Id: ana_grid.h 904 2007-07-07 00:30:27Z jcwarner $
+!! svn $Id: ana_grid.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2007 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
-!!                                                                     !
 !=======================================================================
 !                                                                      !
 !  This routine sets model grid using an analytical expressions.       !
@@ -44,8 +43,9 @@
 
 #include "tile.h"
 !
-      CALL ana_grid_tile (ng, model, Istr, Iend, Jstr, Jend,            &
+      CALL ana_grid_tile (ng, tile, model,                              &
      &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    GRID(ng) % angler,                            &
 #if defined CURVGRID && defined UV_ADV
      &                    GRID(ng) % dmde,                              &
@@ -80,16 +80,21 @@
 !
 ! Set analytical header file name used.
 !
+#ifdef DISTRIBUTE
       IF (Lanafile) THEN
-        WRITE (ANANAME( 7),'(a,a)') TRIM(Adir), '/ana_grid.h'
+#else
+      IF (Lanafile.and.(tile.eq.0)) THEN
+#endif
+        ANANAME( 7)=__FILE__
       END IF
 
       RETURN
       END SUBROUTINE ana_grid
 !
 !***********************************************************************
-      SUBROUTINE ana_grid_tile (ng, model, Istr, Iend, Jstr, Jend,      &
+      SUBROUTINE ana_grid_tile (ng, tile, model,                        &
      &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          angler,                                 &
 #if defined CURVGRID && defined UV_ADV
      &                          dmde, dndx,                             &
@@ -123,8 +128,9 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, model, Iend, Istr, Jend, Jstr
+      integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 #ifdef ASSUMED_SHAPE
       real(r8), intent(out) :: angler(LBi:,LBj:)
@@ -207,18 +213,22 @@
 # endif
 #endif
       integer :: Imin, Imax, Jmin, Jmax
-      integer :: IstrR, IendR, JstrR, JendR, IstrU, JstrV
       integer :: NSUB, i, j, k
 
-      real(r8) :: Esize, Xsize, beta, depth
-      real(r8) :: dx, dy, f0, my_min, my_max, val1
+      real(r8), parameter :: twopi = 2.0_r8*pi
+
+      real(r8) :: Esize, Xsize, beta, cff, depth, dth
+      real(r8) :: dx, dy, f0, my_min, my_max, r, theta, val1, val2
 
 #ifdef DISTRIBUTE
       real(r8), dimension(2) :: buffer
       character (len=3), dimension(2) :: op_handle
 #endif
-      real(r8) :: wrkX(PRIVATE_2D_SCRATCH_ARRAY)
-      real(r8) :: wrkY(PRIVATE_2D_SCRATCH_ARRAY)
+#ifdef WEDDELL
+      real(r8) :: hwrk(-1:235), xwrk(-1:235), zwrk
+#endif
+      real(r8) :: wrkX(IminS:ImaxS,JminS:JmaxS)
+      real(r8) :: wrkY(IminS:ImaxS,JminS:JmaxS)
 !
 #include "set_bounds.h"
 !
@@ -232,14 +242,14 @@
 !     beta     Coriolis parameter, beta-plane constant (1/s/m).
 !-----------------------------------------------------------------------
 !
-#if defined MUD_TOY
-      Xsize=100.0_r8
-      Esize=160.0_r8
-      depth=10.0_r8
+#if defined SEDBED_TOY
+      Xsize=40.0_r8
+      Esize=30.0_r8
+      depth=0.5_r8
       f0=0.0_r8
       beta=0.0_r8
 #else
-      ana_grid: no values provided for Xsize, Esize, depth, f0, and beta.
+      ana_grid.h: no values provided for Xsize, Esize, depth, f0, beta.
 #endif
 !
 !  Load grid parameters to global storage.
@@ -257,7 +267,7 @@
 !  Determine I- and J-ranges for computing grid data.  This ranges
 !  are special in periodic boundary conditons since periodicity cannot
 !  be imposed in the grid coordinates.
-! 
+!
       IF (WESTERN_EDGE) THEN
         Imin=Istr-1
       ELSE
@@ -293,16 +303,26 @@
           yv(i,j)=yp(i,j)
         END DO
       END DO
-
 #ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, model, 4, Istr, Iend, Jstr, Jend,         &
+# ifdef SPHERICAL
+      CALL mp_exchange2d (ng, tile, model, 4,                           &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, .FALSE., .FALSE.,               &
+     &                    lonp, lonr, lonu, lonv)
+      CALL mp_exchange2d (ng, tile, model, 4,                           &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, .FALSE., .FALSE.,               &
+     &                    latp, latr, latu, latv)
+# else
+      CALL mp_exchange2d (ng, tile, model, 4,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, .FALSE., .FALSE.,               &
      &                    xp, xr, xu, xv)
-      CALL mp_exchange2d (ng, model, 4, Istr, Iend, Jstr, Jend,         &
+      CALL mp_exchange2d (ng, tile, model, 4,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, .FALSE., .FALSE.,               &
      &                    yp, yr, yu, yv)
+# endif
 #endif
 !
 !-----------------------------------------------------------------------
@@ -328,22 +348,20 @@
           pn(i,j)=wrkY(i,j)
         END DO
       END DO
-
 #if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, Istr, Iend, Jstr, Jend,               &
+      CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        pm)
-      CALL exchange_r2d_tile (ng, Istr, Iend, Jstr, Jend,               &
+      CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        pn)
 #endif
 #ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, model, 2, Istr, Iend, Jstr, Jend,         &
+      CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    pm, pn)
 #endif
-
 #if (defined CURVGRID && defined UV_ADV)
 !
 !-----------------------------------------------------------------------
@@ -359,15 +377,15 @@
         END DO
       END DO
 # if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, Istr, Iend, Jstr, Jend,               &
+      CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        dndx)
-      CALL exchange_r2d_tile (ng, Istr, Iend, Jstr, Jend,               &
+      CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        dmde)
 # endif
 # ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, model, 2, Istr, Iend, Jstr, Jend,         &
+      CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    dndx, dmde)
@@ -378,26 +396,18 @@
 ! Angle (radians) between XI-axis and true EAST at RHO-points.
 !-----------------------------------------------------------------------
 !
-#if defined MUD_TOY
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           angler(i,j)=0.0_r8
         END DO
       END DO
-#else
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          angler(i,j)=0.0_r8
-        END DO
-      END DO
-#endif
 #if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, Istr, Iend, Jstr, Jend,               &
+      CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        angler)
 #endif
 #ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, model, 1, Istr, Iend, Jstr, Jend,         &
+      CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    angler)
@@ -407,27 +417,19 @@
 !  Compute Coriolis parameter (1/s) at RHO-points.
 !-----------------------------------------------------------------------
 !
-#if defined MUD_TOY
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          f(i,j)=0.0_r8
-        END DO
-      END DO
-#else
       val1=0.5_r8*Esize
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           f(i,j)=f0+beta*(yr(i,j)-val1)
         END DO
       END DO
-#endif
 #if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, Istr, Iend, Jstr, Jend,               &
+      CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        f)
 #endif
 #ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, model, 1, Istr, Iend, Jstr, Jend,         &
+      CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    f)
@@ -437,10 +439,10 @@
 !  Set bathymetry (meters; positive) at RHO-points.
 !-----------------------------------------------------------------------
 !
-#if defined MUD_TOY
+#if defined SEDBED_TOY
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-          h(i,j)=depth
+          h(i,j)=20.0_r8
         END DO
       END DO
 #else
@@ -451,20 +453,20 @@
       END DO
 #endif
 #if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, Istr, Iend, Jstr, Jend,               &
+      CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        h)
 #endif
 #ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, model, 1, Istr, Iend, Jstr, Jend,         &
+      CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    h)
 #endif
 !
 ! Determine minimum depth: first, determine minimum values of depth
-! within each subdomain, then determine global minimum by comparing
-! these subdomain minima.
+! within each subdomain (stored as private variable cff), then
+! determine global minimum by comparing these  subdomain minima.
 !
       my_min=h(IstrR,JstrR)
       my_max=h(IstrR,JstrR)
@@ -502,33 +504,5 @@
 #endif
       END IF
 !$OMP END CRITICAL (H_RANGE)
-#ifdef ICESHELF
-!
-!-----------------------------------------------------------------------
-!  Set depth of ice shelf (meters; negative) at RHO-points.
-!-----------------------------------------------------------------------
-!
-# ifdef WEDDELL
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          zice(i,j)=???
-        END DO
-      END DO
-# else
-      ana_grid.h: No value provided for zice.
-# endif
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, Istr, Iend, Jstr, Jend,               &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        zice)
-# endif
-# ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, model, 1, Istr, Iend, Jstr, Jend,         &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    zice)
-# endif
-#endif
-
       RETURN
       END SUBROUTINE ana_grid_tile

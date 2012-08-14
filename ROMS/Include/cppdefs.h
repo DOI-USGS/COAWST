@@ -683,6 +683,11 @@
 ** SED_DENS            use to activate sediment to affect equation of state  **
 ** SED_MORPH           use to allow bottom model elevation to evolve         **
 ** SUSPLOAD            use to activate suspended load transport              **
+** SED_BIODIFF         use to activate sediment biodiffusivity               **
+** MIXED_BED           use to activate mixed bed behavior                    **
+** COHESIVE_BED        use to activate cohesive bed model                    **
+** NONCOHESIVE_BED1    use original bed model of Warner et al 2008, default  **
+** NONCOHESIVE_BED2    use modified bed model of Sherwood et al, in press    **
 **                                                                           **
 ** Wave effoct on currents (WEC) and shallow water OPTIONS:                  **
 **                                                                           **

@@ -188,6 +188,13 @@
       real(r8) :: transC(Ngrids)         ! cohesive transition
       real(r8) :: transN(Ngrids)         ! noncohesive transition
 #endif
+#if defined SED_BIODIFF
+      real(r8) :: Dbmx(Ngrids)     ! Dbmax  Maximum biodiffusivity
+      real(r8) :: Dbmm(Ngrids)     ! Dbmin  Minimum biodiffusivity
+      real(r8) :: Dbzs(Ngrids)     ! Dbzs   Depth of maximum biodiff
+      real(r8) :: Dbzm(Ngrids)     ! Dbzm   Depth end exp biodiff
+      real(r8) :: Dbzp(Ngrids)     ! Dbzp   Depth of minimum biodiff
+#endif
 
       CONTAINS
 
