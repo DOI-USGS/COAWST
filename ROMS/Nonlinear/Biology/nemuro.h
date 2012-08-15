@@ -667,7 +667,7 @@
 # ifdef HOLLING_GRAZING
               cff4=1.0_r8/(KZS2ZP(ng)+Bio(i,k,iSzoo)*Bio(i,k,iSzoo))
               cff5=EXP(-PusaiZS(ng)*Bio(i,k,iLzoo))
-              cff=fac6*cff3**cff4*cff5*Bio(i,k,iPzoo)*Bio(i,k,iSzoo)
+              cff=fac6*cff3*cff4*cff5*Bio(i,k,iPzoo)*Bio(i,k,iSzoo)
 # elif defined IVLEV_IMPLICIT
               cff4=1.0_r8-EXP(LamP(ng)*(ZS2ZPstar(ng)-Bio(i,k,iSzoo)))
               cff5=EXP(-PusaiZS(ng)*Bio(i,k,iLzoo))
