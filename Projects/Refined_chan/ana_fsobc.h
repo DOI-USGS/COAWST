@@ -58,7 +58,7 @@
 !  Local variable declarations.
 !
       integer :: i, j
-      real(r8) :: cff, fac, omega, phase, val
+      real(r8) :: cff, fac, omega, phase, val, ramp
 
 #include "set_bounds.h"
 !
@@ -67,19 +67,12 @@
 !-----------------------------------------------------------------------
 !
 #if defined REFINED_CHAN
-# ifdef WEST_FSOBC
-      IF (WESTERN_EDGE) THEN
-        cff=0.0_r8
-        DO j=JstrR,JendR
-          BOUNDARY(ng)%zeta_west(j)=cff
-        END DO
-      END IF
-# endif
 # ifdef EAST_FSOBC
       IF (EASTERN_EDGE) THEN
-        cff=-0.4040_r8
-        DO j=JstrR,JendR
-          BOUNDARY(ng)%zeta_east(j)=cff
+        ramp=MIN(time(ng)/3600.0_r8,1.0_r8)
+        cff=-0.2_r8
+        DO j=JstrT,JendT
+          BOUNDARY(ng)%zeta_east(j)=cff*ramp
         END DO
       END IF
 # endif

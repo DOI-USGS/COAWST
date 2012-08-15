@@ -73,7 +73,7 @@
 
 ! Time-Stepping parameters.
 
-      NTIMES == 960     4800  !240     1200
+      NTIMES == 720     3600
           DT == 60.0d0  12.0d0
      NDTFAST == 20      20
 
@@ -104,7 +104,7 @@
 ! Output history, average, diagnostic files parameters.
 
      LDEFOUT == T      T
-        NHIS == 20     100   !10     50
+        NHIS == 30     150
      NDEFHIS == 0      0
       NTSAVG == 1      1
         NAVG == 240    1200
@@ -258,7 +258,7 @@
 ! conditions, [1:Ngrids]. If OBCFAC > 1, nudging on inflow is stronger
 ! than on outflow (recommended).
 
-      OBCFAC == 0.0d0                      ! nondimensional
+      OBCFAC == 1.0d0                      ! nondimensional
 
 ! Linear equation of State parameters:
 

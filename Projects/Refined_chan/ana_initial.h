@@ -198,10 +198,14 @@
 !-----------------------------------------------------------------------
 !
 #if defined REFINED_CHAN
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          zeta(i,j,1)=-0.4040_r8*REAL(i,r8)/REAL(Lm(ng)+1,r8)
-!         zeta(i,j,1)=0.0_r8
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          zeta(i,j,1)=0.0_r8
+!          IF (ng.eq.1) THEN
+!            zeta(i,j,1)=-0.4040_r8*REAL(i,r8)/REAL(Lm(ng)+1,r8)
+!          ELSE
+!            zeta(i,j,1)=-0.1152_r8-0.404_r8/5.0_r8*REAL(3+i,r8)/REAL(Lm(ng)+1,r8)
+!          END IF
         END DO
       END DO
 #else

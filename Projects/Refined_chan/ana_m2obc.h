@@ -117,7 +117,8 @@
 !-----------------------------------------------------------------------
 !
 #if defined REFINED_CHAN
-      ramp=MIN(time(ng)/3600.0_r8,1.0_r8)
+!     ramp=MIN(time(ng)/5400.0_r8,1.0_r8)
+      ramp=TANH(time(ng)/7200.0_r8)
 # ifdef WEST_M2OBC
       IF (WESTERN_EDGE) THEN
         my_area =0.0_r8
@@ -128,9 +129,7 @@
      &                           on_u(Istr,j)
           my_width=my_width+on_u(Istr,j)
         END DO
-        fac=my_width*10.0_r8*1.0_r8*ramp     !(width  depth  ubar)
-        DO j=Jstr,Jend
-        END DO
+        fac=my_width*1.0_r8*0.2_r8*ramp     !(width  depth  ubar)
         DO j=JstrR,JendR
           BOUNDARY(ng)%ubar_west(j)=fac/my_area
         END DO
@@ -149,9 +148,9 @@
      &                           on_u(Iend,j)
           my_width=my_width+on_u(Iend,j)
         END DO
-        fac=my_width*10.0_r8*1.0_r8*ramp           !(width  depth  ubar)
+        fac=my_width*1.0_r8*0.2_r8*ramp           !(width  depth  ubar)
         DO j=JstrR,JendR
-          BOUNDARY(ng)%ubar_east(j)=fac/my_area*0.0_r8
+          BOUNDARY(ng)%ubar_east(j)=fac/my_area
         END DO
         DO j=Jstr,JendR
           BOUNDARY(ng)%vbar_east(j)=0.0_r8

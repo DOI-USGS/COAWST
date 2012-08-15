@@ -18,9 +18,8 @@
 
 #define WRITE_GRID
 #define OUT_DOUBLE
-/*#define BODYFORCE*/
 
-#undef  UV_ADV
+#define  UV_ADV
 #undef  SALINITY
 #define SOLVE3D
 #define MASKING
@@ -28,33 +27,33 @@
 
 #define ANA_INITIAL
 #define ANA_SMFLUX
-#define ANA_STFLUX
-#define ANA_BTFLUX
-#define ANA_SSFLUX
-#define ANA_BSFLUX
-#define ANA_SPFLUX
-#define ANA_BPFLUX
-
-/*#define GLS_MIXING
-  #define KANTHA_CLAYSON */
-#undef  N2S2_HORAVG
+#ifdef SOLVE3D
+# define ANA_STFLUX
+# define ANA_BTFLUX
+# define ANA_SSFLUX
+# define ANA_BSFLUX
+# define ANA_SPFLUX
+# define ANA_BPFLUX
+# define ANA_TOBC
+#endif
+#define GLS_MIXING
+#define KANTHA_CLAYSON
+#undef  N2S2_HORAVG   /*keep this off for uniformity in this test case*/
 #define UV_LOGDRAG
-#undef  TS_U3HADVECTION
-#define TS_MPDATA
-/*#define TS_FIXED*/
+#define TS_U3HADVECTION
 
-/* #define EW_PERIODIC_REFINED
-   #define EW_PERIODIC */
 #define EAST_FSCHAPMAN
-#define EAST_M2FLATHER
-#define EAST_M3GRADIENT
+#define EAST_M2REDUCED
+#define FSOBC_REDUCED
 #define WEST_FSCHAPMAN
-#define WEST_M2FLATHER
-#define WEST_M3GRADIENT
-#define WEST_TCLAMPED
+#define WEST_M2GRADIENT
+#ifdef SOLVE3D
+# define EAST_M3GRADIENT
+# define WEST_M3GRADIENT
+# define WEST_TCLAMPED
+#endif
+!#define ANA_M2OBC
 #define ANA_FSOBC
-#define ANA_M2OBC
-#define ANA_TOBC
 
 #undef  SEDIMENT
 #ifdef SEDIMENT
