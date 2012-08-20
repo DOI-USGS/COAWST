@@ -46,9 +46,6 @@
       USE OUTP_DATA                                                       40.31
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
-#ifdef SWAN_MODEL
-      USE mod_param
-#endif
 !
 !
 !
@@ -441,8 +438,13 @@
              CALL SWBLKP ( CORQ%OQI, CORQ%IVTYP, MXK, MYK, VOQR,          40.31
      &                     VOQ(1), IONOD )                                40.51 40.31
           ELSE                                                            40.31
+#ifdef SWAN_MODEL
+             CALL SWBLOK ( RTYPE, CORQ%OQI, CORQ%IVTYP, CORQ%FAC,         40.31
+     &                     SNAME, MXK, MYK, IRQ, VOQR, VOQ(1), ng)        40.51 40.31
+#else
              CALL SWBLOK ( RTYPE, CORQ%OQI, CORQ%IVTYP, CORQ%FAC,         40.31
      &                     SNAME, MXK, MYK, IRQ, VOQR, VOQ(1) )           40.51 40.31
+#endif
           END IF                                                          40.31
           IF (STPNOW()) RETURN                                            34.01
           GOTO 68                                                         40.00
@@ -554,12 +556,12 @@
       REAL, INTENT(IN) :: AC2(MDC,MSC,MCGRD), COMPDA(MCGRD,MCMVAR)
       INTEGER, INTENT(IN) :: KGRPNT(MXC,MYC)
       INTEGER, INTENT(IN) :: ng, ngc
-      REAL, INTENT(INOUT) :: AC2_parent(MSC*MDC*Numspec(ngc))
+      REAL, INTENT(INOUT) :: AC2_parent(MSC*MDC*Numspec(ngc),2)
 !
       INTEGER :: spcount, offset
       INTEGER MySize, MyError, MyTag
       INTEGER ISTAT(MPI_STATUS_SIZE)
-      INTEGER IS, ID, ISIGM
+      INTEGER IS, ID, ISIGM, TIDX
       REAL :: IX, IY
       LOGICAL EXCPT
       INTEGER, ALLOCATABLE :: CROSS(:)
@@ -577,7 +579,11 @@
           ACL(ID,ISIGM)=0.
         END DO
       END DO
-      AC2_parent=0.
+!
+!     Determine which tme index to fill AC2 data.
+!
+      TIDX=sstp(ng)
+      AC2_parent(:,TIDX)=0.
 !
 ! Set no cross obstacles.
 !
@@ -599,7 +605,9 @@
 !  Store AC2 spectra into parent array for transfer to child.
 !
               offset=MSC*MDC*(spcount-1)+(ISIGM-1)*MDC+ID
-              AC2_parent(offset)=ACL(ID,ISIGM)
+
+!  Fill the appropriate time level.
+              AC2_parent(offset,TIDX)=ACL(ID,ISIGM)
  100        END DO
  110      END DO
         END IF
@@ -619,13 +627,13 @@
           CALL MPI_RECV(AC_EXCH,ac2size(ngc),SWREAL,ID,             &
      &                  MyTag,WAV_COMM_WORLD,ISTAT,MyError)
           DO ID=1,ac2size(ngc)
-            AC2_parent(ID)=AC2_parent(ID)+AC_EXCH(ID)
+            AC2_parent(ID,TIDX)=AC2_parent(ID,TIDX)+AC_EXCH(ID)
           END DO
         END DO
       ELSE
         MyTag=INODE
         DO ID=1,ac2size(ngc)
-          AC_EXCH(ID)=AC2_parent(ID)
+          AC_EXCH(ID)=AC2_parent(ID,TIDX)
         END DO
         CALL MPI_SEND(AC_EXCH,ac2size(ngc),SWREAL,0,MyTag,          &
      &                WAV_COMM_WORLD,MyError)
@@ -637,14 +645,13 @@
       CALL SWSYNC
       IF (INODE.EQ.MASTER) THEN
         DO ID=1,ac2size(ngc)
-          AC_EXCH(ID)=AC2_parent(ID)
+          AC_EXCH(ID)=AC2_parent(ID,TIDX)
         END DO
       ENDIF
       CALL MPI_BCAST(AC_EXCH,ac2size(ngc),SWREAL,0,                   &
      &               WAV_COMM_WORLD,MyError)
       DO ID=1,ac2size(ngc)
-!       PARALL2_MOD(ngc)%AC2_parent2_G(ID)=AC_EXCH(ID)
-        AC2_parent(ID)=AC_EXCH(ID)
+        AC2_parent(ID,TIDX)=AC_EXCH(ID)
       END DO
 
       DEALLOCATE(ACL, CROSS, AC_EXCH)
@@ -676,7 +683,6 @@
       USE SwanGriddata                                                    40.80
       USE M_MPI
       USE WAVES_COUPLER_MOD, ONLY: WAV2OCN_COUPLING
-      USE mod_param
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -913,7 +919,7 @@
       Cpltype(2)=55                      ! DISSURF SWOEXD
       Cpltype(3)=56                      ! DISWCAP SWOEXD
       Cpltype(4)=50                      ! TMBOT   SWOEXD
-      Cpltype(5)=34                      ! URMS    SWOEXD
+      Cpltype(5)=6                       ! UBOT    SWOEXD
       Cpltype(6)=8                       ! QB      SWOEXD
       Cpltype(7)=10                      ! HSIGN   SWOEXA
       Cpltype(8)=12                      ! RTP     SWOEXA
@@ -990,12 +996,16 @@
      &               XCGRID              ,YCGRID              ,           30.21
      &               CROSS                                    )           40.86 40.00
 !
+        ALLOCATE(FORCE(0,0))                                              40.80
+!
 !       call SWOEXD to interpolate quantities which are computed during the
 !       SWAN computation, such as Qb, Dissipation, Ursell etc.
 !
         CALL SWOEXD (OQPROC, MIP, VOQ(1+2*MIP),                           40.31 30.90
      &               VOQ(1+3*MIP), VOQR, VOQ(1),                          40.31 30.90
      &               COMPDA, KGRPNT, FORCE, CROSS, IONOD)                 40.86 40.80 40.31
+!
+        DEALLOCATE(FORCE)                                                 40.80
 !
         IF (BKC .GT. 0) THEN
 !
@@ -2055,6 +2065,9 @@
 !
       REAL       XC(*), YC(*), VOQ(MIP,*), COMPDA(MCGRD,MCMVAR)
       REAL       FORCE(nverts,2)                                          40.80
+#ifdef SWAN_MODEL
+      REAL       UIN(MCGRD), VIN(MCGRD), UOUT(MIP), VOUT(MIP)             !PSD 09/26/2011 
+#endif
       INTEGER    VOQR(*), KGRPNT(MXC,MYC)
       INTEGER    IONOD(*)                                                 40.31
       INTEGER, ALLOCATABLE :: KVERT(:)                                    41.07
@@ -2217,6 +2230,52 @@
            ENDDO                                                          40.65
         ENDIF
       ENDIF
+#ifdef SWAN_MODEL
+!
+!     DirBot                                                              !PSD 09/22/2001
+!
+      IF (OQPROC(72)) THEN                                                !PSD
+        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 72,
+     &  VOQR(72), JDBOT
+        IF (JDBOT.GT.1) THEN                                              !PSD
+           UIN = COS(COMPDA(:,JDBOT));
+           VIN = SIN(COMPDA(:,JDBOT));
+           WHERE (COMPDA(:,JDBOT) .EQ. OVEXCV(72)) UIN = OVEXCV(72)
+           WHERE (COMPDA(:,JDBOT) .EQ. OVEXCV(72)) VIN = OVEXCV(72)
+           IF (OPTG.NE.5) THEN                                            !PSD
+              CALL SWIPOL(UIN,OVEXCV(72),XC, YC, MIP, CROSS,
+     &                    UOUT(1) ,KGRPNT, COMPDA(1,JDP2))
+              CALL SWIPOL(VIN,OVEXCV(72),XC, YC, MIP, CROSS,
+     &                    VOUT(1) ,KGRPNT, COMPDA(1,JDP2))
+           ELSE                                                           !PSD
+           !PSD TESTED FOR UNSTRUCTURED
+              CALL SwanInterpolateOutput ( UOUT(1), VOQ(1,1),             !PSD
+     &                                     VOQ(1,2), UIN,                 !PSD
+     &                                     MIP, KVERT, OVEXCV(72) )       !PSD
+              CALL SwanInterpolateOutput ( VOUT(1), VOQ(1,1),             !PSD
+     &                                     VOQ(1,2), VIN,                 !PSD
+     &                                     MIP, KVERT, OVEXCV(72) )       !PSD
+           ENDIF                                                          !PSD
+           !Put in the proper convention...calculated in cartesian radians
+           DO IP = 1, MIP
+              VOQ(IP,VOQR(72)) = ATAN2(VOUT(IP),UOUT(IP))
+	      IF (BNAUT) THEN
+                VOQ(IP,VOQR(72)) = VOQ(IP,VOQR(72)) * 180./PI
+              ELSE
+                VOQ(IP,VOQR(72)) = (ALCQ + VOQ(IP,VOQR(72))) * 180./PI
+              ENDIF
+              IF (VOQ(IP,VOQR(72)).LT.0) THEN
+                 VOQ(IP,VOQR(72)) = VOQ(IP,VOQR(72)) + 360.
+              ENDIF
+              VOQ(IP,VOQR(72)) = DEGCNV( VOQ(IP,VOQR(72)))
+           ENDDO
+        ELSE
+           DO IP = 1, MIP                                                 !PSD
+             VOQ(IP,VOQR(72)) = OVEXCV(72)                                !PSD
+           ENDDO                                                          !PSD
+        ENDIF
+      ENDIF
+#endif
 !
 !     dissipation
 !

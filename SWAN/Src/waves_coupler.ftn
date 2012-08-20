@@ -148,6 +148,7 @@
       USE M_PARALL
       USE mod_scalars
       USE mod_iounits
+      USE mct_coupler_params
 !
       include 'mpif.h'
       integer, intent(in) :: ng
@@ -166,10 +167,6 @@
 
       integer, dimension(2) :: src_grid_dims, dst_grid_dims
       integer, allocatable :: start(:), length(:)
-# ifdef REFINED_GRID
-      integer, dimension(:), pointer :: ocnids
-      integer, dimension(:), pointer :: wavids
-# endif
 !
 !-----------------------------------------------------------------------
 !  Begin initialization phase.
@@ -192,16 +189,8 @@
       END IF
 !
 # ifdef REFINED_GRID
-      CALL initialize_param
-
-      allocate ( wavids(Ngrids) )
-      allocate ( ocnids(Ngrids) )
-      DO j=1,Ngrids
-        ocnids(j)=j
-        wavids(j)=Ngrids+j
-      END DO
-      WAVid=wavids(ng)
       OCNid=ocnids(ng)
+      WAVid=wavids(ng)
       CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                  &
      &                    WAV_COMM_WORLD, myids=wavids)
 # else
@@ -371,7 +360,7 @@
       deallocate (start)
       deallocate (length)
 !# endif
-      call mpi_barrier(WAV_COMM_WORLD)
+      call mpi_barrier(WAV_COMM_WORLD, MyError)
 !# ifdef MCT_INTERP_WV2AT
 !
 ! Create ATM sparse matrix plus for interpolation.
@@ -432,7 +421,7 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-      to_add=':URMS'
+      to_add=':UBOT'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -574,10 +563,6 @@
       CALL AttrVect_zero(wav2atm_AV2)
 #  endif
 # endif
-# ifdef REFINED_GRID
-      deallocate ( wavids )
-      deallocate ( ocnids )
-# endif
 
       RETURN
       END SUBROUTINE INITIALIZE_WAV2OCN_COUPLING
@@ -714,9 +699,9 @@
       ELSE IF (IVTYPE.eq.50) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "TMBOT",avdata)
-      ELSE IF (IVTYPE.eq.34) THEN
+      ELSE IF (IVTYPE.eq.6) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
-     &                             "URMS",avdata)
+     &                             "UBOT",avdata)
       ELSE IF (IVTYPE.eq.13) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DIR",avdata)

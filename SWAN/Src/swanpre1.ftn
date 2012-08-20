@@ -1162,7 +1162,7 @@
         IF (KEYWIS ('BOT')) THEN
           IGRD = 1
           PSNAME = 'BOTTGRID'
-#ifdef SWAN_MODEL
+#ifdef MODEL_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ELSE IF (KEYWIS ('CUR')) THEN
@@ -1216,7 +1216,7 @@
           IGRD = 5
           IGR2 = 6                                                          10.26
           PSNAME = 'WXGRID  '
-#if defined SWAN_MODEL
+#ifdef MODEL_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
           LWINDR = 2                                                        30.10
           IWIND  = LWINDM                                                   30.10
@@ -1294,7 +1294,7 @@
         ENDIF
 !
 #ifndef MODEL_COUPLING
-        CALL SINPGR (IGRD, IGR2, PSNAME)                                  40.31
+        CALL SINPGR (IGRD, IGR2, PSNAME, ng)                              40.31
 #endif
         IF (STPNOW()) RETURN                                              34.01
         GOTO 100
@@ -1368,7 +1368,7 @@
            GOTO 444                                                       40.80
         ENDIF
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
         CALL SREDEP ( LWINDR, LWINDM, LOGCOM, ng)                         40.31 40.02
 #else
         CALL SREDEP ( LWINDR, LWINDM, LOGCOM )                            40.31 40.02
@@ -1379,7 +1379,7 @@
  444    IF (OPTG .EQ. 1) THEN                                             40.80
 !         regular grid
           IF (LOGCOM(3) .AND. .NOT. LOGCOM(6)) THEN                       30.90
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
             CALL CGINIT(LOGCOM, ng)
 #else
             CALL CGINIT(LOGCOM)                                           40.31 30.90
@@ -1394,7 +1394,7 @@
             CALL MSGERR (3, '** before reading the bottom grid       *')
           ELSE IF (LOGCOM(2) .AND. LOGCOM(3) .AND.
      &             LOGCOM(4) .AND. .NOT. LOGCOM(6)) THEN
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
             CALL CGINIT(LOGCOM, ng)
 #else
             CALL CGINIT(LOGCOM)                                           40.31 30.90
@@ -3694,8 +3694,10 @@
          ASTDF=>M_GENARR_MOD(ng)%ASTDF_G
          CALL SWCOPR( TARR, ASTDF, MXG(IGR1)*MYG(IGR1) )                  40.31
       ELSE IF (IGR1.EQ.11) THEN                                           40.55
-         IF (.NOT.ALLOCATED(NPLAF)) ALLOCATE(NPLAF(MXG(IGR1)*MYG(IGR1)))  40.55
-         CALL SWCOPR( TARR, NPLAF, MXG(IGR1)*MYG(IGR1) )                  40.55
+         DEALLOCATE(M_GENARR_MOD(ng)%NPLAF_G)
+         ALLOCATE (M_GENARR_MOD(ng)%NPLAF_G(MXG(IGR1)*MYG(IGR1)))
+         NPLAF=>M_GENARR_MOD(ng)%NPLAF_G
+         CALL SWCOPR( TARR, NPLAF, MXG(IGR1)*MYG(IGR1) )                  40.31
       END IF                                                              40.31
 #else
       IF (IGR1.EQ.1) THEN                                                 40.31
@@ -5777,7 +5779,7 @@
       END
 !*******************************************************************
 !                                                                  *
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       SUBROUTINE BACKUP (AC2, SPCSIG, SPCDIR, KGRPNT,
      &                   XCGRID, YCGRID, ng)
 #else
@@ -5872,7 +5874,7 @@
       REAL    SPCDIR(MDC,6)                                               30.82
       REAL    SPCSIG(MSC)                                                 30.82
       REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.82
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
       INTEGER, INTENT(IN) :: ng
 #endif
 !
@@ -5896,7 +5898,7 @@
 !
 !     ==================================================================
 !
-#ifdef MODEL_COUPLING
+#ifdef SWAN_MODEL
        FILENM='swan_restart.dat'
        ILPOS = INDEX ( FILENM, ' ' )-1
        IF (ILPOS.GT.0) THEN

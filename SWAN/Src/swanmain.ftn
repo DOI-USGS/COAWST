@@ -43,8 +43,8 @@
       USE M_GENARR                                                        40.31
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
-# ifdef WAVES_OCEAN
       USE M_PARALL2
+# ifdef WAVES_OCEAN
       USE WAVES_COUPLER_MOD, ONLY: INITIALIZE_WAV2OCN_COUPLING
 # endif
 # ifdef WRF_COUPLING
@@ -56,7 +56,15 @@
       USE M_CVMESH
 !
       IMPLICIT NONE
+
+!     Tell the compiler about the optional parameter for SWINITMPI
+!     (required for the xlf compiler).
 !
+      INTERFACE
+        SUBROUTINE SWINITMPI(MyCOMM)
+          integer, intent(in), optional :: MyCOMM
+        END SUBROUTINE
+      END INTERFACE
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -272,6 +280,7 @@
       ALLOCATE (M_GENARR_MOD(ng)%WYI_G(1))
       ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(1))
       ALLOCATE (M_GENARR_MOD(ng)%ASTDF_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%NPLAF_G(1))
       ALLOCATE (COMPT_MOD(ng)%NCOMPT_G)
       NCOMPT=>COMPT_MOD(ng)%NCOMPT_G
       ALLOCATE (COMPT_MOD(ng)%RCOMPT_G(50,5))
@@ -571,6 +580,7 @@
       WYI=>   M_GENARR_MOD(ng)%WYI_G
       WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
       ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
+      NPLAF=> M_GENARR_MOD(ng)%NPLAF_G
 # ifdef WRF_COUPLING
       CosAngler=>M_GENARR_MOD(ng)%CosAngler_G
       SinAngler=>M_GENARR_MOD(ng)%SinAngler_G
@@ -600,12 +610,12 @@
 
 # ifdef REFINED_GRID
 !
-!     AC2_parent is the action density array filled for each parent
-!     tile. 
+!     AC2_parent is the action density array filled for each grid that is 
+!     a parent.
 !
-      IF (first.eq.0) THEN
-        ALLOCATE (PARALL2_MOD(ng)%AC2_parent_G(MSC*MDC*Numspec(ngc)))
-        AC2_parent=0.
+      IF ((first.eq.0).and.(ng.lt.Ngrids)) THEN
+        ALLOCATE (PARALL2_MOD(ng)%AC2_parent_G(MSC*MDC*Numspec(ngc),2))
+        PARALL2_MOD(ng)%AC2_parent_G=0.
       END IF
       AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
 
@@ -638,8 +648,6 @@
 !           --- update boundary conditions and input fields
 !
 !TIMG            CALL SWTSTA(7)                                                40.23
-!
-!  This needs revisiting when i do the 2-way.
 !
 # ifdef REFINED_GRID
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
@@ -712,11 +720,12 @@
 
 !TIMG            CALL SWTSTA(9)                                                    40.23
 
-!           --- couple models during output computations
-
             CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
      &                    KGRPNT, XCGRID, YCGRID, OURQT , ng)
+
 # ifdef MODEL_COUPLING
+!           --- couple models during output computations
+
             nWAV_steps=MAX(1,INT(CouplingTime/DT))
             IF (MOD(IT, nWAV_steps).eq.0) THEN
               CALL SWOUTC ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
@@ -725,10 +734,20 @@
             END IF
 # endif
 # ifdef REFINED_GRID
+!
+!  Determine the AC data in this current grid, acting as a parent.
+!
             IF (ng.lt.Ngrids) THEN
               CALL SWOUTR ( AC2   , COMPDA,
      &                      KGRPNT, ng, ngc, AC2_parent)
             END IF
+!
+!  Interpolate child AC data back to parent.
+!
+!            IF (ng.gt.1) THEN
+!              CALL AC_CHILD2PAR ( AC2   , COMPDA,
+!     &                      KGRPNT, ng, ngc, AC2_parent)
+!            END IF
 # endif
 !TIMG            CALL SWTSTO(9)                                                     40.23
             IF (STPNOW()) RETURN                                          40.30
@@ -768,7 +787,9 @@
       USE M_COUPLING
       USE SWPOINT_MOD, ONLY: INIT_POINTERS, DEALLOCATE_SWAN_ARRAYS
 !
+# ifdef MODEL_COUPLING
       USE WAVES_COUPLER_MOD, ONLY : finalize_wav2ocn_coupling
+# endif
 !# if defined WRF_COUPLING
 !      USE WAVES_COUPLER_MOD, ONLY : finalize_wav2atm_coupling
 !# endif
@@ -807,6 +828,7 @@
       WYI=>   M_GENARR_MOD(ng)%WYI_G
       WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
       ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
+      NPLAF=> M_GENARR_MOD(ng)%NPLAF_G
 # ifdef WRF_COUPLING
       CosAngler=>M_GENARR_MOD(ng)%CosAngler_G
       SinAngler=>M_GENARR_MOD(ng)%SinAngler_G
@@ -2237,6 +2259,9 @@
       JTSXT  = 1                                                          40.85
       JTSXS  = 1                                                          40.85
       JRADS  = 1                                                          40.85
+#ifdef SWAN_MODEL
+      JDBOT  = 1                                                          !PSD 09/21/2011
+#endif
 !
 !     Next pointers are for the plot of the source terms (SWTSDA)         40.31
 !
@@ -3141,6 +3166,18 @@
       OVLEXP(IVTYPE) = 0.
       OVHEXP(IVTYPE) = 200.
       OVEXCV(IVTYPE) = -9.
+
+      IVTYPE = 72                                                   
+      OVKEYW(IVTYPE) = 'DIRBOT'                                           !PSD 09/21/2011
+      OVSNAM(IVTYPE) = 'DirBot'
+      OVLNAM(IVTYPE) = 'Average bottom wave direction'
+      OVUNIT(IVTYPE) = UDI                                                30.72
+      OVSVTY(IVTYPE) = 2
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 360.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 360.
+      OVEXCV(IVTYPE) = -999.
 #endif
 !
 !     various parameters for computation of output quantities             40.00
@@ -4389,6 +4426,11 @@
 !     --- initialize UBOT and TMBOT                                       40.94
       COMPDA(:,JUBOT) = 0.                                                40.94
       IF (JPBOT.GT.1) COMPDA(:,JPBOT) = 0.                                40.94
+!
+#ifdef SWAN_MODEL
+!     --- initialize DIRBOT    !PSD 09/21/2011
+      IF (JDBOT.GT.1) COMPDA(:,JDBOT) = 0.   !PSD 09/21/2011
+#endif
 !
       RETURN
 ! * end of subroutine SWRBC *
@@ -5696,7 +5738,7 @@
       USE SwanGriddata                                                    40.80
 #ifdef SWAN_MODEL
       USE M_MPI
-      USE mod_param
+      USE mod_swan_kinds
 #endif
 #ifdef REFINED_GRID
       USE M_SREFINED
@@ -5789,7 +5831,7 @@
       INTEGER offset, spcount, IX, IY
       INTEGER, intent(in) :: ng, ngp, ITjcw
 # ifdef REFINED_GRID
-      REAL, INTENT(IN) :: AC2_parent(MSC*MDC*Numspec(ng))
+      REAL, INTENT(IN) :: AC2_parent(MSC*MDC*Numspec(ng),2)
       REAL        AC2LOC(MCGRD)                                           40.31
 # else
       REAL, INTENT(IN) :: AC2_parent
@@ -5864,6 +5906,10 @@
 !
       INTEGER     IERR
       REAL        TSTVAL(10)                                              40.00
+# ifdef REFINED_GRID
+      REAL        fac, fac1, fac2, fac3
+      INTEGER     TIDX1, TIDX2
+# endif
       TYPE(BSPCDAT), POINTER :: CURBFL                                    40.31
       LOGICAL LPB                                                         40.80
       SAVE  IENT
@@ -5907,7 +5953,6 @@
            IF (STPNOW()) RETURN                                           34.01
            IF (.NOT.ASSOCIATED(CURBFL%NEXTBSPC)) EXIT                     40.31
            CURBFL => CURBFL%NEXTBSPC                                      40.31
-
          END DO
         END IF
 
@@ -5953,6 +5998,21 @@
         BOUNDHINDPR =>REFINED_MOD(ng)%BOUNDHINDPR_G
         BOUNDHINDIX =>REFINED_MOD(ng)%BOUNDHINDIX_G
         BOUNDHINDIY =>REFINED_MOD(ng)%BOUNDHINDIY_G
+!
+!     Determine scales for time interp.  Time is one dt less.
+!
+        fac3=0.
+        IF (ITjcw.eq.MTC_G(ngp)) fac3=DT_G(ngp)
+        fac1=(TIMCO_G(ngp)-DT_G(ngp)+fac3)-TIMCO_G(ng)
+        fac2=TIMCO_G(ng)-(TIMCO_G(ngp)-2.0*DT_G(ngp)+fac3)
+        fac=1.0_s8/(fac1+fac2)
+        fac1=fac*fac1
+        fac2=fac*fac2
+        IF (ITjcw.eq.0) fac1=1.0
+        IF (ITjcw.eq.0) fac2=0.0
+        TIDX1=snew(ngp)
+        TIDX2=sstp(ngp)
+!
         DO spcount=1,Numspec(ng)
           IF (BOUNDHINDPR(spcount).eq.INODE) THEN
             IX=BOUNDHINDIX(spcount)-MXF+1
@@ -5961,7 +6021,8 @@
             DO IS = 1, MSC
               DO ID = 1, MDC
                 offset=MSC*MDC*(spcount-1)+(IS-1)*MDC+ID
-                AC2(ID,IS,INDXGR)=AC2_parent(offset)
+                AC2(ID,IS,INDXGR)=fac1*AC2_parent(offset,TIDX1)+        &
+     &                            fac2*AC2_parent(offset,TIDX2)
               END DO
             END DO
           END IF
@@ -8101,6 +8162,7 @@
       DEALLOCATE(WYI   )
       DEALLOCATE(WLEVL )
       DEALLOCATE(ASTDF )
+      DEALLOCATE(NPLAF )
 # ifdef WRF_COUPLING
       DEALLOCATE(CosAngler)
       DEALLOCATE(SinAngler)

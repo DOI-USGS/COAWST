@@ -2259,6 +2259,9 @@
       JTSXT  = 1                                                          40.85
       JTSXS  = 1                                                          40.85
       JRADS  = 1                                                          40.85
+#ifdef SWAN_MODEL
+      JDBOT  = 1                                                          !PSD 09/21/2011
+#endif
 !
 !     Next pointers are for the plot of the source terms (SWTSDA)         40.31
 !
@@ -3163,6 +3166,18 @@
       OVLEXP(IVTYPE) = 0.
       OVHEXP(IVTYPE) = 200.
       OVEXCV(IVTYPE) = -9.
+
+      IVTYPE = 72                                                   
+      OVKEYW(IVTYPE) = 'DIRBOT'                                           !PSD 09/21/2011
+      OVSNAM(IVTYPE) = 'DirBot'
+      OVLNAM(IVTYPE) = 'Average bottom wave direction'
+      OVUNIT(IVTYPE) = UDI                                                30.72
+      OVSVTY(IVTYPE) = 2
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 360.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 360.
+      OVEXCV(IVTYPE) = -999.
 #endif
 !
 !     various parameters for computation of output quantities             40.00
@@ -4411,6 +4426,11 @@
 !     --- initialize UBOT and TMBOT                                       40.94
       COMPDA(:,JUBOT) = 0.                                                40.94
       IF (JPBOT.GT.1) COMPDA(:,JPBOT) = 0.                                40.94
+!
+#ifdef SWAN_MODEL
+!     --- initialize DIRBOT    !PSD 09/21/2011
+      IF (JDBOT.GT.1) COMPDA(:,JDBOT) = 0.   !PSD 09/21/2011
+#endif
 !
       RETURN
 ! * end of subroutine SWRBC *

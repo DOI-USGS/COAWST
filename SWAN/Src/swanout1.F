@@ -2065,6 +2065,9 @@
 !
       REAL       XC(*), YC(*), VOQ(MIP,*), COMPDA(MCGRD,MCMVAR)
       REAL       FORCE(nverts,2)                                          40.80
+#ifdef SWAN_MODEL
+      REAL       UIN(MCGRD), VIN(MCGRD), UOUT(MIP), VOUT(MIP)             !PSD 09/26/2011 
+#endif
       INTEGER    VOQR(*), KGRPNT(MXC,MYC)
       INTEGER    IONOD(*)                                                 40.31
       INTEGER, ALLOCATABLE :: KVERT(:)                                    41.07
@@ -2227,6 +2230,52 @@
            ENDDO                                                          40.65
         ENDIF
       ENDIF
+#ifdef SWAN_MODEL
+!
+!     DirBot                                                              !PSD 09/22/2001
+!
+      IF (OQPROC(72)) THEN                                                !PSD
+        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 72,
+     &  VOQR(72), JDBOT
+        IF (JDBOT.GT.1) THEN                                              !PSD
+           UIN = COS(COMPDA(:,JDBOT));
+           VIN = SIN(COMPDA(:,JDBOT));
+           WHERE (COMPDA(:,JDBOT) .EQ. OVEXCV(72)) UIN = OVEXCV(72)
+           WHERE (COMPDA(:,JDBOT) .EQ. OVEXCV(72)) VIN = OVEXCV(72)
+           IF (OPTG.NE.5) THEN                                            !PSD
+              CALL SWIPOL(UIN,OVEXCV(72),XC, YC, MIP, CROSS,
+     &                    UOUT(1) ,KGRPNT, COMPDA(1,JDP2))
+              CALL SWIPOL(VIN,OVEXCV(72),XC, YC, MIP, CROSS,
+     &                    VOUT(1) ,KGRPNT, COMPDA(1,JDP2))
+           ELSE                                                           !PSD
+           !PSD TESTED FOR UNSTRUCTURED
+              CALL SwanInterpolateOutput ( UOUT(1), VOQ(1,1),             !PSD
+     &                                     VOQ(1,2), UIN,                 !PSD
+     &                                     MIP, KVERT, OVEXCV(72) )       !PSD
+              CALL SwanInterpolateOutput ( VOUT(1), VOQ(1,1),             !PSD
+     &                                     VOQ(1,2), VIN,                 !PSD
+     &                                     MIP, KVERT, OVEXCV(72) )       !PSD
+           ENDIF                                                          !PSD
+           !Put in the proper convention...calculated in cartesian radians
+           DO IP = 1, MIP
+              VOQ(IP,VOQR(72)) = ATAN2(VOUT(IP),UOUT(IP))
+	      IF (BNAUT) THEN
+                VOQ(IP,VOQR(72)) = VOQ(IP,VOQR(72)) * 180./PI
+              ELSE
+                VOQ(IP,VOQR(72)) = (ALCQ + VOQ(IP,VOQR(72))) * 180./PI
+              ENDIF
+              IF (VOQ(IP,VOQR(72)).LT.0) THEN
+                 VOQ(IP,VOQR(72)) = VOQ(IP,VOQR(72)) + 360.
+              ENDIF
+              VOQ(IP,VOQR(72)) = DEGCNV( VOQ(IP,VOQR(72)))
+           ENDDO
+        ELSE
+           DO IP = 1, MIP                                                 !PSD
+             VOQ(IP,VOQR(72)) = OVEXCV(72)                                !PSD
+           ENDDO                                                          !PSD
+        ENDIF
+      ENDIF
+#endif
 !
 !     dissipation
 !

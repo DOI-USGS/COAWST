@@ -289,6 +289,9 @@
       LOGICAL, POINTER, SAVE :: LORQ
       LOGICAL, POINTER, SAVE :: LORQ_G(:)
 
+      INTEGER, SAVE, POINTER :: IREC(:)
+      INTEGER, SAVE, POINTER :: IREC_G(:,:)
+
 #else
       INTEGER, SAVE :: NREOQ = 0         ! actual number of requests saved
 
@@ -844,6 +847,7 @@
         REAL, POINTER :: WYI_G(:)
         REAL, POINTER :: WLEVL_G(:)
         REAL, POINTER :: ASTDF_G(:)
+        REAL, POINTER :: NPLAF_G(:)
 # ifdef WRF_COUPLING
         REAL, POINTER :: CosAngler_G(:)
         REAL, POINTER :: SinAngler_G(:)
@@ -867,6 +871,7 @@
       REAL   , POINTER :: WYI(:)
       REAL   , POINTER :: WLEVL(:)
       REAL   , POINTER :: ASTDF(:)
+      REAL   , POINTER :: NPLAF(:)
 # ifdef WRF_COUPLING
       REAL  , POINTER :: CosAngler(:)
       REAL  , POINTER :: SinAngler(:)
@@ -881,8 +886,8 @@
       REAL   , SAVE, ALLOCATABLE :: UXB(:)   , UYB(:)
       REAL   , SAVE, ALLOCATABLE :: WXI(:)   , WYI(:)
       REAL   , SAVE, ALLOCATABLE :: WLEVL(:) , ASTDF(:)
-#endif
       REAL   , SAVE, ALLOCATABLE :: NPLAF(:)
+#endif
       REAL   , SAVE, ALLOCATABLE :: LAYH(:), VEGDIL(:), VEGDRL(:),
      &                              VEGNSL(:)
 
@@ -1057,9 +1062,13 @@
       INTEGER, SAVE :: WAV_COMM_WORLD
       INTEGER :: Numspecl
       INTEGER :: NBGRPT_last
+      INTEGER, SAVE, ALLOCATABLE :: BGRIDPG(:,:)
+# ifdef REFINED_GRID
       INTEGER, SAVE, ALLOCATABLE :: Numspec(:)
       INTEGER, SAVE, ALLOCATABLE :: ac2size(:)
-      INTEGER, SAVE, ALLOCATABLE :: BGRIDPG(:,:)
+      INTEGER, SAVE, ALLOCATABLE :: sstp(:)
+      INTEGER, SAVE, ALLOCATABLE :: snew(:)
+# endif
 !
       INTEGER, POINTER :: MCGRDGL
       INTEGER, SAVE, TARGET, ALLOCATABLE :: MCGRDGL_G(:)
@@ -1261,7 +1270,7 @@
         REAL, POINTER :: AC1_G(:,:,:)
         REAL, POINTER :: COMPDA_G(:,:)
         REAL, POINTER :: OURQT_G(:)
-        REAL, POINTER :: AC2_parent_G(:)
+        REAL, POINTER :: AC2_parent_G(:,:)
       END TYPE T_PARALL2_MOD
       TYPE (T_PARALL2_MOD), ALLOCATABLE :: PARALL2_MOD(:)
 
@@ -1271,7 +1280,7 @@
       REAL, POINTER :: AC1(:,:,:)
       REAL, POINTER :: COMPDA(:,:)
       REAL, POINTER :: OURQT(:)
-      REAL, POINTER :: AC2_parent(:)
+      REAL, POINTER :: AC2_parent(:,:)
 #else
       REAL, SAVE,    ALLOCATABLE :: BSPECS(:,:,:,:)
       INTEGER, SAVE, ALLOCATABLE :: CROSS(:)

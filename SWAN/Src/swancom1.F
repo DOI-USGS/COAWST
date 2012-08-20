@@ -358,6 +358,9 @@
 !                     JWY2    Y-component of wind velocity in (X,Y)       40.00
 !                             at time T+DT (nonstationary case)           40.00
 !                     JUBOT   Absolute orbital velocity in a gridpoint (IX,IY)
+#ifdef SWAN_MODEL
+!                     JDBOT   Bottom wave direction at a gridpoint (IX,IY) !PSD 09/21/2011
+#endif
 !     SWTSDA    4D    intermediate data computed for the test points;
 !                     there are MTSVAR subarrays:
 !                     JPWNDA   wind source term part A
@@ -2883,6 +2886,18 @@
 !       Calculate various integral parameters for use in the source terms
 !
 !TIMG        CALL SWTSTA(116)                                                  40.23
+#ifdef SWAN_MODEL
+        CALL SINTGRL  (SPCDIR  ,KWAVE   ,AC2     ,                        40.02
+     &                 COMPDA(1,JDP2)   ,QBLOC   ,COMPDA(1,JURSEL),       40.02
+     &                 RDX     ,RDY     ,                                 40.02
+     &                 AC2TOT  ,ETOT    ,                                 40.02
+     &                 ABRBOT  ,COMPDA(1,JUBOT)  ,HS      ,               40.02
+     &                 COMPDA(1,JQB)    ,                                 40.02
+     &                 HM      ,KMESPC  ,SMEBRK,                          40.02
+     &                 COMPDA(1,JPBOT)  ,                                 40.51
+     &                 SWPDIR  ,                                          40.16
+     &                 COMPDA(1,JDBOT)  )                                 !PSD 09/21/2011
+#else
         CALL SINTGRL  (SPCDIR  ,KWAVE   ,AC2     ,                        40.02
      &                 COMPDA(1,JDP2)   ,QBLOC   ,COMPDA(1,JURSEL),       40.02
      &                 RDX     ,RDY     ,                                 40.02
@@ -2892,6 +2907,7 @@
      &                 HM      ,KMESPC  ,SMEBRK,                          40.02
      &                 COMPDA(1,JPBOT)  ,                                 40.51
      &                 SWPDIR                  )                          40.16
+#endif
 !TIMG        CALL SWTSTO(116)                                                  40.23
 !
         COMPDA(KCGRD(1),JHS) = HS                                         30.70
@@ -4617,6 +4633,16 @@
       END
 !****************************************************************
 !
+#ifdef SWAN_MODEL
+      SUBROUTINE SINTGRL(SPCDIR  ,KWAVE   ,AC2     ,                      40.02
+     &                   DEP2    ,QB_LOC  ,URSELL  ,                      40.02
+     &                   RDX     ,RDY     ,                               40.02
+     &                   AC2TOT  ,ETOT    ,                               40.02
+     &                   ABRBOT  ,UBOT    ,HS      ,QB      ,             40.02
+     &                   HM      ,KMESPC  ,SMEBRK  ,                      40.02
+     &                   TMBOT   ,SWPDIR  ,                               40.51 40.16
+     &                   DIRBOT  )                                        !PSD 09/21/2011
+#else
       SUBROUTINE SINTGRL(SPCDIR  ,KWAVE   ,AC2     ,                      40.02
      &                   DEP2    ,QB_LOC  ,URSELL  ,                      40.02
      &                   RDX     ,RDY     ,                               40.02
@@ -4624,6 +4650,7 @@
      &                   ABRBOT  ,UBOT    ,HS      ,QB      ,             40.02
      &                   HM      ,KMESPC  ,SMEBRK  ,                      40.02
      &                   TMBOT   ,SWPDIR           )                      40.51 40.16
+#endif
 !
 !****************************************************************
 !
@@ -4739,6 +4766,16 @@
 !                                                3      2
 !     UB2   = Integrate [ (AC2(theta,sigma) sigma / Sinh [ K(sigma) depth ]) dsigma dtheta ]
 !
+#ifdef SWAN_MODEL
+!PSD Next 2 integrals are used for DIRBOT calculation 09/21/2011
+!
+!                                                     3      2
+!     EBSINTOT   = Integrate [ (AC2(theta,sigma) sigma / Sinh [ K(sigma) depth ]) Sin [ theta ] dsigma dtheta ]
+!
+!                                                     3      2
+!     EBCOSTOT   = Integrate [ (AC2(theta,sigma) sigma / Sinh [ K(sigma) depth ]) Cos [ theta ] dsigma dtheta ]
+!
+#endif
 !     For reasons of ??, in the calculation of UB2, AB2, ETOTM2, ETOTM4, the high frequency
 !     tail is ignored.
 !
@@ -4751,8 +4788,11 @@
 !     QB      : computed in the subroutine FRABRE
 !     SIGM01  = ETOT1 / ETOT
 !     SIGM_10 = ETOT  / ACTOT
-!     UBOT    = Sqrt [ 2 UB2 ] Note: this is Urms according to Madsen (1994)
+!     UBOT    = Sqrt [ UB2 ] Note: this is Urms according to Madsen (1994)
 !     TMBOT   = 2*PI AB2 / UB2
+#ifdef SWAN_MODEL
+!     DIRBOT = ATAN2 [ EBSINTOT / EBCOSTOT] !PSD 09/21/2011 follows Madsen (1994)
+#endif
 !
 !  4. Argument variables
 !
@@ -4772,7 +4812,9 @@
 !     UBOT  : Near bottom velocity as function of IX and IY
 !     URSELL: Ursell number as function of IX and IY
 !     TMBOT : bottom wave period                                          40.51
-
+#ifdef SWAN_MODEL
+!     DIRBOT : bottom wave mean direction !PSD 09/21/2011
+#endif
       INTEGER, INTENT(IN)  :: SWPDIR                                      40.16
 
       REAL, INTENT(IN)     :: DEP2(MCGRD)
@@ -4786,6 +4828,9 @@
       REAL, INTENT(IN OUT) :: UBOT(MCGRD)
       REAL, INTENT(IN OUT) :: URSELL(MCGRD)
       REAL, INTENT(IN OUT) :: TMBOT(MCGRD)                                40.51
+#ifdef SWAN_MODEL
+      REAL, INTENT(IN OUT) :: DIRBOT(MCGRD)                               !PSD 09/21/2011
+#endif
 !
       REAL, INTENT(OUT)    :: ABRBOT, ETOT, HM, HS, QB_LOC
       REAL, INTENT(OUT)    :: AC2TOT, KMESPC, SMEBRK
@@ -4796,6 +4841,9 @@
 !     IS    : Counter for the relative frequency band
 !
       INTEGER, SAVE :: IENT = 0
+#ifdef SWAN_MODEL
+      INTEGER       :: IS, ID
+#endif
 !
 !     AB2                : Sum of E_DSHKD2_DS_DD
 !     ACTOT_DSIG         : Integration term for calculating ACTOT
@@ -4810,6 +4858,12 @@
 !     ETOT_SIG2_DSIG     : Integration term for calculating ETOT2
 !     ETOT_SIG2_DSHKD2_DSIG: Integration term for calculating UB2
 !     ETOT_SIG4_DSIG     : Integration term for calculating ETOT4
+#ifdef SWAN_MODEL
+!     EBSIN              : Integration term for calculatng EBSINTOT !PSD 09/21/2011
+!     EBCOS              : Integration term for calculating EBCOSTOT !PSD 09/21/2011     
+!     EBSINTOT           : Numerator in calculating DIRBOT !PSD 09/21/2011
+!     EBCOSTOT           : Denominator in calculating DIRBOT !PSD 09/21/2011
+#endif
 !     FRINT_X_DDIR       : FRINTF * DDIR
 !     SINH_K_X_DEP_2     : SINH(KWAVE*DEP2)**2
 !     UB2                : Sum of ETOT_SIG2_DSHKD2_DSIG
@@ -4828,6 +4882,13 @@
       REAL              :: ETOT_SIG2_DSHKD2_DSIG(MSC)                     40.22
       REAL              :: ETOT_SIG4_DSIG(MSC)                            40.22
       REAL              :: SINH_K_X_DEP_2(MSC)                            40.22
+#ifdef SWAN_MODEL
+      REAL              :: EBCOSTOT, EBSINTOT                            !PSD 09/21/2011
+      REAL              :: EBSIN(MSC)                                     !PSD 09/21/2011
+      REAL              :: EBCOS(MSC)                                     !PSD 09/21/2011
+      REAL              :: EBSIN_INT(MSC)                                 !PSD 09/23/2011
+      REAL              :: EBCOS_INT(MSC)                                 !PSD 09/23/2011
+#endif
 !
 !     9. STRUCTURE
 !
@@ -4871,6 +4932,9 @@
       ABRBOT         = 0.001
       UBOT(KCGRD(1)) = 0.
       TMBOT(KCGRD(1))= 0.
+#ifdef SWAN_MODEL
+      DIRBOT(KCGRD(1)) = 0.                                           !PSD 09/21/2011
+#endif
 !
 !     Calculate total spectral energy:
 !
@@ -4988,7 +5052,24 @@
         IF ( AB2 .GT. 0.) ABRBOT = SQRT (2. *  AB2)
         IF ( UB2.GT.0. .AND. AB2.GT.0. )                                  40.51
      &                               TMBOT(KCGRD(1)) = PI2*SQRT(AB2/UB2)  40.51
-!
+#ifdef SWAN_MODEL
+!PSD 09/21/2011 calculations for DIRBOT
+        IF (UB2.GT.0.) THEN
+          EBCOSTOT = 0.
+          EBSINTOT = 0.
+          DO IS=1,MSC
+            EBCOS(IS) = SUM(AC2(:,IS,KCGRD(1))*SPCDIR(:,2))
+            EBSIN(IS) = SUM(AC2(:,IS,KCGRD(1))*SPCDIR(:,3))
+          ENDDO 
+            EBCOS_INT = EBCOS(:) * SIGPOW(:,4) / SINH_K_X_DEP_2(:)
+            EBSIN_INT = EBSIN(:) * SIGPOW(:,4) / SINH_K_X_DEP_2(:)
+            EBCOSTOT = SUM(EBCOS_INT(:) * FRINTF_X_DDIR)
+            EBSINTOT = SUM(EBSIN_INT(:) * FRINTF_X_DDIR)
+            DIRBOT(KCGRD(1)) = ATAN2(EBSINTOT,EBCOSTOT)
+        ELSE
+          DIRBOT(KCGRD(1)) = OVEXCV(71)
+        ENDIF
+#endif
       ENDIF
 !
 !     *** calculate Ursell number ***

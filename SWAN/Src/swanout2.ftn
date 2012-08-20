@@ -14,8 +14,13 @@
 !
 !***********************************************************************
 !                                                                      *
+#ifdef SWAN_MODEL
+      SUBROUTINE SWBLOK ( RTYPE, OQI , IVTYP, FAC, PSNAME, MXK, MYK,
+     &                    IRQ  , VOQR, VOQ, ng)
+#else
       SUBROUTINE SWBLOK ( RTYPE, OQI , IVTYP, FAC, PSNAME, MXK, MYK,
      &                    IRQ  , VOQR, VOQ )                              40.51 40.31
+#endif
 !                                                                      *
 !***********************************************************************
 !
@@ -135,18 +140,26 @@
 !
 ! 10. SOURCE TEXT
 !                                                                             30.81
+#ifdef SWAN_MODEL
+      INTEGER, intent(in) :: ng
+#endif
       CHARACTER (LEN=8) :: PSNAME       ! name of output locations        40.13
       CHARACTER (LEN=4) :: RTYPE        ! output type                     40.13
       INTEGER   VOQR(*), IPD
       INTEGER   OQI(4), IVTYP(OQI(3))                                     40.31
       REAL      VOQ(MXK*MYK,*), FAC(OQI(3))                               40.31
       INTEGER IF, IL                                                      40.41 40.30
-      INTEGER, SAVE :: IREC(MAX_OUTP_REQ)=0                               40.51 40.41
       LOGICAL, SAVE :: MATLAB=.FALSE.                                     40.41 40.30
       CHARACTER (LEN=20) :: CTIM                                          40.41
       CHARACTER (LEN=30) :: NAMVAR                                        40.41
 
       INTEGER, SAVE :: IENT=0                                             40.13
+#ifdef SWAN_MODEL
+      IREC=>IREC_G(ng,:)
+      IREC(MAX_OUTP_REQ)=0
+#else
+      INTEGER, SAVE :: IREC(MAX_OUTP_REQ)=0                               40.51 40.41
+#endif
       IF (LTRACE) CALL STRACE (IENT,'SWBLOK')
 !
 !     **** obtain destination and number of variables from array OUTR ***

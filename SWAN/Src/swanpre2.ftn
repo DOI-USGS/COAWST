@@ -1487,7 +1487,11 @@
 !          <  DSPR/HSIGN/DIR/PDIR/TDIR/TM01/RTM01/RTP/TM02/FSPR/DEPTH/VEL/   &
 !             FRCOEFF/WIND/DISSIP/QB/TRANSP/FORCE/UBOT/URMS/WLEN/STEEPNESS/  &
 !             DHSIGN/DRTM01/LEAK/TSEC/XP/YP/DIST/SETUP/TMM10/RTMM10/         &
+#ifdef SWAN_MODEL
+!             TMBOT/DIRBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP/  &
+#else
 !             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP/         &
+#endif
 !             GENE/GENW/REDI/REDQ/REDT/PROPA/PROPX/PROPT/PROPS/RADS >        &
 !             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
@@ -1674,6 +1678,13 @@
                    JRADS  = MCMVAR                                        40.85
                    ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.85
+#ifdef SWAN_MODEL
+                IF (IVTYPE.EQ.72 .AND. JDBOT.LE.1) THEN                   !PSD 09/21/2011
+                   MCMVAR = MCMVAR+1                                      !PSD 09/21/2011
+                   JDBOT = MCMVAR                                         !PSD 09/21/2011
+                   ALOCMP = .TRUE.                                        !PSD 09/21/2011
+                ENDIF                                                     !PSD 09/21/2011
+#endif
                 IF (IVTYPE.EQ.7  .OR. IVTYPE.EQ.9  .OR.                   40.85
      &              IVTYPE.EQ.54 .OR. IVTYPE.EQ.55 .OR.                   40.85
      &              IVTYPE.EQ.56 .OR. IVTYPE.GE.60 ) LADDS = .TRUE.       40.85
@@ -1725,7 +1736,11 @@
 !          <  DSPR/HSIGN/DIR/PDIR/TDIR/TM01/RTM01/RTP/TM02/FSPR/DEPTH/VEL/   &
 !             FRCOEFF/WIND/DISSIP/QB/TRANSP/FORCE/UBOT/URMS/WLEN/STEEPNESS/  &
 !             DHSIGN/DRTM01/LEAK/TIME/TSEC/XP/YP/DIST/SETUP/TMM10/RTMM10/    &
+#ifdef SWAN_MODEL
+!             TMBOT/DIRBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP/  &
+#else
 !             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP/         &
+#endif
 !             GENE/GENW/REDI/REDQ/REDT/PROPA/PROPX/PROPT/PROPS/RADS >        &
 !             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
@@ -1882,6 +1897,13 @@
                JRADS  = MCMVAR                                            40.85
                ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.85
+#ifdef SWAN_MODEL
+            IF (IVTYPE.EQ.72 .AND. JDBOT.LE.1) THEN                       !PSD 09/21/2011
+               MCMVAR = MCMVAR+1                                          !PSD 09/21/2011
+               JDBOT  = MCMVAR                                            !PSD 09/21/2011
+               ALOCMP = .TRUE.                                            !PSD 09/21/2011
+            ENDIF                                                         !PSD 09/21/2011
+#endif
             IF (IVTYPE.EQ.7  .OR. IVTYPE.EQ.9  .OR.                       40.85
      &          IVTYPE.EQ.54 .OR. IVTYPE.EQ.55 .OR.                       40.85
      &          IVTYPE.EQ.56 .OR. IVTYPE.GE.60 ) LADDS = .TRUE.           40.85

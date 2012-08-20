@@ -212,15 +212,11 @@
 
 !     --- determine whether this is a parallel run or not
 
-#ifdef REFINED_GRID
-      PARLL = .TRUE.
-#else
       IF ( NPROC.GT.1 ) THEN
          PARLL = .TRUE.
       ELSE
          PARLL = .FALSE.
       END IF
-#endif
 
 !MPI!     --- define MPI constants for communication within SWAN
 !MPI
@@ -3579,8 +3575,14 @@
 !                  output data
 
                IF ( RTYPE(1:3).EQ.'BLK' ) THEN
+#ifdef SWAN_MODEL
+                  CALL SWCOLBLK ( RTYPE, CORQ%OQI, CORQ%IVTYP, CORQ%FAC,
+     &                            SNAMPF, MXK, MYK, IRQ, BLKND, XC, YC, 
+     &                            ng)
+#else
                   CALL SWCOLBLK ( RTYPE, CORQ%OQI, CORQ%IVTYP, CORQ%FAC,
      &                            SNAMPF, MXK, MYK, IRQ, BLKND, XC, YC )  40.51 40.41
+#endif
                   IF (STPNOW()) RETURN
                END IF
 
@@ -4273,9 +4275,15 @@
       END
 !****************************************************************
 !
+#ifdef SWAN_MODEL
+      SUBROUTINE SWCOLBLK ( RTYPE, OQI, IVTYP, FAC  , PSNAME,
+     &                      MXK  , MYK, IRQ  , BLKND, XC    ,             40.51
+     &                      YC   , ng)
+#else
       SUBROUTINE SWCOLBLK ( RTYPE, OQI, IVTYP, FAC  , PSNAME,
      &                      MXK  , MYK, IRQ  , BLKND, XC    ,             40.51
      &                      YC   )                                        40.51
+#endif
 !
 !****************************************************************
 !
@@ -4389,12 +4397,14 @@
 !     OPENED:     logical whether a file is open or not
 !     VOQ   :     collected output variables
 !
+#ifdef SWAN_MODEL
+      INTEGER, INTENT(IN) :: ng
+#endif
       INTEGER      IDLA, IENT, IF, IFAC, IL, ILPOS, IP, IPD,
      &             IPROC, IUNIT, IUT, IXK, IYK, IVTYPE, JVAR, NREF,
      &             NVAR
       REAL         DFAC, FMAX, FTIP, FTIP1, FTIP2
       LOGICAL      EXIST, OPENED
-      INTEGER, SAVE :: IREC(MAX_OUTP_REQ)=0                               40.51 40.41
       LOGICAL, SAVE :: MATLAB=.FALSE.                                     40.41
       CHARACTER*80 MSGSTR
       CHARACTER (LEN=20) :: CTIM                                          40.41
@@ -4439,6 +4449,12 @@
 !
       SAVE IENT
       DATA IENT/0/
+#ifdef SWAN_MODEL
+      IREC=>IREC_G(ng,:)
+      IREC(MAX_OUTP_REQ)=0
+#else
+      INTEGER, SAVE :: IREC(MAX_OUTP_REQ)=0                               40.51 40.41
+#endif
       IF (LTRACE) CALL STRACE (IENT,'SWCOLBLK')
 
       NREF = OQI(1)

@@ -633,7 +633,7 @@
 !  6. Parameter variables
 !
 #ifdef SWAN_MODEL
-!     NMOVAR [  71]  maximum number of output variables                   40.85 40.64 40.61 40.51 40.21 40.41
+!     NMOVAR [  72]  maximum number of output variables                   40.85 40.64 40.61 40.51 40.21 40.41
 #else
 !     NMOVAR [  70]  maximum number of output variables                   40.85 40.64 40.61 40.51 40.21 40.41
 #endif
@@ -641,7 +641,7 @@
 !
       INTEGER NMOVAR, MOUTPA
 #ifdef SWAN_MODEL
-      PARAMETER (NMOVAR = 71, MOUTPA=50)                                  40.85 40.87 40.64 40.61 40.51 40.21 40.41
+      PARAMETER (NMOVAR = 72, MOUTPA=50)                                  40.85 40.87 40.64 40.61 40.51 40.21 40.41
 #else
       PARAMETER (NMOVAR = 70, MOUTPA=50)                                  40.85 40.87 40.64 40.61 40.51 40.21 40.41
 #endif
@@ -720,6 +720,7 @@
 !  (70) [   'NPL']
 #ifdef SWAN_MODEL
 !  (71) [ 'WLENP']
+!  (72) ['DIRBOT']
 #endif
 ! OVSNAM(NMOVAR)   short name of output quantity
 !  ( 1) [    'Xp']
@@ -788,7 +789,8 @@
 !  (69) ['Radstr']
 !  (70) ['Nplant']
 #ifdef SWAN_MODEL
-!  (71) ['WLENP']
+!  (71) [' Wlenp']
+!  (72) ['Dirbot']
 #endif
 ! OVLNAM(NMOVAR)   long name of output quantity
 !  ( 1) [                        'X user coordinate']
@@ -858,6 +860,7 @@
 !  (70) [                            'Plants per m2']
 #ifdef SWAN_MODEL
 !  (71) [                         'Peak wave length']
+!  (72) [            'Average bottom wave direction']
 #endif
 ! OVUNIT(NMOVAR)   unit of of output quantity
 !  ( 1) [CALCULAT] =UL
@@ -927,6 +930,7 @@
 !  (70) [  '1/m2']
 #ifdef SWAN_MODEL
 !  (71) [CALCULAT] =UL
+!  (72) [CALCULAT] =UDI
 #endif
 ! SNAME [        ] name of output point set
 ! UAP   [  'W/m2'] unit of dissipation
@@ -1053,6 +1057,7 @@
 !  (70)  [  1]   Nplant
 #ifdef SWAN_MODEL
 !  (71)  [  1]   Wlenp
+!  (72)  [  2]   DirBot
 #endif
 ! OVEXCV(NMOVAR)   exception value for output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1120,6 +1125,7 @@
 !  (70)  [    -9.] Nplant
 #ifdef SWAN_MODEL
 !  (71)  [   -10.] Wlenp
+!  (72)  [  -999.] DirBot
 #endif
 ! OVLEXP(NMOVAR)   lower expected limit of output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1187,6 +1193,7 @@
 !  (70)  [     0.] Nplant
 #ifdef SWAN_MODEL
 !  (71)  [     0.] Wlenp
+!  (72)  [     0.] DirBot
 #endif
 ! OVLLIM(NMOVAR)   lower limit of validity of output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1254,6 +1261,7 @@
 !  (70)  [     0.] Nplant
 #ifdef SWAN_MODEL
 !  (71)  [     0.] Wlenp
+!  (72)  [     0.] DirBot
 #endif
 ! OVHEXP(NMOVAR)   upper expected limit of output quantity
 !  ( 1)  [  1.E10] Xp
@@ -1321,6 +1329,7 @@
 !  (70)  [   100.] Nplant
 #ifdef SWAN_MODEL
 !  (71)  [   200.] Wlenp
+!  (72)  [   360.] DirBot
 #endif
 ! OVULIM(NMOVAR)   upper limit of validity
 !  ( 1)  [  1.E10] Xp
@@ -1388,6 +1397,7 @@
 !  (70)  [  1000.] Nplant
 #ifdef SWAN_MODEL
 !  (71)  [  1000.] Wlenp
+!  (72)  [   360.] DirBot
 #endif
 ! SINCQ  [       ] sin of ALCQ
 ! SINPQ  [       ] sin of ALPQ
@@ -1901,6 +1911,9 @@
 ! JP4S   [  6] within array SWTSDA, quadruplet interactions
 ! JPBOT  [  1] bottom wave period within array COMPDA
 !              set by command TABLE/BLOCK
+#ifdef SWAN_MODEL
+! JDBOT  [  1] mean wave bottom direction within array COMPDA
+#endif
 ! JPBTFR [  4] within array SWTSDA, bottom friction
 ! JPTRI  [  8] within array SWTSDA, triad interactions
 ! JPVEGT [  9] within array SWTSDA, vegetation dissipation
@@ -1957,6 +1970,9 @@
 !              =MCMVAR+4, for command WCAP JANS ... (add JCDRAG, JTAUW,
 !               JUSTAR, JZEL)
 !              =MCMVAR+1, for command TABLE/BLOCK TMBOT (add JPBOT)
+#ifdef SWAN_MODEL
+!              =MCMVAR+1, for command TABLE/BLOCK DIRBOT (add JDBOT)   !PSD 09/21/2011
+#endif
 !              =MCMVAR+1, for command TABLE/BLOCK BOTLEV (add JBOTLV)
 !              =MCMVAR+1, for command TABLE/BLOCK DISB (add JDSXB)
 !              =MCMVAR+1, for command TABLE/BLOCK DISSU (add JDSXS)
@@ -2003,6 +2019,9 @@
       INTEGER             JWLV1,       JWLV2,       JWLV3
       INTEGER             JWX2,        JWX3
       INTEGER             JWY2,        JWY3,        JZEL  ,      JPBOT
+#ifdef SWAN_MODEL
+      INTEGER             JDBOT                                         !PSD 09/21/2011
+#endif
       INTEGER             MCMVAR,                   MTSVAR,      JURSEL
       INTEGER             JBOTLV,      MSWMATR,     MLSWMAT
 !
