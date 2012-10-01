@@ -50,7 +50,7 @@ else
     NETCDF_LIBDIR ?= /usr/local/lib
 endif
              LIBS += $(shell $(NC_CONFIG) --flibs)
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
+             LIBS := -L$(NETCDF_LIBDIR) -lnetcdff -lnetcdf
 ifdef USE_NETCDF4
              LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
 endif
