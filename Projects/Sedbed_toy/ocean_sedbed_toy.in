@@ -42,7 +42,7 @@
 
 ! C-preprocessing Flag.
 
-    MyAppCPP = SED_TOY
+    MyAppCPP = SEDBED_TOY
 
 ! Input variable information file name.  This file needs to be processed
 ! first so all information arrays can be initialized properly.
