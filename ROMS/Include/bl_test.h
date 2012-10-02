@@ -12,6 +12,7 @@
 ** Input script:       ocean_bl_test.in
 */
 
+#define ROMS_MODEL
 #define UV_ADV
 #define UV_SADVECTION
 #define UV_COR

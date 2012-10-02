@@ -14,6 +14,7 @@
 **                     sediment_inlet_test.in
 */
 
+#define ROMS_MODEL
 #define UV_VIS2
 #define MIX_S_UV
 #undef  ANA_GRID

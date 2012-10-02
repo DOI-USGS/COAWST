@@ -12,6 +12,7 @@
 ** Input script:       ocean_soliton.in
 */
 
+#define ROMS_MODEL
 #define UV_ADV
 #define UV_C4ADVECTION
 #define UV_VIS2

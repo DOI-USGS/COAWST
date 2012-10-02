@@ -14,6 +14,7 @@
 **                     sediment_lake_signell.in
 */
 
+#define ROMS_MODEL
 #define UV_ADV
 #undef  UV_COR
 #define DJ_GRADPS

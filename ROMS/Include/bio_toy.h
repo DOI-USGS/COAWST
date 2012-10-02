@@ -13,6 +13,7 @@
 **                     bioFennel.in, ecosim.in, npzd_Franks.in, npzd_Powell.in
 */
 
+#define ROMS_MODEL
 #define UV_ADV
 #define UV_SADVECTION
 #define UV_COR

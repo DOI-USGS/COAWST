@@ -12,6 +12,7 @@
 ** Input script:       ocean_grav_adj.in
 */
 
+#define ROMS_MODEL
 #define UV_ADV
 #define UV_VIS2
 #define UV_LDRAG

@@ -12,6 +12,7 @@
 ** Input script:       ocean_lmd_test.in
 */
 
+#define ROMS_MODEL
 #define UV_ADV
 #define UV_COR
 #define UV_QDRAG

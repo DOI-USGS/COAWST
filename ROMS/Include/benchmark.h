@@ -14,6 +14,7 @@
 ** Input script:       benchmark1.in, benchmark2.in, benchmark3.in
 */
 
+#define ROMS_MODEL
 #define UV_ADV
 #define UV_COR
 #define UV_QDRAG

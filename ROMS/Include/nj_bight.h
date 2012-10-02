@@ -12,6 +12,7 @@
 ** Input script:       ocean_nj_bight.in
 */
 
+#define ROMS_MODEL
 #define UV_ADV
 #define UV_SADVECTION
 #define UV_QDRAG

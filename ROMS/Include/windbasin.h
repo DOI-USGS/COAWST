@@ -12,6 +12,7 @@
 ** Input script:       ocean_windbasin.in
 */
 
+#define ROMS_MODEL
 #undef UV_ADV
 #define UV_COR
 #define UV_QDRAG

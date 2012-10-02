@@ -12,6 +12,7 @@
 ** Input script:       ocean_canyon2d.in, ocean_canyon3d.in
 */
 
+#define ROMS_MODEL
 #ifndef SOLVE3D                   /* 2D set-up */
 # define UV_ADV
 # define UV_QDRAG

@@ -12,6 +12,7 @@
 ** Input script:       ocean_channel_neck1.in, ocean_channel_neck3.in
 */
 
+#define ROMS_MODEL
 #undef  AD_SENSITIVITY
 #define CORRELATION
 #undef  MULTI_DOMAIN

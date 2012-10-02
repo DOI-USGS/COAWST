@@ -14,6 +14,7 @@
 **                     sediment_test_head.in
 */
 
+#define ROMS_MODEL
 #undef  CURVGRID
 #define WET_DRY
 #define WEC_VF

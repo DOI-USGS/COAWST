@@ -12,6 +12,7 @@
 ** Input script:       ocean_double_gyre.in
 */
 
+#define ROMS_MODEL
 #define SOLVE3D
 
 #undef  AD_SENSITIVITY          /* Adjoint Sensitivity */

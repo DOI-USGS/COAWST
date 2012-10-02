@@ -13,6 +13,7 @@
 **                     sediment_estuary_test.in
 */
 
+#define ROMS_MODEL
 #define UV_ADV
 #define UV_LOGDRAG
 #define TS_U3HADVECTION

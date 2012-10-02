@@ -13,6 +13,7 @@
 **                     sediment_sed_test1.in
 */
 
+#define ROMS_MODEL
 #define UV_ADV
 #define UV_PSOURCE
 #define UV_LOGDRAG

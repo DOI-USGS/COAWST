@@ -13,6 +13,7 @@
 **                     s4dvar.in
 */
 
+#define ROMS_MODEL
 #undef  NLM_DRIVER
 #undef  IS4DVAR
 #define W4DPSAS

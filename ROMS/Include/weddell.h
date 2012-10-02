@@ -12,6 +12,7 @@
 ** Input script:       ocean_wedell.in
 */
 
+#define ROMS_MODEL
 #define UV_ADV
 #define DJ_GRADPS
 #define UV_COR

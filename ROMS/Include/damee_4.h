@@ -12,6 +12,7 @@
 ** Input script:       ocean_damee_4.in
 */
 
+#define ROMS_MODEL
 #define UV_ADV
 #define UV_COR
 #define UV_QDRAG

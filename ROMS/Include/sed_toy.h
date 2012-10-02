@@ -13,6 +13,7 @@
 **                     sediment_sed_toy.in
 */
 
+#define ROMS_MODEL
 #undef  BODYFORCE
 #undef  LOG_PROFILE
 #define DJ_GRADPS

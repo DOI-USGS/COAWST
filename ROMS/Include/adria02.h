@@ -15,6 +15,7 @@
 **                     stations_adria02.in
 */
 
+#define ROMS_MODEL
 #define UV_ADV
 #define UV_COR
 #define UV_PSOURCE

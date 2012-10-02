@@ -12,6 +12,7 @@
 ** Input script:       ocean_lab_canyon.in
 */
 
+#define ROMS_MODEL
 #define UV_COR
 #define UV_ADV
 #define UV_LDRAG

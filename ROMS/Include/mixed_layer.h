@@ -13,6 +13,7 @@
 ** Input script:       ocean_mixed_layer.in
 */
 
+#define ROMS_MODEL
 #define WRITE_GRID
 #define OUT_DOUBLE
 #define ANA_GRID

@@ -13,6 +13,7 @@
 ** Input script:       ocean_riverplume2.in
 */
 
+#define ROMS_MODEL
 #define UV_ADV
 #define UV_COR
 #define UV_QDRAG
