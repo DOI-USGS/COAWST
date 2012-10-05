@@ -30,15 +30,15 @@ xc_c=repmat(xc_c',1,numy_c);
 yc_c=[1:numy_c];
 yc_c=repmat(yc_c,numx_c,1);
 
-xc_f=[1:1/scale:numx_c];
-xc_f=repmat(xc_f',1,numy_f);
-yc_f=[1:1/scale:numy_c];
-yc_f=repmat(yc_f,numx_f,1);
+xp_f=[1:1/scale:numx_c];
+xp_f=repmat(xp_f',1,numy_f);
+yp_f=[1:1/scale:numy_c];
+yp_f=repmat(yp_f,numx_f,1);
 
 %%%%%%%%%  Lon Lat SPACE  %%%%%%%%%%%
 %establish a full grid of psi points, including an extra row and column
-lon_full_grid=interp2(xc_c', yc_c', lon_psi(Istr-offset:Iend+1,Jstr-offset:Jend+1)', xc_f, yc_f);
-lat_full_grid=interp2(xc_c', yc_c', lat_psi(Istr-offset:Iend+1,Jstr-offset:Jend+1)', xc_f, yc_f);
+lon_full_grid=interp2(xc_c', yc_c', lon_psi(Istr-offset:Iend+1,Jstr-offset:Jend+1)', xp_f, yp_f,'spline');
+lat_full_grid=interp2(xc_c', yc_c', lat_psi(Istr-offset:Iend+1,Jstr-offset:Jend+1)', xp_f, yp_f,'spline');
 
 %set the psi points
 fine.lon.psi=lon_full_grid(offset+2:end-(scale-3+1),offset+2:end-(scale-3+1)); 
@@ -64,8 +64,8 @@ fine.lat.v=ztemp(2:2:end-1,3:2:end-2);
 
 %%%%%%%%%  X Y SPACE  %%%%%%%%%%%
 %establish a full grid of psi points, including an extra row and column
-x_full_grid=interp2(xc_c', yc_c', x_psi(Istr-offset:Iend+1,Jstr-offset:Jend+1)', xc_f, yc_f);
-y_full_grid=interp2(xc_c', yc_c', y_psi(Istr-offset:Iend+1,Jstr-offset:Jend+1)', xc_f, yc_f);
+x_full_grid=interp2(xc_c', yc_c', x_psi(Istr-offset:Iend+1,Jstr-offset:Jend+1)', xp_f, yp_f,'spline');
+y_full_grid=interp2(xc_c', yc_c', y_psi(Istr-offset:Iend+1,Jstr-offset:Jend+1)', xp_f, yp_f,'spline');
 
 %set the psi points
 fine.x.psi=x_full_grid(offset+2:end-(scale-3+1),offset+2:end-(scale-3+1)); 
@@ -90,20 +90,42 @@ ztemp=interp2(y_full_grid(offset+2-1:end-(scale-3+1)+1,offset+2-1:end-(scale-3+1
 fine.y.v=ztemp(2:2:end-1,3:2:end-2); 
 
 %%%%%%%  now need grid metrics %%%%%%%%%%%
-fine.pm=zeros(size(fine.lon.rho));
-fine.pn=zeros(size(fine.lat.rho));
-for j=Jstr-1:Jend+1
-  for i=Istr-1:Iend+1
-    X=[lon_psi(i-1,j-1) lon_psi(i,j-1) lon_psi(i,j) lon_psi(i-1,j)];
-    Y=[lat_psi(i-1,j-1) lat_psi(i,j-1) lat_psi(i,j) lat_psi(i-1,j)];
-    %find child cells within parent cell
-    ind=find(inpolygon(fine.lon.rho(:),fine.lat.rho(:),X,Y));
-    if ~isempty(ind),
-      fine.pm(ind)=pm(i,j)*scale;
-      fine.pn(ind)=pn(i,j)*scale;
-    end
-  end
+if ((spherical=='T') || (spherical=='t'))
+  [LP, MP] = size(fine.lon.rho);
+  [dx,ang]=sw_dist(fine.lat.u(:),fine.lon.u(:),'km');
+
+  dx=[dx(:); dx(end)]*1000;  % km==> m
+  dx=reshape(dx,LP-1,MP);
+  dx=[dx(1,:); dx(1:end-1,:); dx(end-1,:)];
+
+  ang=[ang(:); ang(end)];
+  ang=reshape(ang,LP-1,MP);
+  ang=[ang(1,:); ang(1:end-1,:); ang(end-1,:)];
+  ang=ang*pi/180;
+
+  latv=fine.lat.v.';
+  lonv=fine.lon.v.';
+  dy=sw_dist(latv(:).',lonv(:).','km');
+  dy=[dy(:); dy(end)]*1000;   % km ==> m
+  dy=reshape(dy,MP-1,LP);
+  dy=[dy(1,:); dy(1:end-1,:); dy(end-1,:)];
+  dy=dy.';
+else
+  dx=sqrt((fine.x.u(2:end,:)-fine.x.u(1:end-1,:)).^2+(fine.y.u(2:end,:)-fine.y.u(1:end-1,:)).^2);
+  dx=[dx(1,:); dx; dx(end,:)];
+  dy=sqrt((x_v(:,2:end)-x_v(:,1:end-1)).^2+(y_v(:,2:end)-y_v(:,1:end-1)).^2);
+  dy=dy;
+  dy=[dy(:,1) dy dy(:,end)];
+
+  y_v=grid_y(i_psi, j_psi);
+  y_v=diff(y_v); 
+  x_v=dx(2:end-1,2:end);
+  ang=angle(x_v+y_v*sqrt(-1));
+  ang=[ang(end,:); ang; ang(1,:)];
+  ang=[ang ang(:,end)];
 end
+fine.pm=1./dx;
+fine.pn=1./dy;
 
 fine.dmde = zeros(size(fine.pm));
 fine.dndx = zeros(size(fine.pn));
@@ -115,22 +137,18 @@ fine.dndx(1,:)=fine.dndx(2,:);
 fine.dndx(end,:)=fine.dndx(end-1,:);
 
 % Grid-cell orientation, degrees counter-clockwise from 
-fine.angle=griddata(lon_rho,lat_rho,angle,fine.lon.rho,fine.lat.rho);
+%fine.angle=griddata(lon_rho,lat_rho,angle,fine.lon.rho,fine.lat.rho);
+fine.angle=ang;
 fine.f=griddata(lon_rho,lat_rho,f,fine.lon.rho,fine.lat.rho);
 
 %%%%%% GRID h and masking  %%%%%%%%%
 [XI,YI]=meshgrid([min(x_psi(:)):min(1./pm(:))/2:max(x_psi(:))], ...
                  [min(y_psi(:)):min(1./pn(:))/2:max(y_psi(:))]);
 ZI=griddata(x_rho,y_rho,h,XI,YI);
-%ZI=interp2(x_rho,y_rho,h,XI,YI);
 fine.h=interp2(XI,YI,ZI,fine.x.rho,fine.y.rho);
 
 ZI=griddata(x_rho,y_rho,mask_rho,XI,YI);
-%ZI=interp2(x_rho,y_rho,mask_rho,XI,YI);
 fine.mask.rho=interp2(XI,YI,ZI,fine.x.rho,fine.y.rho,'nearest');
-%force masking to = 0 if it is less than 1.
-fine.mask.rho(fine.mask.rho>0.95)=1;
-fine.mask.rho(fine.mask.rho<0.96)=0;
 
 %%%%%%%%%%%%%%%%%%% finished creating grid %%%%%%%%%%%%%%%%
 

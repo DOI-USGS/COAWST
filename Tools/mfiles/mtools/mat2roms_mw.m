@@ -206,12 +206,15 @@ if ((s.spherical=='T') || (s.spherical=='t'))
   dy=dy.';
 else
   x_u=grid_x(i_u, j_u);
-  dx=diff(x_u);
+  y_u=grid_y(i_u, j_u);
+  %dx=diff(x_u);
+  dx=sqrt((x_u(2:end,:)-x_u(1:end-1,:)).^2+(y_u(2:end,:)-y_u(1:end-1,:)).^2);
   dx=[dx(1,:); dx; dx(end,:)];
 
-  y_v=grid_y(i_v, j_v).';
-  dy=diff(y_v);
-  dy=dy.';
+  x_v=grid_x(i_v, j_v);
+  y_v=grid_y(i_v, j_v);
+% dy=diff(y_v);
+  dy=sqrt((x_v(:,2:end)-x_v(:,1:end-1)).^2+(y_v(:,2:end)-y_v(:,1:end-1)).^2);
   dy=[dy(:,1) dy dy(:,end)];
 
   y_v=grid_y(i_psi, j_psi);
