@@ -1,5 +1,4 @@
 #include "cppdefs.h"
-#undef VARY_AVG2
 #define INTERP_BILINEAR
       MODULE get_2dparent_data_mod
 #ifdef REFINED_GRID
@@ -247,38 +246,23 @@
 ! Now interpolate to the local tile.
 !
 # ifdef INTERP_BILINEAR
-          IF (spherical) THEN
-            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                         REFINED(ng)%lonr_p(Imin:Imax,Jmin:Jmax), &
-     &                         REFINED(ng)%latr_p(Imin:Imax,Jmin:Jmax), &
-     &                         A, Amask,                                &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_r, OCEAN(ng)%hindpj_r,  &
-     &                         GRID(ng)%lonr, GRID(ng)%latr, A2,        &
-     &                         my_min, my_max)
-          ELSE
-            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                         REFINED(ng)%xr_p(Imin:Imax,Jmin:Jmax),   &
-     &                         REFINED(ng)%yr_p(Imin:Imax,Jmin:Jmax),   &
-     &                         A, Amask,                                &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_r, OCEAN(ng)%hindpj_r,  &
-     &                         GRID(ng)%xr, GRID(ng)%yr, A2,            &
-     &                         my_min, my_max)
-          END IF
+          CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,               &
+     &                        A, Amask,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        OCEAN(ng)%hindspi_r, OCEAN(ng)%hindspj_r, &
+     &                        A2, my_min, my_max)
 # else
-            CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A,                                       &
+          CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
+     &                       A,                                       &
 #  ifdef MASKING
-     &                         Amask,                                   &
+     &                       Amask,                                   &
 #  endif 
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj, refscale,            &
-     &                         OCEAN(ng)%hindpi_r(i,j),                 &
-     &                         OCEAN(ng)%hindpj_r(i,j),                 &
-     &                         A2, my_min, my_max)
+     &                       LBi, UBi, LBj, UBj,                      &
+     &                       LBi, UBi, LBj, UBj, refscale,            &
+     &                       OCEAN(ng)%hindspi_r(i,j),                &
+     &                       OCEAN(ng)%hindspj_r(i,j),                &
+     &                       A2, my_min, my_max)
 # endif
 !
           IF (WESTERN_EDGE) THEN
@@ -357,37 +341,22 @@
 ! Now interpolate to the local tile for ng=2.
 !
 # ifdef INTERP_BILINEAR
-          IF (spherical) THEN
-            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                         REFINED(ng)%lonu_p(Imin:Imax,Jmin:Jmax), &
-     &                         REFINED(ng)%latu_p(Imin:Imax,Jmin:Jmax), &
-     &                         A, Amask,                                &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
-     &                         GRID(ng)%lonu, GRID(ng)%latu, A2,        &
-     &                         my_min, my_max)
-          ELSE
-            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                         REFINED(ng)%xu_p(Imin:Imax,Jmin:Jmax),   &
-     &                         REFINED(ng)%yu_p(Imin:Imax,Jmin:Jmax),   &
-     &                         A, Amask,                                &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
-     &                         GRID(ng)%xu, GRID(ng)%yu, A2,            &
-     &                         my_min, my_max)
-          END IF
+          CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,               &
+     &                        A, Amask,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        OCEAN(ng)%hindspi_u, OCEAN(ng)%hindspj_u, &
+     &                        A2, my_min, my_max)
 # else
-            CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A,                                       &
+          CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,                &
+     &                       A,                                         &
 #  ifdef MASKING
-     &                         Amask,                                   &
+     &                       Amask,                                     &
 #  endif 
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj, refscale,            &
-     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
-     &                         A2, my_min, my_max)
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       LBi, UBi, LBj, UBj, refscale,              &
+     &                       OCEAN(ng)%hindspi_u, OCEAN(ng)%hindspj_u,  &
+     &                       A2, my_min, my_max)
 # endif
 !
           IF (WESTERN_EDGE) THEN
@@ -473,16 +442,10 @@
             DO j=Jstr,Jend
               ic=NINT(OCEAN(ng)%hindpi_u(1,j))
               jc=NINT(OCEAN(ng)%hindpj_u(1,j))
-              ic1=OCEAN(ng)%hindpi_u(1,j)
-              jc1=OCEAN(ng)%hindpj_u(1,j)
               IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
-# ifdef VARY_AVG2
-                cff=0.5_r8*(A(ic,jc+1)-A(ic,jc-1))
-                REFINED(ng)%DUavg2R_west(j)=A(ic,jc)+                   &
-     &                                      (jc1-REAL(jc,r8))*cff
-# else
-                REFINED(ng)%DUavg2R_west(j)=A(ic,jc)
-# endif
+                REFINED(ng)%DUavg2R_west(j)=A(ic,jc)*                    &
+     &                                      GRID(ng)%on_u(1,j)/          &
+     &                                      REFINED(ng)%on_u_p(ic,jc)
               END IF
             END DO
           END IF
@@ -490,16 +453,10 @@
             DO j=Jstr,Jend
               ic=NINT(OCEAN(ng)%hindpi_u(Iend+1,j))
               jc=NINT(OCEAN(ng)%hindpj_u(Iend+1,j))
-              ic1=OCEAN(ng)%hindpi_u(Iend+1,j)
-              jc1=OCEAN(ng)%hindpj_u(Iend+1,j)
               IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
-# ifdef VARY_AVG2
-                cff=0.5_r8*(A(ic,jc+1)-A(ic,jc-1))
-                REFINED(ng)%DUavg2R_east(j)=A(ic,jc)+                   &
-     &                                      (jc1-REAL(jc,r8))*cff
-# else
-                REFINED(ng)%DUavg2R_east(j)=A(ic,jc)
-# endif
+                REFINED(ng)%DUavg2R_east(j)=A(ic,jc)*                    &
+     &                                      GRID(ng)%on_u(Iend+1,j)/     &
+     &                                      REFINED(ng)%on_u_p(ic,jc)
               END IF
             END DO
           END IF
@@ -533,37 +490,22 @@
 ! Now interpolate to the local tile for ng=2.
 !
 # ifdef INTERP_BILINEAR
-          IF (spherical) THEN
-            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                         REFINED(ng)%lonu_p(Imin:Imax,Jmin:Jmax), &
-     &                         REFINED(ng)%latu_p(Imin:Imax,Jmin:Jmax), &
-     &                         A, Amask,                                &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
-     &                         GRID(ng)%lonu, GRID(ng)%latu, A2,        &
-     &                         my_min, my_max)
-          ELSE
-            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                         REFINED(ng)%xu_p(Imin:Imax,Jmin:Jmax),   &
-     &                         REFINED(ng)%yu_p(Imin:Imax,Jmin:Jmax),   &
-     &                         A, Amask,                                &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
-     &                         GRID(ng)%xu, GRID(ng)%yu, A2,            &
-     &                         my_min, my_max)
-          END IF
+          CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,               &
+     &                        A, Amask,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        OCEAN(ng)%hindspi_u, OCEAN(ng)%hindspj_u, &
+     &                        A2, my_min, my_max)
 # else
-            CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A,                                       &
+          CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,                &
+     &                       A,                                         &
 #  ifdef MASKING
-     &                         Amask,                                   &
+     &                       Amask,                                     &
 #  endif 
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj, refscale,            &
-     &                         OCEAN(ng)%hindpi_u, OCEAN(ng)%hindpj_u,  &
-     &                         A2, my_min, my_max)
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       LBi, UBi, LBj, UBj, refscale,              &
+     &                       OCEAN(ng)%hindspi_u, OCEAN(ng)%hindspj_u,  &
+     &                       A2, my_min, my_max)
 # endif
 !
           IF (WESTERN_EDGE) THEN
@@ -644,37 +586,22 @@
 ! Now interpolate to the local tile for ng=2.
 !
 # ifdef INTERP_BILINEAR
-          IF (spherical) THEN
-            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                         REFINED(ng)%lonv_p(Imin:Imax,Jmin:Jmax), &
-     &                         REFINED(ng)%latv_p(Imin:Imax,Jmin:Jmax), &
-     &                         A, Amask,                                &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,  &
-     &                         GRID(ng)%lonv, GRID(ng)%latv, A2,        &
-     &                         my_min, my_max)
-          ELSE
-            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                         REFINED(ng)%xv_p(Imin:Imax,Jmin:Jmax),   &
-     &                         REFINED(ng)%yv_p(Imin:Imax,Jmin:Jmax),   &
-     &                         A, Amask,                                &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,  &
-     &                         GRID(ng)%xv, GRID(ng)%yv, A2,            &
-     &                         my_min, my_max)
-          END IF
+          CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,               &
+     &                        A, Amask,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        OCEAN(ng)%hindspi_v, OCEAN(ng)%hindspj_v, &
+     &                        A2, my_min, my_max)
 # else
-            CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A,                                       &
+          CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,                &
+     &                       A,                                         &
 #  ifdef MASKING
-     &                         Amask,                                   &
+     &                       Amask,                                     &
 #  endif 
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj, refscale,            &
-     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,  &
-     &                         A2, my_min, my_max)
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       LBi, UBi, LBj, UBj, refscale,              &
+     &                       OCEAN(ng)%hindspi_v, OCEAN(ng)%hindspj_v,  &
+     &                       A2, my_min, my_max)
 # endif
           IF (WESTERN_EDGE) THEN
             DO j=JstrT,JendT
@@ -740,7 +667,7 @@
 # endif
      &                    Npts, Aout)
 !
-! distribute the Aout (1D packed) field to all the nodes for ng=2
+! distribute the Aout (1D packed) field to all the nodes for ng>2
           CALL mpi_bcast (Aout, MySize, MP_FLOAT, MyMaster,             &
      &                    OCN_COMM_WORLD, MyError)
 ! unpack and place in global ng=1 2D array
@@ -755,16 +682,10 @@
             DO i=Istr,Iend
               ic=NINT(OCEAN(ng)%hindpi_v(i,1))
               jc=NINT(OCEAN(ng)%hindpj_v(i,1))
-              ic1=OCEAN(ng)%hindpi_v(i,1)
-              jc1=OCEAN(ng)%hindpj_v(i,1)
               IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
-# ifdef VARY_AVG2
-                cff=0.5_r8*(A(ic+1,jc)-A(ic-1,jc))
-                REFINED(ng)%DVavg2R_south(i)=A(ic,jc)+                  &
-     &                                      (ic1-REAL(ic,r8))*cff
-# else
-                REFINED(ng)%DVavg2R_south(i)=A(ic,jc)
-# endif
+                REFINED(ng)%DVavg2R_south(i)=A(ic,jc)*                   &
+     &                                       GRID(ng)%om_v(i,1)/         &
+     &                                       REFINED(ng)%om_v_p(ic,jc)
               END IF
             END DO
           END IF
@@ -772,16 +693,10 @@
             DO i=Istr,Iend
               ic=NINT(OCEAN(ng)%hindpi_v(i,Jend+1))
               jc=NINT(OCEAN(ng)%hindpj_v(i,Jend+1))
-              ic1=OCEAN(ng)%hindpi_v(i,Jend+1)
-              jc1=OCEAN(ng)%hindpj_v(i,Jend+1)
               IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
-# ifdef VARY_AVG2
-                cff=0.5_r8*(A(ic+1,jc)-A(ic-1,jc))
-                REFINED(ng)%DVavg2R_north(i)=A(ic,jc)+                  &
-     &                                      (ic1-REAL(ic,r8))*cff
-# else
-                REFINED(ng)%DVavg2R_north(i)=A(ic,jc)
-# endif
+                REFINED(ng)%DVavg2R_north(i)=A(ic,jc)*                   &
+     &                                       GRID(ng)%om_v(i,Jend+1)/    &
+     &                                       REFINED(ng)%om_v_p(ic,jc)
               END IF
             END DO
           END IF
@@ -815,37 +730,22 @@
 ! Now interpolate to the local tile for ng=2.
 !
 # ifdef INTERP_BILINEAR
-          IF (spherical) THEN
-            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                         REFINED(ng)%lonv_p(Imin:Imax,Jmin:Jmax), &
-     &                         REFINED(ng)%latv_p(Imin:Imax,Jmin:Jmax), &
-     &                         A, Amask,                                &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,&
-     &                         GRID(ng)%lonv, GRID(ng)%latv, A2,        &
-     &                         my_min, my_max)
-          ELSE
-            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
-     &                         REFINED(ng)%xv_p(Imin:Imax,Jmin:Jmax),   &
-     &                         REFINED(ng)%yv_p(Imin:Imax,Jmin:Jmax),   &
-     &                         A, Amask,                                &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,&
-     &                         GRID(ng)%xv, GRID(ng)%yv, A2,            &
-     &                         my_min, my_max)
-          END IF
+          CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,               &
+     &                        A, Amask,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        OCEAN(ng)%hindspi_v, OCEAN(ng)%hindspj_v, &
+     &                        A2, my_min, my_max)
 # else
-            CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
-     &                         A,                                       &
+          CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,                &
+     &                       A,                                         &
 #  ifdef MASKING
-     &                         Amask,                                   &
+     &                       Amask,                                     &
 #  endif 
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         LBi, UBi, LBj, UBj, refscale,            &
-     &                         OCEAN(ng)%hindpi_v, OCEAN(ng)%hindpj_v,&
-     &                         A2, my_min, my_max)
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       LBi, UBi, LBj, UBj, refscale,              &
+     &                       OCEAN(ng)%hindspi_v, OCEAN(ng)%hindspj_v,  &
+     &                       A2, my_min, my_max)
 # endif
           IF (WESTERN_EDGE) THEN
             DO j=JstrT,JendT

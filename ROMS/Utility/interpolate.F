@@ -340,12 +340,11 @@
       END SUBROUTINE consrvterp3d
 
       SUBROUTINE linterp2d_ref (ng, LBx, UBx, LBy, UBy,                 &
-     &                      Xinp, Yinp, Finp, Amask,                    &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      Istr, Iend, Jstr, Jend,                     &
-     &                      Iout, Jout,                                 &
-     &                      Xout, Yout,                                 &
-     &                      Fout, Fmin, Fmax)
+     &                          Finp, Amask,                            &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Istr, Iend, Jstr, Jend,                 &
+     &                          Iout, Jout,                             &
+     &                          Fout, Fmin, Fmax)
 !
 !=======================================================================
 !                                                                      !
@@ -362,8 +361,6 @@
 !     UBx        I-dimension upper bound of gridded field, Finp.       !
 !     LBy        J-dimension lower bound of gridded field, Finp.       !
 !     UBy        J-dimension upper bound of gridded field, Finp.       !
-!     Xinp       X-locations of gridded field, Finp.                   !
-!     Yinp       Y-locations of gridded field, Finp.                   !
 !     Finp       2D field to interpolate from.                         !
 !     LBi        I-dimension Lower bound of data to interpolate, Fout. !
 !     UBi        I-dimension Upper bound of data to interpolate, Fout. !
@@ -375,8 +372,6 @@
 !     Jend       Ending   data J-index to interpolate, Fout.           !
 !     Iout       I-fractional Xinp grid cell containing Xout.          !
 !     Jout       J-fractional Yinp grid cell containing Yout.          !
-!     Xout       X-locations to interpolate, Fout.                     !
-!     Yout       Y-locations to interpolate, Fout.                     !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
@@ -396,15 +391,11 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: Istr, Iend, Jstr, Jend
 !
-      real(r8), intent(in) :: Xinp(LBx:UBx,LBy:UBy)
-      real(r8), intent(in) :: Yinp(LBx:UBx,LBy:UBy)
       real(r8), intent(in) :: Finp(LBx:UBx,LBy:UBy)
       real(r8), intent(in) :: Amask(LBx:UBx,LBy:UBy)
 
       real(r8), intent(in) :: Iout(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Jout(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: Xout(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: Yout(LBi:UBi,LBj:UBj)
 
       real(r8), intent(out) :: Fout(LBi:UBi,LBj:UBj)
 !
@@ -435,28 +426,14 @@
             q2=REAL(j2-j1,r8)*(Jout(i,j)-REAL(j1,r8))
             p1=1.0_r8-p2
             q1=1.0_r8-q2
-! issue: when j1=UBy, we need a point at Finp(i,j2) but
-! Finp(i,j2)=Finp(i,j1+1)=Finp(i,UBy+1) but it only goes to UBy !
-!            IF(i1.eq.UBx) THEN
-!              Fout(i,j)=p1*q1*Finp(i1,j1)+                              &
-!     &                  p1*q2*Finp(i1,j2)
-!            ELSE IF (j1.eq.UBy) THEN
-!              Fout(i,j)=p1*q1*Finp(i1,j1)+                              &
-!     &                  p2*q1*Finp(i2,j1)
-!            ELSE
-!              Fout(i,j)=p1*q1*Finp(i1,j1)+                              &
-!     &                  p2*q1*Finp(i2,j1)+                              &
-!     &                  p2*q2*Finp(i2,j2)+                              &
-!     &                  p1*q2*Finp(i1,j2)
-!            END IF
 #  ifdef MASKING
-            cff7=p1*q1*Finp(i1,j1)*Amask(i1,j1)+               &
-     &           p2*q1*Finp(i2,j1)*Amask(i2,j1)+               &
-     &           p1*q2*Finp(i1,j2)*Amask(i1,j2)+               &
+            cff7=p1*q1*Finp(i1,j1)*Amask(i1,j1)+                        &
+     &           p2*q1*Finp(i2,j1)*Amask(i2,j1)+                        &
+     &           p1*q2*Finp(i1,j2)*Amask(i1,j2)+                        &
      &           p2*q2*Finp(i2,j2)*Amask(i2,j2)
-            cff8=p1*q1*Amask(i1,j1)+                           &
-     &           p2*q1*Amask(i2,j1)+                           &
-     &           p1*q2*Amask(i1,j2)+                           &
+            cff8=p1*q1*Amask(i1,j1)+                                    &
+     &           p2*q1*Amask(i2,j1)+                                    &
+     &           p1*q2*Amask(i1,j2)+                                    &
      &           p2*q2*Amask(i2,j2)
             cff9=0.0_r8
             IF (cff8.gt.0.0_r8) cff9=cff7/cff8
@@ -475,12 +452,11 @@
       END SUBROUTINE linterp2d_ref
 
       SUBROUTINE linterp3d_ref (ng, LBx, UBx, LBy, UBy, LBz, UBz,       &
-     &                      Xinp, Yinp, Finp, Amask,                    &
-     &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
-     &                      Istr, Iend, Jstr, Jend,                     &
-     &                      Iout, Jout,                                 &
-     &                      Xout, Yout,                                 &
-     &                      Fout, Fmin, Fmax)
+     &                          Finp, Amask,                            &
+     &                          LBi, UBi, LBj, UBj, LBk, UBk,           &
+     &                          Istr, Iend, Jstr, Jend,                 &
+     &                          Iout, Jout,                             &
+     &                          Fout, Fmin, Fmax)
 !
 !=======================================================================
 !                                                                      !
@@ -497,8 +473,6 @@
 !     UBx        I-dimension upper bound of gridded field, Finp.       !
 !     LBy        J-dimension lower bound of gridded field, Finp.       !
 !     UBy        J-dimension upper bound of gridded field, Finp.       !
-!     Xinp       X-locations of gridded field, Finp.                   !
-!     Yinp       Y-locations of gridded field, Finp.                   !
 !     Finp       2D field to interpolate from.                         !
 !     LBi        I-dimension Lower bound of data to interpolate, Fout. !
 !     UBi        I-dimension Upper bound of data to interpolate, Fout. !
@@ -510,8 +484,6 @@
 !     Jend       Ending   data J-index to interpolate, Fout.           !
 !     Iout       I-fractional Xinp grid cell containing Xout.          !
 !     Jout       J-fractional Yinp grid cell containing Yout.          !
-!     Xout       X-locations to interpolate, Fout.                     !
-!     Yout       Y-locations to interpolate, Fout.                     !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
@@ -531,15 +503,11 @@
       integer, intent(in) ::     LBi, UBi, LBj, UBj, LBk, UBk
       integer, intent(in) :: Istr, Iend, Jstr, Jend
 !
-      real(r8), intent(in) :: Xinp(LBx:UBx,LBy:UBy)
-      real(r8), intent(in) :: Yinp(LBx:UBx,LBy:UBy)
       real(r8), intent(in) :: Finp(LBx:UBx,LBy:UBy,LBz:UBz)
       real(r8), intent(in) :: Amask(LBx:UBx,LBy:UBy)
 
       real(r8), intent(in) :: Iout(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Jout(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: Xout(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: Yout(LBi:UBi,LBj:UBj)
 
       real(r8), intent(out) :: Fout(LBi:UBi,LBj:UBj,LBk:UBk)
 !
@@ -571,28 +539,14 @@
             p1=1.0_r8-p2
             q1=1.0_r8-q2
             DO k=LBk,UBk
-! issue: when j1=UBy, we need a point at Finp(i,j2) but
-! Finp(i,j2)=Finp(i,j1+1)=Finp(i,UBy+1) but it only goes to UBy !
-!              IF(i1.eq.UBx) THEN
-!                Fout(i,j,k)=p1*q1*Finp(i1,j1,k)+                        &
-!     &                      p1*q2*Finp(i1,j2,k)
-!              ELSE IF (j1.eq.UBy) THEN
-!                Fout(i,j,k)=p1*q1*Finp(i1,j1,k)+                        &
-!     &                      p2*q1*Finp(i2,j1,k)
-!              ELSE
-!                Fout(i,j,k)=p1*q1*Finp(i1,j1,k)+                        &
-!     &                      p2*q1*Finp(i2,j1,k)+                        &
-!     &                      p2*q2*Finp(i2,j2,k)+                        &
-!     &                      p1*q2*Finp(i1,j2,k)
-!              END IF
 #  ifdef MASKING
-              cff7=p1*q1*Finp(i1,j1,k)*Amask(i1,j1)+           &
-     &             p2*q1*Finp(i2,j1,k)*Amask(i2,j1)+           &
-     &             p1*q2*Finp(i1,j2,k)*Amask(i1,j2)+           &
+              cff7=p1*q1*Finp(i1,j1,k)*Amask(i1,j1)+                    &
+     &             p2*q1*Finp(i2,j1,k)*Amask(i2,j1)+                    &
+     &             p1*q2*Finp(i1,j2,k)*Amask(i1,j2)+                    &
      &             p2*q2*Finp(i2,j2,k)*Amask(i2,j2)
-              cff8=p1*q1*Amask(i1,j1)+                         &
-     &             p2*q1*Amask(i2,j1)+                         &
-     &             p1*q2*Amask(i1,j2)+                         &
+              cff8=p1*q1*Amask(i1,j1)+                                  &
+     &             p2*q1*Amask(i2,j1)+                                  &
+     &             p1*q2*Amask(i1,j2)+                                  &
      &             p2*q2*Amask(i2,j2)
               cff9=0.0_r8
               IF (cff8.gt.0.0_r8) cff9=cff7/cff8

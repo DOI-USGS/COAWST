@@ -410,7 +410,8 @@
      &                OCEAN(ng)%zeta(Istr-1,j,indx1(ng))+               &
      &                GRID(ng)%h(Istr  ,j)+                             &
      &                OCEAN(ng)%zeta(Istr  ,j,indx1(ng))))
-          my_val=REFINED(ng)%DUavg2R_west(j)/(ref_scale*cff2)
+!         my_val=REFINED(ng)%DUavg2R_west(j)/(ref_scale*cff2)
+          my_val=REFINED(ng)%DUavg2R_west(j)/cff2
 # ifdef WEC
           my_val=my_val-OCEAN(ng)%ubar_stokes(Istr,j)
 # endif
@@ -433,7 +434,8 @@
      &                OCEAN(ng)%zeta(Iend+1,j,indx1(ng))+               &
      &                GRID(ng)%h(Iend  ,j)+                             &
      &                OCEAN(ng)%zeta(Iend  ,j,indx1(ng))))
-          my_val=REFINED(ng)%DUavg2R_east(j)/(ref_scale*cff2)
+!         my_val=REFINED(ng)%DUavg2R_east(j)/(ref_scale*cff2)
+          my_val=REFINED(ng)%DUavg2R_east(j)/cff2
 # ifdef WEC
           my_val=my_val-OCEAN(ng)%ubar_stokes(Iend+1,j)
 # endif
@@ -603,7 +605,8 @@
      &                OCEAN(ng)%zeta(i,Jstr-1,indx1(ng))+               &
      &                GRID(ng)%h(i,Jstr  )+                             &
      &                OCEAN(ng)%zeta(i,Jstr  ,indx1(ng))))
-          my_val=REFINED(ng)%DVavg2R_south(i)/(ref_scale*cff2)
+!         my_val=REFINED(ng)%DVavg2R_south(i)/(ref_scale*cff2)
+          my_val=REFINED(ng)%DVavg2R_south(i)/cff2
 # ifdef WEC
           my_val=my_val-OCEAN(ng)%vbar_stokes(i,Jstr)
 # endif
@@ -626,7 +629,8 @@
      &                OCEAN(ng)%zeta(i,Jend+1,indx1(ng))+               &
      &                GRID(ng)%h(i,Jend  )+                             &
      &                OCEAN(ng)%zeta(i,Jend  ,indx1(ng))))
-          my_val=REFINED(ng)%DVavg2R_north(i)/(ref_scale*cff2)
+!         my_val=REFINED(ng)%DVavg2R_north(i)/(ref_scale*cff2)
+          my_val=REFINED(ng)%DVavg2R_north(i)/cff2
 # ifdef WEC
           my_val=my_val-OCEAN(ng)%vbar_stokes(i,Jend+1)
 # endif

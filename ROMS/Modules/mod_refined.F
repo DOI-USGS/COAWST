@@ -96,6 +96,8 @@
           real(r8), pointer :: yr_p(:,:)
           real(r8), pointer :: yu_p(:,:)
           real(r8), pointer :: yv_p(:,:)
+          real(r8), pointer :: on_u_p(:,:)
+          real(r8), pointer :: om_v_p(:,:)
 # ifdef MASKING
           real(r8), pointer :: pmask_p(:,:)
           real(r8), pointer :: rmask_p(:,:)
@@ -120,6 +122,10 @@
           real(r8), pointer :: yr_c(:,:)
           real(r8), pointer :: yu_c(:,:)
           real(r8), pointer :: yv_c(:,:)
+          real(r8), pointer :: pm_c(:,:)
+          real(r8), pointer :: pn_c(:,:)
+          real(r8), pointer :: om_r_c(:,:)
+          real(r8), pointer :: on_r_c(:,:)
 # ifdef MASKING
           real(r8), pointer :: pmask_c(:,:)
           real(r8), pointer :: rmask_c(:,:)
@@ -245,6 +251,8 @@
         allocate ( REFINED(ng) % yr_p(XI_DIMp,ETA_DIMp) )
         allocate ( REFINED(ng) % yu_p(XI_DIMp,ETA_DIMp) )
         allocate ( REFINED(ng) % yv_p(XI_DIMp,ETA_DIMp) )
+        allocate ( REFINED(ng) % on_u_p(XI_DIMp,ETA_DIMp) )
+        allocate ( REFINED(ng) % om_v_p(XI_DIMp,ETA_DIMp) )
 # ifdef MASKING
         allocate ( REFINED(ng) % pmask_p(XI_DIMp,ETA_DIMp) )
         allocate ( REFINED(ng) % rmask_p(XI_DIMp,ETA_DIMp) )
@@ -271,6 +279,10 @@
         allocate ( REFINED(ng) % yr_c(XI_DIMc,ETA_DIMc) )
         allocate ( REFINED(ng) % yu_c(XI_DIMc,ETA_DIMc) )
         allocate ( REFINED(ng) % yv_c(XI_DIMc,ETA_DIMc) )
+        allocate ( REFINED(ng) % pm_c(XI_DIMc,ETA_DIMc) )
+        allocate ( REFINED(ng) % pn_c(XI_DIMc,ETA_DIMc) )
+        allocate ( REFINED(ng) % om_r_c(XI_DIMc,ETA_DIMc) )
+        allocate ( REFINED(ng) % on_r_c(XI_DIMc,ETA_DIMc) )
 # ifdef MASKING
         allocate ( REFINED(ng) % pmask_c(XI_DIMc,ETA_DIMc) )
         allocate ( REFINED(ng) % rmask_c(XI_DIMc,ETA_DIMc) )
@@ -403,6 +415,8 @@
           REFINED(ng) % yp_p = IniVal
           REFINED(ng) % yu_p = IniVal
           REFINED(ng) % yv_p = IniVal
+          REFINED(ng) % on_u_p = IniVal
+          REFINED(ng) % om_v_p = IniVal
 #ifdef MASKING
           REFINED(ng) % pmask_p = IniVal
           REFINED(ng) % rmask_p = IniVal
@@ -429,6 +443,10 @@
           REFINED(ng) % yp_c = IniVal
           REFINED(ng) % yu_c = IniVal
           REFINED(ng) % yv_c = IniVal
+          REFINED(ng) % pm_c = IniVal
+          REFINED(ng) % pn_c = IniVal
+          REFINED(ng) % om_r_c = IniVal
+          REFINED(ng) % on_r_c = IniVal
 #ifdef MASKING
           REFINED(ng) % pmask_c = IniVal
           REFINED(ng) % rmask_c = IniVal

@@ -1,6 +1,6 @@
 #include "wrfcpp.h"
 
-      MODULE mct_coupler_params
+      MODULE mct_wrf_coupler_params
 
 #if defined MODEL_COUPLING && defined MCT_LIB
 
@@ -33,4 +33,4 @@
 
 #endif
 
-      END MODULE mct_coupler_params
+      END MODULE mct_wrf_coupler_params

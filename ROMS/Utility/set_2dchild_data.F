@@ -7,6 +7,10 @@
 !                                                                      !
 !  This routine acquires data from a child grid.                       !
 !  That data is averaged and placed into the parent grid.              !
+!  Need special treatment to use Amask for case of                     !
+!  wet/dry to ensure dry cells are not used in the avg.                !
+!  Also added ability for sum(child_cell_areas) may not be equal       !
+!  to the parent area.                                                 !
 !                                                                      !
 !=======================================================================
 !
@@ -92,8 +96,8 @@
 # ifdef OBC
       integer :: ILB, IUB, JLB, JUB
 # endif
-      integer :: i, j, ngc, ic, jc
-      integer :: ii, gtype, Npts
+      integer :: i, j, ngc, ic, jc, rs
+      integer :: ii, ir, jr, gtype, Npts
       integer :: Imin, Imax, Jmin, Jmax, model
       integer :: Ilen, Jlen, IJlen, MyType, status
       integer :: MyError, MySizer, ncvarid
@@ -104,11 +108,10 @@
 !
       real(r8), allocatable :: Aout(:)
       real(r8), allocatable :: A(:,:)
-      real(r8), allocatable :: AA(:,:)
       real(r8), allocatable :: Amask(:,:)
 
       logical :: rectangular
-      real(r8) :: cff, IJspv
+      real(r8) :: cff, cff1, IJspv
       character (len=20) :: Xname, Yname
 # ifdef DISTRIBUTE
 #  ifdef EW_PERIODIC
@@ -201,9 +204,6 @@
         IF (.not.allocated(A)) THEN
           allocate(A(Imin:Imax,Jmin:Jmax))
         END IF
-        IF (.not.allocated(AA)) THEN
-          allocate(AA(Imin:Imax,Jmin:Jmax))
-        END IF
         IF (.not.allocated(Amask)) THEN
           allocate(Amask(Imin:Imax,Jmin:Jmax))
         END IF
@@ -219,15 +219,35 @@
 !
 ! get mask
 !
+# ifdef WET_DRY
+          CALL mp_gather2d (ngc, model, LBic, UBic, LBjc, UBjc, 0,      &
+     &               gtype, 1.0_r8,                                     &
+     &               GRID(ngc) % rmask(LBic:UBic,LBjc:UBjc),            &
+     &               GRID(ngc) % rmask_full(LBic:UBic,LBjc:UBjc),       &
+     &               Npts, Aout)
+!
+! distribute the Aout (1D packed) field to all the nodes for ng=2
+!
+          CALL mpi_bcast (Aout, MySizer, MP_FLOAT, MyMaster,            &
+     &                    OCN_COMM_WORLD, MyError)
+!
+! unpack and place in global ng=1 2D array
+!
+          ic=0
           DO j=Jmin,Jmax
             DO i=Imin,Imax
-# ifdef MASKING
-              Amask(i,j)=REFINED(ng)%rmask_c(i,j)
-# else
-              Amask(i,j)=1.0_r8
-# endif
+              ic=ic+1
+              Amask(i,j)=Aout(ic)
             END DO
           END DO
+# endif
+# if defined MASKING && !defined WET_DRY
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              Amask(i,j)=REFINED(ng)%rmask_c(i,j)
+            END DO
+          END DO
+# endif
 !
 ! get zeta
 !
@@ -254,7 +274,6 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              AA(i,j)=Aout(ic)
               A(i,j)=Aout(ic)
             END DO
           END DO
@@ -269,80 +288,47 @@
 !
 !  Average the child data back to parent resolution.
 !
-          IF (REFINED(ngc)%ref_scale.eq.5) THEN
-            fac=1.0_r8/25.0_r8
-            DO j=Jmin+2,Jmax-2
-              DO i=Imin+2,Imax-2
-                A(i,j)=(AA(i-2,j+2)+AA(i-1,j+2)+AA(i  ,j+2)+            &
-     &                  AA(i+1,j+2)+AA(i+2,j+2)+                        &
-     &                  AA(i-2,j+1)+AA(i-1,j+1)+AA(i  ,j+1)+            &
-     &                  AA(i+1,j+1)+AA(i+2,j+1)+                        &
-     &                  AA(i-2,j  )+AA(i-1,j  )+AA(i  ,j  )+            &
-     &                  AA(i+1,j  )+AA(i+2,j  )+                        &
-     &                  AA(i-2,j-1)+AA(i-1,j-1)+AA(i  ,j-1)+            &
-     &                  AA(i+1,j-1)+AA(i+2,j-1)+                        &
-     &                  AA(i-2,j-2)+AA(i-1,j-2)+AA(i  ,j-2)+            &
-     &                  AA(i+1,j-2)+AA(i+2,j-2))
+            DO j=Ymin,Ymax
+              DO i=Xmin,Xmax
+                ic=NINT(OCEAN(ng)%hindci_r(i,j))
+                jc=NINT(OCEAN(ng)%hindcj_r(i,j))
+                rs=(REFINED(ngc)%ref_scale-1)/2
+                my_val=0.0_r8
+                cff=0.0_r8
+                DO ir=-rs,rs
+                  DO jr=-rs,rs
+                    cff1=A(ic+ir,jc+jr)*                                &
+     &                   REFINED(ng)%om_r_c(ic+ir,jc+jr)*               &
+     &                   REFINED(ng)%on_r_c(ic+ir,jc+jr)
 # ifdef MASKING
-                cff=Amask(i-2,j+2)+Amask(i-1,j+2)+Amask(i  ,j+2)+       &
-     &              Amask(i+1,j+2)+Amask(i+2,j+2)+                      &
-     &              Amask(i-2,j+1)+Amask(i-1,j+1)+Amask(i  ,j+1)+       &
-     &              Amask(i+1,j+1)+Amask(i+2,j+1)+                      &
-     &              Amask(i-2,j  )+Amask(i-1,j  )+Amask(i  ,j  )+       &
-     &              Amask(i+1,j  )+Amask(i+2,j  )+                      &
-     &              Amask(i-2,j-1)+Amask(i-1,j-1)+Amask(i  ,j-1)+       &
-     &              Amask(i+1,j-1)+Amask(i+2,j-1)+                      &
-     &              Amask(i-2,j-2)+Amask(i-1,j-2)+Amask(i  ,j-2)+       &
-     &              Amask(i+1,j-2)+Amask(i+2,j-2)
-                IF (cff.gt.0.0_r8) A(i,j)=A(i,j)/cff
+                    my_val=my_val+cff1*Amask(ic+ir,jc+jr)
+                    cff=cff+1.0_r8*Amask(ic+ir,jc+jr)
 # else
-                A(i,j)=A(i,j)*fac
+                    my_val=my_val+cff1
 # endif
-              END DO
-            END DO
-          ELSE IF (REFINED(ngc)%ref_scale.eq.3) THEN
-            fac=1.0_r8/9.0_r8
-            DO j=Jmin+1,Jmax-1
-              DO i=Imin+1,Imax-1
-                A(i,j)=(AA(i-1,j+1)+AA(i  ,j+1)+AA(i+1,j+1)+            &
-     &                  AA(i-1,j  )+AA(i  ,j  )+AA(i+1,j  )+            &
-     &                  AA(i-1,j-1)+AA(i  ,j-1)+AA(i+1,j-1))
+                  END DO
+                END DO
+                my_val=my_val*GRID(ng)%pm(i,j)*GRID(ng)%pn(i,j)
 # ifdef MASKING
-                cff=Amask(i-1,j+1)+Amask(i  ,j+1)+Amask(i+1,j+1)+       &
-     &              Amask(i-1,j  )+Amask(i  ,j  )+Amask(i+1,j  )+       &
-     &              Amask(i-1,j-1)+Amask(i  ,j-1)+Amask(i+1,j-1)
-                IF (cff.gt.0.0_r8) A(i,j)=A(i,j)/cff
-# else
-                A(i,j)=A(i,j)*fac
-# endif
-              END DO
-            END DO
-          ENDIF
-!
-! Set the chld data into the parent locations. A is on the child grid.
-! Use hindices to obtain the parent location on the child grid.
-!
-          DO j=Ymin,Ymax
-            DO i=Xmin,Xmax
-              ic=NINT(OCEAN(ng)%hindci_r(i,j))
-              jc=NINT(OCEAN(ng)%hindcj_r(i,j))
-              my_val=A(ic,jc)
-# ifdef MASKING
-              my_val=my_val*GRID(ng)%rmask(i,j)
+                IF (cff.gt.0.0_r8) THEN
+                  my_val=my_val*REAL(REFINED(ngc)%ref_scale,r8)*        &
+     &                          REAL(REFINED(ngc)%ref_scale,r8)/cff
+                END IF
+                my_val=my_val*GRID(ng)%rmask(i,j)
 # endif
 # ifdef WET_DRY
-              IF (my_val.le.(Dcrit(ng)-GRID(ng)%h(i,j))) THEN
-                my_val=Dcrit(ng)-GRID(ng)%h(i,j)
-              END IF
+                IF (my_val.le.(Dcrit(ng)-GRID(ng)%h(i,j))) THEN
+                  my_val=Dcrit(ng)-GRID(ng)%h(i,j)
+                END IF
 # endif
 # ifdef SOLVE3D
-              COUPLING(ng)%Zt_avg1(i,j)=my_val
+                COUPLING(ng)%Zt_avg1(i,j)=my_val
 # else
-              OCEAN(ng)%zeta(i,j,1)=my_val
-              OCEAN(ng)%zeta(i,j,2)=my_val
+                OCEAN(ng)%zeta(i,j,1)=my_val
+                OCEAN(ng)%zeta(i,j,2)=my_val
 # endif
+              END DO
             END DO
-          END DO
           END IF
         ELSE IF (ii.eq.2) THEN
 !!!!!!!!!!!!!!!!!!!
@@ -351,15 +337,13 @@
 !
 ! get mask
 !
+# ifdef MASKING
           DO j=Jmin,Jmax
             DO i=Imin,Imax
-# ifdef MASKING
               Amask(i,j)=REFINED(ng)%umask_c(i,j)
-# else
-              Amask(i,j)=1.0_r8
-# endif
             END DO
           END DO
+# endif
 !
 ! get ubar
 !
@@ -371,7 +355,7 @@
      &              OCEAN(ngc) % ubar(LBic:UBic,LBjc:UBjc,KOUTC),       &
      &              Npts, Aout)
 !
-! distribute the Aout (1D packed) field to all the nodes for ng=2
+! distribute the Aout (1D packed) field to all the nodes
 !
           CALL mpi_bcast (Aout, MySizer, MP_FLOAT, MyMaster,            &
      &                    OCN_COMM_WORLD, MyError)
@@ -382,7 +366,6 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              AA(i,j)=Aout(ic)
               A(i,j)=Aout(ic)
             END DO
           END DO
@@ -393,78 +376,37 @@
           Xmax=OCEAN(ng)%hindcu(2)
           Ymin=OCEAN(ng)%hindcu(3)
           Ymax=OCEAN(ng)%hindcu(4)
-!
-!  Average the child data back to parent resolution.
-!
           IF (Xmax.gt.-9999) THEN
 !
 !  Average the child data back to parent resolution.
 !
-          IF (REFINED(ngc)%ref_scale.eq.5) THEN
-            fac=1.0_r8/25.0_r8
-            DO j=Jmin+2,Jmax-2
-              DO i=Imin+2,Imax-2
-                A(i,j)=(AA(i-2,j+2)+AA(i-1,j+2)+AA(i  ,j+2)+            &
-     &                  AA(i+1,j+2)+AA(i+2,j+2)+                        &
-     &                  AA(i-2,j+1)+AA(i-1,j+1)+AA(i  ,j+1)+            &
-     &                  AA(i+1,j+1)+AA(i+2,j+1)+                        &
-     &                  AA(i-2,j  )+AA(i-1,j  )+AA(i  ,j  )+            &
-     &                  AA(i+1,j  )+AA(i+2,j  )+                        &
-     &                  AA(i-2,j-1)+AA(i-1,j-1)+AA(i  ,j-1)+            &
-     &                  AA(i+1,j-1)+AA(i+2,j-1)+                        &
-     &                  AA(i-2,j-2)+AA(i-1,j-2)+AA(i  ,j-2)+            &
-     &                  AA(i+1,j-2)+AA(i+2,j-2))
+            DO j=Ymin,Ymax
+              DO i=Xmin,Xmax
+                ic=NINT(OCEAN(ng)%hindci_u(i,j))
+                jc=NINT(OCEAN(ng)%hindcj_u(i,j))
+                rs=(REFINED(ngc)%ref_scale-1)/2
+                my_val=0.0_r8
+                cff=0.0_r8
+                DO ir=-rs,rs
+                  DO jr=-rs,rs
+                    cff1=A(ic+ir,jc+jr)
 # ifdef MASKING
-                cff=Amask(i-2,j+2)+Amask(i-1,j+2)+Amask(i  ,j+2)+       &
-     &              Amask(i+1,j+2)+Amask(i+2,j+2)+                      &
-     &              Amask(i-2,j+1)+Amask(i-1,j+1)+Amask(i  ,j+1)+       &
-     &              Amask(i+1,j+1)+Amask(i+2,j+1)+                      &
-     &              Amask(i-2,j  )+Amask(i-1,j  )+Amask(i  ,j  )+       &
-     &              Amask(i+1,j  )+Amask(i+2,j  )+                      &
-     &              Amask(i-2,j-1)+Amask(i-1,j-1)+Amask(i  ,j-1)+       &
-     &              Amask(i+1,j-1)+Amask(i+2,j-1)+                      &
-     &              Amask(i-2,j-2)+Amask(i-1,j-2)+Amask(i  ,j-2)+       &
-     &              Amask(i+1,j-2)+Amask(i+2,j-2)
-                IF (cff.gt.0.0_r8) A(i,j)=A(i,j)/cff
+                    my_val=my_val+cff1*Amask(ic+ir,jc+jr)
+                    cff=cff+1.0_r8*Amask(ic+ir,jc+jr)
 # else
-                A(i,j)=A(i,j)*fac
+                    my_val=my_val+cff1
+                    cff=cff+1.0_r8
 # endif
+                  END DO
+                END DO
+                IF (cff.gt.0.0_r8) my_val=my_val/cff
+# ifdef MASKING
+                my_val=my_val*GRID(ng)%umask(i,j)
+# endif
+                OCEAN(ng)%ubar(i,j,1)=my_val
+                OCEAN(ng)%ubar(i,j,2)=my_val
               END DO
             END DO
-          ELSE IF (REFINED(ngc)%ref_scale.eq.3) THEN
-            fac=1.0_r8/9.0_r8
-            DO j=Jmin+1,Jmax-1
-              DO i=Imin+1,Imax-1
-                A(i,j)=(AA(i-1,j+1)+AA(i  ,j+1)+AA(i+1,j+1)+            &
-     &                  AA(i-1,j  )+AA(i  ,j  )+AA(i+1,j  )+            &
-     &                  AA(i-1,j-1)+AA(i  ,j-1)+AA(i+1,j-1))
-# ifdef MASKING
-                cff=Amask(i-1,j+1)+Amask(i  ,j+1)+Amask(i+1,j+1)+       &
-     &              Amask(i-1,j  )+Amask(i  ,j  )+Amask(i+1,j  )+       &
-     &              Amask(i-1,j-1)+Amask(i  ,j-1)+Amask(i+1,j-1)
-                IF (cff.gt.0.0_r8) A(i,j)=A(i,j)/cff
-# else
-                A(i,j)=A(i,j)*fac
-# endif
-              END DO
-            END DO
-          ENDIF
-!
-! Set the chld data into the parent locations. A is on the child grid.
-! Use hindices to obtain the parent location on the child grid.
-!
-          DO j=Ymin,Ymax
-            DO i=Xmin,Xmax
-              ic=NINT(OCEAN(ng)%hindci_u(i,j))
-              jc=NINT(OCEAN(ng)%hindcj_u(i,j))
-              my_val=A(ic,jc)
-# ifdef MASKING
-              my_val=my_val*GRID(ng)%umask(i,j)
-# endif
-              OCEAN(ng)%ubar(i,j,1)=my_val
-              OCEAN(ng)%ubar(i,j,2)=my_val
-            END DO
-          END DO
           END IF
         ELSE IF (ii.eq.3) THEN
 !!!!!!!!!!!!!!!!!!!
@@ -473,15 +415,13 @@
 !
 ! get mask
 !
+# ifdef MASKING
           DO j=Jmin,Jmax
             DO i=Imin,Imax
-# ifdef MASKING
               Amask(i,j)=REFINED(ng)%vmask_c(i,j)
-# else
-              Amask(i,j)=1.0_r8
-# endif
             END DO
           END DO
+# endif
 !
 ! get vbar
 !
@@ -504,7 +444,6 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               ic=ic+1
-              AA(i,j)=Aout(ic)
               A(i,j)=Aout(ic)
             END DO
           END DO
@@ -515,78 +454,37 @@
           Xmax=OCEAN(ng)%hindcv(2)
           Ymin=OCEAN(ng)%hindcv(3)
           Ymax=OCEAN(ng)%hindcv(4)
-!
-!  Average the child data back to parent resolution.
-!
           IF (Xmax.gt.-9999) THEN
 !
 !  Average the child data back to parent resolution.
 !
-          IF (REFINED(ngc)%ref_scale.eq.5) THEN
-            fac=1.0_r8/25.0_r8
-            DO j=Jmin+2,Jmax-2
-              DO i=Imin+2,Imax-2
-                A(i,j)=(AA(i-2,j+2)+AA(i-1,j+2)+AA(i  ,j+2)+            &
-     &                  AA(i+1,j+2)+AA(i+2,j+2)+                        &
-     &                  AA(i-2,j+1)+AA(i-1,j+1)+AA(i  ,j+1)+            &
-     &                  AA(i+1,j+1)+AA(i+2,j+1)+                        &
-     &                  AA(i-2,j  )+AA(i-1,j  )+AA(i  ,j  )+            &
-     &                  AA(i+1,j  )+AA(i+2,j  )+                        &
-     &                  AA(i-2,j-1)+AA(i-1,j-1)+AA(i  ,j-1)+            &
-     &                  AA(i+1,j-1)+AA(i+2,j-1)+                        &
-     &                  AA(i-2,j-2)+AA(i-1,j-2)+AA(i  ,j-2)+            &
-     &                  AA(i+1,j-2)+AA(i+2,j-2))
+            DO j=Ymin,Ymax
+              DO i=Xmin,Xmax
+                ic=NINT(OCEAN(ng)%hindci_v(i,j))
+                jc=NINT(OCEAN(ng)%hindcj_v(i,j))
+                rs=(REFINED(ngc)%ref_scale-1)/2
+                my_val=0.0_r8
+                cff=0.0_r8
+                DO ir=-rs,rs
+                  DO jr=-rs,rs
+                    cff1=A(ic+ir,jc+jr)
 # ifdef MASKING
-                cff=Amask(i-2,j+2)+Amask(i-1,j+2)+Amask(i  ,j+2)+       &
-     &              Amask(i+1,j+2)+Amask(i+2,j+2)+                      &
-     &              Amask(i-2,j+1)+Amask(i-1,j+1)+Amask(i  ,j+1)+       &
-     &              Amask(i+1,j+1)+Amask(i+2,j+1)+                      &
-     &              Amask(i-2,j  )+Amask(i-1,j  )+Amask(i  ,j  )+       &
-     &              Amask(i+1,j  )+Amask(i+2,j  )+                      &
-     &              Amask(i-2,j-1)+Amask(i-1,j-1)+Amask(i  ,j-1)+       &
-     &              Amask(i+1,j-1)+Amask(i+2,j-1)+                      &
-     &              Amask(i-2,j-2)+Amask(i-1,j-2)+Amask(i  ,j-2)+       &
-     &              Amask(i+1,j-2)+Amask(i+2,j-2)
-                IF (cff.gt.0.0_r8) A(i,j)=A(i,j)/cff
+                    my_val=my_val+cff1*Amask(ic+ir,jc+jr)
+                    cff=cff+1.0_r8*Amask(ic+ir,jc+jr)
 # else
-                A(i,j)=A(i,j)*fac
+                    my_val=my_val+cff1
+                    cff=cff+1.0_r8
 # endif
+                  END DO
+                END DO
+                IF (cff.gt.0.0_r8) my_val=my_val/cff
+# ifdef MASKING
+                my_val=my_val*GRID(ng)%vmask(i,j)
+# endif
+                OCEAN(ng)%vbar(i,j,1)=my_val
+                OCEAN(ng)%vbar(i,j,2)=my_val
               END DO
             END DO
-          ELSE IF (REFINED(ngc)%ref_scale.eq.3) THEN
-            fac=1.0_r8/9.0_r8
-            DO j=Jmin+1,Jmax-1
-              DO i=Imin+1,Imax-1
-                A(i,j)=(AA(i-1,j+1)+AA(i  ,j+1)+AA(i+1,j+1)+            &
-     &                  AA(i-1,j  )+AA(i  ,j  )+AA(i+1,j  )+            &
-     &                  AA(i-1,j-1)+AA(i  ,j-1)+AA(i+1,j-1))
-# ifdef MASKING
-                cff=Amask(i-1,j+1)+Amask(i  ,j+1)+Amask(i+1,j+1)+       &
-     &              Amask(i-1,j  )+Amask(i  ,j  )+Amask(i+1,j  )+       &
-     &              Amask(i-1,j-1)+Amask(i  ,j-1)+Amask(i+1,j-1)
-                IF (cff.gt.0.0_r8) A(i,j)=A(i,j)/cff
-# else
-                A(i,j)=A(i,j)*fac
-# endif
-              END DO
-            END DO
-          ENDIF
-!
-! Set the chld data into the parent locations. A is on the child grid.
-! Use hindices to obtain the parent location on the child grid.
-!
-          DO j=Ymin,Ymax
-            DO i=Xmin,Xmax
-              ic=NINT(OCEAN(ng)%hindci_v(i,j))
-              jc=NINT(OCEAN(ng)%hindcj_v(i,j))
-              my_val=A(ic,jc)
-# ifdef MASKING
-              my_val=my_val*GRID(ng)%vmask(i,j)
-# endif
-              OCEAN(ng)%vbar(i,j,1)=my_val
-              OCEAN(ng)%vbar(i,j,2)=my_val
-            END DO
-          END DO
           END IF
         END IF
 !
@@ -595,9 +493,6 @@
         END IF
         IF (allocated(A)) THEN
           deallocate (A)
-        END IF
-        IF (allocated(AA)) THEN
-          deallocate (AA)
         END IF
         IF (allocated(Amask)) THEN
           deallocate (Amask)

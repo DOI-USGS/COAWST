@@ -108,7 +108,7 @@
       real(r8) :: cff, cff1, cff2, dt2d, dUde, dUdt, dUdx, tau
 
 #ifdef REFINED_GRID
-      real(r8) :: my_val, ref_scale
+      real(r8) :: my_val
 #endif
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
 
@@ -818,7 +818,6 @@
 !
 ! For child grid, impose bc's to ensure mass flux conservation.
 !
-      ref_scale=1.0_r8/REAL(REFINED(ng)%ref_scale,r8)
       IF (ng.ge.2) THEN
         IF (WESTERN_EDGE) THEN
           DO j=Jstr,Jend
@@ -830,7 +829,7 @@
      &                          zeta(Istr-1,j,kout)+                    &
      &                          GRID(ng)%h(Istr  ,j)+                   &
      &                          zeta(Istr  ,j,kout)))
-            my_val=ref_scale*REFINED(ng)%DUavg2R_west(j)/cff1
+            my_val=REFINED(ng)%DUavg2R_west(j)/cff1
 # if defined WEC && defined REFINED_GRID
             my_val=my_val-ubar_stokes(Istr,j)
 # endif
@@ -851,7 +850,7 @@
      &                          zeta(Iend,j,kout)+                      &
      &                          GRID(ng)%h(Iend+1  ,j)+                 &
      &                          zeta(Iend+1,j,kout)))
-            my_val=ref_scale*REFINED(ng)%DUavg2R_east(j)/cff1
+            my_val=REFINED(ng)%DUavg2R_east(j)/cff1
 # if defined WEC && defined REFINED_GRID
             my_val=my_val-ubar_stokes(Iend+1,j)
 # endif

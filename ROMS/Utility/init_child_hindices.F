@@ -257,6 +257,46 @@
               REFINED(ng)%yr_c(i,j)=A(ic)
             END DO
           END DO
+!
+! Case pm
+!
+          var_name='pm'
+          CALL get_gridcoords (ngc, ncGRDid(ngc), Ilen, Jlen,           &
+     &                         var_name, A)
+          CALL mpi_bcast (A, IJlen, MP_FLOAT, MyMaster,                 &
+     &                    OCN_COMM_WORLD, MyError)
+          ic=0
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              ic=ic+1
+              REFINED(ng)%pm_c(i,j)=A(ic)
+            END DO
+          END DO
+!
+! Case pn
+!
+          var_name='pn'
+          CALL get_gridcoords (ngc, ncGRDid(ngc), Ilen, Jlen,           &
+     &                         var_name, A)
+          CALL mpi_bcast (A, IJlen, MP_FLOAT, MyMaster,                 &
+     &                    OCN_COMM_WORLD, MyError)
+          ic=0
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              ic=ic+1
+              REFINED(ng)%pn_c(i,j)=A(ic)
+            END DO
+          END DO
+!
+! Compute on_u and om_v for the parent grid. This is needed to distribute
+! the DU_avg2 and DV_avg2 flows along the child grid perimeter.
+!
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              REFINED(ng)%om_r_c(i,j)=1.0_r8/REFINED(ng)%pm_c(i,j)
+              REFINED(ng)%on_r_c(i,j)=1.0_r8/REFINED(ng)%pn_c(i,j)
+            END DO
+          END DO
 # ifdef MASKING
 !
 ! Case mask_rho

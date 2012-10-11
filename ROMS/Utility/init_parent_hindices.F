@@ -83,12 +83,12 @@
 # endif
       integer :: LBip, UBip, LBjp, UBjp
       integer :: Imin, Imax, Jmin, Jmax, model
-      integer :: i, ii, j, ngp, ngc, ic
+      integer :: i, ii, j, jj, ngp, ngc, ic, jc
       integer :: gtype, MyType, Ilen, Jlen, IJlen
       integer :: Npts
       integer :: Iminp, Imaxp, Jminp, Jmaxp
 
-      real(r8) :: IJspv, my_min, my_max, offset, scale
+      real(r8) :: IJspv, my_min, my_max, offset, scale, cff
       integer :: Xmin, Xmax, Ymin, Ymax, MyError, MySizer
 
       logical :: rectangular
@@ -758,6 +758,689 @@
       deallocate ( Ipos, Jpos)
       deallocate ( A, lonpsi_cld, latpsi_cld)
 !
+!  We have modified the way that the grids are computed 
+!  so that the child grid is not necessarily a constant exact
+!  exact fraction. It can now vary within the parent grid.
+!  So we need to make a new array to compute the non-fractional 
+!  indices of the child grid locations in the parent grid
+!  for use in interpolation of zeta, ubar, vbar etc from the 
+!  parent.
+!
+!  Do this for rho, u, and v points.
+!
+      gtype=r2dvar
+      IF (ng.eq.1) THEN
+        Imin=0
+        Imax=Lm(ng)+1
+        Jmin=0
+        Jmax=Mm(ng)+1
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.u2dvar)) THEN
+          Imin=1
+        END IF
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.v2dvar)) THEN
+          Jmin=1
+        END IF
+      ELSE
+        Imin=LOWER_BOUND_I
+        Imax=Lm(ng)+GHOST_POINTS
+        Jmin=LOWER_BOUND_J
+        Jmax=Mm(ng)+GHOST_POINTS
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.u2dvar)) THEN
+          Imin=LOWER_BOUND_I+1
+        END IF
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.v2dvar)) THEN
+          Jmin=LOWER_BOUND_J+1
+        END IF
+      END IF
+      Ilen=Imax-Imin+1
+      Jlen=Jmax-Jmin+1
+      IJlen=Ilen*Jlen
+      MySizer=IJlen
+      Npts=IJlen
+      allocate (A(1:IJlen))
+      allocate (lonpsi_cld(Imin:Imax,Jmin:Jmax))
+      allocate (latpsi_cld(Imin:Imax,Jmin:Jmax))
+      DO i=1,IJlen
+        A(i)=0.0_r8
+      END DO
+      DO i=Imin,Imax
+        DO j=Jmin,Jmax
+          lonpsi_cld(i,j)=0.0_r8
+          latpsi_cld(i,j)=0.0_r8
+        END DO
+      END DO
+!
+! Get all the child grid lon lat psi data.
+!
+      IF (spherical) THEN
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % lonr(LBi:UBi,LBj:UBj),             &
+     &                    Npts, A)
+      ELSE
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % xr(LBi:UBi,LBj:UBj),               &
+     &                    Npts, A)
+      END IF
+!
+! distribute the A (1D packed) field to all the nodes.
+!
+      CALL mpi_bcast (A, MySizer, MP_FLOAT, MyMaster,                &
+     &                OCN_COMM_WORLD, MyError)
+!
+! unpack and place in global ng=1 2D array
+!
+      ic=0
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
+          ic=ic+1
+          lonpsi_cld(i,j)=A(ic)
+        END DO
+      END DO
+      IF (spherical) THEN
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % latr(LBi:UBi,LBj:UBj),             &
+     &                    Npts, A)
+      ELSE
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % yr(LBi:UBi,LBj:UBj),               &
+     &                    Npts, A)
+      END IF
+!
+! distribute the A (1D packed) field to all the nodes.
+!
+      CALL mpi_bcast (A, MySizer, MP_FLOAT, MyMaster,                &
+     &                OCN_COMM_WORLD, MyError)
+!
+! unpack and place in global ng=1 2D array
+!
+      ic=0
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
+          ic=ic+1
+          latpsi_cld(i,j)=A(ic)
+        END DO
+      END DO
+!
+!  Now use hindices to get locations of the child grid in the parent grid.
+!
+      Iminp=1                    !LOWER_BOUND_I+1
+      Imaxp=Lm(ngp)+1            !GHOST_POINTS
+      Jminp=1                    !LOWER_BOUND_J+1
+      Jmaxp=Mm(ngp)+1            !GHOST_POINTS
+!
+      allocate ( Ipos(Imin-1:Imax+1,Jmin-1:Jmax+1) )
+      allocate ( Jpos(Imin-1:Imax+1,Jmin-1:Jmax+1) )
+!
+      IF (spherical) THEN
+        CALL hindices (ng, Iminp, Imaxp, Jminp, Jmaxp,                  &
+     &                 Iminp, Imaxp, Jminp, Jmaxp,                      &
+     &                 REFINED(ng)%angler_p(Iminp:Imaxp,Jminp:Jmaxp),   &
+     &                 REFINED(ng)%lonr_p(Iminp:Imaxp,Jminp:Jmaxp),     &
+     &                 REFINED(ng)%latr_p(Iminp:Imaxp,Jminp:Jmaxp),     &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 lonpsi_cld, latpsi_cld,                          &
+     &                 Ipos(Imin:Imax,Jmin:Jmax),                       &
+     &                 Jpos(Imin:Imax,Jmin:Jmax),                       &
+     &                 IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
+      ELSE
+        CALL hindices (ng, Iminp, Imaxp, Jminp, Jmaxp,                  &
+     &                 Iminp, Imaxp, Jminp, Jmaxp,                      &
+     &                 REFINED(ng)%angler_p(Iminp:Imaxp,Jminp:Jmaxp),   &
+     &                 REFINED(ng)%xr_p(Iminp:Imaxp,Jminp:Jmaxp),       &
+     &                 REFINED(ng)%yr_p(Iminp:Imaxp,Jminp:Jmaxp),       &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 lonpsi_cld, latpsi_cld,                          &
+     &                 Ipos(Imin:Imax,Jmin:Jmax),                       &
+     &                 Jpos(Imin:Imax,Jmin:Jmax),                       &
+     &                 IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
+      END IF
+!
+!  Do local rho points.
+!
+      DO j=LBj,UBj
+        DO i=LBi,UBi
+          OCEAN(ng)%hindspi_r(i,j)=IPOS(i,j)
+          OCEAN(ng)%hindspj_r(i,j)=JPOS(i,j)
+        END DO
+      END DO
+      deallocate ( Ipos, Jpos)
+      deallocate ( A, lonpsi_cld, latpsi_cld)
+!
+!  Now compute for u points
+!
+      gtype=u2dvar
+      IF (ng.eq.1) THEN
+        Imin=0
+        Imax=Lm(ng)+1
+        Jmin=0
+        Jmax=Mm(ng)+1
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.u2dvar)) THEN
+          Imin=1
+        END IF
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.v2dvar)) THEN
+          Jmin=1
+        END IF
+      ELSE
+        Imin=LOWER_BOUND_I
+        Imax=Lm(ng)+GHOST_POINTS
+        Jmin=LOWER_BOUND_J
+        Jmax=Mm(ng)+GHOST_POINTS
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.u2dvar)) THEN
+          Imin=LOWER_BOUND_I+1
+        END IF
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.v2dvar)) THEN
+          Jmin=LOWER_BOUND_J+1
+        END IF
+      END IF
+      Ilen=Imax-Imin+1
+      Jlen=Jmax-Jmin+1
+      IJlen=Ilen*Jlen
+      MySizer=IJlen
+      Npts=IJlen
+      allocate (A(1:IJlen))
+      allocate (lonpsi_cld(Imin:Imax,Jmin:Jmax))
+      allocate (latpsi_cld(Imin:Imax,Jmin:Jmax))
+      DO i=1,IJlen
+        A(i)=0.0_r8
+      END DO
+      DO i=Imin,Imax
+        DO j=Jmin,Jmax
+          lonpsi_cld(i,j)=0.0_r8
+          latpsi_cld(i,j)=0.0_r8
+        END DO
+      END DO
+!
+! Get all the child grid lon lat psi data.
+!
+      IF (spherical) THEN
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % lonu(LBi:UBi,LBj:UBj),             &
+     &                    Npts, A)
+      ELSE
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % xu(LBi:UBi,LBj:UBj),               &
+     &                    Npts, A)
+      END IF
+!
+! distribute the A (1D packed) field to all the nodes.
+!
+      CALL mpi_bcast (A, MySizer, MP_FLOAT, MyMaster,                &
+     &                OCN_COMM_WORLD, MyError)
+!
+! unpack and place in global ng=1 2D array
+!
+      ic=0
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
+          ic=ic+1
+          lonpsi_cld(i,j)=A(ic)
+        END DO
+      END DO
+      IF (spherical) THEN
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % latu(LBi:UBi,LBj:UBj),             &
+     &                    Npts, A)
+      ELSE
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % yu(LBi:UBi,LBj:UBj),               &
+     &                    Npts, A)
+      END IF
+!
+! distribute the A (1D packed) field to all the nodes.
+!
+      CALL mpi_bcast (A, MySizer, MP_FLOAT, MyMaster,                &
+     &                OCN_COMM_WORLD, MyError)
+!
+! unpack and place in global ng=1 2D array
+!
+      ic=0
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
+          ic=ic+1
+          latpsi_cld(i,j)=A(ic)
+        END DO
+      END DO
+!
+!  Now use hindices to get locations of the child grid in the parent grid.
+!
+      Iminp=1                    !LOWER_BOUND_I+1
+      Imaxp=Lm(ngp)+1            !GHOST_POINTS
+      Jminp=1                    !LOWER_BOUND_J+1
+      Jmaxp=Mm(ngp)+1            !GHOST_POINTS
+!
+      allocate ( Ipos(Imin-1:Imax+1,Jmin-1:Jmax+1) )
+      allocate ( Jpos(Imin-1:Imax+1,Jmin-1:Jmax+1) )
+!
+      IF (spherical) THEN
+        CALL hindices (ng, Iminp, Imaxp, Jminp, Jmaxp,                  &
+     &                 Iminp, Imaxp, Jminp, Jmaxp,                      &
+     &                 REFINED(ng)%angler_p(Iminp:Imaxp,Jminp:Jmaxp),   &
+     &                 REFINED(ng)%lonu_p(Iminp:Imaxp,Jminp:Jmaxp),     &
+     &                 REFINED(ng)%latu_p(Iminp:Imaxp,Jminp:Jmaxp),     &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 lonpsi_cld, latpsi_cld,                          &
+     &                 Ipos(Imin:Imax,Jmin:Jmax),                       &
+     &                 Jpos(Imin:Imax,Jmin:Jmax),                       &
+     &                 IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
+      ELSE
+        CALL hindices (ng, Iminp, Imaxp, Jminp, Jmaxp,                  &
+     &                 Iminp, Imaxp, Jminp, Jmaxp,                      &
+     &                 REFINED(ng)%angler_p(Iminp:Imaxp,Jminp:Jmaxp),   &
+     &                 REFINED(ng)%xu_p(Iminp:Imaxp,Jminp:Jmaxp),       &
+     &                 REFINED(ng)%yu_p(Iminp:Imaxp,Jminp:Jmaxp),       &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 lonpsi_cld, latpsi_cld,                          &
+     &                 Ipos(Imin:Imax,Jmin:Jmax),                       &
+     &                 Jpos(Imin:Imax,Jmin:Jmax),                       &
+     &                 IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
+      END IF
+!
+!  Do local u points.
+!
+      DO j=LBj,UBj
+        DO i=LBi,UBi
+          OCEAN(ng)%hindspi_u(i,j)=IPOS(i,j)
+          OCEAN(ng)%hindspj_u(i,j)=JPOS(i,j)
+        END DO
+      END DO
+      deallocate ( Ipos, Jpos)
+      deallocate ( A, lonpsi_cld, latpsi_cld)
+!
+!  Now compute for v points
+!
+      gtype=v2dvar
+      IF (ng.eq.1) THEN
+        Imin=0
+        Imax=Lm(ng)+1
+        Jmin=0
+        Jmax=Mm(ng)+1
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.u2dvar)) THEN
+          Imin=1
+        END IF
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.v2dvar)) THEN
+          Jmin=1
+        END IF
+      ELSE
+        Imin=LOWER_BOUND_I
+        Imax=Lm(ng)+GHOST_POINTS
+        Jmin=LOWER_BOUND_J
+        Jmax=Mm(ng)+GHOST_POINTS
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.u2dvar)) THEN
+          Imin=LOWER_BOUND_I+1
+        END IF
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.v2dvar)) THEN
+          Jmin=LOWER_BOUND_J+1
+        END IF
+      END IF
+      Ilen=Imax-Imin+1
+      Jlen=Jmax-Jmin+1
+      IJlen=Ilen*Jlen
+      MySizer=IJlen
+      Npts=IJlen
+      allocate (A(1:IJlen))
+      allocate (lonpsi_cld(Imin:Imax,Jmin:Jmax))
+      allocate (latpsi_cld(Imin:Imax,Jmin:Jmax))
+      DO i=1,IJlen
+        A(i)=0.0_r8
+      END DO
+      DO i=Imin,Imax
+        DO j=Jmin,Jmax
+          lonpsi_cld(i,j)=0.0_r8
+          latpsi_cld(i,j)=0.0_r8
+        END DO
+      END DO
+!
+! Get all the child grid lon lat psi data.
+!
+      IF (spherical) THEN
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % lonv(LBi:UBi,LBj:UBj),             &
+     &                    Npts, A)
+      ELSE
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % xv(LBi:UBi,LBj:UBj),               &
+     &                    Npts, A)
+      END IF
+!
+! distribute the A (1D packed) field to all the nodes.
+!
+      CALL mpi_bcast (A, MySizer, MP_FLOAT, MyMaster,                &
+     &                OCN_COMM_WORLD, MyError)
+!
+! unpack and place in global ng=1 2D array
+!
+      ic=0
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
+          ic=ic+1
+          lonpsi_cld(i,j)=A(ic)
+        END DO
+      END DO
+      IF (spherical) THEN
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % latv(LBi:UBi,LBj:UBj),             &
+     &                    Npts, A)
+      ELSE
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,             &
+     &                    gtype, 1.0_r8,                                &
+# ifdef MASKING
+     &                    GRID(ng) % pmask(LBi:UBi,LBj:UBj),            &
+# endif
+     &                    GRID(ng) % yv(LBi:UBi,LBj:UBj),               &
+     &                    Npts, A)
+      END IF
+!
+! distribute the A (1D packed) field to all the nodes.
+!
+      CALL mpi_bcast (A, MySizer, MP_FLOAT, MyMaster,                &
+     &                OCN_COMM_WORLD, MyError)
+!
+! unpack and place in global ng=1 2D array
+!
+      ic=0
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
+          ic=ic+1
+          latpsi_cld(i,j)=A(ic)
+        END DO
+      END DO
+!
+!  Now use hindices to get locations of the child grid in the parent grid.
+!
+      Iminp=1                    !LOWER_BOUND_I+1
+      Imaxp=Lm(ngp)+1            !GHOST_POINTS
+      Jminp=1                    !LOWER_BOUND_J+1
+      Jmaxp=Mm(ngp)+1            !GHOST_POINTS
+!
+      allocate ( Ipos(Imin-1:Imax+1,Jmin-1:Jmax+1) )
+      allocate ( Jpos(Imin-1:Imax+1,Jmin-1:Jmax+1) )
+!
+      IF (spherical) THEN
+        CALL hindices (ng, Iminp, Imaxp, Jminp, Jmaxp,                  &
+     &                 Iminp, Imaxp, Jminp, Jmaxp,                      &
+     &                 REFINED(ng)%angler_p(Iminp:Imaxp,Jminp:Jmaxp),   &
+     &                 REFINED(ng)%lonv_p(Iminp:Imaxp,Jminp:Jmaxp),     &
+     &                 REFINED(ng)%latv_p(Iminp:Imaxp,Jminp:Jmaxp),     &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 lonpsi_cld, latpsi_cld,                          &
+     &                 Ipos(Imin:Imax,Jmin:Jmax),                       &
+     &                 Jpos(Imin:Imax,Jmin:Jmax),                       &
+     &                 IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
+      ELSE
+        CALL hindices (ng, Iminp, Imaxp, Jminp, Jmaxp,                  &
+     &                 Iminp, Imaxp, Jminp, Jmaxp,                      &
+     &                 REFINED(ng)%angler_p(Iminp:Imaxp,Jminp:Jmaxp),   &
+     &                 REFINED(ng)%xv_p(Iminp:Imaxp,Jminp:Jmaxp),       &
+     &                 REFINED(ng)%yv_p(Iminp:Imaxp,Jminp:Jmaxp),       &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 Imin, Imax, Jmin, Jmax,                          &
+     &                 lonpsi_cld, latpsi_cld,                          &
+     &                 Ipos(Imin:Imax,Jmin:Jmax),                       &
+     &                 Jpos(Imin:Imax,Jmin:Jmax),                       &
+     &                 IJspv, rectangular, Xmin, Xmax, Ymin, Ymax)
+      END IF
+!
+!  Do local v points.
+!
+      DO j=LBj,UBj
+        DO i=LBi,UBi
+          OCEAN(ng)%hindspi_v(i,j)=IPOS(i,j)
+          OCEAN(ng)%hindspj_v(i,j)=JPOS(i,j)
+        END DO
+      END DO
+      deallocate ( Ipos, Jpos)
+      deallocate ( A, lonpsi_cld, latpsi_cld)
+!
+!  Now we need to get the total sum of the 'dys' and 'dxs' of the child 
+!  cells in each parent cell. For now this is only used along the 
+!  perimeter of the child grid. This info is necessary becasue the 
+!  sum of the child sides may not equal the total lenght of the parent
+!  edge.
+!
+!  Now compute for dy's: on_u points
+!
+      gtype=u2dvar
+      IF (ng.eq.1) THEN
+        Imin=0
+        Imax=Lm(ng)+1
+        Jmin=0
+        Jmax=Mm(ng)+1
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.u2dvar)) THEN
+          Imin=1
+        END IF
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.v2dvar)) THEN
+          Jmin=1
+        END IF
+      ELSE
+        Imin=LOWER_BOUND_I
+        Imax=Lm(ng)+GHOST_POINTS
+        Jmin=LOWER_BOUND_J
+        Jmax=Mm(ng)+GHOST_POINTS
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.u2dvar)) THEN
+          Imin=LOWER_BOUND_I+1
+        END IF
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.v2dvar)) THEN
+          Jmin=LOWER_BOUND_J+1
+        END IF
+      END IF
+      Ilen=Imax-Imin+1
+      Jlen=Jmax-Jmin+1
+      IJlen=Ilen*Jlen
+      MySizer=IJlen
+      Npts=IJlen
+      allocate (A(1:IJlen))
+      allocate (lonpsi_cld(Imin:Imax,Jmin:Jmax))
+      DO i=1,IJlen
+        A(i)=0.0_r8
+      END DO
+      DO i=Imin,Imax
+        DO j=Jmin,Jmax
+          lonpsi_cld(i,j)=0.0_r8
+        END DO
+      END DO
+!
+! Get all the child grid on_u data.
+!
+      CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,               &
+     &                  gtype, 1.0_r8,                                  &
+# ifdef MASKING
+     &                  GRID(ng) % pmask(LBi:UBi,LBj:UBj),              &
+# endif
+     &                  GRID(ng) % on_u(LBi:UBi,LBj:UBj),               &
+     &                  Npts, A)
+!
+! distribute the A (1D packed) field to all the nodes.
+!
+      CALL mpi_bcast (A, MySizer, MP_FLOAT, MyMaster,                &
+     &                OCN_COMM_WORLD, MyError)
+!
+! unpack and place in global ng=1 2D array
+! Notice re-use of lonpsi_cld array name
+      ic=0
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
+          ic=ic+1
+          lonpsi_cld(i,j)=A(ic)
+        END DO
+      END DO
+      IF (WESTERN_EDGE) THEN
+        DO j=Jstr,Jend
+          ic=NINT(OCEAN(ng)%hindpi_u(1,j))
+          jc=NINT(OCEAN(ng)%hindpj_u(1,j))
+          IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
+            i=mod(j,REFINED(ng)%ref_scale)
+            IF (i.eq.0) i=REFINED(ng)%ref_scale
+            cff=0.0_r8
+            DO jj= j-(i-1),j+(REFINED(ng)%ref_scale-i)
+              cff=cff+lonpsi_cld(1,jj)
+            END DO
+            REFINED(ng)%on_u_p(ic,jc)=cff
+          END IF
+        END DO
+      END IF
+      IF (EASTERN_EDGE) THEN
+        DO j=Jstr,Jend
+          ic=NINT(OCEAN(ng)%hindpi_u(Iend+1,j))
+          jc=NINT(OCEAN(ng)%hindpj_u(Iend+1,j))
+          IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
+            i=mod(j,REFINED(ng)%ref_scale)
+            IF (i.eq.0) i=REFINED(ng)%ref_scale
+            cff=0.0_r8
+            DO jj= j-(i-1),j+(REFINED(ng)%ref_scale-i)
+              cff=cff+lonpsi_cld(Iend+1,jj)
+            END DO
+            REFINED(ng)%on_u_p(ic,jc)=cff
+          END IF
+        END DO
+      END IF
+      deallocate ( A, lonpsi_cld)
+!
+!  Now compute for dx's: om_v points
+!
+      gtype=v2dvar
+      IF (ng.eq.1) THEN
+        Imin=0
+        Imax=Lm(ng)+1
+        Jmin=0
+        Jmax=Mm(ng)+1
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.u2dvar)) THEN
+          Imin=1
+        END IF
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.v2dvar)) THEN
+          Jmin=1
+        END IF
+      ELSE
+        Imin=LOWER_BOUND_I
+        Imax=Lm(ng)+GHOST_POINTS
+        Jmin=LOWER_BOUND_J
+        Jmax=Mm(ng)+GHOST_POINTS
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.u2dvar)) THEN
+          Imin=LOWER_BOUND_I+1
+        END IF
+        IF ((ABS(gtype).eq.p2dvar).or.(ABS(gtype).eq.v2dvar)) THEN
+          Jmin=LOWER_BOUND_J+1
+        END IF
+      END IF
+      Ilen=Imax-Imin+1
+      Jlen=Jmax-Jmin+1
+      IJlen=Ilen*Jlen
+      MySizer=IJlen
+      Npts=IJlen
+      allocate (A(1:IJlen))
+      allocate (lonpsi_cld(Imin:Imax,Jmin:Jmax))
+      DO i=1,IJlen
+        A(i)=0.0_r8
+      END DO
+      DO i=Imin,Imax
+        DO j=Jmin,Jmax
+          lonpsi_cld(i,j)=0.0_r8
+        END DO
+      END DO
+!
+! Get all the child grid on_u data.
+!
+      CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj, 0,               &
+     &                  gtype, 1.0_r8,                                  &
+# ifdef MASKING
+     &                  GRID(ng) % pmask(LBi:UBi,LBj:UBj),              &
+# endif
+     &                  GRID(ng) % om_v(LBi:UBi,LBj:UBj),               &
+     &                  Npts, A)
+!
+! distribute the A (1D packed) field to all the nodes.
+!
+      CALL mpi_bcast (A, MySizer, MP_FLOAT, MyMaster,                &
+     &                OCN_COMM_WORLD, MyError)
+!
+! unpack and place in global ng=1 2D array
+! Notice re-use of lonpsi_cld array name
+      ic=0
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
+          ic=ic+1
+          lonpsi_cld(i,j)=A(ic)
+        END DO
+      END DO
+      IF (SOUTHERN_EDGE) THEN
+        DO i=Istr,Iend
+          ic=NINT(OCEAN(ng)%hindpi_v(i,1))
+          jc=NINT(OCEAN(ng)%hindpj_v(i,1))
+          IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
+            j=mod(i,REFINED(ng)%ref_scale)
+            IF (j.eq.0) j=REFINED(ng)%ref_scale
+            cff=0.0_r8
+            DO ii= i-(j-1),i+(REFINED(ng)%ref_scale-j)
+              cff=cff+lonpsi_cld(ii,1)
+            END DO
+            REFINED(ng)%om_v_p(ic,jc)=cff
+          END IF
+        END DO
+      END IF
+      IF (NORTHERN_EDGE) THEN
+        DO i=Istr,Iend
+          ic=NINT(OCEAN(ng)%hindpi_v(i,Jend+1))
+          jc=NINT(OCEAN(ng)%hindpj_v(i,Jend+1))
+          IF ((jc.ne.-9999).and.(ic.ne.-9999)) THEN
+            j=mod(i,REFINED(ng)%ref_scale)
+            IF (j.eq.0) j=REFINED(ng)%ref_scale
+            cff=0.0_r8
+            DO ii= i-(j-1),i+(REFINED(ng)%ref_scale-j)
+              cff=cff+lonpsi_cld(ii,Jend+1)
+            END DO
+            REFINED(ng)%om_v_p(ic,jc)=cff
+          END IF
+        END DO
+      END IF
+      deallocate ( A, lonpsi_cld)
       RETURN
       END SUBROUTINE init_parent_hindices_tile
 #endif

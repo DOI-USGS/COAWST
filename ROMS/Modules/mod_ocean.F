@@ -133,6 +133,12 @@
           real(r8), pointer :: hindpj_v(:,:)
           real(r8), pointer :: hindpi_r(:,:)
           real(r8), pointer :: hindpj_r(:,:)
+          real(r8), pointer :: hindspi_u(:,:)
+          real(r8), pointer :: hindspj_u(:,:)
+          real(r8), pointer :: hindspi_v(:,:)
+          real(r8), pointer :: hindspj_v(:,:)
+          real(r8), pointer :: hindspi_r(:,:)
+          real(r8), pointer :: hindspj_r(:,:)
           integer, pointer :: hindpr(:)
           integer, pointer :: hindpu(:)
           integer, pointer :: hindpv(:)
@@ -410,6 +416,12 @@
           allocate ( OCEAN(ng) % hindpj_v(LBi:UBi,LBj:UBj) )
           allocate ( OCEAN(ng) % hindpi_r(LBi:UBi,LBj:UBj) )
           allocate ( OCEAN(ng) % hindpj_r(LBi:UBi,LBj:UBj) )
+          allocate ( OCEAN(ng) % hindspi_u(LBi:UBi,LBj:UBj) )
+          allocate ( OCEAN(ng) % hindspj_u(LBi:UBi,LBj:UBj) )
+          allocate ( OCEAN(ng) % hindspi_v(LBi:UBi,LBj:UBj) )
+          allocate ( OCEAN(ng) % hindspj_v(LBi:UBi,LBj:UBj) )
+          allocate ( OCEAN(ng) % hindspi_r(LBi:UBi,LBj:UBj) )
+          allocate ( OCEAN(ng) % hindspj_r(LBi:UBi,LBj:UBj) )
           allocate ( OCEAN(ng) % hindpr(1:4) )
           allocate ( OCEAN(ng) % hindpu(1:4) )
           allocate ( OCEAN(ng) % hindpv(1:4) )
@@ -812,6 +824,12 @@
             OCEAN(ng) % hindpj_v(i,j) = IniVal
             OCEAN(ng) % hindpi_r(i,j) = IniVal
             OCEAN(ng) % hindpj_r(i,j) = IniVal
+            OCEAN(ng) % hindspi_u(i,j) = IniVal
+            OCEAN(ng) % hindspj_u(i,j) = IniVal
+            OCEAN(ng) % hindspi_v(i,j) = IniVal
+            OCEAN(ng) % hindspj_v(i,j) = IniVal
+            OCEAN(ng) % hindspi_r(i,j) = IniVal
+            OCEAN(ng) % hindspj_r(i,j) = IniVal
             OCEAN(ng) % hindci_u(i,j) = IniVal
             OCEAN(ng) % hindcj_u(i,j) = IniVal
             OCEAN(ng) % hindci_v(i,j) = IniVal
