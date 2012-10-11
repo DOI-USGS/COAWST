@@ -193,7 +193,7 @@ module_wrf_top.o: ../frame/module_machine.o \
                   ../frame/module_timing.o \
                   ../frame/module_wrf_error.o \
                   ../frame/module_state_description.o \
-                  ../frame/mct_coupler_params.o \
+                  ../frame/mct_wrf_coupler_params.o \
                   $(ESMF_MOD_DEPENDENCE)
 
 # DO NOT DELETE

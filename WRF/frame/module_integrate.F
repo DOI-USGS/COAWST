@@ -22,7 +22,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
 #ifdef WRF_COUPLING
    USE atm_coupler_mod, ONLY: atm2ocn_coupling
    USE atm_coupler_mod, ONLY: initialize_atm_coupling
-   USE mct_coupler_params
+   USE mct_wrf_coupler_params
 #endif
 
    IMPLICIT NONE

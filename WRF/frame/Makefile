@@ -6,7 +6,7 @@ RM      =       rm -f
 
 
 
-MODULES =       mct_coupler_params.o       \
+MODULES =       mct_wrf_coupler_params.o   \
                 module_parallel.o          \
                 module_driver_constants.o  \
                 module_domain_type.o       \
@@ -264,7 +264,7 @@ module_integrate.o: module_domain.o \
 		module_nesting.o \
 		module_configure.o \
 		atm_coupler.o \
-		mct_coupler_params.o \
+		mct_wrf_coupler_params.o \
 		$(ESMF_MOD_DEPENDENCE)
 
 module_io.o : md_calls.inc \
@@ -304,9 +304,9 @@ module_wrf_error.o: \
 		wrf_shutdown.o \
 		$(ESMF_MOD_DEPENDENCE)
 
-atm_coupler.o: module_domain.o module_parallel.o mct_coupler_params.o
+atm_coupler.o: module_domain.o module_parallel.o mct_wrf_coupler_params.o
 
-mct_coupler_params.o:
+mct_wrf_coupler_params.o:
 
 wrf_debug.o: \
 		module_wrf_error.o

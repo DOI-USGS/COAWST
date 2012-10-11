@@ -111,7 +111,7 @@ CONTAINS
    USE module_parallel
    USE ATM_COUPLER_MOD, ONLY: initialize_atm_coupling
    USE ATM_COUPLER_MOD, ONLY: atm2ocn_coupling
-   USE mct_coupler_params
+   USE mct_wrf_coupler_params
 #else
    SUBROUTINE wrf_init( no_init1 )
 !<DESCRIPTION>

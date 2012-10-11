@@ -47,7 +47,7 @@
       USE m_Transfer, ONLY : MCT_Send => send
       USE m_Transfer, ONLY : MCT_Recv => recv
 !
-      USE mct_coupler_params
+      USE mct_wrf_coupler_params
 !
       implicit none
 !
