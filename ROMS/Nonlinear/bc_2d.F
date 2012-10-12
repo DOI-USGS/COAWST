@@ -53,11 +53,6 @@
 
 #include "set_bounds.h"
 
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-!      IF (ng.eq.1) THEN
-#endif
-
 #if !defined EW_PERIODIC && !defined COMPOSED_GRID
 !
 !-----------------------------------------------------------------------
@@ -129,11 +124,6 @@
      &                        A)
 #endif
 
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-!      END IF
-#endif
-
       RETURN
       END SUBROUTINE bc_r2d_tile
 
@@ -170,18 +160,13 @@
 
 #include "set_bounds.h"
 
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-!      IF (ng.eq.1) THEN
-#endif
-
 #if !defined EW_PERIODIC && !defined COMPOSED_GRID
 !
 !-----------------------------------------------------------------------
 !  East-West boundary conditions: Closed or gradient
 !-----------------------------------------------------------------------
 !
-      IF (EASTERN_EDGE) THEN
+      IF (EASTERN_EDGE_REF) THEN
         DO j=Jstr,Jend
 # ifdef EASTERN_WALL
           A(Iend+1,j)=0.0_r8
@@ -189,8 +174,14 @@
           A(Iend+1,j)=A(Iend,j)
 # endif
         END DO
+# ifdef REFINED_GRID
+      ELSEIF (EASTERN_EDGE) THEN
+        DO j=Jstr,Jend
+          A(Iend+1,j)=A(Iend,j)
+        END DO
+# endif
       END IF
-      IF (WESTERN_EDGE) THEN
+      IF (WESTERN_EDGE_REF) THEN
         DO j=Jstr,Jend
 # ifdef WESTERN_WALL
           A(Istr,j)=0.0_r8
@@ -198,6 +189,12 @@
           A(Istr,j)=A(Istr+1,j)
 # endif
         END DO
+# ifdef REFINED_GRID
+      ELSEIF (WESTERN_EDGE) THEN
+        DO j=Jstr,Jend
+          A(Istr,j)=A(Istr+1,j)
+        END DO
+# endif
       END IF
 #endif
 
@@ -208,7 +205,7 @@
 !  gradient.
 !-----------------------------------------------------------------------
 !
-      IF (NORTHERN_EDGE) THEN
+      IF (NORTHERN_EDGE_REF) THEN
 # ifdef NORTHERN_WALL
 #  ifdef EW_PERIODIC
 #   define I_RANGE IstrU,Iend
@@ -227,9 +224,15 @@
           A(i,Jend+1)=A(i,Jend)
         END DO
 # endif
+# ifdef REFINED_GRID
+      ELSEIF (NORTHERN_EDGE) THEN
+        DO i=IstrU,Iend
+          A(i,Jend+1)=A(i,Jend)
+        END DO
+# endif
       END IF
 
-      IF (SOUTHERN_EDGE) THEN
+      IF (SOUTHERN_EDGE_REF) THEN
 # ifdef SOUTHERN_WALL
 #  ifdef EW_PERIODIC
 #   define I_RANGE IstrU,Iend
@@ -244,6 +247,12 @@
         END DO
 #  undef I_RANGE
 # else
+        DO i=IstrU,Iend
+          A(i,Jstr-1)=A(i,Jstr)
+        END DO
+# endif
+# ifdef REFINED_GRID
+      ELSEIF (SOUTHERN_EDGE) THEN
         DO i=IstrU,Iend
           A(i,Jstr-1)=A(i,Jstr)
         END DO
@@ -286,11 +295,6 @@
      &                        A)
 #endif
 
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-!      END IF
-#endif
-
       RETURN
       END SUBROUTINE bc_u2d_tile
 
@@ -327,11 +331,6 @@
 
 #include "set_bounds.h"
 
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-!      IF (ng.eq.1) THEN
-#endif
-
 #if !defined EW_PERIODIC && !defined COMPOSED_GRID
 !
 !-----------------------------------------------------------------------
@@ -339,7 +338,7 @@
 !  gradient.
 !-----------------------------------------------------------------------
 !
-      IF (EASTERN_EDGE) THEN
+      IF (EASTERN_EDGE_REF) THEN
 # ifdef EASTERN_WALL
 #  ifdef NS_PERIODIC
 #   define J_RANGE JstrV,Jend
@@ -358,9 +357,15 @@
           A(Iend+1,j)=A(Iend,j)
         END DO
 # endif
+# ifdef REFINED_GRID
+      ELSEIF (EASTERN_EDGE) THEN
+        DO j=JstrV,Jend
+          A(Iend+1,j)=A(Iend,j)
+        END DO
+# endif
       END IF
 
-      IF (WESTERN_EDGE) THEN
+      IF (WESTERN_EDGE_REF) THEN
 # ifdef WESTERN_WALL
 #  ifdef NS_PERIODIC
 #   define J_RANGE JstrV,Jend
@@ -379,6 +384,12 @@
           A(Istr-1,j)=A(Istr,j)
         END DO
 # endif
+# ifdef REFINED_GRID
+      ELSEIF (WESTERN_EDGE) THEN
+        DO j=JstrV,Jend
+          A(Istr-1,j)=A(Istr,j)
+        END DO
+# endif
       END IF
 #endif
 
@@ -388,7 +399,7 @@
 !  North-South boundary conditions: Closed or Gradient.
 !-----------------------------------------------------------------------
 !
-      IF (NORTHERN_EDGE) THEN
+      IF (NORTHERN_EDGE_REF) THEN
         DO i=Istr,Iend
 # ifdef NORTHERN_WALL
           A(i,Jend+1)=0.0_r8
@@ -396,8 +407,14 @@
           A(i,Jend+1)=A(i,Jend)
 # endif
         END DO
+# ifdef REFINED_GRID
+      ELSEIF (NORTHERN_EDGE) THEN
+        DO i=Istr,Iend
+          A(i,Jend+1)=A(i,Jend)
+        END DO
+# endif
       END IF
-      IF (SOUTHERN_EDGE) THEN
+      IF (SOUTHERN_EDGE_REF) THEN
         DO i=Istr,Iend
 # ifdef SOUTHERN_WALL
           A(i,Jstr)=0.0_r8
@@ -405,6 +422,12 @@
           A(i,Jstr)=A(i,Jstr+1)
 # endif
         END DO
+# ifdef REFINED_GRID
+      ELSEIF (SOUTHERN_EDGE) THEN
+        DO i=Istr,Iend
+          A(i,Jstr)=A(i,Jstr+1)
+        END DO
+# endif
       END IF
 #endif
 
@@ -441,11 +464,6 @@
       CALL exchange_v2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        A)
-#endif
-
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-!      END IF
 #endif
 
       RETURN

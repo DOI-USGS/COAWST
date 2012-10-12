@@ -644,8 +644,8 @@
               t(is-1,j,k,nstp,itrc)=(t(is-1,j,k,nstp,itrc)-cff*cff2)*   &
      &                              Hz(is-1,j,k)
 # else
-              t(is-1,j,k,nstp,itrc)=t(is-1,j,k,nstp,itrc)-              &
-     &                              cff*cff2
+              t(is-1,j,k,nstp,itrc)=MAX(t(is-1,j,k,nstp,itrc)-          &
+     &                              cff*cff2,0.0_r8)
 #  if defined TCLM_NUDGING && defined TCLIMATOLOGY
 !
 !  Nudge towards tracer climatology.
@@ -697,8 +697,8 @@
               t(is,j,k,nstp,itrc)=(t(is,j,k,nstp,itrc)+cff*cff2)*       &
      &                            Hz(is,j,k)
 # else
-              t(is,j,k,nstp,itrc)=t(is,j,k,nstp,itrc)+                  &
-     &                            cff*cff2
+              t(is,j,k,nstp,itrc)=MAX(t(is,j,k,nstp,itrc)+              &
+     &                            cff*cff2,0.0_r8)
 #  if defined TCLM_NUDGING && defined TCLIMATOLOGY
 !
 !  Nudge towards tracer climatology.
@@ -758,8 +758,8 @@
               t(i,js-1,k,nstp,itrc)=(t(i,js-1,k,nstp,itrc)-cff*cff2)*   &
      &                              Hz(i,js-1,k)
 # else
-              t(i,js-1,k,nstp,itrc)=t(i,js-1,k,nstp,itrc)-              &
-     &                              cff*cff2
+              t(i,js-1,k,nstp,itrc)=MAX(t(i,js-1,k,nstp,itrc)-          &
+     &                              cff*cff2,0.0_r8)
 #  if defined TCLM_NUDGING && defined TCLIMATOLOGY
 !
 !  Nudge towards tracer climatology.
@@ -811,8 +811,8 @@
               t(i,js,k,nstp,itrc)=(t(i,js,k,nstp,itrc)+cff*cff2)*       &
      &                            Hz(i,js,k)
 # else
-              t(i,js,k,nstp,itrc)=t(i,js,k,nstp,itrc)+                  &
-     &                            cff*cff2
+              t(i,js,k,nstp,itrc)=MAX(t(i,js,k,nstp,itrc)+              &
+     &                            cff*cff2,0.0_r8)
 #  if defined TCLM_NUDGING && defined TCLIMATOLOGY
 !
 !  Nudge towards tracer climatology.

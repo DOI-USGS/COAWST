@@ -55,11 +55,6 @@
 
 # include "set_bounds.h"
 
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-!      IF (ng.eq.1) THEN
-#endif
-
 # if !defined EW_PERIODIC && !defined COMPOSED_GRID
 !
 !-----------------------------------------------------------------------
@@ -147,11 +142,6 @@
      &                        A)
 # endif
 
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-!      END IF
-#endif
-
       RETURN
       END SUBROUTINE bc_r3d_tile
 
@@ -188,18 +178,13 @@
 
 # include "set_bounds.h"
 
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-!      IF (ng.eq.1) THEN
-#endif
-
 # if !defined EW_PERIODIC && !defined COMPOSED_GRID
 !
 !-----------------------------------------------------------------------
 !  East-West boundary conditions: Closed or gradient.
 !-----------------------------------------------------------------------
 !
-      IF (EASTERN_EDGE) THEN
+      IF (EASTERN_EDGE_REF) THEN
         DO k=LBk,UBk
           DO j=Jstr,Jend
 #  ifdef EASTERN_WALL
@@ -209,8 +194,16 @@
 #  endif
           END DO
         END DO
+# ifdef REFINED_GRID
+      ELSEIF (EASTERN_EDGE) THEN
+        DO k=LBk,UBk
+          DO j=Jstr,Jend
+            A(Iend+1,j,k)=A(Iend,j,k)
+          END DO
+        END DO
+# endif
       END IF
-      IF (WESTERN_EDGE) THEN
+      IF (WESTERN_EDGE_REF) THEN
         DO k=LBk,UBk
           DO j=Jstr,Jend
 #  ifdef WESTERN_WALL
@@ -220,6 +213,14 @@
 #  endif
           END DO
         END DO
+# ifdef REFINED_GRID
+      ELSEIF (WESTERN_EDGE) THEN
+        DO k=LBk,UBk
+          DO j=Jstr,Jend
+            A(Istr,j,k)=A(Istr+1,j,k)
+          END DO
+        END DO
+# endif
       END IF
 # endif
 
@@ -230,7 +231,7 @@
 !  gradient.
 !-----------------------------------------------------------------------
 !
-      IF (NORTHERN_EDGE) THEN
+      IF (NORTHERN_EDGE_REF) THEN
 #  ifdef NORTHERN_WALL
 #   ifdef EW_PERIODIC
 #    define I_RANGE IstrU,Iend
@@ -253,9 +254,17 @@
           END DO
         END DO
 #  endif
+#  ifdef REFINED_GRID
+      ELSEIF (NORTHERN_EDGE) THEN
+        DO k=LBk,UBk
+          DO i=IstrU,Iend
+            A(i,Jend+1,k)=A(i,Jend,k)
+          END DO
+        END DO
+#  endif
       END IF
 
-      IF (SOUTHERN_EDGE) THEN
+      IF (SOUTHERN_EDGE_REF) THEN
 #  ifdef SOUTHERN_WALL
 #   ifdef EW_PERIODIC
 #    define I_RANGE IstrU,Iend
@@ -272,6 +281,14 @@
         END DO
 #   undef I_RANGE
 #  else
+        DO k=LBk,UBk
+          DO i=IstrU,Iend
+            A(i,Jstr-1,k)=A(i,Jstr,k)
+          END DO
+        END DO
+#  endif
+#  ifdef REFINED_GRID
+      ELSEIF (SOUTHERN_EDGE) THEN
         DO k=LBk,UBk
           DO i=IstrU,Iend
             A(i,Jstr-1,k)=A(i,Jstr,k)
@@ -324,11 +341,6 @@
      &                        A)
 # endif
 
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-!      END IF
-#endif
-
       RETURN
       END SUBROUTINE bc_u3d_tile
 
@@ -365,11 +377,6 @@
 
 # include "set_bounds.h"
 
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-!      IF (ng.eq.1) THEN
-#endif
-
 # if !defined EW_PERIODIC && !defined COMPOSED_GRID
 !
 !-----------------------------------------------------------------------
@@ -394,6 +401,14 @@
         END DO
 #   undef J_RANGE
 #  else
+        DO k=LBk,UBk
+          DO j=JstrV,Jend
+            A(Iend+1,j,k)=A(Iend,j,k)
+          END DO
+        END DO
+#  endif
+#  ifdef REFINED_GRID
+      ELSEIF (EASTERN_EDGE) THEN
         DO k=LBk,UBk
           DO j=JstrV,Jend
             A(Iend+1,j,k)=A(Iend,j,k)
@@ -425,6 +440,14 @@
           END DO
         END DO
 #  endif
+#  ifdef REFINED_GRID
+      ELSEIF (WESTERN_EDGE) THEN
+        DO k=LBk,UBk
+          DO j=JstrV,Jend
+            A(Istr-1,j,k)=A(Istr,j,k)
+          END DO
+        END DO
+#  endif
       END IF
 # endif
 
@@ -444,6 +467,14 @@
 #  endif
           END DO
         END DO
+#  ifdef REFINED_GRID
+      ELSEIF (NORTHERN_EDGE) THEN
+        DO k=LBk,UBk
+          DO i=Istr,Iend
+            A(i,Jend+1,k)=A(i,Jend,k)
+          END DO
+        END DO
+#  endif
       END IF
       IF (SOUTHERN_EDGE) THEN
         DO k=LBk,UBk
@@ -455,6 +486,14 @@
 #  endif
           END DO
         END DO
+#  ifdef REFINED_GRID
+      ELSEIF (SOUTHERN_EDGE) THEN
+        DO k=LBk,UBk
+          DO i=Istr,Iend
+            A(i,Jstr,k)=A(i,Jstr+1,k)
+          END DO
+        END DO
+#  endif
       END IF
 # endif
 
@@ -500,11 +539,6 @@
      &                        LBi, UBi, LBj, UBj, LBk, UBk,             &
      &                        A)
 # endif
-
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-!      END IF
-#endif
 
       RETURN
       END SUBROUTINE bc_v3d_tile
