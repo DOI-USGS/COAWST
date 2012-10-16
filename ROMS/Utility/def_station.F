@@ -598,7 +598,7 @@
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #  endif
-#  if defined EMINUSP && defined BULK_FLUXES || defined CCSM_FLUX)
+#  if defined EMINUSP && (defined BULK_FLUXES || defined CCSM_FLUX)
 !
 !  Define E-P flux (as computed by bulk_flux.F).
 !
