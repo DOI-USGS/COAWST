@@ -452,7 +452,7 @@
 !
         DEALLOCATE (CHTIME_G)
 !
-! OUTP_DATA
+!  OUTP_DATA
 !
         DEALLOCATE (NREOQ_G)
 !       NREOQ_G(ng)=0
@@ -461,7 +461,7 @@
         DEALLOCATE (LORQ_G)
 !       LORQ_G(ng)=.FALSE.
         DEALLOCATE (OUTP_FILES_G)
-        DEALLOCATE (IREC)
+!       DEALLOCATE (IREC)
         DEALLOCATE (IREC_G)
 !
 !       ALLOCATE (ORQDATZ_MOD(ng)%FORQ)
