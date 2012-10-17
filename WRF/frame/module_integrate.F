@@ -343,7 +343,8 @@ RECURSIVE SUBROUTINE integrate ( grid )
               !jcw  WRF_CPL_GRID is read in from the coupling input file.
               IF ( grid%id .EQ. WRF_CPL_GRID ) THEN
                 CALL domain_clock_get( grid, minutesSinceSimulationStart=minutesSinceSimulationStart )
-                num_steps=minutesSinceSimulationStart*60.0/grid%dt
+!               num_steps=minutesSinceSimulationStart*60.0/grid%dt
+                num_steps=grid%itimestep
                 nATM_steps=MAX(1,INT(TI_ATM_OCN/grid%dt))
                 IF ((num_steps.gt.last_step).and.(MOD(num_steps, nATM_steps).eq.0)) THEN
                   CALL atm2ocn_coupling (grid)
