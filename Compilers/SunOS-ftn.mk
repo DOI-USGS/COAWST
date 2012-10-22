@@ -42,17 +42,20 @@
 # Library locations, can be overridden by environment variables.
 #
 
-ifdef USE_NETCDF4
+             LIBS :=
+ifdef USE_ROMS
+ ifdef USE_NETCDF4
     NETCDF_INCDIR ?= /usr/local/pkg/netcdf4/include
     NETCDF_LIBDIR ?= /usr/local/pkg/netcdf4/lib
       HDF5_LIBDIR ?= /usr/local/pkg/hdf5/lib
-else
+ else
     NETCDF_INCDIR ?= /usr/local/pkg/netcdf/netcdf-3.5.1-x1/include
     NETCDF_LIBDIR ?= /usr/local/pkg/netcdf/netcdf-3.5.1-x1/lib
-endif
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
-ifdef USE_NETCDF4
+ endif
+             LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
+ ifdef USE_NETCDF4
              LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
+ endif
 endif
 
 ifdef USE_ARPACK

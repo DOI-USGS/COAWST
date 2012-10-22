@@ -42,17 +42,20 @@
 # Library locations, can be overridden by environment variables.
 #
 
-ifdef USE_NETCDF4
+             LIBS :=
+ifdef USE_ROMS
+ ifdef USE_NETCDF4
     NETCDF_INCDIR ?= /opt/intelsoft/netcdf4/include
     NETCDF_LIBDIR ?= /opt/intelsoft/netcdf4/lib
       HDF5_LIBDIR ?= /opt/intelsoft/hdf5/lib
-else
+ else
     NETCDF_INCDIR ?= /opt/intelsoft/netcdf/include
     NETCDF_LIBDIR ?= /opt/intelsoft/netcdf/lib
-endif
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
-ifdef USE_NETCDF4
+ endif
+             LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
+ ifdef USE_NETCDF4
              LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz -lnetcdff
+ endif
 endif
 
 ifdef USE_ARPACK

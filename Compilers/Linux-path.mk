@@ -44,30 +44,36 @@
 
 ifdef USE_LARGE
            FFLAGS += -m64
+endif
 
- ifdef USE_NETCDF4
+             LIBS :=
+ifdef USE_ROMS
+ ifdef USE_LARGE
+
+  ifdef USE_NETCDF4
     NETCDF_INCDIR ?= /usr/local/netcdf4/include
     NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
       HDF5_LIBDIR ?= /usr/local/hdf5/lib
- else
+  else
     NETCDF_INCDIR ?= /usr/local/include
     NETCDF_LIBDIR ?= /usr/local/lib64
- endif
+  endif
 
-else
+ else
 
- ifdef USE_NETCDF4
+  ifdef USE_NETCDF4
     NETCDF_INCDIR ?= /opt/pathscalesoft/netcdf4/include
     NETCDF_LIBDIR ?= /opt/pathscalesoft/netcdf4/lib
       HDF5_LIBDIR ?= /opt/pathscalesoft/hdf5/lib
- else
+  else
     NETCDF_INCDIR ?= /opt/pathscalesoft/netcdf/include
     NETCDF_LIBDIR ?= /opt/pathscalesoft/netcdf/lib
+  endif
  endif
-endif
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
-ifdef USE_NETCDF4
+             LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
+ ifdef USE_NETCDF4
              LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
+ endif
 endif
 
 ifdef USE_ARPACK

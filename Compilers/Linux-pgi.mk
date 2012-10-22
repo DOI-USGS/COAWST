@@ -50,18 +50,21 @@
 # Library locations, can be overridden by environment variables.
 #
 
-ifdef USE_NETCDF4
+             LIBS :=
+ifdef USE_ROMS
+ ifdef USE_NETCDF4
     NETCDF_INCDIR ?= /opt/pgisoft/netcdf4/include
     NETCDF_LIBDIR ?= /opt/pgisoft/netcdf4/lib
       HDF5_LIBDIR ?= /opt/pgisoft/hdf5/lib
-else
+ else
     NETCDF_INCDIR ?= /opt/pgisoft/netcdf/include
     NETCDF_LIBDIR ?= /opt/pgisoft/netcdf/lib
-endif
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff -L/opt/mx/lib64 -lcurl -lgssapi_krb5
+ endif
+             LIBS += -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff -L/opt/mx/lib64 -lcurl -lgssapi_krb5
              LIBS += $(shell nc-config --libs)
-ifdef USE_NETCDF4
+ ifdef USE_NETCDF4
              LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
+ endif
 endif
 
 ifdef USE_ARPACK

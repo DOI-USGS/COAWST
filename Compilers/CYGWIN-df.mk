@@ -131,7 +131,9 @@ endif
 #
 
          BIN_WIN32 = "$$(cygpath --windows $(BIN))"
+ifdef USE_ROMS
         LIBS_WIN32 = "$$(cygpath --windows $(NETCDF_LIB))"
+endif
 ifdef USE_ARPACK
         LIBS_WIN32 += "$$(cygpath --windows $(ARPACK_LIB))"
 endif

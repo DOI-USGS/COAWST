@@ -142,7 +142,9 @@ endif
 #
 
          BIN_WIN32 = "$$(cygpath --windows $(BIN))"
+ifdef USE_ROMS
         LIBS_WIN32 += "$$(cygpath --windows $(NETCDF_LIB))"
+endif
         LIBS_WIN32 += "c:\cygwin\lib\gcc\i686-pc-cygwin\3.4.4\libgcc.a"
 ifdef USE_ARPACK
         LIBS_WIN32 += "$$(cygpath --windows $(ARPACK_LIB))"
