@@ -861,7 +861,14 @@
 !
 !TIMG       CALL SWTSTO(1)                                                     40.23
 !
-      CALL BACKUP( AC2, SPCSIG, SPCDIR, KGRPNT, XCGRID, YCGRID, ng )
+!      CALL BACKUP( AC2, SPCSIG, SPCDIR, KGRPNT, XCGRID, YCGRID, ng )
+
+!      CALL the final read of the input file
+!TIMG        CALL SWTSTA(3)                                                    40.23
+        CALL SWREAD (COMPUT, ng, Numgrids)                                40.31 30.90
+!TIMG        CALL SWTSTO(3)                                                    40.23
+        IF (STPNOW()) RETURN                                              34.01
+
 
       DO IUNIT=1,HIOPEN                                                   34.01
         INQUIRE(UNIT=IUNIT,OPENED=LOPEN)                                  34.01

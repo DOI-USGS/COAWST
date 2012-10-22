@@ -47,56 +47,61 @@
 !!                                                                     !
 !!======================================================================
 !!
-#if defined AD_SENSITIVITY
-# include "adsen_ocean.h"
-#elif defined AFT_EIGENMODES
-# include "afte_ocean.h"
-#elif defined CONVOLUTION
-# include "convolution.h"
-#elif defined CORRELATION
-# include "correlation.h"
-#elif defined FT_EIGENMODES
-# include "fte_ocean.h"
-#elif defined FORCING_SV
-# include "fsv_ocean.h"
-#elif defined IS4DVAR_SENSITIVITY
-# include "obs_sen_is4dvar.h"
-#elif defined OPT_PERTURBATION
-# include "op_ocean.h"
-#elif defined OPT_OBSERVATIONS
-# include "optobs_ocean.h"
-#elif defined SO_SEMI
-# include "so_semi_ocean.h"
-#elif defined TLM_CHECK
-# include "tlcheck_ocean.h"
-#elif defined INNER_PRODUCT || defined SANITY_CHECK
-# include "pert_ocean.h"
-#elif defined PICARD_TEST
-# include "picard_ocean.h"
-#elif defined R_SYMMETRY
-# include "symmetry.h"
-#elif defined IS4DVAR
-#  include "is4dvar_ocean.h"
-#elif defined W4DPSAS
-# include "w4dpsas_ocean.h"
-#elif defined W4DVAR
-# include "w4dvar_ocean.h"
-#elif defined W4DPSAS_SENSITIVITY
-# include "obs_sen_w4dpsas.h"
-#elif defined TL_W4DPSAS
-# include "tl_w4dpsas_ocean.h"
-#elif defined W4DVAR_SENSITIVITY
-# include "obs_sen_w4dvar.h"
-#elif defined TL_W4DVAR
-# include "tl_w4dvar_ocean.h"
-#else
-# if defined TLM_DRIVER
-#  include "tl_ocean.h"
-# elif defined RPM_DRIVER
-#  include "rp_ocean.h"
-# elif defined ADM_DRIVER
-#  include "ad_ocean.h"
-# elif defined ROMS_MODEL
-#  include "nl_ocean.h"
+#ifdef ROMS_MODEL
+# if defined AD_SENSITIVITY
+#  include "adsen_ocean.h"
+# elif defined AFT_EIGENMODES
+#  include "afte_ocean.h"
+# elif defined CONVOLUTION
+#  include "convolution.h"
+# elif defined CORRELATION
+#  include "correlation.h"
+# elif defined FT_EIGENMODES
+#  include "fte_ocean.h"
+# elif defined FORCING_SV
+#  include "fsv_ocean.h"
+# elif defined IS4DVAR_SENSITIVITY
+#  include "obs_sen_is4dvar.h"
+# elif defined OPT_PERTURBATION
+#  include "op_ocean.h"
+# elif defined OPT_OBSERVATIONS
+#  include "optobs_ocean.h"
+# elif defined SO_SEMI
+#  include "so_semi_ocean.h"
+# elif defined TLM_CHECK
+#  include "tlcheck_ocean.h"
+# elif defined INNER_PRODUCT || defined SANITY_CHECK
+#  include "pert_ocean.h"
+# elif defined PICARD_TEST
+#  include "picard_ocean.h"
+# elif defined R_SYMMETRY
+#  include "symmetry.h"
+# elif defined IS4DVAR
+#   include "is4dvar_ocean.h"
+# elif defined W4DPSAS
+#  include "w4dpsas_ocean.h"
+# elif defined W4DVAR
+#  include "w4dvar_ocean.h"
+# elif defined W4DPSAS_SENSITIVITY
+#  include "obs_sen_w4dpsas.h"
+# elif defined TL_W4DPSAS
+#  include "tl_w4dpsas_ocean.h"
+# elif defined W4DVAR_SENSITIVITY
+#  include "obs_sen_w4dvar.h"
+# elif defined TL_W4DVAR
+#  include "tl_w4dvar_ocean.h"
+# else
+#  if defined TLM_DRIVER
+#   include "tl_ocean.h"
+#  elif defined RPM_DRIVER
+#   include "rp_ocean.h"
+#  elif defined ADM_DRIVER
+#   include "ad_ocean.h"
+#  elif defined ROMS_MODEL
+#   include "nl_ocean.h"
+#  endif
 # endif
+#else
+      MODULE ocean_control
+      END MODULE ocean_control
 #endif

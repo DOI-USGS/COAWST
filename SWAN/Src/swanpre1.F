@@ -5898,16 +5898,7 @@
 !
 !     ==================================================================
 !
-#ifdef SWAN_MODEL
-       FILENM='swan_restart.dat'
-       ILPOS = INDEX ( FILENM, ' ' )-1
-       IF (ILPOS.GT.0) THEN
-          WRITE(FILENM(ILPOS+1:ILPOS+2),180) ng
-       END IF
- 180   FORMAT(I2.2)
-#else
-      CALL INCSTR ('FNAME', FILENM, 'REQ', ' ')
-#endif
+       CALL INCSTR ('FNAME', FILENM, 'REQ', ' ')
 !     --- append node number to FILENM in case of parallel computing      40.31
       IF ( PARLL ) THEN                                                   40.31
          ILPOS = INDEX ( FILENM, ' ' )-1                                  40.31

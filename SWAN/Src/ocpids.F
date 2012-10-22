@@ -207,7 +207,11 @@
 !
 !       REFERENCE NUMBERS AND NAMES OF STANDARD FILES
 !
+#ifdef SWAN_MODEL
+        INPUTF = 600+ng
+#else
         INPUTF = 3
+#endif
 #ifndef SWAN_MODEL
         INPFIL = 'INPUT'
 #endif
