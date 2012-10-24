@@ -500,11 +500,11 @@
           CALL compute_angler(ng)
 # endif
           IT=0
-          IF ( IT.EQ.IT0) THEN
+!         IF ( IT.EQ.IT0) THEN
              ALLOCATE (PARALL2_MOD(ng)%OURQT_G(MAX_OUTP_REQ))
              OURQT=>PARALL2_MOD(ng)%OURQT_G
              OURQT = -9999.
-          ENDIF
+!         ENDIF
 # ifdef MODEL_COUPLING
 !
 !         --- initialize MCT coupling
