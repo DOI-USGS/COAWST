@@ -311,7 +311,6 @@
             t(i,j,k,1,iLDeN)=0.02_r8
             t(i,j,k,1,iSDeN)=0.04_r8
             t(i,j,k,1,iChlo)=0.02_r8
-            t(i,j,k,1,iOxyg)=0.00_r8
 #ifdef CARBON
             t(i,j,k,1,iTIC_)=2100.0_r8
             t(i,j,k,1,iTAlk)=2350.0_r8
