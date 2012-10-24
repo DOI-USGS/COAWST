@@ -1450,7 +1450,7 @@
         scale=1.0_r8
         CALL extract_sta2d (ng, iNLM, Cgrid, idWztw, r2dvar,            &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, OCEAN(ng) % zeta,                    &
+     &                      scale, OCEAN(ng) % zeta(:,:,KOUT),          &
      &                      Nstation(ng), Xpos, Ypos, psta)
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idWztw)), psta,              &
