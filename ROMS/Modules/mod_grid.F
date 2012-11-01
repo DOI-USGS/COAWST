@@ -77,6 +77,11 @@
 !  umask_wet  Mask at U-points for wetting and drying (0=dry, 1,2=wet) !
 !  vmask      Mask at V-points (0=Land, 1=Sea).                        !
 !  vmask_wet  Mask at V-points for wetting and drying (0=dry, 1,2=wet) !
+!                                                                      !
+!  pmask_io   Output FillValue mask at PSI-points (0=dry, 1=wet)       !
+!  rmask_io   Output FillValue mask at RHO-points (0=dry, 1=wet)       !
+!  rmask_io   Output FillValue mask at   U-points (0=dry, 1=wet)       !
+!  rmask_io   Output FillValue mask at   V-points (0=dry, 1=wet)       !
 !  xp         XI-coordinates (m) at PSI-points.                        !
 !  xr         XI-coordinates (m) at RHO-points.                        !
 !  xu         XI-coordinates (m) at U-points.                          !
@@ -179,6 +184,10 @@
           real(r8), pointer :: rmask(:,:)
           real(r8), pointer :: umask(:,:)
           real(r8), pointer :: vmask(:,:)
+          real(r8), pointer :: pmask_io(:,:)
+          real(r8), pointer :: rmask_io(:,:)
+          real(r8), pointer :: umask_io(:,:)
+          real(r8), pointer :: vmask_io(:,:)
 #endif
 #ifdef WET_DRY
 # ifdef SOLVE3D
@@ -343,6 +352,10 @@
       allocate ( GRID(ng) % rmask(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % umask(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % vmask(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % pmask_io(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % rmask_io(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % umask_io(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % vmask_io(LBi:UBi,LBj:UBj) )
 #endif
 
 #ifdef WET_DRY
@@ -542,6 +555,10 @@
             GRID(ng) % rmask(i,j) = IniVal
             GRID(ng) % umask(i,j) = IniVal
             GRID(ng) % vmask(i,j) = IniVal
+            GRID(ng) % pmask_io(i,j) = 1.0_r8
+            GRID(ng) % rmask_io(i,j) = 1.0_r8
+            GRID(ng) % umask_io(i,j) = 1.0_r8
+            GRID(ng) % vmask_io(i,j) = 1.0_r8
 #endif
 
 #ifdef WET_DRY

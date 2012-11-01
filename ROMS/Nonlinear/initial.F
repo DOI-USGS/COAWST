@@ -44,6 +44,9 @@
       USE rho_eos_mod, ONLY : rho_eos
       USE set_massflux_mod, ONLY : set_massflux
 #endif
+#ifdef MASKING
+      USE set_masks_mod, ONLY : set_masks
+#endif
       USE stiffness_mod, ONLY : stiffness
 #if defined PROPAGATOR || \
    (defined MASKING && (defined READ_WATER || defined WRITE_WATER ))
@@ -602,6 +605,21 @@
       IF (exit_flag.ne.NoError) RETURN
 #endif
 
+#ifdef MASKING
+!
+!-----------------------------------------------------------------------
+!  Set internal I/O mask arrays.
+!-----------------------------------------------------------------------
+!
+!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+        DO thread=0,numthreads-1
+          subs=NtileX(ng)*NtileE(ng)/numthreads
+          DO tile=subs*thread,subs*(thread+1)-1
+            CALL set_masks (ng, TILE, iNLM)
+          END DO
+        END DO
+!$OMP END PARALLEL DO
+#endif
 #if defined NLM_OUTER || defined TL_W4DPSAS          || \
     defined W4DPSAS   || defined W4DPSAS_SENSITIVITY
 !

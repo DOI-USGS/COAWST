@@ -31,7 +31,8 @@
 # endif
      &                        pmask_wet,                                &
      &                        rmask_full, umask_full, vmask_full,       &
-     &                        rmask_wet, umask_wet, vmask_wet)
+     &                        rmask_wet, umask_wet, vmask_wet,          &
+     &                        pmask_io, rmask_io, umask_io, vmask_io)
 !***********************************************************************
 !
       USE mod_param
@@ -70,6 +71,11 @@
       real(r8), intent(out) :: umask_wet(LBi:,LBj:)
       real(r8), intent(out) :: vmask_full(LBi:,LBj:)
       real(r8), intent(out) :: vmask_wet(LBi:,LBj:)
+      real(r8), intent(out) :: pmask_io(LBi:,LBj:)
+      real(r8), intent(out) :: rmask_io(LBi:,LBj:)
+      real(r8), intent(out) :: umask_io(LBi:,LBj:)
+      real(r8), intent(out) :: vmask_io(LBi:,LBj:)
+
 # else
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
 #  ifdef MASKING
@@ -90,6 +96,10 @@
       real(r8), intent(out) :: umask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: vmask_full(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: vmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: pmask_io(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: rmask_io(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: umask_io(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: vmask_io(LBi:UBi,LBj:UBj)
 # endif
 !
 !  Local variable declarations.
@@ -367,6 +377,81 @@
      &                      pmask_wet)
       END IF
 # endif
+
+!-----------------------------------------------------------------------
+!  Set masks for I/O purposes.
+!-----------------------------------------------------------------------
+!
+# ifdef SOLVE3D
+      IF (iif(ng).gt.nfast(ng)) THEN
+# else
+      IF (iif(ng).eq.nfast(ng)) THEN
+# endif
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            rmask_io(i,j)=rmask_wet(i,j)*rmask(i,j)
+          END DO
+        END DO
+        DO j=Jstr,JendR
+          DO i=Istr,IendR
+            pmask_io(i,j)=pmask_wet(i,j)*pmask(i,j)
+          END DO
+        END DO
+        DO j=JstrR,JendR
+          DO i=Istr,IendR
+            umask_io(i,j)=umask_wet(i,j)*umask(i,j)
+          END DO
+        END DO
+        DO j=Jstr,JendR
+          DO i=IstrR,IendR
+            vmask_io(i,j)=vmask_wet(i,j)*vmask(i,j)
+          END DO
+        END DO
+
+# ifdef UV_PSOURCE
+!
+!  Insure that masks at mass point source locations are set to water
+!  to avoid writting output with FillValue at those locations.
+!
+        DO is=1,Nsrc
+          i=Isrc(is)
+          j=Jsrc(is)
+          IF (((IstrR.le.i).and.(i.le.IendR)).and.                      &
+     &        ((JstrR.le.j).and.(j.le.JendR))) THEN
+            IF (INT(Dsrc(is)).eq.0) THEN
+              umask_io(i,j)=1.0_r8
+            ELSE
+              vmask_io(i,j)=1.0_r8
+            END IF
+          END IF
+        END DO
+# endif
+!
+!  Exchange boundary data.
+!
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_p2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            pmask_io)
+          CALL exchange_r2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            rmask_io)
+          CALL exchange_u2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            umask_io)
+          CALL exchange_v2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            vmask_io)
+        END IF
+# ifdef DISTRIBUTE
+        CALL mp_exchange2d (ng, tile, iNLM, 4,                          &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
+     &                      pmask_io, rmask_io, umask_io, vmask_io)
+# endif
+      END IF
+
       RETURN
       END SUBROUTINE wetdry_tile
 #endif

@@ -68,6 +68,8 @@
      &                  GRID(ng) % rmask_wet,   GRID(ng) % rmask_full,  &
      &                  GRID(ng) % umask_wet,   GRID(ng) % umask_full,  &
      &                  GRID(ng) % vmask_wet,   GRID(ng) % vmask_full,  &
+     &                  GRID(ng) % pmask_io,    GRID(ng) % rmask_io,    &
+     &                  GRID(ng) % umask_io,    GRID(ng) % vmask_io,    &
 #  ifdef SOLVE3D
      &                  GRID(ng) % rmask_wet_avg,                       &
 #  endif
@@ -193,6 +195,8 @@
      &                        rmask_wet, rmask_full,                    &
      &                        umask_wet, umask_full,                    &
      &                        vmask_wet, vmask_full,                    &
+     &                        pmask_io,  rmask_io,                      &
+     &                        umask_io,  vmask_io,                      &
 #  ifdef SOLVE3D
      &                        rmask_wet_avg,                            &
 #  endif
@@ -439,6 +443,10 @@
       real(r8), intent(inout) :: umask_wet(LBi:,LBj:)
       real(r8), intent(inout) :: vmask_full(LBi:,LBj:)
       real(r8), intent(inout) :: vmask_wet(LBi:,LBj:)
+      real(r8), intent(inout) :: pmask_io(LBi:,LBj:)
+      real(r8), intent(inout) :: rmask_io(LBi:,LBj:)
+      real(r8), intent(inout) :: umask_io(LBi:,LBj:)
+      real(r8), intent(inout) :: vmask_io(LBi:,LBj:)
 #   ifdef SOLVE3D
       real(r8), intent(inout) :: rmask_wet_avg(LBi:,LBj:)
 #   endif
@@ -594,6 +602,10 @@
       real(r8), intent(inout) :: umask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: vmask_full(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: vmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: pmask_io(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: rmask_io(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: umask_io(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: vmask_io(LBi:UBi,LBj:UBj)
 #   ifdef SOLVE3D
       real(r8), intent(inout) :: rmask_wet_avg(LBi:UBi,LBj:UBj)
 #   endif
@@ -1019,7 +1031,8 @@
 #  endif
      &                  pmask_wet,                                      &
      &                  rmask_full, umask_full, vmask_full,             &
-     &                  rmask_wet, umask_wet, vmask_wet)
+     &                  rmask_wet, umask_wet, vmask_wet,                &
+     &                  pmask_io, rmask_io, umask_io, vmask_io)
 # endif
 !
 !  Do not perform the actual time stepping during the auxiliary
