@@ -22,7 +22,7 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        IminS, ImaxS, JminS, JmaxS,               &
 # ifdef MASKING
-     &                        rmask, umask, vmask,                      &
+     &                        pmask, rmask, umask, vmask,               &
 # endif
      &                        h, zeta,                                  &
 # ifdef SOLVE3D
@@ -54,6 +54,7 @@
 # ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: h(LBi:,LBj:)
 #  ifdef MASKING
+      real(r8), intent(in) :: pmask(LBi:,LBj:)
       real(r8), intent(in) :: rmask(LBi:,LBj:)
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
@@ -79,6 +80,7 @@
 # else
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
 #  ifdef MASKING
+      real(r8), intent(in) :: pmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
@@ -429,7 +431,7 @@
 !
 !  Exchange boundary data.
 !
-        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+# if defined EW_PERIODIC || defined NS_PERIODIC
           CALL exchange_p2d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            pmask_io)
@@ -442,12 +444,12 @@
           CALL exchange_v2d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            vmask_io)
-        END IF
+# endif
 # ifdef DISTRIBUTE
         CALL mp_exchange2d (ng, tile, iNLM, 4,                          &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      NghostPoints,                               &
-     &                      EWperiodic(ng), NSperiodic(ng),             &
+     &                      EWperiodic, NSperiodic,                     &
      &                      pmask_io, rmask_io, umask_io, vmask_io)
 # endif
       END IF

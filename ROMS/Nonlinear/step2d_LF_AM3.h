@@ -1022,7 +1022,7 @@
      &                  LBi, UBi, LBj, UBj,                             &
      &                  IminS, ImaxS, JminS, JmaxS,                     &
 #  ifdef MASKING
-     &                  rmask, umask, vmask,                            &
+     &                  pmask, rmask, umask, vmask,                     &
 #  endif
      &                  h, zeta(:,:,kstp),                              &
 #  ifdef SOLVE3D
