@@ -226,7 +226,7 @@
 # endif
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
-     &                    IminS, ImaxS, JminS, JmaxS,                   &
+     &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    pmask_io, rmask_io, umask_io, vmask_io)
 # endif
