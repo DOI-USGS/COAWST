@@ -246,12 +246,27 @@
 ! Now interpolate to the local tile.
 !
 # ifdef INTERP_BILINEAR
-          CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,               &
-     &                        A, Amask,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%hindspi_r, OCEAN(ng)%hindspj_r, &
-     &                        A2, my_min, my_max)
+          IF (spherical) THEN
+            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
+     &                         REFINED(ng)%lonr_p(Imin:Imax,Jmin:Jmax), &
+     &                         REFINED(ng)%latr_p(Imin:Imax,Jmin:Jmax), &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindspi_r, OCEAN(ng)%hindspj_r,&
+     &                         GRID(ng)%lonr, GRID(ng)%latr, A2,        &
+     &                         my_min, my_max)
+          ELSE
+            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
+     &                         REFINED(ng)%xr_p(Imin:Imax,Jmin:Jmax),   &
+     &                         REFINED(ng)%yr_p(Imin:Imax,Jmin:Jmax),   &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindspi_r, OCEAN(ng)%hindspj_r,&
+     &                         GRID(ng)%xr, GRID(ng)%yr, A2,            &
+     &                         my_min, my_max)
+          END IF
 # else
           CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,              &
      &                       A,                                       &
@@ -341,12 +356,27 @@
 ! Now interpolate to the local tile for ng=2.
 !
 # ifdef INTERP_BILINEAR
-          CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,               &
-     &                        A, Amask,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%hindspi_u, OCEAN(ng)%hindspj_u, &
-     &                        A2, my_min, my_max)
+          IF (spherical) THEN
+            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
+     &                         REFINED(ng)%lonu_p(Imin:Imax,Jmin:Jmax), &
+     &                         REFINED(ng)%latu_p(Imin:Imax,Jmin:Jmax), &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindspi_u, OCEAN(ng)%hindspj_u,&
+     &                         GRID(ng)%lonu, GRID(ng)%latu, A2,        &
+     &                         my_min, my_max)
+          ELSE
+            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
+     &                         REFINED(ng)%xu_p(Imin:Imax,Jmin:Jmax),   &
+     &                         REFINED(ng)%yu_p(Imin:Imax,Jmin:Jmax),   &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindspi_u, OCEAN(ng)%hindspj_u,&
+     &                         GRID(ng)%xu, GRID(ng)%yu, A2,            &
+     &                         my_min, my_max)
+          END IF
 # else
           CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,                &
      &                       A,                                         &
@@ -490,12 +520,27 @@
 ! Now interpolate to the local tile for ng=2.
 !
 # ifdef INTERP_BILINEAR
-          CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,               &
-     &                        A, Amask,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%hindspi_u, OCEAN(ng)%hindspj_u, &
-     &                        A2, my_min, my_max)
+          IF (spherical) THEN
+            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
+     &                         REFINED(ng)%lonu_p(Imin:Imax,Jmin:Jmax), &
+     &                         REFINED(ng)%latu_p(Imin:Imax,Jmin:Jmax), &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindspi_u, OCEAN(ng)%hindspj_u,&
+     &                         GRID(ng)%lonu, GRID(ng)%latu, A2,        &
+     &                         my_min, my_max)
+          ELSE
+            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
+     &                         REFINED(ng)%xu_p(Imin:Imax,Jmin:Jmax),   &
+     &                         REFINED(ng)%yu_p(Imin:Imax,Jmin:Jmax),   &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindspi_u, OCEAN(ng)%hindspj_u,&
+     &                         GRID(ng)%xu, GRID(ng)%yu, A2,            &
+     &                         my_min, my_max)
+          END IF
 # else
           CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,                &
      &                       A,                                         &
@@ -586,12 +631,27 @@
 ! Now interpolate to the local tile for ng=2.
 !
 # ifdef INTERP_BILINEAR
-          CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,               &
-     &                        A, Amask,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%hindspi_v, OCEAN(ng)%hindspj_v, &
-     &                        A2, my_min, my_max)
+          IF (spherical) THEN
+            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
+     &                         REFINED(ng)%lonv_p(Imin:Imax,Jmin:Jmax), &
+     &                         REFINED(ng)%latv_p(Imin:Imax,Jmin:Jmax), &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindspi_v, OCEAN(ng)%hindspj_v,&
+     &                         GRID(ng)%lonv, GRID(ng)%latv, A2,        &
+     &                         my_min, my_max)
+          ELSE
+            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
+     &                         REFINED(ng)%xv_p(Imin:Imax,Jmin:Jmax),   &
+     &                         REFINED(ng)%yv_p(Imin:Imax,Jmin:Jmax),   &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindspi_v, OCEAN(ng)%hindspj_v,&
+     &                         GRID(ng)%xv, GRID(ng)%yv, A2,            &
+     &                         my_min, my_max)
+          END IF
 # else
           CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,                &
      &                       A,                                         &
@@ -730,12 +790,27 @@
 ! Now interpolate to the local tile for ng=2.
 !
 # ifdef INTERP_BILINEAR
-          CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,               &
-     &                        A, Amask,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        OCEAN(ng)%hindspi_v, OCEAN(ng)%hindspj_v, &
-     &                        A2, my_min, my_max)
+          IF (spherical) THEN
+            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
+     &                         REFINED(ng)%lonv_p(Imin:Imax,Jmin:Jmax), &
+     &                         REFINED(ng)%latv_p(Imin:Imax,Jmin:Jmax), &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindspi_v, OCEAN(ng)%hindspj_v,&
+     &                         GRID(ng)%lonv, GRID(ng)%latv, A2,        &
+     &                         my_min, my_max)
+          ELSE
+            CALL linterp2d_ref (ng, Imin, Imax, Jmin, Jmax,             &
+     &                         REFINED(ng)%xv_p(Imin:Imax,Jmin:Jmax),   &
+     &                         REFINED(ng)%yv_p(Imin:Imax,Jmin:Jmax),   &
+     &                         A, Amask,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         OCEAN(ng)%hindspi_v, OCEAN(ng)%hindspj_v,&
+     &                         GRID(ng)%xv, GRID(ng)%yv, A2,            &
+     &                         my_min, my_max)
+          END IF
 # else
           CALL consrvterp2d (ng, Imin, Imax, Jmin, Jmax,                &
      &                       A,                                         &
