@@ -37,7 +37,9 @@
 !
       USE mod_param
       USE mod_scalars
-
+# if defined UV_PSOURCE
+      USE mod_sources
+# endif
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
 # endif
@@ -118,7 +120,7 @@
       logical :: NSperiodic=.FALSE.
 #  endif
 # endif
-      integer :: i, j
+      integer :: i, j, is
 
       real(r8) :: cff, cff1, cff2, cff5, cff6, cff7
       real(r8), parameter :: eps = 1.0E-10_r8
@@ -415,12 +417,12 @@
 !  Insure that masks at mass point source locations are set to water
 !  to avoid writting output with FillValue at those locations.
 !
-        DO is=1,Nsrc
-          i=Isrc(is)
-          j=Jsrc(is)
+        DO is=1,Nsrc(ng)
+          i=SOURCES(ng)%Isrc(is)
+          j=SOURCES(ng)%Jsrc(is)
           IF (((IstrR.le.i).and.(i.le.IendR)).and.                      &
      &        ((JstrR.le.j).and.(j.le.JendR))) THEN
-            IF (INT(Dsrc(is)).eq.0) THEN
+            IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
               umask_io(i,j)=1.0_r8
             ELSE
               vmask_io(i,j)=1.0_r8
