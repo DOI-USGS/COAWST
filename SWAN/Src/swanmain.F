@@ -865,10 +865,10 @@
 
 !      CALL the final read of the input file
 !TIMG        CALL SWTSTA(3)                                                    40.23
-        CALL SWREAD (COMPUT, ng, Numgrids)                                40.31 30.90
+      CALL SWSYNC                                                         40.30
+      CALL SWREAD (COMPUT, ng, Numgrids)                                  40.31 30.90
 !TIMG        CALL SWTSTO(3)                                                    40.23
-        IF (STPNOW()) RETURN                                              34.01
-
+      IF (STPNOW()) RETURN                                                34.01
 
       DO IUNIT=1,HIOPEN                                                   34.01
         INQUIRE(UNIT=IUNIT,OPENED=LOPEN)                                  34.01
