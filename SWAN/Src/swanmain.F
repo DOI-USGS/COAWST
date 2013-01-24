@@ -804,6 +804,7 @@
       LOGICAL LOPEN
       INTEGER MyStatus, IUNIT
       REAL, ALLOCATABLE    :: BLKND(:), BLKNDC(:)
+      CHARACTER COMPUT*4
 !
 !  Create list of pointers for each ng instance.
 !
