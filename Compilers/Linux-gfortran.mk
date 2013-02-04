@@ -42,20 +42,18 @@
 #
 
              LIBS :=
-ifdef USE_ROMS
- ifdef USE_NETCDF4
-    NETCDF_INCDIR ?= /usr/local/netcdf4/include
-    NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
-      HDF5_LIBDIR ?= /usr/local/hdf5/lib
- else
-    NETCDF_INCDIR ?= /usr/local/include
-    NETCDF_LIBDIR ?= /usr/local/lib
- endif
-#            LIBS += $(shell $(NC_CONFIG) --flibs)
-             LIBS += -L$(NETCDF_LIBDIR) -lnetcdff -lnetcdf
- ifdef USE_NETCDF4
-             LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
- endif
+ifdef USE_NETCDF4
+   NETCDF_INCDIR ?= /usr/local/netcdf4/include
+   NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
+     HDF5_LIBDIR ?= /usr/local/hdf5/lib
+else
+   NETCDF_INCDIR ?= /usr/local/include
+   NETCDF_LIBDIR ?= /usr/local/lib
+endif
+#           LIBS += $(shell $(NC_CONFIG) --flibs)
+            LIBS += -L$(NETCDF_LIBDIR) -lnetcdff -lnetcdf
+ifdef USE_NETCDF4
+            LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
 endif
 
 ifdef USE_ARPACK
@@ -167,9 +165,9 @@ endif
 
 ifdef USE_SWAN
 
-$(SCRATCH_DIR)/ocpcre.o: FFLAGS += -ffixed-form
-$(SCRATCH_DIR)/ocpids.o: FFLAGS += -ffixed-form
-$(SCRATCH_DIR)/ocpmix.o: FFLAGS += -ffixed-form
+$(SCRATCH_DIR)/ocpcre.o:   FFLAGS += -ffixed-form
+$(SCRATCH_DIR)/ocpids.o:   FFLAGS += -ffixed-form
+$(SCRATCH_DIR)/ocpmix.o:   FFLAGS += -ffixed-form
 $(SCRATCH_DIR)/swancom1.o: FFLAGS += -ffixed-form
 $(SCRATCH_DIR)/swancom2.o: FFLAGS += -ffixed-form
 $(SCRATCH_DIR)/swancom3.o: FFLAGS += -ffixed-form
@@ -179,20 +177,25 @@ $(SCRATCH_DIR)/swanmain.o: FFLAGS += -ffixed-form
 $(SCRATCH_DIR)/swanout1.o: FFLAGS += -ffixed-form
 $(SCRATCH_DIR)/swanout2.o: FFLAGS += -ffixed-form
 $(SCRATCH_DIR)/swanparll.o: FFLAGS += -ffixed-form
-$(SCRATCH_DIR)/swanpre1.o: FFLAGS += -ffixed-form
-$(SCRATCH_DIR)/swanpre2.o: FFLAGS += -ffixed-form
-$(SCRATCH_DIR)/swanser.o: FFLAGS += -ffixed-form
-$(SCRATCH_DIR)/swmod1.o: FFLAGS += -ffixed-form
-$(SCRATCH_DIR)/swmod2.o: FFLAGS += -ffixed-form
-$(SCRATCH_DIR)/m_constants.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/m_fileio.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/mod_xnl4v5.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/serv_xnl4v5.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/SwanCompUnstruc.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/SwanInterpolateAc.o: FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/swanpre1.o:  FFLAGS += -ffixed-form
+$(SCRATCH_DIR)/swanpre2.o:  FFLAGS += -ffixed-form
+$(SCRATCH_DIR)/swanser.o:   FFLAGS += -ffixed-form
+$(SCRATCH_DIR)/swmod1.o:    FFLAGS += -ffixed-form
+$(SCRATCH_DIR)/swmod2.o:    FFLAGS += -ffixed-form
+$(SCRATCH_DIR)/m_constants.o:           FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/m_fileio.o:              FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/mod_xnl4v5.o:            FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/serv_xnl4v5.o:           FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/SwanCompUnstruc.o:       FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/SwanInterpolateAc.o:     FFLAGS += -ffree-form -ffree-line-length-none
 $(SCRATCH_DIR)/SwanInterpolateOutput.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/SwanPropvelS.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/waves_control.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/SwanConvStopc.o: FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/SwanPropvelS.o:          FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/waves_control.o:         FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/SwanConvStopc.o:         FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/SwanCompdata.o: FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/SwanGriddata.o: FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/nctablemd.o:    FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/agioncmd.o:     FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/swn_outnc.o:    FFLAGS += -ffree-form -ffree-line-length-none
 
 endif

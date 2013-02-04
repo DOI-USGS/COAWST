@@ -43,19 +43,17 @@
 #
 
              LIBS :=
-ifdef USE_ROMS
- ifdef USE_NETCDF4
-    NETCDF_INCDIR ?= /opt/intelsoft/netcdf4/include
-    NETCDF_LIBDIR ?= /opt/intelsoft/netcdf4/lib
-      HDF5_LIBDIR ?= /opt/intelsoft/hdf5/lib
- else
-    NETCDF_INCDIR ?= /opt/intelsoft/netcdf/include
-    NETCDF_LIBDIR ?= /opt/intelsoft/netcdf/lib
- endif
-             LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
- ifdef USE_NETCDF4
-             LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz -lnetcdff
- endif
+ifdef USE_NETCDF4
+   NETCDF_INCDIR ?= /opt/intelsoft/netcdf4/include
+   NETCDF_LIBDIR ?= /opt/intelsoft/netcdf4/lib
+     HDF5_LIBDIR ?= /opt/intelsoft/hdf5/lib
+else
+   NETCDF_INCDIR ?= /opt/intelsoft/netcdf/include
+   NETCDF_LIBDIR ?= /opt/intelsoft/netcdf/lib
+endif
+            LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
+ifdef USE_NETCDF4
+            LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz -lnetcdff
 endif
 
 ifdef USE_ARPACK
@@ -176,9 +174,14 @@ $(SCRATCH_DIR)/swanpre2.o: FFLAGS += -nofree
 $(SCRATCH_DIR)/swanser.o: FFLAGS += -nofree
 $(SCRATCH_DIR)/swmod1.o: FFLAGS += -nofree
 $(SCRATCH_DIR)/swmod2.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/m_constants.o: FFLAGS += -free
-$(SCRATCH_DIR)/m_fileio.o: FFLAGS += -free
-$(SCRATCH_DIR)/mod_xnl4v5.o: FFLAGS += -free
-$(SCRATCH_DIR)/serv_xnl4v5.o: FFLAGS += -free
+$(SCRATCH_DIR)/SwanCompdata.o: FFLAGS += -free
+$(SCRATCH_DIR)/SwanGriddata.o: FFLAGS += -free
+$(SCRATCH_DIR)/m_constants.o:  FFLAGS += -free
+$(SCRATCH_DIR)/m_fileio.o:     FFLAGS += -free
+$(SCRATCH_DIR)/mod_xnl4v5.o:   FFLAGS += -free
+$(SCRATCH_DIR)/serv_xnl4v5.o:  FFLAGS += -free
+$(SCRATCH_DIR)/nctablemd.o:    FFLAGS += -free
+$(SCRATCH_DIR)/agioncmd.o:     FFLAGS += -free
+$(SCRATCH_DIR)/swn_outnc.o:    FFLAGS += -free
 
 endif

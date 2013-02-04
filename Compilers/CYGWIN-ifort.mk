@@ -142,9 +142,7 @@ endif
 #
 
          BIN_WIN32 = "$$(cygpath --windows $(BIN))"
-ifdef USE_ROMS
         LIBS_WIN32 += "$$(cygpath --windows $(NETCDF_LIB))"
-endif
         LIBS_WIN32 += "c:\cygwin\lib\gcc\i686-pc-cygwin\3.4.4\libgcc.a"
 ifdef USE_ARPACK
         LIBS_WIN32 += "$$(cygpath --windows $(ARPACK_LIB))"
@@ -236,5 +234,8 @@ $(SCRATCH_DIR)/m_constants.o:  FFLAGS += -free
 $(SCRATCH_DIR)/m_fileio.o:     FFLAGS += -free
 $(SCRATCH_DIR)/mod_xnl4v5.o:   FFLAGS += -free
 $(SCRATCH_DIR)/serv_xnl4v5.o:  FFLAGS += -free
+$(SCRATCH_DIR)/nctablemd.o:    FFLAGS += -free
+$(SCRATCH_DIR)/agioncmd.o:     FFLAGS += -free
+$(SCRATCH_DIR)/swn_outnc.o:    FFLAGS += -free
 
 endif

@@ -49,34 +49,29 @@ else
 endif
 
              LIBS :=
-ifdef USE_ROMS
- ifdef USE_LARGE
-
-  ifdef USE_NETCDF4
-    NETCDF_INCDIR ?= /usr/local/netcdf4/include
-    NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
-      HDF5_LIBDIR ?= /usr/local/hdf5/lib
-  else
-    NETCDF_INCDIR ?= $(HOME)/netcdf/include
-    NETCDF_LIBDIR ?= $(HOME)/netcdf/lib64
-  endif
-
- else
-
-  ifdef USE_NETCDF4
-    NETCDF_INCDIR ?= /usr/local/netcdf4/include
-    NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
-      HDF5_LIBDIR ?= /usr/local/hdf5/lib
-  else
-    NETCDF_INCDIR ?= /usr/local/include
-    NETCDF_LIBDIR ?= /usr/local/lib
-  endif
- endif
-
-             LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
+ifdef USE_LARGE
  ifdef USE_NETCDF4
-             LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
+   NETCDF_INCDIR ?= /usr/local/netcdf4/include
+   NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
+     HDF5_LIBDIR ?= /usr/local/hdf5/lib
+ else
+   NETCDF_INCDIR ?= $(HOME)/netcdf/include
+   NETCDF_LIBDIR ?= $(HOME)/netcdf/lib64
  endif
+else
+ ifdef USE_NETCDF4
+   NETCDF_INCDIR ?= /usr/local/netcdf4/include
+   NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
+     HDF5_LIBDIR ?= /usr/local/hdf5/lib
+ else
+   NETCDF_INCDIR ?= /usr/local/include
+   NETCDF_LIBDIR ?= /usr/local/lib
+ endif
+endif
+
+            LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
+ifdef USE_NETCDF4
+            LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
 endif
 
 ifdef USE_ARPACK
@@ -187,9 +182,14 @@ $(SCRATCH_DIR)/swanpre2.o: FFLAGS += -fixedform
 $(SCRATCH_DIR)/swanser.o: FFLAGS += -fixedform
 $(SCRATCH_DIR)/swmod1.o: FFLAGS += -fixedform
 $(SCRATCH_DIR)/swmod2.o: FFLAGS += -fixedform
-$(SCRATCH_DIR)/m_constants.o: FFLAGS += -freeform
-$(SCRATCH_DIR)/m_fileio.o: FFLAGS += -freeform
-$(SCRATCH_DIR)/mod_xnl4v5.o: FFLAGS += -freeform
-$(SCRATCH_DIR)/serv_xnl4v5.o: FFLAGS += -freeform
+$(SCRATCH_DIR)/SwanCompdata.o: FFLAGS += -freeform
+$(SCRATCH_DIR)/SwanGriddata.o: FFLAGS += -freeform
+$(SCRATCH_DIR)/m_constants.o:  FFLAGS += -freeform
+$(SCRATCH_DIR)/m_fileio.o:     FFLAGS += -freeform
+$(SCRATCH_DIR)/mod_xnl4v5.o:   FFLAGS += -freeform
+$(SCRATCH_DIR)/serv_xnl4v5.o:  FFLAGS += -freeform
+$(SCRATCH_DIR)/nctablemd.o:    FFLAGS += -freeform
+$(SCRATCH_DIR)/agioncmd.o:     FFLAGS += -freeform
+$(SCRATCH_DIR)/swn_outnc.o:    FFLAGS += -freeform
 
 endif

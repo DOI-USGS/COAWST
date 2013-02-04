@@ -44,19 +44,17 @@
 #
 
              LIBS :=
-ifdef USE_ROMS
- ifdef USE_NETCDF4
-    NETCDF_INCDIR ?= /usr/local/netcdf4/include
-    NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
-      HDF5_LIBDIR ?= /usr/local/hdf5/lib
- else
-    NETCDF_INCDIR ?= /usr/local/netcdf/include
-    NETCDF_LIBDIR ?= /usr/local/netcdf/lib
- endif
-             LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
- ifdef USE_NETCDF4
-             LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
- endif
+ifdef USE_NETCDF4
+   NETCDF_INCDIR ?= /usr/local/netcdf4/include
+   NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
+     HDF5_LIBDIR ?= /usr/local/hdf5/lib
+else
+   NETCDF_INCDIR ?= /usr/local/netcdf/include
+   NETCDF_LIBDIR ?= /usr/local/netcdf/lib
+endif
+            LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
+ifdef USE_NETCDF4
+            LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
 endif
 
 ifdef USE_ARPACK
@@ -143,9 +141,9 @@ $(SCRATCH_DIR)/mod_strings.o: FFLAGS += -f4
 
 ifdef SWAN_COUPLE
 
-$(SCRATCH_DIR)/ocpcre.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/ocpids.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/ocpmix.o: FFLAGS += -nofree
+$(SCRATCH_DIR)/ocpcre.o:   FFLAGS += -nofree
+$(SCRATCH_DIR)/ocpids.o:   FFLAGS += -nofree
+$(SCRATCH_DIR)/ocpmix.o:   FFLAGS += -nofree
 $(SCRATCH_DIR)/swancom1.o: FFLAGS += -nofree
 $(SCRATCH_DIR)/swancom2.o: FFLAGS += -nofree
 $(SCRATCH_DIR)/swancom3.o: FFLAGS += -nofree
@@ -157,10 +155,19 @@ $(SCRATCH_DIR)/swanout2.o: FFLAGS += -nofree
 $(SCRATCH_DIR)/swanparll.o: FFLAGS += -nofree
 $(SCRATCH_DIR)/swanpre1.o: FFLAGS += -nofree
 $(SCRATCH_DIR)/swanpre2.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swanser.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swmod1.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swmod2.o: FFLAGS += -nofree
-$(SCRATCH_DIR)/swmod3.o: FFLAGS += -nofree
+$(SCRATCH_DIR)/swanser.o:  FFLAGS += -nofree
+$(SCRATCH_DIR)/swmod1.o:   FFLAGS += -nofree
+$(SCRATCH_DIR)/swmod2.o:   FFLAGS += -nofree
+$(SCRATCH_DIR)/swmod3.o:   FFLAGS += -nofree
+$(SCRATCH_DIR)/SwanCompdata.o: FFLAGS += -free
+$(SCRATCH_DIR)/SwanGriddata.o: FFLAGS += -free
+$(SCRATCH_DIR)/m_constants.o:  FFLAGS += -free
+$(SCRATCH_DIR)/m_fileio.o:     FFLAGS += -free
+$(SCRATCH_DIR)/mod_xnl4v5.o:   FFLAGS += -free
+$(SCRATCH_DIR)/serv_xnl4v5.o:  FFLAGS += -free
+$(SCRATCH_DIR)/nctablemd.o:    FFLAGS += -free
+$(SCRATCH_DIR)/agioncmd.o:     FFLAGS += -free
+$(SCRATCH_DIR)/swn_outnc.o:    FFLAGS += -free
 
 endif
 

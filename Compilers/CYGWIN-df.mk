@@ -131,9 +131,7 @@ endif
 #
 
          BIN_WIN32 = "$$(cygpath --windows $(BIN))"
-ifdef USE_ROMS
         LIBS_WIN32 = "$$(cygpath --windows $(NETCDF_LIB))"
-endif
 ifdef USE_ARPACK
         LIBS_WIN32 += "$$(cygpath --windows $(ARPACK_LIB))"
 endif
@@ -189,10 +187,15 @@ $(SCRATCH_DIR)/swanpre2.o: FFLAGS += /fixed
 $(SCRATCH_DIR)/swanser.o: FFLAGS += /fixed
 $(SCRATCH_DIR)/swmod1.o: FFLAGS += /fixed
 $(SCRATCH_DIR)/swmod2.o: FFLAGS += /fixed
-$(SCRATCH_DIR)/m_constants.o: FFLAGS += /free
-$(SCRATCH_DIR)/m_fileio.o: FFLAGS += /free
-$(SCRATCH_DIR)/mod_xnl4v5.o: FFLAGS += /free
-$(SCRATCH_DIR)/serv_xnl4v5.o: FFLAGS += /free
+$(SCRATCH_DIR)/SwanCompdata.o: FFLAGS += /free
+$(SCRATCH_DIR)/SwanGriddata.o: FFLAGS += /free
+$(SCRATCH_DIR)/m_constants.o:  FFLAGS += /free
+$(SCRATCH_DIR)/m_fileio.o:     FFLAGS += /free
+$(SCRATCH_DIR)/mod_xnl4v5.o:   FFLAGS += /free
+$(SCRATCH_DIR)/serv_xnl4v5.o:  FFLAGS += /free
+$(SCRATCH_DIR)/nctablemd.o:    FFLAGS += /free
+$(SCRATCH_DIR)/agioncmd.o:     FFLAGS += /free
+$(SCRATCH_DIR)/swn_outnc.o:    FFLAGS += /free
 
 endif
 
