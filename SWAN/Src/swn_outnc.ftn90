@@ -180,7 +180,7 @@ contains
 !
 !  5. Local variables
 !
-      logical                             :: irq
+      integer                             :: irq
       integer, save                       :: IENT=0
       type(spcaux_type)                   :: spcaux
 !  8. Subroutines used

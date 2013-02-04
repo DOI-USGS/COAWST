@@ -934,7 +934,7 @@
             logical                                                    :: dim_found
 
             dim_found = .false.
-            dnames = (/ 'time', 'run' /)
+            dnames = (/ 'time  ', 'run   ' /)
 
             ! Note that the assumption is that the record axe dimension has a correspomding
             ! variable
