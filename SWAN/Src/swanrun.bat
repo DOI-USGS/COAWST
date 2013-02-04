@@ -29,42 +29,35 @@ if "%1"=="" goto OK3
   set nprocs=%1
 :OK3
 
-if %nprocs%==1 goto OK4
-if exist machinefile goto OK4
-  echo.
-  echo Error: no machinefile is present in current directory
-  goto END
-:OK4
-
 copy %inputfile%.swn INPUT >> nul
 
 if not %nprocs%==1 goto PARALLEL1
 swan.exe
-goto OK5
+goto OK4
 
 :PARALLEL1
-mpirun -np %nprocs% -machinefile machinefile swan.exe
+mpiexec -n %nprocs% swan.exe
 
-:OK5
+:OK4
 if errorlevel 1 goto END
 
 if not %nprocs%==1 goto PARALLEL2
   if exist PRINT copy PRINT %inputfile%.prt >> nul
   if exist PRINT del PRINT
-  goto OK6
+  goto OK5
 :PARALLEL2
-if not exist PRINT-001 goto OK6
+if not exist PRINT-001 goto OK5
 if %nprocs% GTR 9 goto RANGE1
   for /L %%i in (1,1,%nprocs%) do copy PRINT-00%%i %inputfile%.prt-00%%i >> nul
   for /L %%i in (1,1,%nprocs%) do del PRINT-00%%i
-  goto OK6
+  goto OK5
 :RANGE1
 if %nprocs% GTR 99 goto RANGE2
   for /L %%i in (1,1,9) do copy PRINT-00%%i %inputfile%.prt-00%%i >> nul
   for /L %%i in (1,1,9) do del PRINT-00%%i
   for /L %%i in (10,1,%nprocs%) do copy PRINT-0%%i %inputfile%.prt-0%%i >> nul
   for /L %%i in (10,1,%nprocs%) do del PRINT-0%%i
-  goto OK6
+  goto OK5
 :RANGE2
 if %nprocs% GTR 999 goto ERR
   for /L %%i in (1,1,9) do copy PRINT-00%%i %inputfile%.prt-00%%i >> nul
@@ -73,11 +66,11 @@ if %nprocs% GTR 999 goto ERR
   for /L %%i in (10,1,99) do del PRINT-0%%i
   for /L %%i in (100,1,%nprocs%) do copy PRINT-%%i %inputfile%.prt-%%i >> nul
   for /L %%i in (100,1,%nprocs%) do del PRINT-%%i
-  goto OK6
+  goto OK5
 :ERR
   echo Error: too many processes
   goto END
-:OK6
+:OK5
 
 if exist Errfile copy Errfile %inputfile%.erf >> nul
 if exist Errfile del Errfile

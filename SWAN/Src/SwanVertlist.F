@@ -11,7 +11,7 @@ subroutine SwanVertlist
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -92,6 +92,7 @@ subroutine SwanVertlist
     !
     vert => gridobject%vert_grid
     !
+    istat = 0
     if(.not.allocated(vlist)) allocate (vlist(nverts), stat = istat)
     if ( istat /= 0 ) then
        call msgerr ( 4, 'Allocation problem in SwanVertlist: array vlist ' )

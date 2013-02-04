@@ -42,7 +42,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -135,7 +135,7 @@
       IYEAR = INTTIM(1)
       IYRM1 = IYEAR-1
       LEAPYR=(MOD(IYEAR,4).EQ.0.AND.MOD(IYEAR,100).NE.0).OR.
-     &        MOD(IYEAR,1000).EQ.0
+     &        MOD(IYEAR,400).EQ.0
       IDNOW=0
       IF (INTTIM(2).GT.12) THEN                                           9705
         WRITE (PRINTF, 8) INTTIM(2), (INTTIM(II), II=1,6)                 9705
@@ -147,7 +147,7 @@
       ENDIF                                                               9705
       IDNOW=IDNOW+INTTIM(3)
       IF (LEAPYR.AND.INTTIM(2).GT.2) IDNOW=IDNOW+1
-      IDNOW = IDNOW + IYEAR*365 + IYRM1/4 - IYRM1/100 + IYRM1/1000 + 1
+      IDNOW = IDNOW + IYEAR*365 + IYRM1/4 - IYRM1/100 + IYRM1/400 + 1
       IF (IYEAR.EQ.0) IDNOW=IDNOW-1
       IF (.NOT.LOGREF) THEN
         REFDAY = IDNOW
@@ -182,7 +182,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -239,17 +239,17 @@
 !
 !  5. PARAMETER VARIABLES
 !
-!     IDAYYR : number of days in 'normal' year (no leap-year)
-!     IDYCEN : number of days in a century
-!     IDYMIL : number of days in a millenium (1000 years)
-!     IFOUR  : number of days in 4 year with 1 leap-year
+!     IDAYYR : number of days in a year (not leapyear)
+!     IFOUR  : number of days in 4 years (leapyear)
+!     IDYCEN : number of days in a century (not leapyear)
+!     IDYMIL : number of days in 4 centuries (leapyear)
 !
       INTEGER IDAYYR, IDYCEN, IDYMIL, IFOUR
 !
       PARAMETER (IDAYYR = 365)
-      PARAMETER (IDYMIL = IDAYYR*1000+1000/4-1000/100+1)
-      PARAMETER (IDYCEN = IDAYYR*100+100/4-1)
       PARAMETER (IFOUR  = 4*IDAYYR+1)
+      PARAMETER (IDYCEN = 25*IFOUR-1)
+      PARAMETER (IDYMIL = 4*IDYCEN+1)
 !
 !  6. LOCAL VARIABLES
 !
@@ -257,12 +257,12 @@
 !              millenia and the centuries
 !     ICEN   : number of centuries after subtracking the millenia
 !     IDYMN  : day of the month
-!     IDYMON : number of days of each month (February counts as 28 days)
+!     IDYMON : number of days of each month
 !     IDYNOW : local daynumber
 !     IMIL   : number of millenia in julday-1 days
 !     IMN    : month counter
 !     IYR    : remaining number of years
-!     IYEAR  : number of years after substacking the centuries
+!     IYEAR  : number of years after subtracking the centuries
 !     NDAY   : number of days since reference day
 !     NOWDAY : reference day
 !
@@ -303,29 +303,34 @@
 !        get year
 !
       IDYNOW = NOWDAY-1
+!
       IMIL   = IDYNOW/IDYMIL
       IDYNOW = IDYNOW-IMIL*IDYMIL
-      ICEN   = (IDYNOW-(IDYCEN+1))/IDYCEN+1
-      IF (IDYNOW-(IDYCEN+1).LT.0) ICEN=0
-      IF (ICEN.EQ.0) THEN
-        I4     = IDYNOW/IFOUR
-        IDYNOW = IDYNOW-I4*IFOUR
+!
+      ICEN   = IDYNOW/IDYCEN
+      IDYNOW = IDYNOW-ICEN*IDYCEN
+!
+      I4     = IDYNOW/IFOUR
+      IDYNOW = IDYNOW-I4*IFOUR
+!
+      IF (IDYNOW.GE.366) THEN
+         IDYNOW = IDYNOW-366
+         IYR    = IDYNOW/IDAYYR
+         IDYNOW = IDYNOW-IYR*IDAYYR
+         IYR    = IYR+1
       ELSE
-        IDYNOW = IDYNOW-(IDYCEN+1)-(ICEN-1)*IDYCEN
-        I4     = (IDYNOW-(IFOUR-1))/IFOUR+1
-        IF(IDYNOW-(IFOUR-1).LT.0) I4=0
-        IF(I4.GT.0) IDYNOW=IDYNOW-(IFOUR-1)-(I4-1)*IFOUR
-      END IF
-      IYR   = (IDYNOW-(IDAYYR+1))/IDAYYR+1
-      IF(IDYNOW-(IDAYYR+1).LT.0) IYR=0
-      IYEAR = 1000*IMIL + 100*ICEN + 4*I4 + IYR
+         IYR = 0
+      ENDIF
+!
+      IYEAR = 400*IMIL + 100*ICEN + 4*I4 + IYR
+!
+      IF (MOD(IYEAR,100).NE.0.OR.MOD(IYEAR,400).EQ.0) IDYNOW = IDYNOW+1
 !
 !        get month and day
 !
       LEAPYR = (MOD(IYEAR,4).EQ.0.AND.MOD(IYEAR,100).NE.0).OR.
-     &          MOD(IYEAR,1000).EQ.0
-      IF (IYR.GT.0) IDYNOW=IDYNOW-(IDAYYR+1)-(IYR-1)*IDAYYR
-      IDYNOW = IDYNOW+1
+     &          MOD(IYEAR,400).EQ.0
+!
       DO 30 IMN = 1, 12
         IDYMN=IDYMON(IMN)
         IF(LEAPYR.AND.IMN.EQ.2) IDYMN=IDYMN+1
@@ -365,7 +370,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -456,7 +461,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -530,7 +535,7 @@
 !*****************************************************************
 !                                                                *
       SUBROUTINE REPARM (NDSL, NDSD, IDLA, IDFM, RFORM,                   40.00
-     &                   NHEDF, IDYN, NHEDT, LOGC, NHEDC)                 40.00
+     &                   NHEDF, IDYN, NHEDT, LOGC, LOCAL, NHEDC)          40.95 40.00
 !                                                                *
 !*****************************************************************
 !
@@ -538,6 +543,7 @@
       USE OCPCOMM2                                                        40.41
       USE OCPCOMM3                                                        40.41
       USE OCPCOMM4                                                        40.41
+!PUN      USE SIZES, ONLY: LOCALDIR                                           40.95
 !
       IMPLICIT NONE
 !
@@ -553,7 +559,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -616,9 +622,10 @@
 !
       INTEGER   IDFM, IDLA,  NDSL, NDSD, NHEDF, NHEDT, NHEDC, IDYN
 !
+!     LOCAL  : input    if True input file found in local directory
 !     LOGC   : input    if True more than one component is read from file
 !
-      LOGICAL   LOGC
+      LOGICAL   LOGC, LOCAL
 !
 !     RFORM  : output   reading format
 !
@@ -676,6 +683,7 @@
       ELSE
         CALL INCSTR ('FNAME', FILENM, 'REQ', ' ')                         40.00
       ENDIF
+!PUN      IF (LOCAL) FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)            40.95
 !
       IF (FILENM.NE.OLDFIL) THEN
         BNEW = .TRUE.
@@ -784,7 +792,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1154,7 +1162,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1233,7 +1241,7 @@
 !$    ELSE                                                                40.31
          IENT=IENT+1
          WRITE (PRTEST, 10) SUBNAM
-         IF ( SCREEN.NE.PRINTF .AND. INODE.EQ.MASTER )                    40.30
+         IF ( SCREEN.NE.PRINTF .AND. IAMMASTER )                          40.95 40.30
      &                                         WRITE (SCREEN, 10) SUBNAM  40.30
 !$    ENDIF                                                               40.31
   10  FORMAT (' ++ trace subr: ',A)
@@ -1251,6 +1259,7 @@
       USE OCPCOMM3                                                        40.41
       USE OCPCOMM4                                                        40.41
       USE M_PARALL                                                        40.31
+!PUN      USE SIZES                                                           40.95
 #ifdef SWAN_MODEL
       USE M_COUPLING
 #endif
@@ -1269,7 +1278,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1390,6 +1399,8 @@
   13         FORMAT('-',I3.3)                                             40.30
           END IF                                                          40.30
 !
+!PUN          ERRFNM = TRIM(LOCALDIR)//DIRCH2//TRIM(ERRFNM)                   40.95
+!PUN!
           IERRF = 17                                                      40.13
           OPEN (UNIT=IERRF, FILE=ERRFNM, FORM='FORMATTED')                40.13
         ENDIF
@@ -1423,7 +1434,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1524,7 +1535,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1623,7 +1634,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1649,6 +1660,7 @@
 !     34.01: IJsbrand Haagsma
 !     40.00, 40.03: Nico Booij
 !     40.41: Marcel Zijlema
+!     41.20: Casey Dietrich
 !
 !  1. Updates
 !
@@ -1660,6 +1672,7 @@
 !     40.00, Feb. 99: DIRCH2 replaces DIRCH1 in filenames
 !     40.03, May  00: modification for Linux: local copy of filename
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     41.20, Mar. 10: extension to tightly coupled ADCIRC+SWAN model
 !
 !  1. PURPOSE
 !
@@ -1858,12 +1871,18 @@
                IUNIT = IUTTM
                RETURN
             ENDIF
+!ADC  60        CONTINUE                                                      41.20
 !           Assign free unit number
             IF (IFUN.EQ.0) THEN
                IFUN = FUNLO
             ELSE
                IFUN = IFUN + 1
             ENDIF
+!ADC!           the following unit numbers are reserved for ADCIRC            41.20
+!ADC            IF ( IFUN.EQ.13 ) GOTO 60                                     41.20
+!ADC            IF ( IFUN.EQ.14 ) GOTO 60                                     41.20
+!ADC            IF ( IFUN.EQ.15 ) GOTO 60                                     41.20
+!ADC            IF ( IFUN.EQ.22 ) GOTO 60                                     41.20
             IUNIT = IFUN
             IF (IUNIT .GT. FUNHI) THEN
                IF (IOSTAT.GT.-2) CALL MSGERR (3, 'All free units used')
@@ -1965,7 +1984,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2092,7 +2111,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2286,7 +2305,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2382,7 +2401,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

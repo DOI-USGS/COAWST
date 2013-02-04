@@ -100,6 +100,7 @@
         IF (.not.allocated(FUNLO_G)) ALLOCATE (FUNLO_G(Numgrids))
         IF (.not.allocated(HIOPEN_G)) ALLOCATE (HIOPEN_G(Numgrids))
         IF (.not.allocated(PRINTF_G)) ALLOCATE (PRINTF_G(Numgrids))
+        IF (.not.allocated(INPUTF_G)) ALLOCATE (INPUTF_G(Numgrids))
 !
 !  SWANCOMM3
 !
@@ -268,6 +269,7 @@
       FUNLO=>FUNLO_G(ng)
       HIOPEN=>HIOPEN_G(ng)
       PRINTF=>PRINTF_G(ng)
+      INPUTF=>INPUTF_G(ng)
 !
 !  SWANCOMM3
 !
@@ -421,6 +423,7 @@
         DEALLOCATE (FUNLO_G)
         DEALLOCATE (HIOPEN_G)
         DEALLOCATE (PRINTF_G)
+        DEALLOCATE (INPUTF_G)
 !
 !  SWANCOMM3
 !

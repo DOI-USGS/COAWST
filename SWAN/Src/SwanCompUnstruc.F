@@ -11,7 +11,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,17 +33,21 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
 !
 !   40.80: Marcel Zijlema
 !   40.85: Marcel Zijlema
+!   40.95: Marcel Zijlema
 !   41.02: Marcel Zijlema
 !   41.07: Marcel Zijlema
 !   41.10: Marcel Zijlema
+!   41.20: Casey Dietrich
 !
 !   Updates
 !
 !   40.80,     July 2007: New subroutine
 !   40.85,   August 2008: add propagation, generation and redistribution terms for output purposes
+!   40.95,     June 2008: parallelization of unSWAN using MESSENGER of ADCIRC
 !   41.02, February 2009: implementation of diffraction
 !   41.07,   August 2009: bug fix: never-ending sweep is prevented
 !   41.10,   August 2009: parallelization using OpenMP directives
+!   41.20,     June 2010: extension to tightly coupled ADCIRC+SWAN model
 !
 !   Purpose
 !
@@ -77,6 +81,11 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     use SwanGriddata
     use SwanGridobjects
     use SwanCompdata
+    use m_parall
+!PUN    use SIZES, only: SZ, MNPROC
+!PUN    use MESSENGER
+!ADC    use couple2adcirc, only: MakeBoundariesReflective
+!ADC    use NodalAttributes, only: FoundSwanWaveRefrac, LoadSwanWaveRefrac, SwanWaveRefrac
 !
     implicit none
 !
@@ -101,6 +110,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
 !   Local variables
 !
     integer                               :: icell     ! cell index / loop counter
+    integer                               :: id        ! loop counter over direction bins
     integer                               :: iddlow    ! minimum direction bin that is propagated within a sweep
     integer                               :: iddtop    ! maximum direction bin that is propagated within a sweep
     integer, parameter                    :: idebug=0  ! level of debug output:
@@ -113,6 +123,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     integer                               :: iface     ! face index
     integer                               :: inocnt    ! inocnv counter for calling thread
     integer                               :: inocnv    ! integer indicating number of vertices in which solver does not converged
+    integer                               :: is        ! loop counter over frequency bins
     integer                               :: isslow    ! minimum frequency that is propagated within a sweep
     integer                               :: isstop    ! maximum frequency that is propagated within a sweep
     integer                               :: istat     ! indicate status of allocation
@@ -136,7 +147,6 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     integer                               :: npfl      ! number of vertices in which limiter is used
     integer                               :: npfr      ! number of vertices in which rescaling is used
     integer                               :: nupdv     ! number of updates of present vertex (based on surrounding cells)
-    integer                               :: nwetp     ! total number of active vertices
     integer                               :: swpcol    ! own sweep color (0/1=black/white) in calling thread
     integer                               :: swpdir    ! sweep counter
     integer                               :: swpnr     ! sweep number
@@ -163,6 +173,8 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     real                                  :: dal1      ! a coefficent for the 4 wave-wave interactions
     real                                  :: dal2      ! another coefficent for the 4 wave-wave interactions
     real                                  :: dal3      ! just another coefficent for the 4 wave-wave interactions
+!PUN    real(SZ), dimension(1)                :: dum1      ! a dummy real meant for UPDATER
+!PUN    real(SZ), dimension(1)                :: dum2      ! a dummy real meant for UPDATER
     real                                  :: dummy     ! dummy variable (to be used in existing SWAN routine call)
     real                                  :: etot      ! total wave energy density
     real                                  :: fpm       ! Pierson Moskowitz frequency
@@ -170,10 +182,13 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     real                                  :: hm        ! maximum wave height
     real                                  :: hs        ! significant wave height
     real                                  :: kmespc    ! mean average wavenumber based on the WAM formulation
+    real                                  :: nwetp     ! total number of active vertices
     real                                  :: qbloc     ! fraction of breaking waves
     real, dimension(2)                    :: rdx       ! first component of contravariant base vector rdx(b) = a^(b)_1
     real, dimension(2)                    :: rdy       ! second component of contravariant base vector rdy(b) = a^(b)_2
     real                                  :: rhof      ! asymptotic convergence factor
+    real                                  :: rval1     ! a dummy value
+    real                                  :: rval2     ! a dummy value
     real                                  :: smebrk    ! mean frequency based on the first order moment
     real                                  :: snlc1     ! a coefficent for the 4 wave-wave interactions
     real                                  :: stopcr    ! stopping criterion for stationary solution
@@ -186,6 +201,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     real                                  :: xis       ! difference between succeeding frequencies for computing 4 wave-wave interactions
     !
     real, dimension(:,:), allocatable     :: ac2old    ! array to store action density before solving system of equations
+!PUN    real(SZ), dimension(:), allocatable   :: ac2loc    ! local action density meant for UPDATER
     real, dimension(:,:), allocatable     :: alimw     ! maximum energy by wind growth
                                                        ! this auxiliary array is used because the maximum value has to be checked
                                                        ! direct after solving the action balance equation
@@ -294,6 +310,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     allocate(tmcurr(nverts))
     allocate(tmprev(nverts))
     allocate(tmdifc(nverts))
+!PUN    allocate(ac2loc(nverts))
     !
     allocate(swtsda(MDC,MSC,NPTSTA,MTSVAR))
     !
@@ -434,16 +451,16 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     ! marks vertices active and non-active
     !
     !$omp single
-    nwetp = 0
+    nwetp = 0.
     do kvert = 1, nverts
        if ( compda(kvert,JDP2) > DEPMIN ) then
           vert(kvert)%active = .true.
-          nwetp = nwetp +1
+          nwetp = nwetp +1.
        else
           vert(kvert)%active = .false.
        endif
     enddo
-    if ( it == 1 .and. ITEST > 0 ) write (PRINTF,108) nwetp, real(nwetp)*100./real(nverts)
+    if ( it == 1 .and. ITEST > 0 ) write (PRINTF,108) nint(nwetp), nwetp*100./real(nverts)
     !
     ! First guess of action density will be applied if 3rd generation mode is employed and wind is active (IWIND > 2)
     ! Note: this first guess is not used in nonstationary run (NSTATC > 0) or hotstart (ICOND = 4)
@@ -466,7 +483,6 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        !
        if ( IQUAD  > 2 ) memnl4(1:MDC,1:MSC,ivlow:ivup) = 0.
        if ( ITRIAD > 0 &
-            .or. ISURF == 5 &
                        ) compda(ivlow:ivup,JURSEL) = 0.
        !
        compda(ivlow:ivup,JDISS) = 0.
@@ -611,13 +627,15 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
           !
           if ( SCREEN /= PRINTF ) then
              if ( NSTATC == 1 ) then
-                write (SCREEN,110) CHTIME, it, iter, swpdir
+                if ( IAMMASTER ) write (SCREEN,110) CHTIME, it, iter, swpdir
              else
                 write (PRINTF,120) iter, swpdir
-                if ( swpdir == 1 ) then
-                   write (SCREEN,120) iter, swpdir
-                else
-                   write (SCREEN,130) iter, swpdir
+                if ( IAMMASTER ) then
+                   if ( swpdir == 1 ) then
+                      write (SCREEN,120) iter, swpdir
+                   else
+                      write (SCREEN,130) iter, swpdir
+                   endif
                 endif
              endif
           endif
@@ -641,6 +659,11 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
             !
             ivert = vlist(kvert)
             !$ ivert = tlist(kvert)
+!ADC            !
+!ADC            ! allow SWAN to handle wave refraction as a nodal attribute
+!ADC            if ( LoadSwanWaveRefrac .and. FoundSwanWaveRefrac ) then
+!ADC               IREFR = nint(SwanWaveRefrac(ivert))
+!ADC            endif
             !
             if ( vert(ivert)%active ) then   ! this active vertex needs to be updated
                !
@@ -781,10 +804,11 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                      ! calculate various integral parameters
                      !
 !TIMG                     call SWTSTA(116)
-                     call SINTGRL (spcdir, kwave        , ac2  , compda(1,JDP2), qbloc , compda(1,JURSEL), &
-                                   rdx   , rdy          , dummy, etot          , abrbot, compda(1,JUBOT) , &
-                                   hs    , compda(1,JQB), hm   , kmespc        , smebrk, compda(1,JPBOT) , &
-                                   swpnr )
+                     call SINTGRL (spcdir          , kwave           , ac2  , compda(1,JDP2), qbloc , compda(1,JURSEL), &
+                                   rdx             , rdy             , dummy, etot          , abrbot, compda(1,JUBOT) , &
+                                   hs              , compda(1,JQB)   , hm   , kmespc        , smebrk, compda(1,JPBOT) , &
+                                   compda(1,JBOTLV), compda(1,JGAMMA), compda(1,JRESPL)     , swpnr , iddlow          , &
+                                   iddtop          )
 !TIMG                     call SWTSTO(116)
                      !
                      compda(ivert,JHS) = hs
@@ -864,7 +888,9 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                         if ( IWIND > 0 ) call WINDP1 ( wind10, thetaw, idwmin        , idwmax        , &
                                                        fpm   , ufric , compda(1,JWX2), compda(1,JWY2), &
                                                        anywnd, spcdir, compda(1,JVX2), compda(1,JVY2), &
-                                                       spcsig )
+                                                       spcsig, ac2                                     &
+!ADC                                                      ,ivert                                           &
+                                                     )
 !TIMG                        call SWTSTO(115)
                         !
                         ! compute the source terms
@@ -890,7 +916,6 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                                       sfnl                , dsnl                , memnl4              , wwint               , &
                                       wwawg               , wwswg               , cgo                 , compda(1,JUSTAR)    , &
                                       compda(1,JZEL)      , spcdir              , anywnd              ,                       &
-                                      cas                 ,                                                                   &
                                       disc0               ,                                                                   &
                                       disc1               , genc0               , genc1               , redc0               , &
                                       redc1               , xis                 , compda(1,JFRC2)     , it                  , &
@@ -1012,6 +1037,13 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                enddo celloop
                !
                if ( nupdv == vert(ivert)%noc ) vert(ivert)%fullupdated = .true.
+!ADC               !
+!ADC               ! make boundaries reflective
+!ADC               if ( .false. ) then
+!ADC                  !
+!ADC                  if ( vert(ivert)%atti(VMARKER)==1 .and. vert(ivert)%atti(VBC)==0 ) call MakeBoundariesReflective( ivert, ac2 )
+!ADC                  !
+!ADC               endif
                !
             endif
             !
@@ -1030,6 +1062,20 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        ! synchronize threads before checking stop criterion
        !$omp barrier
        !
+!PUN       ! exchange action densities with neighbours in parallel run
+!PUN       !
+!PUN       if ( ACUPDA .and. MNPROC>1 ) then
+!TIMG!PUN          call SWTSTA(213)
+!PUN          do id = 1, MDC
+!PUN             do is = 1, MSC
+!PUN                ac2loc(:) = real(ac2(id,is,:),SZ)
+!PUN                call UPDATER(ac2loc,dum1,dum2,1)
+!PUN                ac2(id,is,:) = real(ac2loc(:),4)
+!PUN             enddo
+!PUN          enddo
+!TIMG!PUN          call SWTSTO(213)
+!PUN       endif
+!PUN       !
        ! store the source terms assembled in test points per iteration in the files IFPAR, IFS1D and IFS2D
        !
        !$omp master
@@ -1051,17 +1097,29 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        !
        if ( ITEST >= 30 .or. idebug == 1 ) then
           !
-          nwetp = 0
+          nwetp = 0.
           do ivert = 1, nverts
-             if ( vert(ivert)%active ) nwetp = nwetp +1
+             if ( vert(ivert)%active ) nwetp = nwetp +1.
           enddo
+!PUN          call SwanSumOverNodes ( nwetp )
           !
           mxnfr = maxval(nrscal)
           npfr  = count(mask=nrscal>0)
           !
-          frac = real(npfr)*100./real(nwetp)
+!PUN          rval1 = real(npfr )
+!PUN          rval2 = real(mxnfr)
+!PUN          !
+!PUN          ! perform global reductions in parallel run
+!PUN          !
+!PUN          call SwanSumOverNodes ( rval1 )
+!PUN          call SwanMaxOverNodes ( rval2 )
+!PUN          !
+!PUN          npfr  = nint(rval1)
+!PUN          mxnfr = nint(rval2)
+!PUN          !
+          frac = real(npfr)*100./nwetp
           if ( npfr > 0 ) write (PRINTF,134) 'rescaling', frac, mxnfr
-          if ( NSTATC == 0 .and. npfr > 0 ) write (SCREEN,134) 'rescaling', frac, mxnfr
+          if ( NSTATC == 0 .and. npfr > 0 .and. IAMMASTER ) write (SCREEN,134) 'rescaling', frac, mxnfr
           !
        endif
        !
@@ -1070,22 +1128,38 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        !
        if ( ITEST >= 30 .or. idebug == 1 ) then
           !
-          nwetp = 0
+          nwetp = 0.
           do ivert = 1, nverts
-             if ( vert(ivert)%active ) nwetp = nwetp +1
+             if ( vert(ivert)%active ) nwetp = nwetp +1.
           enddo
+!PUN          call SwanSumOverNodes ( nwetp )
           !
           mxnfl = maxval(nflim)
           npfl  = count(mask=nflim>0)
           !
+!PUN          rval1 = real(npfl )
+!PUN          rval2 = real(mxnfl)
+!PUN          !
+!PUN          ! perform global reductions in parallel run
+!PUN          !
+!PUN          call SwanSumOverNodes ( rval1 )
+!PUN          call SwanMaxOverNodes ( rval2 )
+!PUN          !
+!PUN          npfl  = nint(rval1)
+!PUN          mxnfl = nint(rval2)
+!PUN          !
+          frac = real(npfl)*100./nwetp
+          if ( npfl > 0 ) write (PRINTF,134) 'limiter', frac, mxnfl
+          if ( NSTATC == 0 .and. npfl > 0 .and. IAMMASTER ) write (SCREEN,134) 'limiter', frac, mxnfl
+          !
           mnisl = minval(islmin)
           !
-          frac = real(npfl)*100./real(nwetp)
-          if ( npfl > 0 ) write (PRINTF,134) 'limiter', frac, mxnfl
-          if ( NSTATC == 0 .and. npfl > 0 ) write (SCREEN,134) 'limiter', frac, mxnfl
-          !
+!PUN          rval1 = real(mnisl)
+!PUN          call SwanMinOverNodes ( rval1 )
+!PUN          mnisl = nint(rval1)
+!PUN          !
           if ( npfl > 0 ) write (PRINTF,135) spcsig(mnisl)/PI2
-          if ( NSTATC == 0 .and. npfl > 0 ) write (SCREEN,135) spcsig(mnisl)/PI2
+          if ( NSTATC == 0 .and. npfl > 0 .and. IAMMASTER ) write (SCREEN,135) spcsig(mnisl)/PI2
           !
        endif
        !
@@ -1093,6 +1167,9 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        ! (only for debug purposes)
        !
        if ( ITEST >= 30 .or. idebug == 1 ) then
+!PUN          rval1 = real(inocnv)
+!PUN          call SwanSumOverNodes ( rval1 )
+!PUN          inocnv = nint(rval1)
           if ( (DYNDEP .or. ICUR /= 0) .and. inocnv /= 0 ) then
              write (PRINTF,136) inocnv
           endif
@@ -1118,10 +1195,10 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
           if ( iter == 1 ) then
              accur = -9999.
              write (PRINTF,142)
-             if ( NSTATC == 0 ) write (SCREEN,142)
+             if ( NSTATC == 0 .and. IAMMASTER ) write (SCREEN,142)
           else
              write (PRINTF,140) accur, PNUMS(4)
-             if ( NSTATC == 0 ) write (SCREEN,140) accur, PNUMS(4)
+             if ( NSTATC == 0 .and. IAMMASTER ) write (SCREEN,140) accur, PNUMS(4)
           endif
           !$omp end master
 !TIMG          call SWTSTO(102)
@@ -1138,20 +1215,20 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
          !$omp master
 !TIMG          call SWTSTA(102)
           write (PRINTF,141)
-          if ( NSTATC == 0 ) write (SCREEN,141)
+          if ( NSTATC == 0 .and. IAMMASTER ) write (SCREEN,141)
           if ( iter == 1 ) then
              stopcr = -9999.
              write (PRINTF,142)
-             if ( NSTATC == 0 ) write (SCREEN,142)
+             if ( NSTATC == 0 .and. IAMMASTER ) write (SCREEN,142)
           else
              if ( acnrms(1) < 1.e-20 .or. acnrmo < 1.e-20 ) then
                 write (PRINTF,143)
-                if ( NSTATC == 0 ) write (SCREEN,143)
+                if ( NSTATC == 0 .and. IAMMASTER ) write (SCREEN,143)
              else
                 rhof   = acnrms(1)/acnrmo
                 stopcr = PNUMS(1)*acnrms(2)*(1.-rhof)/rhof
                 write (PRINTF,144) rhof, acnrms(1), stopcr
-                if ( NSTATC == 0 ) write (SCREEN,144) rhof, acnrms(1), stopcr
+                if ( NSTATC == 0 .and. IAMMASTER ) write (SCREEN,144) rhof, acnrms(1), stopcr
              endif
           endif
           acnrmo = acnrms(1)
@@ -1252,6 +1329,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     deallocate(tmcurr)
     deallocate(tmprev)
     deallocate(tmdifc)
+!PUN    deallocate(ac2loc)
     !
     deallocate(swtsda)
     !

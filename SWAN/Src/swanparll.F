@@ -59,7 +59,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -218,6 +218,10 @@
          PARLL = .FALSE.
       END IF
 
+!     --- am I master?
+
+      IAMMASTER = INODE.EQ.MASTER
+
 !     --- define MPI constants for communication within SWAN
 
       SWINT  = MPI_INTEGER
@@ -258,7 +262,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -391,7 +395,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -526,7 +530,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -669,7 +673,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -818,7 +822,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -960,7 +964,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1071,7 +1075,7 @@
 !     --- if not parallel, return
       IF (.NOT.PARLL) RETURN
 
-      IF (INODE.EQ.MASTER) THEN
+      IF (IAMMASTER) THEN
          ALLOCATE(ICOUNT(0:NPROC-1))
          ALLOCATE(IDSPLC(0:NPROC-1))
       END IF
@@ -1096,7 +1100,7 @@
 !     --- check whether enough space has been allocated
 !         for gathered data
 
-      IF (INODE.EQ.MASTER) THEN
+      IF (IAMMASTER) THEN
          IF ( SUM(ICOUNT).GT.IOLEN ) THEN
             CALL MSGERR(4,
      &                  'Not enough space allocated for gathered data')
@@ -1107,7 +1111,7 @@
 !     --- calculate starting address of each local array
 !         with respect to the global array
 
-      IF (INODE.EQ.MASTER) THEN
+      IF (IAMMASTER) THEN
          IDSPLC(0) = 0
          DO I = 1, NPROC-1
             IDSPLC(I) = ICOUNT(I-1) + IDSPLC(I-1)
@@ -1132,7 +1136,7 @@
          RETURN
       END IF
 
-      IF (INODE.EQ.MASTER) DEALLOCATE(ICOUNT,IDSPLC)
+      IF (IAMMASTER) DEALLOCATE(ICOUNT,IDSPLC)
 
       RETURN
       END
@@ -1159,7 +1163,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1280,7 +1284,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1426,7 +1430,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1569,7 +1573,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1772,7 +1776,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1939,7 +1943,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2285,7 +2289,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2459,7 +2463,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2649,7 +2653,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2815,7 +2819,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2982,7 +2986,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3121,7 +3125,7 @@
          IF (STPNOW()) RETURN
 
          IF (.NOT.FULL) THEN
-            IF (INODE.EQ.MASTER) THEN
+            IF (IAMMASTER) THEN
                ILEN = MXCGL*MYCGL +
      &                       4*MAX(IHALOX,IHALOY)*NPROC*MAX(MXCGL,MYCGL)
                ALLOCATE(KGRPTC(ILEN))
@@ -3129,10 +3133,10 @@
             CALL SWGATHER ( KGRPTC, ILEN, KGRPNT, MXC*MYC, SWINT )
             IF (STPNOW()) RETURN
          ELSE
-            IF (INODE.EQ.MASTER) ALLOCATE(KGRPTC(0))
+            IF (IAMMASTER) ALLOCATE(KGRPTC(0))
          END IF
 
-         IF (INODE.EQ.MASTER) THEN
+         IF (IAMMASTER) THEN
             IF (FULL) THEN
                ILEN = MXCGL*MYCGL +
      &                       4*MAX(IHALOX,IHALOY)*NPROC*MAX(MXCGL,MYCGL)
@@ -3152,7 +3156,7 @@
 
 !        --- copy gathered data to global array in appropriate manner
 
-         IF (INODE.EQ.MASTER) THEN
+         IF (IAMMASTER) THEN
 
             IOFF1 = 0
             IOFF2 = 0
@@ -3232,7 +3236,7 @@
 
          END IF
 
-         IF (INODE.EQ.MASTER) DEALLOCATE(KGRPTC,FLDC)
+         IF (IAMMASTER) DEALLOCATE(KGRPTC,FLDC)
 
       END IF
 
@@ -3249,12 +3253,15 @@
 !****************************************************************
 !
       USE TIMECOMM                                                        40.41
+!PUN      USE OCPCOMM2
       USE OCPCOMM4                                                        40.41
       USE SWCOMM1                                                         40.41
       USE SWCOMM2                                                         40.51
       USE SWCOMM3                                                         40.41
       USE OUTP_DATA
       USE M_PARALL                                                        40.31
+!PUN      USE SwanGriddata, ONLY: nvertsg                                     41.36
+!PUN      USE SIZES                                                           41.36
 !
       IMPLICIT NONE
 !
@@ -3270,7 +3277,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3293,6 +3300,7 @@
 !     40.30: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.51: Marcel Zijlema
+!     41.36: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -3300,6 +3308,7 @@
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.41, Dec. 04: optimization output with respect to COMPGRID
 !     40.51, Feb. 05: re-design output process in parallel mode
+!     41.36, Jun. 06: collecting data for PunSWAN
 !
 !  2. Purpose
 !
@@ -3327,11 +3336,14 @@
 !     CORQ  :     current item in list of request outputs
 !     CROSS :     auxiliary logical array
 !     CUOPS :     current item in list of point sets
+!PUN!     EXIST :     logical whether a file exist or not
 !     DIF   :     difference between end and actual times
 !     DTTIWR:     to write time string
 !     IC    :     loop variable
 !     IENT  :     number of entries
+!PUN!     ILPOS :     actual length of filename
 !     IP    :     loop variable
+!PUN!     IPROC :     loop counter
 !     IRQ   :     request number
 !     IT    :     time step counter
 !     IT0   :     integer indicating first step of simulation
@@ -3362,10 +3374,12 @@
 !
       INTEGER   IC, IENT, IP, IRQ, IT, IT0, IT1, IUNIT, MIP, MXK, MYK
       INTEGER   ITMP1, ITMP2, ITMP3, ITMP4, ITMP5, ITMP6
+!PUN      INTEGER   ILPOS, IPROC
       REAL      DIF, TNEXT
       REAL      RTMP1, RTMP2, RTMP3, RTMP4
       REAL, ALLOCATABLE :: XC(:), YC(:), XP(:), YP(:)                     40.51
       LOGICAL   OPENED
+!PUN      LOGICAL   EXIST
       LOGICAL, ALLOCATABLE :: CROSS(:,:)                                  40.86
       CHARACTER PSTYPE*1, RTYPE*4, SNAMPF*8, DTTIWR*18
       TYPE(ORQDAT), POINTER :: CORQ
@@ -3417,6 +3431,8 @@
       IF (LTRACE) CALL STRACE (IENT,'SWCOLOUT')
 
       IF ( NREOQ.EQ.0 ) RETURN
+!PUN
+!PUN      NPROC = MNPROC                                                      41.36
 
 !     --- do for all COMPUTE commands
 
@@ -3458,11 +3474,14 @@
                IF ( IT.EQ.IT0 .AND. IC.EQ.1 ) THEN
                   CORQ%OQR(1) = OURQT(IRQ)                                40.51
                END IF
-               TNEXT = CORQ%OQR(1)
+               IF (CORQ%OQR(1).LT.TINIC) THEN
+                  TNEXT = TINIC
+               ELSE
+                  TNEXT = CORQ%OQR(1)
+               ENDIF
                IF ( ABS(DIF).LT.0.5*DT .AND. CORQ%OQR(2).LT.0. ) THEN
                   CORQ%OQR(1) = TIMCO
                ELSE IF ( CORQ%OQR(2).GT.0. .AND. TIMCO.GE.TNEXT ) THEN
-!                 CORQ%OQR(1) = TIMCO + CORQ%OQR(2)
                   CORQ%OQR(1) = TNEXT + CORQ%OQR(2)
                ELSE
                   GOTO 50
@@ -3470,6 +3489,12 @@
 
                RTYPE  = CORQ%RQTYPE
                SNAMPF = CORQ%PSNAME
+!PUN
+!PUN               IF (SNAMPF.EQ.'COMPGRID') THEN
+!PUN                  LCOMPGRD=.TRUE.
+!PUN               ELSE
+!PUN                  LCOMPGRD=.FALSE.
+!PUN               ENDIF
 #ifdef SWAN_MODEL
                CUOPS => OPSDATZ_MOD(ng)%FOPS
 #else
@@ -3493,6 +3518,7 @@
                   MIP = CUOPS%MIP
                ELSE IF ( PSTYPE.EQ.'U' ) THEN
                   MIP = CUOPS%MIP
+!PUN                  IF ( LCOMPGRD ) MIP = nvertsg
                   MXK = MIP
                   MYK = 1
                END IF
@@ -3543,6 +3569,46 @@
                XCLMAX = RTMP2
                YCLMIN = RTMP3
                YCLMAX = RTMP4
+!PUN
+!PUN!              --- find global vertex index for output locations
+!PUN!                  stored in array XC
+!PUN
+!PUN               IF ( .NOT.LCOMPGRD ) THEN
+!PUN                  XC = -1.
+!PUN                  YC =  0.
+!PUN                  FILENM = TRIM(LOCALDIR)//DIRCH2//'output.set'
+!PUN                  ILPOS  = LEN(TRIM(LOCALDIR))
+!PUN                  DO IPROC = 1, NPROC
+!PUN                     WRITE(FILENM(ILPOS-3:ILPOS),'(I4.4)') IPROC-1
+!PUN                     IUNIT = HIOPEN+NREOQ*(NPROC+1)+IPROC
+!PUN                     INQUIRE ( FILE=FILENM, EXIST=EXIST, OPENED=OPENED )
+!PUN                     IF ( .NOT.OPENED ) THEN
+!PUN                        IF (EXIST) THEN
+!PUN                           OPEN ( UNIT=IUNIT, FILE=FILENM )
+!PUN                        ELSE
+!PUN                           CALL MSGERR( 4,
+!PUN     &                                'file output.set does not exist' )
+!PUN                           RETURN
+!PUN                        ENDIF
+!PUN                     ENDIF
+!PUN                     READ(IUNIT,'(2I8)') ITMP1, ITMP2
+!PUN                     IF (ITMP1.EQ.IRQ) THEN
+!PUN                        DO IP = 1, ITMP2
+!PUN                           READ (IUNIT,'(2I8)') ITMP3, ITMP4
+!PUN                           XC(ITMP3) = REAL(ITMP4) - 1.
+!PUN                        ENDDO
+!PUN                     ELSE
+!PUN                        CALL MSGERR( 4,
+!PUN     &        'inconsistency found in SWCOLOUT: wrong request number ' )
+!PUN                        RETURN
+!PUN                     ENDIF
+!PUN                  ENDDO
+!PUN               ELSE
+!PUN                  DO IP = 1, MIP
+!PUN                     XC(IP) = REAL(IP) - 1.
+!PUN                     YC(IP) = 0.
+!PUN                  ENDDO
+!PUN               ENDIF
 
 !              --- correct problem coordinates with offset values
 
@@ -3566,8 +3632,8 @@
 !                  output locations
 
                IF ( RTYPE(1:2).EQ.'SP' ) THEN
-                  CALL SWCOLSPC ( RTYPE, CORQ%OQI, MIP, IRQ, BLKND,       40.51 40.41
-     &                            XC, YC )                                40.51
+                  CALL SWCOLSPC ( RTYPE, CORQ%OQI, CORQ%OQR, MIP,         41.40 40.51 40.41
+     &                            IRQ  , BLKND   , XC      , YC )         40.51
                   IF (STPNOW()) RETURN
                END IF
 
@@ -3576,12 +3642,13 @@
 
                IF ( RTYPE(1:3).EQ.'BLK' ) THEN
 #ifdef SWAN_MODEL
-                  CALL SWCOLBLK ( RTYPE, CORQ%OQI, CORQ%IVTYP, CORQ%FAC,
-     &                            SNAMPF, MXK, MYK, IRQ, BLKND, XC, YC, 
-     &                            ng)
+                  CALL SWCOLBLK ( RTYPE, CORQ%OQI, CORQ%OQR, CORQ%IVTYP,  41.40
+     &                            CORQ%FAC, SNAMPF, MXK, MYK, IRQ,        40.51 40.41
+     &                            BLKND, XC, YC, ng )                     40.51 40.41
 #else
-                  CALL SWCOLBLK ( RTYPE, CORQ%OQI, CORQ%IVTYP, CORQ%FAC,
-     &                            SNAMPF, MXK, MYK, IRQ, BLKND, XC, YC )  40.51 40.41
+                  CALL SWCOLBLK ( RTYPE, CORQ%OQI, CORQ%OQR, CORQ%IVTYP,  41.40
+     &                            CORQ%FAC, SNAMPF, MXK, MYK, IRQ,        40.51 40.41
+     &                            BLKND, XC, YC )                         40.51 40.41
 #endif
                   IF (STPNOW()) RETURN
                END IF
@@ -3611,6 +3678,7 @@
         IF (OPENED) CLOSE(IUNIT)
       END DO
       DO IUNIT = HIOPEN+NREOQ+1, HIOPEN+NREOQ*(NPROC+1)
+!PUN      DO IUNIT = HIOPEN+NREOQ+1, HIOPEN+NREOQ*(NPROC+1)+NPROC
         INQUIRE ( UNIT=IUNIT, OPENED=OPENED )
         IF (OPENED) CLOSE ( UNIT=IUNIT, STATUS='delete' )
       END DO
@@ -3624,12 +3692,14 @@
 !
 !****************************************************************
 !
+!PUN      USE OCPCOMM2, ONLY: LENFNM, DIRCH2                                  41.36
       USE OCPCOMM4                                                        40.41
       USE SWCOMM1                                                         40.41
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
       USE OUTP_DATA
       USE M_PARALL                                                        40.31
+!PUN      USE SIZES, ONLY: GLOBALDIR, LOCALDIR                                41.36
 !
       IMPLICIT NONE
 !
@@ -3645,7 +3715,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3669,6 +3739,7 @@
 !     40.41: Marcel Zijlema
 !     40.51: Agnieszka Herman
 !     40.51: Marcel Zijlema
+!     41.36: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -3677,6 +3748,7 @@
 !     40.41, Dec. 04: optimization output with respect to COMPGRID
 !     40.51, Feb. 05: further optimization
 !     40.51, Feb. 05: re-design output process in parallel mode
+!     41.36, Jun. 12: collecting data for PunSWAN
 !
 !  2. Purpose
 !
@@ -3704,6 +3776,7 @@
 !
 !     EXIST :     logical whether a file exist or not
 !     FSTR  :     an auxiliary string
+!     I     :     integer
 !     IENT  :     number of entries
 !     IF    :     first non-character in string
 !     IL    :     last non-character in string
@@ -3725,7 +3798,7 @@
 !     OPENED:     logical whether a file is open or not
 !     OUTLIN:     output line
 !
-      INTEGER       IENT, IF, IL, ILPOS, IP, IPROC, IUNIT,
+      INTEGER       I, IENT, IF, IL, ILPOS, IP, IPROC, IUNIT,
      &              IUT, IVTYPE, IXK, IYK, JVAR, LFIELD, NLINES,
      &              NREF, NUMDEC, NVAR
       LOGICAL       EXIST, OPENED
@@ -3783,7 +3856,10 @@
 
          FILENM = OUTP_FILES(OQI(2))
          ILPOS  = INDEX(FILENM, '-0')
-         FILENM = FILENM(1:ILPOS-1)
+         IF (ILPOS.NE.0) FILENM = FILENM(1:ILPOS-1)
+!PUN         ILPOS  = LEN(TRIM(LOCALDIR))+2
+!PUN         FILENM = FILENM(ILPOS:LENFNM)
+!PUN         FILENM = TRIM(GLOBALDIR)//DIRCH2//TRIM(FILENM)
          INQUIRE ( FILE=FILENM, OPENED=OPENED, NUMBER=IUT )
 
 !        --- if it is not open or already open thru another request
@@ -3829,9 +3905,13 @@
 
             FILENM = OUTP_FILES(OQI(2))
             ILPOS  = INDEX ( FILENM, ' ' )-1
+!PUN            ILPOS  = LEN(TRIM(LOCALDIR))
             DO IPROC = 1, NPROC
-               WRITE(FILENM(ILPOS-3:ILPOS),100) IPROC
+               I = IPROC
+!PUN               I = I - 1
+               WRITE(FILENM(ILPOS-3:ILPOS),100) I
  100           FORMAT('-',I3.3)
+!PUN 100           FORMAT(I4.4)
                IUNIT = HIOPEN+NREOQ+(NREF-HIOPEN-1)*NPROC+IPROC
                INQUIRE ( FILE=FILENM, EXIST=EXIST, OPENED=OPENED )
                IF ( .NOT.OPENED ) THEN
@@ -3839,6 +3919,8 @@
                      OPEN ( UNIT=IUNIT, FILE=FILENM )
                   ELSE
                      MSGSTR= 'file '//FILENM(1:ILPOS)//' does not exist'
+!PUN                     MSGSTR= 'file '//TRIM(FILENM(ILPOS:LENFNM))//
+!PUN     &                       ' does not exist'
                      CALL MSGERR( 4, MSGSTR )
                      RETURN
                   END IF
@@ -3949,16 +4031,19 @@
       END
 !****************************************************************
 !
-      SUBROUTINE SWCOLSPC ( RTYPE, OQI, MIP, IRQ, BLKND, XC, YC )         40.51
+      SUBROUTINE SWCOLSPC ( RTYPE, OQI, OQR, MIP, IRQ, BLKND, XC, YC )    41.40 40.51
 !
 !****************************************************************
 !
+!PUN      USE OCPCOMM2, ONLY: LENFNM, DIRCH2                                  41.36
       USE OCPCOMM4                                                        40.41
       USE SWCOMM1                                                         40.41
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
       USE OUTP_DATA
       USE M_PARALL                                                        40.31
+      USE swn_outnc, ONLY: swn_outnc_colspc                               41.40
+!PUN      USE SIZES, ONLY: GLOBALDIR, LOCALDIR                                41.36
 !
       IMPLICIT NONE
 !
@@ -3974,7 +4059,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3998,6 +4083,7 @@
 !     40.41: Marcel Zijlema
 !     40.51: Agnieszka Herman
 !     40.51: Marcel Zijlema
+!     41.36: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -4006,6 +4092,7 @@
 !     40.41, Dec. 04: optimization output with respect to COMPGRID
 !     40.51, Feb. 05: further optimization
 !     40.51, Feb. 05: re-design output process in parallel mode
+!     41.36, Jun. 12: collecting data for PunSWAN
 !
 !  2. Purpose
 !
@@ -4017,12 +4104,14 @@
 !     BLKND       collected array giving node number per subdomain
 !     IRQ         request number
 !     MIP         total number of output points
-!     OQI         array containing output request data
+!     OQI         integer array containing output request data
+!     OQR         real array containing output request data
 !     RTYPE       type of output request
 !     XC          computational grid x-coordinate of output point
 !     YC          computational grid y-coordinate of output point
 !
       INTEGER   IRQ, MIP, OQI(4)
+      REAL      OQR(2)                                                    41.40
       REAL      BLKND(MXCGL,MYCGL), XC(MIP), YC(MIP)                      40.51
       CHARACTER RTYPE*4
 !
@@ -4030,6 +4119,7 @@
 !
 !     EMPTY :     logical whether a line is empty or not
 !     EXIST :     logical whether a file exist or not
+!     I     :     integer
 !     IBLKN :     integer giving node number per subdomain
 !     IENT  :     number of entries
 !     IF    :     first non-character in string
@@ -4043,15 +4133,17 @@
 !     IXK   :     loop counter
 !     IYK   :     loop counter
 !     MSGSTR:     string to pass message to call MSGERR
+!     NCF   :     true if netCDF file
 !     NLINES:     number of lines in heading
 !     NREF  :     unit reference number
 !     OPENED:     logical whether a file is open or not
 !     OTYPE :     integer indicating dimension of spectrum
 !     OUTLIN:     output line
 !
-      INTEGER       IBLKN, IENT, IF, IL, ILPOS, IP, IPROC, IS,
+      INTEGER       I, IBLKN, IENT, IF, IL, ILPOS, IP, IPROC, IS,
      &              IUNIT, IUT, IXK, IYK, NLINES, NREF, OTYPE
       LOGICAL       EMPTY, EXIST, OPENED
+      LOGICAL, SAVE :: NCF = .FALSE.                                      41.40
       CHARACTER*80  MSGSTR
       CHARACTER (LEN=LENSPO) OUTLIN
 !
@@ -4059,7 +4151,11 @@
 !
 !     MSGERR           Writes error message
 !     STRACE           Tracing routine for debugging
+!     STPNOW           Logical indicating whether program must
+!     swn_outnc_colspc Collect spectral output for netcdf
 !     TXPBLA           Removes leading and trailing blanks in string
+!
+      LOGICAL STPNOW
 !
 !  9. Subroutines calling
 !
@@ -4095,6 +4191,16 @@
       DATA IENT/0/
       IF (LTRACE) CALL STRACE (IENT,'SWCOLSPC')
 
+      FILENM = OUTP_FILES(OQI(2))
+      NCF = INDEX( FILENM, '.NC' ).NE.0 .OR.                              41.40
+     &      INDEX (FILENM, '.nc' ).NE.0                                   41.40
+!
+      IF ( NCF ) THEN                                                     41.40
+         CALL swn_outnc_colspc( RTYPE, OQI, OQR, MIP )
+         IF (STPNOW()) RETURN
+         RETURN
+      ENDIF
+
       NREF   = OQI(1)
       NLINES = 0
 
@@ -4104,7 +4210,10 @@
 
          FILENM = OUTP_FILES(OQI(2))
          ILPOS  = INDEX(FILENM, '-0')
-         FILENM = FILENM(1:ILPOS-1)
+         IF (ILPOS.NE.0) FILENM = FILENM(1:ILPOS-1)
+!PUN         ILPOS  = LEN(TRIM(LOCALDIR))+2
+!PUN         FILENM = FILENM(ILPOS:LENFNM)
+!PUN         FILENM = TRIM(GLOBALDIR)//DIRCH2//TRIM(FILENM)
          INQUIRE ( FILE=FILENM, OPENED=OPENED, NUMBER=IUT )
 
 !        --- if it is not open or already open thru another request
@@ -4131,9 +4240,13 @@
 
             FILENM = OUTP_FILES(OQI(2))
             ILPOS  = INDEX ( FILENM, ' ' )-1
+!PUN            ILPOS  = LEN(TRIM(LOCALDIR))
             DO IPROC = 1, NPROC
-               WRITE(FILENM(ILPOS-3:ILPOS),100) IPROC
+               I = IPROC
+!PUN               I = I - 1
+               WRITE(FILENM(ILPOS-3:ILPOS),100) I
  100           FORMAT('-',I3.3)
+!PUN 100           FORMAT(I4.4)
                IUNIT = HIOPEN+NREOQ+(NREF-HIOPEN-1)*NPROC+IPROC
                INQUIRE ( FILE=FILENM, EXIST=EXIST, OPENED=OPENED )
                IF ( .NOT.OPENED ) THEN
@@ -4141,6 +4254,8 @@
                      OPEN ( UNIT=IUNIT, FILE=FILENM )
                   ELSE
                      MSGSTR= 'file '//FILENM(1:ILPOS)//' does not exist'
+!PUN                     MSGSTR= 'file '//TRIM(FILENM(ILPOS:LENFNM))//
+!PUN     &                       ' does not exist'
                      CALL MSGERR( 4, MSGSTR )
                      RETURN
                   END IF
@@ -4276,21 +4391,25 @@
 !****************************************************************
 !
 #ifdef SWAN_MODEL
-      SUBROUTINE SWCOLBLK ( RTYPE, OQI, IVTYP, FAC  , PSNAME,
-     &                      MXK  , MYK, IRQ  , BLKND, XC    ,             40.51
-     &                      YC   , ng)
+      SUBROUTINE SWCOLBLK ( RTYPE , OQI, OQR, IVTYP, FAC  ,              41.40
+     &                      PSNAME, MXK, MYK, IRQ  , BLKND,              40.51
+     &                      XC    , YC, ng )                             40.51
 #else
-      SUBROUTINE SWCOLBLK ( RTYPE, OQI, IVTYP, FAC  , PSNAME,
-     &                      MXK  , MYK, IRQ  , BLKND, XC    ,             40.51
-     &                      YC   )                                        40.51
+      SUBROUTINE SWCOLBLK ( RTYPE , OQI, OQR, IVTYP, FAC  ,              41.40
+     &                      PSNAME, MXK, MYK, IRQ  , BLKND,              40.51
+     &                      XC    , YC )                                 40.51
 #endif
 !
 !****************************************************************
 !
+!PUN      USE OCPCOMM2, ONLY: LENFNM, DIRCH2                                  41.36
       USE OCPCOMM4                                                        40.41
       USE SWCOMM1                                                         40.41
       USE OUTP_DATA
       USE M_PARALL
+!PUN      USE SIZES, ONLY: GLOBALDIR, LOCALDIR                                41.36
+!PUN!NCF      USE SwanGridData, ONLY: XCUGRDGL, YCUGRDGL                          41.40
+      USE swn_outnc                                                       41.40
 !
       IMPLICIT NONE
 !
@@ -4306,7 +4425,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4330,6 +4449,7 @@
 !     40.41: Marcel Zijlema
 !     40.51: Agnieszka Herman
 !     40.51: Marcel Zijlema
+!     41.36: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -4339,6 +4459,7 @@
 !     40.41, Dec. 04: optimization output with respect to COMPGRID
 !     40.51, Feb. 05: further optimization
 !     40.51, Feb. 05: re-design output process in parallel mode
+!     41.36, Jun. 12: collecting data for PunSWAN
 !
 !  2. Purpose
 !
@@ -4353,7 +4474,8 @@
 !     IVTYP       type of variable output
 !     MXK         number of points in x-direction of output frame
 !     MYK         number of points in y-direction of output frame
-!     OQI         array containing output request data
+!     OQI         integer array containing output request data
+!     OQR         real array containing output request data
 !     PSNAME      name of output locations
 !     RTYPE       type of output request
 !     XC          computational grid x-coordinate of output point
@@ -4361,7 +4483,7 @@
 !
       INTEGER   MXK, MYK, IRQ, OQI(4), IVTYP(OQI(3))
       REAL      BLKND(MXCGL,MYCGL), XC(MXK*MYK), YC(MXK*MYK)              40.51
-      REAL      FAC(OQI(3))
+      REAL      OQR(2), FAC(OQI(3))                                       41.40
       CHARACTER RTYPE*4, PSNAME*8
 !
 !  6. Local variables
@@ -4373,6 +4495,8 @@
 !     FTIP  :     auxiliary real
 !     FTIP1 :     auxiliary real
 !     FTIP2 :     auxiliary real
+!     I     :     integer
+!     IBLKN :     integer giving node number per subdomain
 !     IDLA  :     lay-out indicator
 !     IF    :     first non-character in string
 !     IFAC  :     auxiliary integer
@@ -4400,12 +4524,13 @@
 #ifdef SWAN_MODEL
       INTEGER, INTENT(IN) :: ng
 #endif
-      INTEGER      IDLA, IENT, IF, IFAC, IL, ILPOS, IP, IPD,
+      INTEGER      I, IBLKN, IDLA, IENT, IF, IFAC, IL, ILPOS, IP, IPD,
      &             IPROC, IUNIT, IUT, IXK, IYK, IVTYPE, JVAR, NREF,
      &             NVAR
       REAL         DFAC, FMAX, FTIP, FTIP1, FTIP2
       LOGICAL      EXIST, OPENED
       LOGICAL, SAVE :: MATLAB=.FALSE.                                     40.41
+      LOGICAL, SAVE :: NCF   =.FALSE.                                     41.40
       CHARACTER*80 MSGSTR
       CHARACTER (LEN=20) :: CTIM                                          40.41
       CHARACTER (LEN=30) :: NAMVAR                                        40.41
@@ -4476,16 +4601,32 @@
 
          FILENM = OUTP_FILES(OQI(2))
          ILPOS  = INDEX(FILENM, '-0')
-         FILENM = FILENM(1:ILPOS-1)
+         IF (ILPOS.NE.0) FILENM = FILENM(1:ILPOS-1)
+!PUN         ILPOS  = LEN(TRIM(LOCALDIR))+2
+!PUN         FILENM = FILENM(ILPOS:LENFNM)
+!PUN         FILENM = TRIM(GLOBALDIR)//DIRCH2//TRIM(FILENM)
          INQUIRE ( FILE=FILENM, OPENED=OPENED, NUMBER=IUT )
          MATLAB = INDEX( FILENM, '.MAT' ).NE.0 .OR.                       40.41
      &            INDEX (FILENM, '.mat' ).NE.0                            40.41
+         NCF    = INDEX( FILENM, '.NC'  ).NE.0 .OR.                       41.40
+     &            INDEX (FILENM, '.nc'  ).NE.0                            41.40
 
 !        --- if it is not open or already open thru another request
 
          IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN ) THEN
 
 !           --- open generic output file or reset reference number
+
+            IF (NCF .AND. .NOT.OPENED) THEN                               41.40
+               CALL swn_outnc_openblockfile(FILENM, MYK, MXK,
+     &                                      OVLNAM, XGRDGL, YGRDGL,
+     &                                      OQI, OQR, IVTYP, IRQ)
+!PUN!NCF               CALL swn_outnc_openblockfile(FILENM, MYK, MXK,
+!PUN!NCF     &                                      OVLNAM, XCUGRDGL, YCUGRDGL,
+!PUN!NCF     &                                      OQI, OQR, IVTYP, IRQ)
+                IUT    = HIOPEN + IRQ
+                OPENED = .TRUE.
+            END IF
 
             IF ( .NOT.OPENED ) THEN
                NREF = HIOPEN + IRQ
@@ -4498,6 +4639,8 @@
             IF (MATLAB .AND. .NOT.OPENED) THEN
                CLOSE(NREF)
                OPEN(UNIT=NREF, FILE=FILENM, FORM='UNFORMATTED',
+     &              STATUS='REPLACE',
+!MatL4     &              ACCESS='DIRECT', RECL=1)
      &              ACCESS='DIRECT', RECL=4)                              41.08
                IREC(IRQ) = 1                                              40.51
             END IF
@@ -4506,16 +4649,22 @@
 
             FILENM = OUTP_FILES(OQI(2))
             ILPOS  = INDEX ( FILENM, ' ' )-1
+!PUN            ILPOS  = LEN(TRIM(LOCALDIR))
             DO IPROC = 1, NPROC
-               WRITE(FILENM(ILPOS-3:ILPOS),100) IPROC
+               I = IPROC
+!PUN               I = I - 1
+               WRITE(FILENM(ILPOS-3:ILPOS),100) I
  100           FORMAT('-',I3.3)
+!PUN 100           FORMAT(I4.4)
                IUNIT = HIOPEN+NREOQ+(NREF-HIOPEN-1)*NPROC+IPROC
                INQUIRE ( FILE=FILENM, EXIST=EXIST, OPENED=OPENED )
                IF ( .NOT.OPENED ) THEN
                   IF (EXIST) THEN
-                     OPEN ( UNIT=IUNIT, FILE=FILENM )
+                     OPEN ( UNIT=IUNIT, FILE=FILENM, FORM='UNFORMATTED')
                   ELSE
                      MSGSTR= 'file '//FILENM(1:ILPOS)//' does not exist'
+!PUN                     MSGSTR= 'file '//TRIM(FILENM(ILPOS:LENFNM))//
+!PUN     &                       ' does not exist'
                      CALL MSGERR( 4, MSGSTR )
                      RETURN
                   END IF
@@ -4545,11 +4694,18 @@
          DO IP = 1, MXK*MYK                                               40.51
             IXK = NINT(XC(IP)+100.)-99                                    41.07 40.51
             IYK = NINT(YC(IP)+100.)-99                                    41.07 40.51
-            IPROC = 1                                                     40.51
+            IF ( IXK.LT.1 .OR. IYK.LT.1 .OR. IXK.GT.MXCGL .OR.
+     &           IYK.GT.MYCGL ) THEN
+               IBLKN = 0
+               IPROC = NPROC+1
+            ELSE
+               IBLKN = NINT(BLKND(IXK,IYK))
+               IPROC = 1
+            END IF
             PROCLOOP1 : DO                                                40.51
-              IF ( NINT(BLKND(IXK,IYK)).EQ.IPROC ) THEN                   40.51
+              IF ( IBLKN.EQ.IPROC ) THEN                                  40.51
                  IUNIT = HIOPEN+NREOQ+(NREF-HIOPEN-1)*NPROC+IPROC         40.51
-                 READ (IUNIT, FLT_BLKP) VOQ(IP,1)                         40.51
+                 READ (IUNIT) VOQ(IP,1)                                   40.51
                  EXIT PROCLOOP1                                           40.51
               ELSE                                                        40.51
                  IPROC = IPROC + 1                                        40.51
@@ -4567,11 +4723,18 @@
             DO IP = 1, MXK*MYK                                            40.51
                IXK = NINT(XC(IP)+100.)-99                                 41.07 40.51
                IYK = NINT(YC(IP)+100.)-99                                 41.07 40.51
-               IPROC = 1                                                  40.51
+               IF ( IXK.LT.1 .OR. IYK.LT.1 .OR. IXK.GT.MXCGL .OR.
+     &              IYK.GT.MYCGL ) THEN
+                  IBLKN = 0
+                  IPROC = NPROC+1
+               ELSE
+                  IBLKN = NINT(BLKND(IXK,IYK))
+                  IPROC = 1
+               END IF
                PROCLOOP2 : DO                                             40.51
-                 IF ( NINT(BLKND(IXK,IYK)).EQ.IPROC ) THEN                40.51
+                 IF ( IBLKN.EQ.IPROC ) THEN                               40.51
                     IUNIT=HIOPEN+NREOQ+(NREF-HIOPEN-1)*NPROC+IPROC        40.51
-                    READ (IUNIT, FLT_BLKP) VOQ(IP,2)                      40.51
+                    READ (IUNIT) VOQ(IP,2)                                40.51
                     EXIT PROCLOOP2                                        40.51
                  ELSE                                                     40.51
                     IPROC = IPROC + 1                                     40.51
@@ -4624,6 +4787,12 @@
                END IF                                                     40.41
                CALL SWRMAT( MYK, MXK, NAMVAR, VOQ(1,1), NREF,
      &                      IREC(IRQ), IDLA, OVEXCV(IVTYPE) )             40.51
+            ELSE IF (NCF) THEN                                            41.40
+               IF ( IVTYPE.GT.3 ) THEN
+                  CALL swn_outnc_appendblock(MYK, MXK, IVTYPE, OQI(1),
+     &                                       IRQ, VOQ(1,1),
+     &                                       OVEXCV(IVTYPE), 1)
+               END IF
             ELSE
                CALL SBLKPT( IPD, NREF, DFAC, PSNAME, OVUNIT(IVTYPE),
      &                      MXK, MYK, IDLA, OVLNAM(IVTYPE), VOQ(1,1) )
@@ -4648,6 +4817,15 @@
                END IF                                                     40.41
                CALL SWRMAT( MYK, MXK, NAMVAR,
      &                 VOQ(1,2), NREF, IREC(IRQ), IDLA, OVEXCV(IVTYPE) )  40.51
+            ELSE IF (NCF) THEN                                            41.40
+               IF ( IVTYPE.GT.3 ) THEN
+                  CALL swn_outnc_appendblock(MYK, MXK, IVTYPE, OQI(1),
+     &                                       IRQ, VOQ(1,1),
+     &                                       OVEXCV(IVTYPE), 1)
+                  CALL swn_outnc_appendblock(MYK, MXK, IVTYPE, OQI(1),
+     &                                       IRQ, VOQ(1,2),
+     &                                       OVEXCV(IVTYPE), 2)
+               END IF
             ELSE
                CALL SBLKPT( IPD, NREF, DFAC, PSNAME, OVUNIT(IVTYPE),
      &                      MXK, MYK, IDLA, OVLNAM(IVTYPE)//'X-comp',
@@ -4660,7 +4838,9 @@
 
       END DO
 
-      IF (IPD.EQ.1) WRITE (PRINTF, 111)
+      IF ( NCF ) CALL swn_outnc_close_on_end(OQI(1), IRQ)                 41.40
+
+      IF (IPD.EQ.1 .AND. NREF.EQ.PRINTF) WRITE (PRINTF, 111)
 
       DEALLOCATE(VOQ)
 

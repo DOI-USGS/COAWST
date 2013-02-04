@@ -15,11 +15,11 @@
 !***********************************************************************
 !                                                                      *
 #ifdef SWAN_MODEL
-      SUBROUTINE SWBLOK ( RTYPE, OQI , IVTYP, FAC, PSNAME, MXK, MYK,
-     &                    IRQ  , VOQR, VOQ, ng)
+      SUBROUTINE SWBLOK ( RTYPE, OQI , OQR , IVTYP, FAC, PSNAME,          41.40
+     &                    MXK  , MYK , IRQ , VOQR , VOQ, ng        )      40.51 40.31
 #else
-      SUBROUTINE SWBLOK ( RTYPE, OQI , IVTYP, FAC, PSNAME, MXK, MYK,
-     &                    IRQ  , VOQR, VOQ )                              40.51 40.31
+      SUBROUTINE SWBLOK ( RTYPE, OQI , OQR , IVTYP, FAC, PSNAME,          41.40
+     &                    MXK  , MYK , IRQ , VOQR , VOQ        )          40.51 40.31
 #endif
 !                                                                      *
 !***********************************************************************
@@ -28,6 +28,7 @@
       USE OCPCOMM4                                                        40.41
       USE SWCOMM1                                                         40.41
       USE OUTP_DATA                                                       40.13
+!NCF      USE swn_outnc                                                       41.40
 !
 !
 !
@@ -42,7 +43,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -147,9 +148,10 @@
       CHARACTER (LEN=4) :: RTYPE        ! output type                     40.13
       INTEGER   VOQR(*), IPD
       INTEGER   OQI(4), IVTYP(OQI(3))                                     40.31
-      REAL      VOQ(MXK*MYK,*), FAC(OQI(3))                               40.31
+      REAL      OQR(2), VOQ(MXK*MYK,*), FAC(OQI(3))                       41.40 40.31
       INTEGER IF, IL                                                      40.41 40.30
       LOGICAL, SAVE :: MATLAB=.FALSE.                                     40.41 40.30
+!NCF      LOGICAL, SAVE :: NCF   =.FALSE.                                     41.40
       CHARACTER (LEN=20) :: CTIM                                          40.41
       CHARACTER (LEN=30) :: NAMVAR                                        40.41
 
@@ -179,7 +181,10 @@
       FILENM = OUTP_FILES(OQI(2))                                         40.31 40.13
       MATLAB = INDEX( FILENM, '.MAT' ).NE.0 .OR.                          40.41 40.30
      &         INDEX (FILENM, '.mat' ).NE.0                               40.41 40.30
-      IF (NREF.EQ.0) THEN
+!NCF      NCF    = INDEX( FILENM, '.NC'  ).NE.0 .OR.                          41.40
+!NCF     &         INDEX (FILENM, '.nc'  ).NE.0                               41.40
+!NNCF      IF (NREF.EQ.0) THEN
+!NCF      IF (.NOT.NCF .AND. NREF.EQ.0) THEN                                  41.40
         IOSTAT = -1                                                       20.75
         CALL FOR (NREF, FILENM, 'UF', IOSTAT)
         IF (STPNOW()) RETURN                                              34.01
@@ -188,9 +193,22 @@
         IF (MATLAB) THEN                                                  40.30
            CLOSE(NREF)                                                    40.30
            OPEN(UNIT=NREF, FILE=FILENM, FORM='UNFORMATTED',               40.30
-     &          ACCESS='DIRECT', RECL=4)                                  41.08 40.30
+     &          STATUS='REPLACE',
+!MatL4     &          ACCESS='DIRECT', RECL=1)                                  40.30
+!MatL5     &          ACCESS='DIRECT', RECL=4)                                  41.08 40.30
            IREC(IRQ) = 1                                                  40.51
         END IF
+!NCF      ELSE IF (NCF .AND. NREF.EQ.0) THEN                                  41.40
+!NCF        ! reserve free unit number
+!NCF        IOSTAT = -1
+!NCF        CALL FOR (NREF, FILENM, 'NU', IOSTAT)
+!NCF        IF (STPNOW()) RETURN
+!NCF        CLOSE(NREF, STATUS='DELETE')
+!NCF        OQI(1) = NREF
+!NCF        CALL swn_outnc_openblockfile(FILENM, MYK, MXK,
+!NCF     &                               OVLNAM, VOQ(:,VOQR(1)),
+!NCF     &                               VOQ(:,VOQR(2)),
+!NCF     &                               OQI, OQR, IVTYP, IRQ)
       ENDIF
       IDLA = OQI(4)                                                       40.31 30.00
       NVAR = OQI(3)                                                       40.31 30.00
@@ -253,6 +271,12 @@
              CALL SWRMAT( MYK, MXK, NAMVAR,                               40.41
      &                    VOQ(1,VOQR(IVTYPE)), NREF, IREC(IRQ),           40.51
      &                    IDLA, OVEXCV(IVTYPE) )
+!NCF          ELSE IF (NCF) THEN                                              41.40
+!NCF             IF ( IVTYPE.GT.3 ) THEN
+!NCF                CALL swn_outnc_appendblock(MYK, MXK, IVTYPE, OQI(1),
+!NCF     &                                     IRQ, VOQ(1,VOQR(IVTYPE)),
+!NCF     &                                     OVEXCV(IVTYPE), 1)
+!NCF             END IF
           ELSE
              CALL SBLKPT(IPD, NREF, DFAC, PSNAME, OVUNIT(IVTYPE),
      &       MXK, MYK, IDLA, OVLNAM(IVTYPE), VOQ(1,VOQR(IVTYPE)))
@@ -280,6 +304,15 @@
              CALL SWRMAT( MYK, MXK, NAMVAR,                               40.41
      &                 VOQ(1,VOQR(IVTYPE)+1), NREF, IREC(IRQ),            40.51
      &                 IDLA, OVEXCV(IVTYPE))
+!NCF          ELSE IF (NCF) THEN                                              41.40
+!NCF             IF ( IVTYPE.GT.3 ) THEN
+!NCF                CALL swn_outnc_appendblock(MYK, MXK, IVTYPE, OQI(1),
+!NCF     &                                    IRQ, VOQ(1,VOQR(IVTYPE)),
+!NCF     &                                    OVEXCV(IVTYPE), 1)
+!NCF                CALL swn_outnc_appendblock(MYK, MXK, IVTYPE, OQI(1),
+!NCF     &                                    IRQ, VOQ(1,VOQR(IVTYPE)+1),
+!NCF     &                                    OVEXCV(IVTYPE), 2)
+!NCF             END IF
           ELSE
              CALL SBLKPT(IPD, NREF, DFAC, PSNAME, OVUNIT(IVTYPE),
      &       MXK, MYK, IDLA, OVLNAM(IVTYPE)//'X-comp',
@@ -291,7 +324,8 @@
         ENDIF
 !
   800 CONTINUE
-      IF (IPD.EQ.1) WRITE (PRINTF, 6030)
+!NCF      IF ( NCF ) CALL swn_outnc_close_on_end(OQI(1), IRQ)                 41.40
+      IF (IPD.EQ.1 .AND. NREF.EQ.PRINTF) WRITE (PRINTF, 6030)
  6030 FORMAT (///)
 !
       RETURN
@@ -323,7 +357,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -424,7 +458,7 @@
 !
 
       CHARACTER (LEN=20) :: WFORM1 = '(A1, 2X, 151(I6))'                  40.13
-      CHARACTER (LEN=21) :: WFORM2 = '(1X,I3,1X, 151(F6.0))'              40.13
+      CHARACTER (LEN=21) :: WFORM2 = '(1X,I4,1X, 151(F6.0))'              41.41 40.13
       CHARACTER (LEN=20) :: WFORM3 = '(5X, 151(F6.0))'                    40.13
 
       CHARACTER PSNAME*8, STRING*(*), QUNIT*(*)                           40.00
@@ -534,6 +568,7 @@
       USE SWCOMM1                                                         40.41
       USE OUTP_DATA
       USE M_PARALL                                                        40.51
+!PUN      USE SIZES, ONLY: MYPROC
 !
       IMPLICIT NONE
 !
@@ -549,7 +584,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -607,6 +642,7 @@
 !     IENT  :     number of entries
 !     IOSTAT:     status of input/output
 !     IP    :     pointer
+!     IPROC :     processor number
 !     IVTYPE:     type number output variable
 !     IXK   :     loop counter
 !     IYK   :     loop counter
@@ -614,7 +650,7 @@
 !     NREF  :     unit reference number
 !     NVAR  :     number of variables
 !
-      INTEGER IENT, IOSTAT, IP, IVTYPE, IXK, IYK, JVAR, NREF, NVAR
+      INTEGER IENT, IOSTAT, IP, IPROC,IVTYPE, IXK, IYK, JVAR, NREF, NVAR
 !
 !  8. Subroutines used
 !
@@ -639,28 +675,31 @@
       IF (NREF.EQ.0) THEN
          FILENM = OUTP_FILES(OQI(2))
          IOSTAT = -1
-         CALL FOR (NREF, FILENM, 'UF', IOSTAT)
+         CALL FOR (NREF, FILENM, 'UU', IOSTAT)
          IF (STPNOW()) RETURN
          OQI(1) = NREF
          OUTP_FILES(OQI(2)) = FILENM                                      40.41
       END IF
       NVAR = OQI(3)
 
+!NPUN      IPROC = INODE
+!PUN      IPROC = MYPROC
+
       DO JVAR = 1, NVAR
          IVTYPE = IVTYP(JVAR)
          DO IYK = 1, MYK                                                  40.51
             IP = (IYK-1)*MXK                                              40.51
             DO IXK = 1, MXK                                               40.51
-               IF ( IONOD(IP+IXK).EQ.INODE )                              40.51
-     &            WRITE (NREF, FLT_BLKP) VOQ(IP+IXK,VOQR(IVTYPE))         40.51
+               IF ( IONOD(IP+IXK).EQ.IPROC )                              40.51
+     &            WRITE (NREF) VOQ(IP+IXK,VOQR(IVTYPE))                   40.51
             END DO                                                        40.51
          END DO                                                           40.51
          IF ( OVSVTY(IVTYPE).GE.3 ) THEN
             DO IYK = 1, MYK                                               40.51
                IP = (IYK-1)*MXK                                           40.51
                DO IXK = 1, MXK                                            40.51
-                  IF ( IONOD(IP+IXK).EQ.INODE )                           40.51
-     &               WRITE (NREF, FLT_BLKP) VOQ(IP+IXK,VOQR(IVTYPE)+1)    40.51
+                  IF ( IONOD(IP+IXK).EQ.IPROC )                           40.51
+     &               WRITE (NREF) VOQ(IP+IXK,VOQR(IVTYPE)+1)              40.51
                END DO                                                     40.51
             END DO                                                        40.51
          END IF
@@ -684,6 +723,7 @@
       USE OUTP_DATA                                                       40.13
       USE TIMECOMM                                                        40.41
       USE M_PARALL                                                        40.51
+!PUN      USE SIZES, ONLY: MYPROC, MNPROC
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -697,7 +737,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -902,8 +942,8 @@
             WRITE (NREF, 20) OUT_COMMENT                                  40.13
 !           write (short) names of output quantities
             IF (RTYPE.EQ.'TABI') THEN
-              OUTLIN(1:9) = OUT_COMMENT // '        '                     40.13
-              LINKAR = 9
+              OUTLIN(1:12) = OUT_COMMENT // '           '                 40.13
+              LINKAR = 12
             ELSE
               OUTLIN(1:3) = OUT_COMMENT                                   40.13
               LINKAR = 4                                                  40.13
@@ -931,8 +971,8 @@
 !           write units of output quantities
             OUTLIN = '    '
             IF (RTYPE.EQ.'TABI') THEN
-              OUTLIN(1:9) = OUT_COMMENT // '        '                     40.13
-              LINKAR = 9
+              OUTLIN(1:12) = OUT_COMMENT // '           '                 40.13
+              LINKAR = 12
             ELSE
               OUTLIN(1:3) = OUT_COMMENT                                   40.13
               LINKAR = 4                                                  40.13
@@ -1022,10 +1062,11 @@
 !     ***** printing of the table *****
 !
       IF (RTYPE.EQ.'TABS') THEN
-        IF (NSTATM.EQ.1) WRITE (NREF, 102) CHTIME, 'date-time'
+        IF (NSTATM.EQ.1) WRITE (NREF, 102) CHTIME, 'date and time'
       ENDIF
       DO 70 IP = 1, MIP
-       IF ( .NOT.PARLL .OR. IONOD(IP).EQ.INODE ) THEN                     40.51
+!NPUN       IF ( .NOT.PARLL .OR. IONOD(IP).EQ.INODE ) THEN                     40.51
+!PUN       IF ( MNPROC.EQ.1 .OR. IONOD(IP).EQ.MYPROC ) THEN                   41.36
         LINKAR = 1
         OUTLIN = '    '
         IF (RTYPE.EQ.'TABI') THEN
@@ -1090,7 +1131,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1185,7 +1226,7 @@
       END
 !***********************************************************************
 !                                                                      *
-      SUBROUTINE SWSPEC (RTYPE, OQI, MIP, VOQR, VOQ, AC2, ACLOC,          40.31 20.28
+      SUBROUTINE SWSPEC (RTYPE, OQI, OQR, MIP, VOQR, VOQ, AC2, ACLOC,     41.40 40.31 20.28
      &                   SPCSIG, SPCDIR, DEP2, KGRPNT, CROSS, IONOD)      40.90 40.31 30.72
 !                                                                      *
 !***********************************************************************
@@ -1198,6 +1239,8 @@
       USE SWCOMM4                                                         40.41
       USE OUTP_DATA                                                       40.13
       USE M_PARALL                                                        40.31
+!NCF      USE swn_outnc, only: swn_outnc_spec                                 41.40
+!PUN      USE SIZES, ONLY: MYPROC, MNPROC
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -1211,7 +1254,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1333,13 +1376,26 @@
       INTEGER       :: VOQR(*), OQI(4), OTYPE, KGRPNT(MXC,MYC)            40.31 40.13
       INTEGER       :: IONOD(*)                                           40.31
       INTEGER, SAVE :: IVERF = 1                                          40.13
-      REAL      VOQ(MIP,*), AC2(MDC,MSC,MCGRD),
+      REAL      OQR(2), VOQ(MIP,*), AC2(MDC,MSC,MCGRD),
      &          ACLOC(*), DEP2(MCGRD)                                     40.00
       LOGICAL   EQREAL
+!NCF      LOGICAL, SAVE :: NCF =.FALSE.                                       41.40
 
       INTEGER, SAVE :: IENT=0                                             40.13
       IF (LTRACE) CALL STRACE(IENT,'SWSPEC')
 !
+!NCF      FILENM = OUTP_FILES(OQI(2))                                         41.40
+!NCF      NCF = INDEX( FILENM, '.NC' ).NE.0 .OR.                              41.40
+!NCF     &      INDEX (FILENM, '.nc' ).NE.0                                   41.40
+!NCF!
+!NCF      IF ( NCF ) THEN                                                     41.40
+!NCF         CALL swn_outnc_spec ( RTYPE, OQI, OQR, MIP, VOQR,
+!NCF     &                         VOQ, AC2, SPCSIG, SPCDIR,
+!NCF     &                         DEP2, KGRPNT, CROSS, IONOD )
+!NCF         IF (STPNOW()) RETURN
+!NCF         RETURN
+!NCF      ENDIF
+!NCF!
       NREF = OQI(1)                                                       40.31 30.00
       IF (INRHOG.EQ.1) THEN
         OFAC = RHO * GRAV                                                 30.20
@@ -1484,12 +1540,14 @@
         ENDIF                                                             40.80
         DEP = VOQ(IP,VOQR(4))
         IF (DEP.LE.0. .OR. EQREAL(DEP,OVEXCV(4))) THEN
-          IF ( .NOT.PARLL .OR. IONOD(IP).EQ.INODE )                       40.51
+!NPUN          IF ( .NOT.PARLL .OR. IONOD(IP).EQ.INODE )                       40.51
+!PUN          IF ( MNPROC.EQ.1 .OR. IONOD(IP).EQ.MYPROC )                     41.36
      &       WRITE (NREF, 220) 'NODATA'                                   40.00
  220      FORMAT (A6)
           GOTO 290
         ENDIF
-        IF ( PARLL .AND. IONOD(IP).NE.INODE ) GOTO 290                    40.51
+!NPUN        IF ( PARLL .AND. IONOD(IP).NE.INODE ) GOTO 290                    40.51
+!PUN        IF ( MNPROC.GT.1 .AND. IONOD(IP).NE.MYPROC ) GOTO 290             41.36
         IF (ICUR.GT.0) THEN
           UX = VOQ(IP,VOQR(5))
           UY = VOQ(IP,VOQR(5)+1)
@@ -1523,7 +1581,6 @@
         ENDIF
  290  CONTINUE
 !
-!
       RETURN
 ! * end of subroutine SWSPEC *
       END
@@ -1555,7 +1612,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1856,18 +1913,17 @@
       RETURN
 ! * end of subroutine SWCMSP *
       END
-!****************************************************************
-!
-      SUBROUTINE SWRMAT ( MROWS , NCOLS, MATNAM, RDATA,
-     &                    IOUTMA, IREC , IDLA  , DUMVAL )
-!
-!****************************************************************
-!
-      USE OCPCOMM2                                                        41.08
-      USE OCPCOMM4                                                        40.41
-!
-      IMPLICIT NONE
-!
+!MatL4!****************************************************************
+!MatL4!
+!MatL4      SUBROUTINE SWRMAT ( MROWS , NCOLS, MATNAM, RDATA,
+!MatL4     &                    IOUTMA, IREC , IDLA  , DUMVAL )
+!MatL4!
+!MatL4!****************************************************************
+!MatL4!
+!MatL4      USE OCPCOMM4                                                        40.41
+!MatL4!
+!MatL4      IMPLICIT NONE
+!MatL4!
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -1880,7 +1936,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1897,345 +1953,604 @@
 !     or by writing to the Free Software Foundation, Inc.,
 !     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 !
+!MatL4!
+!MatL4!  0. Authors
+!MatL4!
+!MatL4!     40.30: Marcel Zijlema
+!MatL4!     40.41: Marcel Zijlema
+!MatL4!
+!MatL4!  1. Updates
+!MatL4!
+!MatL4!     40.30, May 03: New subroutine
+!MatL4!     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!MatL4!
+!MatL4!  2. Purpose
+!MatL4!
+!MatL4!     Writes block output to a binary file in the MAT-format
+!MatL4!     to be used in MATLAB
+!MatL4!
+!MatL4!  3. Method
+!MatL4!
+!MatL4!     1) The binary file BINFIL must be opened with the following
+!MatL4!        statement:
+!MatL4!
+!MatL4!        OPEN(UNIT=IOUTMA, FILE=BINFIL, FORM='UNFORMATTED',
+!MatL4!             ACCESS='DIRECT', RECL=1)
+!MatL4!
+!MatL4!        Furthermore, initialize record counter to IREC = 1
+!MatL4!
+!MatL4!     2) Be sure to close the binary file when there are no more
+!MatL4!        matrices to be saved
+!MatL4!
+!MatL4!     3) The matrix may contain signed infinity and/or Not a Numbers.
+!MatL4!        According to the IEEE standard, on a 32-bit machine, the real
+!MatL4!        format has an 8-bit biased exponent (=actual exponent increased
+!MatL4!        by bias=127) and a 23-bit fraction or mantissa. The leftmost
+!MatL4!        bit is the sign bit. Let a fraction, biased exponent and sign
+!MatL4!        bit be denoted as F, E and S, respectively. The following
+!MatL4!        formats adhere to IEEE standard:
+!MatL4!
+!MatL4!          S = 0, E = 11111111 and F  = 00 ... 0 : X = +Inf
+!MatL4!          S = 1, E = 11111111 and F  = 00 ... 0 : X = -Inf
+!MatL4!          S = 0, E = 11111111 and F <> 00 ... 0 : X = NaN
+!MatL4!
+!MatL4!        Hence, the representation of +Inf equals 2**31 - 2**23. A
+!MatL4!        representation of a NaN equals the representation of +Inf
+!MatL4!        plus 1.
+!MatL4!
+!MatL4!        The Cray machine C916 at SARA Information Centre does not
+!MatL4!        support the IEEE standard.
+!MatL4!
+!MatL4!     4) The NaN's or Inf's are indicated by a dummy value as given
+!MatL4!        by dumval
+!MatL4!
+!MatL4!     For more information consult "Appendix - MAT-File Structure"
+!MatL4!     of the MATLAB External Data Reference guide (Version 4.2)
+!MatL4!
+!MatL4!  4. Argument variables
+!MatL4!
+!MatL4!     DUMVAL      a dummy value meant for indicating NaN
+!MatL4!     IDLA        controls lay-out of output (see user manual)
+!MatL4!     IOUTMA      unit number of binary MAT-file
+!MatL4!     IREC        direct access file record counter
+!MatL4!     MATNAM      character array holding the matrix name
+!MatL4!     MROWS       a 4-byte integer representing the number of
+!MatL4!                 rows in matrix
+!MatL4!     NCOLS       a 4-byte integer representing the number of
+!MatL4!                 columns in matrix
+!MatL4!     RDATA       real array consists of MROWS * NCOLS real
+!MatL4!                 elements stored column wise
+!MatL4!
+!MatL4      INTEGER       MROWS, NCOLS, IDLA, IOUTMA, IREC
+!MatL4      REAL          RDATA(*), DUMVAL
+!MatL4      CHARACTER*(*) MATNAM
+!MatL4!
+!MatL4!  5. Parameter variables
+!MatL4!
+!MatL4!     ---
+!MatL4!
+!MatL4!  6. Local variables
+!MatL4!
+!MatL4!     BVAL  :     a byte value
+!MatL4!     CHARS :     array to pass character info to MSGERR
+!MatL4!     I     :     loop variable
+!MatL4!     IENT  :     number of entries
+!MatL4!     IF    :     first non-character in string
+!MatL4!     IL    :     last non-character in string
+!MatL4!     IMAGF :     a 4-byte imaginary flag. Possible values are:
+!MatL4!                 0: there is only real data
+!MatL4!                 1: the data has also an imaginary part
+!MatL4!     IOS   :     auxiliary integer with iostat-number
+!MatL4!     ITYPE :     the type flag containing a 4-byte integer whose
+!MatL4!                 decimal digits encode storage information.
+!MatL4!                 If the integer is represented as ABCD then:
+!MatL4!                 "A" indicates the format to write the binary
+!MatL4!                 data to a file on the machine. Possible values are:
+!MatL4!                   0: Intel based machines (PC 386/486, Pentium)
+!MatL4!                   1: Motorola 68000 based machines (Macintosh,
+!MatL4!                      HP 9000, SPARC, Apollo, SGI)
+!MatL4!                   2: VAX-D format
+!MatL4!                   3: VAX-G format
+!MatL4!                   4: Cray
+!MatL4!                 "B" is always zero
+!MatL4!                 "C" indicates which format the data is stored.
+!MatL4!                  Possible values are:
+!MatL4!                   0: double precision (64 bit) floating point numbers
+!MatL4!                   1: single precision (32 bit) floating point numbers
+!MatL4!                   2: 32-bit signed integers
+!MatL4!                   3: 16-bit signed integers
+!MatL4!                   4: 16-bit unsigned integers
+!MatL4!                   5: 8-bit unsigned integers
+!MatL4!                 "D" indicates the type of data (matrix).
+!MatL4!                  Possible values:
+!MatL4!                   0: numeric matrix
+!MatL4!                   1: textual matrix
+!MatL4!                   2: sparse  matrix
+!MatL4!     J     :     index
+!MatL4!     M     :     loop variable
+!MatL4!     MSGSTR:     string to pass message to call MSGERR
+!MatL4!     N     :     loop variable
+!MatL4!     NAMLEN:     a 4-byte integer representing the number of
+!MatL4!                 characters in matrix name plus 1
+!MatL4!     NANVAL:     an integer representing Not a Number
+!MatL4!
+!MatL4      INTEGER I, J, IENT, IF, IL, IOS, M, N
+!MatL4      INTEGER BVAL(4), IMAGF, ITYPE, NAMLEN, NANVAL
+!MatL4      CHARACTER*20 INTSTR, CHARS
+!MatL4      CHARACTER*80 MSGSTR
+!MatL4!
+!MatL4!  8. Subroutines used
+!MatL4!
+!MatL4!     INTSTR           Converts integer to string
+!MatL4!     MSGERR           Writes error message
+!MatL4!     TXPBLA           Removes leading and trailing blanks in string
+!MatL4!     SWI2B            Calculates 32-bit representation of an
+!MatL4!                      integer number
+!MatL4!     SWR2B            Calculates 32-bit representation of a
+!MatL4!                      floating-point number
+!MatL4!
+!MatL4!  9. Subroutines calling
+!MatL4!
+!MatL4!     ---
+!MatL4!
+!MatL4! 10. Error messages
+!MatL4!
+!MatL4!     ---
+!MatL4!
+!MatL4! 11. Remarks
+!MatL4!
+!MatL4!     ---
+!MatL4!
+!MatL4! 12. Structure
+!MatL4!
+!MatL4!     set Not a Number
+!MatL4!
+!MatL4!     set some flags
+!MatL4!
+!MatL4!     write header consisting of ITYPE, MROWS, NCOLS, IMAGF, NAMLEN and
+!MatL4!     name of matrix MATNAM
+!MatL4!
+!MatL4!     write matrix
+!MatL4!
+!MatL4!     if necessary, give message that error occurred while writing file
+!MatL4!
+!MatL4! 13. Source text
+!MatL4!
+!MatL4      SAVE IENT
+!MatL4      DATA IENT/0/
+!MatL4      IF (LTRACE) CALL STRACE (IENT,'SWRMAT')
+!MatL4
+!MatL4!     --- set Not a Number
+!MatL4
+!MatL4      NANVAL = 255 * 2**23 + 1
+!MatL4
+!MatL4!     --- set some flags
+!MatL4
+!MatL4      ITYPE = 1010
+!MatL4      IMAGF = 0
+!MatL4      IOS   = 0
+!MatL4
+!MatL4!     --- write header consisting of ITYPE, MROWS, NCOLS, IMAGF,
+!MatL4!         NAMLEN and name of matrix MATNAM
+!MatL4!         the name should be ended by zero-byte terminator
+!MatL4
+!MatL4      CALL SWI2B ( ITYPE, BVAL )
+!MatL4      DO I = 1, 4
+!MatL4         IF (IOS.EQ.0) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CHAR(BVAL(I))
+!MatL4         IREC = IREC + 1
+!MatL4      END DO
+!MatL4
+!MatL4      CALL SWI2B ( MROWS, BVAL )
+!MatL4      DO I = 1, 4
+!MatL4         IF (IOS.EQ.0) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CHAR(BVAL(I))
+!MatL4         IREC = IREC + 1
+!MatL4      END DO
+!MatL4
+!MatL4      CALL SWI2B ( NCOLS, BVAL )
+!MatL4      DO I = 1, 4
+!MatL4         IF (IOS.EQ.0) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CHAR(BVAL(I))
+!MatL4         IREC = IREC + 1
+!MatL4      END DO
+!MatL4
+!MatL4      CALL SWI2B ( IMAGF, BVAL )
+!MatL4      DO I = 1, 4
+!MatL4         IF (IOS.EQ.0) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CHAR(BVAL(I))
+!MatL4         IREC = IREC + 1
+!MatL4      END DO
+!MatL4
+!MatL4      CALL TXPBLA(MATNAM,IF,IL)
+!MatL4      NAMLEN = IL - IF + 2
+!MatL4      CALL SWI2B ( NAMLEN, BVAL )
+!MatL4      DO I = 1, 4
+!MatL4         IF (IOS.EQ.0) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CHAR(BVAL(I))
+!MatL4         IREC = IREC + 1
+!MatL4      END DO
+!MatL4
+!MatL4      DO I = IF, IL
+!MatL4         IF (IOS.EQ.0) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) MATNAM(I:I)
+!MatL4         IREC = IREC + 1
+!MatL4      END DO
+!MatL4      IF (IOS.EQ.0) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CHAR(0)
+!MatL4      IREC = IREC + 1
+!MatL4
+!MatL4!     --- write matrix
+!MatL4
+!MatL4      DO M = 1, NCOLS
+!MatL4         DO N = 1, MROWS
+!MatL4            IF ( IDLA.EQ.1 ) THEN
+!MatL4               J = (MROWS-N)*NCOLS + M
+!MatL4            ELSE
+!MatL4               J = (N-1)*NCOLS + M
+!MatL4            END IF
+!MatL4            IF (RDATA(J).EQ.DUMVAL ) THEN
+!MatL4               CALL SWI2B ( NANVAL, BVAL )
+!MatL4            ELSE
+!MatL4               CALL SWR2B ( RDATA(J), BVAL )
+!MatL4            END IF
+!MatL4            DO I = 1, 4
+!MatL4              IF (IOS.EQ.0)
+!MatL4     &                   WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CHAR(BVAL(I))
+!MatL4              IREC = IREC + 1
+!MatL4            END DO
+!MatL4         END DO
+!MatL4      END DO
+!MatL4
+!MatL4!     --- if necessary, give message that error occurred while writing file
+!MatL4
+!MatL4      IF ( IOS.NE.0 ) THEN
+!MatL4         CHARS = INTSTR(IOS)
+!MatL4         CALL TXPBLA(CHARS,IF,IL)
+!MatL4         MSGSTR = 'Error while writing binary MAT-file - '//
+!MatL4     &            'IOSTAT number is '//CHARS(IF:IL)
+!MatL4         CALL MSGERR ( 4, MSGSTR )
+!MatL4         RETURN
+!MatL4      END IF
+!MatL4
+!MatL4      RETURN
+!MatL4      END
+!MatL5!****************************************************************
+!MatL5!
+!MatL5      SUBROUTINE SWRMAT ( MROWS , NCOLS, MATNAM, RDATA,
+!MatL5     &                    IOUTMA, IREC , IDLA  , DUMVAL )
+!MatL5!
+!MatL5!****************************************************************
+!MatL5!
+!MatL5      USE OCPCOMM2                                                        41.08
+!MatL5      USE OCPCOMM4                                                        40.41
+!MatL5!
+!MatL5      IMPLICIT NONE
+!MatL5!
 !
-!  0. Authors
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering and Geosciences              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmer: Marcel Zijlema                                |
+!   --|-----------------------------------------------------------|--
 !
-!     40.30: Marcel Zijlema
-!     40.41: Marcel Zijlema
-!     41.08: Pieter Smit
 !
-!  1. Updates
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
-!     40.30, May  03: New subroutine
-!     40.41, Oct. 04: common blocks replaced by modules, include files removed
-!     41.08, Aug. 09: adapted to write binary file in the Level 5 MAT-file format
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
 !
-!  2. Purpose
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
 !
-!     Writes block output to a binary file in the MAT-format
-!     to be used in MATLAB
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 !
-!  3. Method
-!
-!     1) The binary file BINFIL must be opened with the following
-!        statement:
-!
-!        OPEN(UNIT=IOUTMA, FILE=BINFIL, FORM='UNFORMATTED',
-!             ACCESS='DIRECT', RECL=4)
-!
-!        Furthermore, initialize record counter to IREC = 1
-!
-!     2) Be sure to close the binary file when there are no more
-!        matrices to be saved
-!
-!     3) The matrix may contain signed infinity and/or Not a Numbers.
-!        According to the IEEE 754 standard, on a 32-bit machine, the real
-!        format has an 8-bit biased exponent (=actual exponent increased
-!        by bias=127) and a 23-bit fraction or mantissa. The leftmost
-!        bit is the sign bit. Let a fraction, biased exponent and sign
-!        bit be denoted as F, E and S, respectively. The following
-!        formats adhere to IEEE standard:
-!
-!          S = 0, E = 11111111 and F  = 00 ... 0 : X = +Inf
-!          S = 1, E = 11111111 and F  = 00 ... 0 : X = -Inf
-!          S = 0, E = 11111111 and F <> 00 ... 0 : X = NaN
-!
-!        Hence, the representation of +Inf equals 2**31 - 2**23. A
-!        representation of a NaN equals the representation of +Inf
-!        plus 1.
-!
-!     4) The NaN's or Inf's are indicated by a dummy value as given
-!        by dumval
-!
-!     For more information on the Level 5 MAT-file format consult
-!     document "MAT-File Format" of MathWorks
-!
-!  4. Argument variables
-!
-!     DUMVAL      a dummy value meant for indicating NaN
-!     IDLA        controls lay-out of output (see user manual)
-!     IOUTMA      unit number of binary MAT-file
-!     IREC        direct access file record counter
-!     MATNAM      character array holding the matrix name
-!     MROWS       a 4-byte integer representing the number of
-!                 rows in matrix
-!     NCOLS       a 4-byte integer representing the number of
-!                 columns in matrix
-!     RDATA       real array consists of MROWS * NCOLS real
-!                 elements stored column wise
-!
-      INTEGER       MROWS, NCOLS, IDLA, IOUTMA, IREC
-      REAL          RDATA(*), DUMVAL
-      CHARACTER*(*) MATNAM
-!
-!  5. Parameter variables
-!
-!     BlockSize   size of matlab data segment
-!     DataSize    number of bytes written per write statement
-!     HeaderSize  size of the header in bytes
-!     mChar       character data
-!     mInt32      signed   integer*4
-!     mUInt32     unsigned integer*8
-!     mSingle     real
-!
-!     --- standard sizes
-!
-      INTEGER, PARAMETER :: DataSize   = 4
-      INTEGER, PARAMETER :: HeaderSize = 128
-      INTEGER, PARAMETER :: BlockSize  = 8
-!
-!     --- Matlab data types
-!
-      INTEGER, PARAMETER :: mChar      = 4
-      INTEGER, PARAMETER :: mInt32     = 5
-      INTEGER, PARAMETER :: mUInt32    = 6
-      INTEGER, PARAMETER :: mSingle    = 7
-!
-!  6. Local variables
-!
-!     CTMP  :     a temporary character array
-#ifdef SWAN_MODEL
-!     HEADERS:    header of binary MAT-file
-#else
-!     HEADER:     header of binary MAT-file
-#endif
-!     I     :     loop variable
-!     IENT  :     number of entries
-!     IOS   :     auxiliary integer with iostat-number
-!     IRECS :     size of array including tags and flags
-!     J     :     index
-!     M     :     loop variable
-!     MSGSTR:     string to pass message to call MSGERR
-!     N     :     loop variable
-!     NAMLEN:     a 4-byte integer representing the number of
-!                 characters in matrix name
-!     NANVAL:     an integer representing Not a Number
-!     NTOT  :     size of data array
-!
-      INTEGER I, J, IENT, IOS, M, N, NTOT
-      INTEGER NAMLEN, NANVAL
-      INTEGER, SAVE :: IRECS
-      CHARACTER*80 MSGSTR
-#ifdef SWAN_MODEL
-      CHARACTER(LEN=HeaderSize) HEADERS
-#else
-      CHARACTER(LEN=HeaderSize) HEADER
-#endif
-      CHARACTER(LEN=BlockSize) CTMP
-
-!
-!  8. Subroutines used
-!
-!     MSGERR           Writes error message
-!
-!  9. Subroutines calling
-!
-!     ---
-!
-! 10. Error messages
-!
-!     ---
-!
-! 11. Remarks
-!
-!     ---
-!
-! 12. Structure
-!
-!     set Not a Number
-!     length of name matrix
-!     size of data array
-!     write header once
-!     array name
-!     write matrix
-!     write the size of the array
-!     if necessary, give message that error occurred while writing file
-!
-! 13. Source text
-!
-      SAVE IENT
-      DATA IENT/0/
-      IF (LTRACE) CALL STRACE (IENT,'SWRMAT')
-
-      IOS = 0
-
-!     --- set Not a Number
-
-      NANVAL = 255 * 2**23 + 1
-
-!     --- length of name matrix
-
-      NAMLEN = LEN_TRIM(MATNAM)
-
-!     --- size of data array
-
-      NTOT = MROWS * NCOLS
-
-!     --- descriptive header
-
-#ifdef SWAN_MODEL
-      WRITE (HEADERS, '(6A)') 'Data produced by SWAN version ',
-     &                       TRIM(VERTXT),'; project: ',TRIM(PROJID),
-     &                       '; run number: ',PROJNR
-
-!     --- data offset
-
-      HEADERS(117:124) = CHAR(ICHAR(' '))
-
-!     --- version
-
-      HEADERS(125:126) = CHAR(0) // CHAR(1)
-
-!     --- endian indicator
-
-      WRITE(HEADERS(127:128),'(A)') INT(19785,KIND=2)
-
-!     --- write header once
-
-      IF ( IREC.EQ.1 ) THEN
-         DO I = 1, HeaderSize/DataSize
-            J = DataSize*(I-1) + 1
-            IF ( IOS.EQ.0 )
-     &         WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) HEADERS(J:J+DataSize-1)
-            IREC = IREC + 1
-         END DO
-      END IF
-#else
-      WRITE (HEADER, '(6A)') 'Data produced by SWAN version ',
-     &                       TRIM(VERTXT),'; project: ',TRIM(PROJID),
-     &                       '; run number: ',PROJNR
-
-!     --- data offset
-
-      HEADER(117:124) = CHAR(ICHAR(' '))
-
-!     --- version
-
-      HEADER(125:126) = CHAR(0) // CHAR(1)
-
-!     --- endian indicator
-
-      WRITE(HEADER(127:128),'(A)') INT(19785,KIND=2)
-
-!     --- write header once
-
-      IF ( IREC.EQ.1 ) THEN
-         DO I = 1, HeaderSize/DataSize
-            J = DataSize*(I-1) + 1
-            IF ( IOS.EQ.0 )
-     &         WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) HEADER(J:J+DataSize-1)
-            IREC = IREC + 1
-         END DO
-      END IF
-#endif
-
-!     --- array tag
-
-      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 14                ! Matlab array
-      IREC = IREC + 1
-      IRECS = IREC
-      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 0
-      IREC = IREC + 1
-
-!     --- array flags
-
-      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) mInt32
-      IREC = IREC + 1
-      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 2*DataSize
-      IREC = IREC + 1
-      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 7                 ! single precision array
-      IREC = IREC + 1
-      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 0
-      IREC = IREC + 1
-
-      IF ( MOD(2,BlockSize/DataSize).NE.0 ) THEN
-         IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 0
-         IREC = IREC + 1
-      END IF
-
-!     --- dimensions array
-
-      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) mInt32
-      IREC = IREC + 1
-      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 2*DataSize
-      IREC = IREC + 1
-      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) MROWS
-      IREC = IREC + 1
-      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) NCOLS
-      IREC = IREC + 1
-
-      IF ( MOD(2,BlockSize/DataSize).NE.0 ) THEN
-         IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 0
-         IREC = IREC + 1
-      END IF
-
-!     --- array name
-
-      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) mChar
-      IREC = IREC + 1
-      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) NAMLEN
-      IREC = IREC + 1
-
-      I = 1
-      DO
-        CTMP(1:8) = CHAR(ICHAR(' '))
-        IF ( I.GT.NAMLEN ) THEN
-           EXIT
-        ELSE IF ( I+BlockSize.LE.NAMLEN ) THEN
-           CTMP(1:8) = MATNAM(I:I+BlockSize-1)
-        ELSE
-           CTMP(1:NAMLEN-I+1) = MATNAM(I:NAMLEN)
-        END IF
-
-        IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CTMP(1:4)
-        IREC = IREC + 1
-        IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CTMP(5:8)
-        I = I + BlockSize
-        IREC = IREC + 1
-      END DO
-
-!     --- write matrix
-
-      IF ( IOS.EQ.0 ) WRITE (IOUTMA,REC=IREC,IOSTAT=IOS) mSingle
-      IREC = IREC + 1
-      IF ( IOS.EQ.0 ) WRITE (IOUTMA,REC=IREC,IOSTAT=IOS) NTOT*DataSize
-      IREC = IREC + 1
-
-      DO M = 1, NCOLS
-         DO N = 1, MROWS
-            IF ( IDLA.EQ.1 ) THEN
-               J = (MROWS-N)*NCOLS + M
-            ELSE
-               J = (N-1)*NCOLS + M
-            END IF
-            IF (RDATA(J).NE.DUMVAL ) THEN
-               WRITE (IOUTMA,REC=IREC) RDATA(J)
-            ELSE
-               WRITE (IOUTMA,REC=IREC) NANVAL
-            END IF
-            IREC = IREC + 1
-         END DO
-      END DO
-
-      IF ( MOD(NTOT,BlockSize/DataSize).NE.0 ) THEN
-         IF ( IOS.EQ.0 ) WRITE (IOUTMA,REC=IREC,IOSTAT=IOS) 0.
-         IREC = IREC + 1
-      END IF
-
-!     --- write the size of the array
-
-      IF ( IOS.EQ.0 )
-     &   WRITE (IOUTMA,REC=IRECS,IOSTAT=IOS) (IREC-IRECS-1)*DataSize
-
-!     --- if necessary, give message that error occurred while writing file
-
-      IF ( IOS.NE.0 ) THEN
-         WRITE (MSGSTR, '(A,I5)')
-     &            'Error while writing binary MAT-file - '//
-     &            'IOSTAT number is ', IOS
-         CALL MSGERR( 4, TRIM(MSGSTR) )
-         RETURN
-      END IF
-
-      RETURN
-      END
+!MatL5!
+!MatL5!  0. Authors
+!MatL5!
+!MatL5!     40.30: Marcel Zijlema
+!MatL5!     40.41: Marcel Zijlema
+!MatL5!     41.08: Pieter Smit
+!MatL5!
+!MatL5!  1. Updates
+!MatL5!
+!MatL5!     40.30, May  03: New subroutine
+!MatL5!     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!MatL5!     41.08, Aug. 09: adapted to write binary file in the Level 5 MAT-file format
+!MatL5!
+!MatL5!  2. Purpose
+!MatL5!
+!MatL5!     Writes block output to a binary file in the MAT-format
+!MatL5!     to be used in MATLAB
+!MatL5!
+!MatL5!  3. Method
+!MatL5!
+!MatL5!     1) The binary file BINFIL must be opened with the following
+!MatL5!        statement:
+!MatL5!
+!MatL5!        OPEN(UNIT=IOUTMA, FILE=BINFIL, FORM='UNFORMATTED',
+!MatL5!             ACCESS='DIRECT', RECL=4)
+!MatL5!
+!MatL5!        Furthermore, initialize record counter to IREC = 1
+!MatL5!
+!MatL5!     2) Be sure to close the binary file when there are no more
+!MatL5!        matrices to be saved
+!MatL5!
+!MatL5!     3) The matrix may contain signed infinity and/or Not a Numbers.
+!MatL5!        According to the IEEE 754 standard, on a 32-bit machine, the real
+!MatL5!        format has an 8-bit biased exponent (=actual exponent increased
+!MatL5!        by bias=127) and a 23-bit fraction or mantissa. The leftmost
+!MatL5!        bit is the sign bit. Let a fraction, biased exponent and sign
+!MatL5!        bit be denoted as F, E and S, respectively. The following
+!MatL5!        formats adhere to IEEE standard:
+!MatL5!
+!MatL5!          S = 0, E = 11111111 and F  = 00 ... 0 : X = +Inf
+!MatL5!          S = 1, E = 11111111 and F  = 00 ... 0 : X = -Inf
+!MatL5!          S = 0, E = 11111111 and F <> 00 ... 0 : X = NaN
+!MatL5!
+!MatL5!        Hence, the representation of +Inf equals 2**31 - 2**23. A
+!MatL5!        representation of a NaN equals the representation of +Inf
+!MatL5!        plus 1.
+!MatL5!
+!MatL5!     4) The NaN's or Inf's are indicated by a dummy value as given
+!MatL5!        by dumval
+!MatL5!
+!MatL5!     For more information on the Level 5 MAT-file format consult
+!MatL5!     document "MAT-File Format" of MathWorks
+!MatL5!
+!MatL5!  4. Argument variables
+!MatL5!
+!MatL5!     DUMVAL      a dummy value meant for indicating NaN
+!MatL5!     IDLA        controls lay-out of output (see user manual)
+!MatL5!     IOUTMA      unit number of binary MAT-file
+!MatL5!     IREC        direct access file record counter
+!MatL5!     MATNAM      character array holding the matrix name
+!MatL5!     MROWS       a 4-byte integer representing the number of
+!MatL5!                 rows in matrix
+!MatL5!     NCOLS       a 4-byte integer representing the number of
+!MatL5!                 columns in matrix
+!MatL5!     RDATA       real array consists of MROWS * NCOLS real
+!MatL5!                 elements stored column wise
+!MatL5!
+!MatL5      INTEGER       MROWS, NCOLS, IDLA, IOUTMA, IREC
+!MatL5      REAL          RDATA(*), DUMVAL
+!MatL5      CHARACTER*(*) MATNAM
+!MatL5!
+!MatL5!  5. Parameter variables
+!MatL5!
+!MatL5!     BlockSize   size of matlab data segment
+!MatL5!     DataSize    number of bytes written per write statement
+!MatL5!     HeaderSize  size of the header in bytes
+!MatL5!     mChar       character data
+!MatL5!     mInt32      signed   integer*4
+!MatL5!     mUInt32     unsigned integer*8
+!MatL5!     mSingle     real
+!MatL5!
+!MatL5!     --- standard sizes
+!MatL5!
+!MatL5      INTEGER, PARAMETER :: DataSize   = 4
+!MatL5      INTEGER, PARAMETER :: HeaderSize = 128
+!MatL5      INTEGER, PARAMETER :: BlockSize  = 8
+!MatL5!
+!MatL5!     --- Matlab data types
+!MatL5!
+!MatL5      INTEGER, PARAMETER :: mChar      = 1
+!MatL5      INTEGER, PARAMETER :: mInt32     = 5
+!MatL5      INTEGER, PARAMETER :: mUInt32    = 6
+!MatL5      INTEGER, PARAMETER :: mSingle    = 7
+!MatL5!
+!MatL5!  6. Local variables
+!MatL5!
+!MatL5!     CTMP  :     a temporary character array
+!MatL5!     HEADERS:     header of binary MAT-file
+!MatL5!     I     :     loop variable
+!MatL5!     IENT  :     number of entries
+!MatL5!     IOS   :     auxiliary integer with iostat-number
+!MatL5!     IRECS :     size of array including tags and flags
+!MatL5!     J     :     index
+!MatL5!     M     :     loop variable
+!MatL5!     MSGSTR:     string to pass message to call MSGERR
+!MatL5!     N     :     loop variable
+!MatL5!     NAMLEN:     a 4-byte integer representing the number of
+!MatL5!                 characters in matrix name
+!MatL5!     NANVAL:     an integer representing Not a Number
+!MatL5!     NTOT  :     size of data array
+!MatL5!
+!MatL5      INTEGER I, J, IENT, IOS, M, N, NTOT
+!MatL5      INTEGER NAMLEN, NANVAL
+!MatL5      INTEGER, SAVE :: IRECS
+!MatL5      CHARACTER*80 MSGSTR
+!MatL5      CHARACTER(LEN=HeaderSize) HEADERS
+!MatL5      CHARACTER(LEN=BlockSize) CTMP
+!MatL5
+!MatL5!
+!MatL5!  8. Subroutines used
+!MatL5!
+!MatL5!     MSGERR           Writes error message
+!MatL5!
+!MatL5!  9. Subroutines calling
+!MatL5!
+!MatL5!     ---
+!MatL5!
+!MatL5! 10. Error messages
+!MatL5!
+!MatL5!     ---
+!MatL5!
+!MatL5! 11. Remarks
+!MatL5!
+!MatL5!     ---
+!MatL5!
+!MatL5! 12. Structure
+!MatL5!
+!MatL5!     set Not a Number
+!MatL5!     length of name matrix
+!MatL5!     size of data array
+!MatL5!     write header once
+!MatL5!     array name
+!MatL5!     write matrix
+!MatL5!     write the size of the array
+!MatL5!     if necessary, give message that error occurred while writing file
+!MatL5!
+!MatL5! 13. Source text
+!MatL5!
+!MatL5      SAVE IENT
+!MatL5      DATA IENT/0/
+!MatL5      IF (LTRACE) CALL STRACE (IENT,'SWRMAT')
+!MatL5
+!MatL5      IOS = 0
+!MatL5
+!MatL5!     --- set Not a Number
+!MatL5
+!MatL5      NANVAL = 255 * 2**23 + 1
+!MatL5
+!MatL5!     --- length of name matrix
+!MatL5
+!MatL5      NAMLEN = LEN_TRIM(MATNAM)
+!MatL5
+!MatL5!     --- size of data array
+!MatL5
+!MatL5      NTOT = MROWS * NCOLS
+!MatL5
+!MatL5!     --- descriptive header
+!MatL5
+!MatL5      WRITE (HEADERS, '(6A)') 'Data produced by SWAN version ',
+!MatL5     &                       TRIM(VERTXT),'; project: ',TRIM(PROJID),
+!MatL5     &                       '; run number: ',PROJNR
+!MatL5
+!MatL5!     --- data offset
+!MatL5
+!MatL5      HEADERS(117:124) = CHAR(ICHAR(' '))
+!MatL5
+!MatL5!     --- version
+!MatL5
+!MatL5      HEADERS(125:126) = CHAR(0) // CHAR(1)
+!MatL5
+!MatL5!     --- endian indicator
+!MatL5
+!MatL5      WRITE(HEADERS(127:128),'(A)') INT(19785,KIND=2)
+!MatL5
+!MatL5!     --- write header once
+!MatL5
+!MatL5      IF ( IREC.EQ.1 ) THEN
+!MatL5         DO I = 1, HeaderSize/DataSize
+!MatL5            J = DataSize*(I-1) + 1
+!MatL5            IF ( IOS.EQ.0 )
+!MatL5     &         WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) HEADERS(J:J+DataSize-1)
+!MatL5            IREC = IREC + 1
+!MatL5         END DO
+!MatL5      END IF
+!MatL5
+!MatL5!     --- array tag
+!MatL5
+!MatL5      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 14                ! Matlab array
+!MatL5      IREC = IREC + 1
+!MatL5      IRECS = IREC
+!MatL5      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 0
+!MatL5      IREC = IREC + 1
+!MatL5
+!MatL5!     --- array flags
+!MatL5
+!MatL5      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) mInt32
+!MatL5      IREC = IREC + 1
+!MatL5      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 2*DataSize
+!MatL5      IREC = IREC + 1
+!MatL5      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 7                 ! single precision array
+!MatL5      IREC = IREC + 1
+!MatL5      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 0
+!MatL5      IREC = IREC + 1
+!MatL5
+!MatL5      IF ( MOD(2,BlockSize/DataSize).NE.0 ) THEN
+!MatL5         IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 0
+!MatL5         IREC = IREC + 1
+!MatL5      END IF
+!MatL5
+!MatL5!     --- dimensions array
+!MatL5
+!MatL5      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) mInt32
+!MatL5      IREC = IREC + 1
+!MatL5      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 2*DataSize
+!MatL5      IREC = IREC + 1
+!MatL5      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) MROWS
+!MatL5      IREC = IREC + 1
+!MatL5      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) NCOLS
+!MatL5      IREC = IREC + 1
+!MatL5
+!MatL5      IF ( MOD(2,BlockSize/DataSize).NE.0 ) THEN
+!MatL5         IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) 0
+!MatL5         IREC = IREC + 1
+!MatL5      END IF
+!MatL5
+!MatL5!     --- array name
+!MatL5
+!MatL5      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) mChar
+!MatL5      IREC = IREC + 1
+!MatL5      IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) NAMLEN
+!MatL5      IREC = IREC + 1
+!MatL5
+!MatL5      I = 1
+!MatL5      DO
+!MatL5        CTMP(1:8) = CHAR(ICHAR(' '))
+!MatL5        IF ( I.GT.NAMLEN ) THEN
+!MatL5           EXIT
+!MatL5        ELSE IF ( I+BlockSize.LE.NAMLEN ) THEN
+!MatL5           CTMP(1:8) = MATNAM(I:I+BlockSize-1)
+!MatL5        ELSE
+!MatL5           CTMP(1:NAMLEN-I+1) = MATNAM(I:NAMLEN)
+!MatL5        END IF
+!MatL5
+!MatL5        IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CTMP(1:4)
+!MatL5        IREC = IREC + 1
+!MatL5        IF ( IOS.EQ.0 ) WRITE(IOUTMA,REC=IREC,IOSTAT=IOS) CTMP(5:8)
+!MatL5        I = I + BlockSize
+!MatL5        IREC = IREC + 1
+!MatL5      END DO
+!MatL5
+!MatL5!     --- write matrix
+!MatL5
+!MatL5      IF ( IOS.EQ.0 ) WRITE (IOUTMA,REC=IREC,IOSTAT=IOS) mSingle
+!MatL5      IREC = IREC + 1
+!MatL5      IF ( IOS.EQ.0 ) WRITE (IOUTMA,REC=IREC,IOSTAT=IOS) NTOT*DataSize
+!MatL5      IREC = IREC + 1
+!MatL5
+!MatL5      DO M = 1, NCOLS
+!MatL5         DO N = 1, MROWS
+!MatL5            IF ( IDLA.EQ.1 ) THEN
+!MatL5               J = (MROWS-N)*NCOLS + M
+!MatL5            ELSE
+!MatL5               J = (N-1)*NCOLS + M
+!MatL5            END IF
+!MatL5            IF (RDATA(J).NE.DUMVAL ) THEN
+!MatL5               WRITE (IOUTMA,REC=IREC) RDATA(J)
+!MatL5            ELSE
+!MatL5               WRITE (IOUTMA,REC=IREC) NANVAL
+!MatL5            END IF
+!MatL5            IREC = IREC + 1
+!MatL5         END DO
+!MatL5      END DO
+!MatL5
+!MatL5      IF ( MOD(NTOT,BlockSize/DataSize).NE.0 ) THEN
+!MatL5         IF ( IOS.EQ.0 ) WRITE (IOUTMA,REC=IREC,IOSTAT=IOS) 0.
+!MatL5         IREC = IREC + 1
+!MatL5      END IF
+!MatL5
+!MatL5!     --- write the size of the array
+!MatL5
+!MatL5      IF ( IOS.EQ.0 )
+!MatL5     &   WRITE (IOUTMA,REC=IRECS,IOSTAT=IOS) (IREC-IRECS-1)*DataSize
+!MatL5
+!MatL5!     --- if necessary, give message that error occurred while writing file
+!MatL5
+!MatL5      IF ( IOS.NE.0 ) THEN
+!MatL5         WRITE (MSGSTR, '(A,I5)')
+!MatL5     &            'Error while writing binary MAT-file - '//
+!MatL5     &            'IOSTAT number is ', IOS
+!MatL5         CALL MSGERR( 4, TRIM(MSGSTR) )
+!MatL5         RETURN
+!MatL5      END IF
+!MatL5
+!MatL5      RETURN
+!MatL5      END

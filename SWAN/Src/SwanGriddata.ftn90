@@ -11,7 +11,7 @@ module SwanGriddata
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -61,20 +61,25 @@ module SwanGriddata
 !
     integer                                    :: grid_generator ! used grid generator
     !
-    integer                                    :: ncells         ! number of cells in grid
+    integer                                    :: ncells         ! number of cells in (subdomain) grid
+    integer                                    :: ncellsg        ! number of cells in global grid
     integer                                    :: nfaces         ! number of faces in grid
-    integer                                    :: nverts         ! number of vertices in grid
+    integer                                    :: nverts         ! number of vertices in (subdomain) grid
+    integer                                    :: nvertsg        ! number of vertices in global grid
     !
     integer, dimension(:,:), save, allocatable :: kvertc         !
     integer, dimension(:,:), save, allocatable :: kvertf         !
     !
+    integer, dimension(:), save, allocatable   :: ivertg         ! vertex index in global grid
     integer, dimension(:), save, allocatable   :: vmark          ! boundary marker for vertices
     !
     real                                       :: maxgsiz        ! maximum gridsize
     real                                       :: mingsiz        ! minimum gridsize
     !
     real, dimension(:), save, allocatable      :: xcugrd         ! the x-coordinates of the grid vertices
+    real, dimension(:), save, allocatable      :: xcugrdgl       ! the x-coordinates of the grid vertices in global grid
     real, dimension(:), save, allocatable      :: ycugrd         ! the y-coordinates of the grid vertices
+    real, dimension(:), save, allocatable      :: ycugrdgl       ! the y-coordinates of the grid vertices in global grid
 !
 !   Source text
 !

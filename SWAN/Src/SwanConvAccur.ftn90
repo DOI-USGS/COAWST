@@ -11,7 +11,7 @@ subroutine SwanConvAccur ( accur, hscurr, tmcurr, delhs, deltm, xytst, spcsig, a
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -74,10 +74,6 @@ subroutine SwanConvAccur ( accur, hscurr, tmcurr, delhs, deltm, xytst, spcsig, a
     integer                               :: is       ! loop counter over frequency bins
     integer                               :: ivert    ! loop counter over vertices
     integer                               :: j        ! loop counter
-    integer                               :: npacc    ! number of vertices in which required accuracy has been reached
-    integer                               :: npacct   ! npacc counter for calling thread
-    integer                               :: nwetp    ! total number of active vertices
-    integer                               :: nwetpt   ! nwetp counter for calling thread
     !
     real                                  :: fact     ! auxiliary factor
     real                                  :: hsabs    ! absolute difference in wave height between last 2 iterations
@@ -88,6 +84,10 @@ subroutine SwanConvAccur ( accur, hscurr, tmcurr, delhs, deltm, xytst, spcsig, a
     real                                  :: hsmeant  ! hsmean variable for calling thread
     real                                  :: m0       ! moment of zeroth order
     real                                  :: m1       ! moment of first order
+    real                                  :: npacc    ! number of vertices in which required accuracy has been reached
+    real                                  :: npacct   ! npacc counter for calling thread
+    real                                  :: nwetp    ! total number of active vertices
+    real                                  :: nwetpt   ! nwetp counter for calling thread
     real                                  :: tmmean   ! space-averaged mean period at previous iteration level
     real                                  :: tmmeant  ! tmmean variable for calling thread
     real                                  :: tmabs    ! absolute difference in mean period between last 2 iterations
@@ -116,15 +116,15 @@ subroutine SwanConvAccur ( accur, hscurr, tmcurr, delhs, deltm, xytst, spcsig, a
     vert => gridobject%vert_grid
     !
     !$omp single
-    npacc = 0
-    nwetp = 0
+    npacc = 0.
+    nwetp = 0.
     !
     hsmean = 0.
     tmmean = 0.
     !$omp end single
     !
-    npacct = 0
-    nwetpt = 0
+    npacct = 0.
+    nwetpt = 0.
     !
     deltm = 0.
     delhs = 0.
@@ -140,7 +140,7 @@ subroutine SwanConvAccur ( accur, hscurr, tmcurr, delhs, deltm, xytst, spcsig, a
        !
        if ( vert(ivert)%active ) then
           !
-          nwetpt = nwetpt + 1
+          nwetpt = nwetpt + 1.
           !
           hsmeant = hsmeant + hscurr(ivert)
           tmmeant = tmmeant + tmcurr(ivert)
@@ -158,10 +158,16 @@ subroutine SwanConvAccur ( accur, hscurr, tmcurr, delhs, deltm, xytst, spcsig, a
     !$omp atomic
     tmmean = tmmean + tmmeant
     !
+!PUN    ! perform global reductions in parallel run
+!PUN    !
+!PUN    call SwanSumOverNodes ( nwetp  )
+!PUN    call SwanSumOverNodes ( hsmean )
+!PUN    call SwanSumOverNodes ( tmmean )
+!PUN    !
     !$omp barrier
     !$omp single
-    hsmean = hsmean/real(nwetp)
-    tmmean = tmmean/real(nwetp)
+    hsmean = hsmean/nwetp
+    tmmean = tmmean/nwetp
     !$omp end single
     !
     ! calculate a set of accuracy parameters based on relative and overall accuracy measures for Hs and Tm
@@ -228,7 +234,7 @@ subroutine SwanConvAccur ( accur, hscurr, tmcurr, delhs, deltm, xytst, spcsig, a
           !
           ! count vertices where wave height and mean period have reached required accuracies
           !
-          if ( hsabs <= max(hsrel,hsoval) .and. tmabs <= max(tmrel,tmoval) ) npacct = npacct + 1
+          if ( hsabs <= max(hsrel,hsoval) .and. tmabs <= max(tmrel,tmoval) ) npacct = npacct + 1.
           !
           if (tstfl) then
              if (lhead) write(PRINTF,11)
@@ -250,11 +256,15 @@ subroutine SwanConvAccur ( accur, hscurr, tmcurr, delhs, deltm, xytst, spcsig, a
     !$omp atomic
     npacc = npacc + npacct
     !
+!PUN    ! perform global reduction in parallel run
+!PUN    !
+!PUN    call SwanSumOverNodes ( npacc )
+!PUN    !
     ! compute percentage of active vertices where required accuracy has been reached
     !
     !$omp barrier
     !$omp single
-    accur = real(npacc)*100./real(nwetp)
+    accur = npacc*100./nwetp
     !$omp end single
     !
  11 format(13x,'dHrel          ','dHoval         ','dTm01rel       ','dTm01oval ')

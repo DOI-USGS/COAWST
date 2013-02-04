@@ -9,8 +9,7 @@ tasks:
       In most cases, it is available for Linux and a Unix operating
       system. Check it by typing 'perl -v'. Otherwise, you may
       download a free distribution for Linux, Solaris and Windows
-      called ActivePerl
-      (http://aspn.activestate.com/ASPN/Downloads/ActivePerl/Source).
+      called ActivePerl (www.activestate.com/activeperl/downloads).
       The Perl version should be at least 5.0.0 or higher!
 
    2) Type 'make config' or 'nmake config' (in case of MS Windows)
@@ -45,8 +44,9 @@ tasks:
       choose between linking the MPI libraries for distributed
       memory machines and using OpenMP directives for shared memory
       systems for appropriate compilation by typing, respectively,
-      'make mpi' and 'make omp'.
-      NOTE: One of these commands must be preceded by 'make config'
+      'make mpi' and 'make omp'. However, for parallel, unstructured
+      mesh simulation on a distributed memory system, type 'make punswan'.
+      NOTE: One of these commands must be preceded once by 'make config'.
 
    4) SWAN documents in PDF format can be created by typing 'make doc'.
       This command must be preceded by 'make config'. For creating the

@@ -54,7 +54,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -538,7 +538,10 @@
      &                   FPM        ,UFRIC      ,
      &                   WX2        ,WY2        ,
      &                   ANYWND     ,SPCDIR     ,                         40.00
-     &                   UX2        ,UY2        ,SPCSIG     )             30.70
+     &                   UX2        ,UY2        ,
+     &                   SPCSIG     ,AC2                                  30.70 41.33
+!ADC     &                   ,NodeNumber                                      41.20
+     &                  )
 !
 !****************************************************************
 !
@@ -550,6 +553,9 @@
       USE SWCOMM2                                                         40.41
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
+!ADC      USE WIND, ONLY: WindDrag                                            41.20
+!
+      IMPLICIT NONE
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -563,7 +569,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -588,6 +594,8 @@
 !     32.06: Roeland Ris
 !     40.00: Nico Booij (Nonstationary boundary conditions)
 !     40.41: Marcel Zijlema
+!     41.20: Casey Dietrich
+!     41.33: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -601,6 +609,9 @@
 !     32.06, June 99: Reformulation of wind speed in terms of friction
 !                     velocity for first and second generation
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     41.20, Jun. 10: use ADCIRC's new sector-based wind drag
+!     41.33, Mar. 12: extension drag coefficient based on 2nd order polynomial
+!     41.33, Aug. 12: extension drag coefficient based on cross swell
 !
 !  2. Purpose
 !
@@ -728,15 +739,31 @@
 !
 !***********************************************************************
 !
+!ADC      INTEGER, OPTIONAL :: NodeNumber                                     41.20
+!ADC!
       INTEGER      IDWMIN ,IDWMAX                                         30.70
+      INTEGER      IENT   ,ID    ,IDDUM, IS
 !
       REAL         WIND10 ,THETAW ,                                       30.70
      &             UFRIC  ,FPM    ,CDRAG  ,SDMEAN                         30.70
+!
+      REAL         UREF   ,UTL    ,PP, QQ, RR                             41.33
+      PARAMETER (UREF=31.5, PP=0.55, QQ=2.97, RR=-1.49)                   41.33
+      REAL         UREF1, UTL1, NSL1, NSH1, CS, CA,CB,CC, NA,NB,NC,       41.33
+     &             UREF2, UTL2, NSL2, NSH2,     CD,CE,    ND,NE           41.33
+      PARAMETER (UREF1=27.5,NA=1.05,NB=1.25,NC=1.4,CA=0.7,CB=1.1,CC=6.,   41.33
+     &           NSL1=30.,NSH1=80.,CS=50.,                                41.33
+     &           UREF2=54.,ND=2.3,NE=10.,CD=8.2,CE=2.5,                   41.33
+     &           NSL2=45.,NSH2=55.)                                       41.33
+      REAL         A, B, C, D, E                                          41.33
+      REAL         ETOTS ,EEX   ,EEY   , EAD   ,SIGMA1,                   41.33
+     &             COSDIR,SINDIR,DETOT , FAC   ,DSPR                      41.33
 !
       REAL         WX2(MCGRD)   ,
      &             WY2(MCGRD)   ,
      &             UX2(MCGRD)   ,                                         30.70
      &             UY2(MCGRD)                                             30.70
+      REAL         AC2(MDC,MSC,MCGRD)                                     41.33
 !
       LOGICAL      ANYWND(MDC)
 !
@@ -835,6 +862,34 @@
 !
       ENDDO
 !
+!     --- determine directional spreading for cross swell
+!
+      IF ( IDRAG.EQ.3 ) THEN
+         EEX   = 0.
+         EEY   = 0.
+         ETOTS = 0.
+         DO ID = 1, MDC
+            EAD = 0.
+            DO IS = 1, MSC
+               SIGMA1 = SPCSIG(IS)
+               DETOT  = SIGMA1**2 * AC2(ID,IS,KCGRD(1))
+               EAD    = EAD + DETOT
+            ENDDO
+            ETOTS = ETOTS + EAD
+            EEX   = EEX + EAD * SPCDIR(ID,2)
+            EEY   = EEY + EAD * SPCDIR(ID,3)
+         ENDDO
+         IF ( ETOTS.GT.0. ) THEN
+            COSDIR = EEX / ETOTS
+            SINDIR = EEY / ETOTS
+            FAC    = MIN( 1., SQRT(COSDIR**2+SINDIR**2) )
+            DSPR   = SQRT(2.-2.*FAC)
+         ELSE
+            DSPR   = 0.
+         ENDIF
+         DSPR = DSPR * 180. / PI
+      ENDIF
+!
 !     *** compute the Pierson Moskowitz frequency ***
 !
       IF ( IWIND .EQ. 1 .OR. IWIND .EQ. 2 ) THEN
@@ -847,12 +902,65 @@
 !       *** determine U friction in case predictor is obtained ***
 !       *** with second genaration wave model                  ***
 !
-        IF ( WIND10 .GT. 7.5 ) THEN
-          UFRIC = WIND10 * SQRT (( 0.8 + 0.065 * WIND10 ) * 0.001 )
-        ELSE
-          CDRAG = 0.0012873
-          UFRIC = SQRT ( CDRAG ) * WIND10
-        ENDIF
+        IF ( IDRAG.EQ.1 ) THEN
+           IF ( WIND10 .GT. 7.5 ) THEN
+             CDRAG = ( 0.8 + 0.065 * WIND10 ) * 0.001
+             CDRAG = MIN ( CDCAP, CDRAG )
+           ELSE
+             CDRAG = 0.0012873
+           ENDIF
+        ELSE IF ( IDRAG.EQ.2 ) THEN
+           UTL   = WIND10/UREF
+           CDRAG = ( PP + QQ*UTL + RR*UTL*UTL ) * 0.001
+           CDRAG = MIN ( CDCAP, CDRAG )
+        ELSE IF ( IDRAG.EQ.3 ) THEN
+           UTL1  = WIND10/UREF1
+           UTL2  = WIND10/UREF2
+!
+           IF ( DSPR.NE.CS ) THEN
+!             no swell, opposing or following swell
+              A = NA
+              B = NB
+              C = NC
+              D = ND
+              E = NE
+              IF ( DSPR.GT.NSL1 .AND. DSPR.LT.CS ) THEN
+                 FAC = (DSPR-NSL1) / (CS-NSL1)
+                 A = A + FAC * (CA-NA)
+                 B = B + FAC * (CB-NB)
+                 C = C + FAC * (CC-NC)
+                 IF ( DSPR.GT.NSL2 ) THEN
+                    FAC = (DSPR-NSL2) / (CS-NSL2)
+                    D = D + FAC * (CD-ND)
+                    E = E + FAC * (CE-NE)
+                 ENDIF
+              ELSE IF ( DSPR.GT.CS .AND. DSPR.LT.NSH1 ) THEN
+                 FAC = (DSPR-NSH1) / (CS-NSH1)
+                 A = A + FAC * (CA-NA)
+                 B = B + FAC * (CB-NB)
+                 C = C + FAC * (CC-NC)
+                 IF ( DSPR.LT.NSH2 ) THEN
+                    FAC = (DSPR-NSH2) / (CS-NSH2)
+                    D = D + FAC * (CD-ND)
+                    E = E + FAC * (CE-NE)
+                 ENDIF
+              ENDIF
+           ELSE
+!             cross swell
+              A = CA
+              B = CB
+              C = CC
+              D = CD
+              E = CE
+           ENDIF
+!
+           CDRAG = MIN ( A+B*UTL1**C, D*(1-UTL2**E) )
+           CDRAG = MAX ( 0.7  , CDRAG )
+           CDRAG = CDRAG * 0.001
+           CDRAG = MIN ( CDCAP, CDRAG )
+        END IF
+!
+        UFRIC = SQRT ( CDRAG ) * WIND10
 !
 !     Reformulation of the wind speed in terms of friction velocity.      32.06
 !     This formulation is based on Bouws (1986) and described in Delft    32.06
@@ -867,12 +975,65 @@
 !       *** according to Wu (1982)                ***
 !       *** apply cd-cap if appropriate           ***
 !
-        IF ( WIND10 .GT. 7.5 ) THEN
-          CDRAG = ( 0.8 + 0.065 * WIND10 ) * 0.001
-          CDRAG = MIN ( CDCAP, CDRAG )
-        ELSE
-          CDRAG = 0.0012873
-        ENDIF
+        IF ( IDRAG.EQ.1 ) THEN
+           IF ( WIND10 .GT. 7.5 ) THEN
+             CDRAG = ( 0.8 + 0.065 * WIND10 ) * 0.001
+             CDRAG = MIN ( CDCAP, CDRAG )
+!ADC             CDRAG = WindDrag(DBLE(WIND10),NodeNumber)
+           ELSE
+             CDRAG = 0.0012873
+           ENDIF
+        ELSE IF ( IDRAG.EQ.2 ) THEN
+           UTL   = WIND10/UREF
+           CDRAG = ( PP + QQ*UTL + RR*UTL*UTL ) * 0.001
+           CDRAG = MIN ( CDCAP, CDRAG )
+        ELSE IF ( IDRAG.EQ.3 ) THEN
+           UTL1  = WIND10/UREF1
+           UTL2  = WIND10/UREF2
+!
+           IF ( DSPR.NE.CS ) THEN
+!             no swell, opposing or following swell
+              A = NA
+              B = NB
+              C = NC
+              D = ND
+              E = NE
+              IF ( DSPR.GT.NSL1 .AND. DSPR.LT.CS ) THEN
+                 FAC = (DSPR-NSL1) / (CS-NSL1)
+                 A = A + FAC * (CA-NA)
+                 B = B + FAC * (CB-NB)
+                 C = C + FAC * (CC-NC)
+                 IF ( DSPR.GT.NSL2 ) THEN
+                    FAC = (DSPR-NSL2) / (CS-NSL2)
+                    D = D + FAC * (CD-ND)
+                    E = E + FAC * (CE-NE)
+                 ENDIF
+              ELSE IF ( DSPR.GT.CS .AND. DSPR.LT.NSH1 ) THEN
+                 FAC = (DSPR-NSH1) / (CS-NSH1)
+                 A = A + FAC * (CA-NA)
+                 B = B + FAC * (CB-NB)
+                 C = C + FAC * (CC-NC)
+                 IF ( DSPR.LT.NSH2 ) THEN
+                    FAC = (DSPR-NSH2) / (CS-NSH2)
+                    D = D + FAC * (CD-ND)
+                    E = E + FAC * (CE-NE)
+                 ENDIF
+              ENDIF
+           ELSE
+!             cross swell
+              A = CA
+              B = CB
+              C = CC
+              D = CD
+              E = CE
+           ENDIF
+!
+           CDRAG = MIN ( A+B*UTL1**C, D*(1-UTL2**E) )
+           CDRAG = MAX ( 0.7  , CDRAG )
+           CDRAG = CDRAG * 0.001
+           CDRAG = MIN ( CDCAP, CDRAG )
+        END IF
+!
         UFRIC = SQRT ( CDRAG ) * WIND10
 !
 !       *** Wind friction velocity and PM-frequency ***
@@ -930,7 +1091,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1163,7 +1324,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1340,7 +1501,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1579,7 +1740,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1812,7 +1973,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2219,8 +2380,8 @@
 !
           FCEN = FD * FE - SQRT(RHOA) * WIND10 * XKAPPA
           FF1  = 0.5 * FE / FD
-          FF2  = 0.5 * TAUW * FC / FA**2 - FA * FB
-          FF3  = TAUTOT**1.5 * ( FC + 1. )
+          FF2  = 0.5 * TAUW * FC / FA - FA * FB
+          FF3  = TAUTOT**1.5 * ( FC + FA )
           DCEN = FF1 + FF2 / FF3
 !
 !         *** new total stress ***
@@ -2357,7 +2518,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

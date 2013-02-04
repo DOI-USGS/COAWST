@@ -11,7 +11,7 @@ subroutine SwanCheckGrid
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -112,7 +112,8 @@ subroutine SwanCheckGrid
     !
     badvertex = .false.
     do i = 1, nverts
-       if ( vcount(i) > 0 .and. vcount(i) < 4 .and. vmark(i) == 0 ) badvertex = .true.
+!NADC       if ( vcount(i) > 0 .and. vcount(i) < 4 .and. vmark(i) == 0 ) badvertex = .true.
+!ADC       if ( vcount(i) > 0 .and. vcount(i) < 4 .and. vmark(i) == 0 ) vmark(i) = 1
        if ( vcount(i) > 10 ) badvertex = .true.
     enddo
     !
@@ -142,14 +143,14 @@ subroutine SwanCheckGrid
        !
        ! is triangle acute ?
        !
-       acute = (len12+len23>len13) .and. (len23+len13>len12) .and. (len13+len12>len23)
+       if (acute) acute = (len12+len23>len13) .and. (len23+len13>len12) .and. (len13+len12>len23)
        !
        cosphi1 =( xdif12*xdif13 + ydif12*ydif13)/(sqrt(len12*len13))
        cosphi2 =(-xdif12*xdif23 - ydif12*ydif23)/(sqrt(len12*len23))
        cosphi3 =( xdif13*xdif23 + ydif13*ydif23)/(sqrt(len13*len23))
        !
        if ( cosphi1 <= -0.8 .or. cosphi2 <= -0.8 .or. cosphi3 <= -0.8 ) then
-          call msgerr (2, 'an angle in a triangle is too large ')
+!NADC          call msgerr (2, 'an angle in a triangle is too large ')
        endif
        !
     enddo

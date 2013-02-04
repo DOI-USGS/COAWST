@@ -1,24 +1,8 @@
-if (open(P,"uname -s 2>&1 |") && (@tmp = <P>) && close(P))
-{
-   chop($os = $tmp[$#tmp]);
-}
-else
-{
-   $os = $^O;
-}
-@tmp = ();
-close P;
+my $os  = `uname -s`;
+   $os  = $^O unless chomp($os);
 
-if (open(P,"uname -m 2>&1 |") && (@tmp = <P>) && close(P))
-{
-   chop($cpu = $tmp[$#tmp]);
-}
-else
-{
-   $cpu = $^O;
-}
-@tmp = ();
-close P;
+my $cpu = `uname -m`;
+   $cpu = $^O unless chomp($cpu);
 
 open(OUTFILE,">macros.inc");
 
@@ -35,17 +19,34 @@ if ($os =~ /IRIX64/i) {
   print OUTFILE "FLAGS_SER =\n";
   print OUTFILE "FLAGS_OMP = -mp\n";
   print OUTFILE "FLAGS_MPI =\n";
-  print OUTFILE "INCS_SER = \n";
-  print OUTFILE "INCS_OMP =\n";
-  print OUTFILE "INCS_MPI =\n";
-  print OUTFILE "LIBS_SER =\n";
-  print OUTFILE "LIBS_OMP =\n";
-  print OUTFILE "LIBS_MPI = -lmpi\n";
+  print OUTFILE "NETCDFROOT =\n";
+  print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+  print OUTFILE "  INCS_SER = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  INCS_OMP = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  INCS_MPI = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  LIBS_SER = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+  print OUTFILE "  LIBS_OMP = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+  print OUTFILE "  LIBS_MPI = -lmpi -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+  print OUTFILE "  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o\n";
+  print OUTFILE "else\n";
+  print OUTFILE "  INCS_SER =\n";
+  print OUTFILE "  INCS_OMP =\n";
+  print OUTFILE "  INCS_MPI =\n";
+  print OUTFILE "  LIBS_SER =\n";
+  print OUTFILE "  LIBS_OMP =\n";
+  print OUTFILE "  LIBS_MPI = -lmpi\n";
+  print OUTFILE "  NCF_OBJS =\n";
+  print OUTFILE "endif\n";
+  print OUTFILE "O_DIR = ../work/odir4/\n";
   print OUTFILE "OUT = -o \n";
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -f95 -timg -sgi -cdate12\n";
+  print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+  print OUTFILE "  swch = -unix -f95 -timg -sgi -netcdf\n";
+  print OUTFILE "else\n";
+  print OUTFILE "  swch = -unix -f95 -timg -sgi\n";
+  print OUTFILE "endif\n";
 }
 elsif ($os =~ /AIX/i) {
   print OUTFILE "##############################################################################\n";
@@ -61,17 +62,34 @@ elsif ($os =~ /AIX/i) {
   print OUTFILE "FLAGS_SER =\n";
   print OUTFILE "FLAGS_OMP = -qsmp=omp\n";
   print OUTFILE "FLAGS_MPI =\n";
-  print OUTFILE "INCS_SER = \n";
-  print OUTFILE "INCS_OMP =\n";
-  print OUTFILE "INCS_MPI =\n";
-  print OUTFILE "LIBS_SER = -lessl -lmass\n";
-  print OUTFILE "LIBS_OMP = -lessl -lmass\n";
-  print OUTFILE "LIBS_MPI = -lessl -lmass\n";
+  print OUTFILE "NETCDFROOT =\n";
+  print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+  print OUTFILE "  INCS_SER = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  INCS_OMP = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  INCS_MPI = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  LIBS_SER = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff -lessl -lmass\n";
+  print OUTFILE "  LIBS_OMP = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff -lessl -lmass\n";
+  print OUTFILE "  LIBS_MPI = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff -lessl -lmass\n";
+  print OUTFILE "  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o\n";
+  print OUTFILE "else\n";
+  print OUTFILE "  INCS_SER =\n";
+  print OUTFILE "  INCS_OMP =\n";
+  print OUTFILE "  INCS_MPI =\n";
+  print OUTFILE "  LIBS_SER = -lessl -lmass\n";
+  print OUTFILE "  LIBS_OMP = -lessl -lmass\n";
+  print OUTFILE "  LIBS_MPI = -lessl -lmass\n";
+  print OUTFILE "  NCF_OBJS =\n";
+  print OUTFILE "endif\n";
+  print OUTFILE "O_DIR = ../work/odir4/\n";
   print OUTFILE "OUT = -o \n";
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -f95 -timg -cdate12\n";
+  print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+  print OUTFILE "  swch = -unix -f95 -timg -netcdf\n";
+  print OUTFILE "else\n";
+  print OUTFILE "  swch = -unix -f95 -timg\n";
+  print OUTFILE "endif\n";
 }
 elsif ($os =~ /OSF1/i) {
   print OUTFILE "##############################################################################\n";
@@ -86,17 +104,19 @@ elsif ($os =~ /OSF1/i) {
   print OUTFILE "FLAGS_SER =\n";
   print OUTFILE "FLAGS_OMP = -Wp,-C -omp\n";
   print OUTFILE "FLAGS_MPI =\n";
+  print OUTFILE "NETCDFROOT =\n";
   print OUTFILE "INCS_SER =\n";
   print OUTFILE "INCS_OMP =\n";
   print OUTFILE "INCS_MPI =\n";
   print OUTFILE "LIBS_SER =\n";
   print OUTFILE "LIBS_OMP =\n";
   print OUTFILE "LIBS_MPI = -lfmpi -lmpi -lelan\n";
+  print OUTFILE "O_DIR = ../work/odir4/\n";
   print OUTFILE "OUT = -o \n";
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -timg -cdate12\n";
+  print OUTFILE "swch = -unix -timg\n";
 }
 elsif ($os =~ /SunOS/i) {
   print OUTFILE "##############################################################################\n";
@@ -111,17 +131,34 @@ elsif ($os =~ /SunOS/i) {
   print OUTFILE "FLAGS_SER =\n";
   print OUTFILE "FLAGS_OMP = -openmp\n";
   print OUTFILE "FLAGS_MPI =\n";
-  print OUTFILE "INCS_SER = \n";
-  print OUTFILE "INCS_OMP = \n";
-  print OUTFILE "INCS_MPI =\n";
-  print OUTFILE "LIBS_SER =\n";
-  print OUTFILE "LIBS_OMP =\n";
-  print OUTFILE "LIBS_MPI = -lmpi\n";
+  print OUTFILE "NETCDFROOT =\n";
+  print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+  print OUTFILE "  INCS_SER = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  INCS_OMP = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  INCS_MPI = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  LIBS_SER = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+  print OUTFILE "  LIBS_OMP = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+  print OUTFILE "  LIBS_MPI = -lmpi -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+  print OUTFILE "  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o\n";
+  print OUTFILE "else\n";
+  print OUTFILE "  INCS_SER =\n";
+  print OUTFILE "  INCS_OMP =\n";
+  print OUTFILE "  INCS_MPI =\n";
+  print OUTFILE "  LIBS_SER =\n";
+  print OUTFILE "  LIBS_OMP =\n";
+  print OUTFILE "  LIBS_MPI = -lmpi\n";
+  print OUTFILE "  NCF_OBJS =\n";
+  print OUTFILE "endif\n";
+  print OUTFILE "O_DIR = ../work/odir4/\n";
   print OUTFILE "OUT = -o \n";
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -timg -cdate12\n";
+  print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+  print OUTFILE "  swch = -unix -timg -netcdf\n";
+  print OUTFILE "else\n";
+  print OUTFILE "  swch = -unix -timg\n";
+  print OUTFILE "endif\n";
 }
 elsif ($os =~ /HP-UX/i) {
   print OUTFILE "##############################################################################\n";
@@ -136,25 +173,41 @@ elsif ($os =~ /HP-UX/i) {
   print OUTFILE "FLAGS_SER = +Onoopenmp\n";
   print OUTFILE "FLAGS_OMP = +Oopenmp\n";
   print OUTFILE "FLAGS_MPI =\n";
-  print OUTFILE "INCS_SER =\n";
-  print OUTFILE "INCS_OMP =\n";
-  print OUTFILE "INCS_MPI =\n";
-  print OUTFILE "LIBS_SER =\n";
-  print OUTFILE "LIBS_OMP =\n";
-  print OUTFILE "LIBS_MPI =\n";
+  print OUTFILE "NETCDFROOT =\n";
+  print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+  print OUTFILE "  INCS_SER = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  INCS_OMP = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  INCS_MPI = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  LIBS_SER = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+  print OUTFILE "  LIBS_OMP = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+  print OUTFILE "  LIBS_MPI = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+  print OUTFILE "  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o\n";
+  print OUTFILE "else\n";
+  print OUTFILE "  INCS_SER =\n";
+  print OUTFILE "  INCS_OMP =\n";
+  print OUTFILE "  INCS_MPI =\n";
+  print OUTFILE "  LIBS_SER =\n";
+  print OUTFILE "  LIBS_OMP =\n";
+  print OUTFILE "  LIBS_MPI =\n";
+  print OUTFILE "  NCF_OBJS =\n";
+  print OUTFILE "endif\n";
+  print OUTFILE "O_DIR =\n";
   print OUTFILE "OUT = -o \n";
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -f95 -timg -cdate12\n";
+  print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+  print OUTFILE "  swch = -unix -f95 -timg -netcdf\n";
+  print OUTFILE "else\n";
+  print OUTFILE "  swch = -unix -f95 -timg\n";
+  print OUTFILE "endif\n";
 }
 elsif ($os =~ /Linux/i) {
-  system 'sh ./getcmpl';
-  if ( -f "ifort" )
+  my $compiler = getcmpl();
+  if ( $compiler eq "ifort" )
   {
-    system 'rm ifort';
     print OUTFILE "##############################################################################\n";
-    print OUTFILE "# IA32_Intel/x86-64_Intel:	Intel Pentium with Linux using Intel compiler 9.1.\n";
+    print OUTFILE "# IA32_Intel/x86-64_Intel:	Intel Pentium with Linux using Intel compiler 11.\n";
     print OUTFILE "##############################################################################\n";
     print OUTFILE "F90_SER = ifort\n";
     print OUTFILE "F90_OMP = ifort\n";
@@ -168,26 +221,43 @@ elsif ($os =~ /Linux/i) {
 #    else {
       print OUTFILE "FLAGS_OPT = -O2\n";
 #    }
-    print OUTFILE "FLAGS_MSC = -W0 -assume byterecl -traceback\n";
+#    print OUTFILE "FLAGS_MSC = -W0 -assume byterecl -traceback -diag-disable remark\n";
+    print OUTFILE "FLAGS_MSC = -W0 -assume byterecl -traceback -diag-disable 8290 -diag-disable 8291 -diag-disable 8293\n";
     print OUTFILE "FLAGS90_MSC = \$(FLAGS_MSC)\n";
     print OUTFILE "FLAGS_SER =\n";
     print OUTFILE "FLAGS_OMP = -openmp\n";
     print OUTFILE "FLAGS_MPI =\n";
-    print OUTFILE "INCS_SER =\n";
-    print OUTFILE "INCS_OMP =\n";
-    print OUTFILE "INCS_MPI =\n";
-    print OUTFILE "LIBS_SER =\n";
-    print OUTFILE "LIBS_OMP =\n";
-    print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "NETCDFROOT =\n";
+    print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+    print OUTFILE "  INCS_SER = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  INCS_OMP = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  INCS_MPI = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  LIBS_SER = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  LIBS_OMP = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  LIBS_MPI = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o\n";
+    print OUTFILE "else\n";
+    print OUTFILE "  INCS_SER =\n";
+    print OUTFILE "  INCS_OMP =\n";
+    print OUTFILE "  INCS_MPI =\n";
+    print OUTFILE "  LIBS_SER =\n";
+    print OUTFILE "  LIBS_OMP =\n";
+    print OUTFILE "  LIBS_MPI =\n";
+    print OUTFILE "  NCF_OBJS =\n";
+    print OUTFILE "endif\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -impi -cdate12\n";
+    print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+    print OUTFILE "  swch = -unix -impi -netcdf\n";
+    print OUTFILE "else\n";
+    print OUTFILE "  swch = -unix -impi\n";
+    print OUTFILE "endif\n";
   }
-  elsif ( -f "ifc" )
+  elsif ( $compiler eq "ifc" )
   {
-    system 'rm ifc';
     print OUTFILE "##############################################################################\n";
     print OUTFILE "# IA32_Intel:		Intel Pentium with Linux using Intel compiler 7.0.\n";
     print OUTFILE "# Note: -tpp6 is for Pentium III & -tpp7 is for Pentium IV\n";
@@ -201,21 +271,22 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "FLAGS_SER =\n";
     print OUTFILE "FLAGS_OMP = -openmp\n";
     print OUTFILE "FLAGS_MPI =\n";
+    print OUTFILE "NETCDFROOT =\n";
     print OUTFILE "INCS_SER =\n";
     print OUTFILE "INCS_OMP =\n";
     print OUTFILE "INCS_MPI =\n";
     print OUTFILE "LIBS_SER =\n";
     print OUTFILE "LIBS_OMP =\n";
     print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -f95 -timg -cdate12\n";
+    print OUTFILE "swch = -unix -f95 -timg\n";
   }
-  elsif ( -f "efc" )
+  elsif ( $compiler eq "efc" )
   {
-    system 'rm efc';
     print OUTFILE "##############################################################################\n";
     print OUTFILE "# IA64_Intel:		Intel Itanium with Linux using Intel compiler.\n";
     print OUTFILE "# Note: -tpp1 is for Itanium I & -tpp2 is for Itanium II\n";
@@ -229,21 +300,22 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "FLAGS_SER =\n";
     print OUTFILE "FLAGS_OMP = -openmp\n";
     print OUTFILE "FLAGS_MPI =\n";
+    print OUTFILE "NETCDFROOT =\n";
     print OUTFILE "INCS_SER =\n";
     print OUTFILE "INCS_OMP =\n";
     print OUTFILE "INCS_MPI =\n";
     print OUTFILE "LIBS_SER =\n";
     print OUTFILE "LIBS_OMP =\n";
     print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -f95 -timg -cdate12\n";
+    print OUTFILE "swch = -unix -f95 -timg\n";
   }
-  elsif ( -f "pgf90" )
+  elsif ( $compiler eq "pgf90" )
   {
-    system 'rm pgf90';
     print OUTFILE "##############################################################################\n";
     print OUTFILE "# IA32_PGF:		Intel Pentium with Linux using Portland Group compiler\n";
     print OUTFILE "##############################################################################\n";
@@ -256,21 +328,37 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "FLAGS_SER =\n";
     print OUTFILE "FLAGS_OMP = -mp\n";
     print OUTFILE "FLAGS_MPI = -tp barcelona-64\n";
-    print OUTFILE "INCS_SER =\n";
-    print OUTFILE "INCS_OMP =\n";
-    print OUTFILE "INCS_MPI =\n";
-    print OUTFILE "LIBS_SER =\n";
-    print OUTFILE "LIBS_OMP =\n";
-    print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "NETCDFROOT =\n";
+    print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+    print OUTFILE "  INCS_SER = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  INCS_OMP = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  INCS_MPI = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  LIBS_SER = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  LIBS_OMP = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  LIBS_MPI = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o\n";
+    print OUTFILE "else\n";
+    print OUTFILE "  INCS_SER =\n";
+    print OUTFILE "  INCS_OMP =\n";
+    print OUTFILE "  INCS_MPI =\n";
+    print OUTFILE "  LIBS_SER =\n";
+    print OUTFILE "  LIBS_OMP =\n";
+    print OUTFILE "  LIBS_MPI =\n";
+    print OUTFILE "  NCF_OBJS =\n";
+    print OUTFILE "endif\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -impi -cdate12\n";
+    print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+    print OUTFILE "  swch = -unix -impi -netcdf\n";
+    print OUTFILE "else\n";
+    print OUTFILE "  swch = -unix -impi\n";
+    print OUTFILE "endif\n";
   }
-  elsif ( -f "lf95" )
+  elsif ( $compiler eq "lf95" )
   {
-    system 'rm lf95';
     print OUTFILE "##############################################################################\n";
     print OUTFILE "# IA32_Lahey:		Intel Pentium with Linux using Lahey compiler.\n";
     print OUTFILE "##############################################################################\n";
@@ -283,21 +371,22 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "FLAGS_SER =\n";
     print OUTFILE "FLAGS_OMP =\n";
     print OUTFILE "FLAGS_MPI =\n";
+    print OUTFILE "NETCDFROOT =\n";
     print OUTFILE "INCS_SER =\n";
     print OUTFILE "INCS_OMP =\n";
     print OUTFILE "INCS_MPI =\n";
     print OUTFILE "LIBS_SER =\n";
     print OUTFILE "LIBS_OMP =\n";
     print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "O_DIR =\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -cdate12\n";
+    print OUTFILE "swch = -unix\n";
   }
-  elsif ( -f "gfortran" )
+  elsif ( $compiler eq "gfortran" )
   {
-    system 'rm gfortran';
     print OUTFILE "##############################################################################\n";
     print OUTFILE "# IA32_GNU:		Intel Pentium with Linux using GNU compiler gfortran.\n";
     print OUTFILE "##############################################################################\n";
@@ -310,21 +399,37 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "FLAGS_SER =\n";
     print OUTFILE "FLAGS_OMP = -fopenmp\n";
     print OUTFILE "FLAGS_MPI =\n";
-    print OUTFILE "INCS_SER =\n";
-    print OUTFILE "INCS_OMP =\n";
-    print OUTFILE "INCS_MPI =\n";
-    print OUTFILE "LIBS_SER =\n";
-    print OUTFILE "LIBS_OMP = -static-libgcc\n";
-    print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "NETCDFROOT =\n";
+    print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+    print OUTFILE "  INCS_SER = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  INCS_OMP = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  INCS_MPI = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  LIBS_SER = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  LIBS_OMP = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff -static-libgcc\n";
+    print OUTFILE "  LIBS_MPI = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o\n";
+    print OUTFILE "else\n";
+    print OUTFILE "  INCS_SER =\n";
+    print OUTFILE "  INCS_OMP =\n";
+    print OUTFILE "  INCS_MPI =\n";
+    print OUTFILE "  LIBS_SER =\n";
+    print OUTFILE "  LIBS_OMP = -static-libgcc\n";
+    print OUTFILE "  LIBS_MPI =\n";
+    print OUTFILE "  NCF_OBJS =\n";
+    print OUTFILE "endif\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -cdate12\n";
+    print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+    print OUTFILE "  swch = -unix -netcdf\n";
+    print OUTFILE "else\n";
+    print OUTFILE "  swch = -unix\n";
+    print OUTFILE "endif\n";
   }
-  elsif ( -f "g95" )
+  elsif ( $compiler eq "g95" )
   {
-    system 'rm g95';
     print OUTFILE "##############################################################################\n";
     print OUTFILE "# IA32_GNU:		Intel Pentium with Linux using GNU compiler g95.\n";
     print OUTFILE "##############################################################################\n";
@@ -337,21 +442,37 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "FLAGS_SER =\n";
     print OUTFILE "FLAGS_OMP =\n";
     print OUTFILE "FLAGS_MPI =\n";
-    print OUTFILE "INCS_SER =\n";
-    print OUTFILE "INCS_OMP =\n";
-    print OUTFILE "INCS_MPI =\n";
-    print OUTFILE "LIBS_SER =\n";
-    print OUTFILE "LIBS_OMP =\n";
-    print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "NETCDFROOT =\n";
+    print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+    print OUTFILE "  INCS_SER = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  INCS_OMP = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  INCS_MPI = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  LIBS_SER = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  LIBS_OMP = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  LIBS_MPI = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o\n";
+    print OUTFILE "else\n";
+    print OUTFILE "  INCS_SER =\n";
+    print OUTFILE "  INCS_OMP =\n";
+    print OUTFILE "  INCS_MPI =\n";
+    print OUTFILE "  LIBS_SER =\n";
+    print OUTFILE "  LIBS_OMP =\n";
+    print OUTFILE "  LIBS_MPI =\n";
+    print OUTFILE "  NCF_OBJS =\n";
+    print OUTFILE "endif\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -cdate12\n";
+    print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+    print OUTFILE "  swch = -unix -netcdf\n";
+    print OUTFILE "else\n";
+    print OUTFILE "  swch = -unix\n";
+    print OUTFILE "endif\n";
   }
-  elsif ( -f "xlf90" )
+  elsif ( $compiler eq "xlf90" )
   {
-    system 'rm xlf90';
     print OUTFILE "##############################################################################\n";
     print OUTFILE "# PPC64_IBM:		IBM Power6 with Linux using IBM Compiler.\n";
     print OUTFILE "##############################################################################\n";
@@ -364,47 +485,134 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "FLAGS_SER =\n";
     print OUTFILE "FLAGS_OMP =\n";
     print OUTFILE "FLAGS_MPI =\n";
-    print OUTFILE "INCS_SER = \n";
-    print OUTFILE "INCS_OMP =\n";
-    print OUTFILE "INCS_MPI =\n";
-    print OUTFILE "LIBS_SER =\n";
-    print OUTFILE "LIBS_OMP =\n";
-    print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "NETCDFROOT =\n";
+    print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+    print OUTFILE "  INCS_SER = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  INCS_OMP = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  INCS_MPI = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  LIBS_SER = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  LIBS_OMP = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  LIBS_MPI = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o\n";
+    print OUTFILE "else\n";
+    print OUTFILE "  INCS_SER =\n";
+    print OUTFILE "  INCS_OMP =\n";
+    print OUTFILE "  INCS_MPI =\n";
+    print OUTFILE "  LIBS_SER =\n";
+    print OUTFILE "  LIBS_OMP =\n";
+    print OUTFILE "  LIBS_MPI =\n";
+    print OUTFILE "  NCF_OBJS =\n";
+    print OUTFILE "endif\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -cdate12\n";
+    print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+    print OUTFILE "  swch = -unix -matl4 -netcdf\n";
+    print OUTFILE "else\n";
+    print OUTFILE "  swch = -unix -matl4\n";
+    print OUTFILE "endif\n";
   }
   else
   {
-    die "Current Fortran compiler not supported.... \n";
+    die "Current Fortran compiler '$compiler' not supported.... \n";
   }
 }
-elsif ($os =~ /WindowsNT/i || $os =~ /MSWin32/i) {
-  print OUTFILE "##############################################################################\n";
-  print OUTFILE "# IA32_Intel/EM64T_Intel:	Intel Pentium with MS Windows using Intel compiler 11.\n";
-  print OUTFILE "##############################################################################\n";
-  print OUTFILE "F90_SER = ifort\n";
-  print OUTFILE "F90_OMP = ifort\n";
-  print OUTFILE "F90_MPI = ifort\n";
-  print OUTFILE "FLAGS_OPT = /optimize:2\n";
-  print OUTFILE "FLAGS_MSC = /assume:byterecl /traceback /nowarn /nologo\n";
-  print OUTFILE "FLAGS90_MSC = \$(FLAGS_MSC)\n";
-  print OUTFILE "FLAGS_SER =\n";
-  print OUTFILE "FLAGS_OMP = /Qopenmp /Qopenmp-link:static\n";
-  print OUTFILE "FLAGS_MPI =\n";
-  print OUTFILE "INCS_SER =\n";
-  print OUTFILE "INCS_OMP =\n";
-  print OUTFILE "INCS_MPI = /include:\"c:\\\progra~1\\\MPICH\\\SDK\\\include\"\n";
-  print OUTFILE "LIBS_SER =\n";
-  print OUTFILE "LIBS_OMP =\n";
-  print OUTFILE "LIBS_MPI = c:\\\progra~1\\\MPICH\\\SDK\\\llib\\\mpe.lib c:\\\progra~1\\\MPICH\\\SDK\\\llib\\\mpich.lib\n";
-  print OUTFILE "OUT = /exe:\n";
-  print OUTFILE "EXTO = obj\n";
-  print OUTFILE "MAKE = nmake\n";
-  print OUTFILE "RM = del\n";
-  print OUTFILE "swch = -dos -impi -cvis -cdate12\n";
+elsif ($os =~ /WindowsNT/i || $os =~ /MSWin32/i || $os =~ /CYGWIN/i) {
+  my $compiler = getcmpl();
+  if ( $compiler eq "ifort" )
+  {
+    print OUTFILE "##############################################################################\n";
+    print OUTFILE "# IA32_Intel/EM64T_Intel:	Intel Pentium with MS Windows using Intel compiler 11.\n";
+    print OUTFILE "##############################################################################\n";
+    print OUTFILE "F90_SER = ifort\n";
+    print OUTFILE "F90_OMP = ifort\n";
+    print OUTFILE "F90_MPI = ifort\n";
+    print OUTFILE "FLAGS_OPT = /optimize:2\n";
+#    print OUTFILE "FLAGS_MSC = /assume:byterecl /traceback /nowarn /nologo /Qdiag-disable:remark\n";
+    print OUTFILE "FLAGS_MSC = /assume:byterecl /traceback /nowarn /nologo /Qdiag-disable:8290 /Qdiag-disable:8291 /Qdiag-disable:8293\n";
+    print OUTFILE "FLAGS90_MSC = \$(FLAGS_MSC)\n";
+    print OUTFILE "FLAGS_SER =\n";
+    print OUTFILE "FLAGS_OMP = /Qopenmp /Qopenmp-link:static\n";
+    print OUTFILE "FLAGS_MPI =\n";
+    print OUTFILE "#NETCDFROOT = C:\\\PROGRA~2\\\lnetcdf\n";
+    print OUTFILE "!IF DEFINED(NETCDFROOT)\n";
+    print OUTFILE "INCS_SER = /include:\$(NETCDFROOT)\n";
+    print OUTFILE "INCS_OMP = /include:\$(NETCDFROOT)\n";
+    print OUTFILE "INCS_MPI = /include:\"C:\\\PROGRA~1\\\MPICH2\\\include\" /include:\$(NETCDFROOT)\n";
+    print OUTFILE "LIBSC = /link /NODEFAULTLIB:MSVCRT.lib /NODEFAULTLIB:LIBC.lib\n";
+    print OUTFILE "LIBS_SER = \$(NETCDFROOT)\\\lf90_netcdf.lib \$(NETCDFROOT)\\\lf77_netcdf.lib \$(NETCDFROOT)\\\lnetcdf.lib \$(LIBSC)\n";
+    print OUTFILE "LIBS_OMP = \$(NETCDFROOT)\\\lf90_netcdf.lib \$(NETCDFROOT)\\\lf77_netcdf.lib \$(NETCDFROOT)\\\lnetcdf.lib \$(LIBSC)\n";
+    print OUTFILE "LIBS_MPI = C:\\\PROGRA~1\\\MPICH2\\\llib\\\lfmpich2.lib \$(NETCDFROOT)\\\lf90_netcdf.lib \$(NETCDFROOT)\\\lf77_netcdf.lib \$(NETCDFROOT)\\\lnetcdf.lib \$(LIBSC)\n";
+    print OUTFILE "NCF_OBJS = nctablemd.obj agioncmd.obj swn_outnc.obj\n";
+    print OUTFILE "!ELSE\n";
+    print OUTFILE "INCS_SER =\n";
+    print OUTFILE "INCS_OMP =\n";
+    print OUTFILE "INCS_MPI = /include:\"C:\\\PROGRA~1\\\MPICH2\\\include\"\n";
+    print OUTFILE "LIBS_SER =\n";
+    print OUTFILE "LIBS_OMP =\n";
+    print OUTFILE "LIBS_MPI = C:\\\PROGRA~1\\\MPICH2\\\llib\\\lfmpich2.lib\n";
+    print OUTFILE "NCF_OBJS =\n";
+    print OUTFILE "!ENDIF\n";
+    print OUTFILE "O_DIR =\n";
+    print OUTFILE "OUT = /exe:\n";
+    print OUTFILE "EXTO = obj\n";
+    print OUTFILE "MAKE = nmake\n";
+    print OUTFILE "RM = del\n";
+    print OUTFILE "!IF DEFINED(NETCDFROOT)\n";
+    print OUTFILE "swch = -dos -impi -cvis -netcdf\n";
+    print OUTFILE "!ELSE\n";
+    print OUTFILE "swch = -dos -impi -cvis\n";
+    print OUTFILE "!ENDIF\n";
+  }
+  elsif ( $compiler eq "f90" )
+  {
+    print OUTFILE "##############################################################################\n";
+    print OUTFILE "# IA32_Intel/EM64T_Intel:	Intel Pentium with MS Windows using Compaq Visual Fortran 6.6x.\n";
+    print OUTFILE "##############################################################################\n";
+    print OUTFILE "F90_SER = f90\n";
+    print OUTFILE "F90_OMP = f90\n";
+    print OUTFILE "F90_MPI = f90\n";
+    print OUTFILE "FLAGS_OPT = /optimize:2\n";
+    print OUTFILE "FLAGS_MSC = /assume:byterecl /traceback /names:lowercase /nowarn /nologo\n";
+    print OUTFILE "FLAGS90_MSC = \$(FLAGS_MSC)\n";
+    print OUTFILE "FLAGS_SER =\n";
+    print OUTFILE "FLAGS_OMP = /Qopenmp /Qopenmp-link:static\n";
+    print OUTFILE "FLAGS_MPI =\n";
+    print OUTFILE "NETCDFROOT:\n";
+    print OUTFILE "!IF DEFINED(NETCDFROOT)\n";
+    print OUTFILE "INCS_SER =\n";
+    print OUTFILE "INCS_OMP =\n";
+    print OUTFILE "INCS_MPI = /include:\"C:\\\PROGRA~1\\\MPICH2\\\include\"\n";
+    print OUTFILE "LIBS_SER =\n";
+    print OUTFILE "LIBS_OMP =\n";
+    print OUTFILE "LIBS_MPI = C:\\\PROGRA~1\\\MPICH2\\\llib\\\lfmpich2.lib\n";
+    print OUTFILE "NCF_OBJS = nctablemd.obj agioncmd.obj swn_outnc.obj\n";
+    print OUTFILE "!ELSE\n";
+    print OUTFILE "INCS_SER =\n";
+    print OUTFILE "INCS_OMP =\n";
+    print OUTFILE "INCS_MPI = /include:\"C:\\\PROGRA~1\\\MPICH2\\\include\"\n";
+    print OUTFILE "LIBS_SER =\n";
+    print OUTFILE "LIBS_OMP =\n";
+    print OUTFILE "LIBS_MPI = C:\\\PROGRA~1\\\MPICH2\\\llib\\\lfmpich2.lib\n";
+    print OUTFILE "NCF_OBJS =\n";
+    print OUTFILE "!ENDIF\n";
+    print OUTFILE "O_DIR =\n";
+    print OUTFILE "OUT = /exe:\n";
+    print OUTFILE "EXTO = obj\n";
+    print OUTFILE "MAKE = nmake\n";
+    print OUTFILE "RM = del\n";
+    print OUTFILE "!IF DEFINED(NETCDFROOT)\n";
+    print OUTFILE "swch = -dos -impi -cvis -netcdf\n";
+    print OUTFILE "!ELSE\n";
+    print OUTFILE "swch = -dos -impi -cvis\n";
+    print OUTFILE "!ENDIF\n";
+  }
+  else
+  {
+    die "Current Fortran compiler '$compiler' not supported.... \n";
+  }
 }
 elsif ($os =~ /Darwin/i) {
   print OUTFILE "##############################################################################\n";
@@ -419,21 +627,57 @@ elsif ($os =~ /Darwin/i) {
   print OUTFILE "FLAGS_SER =\n";
   print OUTFILE "FLAGS_OMP =\n";
   print OUTFILE "FLAGS_MPI =\n";
-  print OUTFILE "INCS_SER = \n";
-  print OUTFILE "INCS_OMP =\n";
-  print OUTFILE "INCS_MPI =\n";
-  print OUTFILE "LIBS_SER =\n";
-  print OUTFILE "LIBS_OMP =\n";
-  print OUTFILE "LIBS_MPI =\n";
+  print OUTFILE "NETCDFROOT =\n";
+  print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+  print OUTFILE "  INCS_SER = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  INCS_OMP = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  INCS_MPI = -I\$(NETCDFROOT)/include\n";
+  print OUTFILE "  LIBS_SER = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+  print OUTFILE "  LIBS_OMP = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+  print OUTFILE "  LIBS_MPI = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+  print OUTFILE "  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o\n";
+  print OUTFILE "else\n";
+  print OUTFILE "  INCS_SER =\n";
+  print OUTFILE "  INCS_OMP =\n";
+  print OUTFILE "  INCS_MPI =\n";
+  print OUTFILE "  LIBS_SER =\n";
+  print OUTFILE "  LIBS_OMP =\n";
+  print OUTFILE "  LIBS_MPI =\n";
+  print OUTFILE "  NCF_OBJS =\n";
+  print OUTFILE "endif\n";
+  print OUTFILE "O_DIR =\n";
   print OUTFILE "OUT = -o \n";
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -cdate12\n";
+  print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+  print OUTFILE "  swch = -unix -netcdf\n";
+  print OUTFILE "else\n";
+  print OUTFILE "  swch = -unix\n";
+  print OUTFILE "endif\n";
 }
 else
 {
-   die "Current operating system not supported.... \n";
+   die "Current operating system '$os' not supported.... \n";
 }
 
 close(OUTFILE);
+
+# =============================================================================
+
+sub getcmpl {
+
+   my $compiler = $ENV{'FC'};
+
+   unless ( $compiler ) {
+      foreach ('ifort','f90','ifc','efc','pgf90','xlf90', 'lf95','gfortran','g95') {
+         $compiler = $_;
+         my $path  = `which $compiler`;
+         last if $path;
+      }
+   }
+
+   return $compiler;
+}
+
+# =============================================================================

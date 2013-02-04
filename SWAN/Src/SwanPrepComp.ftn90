@@ -11,7 +11,7 @@ subroutine SwanPrepComp ( cross )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,6 +46,7 @@ subroutine SwanPrepComp ( cross )
     use ocpcomm4
     use swcomm3
     use SwanGriddata
+!PUN    use SwanGridobjects
 !
     implicit none
 !
@@ -56,7 +57,10 @@ subroutine SwanPrepComp ( cross )
 !
 !   Local variables
 !
-    integer, save :: ient = 0 ! number of entries in this subroutine
+    integer, save                         :: ient = 0 ! number of entries in this subroutine
+!PUN    integer                               :: ivert    ! loop counter over vertices
+    !
+!PUN    type(verttype), dimension(:), pointer :: vert     ! datastructure for vertices with their attributes
 !
 !   Structure
 !
@@ -66,11 +70,21 @@ subroutine SwanPrepComp ( cross )
 !
     if (ltrace) call strace (ient,'SwanPrepComp')
     !
+!PUN    ! point to vertex object
+!PUN    !
+!PUN    vert => gridobject%vert_grid
+!PUN    !
     ! deallocate arrays kvertc and kvertf (we don't use them anymore!)
     !
     if (allocated(kvertc)) deallocate(kvertc)
     if (allocated(kvertf)) deallocate(kvertf)
     !
+!PUN    ! ghost vertices are regarded as vertices with boundary condition
+!PUN    !
+!PUN    do ivert = 1, nverts
+!PUN       if ( vmark(ivert) == 999 ) vert(ivert)%atti(VBC) = 1
+!PUN    enddo
+!PUN    !
     ! setup a vertex list
     !
     call SwanVertlist

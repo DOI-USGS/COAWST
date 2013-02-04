@@ -11,7 +11,7 @@ subroutine SwanInterpolateAc ( acintp, x, y, ac2, excpt )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -144,7 +144,6 @@ subroutine SwanInterpolateAc ( acintp, x, y, ac2, excpt )
     !
     dxp = xcugrd(ivert) - x
     dyp = ycugrd(ivert) - y
-    th = atan2(dyp,dxp)
     !
     ! if given point equals closest vertex, determine determine action density and return
     !
@@ -153,6 +152,8 @@ subroutine SwanInterpolateAc ( acintp, x, y, ac2, excpt )
        acintp = ac2(:,:,ivert)
        return
     endif
+    !
+    th = atan2(dyp,dxp)
     !
     cellfound = .false.
     !

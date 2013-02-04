@@ -13,7 +13,7 @@ subroutine SwanReadADCGrid
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,11 +34,13 @@ subroutine SwanReadADCGrid
 !   Authors
 !
 !   40.80: Marcel Zijlema
+!   40.95: Marcel Zijlema
 !   41.07: Casey Dietrich
 !
 !   Updates
 !
 !   40.80, December 2007: New subroutine
+!   40.95,     June 2008: parallelization of unSWAN using MESSENGER of ADCIRC
 !   41.07,   August 2009: use ADCIRC boundary info to mark all boundary vertices
 !
 !   Purpose
@@ -54,15 +56,18 @@ subroutine SwanReadADCGrid
 !
 !   Modules used
 !
+!PUN    use ocpcomm2
     use ocpcomm4
     use m_genarr
     use SwanGriddata
+!PUN    use SIZES
+!PUN    use MESSENGER
 !
     implicit none
 !
 !   Local variables
 !
-    character(7)            :: grdfil   ! file name (fort.14)
+    character(80)           :: grdfil   ! name of grid file including path
     integer, save           :: ient = 0 ! number of entries in this subroutine
     integer                 :: idum     ! dummy integer
     integer                 :: ii       ! auxiliary integer
@@ -94,6 +99,7 @@ subroutine SwanReadADCGrid
     ndsd   = 0
     iostat = 0
     grdfil = 'fort.14'
+!PUN    grdfil = trim(INPUTDIR)//DIRCH2//trim(grdfil)
     call for (ndsd, grdfil, 'OF', iostat)
     if (stpnow()) goto 900
     !
@@ -104,6 +110,7 @@ subroutine SwanReadADCGrid
     ! read number of elements and number of vertices
     !
     read(ndsd, *, end=950, err=910) ncells, nverts
+    istat = 0
     if(.not.allocated(xcugrd)) allocate (xcugrd(nverts), stat = istat)
     if ( istat == 0 ) then
        if(.not.allocated(ycugrd)) allocate (ycugrd(nverts), stat = istat)
@@ -148,8 +155,12 @@ subroutine SwanReadADCGrid
     read(ndsd, *, end=950, err=910) nopbc
     read(ndsd, *, end=950, err=910) idum
     do j = 1, nopbc
-       vm = j
-       read(ndsd, *, end=950, err=910) n2
+!PUN       if ( MNPROC==1 ) then
+          vm = j
+          read(ndsd, *, end=950, err=910) n2
+!PUN       else
+!PUN          read(ndsd, *, end=950, err=910) n2, vm
+!PUN       endif
        do k = 1, n2
            read(ndsd, *, end=950, err=910) ivert
            vmark(ivert) = vm
@@ -159,8 +170,12 @@ subroutine SwanReadADCGrid
     read(ndsd, *, end=950, err=910) n1
     read(ndsd, *, end=950, err=910) idum
     do j = 1, n1
-       vm = nopbc + j
-       read(ndsd, *, end=950, err=910) n2, itype
+!PUN       if ( MNPROC==1 ) then
+          vm = nopbc + j
+          read(ndsd, *, end=950, err=910) n2, itype
+!PUN       else
+!PUN          read(ndsd, *, end=950, err=910) n2, itype, vm
+!PUN       endif
        if ( itype /= 4 .and. itype /= 24 ) then
           do k = 1, n2
              read(ndsd, *, end=950, err=910) ivert
@@ -175,25 +190,19 @@ subroutine SwanReadADCGrid
        endif
     enddo
     !
-    ! read and store SWAN boundary markers, if appropriate
-    !
-    read(ndsd, *, end=920, err=910) n1
-    !
-    vmark = 0
-    !
-    read(ndsd, *, end=950, err=910) idum
-    do j = 1, n1
-       read(ndsd, *, end=950, err=910) n2, vm
-       do k = 1, n2
-          read(ndsd, *, end=950, err=910) ivert
-          vmark(ivert) = vm
-       enddo
-    enddo
-    !
     ! close file fort.14
     !
- 920 close(ndsd)
+    close(ndsd)
     !
+!PUN       ! ghost vertices are marked with +999
+!PUN       !
+!PUN       do j = 1, NEIGHPROC
+!PUN          do k = 1, NNODRECV(j)
+!PUN             ivert = IRECVLOC(k,j)
+!PUN             vmark(ivert) = 999
+!PUN          enddo
+!PUN       enddo
+!PUN       !
  900 return
     !
  910 call msgerr (4, 'error reading data from grid file fort.14' )

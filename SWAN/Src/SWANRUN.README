@@ -1,23 +1,22 @@
 Instructions for running a SWAN model
 -------------------------------------
 
-Windows 2000/NT/XP (single-core or dual-core)
----------------------------------------------
+Windows XP/Vista/7
+------------------
 
 *) Before running, first adapt the environment
    variable PATH by including the pathname of the
    directory where swan.exe can be found. This
    pathname can be specified through the category
-   System of Control Panel (on the Advanced tab,
-   click Environment Variables) or by adding it in
-   the AUTOEXEC.BAT file.
+   System of Control Panel, on the Advanced tab,
+   click Environment Variables.
 
 *) You may also need to add the directory path where
-   bin of MPICH is resided to PATH to have access
-   to the command mpirun.
+   bin of MPICH2 is resided to PATH to have access
+   to the command mpiexec.exe.
 
 *) Open a command prompt and change to the directory
-   where your model can be found.
+   where your application is resided.
 
 *) Execute the batch-file swanrun.bat as follows:
 
@@ -25,31 +24,18 @@ Windows 2000/NT/XP (single-core or dual-core)
 
    where SWAN-inputfile is the name of your inputfile
    without extension (it is assumed that the extension
-   is '.swn') and 'nprocs' indicates how many processes
+   is '.swn') and 'nprocs' indicates how many processors
    need to be launched for a parallel MPI run (do not
    type the brackets; they just indicate that nprocs
    is optional). By default, nprocs=1.
 
-   This script is also suited when no MPICH is available
+   This script is also suited when no MPICH2 is available
    (of course, nprocs must be 1).
 
-   This script is also suited for dual-core PC provided
+   This script is also suited for multi-core PC provided
    that SWAN source code with OpenMP directives is
    compiled. The parameter 'nprocs' must be set to 1.
 
-*) For a parallel MPI run, you may also need a machinefile
-   that contains the names of the nodes in your parallel
-   environment. Put one node per line in the file. You
-   can specify a number after the node name to indicate
-   how many processes to launch on the node. This is useful
-   e.g., for dual-processors. The run procedure will cycle
-   through this list until all the requested processes are
-   launched. Example file:
-
-   node1
-   node2 2
-   node3
-   node4 2
 
 
 UNIX or Linux
@@ -73,8 +59,8 @@ UNIX or Linux
    without extension (it is assumed that the extension
    is '.swn') and n is the number of processors.
    The parameter '-omp n' specifies a parallel run on n
-   processors using OpenMP. The parameter '-mpi n' specifies
-   a parallel run on n processors using MPI. The parameter
+   threads using OpenMP. The parameter '-mpi n' specifies
+   a parallel run on n cores using MPI. The parameter
    '-input' is obliged, whereas the parameters '-omp n' or
    '-mpi n' can be omitted (default: n=1).
 
@@ -91,9 +77,9 @@ UNIX or Linux
    environment. Put one node per line in the file. You
    can specify a number followed by a colon after the node
    name to indicate how many processes to launch on the
-   node. This is useful e.g., for dual-processors. The
-   run procedure will cycle through this list until all
-   the requested processes are launched. Example file:
+   node. This is useful e.g., for multi-core processors.
+   The run procedure will cycle through this list until
+   all the requested processes are launched. Example file:
 
    node1
    node2:2

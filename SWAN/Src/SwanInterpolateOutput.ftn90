@@ -11,7 +11,7 @@ subroutine SwanInterpolateOutput ( foutp, x, y, finp, mip, kvert, excval )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -128,7 +128,7 @@ subroutine SwanInterpolateOutput ( foutp, x, y, finp, mip, kvert, excval )
 !
     if (ltrace) call strace (ient,'SwanInterpolateOutput')
     !
-    if ( LCOMPGRD .and. mip == nverts ) then
+    if ( LCOMPGRD .and. mip == nvertsg ) then
        foutp = finp
        return
     endif
@@ -162,7 +162,6 @@ subroutine SwanInterpolateOutput ( foutp, x, y, finp, mip, kvert, excval )
        !
        dxp = xcugrd(ivert) - x(ip)
        dyp = ycugrd(ivert) - y(ip)
-       th = atan2(dyp,dxp)
        !
        ! if given point equals closest vertex, determine output quantity and go to next point
        !
@@ -170,6 +169,8 @@ subroutine SwanInterpolateOutput ( foutp, x, y, finp, mip, kvert, excval )
           foutp(ip) = finp(ivert)
           cycle pointloop
        endif
+       !
+       th = atan2(dyp,dxp)
        !
        cellfound = .false.
        !

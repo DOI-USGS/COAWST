@@ -15,7 +15,7 @@
 \end{center}
 \vfill
 \begin{center}
-{\Large\bf SWAN Cycle III version 40.81}
+{\Large\bf SWAN Cycle III version 40.91A}
 \end{center}
 
 \cleardoublepage
@@ -44,7 +44,7 @@ home page    &:& \hl{http://www.swan.tudelft.nl}
 \vfill
 
 \noindent
-Copyright (c) 1993-2010 Delft University of Technology.
+Copyright (c) 1993-2013 Delft University of Technology.
 \\[2ex]
 \noindent
 Permission is granted to copy, distribute and/or modify this document
@@ -71,7 +71,7 @@ This Implementation Manual is a part of the total material to implement the
 SWAN wave model on your computer system. The total material consists of:
 \begin{itemize}
     \item the SWAN source code,
-    \item the SWAN executable for Microsoft Windows,
+    \item the SWAN executable(s) for Microsoft Windows,
     \item the User Manual,
     \item this Implementation Manual,
     \item the Technical documentation,
@@ -80,10 +80,10 @@ SWAN wave model on your computer system. The total material consists of:
     \item some test cases.
 \end{itemize}
 All of the material can be found on the following SWAN web page\\
-\hl{http://www.swan.tudelft.nl}.
+\hl{http://www.swan.tudelft.nl} or \hl{http://swanmodel.sf.net}.
 \\[2ex]
 \noindent
-On the SWAN home page \hl{http://www.swan.tudelft.nl},
+On the SWAN home page,
 general information is given about the functionalities, physics and limitations
 of SWAN. Moreover, the modification history of SWAN is given. Finally,
 information on support, links to the related web pages and various
@@ -104,7 +104,7 @@ additional files, e.g. for testing SWAN. Please read the copyright in this
 manual and in the source code with respect to the terms of usage and distribution
 of SWAN. You are permitted to implement SWAN on your computer system.
 However, for any use of the SWAN source code in your environment, proper reference
-must be made to the origin of the software!
+must be made to the origin of the software.
 \\[2ex]
 \noindent
 Implementation involves the following steps:
@@ -122,14 +122,15 @@ that steps 3 and 4 can be done fully automatically.
 
 \section{The material}
 
-The downloaded file {\tt swan4081.tgz} contains the SWAN source code. You can unzip this
-file either with WinZip (in case of Windows) or with the command {\tt tar xzf} (in case of
+The downloaded file {\tt swan4091.tar.gz} contains the SWAN source code. You can unzip this
+file either with WinRAR (in case of Windows) or with the command {\tt tar xzf} (in case of
 UNIX or Linux). The SWAN source code consists of the following files:
 \begin{tabbing}
 xxxxxxxxxxxxxxxxxxxxxxxx\= \kill
 main program             \>:       swanmain.ftn \\
 pre-processing routines  \>:       swanpre1.ftn \\
                          \> $\,\,$ swanpre2.ftn \\
+                         \> $\,\,$ SwanBndStruc.ftn90 \\
 computational routines   \>:       swancom1.ftn \\
                          \> $\,\,$ swancom2.ftn \\
                          \> $\,\,$ swancom3.ftn \\
@@ -139,10 +140,6 @@ post-processing routines \>:       swanout1.ftn \\
                          \> $\,\,$ swanout2.ftn \\
 service routines         \>:       swanser.ftn \\
                          \> $\,\,$ SwanIntgratSpc.ftn90 \\
-\end{tabbing}
-\newpage
-\begin{tabbing}
-xxxxxxxxxxxxxxxxxxxxxxxx\= \kill
 routines for support     \> \\
 parallel MPI runs        \>:       swanparll.ftn \\
 routines for unstructured \> $\,\,$ \\
@@ -181,13 +178,20 @@ grids                     \>:       SwanReadGrid.ftn90 \\
                           \> $\,\,$ SwanFindObstacles.ftn90 \\
                           \> $\,\,$ SwanCrossObstacle.ftn90 \\
                           \> $\,\,$ SwanComputeForce.ftn90 \\
+routines for parallel,    \> $\,\,$ \\
+unstructured grids        \>:       SwanReadfort18.ftn90 \\
+                          \> $\,\,$ SwanSumOverNodes.ftn90 \\
+                          \> $\,\,$ SwanMinOverNodes.ftn90 \\
+                          \> $\,\,$ SwanMaxOverNodes.ftn90 \\
+                          \> $\,\,$ SwanPunCollect.ftn90 \\
+modules and subroutines   \> $\,\,$ \\
+for netCDF                \>:       nctablemd.ftn90 \\
+                          \> $\,\,$ agioncmd.ftn90 \\
+                          \> $\,\,$ swn\_outnc.ftn90 \\
+couplers                  \>:       couple2adcirc.ftn90 \\
 routines for installation \>:       ocpids.ftn \\
 command reading routines  \>:       ocpcre.ftn \\
 miscellaneous routines    \>:       ocpmix.ftn \\
-\end{tabbing}
-\newpage
-\begin{tabbing}
-xxxxxxxxxxxxxxxxxxxxxxxx\= \kill
 general modules           \>:       swmod1.ftn \\
                           \> $\,\,$ swmod2.ftn \\
 modules for XNL           \>:       m\_constants.ftn90 \\
@@ -220,7 +224,7 @@ installation procedures   \>:       INSTALL.README \\
                           \> $\,\,$ Makefile \\
                           \> $\,\,$ Makefile.latex \\
                           \> $\,\,$ macros.inc \\
-                          \> $\,\,$ getcmpl \\
+                          \> $\,\,$ which.cmd \\
                           \> $\,\,$ platform.pl \\
                           \> $\,\,$ switch.pl \\
                           \> $\,\,$ adjlfh.pl \\
@@ -232,9 +236,8 @@ MPI runs                  \>:       machinefile \\
 for concatenation of      \> $\,\,$ \\
 multiple hotfiles         \>:       swanhcat.ftn \\
                           \> $\,\,$ hcat.nml \\
+                          \> $\,\,$ HottifySWAN.ftn90 \\
 edit file                 \>:       swan.edt \\
-for conversion of spectra \>:       cvspec1d.for \\
-                          \> $\,\,$ cvspec2d.for \\
 Matlab scripts for        \> $\,\,$ \\
 unstructured grids        \>:       plotunswan.m \\
                           \> $\,\,$ plotgrid.m \\
@@ -268,8 +271,8 @@ features are published on the SWAN web page. These are provided by patch files t
 be downloaded from the web site. Typically, a patch can be installed over the top of the
 existing source code. Patches are indicated by a link to {\bf patchfile}. The names
 refer to the current version number supplemented with letter codes. The first will be
-coded 'A' (i.e. 40.81.A), the second will be coded 'B', the third will be coded 'C', etc.
-The version number in the resulting output files will be updated to 40.81ABC, indicating
+coded 'A' (i.e. 40.91.A), the second will be coded 'B', the third will be coded 'C', etc.
+The version number in the resulting output files will be updated to 40.91ABC, indicating
 the implemented patches.
 \\[2ex]
 \noindent
@@ -292,13 +295,13 @@ found. If you have trouble with patch, you can look at the patch file itself.
 Note to UNIX/Linux users:
 the downloaded patch files are MS-DOS ASCII files and contain carriage return (CR) characters.
 To convert these files to  UNIX format, use the command {\tt dos2unix}. Alternatively,
-execute {\tt cat 40.81.[A-C] | tr -d '$\backslash$r' | patch} that apply the patch files
-40.81.A to 40.81.C to the SWAN source code at once after which the conversion is
+execute {\tt cat 40.91.[A-C] | tr -d '$\backslash$r' | patch} that apply the patch files
+40.91.A to 40.91.C to the SWAN source code at once after which the conversion is
 carried out.
 \\[2ex]
 \noindent
 Note to Windows users: {\tt patch} is a UNIX command. Download the patch program
-from the SWAN web site, which is appropriate for Windows operating system (NT/2000/XP).
+from the SWAN web site, which is appropriate for Windows operating system (XP/Vista/7).
 
 \chap{Installation of SWAN on your computer} \label{ch:instal}
 
@@ -355,7 +358,7 @@ for a detailed description of the manual installation of SWAN.
 Note that for a successful installation, a Perl package must be available on your computer.
 In most cases, it is available for Linux and a UNIX operating system. Check it by typing
 {\tt perl -v}. Otherwise, you can download a free distribution for Windows called ActivePerl;
-see \hl{http://aspn.activestate.com/ASPN/Downloads/ActivePerl/Source}. The Perl version
+see \hl{http://www.activestate.com/activeperl/downloads}. The Perl version
 should be at least 5.0.0 or higher!
 \\[2ex]
 \noindent
@@ -378,18 +381,21 @@ available:
          on (symmetric) multiprocessors and PC's with dual core or quad core processors.
    \item If the user want to run SWAN on a relative large number of processors, a message passing
          model is a good alternative. It is based on independent processors which do not share
-         any memory but are connected via an interconnection network, such as Beowulf systems
-         (cluster of Linux PC's connected via fast Ethernet switches). The implementation is based on
+         any memory but are connected via an interconnection network
+         (e.g. cluster of Linux PC's connected via fast Ethernet switches). The implementation is based on
          the Message Passing Interface (MPI) standard (e.g., MPICH2 distribution, freely available
-         for several platforms, such as Linux and Windows NT/2000/XP, at
+         for several platforms, such as Linux and Windows, at
          \hl{http://www-unix.mcs.anl.gov/mpi/mpich}).
          The SWAN code contains a set of generic subroutines that call a
          number of MPI routines, meant for local data exchange, gathering data, global reductions,
          etc. This technique is beneficial for larger simulations only, such that the communication
          times are relatively small compared to the computing times.
+   \item For a proper installation of MPICH2 on Windows (XP/Vista/7), please consult Section \ref{sec:mpich2}.
+   \item Consult Chapter~\ref{ch:punswan} for parallel, unstructured mesh simulations on distributed
+         memory machines.
 \end{itemize}
 
-\section{Automatic and quick installation} \label{sec:quick}
+\section{Quick installation} \label{sec:quick}
 
 Carry out the following steps for setting up SWAN on your computer.
 \begin{enumerate}
@@ -423,27 +429,32 @@ IMPORTANT NOTES:
         \begin{itemize}
            \item To execute the above instructions, just open a command prompt.
            \item To build SWAN on Windows platforms by means of a Makefile you need a make program.
-                 However, such a program is not available in MS Windows environment. You can download
-                 {\tt Nmake} 1.5 for Win32 that is freely available
-                 (see http://support.microsoft.com/default.aspx?scid=kb;en-us;Q132084). Run the
-                 downloaded file ({\tt Nmake15.exe}) to extract it. Copy both the {\tt NMAKE.EXE} and
-                 the {\tt NMAKE.ERR} file to SWAN directory.
+                 However, such a program is usually not available in MS Windows environment. There are two
+                 alternatives to get a make program:
+                 \begin{enumerate}
+                    \item You can download the Visual Studio 2005/2008/2010 Express for free;
+                          \hl{http://www.microsoft.com/express}. This contains tools for building
+                          applications. It also contains a make program called {\tt NMAKE.EXE}.
+                    \item You can download {\tt Nmake} 1.5 for Win32 that is freely available\\
+                          (see \hl{http://support.microsoft.com/default.aspx?scid=kb;en-us;Q132084}).\\ Run the
+                          downloaded file ({\tt Nmake15.exe}) to extract it. Copy both the {\tt NMAKE.EXE} and
+                          the {\tt NMAKE.ERR} file to SWAN directory.
+                 \end{enumerate}
            \item This setup does support OpenMP for Windows dual core systems, if Intel Fortran
                  compiler is provided.
-           \item This installation currently supports MPICH for
-                 Windows NT/2000/XP (Professional); Win9x/ME are not supported.
+           \item This installation currently supports MPICH2 for
+                 Windows XP/Vista/7; older versions are probably not supported. See Section \ref{sec:mpich2} for further information.
            \item It is assumed that both the directories {\tt include} and
                  {\tt lib} are resided in\\
-                 {\tt C:$\backslash$PROGRAM FILES$\backslash$MPICH$\backslash$SDK}.
+                 {\tt C:$\backslash$PROGRAM FILES$\backslash$MPICH2}.
                  If not, the file {\tt macros.inc} should be adapted such
                  that they can be found by the Makefile.
         \end{itemize}
   \item One of the commands {\tt make ser}, {\tt make omp} and {\tt make mpi}
-        must be preceded by {\tt make config}.
+        must be preceded once by {\tt make config}.
   \item If desirable, you may clean up the generated object files and modules by
-        typing {\tt make~clean}. If you want to go back to the original state
-        with respect to the source code, i.e. removing everything that has been
-        generated by the Makefile, just type {\tt make~clobber}.
+        typing {\tt make~clean}. If you want to delete any stray files from a
+        previous compilation, just type {\tt make~clobber}.
   \item If you are unable to install SWAN using the Makefile and Perl scripts for
         whatever reason, see Section \ref{sec:manual} for instructions on manual
         installation.
@@ -460,8 +471,8 @@ indentifiable prefix in the first 3 or 4 columns of the subroutine. A Perl scrip
 {\tt switch.pl} is provided in the material that enables the user to quickly select the
 switches to be removed. This script can be used as follows:
 \begin{verbatim}
-perl switch.pl [-dos] [-unix] [-f95] [-mpi] [-cray] [-sgi]
-               [-cvis] [-timg] [-impi] [-cdate10|12|14] *.ftn
+perl switch.pl [-dos] [-unix] [-f95] [-mpi] [-pun] [-cray] [-sgi]
+               [-cvis] [-timg] [-matl4] [-impi] [-adcirc] [-netcdf] *.ftn
 \end{verbatim}
 where the options are all optionally. The meaning of these options are as follows.
 \begin{itemize}
@@ -482,6 +493,9 @@ where the options are all optionally. The meaning of these options are as follow
   \item[{\tt -mpi}]
   For the proper use of MPI, you must remove the switch !MPI at several places in the file
   {\tt swanparll.ftn}, {\tt swancom1.ftn} and {\tt swmod1.ftn}.
+  \item[{\tt -pun}]
+  To enable to do parallel, unstructured mesh simulation, the switch !PUN must be removed
+  at several places in different files.
   \item[{\tt -cray}, {\tt -sgi}]
   If you use a Cray or SGI Fortran 90 compiler, the subroutines {\tt OCPINI} (in {\tt ocpids.ftn})
   and {\tt FOR} (in {\tt ocpmix.ftn}) should be adapted by removing the switch !/Cray or !/SGI since,
@@ -498,18 +512,23 @@ where the options are all optionally. The meaning of these options are as follow
   If the user want to print the timings (both wall-clock and CPU times in seconds) of different
   processes within SWAN then remove the switch !TIMG. Otherwise, no timings will be keeped up
   and subsequently printed in the {\tt PRINT} file.
+  \item[{\tt -matl4}]
+  By default, the created binary Matlab files are of Level 5 MAT-File format and are thus
+  compatible with MATLAB version 5 and up. In this case the switch !MatL5 must be removed.
+  However, some machines do not support a 1-byte unit for the record length (e.g. IBM Power6).
+  At those computers, the binary Matlab files must be formatted of Level 4. In this case the
+  switch !MatL4 must be removed while the switch !MatL5 should not be removed. Level 4 MAT-files
+  are compatible with MATLAB versions 4 and earlier. However, they can be read with the later
+  versions of MATLAB.
   \item[{\tt -impi}]
   Some Fortran compilers do not support {\tt USE MPI} statement and therefore,
   the module {\tt MPI} in {\tt swmod1.ftn} must be included by removing the switch !/impi.
-  \item[{\tt -cdate10}]
-  The length of the string CDATE indicating the date-time in the WAM boundary condition file is 10.
-  The format of CDATE is for instance 8705301530 (i.e. 30 May 1987, 15:30 hrs).
-  \item[{\tt -cdate12}]
-  The length of the string CDATE indicating the date-time in the WAM boundary condition file is 12.
-  The format of CDATE is for instance 870530153000 (i.e. 30 May 1987, 15:30:00 hrs).
-  \item[{\tt -cdate14}]
-  The length of the string CDATE indicating the date-time in the WAM boundary condition file is 14.
-  The format of CDATE is for instance 19870530153000 (i.e. 30 May 1987, 15:30:00 hrs).
+  \item[{\tt -adcirc}]
+  To enable to do coupled ADCIRC+SWAN simulation, the switch !ADC must be removed at several places
+  in different files. However, for a standalone SWAN simulation, the switch !NADC must be
+  removed while the switch !ADC should not be removed.
+  \item[{\tt -netcdf}]
+  For the proper use of netCDF, you must remove the switch !NCF at several places in different files.
 \end{itemize}
 
 \noindent
@@ -528,7 +547,7 @@ ready for compilation. All source code is written in Fortran 90 so you must have
 Fortran 90 compiler in order to compile SWAN. The source code cannot be compiled with a Fortran 77
 compiler. If you intended to use MPI for parallel runs, you must use the command {\tt mpif90} instead
 of the original compiler command or using the Integrated Development Environment e.g., for Visual
-Fortran (see Installation and User's Guide for MPICH).
+Fortran (see Installation and User's Guide for MPICH2).
 \\[2ex]
 \noindent
 The SWAN source code complies with the ANSI Fortran 90 standard, except for a few cases, where
@@ -544,16 +563,16 @@ is 8 bytes. When a compiler allocates 8 bytes for a {\scriptsize REAL} and 4 byt
 \\[2ex]
 \noindent
 Furthermore, SWAN can generate binary MATLAB files on request, which are unformatted. Some compilers,
-e.g. Compaq Visual Fortran and Intel Fortran version 9.x, measured record length in 4-byte or longword units and
+e.g. Compaq Visual Fortran and Intel Fortran version 9.x (or higher), measured record length in 4-byte or longword units and
 as a consequence, these unformatted files cannot be loaded in MATLAB. Hence, in such as case a
 compiler option is needed to request 1-byte units, e.g. for Compaq Visual Fortran this is
-{\tt /assume:byterecl} and for Intel Fortran version 9.x this is {\tt -assume byterecl}.
+{\tt /assume:byterecl} and for Intel Fortran version 9.x (or higher) this is {\tt -assume byterecl}.
 \\[2ex]
 \noindent
 The modules (in files {\tt swmod1.ftn}, {\tt swmod2.ftn}, {\tt m\_constants.ftn90},
 {\tt m\_fileio.ftn90}, {\tt serv\_xnl4v5.ftn90}, {\tt mod\_xnl4v5.ftn90},
 {\tt SwanGriddata.ftn90}, {\tt SwanGridobjects.ftn90} and {\tt SwanCompdata.ftn90}) must be compiled first.
-Several subroutines use the modules. These subroutines need the compiled versions of the modules before they can be compiled.
+Several subroutines use these modules. These subroutines need the compiled versions of the modules before they can be compiled.
 Linking should be done without any options nor using shared libraries (e.g. math or NAG). It is
 recommended to rename the executable to {\tt swan.exe} after linking.
 \\[2ex]
@@ -565,7 +584,49 @@ mpif90 swmod1.f swmod2.f m_constants.f90 m_fileio.f90 serv_xnl4v5.f90
        ocp*.f swan*.f Swan*.f90 -o swan.exe
 \end{verbatim}
 
-\newpage
+\section{Building with netCDF support} \label{sec:netcdf}
+
+SWAN 40.91A contains extensions that provide netCDF output of spectra and maps of several wave parameters.
+Carry out the following steps.
+\begin{enumerate}
+  \item Make sure that netCDF 4.1.x is compiled and available on your system.
+        For details, consult \hl{http://www.unidata.ucar.edu/software/netcdf/docs/netcdf-install}.
+        The Fortran interface must have been enabled when netCDF was built.
+  \item Define the variable {\tt NETCDFROOT} in file {\tt macros.inc} to point to the netCDF root directory
+        (e.g. {\tt NETCDFROOT=/usr/local/netcdf-4.1.3} in case of Linux or \\
+        {\tt NETCDFROOT=C:$\backslash$PROGRAM FILES$\backslash$netcdf}
+         in case of Windows). This enables to compile netCDF I/O into SWAN.
+  \item Build SWAN as usual (e.g. {\tt make mpi}); see Section~\ref{sec:quick}.
+\end{enumerate}
+%Note to Windows users. Download the file \\
+%\hl{ftp://ftp.unidata.ucar.edu/pub/netcdf/contrib/win32/netcdf-4.1.1-win32-bin.zip} which contains 32-bit
+%binaries of netCDF 4.1.1 (including Fortran libraries). It is ported to Intel Fortran.
+
+\section{Installation of MPICH2 on Windows XP/Vista/7} \label{sec:mpich2}
+
+SWAN can be built with support for MPI. It is assumed that MPI has been installed already in the Linux environment. However, this is probably not the
+case for Windows. This section instructs you how to install MPI in the Windows environment. It is assumed that your OS is either Windows XP, Vista or
+7.
+
+\begin{itemize}
+   \item Install MPICH2 on your machine using the installer downloaded from the downloads page
+         \hl{http://www.mcs.anl.gov/research/projects/mpich2/downloads/index.php?s=downloads}.
+   \item During installation select MPICH2 to be installed for {\tt Everyone}.
+   \item Also make sure that you keep the default setting for passphrase (usually {\tt behappy}) during the installation.
+   \item After installing MPICH2 successfully, you may add rules to your firewall to allow the programs {\tt mpiexec.exe} and
+         {\tt smpd.exe} to communicate through firewall. This process depends on your firewall.
+   \item You need to add the {\tt bin} folder of MPICH2 (usually {\tt C:$\backslash$PROGRAM FILES$\backslash$MPICH2$\backslash$bin}) to your {\small \tt PATH}.
+   \item Next, open an admin command prompt by right-clicking on the command prompt icon and selecting {\tt run as administrator}.
+         In the command prompt type the following commands in sequence:\\
+         {\tt smpd -install}\\
+         {\tt mpiexec -remove}\\
+         {\tt mpiexec -register}\\
+         {\tt mpiexec -validate} (it should return {\small \tt SUCCESS})\\
+         {\tt smpd -status} (it should return 'smpd running on {\tt <hostname>}')\\
+         If the last two commands are successfully, then you are ready to run SWAN in parallel. See Chapter \ref{ch:usage}.
+\end{itemize}
+Note that when you register, you should indicate your username and password as a user. Moreover, if your machine is not part of a domain, do not specify any domain name.
+
 \section{Make SWAN documentation} \label{sec:makedoc}
 
 SWAN comes with 4 detailed documents which are provided as downloadable PDF files as well as browsable web pages:
@@ -690,14 +751,14 @@ run procedure carries out the following actions:
         with extension {\tt prt}.
 \end{itemize}
 On other operating system a similar procedure can be followed. For parallel MPI runs, the
-program {\tt mpirun} is needed and is provided in the MPICH distribution.
+program {\tt mpirun} or {\tt mpiexec} is needed and is provided in the MPICH2 distribution.
 \\[2ex]
 \noindent
 Before calling the run procedure, the environment variable {\small \tt PATH} need to be adapted by
 including the pathname of the directory where {\tt swan.exe} can be found. In case of Windows,
 this pathname can be specified through the category {\it System} of {\it Control Panel} (on the
-{\it Advanced} tab, click {\it Environment Variables}) or by adding it in the {\tt AUTOEXEC.BAT}
-file. In case of UNIX or Linux running the bash shell (sh or ksh), the environment variable
+{\it Advanced} tab, click {\it Environment Variables}).
+In case of UNIX or Linux running the bash shell (sh or ksh), the environment variable
 {\small \tt PATH} may be changed as follows:
 \begin{verbatim}
 export PATH=${PATH}:/usr/local/swan
@@ -709,8 +770,8 @@ setenv PATH ${PATH}:/usr/local/swan
 \end{verbatim}
 
 \noindent
-If appropriate, you also need to add the directory path where the {\tt bin} directory of MPICH
-is resided to {\small \tt PATH} to have access to the command {\tt mpirun}.
+If appropriate, you also need to add the directory path where the {\tt bin} directory of MPICH2
+is resided to {\small \tt PATH} to have access to the command {\tt mpiexec}.
 \\[2ex]
 \noindent
 You may also specify the number of threads to be used during execution of the multithreaded
@@ -810,15 +871,108 @@ In the latter case, the number of processors must be equal to the number of gene
 appropriate, the single hotfile can be created from a set of multiple hotfiles using the program
 {\tt hcat.exe} as available from SWAN version 40.51A. This executable is generated from the Fortran
 program {\tt swanhcat.ftn}. A self-contained input file {\tt hcat.nml} is provided. This file contains,
-e.g. the (basis) name of the hotfile. To concatenate multiple hotfiles into single hotfile just execute
+e.g. the (basis) name of the hotfile. To concatenate the multiple hotfiles into a single hotfile just execute
 {\tt hcat.exe}.
+
+\chap{Compiling and running unstructured mesh SWAN in parallel} \label{ch:punswan}
+
+In order to efficiently carry out high-resolution simulations with the unstructured mesh version of SWAN, a parallel code is build
+using message passing paradigm and tested on a commodity computer cluster. In parallelizing unstructured mesh version of SWAN,
+we employ the same paradigm as applied in the circulation model ADCIRC (\hl{http://www.adcirc.org}) and so the parallel version of the
+unstructured mesh SWAN model uses the same domain decomposition and localized communication as the parallel version of ADCIRC.
+For a proper use, version {\bf 50} of ADCIRC must be employed.
+\\[2ex]
+For details on the implementation and use of the coupled ADCIRC $+$ SWAN model, go to
+\hl{http://www.caseydietrich.com/swanadcirc/}.
+\\[2ex]
+It is assumed that the unstructured mesh is stored in the file {\tt fort.14} and the associated model domain information
+is stored in {\tt fort.15} and that these files are yet available.
+
+\section{Code compilation}
+
+The parallel version of the unstructured SWAN model utilizes the parallel infrastructure from parallel ADCIRC.
+Specifically, it needs the {\tt MKDIR}, {\tt SIZES}, {\tt GLOBAL} and {\tt MESSENGER} object files.
+So those need to be compiled before the parallel, unstructured mesh SWAN model is compiled. Also, for mesh partition
+a program called {\tt adcprep} need to be compiled as well. These compilations are performed typically by navigating to
+the directory {\tt work} and typing
+\begin{verbatim}
+make adcprep padcirc
+\end{verbatim}
+Make sure that the {\tt -DADCSWAN} flag has been added to the {\tt DPRE} line in the {\tt cmplrflags.mk} file.
+\\[2ex]
+\noindent
+To compile the parallel version of the unstructured mesh SWAN model, you probably first need to remove the files that were created during
+the compilation of the commonly used SWAN model. You can do this by typing
+\begin{verbatim}
+make clobber
+\end{verbatim}
+to remove the stray files. If necessary, type
+\begin{verbatim}
+make config
+\end{verbatim}
+to have SWAN attempt to create a file {\tt macros.inc} with compiler flags for your system.
+Be sure to complete the line
+\begin{verbatim}
+O_DIR = ../work/odir4/
+\end{verbatim}
+where the abovementioned object files are resided. Then type
+\begin{verbatim}
+make punswan
+\end{verbatim}
+to make the parallel, unstructured mesh version of SWAN. It will follow the SWAN convention of assigning the name {\tt swan.exe} to the executable.
+
+\section{Running the model}
+
+The main difference between running commonly used SWAN in parallel and running the unstructured mesh version of SWAN in parallel on
+a multi-core cluster is the need to explicitly decompose the unstructured mesh and input files, e.g. {\tt fort.14} and {\tt fort.15},
+into smaller pieces, so that each piece can run on its own core on the cluster.
+The program {\tt adcprep} is used to perform the decomposition. The actual mesh partitioning is done by
+the well-known METIS package (\hl{http://glaros.dtc.umn.edu/gkhome/views/metis}).
+\\[2ex]
+\noindent
+In order to break up the original input files (which describe the full domain) into smaller pieces (called subdomains), go to the directory
+where the input files are located and execute {\tt adcprep}.
+You need to specify the number of cores that you plan to use for the simulation. The program will decompose your input files into that number of subdomains
+and copy each of them into the corresponding local PE sub-directories. Finally, it will copy the SWAN command file into the local PE sub-directories.
+If you decide later that you want to run on more (or fewer) cores, you must perform this step again.
+\\[2ex]
+\noindent
+So, more specifically, run {\tt adcprep} and indicate the number of processors. First, you need to do mesh partition using METIS by selecting
+\begin{verbatim}
+1. partmesh
+\end{verbatim}
+Next, rerun {\tt adcprep} and continue with full pre-processing by selecting
+\begin{verbatim}
+2. prepall
+\end{verbatim}
+or
+\begin{verbatim}
+3. prepspec
+\end{verbatim}
+and specify the necessary ADCIRC files ({\tt fort.14} and {\tt fort.15}; you may skip the file {\tt fort.19}).
+Be sure that the initialisation file {\tt swaninit} has been created before running {\tt adcprep}. You may adapt this initialisation file by renaming
+{\tt INPUT} to your own SWAN command file. Otherwise, you may copy your command file to {\tt INPUT}.
+\\[2ex]
+\noindent
+After the mesh and input files have been prepared with {\tt adcprep}, the actual SWAN calculation is performed using {\tt swan.exe}.
+This program performs the calculation on each subdomain and uses MPI to provide ongoing communication between the subdomains.
+The command required for actually starting the SWAN job is highly dependent on the cluster software and queueing system. Either way,
+use the new executable to run this model in much the same way you would run the parallel SWAN; see Chapter~\ref{ch:usage}.
+\\[2ex]
+\noindent
+After the simulation is finished the output data will be automatically merged. With respect to the generation of hotfiles, it is usually
+done in different PE sub-directories. So, in principle, in case of restarting, the same number of processors must be employed. Instead,
+a single hotfile can be created from the existing local PE hotfiles using the program {\tt unhcat.exe}, as available from SWAN version 40.91.
+This executable is generated from the Fortran program {\tt HottifySWAN.ftn90}. To concatenate the multiple hotfiles into a single hotfile
+({\it globalization}) just execute {\tt unhcat.exe}. With this program, it is also possible to create a set of local PE hotfiles from an
+existing global hotfile ({\it localization}) over a different number of processors.
 
 \chap{Testing the system} \label{ch:test}
 
 The SWAN system consists of one executable file ({\tt swan.exe}), a command file ({\tt swan.edt}) and
 a run procedure ({\tt swanrun.bat} or {\tt swanrun}).
 Depending on your system, you may use 32-bit or 64-bit executable.
-These executables for Windows NT/2000/XP can be obtained from the SWAN web site.
+These executables for Windows XP/Vista/7 can be obtained from the SWAN web site.
 The input and output to a number of test problems
 is provided on the SWAN web page. The files with extension {\tt swn} are the command files for these
 tests; the files with extension {\tt bot} are the bottom files for these tests, etc. This input can be

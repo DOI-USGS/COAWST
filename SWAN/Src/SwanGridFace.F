@@ -11,7 +11,7 @@ subroutine SwanGridFace ( nfaces, ncells, nverts, xcugrd, ycugrd, kvertf )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -49,6 +49,7 @@ subroutine SwanGridFace ( nfaces, ncells, nverts, xcugrd, ycugrd, kvertf )
 !
     use ocpcomm4
     use SwanGridobjects
+!ADC    USE SIZES, ONLY: MYPROC
 !
     implicit none
 !
@@ -166,6 +167,7 @@ subroutine SwanGridFace ( nfaces, ncells, nverts, xcugrd, ycugrd, kvertf )
        !
        k = cntv1(v1) +1
        if ( k > 10 ) then
+!ADC          PRINT *, "SWAN does not like local vertex ",v1," on core ",MYPROC
           call msgerr ( 4, 'SwanGridFace: more than 10 faces around vertex ' )
           return
        endif
@@ -174,6 +176,7 @@ subroutine SwanGridFace ( nfaces, ncells, nverts, xcugrd, ycugrd, kvertf )
        !
        k = cntv2(v2) +1
        if ( k > 10 ) then
+!ADC          PRINT *, "SWAN does not like local vertex ",v2," on core ",MYPROC
           call msgerr ( 4, 'SwanGridFace: more than 10 faces around vertex ' )
           return
        endif
@@ -245,6 +248,7 @@ subroutine SwanGridFace ( nfaces, ncells, nverts, xcugrd, ycugrd, kvertf )
              if ( face(iface)%atti(FACEC1) == 0 ) then
                 face(iface)%atti(FACEC1) = icell
              else
+!ADC                PRINT *, "SWAN does not like local element ",icell," on core ",MYPROC
                 call msgerr ( 4, 'SwanGridFace: not all cells have counterclockwise order of vertices ' )
                 return
              endif
@@ -252,6 +256,7 @@ subroutine SwanGridFace ( nfaces, ncells, nverts, xcugrd, ycugrd, kvertf )
              if ( face(iface)%atti(FACEC2) == 0 ) then
                 face(iface)%atti(FACEC2) = icell
              else
+!ADC                PRINT *, "SWAN does not like local element ",icell," on core ",MYPROC
                 call msgerr ( 4, 'SwanGridFace: not all cells have counterclockwise order of vertices ' )
                 return
              endif

@@ -11,7 +11,7 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -80,10 +80,6 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
     integer                               :: is       ! loop counter over frequency bins
     integer                               :: ivert    ! loop counter over vertices
     integer                               :: j        ! loop counter
-    integer                               :: npacc    ! number of vertices in which required accuracy has been reached
-    integer                               :: npacct   ! npacc counter for calling thread
-    integer                               :: nwetp    ! total number of active vertices
-    integer                               :: nwetpt   ! nwetp counter for calling thread
     !
     real                                  :: curvah   ! required accuracy with respect to curvature in wave height
     real                                  :: curvat   ! required accuracy with respect to curvature in mean period
@@ -95,6 +91,10 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
     real                                  :: hsrel    ! required accuracy with respect to relative error in wave height
     real                                  :: m0       ! moment of zeroth order
     real                                  :: m1       ! moment of first order
+    real                                  :: npacc    ! number of vertices in which required accuracy has been reached
+    real                                  :: npacct   ! npacc counter for calling thread
+    real                                  :: nwetp    ! total number of active vertices
+    real                                  :: nwetpt   ! nwetp counter for calling thread
     real                                  :: tmabs    ! absolute difference in mean period between last 2 iterations
     real                                  :: tmcurv   ! curvature of iteration curve of mean period
     real                                  :: tmdif0   ! value of tmdifc at previous iteration level
@@ -123,12 +123,12 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
     vert => gridobject%vert_grid
     !
     !$omp single
-    npacc = 0
-    nwetp = 0
+    npacc = 0.
+    nwetp = 0.
     !$omp end single
     !
-    npacct = 0
-    nwetpt = 0
+    npacct = 0.
+    nwetpt = 0.
     !
     deltm = 0.
     delhs = 0.
@@ -153,7 +153,7 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
           !
           ! count active points
           !
-          nwetpt = nwetpt + 1
+          nwetpt = nwetpt + 1.
           !
           ! store wave height and mean period of previous iteration levels
           !
@@ -220,7 +220,7 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
           ! count vertices where wave height and period have reached required accuracies
           !
           if ( (hscurv <= curvah .and. hsabs <= max(hsrel,PNUMS(2)) ) .and. &
-               (tmcurv <= curvat .and. tmabs <= max(tmrel,PNUMS(3)) ) ) npacct = npacct + 1
+               (tmcurv <= curvat .and. tmabs <= max(tmrel,PNUMS(3)) ) ) npacct = npacct + 1.
           !
           if (tstfl) then
              if (lhead) write(PRINTF,11)
@@ -244,11 +244,16 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
     !$omp atomic
     nwetp = nwetp + nwetpt
     !
+!PUN    ! perform global reduction in parallel run
+!PUN    !
+!PUN    call SwanSumOverNodes ( nwetp )
+!PUN    call SwanSumOverNodes ( npacc )
+!PUN    !
     ! compute percentage of active vertices where required accuracy has been reached
     !
     !$omp barrier
     !$omp single
-    accur = real(npacc)*100./real(nwetp)
+    accur = npacc*100./nwetp
     !$omp end single
     !
  11 format(13x,'dHabs          ','dHrel          ','Curvature H    ','dTabs          ','dTrel          ','Curvature T    ')

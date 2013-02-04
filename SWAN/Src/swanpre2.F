@@ -41,7 +41,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -222,7 +222,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1116,6 +1116,7 @@
 !               --- read first line to determine number of vertices
 !
                 READ(NDS, *, END=950, ERR=910) NVTX
+                ISTAT = 0
                 IF(.NOT.ALLOCATED(XG)) ALLOCATE(XG(NVTX), STAT = ISTAT)
                 IF ( ISTAT == 0 ) THEN
                    IF(.NOT.ALLOCATED(YG)) ALLOCATE(YG(NVTX), STAT=ISTAT)
@@ -1151,6 +1152,7 @@
 !               --- read first line to determine number of vertices
 !
                 READ(NDS, *, END=950, ERR=910) NVTX, NDIM, NATTR, NBMARK
+                ISTAT = 0
                 IF(.NOT.ALLOCATED(XG)) ALLOCATE(XG(NVTX), STAT = ISTAT)
                 IF ( ISTAT == 0 ) THEN
                    IF(.NOT.ALLOCATED(YG)) ALLOCATE(YG(NVTX), STAT=ISTAT)
@@ -1358,6 +1360,7 @@
       USE SWCOMM4                                                         40.41
       USE OUTP_DATA                                                       40.13
       USE M_PARALL                                                        40.31
+!PUN      USE SIZES                                                           40.95
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -1371,7 +1374,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1492,7 +1495,7 @@
 #else
 !             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP/         &
 #endif
-!             GENE/GENW/REDI/REDQ/REDT/PROPA/PROPX/PROPT/PROPS/RADS >        &
+!             GENE/GENW/REDI/REDQ/REDT/PROPA/PROPX/PROPT/PROPS/RADS|LWAVP >  &
 !             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
 !   BLO   block type output
@@ -1556,12 +1559,15 @@
                WRITE(FILENM(ILPOS+1:ILPOS+4),33) INODE                    40.30
   33           FORMAT('-',I3.3)                                           40.30
             END IF                                                        40.30
+!PUN            FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)                 40.95
           ENDIF
           CALL INKEYW ('STA', ' ')
           IF (KEYWIS('LAY')) THEN
             CALL ININTG ('IDLA', IDLAO, 'REQ', 0)
             CALL INKEYW ('REQ', ' ')
-            IF (IDLAO.NE.1 .AND. IDLAO.NE.3 .AND. IDLAO.NE.4)
+            IF (IDLAO.NE.1 .AND. IDLAO.NE.3 .AND. IDLAO.NE.4
+     &          .AND. IDLAO.NE.5
+     &         )
      &        CALL MSGERR (2, 'Illegal value for IDLA')
           ENDIF
           ORQTMP%OQR(1) = -1.                                             40.31
@@ -1601,11 +1607,6 @@
                 IF (IVTYPE.EQ.50 .AND. JPBOT.LE.1) THEN                   40.65
                    MCMVAR = MCMVAR+1                                      40.65
                    JPBOT  = MCMVAR                                        40.65
-                   ALOCMP = .TRUE.                                        40.97
-                ENDIF                                                     40.65
-                IF (IVTYPE.EQ.52 .AND. JBOTLV.LE.1) THEN                  40.65
-                   MCMVAR = MCMVAR+1                                      40.65
-                   JBOTLV = MCMVAR                                        40.65
                    ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.65
                 IF (IVTYPE.EQ.54 .AND. JDSXB.LE.1) THEN                   40.65
@@ -1741,7 +1742,7 @@
 #else
 !             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP/         &
 #endif
-!             GENE/GENW/REDI/REDQ/REDT/PROPA/PROPX/PROPT/PROPS/RADS >        &
+!             GENE/GENW/REDI/REDQ/REDT/PROPA/PROPX/PROPT/PROPS/RADS|LWAVP >  &
 !             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
 !   TABLE   output in the form of a table
@@ -1788,6 +1789,7 @@
              ILPOS = INDEX ( FILENM, ' ' )-1                              40.30
              WRITE(FILENM(ILPOS+1:ILPOS+4),33) INODE                      40.30
           END IF                                                          40.30
+!PUN          FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)                   40.95
         ELSE
           NREF = PRINTF
         ENDIF
@@ -1820,11 +1822,6 @@
             IF (IVTYPE.EQ.50 .AND. JPBOT.LE.1) THEN                       40.65
                MCMVAR = MCMVAR+1                                          40.65
                JPBOT  = MCMVAR                                            40.65
-               ALOCMP = .TRUE.                                            40.97
-            ENDIF                                                         40.65
-            IF (IVTYPE.EQ.52 .AND. JBOTLV.LE.1) THEN                      40.65
-               MCMVAR = MCMVAR+1                                          40.65
-               JBOTLV = MCMVAR                                            40.65
                ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.65
             IF (IVTYPE.EQ.54 .AND. JDSXB.LE.1) THEN                       40.65
@@ -1961,7 +1958,8 @@
 !
 !   --------------------------------------------------------------------------
 !   SPECout 'sname'  SPEC1D/SPEC2D  ABS/REL   'fname'                       &
-!             (OUTPUT [tbegspc] [deltspc] SEC/MIN/HR/DAY)
+!                    (MONth  ESCAle       (NOT documented)     )            &
+!                    (OUTPUT [tbegspc] [deltspc] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
 !   SPEC   output of spectra
 
@@ -2005,10 +2003,25 @@
            ILPOS = INDEX ( FILENM, ' ' )-1                                40.30
            WRITE(FILENM(ILPOS+1:ILPOS+4),33) INODE                        40.30
         END IF                                                            40.30
+!PUN        FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)                     40.95
         ORQTMP%PSNAME = PSNAME                                            40.31
         ORQTMP%OQI(1) = NREF                                              40.31
         ORQTMP%OQI(2) = NREOQ                                             40.31
         OUTP_FILES(NREOQ) = FILENM                                        40.31 40.13
+!
+        CALL INKEYW ('STA', ' ')                                          41.40
+!       declare monthly netCDF file                                       41.40
+!       store in oqi(4) differ from idla of block!                        41.40
+        ORQTMP%OQI(4) = 0                                                 41.40
+        IF (KEYWIS('MON')) THEN                                           41.40
+           ORQTMP%OQI(4) = 1                                              41.40
+        ELSE                                                              41.40
+           ORQTMP%OQI(4) = 0                                              41.40
+        ENDIF                                                             41.40
+        CALL INKEYW ('STA', ' ')                                          41.40
+        IF (KEYWIS('ESCA')) THEN                                          41.40
+           ORQTMP%OQI(4) = ORQTMP%OQI(4) + 2                              41.40
+        ENDIF                                                             41.40
 !
         NVAR = 0                                                          40.31
         ORQTMP%OQI(3) = NVAR                                              40.31
@@ -2093,6 +2106,7 @@
              ILPOS = INDEX ( FILENM, ' ' )-1                              40.30
              WRITE(FILENM(ILPOS+1:ILPOS+4),33) INODE                      40.30
           END IF                                                          40.30
+!PUN          FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)                   40.95
           ORQTMP%PSNAME = PSNAME                                          40.31
           ORQTMP%OQI(1) = NREF                                            40.31
           ORQTMP%OQI(2) = NREOQ                                           40.31
@@ -2160,7 +2174,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2334,7 +2348,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2459,7 +2473,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2595,7 +2609,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2627,6 +2641,7 @@
 !     40.41: Marcel Zijlema
 !     40.80: Marcel Zijlema
 !     40.92: Marcel Zijlema
+!     41.14: Nico Booij
 !
 !  1. Updates
 !
@@ -2647,6 +2662,7 @@
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.80, Jun. 07: extension to unstructured grids
 !     40.92, Jun. 08: changes with respect to boundary polygons
+!     41.14, Jul. 10: call SwanBndStruc added
 !
 !  2. Purpose
 !
@@ -2803,6 +2819,12 @@
 !        in ascending order
 !
          CALL SwanBpntlist                                                40.80
+         IF (STPNOW()) RETURN                                             41.39
+      ELSE                                                                41.14
+!
+!        generate output curves BOUNDARY and BOUND_** for structured grids
+!
+         CALL SwanBndStruc ( XCGRID, YCGRID )                             41.14
       ENDIF                                                               40.80
 !
       CALL INKEYW ('REQ',' ')
@@ -2869,7 +2891,7 @@
 !                                    | UNFormatted <          > |
 !                                    |              | WKstat |  |
 !                                    |                          |
-!       BOUNdnest2  WAMNest 'fname' <                            > [xgc] [ygc]
+!       BOUNdnest2  WAMNest 'fname' <                            > [xgc] [ygc] [lwdate]
 !                                    |                          |
 !                                    | FREE                     |
 !
@@ -3195,7 +3217,10 @@
                    ENDIF
                  ENDDO
                ELSE
-                 CALL MSGERR (2, 'Boundary point outside comp. grid')
+                 MSGSTR =''                                               41.14
+                 write (MSGSTR, 117) IX2-1, IY2-1                         41.14
+ 117             format ('(',2I5, ') is outside computational grid')      41.14
+                 CALL MSGERR (2, MSGSTR)
                ENDIF
                IY1 = IY2
             ELSE                                                          40.80
@@ -3926,7 +3951,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4431,7 +4456,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4603,7 +4628,7 @@
 
       REAL      XP, YP, XP1, YP1, XP2, YP2, RR, RX, RY, RL2,
      &          XANG, XFRE, THD, FR1, CO, XBOU, XDELC,
-     &          XLON, XLAT, XDATE, EMEAN, THQ, FMEAN, USNEW, THWNEW
+     &          XLON, XLAT, XDATE, EMEAN, THQ, FMEAN
 !     XP        problem coordinate of a comp. grid point on the boundary
 !     YP        problem coordinate of a comp. grid point on the boundary
 !     XP1       problem coordinate of a boundary location
@@ -4628,8 +4653,6 @@
 
 
       CHARACTER (LEN=4)  :: BTYPE     ! type of boundary cond.
-!CDAT10      CHARACTER (LEN=10) :: CDATE     ! date-time
-!CDAT12      CHARACTER (LEN=12) :: CDATE     ! date-time
       CHARACTER (LEN=14) :: CDATE     ! date-time
       CHARACTER (LEN=80) :: HEDLIN    ! heading line
 
@@ -4687,6 +4710,7 @@
 !     if not given first point in data file is assumed
       CALL INDBLE('XGC',XLON0,'STA',-999.D0)                              40.01
       CALL INDBLE('YGC',XLAT0,'STA',-999.D0)                              40.01
+      CALL ININTG('LWDATE',LWDATE,'STA',12)                               41.13
 !
 !     start reading from the data file
 !
@@ -4756,7 +4780,7 @@
         IF (BTYPE.EQ.'WAMF') THEN
 !         read boundary point coordinates from file
           READ(NDSD,*) XLON, XLAT, DDATE, EMEAN,
-     &               THQ, FMEAN, USNEW, THWNEW
+     &               THQ, FMEAN
           IF (IBOUNC.EQ.1 .AND. ITEST.GE.80) WRITE (PRTEST, *)            40.13
      &          ' WAMNEST starting time ', DDATE                          40.13
 !         read spectral densities but ignore them for the moment
@@ -4766,16 +4790,16 @@
         ELSE IF (BTYPE.EQ.'WAMC') THEN
 !         read boundary point coordinates from file
           READ(NDSD) XLON, XLAT, XDATE, EMEAN,
-     &               THQ, FMEAN, USNEW, THWNEW
+     &               THQ, FMEAN
           IF (IBOUNC.EQ.1 .AND. ITEST.GE.80) WRITE (PRTEST, *)            40.13
      &          ' WAMNEST starting time ', XDATE                          40.13
 !         read spectral densities but ignore them for the moment
           READ(NDSD) (SPAUX(II), II=1,NANG*NFRE)                          40.31 30.90
         ELSE
 !         read boundary point coordinates from file
-          READ(NDSD) XLON, XLAT, CDATE, EMEAN, THQ, FMEAN
+          READ(NDSD) XLON, XLAT, CDATE(1:LWDATE), EMEAN, THQ, FMEAN       41.13
           IF (IBOUNC.EQ.1 .AND. ITEST.GE.80) WRITE (PRTEST, *)            40.13
-     &          ' WAMNEST starting time ', CDATE                          40.13
+     &          ' WAMNEST starting time ', CDATE(1:LWDATE)                41.13 40.13
 !         read spectral densities but ignore them for the moment
           READ(NDSD) (SPAUX(II), II=1,NANG*NFRE)                          40.31 30.90
         ENDIF
@@ -5057,7 +5081,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5533,7 +5557,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5558,6 +5582,7 @@
 !     40.31: Tim Campbell and John Cazes
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     41.14: Nico Booij
 !
 !  1. Updates
 !
@@ -5566,6 +5591,7 @@
 !     40.31, Jul. 03: initializations XP0, XP1, YP0, YP1
 !     40.31, Nov. 03: removing POOL mechanism
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     41.14, Jul. 10: error in nesting unstructured grid corrected
 !
 !  2. Purpose
 !
@@ -5591,6 +5617,7 @@
 !
       INTEGER, INTENT(IN)     ::  IBOUNC,NBOUNC
 !
+      REAL                    ::  XP2, YP2         ! coordinates of a point in spectral file   41.14
       REAL, INTENT(IN)        ::  XCGRID(MXC,MYC), YCGRID(MXC,MYC)  ! coordinates of computational grid points
 !
 !     DONALL : logic arguments declare if the nesting boundary is open or close
@@ -5619,7 +5646,7 @@
       INTEGER            :: IXP,IYP,IIPT1
 !
       REAL, SAVE         :: XP0=0., XP1=0., YP0=0., YP1=0.                40.31
-      REAL               :: XP2, YP2, XP, YP, RX, RY, RL2
+      REAL               :: XP, YP, RX, RY, RL2
       REAL               :: DISXY, W2
 #if !defined SWAN_MODEL
       TYPE(BGPDAT), POINTER :: BGPTMP                                     40.31
@@ -5659,6 +5686,9 @@
 !
       CALL STRACE (IENT, 'SWBCPT')                                        40.41
 !
+      IF (NBOUNC.EQ.1) CALL MSGERR (2,                                    41.14
+     &  'Nesting procedure does not work if file has only 1 spectrum')    41.14
+!
 !     point to vertices
 !
       vert => gridobject%vert_grid                                        40.80
@@ -5666,96 +5696,107 @@
       IBSP2 = NBSPEC+IBOUNC
       IIPT1 = 0
 !
-#if !defined SWAN_MODEL
-      IF (OPTG.EQ.5) THEN                                                 40.80
-!
-!        in case of unstructured grid, no interpolation is needed,
-!        since this grid is nested in a coarse structured or
-!        unstructured grid run
-!
-!        Note that the variable DONALL has no effect, since we
-!        searching into the whole grid
-!
-         DO IXP = 1, nverts                                               40.80
-            IF ( vert(IXP)%atti(VMARKER) == 1 .AND.                       40.80
-     &           vert(IXP)%atti(VBC) == 0 ) THEN                          40.80
-               RX = XP2 - vert(IXP)%attr(VERTX)
-               RY = YP2 - vert(IXP)%attr(VERTY)
-               DISXY = SQRT(RX**2 + RY**2)
-               IF (DISXY.LT.0.1) THEN
-                  vert(IXP)%atti(VBC) = 1                                 40.80
-                  NBGRPT = NBGRPT + 1                                     40.80
-                  ALLOCATE(BGPTMP)                                        40.80
-                  BGPTMP%BGP(1) = IXP                                     40.80
-                  BGPTMP%BGP(2) = 1                                       40.80
-                  BGPTMP%BGP(3) = 1000                                    40.80
-                  BGPTMP%BGP(4) = IBSP2                                   40.80
-                  BGPTMP%BGP(5) = 0                                       40.80
-                  BGPTMP%BGP(6) = IBSP2-1                                 40.80
-                  NULLIFY(BGPTMP%NEXTBGP)                                 40.80
-                  IF ( .NOT.LBGP ) THEN                                   40.80
-                     FBGP = BGPTMP                                        40.80
-                     CUBGP => FBGP                                        40.80
-                     LBGP = .TRUE.                                        40.80
-                  ELSE                                                    40.80
-                     CUBGP%NEXTBGP => BGPTMP                              40.80
-                     CUBGP => BGPTMP                                      40.80
-                  ENDIF                                                   40.80
-                  EXIT                                                    40.80
-               ENDIF
-            ENDIF                                                         40.80
-         ENDDO                                                            40.80
-         RETURN                                                           40.80
-      ENDIF                                                               40.80
-#endif
-
-201   IF (IBOUNC.EQ.1) THEN
+ 201  IF (IBOUNC.EQ.1) THEN
+!        first point found in a spectral input file                       41.14
          XP0   = XP2
          YP0   = YP2
          IBSP0 = IBSP2
          IIPT1 = 1                                                        40.41
       ELSE
+!        RX, RY difference vector between consecutive points of spectral file  41.14
          RX  = XP2 - XP1
          RY  = YP2 - YP1
          RL2 = RX**2 + RY**2
          IF (RL2.GT.0.) THEN
-            RX  = RX/RL2
-            RY  = RY/RL2
+           RX  = RX/RL2
+           RY  = RY/RL2
 !
-!           loop over boundary of comp. grid, select points between
-!           (XP1,YP1) and (XP2,YP2)
+!          loop over boundary of comp. grid, select boundary points
+!          between (XP1,YP1) and (XP2,YP2)
+!
+           IF (OPTG.EQ.5) THEN                                            40.80
+#if !defined SWAN_MODEL
+             DO IXP = 1, nverts                                           40.80
+               IF ( vert(IXP)%atti(VMARKER) == 1 .AND.                    40.80
+     &              vert(IXP)%atti(VBC) == 0 ) THEN                       40.80
+                 XP = vert(IXP)%attr(VERTX)                               41.14
+                 YP = vert(IXP)%attr(VERTY)                               41.14
+!
+!                DISXY is relative distance from (XP,YP) to line
+!                (XP1,YP1) to (XP2,YP2) with respect to the
+!                length of that line
+!
+                 DISXY = ABS(RX*(YP-YP1)-RY*(XP-XP1))                     41.14
+!
+                 IF (DISXY.LT.0.1) THEN
+!                  W2 is relative length of projection on line
+!                  (XP1,YP1) to (XP2,YP2)
+                   W2 = RX*(XP-XP1)+RY*(YP-YP1)                           41.14
+                   IF (W2.GT.-0.001 .AND. W2.LT.1.001) THEN               41.14
+                     IF (W2.LT.0.01) W2 = 0.                              41.14
+                     IF (W2.GT.0.99) W2 = 1.                              41.14
+                     IF (ITEST.GE.80) WRITE (PRTEST, *) ' B.pnt',
+     &                        IXP, XP, YP, W2, IBSP2, 1.-W2, IBSP1        41.14
+                     NBGRPT = NBGRPT + 1
+                     IIPT1 = IIPT1 + 1
+!
+                     ALLOCATE(BGPTMP)                                     40.31
+                     BGPTMP%BGP(1) = IXP                                  40.31
+!                    next item indicates type of boundary condition
+                     BGPTMP%BGP(2) = 1                                    40.31
+                     BGPTMP%BGP(3) = NINT(1000. * W2)                     40.31
+                     BGPTMP%BGP(4) = IBSP2                                40.31
+                     BGPTMP%BGP(5) = NINT(1000. * (1.-W2))                40.31
+                     BGPTMP%BGP(6) = IBSP1                                40.31
+                     vert(IXP)%atti(VBC) = 1                              40.80
+                     NULLIFY(BGPTMP%NEXTBGP)                              40.80
+                     IF ( .NOT.LBGP ) THEN                                40.80
+                        FBGP = BGPTMP                                     40.80
+                        CUBGP => FBGP                                     40.80
+                        LBGP = .TRUE.                                     40.80
+                     ELSE                                                 40.80
+                        CUBGP%NEXTBGP => BGPTMP                           40.80
+                        CUBGP => BGPTMP                                   40.80
+                     ENDIF                                                40.80
+                   ENDIF                                                  41.14
+                 ENDIF                                                    41.14
+               ENDIF                                                      40.80
+             ENDDO                                                        40.80
+#endif
+           ELSE
+!
 !           KGRBND grid addresses on boundary points, NGRBND number of grid points
 !           on computational grid boundary
 !
-            DO IGRBND = 1, NGRBND
-              IXP = KGRBND(2*IGRBND-1)
-              IYP = KGRBND(2*IGRBND)
+             DO IGRBND = 1, NGRBND
+               IXP = KGRBND(2*IGRBND-1)
+               IYP = KGRBND(2*IGRBND)
 !
-              IF (IXP.GT.0 .AND.IYP.GT.0) THEN
+               IF (IXP.GT.0 .AND.IYP.GT.0) THEN
 !
-!               (IXP,IYP) is a valid boundary point
+!                (IXP,IYP) is a valid boundary point
 !
-                INDXGR = KGRPNT(IXP,IYP)
-                XP = XCGRID(IXP,IYP)
-                YP = YCGRID(IXP,IYP)
+                 INDXGR = KGRPNT(IXP,IYP)
+                 XP = XCGRID(IXP,IYP)
+                 YP = YCGRID(IXP,IYP)
 !
-!               DISXY is relative distance from (XP,YP) to line
-!               (XP1,YP1) to (XP2,YP2) with respect to the
-!               length of that line
+!                DISXY is relative distance from (XP,YP) to line
+!                (XP1,YP1) to (XP2,YP2) with respect to the
+!                length of that line
 !
-                DISXY = ABS(RX*(YP-YP1)-RY*(XP-XP1))
+                 DISXY = ABS(RX*(YP-YP1)-RY*(XP-XP1))
 !
-                IF (DISXY.LT.0.1) THEN
-!                 W2 is relative length of projection on line
-!                 (XP1,YP1) to (XP2,YP2)
-                  W2 = RX*(XP-XP1)+RY*(YP-YP1)
-                  IF (W2.GT.-0.001 .AND. W2.LT.1.001) THEN
-                    IF (W2.LT.0.01) W2 = 0.
-                    IF (W2.GT.0.99) W2 = 1.
-                    IF (ITEST.GE.80) WRITE (PRTEST, *) ' B.pnt',
-     &                       IXP, IYP, XP, YP, W2, IBSP2, 1.-W2, IBSP1    40.41
-                    NBGRPT = NBGRPT + 1
-                    IIPT1 = IIPT1 + 1
+                 IF (DISXY.LT.0.1) THEN
+!                  W2 is relative length of projection on line
+!                  (XP1,YP1) to (XP2,YP2)
+                   W2 = RX*(XP-XP1)+RY*(YP-YP1)
+                   IF (W2.GT.-0.001 .AND. W2.LT.1.001) THEN
+                     IF (W2.LT.0.01) W2 = 0.
+                     IF (W2.GT.0.99) W2 = 1.
+                     IF (ITEST.GE.80) WRITE (PRTEST, *) ' B.pnt',
+     &                        IXP, IYP, XP, YP, W2, IBSP2, 1.-W2, IBSP1   40.41
+                     NBGRPT = NBGRPT + 1
+                     IIPT1 = IIPT1 + 1
 !
 #ifdef SWAN_MODEL
                     ALLOCATE(BGPDATZ_MOD(ng)%BGPTMP)
@@ -5781,41 +5822,42 @@
      &                BGPDATZ_MOD(ng)%BGPTMP
                     END IF
 #else
-                    ALLOCATE(BGPTMP)                                      40.31
-                    BGPTMP%BGP(1) = INDXGR                                40.31
-!                   next item indicates type of boundary condition
-                    BGPTMP%BGP(2) = 1                                     40.31
-                    BGPTMP%BGP(3) = NINT(1000. * W2)                      40.31
-                    BGPTMP%BGP(4) = IBSP2                                 40.31
-                    BGPTMP%BGP(5) = NINT(1000. * (1.-W2))                 40.31
-                    BGPTMP%BGP(6) = IBSP1                                 40.31
-                    NULLIFY(BGPTMP%NEXTBGP)                               40.31
-                    IF ( .NOT.LBGP ) THEN                                 40.31
-                       FBGP = BGPTMP                                      40.31
-                       CUBGP => FBGP                                      40.31
-                       LBGP = .TRUE.                                      40.31
-                    ELSE                                                  40.31
-                       CUBGP%NEXTBGP => BGPTMP                            40.31
-                       CUBGP => BGPTMP                                    40.31
-                    END IF                                                40.31
+                     ALLOCATE(BGPTMP)                                     40.31
+                     BGPTMP%BGP(1) = INDXGR                               40.31
+!                    next item indicates type of boundary condition
+                     BGPTMP%BGP(2) = 1                                    40.31
+                     BGPTMP%BGP(3) = NINT(1000. * W2)                     40.31
+                     BGPTMP%BGP(4) = IBSP2                                40.31
+                     BGPTMP%BGP(5) = NINT(1000. * (1.-W2))                40.31
+                     BGPTMP%BGP(6) = IBSP1                                40.31
+                     NULLIFY(BGPTMP%NEXTBGP)                              40.31
+                     IF ( .NOT.LBGP ) THEN                                40.31
+                        FBGP = BGPTMP                                     40.31
+                        CUBGP => FBGP                                     40.31
+                        LBGP = .TRUE.                                     40.31
+                     ELSE                                                 40.31
+                        CUBGP%NEXTBGP => BGPTMP                           40.31
+                        CUBGP => BGPTMP                                   40.31
+                     END IF                                               40.31
 #endif
 !
-!                   test output if point is a test point
+!                    test output if point is a test point
 !
-                    IF (NPTST.GT.0) THEN
-                      DO IPTST = 1, NPTST
-                        IF (IXP.EQ.XYTST(2*IPTST-1)+MXF-1 .AND.
-     &                      IYP.EQ.XYTST(2*IPTST  )+MYF-1)
-     &                     WRITE (PRTEST, 223)
-     &                     IXP-1,IYP-1, XP+XOFFS, YP+YOFFS, W2, IBSP2,
-     &                     IBSP1
- 223                       FORMAT (' B.pnt', 2I5, 2F9.0, F6.3, 2I3)
-                      ENDDO
-                    ENDIF
-                  ENDIF
-                ENDIF
-              ENDIF
-            ENDDO
+                     IF (NPTST.GT.0) THEN
+                       DO IPTST = 1, NPTST
+                         IF (IXP.EQ.XYTST(2*IPTST-1)+MXF-1 .AND.
+     &                       IYP.EQ.XYTST(2*IPTST  )+MYF-1)
+     &                      WRITE (PRTEST, 223)
+     &                      IXP-1,IYP-1, XP+XOFFS, YP+YOFFS, W2, IBSP2,
+     &                      IBSP1
+ 223                        FORMAT (' B.pnt', 2I5, 2F9.0, F6.3, 2I3)
+                       ENDDO
+                     ENDIF
+                   ENDIF
+                 ENDIF
+               ENDIF
+             ENDDO
+           ENDIF
          ENDIF
       ENDIF
 !
@@ -5867,7 +5909,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6013,6 +6055,7 @@
 !                                                                    *
 !*********************************************************************
 !
+      USE OCPCOMM2                                                        40.95
       USE OCPCOMM4                                                        40.41
       USE SWCOMM1                                                         40.41
       USE SWCOMM2                                                         40.41
@@ -6021,6 +6064,7 @@
       USE OUTP_DATA                                                       40.31
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
+!PUN      USE SIZES                                                           40.95
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -6034,7 +6078,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6328,6 +6372,7 @@
            WRITE(FILENM(ILPOS+1:ILPOS+4),99) INODE                        40.30
   99       FORMAT('-',I3.3)                                               40.30
         END IF                                                            40.30
+!PUN        FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)                     40.95
         IERR = 0                                                          40.00
         CALL FOR (IFPAR, FILENM, 'UF', IERR)                              40.00
         IF (STPNOW()) RETURN                                              34.01
@@ -6411,6 +6456,7 @@
            ILPOS = INDEX ( FILENM, ' ' )-1                                40.30
            WRITE(FILENM(ILPOS+1:ILPOS+4),99) INODE                        40.30
         END IF                                                            40.30
+!PUN        FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)                     40.95
         IERR = 0                                                          40.00
         CALL FOR (IFS1D, FILENM, 'UF', IERR)                              40.00
         IF (STPNOW()) RETURN                                              34.01
@@ -6490,6 +6536,7 @@
            ILPOS = INDEX ( FILENM, ' ' )-1                                40.30
            WRITE(FILENM(ILPOS+1:ILPOS+4),99) INODE                        40.30
         END IF                                                            40.30
+!PUN        FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)                     40.95
         IERR = 0                                                          40.00
         CALL FOR (IFS2D, FILENM, 'UF', IERR)                              40.00
         IF (STPNOW()) RETURN                                              34.01

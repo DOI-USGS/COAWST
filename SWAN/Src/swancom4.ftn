@@ -68,7 +68,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -510,7 +510,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -703,7 +703,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1201,7 +1201,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1603,7 +1603,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1997,7 +1997,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2403,7 +2403,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2691,7 +2691,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2820,7 +2820,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3029,7 +3029,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3361,3 +3361,227 @@
 
       RETURN
       END SUBROUTINE SWLTA
+!
+!********************************************************************
+!
+      SUBROUTINE STRICL (ACLOC   ,DEPLOC  ,SPCSIG  ,KWAVE   ,
+     &                   IDDLOW  ,IDDTOP  ,ANYBIN  ,IMATDA  ,IMATRA,
+     &                   CGO     ,KMESPC  ,ETOT    ,SMEBRK          )   40.45
+!
+!********************************************************************
+!
+      USE OCPCOMM4
+      USE SWCOMM3
+      USE SWCOMM4
+
+      IMPLICIT NONE
+!
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering                              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2013  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+
+!     40.45: Nico Booij
+!     40.96: Matthijs Benit
+
+!  1. Updates
+
+!     40.45, July 04: new subroutine
+
+!  2. Purpose
+
+!     In this subroutine the triad-wave interactions are calculated
+!     with the empiric distributed colinear approximation.
+
+!  3. Method
+
+!     Transfer of action between two components under influence of a
+!     third one is formulated as follows:
+
+!                  P+1          P+1
+!     M * N  (Sigma   N  - Sigma   N  )
+!          3       1   1        2   2
+
+!     in which:
+
+!     M      is a dimensional coefficient
+!     N      is action density
+!     Sigma  spectral (angular) frequency
+
+!     Dimensions:
+!     ACL#  : m2s2
+!     KW#   : 1/m
+!     SIG#  : 1/s
+!     SDIA# : 1/s
+
+!  4. Argument variables
+
+      REAL, INTENT(IN)      :: ACLOC(1:MDC,1:MSC)                       ! local action density spectrum
+      REAL, INTENT(IN)      :: DEPLOC                                   ! Depth at gridpoint ix,iy (obtained from SWANCOM1)
+      REAL, INTENT(IN)      :: SPCSIG(1:MSC)                            ! Relative frequencies in computational domain in sigma-space
+      REAL                  :: KWAVE(1:MSC)                             ! Wave number in stencil points
+      INTEGER, INTENT(IN)   :: IDDLOW                                   ! Minimum counter in directional space
+      INTEGER, INTENT(IN)   :: IDDTOP                                   ! Maximum counter in directional space
+      LOGICAL, INTENT(IN)   :: ANYBIN(1:MDC,1:MSC)                      ! if True this bin is going to be updated using the matrix
+      REAL                  :: IMATDA(1:MDC,1:MSC)                      ! IMATDA: Diagonal of matrix
+      REAL                  :: IMATRA(1:MDC,1:MSC)                      ! IMATRA: Right hand vector of matrix
+      REAL, INTENT(IN)      :: CGO(1:MSC)                               ! Group velocities in stencil points
+      REAL, INTENT(IN)      :: KMESPC                                   ! Mean wave number of the spectrum
+      REAL, INTENT(IN)      :: ETOT                                     !
+      REAL, INTENT(IN)      :: SMEBRK                                   !
+
+!     Values from common
+
+!     MDC       : Size of array in theta-direction
+!     MSC       : Size of array in sigma-direction
+!     ITRIAD    : indicates type of triad formulation
+!     PI        : Circular constant Pi
+!     MTRIAD    : Size of array containing triad-coefficients
+!     PTRIAD    : Tunable coefficients for nonlinear triad sourceterms
+!     PTRIAD(1) : Interaction coefficient (labda)
+!     PTRIAD(2) : Power of the tail of the spectrum (p)
+!     PTRIAD(4) : xxx (delta)
+
+!  6. Local variables
+
+      INTEGER, SAVE     :: IENT=0                                       ! Number of entries into this subroutine
+      INTEGER           :: ID                                           ! Grid counter in spectral space (direction)
+      INTEGER           :: II                                           ! Counter
+      INTEGER           :: IS1, IS2, IS3                                ! Grid counter for spectral frequency
+      REAL              :: SIG1, SIG2, SIG3                             ! frequencies of 3 components
+      REAL              :: ACL1, ACL2, ACL3                             ! action densities of 2 components
+      REAL              :: KW1, KW2, KW3                                ! wave numbers of 3 components
+      REAL              :: CG1, CG2                                     ! wave group velocities at interacting frequencies
+      REAL              :: RS3, SS                                      ! aux. var. for determining SIG3
+      REAL              :: DSIG                                         ! frequency increment
+      REAL              :: SIGMEAN                                      ! mean freq of the 3 components
+      REAL              :: KMEAN                                        ! mean wave number
+      REAL              :: SDIA1, SDIA2                                 ! source term to diagonal
+      REAL              :: SRHS
+      REAL              :: DISPC                                        ! dispersion coefficient
+      REAL              :: BETA
+      REAL              :: SINABS
+      REAL              :: BIPH
+      REAL              :: URSLOC                                       ! aux. coefficients
+
+
+!  7. SUBROUTINES USED
+
+!      INTEGER :: CNTSIG
+
+!  8. SUBROUTINES CALLING
+
+!     SOURCE
+
+!  9. ERROR MESSAGES
+
+!     ---
+
+! 10. REMARKS
+
+!     ---
+
+! 11. STRUCTURE
+
+!     -----------------------------------------------------------------
+!     For all active directions do
+!         For all first components do
+!             determine frequency and wave number of component
+!             For all second components do
+!                 determine frequency and wave number of components
+!                 determine frequency of third resonating component
+!                 If this frequency is within spectral range
+!                 Then determine source terms
+!                      determine contributions to matrix
+!     -----------------------------------------------------------------
+
+! 13. Source text
+
+      IF (LTRACE) CALL STRACE (IENT,'STRICL')
+
+      URSLOC = (GRAV*2.*SQRT(ETOT))/(SQRT(2.)*SMEBRK**2*DEPLOC**2)
+      BIPH   = 0.5 * PI * (TANH(PTRIAD(4)/URSLOC) - 1.)
+      SINABS = ABS(SIN(BIPH))
+      BETA   = PTRIAD(1) / DEPLOC / DEPLOC * SINABS *
+     &         KMESPC**(1.-PTRIAD(2))
+
+!     first loop over all directions
+      DO II = IDDLOW, IDDTOP
+        ID = MOD (II - 1 + MDC, MDC) + 1
+!       first loop over all frequencies
+        DO IS1 = 1, MSC
+          SIG1 = SPCSIG(IS1)
+!         second loop over all higher frequencies
+          DO IS2 = IS1+1, MSC
+            SIG2 = SPCSIG(IS2)
+!           determine properties of 3rd component
+            SIG3 = SIG2 - SIG1
+            IF (SIG3.GT.SPCSIG(1)) THEN
+
+              SS  = ALOG(SIG3/SPCSIG(1)) / FRINTF
+              IS3 = INT(SS) + 1
+              RS3 = SS - REAL(IS3 - 1)
+
+              ACL1 = ACLOC(ID,IS1)
+              ACL2 = ACLOC(ID,IS2)
+              ACL3 = RS3 * ACLOC(ID,IS3+1) + (1. - RS3) * ACLOC(ID,IS3)
+              KW1  = KWAVE(IS1)
+              KW2  = KWAVE(IS2)
+              KW3  = RS3 * KWAVE(IS3+1) + (1. - RS3) * KWAVE(IS3)
+              CG1  = CGO(IS1)
+              CG2  = CGO(IS2)
+!             determine properties of triad
+              KMEAN = (KW1 + KW2 + KW3)/3.
+              DISPC = TANH(KMEAN * DEPLOC) / (KMEAN * DEPLOC)
+
+              SDIA1 = BETA * ACL3 * SIG1 * CG1 * KW1**(PTRIAD(2))
+     &                   * DISPC
+              SDIA2 = BETA * ACL3 * SIG2 * CG2 * KW2**(PTRIAD(2))
+     &                   * DISPC
+
+              IF (ANYBIN(ID,IS1)) THEN
+                DSIG = FRINTF * SIG2
+                SRHS =  SDIA2 * ACL2
+                IMATDA(ID,IS1) = IMATDA(ID,IS1) + SDIA1 * DSIG
+                IMATRA(ID,IS1) = IMATRA(ID,IS1) +  SRHS * DSIG
+              ENDIF
+              IF (ANYBIN(ID,IS2)) THEN
+                DSIG = FRINTF * SIG1
+                SRHS =  SDIA1 * ACL1
+                IMATDA(ID,IS2) = IMATDA(ID,IS2) + SDIA2 * DSIG
+                IMATRA(ID,IS2) = IMATRA(ID,IS2) +  SRHS * DSIG
+              ENDIF
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
+      RETURN
+      END subroutine STRICL

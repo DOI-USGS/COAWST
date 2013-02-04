@@ -16,7 +16,7 @@
 !     hcat.nml file.
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,19 +34,21 @@
 !     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 !
 
-
       program HotConcat
 
       implicit none
-      character(256) RLINE
+      character(1024) RLINE
       character*128 arg_str, basefile, tmp
       integer ios,i,j,k,l,numfiles, sum, halo,haloindex, mxc, myc
-      integer prevsource,freq,cdir, version
+      integer prevsource,freq,cdir, version, ival, ival2, indx
+      real    rval
+      character  rprojid*16, rprojnr*4, rvertxt*20, rchtime*20
       logical ydivide, verbose, haloflag, exists, stomp, nonstat, kspher
-      real, allocatable :: x(:,:),y(:,:)
+      logical free
+      real, allocatable :: x(:,:),y(:,:), ac2(:,:)
       integer, allocatable :: locations(:),index(:), source(:)
       integer, allocatable :: ownlocat(:)
-      namelist /arg_nml/ basefile,halo,verbose,stomp
+      namelist /arg_nml/ basefile,free,halo,verbose,stomp
 
  33   FORMAT('-',I3.3,A)
  35   FORMAT(A)
@@ -55,8 +57,9 @@
  38   FORMAT(I8,2I6,A)
 
 !.....Set command-line argument defaults
-      basefile='NULL'
-      halo=3
+      basefile = 'NULL'
+      free = .TRUE.
+      halo = 3
       verbose = .FALSE.
       stomp = .FALSE.
 
@@ -119,9 +122,19 @@
 
 !.....Open basefile
       IF (stomp) THEN
-         OPEN(unit=10, file=TRIM(basefile), iostat=ios)
+         IF (free) THEN
+            OPEN(unit=10, file=TRIM(basefile), iostat=ios)
+         ELSE
+            OPEN(unit=10, file=TRIM(basefile), form='UNFORMATTED',      &
+     &           iostat=ios)
+         ENDIF
       ELSE
-         OPEN(unit=10, file=TRIM(basefile), iostat=ios, STATUS='NEW')
+         IF (free) THEN
+            OPEN(unit=10, file=TRIM(basefile), iostat=ios, STATUS='NEW')
+         ELSE
+            OPEN(unit=10, file=TRIM(basefile), form='UNFORMATTED',      &
+     &           iostat=ios, STATUS='NEW')
+         ENDIF
       ENDIF
       IF ( ios /= 0 ) then
          PRINT*,'Could not open ',trim(basefile),' or it already exists'
@@ -153,7 +166,12 @@
       DO i=1,numfiles
          tmp = trim(basefile)
          WRITE(tmp(LEN_TRIM(tmp)+1:LEN_TRIM(tmp)+4),33) i
-         OPEN(unit=10+i, file=tmp, status='old', iostat=ios)
+         IF (free) THEN
+            OPEN(unit=10+i, file=tmp, status='old', iostat=ios)
+         ELSE
+            OPEN(unit=10+i, file=tmp, form='unformatted', status='old',&
+     &           iostat=ios)
+         ENDIF
          IF ( ios /= 0 ) THEN
             PRINT *,'Unable to open',TRIM(tmp)
          ELSE
@@ -165,36 +183,57 @@
 !.....the one being created at location(0)
       nonstat = .FALSE. !nonstationary unless time is found
       allocate(locations(0:numfiles))
-      DO i=1,numfiles
-         READ (10+i,35) RLINE
-         IF(i==1) WRITE(10,35) TRIM(RLINE)
-         READ(RLINE,'(A4,I5)') tmp,version
-         IF(tmp /= 'SWAN') THEN
-            tmp = trim(basefile)
-            WRITE(tmp(LEN_TRIM(tmp)+1:LEN_TRIM(tmp)+4),33) i
-            PRINT *,trim(tmp),                                          &
-     &           'is not a proper hotfile missing header SWAN'
-            STOP
-         ENDIF
-         IF (version /= 1) THEN
-            tmp = trim(basefile)
-            WRITE(tmp(LEN_TRIM(tmp)+1:LEN_TRIM(tmp)+4),33) i
-            PRINT *,trim(tmp),'is verion',version,                      &
-     &                'only version 1 is supported'
-            STOP
-         ENDIF
- 110     READ (10+i,35) RLINE
-         IF(i==1) WRITE(10,35) TRIM(RLINE)
-         IF (RLINE(1:4)=='TIME') nonstat=.TRUE.
-         IF (RLINE(1:6).NE.'LONLAT' .AND. RLINE(1:4).NE.'LOCA') GOTO 110
-         IF (RLINE(1:6).EQ.'LONLAT') THEN
-            kspher = .TRUE.
-         ELSE IF (RLINE(1:4).EQ.'LOCA') THEN
-            kspher = .FALSE.
-         ENDIF
-         READ (10+i,38) locations(i),mxc,myc,RLINE
-         IF(verbose) PRINT *,'File',i,'has',locations(i),'locations'
-      ENDDO
+      IF (free) THEN
+         DO i=1,numfiles
+            READ (10+i,35) RLINE
+            IF(i==1) WRITE(10,35) TRIM(RLINE)
+            READ(RLINE,'(A4,I5)') tmp,version
+            IF(tmp /= 'SWAN') THEN
+               tmp = trim(basefile)
+               WRITE(tmp(LEN_TRIM(tmp)+1:LEN_TRIM(tmp)+4),33) i
+               PRINT *,trim(tmp),                                       &
+     &              'is not a proper hotfile missing header SWAN'
+               STOP
+            ENDIF
+            IF (version /= 1) THEN
+               tmp = trim(basefile)
+               WRITE(tmp(LEN_TRIM(tmp)+1:LEN_TRIM(tmp)+4),33) i
+               PRINT *,trim(tmp),'is verion',version,                   &
+     &                   'only version 1 is supported'
+               STOP
+            ENDIF
+ 110        READ (10+i,35) RLINE
+            IF(i==1) WRITE(10,35) TRIM(RLINE)
+            IF (RLINE(1:4)=='TIME') nonstat=.TRUE.
+            IF (RLINE(1:6).NE.'LONLAT' .AND. RLINE(1:4).NE.'LOCA')      &
+     &         GOTO 110
+            IF (RLINE(1:6).EQ.'LONLAT') THEN
+               kspher = .TRUE.
+            ELSE IF (RLINE(1:4).EQ.'LOCA') THEN
+               kspher = .FALSE.
+            ENDIF
+            READ (10+i,38) locations(i),mxc,myc,RLINE
+            IF(verbose) PRINT *,'File',i,'has',locations(i),'locations'
+         ENDDO
+      ELSE
+         DO i=1,numfiles
+            READ (10+i) RVERTXT
+            READ (10+i) RPROJID, RPROJNR
+            IF(i==1) WRITE(10) RVERTXT
+            IF(i==1) WRITE(10) RPROJID, RPROJNR
+            READ (10+i) IVAL
+            IF(i==1) WRITE(10) IVAL
+            IF (IVAL==1) THEN
+               READ (10+i) IVAL2
+               IF(i==1) WRITE(10) IVAL2
+               nonstat=.TRUE.
+            ENDIF
+            READ (10+i) IVAL
+            IF(i==1) WRITE(10) IVAL
+            READ (10+i) locations(i), mxc, myc
+            IF(verbose) PRINT *,'File',i,'has',locations(i),'locations'
+         ENDDO
+      ENDIF
 
 !.....Find sum of location length
       sum=0
@@ -210,16 +249,24 @@
       allocate(source(1:sum))
 
 !.....Read in locations
-      IF (.not.kspher) THEN
-         DO i=1,numfiles
-            DO j=1,locations(i)
-               READ (10+i,36) x(i,j),y(i,j)
+      IF (free) THEN
+         IF (.not.kspher) THEN
+            DO i=1,numfiles
+               DO j=1,locations(i)
+                  READ (10+i,36) x(i,j),y(i,j)
+               ENDDO
             ENDDO
-         ENDDO
+         ELSE
+            DO i=1,numfiles
+               DO j=1,locations(i)
+                  READ (10+i,37) x(i,j),y(i,j)
+               ENDDO
+            ENDDO
+         ENDIF
       ELSE
          DO i=1,numfiles
             DO j=1,locations(i)
-               READ (10+i,37) x(i,j),y(i,j)
+               READ (10+i) x(i,j),y(i,j)
             ENDDO
          ENDDO
       ENDIF
@@ -330,61 +377,107 @@
       ENDIF
 
 !.....Write total number of locations to basefile
-      WRITE (10,38) locations(0),mxc,myc,TRIM(RLINE)
+      IF (free) THEN
+         WRITE (10,38) locations(0),mxc,myc,TRIM(RLINE)
+      ELSE
+         WRITE (10) locations(0),mxc,myc
+      ENDIF
 
 !.....Write grid points to basefile
-      IF (.not.kspher) THEN
-         DO i=1,locations(0)
-            WRITE (10,36) x(0,i),y(0,i)
-         ENDDO
+      IF (free) THEN
+         IF (.not.kspher) THEN
+            DO i=1,locations(0)
+               WRITE (10,36) x(0,i),y(0,i)
+            ENDDO
+         ELSE
+            DO i=1,locations(0)
+               WRITE (10,37) x(0,i),y(0,i)
+            ENDDO
+         ENDIF
       ELSE
          DO i=1,locations(0)
-            WRITE (10,37) x(0,i),y(0,i)
+            WRITE (10) x(0,i),y(0,i)
          ENDDO
       ENDIF
 
 !.....Process FREQ
-      DO i=1,numfiles
-         READ (10+i,35) RLINE
-         IF (i==1) WRITE(10,35) TRIM(RLINE)
-         READ (10+i,35) RLINE
-         READ (RLINE,*) freq
-         IF (i==1) WRITE(10,35) TRIM(RLINE)
-         IF(verbose) PRINT *,'File',i,'has',freq,'frequencies'
-         DO j=1,freq
+      IF (free) THEN
+         DO i=1,numfiles
             READ (10+i,35) RLINE
             IF (i==1) WRITE(10,35) TRIM(RLINE)
+            READ (10+i,35) RLINE
+            READ (RLINE,*) freq
+            IF (i==1) WRITE(10,35) TRIM(RLINE)
+            IF(verbose) PRINT *,'File',i,'has',freq,'frequencies'
+            DO j=1,freq
+               READ (10+i,35) RLINE
+               IF (i==1) WRITE(10,35) TRIM(RLINE)
+            ENDDO
          ENDDO
-      ENDDO
+      ELSE
+         DO i=1,numfiles
+            READ (10+i) freq
+            IF (i==1) WRITE(10) freq
+            IF(verbose) PRINT *,'File',i,'has',freq,'frequencies'
+            DO j=1,freq
+               READ (10+i) RVAL
+               IF (i==1) WRITE(10) RVAL
+            ENDDO
+         ENDDO
+      ENDIF
 
 !.....Process DIR
-      DO i=1,numfiles
-         READ (10+i,35) RLINE
-         IF (i==1) WRITE(10,35) TRIM(RLINE)
-         READ (10+i,35) RLINE
-         READ (RLINE,*) cdir
-         IF (i==1) WRITE(10,35) TRIM(RLINE)
-         IF(verbose) PRINT *,'File',i,'has',cdir,'directions'
-         DO j=1,cdir
+      IF (free) THEN
+         DO i=1,numfiles
             READ (10+i,35) RLINE
             IF (i==1) WRITE(10,35) TRIM(RLINE)
-         ENDDO
-      ENDDO
-
-!.....Process QUANT (must be single quantity)
-      DO i=1,numfiles
-         DO j=1,5
             READ (10+i,35) RLINE
-            IF (i==numfiles) WRITE(10,35) TRIM(RLINE)
+            READ (RLINE,*) cdir
+            IF (i==1) WRITE(10,35) TRIM(RLINE)
+            IF(verbose) PRINT *,'File',i,'has',cdir,'directions'
+            DO j=1,cdir
+               READ (10+i,35) RLINE
+               IF (i==1) WRITE(10,35) TRIM(RLINE)
+            ENDDO
          ENDDO
-      ENDDO
+      ELSE
+         DO i=1,numfiles
+            READ (10+i) cdir
+            IF (i==1) WRITE(10) cdir
+            IF(verbose) PRINT *,'File',i,'has',cdir,'directions'
+            DO j=1,cdir
+               READ (10+i) RVAL
+               IF (i==1) WRITE(10) RVAL
+            ENDDO
+         ENDDO
+      ENDIF
+
+!.....Allocate action density in case of binary format for reading/writing purpose
+      if (.not.free) allocate(ac2(cdir,freq))
+
+!.....Process QUANT (must be single quantity) in case of free format
+      IF (free) THEN
+         DO i=1,numfiles
+            DO j=1,5
+               READ (10+i,35) RLINE
+               IF (i==numfiles) WRITE(10,35) TRIM(RLINE)
+            ENDDO
+         ENDDO
+      ENDIF
 
 !.....Process date & time -- in case of nonstationary run
       IF (nonstat) THEN
-         DO i=1,numfiles
-            READ (10+i,35) RLINE
-            IF (i==numfiles) WRITE(10,35) TRIM(RLINE)
-         ENDDO
+         IF (free) THEN
+            DO i=1,numfiles
+               READ (10+i,35) RLINE
+               IF (i==numfiles) WRITE(10,35) TRIM(RLINE)
+            ENDDO
+         ELSE
+            DO i=1,numfiles
+               READ (10+i) RCHTIME
+               IF (i==numfiles) WRITE(10) RCHTIME
+            ENDDO
+         ENDIF
       ENDIF
 
 !.....Reset index
@@ -403,69 +496,120 @@
                IF(source(index(0))==j) THEN
 !.................IF source equals 1 there are no halo points at the beginning
                   IF(j .NE. 1) THEN
-                     DO k=1,halo
-                        READ (10+j,35,IOSTAT=ios) RLINE
-                        IF (RLINE(1:6).EQ.'FACTOR' .and. ios==0) THEN
-                           DO l=1,freq+1
-                              READ (10+j,35,IOSTAT=ios) RLINE
-                           ENDDO
-                           index(j)=index(j)+1
-                        ELSE IF(RLINE(1:4).EQ.'ZERO' .and. ios==0) THEN
-                           index(j)=index(j)+1
-                        ELSE IF(RLINE(1:6).EQ.'NODATA' .and. ios==0)THEN
-                           index(j)=index(j)+1
-                        ELSE
-                           PRINT *,'Unable to process'
-                           PRINT *,RLINE
-                           EXIT
-                        ENDIF
-                     ENDDO
+                     IF (free) THEN
+                       DO k=1,halo
+                          READ (10+j,35,IOSTAT=ios) RLINE
+                          IF (RLINE(1:6).EQ.'FACTOR' .and. ios==0) THEN
+                             DO l=1,freq+1
+                                READ (10+j,35,IOSTAT=ios) RLINE
+                             ENDDO
+                             index(j)=index(j)+1
+                          ELSE IF(RLINE(1:4).EQ.'ZERO'.and.ios==0) THEN
+                             index(j)=index(j)+1
+                          ELSE IF(RLINE(1:6).EQ.'NODATA'.and.ios==0)THEN
+                             index(j)=index(j)+1
+                          ELSE
+                             PRINT *,'Unable to process'
+                             PRINT *,RLINE
+                             EXIT
+                          ENDIF
+                       ENDDO
+                     ELSE
+                       DO k=1,halo
+                          READ (10+j,IOSTAT=ios) INDX
+                          IF (INDX.EQ.1 .and. ios==0) THEN
+                             index(j)=index(j)+1
+                          ELSE IF (INDX.GT.1 .and. ios==0) THEN
+                             READ (10+j,IOSTAT=ios) ac2(:,:)
+                             index(j)=index(j)+1
+                          ELSE
+                             PRINT *,'Unable to process'
+                             PRINT *,INDX
+                             EXIT
+                          ENDIF
+                       ENDDO
+                     ENDIF
                   ENDIF
 !.................Write out grid point data as long as the source doesn't change
                   DO WHILE(source(index(0))==j)
-                     READ (10+j,35,IOSTAT=ios) RLINE
-                     IF (RLINE(1:6).EQ.'FACTOR' .and. ios==0) THEN
-                        WRITE(10,35) TRIM(RLINE)
-                        DO l=1,freq+1
-                           READ (10+j,35,IOSTAT=ios) RLINE
-                           WRITE(10,35) TRIM(RLINE)
-                        ENDDO
-                        index(j)=index(j)+1
-                        index(0)=index(0)+1
-                     ELSE IF(RLINE(1:4).EQ.'ZERO' .and. ios==0) THEN
-                        WRITE(10,35) TRIM(RLINE)
-                        index(j)=index(j)+1
-                        index(0)=index(0)+1
-                     ELSE IF(RLINE(1:6).EQ.'NODATA' .and. ios==0) THEN
-                        WRITE(10,35) TRIM(RLINE)
-                        index(j)=index(j)+1
-                        index(0)=index(0)+1
+                     IF (free) THEN
+                       READ (10+j,35,IOSTAT=ios) RLINE
+                       IF (RLINE(1:6).EQ.'FACTOR' .and. ios==0) THEN
+                          WRITE(10,35) TRIM(RLINE)
+                          DO l=1,freq+1
+                             READ (10+j,35,IOSTAT=ios) RLINE
+                             WRITE(10,35) TRIM(RLINE)
+                          ENDDO
+                          index(j)=index(j)+1
+                          index(0)=index(0)+1
+                       ELSE IF(RLINE(1:4).EQ.'ZERO' .and. ios==0) THEN
+                          WRITE(10,35) TRIM(RLINE)
+                          index(j)=index(j)+1
+                          index(0)=index(0)+1
+                       ELSE IF(RLINE(1:6).EQ.'NODATA' .and. ios==0) THEN
+                          WRITE(10,35) TRIM(RLINE)
+                          index(j)=index(j)+1
+                          index(0)=index(0)+1
+                       ELSE
+                          PRINT *,'Unable to process'
+                          PRINT *,RLINE
+                          EXIT
+                       ENDIF
                      ELSE
-                        PRINT *,'Unable to process'
-                        PRINT *,RLINE
-                        EXIT
+                       READ (10+j,IOSTAT=ios) INDX
+                       IF (INDX.EQ.1 .and. ios==0) THEN
+                          WRITE(10) INDX
+                          index(j)=index(j)+1
+                          index(0)=index(0)+1
+                       ELSE IF (INDX.GT.1 .and. ios==0) THEN
+                          WRITE(10) INDX
+                          READ (10+j,IOSTAT=ios) ac2(:,:)
+                          WRITE(10) ac2(:,:)
+                          index(j)=index(j)+1
+                          index(0)=index(0)+1
+                       ELSE
+                          PRINT *,'Unable to process'
+                          PRINT *,INDX
+                          EXIT
+                       ENDIF
                      ENDIF
                      prevsource=j
                   ENDDO
 !.................IF source equals last source there are no halo points at the end
                   IF(j .NE. numfiles) THEN
-                     DO k=1,halo
-                        READ (10+j,35,IOSTAT=ios) RLINE
-                        IF (RLINE(1:6).EQ.'FACTOR' .and. ios==0) THEN
-                           DO l=1,freq+1
-                              READ (10+j,35,IOSTAT=ios) RLINE
-                           ENDDO
-                           index(j)=index(j)+1
-                        ELSE IF(RLINE(1:4).EQ.'ZERO' .and. ios==0) THEN
-                           index(j)=index(j)+1
-                        ELSE IF(RLINE(1:6).EQ.'NODATA' .and. ios==0)THEN
-                           index(j)=index(j)+1
-                        ELSE
-                           PRINT *,'Unable to process'
-                           PRINT *,RLINE
-                           EXIT
-                        ENDIF
-                     ENDDO
+                     IF (free) THEN
+                       DO k=1,halo
+                          READ (10+j,35,IOSTAT=ios) RLINE
+                          IF (RLINE(1:6).EQ.'FACTOR'.and.ios==0) THEN
+                             DO l=1,freq+1
+                                READ (10+j,35,IOSTAT=ios) RLINE
+                             ENDDO
+                             index(j)=index(j)+1
+                          ELSE IF(RLINE(1:4).EQ.'ZERO'.and.ios==0) THEN
+                             index(j)=index(j)+1
+                          ELSE IF(RLINE(1:6).EQ.'NODATA'.and.ios==0)THEN
+                             index(j)=index(j)+1
+                          ELSE
+                             PRINT *,'Unable to process'
+                             PRINT *,RLINE
+                             EXIT
+                          ENDIF
+                       ENDDO
+                     ELSE
+                       DO k=1,halo
+                          READ (10+j,IOSTAT=ios) INDX
+                          IF (INDX.EQ.1 .and. ios==0) THEN
+                             index(j)=index(j)+1
+                          ELSE IF (INDX.GT.1 .and. ios==0) THEN
+                             READ (10+j,IOSTAT=ios) ac2(:,:)
+                             index(j)=index(j)+1
+                          ELSE
+                             PRINT *,'Unable to process'
+                             PRINT *,INDX
+                             EXIT
+                          ENDIF
+                       ENDDO
+                     ENDIF
                   ENDIF
                ENDIF
 !...........IF divided along X
@@ -473,58 +617,102 @@
                IF(source(index(0))==j) THEN
 !.................IF source equals 1 there are no halo points at the beginning
                   IF(j .NE. 1) THEN
-                     DO WHILE (index(j-1)<=ownlocat(j-1))
-                        READ (10+j,35,IOSTAT=ios) RLINE
-                        IF (RLINE(1:6).EQ.'FACTOR' .and. ios==0)THEN
-                           DO l=1,freq+1
-                              READ (10+j,35,IOSTAT=ios) RLINE
-                           ENDDO
-                           index(j-1)=index(j-1)+1
-                           index(j)=index(j)+1
-                        ELSEIF(RLINE(1:4).EQ.'ZERO'.and.ios==0) THEN
-                           index(j-1)=index(j-1)+1
-                           index(j)=index(j)+1
-                        ELSEIF(RLINE(1:6).EQ.'NODATA'.and.ios==0)THEN
-                           index(j-1)=index(j-1)+1
-                           index(j)=index(j)+1
-                        ELSE IF (ios/=0) THEN
-                           PRINT *,'End of file error'
-                           PRINT *,'ios:',ios
-                           STOP
+!                     DO WHILE (index(j-1)<=ownlocat(j-1))
+                     DO WHILE (index(j-1)<=locations(j-1))
+                        IF (free) THEN
+                          READ (10+j,35,IOSTAT=ios) RLINE
+                          IF (RLINE(1:6).EQ.'FACTOR' .and. ios==0)THEN
+                             DO l=1,freq+1
+                                READ (10+j,35,IOSTAT=ios) RLINE
+                             ENDDO
+                             index(j-1)=index(j-1)+1
+                             index(j)=index(j)+1
+                          ELSEIF(RLINE(1:4).EQ.'ZERO'.and.ios==0) THEN
+                             index(j-1)=index(j-1)+1
+                             index(j)=index(j)+1
+                          ELSEIF(RLINE(1:6).EQ.'NODATA'.and.ios==0)THEN
+                             index(j-1)=index(j-1)+1
+                             index(j)=index(j)+1
+                          ELSE IF (ios/=0) THEN
+                             PRINT *,'End of file error'
+                             PRINT *,'ios:',ios
+                             STOP
+                          ELSE
+                             PRINT *,'Unable to process'
+                             PRINT *,'RLINE: ',RLINE
+                             STOP
+                          ENDIF
                         ELSE
-                           PRINT *,'Unable to process'
-                           PRINT *,'RLINE: ',RLINE
-                           STOP
+                          READ (10+j,IOSTAT=ios) INDX
+                          IF (INDX.EQ.1 .and. ios==0) THEN
+                             index(j-1)=index(j-1)+1
+                             index(j)=index(j)+1
+                          ELSE IF (INDX.GT.1 .and. ios==0) THEN
+                             READ (10+j,IOSTAT=ios) ac2(:,:)
+                             index(j-1)=index(j-1)+1
+                             index(j)=index(j)+1
+                          ELSE IF (ios/=0) THEN
+                             PRINT *,'End of file error'
+                             PRINT *,'ios:',ios
+                             STOP
+                          ELSE
+                             PRINT *,'Unable to process'
+                             PRINT *,'INDX: ',INDX
+                             STOP
+                          ENDIF
                         ENDIF
                      ENDDO
                   ENDIF
 !.................Write out grid point data as long as the source doesn't change
                   DO WHILE(source(index(0))==j)
-                     READ (10+j,35,IOSTAT=ios) RLINE
-                     IF (RLINE(1:6).EQ.'FACTOR' .and. ios==0) THEN
-                        WRITE(10,35) TRIM(RLINE)
-                        DO l=1,freq+1
-                           READ (10+j,35,IOSTAT=ios) RLINE
-                           WRITE(10,35) TRIM(RLINE)
-                        ENDDO
-                        index(j)=index(j)+1
-                        index(0)=index(0)+1
-                     ELSE IF(RLINE(1:4).EQ.'ZERO' .and. ios==0) THEN
-                        WRITE(10,35) TRIM(RLINE)
-                        index(j)=index(j)+1
-                        index(0)=index(0)+1
-                     ELSE IF(RLINE(1:6).EQ.'NODATA' .and. ios==0) THEN
-                        WRITE(10,35) TRIM(RLINE)
-                        index(j)=index(j)+1
-                        index(0)=index(0)+1
-                     ELSE IF (ios/=0) THEN
-                        PRINT *,'End of file error'
-                        PRINT *,'ios:',ios
-                        STOP
+                     IF (free) THEN
+                       READ (10+j,35,IOSTAT=ios) RLINE
+                       IF (RLINE(1:6).EQ.'FACTOR' .and. ios==0) THEN
+                          WRITE(10,35) TRIM(RLINE)
+                          DO l=1,freq+1
+                             READ (10+j,35,IOSTAT=ios) RLINE
+                             WRITE(10,35) TRIM(RLINE)
+                          ENDDO
+                          index(j)=index(j)+1
+                          index(0)=index(0)+1
+                       ELSE IF(RLINE(1:4).EQ.'ZERO' .and. ios==0) THEN
+                          WRITE(10,35) TRIM(RLINE)
+                          index(j)=index(j)+1
+                          index(0)=index(0)+1
+                       ELSE IF(RLINE(1:6).EQ.'NODATA' .and. ios==0) THEN
+                          WRITE(10,35) TRIM(RLINE)
+                          index(j)=index(j)+1
+                          index(0)=index(0)+1
+                       ELSE IF (ios/=0) THEN
+                          PRINT *,'End of file error'
+                          PRINT *,'ios:',ios
+                          STOP
+                       ELSE
+                          PRINT *,'Unable to process'
+                          PRINT *,'RLINE: ',RLINE
+                          STOP
+                       ENDIF
                      ELSE
-                        PRINT *,'Unable to process'
-                        PRINT *,'RLINE: ',RLINE
-                        STOP
+                       READ (10+j,IOSTAT=ios) INDX
+                       IF (INDX.EQ.1 .and. ios==0) THEN
+                          WRITE(10) INDX
+                          index(j)=index(j)+1
+                          index(0)=index(0)+1
+                       ELSE IF (INDX.GT.1 .and. ios==0) THEN
+                          WRITE(10) INDX
+                          READ (10+j,IOSTAT=ios) ac2(:,:)
+                          WRITE(10) ac2(:,:)
+                          index(j)=index(j)+1
+                          index(0)=index(0)+1
+                       ELSE IF (ios/=0) THEN
+                          PRINT *,'End of file error'
+                          PRINT *,'ios:',ios
+                          STOP
+                       ELSE
+                          PRINT *,'Unable to process'
+                          PRINT *,'INDX: ',INDX
+                          STOP
+                       ENDIF
                      ENDIF
                      prevsource=j
                   ENDDO
@@ -540,4 +728,3 @@
       ENDDO
 
       END PROGRAM HotConcat
-

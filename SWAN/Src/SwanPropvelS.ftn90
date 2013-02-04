@@ -16,7 +16,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,6 +40,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
 !   41.02: Marcel Zijlema
 !   41.06: Gerbrant van Vledder
 !   41.07: Marcel Zijlema
+!   41.35: Casey Dietrich
 !
 !   Updates
 !
@@ -50,6 +51,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
 !                         wave transport velocity in theta-direction based on
 !                         (x,y)-derivatives of the wave number
 !                         (see Holthuijsen (2007), page 210, footnote 4)
+!   41.35,    March 2012: add option of limitation on csigma and ctheta
 !
 !   Purpose
 !
@@ -109,6 +111,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
     integer                               :: k        ! loop counter
     integer, dimension(3)                 :: v        ! vertices in considered cell
     !
+    real                                  :: alpha    ! upper limit of CFL restriction
     real, dimension(3)                    :: cd       ! coefficients for computing cad
     real, dimension(10)                   :: cs       ! coefficients for computing cas
     real                                  :: dhdx     ! derivative of dep2 to x in considered sweep
@@ -131,6 +134,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
     real                                  :: duydym   ! derivative of uy2 to y in sweep below considered sweep
     real                                  :: duydyp   ! derivative of uy2 to y in sweep above considered sweep
     real                                  :: fac      ! a factor
+    real                                  :: fac2     ! another factor
     real                                  :: frlim    ! frequency range in which limit on velocity in theta-direction is applied
     real                                  :: kd       ! help variable, wave number times water depth
     real                                  :: pp       ! power of the frequency dependent limiter on refraction
@@ -469,9 +473,32 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
              !
              cas(id,is) = cs(6)
              if ( ICUR /= 0 ) cas(id,is) = cas(id,is) + cs(7) + coscos(id)*cs(8) + sincos(id)*cs(9) + sinsin(id)*cs(10)
-!            !
+             !
           enddo
        enddo
+       !
+       ! limit velocity using Courant number
+       !
+       if ( int(PNUMS(33)) == 1 ) then
+          !
+          alpha = PNUMS(34)
+          !
+          do is = 1, MSC
+             !
+             fac2 = alpha * FRINTF * spcsig(is)
+             !
+             do iddum = idcmin(is), idcmax(is)
+                id = mod ( iddum - 1 + MDC , MDC ) + 1
+                !
+                fac = fac2 * ( abs((rdx(1)+rdx(2))*cax(id,is,1)) + abs((rdy(1)+rdy(2))*cay(id,is,1)) )
+                !
+                if ( abs(cas(id,is)) > fac ) cas(id,is) = cas(id,is) * fac / abs(cas(id,is))
+                !
+             enddo
+             !
+          enddo
+          !
+       endif
        !
     endif
     !
@@ -577,6 +604,29 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
              do id = 1, MDC
                 cad(id,is) = fac*cad(id,is)
              enddo
+          enddo
+          !
+       endif
+       !
+       ! limit velocity using Courant number
+       !
+       if ( int(PNUMS(35)) == 1 ) then
+          !
+          alpha = PNUMS(36)
+          !
+          fac2 = alpha * DDIR
+          !
+          do is = 1, MSC
+             !
+             do iddum = idcmin(is)-1, idcmax(is)+1
+                id = mod ( iddum - 1 + MDC , MDC ) + 1
+                !
+                fac = fac2 * ( abs((rdx(1)+rdx(2))*cax(id,is,1)) + abs((rdy(1)+rdy(2))*cay(id,is,1)) )
+                !
+                if ( abs(cad(id,is)) > fac ) cad(id,is) = cad(id,is) * fac / abs(cad(id,is))
+                !
+             enddo
+             !
           enddo
           !
        endif

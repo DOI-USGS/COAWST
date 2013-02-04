@@ -80,7 +80,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1189,7 +1189,7 @@
       IF (IQUAD.EQ.51.OR.IQUAD.EQ.52.OR.IQUAD.EQ.53) THEN                 40.41
          CALL init_constants                                              40.41
          IXQUAD = IQUAD - 50                                              40.41
-         IF (INODE.EQ.MASTER) THEN                                        40.41
+         IF (IAMMASTER) THEN                                              40.95 40.41
             WRITE(SCREEN,*) 'GurboQuad initialization'                    40.41
             WRITE(SCREEN,*) 'gravity               :', GRAV               40.41
             WRITE(SCREEN,*) 'pftail                :', PWTAIL(1)          40.41
@@ -1240,7 +1240,6 @@
 !       this is done in parallel within OpenMP environment                40.31
 !
         IF (ITRIAD.GT.0
-     &      .OR. ISURF.EQ.5                                               41.03
      &                 ) THEN
            DO IP = I1GRD,I2GRD                                            40.31
             COMPDA(IP,JURSEL) = 0.
@@ -1479,21 +1478,21 @@
             IF (SCREEN.NE.PRINTF) THEN
               IF (NSTATC.EQ.1) THEN                                       40.00
 #ifdef SWAN_MODEL
-                IF (INODE.EQ.MASTER) WRITE(PRINTF,313) CHTIME, IT,
+                IF (IAMMASTER) WRITE(PRINTF,313) CHTIME, IT,
      &                                    ITER, SWPDIR, GRIDNUM
-                IF (INODE.EQ.MASTER) WRITE(SCREEN,313) CHTIME, IT,
+                IF (IAMMASTER) WRITE(SCREEN,313) CHTIME, IT,
      &                                    ITER, SWPDIR, GRIDNUM
  313            FORMAT ('+time ', A18, ', step ',I6, '; iteration '
      &                  ,I4, '; sweep ',I1,' grid  ',I2)                  40.23 40.00
 #else
-                IF (INODE.EQ.MASTER) WRITE(SCREEN,313) CHTIME, IT,        40.30
+                IF (IAMMASTER) WRITE(SCREEN,313) CHTIME, IT,              40.95 40.30
      &                                                 ITER, SWPDIR       40.30
  313            FORMAT ('+time ', A18, ', step ',I6, '; iteration '
      &                  ,I4, '; sweep ',I1)                               40.23 40.00
 #endif
               ELSE
                 WRITE(PRINTF,314) ITER, SWPDIR
-                IF (INODE.EQ.MASTER) THEN                                 40.30
+                IF (IAMMASTER) THEN                                       40.95 40.30
                    IF (SWPDIR.EQ.1) THEN                                  40.30
                       WRITE(SCREEN,314) ITER, SWPDIR                      40.30
                    ELSE                                                   40.30
@@ -1808,16 +1807,16 @@
 !MPI!                                                                         40.30
            FRAC = REAL(NPFL)*100./REAL(NWETP)                             40.23
            IF(NPFL.GT.0) WRITE(PRINTF,110) 'limiter',FRAC,MXNFL           40.23
-           IF (NSTATC.EQ.0 .AND. NPFL.GT.0 .AND. INODE.EQ.MASTER)         40.23
+           IF (NSTATC.EQ.0 .AND. NPFL.GT.0 .AND. IAMMASTER)               40.95 40.23
      &        WRITE(SCREEN,110) 'limiter',FRAC,MXNFL                      40.23
 !                                                                         40.23
            IF (NPFL.GT.0) WRITE(PRINTF,111) SPCSIG(MNISL)/PI2             40.23
-           IF (NSTATC.EQ.0 .AND. NPFL.GT.0 .AND. INODE.EQ.MASTER)         40.23
+           IF (NSTATC.EQ.0 .AND. NPFL.GT.0 .AND. IAMMASTER)               40.95 40.23
      &        WRITE(SCREEN,111) SPCSIG(MNISL)/PI2                         40.23
 !                                                                         40.23
            FRAC = REAL(NPFR)*100./REAL(NWETP)                             40.23
            IF(NPFR.GT.0) WRITE(PRINTF,110) 'rescaling',FRAC,MXNFR         40.23
-           IF (NSTATC.EQ.0 .AND. NPFR.GT.0 .AND. INODE.EQ.MASTER)         40.23
+           IF (NSTATC.EQ.0 .AND. NPFR.GT.0 .AND. IAMMASTER)               40.95 40.23
      &        WRITE(SCREEN,110) 'rescaling',FRAC,MXNFR                    40.23
 !                                                                         40.23
  110       FORMAT(1X,'use of ',A9,' in ',F6.2,                            40.23
@@ -1893,10 +1892,10 @@
 !
         IF (PNUMS(21).EQ.1. .AND. ITER.EQ.1) THEN                         40.41
            WRITE(PRINTF,113)                                              40.41
-           IF (NSTATC.EQ.0.AND.INODE.EQ.MASTER) WRITE(SCREEN,113)         40.41
+           IF (NSTATC.EQ.0.AND.IAMMASTER) WRITE(SCREEN,113)               40.95 40.41
         ELSE                                                              40.41
            WRITE(PRINTF,112) ACCUR,PNUMS(4)                               30.72
-           IF (NSTATC.EQ.0.AND.INODE.EQ.MASTER)                           40.30
+           IF (NSTATC.EQ.0.AND.IAMMASTER)                                 40.95 40.30
      &        WRITE(SCREEN,112) ACCUR,PNUMS(4)                            40.30 40.00
         END IF                                                            40.41
  112    FORMAT(' accuracy OK in ',F6.2,
@@ -1983,7 +1982,7 @@
 !
       IF (.NOT.CSETUP) THEN                                               30.82
           WRITE(PRINTF,124)                                               30.82
-          IF (SCREEN.NE.PRINTF.AND.NSTATC.EQ.0.AND.INODE.EQ.MASTER)       40.30 40.13
+          IF (SCREEN.NE.PRINTF.AND.NSTATC.EQ.0.AND.IAMMASTER)             40.95 40.30 40.13
      &    WRITE(SCREEN,124)                                               30.82
       END IF                                                              30.82
  124  FORMAT(1X,'no convergence in set-up calculation')                   30.82
@@ -2088,7 +2087,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2861,7 +2860,7 @@
      &                 FPM        ,UFRIC      ,
      &                 COMPDA(1,JWX2) ,COMPDA(1,JWY2) ,
      &                 ANYWND     ,SPCDIR     ,                           40.00
-     &                 COMPDA(1,JVX2) ,COMPDA(1,JVY2) ,SPCSIG     )       30.70
+     &                 COMPDA(1,JVX2) ,COMPDA(1,JVY2) ,SPCSIG ,AC2)       41.33 30.70
 !TIMG          CALL SWTSTO(115)                                                40.23
         END IF
 !
@@ -2886,28 +2885,21 @@
 !       Calculate various integral parameters for use in the source terms
 !
 !TIMG        CALL SWTSTA(116)                                                  40.23
+        CALL SINTGRL  (SPCDIR  ,KWAVE   ,AC2     ,                        40.02
+     &                 COMPDA(1,JDP2)   ,QBLOC   ,COMPDA(1,JURSEL),       40.02
+     &                 RDX     ,RDY     ,                                 40.02
+     &                 AC2TOT  ,ETOT    ,                                 40.02
+     &                 ABRBOT  ,COMPDA(1,JUBOT)  ,HS      ,               40.02
+     &                 COMPDA(1,JQB)    ,                                 40.02
+     &                 HM      ,KMESPC  ,SMEBRK,                          40.02
 #ifdef SWAN_MODEL
-        CALL SINTGRL  (SPCDIR  ,KWAVE   ,AC2     ,                        40.02
-     &                 COMPDA(1,JDP2)   ,QBLOC   ,COMPDA(1,JURSEL),       40.02
-     &                 RDX     ,RDY     ,                                 40.02
-     &                 AC2TOT  ,ETOT    ,                                 40.02
-     &                 ABRBOT  ,COMPDA(1,JUBOT)  ,HS      ,               40.02
-     &                 COMPDA(1,JQB)    ,                                 40.02
-     &                 HM      ,KMESPC  ,SMEBRK,                          40.02
-     &                 COMPDA(1,JPBOT)  ,                                 40.51
-     &                 SWPDIR  ,                                          40.16
-     &                 COMPDA(1,JDBOT)  )                                 !PSD 09/21/2011
+     &                 COMPDA(1,JPBOT)  ,COMPDA(1,JDBOT),                 40.51
 #else
-        CALL SINTGRL  (SPCDIR  ,KWAVE   ,AC2     ,                        40.02
-     &                 COMPDA(1,JDP2)   ,QBLOC   ,COMPDA(1,JURSEL),       40.02
-     &                 RDX     ,RDY     ,                                 40.02
-     &                 AC2TOT  ,ETOT    ,                                 40.02
-     &                 ABRBOT  ,COMPDA(1,JUBOT)  ,HS      ,               40.02
-     &                 COMPDA(1,JQB)    ,                                 40.02
-     &                 HM      ,KMESPC  ,SMEBRK,                          40.02
      &                 COMPDA(1,JPBOT)  ,                                 40.51
-     &                 SWPDIR                  )                          40.16
 #endif
+     &                 COMPDA(1,JBOTLV) ,COMPDA(1,JGAMMA) ,               41.38
+     &                 COMPDA(1,JRESPL) ,SWPDIR           ,               41.38 40.16
+     &                 IDDLOW           ,IDDTOP           )               41.38
 !TIMG        CALL SWTSTO(116)                                                  40.23
 !
         COMPDA(KCGRD(1),JHS) = HS                                         30.70
@@ -2990,7 +2982,6 @@
      &  MEMNL4              ,WWINT               ,WWAWG               ,
      &  WWSWG               ,CGO                 ,COMPDA(1,JUSTAR)    ,
      &  COMPDA(1,JZEL)      ,SPCDIR              ,ANYWND              ,
-     &  CAS                 ,                                             41.11
      &  SWMATR(1,1,JDIS0)   ,SWMATR(1,1,JDIS1)   ,
      &  SWMATR(1,1,JGEN0)   ,SWMATR(1,1,JGEN1)   ,                        40.85
      &  SWMATR(1,1,JRED0)   ,SWMATR(1,1,JRED1)   ,                        40.85
@@ -3225,7 +3216,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3440,8 +3431,10 @@
 !
       IF (IWCAP.EQ.1) THEN
          WRITE(PRINTF,6005) PWCAP(1),PWCAP(2)
+         WRITE(PRINTF,6006) PWCAP(10)
  6005    FORMAT(' W-cap Komen (`84)    : EMPCOF ',E12.4,
      &          ' APM   ',E12.4)
+ 6006    FORMAT('                      : DELTA  ',E12.4)                  41.41
       ELSEIF (IWCAP.EQ.2) THEN
          WRITE(PRINTF,6335) PWCAP(3),PWCAP(4)
  6335    FORMAT(' W-cap Janssen (`90)  : CFJANS ',E12.4,
@@ -3485,17 +3478,30 @@
          WRITE(PRINTF,7215) PSURF(5)
  7215    FORMAT('                        B      ',E12.4)
       ELSEIF (ISURF.EQ.4) THEN                                            41.03
-         WRITE(PRINTF,7216) PSURF(1), PSURF(2)
+         WRITE(PRINTF,7216) PSURF(1), PSURF(4)
  7216    FORMAT(' Thornton&Guza (`83)  : ALPHA  ',E12.4,
      &          ' GAMMA ',E12.4)
-         WRITE(PRINTF,7217) PSURF(4)
+         WRITE(PRINTF,7217) PSURF(5)
  7217    FORMAT('                        N      ',E12.4)
-      ELSEIF (ISURF.EQ.5) THEN                                            41.03
-         WRITE(PRINTF,7218) PSURF(1), PSURF(4)
- 7218    FORMAT(' Surf biphase (2009)  : ALPHA  ',E12.4,
-     &          ' N     ',E12.4)
-         WRITE(PRINTF,7219) PSURF(5)
- 7219    FORMAT('                        BREF   ',E12.4)
+      ELSEIF (ISURF.EQ.6) THEN                                            41.38
+         WRITE(PRINTF,7220) PSURF(1), PSURF(5)
+ 7220    FORMAT(' n-k2d (2012)         : ALPHA  ',E12.4,
+     &          ' ALPHA0',E12.4)
+         WRITE(PRINTF,7221) PSURF(4), PSURF(14)
+ 7221    FORMAT('                        GAMMA0 ',E12.4,
+     &          ' A_DSPR',E12.4)
+         WRITE(PRINTF,7222) PSURF(6), PSURF(7)
+ 7222    FORMAT('                        BETA1  ',E12.4,
+     &          ' BETA2 ',E12.4)
+         WRITE(PRINTF,7223) PSURF(8), PSURF(9)
+ 7223    FORMAT('                        DELTA1 ',E12.4,
+     &          ' DELTA2',E12.4)
+         WRITE(PRINTF,7224) PSURF(10), PSURF(11)
+ 7224    FORMAT('                        N_LOW  ',E12.4,
+     &          ' N_HIGH',E12.4)
+         WRITE(PRINTF,7225) PSURF(12), PSURF(13)
+ 7225    FORMAT('                        R_LOW  ',E12.4,
+     &          ' R_HIGH',E12.4)
       ELSE
          WRITE (PRINTF, *) 'Surf breaking is off'
       ENDIF
@@ -3586,7 +3592,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4050,7 +4056,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4270,7 +4276,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4633,24 +4639,18 @@
       END
 !****************************************************************
 !
+      SUBROUTINE SINTGRL(SPCDIR  ,KWAVE   ,AC2     ,                      40.02
+     &                   DEP2    ,QB_LOC  ,URSELL  ,                      40.02
+     &                   RDX     ,RDY     ,                               40.02
+     &                   AC2TOT  ,ETOT    ,                               40.02
+     &                   ABRBOT  ,UBOT    ,HS      ,QB      ,             40.02
+     &                   HM      ,KMESPC  ,SMEBRK  ,                      40.02
 #ifdef SWAN_MODEL
-      SUBROUTINE SINTGRL(SPCDIR  ,KWAVE   ,AC2     ,                      40.02
-     &                   DEP2    ,QB_LOC  ,URSELL  ,                      40.02
-     &                   RDX     ,RDY     ,                               40.02
-     &                   AC2TOT  ,ETOT    ,                               40.02
-     &                   ABRBOT  ,UBOT    ,HS      ,QB      ,             40.02
-     &                   HM      ,KMESPC  ,SMEBRK  ,                      40.02
-     &                   TMBOT   ,SWPDIR  ,                               40.51 40.16
-     &                   DIRBOT  )                                        !PSD 09/21/2011
+     &                   TMBOT   ,DIRBOT, BOTLV   ,GAMBR   ,RESPL   ,     41.38 40.51 40.16
 #else
-      SUBROUTINE SINTGRL(SPCDIR  ,KWAVE   ,AC2     ,                      40.02
-     &                   DEP2    ,QB_LOC  ,URSELL  ,                      40.02
-     &                   RDX     ,RDY     ,                               40.02
-     &                   AC2TOT  ,ETOT    ,                               40.02
-     &                   ABRBOT  ,UBOT    ,HS      ,QB      ,             40.02
-     &                   HM      ,KMESPC  ,SMEBRK  ,                      40.02
-     &                   TMBOT   ,SWPDIR           )                      40.51 40.16
+     &                   TMBOT   ,BOTLV   ,GAMBR   ,RESPL   ,             41.38 40.51 40.16
 #endif
+     &                   SWPDIR  ,IDDLOW  ,IDDTOP  )                      41.38
 !
 !****************************************************************
 !
@@ -4675,7 +4675,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4702,6 +4702,7 @@
 !     40.22: John Cazes and Tim Campbell
 !     40.41: Marcel Zijlema
 !     40.51: Marcel Zijlema
+!     41.38: James Salmon
 !
 !  1. Updates
 !
@@ -4718,7 +4719,8 @@
 !     40.08, Mar. 03: Dimensioning of RDX, RDX changed to be consistent
 !                     with other subroutines
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
-!     40.51, Feb. 05: bottom wave period added
+!     40.51, Feb. 05: near bottom wave period added
+!     41.38, Apr. 12: extension to nkd scaling
 !
 !  2. Purpose
 !
@@ -4788,8 +4790,10 @@
 !     QB      : computed in the subroutine FRABRE
 !     SIGM01  = ETOT1 / ETOT
 !     SIGM_10 = ETOT  / ACTOT
-!     UBOT    = Sqrt [ UB2 ] Note: this is Urms according to Madsen (1994)
-!     TMBOT   = 2*PI AB2 / UB2
+!     UBOT    = Sqrt [ UB2 ]             NOTE: THIS IS THE ROOT MEAN SQUARE OF THE ORBITAL MOTION NEAR THE BOTTOM!!!
+!                                        Note: this is Urms according to Madsen (1994)
+!     TMBOT   = PI Sqrt [ 2 AB2 / UB2 ]   ! new since 40.85
+!     TMBOT   = 2*PI AB2 / UB2            !we thoguth this was the right way
 #ifdef SWAN_MODEL
 !     DIRBOT = ATAN2 [ EBSINTOT / EBCOSTOT] !PSD 09/21/2011 follows Madsen (1994)
 #endif
@@ -4798,26 +4802,31 @@
 !
 !     ABRBOT: Near bottom excursion
 !     AC2   : Action density as function of ID, IS, IX and IY
-!     AC2TOT : Total action density per gridpoint
+!     AC2TOT: Total action density per gridpoint
+!     BOTLV : Bottom depth
 !     DEP2  : Water depth
 !     ETOT  : Total wave energy density
+!     GAMBR : breaker parameter as function of IX and IY
 !     HM    : Maximum wave height
 !     HS    : Significant wave height
 !     KMESPC: Mean average wavenumber according to the WAM-formulation
-!     KWAVE : Wavenumber function of frequency and IC??
+!     KWAVE : Wavenumber
 !     QB    : Fraction of breaking waves
 !     QB_LOC: Fraction of breaking waves at current grid-point
+!     RESPL : response length
 !     SMEBRK: Mean frequency according to first order moment
 !     SWPDIR: Number of current sweep direction                           40.16
 !     UBOT  : Near bottom velocity as function of IX and IY
 !     URSELL: Ursell number as function of IX and IY
-!     TMBOT : bottom wave period                                          40.51
+!     TMBOT : near bottom wave period                                     40.51
 #ifdef SWAN_MODEL
 !     DIRBOT : bottom wave mean direction !PSD 09/21/2011
 #endif
       INTEGER, INTENT(IN)  :: SWPDIR                                      40.16
+      INTEGER, INTENT(IN)  :: IDDLOW, IDDTOP                              41.38
 
-      REAL, INTENT(IN)     :: DEP2(MCGRD)
+      REAL, INTENT(IN)     :: DEP2(MCGRD), BOTLV(MCGRD)
+      REAL, INTENT(INOUT)  :: GAMBR(MCGRD), RESPL(MCGRD)                  41.38
 !     Changed ICMAX to MICMAX, since MICMAX doesn't vary over gridpoint   40.22
       REAL, INTENT(IN)     :: KWAVE(MSC,MICMAX)                           40.22
       REAL, INTENT(IN)     :: RDX(10), RDY(10)                            40.08
@@ -4847,7 +4856,7 @@
 !
 !     AB2                : Sum of E_DSHKD2_DS_DD
 !     ACTOT_DSIG         : Integration term for calculating ACTOT
-!     BIPH               : parameterized biphase of the spectrum
+!     ARR                : auxiliary array
 !     EDRKTOT_SWELL      : Swell-part of EDRKTOT
 !     EMAX               : Maximum energy according calculated HM
 !     ETOT_DRK_DSIG      : Integration term for calculating EDRKTOT
@@ -4858,6 +4867,8 @@
 !     ETOT_SIG2_DSIG     : Integration term for calculating ETOT2
 !     ETOT_SIG2_DSHKD2_DSIG: Integration term for calculating UB2
 !     ETOT_SIG4_DSIG     : Integration term for calculating ETOT4
+!     ETOT_SIG_2_DSIG    : Integration term for calculating ETOT_2
+!     ETOT_2             : (negative) second moment of the energy density
 #ifdef SWAN_MODEL
 !     EBSIN              : Integration term for calculatng EBSINTOT !PSD 09/21/2011
 !     EBCOS              : Integration term for calculating EBCOSTOT !PSD 09/21/2011     
@@ -4865,13 +4876,13 @@
 !     EBCOSTOT           : Denominator in calculating DIRBOT !PSD 09/21/2011
 #endif
 !     FRINT_X_DDIR       : FRINTF * DDIR
+!     KLOC               : help variable to compute wave number based on sigma0,-2
 !     SINH_K_X_DEP_2     : SINH(KWAVE*DEP2)**2
 !     UB2                : Sum of ETOT_SIG2_DSHKD2_DSIG
 !     WH                 : fraction of breaking waves
 !
-      REAL              :: AB2, EMAX, UB2
+      REAL              :: AB2, EMAX, UB2, ETOT_2, KLOC(1), ARR(1)
       REAL              :: WH
-      REAL              :: BIPH
       REAL              :: FRINTF_X_DDIR
       REAL              :: BRCOEF   ! variable breaking coefficient (calc. in BRKPAR)  40.22
 !
@@ -4882,6 +4893,7 @@
       REAL              :: ETOT_SIG2_DSHKD2_DSIG(MSC)                     40.22
       REAL              :: ETOT_SIG4_DSIG(MSC)                            40.22
       REAL              :: SINH_K_X_DEP_2(MSC)                            40.22
+      REAL              :: ETOT_SIG_2_DSIG(MSC)                           41.38
 #ifdef SWAN_MODEL
       REAL              :: EBCOSTOT, EBSINTOT                            !PSD 09/21/2011
       REAL              :: EBSIN(MSC)                                     !PSD 09/21/2011
@@ -4921,9 +4933,11 @@
 !
       KM_WAM  = 10.
       KM01    = 10.
+      KM_20   = 10.
 !
       SIGM01  = 10.
       SIGM_10 = 10.
+      SIGM_20 = 10.
 !
       HS      = 0.
       HM      = 0.1
@@ -4936,8 +4950,7 @@
       DIRBOT(KCGRD(1)) = 0.                                           !PSD 09/21/2011
 #endif
 !
-!     Calculate total spectral energy:
-!
+!     Calculate total spectral energy
 !
       FRINTF_X_DDIR = FRINTF * DDIR
       ETOT_DSIG(:)  = SUM(AC2(:,:,KCGRD(1)),DIM=1) * SIGPOW(:,2) *
@@ -4948,21 +4961,9 @@
 !
       ETOT = ETOT + ETOT_DSIG(MSC) * PWTAIL(6) / FRINTF
 !
-      IF (ISURF .EQ. 1 .OR. ISURF.EQ.4                                    41.03
-     &    .OR. ISURF.EQ.5                                                 41.03
-     &                                ) THEN
-        HM   = PSURF(2) * DEP2(KCGRD(1))                                  40.22
-      ELSEIF (ISURF .EQ. 2 .OR. ISURF.EQ.3) THEN                          41.03
-!        Calulate the correct breaking coefficient BRCOEF
-         CALL BRKPAR (BRCOEF  ,SPCDIR(1,2), SPCDIR(1,3), AC2     ,
-     &                SIGPOW(:,1), DEP2, RDX, RDY, KWAVE         )        41.03 40.22
-        HM   = BRCOEF * DEP2(KCGRD(1))                                    40.22
-      ELSE
-!       breaking disabled, assign very high value to HM
-        HM   = 100.                                                       40.22
-      ENDIF
+!     --- compute maximum energy based on maximum wave height
 !
-      EMAX = 0.25 * HM**2
+      EMAX = 0.25 * ( PSURF(2) * DEP2(KCGRD(1)) )**2
 !
 !     --- reduce action density if necessary
 !
@@ -4993,6 +4994,7 @@
         ETOT_SIG_DSIG(:)    = ACTOT_DSIG(:) * SIGPOW(:,2)
         ETOT_SIG2_DSIG(:)   = ACTOT_DSIG(:) * SIGPOW(:,3)
         ETOT_SIG4_DSIG(:)   = ACTOT_DSIG(:) * SIGPOW(:,5)
+        ETOT_SIG_2_DSIG(:)  = ACTOT_DSIG(:) / SIGPOW(:,1)                 41.38
         ETOT_DRK_DSIG(:)    = ETOT_DSIG(:) / SQRT(KWAVE(:,1))
         ETOT_K_DSIG(:)      = ETOT_DSIG(:) * KWAVE(:,1)
         ETOT_DSHKD2_DSIG(:) = ETOT_DSIG(:) / SINH_K_X_DEP_2(:)
@@ -5003,6 +5005,7 @@
         ETOT1         = SUM(ETOT_SIG_DSIG)
         ETOT2         = SUM(ETOT_SIG2_DSIG)
         ETOT4         = SUM(ETOT_SIG4_DSIG)
+        ETOT_2        = SUM(ETOT_SIG_2_DSIG)                              41.38
         EDRKTOT       = SUM(ETOT_DRK_DSIG)
         EKTOT         = SUM(ETOT_K_DSIG)
         UB2           = SUM(ETOT_SIG2_DSHKD2_DSIG)
@@ -5013,6 +5016,8 @@
         ACTOT       = ACTOT + PWTAIL(5) * ACTOT_DSIG(MSC) / FRINTF
         ETOT1       = ETOT1 + PWTAIL(7) * ETOT_DSIG(MSC) *
      &                SIGPOW(MSC,1) / FRINTF
+        ETOT_2      = ETOT_2 + PWTAIL(4) * ACTOT_DSIG(MSC) /              41.38
+     &                SIGPOW(MSC,1) / FRINTF                              41.38
         EDRKTOT     = EDRKTOT + PWTAIL(5) * ETOT_DSIG(MSC) /
      &                (SQRT(KWAVE(MSC,1)) * FRINTF)
         EKTOT       = EKTOT + PWTAIL(8) * ETOT_DSIG(MSC) *
@@ -5021,35 +5026,30 @@
 !     Calculate the mean frequencies SIGM01 and SIGM_10,
 !     mean wavenumbers KM_WAM, KM01 and significant waveheight HS
 !
-        IF (ETOT1 .GT. 0.) SIGM01  = ETOT1 / ETOT
-        IF (EKTOT .GT. 0.) KM01    = EKTOT / ETOT
-        IF (ACTOT .GT. 0.) SIGM_10 = ETOT / ACTOT
+        IF (ETOT1  .GT. 0.) SIGM01  = ETOT1 / ETOT
+        IF (EKTOT  .GT. 0.) KM01    = EKTOT / ETOT
+        IF (ACTOT  .GT. 0.) SIGM_10 = ETOT / ACTOT
+        IF (ETOT_2 .GT. 0.) SIGM_20 = SQRT( ETOT / ETOT_2 )               41.38
         IF (EDRKTOT .GT. 0. ) THEN
           KM_WAM  = ( ETOT / EDRKTOT )**2.
         ENDIF
+        IF ( ETOT_2.GT.0. ) THEN                                          41.38
+           CALL KSCIP1 (1, SIGM_20, DEP2(KCGRD(1)), KLOC, ARR, ARR, ARR)  41.38
+           KM_20 = KLOC(1)                                                41.38
+        ENDIF                                                             41.38
         IF ( ETOT .GT. 1.E-20 ) THEN
           HS       = 4. * SQRT (ETOT)
         END IF
 !
-!       --- calculate Qb when Battjes/Janssen breaking is activated
-!
-        IF ( ISURF.GT.0 .AND. ISURF.LT.4 ) THEN
-           CALL FRABRE (HM, ETOT, QB(KCGRD(1)))
-!
-!       --- calculate Qb when Thornton/Guza breaking is activated         41.03
-!
-        ELSEIF (ISURF.EQ.4) THEN
-           WH = (2.*SQRT(2.*ETOT)/HM)**PSURF(4)
-           WH = MIN(1.,WH)
-           QB(KCGRD(1)) = WH
-        ENDIF
-!
 !     Calculate the orbital velocity UBOT, orbital excursion ABRBOT and
-!     bottom wave period TMBOT                                            40.51
+!     near bottom wave period TMBOT                                       40.51
 !
-!jcw    IF ( UB2 .GT. 0.) UBOT(KCGRD(1)) = SQRT ( 2. * UB2 )
         IF ( UB2 .GT. 0.) UBOT(KCGRD(1)) = SQRT ( UB2 )
         IF ( AB2 .GT. 0.) ABRBOT = SQRT (2. *  AB2)
+! These next 2 lines are the way in the new swan
+!       IF ( UB2.GT.0. .AND. AB2.GT.0. )                                  40.51
+!    &                             TMBOT(KCGRD(1)) = PI*SQRT(2.*AB2/UB2)  40.51
+! These next 2 lines are the way we think it should be.
         IF ( UB2.GT.0. .AND. AB2.GT.0. )                                  40.51
      &                               TMBOT(KCGRD(1)) = PI2*SQRT(AB2/UB2)  40.51
 #ifdef SWAN_MODEL
@@ -5072,11 +5072,48 @@
 #endif
       ENDIF
 !
+!     --- compute actual maximum wave height based on breaking model
+!
+      IF (ISURF .EQ. 1                                                    41.38 41.03
+     &                                ) THEN
+        HM   = PSURF(2) * DEP2(KCGRD(1))                                  40.22
+      ELSEIF (ISURF .EQ. 4) THEN                                          41.38
+        HM   = PSURF(4) * DEP2(KCGRD(1))                                  40.38
+      ELSEIF (ISURF .EQ. 2 .OR. ISURF.EQ.3 .OR. ISURF.EQ.6) THEN          41.38 41.03
+!        Calulate the correct breaking coefficient BRCOEF
+         CALL BRKPAR (BRCOEF, SPCDIR(1,2), SPCDIR(1,3), AC2,
+     &                SIGPOW(:,1), DEP2, BOTLV, GAMBR, RESPL,             41.38
+     &                RDX, RDY, KWAVE, IDDLOW, IDDTOP, SPCDIR(1,1) )      41.38 41.03 40.22
+        HM   = BRCOEF * DEP2(KCGRD(1))                                    40.22
+      ELSE
+!       breaking disabled, assign very high value to HM
+        HM   = 100.                                                       40.22
+      ENDIF
+!
+!     --- calculate fraction of breakers
+!
+      IF ( ETOT .GT. 0. ) THEN
+!
+!       --- calculate Qb when Battjes/Janssen breaking is activated
+!
+        IF ( ISURF.NE.4                                                   41.38
+     &                  ) THEN
+           CALL FRABRE (HM, ETOT, QB(KCGRD(1)))
+!
+!       --- calculate Qb when Thornton/Guza breaking is activated         41.03
+!
+        ELSEIF (ISURF.EQ.4) THEN
+           WH = (2.*SQRT(2.*ETOT)/HM)**PSURF(5)
+           WH = MIN(1.,WH)
+           QB(KCGRD(1)) = WH
+        ENDIF
+!
+      ENDIF
+!
 !     *** calculate Ursell number ***
 !     *** update only for first encounter in a sweep                      40.16
 !
       IF ( ITRIAD.GT.0                                                    40.41
-     &     .OR. ISURF.EQ.5                                                41.03
      &                 ) THEN                                             40.41
          IF (( SWPDIR .EQ. 1) .OR.                                        40.16
      &       ( SWPDIR .EQ. 2 .AND. IXCGRD(1) .EQ. 1) .OR.                 40.16
@@ -5089,17 +5126,6 @@
       ELSE                                                                40.41
         URSELL(KCGRD(1)) = 0.                                             40.41
       END IF                                                              40.41
-!
-!     --- calculate Qb when biphase scaling is activated                  41.03
-!
-      IF (ISURF.EQ.5) THEN
-         BIPH = 0.5*PI*(TANH(PTRIAD(4)/URSELL(KCGRD(1)))-1.)
-         IF ( BIPH.LT.0. ) THEN
-            WH = (BIPH/PSURF(5))**PSURF(4)
-            WH = MIN(1.,WH)
-            QB(KCGRD(1)) = WH
-         ENDIF
-      ENDIF
 !
       QB_LOC = QB(KCGRD(1))
 !
@@ -5153,7 +5179,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5373,7 +5399,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5619,7 +5645,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5944,7 +5970,6 @@
      &                     MEMNL4     ,WWINT      ,WWAWG      ,
      &                     WWSWG      ,CGO        ,USTAR      ,
      &                     ZELEN      ,SPCDIR     ,ANYWND     ,
-     &                     CAS        ,                                   41.11
      &                     DISSC0     ,DISSC1     ,GENC0      ,           40.85
      &                     GENC1      ,REDC0      ,REDC1      ,           40.85
      &                     XIS        ,FRCOEF     ,IT         ,           30.00
@@ -5978,7 +6003,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6294,7 +6319,6 @@
       REAL  :: WWAWG(*)
       REAL  :: WWSWG(*)
       REAL  :: CGO(MSC,MICMAX)                                            40.22
-      REAL  :: CAS(MDC,MSC,MICMAX)                                        41.11
       REAL  :: USTAR(MCGRD)
       REAL  :: ZELEN(MCGRD)
       REAL  :: DISSC0(1:MDC,1:MSC,1:MDISP)                                40.67
@@ -6444,7 +6468,6 @@
      &                            IDCMIN  ,IDCMAX  ,ISSTOP  ,             40.02
      &                            ETOT    ,IMATDA  ,IMATRA  ,PLWCAP  ,    40.02
      &                            CGO     ,UFRIC   ,                      40.53
-     &                            CAS     ,                               41.11
      &                            DEP2    ,DISSC1  ,DISSC0  )             40.67 40.61 40.12
 !TIMG      CALL SWTSTO(133)                                                    40.23
 !
@@ -6459,10 +6482,17 @@
 !
         IF ( ICUR .EQ. 0 .OR. ITER .GT. 1 ) THEN
 !
-            CALL SWLTA ( AC2   , DEP2  , CGO   , SPCSIG,                  40.56
-     &                   KWAVE , IMATRA, IMATDA, REDC0 , REDC1 ,          40.85
-     &                   IDDLOW, IDDTOP, ISSTOP, IDCMIN, IDCMAX,
-     &                   HS    , SMEBRK, PLTRI , URSELL )
+            IF (ITRIAD.EQ.5) THEN
+               CALL STRICL (AC2(1,1,KCGRD(1)) ,DEP2(KCGRD(1)),
+     &                      SPCSIG ,KWAVE ,
+     &                      IDDLOW,IDDTOP,ANYBIN,IMATDA,IMATRA,
+     &                      CGO     ,KMESPC  ,ETOT    ,SMEBRK )
+            ELSE
+               CALL SWLTA ( AC2   , DEP2  , CGO   , SPCSIG,               40.56
+     &                      KWAVE , IMATRA, IMATDA, REDC0 , REDC1 ,       40.85
+     &                      IDDLOW, IDDTOP, ISSTOP, IDCMIN, IDCMAX,
+     &                      HS    , SMEBRK, PLTRI , URSELL )
+            ENDIF
 !
         ENDIF
 !
@@ -6701,7 +6731,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6852,7 +6882,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6996,7 +7026,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7185,7 +7215,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7697,7 +7727,7 @@
          INOCNV = INOCNV + 1
       END IF
       IF ( ICONV.EQ.0 .AND. IAMOUT.GE.1 ) THEN
-         IF (ERRPTS.GT.0.AND.INODE.EQ.MASTER) THEN
+         IF (ERRPTS.GT.0.AND.IAMMASTER) THEN
             WRITE(ERRPTS,100) IXCGRD(1)+MXF-1, IYCGRD(1)+MYF-1, 2
          END IF
  100     FORMAT (I4,1X,I4,1X,I2)
@@ -7796,7 +7826,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8209,7 +8239,7 @@
          INOCNV = INOCNV + 1
       END IF
       IF ( ICONV.EQ.0 .AND. IAMOUT.GE.1 ) THEN
-         IF (ERRPTS.GT.0.AND.INODE.EQ.MASTER) THEN
+         IF (ERRPTS.GT.0.AND.IAMMASTER) THEN
             WRITE(ERRPTS,100) IXCGRD(1)+MXF-1, IYCGRD(1)+MYF-1, 2
          END IF
  100     FORMAT (I4,1X,I4,1X,I2)
@@ -8305,7 +8335,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8423,7 +8453,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8783,7 +8813,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -9338,7 +9368,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

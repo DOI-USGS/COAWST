@@ -11,7 +11,7 @@ subroutine SwanThreadBounds ( nwetp, ivlow, ivup, tlist )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -54,8 +54,9 @@ subroutine SwanThreadBounds ( nwetp, ivlow, ivup, tlist )
 !
     integer, intent(out)                    :: ivlow     ! lower index in range of vertices in calling thread
     integer, intent(out)                    :: ivup      ! upper index in range of vertices in calling thread
-    integer, intent(in)                     :: nwetp     ! total number of active vertices
     integer, dimension(nverts), intent(out) :: tlist     ! vertex list for calling thread
+    !
+    real, intent(in)                        :: nwetp     ! total number of active vertices
 !
 !   Local variables
 !
@@ -100,8 +101,8 @@ subroutine SwanThreadBounds ( nwetp, ivlow, ivup, tlist )
     !
     nvcum = 0
     do i = 1, nth
-       nacvt(i) = (nwetp*i)/nth - nvcum
-       nvcum    = (nwetp*i)/nth
+       nacvt(i) = (nint(nwetp)*i)/nth - nvcum
+       nvcum    = (nint(nwetp)*i)/nth
     enddo
     !
     ! determine loop bounds for calling thread

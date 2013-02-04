@@ -1,4 +1,5 @@
 subroutine SwanComputeForce ( fx, fy, ac2, dep2, spcsig, spcdir )
+!ADCsubroutine SwanComputeForce
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -11,7 +12,7 @@ subroutine SwanComputeForce ( fx, fy, ac2, dep2, spcsig, spcdir )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,10 +33,12 @@ subroutine SwanComputeForce ( fx, fy, ac2, dep2, spcsig, spcdir )
 !   Authors
 !
 !   40.80: Marcel Zijlema
+!   41.20: Casey Dietrich
 !
 !   Updates
 !
 !   40.80, February 2008: New subroutine
+!   41.20, February 2008: extension to tightly coupled ADCIRC+SWAN model
 !
 !   Purpose
 !
@@ -55,6 +58,9 @@ subroutine SwanComputeForce ( fx, fy, ac2, dep2, spcsig, spcdir )
     use swcomm4
     use SwanGriddata
     use SwanGridobjects
+!ADC    use Couple2Adcirc, only: compda
+!ADC    use GLOBAL,        only: rsnx2, rsny2
+!ADC    use m_genarr,      only: ac2, spcdir, spcsig
 !
     implicit none
 !
@@ -113,6 +119,10 @@ subroutine SwanComputeForce ( fx, fy, ac2, dep2, spcsig, spcdir )
     real, dimension(1)                    :: n        ! ratio of group and phase velocity
     real, dimension(1)                    :: nd       ! derivative of n with respect to depth
     real, dimension(1)                    :: sig      ! relative frequency
+!ADC    !
+!ADC    real, dimension(nverts)               :: dep2     ! help array to store water depth
+!ADC    real, dimension(nverts)               :: fx       ! help array to store wave-induced force in x-direction
+!ADC    real, dimension(nverts)               :: fy       ! help array to store wave-induced force in y-direction
     !
     real, dimension(:), allocatable       :: sxx      ! x-component of radiation stress in x-direction
     real, dimension(:), allocatable       :: sxy      ! cross component of radiation stress in x/y-direction
@@ -145,6 +155,11 @@ subroutine SwanComputeForce ( fx, fy, ac2, dep2, spcsig, spcdir )
     sxx = 0.
     sxy = 0.
     syy = 0.
+!ADC    !
+!ADC    ! move the depths to their own array
+!ADC    do ivert = 1, nverts
+!ADC       dep2(ivert) = compda(ivert,jdp2)
+!ADC    enddo
     !
     ! compute radiation stresses in vertices
     !
@@ -306,6 +321,12 @@ subroutine SwanComputeForce ( fx, fy, ac2, dep2, spcsig, spcdir )
        fy(ivert) = -RHO * GRAV * ( dsxydx  + dsyydy )
        !
     enddo vertexloop
+!ADC    !
+!ADC    ! pass stresses to ADCIRC
+!ADC    do ivert = 1, nverts
+!ADC       rsnx2(ivert) = fx(ivert)
+!ADC       rsny2(ivert) = fy(ivert)
+!ADC    enddo
     !
     ! deallocation of radiation stresses
     !

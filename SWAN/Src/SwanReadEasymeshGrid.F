@@ -11,7 +11,7 @@ subroutine SwanReadEasymeshGrid ( basenm, lenfnm )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -88,6 +88,7 @@ subroutine SwanReadEasymeshGrid ( basenm, lenfnm )
     ! read first line to determine number of vertices
     !
     read(ndsd, *, end=950, err=910) nverts
+    istat = 0
     if(.not.allocated(xcugrd)) allocate (xcugrd(nverts), stat = istat)
     if ( istat == 0 ) then
        if(.not.allocated(ycugrd)) allocate (ycugrd(nverts), stat = istat)

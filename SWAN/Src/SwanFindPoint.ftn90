@@ -11,7 +11,7 @@ subroutine SwanFindPoint ( x, y, kvert )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -149,7 +149,7 @@ subroutine SwanFindPoint ( x, y, kvert )
                 !
                 r   = ( dxb*(x-x1) + dyb*(y-y1) ) / ( dxb*dxb + dyb*dyb )
                 !
-                if ( r < 0. .or. r > 1. ) then
+                if ( r < -0.01 .or. r > 1.01 ) then      ! 41.13
                    kvert = -1
                 else
                    !

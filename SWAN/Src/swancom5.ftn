@@ -56,7 +56,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -262,7 +262,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -781,7 +781,7 @@
           ENDIF
         ENDIF
 !       write this point to ERRPTS file (BLOCKed option)                  40.13
-        IF (ERRPTS.GT.0.AND.INODE.EQ.MASTER) THEN                         40.30
+        IF (ERRPTS.GT.0.AND.IAMMASTER) THEN                               40.95 40.30
            WRITE(ERRPTS,7002) IXCGRD(1)+MXF-1, IYCGRD(1)+MYF-1, 3         40.30
         END IF                                                            40.13
  7002   FORMAT (I4, 1X, I4, 1X, I2)                                       40.13
@@ -878,7 +878,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1165,7 +1165,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1195,6 +1195,7 @@
 !     40.41: Marcel Zijlema
 !     40.61: John Warner
 !     41.06: Gerbrant van Vledder
+!     41.35: Casey Dietrich
 !
 !  1. Updates
 !
@@ -1218,6 +1219,7 @@
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.61, Dec. 06: correction DO loop 60 (IDCMIN, IDCMAX -> IDDLOW,IDDTOP)
 !     41.06, Mar. 09: add option of limitation of velocity in theta-direction
+!     41.35, Mar. 12: add option of limitation on csigma and ctheta
 !
 !  2. Purpose
 !
@@ -1357,6 +1359,7 @@
 !
 !     real local variables
 !
+!        ALPHA         upper limit of CFL restriction
 !        KD1           wavenumber * depth
 !        COEF          aux. quantity
 !        VLSINH        sinh of KD1
@@ -1366,6 +1369,7 @@
 !        DPDX, DPDY    depth gradient
 !        DUXDX,DUXDY,DUYDX,DUYDY  current velocity gradients
 !        FAC           a factor
+!        FAC2          another factor
 !        FRLIM         frequency range in which limit on Ctheta is applied
 !        PP            power of the frequency dependent limiter on refraction
 !
@@ -1379,6 +1383,7 @@
      &         CADT4(3) ,CADT5(3) ,CADT6(3) ,CADT7(3)
       REAL  :: DLOC1, DLOC2, DLOC3
       REAL  :: FAC, FRLIM, PP                                             41.06
+      REAL  :: ALPHA, FAC2                                                41.35
 !     local depths corrected in view of stability                         40.02
 !
 !  5. Parameter variables
@@ -1861,9 +1866,9 @@
         ENDDO
       ENDIF
 !
-!     limit Ctheta in some frequency range if requested
+!     --- limit Ctheta in some frequency range if requested
 !
-      IF ( INT(PNUMS(29)) .EQ. 1 ) THEN
+      IF ( INT(PNUMS(29)).EQ.1 ) THEN
          FRLIM = PI2*PNUMS(26)
          PP    =     PNUMS(27)
          DO IS = 1, MSC
@@ -1872,6 +1877,58 @@
                CAD(ID,IS,1) = FAC*CAD(ID,IS,1)
             ENDDO
          ENDDO
+      ENDIF
+!
+!     --- limit Csigma using Courant number
+!
+      IF ( INT(PNUMS(33)).EQ.1 ) THEN
+         !
+         ALPHA = PNUMS(34)
+         !
+         DO IS = 1, MSC
+            !
+            FAC2 = ALPHA * FRINTF * SPCSIG(IS)
+            !
+            DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+               ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
+               !
+               FAC = FAC2 * ( ABS((RDX(1)+RDX(2))*CAX(ID,IS,1)) +
+     &                        ABS((RDY(1)+RDY(2))*CAY(ID,IS,1)) )
+               !
+               IF ( ABS(CAS(ID,IS,1)) > FAC ) THEN
+                  CAS(ID,IS,1) = CAS(ID,IS,1) * FAC / ABS(CAS(ID,IS,1))
+               ENDIF
+               !
+            ENDDO
+            !
+         ENDDO
+         !
+      ENDIF
+!
+!     --- limit Ctheta using Courant number
+!
+      IF ( INT(PNUMS(35)) == 1 ) THEN
+         !
+         ALPHA = PNUMS(36)
+         !
+         FAC2 = ALPHA * DDIR
+         !
+         DO IS = 1, MSC
+            !
+            DO IDDUM = IDCMIN(IS)-1, IDCMAX(IS)+1
+               ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
+               !
+               FAC = FAC2 * ( ABS((RDX(1)+RDX(2))*CAX(ID,IS,1)) +
+     &                        ABS((RDY(1)+RDY(2))*CAY(ID,IS,1)) )
+               !
+               IF ( ABS(CAD(ID,IS,1)) > FAC ) THEN
+                  CAD(ID,IS,1) = CAD(ID,IS,1) * FAC / ABS(CAD(ID,IS,1))
+               ENDIF
+               !
+            ENDDO
+            !
+         ENDDO
+         !
       ENDIF
 !
 !     *** test output ***
@@ -1924,7 +1981,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2098,7 +2155,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2405,7 +2462,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2733,7 +2790,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3187,7 +3244,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3505,7 +3562,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3897,7 +3954,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4180,7 +4237,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4420,7 +4477,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4631,7 +4688,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4903,7 +4960,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5213,7 +5270,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

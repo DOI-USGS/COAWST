@@ -13,7 +13,7 @@ subroutine SwanInitCompGrid ( logcom )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2013  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -104,9 +104,26 @@ subroutine SwanInitCompGrid ( logcom )
        if (xcugrd(i) > XCGMAX) XCGMAX = xcugrd(i)
        if (ycugrd(i) > YCGMAX) YCGMAX = ycugrd(i)
     enddo
+    !
+!PUN    XCGMIN = XCGMIN + XOFFS
+!PUN    YCGMIN = YCGMIN + YOFFS
+!PUN    XCGMAX = XCGMAX + XOFFS
+!PUN    YCGMAX = YCGMAX + YOFFS
+!PUN    !
+!PUN    call SwanMinOverNodes ( XCGMIN )
+!PUN    call SwanMinOverNodes ( YCGMIN )
+!PUN    call SwanMaxOverNodes ( XCGMAX )
+!PUN    call SwanMaxOverNodes ( YCGMAX )
+!PUN    !
+!PUN    XCGMIN = XCGMIN - XOFFS
+!PUN    YCGMIN = YCGMIN - YOFFS
+!PUN    XCGMAX = XCGMAX - XOFFS
+!PUN    YCGMAX = YCGMAX - YOFFS
+!PUN    !
     XCLEN = XCGMAX - XCGMIN
     YCLEN = YCGMAX - YCGMIN
     !
+    istat = 0
     if(.not.allocated(ac2)) allocate(ac2(MDC,MSC,nverts), stat = istat)
     if ( istat /= 0 ) then
        call msgerr ( 4, 'Allocation problem in SwanInitCompGrid: array ac2 ' )
@@ -114,6 +131,13 @@ subroutine SwanInitCompGrid ( logcom )
     endif
     ac2 = 0.
     logcom(6) = .true.
+    !
+    ! set number of vertices and cells in global domain in case of serial run
+    !
+    if ( nvertsg == 0 ) then
+       nvertsg = nverts
+       ncellsg = ncells
+    endif
     !
     ! the following arrays for structured grids (regular and curvilinear)
     ! are allocated as empty ones
@@ -124,7 +148,9 @@ subroutine SwanInitCompGrid ( logcom )
     ! for sake of convenience, set MCGRD to nverts (for allocating AC1 and COMPDA)
     !
     MCGRD   = nverts
-    MCGRDGL = nverts
+    MCGRDGL = nvertsg
+    MXCGL   = nvertsg
+    MYCGL   = 1
     !
 #endif
 end subroutine SwanInitCompGrid

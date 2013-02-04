@@ -43,7 +43,9 @@
 !               \ SERIES 'fname2' /  [idla] [nhedf] ([nhedt]) (nhedvec])    &
 !        FREE | FORMAT 'form' | [idfm] | UNFORMATTED
 !
-!   WIND  [vel] [dir]
+!                              | -> WU
+!   WIND  [vel] [dir]   DRAG  <  FIT
+!                              | SWELL
 !
 !                       |  JONswap  [gamma]  |
 !   BOUNd SHAPespec     |  PM                |
@@ -62,8 +64,8 @@
 !
 !   BOUNdnest1  NEST 'fname'  CLOSed|OPEN
 !
-!   BOUNdnest2  WAMNest 'fname' / UNFormatted  CRAY|WKstat  \
-!                               \ FREE                      /   [xgc] [ygc]
+!   BOUNdnest2  WAMNest 'fname' / UNFormatted CRAY|WKstat \
+!                               \ FREE                    / [xgc] [ygc] [lwdate]
 !
 !   BOUNdnest3  WWIII 'fname'  CLOSed|OPEN  [xgc] [ygc]
 !
@@ -73,9 +75,9 @@
 !             |
 !             |  PAR  [hs] [per] [dir] [dd]
 !             |
-!             |            | -> MULTiple |
-!             |  HOTStart <               >  'fname'
-!             |            |    SINGle   |
+!             |            | -> MULTiple |             | -> FREE
+!             |  HOTStart <               >  'fname'  <
+!             |            |    SINGle   |             | UNFormatted
 !
 !   GEN1  [cf10] [cf20] [cf30] [cf40] [edmlpm] [cdrag] [umin]
 !
@@ -111,8 +113,11 @@
 !        | -> CON [alpha] [gamma]                                      |
 !        |                                                             |
 !        |    VAR [alpha] [gammin] [gammax] [gamneg] [coeff1] [coeff2] |
-!   BRE <                                                               > &
-!        |    RUE [alpha] [a] [b]                                      |
+!        |                                                             |
+!   BRE <     RUE [alpha] [a] [b]                                       > &
+!        |                                                             |
+!        |    NKD [alpha] [gamma0] [alpha0] [beta1] [beta2] [delta1] & |
+!        |        [delta2] [n_low] [n_high] [R_low] [R_high] [a]       |
 !        |                                                             |
 !        |    TG  [alpha] [gamma] [pown]                               |
 !
@@ -127,7 +132,7 @@
 !              |
 !              |    MADsen  [kn]
 !
-!   TRIad   [trfac] [cutfr] [urcrit] [urslim]
+!   TRIad   [itriad] [trfac] [cutfr] [urcrit] [urslim]
 !
 !   VEGEtation  < [height] [diamtr] [nstems] [drag] >
 !
@@ -170,6 +175,10 @@
 !           ( <                                                 )           &
 !              |    SIGEXpl [css] [cfl]
 !
+!           ( CTheta [cfl]                                      )           &
+!
+!           ( CSigma [cfl]                                      )           &
+!
 !           ( SETUP [eps2] [outp] [niter]                       )
 !
 !   FRAME   'sname'  [xpfr] [ypfr] [alpfr] [xlenfr] [ylenfr] [mxfr] [myfr]
@@ -207,7 +216,7 @@
 !             FRCOEF|WIND|DISSIP|QB|TRANSP|FORCE|UBOT|URMS|WLEN|STEEPNESS|  &
 !             DHSIGN|DRTM01|LEAK|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|DEPTH|  &
 !             TMBOT|QP|BFI|NPLANT|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP| &
-!             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS >       &
+!             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS|LWAVP > &
 !             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC|MIN|HR|DAY)
 !
 !   TABLE   'sname'  HEADER | NOHEADER | INDEXED 'fname'                    &
@@ -215,10 +224,11 @@
 !             FRCOEF|WIND|DISSIP|QB|TRANSP|FORCE|UBOT|URMS|WLEN|STEEPNESS|  &
 !             DHSIGN|DRTM01|LEAK|TIME|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|   &
 !             DEPTH|TMBOT|QP|BFI|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP|  &
-!             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS >       &
+!             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS|LWAVP > &
 !             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC|MIN|HR|DAY)
 !
 !   SPECout 'sname'  SPEC1D|SPEC2D  ABS|REL   'fname'                       &
+!                    MONth  ESCAle                                          &
 !                    (OUTput [tbeg] [delt] SEC|MIN|HR|DAY)
 !
 !   NESTout 'sname'  'fname'                                                &
@@ -237,6 +247,8 @@
 !                                   |    HR   |
 !                                   |    DAy  |
 !
-!   HOTFile 'fname'
+!                     | -> FREE
+!   HOTFile 'fname'  <
+!                     | UNFormatted
 !
 !   STOP
