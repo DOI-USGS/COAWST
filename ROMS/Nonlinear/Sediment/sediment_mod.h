@@ -60,7 +60,7 @@
 !   izwbl           Bottom roughness used wave BBL (m).                !
 !   iactv           Active layer thickness for erosive potential (m).  !
 !   ishgt           Sediment saltation height (m).                     !
-!   idefx           Erosion flux.                                      !
+!   imaxD           Maximum inundation depth.                          !
 !   idnet           Erosion or deposition.                             !
 !   idoff           Offset for calculation of dmix erodibility         !
 !                     profile (m).                                     !
@@ -136,7 +136,7 @@
       integer, parameter :: izwbl = 14     ! wave bottom roughness
       integer, parameter :: iactv = 15     ! active layer thickness
       integer, parameter :: ishgt = 16     ! saltation height
-      integer, parameter :: idefx = 17     ! erosion flux
+      integer, parameter :: imaxD = 17     ! maximum inundation depth
       integer, parameter :: idnet = 18     ! erosion or deposition
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
       integer, parameter :: idoff = 19     ! tau critical offset

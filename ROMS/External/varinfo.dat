@@ -3106,6 +3106,15 @@
   'r2dvar'
   1.0d0
 
+'bed_inund_depth'                                  ! Output
+  'inundation depth'
+  'meter'                                          ! [kg/m2]
+  'max_depth, scalar, series'
+  'ocean_time'
+  'idBott(imaxD)'
+  'r2dvar'
+  1.0d0
+
 'dep_net'                                          ! Output
   'erosion or deposition'
   'meter'                                          ! [m]

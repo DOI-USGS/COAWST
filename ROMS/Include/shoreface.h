@@ -61,8 +61,9 @@
 #  undef  SSW_LOGINT
 # endif
 
-# undef SEDIMENT
+# define SEDIMENT
 # ifdef SEDIMENT
+#  undef  SED_BIOMASS
 #  undef  SED_MORPH
 #  define SUSPLOAD
 #  define BEDLOAD_MPM

@@ -57,7 +57,6 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      nstp(ng), nnew(ng),                         &
-     &                      GRID(ng) % Hz,                              &
 # ifdef WET_DRY
      &                      GRID(ng) % rmask_wet,                       &
 # endif
@@ -92,7 +91,6 @@
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            nstp, nnew,                           &
-     &                            Hz,                                   &
 # ifdef WET_DRY
      &                            rmask_wet,                            &
 # endif
@@ -124,7 +122,6 @@
       integer, intent(in) :: nstp, nnew
 !
 # ifdef ASSUMED_SHAPE
-      real(r8), intent(in) :: Hz(LBi:,LBj:,:)
 #  ifdef WET_DRY
       real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
 #  endif
@@ -149,7 +146,6 @@
       real(r8), intent(inout) :: bed_mass(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: bottom(LBi:,LBj:,:)
 # else
-      real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
 #  ifdef WET_DRY
       real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
 #  endif
@@ -193,8 +189,6 @@
       integer :: bnew
 
       real(r8) :: cff, cff1, cff2, cff3, cff4
-
-      real(r8), dimension(IminS:ImaxS,N(ng)) :: Hz_inv
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tau_w
 
@@ -260,12 +254,6 @@
 !  after both fluxes are applied.
 !
       J_LOOP : DO j=Jstr,Jend
-        DO k=1,N(ng)
-          DO i=Istr,Iend
-            Hz_inv(i,k)=1.0_r8/Hz(i,j,k)
-          END DO
-        END DO
-!
         SED_LOOP: DO ised=1,NST
           indx=idsed(ised)
           DO i=Istr,Iend

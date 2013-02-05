@@ -110,6 +110,9 @@
         real(r8), pointer :: ero_flux(:,:,:)
         real(r8), pointer :: settling_flux(:,:,:)
 #endif
+#if defined SEDIMENT && defined SED_BIOMASS
+        real(r8), pointer :: Dstp_max(:,:,:)
+#endif
 
 #if defined TANGENT || defined TL_IOMS
 !
@@ -210,6 +213,9 @@
 #if defined SEDIMENT && defined SUSPLOAD
       allocate ( SEDBED(ng) % ero_flux(LBi:UBi,LBj:UBj,NST) )
       allocate ( SEDBED(ng) % settling_flux(LBi:UBi,LBj:UBj,NST) )
+#endif
+#if defined SEDIMENT && defined SED_BIOMASS
+      allocate ( SEDBED(ng) % Dstp_max(LBi:UBi,LBj:UBj,24) )
 #endif
 
 #if defined TANGENT || defined TL_IOMS
@@ -380,6 +386,13 @@
             DO i=Imin,Imax
               SEDBED(ng) % ero_flux(i,j,itrc) = IniVal
               SEDBED(ng) % settling_flux(i,j,itrc) = IniVal
+            END DO
+          END DO
+#endif
+#if defined SEDIMENT && defined SED_BIOMASS
+          DO itrc=1,24
+            DO i=Imin,Imax
+              SEDBED(ng) % Dstp_max(i,j,itrc) = 0.1_r8
             END DO
           END DO
 #endif

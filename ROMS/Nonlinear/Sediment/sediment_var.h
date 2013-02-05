@@ -64,8 +64,8 @@
                 idBott(iactv)=varid
               CASE ('idBott(ishgt)')
                 idBott(ishgt)=varid
-              CASE ('idBott(idefx)')
-                idBott(idefx)=varid
+              CASE ('idBott(imaxD)')
+                idBott(imaxD)=varid
               CASE ('idBott(idnet)')
                 idBott(idnet)=varid
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED

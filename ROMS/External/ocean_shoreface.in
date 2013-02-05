@@ -449,10 +449,10 @@ Hout(idMtls) == T                          ! gls             turbulent generic l
 !   Hout(idBott(iactv)),  iactv = 15       ! active layer thickness
 !   Hout(idBott(ishgt)),  ishgt = 16       ! saltation height
 !
-!                                 1 1 1 1 1 1 1
-!               1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
+!                                 1 1 1 1 1 1 1 1
+!               1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7
 
-Hout(idBott) == T T T T T T T T T F F F F F T F
+Hout(idBott) == T T T T T T T T T F F F F F T F T
 
 ! Generic User parameters, [1:NUSER].
 
