@@ -1012,7 +1012,7 @@ CONTAINS
      &           (MIN(UST(I)/CWAVE,0.1))**4.5+                          &
      &           0.11*VISC/(UST(I)+0.001),1.59E-5)
 # else
-          ZNT(I)=CZO*UST(I)*UST(I)/G+bvisc/ust(i)                                   
+          ZNT(I)=CZ0*UST(I)*UST(I)/G+bvisc/ust(i)                                   
 # endif
 #else
 !         ZNT(I)=CZO*UST(I)*UST(I)/G+bvisc/ust(i)                                   
