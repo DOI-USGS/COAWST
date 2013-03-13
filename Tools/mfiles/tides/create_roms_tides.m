@@ -103,7 +103,7 @@ end
 % create the netcdf tide forc file
 h=ncread(Gname,'h');
 [Lp,Mp]=size(h);
-roms_tide_forc_file(Fname,Lp,Mp,periods);
+roms_tide_forc_file(Fname,Lp,Mp,periods(indx));
 
 %---------------------------------------------------------------------
 %  Read in application grid data.
@@ -159,15 +159,15 @@ if (adcirc)
 
     F=TriScatteredInterp(lon,lat,elev(:,k));
     zz=F(rlon(iwater),rlat(iwater));
-    ei(:,:,kk)=reshape(zz,896,336);
+    ei(:,:,kk)=reshape(zz,Lp,Mp);
 
     F=TriScatteredInterp(lon,lat,u(:,k));
     zz=F(rlon(iwater),rlat(iwater));
-    ui(:,:,kk)=reshape(zz,896,336);
+    ui(:,:,kk)=reshape(zz,Lp,Mp);
     
     F=TriScatteredInterp(lon,lat,v(:,k));
     zz=F(rlon(iwater),rlat(iwater));
-    vi(:,:,kk)=reshape(zz,896,336);
+    vi(:,:,kk)=reshape(zz,Lp,Mp);
     
   % find T_TIDE constituent names (a.name) that match 
   % selected constituent names (names(tides_to_use))
