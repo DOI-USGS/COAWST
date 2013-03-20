@@ -285,9 +285,9 @@
         DO k=1,N(ng)
           DO i=IstrU-1,Iend
             grad(i,Jstr-1)=u_stokes(i+1,Jstr-1,k)-                      &
-     &                     u_stokes(i  ,Jstr-1,k,nstp)
-            grad(i,Jstr  )=u_stokes(i+1,Jstr  ,k,nstp)-                 &
-     &                     u_stokes(i  ,Jstr  ,k,nstp)
+     &                     u_stokes(i  ,Jstr-1,k)
+            grad(i,Jstr  )=u_stokes(i+1,Jstr  ,k)-                      &
+     &                     u_stokes(i  ,Jstr  ,k)
           END DO
           DO i=IstrU,Iend
             dUdt=u_stokes(i,Jstr,k)-u_stokes(i,Jstr  ,k)
