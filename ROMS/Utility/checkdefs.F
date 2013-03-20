@@ -765,6 +765,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+18)=' DOUBLE_PRECISION,'
 #endif
+#if defined DRENNAN
+      IF (Master) WRITE (stdout,20) 'DRENNAN',                          &
+     &   'Drennan et al (2003) relation for ZoW in bulk fluxes.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+9)=' DRENNAN,'
+#endif
 #ifdef EAST_FSCLAMPED
       IF (Master) WRITE (stdout,20) 'EAST_FSCLAMPED',                   &
      &   'Eastern edge, free-surface, Clamped condition.'
