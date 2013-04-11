@@ -97,6 +97,11 @@
      &                     GRID(ng) % umask,                            &
      &                     GRID(ng) % vmask,                            &
 # endif
+# ifdef WET_DRY
+     &                     GRID(ng) % rmask_full,                       &
+     &                     GRID(ng) % umask_full,                       &
+     &                     GRID(ng) % vmask_full,                       &
+# endif
      &                     MIXING(ng) % alpha,                          &
      &                     MIXING(ng) % beta,                           &
      &                     OCEAN(ng) % rho,                             &
@@ -177,6 +182,9 @@
 # ifdef MASKING
      &                           rmask, umask, vmask,                   &
 # endif
+# ifdef WET_DRY
+     &            rmask_full, umask_full, vmask_full,                   &
+# endif
      &                           alpha, beta, rho, t,                   &
      &                           Hair, Pair, Tair, Uwind, Vwind,        &
 # ifdef CLOUDS
@@ -251,6 +259,11 @@
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
+#  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_full(LBi:,LBj:)
+      real(r8), intent(in) :: umask_full(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_full(LBi:,LBj:)
+#  endif
       real(r8), intent(in) :: alpha(LBi:,LBj:)
       real(r8), intent(in) :: beta(LBi:,LBj:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
@@ -322,6 +335,11 @@
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
+#  endif
+#  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_full(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask_full(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_full(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: alpha(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: beta(LBi:UBi,LBj:UBj)
@@ -602,9 +620,11 @@
 # else
           LRad(i,j)=lrflx(i,j)*Hscale
 # endif
-# ifdef MASKING
+# ifdef WET_DRY
+          LRad(i,j)=LRad(i,j)*rmask_full(i,j)
+# elif defined MASKING
           LRad(i,j)=LRad(i,j)*rmask(i,j)
-# endif
+#  endif
 !
 !-----------------------------------------------------------------------
 !  Compute specific humidities (kg/kg).
@@ -909,7 +929,9 @@
           Hsr=rain(i,j)*wet_bulb*blk_Cpw*                               &
      &        ((TseaC(i)-TairC(i))+(Qsea(i)-Q(i))*Hlv(i,j)/blk_Cpa)
           SHeat(i,j)=(Hs+Hsr)
-# ifdef MASKING
+# ifdef WET_DRY
+          SHeat(i,j)=SHeat(i,j)*rmask_full(i,j)
+# elif defined MASKING
           SHeat(i,j)=SHeat(i,j)*rmask(i,j)
 # endif
 !
@@ -923,7 +945,9 @@
      &          (1.0_r8+1.61_r8*Q(i))*Wstar(i)*Tstar(i)/TairK(i)
           Hlw=rhoAir(i)*Hlv(i,j)*upvel*Q(i)
           LHeat(i,j)=(Hl+Hlw)
-# ifdef MASKING
+# ifdef WET_DRY
+          LHeat(i,j)=LHeat(i,j)*rmask_full(i,j)
+# elif defined MASKING
           LHeat(i,j)=LHeat(i,j)*rmask(i,j)
 # endif
 !
@@ -935,11 +959,15 @@
 !
           cff=rhoAir(i)*Cd*Wspeed
           Taux(i,j)=(cff*Uwind(i,j)+Taur*SIGN(1.0_r8,Uwind(i,j)))
-# ifdef MASKING
+# ifdef WET_DRY
+          Taux(i,j)=Taux(i,j)*rmask_full(i,j)
+# elif defined MASKING
           Taux(i,j)=Taux(i,j)*rmask(i,j)
 # endif
           Tauy(i,j)=(cff*Vwind(i,j)+Taur*SIGN(1.0_r8,Vwind(i,j)))
-# ifdef MASKING
+# ifdef WET_DRY
+          Tauy(i,j)=Tauy(i,j)*rmask_full(i,j)
+# elif defined MASKING
           Tauy(i,j)=Tauy(i,j)*rmask(i,j)
 # endif
 # ifdef ICE_MODEL
@@ -1165,7 +1193,13 @@
           stflx(i,j,isalt) = (1.0_r8-ai(i,j,linew))*stflx(i,j,isalt)
 #  endif
 # endif
-# ifdef MASKING
+# ifdef WET_DRY
+          stflx(i,j,itemp)=stflx(i,j,itemp)*rmask_full(i,j)
+#   ifdef EMINUSP
+          evap(i,j)=evap(i,j)*rmask_full(i,j)
+          stflx(i,j,isalt)=stflx(i,j,isalt)*rmask_full(i,j)
+#   endif
+# elif defined MASKING
           stflx(i,j,itemp)=stflx(i,j,itemp)*rmask(i,j)
 #   ifdef EMINUSP
           evap(i,j)=evap(i,j)*rmask(i,j)
@@ -1175,7 +1209,9 @@
 # ifdef RUNOFF
           stflx(i,j,isalt) = stflx(i,j,isalt) -                         &
      &                        cff*runoff(i,j)
-#  ifdef MASKING
+#  ifdef WET_DRY
+          stflx(i,j,isalt)=stflx(i,j,isalt)*rmask_full(i,j)
+#  elif defined MASKING
           stflx(i,j,isalt)=stflx(i,j,isalt)*rmask(i,j)
 #  endif
 # endif
@@ -1223,7 +1259,9 @@
       DO j=JstrR,JendR
         DO i=Istr,IendR
           sustr(i,j)=cff*(Taux(i-1,j)+Taux(i,j))
-# ifdef MASKING
+# ifdef WET_DRY
+          sustr(i,j)=sustr(i,j)*umask_full(i,j)
+# elif defined MASKING
           sustr(i,j)=sustr(i,j)*umask(i,j)
 # endif
 # ifdef ICE_MODEL
@@ -1235,7 +1273,9 @@
       DO j=Jstr,JendR
         DO i=IstrR,IendR
           svstr(i,j)=cff*(Tauy(i,j-1)+Tauy(i,j))
-# ifdef MASKING
+# ifdef WET_DRY
+          svstr(i,j)=svstr(i,j)*vmask_full(i,j)
+# elif defined MASKING
           svstr(i,j)=svstr(i,j)*vmask(i,j)
 # endif
 # ifdef ICE_MODEL
