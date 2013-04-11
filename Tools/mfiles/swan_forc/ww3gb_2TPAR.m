@@ -46,6 +46,7 @@ for i=1:length(specpts)
         zz=hst>1000;
         hst(zz)=0; %make bad data 0, swan not like NaNs
         Z1=interp2(daplon,daplat,hst,gx,gy);
+        Z1(isnan(Z1))=0;
         TPAR(wavet,2)=Z1;
     end
     close(hsnc);
@@ -56,6 +57,7 @@ for i=1:length(specpts)
         zz=tpt>1000;
         tpt(zz)=0; %make bad data 0, swan not like NaNs
         Z1=interp2(daplon,daplat,tpt,gx,gy);
+        Z1(isnan(Z1))=0;
         TPAR(wavet,3)=Z1;
     end
     close(tpnc);
@@ -66,6 +68,7 @@ for i=1:length(specpts)
         zz=dpt>1000;
         dpt(zz)=0; %make bad data 0, swan not like NaNs
         Z1=interp2(daplon,daplat,dpt,gx,gy);
+        Z1(isnan(Z1))=0;
         TPAR(wavet,4)=Z1;
     end
     close(dpnc);

@@ -10,7 +10,7 @@ clear
 %%%%%%%%%% BEGIN user input   %%%%%%%%%%%%
 %
 %1) Enter name of swan .grd ascii grid file.
-grid_file = 'Projects\Inlet_test\DiffGrid\inlet_test_grid_coord2.grd';
+grid_file = 'inlet_test_grid_coord2.grd';
 
 %2) Enter the grid size. This will be +1 from the values entered for the 
 %   SWAN input file. For example, if you use:
@@ -26,10 +26,10 @@ grid_coords=1;  % this was in meters
 
 %3) Enter name of the bathy file. This will be used to compute the
 %   grid mask.
-bath_file = 'D:\data\models\COAWST\Projects\Inlet_test\DiffGrid\inlet_test_bathy2.bot';
+bath_file = 'inlet_test_bathy2.bot';
 
 %4) Enter name of netcdf output file to use by scrip.
-out_file = 'Projects\Inlet_test\DiffGrid\inlet_test_swan_scrip.nc';
+out_file = 'inlet_test_swan_scrip.nc';
 
 %%%%%%%%%% END of user input   %%%%%%%%%%%%
 
@@ -72,7 +72,7 @@ nc = netcdf.create(out_file, 'clobber');
 %% Global attributes:
 disp(' ## Defining Global Attributes...')
 
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','SCRIP file');
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title','Scrip file');
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history',['Created by ', mfilename ', on ', datestr(now)]);
 
 L = LP-1;       % The psi dimension.
