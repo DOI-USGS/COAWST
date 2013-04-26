@@ -1229,14 +1229,13 @@
     ( defined BULK_FLUXES  && (!defined ANA_PAIR && !defined AIR_OCEAN))     || \
     ( defined BULK_FLUXES  && (!defined ANA_TAIR && !defined AIR_OCEAN))     || \
     ( defined BULK_FLUXES  && (!defined ANA_HUMIDITY && !defined AIR_OCEAN)) || \
-    ( defined BULK_FLUXES  && (!defined ANA_CLOUD && !defined AIR_OCEAN))    || \
-    ( defined BULK_FLUXES  && (!defined ANA_RAIN && !defined AIR_OCEAN))     || \
-    ( defined BULK_FLUXES  && (!defined ANA_WINDS && !defined AIR_OCEAN))    || \
-    ( defined BULK_FLUXES  && (!defined ANA_SRFLUX && !defined AIR_OCEAN))   || \
-    ( defined LMD_SKPP     && !defined ANA_SRFLUX)   || \
-    ( defined SOLAR_SOURCE && !defined ANA_SRFLUX)   || \
-    ( defined BBL_MODEL    && (!defined ANA_WWAVE    && \
-     !defined WAVES_OCEAN))                          || \
+    ( defined BULK_FLUXES  && (!defined ANA_CLOUD    && !defined AIR_OCEAN)) || \
+    ( defined BULK_FLUXES  && (!defined ANA_RAIN     && !defined AIR_OCEAN)) || \
+    ( defined BULK_FLUXES  && (!defined ANA_WINDS    && !defined AIR_OCEAN)) || \
+    ( defined BULK_FLUXES  && (!defined ANA_SRFLUX   && !defined AIR_OCEAN)) || \
+    ( defined LMD_SKPP     && (!defined ANA_SRFLUX   && !defined AIR_OCEAN)) || \
+    ( defined SOLAR_SOURCE && (!defined ANA_SRFLUX   && !defined AIR_OCEAN)) || \
+    ( defined BBL_MODEL    && (!defined ANA_WWAVE  && !defined WAVES_OCEAN)) || \
     ( defined BIOLOGY      && !defined ANA_SPFLUX)   || \
     ( defined BIOLOGY      && !defined ANA_BPFLUX)   || \
     ( defined SEDIMENT     && !defined ANA_SPFLUX)   || \
