@@ -1016,8 +1016,8 @@
      &                          OCEAN(ng)%v(i,j+1,N(ng),NOUT))
 # endif
 #else
-          vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,KOUT)+                &
-     &                          OCEAN(ng)%v(i,j+1,KOUT))
+          vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%vbar(i,j  ,KOUT)+             &
+     &                          OCEAN(ng)%vbar(i,j+1,KOUT))
 #endif
         END DO
       END DO
