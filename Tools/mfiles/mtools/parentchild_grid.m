@@ -147,8 +147,9 @@ fine.f=griddata(lon_rho,lat_rho,f,fine.lon.rho,fine.lat.rho);
 ZI=griddata(x_rho,y_rho,h,XI,YI);
 fine.h=interp2(XI,YI,ZI,fine.x.rho,fine.y.rho);
 
-ZI=griddata(x_rho,y_rho,mask_rho,XI,YI);
-fine.mask.rho=interp2(XI,YI,ZI,fine.x.rho,fine.y.rho,'nearest');
+%ZI=griddata(x_rho,y_rho,mask_rho,XI,YI);
+%fine.mask.rho=interp2(XI,YI,ZI,fine.x.rho,fine.y.rho,'nearest');
+fine.mask.rho=griddata(x_rho,y_rho,mask_rho,fine.x.rho,fine.y.rho,'nearest');
 
 %%%%%%%%%%%%%%%%%%% finished creating grid %%%%%%%%%%%%%%%%
 
