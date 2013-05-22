@@ -2,6 +2,9 @@
 #define SLOPE_NEMETH
 #undef  SLOPE_LESSER
 #define BSTRESS_UPWIND
+#ifdef BBL_MODEL
+# undef BSTRESS_UPWIND
+#endif
 
       MODULE sed_bedload_mod
 
