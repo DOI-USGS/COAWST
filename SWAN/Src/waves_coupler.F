@@ -1234,7 +1234,7 @@
           DO IX=1,MXC
             IP=IP+1
             INDX = KGRPNT(IX,IY)
-            cff=TEMPMCT(IP,iddep)
+            cff=TEMPMCT(IP,iddep)+TEMPMCT(IP,idwlv)
             IF (INDX.GT.1) THEN
 # ifdef BBL_MODEL
               COMPDA(INDX,JFRC2)=MAX(REAL(TEMPMCT(IP,idruf)), 0.0001)
