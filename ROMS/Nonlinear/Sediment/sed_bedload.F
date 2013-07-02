@@ -701,6 +701,19 @@
             FX(i,j)=FX(i,j)*rmask_wet(i-1,j)*rmask_wet(i,j)
 #   endif
 #  endif
+#  ifdef SLOPE_KIRWAN
+            dzdx=(h(i,j)-h(i-1  ,j))/om_u(i,j)
+            a_slopex=(MAX(0.0_r8,abs(dzdx)-0.01_r8)                     &
+     &               *SIGN(1.0_r8,dzdx)*0.1_r8)                         &
+     &               *om_r(i,j)*dt(ng)
+#   ifdef SED_MORPH
+            a_slopex=a_slopex*morph_fac(ised,ng)
+#   endif
+            FX(i,j)=FX(i,j)+a_slopex
+#   ifdef MASKING
+            FX(i,j)=FX(i,j)*rmask(i-1,j)*rmask(i,j)
+#   endif
+#  endif
           END DO
         END DO
         DO j=Jstr,Jend+1
@@ -716,8 +729,21 @@
      &               cff1*0.5_r8*(FE_r(i,j-1)+FE_r(i,j)))
 #  ifdef MASKING
             FE(i,j)=FE(i,j)*vmask(i,j)
-#    ifdef WET_DRY
+#   ifdef WET_DRY
             FE(i,j)=FE(i,j)*rmask_wet(i,j-1)*rmask_wet(i,j)
+#   endif
+#  endif
+#  ifdef SLOPE_KIRWAN
+            dzdy=(h(i,j)-h(i  ,j-1))/on_v(i,j)
+            a_slopey=(MAX(0.0_r8,abs(dzdy)-0.01_r8)                     &
+     &               *SIGN(1.0_r8,dzdy)*0.1_r8)                         &
+     &               *on_r(i,j)*dt(ng)
+#   ifdef SED_MORPH
+            a_slopey=a_slopey*morph_fac(ised,ng)
+#   endif
+            FE(i,j)=FE(i,j)+a_slopey
+#   ifdef MASKING
+            FE(i,j)=FE(i,j)*rmask(i,j-1)*rmask(i,j)
 #   endif
 #  endif
           END DO
