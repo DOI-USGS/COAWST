@@ -44,6 +44,10 @@
 #ifdef MASKING
      &                   GRID(ng) % umask,                              &
      &                   GRID(ng) % vmask,                              &
+# ifdef WET_DRY
+     &                   GRID(ng) % umask_wet,                          &
+     &                   GRID(ng) % vmask_wet,                          &
+# endif
 #endif
      &                   GRID(ng) % Hz,                                 &
      &                   GRID(ng) % pmon_u,                             &
@@ -75,6 +79,9 @@
      &                         nrhs, nstp, nnew,                        &
 #ifdef MASKING
      &                         umask, vmask,                            &
+# ifdef WET_DRY
+     &                         umask_wet, vmask_wet,                    &
+# endif
 #endif
      &                         Hz, pmon_u, pnom_v, pm, pn,              &
 #ifdef DIFF_3DCOEF
@@ -105,6 +112,10 @@
 # ifdef MASKING
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
+#  ifdef WET_DRY
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
+#  endif
 # endif
 # ifdef DIFF_3DCOEF
       real(r8), intent(in) :: diff3d_r(LBi:,LBj:,:)
@@ -127,6 +138,10 @@
 # ifdef MASKING
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
+#  ifdef WET_DRY
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
+#  endif
 # endif
 # ifdef DIFF_3DCOEF
       real(r8), intent(in) :: diff3d_r(LBi:UBi,LBj:UBj,N(ng))
@@ -196,6 +211,9 @@
 #endif
 #ifdef MASKING
               FX(i,j)=FX(i,j)*umask(i,j)
+# ifdef WET_DRY
+              FX(i,j)=FX(i,j)*umask_wet(i,j)
+# endif
 #endif
             END DO
           END DO
@@ -223,6 +241,9 @@
 #endif
 #ifdef MASKING
               FE(i,j)=FE(i,j)*vmask(i,j)
+# ifdef WET_DRY
+              FE(i,j)=FE(i,j)*vmask_wet(i,j)
+# endif
 #endif
             END DO
           END DO
