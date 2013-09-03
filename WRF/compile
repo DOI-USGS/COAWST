@@ -361,7 +361,7 @@ else
     setenv GLOBAL_DEFS_FILE "${MY_ROMS_SRC}/ROMS/Include/globaldefs.h"
   else
     setenv MY_HEADER_DIR "."
-    cat > empty_head.h &
+    cat /dev/null > empty_head.h &
     setenv HEADER "empty_head.h"
     setenv GLOBAL_DEFS_FILE "empty_head.h"
     setenv ROMS_APPLICATION "WRF_ONLY"
