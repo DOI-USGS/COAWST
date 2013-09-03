@@ -64,7 +64,9 @@
 %4) Enter the values of theta_s, theta_b, and Tcline from your *.in file.
     theta_s = 3.0;  
     theta_b = 0.4;  
-    Tcline =  50.0;  
+    Tcline =  50.0;
+    Vtransform = 1;
+    Vstretching = 1;
 
 %5) Enter value of h, Lm, and Mm.
 %   This info can come from a grid file or user supplied here.
@@ -358,6 +360,8 @@ ncwrite(init_file,'Cs_w',Cs_w);
 ncwrite(init_file,'sc_w',sc_w);
 ncwrite(init_file,'sc_r',sc_r);
 ncwrite(init_file,'hc',hc);
+ncwrite(init_file,'Vtransform',Vtransform);
+ncwrite(init_file,'Vstretching',Vstretching);
 
 ncwrite(init_file,'ocean_time',init_time);
 
