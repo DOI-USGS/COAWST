@@ -56,7 +56,7 @@ disp('  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 F=load(hsig_file);
 vname=fieldnames(F);
 Hsig=getfield(F,char(vname(1)));
-[xsize,ysize]=size(Hsig);
+[ysize,xsize]=size(Hsig)
 numsteps=length(vname);
 %get times
 for ii=1:length(vname)
@@ -181,7 +181,7 @@ if(get_hsig)
        Hsig=getfield(F,char(vname(K)));
        Hsig(find(Hsig == -99)) = 0.0;   % flag
        Hsig(find(isnan(Hsig)))=0.0;     % land
-       ncwrite(fname,'Hwave',squeeze(Hsig),[1 1 K])
+       ncwrite(fname,'Hwave',squeeze(Hsig).',[1 1 K])
        clear Hsig;
    end
    clear F vname K
@@ -196,7 +196,7 @@ if(get_dissip)
        Dissip=getfield(F,char(vname(K)));
        Dissip(find(Dissip == -9)) = 0.0;    % flag
        Dissip(find(isnan(Dissip))) = 0.0;   % land
-       ncwrite(fname,'Wave_dissip',squeeze(Dissip),[1 1 K])
+       ncwrite(fname,'Wave_dissip',squeeze(Dissip).',[1 1 K])
        clear Dissip;
    end
    clear F vname K 
@@ -211,7 +211,7 @@ if(get_rtp)
        Rtp=getfield(F,char(vname(K)));
        Rtp(find(Rtp == -9)) = 10.0;     % flag
        Rtp(find(isnan(Rtp))) = 0.0;     % land
-       ncwrite(fname,'Pwave_top',squeeze(Rtp),[1 1 K])
+       ncwrite(fname,'Pwave_top',squeeze(Rtp).',[1 1 K])
        clear Rtp;
    end
    clear F vname K 
@@ -226,7 +226,7 @@ if(get_tmbot)
        Tmbot=getfield(F,char(vname(K)));
        Tmbot(find(Tmbot == -9)) = 10.0;     % flag
        Tmbot(find(isnan(Tmbot))) = 0.0;     % land
-       ncwrite(fname,'Pwave_bot',squeeze(Tmbot),[1 1 K])
+       ncwrite(fname,'Pwave_bot',squeeze(Tmbot).',[1 1 K])
        clear Tmbot;
    end
    clear F vname K 
@@ -241,7 +241,7 @@ if(get_ubot)
        Ubot=getfield(F,char(vname(K)));
        Ubot(find(Ubot == -10)) = 0.0001;    % flag
        Ubot(find(isnan(Ubot))) = 0.0;       % land
-       ncwrite(fname,'Uwave_rms',squeeze(Ubot),[1 1 K])
+       ncwrite(fname,'Uwave_rms',squeeze(Ubot).',[1 1 K])
        clear Ubot;
    end
    clear F vname K 
@@ -256,7 +256,7 @@ if(get_wdir)
        Wdir=getfield(F,char(vname(K)));
        Wdir(find(Wdir == -999)) = 0.0;  % flag
        Wdir(find(isnan(Wdir))) = 0.0;   % land
-       ncwrite(fname,'Dwave',squeeze(Wdir),[1 1 K])
+       ncwrite(fname,'Dwave',squeeze(Wdir).',[1 1 K])
        clear Wdir;
    end
    clear F vname K 
@@ -271,7 +271,7 @@ if(get_wlen)
        Wlen=getfield(F,char(vname(K)));
        Wlen(find(Wlen == -9)) = 10.0;   % flag
        Wlen(find(isnan(Wlen))) = 0.0;   % land
-       ncwrite(fname,'Lwave',squeeze(Wlen),[1 1 K])
+       ncwrite(fname,'Lwave',squeeze(Wlen).',[1 1 K])
        clear Wlen;
    end
    clear F vname K 
@@ -286,7 +286,7 @@ if(get_break)
        Qb=getfield(F,char(vname(K)));
        Qb(find(Qb == -9)) = 10.0;   % flag
        Qb(find(isnan(Qb))) = 0.0;   % land
-       ncwrite(fname,'Wave_break',squeeze(Qb),[1 1 K])
+       ncwrite(fname,'Wave_break',squeeze(Qb).',[1 1 K])
        clear Qb;
    end
    clear F vname K 
@@ -298,7 +298,7 @@ if(get_xp)
    vname=fieldnames(F);
    disp(sprintf('%g/%g ''Xp'' saved',length(vname)))
    Xp=getfield(F,char(vname(1)));
-   ncwrite(fname,'xp',squeeze(Xp))
+   ncwrite(fname,'xp',squeeze(Xp).')
    clear Xp
    clear F vname
 end
@@ -309,7 +309,7 @@ if(get_yp)
    vname=fieldnames(F);
    disp(sprintf('%g/%g ''Yp'' saved',length(vname)))
    Yp=getfield(F,char(vname(1)));
-   ncwrite(fname,'yp',squeeze(Yp))
+   ncwrite(fname,'yp',squeeze(Yp).')
    clear Yp
    clear F vname
 end
