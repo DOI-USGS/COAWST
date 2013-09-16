@@ -108,6 +108,11 @@
 ! value of 1.0 has no scale effect.
 
 MUD_MORPH_FAC == 180.0d0 180.0d0 1.0d0          ! nondimensional
+! Logical switches (TRUE/FALSE) to specify which variables to consider on
+! tracers point Sources/Sinks (like river runoff). See glossary below for
+! details.
+
+ MUD_Ltracer == F F F
 
 ! Logical switch (TRUE/FALSE) to activate writing of cohesive sediment
 ! into HISTORY output file.
@@ -168,7 +173,13 @@ SAND_AKT_BAK == 5.0d-6                          ! m2/s
 ! Morphological time scale factor (greater than or equal to 1.0). A
 ! value of 1.0 has no scale effect.
 
-SAND_MORPH_FAC == 1.0d0 1.0d0 1.0d0             ! nondimensional
+SAND_MORPH_FAC == 1.0d0                         ! nondimensional
+
+! Logical switches (TRUE/FALSE) to specify which variables to consider on
+! tracers point Sources/Sinks (like river runoff). See glossary below for
+! details.
+
+SAND_Ltracer == F
 
 ! Logical switches (TRUE/FALSE) to activate writing of non-cohesive
 ! sediment into HISTORY output file.
@@ -257,6 +268,47 @@ Hout(iSVbld) == T                               ! bed load at V-points
 !                    than or equal to 1.0). A value of 1.0 has no scale
 !                    effect.
 !
+!  MUD_Ltracer     Logical switches (T/F) to specify which tracer variables
+!                    to consider when the option TS_PSOURCE is activated;
+!                    [1:NCS,1:Ngrids] values are expected.
+!
+!                      MUD_Ltracer(  1,ng)         sand_01
+!                      ...                         ...
+!                      MUD_Ltracer(NCS,ng)         ...
+!
+!                    Recall that TS_PSOURCE is usually activated to add river
+!                    runoff as a point source. At minimum, it is necessary to
+!                    specify both temperature and salinity for all rivers. The
+!                    other tracers are optional. The user needs to know the
+!                    correspondence between biological variables and indices
+!                    idbio(1:NBT) when activating one or more of these switches.
+!
+!                    This logical switch REPLACES and ELIMINATES the need to
+!                    have or read the variable "river_flag(river)" in the input
+!                    rivers forcing NetCDF file:
+!
+!                      double river_flag(river)
+!                        river_flag:long_name = "river runoff tracer flag"
+!                        river_flag:option_0 = "all tracers are off"
+!                        river_flag:option_1 = "only temperature"
+!                        river_flag:option_2 = "only salinity"
+!                        river_flag:option_3 = "both temperature and salinity"
+!                        river_flag:units = "nondimensional"
+!
+!                    This logic was too cumbersome and complicated when
+!                    additional tracers are considered. However, this change
+!                    is backward compatible.
+!
+!                    This logical switch will be used to activate the reading
+!                    of respective tracer variable from input river forcing
+!                    NetCDF file. If you want to add other tracer variables
+!                    (other than temperature and salinity) as a source for a
+!                    particular river(s), you just need to specify such values
+!                    on those river(s). Then, set the values to ZERO on the
+!                    other river(s) that do NOT require such river forcing for
+!                    that tracer. Recall that you need to specify the tracer
+!                    values for all rivers, even if their values are zero.
+!
 !  Hout(idmud)     Logical switches to activate writing of cohesive sediment
 !                    concentration into HISTORY NetCDF file,
 !                    HOUT(idTvar(idsed(i))) with i=1:NCS.
@@ -317,6 +369,47 @@ Hout(iSVbld) == T                               ! bed load at V-points
 !  SAND_MORPH_FAC  Morphological time scale factor (nondimensional; greater
 !                    than or equal to 1.0). A value of 1.0 has no scale effect.
 !
+!  SAND_Ltracer     Logical switches (T/F) to specify which tracer variables
+!                    to consider when the option TS_PSOURCE is activated;
+!                    [1:NNS,1:Ngrids] values are expected.
+!
+!                      SAND_Ltracer(  1,ng)        sand_01
+!                      ...                         ...
+!                      SAND_Ltracer(NNS,ng)        ...
+!
+!                    Recall that TS_PSOURCE is usually activated to add river
+!                    runoff as a point source. At minimum, it is necessary to
+!                    specify both temperature and salinity for all rivers. The
+!                    other tracers are optional. The user needs to know the
+!                    correspondence between biological variables and indices
+!                    idbio(1:NBT) when activating one or more of these switches.
+!
+!                    This logical switch REPLACES and ELIMINATES the need to
+!                    have or read the variable "river_flag(river)" in the input
+!                    rivers forcing NetCDF file:
+!
+!                      double river_flag(river)
+!                        river_flag:long_name = "river runoff tracer flag"
+!                        river_flag:option_0 = "all tracers are off"
+!                        river_flag:option_1 = "only temperature"
+!                        river_flag:option_2 = "only salinity"
+!                        river_flag:option_3 = "both temperature and salinity"
+!                        river_flag:units = "nondimensional"
+!
+!                    This logic was too cumbersome and complicated when
+!                    additional tracers are considered. However, this change
+!                    is backward compatible.
+!
+!                    This logical switch will be used to activate the reading
+!                    of respective tracer variable from input river forcing
+!                    NetCDF file. If you want to add other tracer variables
+!                    (other than temperature and salinity) as a source for a
+!                    particular river(s), you just need to specify such values
+!                    on those river(s). Then, set the values to ZERO on the
+!                    other river(s) that do NOT require such river forcing for
+!                    that tracer. Recall that you need to specify the tracer
+!                    values for all rivers, even if their values are zero.
+!
 !  Hout(idsand)    Logical switches to activate writing of non-cohesive
 !                     sediment concentration into HISTORY NetCDF file,
 !                     HOUT(idTvar(idsed(i))) with i=1:NCS+1,NST.
@@ -349,3 +442,4 @@ Hout(iSVbld) == T                               ! bed load at V-points
 !  Hout(iporo)     Sediment layer porosity.
 !
 !  Hout(idiff)     Biodiffusivity at the bottom of each layer.
+!
