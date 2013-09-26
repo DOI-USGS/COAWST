@@ -16,11 +16,6 @@
 
         integer, parameter :: IOnamesize = 80
 
-#if !defined MODEL_COUPLING
-        integer :: NoError = 0
-        integer :: exit_flag = 0
-        integer, parameter :: stdout = 6
-#endif
 
         integer, parameter :: Ngridss = NestedGrids
 

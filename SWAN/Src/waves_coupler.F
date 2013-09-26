@@ -80,9 +80,9 @@
 !
       PRIVATE
 
-      PUBLIC :: initialize_wav2ocn_coupling
-      PUBLIC :: wav2ocn_coupling
-      PUBLIC :: finalize_wav2ocn_coupling
+      PUBLIC :: initialize_wav_coupling
+      PUBLIC :: wav_coupling
+      PUBLIC :: finalize_wav_coupling
 
 !# ifdef WRF_COUPLING
 !      PUBLIC :: initialize_wav2atm_coupling
@@ -90,7 +90,7 @@
 !      PUBLIC :: finalize_wav2atm_coupling
 !# endif
 
-      include 'mpif.h'
+!      include 'mpif.h'
 !
 !  Declarations.
 !
@@ -132,7 +132,7 @@
 
       CONTAINS
 
-      SUBROUTINE INITIALIZE_WAV2OCN_COUPLING (ng)
+      SUBROUTINE INITIALIZE_WAV_COUPLING (ng)
 !
 !=======================================================================
 !                                                                      !
@@ -146,8 +146,7 @@
       USE SWCOMM3
       USE M_GENARR
       USE M_PARALL
-      USE mod_scalars
-      USE mod_iounits
+      USE swan_iounits
       USE mct_coupler_params
 !
       include 'mpif.h'
@@ -156,8 +155,8 @@
 !  Local variable declarations.
 !
       integer :: MyError, MyRank
-      integer :: npoints, gsmsize, nprocs, localsize
-      integer :: i, j, Isize, Jsize, jc, Asize, ic
+      integer :: gsmsize, nprocs
+      integer :: i, j, Isize, Jsize, Asize
       integer :: nRows, nCols, num_sparse_elems
       integer :: cid, cad
       character (len=70)  :: nc_name
@@ -180,11 +179,11 @@
 !  Initialize MCT coupled model registry.
 !
       IF (ng.eq.1) THEN
-        ALLOCATE(GlobalSegMap_G(Ngrids))
-        ALLOCATE(AttrVect_G(Ngrids))
-        ALLOCATE(Router_G(Ngrids))
+        ALLOCATE(GlobalSegMap_G(Ngridss))
+        ALLOCATE(AttrVect_G(Ngridss))
+        ALLOCATE(Router_G(Ngridss))
 # ifdef MCT_INTERP_WV2AT
-        ALLOCATE(SMPlus_G(Ngrids))
+        ALLOCATE(SMPlus_G(Ngridss))
 # endif
       END IF
 !
@@ -391,6 +390,7 @@
       END DO
       cid=1
 !
+# ifdef ROMS_COUPLING
       to_add='DISBOT'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
@@ -489,13 +489,13 @@
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-#ifdef ICE_MODEL
+#  ifdef ICE_MODEL
 !
       to_add=':SEAICE'
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-#endif
+#  endif
 !
 !  Finalize and remove trailing spaces from the owstring
 !  for the rlist.
@@ -512,6 +512,7 @@
       CALL Router_init (OCNid, GlobalSegMap_G(ng)%GSMapSWAN,            &
      &                  WAV_COMM_WORLD, Router_G(ng)%SWANtoROMS)
 !
+# endif
 # if defined WRF_COUPLING
 !
 !  Initialize attribute vector holding the export data code string of
@@ -565,10 +566,10 @@
 # endif
 
       RETURN
-      END SUBROUTINE INITIALIZE_WAV2OCN_COUPLING
+      END SUBROUTINE INITIALIZE_WAV_COUPLING
 
-      SUBROUTINE WAV2OCN_COUPLING (MIP, NVOQP, VOQR, VOQ, IRQ,          &
-     &                             IVTYPE, COMPDA, Numcouple, ng)
+      SUBROUTINE WAV_COUPLING (MIP, NVOQP, VOQR, VOQ, IRQ,              &
+     &                         IVTYPE, COMPDA, Numcouple, ng)
 !
 !=======================================================================
 !                                                                      !
@@ -604,7 +605,7 @@
       USE M_GENARR
       USE M_MPI
       USE OCPCOMM4
-      USE mod_coupler
+      USE mod_coupler_kinds
 !
       implicit none
 !
@@ -634,7 +635,7 @@
 # if !defined BBL_MODEL
       real :: cff2
 # endif
-      real(r8), pointer :: avdata(:)
+      real(m8), pointer :: avdata(:)
 
       real, pointer :: TEMPMCT(:,:)
       real, pointer :: GRECVT(:), GRECVB(:), GRECVR(:), GRECVL(:)
@@ -657,7 +658,7 @@
 !  Allocate attribute vector array used to export/import data.
 !
       allocate ( avdata(gsmsize),stat=ierr )
-      avdata=0.0_r8
+      avdata=0.0_m8
 !
 !  Ask for points in this tile.
 !
@@ -667,57 +668,79 @@
 !  Load SWAN exporting data into MCT storage buffers.  Since this
 !  routine is called several times from main, only load field
 !  according to the IVTYPE flag.  The data is exported using ROMS
-!  definition for real kind r8.
+!  definition for real kind m8.
 !
       DO IP=1,gsmsize
-        avdata(IP)=REAL( VOQ(points(IP),VOQR(IVTYPE)),r8 )
+        avdata(IP)=REAL( VOQ(points(IP),VOQR(IVTYPE)),m8 )
       END DO
 !
       IF (IVTYPE.eq.54) THEN
+# ifdef WAVES_OCEAN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DISBOT",avdata)
+# endif
       ELSE IF (IVTYPE.eq.55) THEN
+# ifdef WAVES_OCEAN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DISSURF",avdata)
+# endif
       ELSE IF (IVTYPE.eq.56) THEN
+# ifdef WAVES_OCEAN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DISWCAP",avdata)
+# endif
       ELSE IF (IVTYPE.eq.10) THEN
+# ifdef WAVES_OCEAN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "HSIGN",avdata)
+# endif
 # ifdef AIR_WAVES
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2atm_AV,           &
      &                             "HSIGN",avdata)
 # endif
       ELSE IF (IVTYPE.eq.12) THEN
+# ifdef WAVES_OCEAN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "RTP",avdata)
+# endif
 # ifdef AIR_WAVES
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2atm_AV,           &
      &                             "RTP",avdata)
 # endif
       ELSE IF (IVTYPE.eq.50) THEN
+# ifdef WAVES_OCEAN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "TMBOT",avdata)
+# endif
       ELSE IF (IVTYPE.eq.6) THEN
+# ifdef WAVES_OCEAN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "UBOT",avdata)
+# endif
       ELSE IF (IVTYPE.eq.13) THEN
+# ifdef WAVES_OCEAN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DIR",avdata)
+# endif
       ELSE IF (IVTYPE.eq.17) THEN
+# ifdef WAVES_OCEAN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "WLEN",avdata)
+# endif
       ELSE IF (IVTYPE.eq.71) THEN
+# ifdef WAVES_OCEAN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "WLENP",avdata)
+# endif
 # ifdef AIR_WAVES
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2atm_AV,           &
      &                             "WLENP",avdata)
 # endif
       ELSE IF (IVTYPE.eq.8) THEN
+# ifdef WAVES_OCEAN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "QB",avdata)
+# endif
       END IF
 !
       IF (IRQ.eq.Numcouple) THEN
@@ -732,6 +755,7 @@
 !  Send wave fields bundle to ocean model, ROMS.
 !-----------------------------------------------------------------------
 !
+# ifdef WAVES_OCEAN
         CALL MCT_Send (AttrVect_G(ng)%wav2ocn_AV,                       &
      &                 Router_G(ng)%SWANtoROMS, MyError)
         IF (MYRANK.EQ.0) THEN
@@ -740,7 +764,7 @@
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling send fail swancplr, MyStatus= ', MyError
-          CALL FINALIZE_WAV2OCN_COUPLING(ng)
+          CALL FINALIZE_WAV_COUPLING(ng)
         END IF
 !
 !-----------------------------------------------------------------------
@@ -753,12 +777,13 @@
      &                 Router_G(ng)%SWANtoROMS, MyError)
         IF (MYRANK.EQ.0) THEN
           WRITE (SCREEN,35) '== SWAN grid ',ng,' recvd data from ROMS'
- 35       FORMAT (a14,i2,a21)
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
-          CALL FINALIZE_WAV2OCN_COUPLING(ng)
+          CALL FINALIZE_WAV_COUPLING(ng)
         END IF
+# endif
+ 35       FORMAT (a14,i2,a21)
 # ifdef AIR_WAVES
 !
 !  Send fields to atmosphere model.
@@ -783,7 +808,7 @@
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupl fail swancplr, MyStatus= ', MyError
-          CALL FINALIZE_WAV2OCN_COUPLING(ng)
+          CALL FINALIZE_WAV_COUPLING(ng)
         END IF
 !
 !  Receive fields from atmosphere model.
@@ -806,7 +831,7 @@
         END IF
         IF (MyError.ne.0) THEN
           WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
-          CALL FINALIZE_WAV2OCN_COUPLING(ng)
+          CALL FINALIZE_WAV_COUPLING(ng)
         END IF
 # endif
 !
@@ -846,9 +871,8 @@
 !
 !  Determine the amount of fields and assign id numbers.
 !
-# ifdef WAVES_OCEAN
         IP=0
-!
+# ifdef WAVES_OCEAN
         IP=IP+1
         iddep=IP
 !
@@ -863,14 +887,13 @@
 !
         IP=IP+1
         idruf=IP
-#  ifdef ICE_MODEL
 !
+#  ifdef ICE_MODEL
         IP=IP+1
         idice=IP
 #  endif
 # endif
 # ifdef AIR_WAVES
-!
         IP=IP+1
         idu10=IP
 !
@@ -881,6 +904,7 @@
 !
         allocate ( TEMPMCT(MXC*MYC,NUMTRANSFER),stat=ierr )
         TEMPMCT=0.0
+# ifdef WAVES_OCEAN
 !
 !  Bottom elevation.
 !
@@ -946,7 +970,7 @@
             TEMPMCT(INDXG,idruf)=avdata(IP)
           END DO
         END DO
-# ifdef ICE_MODEL
+#  ifdef ICE_MODEL
 !
 !  sea ice fraction.
 !
@@ -960,6 +984,7 @@
             TEMPMCT(INDXG,idice)=avdata(IP)
           END DO
         END DO
+#  endif
 # endif
 # ifdef AIR_WAVES
 !
@@ -1175,6 +1200,7 @@
 ! array for DEPTH and computational array COMPDA. Only insert
 ! active (wet points) using array KGRPNT.
 !
+# ifdef WAVES_OCEAN
 ! Insert depth into SWAN array.
 ! Here the depth is really the bottom level. 
 ! When the user requests depth for output, that value is written
@@ -1195,6 +1221,7 @@
             END IF
           END DO
         END DO
+# endif
 !
 ! Move values at 'present' time level 2 to 'old' time level 1.
 ! MCGRD = MXC*MYC+1-#masked cells.
@@ -1203,10 +1230,12 @@
 ! COMPDA has only active wet points + 1.
 !
         DO INDX = 1, MCGRD
+# ifdef WAVES_OCEAN
           COMPDA(INDX,JWLV1)=COMPDA(INDX,JWLV2)
           COMPDA(INDX,JVX1) =COMPDA(INDX,JVX2)
           COMPDA(INDX,JVY1) =COMPDA(INDX,JVY2)
           COMPDA(INDX,JFRC3)=COMPDA(INDX,JFRC2)
+# endif
 # ifdef AIR_WAVES
           COMPDA(INDX,JWX3) =COMPDA(INDX,JWX2)
           COMPDA(INDX,JWY3) =COMPDA(INDX,JWY2)
@@ -1219,8 +1248,8 @@
 ! If not using a BBL model, then determine the non-spatially 
 ! varying friction coeff to enter into the JFRC2 array.
 !
-# if !defined BBL_MODEL
-        cff2=0.05_r8                  ! default
+# if defined WAVES_OCEAN && !defined BBL_MODEL
+        cff2=0.05_m8                  ! default
         IF (IBOT.EQ.1) THEN           ! Jonswap
           cff2=PBOT(3)
         ELSE IF (IBOT.EQ.2) THEN      ! Collins
@@ -1234,23 +1263,27 @@
           DO IX=1,MXC
             IP=IP+1
             INDX = KGRPNT(IX,IY)
-            cff=TEMPMCT(IP,iddep)+TEMPMCT(IP,idwlv)
             IF (INDX.GT.1) THEN
-# ifdef BBL_MODEL
+# ifdef WAVES_OCEAN
+#  ifdef BBL_MODEL
               COMPDA(INDX,JFRC2)=MAX(REAL(TEMPMCT(IP,idruf)), 0.0001)
-# else
+#  else
               COMPDA(INDX,JFRC2)=cff2
-# endif
+#  endif
+              cff=TEMPMCT(IP,iddep)+TEMPMCT(IP,idwlv)
               IF (cff.gt.0.) THEN
                 COMPDA(INDX,JBOTLV)=TEMPMCT(IP,iddep)
                 COMPDA(INDX,JWLV2)=TEMPMCT(IP,idwlv)
                 COMPDA(INDX,JVX2)=TEMPMCT(IP,idvlx)
                 COMPDA(INDX,JVY2)=TEMPMCT(IP,idvly)
-# ifdef WRF_COUPLING
+              END IF
+# endif
+# ifdef AIR_WAVES
+!             IF (cff.gt.0.) THEN
                 COMPDA(INDX,JWX2)=TEMPMCT(IP,idu10)
                 COMPDA(INDX,JWY2)=TEMPMCT(IP,idv10)
+!             END IF
 # endif
-              END IF
             END IF
           END DO
         END DO
@@ -1260,9 +1293,9 @@
       deallocate (avdata, points)
 !
       RETURN
-      END SUBROUTINE WAV2OCN_COUPLING
+      END SUBROUTINE WAV_COUPLING
 
-      SUBROUTINE FINALIZE_WAV2OCN_COUPLING(ng)
+      SUBROUTINE FINALIZE_WAV_COUPLING(ng)
 !
 !=======================================================================
 !                                                                    ===
@@ -1286,6 +1319,6 @@
 # endif
       CALL GlobalSegMap_clean (GlobalSegMap_G(ng)%GSMapSWAN, MyError)
 
-      END SUBROUTINE FINALIZE_WAV2OCN_COUPLING
+      END SUBROUTINE FINALIZE_WAV_COUPLING
 #endif
       END MODULE WAVES_COUPLER_MOD

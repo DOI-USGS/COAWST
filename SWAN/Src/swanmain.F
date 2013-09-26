@@ -44,8 +44,8 @@
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
       USE M_PARALL2
-# ifdef WAVES_OCEAN
-      USE WAVES_COUPLER_MOD, ONLY: INITIALIZE_WAV2OCN_COUPLING
+# ifdef MODEL_COUPLING
+      USE WAVES_COUPLER_MOD, ONLY: INITIALIZE_WAV_COUPLING
 # endif
 # ifdef WRF_COUPLING
       USE INTERP_SWAN_MOD, ONLY: compute_angler
@@ -509,7 +509,7 @@
 !
 !         --- initialize MCT coupling
 !
-            CALL INITIALIZE_WAV2OCN_COUPLING (ng)
+            CALL INITIALIZE_WAV_COUPLING (ng)
 # endif
  900  CONTINUE
 
@@ -788,10 +788,10 @@
       USE SWPOINT_MOD, ONLY: INIT_POINTERS, DEALLOCATE_SWAN_ARRAYS
 !
 # ifdef MODEL_COUPLING
-      USE WAVES_COUPLER_MOD, ONLY : finalize_wav2ocn_coupling
+      USE WAVES_COUPLER_MOD, ONLY : finalize_wav_coupling
 # endif
 !# if defined WRF_COUPLING
-!      USE WAVES_COUPLER_MOD, ONLY : finalize_wav2atm_coupling
+!      USE WAVES_COUPLER_MOD, ONLY : finalize_wav_coupling
 !# endif
 !
 !     Local variables
@@ -911,9 +911,9 @@
 !
 !  Terminate MCT coupling.
 !
-       CALL finalize_wav2ocn_coupling(ng)
+       CALL finalize_wav_coupling(ng)
 !#  ifdef WRF_COUPLING
-!       CALL finalize_wav2atm_coupling
+!       CALL finalize_wavm_coupling
 !#  endif
 # endif
 !
@@ -5848,7 +5848,7 @@
       USE SwanGriddata                                                    40.80
 #ifdef SWAN_MODEL
       USE M_MPI
-      USE mod_swan_kinds
+      USE mod_coupler_kinds
 #endif
 #ifdef REFINED_GRID
       USE M_SREFINED
@@ -6115,7 +6115,7 @@
         IF (ITjcw.eq.MTC_G(ngp)) fac3=DT_G(ngp)
         fac1=(TIMCO_G(ngp)-DT_G(ngp)+fac3)-TIMCO_G(ng)
         fac2=TIMCO_G(ng)-(TIMCO_G(ngp)-2.0*DT_G(ngp)+fac3)
-        fac=1.0_s8/(fac1+fac2)
+        fac=1.0_m8/(fac1+fac2)
         fac1=fac*fac1
         fac2=fac*fac2
         IF (ITjcw.eq.0) fac1=1.0

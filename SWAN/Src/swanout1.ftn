@@ -689,7 +689,7 @@
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
       USE M_MPI
-      USE WAVES_COUPLER_MOD, ONLY: WAV2OCN_COUPLING
+      USE WAVES_COUPLER_MOD, ONLY: WAV_COUPLING
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -1039,8 +1039,8 @@
   68    CONTINUE                                                          40.31
 
 !     Couple to ocean model
-        CALL WAV2OCN_COUPLING (MIP, NVOQP, VOQR, VOQ(1), IRQ,
-     &                         IVTYPE, COMPDA, Numcouple, ng)
+        CALL WAV_COUPLING (MIP, NVOQP, VOQR, VOQ(1), IRQ,
+     &                     IVTYPE, COMPDA, Numcouple, ng)
         IF (STPNOW()) RETURN
         DEALLOCATE(VOQ,CROSS,IONOD)
   70  CONTINUE

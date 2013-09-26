@@ -539,6 +539,9 @@
      &                   WX2        ,WY2        ,
      &                   ANYWND     ,SPCDIR     ,                         40.00
      &                   UX2        ,UY2        ,
+#ifdef SWAN_MODEL
+     &                   UFF        ,UCDRAG     ,
+#endif
      &                   SPCSIG     ,AC2                                  30.70 41.33
 !ADC     &                   ,NodeNumber                                      41.20
      &                  )
@@ -761,9 +764,13 @@
 !
       REAL         WX2(MCGRD)   ,
      &             WY2(MCGRD)   ,
-     &             UX2(MCGRD)   ,                                         30.70
-     &             UY2(MCGRD)                                             30.70
-      REAL         AC2(MDC,MSC,MCGRD)                                     41.33
+     &             UX2(MCGRD)   ,                                        30.70
+     &             UY2(MCGRD)   ,                                        30.70
+#ifdef SWAN_MODEL
+     &             UFF(MCGRD)   ,                                        MAI
+     &             UCDRAG(MCGRD)                                         MAI
+#endif
+      REAL         AC2(MDC,MSC,MCGRD)                                    41.33
 !
       LOGICAL      ANYWND(MDC)
 !
@@ -979,6 +986,9 @@
            IF ( WIND10 .GT. 7.5 ) THEN
              CDRAG = ( 0.8 + 0.065 * WIND10 ) * 0.001
              CDRAG = MIN ( CDCAP, CDRAG )
+#if defined DRAGLIM_DAVIS && defined SWAN_MODEL
+             CDRAG = MIN ( 0.0024, CDRAG )    !Limitig used by Davis maitane
+#endif
 !ADC             CDRAG = WindDrag(DBLE(WIND10),NodeNumber)
            ELSE
              CDRAG = 0.0012873
@@ -1035,12 +1045,17 @@
         END IF
 !
         UFRIC = SQRT ( CDRAG ) * WIND10
+#ifdef SWAN_MODEL
+        UCDRAG = CDRAG
+#endif
 !
 !       *** Wind friction velocity and PM-frequency ***
 !
         UFRIC = MAX ( 1.E-15 , UFRIC)
         FPM =  GRAV / ( 28.0 * UFRIC )
-
+#ifdef SWAN_MODEL
+        UFF = UFRIC
+#endif
       END IF
 !
 !     *** test output ***

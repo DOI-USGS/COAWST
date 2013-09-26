@@ -38,7 +38,7 @@
 !=======================================================================
 !
       USE swan_iounits
-      USE mod_swan_kinds
+      USE mod_coupler_kinds
       USE M_PARALL
       USE M_PARALL2
       USE SWCOMM3
@@ -51,7 +51,7 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: MyCOMM
-      real(s4), intent(in)  :: CouplingTime             ! single precision
+      real(m4), intent(in)  :: CouplingTime             ! single precision
 !
 !  Local variable declarations.
 !
@@ -146,7 +146,7 @@
 !=======================================================================
 !
       USE swan_iounits
-      USE mod_swan_kinds
+      USE mod_coupler_kinds
       USE M_PARALL
       USE M_PARALL2
       USE SWCOMM3
@@ -155,7 +155,7 @@
 !
 !  Imported variable declarations.
 !
-      real(s4), intent(in)  :: CouplingTime             ! single precision
+      real(m4), intent(in)  :: CouplingTime             ! single precision
 !
 !  Local variable declarations.
 !

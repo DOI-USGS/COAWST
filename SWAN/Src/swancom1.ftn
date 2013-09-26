@@ -2860,7 +2860,11 @@
      &                 FPM        ,UFRIC      ,
      &                 COMPDA(1,JWX2) ,COMPDA(1,JWY2) ,
      &                 ANYWND     ,SPCDIR     ,                           40.00
-     &                 COMPDA(1,JVX2) ,COMPDA(1,JVY2) ,SPCSIG ,AC2)       41.33 30.70
+     &                 COMPDA(1,JVX2) ,COMPDA(1,JVY2) ,
+#ifdef SWAN_MODEL
+     &                 COMPDA(1,JUSTAR),COMPDA(1,JCDRAG), 
+#endif
+     &                 SPCSIG ,AC2)                                      41.33 30.70
 !TIMG          CALL SWTSTO(115)                                                40.23
         END IF
 !
