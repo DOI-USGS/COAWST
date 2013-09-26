@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE ocean_coupler_mod
 
-#if defined MODEL_COUPLING && defined MCT_LIB
+#if defined ROMS_COUPLING && defined MCT_LIB
 !
 !svn $Id: ocean_coupler.F 755 2008-09-14 19:07:08Z jcwarner $
 !==================================================== John C. Warner ===

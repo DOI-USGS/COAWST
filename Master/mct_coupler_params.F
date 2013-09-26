@@ -3,7 +3,8 @@
       MODULE mct_coupler_params
 
 #if defined MODEL_COUPLING && defined MCT_LIB
-      USE mod_kinds
+      USE mod_coupler_kinds
+
       implicit none
 !
 !  Number of coupling models.
@@ -16,7 +17,7 @@
 !
       integer, dimension(:), pointer :: sparse_rows2
       integer, dimension(:), pointer :: sparse_cols2
-      real(r8), dimension(:), pointer :: sparse_weights2
+      real(m8), dimension(:), pointer :: sparse_weights2
 # endif
 # if defined MCT_INTERP_OC2WV || defined MCT_INTERP_OC2AT
 !
@@ -25,7 +26,7 @@
       integer, dimension(:), pointer :: sparse_rows
       integer, dimension(:), pointer :: sparse_cols
       integer, dimension(:), pointer :: dst_grid_imask
-      real(r8), dimension(:), pointer :: sparse_weights
+      real(m8), dimension(:), pointer :: sparse_weights
 # endif
 !
 !  Number of parallel nodes assigned to each model in the coupled
@@ -34,12 +35,34 @@
       integer :: NnodesATM
       integer :: NnodesWAV
       integer :: NnodesOCN
+
+# ifdef WRF_COUPLING
+!
+!  Parallel nodes assined to the atmosphere model.
+!
+        integer :: peATM_frst          ! first atmosphere parallel node
+        integer :: peATM_last          ! last  atmosphere parallel node
+# endif
+# ifdef SWAN_COUPLING
+!
+!  Parallel nodes assined to the wave model.
+!
+        integer :: peWAV_frst          ! first atmosphere parallel node
+        integer :: peWAV_last          ! last  atmosphere parallel node
+# endif
+# ifdef ROMS_COUPLING
+!
+!  Parallel nodes assined to the ocean model.
+!
+        integer :: peOCN_frst          ! first ocean parallel node
+        integer :: peOCN_last          ! last  ocean parallel node
+# endif
 !
 !  Time interval (seconds) between coupling of models.
 !
-      real(r8) :: TI_ATM_WAV        ! atmosphere-wave coupling interval
-      real(r8) :: TI_ATM_OCN        ! atmosphere-ocean coupling interval
-      real(r8) :: TI_WAV_OCN        ! wave-ocean coupling interval
+      real(m8) :: TI_ATM_WAV        ! atmosphere-wave coupling interval
+      real(m8) :: TI_ATM_OCN        ! atmosphere-ocean coupling interval
+      real(m8) :: TI_WAV_OCN        ! wave-ocean coupling interval
 !
 !  Number of atmosphere model time-steps and atmosphere model ID.
 !
@@ -62,6 +85,5 @@
 !
       integer :: WRF_CPL_GRID = 1
 
-!     CONTAINS
 #endif
       END MODULE mct_coupler_params

@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE ROMS_export_mod
 
-#ifdef MODEL_COUPLING
+#ifdef ROMS_COUPLING
 !
 !svn $Id: roms_export.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===

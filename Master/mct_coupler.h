@@ -24,11 +24,18 @@
 #endif
 !=======================================================================
 !
-      USE mod_param
-      USE mod_parallel
+#if defined ROMS_COUPLING
+!     USE mod_param
       USE mod_iounits
       USE mod_scalars
+#endif
+#if defined SWAN_COUPLING
+      USE swan_iounits
+#endif
+!     USE mod_parallel
       USE mct_coupler_params
+      USE mod_coupler_iounits
+      USE read_couplepar_mod
 !
       USE m_MCTWorld, ONLY : MCTWorld_clean => clean
 
@@ -42,27 +49,31 @@
       USE waves_control_mod, ONLY : SWAN_driver_run
       USE waves_control_mod, ONLY : SWAN_driver_finalize
 #endif
-#if defined SWAN_COUPLING || defined REFDIF_COUPLING
+#if defined WAVES_OCEAN
       USE ocean_coupler_mod, ONLY : finalize_ocn2wav_coupling
 #endif
-#ifdef WRF_COUPLING
+#if defined AIR_OCEAN
       USE ocean_coupler_mod, ONLY : finalize_ocn2atm_coupling
 #endif
 !
       implicit none
+      include 'mpif.h'
 !
 !  Local variable declarations.
 !
       logical, save :: first
 
       integer :: MyColor, MyCOMM, MyError, MyKey, Nnodes
+      integer :: MyRank
       integer :: ng, pelast
       integer :: Ocncolor, Wavcolor, Atmcolor
 
+#if defined ROMS_COUPLING
       integer, dimension(Ngrids) :: Tstr   ! starting ROMS time-step
       integer, dimension(Ngrids) :: Tend   ! ending   ROMS time-step
+#endif
 
-      real(r4) :: CouplingTime             ! single precision
+      real(m4) :: CouplingTime             ! single precision
 !
 !-----------------------------------------------------------------------
 !  Initialize distributed-memory (MPI) configuration
@@ -78,15 +89,9 @@
       CALL mpi_comm_size (MPI_COMM_WORLD, Nnodes, MyError)
       CALL mpi_comm_rank (MPI_COMM_WORLD, MyRank, MyError)
 !
-!  Set temporarily the ocean communicator to current handle before
-!  splitting so the input coupling script name can be broadcasted to
-!  all the nodes.
-!
-      OCN_COMM_WORLD=MPI_COMM_WORLD
-!
 !  Read in coupled model parameters from standard input.
 !    
-      CALL read_CouplePar (iNLM)
+      CALL read_CouplePar
 !
 !  Allocate several coupling variables.
 !
@@ -95,11 +100,14 @@
       allocate(ocnids(Ngrids))
 # endif
 # ifdef SWAN_COUPLING
-      allocate(wavids(Ngrids))
+      allocate(wavids(Ngridss))
 # endif
 #endif
 !
       N_mctmodels=0
+      OCNid=0
+      WAVid=0
+      ATMid=0
 #ifdef ROMS_COUPLING
 # ifdef REFINED_GRID
       DO ng=1,Ngrids
@@ -114,7 +122,7 @@
 #endif
 #ifdef SWAN_COUPLING
 # ifdef REFINED_GRID
-      DO ng=1,Ngrids
+      DO ng=1,Ngridss
         N_mctmodels=N_mctmodels+1
         wavids(ng)=N_mctmodels
       END DO
@@ -133,13 +141,14 @@
 !
 !  Assign processors to the models.
 !
+      pelast=-1
 #ifdef ROMS_COUPLING
-      peOCN_frst=0
+      peOCN_frst=pelast+1
       peOCN_last=peOCN_frst+NnodesOCN-1
       pelast=peOCN_last
 #endif
 #ifdef SWAN_COUPLING
-      peWAV_frst=peOCN_last+1
+      peWAV_frst=pelast+1
       peWAV_last=peWAV_frst+NnodesWAV-1
       pelast=peWAV_last
 #endif
