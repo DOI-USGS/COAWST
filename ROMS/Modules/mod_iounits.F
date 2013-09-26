@@ -13,11 +13,8 @@
 !  ADSname     Input adjoint sensitivity functional file.              !
 !  AVGbase     Output averages base file name.                         !
 !  AVGname     Output averages file name.                              !
-!  Aname       Atmosphere model stadard input file name.               !
 !  BLKname     Input bulk fluxes file name.                            !
 !  BRYname     Input boundary data file name.                          !
-!  IWBNDname     Input boundary data file name for InWave model        !
-!  IWSWNname     Input spectral SWAN data file name for InWave model   !
 !  CLMname     Input climatology file name.                            !
 !  DIAbase     Output diagnostics base file name.                      !
 !  DIAname     Output diagnostics file name.                           !
@@ -60,7 +57,6 @@
 !  USRname     USER input/output generic file name.                    !
 !  VSURname    Input surface currents observations file name.          !
 !  VOBSname    Input horizontal currents observations file name.       !
-!  Wname       Wave model stadard input file name.                     !
 !  aparnam     Input assimilation parameters file name.                !
 !  bparnam     Input biology parameters file name.                     !
 !  fposnam     Input initial floats positions file name.               !
@@ -140,19 +136,6 @@
         character (len=80), dimension(Ngrids) :: MODname
         character (len=80), dimension(Ngrids) :: OBSname
         character (len=80), dimension(Ngrids) :: REPname
-#ifdef MODEL_COUPLING
-        character (len=80), dimension(Ngrids) :: O2Aname
-        character (len=80), dimension(Ngrids) :: O2Wname
-        character (len=80), dimension(Ngrids) :: W2Aname
-        character (len=80), dimension(Ngrids) :: W2Oname
-        character (len=80), dimension(Ngrids) :: A2Wname
-        character (len=80), dimension(Ngrids) :: A2Oname
-        character (len=80) :: Aname
-# ifdef INWAVE_MODEL
-        character (len=80), dimension(Ngrids) :: IWINIname
-        character (len=80), dimension(Ngrids) :: IWBNDname
-# endif
-#endif
         character (len=80), dimension(Ngrids) :: SSHname
         character (len=80), dimension(Ngrids) :: SSTname
         character (len=80), dimension(Ngrids) :: TIDEname
@@ -168,11 +151,6 @@
         character (len=80), dimension(4,Ngrids) :: NRMname
         character (len=80), dimension(4,Ngrids) :: STDname
 
-#ifdef INWAVE_MODEL
-        character (len=80), dimension(Ngrids) :: IWINIname
-        character (len=80), dimension(Ngrids) :: IWBNDname
-        character (len=80), dimension(Ngrids) :: IWSWNname
-#endif
         character (len=80) :: Iname
         character (len=80) :: MyAppCPP
         character (len=80) :: USRname
