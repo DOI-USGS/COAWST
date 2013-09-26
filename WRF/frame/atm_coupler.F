@@ -149,6 +149,7 @@
 !
       CALL GlobalSegMap_init (GSMapWRF, start, length, 0,               &
      &                        ATM_COMM_WORLD, ATMid)
+# ifdef ROMS_COUPLING
 !
 !  Initialize attribute vector holding the export data code strings of
 !  the atmosphere model.
@@ -168,7 +169,7 @@
       write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-# ifdef ATM2OCN_FLUXES
+#  ifdef ATM2OCN_FLUXES
       to_add=':LH'
       cad=LEN_TRIM(to_add)
       write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
@@ -188,16 +189,16 @@
       cad=LEN_TRIM(to_add)
       write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-# endif
+#  endif
 !
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+#  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
       to_add=':MSLP'
       cad=LEN_TRIM(to_add)
       write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-# endif
+#  endif
 !
-# if defined BULK_FLUXES || defined ECOSIM || \
+#  if defined BULK_FLUXES || defined ECOSIM || \
    (defined SHORTWAVE && defined ANA_SRFLUX)
       to_add=':RELH'
       cad=LEN_TRIM(to_add)
@@ -208,9 +209,9 @@
       cad=LEN_TRIM(to_add)
       write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-# endif
+#  endif
 !
-# if defined BULK_FLUXES || defined ECOSIM
+#  if defined BULK_FLUXES || defined ECOSIM
       to_add=':U10'
       cad=LEN_TRIM(to_add)
       write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
@@ -220,28 +221,28 @@
       cad=LEN_TRIM(to_add)
       write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-# endif
+#  endif
 !
-# ifdef CLOUDS
+#  ifdef CLOUDS
       to_add=':CLDFRA'
       cad=LEN_TRIM(to_add)
       write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-# endif
+#  endif
 !
-# if !defined ANA_RAIN && defined EMINUSP
+#  if !defined ANA_RAIN && defined EMINUSP
       to_add=':RAIN'
       cad=LEN_TRIM(to_add)
       write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-# endif
+#  endif
 !
-# if defined EMINUSP
+#  if defined EMINUSP
       to_add=':EVAP'
       cad=LEN_TRIM(to_add)
       write(avstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-# endif
+#  endif
       cad=LEN_TRIM(avstring)
       avstring=avstring(1:cad)
 !
@@ -257,6 +258,7 @@
 !
       CALL Router_init (OcnId,GSMapWRF,ATM_COMM_WORLD,RoutWRFtoROMS)
 
+# endif
 # ifdef SWAN_COUPLING
 !
 !  Initialize attribute vector holding the export data code string of
@@ -366,6 +368,7 @@
 !  Allocate attribute vector array used to export/import data.
 !
       allocate ( AA(Asize), stat=ierr )
+# ifdef ROMS_COUPLING
 !
 !-----------------------------------------------------------------------
 !  Export fields from atmosphere (WRF) to ocean (ROMS) model.
@@ -391,7 +394,7 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "GLW", AA, Asize)
-# ifdef ATM2OCN_FLUXES
+#  ifdef ATM2OCN_FLUXES
 !-----------------------------------------------------------------------
 !     LH     Latent heat flux (W m-2).
 !
@@ -444,8 +447,8 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "VSTRESS", AA, Asize)
-# endif
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+#  endif
+#  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
 !-----------------------------------------------------------------------
 !     MSLP       Surface atmospheric pressure (Pa).
 !     Use the hypsometric equation to reduce 
@@ -461,9 +464,9 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "MSLP", AA, Asize)
-# endif
-# if defined BULK_FLUXES || defined ECOSIM || \
-   (defined SHORTWAVE && defined ANA_SRFLUX)
+#  endif
+#  if defined BULK_FLUXES || defined ECOSIM || \
+     (defined SHORTWAVE && defined ANA_SRFLUX)
 !-----------------------------------------------------------------------
 !     RELH       Surface air relative humidity (-).
 !
@@ -504,7 +507,7 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "T2", AA, Asize)
-# endif
+#  endif
 !-----------------------------------------------------------------------
 !     U10        U-Wind speed at 10 m (m s-1).
 !
@@ -515,12 +518,9 @@
           AA(ij)=grid%U10(i,j)
         END DO
       END DO
-# if defined BULK_FLUXES || defined ECOSIM
+#  if defined BULK_FLUXES || defined ECOSIM
       CALL AttrVect_importRAttr (atm2ocn_AV, "U10", AA, Asize)
-# endif
-# if defined SWAN_COUPLING
-      CALL AttrVect_importRAttr (atm2wav_AV, "U10", AA, Asize)
-# endif
+#  endif
 !-----------------------------------------------------------------------
 !     V10        V-Wind speed at 10 m (m s-1).
 !
@@ -531,13 +531,10 @@
           AA(ij)=grid%V10(i,j)
         END DO
       END DO
-# if defined BULK_FLUXES || defined ECOSIM
+#  if defined BULK_FLUXES || defined ECOSIM
       CALL AttrVect_importRAttr (atm2ocn_AV, "V10", AA, Asize) 
-# endif
-# if defined SWAN_COUPLING
-      CALL AttrVect_importRAttr (atm2wav_AV, "V10", AA, Asize)
-# endif
-# ifdef CLOUDS
+#  endif
+#  ifdef CLOUDS
 !-----------------------------------------------------------------------
 !     CLDFRA     Cloud fraction (--, 0-1.0).
 !
@@ -549,8 +546,8 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "CLDFRA", AA, Asize)
-# endif
-# if !defined ANA_RAIN && defined EMINUSP
+#  endif
+#  if !defined ANA_RAIN && defined EMINUSP
 !-----------------------------------------------------------------------
 !     RAIN       Precipitation (Convert to m s-1).
 !
@@ -562,8 +559,8 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "RAIN", AA, Asize)
-# endif
-# if defined EMINUSP
+#  endif
+#  if defined EMINUSP
 !-----------------------------------------------------------------------
 !     EVAP      Evaporation (kg/m2 to Convert to m s-1).
 !
@@ -576,7 +573,7 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (atm2ocn_AV, "EVAP", AA, Asize)
-# endif
+#  endif
 !-----------------------------------------------------------------------
 !  Send fields to ocean model.
 !
@@ -614,11 +611,11 @@
           END IF
         END DO
       END DO
+# endif
+# if defined SWAN_COUPLING
 !-----------------------------------------------------------------------
 !  Exchange fields with SWAN.
 !-----------------------------------------------------------------------
-!
-# if defined SWAN_COUPLING
 !
 !  Receive fields from wave model.
 !
@@ -664,7 +661,30 @@
         END DO
       END DO
 !
-!  Send U10 and V10 to SWAN. This AV was filled above.
+!-----------------------------------------------------------------------
+!  Send U10 and V10 to SWAN.
+!-----------------------------------------------------------------------
+!     U10        U-Wind speed at 10 m (m s-1).
+!
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+          AA(ij)=grid%U10(i,j)
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (atm2wav_AV, "U10", AA, Asize)
+!-----------------------------------------------------------------------
+!     V10        V-Wind speed at 10 m (m s-1).
+!
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+          AA(ij)=grid%V10(i,j)
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (atm2wav_AV, "V10", AA, Asize)
 !
       CALL MCT_SEND (atm2wav_AV,RoutWRFtoSWAN,MyError)
       IF (MYRANK.EQ.0) THEN

@@ -495,6 +495,9 @@ CONTAINS
 #else
           Z0=MAX(USTFC*USTAR*USTAR,1.59E-5)
 #endif
+#if defined DRAGLIM_DAVIS
+          Z0=MIN(Z0,2.85E-3) !Davis limiting
+#endif
 !
 !***  VISCOUS SUBLAYER, JANJIC MWR 1994
 !

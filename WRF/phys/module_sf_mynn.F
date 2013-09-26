@@ -1018,6 +1018,9 @@ CONTAINS
 !         ZNT(I)=CZO*UST(I)*UST(I)/G+bvisc/ust(i)                                   
           CALL charnock_1955(ZNT(i),UST(i),WSPD(i),visc)
 #endif
+#if defined DRAGLIM_DAVIS
+          ZNT(I)=MIN(ZNT(I),2.85E-3) !Davis limiting
+#endif
 
             !COMPUTE ROUGHNESS REYNOLDS NUMBER WITH NEW ZNT
              restar=MAX(ust(i)*ZNT(i)/visc, 0.1)
