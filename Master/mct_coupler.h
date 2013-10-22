@@ -35,7 +35,7 @@
 !     USE mod_parallel
       USE mct_coupler_params
       USE mod_coupler_iounits
-      USE read_couplepar_mod
+!     USE read_couplepar_mod
 !
       USE m_MCTWorld, ONLY : MCTWorld_clean => clean
 

@@ -1,14 +1,14 @@
 #include "cppdefs.h"
 
-      MODULE read_couplepar_mod
+!     MODULE read_couplepar_mod
 #ifdef MODEL_COUPLING
 
-      implicit none
+!      implicit none
 
-      PRIVATE
-      PUBLIC  :: read_CouplePar
+!      PRIVATE
+!      PUBLIC  :: read_CouplePar
 
-      CONTAINS
+!      CONTAINS
 
       SUBROUTINE read_CouplePar
 !
@@ -27,13 +27,15 @@
 # ifdef SWAN_MODEL
       USE swan_iounits
 # endif
-       include 'mpif.h'
+      implicit none
+!
+      include 'mpif.h'
 !
 !  Local variable declarations.
 !
       integer :: Npts, Nval, i, inp, out, status
       integer :: MyRank, MyError, MyMaster, Nchars
-      integer :: decode_line, load_i, load_r
+      integer :: cdecode_line, cload_i, cload_r
 
       real(m8), dimension(100) :: Rval
 
@@ -92,7 +94,7 @@
 !
       DO WHILE (.TRUE.)
         READ (inp,'(a)',ERR=40,END=50) line
-        status=decode_line(line, KeyWord, Nval, Cval, Rval)
+        status=cdecode_line(line, KeyWord, Nval, Cval, Rval)
         IF (status.gt.0) THEN
           IF (TRIM(KeyWord).eq.'VARNAME') THEN
             DO i=1,LEN(Cname)
@@ -100,19 +102,19 @@
             END DO
             varnam=TRIM(ADJUSTL(Cval(Nval)))
           ELSE IF (TRIM(KeyWord).eq.'NnodesATM') THEN
-            Npts=load_i(Nval, Rval, 1, NnodesATM)
+            Npts=cload_i(Nval, Rval, 1, NnodesATM)
           ELSE IF (TRIM(KeyWord).eq.'NnodesWAV') THEN
-            Npts=load_i(Nval, Rval, 1, NnodesWAV)
+            Npts=cload_i(Nval, Rval, 1, NnodesWAV)
           ELSE IF (TRIM(KeyWord).eq.'NnodesOCN') THEN
-            Npts=load_i(Nval, Rval, 1, NnodesOCN)
+            Npts=cload_i(Nval, Rval, 1, NnodesOCN)
           ELSE IF (TRIM(KeyWord).eq.'TI_ATM_WAV') THEN
-            Npts=load_r(Nval, Rval, 1, TI_ATM_WAV)
+            Npts=cload_r(Nval, Rval, 1, TI_ATM_WAV)
           ELSE IF (TRIM(KeyWord).eq.'TI_ATM_OCN') THEN
-            Npts=load_r(Nval, Rval, 1, TI_ATM_OCN)
+            Npts=cload_r(Nval, Rval, 1, TI_ATM_OCN)
           ELSE IF (TRIM(KeyWord).eq.'TI_WAV_OCN') THEN
-            Npts=load_r(Nval, Rval, 1, TI_WAV_OCN)
+            Npts=cload_r(Nval, Rval, 1, TI_WAV_OCN)
           ELSE IF (TRIM(KeyWord).eq.'WRF_CPL_GRID') THEN
-            Npts=load_i(Nval, Rval, 1, WRF_CPL_GRID)
+            Npts=cload_i(Nval, Rval, 1, WRF_CPL_GRID)
 # ifdef ROMS_MODEL
           ELSE IF (TRIM(KeyWord).eq.'OCN_name') THEN
             DO i=1,LEN(Iname)
@@ -180,7 +182,7 @@
 
       RETURN
       END SUBROUTINE read_CouplePar
-      FUNCTION decode_line (line_text, KeyWord, Nval, Cval, Rval)
+      FUNCTION cdecode_line (line_text, KeyWord, Nval, Cval, Rval)
 !
 !=======================================================================
 !                                                                      !
@@ -213,7 +215,7 @@
 
       integer, dimension(20) :: Imul
 
-      integer :: decode_line
+      integer :: cdecode_line
 
       character (len=1 ), parameter :: blank = ' '
       character (len=160) :: Vstring, line, string
@@ -380,11 +382,11 @@
         END IF
         status=Nval
       END IF
-      decode_line=status
+      cdecode_line=status
       RETURN
-      END FUNCTION decode_line
+      END FUNCTION cdecode_line
 
-      FUNCTION load_i (Ninp, Vinp, Nout, Vout)
+      FUNCTION cload_i (Ninp, Vinp, Nout, Vout)
 !
 !=======================================================================
 !                                                                      !
@@ -400,7 +402,7 @@
 !  On Output:                                                          !
 !                                                                      !
 !     Vout       Output integer variable.                              !
-!     load_i     Number of output values processed.                    !
+!     cload_i     Number of output values processed.                   !
 !                                                                      !
 !=======================================================================
 !
@@ -417,7 +419,7 @@
 !  Local variable declarations.
 !
       integer :: i, ic
-      integer :: load_i
+      integer :: cload_i
 !
 !-----------------------------------------------------------------------
 !  Load integer variable with input values.
@@ -442,12 +444,12 @@
           Vout(i)=INT(Vinp(i))
         END DO
       END IF
-      load_i=ic
+      cload_i=ic
 
       RETURN
-      END FUNCTION load_i
+      END FUNCTION cload_i
 
-      FUNCTION load_r (Ninp, Vinp, Nout, Vout)
+      FUNCTION cload_r (Ninp, Vinp, Nout, Vout)
 !
 !=======================================================================
 !                                                                      !
@@ -463,7 +465,7 @@
 !  On Output:                                                          !
 !                                                                      !
 !     Vout       Output real variable.                                 !
-!     load_r     Number of output values processed.                    !
+!     cload_r     Number of output values processed.                   !
 !                                                                      !
 !=======================================================================
 !
@@ -480,7 +482,7 @@
 !  Local variable declarations.
 !
       integer :: i, ic
-      integer :: load_r
+      integer :: cload_r
 !
 !-----------------------------------------------------------------------
 !  Load integer variable with input values.
@@ -505,11 +507,11 @@
           Vout(i)=Vinp(i)
         END DO
       END IF
-      load_r=ic
+      cload_r=ic
 
       RETURN
-      END FUNCTION load_r
+      END FUNCTION cload_r
 
 #endif
 
-      END MODULE read_couplepar_mod
+!      END MODULE read_couplepar_mod
