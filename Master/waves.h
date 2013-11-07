@@ -16,7 +16,10 @@
 !
       implicit none
 !
-      integer :: ng, MyError, MyRank
+      integer :: ng, MyError, MyRank, exit_flag
+      integer, parameter :: stdout = 6
+      integer, parameter :: NoError = 0
+
       real(s4) :: cff
 !
 #ifdef DISTRIBUTE
