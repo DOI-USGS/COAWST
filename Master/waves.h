@@ -22,6 +22,7 @@
 
       real(s4) :: cff
 !
+      exit_flag=0
 #ifdef DISTRIBUTE
 # ifdef MPI
 !
