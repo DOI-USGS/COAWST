@@ -16,6 +16,7 @@
 
 %get the coarser grid
 netcdf_load(ncfile_coarse)
+angle_r=angle; clear angle
 
 %set some arrays for interpolation here, psi points
 % _c for coarse, _f for fine
@@ -113,16 +114,14 @@ if ((spherical=='T') || (spherical=='t'))
 else
   dx=sqrt((fine.x.u(2:end,:)-fine.x.u(1:end-1,:)).^2+(fine.y.u(2:end,:)-fine.y.u(1:end-1,:)).^2);
   dx=[dx(1,:); dx; dx(end,:)];
-  dy=sqrt((x_v(:,2:end)-x_v(:,1:end-1)).^2+(y_v(:,2:end)-y_v(:,1:end-1)).^2);
-  dy=dy;
+  dy=sqrt((fine.x.v(:,2:end)-fine.x.v(:,1:end-1)).^2+(fine.y.v(:,2:end)-fine.y.v(:,1:end-1)).^2);
   dy=[dy(:,1) dy dy(:,end)];
 
-  y_v=grid_y(i_psi, j_psi);
-  y_v=diff(y_v); 
-  x_v=dx(2:end-1,2:end);
-  ang=angle(x_v+y_v*sqrt(-1));
+  x_u=fine.x.u(2:end,:)-fine.x.u(1:end-1,:);
+  y_u=fine.y.u(2:end,:)-fine.y.u(1:end-1,:);
+  ang=atan2(y_u,x_u);
   ang=[ang(end,:); ang; ang(1,:)];
-  ang=[ang ang(:,end)];
+%  ang=[ang ang(:,end)];
 end
 fine.pm=1./dx;
 fine.pn=1./dy;
