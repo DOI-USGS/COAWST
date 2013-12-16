@@ -86,3 +86,4 @@
 # define ANA_SRFLUX
 #endif
 
+#define STATIONS

@@ -486,13 +486,14 @@ Hout(idBott) == T T T T T T T T T T F F F F F F F F \
      ADJNAME == ocean_adj.nc
      AVGNAME == ocean_avg.nc
      DIANAME == ocean_dia.nc
-     STANAME == ocean_sta.nc
+     STANAME == stations_inlet_test_ref1.nc \
+                stations_inlet_test_ref5.nc
      FLTNAME == ocean_flt.nc
 
 ! Input ASCII parameter filenames.
 
      APARNAM =  ROMS/External/s4dvar.in
-     SPOSNAM =  ROMS/External/stations.in
+     SPOSNAM =  Projects/Inlet_test/Refined/stations_inlet_test.in
      FPOSNAM =  ROMS/External/floats.in
      BPARNAM =  ROMS/External/bioFasham.in
      SPARNAM =  Projects/Inlet_test/Refined/sediment_inlet_test_ref5.in
