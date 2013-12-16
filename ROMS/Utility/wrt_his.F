@@ -3144,7 +3144,7 @@
 !  Write out wave dissipation due to bottom friction.
 !
       IF (Hout(idWdif,ng)) THEN
-        scale=1.0_r8
+        scale=rho0                          ! W m /kg to W/m2
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, ncHISid(ng), hisVid(idWdif,ng),    &
      &                     tHISindx(ng), gtype,                         &
@@ -3170,7 +3170,7 @@
 !  Write out wave dissipation due to breaking.
 !
       IF (Hout(idWdib,ng)) THEN
-        scale=1.0_r8
+        scale=rho0                          ! W m /kg to W/m2
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, ncHISid(ng), hisVid(idWdib,ng),    &
      &                     tHISindx(ng), gtype,                         &
@@ -3192,7 +3192,7 @@
 !  Write out wave dissipation due to white capping.
 !
       IF (Hout(idWdiw,ng)) THEN
-        scale=1.0_r8
+        scale=rho0                          ! W m /kg to W/m2
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, ncHISid(ng), hisVid(idWdiw,ng),    &
      &                     tHISindx(ng), gtype,                         &
