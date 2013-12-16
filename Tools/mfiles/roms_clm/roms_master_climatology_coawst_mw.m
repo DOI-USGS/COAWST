@@ -24,7 +24,8 @@
 % (1) Enter start date (T1) and number of days to get climatology data 
 T1=datenum(2012,10,22,0,0,0); %start date
 %number of days to create clm for
-numdays=1;
+numdays=15;
+dayFrequency=7;
 
 % (2) Enter URL of the HYCOM catalog for the requested time, T1; see http://tds.hycom.org/thredds/catalog.html
  url='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';      % Jan 2011 - Present
@@ -73,15 +74,15 @@ if numdays>1
     disp('going to create more days of clm and bnd files')
     eval(['!cp coawst_clm.nc coawst_clm_',datestr(T1,'yyyymmdd'),'.nc'])
     eval(['!cp coawst_bdy.nc coawst_bdy_',datestr(T1,'yyyymmdd'),'.nc'])
-    for it=1:numdays-1      %1st day already created, NEED to set number of days at top!
+    for it=dayFrequency:dayFrequency:numdays-1      %1st day already created, NEED to set number of days at top!
         fname=['coawst_clm_',datestr(T1+it,'yyyymmdd'),'.nc']
         fn=updatclim_coawst_mw(T1+it,gn,fname,wdr,url)
         fname=['coawst_bdy_',datestr(T1+it,'yyyymmdd'),'.nc'];
         updatbdry_coawst_mw(fn,gn,fname,wdr)
     end
-    %% get an organized list of files
-    Dclm=dirsort('coawst_clm*.nc');
-    Dbdy=dirsort('coawst_bdy*.nc');
+    %% get an organized list of dated files
+    Dclm=dirsort('coawst_clm_*.nc');
+    Dbdy=dirsort('coawst_bdy_*.nc');
     %names for merged climatology/boundary files
     fout='merged_coawst_clm.nc';
     foutb='merged_coawst_bdy.nc';
