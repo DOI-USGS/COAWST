@@ -148,6 +148,9 @@
       USE M_PARALL
       USE swan_iounits
       USE mct_coupler_params
+# ifdef MCT_INTERP_WV2AT
+      USE mod_coupler_iounits
+# endif
 !
       include 'mpif.h'
       integer, intent(in) :: ng

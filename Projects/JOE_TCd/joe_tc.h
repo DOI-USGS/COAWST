@@ -85,15 +85,15 @@
 # define COARE_TAYLOR_YELLAND
 # undef  WEC_VF
 # define SSW_BBL
-# ifdef WRF_MODEL
-#  define MCT_INTERP_OC2AT
-# endif
-# ifdef SWAN_MODEL
-#  define MCT_INTERP_WV2AT
-# endif
 #endif
 
 #define MCT_LIB
+#ifdef ROMS_MODEL
+# define MCT_INTERP_OC2AT
+#endif
+#ifdef SWAN_MODEL
+# define MCT_INTERP_WV2AT
+#endif
 
 #if defined WRF_MODEL || defined SWAN_MODEL
 # define DRAGLIM_DAVIS

@@ -512,6 +512,10 @@
       RETURN
       END FUNCTION cload_r
 
+#else
+      SUBROUTINE read_couplepar
+      RETURN
+      END SUBROUTINE read_couplepar
 #endif
 
 !      END MODULE read_couplepar_mod

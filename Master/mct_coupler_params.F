@@ -11,15 +11,16 @@
 !
       integer :: N_mctmodels
 
-# if defined MCT_INTERP_WV2AT
-!
-!  Sparse matrix weights
-!
-      integer, dimension(:), pointer :: sparse_rows2
-      integer, dimension(:), pointer :: sparse_cols2
-      real(m8), dimension(:), pointer :: sparse_weights2
-# endif
-# if defined MCT_INTERP_OC2WV || defined MCT_INTERP_OC2AT
+!# if defined MCT_INTERP_WV2AT
+!!
+!!  Sparse matrix weights
+!!
+!      integer, dimension(:), pointer :: sparse_rows2
+!      integer, dimension(:), pointer :: sparse_cols2
+!      real(m8), dimension(:), pointer :: sparse_weights2
+!# endif
+# if defined MCT_INTERP_OC2WV || defined MCT_INTERP_OC2AT || \
+     defined MCT_INTERP_WV2AT
 !
 !  Sparse matrix weights
 !

@@ -28,6 +28,7 @@
 #ifndef ROMS_MODEL
       integer, parameter :: stdinp = 5
       integer, parameter :: stdout = 6
+      integer :: ioerror
 #endif
 
 #ifdef ROMS_COUPLING

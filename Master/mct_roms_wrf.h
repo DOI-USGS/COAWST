@@ -28,6 +28,9 @@
       USE mod_kinds
       USE mod_scalars
       USE mod_iounits
+#ifdef MCT_INTERP_OC2AT
+      USE mod_coupler_iounits
+#endif
 !
 !  Imported variable definitions.
 !

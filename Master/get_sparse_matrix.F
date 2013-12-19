@@ -1,5 +1,6 @@
 #include "cppdefs.h"
-#if defined MCT_INTERP_OC2AT || defined MCT_INTERP_OC2WV
+#if defined MCT_INTERP_OC2AT || defined MCT_INTERP_OC2WV || \
+    defined MCT_INTERP_WV2AT
       SUBROUTINE get_sparse_matrix (ng, nc_name, num_sparse_elems,      &
      &                              src_grid_dims, dst_grid_dims)
 !
@@ -14,17 +15,21 @@
 !                                                                      !
 !=======================================================================
 !
+      USE mod_coupler_iounits
+      USE netcdf
+#ifdef ROMS_MODEL
       USE mod_iounits
-      USE mod_netcdf
-      USE mod_scalars
-      USE mod_ncparam
-      USE mct_coupler_params
+#endif
+!      USE mod_scalars
+!      USE mod_ncparam
+!      USE mct_coupler_params
 !
       implicit none
 !
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng
+      integer :: exit_flag
 
       character (len=70), intent(in) :: nc_name
 
