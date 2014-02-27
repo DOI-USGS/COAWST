@@ -327,11 +327,6 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Uwave_rms)
 # endif
-# ifdef TKE_WAVEDISS
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        wave_dissip)
-# endif
 #endif
 #if defined DISTRIBUTE
 # if defined WAVES_DIR
@@ -389,12 +384,6 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic, NSperiodic,         &
      &                    Uwave_rms)
-# endif
-# ifdef TKE_WAVEDISS
-      CALL mp_exchange2d (ng, tile, model, 1,                           &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    wave_dissip)
 # endif
 #endif
       RETURN
