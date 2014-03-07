@@ -32,6 +32,9 @@
 #if defined SWAN_COUPLING
       USE swan_iounits
 #endif
+#ifdef WRF_COUPLING
+      USE module_wrf_top
+#endif
 !     USE mod_parallel
       USE mct_coupler_params
       USE mod_coupler_iounits
@@ -228,29 +231,15 @@
 #endif
 #ifdef WRF_COUPLING
       IF (MyColor.eq.ATMcolor) THEN
-# if defined IFORT || defined IFC || defined FTN
-        CALL module_wrf_top_mp_wrf_init (MyCOMM, N_mctmodels,           &
+        CALL wrf_init (MyCOMM, N_mctmodels,                             &
 #  ifdef REFINED_GRID
-     &                                   ocnids,                        &
+     &                 ocnids,                                          &
 #  endif
-     &                                   OCNid, ATMid, WAVid,           &
-     &                                   WRF_CPL_GRID,                  &
-     &                                   REAL(TI_ATM_OCN),              &
-     &                                   REAL(TI_ATM_WAV))
-        CALL module_wrf_top_mp_wrf_run
-        CALL module_wrf_top_mp_wrf_finalize
-# else
-        CALL module_wrf_top_wrf_init (MyCOMM, N_mctmodels,              &
-#  ifdef REFINED_GRID
-     &                                ocnids,                           &
-#  endif
-     &                                OCNid, ATMid, WAVid,              &
-     &                                WRF_CPL_GRID,                     &
-     &                                REAL(TI_ATM_OCN),                 &
-     &                                REAL(TI_ATM_WAV))
-        CALL module_wrf_top_wrf_run
-        CALL module_wrf_top_wrf_finalize
-# endif
+     &                 OCNid, ATMid, WAVid,                             &
+     &                 WRF_CPL_GRID,                                    &
+     &                 REAL(TI_ATM_OCN),REAL(TI_ATM_WAV))
+        CALL wrf_run
+        CALL wrf_finalize
       END IF
 #endif
 #ifdef ROMS_COUPLING

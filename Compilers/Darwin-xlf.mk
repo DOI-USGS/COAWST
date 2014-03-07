@@ -99,7 +99,7 @@ ifdef USE_ESMF
 endif
 
 ifdef USE_WRF
-           FFLAGS += -I$(MCT_INCDIR)
+           FFLAGS += -I$(MCT_INCDIR) -I../WRF/main -I../WRF/external/esmf_time_f90
              LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
              LIBS += WRF/main/module_wrf_top.o
              LIBS += WRF/main/libwrflib.a
