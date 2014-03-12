@@ -238,22 +238,38 @@
 !        END IF
       END IF
 !
+      CALL mpi_bcast(dst_grid_dims, 2, MPI_INTEGER, MyMaster,           &
+     &               OCN_COMM_WORLD, MyError)
+!
 !  Determine start and lengths for domain decomposition
 !  of the wave model.
 !
-      Jsize=dst_grid_dims(1)
+!      Jsize=dst_grid_dims(1)
+!      IF (.not.allocated(start)) THEN
+!        allocate ( start(Jsize) )
+!      END IF
+!      IF (.not.allocated(length)) THEN
+!        allocate ( length(Jsize) )
+!      END IF
+!      jc=0
+!      DO j=0,Jsize-1
+!        jc=jc+1
+!        start (jc)=j*dst_grid_dims(2)+1
+!        length(jc)=dst_grid_dims(2)
+!      END DO
+!
+      Isize=INT(dst_grid_dims(1)/nprocs)
+      IF (MyRank.eq.nprocs-1) THEN
+        Isize=dst_grid_dims(1)-Isize*(nprocs-1)
+      ENDIF
       IF (.not.allocated(start)) THEN
-        allocate ( start(Jsize) )
+        allocate ( start(1) )
       END IF
       IF (.not.allocated(length)) THEN
-        allocate ( length(Jsize) )
+        allocate ( length(1) )
       END IF
-      jc=0
-      DO j=0,Jsize-1
-        jc=jc+1
-        start (jc)=j*dst_grid_dims(2)+1
-        length(jc)=dst_grid_dims(2)
-      END DO
+      start=(MyRank*INT(dst_grid_dims(1)/nprocs))*dst_grid_dims(2)+1
+      length=Isize*dst_grid_dims(2)
 !
       CALL GlobalSegMap_init (GlobalSegMap_G(ng)%GSMapSWAN,             &
      &                        start, length, 0, OCN_COMM_WORLD, OCNid)
