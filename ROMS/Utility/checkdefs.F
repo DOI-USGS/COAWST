@@ -2185,6 +2185,42 @@
       Coptions(is:is+18)=' NONCOHESIVE_BED2,'
       sbed_type=sbed_type+1
 # endif
+# ifdef SED_FLOCS
+      IF (Master) WRITE (stdout,20) 'SED_FLOCS',                        &
+     &   'Activate sediment flocculation.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' SED_FLOCS,'
+# endif
+# ifdef FLOC_TURB_DISS
+      IF (Master) WRITE (stdout,20) 'FLOC_TURB_DISS',                   &
+     &   'Activate dissipation for flocculation based on turbulence.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' FLOC_TURB_DISS,'
+# endif
+# ifdef FLOC_BBL_DISS
+      IF (Master) WRITE (stdout,20) 'FLOC_BBL_DISS',                    &
+     &   'Activate dissipation for flocculation based on BBL.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+15)=' FLOC_BBL_DISS,'
+# endif
+# ifdef SED_DEFLOC
+      IF (Master) WRITE (stdout,20) 'SED_DEFLOC',                       &
+     &   'Activate sediment deflocculation in bed.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' SED_DEFLOC,'
+# endif
+# ifdef SED_TAU_CD_CONST
+      IF (Master) WRITE (stdout,20) 'SED_TAU_CD_CONST',                 &
+     &   'Activate constant critical stress for deposition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' SED_TAU_CD_CONST,'
+# endif
+# ifdef SED_TAU_CD_LIN
+      IF (Master) WRITE (stdout,20) 'SED_TAU_CD_LIN',                   &
+     &   'Activate linear critical stress for deposition.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' SED_TAU_CD_LIN,'
+# endif
 #endif
 #ifdef SG_BBL
       IF (Master) WRITE (stdout,20) 'SG_BBL',                           &

@@ -96,6 +96,9 @@
 #  if defined SED_BIOMASS
     USE sed_biomass_mod, ONLY : sed_biomass
 #  endif
+#  if defined SED_FLOCS
+    USE sed_flocs_mod, ONLY : sed_flocmod
+#  endif
 # endif
       USE sed_surface_mod, ONLY : sed_surface
 !
@@ -113,6 +116,14 @@
 # endif
 
 # ifdef SUSPLOAD
+#  ifdef SED_FLOCS
+!
+!-----------------------------------------------------------------------
+!  Compute sediment flocculation
+!-----------------------------------------------------------------------
+!
+      CALL sed_flocmod (ng, tile)
+#  endif
 !
 !-----------------------------------------------------------------------
 !  Compute sediment vertical settling.

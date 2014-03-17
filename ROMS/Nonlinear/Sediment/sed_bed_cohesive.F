@@ -226,7 +226,9 @@
 # if defined COHESIVE_BED || defined MIXED_BED
       real(r8), dimension(Nbed) :: bmz
 # endif
-
+# if defined SED_FLOCS && defined SED_DEFLOC
+     real(r8), dimension(NCS) :: masseq
+# endif
 # include "set_bounds.h"
 
 # ifdef BEDLOAD
@@ -317,13 +319,13 @@ minlayer_thick(ng) = newlayer_thick(ng)
       
          cff3=0.0_r8
          DO ised=1,NST
-            cff3=cff3+bed_mass(i,j,k,nnew,ised)
+            cff3=cff3+bed_mass(i,j,1,nnew,ised)
          END DO
 
          IF (cff3.eq.0.0_r8) THEN 
             cff3=eps 
          END IF 
-         bed(i,j,k,ithck)=0.0_r8
+         bed(i,j,1,ithck)=0.0_r8
          DO ised=1,NST
             bed_frac(i,j,1,ised)=bed_mass(i,j,1,nnew,ised)/cff3
             bed(i,j,1,ithck)=MAX(bed(i,j,1,ithck)+                      &
@@ -911,6 +913,28 @@ minlayer_thick(ng) = newlayer_thick(ng)
      &     (transC(ng)-transN(ng)),0.0_r8),1.0_r8)
 #endif
           END DO I_LOOP3 
+
+#if defined SED_FLOCS && defined SED_DEFLOC
+          alpha = MIN(dt(ng)/t_dfloc(ng),1.0_r8)
+          I_LOOP_DFL: DO i=Istr,Iend
+            DO k=2,Nbed
+              cff3=0.0_r8
+              DO ised=1,NST
+                cff3=cff3+bed_mass(i,j,k,nnew,ised)
+              END DO
+              cff1 = 0.0_r8
+              DO ised=1,NCS
+                cff1 = cff1+bed_mass(i,j,k,nnew,ised)
+              END DO
+              DO ised=1,NCS
+                masseq(ised)=mud_frac_eq(ised,ng)*cff1
+                bed_mass(i,j,k,nnew,ised)=alpha*masseq(ised)+           &
+     &                  bed_mass(i,j,k,nnew,ised)*(1.0_r8-alpha)
+                bed_frac(i,j,k,ised)=bed_mass(i,j,k,nnew,ised)/cff3
+              END DO
+            END DO
+          ENDDO I_LOOP_DFL
+#endif
 
 #if defined COHESIVE_BED || defined MIXED_BED
          I_LOOP_CB2: DO i=Istr,Iend

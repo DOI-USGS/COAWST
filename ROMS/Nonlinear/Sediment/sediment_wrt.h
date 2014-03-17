@@ -32,7 +32,7 @@
       IF (exit_flag.ne.NoError) RETURN
 #endif
 
-#ifdef ANA_SEDIMENT
+!#ifdef ANA_SEDIMENT
       CALL netcdf_put_fvar (ng, model, ncname, 'Sd50',                  &
      &                      Sd50(:,ng), (/1/), (/NST/),                 &
      &                      ncid = ncid)
@@ -47,7 +47,7 @@
      &                      Csed(:,ng), (/1/), (/NST/),                 &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
-#endif
+!#endif
 
       CALL netcdf_put_fvar (ng, model, ncname, 'Wsed',                  &
      &                      Wsed(:,ng), (/1/), (/NST/),                 &

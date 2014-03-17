@@ -195,6 +195,10 @@
       real(r8) :: Dbzm(Ngrids)     ! Dbzm   Depth end exp biodiff
       real(r8) :: Dbzp(Ngrids)     ! Dbzp   Depth of minimum biodiff
 #endif
+#if defined SED_FLOCS && defined SED_DEFLOC
+      real(r8), allocatable :: mud_frac_eq(:,:) ! Equilibrium fractional class distribution
+      real(r8) :: t_dfloc(Ngrids)     ! Time scale of bed deflocculation
+#endif
 
       CONTAINS
 

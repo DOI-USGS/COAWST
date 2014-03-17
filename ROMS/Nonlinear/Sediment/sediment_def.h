@@ -41,7 +41,7 @@
       IF (exit_flag.ne.NoError) RETURN
 #endif
 
-#ifdef ANA_SEDIMENT
+!#ifdef ANA_SEDIMENT
       Vinfo( 1)='Sd50'
       Vinfo( 2)='median sediment grain diameter used in '//             &
      &          'uniform initial conditions'
@@ -68,7 +68,7 @@
      &               1, (/seddim/), Aval, Vinfo, ncname,                &
      &               SetParAccess = .FALSE.)
       IF (exit_flag.ne.NoError) RETURN
-#endif
+!#endif
 
       Vinfo( 1)='Wsed'
       Vinfo( 2)='sediment particle settling velocity'

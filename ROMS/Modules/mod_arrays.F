@@ -43,6 +43,9 @@
 #if defined SEDIMENT || defined BBL_MODEL
       USE mod_sedbed, ONLY : allocate_sedbed, initialize_sedbed
 #endif
+#if defined SEDIMENT && defined SED_FLOCS
+      USE mod_sedflocs, ONLY : allocate_sedflocs, initialize_sedflocs
+#endif
 #if defined UV_PSOURCE || defined TS_PSOURCE || defined Q_PSOURCE
       USE mod_sources, ONLY : allocate_sources
 #endif
@@ -122,6 +125,9 @@
 #if defined SEDIMENT || defined BBL_MODEL
           CALL allocate_sedbed (ng, LBi, UBi, LBj, UBj)
 #endif
+#if defined SEDIMENT && defined SED_FLOCS
+          CALL allocate_sedflocs(ng, LBi, UBi, LBj, UBj)
+#endif
 #if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
           CALL allocate_tides (ng, LBi, UBi, LBj, UBj)
 #endif
@@ -182,6 +188,9 @@
             CALL initialize_ocean (ng, TILE, model)
 #if defined SEDIMENT || defined BBL_MODEL
             CALL initialize_sedbed (ng, TILE, model)
+#endif
+#if defined SEDIMENT && defined SED_FLOCS
+            CALL initialize_sedflocs (ng, TILE, model)
 #endif
 #if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
             CALL initialize_tides (ng, TILE)

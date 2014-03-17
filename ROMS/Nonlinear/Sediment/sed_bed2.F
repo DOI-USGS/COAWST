@@ -306,13 +306,13 @@ minlayer_thick(ng) = newlayer_thick(ng)
       
          cff3=0.0_r8
          DO ised=1,NST
-            cff3=cff3+bed_mass(i,j,k,nnew,ised)
+            cff3=cff3+bed_mass(i,j,1,nnew,ised)
          END DO
 
          IF (cff3.eq.0.0_r8) THEN 
             cff3=eps 
          END IF 
-         bed(i,j,k,ithck)=0.0_r8
+         bed(i,j,1,ithck)=0.0_r8
          DO ised=1,NST
             bed_frac(i,j,1,ised)=bed_mass(i,j,1,nnew,ised)/cff3
             bed(i,j,1,ithck)=MAX(bed(i,j,1,ithck)+                      &

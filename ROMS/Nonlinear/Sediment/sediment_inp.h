@@ -12,6 +12,7 @@
       USE mod_ncparam
       USE mod_scalars
       USE mod_sediment
+      USE mod_sedflocs
 !
       implicit none
 !
@@ -38,8 +39,8 @@
       real(r8), dimension(100) :: Rval
 
       character (len=40) :: KeyWord
-      character (len=256) :: line
-      character (len=256), dimension(100) :: Cval
+      character (len=1024) :: line
+      character (len=1024), dimension(100) :: Cval
 !
 !-----------------------------------------------------------------------
 !  Read in cohesive and non-cohesive model parameters.
@@ -579,6 +580,57 @@
             DO ng=1,Ngrids
               Hout(i,ng)=Lbed(ng)
             END DO
+#if defined SED_FLOCS
+          ELSE IF (TRIM(KeyWord).eq.'l_ADS') THEN
+            Npts=load_l(Nval, Cval, Ngrids, l_ADS)
+          ELSE IF (TRIM(KeyWord).eq.'l_ASH') THEN
+            Npts=load_l(Nval, Cval, Ngrids, l_ASH)
+          ELSE IF (TRIM(KeyWord).eq.'l_COLLFRAG') THEN
+            Npts=load_l(Nval, Cval, Ngrids, l_COLLFRAG)
+	  ELSE IF (TRIM(KeyWord).eq.'f_dp0') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, f_dp0)
+	  ELSE IF (TRIM(KeyWord).eq.'f_nf') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, f_nf)
+	  ELSE IF (TRIM(KeyWord).eq.'f_dmax') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, f_dmax)
+	  ELSE IF (TRIM(KeyWord).eq.'f_nb_frag') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, f_nb_frag)
+	  ELSE IF (TRIM(KeyWord).eq.'f_alpha') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, f_alpha)
+	  ELSE IF (TRIM(KeyWord).eq.'f_beta') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, f_beta)
+	  ELSE IF (TRIM(KeyWord).eq.'f_ater') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, f_ater)
+	  ELSE IF (TRIM(KeyWord).eq.'f_ero_frac') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, f_ero_frac)
+	  ELSE IF (TRIM(KeyWord).eq.'f_ero_nbfrag') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, f_ero_nbfrag)
+	  ELSE IF (TRIM(KeyWord).eq.'f_ero_iv') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, f_ero_iv)
+	  ELSE IF (TRIM(KeyWord).eq.'f_collfragparam') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, f_collfragparam)
+	  ELSE IF (TRIM(KeyWord).eq.'f_clim') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, f_clim)
+          ELSE IF (TRIM(KeyWord).eq.'l_testcase') THEN
+            Npts=load_l(Nval, Cval, Ngrids, l_testcase)
+#endif
+#if defined SED_FLOCS && defined SED_DEFLOC
+          ELSE IF (TRIM(KeyWord).eq.'MUD_FRAC_EQ') THEN
+            IF (.not.allocated(mud_frac_eq)) THEN 
+                allocate (mud_frac_eq(NST,Ngrids))
+            ENDIF
+            Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+            DO ng=1,Ngrids
+              DO itrc=1,NCS
+                mud_frac_eq(itrc,ng)=Rmud(itrc,ng)
+              END DO
+            END DO
+	  ELSE IF (TRIM(KeyWord).eq.'t_dfloc') THEN
+	    Npts=load_r(Nval, Rval, Ngrids, Rbed)
+	    DO ng=1,Ngrids
+	      t_dfloc(ng)=Rbed(ng)
+            END DO
+#endif
           END IF
         END IF
       END DO

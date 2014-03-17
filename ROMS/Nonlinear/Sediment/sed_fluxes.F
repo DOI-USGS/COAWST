@@ -188,7 +188,7 @@
       integer :: Ksed, i, indx, ised, j, k, ks
       integer :: bnew
 
-      real(r8) :: cff, cff1, cff2, cff3, cff4
+      real(r8) :: cff, cff1, cff2, cff3, cff4, cff5
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tau_w
 
@@ -277,14 +277,32 @@
             cff2=dt(ng)*Erate(ised,ng)*cff1
             cff3=Srho(ised,ng)*cff1
             cff4=bed_mass(i,j,1,bnew,ised)
+            cff5=settling_flux(i,j,ised) !CRS
+# if defined SED_TAU_CD_CONST || defined SED_TAU_CD_LIN
+            if (tau_w(i,j).GT.tau_cd(ised,ng)) then
+               cff5=0.0_r8
+            endif
+# endif
+# if defined SED_TAU_CD_LIN
+            if (tau_w(i,j).LE.tau_cd(ised,ng).AND.                      &
+     &                       tau_cd(ised,ng).GT.0.0_r8) then
+               cff5=(1.0_r8-tau_w(i,j)/tau_cd(ised,ng))*cff5
+            endif
+# endif
             ero_flux(i,j,ised)=                                         &
      &               MIN(MAX(0.0_r8,cff2*(cff*tau_w(i,j)-1.0_r8)),      &
      &                   MIN(cff3*bottom(i,j,iactv),cff4)+              &
-     &                   settling_flux(i,j,ised))
+     &                   cff5)
 !
 !  Update global tracer variables (mT units) for erosive flux.
 !
             t(i,j,1,nnew,indx)=t(i,j,1,nnew,indx)+ero_flux(i,j,ised)
+# if defined SED_TAU_CD_CONST || defined SED_TAU_CD_LIN
+            t(i,j,1,nnew,indx)=t(i,j,1,nnew,indx)+                      &
+     &                            (settling_flux(i,j,ised)-cff5)
+            settling_flux(i,j,ised)=cff5
+# endif
+
           END DO
         END DO SED_LOOP
       END DO J_LOOP
@@ -293,3 +311,4 @@
       END SUBROUTINE sed_fluxes_tile
 #endif
       END MODULE sed_fluxes_mod
+
