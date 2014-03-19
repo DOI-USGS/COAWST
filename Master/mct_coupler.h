@@ -33,7 +33,9 @@
       USE swan_iounits
 #endif
 #ifdef WRF_COUPLING
-      USE module_wrf_top
+      USE module_wrf_top, ONLY : wrf_init
+      USE module_wrf_top, ONLY : wrf_run
+      USE module_wrf_top, ONLY : wrf_finalize
 #endif
 !     USE mod_parallel
       USE mct_coupler_params
