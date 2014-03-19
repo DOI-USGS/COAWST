@@ -11,7 +11,7 @@ function wrf2roms_mw(theWRFFile, theROMSFile)
 rho.lat=ncread(theWRFFile,'XLAT');
 rho.lon=ncread(theWRFFile,'XLONG');
 rho.depth=zeros(size(rho.lon))+100;
-rho.mask=ncread(theWRFFile,'LANDMASK');
+rho.mask=1.0-ncread(theWRFFile,'LANDMASK');
 spherical='T';
 %projection='lambert conformal conic';
 projection='mercator';
