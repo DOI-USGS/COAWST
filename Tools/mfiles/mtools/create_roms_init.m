@@ -382,8 +382,8 @@ for mm=1:NCS
   eval(['ncwrite(init_file,''mudmass_',count,''',mudmass_',count,');'])           %sed conc in water column
 end
 for mm=1:NNS
- % count=['00',num2str(mm)];
- % count=count(end-1:end);
+  count=['00',num2str(mm)];
+  count=count(end-1:end);
   eval(['ncwrite(init_file,''sand_',count,''',sand_',count,');'])           %sed conc in water column
   eval(['ncwrite(init_file,''sandfrac_',count,''',sandfrac_',count,');'])           %sed conc in water column
   eval(['ncwrite(init_file,''sandmass_',count,''',sandmass_',count,');'])           %sed conc in water column
