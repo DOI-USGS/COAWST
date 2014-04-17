@@ -12,7 +12,7 @@ LIBPATHS =
 
 include ../configure.wrf
 
-ifndef WRF_COUPLING
+ifeq "$(WRF_MAKE_EXE)" "YES"
 $(SOLVER)_wrf : wrf.o ../main/module_wrf_top.o
 	$(RANLIB) $(LIBWRFLIB)
 	$(LD) -o wrf.exe $(LDFLAGS) wrf.o ../main/module_wrf_top.o $(LIBWRFLIB) $(LIB)

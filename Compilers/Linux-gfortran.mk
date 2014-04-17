@@ -79,6 +79,7 @@ ifdef USE_DEBUG
            FFLAGS += -g -fbounds-check
 else
            FFLAGS += -O3 -ffast-math
+           FFLAGS +=  -ftree-vectorize -ftree-loop-linear -funroll-loops -w -ffree-form -ffree-line-length-none -fconvert=big-endian -frecord-marker=4  
 endif
 
 ifdef USE_MCT
@@ -97,8 +98,7 @@ ifdef USE_ESMF
 endif
 
 ifdef USE_WRF
-           FFLAGS += -I$(MCT_INCDIR) -I../WRF/main -I../WRF/external/esmf_time_f90
-             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+           FFLAGS += -I../WRF/main -I../WRF/external/esmf_time_f90 -I../WRF/frame -I../WRF/share
              LIBS += WRF/main/module_wrf_top.o
              LIBS += WRF/main/libwrflib.a
              LIBS += WRF/external/fftpack/fftpack5/libfftpack.a

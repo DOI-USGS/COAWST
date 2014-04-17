@@ -550,6 +550,12 @@ endif
 
 wrf:
 ifdef USE_WRF
+	WRF_MAKE_EXE=NO
+ ifndef USE_ROMS
+  ifndef USE_SWAN
+	WRF_MAKE_EXE=YES
+  endif
+ endif
 	cp -p $(BIN) $(BIN).backup;                               \
 	$(RM) -r $(BIN);                                          \
 	cd $(WRF_DIR); ls;                                        \
