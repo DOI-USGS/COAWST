@@ -1270,6 +1270,9 @@
           DiaU2rhs(i,j,M2zqsp)=-cff5
           DiaU2rhs(i,j,M2zbeh)=cff6
           DiaU2rhs(i,j,M2kvrf)=cff7
+#   ifndef UV_ADV
+          DiaU2rhs(i,j,M2hjvf)=0.0_r8
+#   endif
 #  endif
 # endif
         END DO
@@ -1318,6 +1321,9 @@
             DiaV2rhs(i,j,M2zqsp)=-cff5
             DiaV2rhs(i,j,M2zbeh)=cff6
             DiaV2rhs(i,j,M2kvrf)=cff7
+#   ifndef UV_ADV
+            DiaV2rhs(i,j,M2hjvf)=0.0_r8
+#   endif
 #  endif
 # endif
           END DO

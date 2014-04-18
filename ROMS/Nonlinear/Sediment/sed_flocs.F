@@ -2,7 +2,8 @@
 
       MODULE sed_flocs_mod
 
-#if defined NONLINEAR && defined SEDIMENT && defined SUSPLOAD
+#if defined NONLINEAR && defined SEDIMENT && defined SUSPLOAD && defined SED_FLOCS
+
 !
 !svn $Id: sed_flocs.F 429 2009-12-20 17:30:26Z arango $
 !=======================================================================
