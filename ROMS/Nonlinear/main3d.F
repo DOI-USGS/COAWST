@@ -108,9 +108,9 @@
       USE wec_roller_mod, ONLY : wec_roller
 #  endif
       USE wec_stokes_mod, ONLY : wec_stokes
-#  ifdef BOTTOM_STREAMING
-      USE wec_streaming_mod, ONLY : wec_streaming
-#  endif
+!#  ifdef BOTTOM_STREAMING
+!      USE wec_streaming_mod, ONLY : wec_streaming
+!#  endif
 #  ifdef WAVE_MIXING
       USE wec_wave_mix_mod, ONLY : wec_wave_mix
 #  endif
@@ -463,10 +463,10 @@
             CALL wec_roller (ng, TILE)
 #  endif
             CALL wec_stokes (ng, TILE)
-            CALL wec_vf (ng, TILE)
-#  ifdef BOTTOM_STREAMING
-            CALL wec_streaming (ng, TILE)
-#  endif
+!           CALL wec_vf (ng, TILE)
+!#  ifdef BOTTOM_STREAMING
+!            CALL wec_streaming (ng, TILE)
+!#  endif
           END DO
         END DO
 #  if !defined REFINED_GRID

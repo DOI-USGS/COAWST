@@ -355,9 +355,9 @@
 !
       K_LOOP : DO k=1,N(ng)
 # ifdef BOTTOM_STREAMING_YU
-        fac2=(z_r(i,j,N(ng))-z_r(i,j,k))*oDstp(i,j)
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
+            fac2=(z_r(i,j,N(ng))-z_r(i,j,k))*oDstp(i,j)
             cff2=COSH(fac2*KWD(i,j))
             cff3=EWD(i,j)*osigma(i,j)
             BWDXL(i,j)=cff2*cff3*wavenx(i,j)*owd(i,j)
@@ -366,9 +366,9 @@
         END DO
 # endif
 # ifdef BOTTOM_STREAMING_XU_BOWEN
-        fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
+            fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
             cff=0.0313_r8*(Hwave(i,j)*sigma(i,j)/                     &
      &                     SINH(kD(i,j)))**2.0_r8
             Beta=MAX(SQRT(0.5_r8*sigma(i,j)/                          &

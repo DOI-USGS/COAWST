@@ -23,6 +23,7 @@
 #define UV_VIS2
 #define MIX_S_UV
 #define DIAGNOSTICS_UV
+#define DIAGNOSTICS_TS
 #define AVERAGES
 #define AVERAGES_WEC
 #define WET_DRY

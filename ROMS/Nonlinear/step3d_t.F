@@ -1293,20 +1293,21 @@
 #  elif defined TS_MPDATA
 !
 !  First_order, upstream differences vertical advective flux.
+!  Need to combine W+W_stokes for first order advection.
 !
           DO i=I_RANGE
             DO k=1,N(ng)-1
               cff1=MAX(W(i,j,k)+W_stokes(i,j,k),0.0_r8)
               cff2=MIN(W(i,j,k)+W_stokes(i,j,k),0.0_r8)
-              FCs(i,k)=cff1*t(i,j,k  ,3,itrc)+                          &
-     &                 cff2*t(i,j,k+1,3,itrc)
+              FC(i,k)=cff1*t(i,j,k  ,3,itrc)+                           &
+     &                cff2*t(i,j,k+1,3,itrc)
             END DO
 #   ifdef SED_MORPH
-            FCs(i,0)=W(i,j,0)*t(i,j,1,3,itrc)
+            FC(i,0)=W(i,j,0)*t(i,j,1,3,itrc)
 #   else
-            FCs(i,0)=0.0_r8
+            FC(i,0)=0.0_r8
 #   endif
-            FCs(i,N(ng))=0.0_r8
+            FC(i,N(ng))=0.0_r8
           END DO
 #  else
 !
@@ -1369,12 +1370,10 @@
             DO i=I_RANGE
               cff1=CF(i,0)*(FC(i,k)-FC(i,k-1))
 # if defined TS_MPDATA
-#  if !defined WEC_VF
               Ta(i,j,k,itrc)=(Ta(i,j,k,itrc)-cff1)*oHz(i,j,k)
 #   ifdef DIAGNOSTICS_TS
               DiaTwrk(i,j,k,itrc,iTvadv)=-cff1
 #   endif
-#  endif
 # else
               t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1
 #  ifdef SPLINES
@@ -1390,28 +1389,18 @@
 # endif
             END DO
           END DO
-# ifdef WEC_VF
+# if defined WEC_VF && !defined TS_MPDATA
           DO k=1,N(ng)
             DO i=I_RANGE
               cff1=CF(i,0)*(FCs(i,k)-FCs(i,k-1))
-#  ifdef TS_MPDATA
-              Ta(i,j,k,itrc)=(Ta(i,j,k,itrc)-cff1)*oHz(i,j,k)
-#   ifdef DIAGNOSTICS_TS
-!              DiaTwrk(i,j,k,itrc,iTvadv)=-cff1
-#   endif
-#  else
-#   ifdef SPLINES
+#  ifdef SPLINES
               t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1*oHz(i,j,k)
-#   else
+#  else
               t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1
-#   endif
-#   ifdef DIAGNOSTICS_TS
-!              DiaTwrk(i,j,k,itrc,iTvadv)=-cff1
-!              DO idiag=1,NDT
-!                DiaTwrk(i,j,k,itrc,idiag)=DiaTwrk(i,j,k,itrc,idiag)*    &
-!     &                                    oHz(i,j,k)
-!              END DO
-#   endif
+#  endif
+#  ifdef DIAGNOSTICS_TS
+              DiaTwrk(i,j,k,itrc,iTvadv)=DiaTwrk(i,j,k,itrc,iTvadv)-    &
+     &                                   cff1*oHz(i,j,k)
 #  endif
             END DO
           END DO

@@ -46,6 +46,12 @@
 !
       USE pre_step3d_mod, ONLY : pre_step3d
       USE prsgrd_mod, ONLY : prsgrd
+# ifdef WEC_VF
+      USE wec_vf_mod, ONLY : wec_vf
+#  if defined BOTTOM_STREAMING || defined SURFACE_STREAMING
+      USE wec_streaming_mod, ONLY : wec_streaming
+#  endif
+# endif
 # ifndef TS_FIXED
 #  ifdef TS_DIF2
       USE t3dmix_mod, ONLY : t3dmix2
@@ -81,6 +87,19 @@
 !-----------------------------------------------------------------------
 !
       CALL prsgrd (ng, tile)
+!
+# ifdef WEC_VF
+!
+!-----------------------------------------------------------------------
+!  Compute wave effect on currents.
+!-----------------------------------------------------------------------
+!
+      CALL wec_vf (ng, tile)
+#  if defined BOTTOM_STREAMING || defined SURFACE_STREAMING
+      CALL wec_streaming (ng, tile)
+#  endif
+# endif
+!
 # ifndef TS_FIXED
 #  ifdef TS_DIF2
 !
