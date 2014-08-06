@@ -1,9 +1,12 @@
-# CAMUW PBL Variables
-state    real   tauresx2d      ij      misc        1         -      r        "tauresx2d"            "X-COMP OF RESIDUAL STRESS"                 "m2 s-2"
-state    real   tauresy2d      ij      misc        1         -      r        "tauresy2d"            "Y-COMP OF RESIDUAL STRESS"                 "m2 s-2"
-state    real   tpert2d        ij      misc        1         -      r        "tpert2d"              "Convective temperature excess "            "K"
-state    real   qpert2d        ij      misc        1         -      r        "qpert2d"              "Convective humidity excess "               "kg/kg"
-state    real   wpert2d        ij      misc        1         -      r        "wpert2d"              "Turbulent velocity excess "                "m/s"
+# CAMUWPBL PBL Variables 
+state  real   tauresx2d ij     misc     1    -   r     "tauresx2d"    "X-COMP OF RESIDUAL STRESS"                                       "m2 s-2"
+state  real   tauresy2d ij     misc     1    -   r     "tauresy2d"    "Y-COMP OF RESIDUAL STRESS"                                       "m2 s-2"
+state  real   tpert2d  ij      misc     1    -   r     "tpert2d"      "Convective temperature excess "                                  "K"
+state  real   qpert2d  ij      misc     1    -   r     "qpert2d"      "Convective humidity excess "                                     "kg/kg"
+state  real   wpert2d  ij      misc     1    -   r     "wpert2d"      "Turbulent velocity excess "                                      "m/s"
+state  real   turbtype3d ikj   misc     1    Z   r     "turbtype3d"   "Turbulent interface types"                                       ""
+state  real   smaw3d   ikj     misc     1    Z   r     "smaw3d"       "Normalized Galperin instability function for momentum"           ""
+state  real   wsedl3d  ikj     misc     1    -   r     "wsedl3d"      "Sedimentation velocity of stratiform liquid cloud droplet"       "m s-1"
 
 # CAM Zhang-McFarlane variables
 state  real   rliq     ij     misc      1    -   r     "RLIQ"         "vertically-integrated reserved cloud condensate"                 "m s-1"
@@ -39,6 +42,20 @@ state  real   zmicuu   ikj    misc      1    -   h6    "ZMICUU"       "ZM in-clo
 state  real   zmicud   ikj    misc      1    -   h6    "ZMICUD"       "ZM in-cloud U downdrafts"                                        "m s-1"
 state  real   zmicvu   ikj    misc      1    -   h6    "ZMICVU"       "ZM in-cloud V updrafts"                                          "m s-1"
 state  real   zmicvd   ikj    misc      1    -   h6    "ZMICVD"       "ZM in-cloud V downdrafts"                                        "m s-1"
+state  real   evapcdp3d ikj   misc      1    -   r     "EVAPCDP3D"    "Evaporation of deep convective precipitation"                    "kg/kg/s"
+state  real   icwmrdp3d ikj   misc      1    -   r     "ICWMRDP3D"    "Deep Convection in-cloud water mixing ratio"                     "kg/m2"
+state  real   rprddp3d ikj    misc      1    -   r     "RPRDDP3D"     "dq/dt due to deep convective rainout"                            "kg/kg/s"
+state  real   dp3d     ikj    misc      1    -   r      "dp3d"        "Layer pressure thickness between interfaces"                     "mb"
+state  real   du3d     ikj    misc      1    -   r      "du3d"        ""                     ""
+state  real   ed3d     ikj    misc      1    -   r      "ed3d"        ""                     ""
+state  real   eu3d     ikj    misc      1    -   r      "eu3d"        ""                     ""
+state  real   md3d     ikj    misc      1    -   r      "md3d"        ""                     ""
+state  real   mu3d     ikj    misc      1    -   r      "mu3d"        ""                     ""
+state  real   dsubcld2d ij    misc      1    -   r      "dsubcld2d"   "Layer pres. thickness between LCL and maxi"                      "mb"
+state  integer ideep2d ij     misc      1    -   r      "ideep2d"     "Holds position of gathered points"                               ""
+state  integer jt2d    ij     misc      1    -   r      "jt2d"        "Top-level index of deep cumulus convection"                       ""
+state  integer maxg2d  ij     misc      1    -   r      "maxg2d"      "Gathered values of maxi"                                           ""
+state  integer lengath2d ij   misc      1    -   r      "lengath2d"     ""                     ""
 
 # CAM UW Shallow Convection variables
 state  real   cmfsl    ikj    misc      1    Z   rh6   "CMFSL "       "moist shallow convection liquid water static energy flux"        "W m-2"
@@ -53,6 +70,10 @@ state  real   snowsh   ij     misc      1    -   r     "SNOWSH"       "convectiv
 #state  real   rprddp   ikj    misc      1    -   r     "RPRDDP"       "dq/dt due to deep convective rainout"                            "~?"
 state  real   rprdsh   ikj    misc      1    -   rh6   "RPRDSH"       "dq/dt due to deep(~?) and shallow convective rainout"            "~?"
 state  real   rliq2    ij     misc      1    -   r     "RLIQ2"        "vertically-integrated reserved cloud condensate for shallow Cu"  "m s-1"
+state  real   dlf2     ikj    misc      1    -   rh     "DLF2"         "dq/dt due to export of cloud water into environment by shallow convection"  "kg/kg/s"
+state  real   shfrc3d  ikj    misc      1    -   r     "SHFRC3D"      "Shallow cloud fraction"                                            ""
+state  real   EVAPCSH3D ikj   misc      1    -   r     "EVAPCSH3D"    "Evaporation of shallow convection precipitation"                  "kg/kg/s"
+#~~~above here needs to be added to package definition
 state  real   qtflx_cu ikj    misc      1    Z   h6    "QTFLX_CU"     "cumulus qt flux"                                                 "kg m-2 s-1"
 state  real   slflx_cu ikj    misc      1    Z   h6    "SLFLX_CU"     "cumulus sl flux"                                                 "J m-2 s-1"
 state  real   uflx_cu  ikj    misc      1    Z   h6    "UFLX_CU"      "cumulus u flux"                                                  "kg m s-2"
@@ -144,3 +165,39 @@ state  real limit_cbmf_cu  ij misc      1    -   h6    "LIMIT_CBMF_CU" "limit_cb
 state  real limit_rei_cu   ij misc      1    -   h6    "LIMIT_REI_CU"  "limit_rei_cu"                                                   ""
 state  real ind_delcin_cu  ij misc      1    -   h6    "IND_DELCIN_CU" "ind_delcin_cu"                                                  ""
 
+#CAMMGMP
+state    real  rh_old_mp       ikj      misc        1         -      r        "RH_OLD_MP"             "previous time level RH for CAMMGMP microphysics"                         ""
+state    real  lcd_old_mp      ikj      misc        1         -      r        "LCD_OLD_MP"            "previous time level liquid cldfra for CAMMGMP microphysics"              ""
+state    real  CLDFRA_OLD_MP   ikj      misc        1         -      r        "CLDFRA_OLD_MP"         "previous time level cldfra for CAMMGMP microphysics"                     ""
+state    real  CLDFRA_MP       ikj      misc        1         -      rh       "CLDFRA_MP"             "current time level cldfra for CAMMGMP microphysics"                      ""
+state    real  CLDFRA_MP_ALL   ikj      misc        1         -      rh       "CLDFRA_MP_ALL"         "current time level cldfra for CAMMGMP microphysics"                      ""
+state    real  IRADIUS         ikj      misc        1         -      rh       "IRADIUS"               "effective radius of ice condensate"                                      ""
+state    real  LRADIUS         ikj      misc        1         -      rh       "LRADIUS"               "effective radius of liquid condensate"                                   ""
+state    real  CLDFRA_CONV     ikj      misc        1         -      rh       "CLDFRA_CONV"           "current time level cldfra for CAMMGMP microphysics"                      ""
+state    real  CLDFRAI         ikj      misc        1         -      rh       "CLDFRAI"               "current time level cldfrai for CAMMGMP microphysics"                     ""
+state    real  CLDFRAL         ikj      misc        1         -      rh       "CLDFRAL"               "current time level cldfral for CAMMGMP microphysics"                     ""
+state    logical is_CAMMGMP_used -      misc        -         -      r        "is_CAMMGMP_used"       ""
+
+ifdef BUILD_CHEM=1
+#CAMMGMP WRF_CHEM variables
+state    real  DGNUM4D         ikj{nmode} misc      1         -      r        "DGNUM4D"                "Number mode diameter"                                   "" 
+state    real  DGNUMWET4D      ikj{nmode} misc      1         -      r        "DGNUMWET4D"             "Number mode diameter WET"                               "" 
+state    real  QME3D           ikj        misc      1         -      r        "QME3D"                  "Net condensation rate "                              "kg/kg/s" 
+state    real  PRAIN3D         ikj        misc      1         -      r        "PRAIN3D"                "Rate of conversion of condensate to precipitation"   "kg/kg/s"
+state    real  NEVAPR3D        ikj        misc      1         -      r        "NEVAPR3D"               "Evaporation rate of rain + snow"                     "kg/kg/s"
+state    real  RATE1ORD_CW2PR_ST3D ikj    misc      1         -      r        "RATE1ORD_CW2PR_ST3D"    "1st order rate for direct conversion of strat. cloud water to precip" "1/s"
+state    real  dvmrdt_sv13d    ikj{nspecmam} misc   1         -      r        "DVMRDT_SV13D"           "Volume mixing ration tendency for interstitial aerosols" ""
+state    real  dvmrcwdt_sv13d  ikj{nspecmam} misc   1         -      r        "DVMCWRDT_SV13D"         "Volume mixing ration tendency for cloud borne aerosols" ""
+
+# MAM chemistry interactions with cloud microphysics requires dgnum to be saved in restart files for each mode.
+# 4D DGNUM4D is not saved correctly, so use these as a workaround.
+state    real  dgnum_a1        ikj       misc       1         -      r        "DG_NUM_A1"              "Accum. mode mean diameter"      ""
+state    real  dgnum_a2        ikj       misc       1         -      r        "DG_NUM_A2"              "Aitken mode mean diameter"      ""
+state    real  dgnum_a3        ikj       misc       1         -      r        "DG_NUM_A3"              "Coarse mode mean diameter"      ""
+state    real  dgnumwet_a1     ikj       misc       1         -      r        "DG_NUMWET_A1"           "Accum. mode mean diameter"      ""
+state    real  dgnumwet_a2     ikj       misc       1         -      r        "DG_NUMWET_A2"           "Aitken mode mean diameter"      ""
+state    real  dgnumwet_a3     ikj       misc       1         -      r        "DG_NUMWET_A3"           "Coarse mode mean diameter"      ""
+
+#CAM5's wet scavenging output variables
+state    real  FRACIS3D        ikj{nspecmam} misc   1         -      r        "FRACIS3D"               "fraction of transported species that are insoluble"    ""
+endif

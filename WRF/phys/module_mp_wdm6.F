@@ -5,10 +5,12 @@
 #  define VREC vrec
 #  define VSQRT vsqrt
 #endif
-
 MODULE module_mp_wdm6
 !
 !
+   USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
+   USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
+   USE module_mp_radar
 !
    REAL, PARAMETER, PRIVATE :: dtcldcr     = 120. ! maximum time step for minor loops
    REAL, PARAMETER, PRIVATE :: n0r = 8.e6         ! intercept parameter rain
@@ -25,8 +27,10 @@ MODULE module_mp_wdm6
    REAL, PARAMETER, PRIVATE :: bvtg = 0.8         ! a constant for terminal velocity of graupel
    REAL, PARAMETER, PRIVATE :: deng = 500.        ! density of graupel
    REAL, PARAMETER, PRIVATE :: n0smax =  1.e11    ! maximum n0s (t=-90C unlimited)
-   REAL, PARAMETER, PRIVATE :: lamdacmax = 1.e10  ! limited maximum value for slope parameter of cloud water 
-   REAL, PARAMETER, PRIVATE :: lamdarmax = 1.e8   ! limited maximum value for slope parameter of rain
+   REAL, PARAMETER, PRIVATE :: lamdacmax = 5.0e5  ! limited maximum value for slope parameter of cloud water
+   REAL, PARAMETER, PRIVATE :: lamdacmin = 2.0e4  ! limited minimum value for slope parameter of cloud water
+   REAL, PARAMETER, PRIVATE :: lamdarmax = 5.0e4  ! limited maximum value for slope parameter of rain
+   REAL, PARAMETER, PRIVATE :: lamdarmin = 2.0e3  ! limited minimum value for slope parameter of rain
    REAL, PARAMETER, PRIVATE :: lamdasmax = 1.e5   ! limited maximum value for slope parameter of snow
    REAL, PARAMETER, PRIVATE :: lamdagmax = 6.e4   ! limited maximum value for slope parameter of graupel
    REAL, PARAMETER, PRIVATE :: dicon = 11.9       ! constant for the cloud-ice diamter
@@ -83,6 +87,7 @@ CONTAINS
                     rain, rainncv,                         &
                     snow, snowncv,                         &
                     sr,                                    &
+                    refl_10cm, diagflag, do_radar_ref,     &
                     graupel, graupelncv,                   &
                     itimestep,                             &
                     ids,ide, jds,jde, kds,kde,             &
@@ -168,6 +173,12 @@ CONTAINS
         INTENT(INOUT) ::                                    rain, &
                                                          rainncv, &
                                                               sr
+
+!+---+-----------------------------------------------------------------+
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::     &  ! GT
+                                                       refl_10cm
+!+---+-----------------------------------------------------------------+
+
   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                 &
         INTENT(INOUT) ::                                    snow, &
                                                          snowncv
@@ -179,7 +190,13 @@ CONTAINS
   REAL, DIMENSION( its:ite , kts:kte, 2 ) ::   qci
   REAL, DIMENSION( its:ite , kts:kte, 3 ) ::   qrs, ncr
   INTEGER ::               i,j,k
-!-------------------------------------------------------------------
+
+!+---+-----------------------------------------------------------------+
+      REAL, DIMENSION(kts:kte):: qv1d, t1d, p1d, qr1d, nr1d, qs1d, qg1d, dBZ
+      LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
+      INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
+!+---+-----------------------------------------------------------------+
+
       IF (itimestep .eq. 1) THEN 
         DO j=jms,jme
            DO k=kms,kme    
@@ -235,6 +252,30 @@ CONTAINS
             nr(i,k,j) = ncr(i,k,3)   
          ENDDO
          ENDDO
+
+!+---+-----------------------------------------------------------------+
+         IF ( PRESENT (diagflag) ) THEN
+         if (diagflag .and. do_radar_ref == 1) then
+            DO I=its,ite
+               DO K=kts,kte
+                  t1d(k)=th(i,k,j)*pii(i,k,j)
+                  p1d(k)=p(i,k,j)
+                  qv1d(k)=q(i,k,j)
+                  qr1d(k)=qr(i,k,j)
+                  nr1d(k)=nr(i,k,j)
+                  qs1d(k)=qs(i,k,j)
+                  qg1d(k)=qg(i,k,j)
+               ENDDO
+               call refl10cm_wdm6 (qv1d, qr1d, nr1d, qs1d, qg1d,        &
+                       t1d, p1d, dBZ, kts, kte, i, j)
+               do k = kts, kte
+                  refl_10cm(i,k,j) = MAX(-35., dBZ(k))
+               enddo
+            ENDDO
+         endif
+         ENDIF
+!+---+-----------------------------------------------------------------+
+
       ENDDO
   END SUBROUTINE wdm6
 !===================================================================
@@ -321,6 +362,10 @@ CONTAINS
         worka,workr
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         den_tmp, delz_tmp, ncr_tmp 
+  REAL, DIMENSION( its:ite , kts:kte ) ::                         &
+        lamdr_tmp
+  REAL, DIMENSION( its:ite , kts:kte ) ::                         &
+        lamdc_tmp
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         falkc, work1c, work2c, fallc
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
@@ -1182,7 +1227,7 @@ CONTAINS
 ! paacw: Accretion of cloud water by averaged snow/graupel 
 !        (T<T0: QC->QG or QS, and T>=T0: QC->QR) 
 !-------------------------------------------------------------
-          if(qrs(i,k,2).gt.qcrmin .and. qrs(i,k,3).gt.qcrmin) then
+          if(qsum(i,k) .gt. 1.e-15) then
             paacw(i,k) = (qrs(i,k,2)*psacw(i,k)+qrs(i,k,3)*pgacw(i,k))/(qsum(i,k))
 !-------------------------------------------------------------
 ! naacw: Accretion of cloud water by averaged snow/graupel
@@ -1768,6 +1813,28 @@ CONTAINS
         do i = its, ite
           if(qci(i,k,1).le.qmin) qci(i,k,1) = 0.0
           if(qci(i,k,2).le.qmin) qci(i,k,2) = 0.0
+          if(qrs(i,k,1).ge.qcrmin .and. ncr(i,k,3) .ge. nrmin) then
+            lamdr_tmp(i,k) = exp(log(((pidnr*ncr(i,k,3))                       & 
+                         /(den(i,k)*qrs(i,k,1))))*((.33333333)))
+            if(lamdr_tmp(i,k) .le. lamdarmin) then
+              lamdr_tmp(i,k) = lamdarmin
+              ncr(i,k,3) = den(i,k)*qrs(i,k,1)*lamdr_tmp(i,k)**3/pidnr
+            elseif(lamdr_tmp(i,k) .ge. lamdarmax) then
+              lamdr_tmp(i,k) = lamdarmax 
+              ncr(i,k,3) = den(i,k)*qrs(i,k,1)*lamdr_tmp(i,k)**3/pidnr
+            endif
+          endif  
+          if(qci(i,k,1).ge.qmin .and. ncr(i,k,2) .ge. ncmin ) then
+            lamdc_tmp(i,k) = exp(log(((pidnc*ncr(i,k,2))                       &
+                         /(den(i,k)*qci(i,k,1))))*((.33333333)))
+            if(lamdc_tmp(i,k) .le. lamdacmin) then
+              lamdc_tmp(i,k) = lamdacmin
+              ncr(i,k,2) = den(i,k)*qci(i,k,1)*lamdc_tmp(i,k)**3/pidnc
+            elseif(lamdc_tmp(i,k) .ge. lamdacmax) then
+              lamdc_tmp(i,k) = lamdacmax
+              ncr(i,k,2) = den(i,k)*qci(i,k,1)*lamdc_tmp(i,k)**3/pidnc
+            endif
+          endif
         enddo
       enddo
       enddo                  ! big loops
@@ -1909,6 +1976,24 @@ CONTAINS
    rsloper3max = rsloper2max * rslopermax
    rslopes3max = rslopes2max * rslopesmax
    rslopeg3max = rslopeg2max * rslopegmax
+
+!+---+-----------------------------------------------------------------+
+!..Set these variables needed for computing radar reflectivity.  These
+!.. get used within radar_init to create other variables used in the
+!.. radar module.
+   xam_r = PI*denr/6.
+   xbm_r = 3.
+   xmu_r = 1.
+   xam_s = PI*dens/6.
+   xbm_s = 3.
+   xmu_s = 0.
+   xam_g = PI*deng/6.
+   xbm_g = 3.
+   xmu_g = 0.
+
+   call radar_init
+!+---+-----------------------------------------------------------------+
+
 !
   END SUBROUTINE wdm6init
 !------------------------------------------------------------------------------
@@ -2441,7 +2526,7 @@ CONTAINS
 ! skip for no precipitation for all layers
       allold = 0.0
       do k=1,km
-        allold = allold + qq(k)
+        allold = allold + qq(k) + qq2(k)
       enddo
       if(allold.le.0.0) then
         cycle i_loop
@@ -2654,4 +2739,183 @@ CONTAINS
       enddo i_loop
 !
   END SUBROUTINE nislfv_rain_plm6
+
+!+---+-----------------------------------------------------------------+
+      subroutine refl10cm_wdm6 (qv1d, qr1d, nr1d, qs1d, qg1d,           &
+                       t1d, p1d, dBZ, kts, kte, ii, jj)
+
+      IMPLICIT NONE
+
+!..Sub arguments
+      INTEGER, INTENT(IN):: kts, kte, ii, jj
+      REAL, DIMENSION(kts:kte), INTENT(IN)::                            &
+                      qv1d, qr1d, nr1d, qs1d, qg1d, t1d, p1d
+      REAL, DIMENSION(kts:kte), INTENT(INOUT):: dBZ
+
+!..Local variables
+      REAL, DIMENSION(kts:kte):: temp, pres, qv, rho
+      REAL, DIMENSION(kts:kte):: rr, nr, rs, rg
+      REAL:: temp_C
+
+      DOUBLE PRECISION, DIMENSION(kts:kte):: ilamr, ilams, ilamg
+      DOUBLE PRECISION, DIMENSION(kts:kte):: N0_r, N0_s, N0_g
+      DOUBLE PRECISION:: lamr, lams, lamg
+      LOGICAL, DIMENSION(kts:kte):: L_qr, L_qs, L_qg
+
+      REAL, DIMENSION(kts:kte):: ze_rain, ze_snow, ze_graupel
+      DOUBLE PRECISION:: fmelt_s, fmelt_g
+
+      INTEGER:: i, k, k_0, kbot, n
+      LOGICAL:: melti
+
+      DOUBLE PRECISION:: cback, x, eta, f_d
+      REAL, PARAMETER:: R=287.
+
+!+---+
+
+      do k = kts, kte
+         dBZ(k) = -35.0
+      enddo
+
+!+---+-----------------------------------------------------------------+
+!..Put column of data into local arrays.
+!+---+-----------------------------------------------------------------+
+      do k = kts, kte
+         temp(k) = t1d(k)
+         temp_C = min(-0.001, temp(K)-273.15)
+         qv(k) = MAX(1.E-10, qv1d(k))
+         pres(k) = p1d(k)
+         rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
+
+         if (qr1d(k) .gt. 1.E-9) then
+            rr(k) = qr1d(k)*rho(k)
+            nr(k) = nr1d(k)*rho(k)
+            lamr = (xam_r*xcrg(3)*xorg2*nr(k)/rr(k))**xobmr
+            ilamr(k) = 1./lamr
+            N0_r(k) = nr(k)*xorg2*lamr**xcre(2)
+            L_qr(k) = .true.
+         else
+            rr(k) = 1.E-12
+            nr(k) = 1.E-12
+            L_qr(k) = .false.
+         endif
+
+         if (qs1d(k) .gt. 1.E-9) then
+            rs(k) = qs1d(k)*rho(k)
+            N0_s(k) = min(n0smax, n0s*exp(-alpha*temp_C))
+            lams = (xam_s*xcsg(3)*N0_s(k)/rs(k))**(1./xcse(1))
+            ilams(k) = 1./lams
+            L_qs(k) = .true.
+         else
+            rs(k) = 1.E-12
+            L_qs(k) = .false.
+         endif
+
+         if (qg1d(k) .gt. 1.E-9) then
+            rg(k) = qg1d(k)*rho(k)
+            N0_g(k) = n0g
+            lamg = (xam_g*xcgg(3)*N0_g(k)/rg(k))**(1./xcge(1))
+            ilamg(k) = 1./lamg
+            L_qg(k) = .true.
+         else
+            rg(k) = 1.E-12
+            L_qg(k) = .false.
+         endif
+      enddo
+
+!+---+-----------------------------------------------------------------+
+!..Locate K-level of start of melting (k_0 is level above).
+!+---+-----------------------------------------------------------------+
+      melti = .false.
+      k_0 = kts
+      do k = kte-1, kts, -1
+         if ( (temp(k).gt.273.15) .and. L_qr(k)                         &
+                                  .and. (L_qs(k+1).or.L_qg(k+1)) ) then
+            k_0 = MAX(k+1, k_0)
+            melti=.true.
+            goto 195
+         endif
+      enddo
+ 195  continue
+
+!+---+-----------------------------------------------------------------+
+!..Assume Rayleigh approximation at 10 cm wavelength. Rain (all temps)
+!.. and non-water-coated snow and graupel when below freezing are
+!.. simple. Integrations of m(D)*m(D)*N(D)*dD.
+!+---+-----------------------------------------------------------------+
+
+      do k = kts, kte
+         ze_rain(k) = 1.e-22
+         ze_snow(k) = 1.e-22
+         ze_graupel(k) = 1.e-22
+         if (L_qr(k)) ze_rain(k) = N0_r(k)*xcrg(4)*ilamr(k)**xcre(4)
+         if (L_qs(k)) ze_snow(k) = (0.176/0.93) * (6.0/PI)*(6.0/PI)     &
+                                 * (xam_s/900.0)*(xam_s/900.0)          &
+                                 * N0_s(k)*xcsg(4)*ilams(k)**xcse(4)
+         if (L_qg(k)) ze_graupel(k) = (0.176/0.93) * (6.0/PI)*(6.0/PI)  &
+                                    * (xam_g/900.0)*(xam_g/900.0)       &
+                                    * N0_g(k)*xcgg(4)*ilamg(k)**xcge(4)
+      enddo
+
+
+!+---+-----------------------------------------------------------------+
+!..Special case of melting ice (snow/graupel) particles.  Assume the
+!.. ice is surrounded by the liquid water.  Fraction of meltwater is
+!.. extremely simple based on amount found above the melting level.
+!.. Uses code from Uli Blahak (rayleigh_soak_wetgraupel and supporting
+!.. routines).
+!+---+-----------------------------------------------------------------+
+
+      if (melti .and. k_0.ge.kts+1) then
+       do k = k_0-1, kts, -1
+
+!..Reflectivity contributed by melting snow
+          if (L_qs(k) .and. L_qs(k_0) ) then
+           fmelt_s = MAX(0.005d0, MIN(1.0d0-rs(k)/rs(k_0), 0.99d0))
+           eta = 0.d0
+           lams = 1./ilams(k)
+           do n = 1, nrbins
+              x = xam_s * xxDs(n)**xbm_s
+              call rayleigh_soak_wetgraupel (x,DBLE(xocms),DBLE(xobms), &
+                    fmelt_s, melt_outside_s, m_w_0, m_i_0, lamda_radar, &
+                    CBACK, mixingrulestring_s, matrixstring_s,          &
+                    inclusionstring_s, hoststring_s,                    &
+                    hostmatrixstring_s, hostinclusionstring_s)
+              f_d = N0_s(k)*xxDs(n)**xmu_s * DEXP(-lams*xxDs(n))
+              eta = eta + f_d * CBACK * simpson(n) * xdts(n)
+           enddo
+           ze_snow(k) = SNGL(lamda4 / (pi5 * K_w) * eta)
+          endif
+
+
+!..Reflectivity contributed by melting graupel
+
+          if (L_qg(k) .and. L_qg(k_0) ) then
+           fmelt_g = MAX(0.005d0, MIN(1.0d0-rg(k)/rg(k_0), 0.99d0))
+           eta = 0.d0
+           lamg = 1./ilamg(k)
+           do n = 1, nrbins
+              x = xam_g * xxDg(n)**xbm_g
+              call rayleigh_soak_wetgraupel (x,DBLE(xocmg),DBLE(xobmg), &
+                    fmelt_g, melt_outside_g, m_w_0, m_i_0, lamda_radar, &
+                    CBACK, mixingrulestring_g, matrixstring_g,          &
+                    inclusionstring_g, hoststring_g,                    &
+                    hostmatrixstring_g, hostinclusionstring_g)
+              f_d = N0_g(k)*xxDg(n)**xmu_g * DEXP(-lamg*xxDg(n))
+              eta = eta + f_d * CBACK * simpson(n) * xdtg(n)
+           enddo
+           ze_graupel(k) = SNGL(lamda4 / (pi5 * K_w) * eta)
+          endif
+
+       enddo
+      endif
+
+      do k = kte, kts, -1
+         dBZ(k) = 10.*log10((ze_rain(k)+ze_snow(k)+ze_graupel(k))*1.d18)
+      enddo
+
+
+      end subroutine refl10cm_wdm6
+!+---+-----------------------------------------------------------------+
+
 END MODULE module_mp_wdm6

@@ -1,4 +1,4 @@
-WRF Model Version 3.4 (April 6, 2012)
+WRF Model Version 3.6 (April 18, 2014)
 http://wrf-model.org/users/users.php
 
 ------------------------
@@ -25,6 +25,43 @@ infringement actions.
 
 ======================================
 This is the main directory for the WRF Version 3 source code release.
+======================================
+
+V3.6 Release Notes (4/18/14) (rev 7412):
+-------------------
+
+- For more information on WRF V3.6 release, visit WRF User's home pages
+  http://www.mmm.ucar.edu/wrf/users/, and
+  http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
+
+======================================
+
+V3.5.1 Release Notes (9/23/13) (rev 6868):
+-------------------
+
+- For more information on WRF V3.5.1 release, visit WRF User's home pages
+  http://www.mmm.ucar.edu/wrf/users/, and
+  http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
+
+======================================
+
+V3.5 Release Notes (4/18/13) (rev 6660):
+-------------------
+
+- For more information on WRF V3.5 release, visit WRF User's home pages
+  http://www.mmm.ucar.edu/wrf/users/, and
+  http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
+
+======================================
+
+V3.4.1 Release Notes (8/16/12) (rev 5930):
+-------------------
+
+This is a bug fix release. The detailed updates for WRF-ARW can be found at
+http://www.mmm.ucar.edu/wrf/users/wrfv3.4/updates-3.4.1.html,
+and for WRF-NMM at
+http://www.dtcenter.org/wrf-nmm/users/model/wrfv3/updates.php
+
 ======================================
 
 V3.4 Release Notes:
@@ -163,6 +200,10 @@ WRF update history:
 - V3.2.1: August 18, 2010
 - V3.3: April 6, 2011
 - V3.3.1: Sept 16, 2011
+- V3.4: April 6, 2012
+- V3.4.1: Aug 16, 2012
+- V3.5: April 18, 2013
+- V3.5.1: Sept 23, 2013
 
 ======================================
 
@@ -261,6 +302,7 @@ What is in WRF V3?
   * positive-definite and monotonic advection for moisture, scalar, tke and chemical tracers
   * global modeling capability on latitude-longitude grid
   * digital filter initialization
+  * WENO advection options
 
 - Two-way nesting:
   * multiple domains and multiple nest levels
@@ -277,16 +319,18 @@ What is in WRF V3?
 - Physics options:
   * microphysics (Kessler/ WRF Single Moment 3, 5 and 6 classes / Lin et al./ Mibrandt 2-moment /
     Eta Ferrier / Thompson / Goddard / 2-moment Morrison / WRF Double Moment 5 and 6 classes /
-    SBU-Lin 5-classes / NSSL 2-moment )
+    SBU-Lin 5-classes / NSSL 2-moment and 1-moment / CAM 5.1 ) / Thompson aerosol-aware /
+    HUJI full and fast SBM
   * cumulus parameterization (Kain-Fritsch with shallow convection / 
-    Betts-Miller-Janjic / Grell-Devenyi ensemble / New Grell (with shallow convection option) /
+    Betts-Miller-Janjic / Grell-Devenyi ensemble / Grell 3D (with shallow convection option) /
+    Grell-Freitas ensemble /
     Tiedtke (with shallow conv and momentum transport) / NSAS (with shallow conv and momentum transport) /
     SAS (with shallow conv for ARW) / Zhang-McFarlane (with momentum transport) )
-  * UW shallow convection
+  * UW shallow convection / GRIMS shallow convection
   * planetary boundary layer (Yosei University / Mellor-Yamada-Janjic / ACM2 / QNSE-EDMF / MYNN / 
-    BouLac / UW / TEMF )
+    BouLac / UW / TEMF / Grenier-Bretherton-McCaa )
   * slab soil model (5-layer thermal diffusion / Noah land-surface model (4 levels) /
-    RUC LSM (6 levels) / Pleim-Xu (2 levels / Noah-MP (4 levels) / SSiB (3 levels) )
+    RUC LSM (6 levels) / Pleim-Xu (2 levels / Noah-MP (4 levels) / SSiB (3 levels) / CLM4 (10 levels) )
   * Urban canopy model, BEP multi-layer and BEM  (works with Noah LSM, BEP and 
     BEM also requires MYJ or BouLac)
   * longwave radiation (RRTM / CAM / RRTMG / new Goddard / FLG )
@@ -297,12 +341,14 @@ What is in WRF V3?
   * Rayleigh damping for w at the upper boundary layer
   * gravity wave drag
   * land-use categories determine surface properties; support for 24 category USGS and 
-    20 category MODIS (Noah LSM only in V3.1)
+    20 category MODIS 
   * Options for modifying SST, sea ice, vegetation fraction, albedo, and deep soil temp
     for long simulations
   * fractional sea ice option for polar regions; modified snow/ice physics
-  * single-column ocean mixed layer model
+  * single-column ocean mixed layer model / 3D Price-Weller-Pinkel (PWP) ocean model
   * drag and enthalpy flux formulation for hurricane applications
+  * CLM lake model
+  * windfarm drag
 
 - Nudging:
   * three-dimensional and surface analysis nudging 
@@ -343,7 +389,8 @@ What is in WRF V3?
       Mac Intel/ppc, PGI/ifort/g95
       NEC SX/8
       HP-UX
-      Fujitsu VPP 5000
+      Fujitsu VPP 5000, FX10
+      Intel MIC
   * RSL_LITE: communication layer, scalable to very large domains, supports nesting.
   * I/O: NetCDF, parallel NetCDF (Argonne), HDF5, GRIB, raw binary, Quilting (asynchronous I/O), MCEL (coupling)
   * ESMF Time Management, including exact arithmetic for fractional

@@ -14,6 +14,11 @@ MODULE module_physics_init
    USE module_model_constants
    USE module_configure, ONLY : grid_config_rec_type
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
+   !Local data for CAM's MG MP scheme
+   integer  :: ixcldliq, ixcldice, ixnumliq, ixnumice
+   LOGICAL  :: CAM_INITIALIZED = .FALSE.
+   LOGICAL  :: WINDFARM_INITIALIZED = .FALSE.
+
 
 CONTAINS
 
@@ -33,6 +38,9 @@ CONTAINS
                          STEPBL,STEPRA,STEPCU,                   &
                          W0AVG, RAINNC, RAINC, RAINCV, RAINNCV,  &
                          SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV, &
+                         z_at_q, qnwfa2d, scalar, num_sc,    & ! G. Thompson
+                         re_cloud, re_ice, re_snow,              & ! G. Thompson
+                         has_reqc, has_reqi, has_reqs,           & ! G. Thompson
                          NCA,swrad_scat,                         &
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
@@ -42,12 +50,13 @@ CONTAINS
                          landuse_ISICE, landuse_LUCATS,          &
                          landuse_LUSEAS, landuse_ISN,            &
                          lu_state,                               &
-                         XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,&
+                         XLAT,XLONG,xlong_u,xlat_v,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,&
                          levsiz, n_ozmixm, n_aerosolc, paerlev,  &
+                         alevsiz, no_src_types,                  &
                          TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_PBL,  &
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  &
-                         adv_moist_cond,                         &
+                         adv_moist_cond,is_CAMMGMP_used,         &
                          APR_GR,APR_W,APR_MC,APR_ST,APR_AS,      &
                          APR_CAPMA,APR_CAPME,APR_CAPMI,          &
                          XICE,XICEM,VEGFRA,SNOW,CANWAT,SMSTAV,   &
@@ -63,11 +72,13 @@ CONTAINS
                          ims, ime, jms, jme, kms, kme,           &
                          its, ite, jts, jte, kts, kte,           &
                          NUM_URBAN_LAYERS,                       &
+                         NUM_URBAN_HI,                           &
                          raincv_a,raincv_b,                      &
                          gd_cloud,gd_cloud2,                     &    ! Optional
                          gd_cloud_a,gd_cloud2_a,                 &    ! Optional
-                         gd_cloud_b,gd_cloud2_b,                 &    ! Optional
+                         QC_CU,QI_CU,                            &    ! Optional
                          ozmixm,pin,                             &    ! Optional
+                         aerodm,pina,                            &    ! Optional
                          m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,& ! Optional
                          RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,         &    ! Optional
                          RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,       &    ! Optional
@@ -82,6 +93,10 @@ CONTAINS
                          STMASSXY, WOODXY, STBLCPXY, FASTCPXY,            & ! Optional Noah-MP
                          XSAIXY,                                          & ! Optional Noah-MP
                          T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP
+                         SMOISEQ  ,SMCWTDXY ,RECHXY, DEEPRECHXY, AREAXY,  & ! Optional Noah-MP 
+                         WTDDT , STEPWTD ,QRFSXY ,QSPRINGSXY ,QSLATXY,    & ! Optional Noah-MP
+                         FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & ! Optional Noah-MP
+                         msftx, msfty,                           &           ! Optional Noah-MP
 !                        num_roof_layers,num_wall_layers,        & !Optional urban
 !                        num_road_layers,                        & !Optional urban
                          DZR, DZB, DZG,                          & !Optional urban
@@ -100,31 +115,105 @@ CONTAINS
                          SFWIN1_URB3D,SFWIN2_URB3D,              & !Optional multi-layer urban
                          SFW1_URB3D,SFW2_URB3D,                  & !Optional multi-layer urban
                          SFR_URB3D,SFG_URB3D,                    & !Optional multi-layer urban
+                         LP_URB2D,HI_URB2D,LB_URB2D,             & !Optional multi-layer urban
+                         HGT_URB2D,MH_URB2D,STDH_URB2D,          & !Optional multi-layer urban
+                         LF_URB2D,                               & !Optional multi-layer urban
                          A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,        & !Optional multi-layer urban
                          A_E_BEP,B_U_BEP,B_V_BEP,                & !Optional multi-layer urban
                          B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,        & !Optional multi-layer urban
                          DL_U_BEP,SF_BEP,VL_BEP,                 & !Optional multi-layer urban
                          TML,T0ML,HML,H0ML,HUML,HVML,TMOML,      & !Optional oml
+                         lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d,       & !lake
+                         snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d, & !lake
+                         z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d,   & !lake
+                         h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d,           & !lake
+                         zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
+                         tkdry3d,      tksatu3d,     lake2d,     lakedepth_default, & !lake
+                         lake_min_elev,   lake_depth,                               & !lake
+#if ( EM_CORE == 1 )
+                         lakemask,   lakeflag,                                   & !lake
+#endif
+                         lake_depth_flag, use_lakedepth,                         & !lake
+                         sf_surface_mosaic, mosaic_cat, NLCAT,               & ! Noah tiling
+!CLM variables
+                         maxpatch,                                           &
+                         numc,nump,snl,                                      &
+                         snowdp,wtc,wtp,h2osno,t_grnd,t_veg,                 &
+                         h2ocan,h2ocan_col,t2m_max,t2m_min,t_ref2m,          &
+                         h2osoi_liq_s1,                                      &
+                         h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                         h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                         h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                         h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                         h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                         h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                         h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                         h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                         h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                         t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                         t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                         t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                         t_soisno8,t_soisno9,t_soisno10,                     &
+                         dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                         snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                         t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                         t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                         h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                         h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                         h2osoi_vol7,h2osoi_vol8,                            &
+                         h2osoi_vol9,h2osoi_vol10,                           &
+                         ht,                                                 &
+                         ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                         Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
+                         SWUPsubgrid,lhsoi,lhveg,lhtran,                     &
+! end of CLM variables
+                         TSK_SAVE,                               & !Optional for fractional seaice
                          itimestep,                              & !Optional obs fdda
 #if ( EM_CORE == 1 )
                          fdob,                                   & !Optional obs fdda
 #endif
                          t00, p00, tlp,                          & !for obs-nudging
                          TYR,TYRA,TDLY,TLAG,NYEAR,NDAY,tmn_update,   &
-                         ACHFX,ACLHF,ACGRDFLX                    &
+                         ACHFX,ACLHF,ACGRDFLX,                   &
+                         nssl_cccn,                              &
+                         nssl_alphah,nssl_alphahl,               &
+                         nssl_cnoh, nssl_cnohl,                  &
+                         nssl_cnor, nssl_cnos,                   &
+                         nssl_rho_qh, nssl_rho_qhl,              &
+                         nssl_rho_qs,                             &
    ! OPTIONAL 
-                         ,te_temf          & ! WA 12/21/09
-                         ,cf3d_temf        & ! WA 9/27/10
-                         ,wm_temf          & ! WA 2/22/11
+                         RQCNCUTEN, RQINCUTEN,                   &
+                         rliq,                                   &  !BSINGH:01/31/2013 - Added rliq and is_CAMMGMP_used for CAM5 physics
+                         cldfra_dp,cldfra_sh                     & !ckay for subgrid cloud
+                         ,te_temf                                & ! WA 12/21/09
+                         ,cf3d_temf                              & ! WA 9/27/10
+                         ,wm_temf                                & ! WA 2/22/11
                          ,massflux_EDKF, entr_EDKF, detr_EDKF  & ! Optional for qnse
                          ,thl_up, thv_up, rt_up                & ! Optional for qnse
                          ,rv_up, rc_up, u_up, v_up, frac_up    & ! Optional for qnse
+                         ,QKE                                  & !for MYNN
+                         ,landusef,landusef2,mosaic_cat_index                                                 & ! danli mosaic
+                         ,TSK_mosaic,TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic                                     & ! danli mosaic
+                         ,CANWAT_mosaic,SNOW_mosaic,SNOWH_mosaic,SNOWC_mosaic                                 & ! danli mosaic
+                         ,ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic      & ! danli mosaic
+                         ,TR_URB2D_mosaic,TB_URB2D_mosaic                                                     & ! danli mosaic 
+                         ,TG_URB2D_mosaic,TC_URB2D_mosaic                                                     & ! danli mosaic 
+                         ,QC_URB2D_mosaic                                                                     & ! danli mosaic
+                         ,TRL_URB3D_mosaic,TBL_URB3D_mosaic                                                   & ! danli mosaic 
+                         ,TGL_URB3D_mosaic                                                                    & ! danli mosaic 
+                         ,SH_URB2D_mosaic,LH_URB2D_mosaic                                                     & ! danli mosaic 
+                         ,G_URB2D_mosaic,RN_URB2D_mosaic                                                      & ! danli mosaic 
+                         ,TS_URB2D_mosaic                                                                     & ! danli mosaic 
+                         ,TS_RUL2D_mosaic                                                                     & ! danli mosaic
                          )
 
 !-----------------------------------------------------------------
    USE module_domain
    USE module_wrf_error
-   USE module_wind_generic
+   use module_sf_lake, only : nlevsoil,nlevsnow,nlevlake
+#ifdef WRF_CHEM
+   USE module_cam_support,         ONLY : cam_mam_aerosols
+#endif
    USE module_wind_fitch
    IMPLICIT NONE
 !-----------------------------------------------------------------
@@ -133,6 +222,7 @@ CONTAINS
    INTEGER , INTENT(IN)        :: id
    INTEGER , INTENT(IN) ,OPTIONAL       :: tmn_update
    LOGICAL , INTENT(OUT)       :: warm_rain,adv_moist_cond
+   LOGICAL , INTENT(OUT)       :: is_CAMMGMP_used !BSINGH:01/31/2013 - Added for CAM5 physics
 !   LOGICAL , INTENT (IN)       :: FNDSOILW, FNDSNOWH
    LOGICAL, PARAMETER          :: FNDSOILW=.true., FNDSNOWH=.true.
    INTEGER , INTENT(IN)        :: ids, ide, jds, jde, kds, kde,  &
@@ -151,15 +241,20 @@ CONTAINS
    REAL,     INTENT(IN)        :: swrad_scat
 
    REAL,     DIMENSION( kms:kme ) , INTENT(IN) :: zfull, zhalf
-   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: TSK, XLAT, XLONG
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: TSK, XLAT, XLONG,xlong_u,xlat_v
+   REAL,  DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: msftx,msfty
 
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
+   INTEGER,      INTENT(IN   )    ::   alevsiz, no_src_types
 
    REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ), OPTIONAL, &
           INTENT(INOUT) ::                                  OZMIXM
+   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, n_ozmixm-1, no_src_types ), OPTIONAL, &
+          INTENT(INOUT) ::                                  aerodm
 
    REAL,  DIMENSION(levsiz), OPTIONAL, INTENT(INOUT)  ::        PIN
+   REAL,  DIMENSION(alevsiz), OPTIONAL, INTENT(INOUT)  ::       PINA
 
    REAL,  DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT)  :: m_ps_1,m_ps_2
    REAL,  DIMENSION(paerlev), OPTIONAL,INTENT(INOUT)  ::          m_hybi
@@ -186,6 +281,7 @@ CONTAINS
                                                          XICEM, &
                                                         VEGFRA, &
                                                         ACSNOM
+   REAL,    DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) ::   rliq    
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             OPTIONAL, INTENT(INOUT)    ::                ACHFX, &
@@ -198,11 +294,19 @@ CONTAINS
 
 ! rad
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
+!..Added by G. Thompson to couple cloud physics variables with RRTMG radiation.
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: re_cloud, &
+             re_ice, re_snow
+   INTEGER, INTENT(INOUT):: has_reqc, has_reqi, has_reqs
+
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &!BSINGH(PNNL)- should be declared inout
              RTHRATEN, RTHRATENLW, RTHRATENSW, CLDFRA
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) :: &
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) :: &!BSINGH(PNNL)- should be declared inout
              CLDFRA_OLD
+
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) :: & ! ckay for subgrid cloud
+             cldfra_dp, cldfra_sh
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::         &
              GSW,ALBEDO,ALBBCK,GLW,EMISS,EMBCK                          !EMBCK new
@@ -216,11 +320,12 @@ CONTAINS
 
 ! cps
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: &
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: & !BSINGH(PNNL)- should be declared inout
              RUCUTEN, RVCUTEN, RTHCUTEN, RQVCUTEN, RQRCUTEN, RQCCUTEN, &
              RQSCUTEN, RQICUTEN,                                       &
              RUSHTEN, RVSHTEN, RTHSHTEN, RQVSHTEN, RQRSHTEN, RQCSHTEN, &
              RQSSHTEN, RQISHTEN, RQGSHTEN
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: RQCNCUTEN, RQINCUTEN 
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: W0AVG
 
@@ -228,12 +333,16 @@ CONTAINS
                       APR_GR,APR_W,APR_MC,APR_ST,APR_AS,          &
                       APR_CAPMA,APR_CAPME,APR_CAPMI
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    & !BSINGH(PNNL)- should be declared inout
              RTHFTEN, RQVFTEN
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) ::           &
              RAINNC, RAINC, RAINCV, RAINNCV,  &
              SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV
+   REAL,     DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: z_at_q                          !  G. Thompson
+   REAL,     DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: qnwfa2d                    !  G. Thompson
+   INTEGER,  INTENT(IN) :: num_sc                                                !  G. Thompson
+   REAL,     DIMENSION(ims:ime,kms:kme,jms:jme,num_sc), INTENT(INOUT) :: scalar  !  G. Thompson
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) :: CLDEFI, NCA
 
@@ -246,8 +355,9 @@ CONTAINS
 
    REAL,     DIMENSION(1:num_soil_layers),      INTENT(INOUT) :: ZS,DZS
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
+  REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    & !BSINGH(PNNL)- should be declared inout
              RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_PBL
+  REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE
 
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
                                             massflux_EDKF, entr_EDKF, detr_EDKF & 
@@ -278,7 +388,7 @@ CONTAINS
           INTENT(INOUT   ) ::                                        &
                                gd_cloud, gd_cloud2,                  &
                                gd_cloud_a, gd_cloud2_a,              &
-                               gd_cloud_b, gd_cloud2_b
+                               QC_CU, QI_CU
 
    REAL,  DIMENSION( ims:ime ,  jms:jme )         ,         &
           INTENT(INOUT   ) ::                                        &
@@ -318,6 +428,22 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MVXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MBXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHSTARXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,1:num_soil_layers,jms:jme) :: SMOISEQ 
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: SMCWTDXY   
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: DEEPRECHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RECHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QRFSXY       
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QSPRINGSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QSLATXY 
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: AREAXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: FDEPTHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: RIVERBEDXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: EQZWT
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: RIVERCONDXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: PEXPXY
+
+   INTEGER , OPTIONAL,  INTENT(OUT) :: STEPWTD
+   REAL , OPTIONAL, INTENT(IN) :: WTDDT
 
 !mp
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::   &
@@ -328,13 +454,15 @@ CONTAINS
 ! ocean mixed layer
    REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
              TML,T0ML,HML,H0ML,HUML,HVML,TMOML
-
+! fractional seaice
+   REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
+             TSK_SAVE
 !fdda
    REAL,     OPTIONAL, INTENT(IN) :: FGDT
    INTEGER , OPTIONAL, INTENT(OUT) :: STEPFG
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &!BSINGH(PNNL)- should be declared inout
              RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN, RPHNDGDTEN, RQVNDGDTEN
-   REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
+   REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
              RMUNDGDTEN
 
 !URBAN
@@ -371,6 +499,7 @@ CONTAINS
    INTEGER, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UTYPE_URB2D !urban
 
    INTEGER , INTENT(IN)        :: num_urban_layers
+   INTEGER , INTENT(IN)        :: num_urban_hi
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TRB_URB4D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW1_URB4D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW2_URB4D ! multi-layer UCM
@@ -392,6 +521,13 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFR_URB3D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW1_URB3D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW2_URB3D ! multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime,1:num_urban_hi, jms:jme), INTENT(INOUT) :: HI_URB2D  !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LP_URB2D  !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LB_URB2D  !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: HGT_URB2D !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: MH_URB2D  !SLUCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: STDH_URB2D !SLUCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ), INTENT(INOUT) :: LF_URB2D  !SLUCM 
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_U_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_V_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_T_BEP
@@ -406,6 +542,75 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DLG_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme,jms:jme), INTENT(INOUT) :: SF_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DL_U_BEP
+! lake varibles:
+  real,    dimension(ims:ime,jms:jme ),intent(out)                        :: lakedepth2d,    &
+                                                                             savedtke12d
+  real,    dimension(ims:ime,jms:jme ),intent(inout)                      :: snowdp2d,       &
+                                                                             h2osno2d,       &
+                                                                             snl2d,          &
+                                                                             t_grnd2d
+ 
+  real,    dimension( ims:ime,1:nlevlake, jms:jme ),INTENT(out)            :: t_lake3d,       &
+                                                                             lake_icefrac3d, &
+                                                                             z_lake3d,       &
+                                                                             dz_lake3d
+  real,    dimension( ims:ime,-nlevsnow+1:nlevsoil, jms:jme ),INTENT(inout) :: t_soisno3d,     &
+                                                                             h2osoi_ice3d,   &
+                                                                             h2osoi_liq3d,   &
+                                                                             h2osoi_vol3d,   &
+                                                                             z3d,            &
+                                                                             dz3d
+  real,    dimension( ims:ime,1:nlevsoil, jms:jme ),INTENT(out)            :: watsat3d,       &
+                                                                             csol3d,         &
+                                                                             tkmg3d,         &
+                                                                             tkdry3d,        &
+                                                                             tksatu3d
+  real,    dimension( ims:ime,-nlevsnow+0:nlevsoil, jms:jme ),INTENT(inout) :: zi3d
+  LOGICAL, DIMENSION( ims:ime, jms:jme ),intent(out)                      :: lake2d
+!  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                      ::  HT
+  REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  lake_depth
+  real, intent(in)      ::      lakedepth_default, lake_min_elev
+#if ( EM_CORE == 1 )
+  REAL,              dimension(ims:ime,jms:jme )      ::  lakemask
+  INTEGER, INTENT(IN)      ::  lakeflag
+#endif
+  INTEGER, INTENT(INOUT)      ::   lake_depth_flag
+  INTEGER, INTENT(IN)      ::   use_lakedepth
+ 
+
+!CLM
+   INTEGER, INTENT(IN) ::       maxpatch
+   REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  HT
+  integer, OPTIONAL,   dimension(ims:ime,jms:jme ),intent(inout) :: numc,nump
+  integer, OPTIONAL,   dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: snl
+  real, OPTIONAL,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) ::  &
+                snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                h2ocan,h2ocan_col,t2m_max,t2m_min,     &
+                t_ref2m,h2osoi_liq_s1,              &
+                h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                t_soisno8,t_soisno9,t_soisno10,                     &
+                dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                h2osoi_vol7,h2osoi_vol8,                            &
+                h2osoi_vol9,h2osoi_vol10,                           &
+                ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
+                SWUPsubgrid,lhsoi,lhtran,lhveg
 
 !obs fdda
    INTEGER, OPTIONAL, INTENT(IN) :: itimestep
@@ -413,6 +618,11 @@ CONTAINS
    TYPE(fdob_type), OPTIONAL, INTENT(INOUT) :: fdob
 #endif
    REAL, OPTIONAL, INTENT(IN) :: p00, t00, tlp   ! for obs-nudging base-state calcn
+   REAL, OPTIONAL, INTENT(IN) :: nssl_cccn, nssl_alphah, nssl_alphahl, &
+                         nssl_cnoh, nssl_cnohl,                  &
+                         nssl_cnor, nssl_cnos,                   &
+                         nssl_rho_qh, nssl_rho_qhl,              &
+                         nssl_rho_qs
 
 ! WA 12/21/09
    REAL,OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , &
@@ -433,27 +643,84 @@ CONTAINS
    INTEGER :: ISICE
    INTEGER :: ISURBAN
    INTEGER :: sf_urban_physics
-   INTEGER :: omlcall
+   INTEGER :: sf_ocean_physics
    REAL    :: oml_hml0
+   INTEGER :: LakeModel
    LOGICAL :: usemonalb
    LOGICAL :: rdmaxalb
    INTEGER :: mfshconv
+   INTEGER :: icloud_cu
+   INTEGER :: iopt_run
 
    INTEGER :: i, j, k, itf, jtf, ktf, n
 integer myproc
 
+!-------------------------------------------------
+! Noah-mosaic related variables are added to declaration  (danli)
+!-------------------------------------------------
+  
+  INTEGER, INTENT(IN) :: sf_surface_mosaic, NLCAT   
+  INTEGER, INTENT(IN) :: mosaic_cat
+  REAL, DIMENSION( ims:ime, NLCAT, jms:jme ) , INTENT(IN) , OPTIONAL::   LANDUSEF
+  REAL, DIMENSION( ims:ime, NLCAT, jms:jme ) , INTENT(INOUT) , OPTIONAL::   LANDUSEF2 
+  INTEGER, DIMENSION( ims:ime, NLCAT, jms:jme ), INTENT(INOUT), OPTIONAL :: mosaic_cat_index 
+
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT):: &
+        TSK_mosaic, CANWAT_mosaic, SNOW_mosaic,SNOWH_mosaic, SNOWC_mosaic
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::                &
+        ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic
+  REAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), OPTIONAL, INTENT(INOUT):: &
+        TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::                &
+        TR_URB2D_mosaic, TB_URB2D_mosaic, TG_URB2D_mosaic, TC_URB2D_mosaic,QC_URB2D_mosaic,    &
+        SH_URB2D_mosaic,LH_URB2D_mosaic,G_URB2D_mosaic,RN_URB2D_mosaic,TS_URB2D_mosaic, TS_RUL2D_mosaic  
+                  
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TRL_URB3D_mosaic
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TBL_URB3D_mosaic
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TGL_URB3D_mosaic  
+   LOGICAL :: IPRINT
+ 
+!-------------------------------------------------
+! End of Noah-mosaic 
+!-------------------------------------------------  
+   
 !-----------------------------------------------------------------
 
    sf_urban_physics=config_flags%sf_urban_physics
    usemonalb=config_flags%usemonalb
    rdmaxalb=config_flags%rdmaxalb
+   LakeModel = config_flags%sf_lake_physics
    mfshconv=config_flags%mfshconv
+   IF(PRESENT(SMOISEQ)) THEN
+      iopt_run=config_flags%opt_run
+   ELSE
+      iopt_run=-1
+   END IF
 #if ( EM_CORE == 1 )
    obs_twindo_cg=model_config_rec%obs_twindo(1)
    obs_twindo=config_flags%obs_twindo
    oml_hml0=config_flags%oml_hml0
-   omlcall=config_flags%omlcall
+   sf_ocean_physics=config_flags%sf_ocean_physics
+#else
+   obs_twindo_cg=0
+   obs_twindo=0
+   oml_hml0=0
 #endif
+
+!..Added G. Thompson to determine if we will compute and pass radiative
+!.. effective radii of cloud water, ice, and snow.  Currently ONLY properly
+!.. connected if using Physics options Thompson-MP and RRTMG-LW/SW.
+   has_reqc = 0
+   has_reqi = 0
+   has_reqs = 0
+   if (config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME .and. &
+       config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME .and. &
+        (config_flags%mp_physics  .eq. THOMPSON .or.        &
+         config_flags%mp_physics  .eq. THOMPSONAERO) ) then
+      has_reqc = 1
+      has_reqi = 1
+      has_reqs = 1
+   endif
 
 !-- should be from the namelist
 
@@ -489,18 +756,17 @@ integer myproc
 !-- temporary fix by ww
    landuse_ISICE = isice
 
-! Added for Wind Turbine parameterization code -- This will only read in an optional 
-! configuration file with information that will be used by inividual turbine init routines 
-! as each domain is initialized.
-  IF ( id .EQ. 1 ) THEN
-    CALL init_module_wind_generic
-    CALL init_module_wind_fitch
-  ENDIF
 !
 
   IF(.not.restart)THEN
 !-- initialize common variables
-
+     !BSINGH - When all the CAM parameterizations are not executed in WRF,
+     !rliq can have undefined behaviour
+ IF (config_flags%cu_physics == CAMZMSCHEME .or. config_flags%shcu_physics == CAMUWSHCUSCHEME ) THEN
+     IF(PRESENT(rliq)) THEN
+        rliq(:,:) = 0.0 
+     ENDIF
+ ENDIF
    IF ( .NOT. moved ) THEN
    DO j=jts,jtf
    DO i=its,itf
@@ -524,6 +790,13 @@ integer myproc
    ENDDO
    ENDDO
    ENDIF
+
+   DO j=jts,jtf
+   DO i=its,itf
+     IVGTYP(i,j) = NINT(LU_INDEX(i,j))
+   ENDDO
+   ENDDO
+
 !
    IF(PRESENT(TMN_UPDATE))THEN
    if(tmn_update.eq.1) then
@@ -581,8 +854,8 @@ integer myproc
              gd_cloud2(i,k,j) = 0.
              gd_cloud_a(i,k,j) = 0.
              gd_cloud2_a(i,k,j) = 0.
-             gd_cloud_b(i,k,j) = 0.
-             gd_cloud2_b(i,k,j) = 0.
+             QC_CU(i,k,j) = 0.
+             QI_CU(i,k,j) = 0.
           end do
        end do
     end do
@@ -594,6 +867,51 @@ integer myproc
            raincv_b(i,j)=0.
       end do
     end do
+
+!..Determine which cu_rad_feedback option to use 
+
+   icloud_cu = 0
+   IF ( config_flags%cu_rad_feedback ) THEN  
+      IF ( config_flags%cu_physics == kfetascheme ) THEN
+         icloud_cu = 2
+      ELSE IF ( config_flags%cu_physics == gfscheme .OR. &
+                config_flags%cu_physics == g3scheme .OR. &
+                config_flags%cu_physics == gdscheme ) THEN
+         icloud_cu = 1
+      END IF
+   END IF
+   CALL nl_set_icloud_cu ( id , icloud_cu )
+
+!..Fill initial starting values of radiative effective radii for
+!.. cloud water (2.51 microns), cloud ice (5.01 microns), and
+!.. snow (10.01 microns).
+    if (has_reqc.ne.0) then
+       do j=jts,jtf
+          do k=kts,ktf
+          do i=its,itf
+             re_cloud(i,k,j) = 2.51E-6
+          end do
+          end do
+       end do
+    endif
+    if (has_reqi.ne.0) then
+       do j=jts,jtf
+          do k=kts,ktf
+          do i=its,itf
+             re_ice(i,k,j) = 5.01E-6
+          end do
+          end do
+       end do
+    endif
+    if (has_reqs.ne.0) then
+       do j=jts,jtf
+          do k=kts,ktf
+          do i=its,itf
+             re_snow(i,k,j) = 10.01E-6
+          end do
+          end do
+       end do
+    endif
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to landuse_init' )
 
@@ -622,19 +940,60 @@ integer myproc
                 allowed_to_read,                                  &
                 kds,kde,kms,kme,kts,kte)
 
+   ! CAM parameterizations specific initializations [Currently incorporates initializations for CAMZM, CAMUWPBL, CAMUWSHCU and CAMMGMP parameterizations]
+
+   !Findout whether CAMMGMP scheme is used used or not in this simulation
+   is_CAMMGMP_used = .FALSE.
+# if (EM_CORE == 1)
+   if(config_flags%mp_physics == CAMMGMPSCHEME) is_CAMMGMP_used = .TRUE.
+# endif
+
+#ifdef WRF_CHEM
+   !BSINGH:02/01/2013 - For WRF_CHEM simulations, initialize cam_mam_aerosols variable
+   cam_mam_aerosols = .FALSE.
+   if(config_flags%chem_opt == CBMZ_CAM_MAM3_NOAQ .OR. config_flags%chem_opt == CBMZ_CAM_MAM3_AQ &
+        .OR. config_flags%chem_opt == CBMZ_CAM_MAM7_NOAQ .OR. config_flags%chem_opt == CBMZ_CAM_MAM7_AQ) cam_mam_aerosols = .TRUE.
+      
+#endif
+
+
+   if(       config_flags%bl_pbl_physics == CAMUWPBLSCHEME     .OR. config_flags%cu_physics == CAMZMSCHEME      &
+        .OR. config_flags%shcu_physics   == CAMUWSHCUSCHEME                                                     & 
+# if (EM_CORE == 1)
+        .OR. config_flags%mp_physics == CAMMGMPSCHEME                                                           &
+# endif
+#ifdef WRF_CHEM
+        !For WRF_CHEM simulations, first five constituents are added in CAM_INIT and rest are added in the MODULE_CAM_MAM_INIT in chem/
+        .OR. config_flags%chem_opt       == CBMZ_CAM_MAM3_NOAQ .OR. config_flags%chem_opt   == CBMZ_CAM_MAM3_AQ &
+        .OR. config_flags%chem_opt       == CBMZ_CAM_MAM7_NOAQ .OR. config_flags%chem_opt   == CBMZ_CAM_MAM7_AQ &
+#endif
+      ) THEN
+      CALL CAM_INIT(ixcldliq, ixcldice, ixnumliq, ixnumice, config_flags)
+   ENDIF
 !-- initialize physics
 !-- ra: radiation
 !-- bl: pbl
 !-- cu: cumulus
 !-- mp: microphysics
 
+!
+! .... paj ... initialize wind farm ...
+!
+  IF ( config_flags%windfarm_opt .EQ. 1 ) THEN
+    CALL init_module_wind_fitch(id,config_flags,xlong,xlat,windfarm_initialized,ims,ime,jms,jme,its,ite,jts,jte,ids,ide,jds,jde)
+  ENDIF
+
+
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to ra_init' )
 
    CALL ra_init(id=id,STEPRA=STEPRA,RADT=RADT,DT=DT,RTHRATEN=RTHRATEN,RTHRATENLW=RTHRATENLW,             &
                 RTHRATENSW=RTHRATENSW,CLDFRA=CLDFRA,EMISS=EMISS,cen_lat=cen_lat,JULYR=JULYR,JULDAY=JULDAY,GMT=GMT,    &
-                levsiz=levsiz,XLAT=XLAT,n_ozmixm=n_ozmixm,                           &
+                levsiz=levsiz,XLAT=XLAT,XLONG=XLONG,n_ozmixm=n_ozmixm,     &
+                alevsiz=alevsiz,no_src_types=no_src_types,                 &
+                cldfra_dp=cldfra_dp,cldfra_sh=cldfra_sh,                   & ! optional for subgrid cloud by ckay
                 cldfra_old=cldfra_old,                                     & ! Optional
                 ozmixm=ozmixm,pin=pin,                                     & ! Optional
+                aerodm=aerodm,pina=pina,                                   & ! Optional
                 m_ps_1=m_ps_1,m_ps_2=m_ps_2,m_hybi=m_hybi,aerosolc_1=aerosolc_1,aerosolc_2=aerosolc_2,     & ! Optional
                 paerlev=paerlev,n_aerosolc=n_aerosolc,                             &
                 sfull=sfull,shalf=shalf,pptop=pptop,swrad_scat=swrad_scat,p_top=p_top,       &
@@ -660,9 +1019,12 @@ integer myproc
                 SNOWH,SH2O,SNOALB,FNDSOILW,FNDSNOWH,RDMAXALB,   &
 #if (NMM_CORE == 1)
                 Z0,XLAND,XICE,                                  &
+                DX,DY,                                          &
 #else
                 ZNT,XLAND,XICE,                                 &
+                DX, DY, MSFTX, MSFTY,                           &
 #endif
+                QKE,                                            &
                 SFCEVP,GRDFLX,                                  &
                 TRIM (MMINLU_LOC),                              &
                 ISNOWXY, ZSNSOXY, TSNOXY,                       &
@@ -672,9 +1034,24 @@ integer myproc
                 WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
                 XSAIXY,                                         &
+                SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
+                WTDDT, STEPWTD, QRFSXY ,QSPRINGSXY ,QSLATXY,   &
+                FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
+                ISICE,                                 &
                 T2MVXY,T2MBXY,CHSTARXY ,                        &
-                allowed_to_read ,                               &
+                allowed_to_read , iopt_run ,                    &
                 start_of_simulation ,                           &
+                lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d,       & !lake
+                snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d, & !lake
+                z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d,   & !lake
+                h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d,           & !lake
+                zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
+                tkdry3d,      tksatu3d,     LakeModel,  lake2d,           & !lake
+                lakedepth_default,            lake_min_elev, lake_depth,       & !lake
+#if (EM_CORE == 1)
+                lakemask, lakeflag,                                    & !lake
+#endif
+                lake_depth_flag, use_lakedepth,                        & !lake
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
@@ -684,6 +1061,7 @@ integer myproc
                 TS_URB2D, FRC_URB2D, UTYPE_URB2D,               & 
                 SF_URBAN_PHYSICS,                               & !Optional urban
                 NUM_URBAN_LAYERS,                               & !Optional multi-layer urban
+                NUM_URBAN_HI,                                   & !Optional multi-layer urban
                 TRB_URB4D,TW1_URB4D,TW2_URB4D,                  & !Optional multi-layer urban
                 TGB_URB4D,TLEV_URB3D,QLEV_URB3D,                & !Optional multi-layer urban
                 TW1LEV_URB3D,TW2LEV_URB3D,                      & !Optional multi-layer urban
@@ -693,6 +1071,9 @@ integer myproc
                 SFWIN1_URB3D,SFWIN2_URB3D,                      & !Optional multi-layer urban
                 SFW1_URB3D,SFW2_URB3D,                          & !Optional multi-layer urban
                 SFR_URB3D,SFG_URB3D,                            & !Optional multi-layer urban
+                LP_URB2D,HI_URB2D,LB_URB2D,                     & !Optional multi-layer urban
+                HGT_URB2D,MH_URB2D,STDH_URB2D,                  & !Optional multi-layer urban
+                LF_URB2D,                                       & !Optional multi-layer urban
                 A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                & !Optional multi-layer urban
                 A_E_BEP,B_U_BEP,B_V_BEP,                        & !Optional multi-layer urban
                 B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                & !Optional multi-layer urban
@@ -701,12 +1082,64 @@ integer myproc
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte,                   &
                 ACHFX,ACLHF,ACGRDFLX,                           &
-                oml_hml0, omlcall,                              & !Optional oml
-                TML,T0ML,HML,H0ML,HUML,HVML,TMOML               ) !Optional oml
+                oml_hml0, sf_ocean_physics,                     & !Optional oml
+                TML,T0ML,HML,H0ML,HUML,HVML,TMOML,              & !Optional oml
+                is_CAMMGMP_used                                 &
+               ,TSK_SAVE                                        & !Optional oml
+! CLM vraiables 
+               ,numc,nump,snl,                                      &
+                snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                h2ocan,h2ocan_col,t2m_max,t2m_min,t_ref2m,          &
+                h2osoi_liq_s1,              &
+                h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                t_soisno8,t_soisno9,t_soisno10,                     &
+                dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                h2osoi_vol7,h2osoi_vol8,                            &
+                h2osoi_vol9,h2osoi_vol10,                           &
+                ht,maxpatch,                                        &
+                ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
+                SWUPsubgrid,lhsoi,lhveg,lhtran                      &
+! end of CLM vraiables 
+                ,landusef,landusef2,NLCAT                       & ! danli mosaic
+                ,sf_surface_mosaic, mosaic_cat                  & ! danli mosaic
+                ,mosaic_cat_index                               & ! danli mosaic  
+                ,TSK_mosaic,TSLB_mosaic                         & ! danli mosaic
+                ,SMOIS_mosaic,SH2O_mosaic                       & ! danli mosaic 
+                ,CANWAT_mosaic,SNOW_mosaic                      & ! danli mosaic
+                ,SNOWH_mosaic,SNOWC_mosaic                      & ! danli mosaic
+                ,ALBEDO,ALBBCK, EMISS, EMBCK                    & ! danli mosaic          
+                ,ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic   &         ! danli mosaic
+                ,TR_URB2D_mosaic,TB_URB2D_mosaic                &  !danli mosaic 
+                ,TG_URB2D_mosaic,TC_URB2D_mosaic                &  !danli mosaic 
+                ,QC_URB2D_mosaic                                &  !danli mosaic                  
+                ,TRL_URB3D_mosaic,TBL_URB3D_mosaic              &  !danli mosaic 
+                ,TGL_URB3D_mosaic                               &  !danli mosaic 
+                ,SH_URB2D_mosaic,LH_URB2D_mosaic                &  !danli mosaic 
+                ,G_URB2D_mosaic,RN_URB2D_mosaic                 &  !danli mosaic 
+                ,TS_URB2D_mosaic                                &  !danli mosaic 
+                ,TS_RUL2D_mosaic                                &  !danli mosaic 
+               ) 
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to cu_init' )
 
-   CALL cu_init(STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,        &
+   CALL cu_init(DX,STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,     &
                 RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,   &
                 NCA,RAINC,RAINCV,W0AVG,config_flags,restart,    &
                 CLDEFI,LOWLYR,MASS_FLUX,                        &
@@ -718,7 +1151,8 @@ integer myproc
                 allowed_to_read, start_of_simulation,           &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
-                its, ite, jts, jte, kts, kte                    )
+                its, ite, jts, jte, kts, kte,                   &
+                RQCNCUTEN,RQINCUTEN                            ) 
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to shcu_init' )
 
@@ -739,6 +1173,14 @@ integer myproc
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
                 mp_restart_state,tbpvs_state,tbpvs0_state,      &
                 allowed_to_read, start_of_simulation,           &
+!CAMMGMP specific variables
+                ixcldliq, ixcldice, ixnumliq, ixnumice,         &
+                nssl_cccn, nssl_alphah, nssl_alphahl,           &
+                         nssl_cnoh, nssl_cnohl,                  &
+                         nssl_cnor, nssl_cnos,                   &
+                         nssl_rho_qh, nssl_rho_qhl,              &
+                         nssl_rho_qs,                            &
+                z_at_q, qnwfa2d, scalar, num_sc,            &  ! G. Thompson
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -853,7 +1295,7 @@ integer myproc
 !---------------------------------------------------------------------
 ! Local
    CHARACTER*256 LUTYPE
-   CHARACTER*80 :: message
+   CHARACTER*512 :: message
    INTEGER  :: landuse_unit, LS, LC, LI, LUN, NSN
    INTEGER  :: i, j, itf, jtf, is, cats, seas, curs
    INTEGER , PARAMETER :: OPEN_OK = 0
@@ -957,10 +1399,11 @@ integer myproc
           LUN=LUCATS
           NSN=LUSEAS
             IF(LUTYPE.NE.'SSIB') THEN !this is not really true for ssib lsm (fds)
-            PRINT *, 'LANDUSE TYPE = "' // TRIM (LUTYPE) // '" FOUND',        &
+            write(message,*) 'LANDUSE TYPE = "' // TRIM (LUTYPE) // '" FOUND',        &
                    LUCATS,' CATEGORIES',LUSEAS,' SEASONS',     &
                    ' WATER CATEGORY = ',ISWATER,               &
                    ' SNOW CATEGORY = ',ISICE
+            call wrf_message(message)
             ENDIF
         ENDIF
         DO ls=1,luseas
@@ -1098,9 +1541,12 @@ integer myproc
 !=====================================================================
    SUBROUTINE ra_init(id,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       &
                       RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
-                      levsiz,XLAT,n_ozmixm,                           &
+                      levsiz,XLAT,XLONG,n_ozmixm,                     &
+                      alevsiz,no_src_types,                           &
+                      cldfra_dp,cldfra_sh,                            & ! Optional for subgrid cloud by ckay
                       cldfra_old,                                     & ! Optional
                       ozmixm,pin,                                     & ! Optional
+                      aerodm,pina,                                    & ! Optional
                       m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     & ! Optional
                       paerlev,n_aerosolc,                             &
                       sfull,shalf,pptop,swrad_scat,p_top,            &
@@ -1114,6 +1560,7 @@ integer myproc
    USE module_ra_rrtmg_lw  , ONLY : rrtmg_lwinit
    USE module_ra_rrtmg_sw  , ONLY : rrtmg_swinit
    USE module_ra_cam       , ONLY : camradinit
+   USE module_ra_cam_support , ONLY : oznini
    USE module_ra_sw        , ONLY : swinit
    USE module_ra_gsfcsw    , ONLY : gsfc_swinit
    USE module_ra_gfdleta   , ONLY : gfdletainit
@@ -1141,11 +1588,14 @@ integer myproc
 
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
+   INTEGER,      INTENT(IN   )    ::   alevsiz, no_src_types
 
-   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::  XLAT
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::  XLAT, XLONG
 
    REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ), OPTIONAL,      &
           INTENT(INOUT) ::                                  OZMIXM
+   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, n_ozmixm-1, no_src_types ), OPTIONAL,      &
+          INTENT(INOUT) ::                                  aerodm
 
    REAL,  DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT)  :: m_ps_1,m_ps_2
    REAL,  DIMENSION(paerlev), OPTIONAL, INTENT(INOUT)  ::         m_hybi
@@ -1153,18 +1603,24 @@ integer myproc
           INTENT(INOUT) ::                      aerosolc_1, aerosolc_2
 
    REAL,  DIMENSION(levsiz), OPTIONAL, INTENT(INOUT)  ::          PIN
+   REAL,  DIMENSION(alevsiz), OPTIONAL, INTENT(INOUT)  ::         PINA
 
    INTEGER , INTENT(INOUT)        :: STEPRA
    INTEGER :: isn
 
    REAL , DIMENSION( kms:kme ) , INTENT(IN) :: sfull, shalf
-   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::           &
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::           &!BSINGH(PNNL)- should be declared inout
                                                            RTHRATEN, &
                                                          RTHRATENLW, &
                                                          RTHRATENSW, &
                                                              CLDFRA
 
-   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) :: &
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) , & ! ckay for subgrid cloud
+                                                         OPTIONAL :: &
+                                                          cldfra_dp, &
+                                                          cldfra_sh
+
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) :: &!BSINGH(PNNL)- should be declared inout
                                                          CLDFRA_OLD
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: EMISS
@@ -1203,6 +1659,17 @@ integer myproc
      ENDDO
      ENDDO
 
+     IF( PRESENT(cldfra_dp) ) THEN
+        DO j=jts,jtf
+        DO k=kts,ktf
+        DO i=its,itf
+           cldfra_dp(i,k,j)=0.
+           cldfra_sh(i,k,j)=0.
+        ENDDO
+        ENDDO
+        ENDDO
+     ENDIF
+
      if( present(cldfra_old) ) then
         DO j=jts,jtf
         DO k=kts,ktf
@@ -1212,6 +1679,26 @@ integer myproc
         ENDDO
         ENDDO
      end if
+   ENDIF
+
+!-- ww: attempt to use CAM ozone and some aerosol profiles in all rad schemes
+!   note that CAM option will still do the same. 
+!   n_ozmixm: no of months; levsiz: = 59, vertical dim
+!   Read in CAM ozone data, and interpolate data to model grid
+!   Interpolation is done on domain 1 only
+
+   IF ( config_flags%o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
+      CALL oznini(ozmixm,pin,levsiz,n_ozmixm,XLAT,                &
+                     ids, ide, jds, jde, kds, kde,                  &
+                     ims, ime, jms, jme, kms, kme,                  &
+                     its, ite, jts, jte, kts, kte)
+   ENDIF
+
+   IF ( config_flags%aer_opt .EQ. 1 .AND. id .EQ. 1 ) THEN
+      CALL aerosol_in(aerodm,pina,alevsiz,n_ozmixm-1,no_src_types,XLAT,XLONG,   &
+                     ids, ide, jds, jde, kds, kde,                  &
+                     ims, ime, jms, jme, kms, kme,                  &
+                     its, ite, jts, jte, kts, kte)
    ENDIF
 
 !-- find out which microphysics option is used first
@@ -1402,11 +1889,11 @@ integer myproc
                 IVGTYP,ISLTYP,ISURBAN,SMOIS,SMFR3D,mavail,      &
                 SNOWH,SH2O,SNOALB,FNDSOILW,FNDSNOWH,RDMAXALB,   &
 #if  ( NMM_CORE == 1 )
-                Z0,XLAND,XICE,                                  &
+                Z0,XLAND,XICE,DX,DY,                            &
 #else
-                ZNT,XLAND,XICE,                                 &
+                ZNT,XLAND,XICE,DX, DY, MSFTX, MSFTY,            &
 #endif
-                SFCEVP,GRDFLX,                                  &
+                QKE, SFCEVP,GRDFLX,                             &
                 MMINLU,                                         &
                 ISNOWXY, ZSNSOXY, TSNOXY,                       &
                 SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
@@ -1415,9 +1902,24 @@ integer myproc
                 WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
                 XSAIXY,                                         &
+                SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
+                WTDDT, STEPWTD,QRFSXY ,QSPRINGSXY ,QSLATXY,     &
+                FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
+                ISICE,                                 &
                 T2MVXY, T2MBXY ,CHSTARXY,                       &
-                allowed_to_read,                                &
+                allowed_to_read, iopt_run ,                     &
                 start_of_simulation,                            &
+                lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d,       & !lake
+                snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d, & !lake
+                z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d,   & !lake
+                h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d,           & !lake
+                zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
+                tkdry3d,      tksatu3d,     LakeModel,  lake2d,           & !lake
+                lakedepth_default,            lake_min_elev, lake_depth,       & !lake
+#if (EM_CORE == 1)
+                lakemask, lakeflag,                                      & !lake
+#endif
+                lake_depth_flag, use_lakedepth,                          & !lake
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
 !                num_roof_layers,num_wall_layers,num_road_layers,& !Optional urban
                 DZR, DZB, DZG,                                  & !Optional urban
@@ -1428,6 +1930,7 @@ integer myproc
                 TS_URB2D, FRC_URB2D, UTYPE_URB2D,               &
                 SF_URBAN_PHYSICS,                               & !Optional urban
                 NUM_URBAN_LAYERS,                               & !Optional multi-layer urban
+                NUM_URBAN_HI,                                   & !Optional multi-layer urban
                 TRB_URB4D,TW1_URB4D,TW2_URB4D,                  & !Optional multi-layer urban
                 TGB_URB4D,TLEV_URB3D,QLEV_URB3D,                & !Optional multi-layer urban
                 TW1LEV_URB3D,TW2LEV_URB3D,                      & !Optional multi-layer urban
@@ -1437,6 +1940,9 @@ integer myproc
                 SFWIN1_URB3D,SFWIN2_URB3D,                      & !Optional multi-layer urban
                 SFW1_URB3D,SFW2_URB3D,                          & !Optional multi-layer urban
                 SFR_URB3D,SFG_URB3D,                            & !Optional multi-layer urban
+                LP_URB2D,HI_URB2D,LB_URB2D,                     & !Optional multi-layer urban
+                HGT_URB2D,MH_URB2D,STDH_URB2D,                  & !Optional multi-layer urban
+                LF_URB2D,                                       & !Optional multi-layer urban
                 A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                & !Optional multi-layer urban
                 A_E_BEP,B_U_BEP,B_V_BEP,                        & !Optional multi-layer urban
                 B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                & !Optional multi-layer urban
@@ -1445,8 +1951,60 @@ integer myproc
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte,                   &
                 ACHFX,ACLHF,ACGRDFLX,                           &
-                oml_hml0, omlcall,                              & !Optional oml
-                TML,T0ML,HML,H0ML,HUML,HVML,TMOML               ) !Optional oml
+                oml_hml0, sf_ocean_physics,                     & !Optional oml
+                TML,T0ML,HML,H0ML,HUML,HVML,TMOML,              &
+                is_CAMMGMP_used                                 &
+               ,TSK_SAVE                                        & !Optional fractional seaice
+! CLM vraiables 
+               ,numc,nump,snl,                                      &
+                snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                h2ocan,h2ocan_col,t2m_max,t2m_min,t_ref2m,          &
+                h2osoi_liq_s1,              &
+                h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                t_soisno8,t_soisno9,t_soisno10,                     &
+                dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                h2osoi_vol7,h2osoi_vol8,                            &
+                h2osoi_vol9,h2osoi_vol10,                           &
+                ht,maxpatch,                                        &
+                ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
+                SWUPsubgrid,lhsoi,lhveg,lhtran                      &
+! end of CLM vraiables 
+                ,landusef,landusef2,NLCAT                       & ! danli mosaic
+                ,sf_surface_mosaic, mosaic_cat                  & ! danli mosaic
+                ,mosaic_cat_index                               & ! danli mosaic  
+                ,TSK_mosaic,TSLB_mosaic                         & ! danli mosaic
+                ,SMOIS_mosaic,SH2O_mosaic                       & ! danli mosaic
+                ,CANWAT_mosaic,SNOW_mosaic                      & ! danli mosaic
+                ,SNOWH_mosaic,SNOWC_mosaic                      & ! danli mosaic
+                ,ALBEDO,ALBBCK, EMISS, EMBCK                    & ! danli mosaic 
+                ,ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic   &         ! danli mosaic
+                ,TR_URB2D_mosaic,TB_URB2D_mosaic                &  !danli mosaic 
+                ,TG_URB2D_mosaic,TC_URB2D_mosaic                &  !danli mosaic 
+                ,QC_URB2D_mosaic                                &  !danli mosaic                  
+                ,TRL_URB3D_mosaic,TBL_URB3D_mosaic              &  !danli mosaic 
+                ,TGL_URB3D_mosaic                               &  !danli mosaic 
+                ,SH_URB2D_mosaic,LH_URB2D_mosaic                &  !danli mosaic 
+                ,G_URB2D_mosaic,RN_URB2D_mosaic                 &  !danli mosaic 
+                ,TS_URB2D_mosaic                                &  !danli mosaic 
+                ,TS_RUL2D_mosaic                                &  !danli mosaic  
+                                                                ) !Optional oml
 !--------------------------------------------------------------------
    USE module_sf_sfclay
    USE module_sf_sfclayrev
@@ -1461,6 +2019,9 @@ integer myproc
    USE module_sf_qnsesfc
    USE module_sf_noahdrv
    USE module_sf_noahmpdrv
+#ifdef WRF_USE_CLM
+   USE module_sf_clm, only : clminit
+#endif
    USE module_sf_urban
    USE module_sf_bep                                  !BEP
    USE module_sf_bep_bem
@@ -1472,8 +2033,10 @@ integer myproc
    USE module_bl_boulac
    USE module_bl_camuwpbl_driver, ONLY :  camuwpblinit
    USE module_bl_qnsepbl
+   USE module_sf_lake
    USE module_bl_qnsepbl09
    USE module_bl_mfshconvpbl
+   USE module_bl_gbmpbl
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
    USE module_bl_temf
@@ -1491,14 +2054,23 @@ integer myproc
    LOGICAL , INTENT(IN)        :: restart
    LOGICAL, INTENT(IN)         ::   FNDSOILW, FNDSNOWH
    LOGICAL, INTENT(IN)         ::   RDMAXALB
+   LOGICAL, INTENT(IN)         :: is_CAMMGMP_used !BSINGH:02/01/2013: For CAMUWPBL scheme
 
    INTEGER , INTENT(IN)        ::     ids, ide, jds, jde, kds, kde, &
                                       ims, ime, jms, jme, kms, kme, &
                                       its, ite, jts, jte, kts, kte
    INTEGER , INTENT(IN)        ::     num_soil_layers
    INTEGER , INTENT(IN)        ::     SF_URBAN_PHYSICS 
+   INTEGER , INTENT(IN)        ::     IOPT_RUN
 
+!   INTEGER , INTENT(IN)        ::     LakeModel
+   INTEGER         ::     LakeModel
+   real, intent(in)            ::      lakedepth_default,lake_min_elev
    REAL ,    INTENT(IN)        ::     DT, BLDT
+   REAL ,    INTENT(IN)        ::     DX, DY
+#if (EM_CORE == 1)
+   REAL,    DIMENSION( ims:ime, jms:jme ) ,  INTENT(IN) :: MSFTX,MSFTY
+#endif
    INTEGER , INTENT(INOUT)     ::     STEPBL
 
    REAL,     DIMENSION( ims:ime , 1:num_soil_layers , jms:jme ),    &
@@ -1540,7 +2112,7 @@ integer myproc
 
    REAL,     DIMENSION(1:num_soil_layers), INTENT(INOUT)  ::  ZS,DZS
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::       &!BSINGH(PNNL)- should be declared inout
                                                            RUBLTEN, &
                                                            RVBLTEN, &
                                                           EXCH_H,   &
@@ -1549,6 +2121,8 @@ integer myproc
                                                           RQCBLTEN, &
                                                           RQIBLTEN, &
                                                           TKE_PBL
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE
+
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
                               massflux_EDKF, entr_EDKF, detr_EDKF & 
                                      ,thl_up, thv_up, rt_up       &
@@ -1603,6 +2177,22 @@ integer myproc
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MVXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MBXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHSTARXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,1:num_soil_layers,jms:jme) :: SMOISEQ
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: SMCWTDXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: DEEPRECHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RECHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QRFSXY  
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QSPRINGSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QSLATXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: AREAXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: FDEPTHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: RIVERBEDXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: EQZWT
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: RIVERCONDXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: PEXPXY
+   INTEGER, OPTIONAL, INTENT(IN)  ::  ISICE
+   INTEGER , OPTIONAL,  INTENT(OUT) :: STEPWTD
+   REAL , OPTIONAL, INTENT(IN) :: WTDDT
 
 !URBAN
 !   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR  !Optional urban
@@ -1635,6 +2225,7 @@ integer myproc
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: TGL_URB3D !Optional urban
 
     INTEGER , INTENT(IN)        ::     num_urban_layers
+    INTEGER , INTENT(IN)        ::     num_urban_hi
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TRB_URB4D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW1_URB4D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW2_URB4D !Optional UCM
@@ -1656,6 +2247,13 @@ integer myproc
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFW2_URB3D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFR_URB3D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFG_URB3D !Optional UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime,1:num_urban_hi, jms:jme ), INTENT(INOUT) :: HI_URB2D  !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LP_URB2D  !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LB_URB2D  !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: HGT_URB2D !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: MH_URB2D !SLUCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: STDH_URB2D !SLUCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ), INTENT(INOUT) :: LF_URB2D !SLUCM
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_U_BEP 
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_V_BEP 
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_T_BEP 
@@ -1670,23 +2268,130 @@ integer myproc
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DLG_BEP 
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme,jms:jme),INTENT(INOUT) :: SF_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DL_U_BEP
+! lake varibles:
+  real,    dimension(ims:ime,jms:jme ),intent(out)                        :: lakedepth2d,    &
+                                                                             savedtke12d
+  real,    dimension(ims:ime,jms:jme ),intent(inout)                      :: snowdp2d,       &
+                                                                             h2osno2d,       &
+                                                                             snl2d,          &
+                                                                             t_grnd2d
+ 
+  real,    dimension( ims:ime,1:nlevlake, jms:jme ),INTENT(out)            :: t_lake3d,       &
+                                                                             lake_icefrac3d, &
+                                                                             z_lake3d,       &
+                                                                             dz_lake3d
+  real,    dimension( ims:ime,-nlevsnow+1:nlevsoil, jms:jme ),INTENT(inout) :: t_soisno3d,     &
+                                                                             h2osoi_ice3d,   &
+                                                                             h2osoi_liq3d,   &
+                                                                             h2osoi_vol3d,   &
+                                                                             z3d,            &
+                                                                             dz3d
+  real,    dimension( ims:ime,1:nlevsoil, jms:jme ),INTENT(out)            :: watsat3d,       &
+                                                                             csol3d,         &
+                                                                             tkmg3d,         &
+                                                                             tkdry3d,        &
+                                                                             tksatu3d
+  real,    dimension( ims:ime,-nlevsnow+0:nlevsoil, jms:jme ),INTENT(inout) :: zi3d
+ 
+  logical,    dimension(ims:ime,jms:jme ),intent(out)                        :: lake2d
+  REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  lake_depth
+#if ( EM_CORE == 1 )
+  REAL,              dimension(ims:ime,jms:jme ),intent(inout)      ::  lakemask
+  INTEGER, INTENT(IN)      ::  lakeflag
+#endif
+  INTEGER, INTENT(IN)      ::   use_lakedepth
+  INTEGER, INTENT(INOUT)      ::   lake_depth_flag
+!  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                         ::  HT
 
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
                                         ACHFX,ACLHF,ACGRDFLX
 ! Optional OML variables
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
                                         TML,T0ML,HML,H0ML,HUML,HVML,TMOML
-   INTEGER,  OPTIONAL,  INTENT(IN) :: omlcall
+   INTEGER,  OPTIONAL,  INTENT(IN) :: sf_ocean_physics
    REAL,  OPTIONAL,  INTENT(IN) :: oml_hml0
+   REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
+                                        TSK_SAVE
    LOGICAL,  INTENT(IN) :: start_of_simulation
    INTEGER :: i,j
 
+! CLM varaibles
+   INTEGER , INTENT(IN)        ::     maxpatch
+   REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  HT
+  integer, OPTIONAL,   dimension(ims:ime,jms:jme ),intent(inout) :: numc,nump
+  integer, OPTIONAL,   dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: snl
+  real, OPTIONAL,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) ::  &
+                snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                h2ocan,h2ocan_col,t2m_max,t2m_min,t_ref2m,          &
+                h2osoi_liq_s1,              &
+                h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                t_soisno8,t_soisno9,t_soisno10,                     &
+                dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                h2osoi_vol7,h2osoi_vol8,                            &
+                h2osoi_vol9,h2osoi_vol10,                           &
+                ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
+                SWUPsubgrid,lhsoi,lhtran,lhveg
+
+!-------------------------------------------------
+! Noah-mosaic related variables are added to declaration  (danli)
+!-------------------------------------------------
+  
+  INTEGER, INTENT(IN) :: sf_surface_mosaic, NLCAT   
+  INTEGER, INTENT(IN) :: mosaic_cat
+  REAL, DIMENSION( ims:ime, NLCAT, jms:jme ) , INTENT(IN)::   LANDUSEF
+  REAL, DIMENSION( ims:ime, NLCAT, jms:jme ) , INTENT(INOUT)::   LANDUSEF2
+  INTEGER, DIMENSION( ims:ime, NLCAT, jms:jme ), INTENT(INOUT) :: mosaic_cat_index 
+
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::   TSK_mosaic, CANWAT_mosaic, SNOW_mosaic,SNOWH_mosaic, SNOWC_mosaic 
+  REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ALBEDO,ALBBCK, EMISS, EMBCK 
+
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::   ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic
+  
+  REAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), OPTIONAL, INTENT(INOUT)::   TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic
+  
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::   TR_URB2D_mosaic, TB_URB2D_mosaic, TG_URB2D_mosaic, TC_URB2D_mosaic,QC_URB2D_mosaic,  &
+                                                                                     SH_URB2D_mosaic,LH_URB2D_mosaic,G_URB2D_mosaic,RN_URB2D_mosaic,TS_URB2D_mosaic, TS_RUL2D_mosaic  
+                    
+  REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TRL_URB3D_mosaic
+  REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TBL_URB3D_mosaic
+  REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TGL_URB3D_mosaic  
+   
+  REAL :: xice_threshold   ! lake input
+   
+  LOGICAL :: IPRINT
+  
+!-------------------------------------------------
+! End of Noah-mosaic related variables 
+!-------------------------------------------------  
 
 #if ( EM_CORE == 1 )
 !local mynn 
    INTEGER :: mynn_closure_level
 #endif
 
+  if ( config_flags%fractional_seaice == 0 ) then
+     xice_threshold = 0.5
+  else if ( config_flags%fractional_seaice == 1 ) then
+     xice_threshold = 0.02
+  endif
+ 
 !-- calculate pbl time step
 
    STEPBL = nint(BLDT*60./DT)
@@ -1701,6 +2406,16 @@ integer myproc
         ACLHF(i,j)=0.
         ACGRDFLX(i,j)=0.
         SFCEVP(i,j)=0.
+     ENDDO
+     ENDDO
+   ENDIF
+   ENDIF
+
+   IF(PRESENT(TSK_SAVE))THEN
+   IF(config_flags%fractional_seaice.EQ.1)THEN
+     DO j=jts,jte
+     DO i=its,ite
+        TSK_SAVE(i,j)=TSK(i,j)
      ENDDO
      ENDDO
    ENDIF
@@ -1837,6 +2552,7 @@ integer myproc
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 )
 
+
 !URBAN
           IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
 
@@ -1856,6 +2572,7 @@ integer myproc
                               TRL_URB3D,TBL_URB3D,TGL_URB3D,                   & !urban
                               SH_URB2D,LH_URB2D,G_URB2D,RN_URB2D, TS_URB2D,    & !urban
                               num_urban_layers,                                & !urban
+                              num_urban_hi,                                    & !urban
                               TRB_URB4D,TW1_URB4D,TW2_URB4D,TGB_URB4D,         & !urban
                               TLEV_URB3D,QLEV_URB3D,                           & !urban
                               TW1LEV_URB3D,TW2LEV_URB3D,                       & !urban
@@ -1864,6 +2581,9 @@ integer myproc
                               SFVENT_URB3D,LFVENT_URB3D,                       & !urban
                               SFWIN1_URB3D,SFWIN2_URB3D,                       & !urban
                               SFW1_URB3D,SFW2_URB3D,SFR_URB3D,SFG_URB3D,       & !urban
+                              LP_URB2D,HI_URB2D,LB_URB2D,                      & !urban
+                              HGT_URB2D,MH_URB2D,STDH_URB2D,                   & !urban
+                              LF_URB2D,                                        & !urban
                               A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                 & !multi-layer urban
                               A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
@@ -1873,21 +2593,64 @@ integer myproc
                 CALL wrf_error_fatal ( 'arguments not present for calling urban model' )
              ENDIF
           ENDIF
+          
+!danli mosaic
+
+          IF (SF_surface_mosaic.eq.1) THEN
+
+CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_flags%ISICE, XLAND, XICE,config_flags%fractional_seaice,TSK,TSLB,SMOIS,SH2O,SNOW,SNOWC,SNOWH,CANWAT,  &                
+                  ids,ide, jds,jde, kds,kde,  &
+                  ims,ime, jms,jme, kms,kme,  &
+                  its,ite, jts,jte, kts,kte, restart,             &
+                  landusef,landusef2,NLCAT,num_soil_layers                  & 
+                  ,sf_surface_mosaic, mosaic_cat                    & 
+                  , mosaic_cat_index                              &   
+                  ,TSK_mosaic,TSLB_mosaic                         &
+                  ,SMOIS_mosaic,SH2O_mosaic                       & 
+                  ,CANWAT_mosaic,SNOW_mosaic                      &
+                  ,SNOWH_mosaic,SNOWC_mosaic                      &
+                  ,ALBEDO,ALBBCK, EMISS, EMBCK,                    &         !danli  
+#if ( NMM_CORE == 1 )
+                                                            Z0, &
+#else
+                                                           ZNT, &
+#endif  
+                  ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic   &         !danli
+                 ,TR_URB2D_mosaic,TB_URB2D_mosaic                &  !danli mosaic 
+                 ,TG_URB2D_mosaic,TC_URB2D_mosaic                &  !danli mosaic 
+                 ,QC_URB2D_mosaic                                &  !danli mosaic                  
+                 ,TRL_URB3D_mosaic,TBL_URB3D_mosaic              &  !danli mosaic 
+                 ,TGL_URB3D_mosaic                               &  !danli mosaic 
+                 ,SH_URB2D_mosaic,LH_URB2D_mosaic                &  !danli mosaic 
+                 ,G_URB2D_mosaic,RN_URB2D_mosaic                 &  !danli mosaic 
+                 ,TS_URB2D_mosaic                                &  !danli mosaic 
+                 ,TS_RUL2D_mosaic                                &  !danli mosaic                        
+                   )
+
+          ENDIF               
+          
 !
+
       CASE (NOAHMPSCHEME)
-          CALL NOAHMP_INIT(MMINLU, SNOW,SNOWH,CANWAT,ISLTYP,                                &
-                     TSLB,SMOIS,SH2O,DZS, FNDSOILW, FNDSNOWH,                               &
-                     TSK,isnowxy  ,tvxy     ,tgxy     ,canicexy ,                           &
+          CALL NOAHMP_INIT(MMINLU, SNOW,SNOWH,CANWAT,ISLTYP,IVGTYP,ISURBAN,                 &
+                     TSLB,SMOIS,SH2O,DZS, FNDSOILW, FNDSNOWH, config_flags%isice, config_flags%iswater  ,         &
+                     TSK,isnowxy  ,tvxy     ,tgxy     ,canicexy ,TMN,XICE,                  &
                      canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
                      fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
                      wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
                      stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,                     &
                      t2mvxy   ,t2mbxy   ,chstarxy ,            &
                      num_soil_layers, restart,                 &
-                     allowed_to_read ,                         &
+                     allowed_to_read, iopt_run ,               &
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
-                     its,ite, jts,jte, kts,kte                 )
+                     its,ite, jts,jte, kts,kte                 &
+#if (EM_CORE == 1)
+                     ,smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy ,dx, dy, msftx, msfty,&
+                     wtddt    ,stepwtd  ,dt  ,qrfsxy ,qspringsxy  ,qslatxy,                  &
+                     fdepthxy ,ht       ,riverbedxy ,eqzwt ,rivercondxy ,pexpxy              &
+#endif
+                     )
 
       CASE (RUCLSMSCHEME)
 !          if(isfc .ne. 2)CALL wrf_error_fatal &
@@ -1905,8 +2668,10 @@ integer myproc
                      its,ite, jts,jte, kts,kte                     )
 
       CASE (PXLSMSCHEME)
-          if(config_flags%num_land_cat .ne. 24) CALL wrf_error_fatal &
-            ( 'module_physics_init: 24 cat USGS must be used with PX LSM option' )
+          if(config_flags%num_land_cat .ne. 20 .and. config_flags%num_land_cat .ne. 21 .and. & ! MODIS
+             config_flags%num_land_cat .ne. 24 .and. config_flags%num_land_cat .ne. 28 .and. & ! USGS
+             config_flags%num_land_cat .ne. 40 .and. config_flags%num_land_cat .ne. 50 )     & ! NLCD
+          CALL wrf_error_fatal ( 'module_physics_init: PX LSM option requires USGS, MODIS, or NLCD' )
           CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
@@ -1932,13 +2697,75 @@ integer myproc
            ( 'module_physics_init: SSiB only works with rrtm, cam scheme or rrtmg scheme (sw_phys=1,3,4)' )
 ! End of Adding radiation scheme 4 (RRTMg) for SSiB, By Zhenxin 2011-06-20 **************
 !--------------------------------------------------------------
+! CLM Init Coupling
+      CASE (CLMSCHEME)
+        IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
+                CALL wrf_error_fatal ( 'CLM DOES NOT WORK WITH URBAN SCHEME' ) 
+        ENDIF
+#ifdef WRF_USE_CLM
+        IF(PRESENT(numc))THEN
+        ! added by Jiming Jin 10/14/2012 ; modified to use MODIS data 3/6/2014
+        if((config_flags%num_land_cat .ne. 24) .AND. &
+           (config_flags%num_land_cat .ne. 28) .AND. &
+           (config_flags%num_land_cat .ne. 21) .AND. &
+           (config_flags%num_land_cat .ne. 20)) CALL wrf_error_fatal &
+            ('module_physics_init: USGS or MODIS must be used with CLM option')
+
+            CALL CLMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,    &
+                     SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,            &
+                     ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS,  &
+                     FNDSOILW, FNDSNOWH,                           &
+                     num_soil_layers, restart,                     &
+                     allowed_to_read ,                             &
+                     ids,ide, jds,jde, kds,kde,                    &
+                     ims,ime, jms,jme, kms,kme,                    &
+                     its,ite, jts,jte, kts,kte                     &
+                    ,maxpatch                                            &
+                    ,numc,nump,snl,                                      &
+                     snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                     h2ocan,h2ocan_col,t2m_max,t2m_min,t_ref2m,          &
+                     h2osoi_liq_s1,              &
+                     h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                     h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                     h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                     h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                     h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                     h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                     h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                     h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                     h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                     t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                     t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                     t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                     t_soisno8,t_soisno9,t_soisno10,                     &
+                     dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                     snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                     t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                     t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                     h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                     h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                     h2osoi_vol7,h2osoi_vol8,                            &
+                     h2osoi_vol9,h2osoi_vol10,                           &
+                     ht,XLAND,XICE                                       &
+                    ,ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                     Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
+                     SWUPsubgrid,lhsoi,lhveg,lhtran                      &
+                    )
+        ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling CLM' )
+        ENDIF
+#else
+        CALL wrf_error_fatal ( "SF CLM CURRENTLY ifdef'ed out, set -DWRF_USE_CLM in configure.wrf in ARCH_LOCAL" )
+#endif
 
       CASE DEFAULT
 
    END SELECT sfc_select
 
-   IF(PRESENT(OMLCALL))THEN
-     IF (omlcall .EQ. 1) THEN
+#if ( EM_CORE == 1 )
+   IF(PRESENT(SF_OCEAN_PHYSICS))THEN
+     IF ( ( sf_ocean_physics .EQ. OMLSCHEME   ) .OR. &
+          ( sf_ocean_physics .EQ. PWP3DSCHEME ) ) THEN
         CALL omlinit(oml_hml0, tsk,                           &
                      tml,t0ml,hml,h0ml,huml,hvml,tmoml,       &
                      allowed_to_read, start_of_simulation,    &
@@ -1947,7 +2774,26 @@ integer myproc
                      its,ite, jts,jte, kts,kte                )
      ENDIF
    ENDIF
+#endif
 
+     IF ( LakeModel == 1 ) THEN
+ 
+             call  lakeini(IVGTYP,         ISLTYP,          HT,              SNOW,           & !i
+                           lake_min_elev,     restart,         lakedepth_default, lake_depth,     &
+                           lakedepth2d,    savedtke12d,     snowdp2d,        h2osno2d,       & !o
+                           snl2d,          t_grnd2d,        t_lake3d,        lake_icefrac3d, &
+                           z_lake3d,       dz_lake3d,       t_soisno3d,      h2osoi_ice3d,   &
+                           h2osoi_liq3d,   h2osoi_vol3d,    z3d,             dz3d,           &
+                           zi3d,           watsat3d,        csol3d,          tkmg3d,         &
+                           config_flags%ISWATER,  xice,     xice_threshold,  xland,  tsk,    &
+#if (EM_CORE == 1)
+                           lakemask,  lakeflag,                                              &
+#endif
+                           lake_depth_flag, use_lakedepth,              &
+                           tkdry3d,        tksatu3d,        lake2d,          its, ite, jts, jte, &
+                           ims,ime, jms,jme)
+     ENDIF
+ 
 !-- initialize pbl scheme
 
    pbl_select: SELECT CASE(config_flags%bl_pbl_physics)
@@ -2078,7 +2924,7 @@ integer myproc
       CASE (BOULACSCHEME)
            if(isfc .ne. 1 .and. isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use sfclay or myjsfc scheme for this pbl option' )
-           CALL boulacinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
+           CALL boulacinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN, &
                          TKE_PBL,EXCH_H,restart,               &
                          allowed_to_read ,                     &
                          ids, ide, jds, jde, kds, kde,         &
@@ -2087,11 +2933,11 @@ integer myproc
         CASE (CAMUWPBLSCHEME)
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
-           CALL camuwpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
-                restart,TKE_PBL,config_flags%grid_id,           &
-                ids, ide, jds, jde, kds, kde,         &
-                ims, ime, jms, jme, kms, kme,         &
-                its, ite, jts, jte, kts, kte          )
+           CALL camuwpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,        &
+                restart,TKE_PBL,is_CAMMGMP_used, &
+                ids, ide, jds, jde, kds, kde,                          &
+                ims, ime, jms, jme, kms, kme,                          &
+                its, ite, jts, jte, kts, kte                           )
 #endif
 
 #if ( EM_CORE == 1 )
@@ -2117,7 +2963,11 @@ integer myproc
            END SELECT
 
            CALL mynn_bl_init_driver(&
-                &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN&
+                &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,&
+                &RQIBLTEN,                                  &
+                !RQNCBLTEN,RQNIBLTEN,                       &
+                &QKE,                                       &
+                &TKE_PBL,EXCH_H                             &
                 &,restart,allowed_to_read,mynn_closure_level &
                 &,IDS,IDE,JDS,JDE,KDS,KDE                    &
                 &,IMS,IME,JMS,JME,KMS,KME                    &
@@ -2144,6 +2994,19 @@ integer myproc
 
 #endif
 
+      CASE (GBMPBLSCHEME) 
+           if(isfc .ne. 1)CALL wrf_error_fatal &
+            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+         CALL gbmpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,   &
+                        RQCBLTEN,RQIBLTEN,P_QI,               &
+                        PARAM_FIRST_SCALAR,TKE_PBL,           &
+                        EXCH_H,                               &
+                        restart,allowed_to_read ,             &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+
+
       CASE DEFAULT
 
    END SELECT pbl_select
@@ -2152,7 +3015,7 @@ integer myproc
    END SUBROUTINE bl_init
 
 !==================================================================
-   SUBROUTINE cu_init(STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,     &
+   SUBROUTINE cu_init(DX,STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,  &
                       RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,&
                       NCA,RAINC,RAINCV,W0AVG,config_flags,restart, &
                       CLDEFI,LOWLYR,MASS_FLUX,                     &
@@ -2164,7 +3027,8 @@ integer myproc
                       allowed_to_read, start_of_simulation,        &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
-                      its, ite, jts, jte, kts, kte                 )
+                      its, ite, jts, jte, kts, kte,                &
+                      RQCNCUTEN,RQINCUTEN                          )                        
 !------------------------------------------------------------------
    USE module_cu_kf
    USE module_cu_kfeta
@@ -2172,6 +3036,7 @@ integer myproc
    USE module_cu_gd,  ONLY : GDINIT
    USE module_cu_g3,  ONLY : G3INIT
    USE module_cu_sas
+   USE module_cu_mesosas
    USE module_cu_osas
    USE module_cu_camzm_driver, ONLY : zm_conv_init
    USE module_cu_nsas
@@ -2187,7 +3052,7 @@ integer myproc
                                   ims, ime, jms, jme, kms, kme,   &
                                   its, ite, jts, jte, kts, kte
 
-   REAL ,    INTENT(IN)        :: DT, CUDT
+   REAL ,    INTENT(IN)        :: DT, CUDT, DX
    LOGICAL , INTENT(IN)        :: start_of_simulation
    LOGICAL , INTENT(IN)        :: allowed_to_read
    INTEGER , INTENT(INOUT)     :: STEPCU
@@ -2197,11 +3062,11 @@ integer myproc
             RQVCUTEN, RQCCUTEN, RQRCUTEN, RQICUTEN, RQSCUTEN
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
                         cugd_tten,cugd_ttens,cugd_qvten,            &
-                        cugd_qvtens,cugd_qcten
+                        cugd_qvtens,cugd_qcten, RQCNCUTEN, RQINCUTEN
 
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: W0AVG
 
-   REAL,    DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
+   REAL,    DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &!BSINGH(PNNL)- should be declared inout
             RTHFTEN, RQVFTEN
 
    REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(OUT):: RAINC, RAINCV
@@ -2291,7 +3156,7 @@ integer myproc
                       its, ite, jts, jte, kts, kte                )
 
 #if ( EM_CORE == 1 )
-     CASE (G3SCHEME)
+     CASE (G3SCHEME,GFSCHEME)
           CALL g3init(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,        &
                       MASS_FLUX,cp,restart,                       &
                       P_QC,P_QI,PARAM_FIRST_SCALAR,               &
@@ -2314,6 +3179,15 @@ integer myproc
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 
+     CASE (MESO_SAS)   !Kwon
+          CALL msasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
+                      RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS
+                      restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+
      CASE (OSASSCHEME)
           CALL osasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,      &
                       RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS
@@ -2324,13 +3198,17 @@ integer myproc
                       its, ite, jts, jte, kts, kte                )
 
      CASE (CAMZMSCHEME)
-          CALL zm_conv_init(rucuten, rvcuten, rthcuten, rqvcuten,       &
-                      rqccuten, rqicuten,                               &
-                      p_qc, p_qi, param_first_scalar,                   &
+          IF (PRESENT(RQCNCUTEN)) THEN
+          CALL zm_conv_init(DT, DX, rucuten, rvcuten, rthcuten, rqvcuten, &
+                      rqccuten, rqicuten, rqcncuten, rqincuten,         &
+                      p_qc, p_qi, p_qnc, p_qni, param_first_scalar,     &
                       restart,                                          &
                       ids, ide, jds, jde, kds, kde,                     &
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte, kts, kte                      )
+          ELSE
+          CALL wrf_error_fatal ( 'arguments not present for calling camzmscheme' )
+          ENDIF
 
 ! Tiedtke Scheme - ZCX&YQW
       CASE (TIEDTKESCHEME)
@@ -2359,6 +3237,7 @@ integer myproc
                       its, ite, jts, jte, kts, kte                 )
 !------------------------------------------------------------------
    USE uwshcu,        ONLY: init_uwshcu
+   USE module_shcu_grims, ONLY: grimsinit
    USE physconst,     ONLY: cpair, gravit, latice, latvap, mwdry, mwh2o, &
                             rair, zvir
    USE shr_kind_mod,  ONLY: r8 => shr_kind_r8
@@ -2425,11 +3304,17 @@ integer myproc
            rqcshten, rqrshten, rqishten, rqsshten, rqgshten,         &
            p_qc, p_qr, p_qi, p_qs, p_qg,                             &
            config_flags%bl_pbl_physics, param_first_scalar, restart, &
-           config_flags%grid_id,                                     &
            ids, ide, jds, jde, kds, kde,                             &
            ims, ime, jms, jme, kms, kme,                             &
            its, ite, jts, jte, kts, kte                              )
 
+   CASE (GRIMSSHCUSCHEME)
+      CALL grimsinit(rthshten,rqvshten,                              &
+           restart,                                                  &
+           ids, ide, jds, jde, kds, kde,                             &
+           ims, ime, jms, jme, kms, kme,                             &
+           its, ite, jts, jte, kts, kte                              )
+ 
    CASE DEFAULT
 
    END SELECT shcu_select
@@ -2443,6 +3328,14 @@ integer myproc
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
                       mp_restart_state,tbpvs_state,tbpvs0_state,   & ! eta mp
                       allowed_to_read, start_of_simulation,       &
+!CAMMGMP specific variables
+                      ixcldliq, ixcldice, ixnumliq, ixnumice,     &       
+                      nssl_cccn, nssl_alphah, nssl_alphahl,       &
+                         nssl_cnoh, nssl_cnohl,                  &
+                         nssl_cnor, nssl_cnos,                   &
+                         nssl_rho_qh, nssl_rho_qhl,              &
+                         nssl_rho_qs,                            &
+                      z_at_q, qnwfa2d, scalar, num_sc,        &  ! G. Thompson
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -2456,6 +3349,8 @@ integer myproc
    USE module_mp_HWRF
 #endif
    USE module_mp_thompson
+   USE module_mp_full_sbm
+   USE module_mp_fast_sbm
    USE module_mp_morr_two_moment
    USE module_mp_milbrandt2mom
 !  USE module_mp_milbrandt3mom
@@ -2463,6 +3358,7 @@ integer myproc
    USE module_mp_wdm6
 #if (EM_CORE==1)
    USE module_mp_nssl_2mom
+   USE module_mp_cammgmp_driver, ONLY:CAMMGMP_INIT !CAM5's microphysics
 #endif
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -2472,7 +3368,14 @@ integer myproc
    LOGICAL , INTENT(IN)        :: restart
    LOGICAL , INTENT(OUT)       :: warm_rain,adv_moist_cond
    REAL    , INTENT(IN)        :: MPDT, DT, DX, DY
+   REAL, INTENT(IN), OPTIONAL  :: nssl_cccn, nssl_alphah, nssl_alphahl, &
+                                  nssl_cnoh, nssl_cnohl,                  &
+                                  nssl_cnor, nssl_cnos,                   &
+                                  nssl_rho_qh, nssl_rho_qhl,              &
+                                  nssl_rho_qs
+
    LOGICAL , INTENT(IN)        :: start_of_simulation
+   INTEGER , INTENT(IN)        :: ixcldliq, ixcldice, ixnumliq, ixnumice ! CAMMGMP specific variables
 
    INTEGER , INTENT(IN)        :: ids, ide, jds, jde, kds, kde,   &
                                   ims, ime, jms, jme, kms, kme,   &
@@ -2484,9 +3387,14 @@ integer myproc
                                   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
    REAL , DIMENSION(:) ,INTENT(INOUT)  :: mp_restart_state,tbpvs_state,tbpvs0_state
    LOGICAL , INTENT(IN)  :: allowed_to_read
+   REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT):: qnwfa2d                       !  G. Thompson
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: z_at_q                   !  G. Thompson
+   INTEGER, INTENT(IN) :: num_sc                                               !  G. Thompson
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme, num_sc), INTENT(INOUT):: scalar    !  G. Thompson
 
 ! Local
    INTEGER :: i, j, itf, jtf
+   REAL, DIMENSION(20) :: nssl_params
 
    warm_rain = .false.
    adv_moist_cond = .true.
@@ -2501,6 +3409,19 @@ integer myproc
         GRAUPELNC(i,j) = 0.
      ENDDO
      ENDDO
+   ENDIF
+   
+   IF ( present( nssl_cccn ) ) THEN
+     nssl_params(1)  = nssl_cccn
+     nssl_params(2)  = nssl_alphah
+     nssl_params(3)  = nssl_alphahl
+     nssl_params(4)  = nssl_cnoh
+     nssl_params(5)  = nssl_cnohl
+     nssl_params(6)  = nssl_cnor
+     nssl_params(7)  = nssl_cnos
+     nssl_params(8)  = nssl_rho_qh
+     nssl_params(9)  = nssl_rho_qhl
+     nssl_params(10) = nssl_rho_qs
    ENDIF
 
    mp_select: SELECT CASE(config_flags%mp_physics)
@@ -2532,9 +3453,25 @@ integer myproc
                           its, ite, jts, jte, kts, kte            )
 #endif 
      CASE (THOMPSON)
+         IF(start_of_simulation.or.restart.or.config_flags%cycling)     &
+            CALL thompson_init(HGT=z_at_q,                              &
+                          IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
+                          IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
+                          ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
+
+     CASE (THOMPSONAERO)
 ! Cycling the WRF forecast with moving nests will cause this initialization to be
 ! called for each nest move. This is potentially very computationally expensive.
-         IF(start_of_simulation.or.restart.or.config_flags%cycling)CALL thompson_init
+         IF(start_of_simulation.or.restart.or.config_flags%cycling)     &
+            CALL thompson_init(HGT=z_at_q,                              &
+                          NWFA2D=qnwfa2d,                               &
+                          NWFA=scalar(ims,kms,jms,P_QNWFA),             &
+                          NIFA=scalar(ims,kms,jms,P_QNIFA),             &
+                          DX=DX, DY=DY,                                 &
+                          is_start=start_of_simulation,                 &
+                          IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
+                          IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
+                          ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
 
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init
@@ -2547,10 +3484,30 @@ integer myproc
      CASE (WDM6SCHEME)
           CALL wdm6init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
 #if (EM_CORE==1)
+    CASE (FULL_KHAIN_LYNN)
+     IF(start_of_simulation.or.restart)THEN
+          CALL full_hucminit(dt)
+     END IF
+    CASE (FAST_KHAIN_LYNN)
+     IF(start_of_simulation.or.restart)THEN
+          CALL fast_hucminit(dt)
+     END IF
+     CASE (NSSL_1MOMLFO)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=0,mixphase=0,ihvol=-1) ! no separate hail
+     CASE (NSSL_1MOM)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=0,mixphase=0,ihvol=0)
      CASE (NSSL_2MOM)
-         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=0)
      CASE (NSSL_2MOMCCN)
-         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=0)
+!     CASE (NSSL_3MOM)
+!         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=8,mixphase=0,ihvol=1)
+     CASE (CAMMGMPSCHEME) ! CAM5's microphysics
+          CALL CAMMGMP_INIT(ixcldliq, ixcldice, ixnumliq, ixnumice &
+             ,config_flags%chem_opt                          &
+             ,ids, ide, jds, jde, kds, kde                   & 
+             ,ims, ime, jms, jme, kms, kme                   &
+             ,its, ite, jts, jte, kts, kte                   )
 #endif
      CASE (ETAMPOLD)
          adv_moist_cond = .false.
@@ -2561,6 +3518,7 @@ integer myproc
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
+
 
      CASE DEFAULT
 
@@ -2595,13 +3553,13 @@ integer myproc
    REAL ,    INTENT(IN)        ::     DT, FGDT
    INTEGER , INTENT(IN)        ::     id
    INTEGER , INTENT(INOUT)     ::     STEPFG
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::       &!BSINGH(PNNL)- should be declared inout
                                                            RUNDGDTEN, &
                                                            RVNDGDTEN, &
                                                           RTHNDGDTEN, &
                                                           RPHNDGDTEN, &
                                                           RQVNDGDTEN
-   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) :: RMUNDGDTEN
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: RMUNDGDTEN !BSINGH(PNNL)- should be declared inout
 
    LOGICAL,  INTENT(IN)           :: allowed_to_read
 !--------------------------------------------------------------------
@@ -2886,5 +3844,436 @@ integer myproc
    ENDIF
 
    END SUBROUTINE z2sigma
+
+!--------------------------------------------------------------------
+   SUBROUTINE CAM_INIT (ixcldliq, ixcldice, ixnumliq, ixnumice,config_flags)
+!  Purpose: To initialize a set of variables and arrays required by 
+!           the CAM Parameterizations ported to WRF
+!
+!  Called by: Phy_init
+!
+!  Author:Balwinder.Singh@pnl.gov
+!--------------------------------------------------------------------
+     USE shr_kind_mod,               ONLY : r8 => shr_kind_r8
+     USE module_cam_esinti,          ONLY : esinti
+     USE physconst,                  ONLY : mwh2o, cpwv, epsilo, latvap, latice &
+          , rh2o, cpair, tmelt,mwdry
+     USE constituents,               ONLY : cnst_add
+     USE module_cam_support,         ONLY : pcnst =>pcnst_runtime, pcnst_mp
+     USE modal_aero_initialize_data_phys, ONLY : modal_aero_initialize_phys
+     
+     implicit none
+
+     TYPE (grid_config_rec_type)              :: config_flags
+
+     integer, intent(out) :: ixcldliq, ixcldice, ixnumliq, ixnumice
+
+     !Local variables
+     !Following variable declarations are from CAM's stratiform.F90 module
+     integer, parameter  :: ncnstmax = 4                    ! Number of constituents     
+     integer             :: mm
+     character(len=8), dimension(ncnstmax), parameter :: cnst_names = & 
+          (/'CLDLIQ', 'CLDICE','NUMLIQ','NUMICE'/)         ! Constituent names
+     !Variables with dummy values
+     integer  :: dumind 
+     real(r8) :: one
+
+     !set dynamic (runtime)pcnst
+     pcnst = 5                                               !For [water vap, cld liq, cld ice, liq num and ice num]
+#if ( EM_CORE == 1 )
+     IF(config_flags%mp_physics == CAMMGMPSCHEME) pcnst = 12 !Additional storage for prescribed aerosols
+# endif
+
+     !pcnst for microphysics (pcnst_mp is different from pcnst ONLY if CAM MAM package amd CAMMGMP schemes are decoupled)
+     pcnst_mp = pcnst
+
+#ifdef WRF_CHEM
+     !If CAM MAM package is selected
+     !BSINGH (01/23/2014):Please make sure pcnst is equal to cam_mam_nspec in chem/module_cam_mam_init.F and registry.chem
+     IF(config_flags%chem_opt == CBMZ_CAM_MAM3_NOAQ .OR. config_flags%chem_opt==CBMZ_CAM_MAM3_AQ) then
+        pcnst = 85 !For 3 modes of aerosols [adjusted for DMS species-BSINGH (01/20/2014) suggested by PMA]
+     else if(config_flags%chem_opt == CBMZ_CAM_MAM7_NOAQ .OR. config_flags%chem_opt == CBMZ_CAM_MAM7_AQ) then
+        pcnst = 90 !For 7 modes of aerosols
+     endif
+     !If CAM MAM package is NOT selected then pcnst presumes its default value set above
+     !*NOTE* : the value of pcnst is 'hardwired' here as it was a quick solution. The dynamic value
+     !of pcnst is computed in module_cam_mam_init.F. In module_cam_mam_init.F, the value of PCNST set here
+     !is tested for its accuracy. If the value computed in module_cam_mam_init.F differs from value mentioned
+     !above, then the above values for pcnst should be adjusted accordingly
+
+     !CAMMGMP Scheme is supposed to run with MODAL treatment of AEROSOLS only
+     IF((config_flags%chem_opt .NE. CBMZ_CAM_MAM3_NOAQ .AND. config_flags%chem_opt .NE. CBMZ_CAM_MAM3_AQ &
+          .AND. config_flags%chem_opt .NE. CBMZ_CAM_MAM7_NOAQ .AND. config_flags%chem_opt .NE. CBMZ_CAM_MAM7_AQ &
+          .AND. config_flags%chem_opt .NE. 0) .AND. config_flags%mp_physics == CAMMGMPSCHEME) THEN
+        call wrf_error_fatal('CAMMGMP (mp_physics=17) ONLY works with CAM MAM package (chem_opt =501,502,503 or 504)')
+     ENDIF
+
+
+     !For assisting decoupled microphysics (MP) CAM MAM simulations (simulations, where MAM package is coupled with 
+     !radiation but uncoupled with MP- i.e. MP runs with 'prescribed' aerosols) 'pcnst_mp' is defined.'pcnst_mp' will
+     !only be used in the CAMMGMP driver and its supporting modules (ndrop and microp_aero)
+     pcnst_mp = pcnst
+     if(.NOT.config_flags%CAM_MP_MAM_cpled)pcnst_mp = 12
+#endif
+
+     ! Initialize the saturation vapor pressure look-up table...      
+     call esinti(epsilo, latvap, latice, rh2o, cpair, tmelt)
+     
+     IF(.NOT.CAM_INITIALIZED) THEN
+        
+        !Allocate module level CAM arrays
+        call ALLOCATE_CAM_ARRAYS()     
+        
+        !-------------------------------------------------------------------------------------!
+        !Calls to add constituents (these calls are imported from in initindx.F90 in CAM)     !
+        !                                                                                     !
+        ! Register water vapor.                                                               !
+        ! ** This must be the first call to cnst_add so that water vapor is constituent 1.**  !
+        !-------------------------------------------------------------------------------------!
+        
+        call cnst_add('Q', mwh2o, cpwv, 1.E-12_r8, mm, &
+             longname='Specific humidity', readiv=.true. )
+        
+        
+        !Following add constituent calls are imported from the stratiform.F90 in CAM
+        
+        call cnst_add(cnst_names(1), mwdry, cpair, 0._r8, ixcldliq, &
+             longname='Grid box averaged cloud liquid amount')
+        call cnst_add(cnst_names(2), mwdry, cpair, 0._r8, ixcldice, &
+             longname='Grid box averaged cloud ice amount'   )
+        call cnst_add(cnst_names(3), mwdry, cpair, 0._r8, ixnumliq, &
+             longname='Grid box averaged cloud liquid number')
+        call cnst_add(cnst_names(4), mwdry, cpair, 0._r8, ixnumice, &
+             longname='Grid box averaged cloud ice number'   )
+
+        !For prescribed aerosols
+#if ( EM_CORE == 1 )
+        IF(config_flags%mp_physics .EQ. CAMMGMPSCHEME &
+#ifdef WRF_CHEM
+             .AND.  config_flags%chem_opt .EQ. 0    &
+#endif
+             )THEN
+           one = 1.0_r8
+           call cnst_add('ACCUM_MASS', one, cpair, 0._r8, dumind, &
+                longname='Grid box averaged accumulation mode mass')
+           call cnst_add('ACCUM_NUM' , one, cpair, 0._r8, dumind, &
+                longname='Grid box averaged accumulation mode number')
+           call cnst_add('AITKEN_MASS', one, cpair, 0._r8, dumind, &
+                longname='Grid box averaged aitken mode mass')
+           call cnst_add('AITKEN_NUM' , one, cpair, 0._r8, dumind, &
+                longname='Grid box averaged aitken mode number')
+           call cnst_add('COARSE_MASS_1', one, cpair, 0._r8, dumind, &
+                longname='Grid box averaged coarse mode1 mass')
+           call cnst_add('COARSE_MASS_2', one, cpair, 0._r8, dumind, &
+                longname='Grid box averaged coarse mode2 mass')
+           call cnst_add('COARSE_NUM' , one, cpair, 0._r8, dumind, &
+                longname='Grid box averaged coarse mode number')
+           
+        ENDIF
+#endif
+        
+        CAM_INITIALIZED = .TRUE.
+     ENDIF
+     
+#if ( EM_CORE == 1 )
+     IF(config_flags%mp_physics == CAMMGMPSCHEME)THEN
+#ifndef WRF_CHEM
+        !Aerosols must be initialized after adding the constituents otherwise the code may crash in WRF-Chem simulations     
+        CALL modal_aero_initialize_phys
+#else
+        if(config_flags%chem_opt==0) then
+           CALL modal_aero_initialize_phys
+        endif
+#endif
+     ENDIF
+#endif
+   END SUBROUTINE CAM_INIT
+
+
+!--------------------------------------------------------------------
+ SUBROUTINE ALLOCATE_CAM_ARRAYS ()
+!  Purpose: To allocate module level CAM arrays for CAM modules which
+!           doesn't have an 'initialization' subroutine
+!
+!  Called by: CAM_INIT
+!
+!  Author:Balwinder.Singh@pnl.gov
+!--------------------------------------------------------------------
+   USE constituents,         ONLY : cnst_name,cnst_longname,cnst_cp,&
+        cnst_cv,cnst_mw,cnst_type,cnst_rgas,qmin,qmincg,            &
+        cnst_fixed_ubc,apcnst,bpcnst,hadvnam,vadvnam,dcconnam,      &
+        fixcnam,tendnam,ptendnam,dmetendnam,sflxnam,tottnam  
+
+   USE module_cam_support,   ONLY : pcnst =>pcnst_runtime, pcnst_mp
+
+   USE modal_aero_data,      ONLY : cnst_name_cw,species_class,     &
+        qneg3_worst_thresh_amode,cnst_name_cw_mp
+
+   implicit none
+
+   !Allocate module_cam_constituents.F arrays
+   Allocate(cnst_name(pcnst),cnst_longname(pcnst),cnst_cp(pcnst),   &
+        cnst_cv(pcnst),cnst_mw(pcnst),cnst_type(pcnst),             &
+        cnst_rgas(pcnst),qmin(pcnst),qmincg(pcnst),                 &
+        cnst_fixed_ubc(pcnst),apcnst(pcnst),bpcnst(pcnst),          &
+        hadvnam(pcnst),vadvnam(pcnst),dcconnam(pcnst),              &
+        fixcnam(pcnst),tendnam(pcnst),ptendnam(pcnst),              &
+        dmetendnam(pcnst),sflxnam(pcnst),tottnam(pcnst)             )
+
+   !Initialize module_cam_constituents.F variables
+   cnst_fixed_ubc(:) = .false.
+
+   !Allocate module_cam_mp_modal_aero_data_phys.F arrays
+   Allocate(cnst_name_cw(pcnst),cnst_name_cw_mp(pcnst_mp),          &
+        species_class(pcnst),qneg3_worst_thresh_amode(pcnst)        )
+   
+ END SUBROUTINE ALLOCATE_CAM_ARRAYS
+
+subroutine aerosol_in(aerodm,pina,alevsiz,no_months,no_src_types,XLAT,XLONG,   &
+                     ids, ide, jds, jde, kds, kde,                  &
+                     ims, ime, jms, jme, kms, kme,                  &
+                     its, ite, jts, jte, kts, kte)
+!
+! Adaped from oznini in CAM 
+! It should be replaced by monthly climatology that varies latitudinally and vertically
+!
+   IMPLICIT NONE
+
+   INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
+                                       ims,ime, jms,jme, kms,kme, &
+                                       its,ite, jts,jte, kts,kte   
+
+   INTEGER,      INTENT(IN   )    ::   alevsiz, no_months, no_src_types
+
+   REAL,  DIMENSION( ims:ime, jms:jme ), INTENT(IN   )  ::     XLAT, XLONG
+
+   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, no_months, no_src_types ),      &
+          INTENT(OUT   ) ::                                  aerodm
+
+   REAL,  DIMENSION(alevsiz), INTENT(OUT )  ::                   pina
+
+! Local
+!  data from Torn, computed from EC 6 types of aerosol data:
+!    organic carbon, sea salt, dust, black carbon, sulfalte 
+!    and stratospheric aerosol (volcanic ashes)
+
+   INTEGER, PARAMETER :: latsiz = 46
+   INTEGER, PARAMETER :: lonsiz = 72
+   INTEGER :: i, j, k, itf, jtf, ktf, m, pin_unit, lat_unit, lon_unit, od_unit, ks, il, jl
+   INTEGER :: ilon1, ilon2, jlat1, jlat2
+   REAL    :: interp_pt, interp_pt_lat, interp_pt_lon, wlat1, wlat2, wlon1, wlon2
+   CHARACTER*256 :: message
+
+   REAL,  DIMENSION( lonsiz, alevsiz, latsiz, no_months, no_src_types )    ::   &
+                                                            aerodin
+
+   REAL,  DIMENSION(latsiz)                ::             lat_od, aertmp1
+   REAL,  DIMENSION(lonsiz)                ::             lon_od, aertmp2
+
+   jtf=min0(jte,jde-1)
+   ktf=min0(kte,kde-1)
+   itf=min0(ite,ide-1)
+
+!-- read in aerosol optical depth pressure data
+
+     WRITE(message,*)'no_months = ',no_months
+     CALL wrf_debug(1,message)
+
+! pressure in mb
+      pin_unit = 27
+        OPEN(pin_unit, FILE='aerosol_plev.formatted',FORM='FORMATTED',STATUS='OLD')
+        do k = 1,alevsiz
+        READ (pin_unit,*) pina(k)
+        end do
+      close(27)
+
+!     do k=1,alevsiz
+!       pina(k) = pina(k)*100.
+!     end do
+
+!-- read in aerosol optical depth lat data
+
+      lat_unit = 28
+        OPEN(lat_unit, FILE='aerosol_lat.formatted',FORM='FORMATTED',STATUS='OLD')
+        do j = 1,latsiz
+        READ (lat_unit,*) lat_od(j)
+        end do
+      close(28)
+
+!-- read in aerosol optical depth lon data
+
+      lon_unit = 29
+        OPEN(lon_unit, FILE='aerosol_lon.formatted',FORM='FORMATTED',STATUS='OLD')
+        do j = 1,lonsiz
+        READ (lon_unit,*) lon_od(j)
+        end do
+      close(29)
+
+!-- read in ozone data
+
+      od_unit = 30
+      OPEN(od_unit, FILE='aerosol.formatted',FORM='FORMATTED',STATUS='OLD')
+
+      do ks=1,no_src_types
+      do m=1,no_months
+      do j=1,latsiz  ! latsiz=46
+      do k=1,alevsiz ! alevsiz=12
+      do i=1,lonsiz  ! lonsiz=72
+         READ (od_unit,*) aerodin(i,k,j,m,ks)
+      enddo
+      enddo
+      enddo
+      enddo
+      enddo
+      close(30)
+
+!-- latitudinally interpolate ozone data (and extend longitudinally)
+!-- using function lin_interpol2(x, f, y) result(g)
+! Purpose:
+!   interpolates f(x) to point y
+!   assuming f(x) = f(x0) + a * (x - x0)
+!   where a = ( f(x1) - f(x0) ) / (x1 - x0)
+!   x0 <= x <= x1
+!   assumes x is monotonically increasing
+!    real, intent(in), dimension(:) :: x  ! grid points
+!    real, intent(in), dimension(:) :: f  ! grid function values
+!    real, intent(in) :: y                ! interpolation point
+!    real :: g                            ! interpolated function value
+!---------------------------------------------------------------------------
+
+      do j=jts,jtf
+      do i=its,itf
+        interp_pt_lat=XLAT(i,j)
+        interp_pt_lon=XLONG(i,j)
+        call interp_vec(lat_od,interp_pt_lat,.true.,jlat1,jlat2,wlat1,wlat2)
+        call interp_vec(lon_od,interp_pt_lon,.true.,ilon1,ilon2,wlon1,wlon2)
+
+        do ks = 1,no_src_types
+        do m  = 1,no_months
+        do k  = 1,alevsiz
+          aerodm(i,k,j,m,ks) = wlon1 * (wlat1 * aerodin(ilon1,k,jlat1,m,ks)  + &
+                                        wlat2 * aerodin(ilon1,k,jlat2,m,ks)) + &
+                               wlon2 * (wlat1 * aerodin(ilon2,k,jlat1,m,ks)  + &
+                                        wlat2 * aerodin(ilon2,k,jlat2,m,ks))
+        end do
+        end do
+        end do
+
+      end do
+      end do
+
+!     do j=jts,jtf
+!     do i=its,itf
+!        onefld(i,j) = aerodm(i,12,j,1,1)
+!     enddo
+!     enddo
+
+END SUBROUTINE aerosol_in
+
+  function lin_interp(x, f, y) result(g)
+
+    ! Purpose:
+    !   interpolates f(x) to point y
+    !   assuming f(x) = f(x0) + a * (x - x0)
+    !   where a = ( f(x1) - f(x0) ) / (x1 - x0)
+    !   x0 <= x <= x1
+    !   assumes x is monotonically increasing
+
+    ! Author: D. Fillmore ::  J. Done changed from r8 to r4
+
+    implicit none
+
+    real, intent(in), dimension(:) :: x  ! grid points
+    real, intent(in), dimension(:) :: f  ! grid function values
+    real, intent(in) :: y                ! interpolation point
+    real :: g                            ! interpolated function value
+
+    integer :: k  ! interpolation point index
+    integer :: n  ! length of x
+    real    :: a
+
+    n = size(x)
+
+    ! find k such that x(k) < y =< x(k+1)
+    ! set k = 1 if y <= x(1)  and  k = n-1 if y > x(n)
+
+    if (y <= x(1)) then
+      k = 1
+    else if (y >= x(n)) then
+      k = n - 1
+    else
+      k = 1
+      do while (y > x(k+1) .and. k < n)
+        k = k + 1
+      end do
+    end if
+
+    ! interpolate
+    a = (  f(k+1) - f(k) ) / ( x(k+1) - x(k) )
+    g = f(k) + a * (y - x(k))
+
+  end function lin_interp
+
+  subroutine interp_vec(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
+
+  implicit none
+
+  real, intent(in), dimension(:) :: locvec
+  real, intent(in)               :: locwant
+  logical, intent(in)            :: periodic
+  integer, intent(out)           :: loc1, loc2
+  real, intent(out)              :: wght1, wght2
+
+  integer :: vsize, n
+  real    :: locv1, locv2
+
+  vsize = size(locvec)
+
+  loc1 = -1
+  loc2 = -1
+
+  do n = 1, vsize-1
+    if ( locvec(n) <= locwant .and. locvec(n+1) > locwant ) then
+      loc1  = n
+      loc2  = n+1
+      locv1 = locvec(n)
+      locv2 = locvec(n+1)
+      exit
+    end if
+  end do
+
+  if ( loc1 < 0 .and. loc2 < 0 ) then
+    if ( periodic ) then
+      if ( locwant < locvec(1) ) then
+        loc1  = vsize
+        loc2  = 1
+        locv1 = locvec(vsize)-360.0
+        locv2 = locvec(1)
+      else
+        loc1  = vsize
+        loc2  = 1
+        locv1 = locvec(vsize)
+        locv2 = locvec(1)+360.0
+      end if
+    else
+      if ( locwant < locvec(1) ) then
+        loc1  = 1
+        loc2  = 1
+        locv1 = locvec(1)
+        locv2 = locvec(1)
+      else
+        loc1  = vsize
+        loc2  = vsize
+        locv1 = locvec(vsize)
+        locv2 = locvec(vsize)
+      end if
+    end if
+  end if
+
+  wght2 = (locwant-locv1) / (locv2-locv1)
+  wght1 = 1.0 - wght2
+
+  return
+  end subroutine interp_vec
 
 END MODULE module_physics_init

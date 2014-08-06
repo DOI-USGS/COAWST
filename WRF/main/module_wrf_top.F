@@ -25,6 +25,8 @@ MODULE module_wrf_top
    USE module_dm, ONLY : wrf_dm_initialize
 #endif
 
+   USE module_cpl, ONLY : coupler_on, cpl_finalize, cpl_defdomain
+
    IMPLICIT NONE
 
    REAL    :: time
@@ -53,6 +55,7 @@ MODULE module_wrf_top
 
    CHARACTER (LEN=80)      :: rstname
    CHARACTER (LEN=80)      :: message
+   CHARACTER (LEN=256) , PRIVATE :: a_message
 
    INTERFACE 
      SUBROUTINE Setup_Timekeeping( grid )
@@ -96,22 +99,13 @@ MODULE module_wrf_top
 CONTAINS
 
 #ifdef WRF_COUPLING
-   SUBROUTINE wrf_init( MyComm_r, N_mctmodels_r,                        &
-# ifdef REFINED_GRID
-     &                  ocnids_r,                                       &
-# endif
-     &                  OCNid_r, ATMid_r, WAVid_r,                      &
-     &                  WRF_CPL_GRID_r,                                 &
-     &                  TI_ATM_OCN_r, TI_ATM_WAV_r,                     &
-     &                  no_init1)
+   SUBROUTINE wrf_init( MyComm_r, no_init1)
 !<DESCRIPTION>
 !     WRF initialization routine.
 !</DESCRIPTION>
 !jcw
    USE module_parallel
-   USE ATM_COUPLER_MOD, ONLY: initialize_atm_coupling
-   USE ATM_COUPLER_MOD, ONLY: atm2ocn_coupling
-   USE mct_wrf_coupler_params
+   USE atm_coupler_mod, ONLY: initialize_atm_coupling
 #else
    SUBROUTINE wrf_init( no_init1 )
 !<DESCRIPTION>
@@ -125,12 +119,7 @@ CONTAINS
      use accel_lib
 #endif
 #ifdef WRF_COUPLING
-     integer, intent(in) :: MyComm_r, N_mctmodels_r
-# ifdef REFINED_GRID
-     integer, intent(in), dimension(NestedGrids) :: ocnids_r
-# endif
-     integer, intent(in) :: OCNid_r, ATMid_r, WAVid_r, WRF_CPL_GRID_r
-     real, intent(in) :: TI_ATM_OCN_r, TI_ATM_WAV_r
+     integer, intent(in) :: MyComm_r
 #endif
      LOGICAL, OPTIONAL, INTENT(IN) :: no_init1
      INTEGER i, myproc, nproc, hostid, loccomm, ierr, buddcounter, mydevice
@@ -143,7 +132,6 @@ CONTAINS
      include "mpif.h"
 #endif
 #include "version_decl"
-
 
 !<DESCRIPTION>
 ! Program_name, a global variable defined in frame/module_domain.F, is
@@ -162,16 +150,6 @@ CONTAINS
 
 #ifdef WRF_COUPLING
    MyComm=MyComm_r
-   N_mctmodels=N_mctmodels_r
-# ifdef REFINED_GRID
-   ocnids=ocnids_r
-# endif
-   OCNid=OCNid_r
-   ATMid=ATMid_r
-   WAVid=WAVid_r
-   WRF_CPL_GRID=WRF_CPL_GRID_r
-   TI_ATM_OCN=TI_ATM_OCN_r
-   TI_ATM_WAV=TI_ATM_WAV_r
 !
    ! Initialize WRF modules:  
    ! Phase 1 returns after MPI_INIT() (if it is called)
@@ -186,11 +164,11 @@ CONTAINS
    CALL init_modules(1)
    IF ( .NOT. PRESENT( no_init1 ) ) THEN
      ! Initialize utilities (time manager, etc.)
-#ifdef NO_LEAP_CALENDAR
+# ifdef NO_LEAP_CALENDAR
      CALL WRFU_Initialize( defaultCalKind=WRFU_CAL_NOLEAP )
-#else
+# else
      CALL WRFU_Initialize( defaultCalKind=WRFU_CAL_GREGORIAN )
-#endif
+# endif
    ENDIF
 #endif
    ! Phase 2 resumes after MPI_INIT() (if it is called)
@@ -285,7 +263,10 @@ CONTAINS
    ALLOCATE( hostids(nproc) )
    ALLOCATE( budds(nproc) )
    CALL mpi_allgather( hostid, 1, MPI_INTEGER, hostids, 1, MPI_INTEGER, loccomm, ierr )
-   if ( ierr .NE. 0 ) write(0,*)__FILE__,__LINE__,'error in mpi_allgather ',ierr
+   IF ( ierr .NE. 0 ) THEN
+      write(a_message,*)__FILE__,__LINE__,'error in mpi_allgather ',ierr
+      CALL wrf_message ( a_message ) 
+   END IF
    budds = -1
    buddcounter = 0 
    ! mark the ones i am on the same node with
@@ -362,9 +343,6 @@ CONTAINS
                                      grid       = head_grid ,          &
                                      parent     = null_domain ,        &
                                      kid        = -1                   )
-#ifdef SWAN_COUPLING
-   CALL allocate_mctvars (grid       = head_grid)
-#endif
    CALL       wrf_debug ( 100 , 'wrf: calling model_to_grid_config_rec ' )
    CALL model_to_grid_config_rec ( head_grid%id , model_config_rec , config_flags )
    CALL       wrf_debug ( 100 , 'wrf: calling set_scalar_indices_from_config ' )
@@ -440,12 +418,10 @@ CONTAINS
 #endif
 #ifdef WRF_COUPLING
    ! initialize the coupling if we are using the head grid.
-   IF (WRF_CPL_GRID.EQ.1) THEN
-     CALL initialize_atm_coupling (head_grid)
-     CALL atm2ocn_coupling (head_grid)
-   END IF
-#endif
 
+   CALL initialize_atm_coupling (head_grid, 1)
+#endif
+   IF (coupler_on) CALL cpl_defdomain( head_grid ) 
 
    END SUBROUTINE wrf_init
 
@@ -516,8 +492,12 @@ CONTAINS
    ! for DM parallel runs).  
    IF ( .NOT. PRESENT( no_shutdown ) ) THEN
      ! Finalize time manager
-     CALL WRFU_Finalize
-     CALL wrf_shutdown
+      IF (coupler_on) THEN 
+         CALL cpl_finalize() 
+      ELSE
+         CALL WRFU_Finalize
+         CALL wrf_shutdown
+      ENDIF
    ENDIF
 
 #ifdef WRF_COUPLING

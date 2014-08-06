@@ -19,9 +19,19 @@ RECURSIVE SUBROUTINE integrate ( grid )
    USE module_configure
    USE module_timing
    USE module_utility
+   USE module_cpl, ONLY : coupler_on, cpl_snd, cpl_defdomain
 #ifdef WRF_COUPLING
-   USE atm_coupler_mod, ONLY: atm2ocn_coupling
    USE atm_coupler_mod, ONLY: initialize_atm_coupling
+   USE atm_coupler_mod, ONLY: initialize_atm_routers
+   USE atm_coupler_mod, ONLY: atm_coupling
+# ifdef ROMS_COUPLING
+   USE atm_coupler_mod, ONLY: atm2ocn_coupling
+   USE atm_coupler_mod, ONLY: atmfocn_coupling
+# endif
+# ifdef SWAN_COUPLING
+   USE atm_coupler_mod, ONLY: atm2wav_coupling
+   USE atm_coupler_mod, ONLY: atmfwav_coupling
+# endif
    USE mct_wrf_coupler_params
 #endif
 
@@ -167,7 +177,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
    LOGICAL , EXTERNAL                     :: wrf_dm_on_monitor
    INTEGER                                :: idum1 , idum2 , ierr , open_status
 #ifdef WRF_COUPLING
-   INTEGER                                :: nATM_steps, num_steps
+   INTEGER                                :: nATM_steps, num_steps, io, iw, ia
    REAL                                   :: minutesSinceSimulationStart
 #endif
    LOGICAL                                :: should_do_last_io
@@ -220,11 +230,10 @@ RECURSIVE SUBROUTINE integrate ( grid )
      END SUBROUTINE med_nest_initial
        ! mediation-supplied routine that gives mediation layer opportunity to 
        ! provide parent->nest forcing
-     SUBROUTINE med_nest_force ( parent , grid , config_flags )
+     SUBROUTINE med_nest_force ( parent , grid )
        USE module_domain
        USE module_configure
        TYPE (domain), POINTER ::  grid, parent
-       TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_nest_force
 
 #ifdef MOVE_NESTS
@@ -312,14 +321,24 @@ RECURSIVE SUBROUTINE integrate ( grid )
                IF ( grid%dfi_stage == DFI_STARTFWD ) THEN
                   CALL wrf_dfi_startfwd_init(new_nest)
                ENDIF
+               IF (coupler_on) CALL cpl_defdomain( new_nest ) 
 #ifdef WRF_COUPLING
-               !jcw Here we init a child grid for the coupling.
-               IF (grid%id.EQ.WRF_CPL_GRID-1) THEN
-                 CALL initialize_atm_coupling (new_nest)
-                 CALL atm2ocn_coupling (new_nest)
-               END IF
+               !jcw Here we init a child grid into the MCT coupler.
+               CALL initialize_atm_coupling (new_nest, nestid)
 #endif
             END DO
+#ifdef WRF_COUPLING
+!           After all nests are opened, and initialized into MCT,
+!           call to init routers and do initial data exchange.
+            num_steps=head_grid%itimestep
+            IF (num_steps.eq.0) THEN
+!             init the routers between all atm, ocn, and wav grids. 
+              CALL initialize_atm_routers
+!             perform initial data exchange between all grids.
+              CALL atm_coupling (grid, num_steps)
+            END IF
+!           CALL set_current_grid_ptr( grid )
+#endif
             IF ( a_nest_was_opened ) THEN
                CALL set_overlaps ( grid )   ! find overlapping and set pointers
             END IF
@@ -340,17 +359,12 @@ RECURSIVE SUBROUTINE integrate ( grid )
                CALL domain_time_test( grid_ptr, 'domain_clockadvance' )
                grid_ptr => grid_ptr%sibling
 #ifdef WRF_COUPLING
-              !jcw  WRF_CPL_GRID is read in from the coupling input file.
-              IF ( grid%id .EQ. WRF_CPL_GRID ) THEN
-                CALL domain_clock_get( grid, minutesSinceSimulationStart=minutesSinceSimulationStart )
-!               num_steps=minutesSinceSimulationStart*60.0/grid%dt
-                num_steps=grid%itimestep
-                nATM_steps=MAX(1,INT(TI_ATM_OCN/grid%dt))
-                IF ((num_steps.gt.last_step).and.(MOD(num_steps, nATM_steps).eq.0)) THEN
-                  CALL atm2ocn_coupling (grid)
-                  last_step=num_steps
-                ENDIF
-              ENDIF
+               num_steps=head_grid%itimestep
+!              IF ((num_steps.gt.last_step).and.(num_steps.gt.0)) THEN
+               IF ((num_steps.gt.last_step).and.(num_steps.gt.1)) THEN
+                 CALL atm_coupling (grid, num_steps)
+                 last_step=num_steps
+               ENDIF
 #endif
             END DO
             CALL set_current_grid_ptr( grid )
@@ -363,7 +377,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
                    CALL set_current_grid_ptr( grid_ptr%nests(kid)%ptr )
                    ! Recursive -- advance nests from previous time level to this time level.
                    CALL wrf_debug( 100 , 'module_integrate: calling med_nest_force ' )
-                   CALL med_nest_force ( grid_ptr , grid_ptr%nests(kid)%ptr , config_flags )
+                   CALL med_nest_force ( grid_ptr , grid_ptr%nests(kid)%ptr )
                    CALL wrf_debug( 100 , 'module_integrate: back from med_nest_force ' )
                    grid_ptr%nests(kid)%ptr%start_subtime = &
                      domain_get_current_time(grid) - domain_get_time_step(grid)
@@ -389,6 +403,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
 #endif
                  END IF
                END DO
+               IF (coupler_on) CALL cpl_snd( grid_ptr ) 
                grid_ptr => grid_ptr%sibling
             END DO
             CALL set_current_grid_ptr( grid )

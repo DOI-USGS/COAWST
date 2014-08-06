@@ -14,8 +14,9 @@ MODULE module_big_step_utilities_em
 
    USE module_model_constants
    USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, kfetascheme, g3scheme, &
-   p_qv, param_first_scalar, p_qr, p_qc
+   gfscheme,p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
    USE module_configure, ONLY : grid_config_rec_type
+   USE module_wrf_error
 
 CONTAINS
 
@@ -803,7 +804,8 @@ SUBROUTINE calc_cq ( moist, cqu, cqv, cqw, n_moist, &
 
    ! Local stuff
 
-   REAL :: qtot
+   ! Changes from Larry Meadows, Intel Corp.  Improve vectorization of this routine
+   REAL :: qtot(its:ite)
    
    INTEGER :: i, j, k, itf, jtf, ktf, ispe
 
@@ -813,67 +815,62 @@ SUBROUTINE calc_cq ( moist, cqu, cqv, cqw, n_moist, &
 !
 !</DESCRIPTION>
 
-      itf=ite
-      jtf=MIN(jte,jde-1)
       ktf=MIN(kte,kde-1)
 
       IF(  n_moist >= PARAM_FIRST_SCALAR ) THEN
 
+        itf=ite
+        jtf=MIN(jte,jde-1)
         DO j=jts,jtf
-        DO k=kts,ktf
-        DO i=its,itf
-          qtot = 0.
-!DEC$ loop count(3)
-          DO ispe=PARAM_FIRST_SCALAR,n_moist
-            qtot = qtot + moist(i,k,j,ispe) + moist(i-1,k,j,ispe)
-          ENDDO
-!           qtot = 0.5*( moist(i  ,k,j,1)+moist(i  ,k,j,2)+moist(i  ,k,j,3)+  &
-!     &                  moist(i-1,k,j,1)+moist(i-1,k,j,2)+moist(i-1,k,j,3) )
-!           cqu(i,k,j) = 1./(1.+qtot)
-           cqu(i,k,j) = 1./(1.+0.5*qtot)
-        ENDDO
+          DO k=kts,ktf
+            qtot = 0.
+            DO ispe=PARAM_FIRST_SCALAR,n_moist
+              DO i=its,itf
+                qtot(i) = qtot(i) + moist(i,k,j,ispe) + moist(i-1,k,j,ispe)
+              ENDDO
+            ENDDO
+            DO i=its,itf
+              cqu(i,k,j) = 1./(1.+0.5*qtot(i))
+            ENDDO
         ENDDO
         ENDDO
 
         itf=MIN(ite,ide-1)
         jtf=jte
-
         DO j=jts,jtf
-        DO k=kts,ktf
-        DO i=its,itf
-          qtot = 0.
-!DEC$ loop count(3)
-          DO ispe=PARAM_FIRST_SCALAR,n_moist
-            qtot = qtot + moist(i,k,j,ispe) + moist(i,k,j-1,ispe)
+          DO k=kts,ktf
+            qtot = 0.
+            DO ispe=PARAM_FIRST_SCALAR,n_moist
+              DO i=its,itf
+                qtot(i) = qtot(i) + moist(i,k,j,ispe) + moist(i,k,j-1,ispe)
+              ENDDO
+            ENDDO
+            DO i = its,itf
+               cqv(i,k,j) = 1./(1.+0.5*qtot(i))
+            ENDDO
           ENDDO
-!           qtot = 0.5*( moist(i,k,j  ,1)+moist(i,k,j  ,2)+moist(i,k,j  ,3)+  &
-!     &                  moist(i,k,j-1,1)+moist(i,k,j-1,2)+moist(i,k,j-1,3) )
-!           cqv(i,k,j) = 1./(1.+qtot)
-           cqv(i,k,j) = 1./(1.+0.5*qtot)
-        ENDDO
-        ENDDO
         ENDDO
 
         itf=MIN(ite,ide-1)
         jtf=MIN(jte,jde-1)
         DO j=jts,jtf
-        DO k=kts+1,ktf
-        DO i=its,itf
-          qtot = 0.
-!DEC$ loop count(3)
-          DO ispe=PARAM_FIRST_SCALAR,n_moist
-            qtot = qtot + moist(i,k,j,ispe) + moist(i,k-1,j,ispe)
-          ENDDO
-!           qtot = 0.5*( moist(i,k  ,j,1)+moist(i,k  ,j,2)+moist(i,k-1,j,3)+  &
-!     &                  moist(i,k-1,j,1)+moist(i,k-1,j,2)+moist(i,k  ,j,3) )
-!           cqw(i,k,j) = qtot
-           cqw(i,k,j) = 0.5*qtot
-        ENDDO
+          DO k=kts+1,ktf
+            qtot = 0.
+            DO ispe=PARAM_FIRST_SCALAR,n_moist
+              DO i=its,itf
+                qtot(i) = qtot(i) + moist(i,k,j,ispe) + moist(i,k-1,j,ispe)
+              ENDDO
+            ENDDO
+            DO i = its,itf
+              cqw(i,k,j) = 0.5*qtot(i)
+            ENDDO
         ENDDO
         ENDDO
 
       ELSE
 
+        itf=ite
+        jtf=MIN(jte,jde-1)
         DO j=jts,jtf
         DO k=kts,ktf
         DO i=its,itf
@@ -884,7 +881,6 @@ SUBROUTINE calc_cq ( moist, cqu, cqv, cqw, n_moist, &
 
         itf=MIN(ite,ide-1)
         jtf=jte
-
         DO j=jts,jtf
         DO k=kts,ktf
         DO i=its,itf
@@ -2529,11 +2525,26 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    END IF
 
    IF ( config_flags%w_damping == 1 ) THEN
+#ifdef OPTIMIZE_CFL_TEST
+! 20121025, L. Meadows vector optimization does not include special case for Cassini
+     IF(config_flags%map_proj == PROJ_CASSINI ) then
+       CALL wrf_error_fatal('module_big_step_utilities_em.F: -DOPTIMIZE_CFL_TEST option does not support PROJ_CASSINI')
+     END IF
+#endif
+
      DO j = jts,jtf
 
      DO k = 2, kde-1
      DO i = its,itf
 #if 1
+#  ifdef OPTIMIZE_CFL_TEST
+! L. Meadows, Intel, MIC optimization, 20121025
+        msfuxt = msfux(i,j)
+        vert_cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
+        IF ( vert_cfl > max_vert_cfl ) THEN
+           max_vert_cfl = vert_cfl
+        ENDIF
+#  else
         IF(config_flags%map_proj == PROJ_CASSINI ) then
            msfuxt = MIN(msfux(i,j), msfxffl)
         ELSE
@@ -2545,6 +2556,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
            max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k 
            maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
         ENDIF
+#  endif
         
         horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt),                          &
              abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
@@ -2563,9 +2575,12 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
         cf_d = abs(mut(i,j))
         if(cf_n .gt. cf_d*w_beta )then
 #endif
-
+#ifndef OPTIMIZE_CFL_TEST
+! This internal write is costly on newer Xeon processors because it breaks 
+! vectorization.  (J. Michalakes for L. Meadows at Intel, 12/13/2012)
            WRITE(temp,*)i,j,k,' vert_cfl,w,d(eta)=',vert_cfl,w(i,k,j),-1./rdnw(k)
            CALL wrf_debug ( 100 , TRIM(temp) )
+#endif
            if ( vert_cfl > 2. ) some = some + 1
            rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(vert_cfl-w_beta)*mut(i,j)
         endif
@@ -2580,6 +2595,14 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
      DO i = its,itf
 
 #if 1
+#  ifdef OPTIMIZE_CFL_TEST
+        msfuxt = msfux(i,j)
+        vert_cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
+        IF ( vert_cfl > max_vert_cfl ) THEN
+           max_vert_cfl = vert_cfl
+        ENDIF
+#  else
+! L. Meadows MIC optimization, 20121025
         IF(config_flags%map_proj == PROJ_CASSINI ) then
            msfuxt = MIN(msfux(i,j), msfxffl)
         ELSE
@@ -2591,6 +2614,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
            max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k 
            maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
         ENDIF
+#  endif
         
         horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt),                          &
              abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
@@ -2610,8 +2634,10 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
         cf_d = abs(mut(i,j))
         if(cf_n .gt. cf_d*w_beta )then
 #endif
+#ifndef OPTIMIZE_CFL_TEST
            WRITE(temp,*)i,j,k,' vert_cfl,w,d(eta)=',vert_cfl,w(i,k,j),-1./rdnw(k)
            CALL wrf_debug ( 100 , TRIM(temp) )
+#endif
            if ( vert_cfl > 2. ) some = some + 1
         endif
      END DO
@@ -2624,9 +2650,11 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
      WRITE(temp,*)some,                                            &
             ' points exceeded cfl=2 in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
      CALL wrf_debug ( 0 , TRIM(temp) )
+#ifndef OPTIMIZE_CFL_TEST
      WRITE(temp,*)'MAX AT i,j,k: ',maxi,maxj,maxk,' vert_cfl,w,d(eta)=',max_vert_cfl, &
                              maxdub,maxdeta
      CALL wrf_debug ( 0 , TRIM(temp) )
+#endif
    ENDIF
 
 END SUBROUTINE w_damp
@@ -4464,7 +4492,6 @@ END SUBROUTINE decouple
 
 !-------------------------------------------------------------------------------
 
-
 SUBROUTINE zero_tend ( tendency,                     &
                        ids, ide, jds, jde, kds, kde, &
                        ims, ime, jms, jme, kms, kme, &
@@ -4502,6 +4529,43 @@ SUBROUTINE zero_tend ( tendency,                     &
       END SUBROUTINE zero_tend
 
 !-------------------------------------------------------------------------------
+
+SUBROUTINE zero_tend2d( tendency,                     &
+                       ids, ide, jds, jde, kds, kde, &
+                       ims, ime, jms, jme, kms, kme, &
+                       its, ite, jts, jte, kts, kte )
+
+
+   IMPLICIT NONE
+   
+   ! Input data
+   
+   INTEGER ,                                   INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                                                                ims, ime, jms, jme, kms, kme, &
+                                                                its, ite, jts, jte, kts, kte
+
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: tendency
+
+   ! Local data
+   
+   INTEGER :: i, j, k, itf, jtf, ktf
+
+!<DESCRIPTION>
+!
+!  zero_tend sets the input tendency array to zero.
+!
+!</DESCRIPTION>
+
+      DO j = jts, jte
+      DO i = its, ite
+        tendency(i,j) = 0.
+      ENDDO
+      ENDDO
+
+      END SUBROUTINE zero_tend2d
+
+!-------------------------------------------------------------------------------
+
 ! Sets the an array on the polar v point(s) to zero
 SUBROUTINE zero_pole ( field,                        &
                        ids, ide, jds, jde, kds, kde, &
@@ -4605,6 +4669,9 @@ END SUBROUTINE pole_point_bc
                          RTHFTEN,  RQVFTEN,                           &
                          RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN,            &
                          RPHNDGDTEN,RQVNDGDTEN, RMUNDGDTEN,           &
+!jdf
+                         landmask, xland,                             &
+!jdf
                          ids, ide, jds, jde, kds, kde,                &
                          ims, ime, jms, jme, kms, kme,                &
                          its, ite, jts, jte, kts, kte                )
@@ -4704,6 +4771,11 @@ END SUBROUTINE pole_point_bc
 
    REAL,  DIMENSION( ims:ime, jms:jme )                            , &
           INTENT(INOUT)   ::                               RMUNDGDTEN
+!jdf
+   REAL,  DIMENSION( ims:ime, jms:jme )                            , &
+          INTENT(INOUT)   ::                               landmask, &
+                                                              xland
+!jdf
 
    INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, j_startv
    INTEGER :: i, j, k
@@ -4731,6 +4803,13 @@ END SUBROUTINE pole_point_bc
 
     k_start = kts
     k_end = min( kte, kde-1 )
+!jdf
+!    do j = j_start,j_end
+!    do i = i_start, i_end
+!      if(landmask(i,j).lt.0.5) xland(i,j)=2.0
+!    enddo
+!    enddo
+!jdf
 
 !  compute thermodynamics and velocities at pressure points (or half levels)
 
@@ -5058,6 +5137,7 @@ END SUBROUTINE pole_point_bc
 !  decouple advective forcing required by Grell-Devenyi scheme
 
    if(( config_flags%cu_physics == GDSCHEME ) .OR.    &
+      ( config_flags%cu_physics == GFSCHEME ) .OR.    &
       ( config_flags%cu_physics == G3SCHEME ) .OR.    &
       ( config_flags%cu_physics == KFETASCHEME ) .OR. &
       ( config_flags%cu_physics == TIEDTKESCHEME ) ) then  ! Tiedtke ZCX&YQW
@@ -5393,7 +5473,6 @@ END SUBROUTINE phy_prep
      DO k = k_start, k_end
      DO i = i_start, i_end
           mpten = th_phy(i,k,j)-h_diabatic(i,k,j)
-#if ( WRF_DFI_RADAR == 1 )
        if(mpten.gt.mptenmax) then
           mptenmax=mpten
           imax=i
@@ -5407,6 +5486,7 @@ END SUBROUTINE phy_prep
           mpten=min(config_flags%mp_tend_lim*dt, mpten)
           mpten=max(-config_flags%mp_tend_lim*dt, mpten)
 
+#if ( WRF_DFI_RADAR == 1 )
        if(k < k_end ) then
          if(dfi_tten_max < dfi_tten_rad(i,k,j) ) dfi_tten_max = dfi_tten_rad(i,k,j)
          if(old_max < (th_phy(i,k,j)-h_diabatic(i,k,j)) ) old_max=th_phy(i,k,j)-h_diabatic(i,k,j)

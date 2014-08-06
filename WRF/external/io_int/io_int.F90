@@ -545,7 +545,7 @@ SUBROUTINE ext_int_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , St
         GOTO 7717
       else
           WRITE(mess,*)'skipping a code=',code,' in ext_int_get_var_info'
-          CALL wrf_message(mess)
+          CALL wrf_debug(2,mess)
       ENDIF
     ELSE
       Status = 1
@@ -1198,7 +1198,7 @@ SUBROUTINE ext_int_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Coun
            Status = 1
            return
         ENDIF
-        CALL int_get_ti_header_integer_varna( hdrbuf, hdrbufsize, itypesize, 4, &
+        CALL int_get_ti_header_integer_varna( hdrbuf, hdrbufsize, itypesize, typesize, &
              locDataHandle, locElement, locVarName, Data, Outcount, code )
      ELSE
         Status = 1
@@ -1217,6 +1217,7 @@ END SUBROUTINE ext_int_get_var_ti_integer
 !--- put_var_ti_integer
 SUBROUTINE ext_int_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Count,  Status )
   USE module_ext_internal
+  USE module_internal_header_util, only: int_gen_ti_header_integer_varna
   IMPLICIT NONE
 #include "intio_tags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle

@@ -9,7 +9,11 @@ CONTAINS
 !-------------------------------------------------------------------
    SUBROUTINE SF_GFDL(U3D,V3D,T3D,QV3D,P3D,                     &
                      CP,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2, CPM,    &
-                     DT, SMOIS,num_soil_layers,ISLTYP,ZNT,UST,PSIM,PSIH,  &
+                     DT, SMOIS,num_soil_layers,ISLTYP,ZNT,      &
+#if (HWRF==1)
+                     MZNT,                                      & 
+#endif
+                     UST,PSIM,PSIH,                             &   
                      XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,    & ! gopal's doing for Ocean coupling
                      QGH,QSFC,U10,V10,                          &
                      GZ1OZ0,WSPD,BR,ISFFLX,                     &
@@ -35,7 +39,8 @@ CONTAINS
 !-- R           gas constant for dry air (J/kg/K)
 !-- XLV         latent heat of vaporization for water (J/kg)
 !-- PSFC	surface pressure (Pa)
-!-- ZNT		roughness length (m)
+!-- ZNT		thermal roughness length (m)
+!-- MZNT        momentum roughness length (m)
 !-- MAVAIL        surface moisture availability (between 0 and 1)
 !-- UST		u* in similarity theory (m/s)
 !-- PSIM        similarity stability function for momentum
@@ -80,7 +85,7 @@ CONTAINS
 !-- kts         start index for k in tile
 !-- kte         end index for k in tile
 !-------------------------------------------------------------------
-
+      character*255 :: message
       INTEGER, INTENT(IN) ::            ids,ide, jds,jde, kds,kde,      &
                                         ims,ime, jms,jme, kms,kme,      &
                                         its,ite, jts,jte, kts,kte,      &
@@ -130,6 +135,9 @@ CONTAINS
                                         QSFC,                           &
                                         UST,                            &
                                         ZNT,                            &
+#if (HWRF==1)
+                                        MZNT,                           &   !KWON momentum zo
+#endif
                                         WSPD,                           &
                                         TAUX,                           & ! gopal's doing for Ocean coupling
                                         TAUY
@@ -202,6 +210,7 @@ CONTAINS
                                         pkmax,                          &
                                         tstrc,                          &
                                         zoc,                            &
+                                        mzoc,                           &  !ADDED BY KWON FOR momentum Zo
                                         wetc,                           &
                                         slwdc,                          &
                                         rib,                            &
@@ -250,7 +259,8 @@ CONTAINS
    IM=ITE-ITS+1
    KM=KTE-KTS+1
 
-   WRITE(0,*)'WITHIN THE GFDL SCHEME, NTSFLG=1 FOR GFDL SLAB  2010 UPGRADS',NTSFLG
+   WRITE(message,*)'WITHIN THE GFDL SCHEME, NTSFLG=1 FOR GFDL SLAB  2010 UPGRADS',NTSFLG
+   call wrf_debug(1,message)
 
    DO J=jts,jte
 
@@ -316,7 +326,7 @@ CONTAINS
 !                    pkmax(i),pspc(i),wetc(i),tjloc(i),zoc(i),tstrc(i)
 !     enddo
 
-     CALL MFLUX2(  fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,tstrc,   &
+     CALL MFLUX2(  fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,   &    !mzoc for momentum Zo KWON
                    pspc,pkmax,wetc,slwdc,tjloc,                &
                    upc,vpc,tpc,rpc,dt,J,wind10,xxfh2,ntsflg,SFENTH,   &
                    ids,ide, jds,jde, kds,kde,                  &
@@ -374,6 +384,9 @@ CONTAINS
 
 
         znt(i,j)= 0.01*abs(zoc(i))
+#if (HWRF==1)
+        mznt(i,j)= 0.01*abs(mzoc(i))
+#endif
         wspd(i,j) = SQRT(upc(kts,i)*upc(kts,i) + vpc(kts,i)*vpc(kts,i))
         wspd(i,j) = amax1(wspd(i,j)    ,100.)/100.
         u10m(i) = u1(i)*(wind10(i)/wspd(i,j))/100.
@@ -467,8 +480,10 @@ CONTAINS
 !       write(0,*) j,(cdm(ii),ii=70,90)
     if(j.eq.jds.or.j.eq.jde) then
 
-    write(0,*) "TSFC in gfdl sf mod,dt, its,ite,jts,jts", dt,its,ite,jts,jte,ids,ide,jds,jde
-    write(0,*) "TSFC",  (TSK(i,j),i=its,ite)
+    write(message,*) "TSFC in gfdl sf mod,dt, its,ite,jts,jts", dt,its,ite,jts,jte,ids,ide,jds,jde
+    call wrf_debug(1,message)
+    write(message,*) "TSFC",  (TSK(i,j),i=its,ite)
+    call wrf_debug(1,message)
     endif
 
    ENDDO            ! FOR THE J LOOP I PRESUME
@@ -506,7 +521,7 @@ CONTAINS
    END SUBROUTINE SF_GFDL
 
 !-------------------------------------------------------------------
-       SUBROUTINE MFLUX2( fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,tstrc,       &
+       SUBROUTINE MFLUX2( fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,       &    !mzoc KWON
                           pspc,pkmax,wetc,slwdc,tjloc,                    &
                           upc,vpc,tpc,rpc,dt,jfix,wind10,xxfh2,ntsflg,sfenth,    &
                           ids,ide, jds,jde, kds,kde,                      &
@@ -564,7 +579,7 @@ CONTAINS
       real, intent (out), dimension (ims :ime ) :: xxfh2
       real, intent (out), dimension (ims :ime ) :: wind10
 
-      real, intent ( inout), dimension (ims :ime ) :: zoc
+      real, intent ( inout), dimension (ims :ime ) :: zoc,mzoc    !KWON
       real, intent ( inout), dimension (ims :ime ) :: tstrc
 
       real, intent ( in)                        :: dt
@@ -781,7 +796,7 @@ CONTAINS
       real,parameter :: g     = 980.6
       real,parameter :: rgas  = 2.87e6
       real,parameter :: og    = 1./g
-
+      character*255 :: message
 !
 !     character*10 routine
 !     routine = 'mflux2'
@@ -857,6 +872,8 @@ CONTAINS
 !------------------------------------------------------------------------
 !     where necessary modify zo values over ocean.
 !------------------------------------------------------------------------
+!
+      mzoc(i) = zoc(i)                !FOR SAVE MOMENTUM Zo
 
       enddo
 
@@ -1076,8 +1093,10 @@ CONTAINS
           if (fmzo .GE. 5.0e-5) then
             sq        = (sgz - sgzm(i))/(szeta(i) - szetam(i))
             if(sq .EQ. 1) then
-             write(0,*)'NCO ERROR DIVIDE BY ZERO IN MFLUX2 (STABLE CASE)'
-             write(0,*)'sq is 1 ',fmzo,sgz,sgzm(i),szeta(i),szetam(i)
+             write(message,*)'NCO ERROR DIVIDE BY ZERO IN MFLUX2 (STABLE CASE)'
+             call wrf_message(message)
+             write(message,*)'sq is 1 ',fmzo,sgz,sgzm(i),szeta(i),szetam(i)
+             call wrf_message(message)
             endif
             szetam(i) = szeta(i)
             szeta (i) = (sgz - szeta(i)*sq)/(1.0 - sq)

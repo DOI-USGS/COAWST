@@ -45,6 +45,28 @@
 
 ! 1) very minor change to limits on autoconversion source of rain number when cloud water is depleted
 
+! WRFV3.5
+! hm/A. Ackerman bug fix 11/08/12
+
+! 1) for accelerated melting from collisions, should use rain mass collected by snow, not snow mass 
+!    collected by rain
+! 2) minor changes to some comments
+! 3) reduction of maximum-allowed ice concentration from 10 cm-3 to 0.3
+!    cm-3. This was done to address the problem of excessive and persistent
+!    anvil cirrus produced by the scheme.
+
+! CHANGES FOR WRFV3.5.1
+! 1) added output for snow+cloud ice and graupel time step and accumulated
+!    surface precipitation
+! 2) bug fix to option w/o graupel/hail (IGRAUP = 1), include PRACI, PGSACW,
+!    and PGRACS as sources for snow instead of graupel/hail, bug reported by
+!    Hailong Wang (PNNL)
+! 3) very minor fix to immersion freezing rate formulation (negligible impact)
+! 4) clarifications to code comments
+! 5) minor change to shedding of rain, remove limit so that the number of 
+!    collected drops can smaller than number of shed drops
+! 6) change of specific heat of liquid water from 4218 to 4187 J/kg/K
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! THIS SCHEME IS A BULK DOUBLE-MOMENT SCHEME THAT PREDICTS MIXING
@@ -53,8 +75,9 @@
 
 MODULE MODULE_MP_MORR_TWO_MOMENT
    USE     module_wrf_error
-!      USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm  ! GT
-!      USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep  ! GT
+   USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm  ! GT
+   USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep  ! GT
+   USE module_mp_radar
 
 ! USE WRF PHYSICS CONSTANTS
   use module_model_constants, ONLY: CP, G, R => r_d, RV => r_v, EP_2
@@ -206,6 +229,7 @@ MODULE MODULE_MP_MORR_TWO_MOMENT
      REAL, PRIVATE :: CONS31,CONS32,CONS33,CONS34,CONS35,CONS36,CONS37,CONS38,CONS39,CONS40
      REAL, PRIVATE :: CONS41
 
+
 CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -354,7 +378,9 @@ SUBROUTINE MORR_TWO_MOMENT_INIT
          EII = 0.1
          ECI = 0.7
 ! HM, ADD FOR V3.2
-         CPW = 4218.
+! hm, 7/23/13
+!         CPW = 4218.
+         CPW = 4187.
 
 ! SIZE DISTRIBUTION PARAMETERS
 
@@ -472,6 +498,25 @@ SUBROUTINE MORR_TWO_MOMENT_INIT
          CONS40=PI/6.*BIMM
          CONS41=PI*PI*ECR*RHOW
 
+!+---+-----------------------------------------------------------------+
+!..Set these variables needed for computing radar reflectivity.  These
+!.. get used within radar_init to create other variables used in the
+!.. radar module.
+
+         xam_r = PI*RHOW/6.
+         xbm_r = 3.
+         xmu_r = 0.
+         xam_s = CS
+         xbm_s = DS
+         xmu_s = 0.
+         xam_g = CG
+         xbm_g = DG
+         xmu_g = 0.
+
+         call radar_init
+!+---+-----------------------------------------------------------------+
+
+
 END SUBROUTINE MORR_TWO_MOMENT_INIT
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -493,6 +538,8 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
                 TH, QV, QC, QR, QI, QS, QG, NI, NS, NR, NG, &
                 RHO, PII, P, DT_IN, DZ, HT, W,          &
                 RAINNC, RAINNCV, SR,                    &
+		SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,    & ! hm added 7/13/13
+                refl_10cm, diagflag, do_radar_ref,      & ! GT added for reflectivity calcs
                 qrcuten, qscuten, qicuten, mu           & ! hm added
                ,F_QNDROP, qndrop                        & ! hm added, wrf-chem 
                ,IDS,IDE, JDS,JDE, KDS,KDE               & ! domain dims
@@ -522,6 +569,10 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 ! ITIMESTEP - time step counter
 ! RAINNC - accumulated grid-scale precipitation (mm)
 ! RAINNCV - one time step grid scale precipitation (mm/time step)
+! SNOWNC - accumulated grid-scale snow plus cloud ice (mm)
+! SNOWNCV - one time step grid scale snow plus cloud ice (mm/time step)
+! GRAUPELNC - accumulated grid-scale graupel (mm)
+! GRAUPELNCV - one time step grid scale graupel (mm/time step)
 ! SR - one time step mass ratio of snow to total precip
 ! qrcuten, rain tendency from parameterized cumulus convection
 ! qscuten, snow tendency from parameterized cumulus convection
@@ -542,10 +593,6 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 
 ! reflectivity currently not included!!!!
 ! REFL_10CM - CALCULATED RADAR REFLECTIVITY AT 10 CM (DBZ)
-!................................
-! GRID_CLOCK, GRID_ALARMS - parameters to limit radar reflectivity calculation only when needed
-! otherwise radar reflectivity calculation every time step is too slow
-! only needed for coupling with WRF, see code below for details
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! EFFC - DROPLET EFFECTIVE RADIUS (MICRON)
@@ -585,15 +632,14 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
    INTEGER, INTENT(IN):: ITIMESTEP
 
    REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT):: &
-                          RAINNC, RAINNCV, SR
+                          RAINNC, RAINNCV, SR, &
+! hm added 7/13/13
+                          SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV
 
-!   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::       &  ! GT
-!                          refl_10cm
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::       &  ! GT
+                          refl_10cm
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::       ht
-
-!      TYPE (WRFU_Clock):: grid_clock                  ! GT
-!      TYPE (WRFU_Alarm), POINTER:: grid_alarms(:)     ! GT
 
    ! LOCAL VARIABLES
 
@@ -631,15 +677,17 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 ! wrf-chem
    REAL, DIMENSION(kts:kte) :: nc1d, nc_tend1d,C2PREC,CSED,ISED,SSED,GSED,RSED    
 ! HM add reflectivity      
-!                            dbz
+   REAL, DIMENSION(kts:kte) :: dBZ
                           
-   REAL PRECPRT1D, SNOWRT1D
+   REAL PRECPRT1D, SNOWRT1D, SNOWPRT1D, GRPLPRT1D ! hm added 7/13/13
 
    INTEGER I,K,J
 
    REAL DT
 
-!   LOGICAL:: dBZ_tstep ! GT
+   LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
+   INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
+
 ! below for wrf-chem
    flag_qndrop = .false.
    IF ( PRESENT ( f_qndrop ) ) flag_qndrop = f_qndrop
@@ -733,6 +781,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
        QC1D, QI1D, QS1D, QR1D,NI1D, NS1D, NR1D,                                          &
        T_TEND1D,QV_TEND1D, T1D, QV1D, P1D, DZ1D, W1D, WVAR1D,                   &
        PRECPRT1D,SNOWRT1D,                                                               &
+       SNOWPRT1D,GRPLPRT1D,                 & ! hm added 7/13/13
        EFFC1D,EFFI1D,EFFS1D,EFFR1D,DT,                                                   &
                                             IMS,IME, JMS,JME, KMS,KME,                   &
                                             ITS,ITE, JTS,JTE, KTS,KTE,                   & ! HM ADD GRAUPEL
@@ -800,7 +849,24 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 ! hm modified so that m2005 precip variables correctly match wrf precip variables
       RAINNC(i,j) = RAINNC(I,J)+PRECPRT1D
       RAINNCV(i,j) = PRECPRT1D
+! hm, added 7/13/13
+      SNOWNC(i,j) = SNOWNC(I,J)+SNOWPRT1D
+      SNOWNCV(i,j) = SNOWPRT1D
+      GRAUPELNC(i,j) = GRAUPELNC(I,J)+GRPLPRT1D
+      GRAUPELNCV(i,j) = GRPLPRT1D
       SR(i,j) = SNOWRT1D/(PRECPRT1D+1.E-12)
+
+!+---+-----------------------------------------------------------------+
+         IF ( PRESENT (diagflag) ) THEN
+         if (diagflag .and. do_radar_ref == 1) then
+          call refl10cm_hm (qv1d, qr1d, nr1d, qs1d, ns1d, qg1d, ng1d,   &
+                      t1d, p1d, dBZ, kts, kte, i, j)
+          do k = kts, kte
+             refl_10cm(i,k,j) = MAX(-35., dBZ(k))
+          enddo
+         endif
+         ENDIF
+!+---+-----------------------------------------------------------------+
 
    end do
    end do   
@@ -812,6 +878,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
       SUBROUTINE MORR_TWO_MOMENT_MICRO(QC3DTEN,QI3DTEN,QNI3DTEN,QR3DTEN,         &
        NI3DTEN,NS3DTEN,NR3DTEN,QC3D,QI3D,QNI3D,QR3D,NI3D,NS3D,NR3D,              &
        T3DTEN,QV3DTEN,T3D,QV3D,PRES,DZQ,W3D,WVAR,PRECRT,SNOWRT,            &
+       SNOWPRT,GRPLPRT,                & ! hm added 7/13/13
        EFFC,EFFI,EFFS,EFFR,DT,                                                   &
                                             IMS,IME, JMS,JME, KMS,KME,           &
                                             ITS,ITE, JTS,JTE, KTS,KTE,           & ! ADD GRAUPEL
@@ -902,6 +969,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
         REAL PRECRT                ! TOTAL PRECIP PER TIME STEP (mm)
         REAL SNOWRT                ! SNOW PER TIME STEP (mm)
+! hm added 7/13/13
+        REAL SNOWPRT      ! TOTAL CLOUD ICE PLUS SNOW PER TIME STEP (mm)
+	REAL GRPLPRT	  ! TOTAL GRAUPEL PER TIME STEP (mm)
 
         REAL, DIMENSION(KTS:KTE) ::   EFFC            ! DROPLET EFFECTIVE RADIUS (MICRON)
         REAL, DIMENSION(KTS:KTE) ::   EFFI            ! CLOUD ICE EFFECTIVE RADIUS (MICRON)
@@ -950,12 +1020,12 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
      REAL, DIMENSION(KTS:KTE) ::  MNUCCR    ! CHANGE Q DUE TO CONTACT FREEZ RAIN
      REAL, DIMENSION(KTS:KTE) ::  NNUCCR    ! CHANGE N DUE TO CONTACT FREEZ RAIN
      REAL, DIMENSION(KTS:KTE) ::  NPRA      ! CHANGE IN N DUE TO DROPLET ACC BY RAIN
-     REAL, DIMENSION(KTS:KTE) ::  NRAGG     ! SELF-COLLECTION OF RAIN
+     REAL, DIMENSION(KTS:KTE) ::  NRAGG     ! SELF-COLLECTION/BREAKUP OF RAIN
      REAL, DIMENSION(KTS:KTE) ::  NSAGG     ! SELF-COLLECTION OF SNOW
      REAL, DIMENSION(KTS:KTE) ::  NPRC      ! CHANGE NC AUTOCONVERSION DROPLETS
      REAL, DIMENSION(KTS:KTE) ::  NPRC1      ! CHANGE NR AUTOCONVERSION DROPLETS
-     REAL, DIMENSION(KTS:KTE) ::  PRAI      ! CHANGE Q AUTOCONVERSION CLOUD ICE
-     REAL, DIMENSION(KTS:KTE) ::  PRCI      ! CHANGE Q ACCRETION CLOUD ICE BY SNOW
+     REAL, DIMENSION(KTS:KTE) ::  PRAI      ! CHANGE Q ACCRETION CLOUD ICE BY SNOW
+     REAL, DIMENSION(KTS:KTE) ::  PRCI      ! CHANGE Q AUTOCONVERSIN CLOUD ICE TO SNOW
      REAL, DIMENSION(KTS:KTE) ::  PSACWS    ! CHANGE Q DROPLET ACCRETION BY SNOW
      REAL, DIMENSION(KTS:KTE) ::  NPSACWS   ! CHANGE N DROPLET ACCRETION BY SNOW
      REAL, DIMENSION(KTS:KTE) ::  PSACWI    ! CHANGE Q DROPLET ACCRETION BY CLOUD ICE
@@ -1516,7 +1586,6 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             PRACG(K) = 0.
             NPRACG(K) = 0.
             PSMLT(K) = 0.
-            EVPMS(K) = 0.
             PGMLT(K) = 0.
             EVPMG(K) = 0.
             PRACS(K) = 0.
@@ -1577,12 +1646,22 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             UMR=MIN(UMR,9.1*dum)
             UNR=MIN(UNR,9.1*dum)
 
-            PRACS(K) = CONS31*(((1.2*UMR-0.95*UMS)**2+              &
-                  0.08*UMS*UMR)**0.5*RHO(K)*                     &
-                 N0RR(K)*N0S(K)/LAMS(K)**3*                    &
-                  (5./(LAMS(K)**3*LAMR(K))+                    &
-                  2./(LAMS(K)**2*LAMR(K)**2)+                  &
-                  0.5/(LAMS(K)*LAMR(K)**3)))
+! hm fix, 2/12/13
+! for above freezing conditions to get accelerated melting of snow,
+! we need collection of rain by snow (following Lin et al. 1983)
+!            PRACS(K) = CONS31*(((1.2*UMR-0.95*UMS)**2+              &
+!                  0.08*UMS*UMR)**0.5*RHO(K)*                     &
+!                 N0RR(K)*N0S(K)/LAMS(K)**3*                    &
+!                  (5./(LAMS(K)**3*LAMR(K))+                    &
+!                  2./(LAMS(K)**2*LAMR(K)**2)+                  &
+!                  0.5/(LAMS(K)*LAMR(K)**3)))
+
+            PRACS(K) = CONS41*(((1.2*UMR-0.95*UMS)**2+                   &
+                  0.08*UMS*UMR)**0.5*RHO(K)*                      &
+                  N0RR(K)*N0S(K)/LAMR(K)**3*                              &
+                  (5./(LAMR(K)**3*LAMS(K))+                    &
+                  2./(LAMR(K)**2*LAMS(K)**2)+                  &				 
+                  0.5/(LAMR(k)*LAMS(k)**3)))
 
 ! fix 053011, npracs no longer subtracted from snow
 !            NPRACS(K) = CONS32*RHO(K)*(1.7*(UNR-UNS)**2+            &
@@ -1630,7 +1709,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
                  1./(LAMR(K)**2*LAMG(K)**2)+                   &
                  1./(LAMR(K)*LAMG(K)**3))
 
-            NPRACG(K)=MAX(NPRACG(K)-DUM,0.)
+! hm 7/15/13, remove limit so that the number of collected drops can smaller than 
+! number of shed drops
+!            NPRACG(K)=MAX(NPRACG(K)-DUM,0.)
+            NPRACG(K)=NPRACG(K)-DUM
 
 	    END IF
 
@@ -2199,13 +2281,22 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
 ! IMMERSION FREEZING (BIGG 1953)
 
+!           MNUCCC(K) = MNUCCC(K)+CONS39*                   &
+!                  EXP(LOG(CDIST1(K))+LOG(GAMMA(7.+PGAM(K)))-6.*LOG(LAMC(K)))*             &
+!                   EXP(AIMM*(273.15-T3D(K)))
+
+!           NNUCCC(K) = NNUCCC(K)+                                  &
+!            CONS40*EXP(LOG(CDIST1(K))+LOG(GAMMA(PGAM(K)+4.))-3.*LOG(LAMC(K)))              &
+!                *EXP(AIMM*(273.15-T3D(K)))
+
+! hm 7/15/13 fix for consistency w/ original formula
            MNUCCC(K) = MNUCCC(K)+CONS39*                   &
                   EXP(LOG(CDIST1(K))+LOG(GAMMA(7.+PGAM(K)))-6.*LOG(LAMC(K)))*             &
-                   EXP(AIMM*(273.15-T3D(K)))
+                   (EXP(AIMM*(273.15-T3D(K)))-1.)
 
            NNUCCC(K) = NNUCCC(K)+                                  &
             CONS40*EXP(LOG(CDIST1(K))+LOG(GAMMA(PGAM(K)+4.))-3.*LOG(LAMC(K)))              &
-                *EXP(AIMM*(273.15-T3D(K)))
+                *(EXP(AIMM*(273.15-T3D(K)))-1.)
 
 ! PUT IN A CATCH HERE TO PREVENT DIVERGENCE BETWEEN NUMBER CONC. AND
 ! MIXING RATIO, SINCE STRICT CONSERVATION NOT CHECKED FOR NUMBER CONC
@@ -2353,8 +2444,6 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! COLLECTION OF SNOW BY RAIN - NEEDED FOR GRAUPEL CONVERSION CALCULATIONS
 ! ONLY CALCULATE IF SNOW AND RAIN MIXING RATIOS EXCEED 0.1 G/KG
 
-! ASSUME COLLECTION OF SNOW BY RAIN PRODUCES GRAUPEL NOT HAIL
-
 ! HM MODIFY FOR WRFV3.1
 !            IF (IHAIL.EQ.0) THEN
             IF (QNI3D(K).GE.0.1E-3.AND.QR3D(K).GE.0.1E-3) THEN
@@ -2482,7 +2571,6 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! HM ADD THRESHOLD SNOW MIXING RATIO FOR RIME-SPLINTERING
 ! TO LIMIT RIME-SPLINTERING IN STRATIFORM CLOUDS
 
-! ONLY CALCULATE FOR GRAUPEL NOT HAIL
 !         IF (IHAIL.EQ.0) THEN
 ! v1.4
          IF (QG3D(K).GE.0.1E-3) THEN
@@ -2536,10 +2624,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 !         END IF
 
 !........................................................................
-! CONVERSION OF RIMED CLOUD WATER ONTO SNOW TO GRAUPEL
-! ASSUME CONVERTED SNOW FORMS GRAUPEL NOT HAIL
-! HAIL ASSUMED TO ONLY FORM BY FREEZING OF RAIN
-! OR COLLISIONS OF RAIN WITH CLOUD ICE
+! CONVERSION OF RIMED CLOUD WATER ONTO SNOW TO GRAUPEL/HAIL
 
 !           IF (IHAIL.EQ.0) THEN
 	   IF (PSACWS(K).GT.0.) THEN
@@ -2597,10 +2682,16 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
          IF (T3D(K).LT.269.15.AND.QR3D(K).GE.QSMALL) THEN
 
 ! IMMERSION FREEZING (BIGG 1953)
-            MNUCCR(K) = CONS20*NR3D(K)*EXP(AIMM*(273.15-T3D(K)))/LAMR(K)**3 &
+!            MNUCCR(K) = CONS20*NR3D(K)*EXP(AIMM*(273.15-T3D(K)))/LAMR(K)**3 &
+!                 /LAMR(K)**3
+
+!            NNUCCR(K) = PI*NR3D(K)*BIMM*EXP(AIMM*(273.15-T3D(K)))/LAMR(K)**3
+
+! hm fix 7/15/13 for consistency w/ original formula
+            MNUCCR(K) = CONS20*NR3D(K)*(EXP(AIMM*(273.15-T3D(K)))-1.)/LAMR(K)**3 &
                  /LAMR(K)**3
 
-            NNUCCR(K) = PI*NR3D(K)*BIMM*EXP(AIMM*(273.15-T3D(K)))/LAMR(K)**3
+            NNUCCR(K) = PI*NR3D(K)*BIMM*(EXP(AIMM*(273.15-T3D(K)))-1.)/LAMR(K)**3
 
 ! PREVENT DIVERGENCE BETWEEN MIXING RATIO AND NUMBER CONC
             NNUCCR(K) = MIN(NNUCCR(K),NR3D(K)/DT)
@@ -2881,8 +2972,6 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             PRACG(K) = 0.
             PSACR(K) = 0.
 	    PSACWG(K) = 0.
-	    PGSACW(K) = 0.
-            PGRACS(K) = 0.
 	    PRDG(K) = 0.
 	    EPRDG(K) = 0.
             EVPMG(K) = 0.
@@ -2897,6 +2986,13 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! fix 053011
             PIACRS(K)=PIACRS(K)+PIACR(K)
             PIACR(K) = 0.
+! fix 070713
+	    PRACIS(K)=PRACIS(K)+PRACI(K)
+	    PRACI(K) = 0.
+	    PSACWS(K)=PSACWS(K)+PGSACW(K)
+	    PGSACW(K) = 0.
+	    PRACS(K)=PRACS(K)+PGRACS(K)
+	    PGRACS(K) = 0.
        END IF
 
 ! CONSERVATION OF QC
@@ -3142,6 +3238,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! INITIALIZE PRECIP AND SNOW RATES
       PRECRT = 0.
       SNOWRT = 0.
+! hm added 7/13/13
+      SNOWPRT = 0.
+      GRPLPRT = 0.
 
 ! IF THERE ARE NO HYDROMETEORS, THEN SKIP TO END OF SUBROUTINE
 
@@ -3463,6 +3562,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
         PRECRT = PRECRT+(FALOUTR(KTS)+FALOUTC(KTS)+FALOUTS(KTS)+FALOUTI(KTS)+FALOUTG(KTS))  &
                      *DT/NSTEP
         SNOWRT = SNOWRT+(FALOUTS(KTS)+FALOUTI(KTS)+FALOUTG(KTS))*DT/NSTEP
+! hm added 7/13/13
+        SNOWPRT = SNOWPRT+(FALOUTI(KTS)+FALOUTS(KTS))*DT/NSTEP
+        GRPLPRT = GRPLPRT+(FALOUTG(KTS))*DT/NSTEP
 
       END DO
 
@@ -3834,7 +3936,12 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! HM ADD 1/10/06, ADD UPPER BOUND ON ICE NUMBER, THIS IS NEEDED
 ! TO PREVENT VERY LARGE ICE NUMBER DUE TO HOMOGENEOUS FREEZING
 ! OF DROPLETS, ESPECIALLY WHEN INUM = 1, SET MAX AT 10 CM-3
-          NI3D(K) = MIN(NI3D(K),10.E6/RHO(K))
+!          NI3D(K) = MIN(NI3D(K),10.E6/RHO(K))
+! HM, 12/28/12, LOWER MAXIMUM ICE CONCENTRATION TO ADDRESS PROBLEM
+! OF EXCESSIVE AND PERSISTENT ANVIL
+! NOTE: THIS MAY CHANGE/REDUCE SENSITIVITY TO AEROSOL/CCN CONCENTRATION
+          NI3D(K) = MIN(NI3D(K),0.3E6/RHO(K))
+
 ! ADD BOUND ON DROPLET NUMBER - CANNOT EXCEED AEROSOL CONCENTRATION
           IF (iinum.EQ.0.AND.IACT.EQ.2) THEN
           NC3D(K) = MIN(NC3D(K),(NANEW1+NANEW2)/RHO(K))
@@ -4274,4 +4381,183 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
 !+---+-----------------------------------------------------------------+
 
+      subroutine refl10cm_hm (qv1d, qr1d, nr1d, qs1d, ns1d, qg1d, ng1d, &
+                      t1d, p1d, dBZ, kts, kte, ii, jj)
+
+      IMPLICIT NONE
+
+!..Sub arguments
+      INTEGER, INTENT(IN):: kts, kte, ii, jj
+      REAL, DIMENSION(kts:kte), INTENT(IN)::                            &
+                      qv1d, qr1d, nr1d, qs1d, ns1d, qg1d, ng1d, t1d, p1d
+      REAL, DIMENSION(kts:kte), INTENT(INOUT):: dBZ
+
+!..Local variables
+      REAL, DIMENSION(kts:kte):: temp, pres, qv, rho
+      REAL, DIMENSION(kts:kte):: rr, nr, rs, ns, rg, ng
+
+      DOUBLE PRECISION, DIMENSION(kts:kte):: ilamr, ilamg, ilams
+      DOUBLE PRECISION, DIMENSION(kts:kte):: N0_r, N0_g, N0_s
+      DOUBLE PRECISION:: lamr, lamg, lams
+      LOGICAL, DIMENSION(kts:kte):: L_qr, L_qs, L_qg
+
+      REAL, DIMENSION(kts:kte):: ze_rain, ze_snow, ze_graupel
+      DOUBLE PRECISION:: fmelt_s, fmelt_g
+      DOUBLE PRECISION:: cback, x, eta, f_d
+
+      INTEGER:: i, k, k_0, kbot, n
+      LOGICAL:: melti
+
+!+---+
+
+      do k = kts, kte
+         dBZ(k) = -35.0
+      enddo
+
+!+---+-----------------------------------------------------------------+
+!..Put column of data into local arrays.
+!+---+-----------------------------------------------------------------+
+      do k = kts, kte
+         temp(k) = t1d(k)
+         qv(k) = MAX(1.E-10, qv1d(k))
+         pres(k) = p1d(k)
+         rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
+
+         if (qr1d(k) .gt. 1.E-9) then
+            rr(k) = qr1d(k)*rho(k)
+            nr(k) = nr1d(k)*rho(k)
+            lamr = (xam_r*xcrg(3)*xorg2*nr(k)/rr(k))**xobmr
+            ilamr(k) = 1./lamr
+            N0_r(k) = nr(k)*xorg2*lamr**xcre(2)
+            L_qr(k) = .true.
+         else
+            rr(k) = 1.E-12
+            nr(k) = 1.E-12
+            L_qr(k) = .false.
+         endif
+
+         if (qs1d(k) .gt. 1.E-9) then
+            rs(k) = qs1d(k)*rho(k)
+            ns(k) = ns1d(k)*rho(k)
+            lams = (xam_s*xcsg(3)*xosg2*ns(k)/rs(k))**xobms
+            ilams(k) = 1./lams
+            N0_s(k) = ns(k)*xosg2*lams**xcse(2)
+            L_qs(k) = .true.
+         else
+            rs(k) = 1.E-12
+            ns(k) = 1.E-12
+            L_qs(k) = .false.
+         endif
+
+         if (qg1d(k) .gt. 1.E-9) then
+            rg(k) = qg1d(k)*rho(k)
+            ng(k) = ng1d(k)*rho(k)
+            lamg = (xam_g*xcgg(3)*xogg2*ng(k)/rg(k))**xobmg
+            ilamg(k) = 1./lamg
+            N0_g(k) = ng(k)*xogg2*lamg**xcge(2)
+            L_qg(k) = .true.
+         else
+            rg(k) = 1.E-12
+            ng(k) = 1.E-12
+            L_qg(k) = .false.
+         endif
+      enddo
+
+!+---+-----------------------------------------------------------------+
+!..Locate K-level of start of melting (k_0 is level above).
+!+---+-----------------------------------------------------------------+
+      melti = .false.
+      k_0 = kts
+      do k = kte-1, kts, -1
+         if ( (temp(k).gt.273.15) .and. L_qr(k)                         &
+                                  .and. (L_qs(k+1).or.L_qg(k+1)) ) then
+            k_0 = MAX(k+1, k_0)
+            melti=.true.
+            goto 195
+         endif
+      enddo
+ 195  continue
+
+!+---+-----------------------------------------------------------------+
+!..Assume Rayleigh approximation at 10 cm wavelength. Rain (all temps)
+!.. and non-water-coated snow and graupel when below freezing are
+!.. simple. Integrations of m(D)*m(D)*N(D)*dD.
+!+---+-----------------------------------------------------------------+
+
+      do k = kts, kte
+         ze_rain(k) = 1.e-22
+         ze_snow(k) = 1.e-22
+         ze_graupel(k) = 1.e-22
+         if (L_qr(k)) ze_rain(k) = N0_r(k)*xcrg(4)*ilamr(k)**xcre(4)
+         if (L_qs(k)) ze_snow(k) = (0.176/0.93) * (6.0/PI)*(6.0/PI)     &
+                                 * (xam_s/900.0)*(xam_s/900.0)          &
+                                 * N0_s(k)*xcsg(4)*ilams(k)**xcse(4)
+         if (L_qg(k)) ze_graupel(k) = (0.176/0.93) * (6.0/PI)*(6.0/PI)  &
+                                    * (xam_g/900.0)*(xam_g/900.0)       &
+                                    * N0_g(k)*xcgg(4)*ilamg(k)**xcge(4)
+      enddo
+
+!+---+-----------------------------------------------------------------+
+!..Special case of melting ice (snow/graupel) particles.  Assume the
+!.. ice is surrounded by the liquid water.  Fraction of meltwater is
+!.. extremely simple based on amount found above the melting level.
+!.. Uses code from Uli Blahak (rayleigh_soak_wetgraupel and supporting
+!.. routines).
+!+---+-----------------------------------------------------------------+
+
+      if (melti .and. k_0.ge.kts+1) then
+       do k = k_0-1, kts, -1
+
+!..Reflectivity contributed by melting snow
+          if (L_qs(k) .and. L_qs(k_0) ) then
+           fmelt_s = MAX(0.005d0, MIN(1.0d0-rs(k)/rs(k_0), 0.99d0))
+           eta = 0.d0
+           lams = 1./ilams(k)
+           do n = 1, nrbins
+              x = xam_s * xxDs(n)**xbm_s
+              call rayleigh_soak_wetgraupel (x,DBLE(xocms),DBLE(xobms), &
+                    fmelt_s, melt_outside_s, m_w_0, m_i_0, lamda_radar, &
+                    CBACK, mixingrulestring_s, matrixstring_s,          &
+                    inclusionstring_s, hoststring_s,                    &
+                    hostmatrixstring_s, hostinclusionstring_s)
+              f_d = N0_s(k)*xxDs(n)**xmu_s * DEXP(-lams*xxDs(n))
+              eta = eta + f_d * CBACK * simpson(n) * xdts(n)
+           enddo
+           ze_snow(k) = SNGL(lamda4 / (pi5 * K_w) * eta)
+          endif
+
+
+!..Reflectivity contributed by melting graupel
+
+          if (L_qg(k) .and. L_qg(k_0) ) then
+           fmelt_g = MAX(0.005d0, MIN(1.0d0-rg(k)/rg(k_0), 0.99d0))
+           eta = 0.d0
+           lamg = 1./ilamg(k)
+           do n = 1, nrbins
+              x = xam_g * xxDg(n)**xbm_g
+              call rayleigh_soak_wetgraupel (x,DBLE(xocmg),DBLE(xobmg), &
+                    fmelt_g, melt_outside_g, m_w_0, m_i_0, lamda_radar, &
+                    CBACK, mixingrulestring_g, matrixstring_g,          &
+                    inclusionstring_g, hoststring_g,                    &
+                    hostmatrixstring_g, hostinclusionstring_g)
+              f_d = N0_g(k)*xxDg(n)**xmu_g * DEXP(-lamg*xxDg(n))
+              eta = eta + f_d * CBACK * simpson(n) * xdtg(n)
+           enddo
+           ze_graupel(k) = SNGL(lamda4 / (pi5 * K_w) * eta)
+          endif
+
+       enddo
+      endif
+
+      do k = kte, kts, -1
+         dBZ(k) = 10.*log10((ze_rain(k)+ze_snow(k)+ze_graupel(k))*1.d18)
+      enddo
+
+
+      end subroutine refl10cm_hm
+
+!+---+-----------------------------------------------------------------+
+
 END MODULE module_mp_morr_two_moment
+!+---+-----------------------------------------------------------------+
+!+---+-----------------------------------------------------------------+

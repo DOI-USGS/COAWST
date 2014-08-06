@@ -332,14 +332,12 @@ CONTAINS
      &               ,ZSL,PLOW                                         &
      &               ,U10(I,J),V10(I,J),TSHLTR(I,J),TH10(I,J)          &
      &               ,QSHLTR(I,J),Q10(I,J),PSHLTR(I,J)                 &
+#ifdef SWAN_COUPLING
+     &               ,HWAVE_L, LWAVEP_L, PWAVE_L                       &
+#endif
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
-#ifdef SWAN_COUPLING
-     &               ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZHK(LMH+1)           &
-     &               ,HWAVE_L, LWAVEP_L, PWAVE_L)
-#else
      &               ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZHK(LMH+1))
-#endif
 !
 !***  REMOVE SUPERATURATION AT 2M AND 10M
 !
@@ -386,14 +384,12 @@ CONTAINS
      &                 ,ULOW,VLOW,TLOW,THLOW,THELOW,QLOW,CWMLOW        &
      &                 ,ZSL,PLOW                                       &
      &                 ,U10,V10,TH02,TH10,Q02,Q10,PSHLTR               &
+#ifdef SWAN_COUPLING
+     &                 ,HWAVE,LWAVEP, PWAVE                            &
+#endif
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
-#ifdef SWAN_COUPLING
-     &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZSFC, HWAVE        &
-     &                 ,LWAVEP, PWAVE)
-#else
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZSFC)
-#endif
 !     ****************************************************************
 !     *                                                              *
 !     *                       SURFACE LAYER                          *

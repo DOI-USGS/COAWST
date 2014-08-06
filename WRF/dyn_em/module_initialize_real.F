@@ -18,6 +18,7 @@ MODULE module_initialize_real
    USE module_soil_pre
    USE module_date_time
    USE module_llxy
+   USE module_polarfft
 #ifdef DM_PARALLEL
    USE module_dm
    USE module_comm_dm, ONLY : &
@@ -26,6 +27,7 @@ MODULE module_initialize_real
                           ,HALO_EM_INIT_3_sub   &
                           ,HALO_EM_INIT_4_sub   &
                           ,HALO_EM_INIT_5_sub   &
+                          ,HALO_EM_INIT_6_sub   &
                           ,HALO_EM_VINTERP_UV_1_sub
 #endif
 
@@ -102,19 +104,21 @@ CONTAINS
       INTEGER :: im, num_3d_m, num_3d_s
       REAL    :: p_surf, p_level
       REAL    :: cof1, cof2
-      REAL    :: qvf , qvf1 , qvf2 , pd_surf
+      REAL    :: qvf , qvf1 , qvf2 , qtot, pd_surf
       REAL    :: p00 , t00 , a , tiso
       REAL    :: hold_znw , ptemp
       REAL    :: vap_pres_mb , sat_vap_pres_mb
       LOGICAL :: were_bad
 
       LOGICAL :: stretch_grid, dry_sounding, debug
-      INTEGER IICOUNT
+      INTEGER :: IICOUNT, icount
 
       REAL :: p_top_requested , temp
       INTEGER :: num_metgrid_levels
       REAL , DIMENSION(max_eta) :: eta_levels
       REAL :: max_dz
+
+      REAL :: dclat
 
 !      INTEGER , PARAMETER :: nl_max = 1000
 !      REAL , DIMENSION(nl_max) :: grid%dn
@@ -134,18 +138,23 @@ integer::oops1,oops2
       LOGICAL , PARAMETER :: want_full_levels = .TRUE.
       LOGICAL , PARAMETER :: want_half_levels = .FALSE.
 
-      CHARACTER (LEN=80) :: a_message
+      CHARACTER (LEN=256) :: a_message, mminlu
       REAL :: max_mf
     
       !  Excluded middle.
 
       LOGICAL :: any_valid_points
       INTEGER :: i_valid , j_valid
+      
+      !  Vert interpolation in WRF
+
+      INTEGER :: k_max_p , k_min_p
 
 !-- Carsel and Parrish [1988]
         REAL , DIMENSION(100) :: lqmi
 
       REAL :: t_start , t_end
+      REAL , ALLOCATABLE , DIMENSION(:,:) :: clat_glob
 
       !  Dimension information stored in grid data structure.
 
@@ -162,6 +171,41 @@ integer::oops1,oops2
 
 
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
+      !   Lake Mask and depth assignment
+
+      CALL nl_get_iswater ( grid%id , grid%iswater )
+      CALL nl_get_islake  ( grid%id , grid%islake )
+
+      DO j = jts, MIN(jde-1,jte)
+         DO i = its, MIN(ide-1,ite)
+            IF ( grid%lu_index(i,j) .NE. grid%islake ) THEN
+               grid%lakemask(i,j) = 0
+            ELSE
+               grid%lakemask(i,j) = 1
+            END IF
+         END DO
+      END DO
+
+      IF ( grid%sf_lake_physics .EQ. 1 ) THEN
+         grid%lake_depth_flag = flag_lake_depth
+         IF ( flag_lake_depth .EQ. 0 ) THEN
+            CALL wrf_message ( " Warning: Please rerun WPS to get lake_depth information for lake model" )
+
+         !  Set lake depth over the ocean to be -2 m, and set the lake depth over land to be -1 m.
+
+         ELSE
+            DO j = jts, MIN(jde-1,jte)
+               DO i = its, MIN(ide-1,ite)
+                  IF      ( ( grid%lu_index(i,j) .NE. grid%islake ) .AND. ( grid%lu_index(i,j) .NE. grid%iswater ) ) THEN
+                     grid%lake_depth(i,j) = -1
+                  ELSE IF   ( grid%lu_index(i,j) .NE. grid%islake ) THEN
+                     grid%lake_depth(i,j) = -2
+                  END IF
+               END DO
+            END DO
+         END IF
+      END IF
 
       !  Send out a quick message about the time steps based on the map scale factors.
 
@@ -227,7 +271,6 @@ integer::oops1,oops2
                  ( config_flags%grid_fdda .NE. 0 ) .OR. &
                  ( config_flags%sst_update .EQ. 1 ) .OR. &
                  ( config_flags%all_ic_times ) .OR. &
-                 ( config_flags%smooth_cg_topo ) .OR. &
                  ( config_flags%map_proj .EQ. PROJ_CASSINI )
 
       !  There are a few checks that we need to do when the input data comes in with the middle
@@ -430,6 +473,41 @@ integer::oops1,oops2
 
       IF ( flag_metgrid .EQ. 1 ) THEN  !   <----- START OF VERTICAL INTERPOLATION PART ---->
 
+         num_metgrid_levels = grid%num_metgrid_levels
+
+         IF ( config_flags%nest_interp_coord .EQ. 1 ) THEN
+
+            !  At the location of maximum pressure in the column, get the temperature and height.  These
+            !  will be written out and could be used for vertical interpolation - to avoid extrapolation.
+            !  Hey, we can also do minimum values, too.
+   
+            DO j=jts,jte
+               DO i=its,ite
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  grid%max_p(i,j) = grid%p_gc(i,1,j) 
+                  k_max_p = 1
+                  IF      ( grid%p_gc(i,2,j) .GT. grid%max_p(i,j) ) THEN
+                     grid%max_p(i,j) = grid%p_gc(i,2,j)
+                     k_max_p = 2
+                  ELSE IF ( grid%p_gc(i,num_metgrid_levels,j) .GT. grid%max_p(i,j) ) THEN
+                     grid%max_p(i,j) = grid%p_gc(i,num_metgrid_levels,j)
+                     k_max_p = num_metgrid_levels
+                  END IF
+                  grid%t_max_p(i,j) = grid%t_gc(i,k_max_p,j)
+                  grid%ght_max_p(i,j) = grid%ght_gc(i,k_max_p,j)
+   
+                  grid%min_p(i,j) = grid%p_gc(i,num_metgrid_levels,j) 
+                  k_min_p = num_metgrid_levels
+                  IF      ( grid%p_gc(i,2,j) .LT. grid%min_p(i,j) ) THEN
+                     grid%min_p(i,j) = grid%p_gc(i,2,j)
+                     k_min_p = 2
+                  END IF
+                  grid%t_min_p(i,j) = grid%t_gc(i,k_min_p,j)
+                  grid%ght_min_p(i,j) = grid%ght_gc(i,k_min_p,j)
+               END DO
+            END DO
+         END IF
+
          !  If this is data from the PINTERP program, it is emulating METGRID output.
          !  One of the caveats of this data is the way that the vertical structure is
          !  handled.  We take the k=1 level and toss it (it is disposable), and we
@@ -482,13 +560,29 @@ integer::oops1,oops2
          !  in the model betwixt the CG and FG domains.
 
          IF ( ( config_flags%smooth_cg_topo ) .AND. &
+              ( internal_time_loop .EQ. 1 ) .AND. &
               ( grid%id .EQ. 1 ) .AND. &
               ( flag_soilhgt .EQ. 1) ) THEN
             CALL blend_terrain ( grid%toposoil  , grid%ht , &
                                  ids , ide , jds , jde , 1   , 1   , &
                                  ims , ime , jms , jme , 1   , 1   , &
                                  ips , ipe , jps , jpe , 1   , 1   )
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%ht_smooth(i,j) = grid%ht(i,j)
+               END DO
+            END DO
 
+         ELSE IF ( ( config_flags%smooth_cg_topo ) .AND. &
+              ( internal_time_loop .NE. 1 ) .AND. &
+              ( grid%id .EQ. 1 ) .AND. &
+              ( flag_soilhgt .EQ. 1) ) THEN
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%ht(i,j) = grid%ht_smooth(i,j)
+               END DO
+            END DO
+            
          END IF
 
          !  Filter the input topography if this is a polar projection.
@@ -498,6 +592,65 @@ integer::oops1,oops2
          END IF
 
          IF ( config_flags%map_proj .EQ. PROJ_CASSINI ) THEN
+#if 1
+            dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
+            DO j = jts, MIN(jte,jde-1)
+              DO k = kts, kte
+                 DO i = its, MIN(ite,ide-1)
+                    grid%t_2(i,k,j) = 1.
+                 END DO
+              END DO
+              DO i = its, MIN(ite,ide-1)
+                 grid%t_2(i,1,j) = grid%ht(i,j)
+                 grid%sr(i,j) = grid%ht(i,j)
+              END DO
+            END DO
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+! WARNING:  this might present scaling issues on very large numbers of processors
+     ALLOCATE( clat_glob(ids:ide,jds:jde) )
+
+     CALL wrf_patch_to_global_real ( grid%clat, clat_glob, grid%domdesc, 'xy', 'xy', &
+                                     ids, ide, jds, jde, 1, 1, &
+                                     ims, ime, jms, jme, 1, 1, &
+                                     its, ite, jts, jte, 1, 1 )
+
+     CALL wrf_dm_bcast_real ( clat_glob , (ide-ids+1)*(jde-jds+1) )
+
+     grid%clat_xxx(ipsx:ipex,jpsx:jpex) = clat_glob(ipsx:ipex,jpsx:jpex)
+
+     DEALLOCATE( clat_glob )
+#endif
+
+         CALL pxft ( grid=grid                                              &
+               ,lineno=__LINE__                                             &
+               ,flag_uv            = 0                                      &
+               ,flag_rurv          = 0                                      &
+               ,flag_wph           = 0                                      &
+               ,flag_ww            = 0                                      &
+               ,flag_t             = 1                                      &
+               ,flag_mu            = 0                                      &
+               ,flag_mut           = 0                                      &
+               ,flag_moist         = 0                                      &
+               ,flag_chem          = 0                                      &
+               ,flag_tracer        = 0                                      &
+               ,flag_scalar        = 0                                      &
+               ,positive_definite  = .FALSE.                                &
+               ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
+               ,fft_filter_lat = config_flags%fft_filter_lat                &
+               ,dclat = dclat                                               &
+               ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
+               ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
+               ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe             &
+               ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
+               ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
+            DO j = jts, MIN(jte,jde-1)
+              DO i = its, MIN(ite,ide-1)
+                 grid%ht(i,j) = grid%t_2(i,1,j)
+                 grid%sr(i,j) = grid%sr(i,j) - grid%ht(i,j)
+              END DO
+            END DO
+
+#else
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 
             !  We stick the topo and map fac in an unused 3d array. The map scale
@@ -566,6 +719,7 @@ integer::oops1,oops2
                                ids, ide, jds, jde, 1,1,           &
                                ims, ime, jms, jme, 1,1,           &
                                its, ite, jts, jte, 1,1 )
+#endif
 #endif
          END IF
 
@@ -889,6 +1043,13 @@ integer::oops1,oops2
                                        ims , ime , jms , jme , kms , kme , &
                                        its , ite , jts , jte , kts , kte )
 
+         IF ( config_flags%rdlai2d ) THEN
+         CALL monthly_interp_to_date ( grid%lai12m , current_date , grid%lai , &
+                                       ids , ide , jds , jde , kds , kde , &
+                                       ims , ime , jms , jme , kms , kme , &
+                                       its , ite , jts , jte , kts , kte )
+         ENDIF
+
          !  Get the min/max of each i,j for the monthly green-ness fraction.
 
          CALL monthly_min_max ( grid%greenfrac , grid%shdmin , grid%shdmax , &
@@ -920,6 +1081,81 @@ integer::oops1,oops2
                END IF
             END DO
          END DO
+
+         !  Added by G. Thompson 2013Sep10
+         !  Interpolate monthly aerosol climatology data to specific date/time.
+         !  Since data are 3D, do over a loop of vertical levels using temporary array space.
+
+         IF (config_flags%mp_physics.eq.THOMPSONAERO .and. P_QNWFA.gt.1 .and. config_flags%use_aero_icbc) then
+         CALL wrf_debug ( 0 , 'Using Thompson_aerosol_aware so using QNWFA monthly climo arrays to create QNWFA_now')
+         DO k = 1, num_metgrid_levels
+         WRITE(a_message,*) '  transferring each K-level ', k, ' to qntemp, sample Jan data, ', grid%QNWFA_jan(10,k,10)
+         CALL wrf_debug ( 0 , a_message)
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%qntemp(i, 1, j) = grid%QNWFA_jan(i,k,j)
+                  grid%qntemp(i, 2, j) = grid%QNWFA_feb(i,k,j)
+                  grid%qntemp(i, 3, j) = grid%QNWFA_mar(i,k,j)
+                  grid%qntemp(i, 4, j) = grid%QNWFA_apr(i,k,j)
+                  grid%qntemp(i, 5, j) = grid%QNWFA_may(i,k,j)
+                  grid%qntemp(i, 6, j) = grid%QNWFA_jun(i,k,j)
+                  grid%qntemp(i, 7, j) = grid%QNWFA_jul(i,k,j)
+                  grid%qntemp(i, 8, j) = grid%QNWFA_aug(i,k,j)
+                  grid%qntemp(i, 9, j) = grid%QNWFA_sep(i,k,j)
+                  grid%qntemp(i,10, j) = grid%QNWFA_oct(i,k,j)
+                  grid%qntemp(i,11, j) = grid%QNWFA_nov(i,k,j)
+                  grid%qntemp(i,12, j) = grid%QNWFA_dec(i,k,j)
+               ENDDO
+            ENDDO
+         if (k.eq.1) then
+         write(a_message,*) ' DEBUG-GT qntemp(10,jan-feb,10) ', grid%qntemp(10, 1, 10),grid%qntemp(10, 2, 10)
+         CALL wrf_debug ( 0 , a_message)
+         endif
+            CALL monthly_interp_to_date ( grid%qntemp , current_date , grid%qntemp2 , &
+                                          ids , ide , jds , jde , kds , kde , &
+                                          ims , ime , jms , jme , kms , kme , &
+                                          its , ite , jts , jte , kts , kte )
+         if (k.eq.1) then
+         write(a_message,*) ' DEBUG-GT qntemp2(10,10) ', grid%qntemp2(10,10)
+         CALL wrf_debug ( 0 , a_message)
+         endif
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%QNWFA_now(i,k,j) = grid%qntemp2(i,j)
+               ENDDO
+            ENDDO
+         ENDDO
+         ENDIF
+
+         IF (config_flags%mp_physics.eq.THOMPSONAERO .and. P_QNIFA.gt.1 .and. config_flags%use_aero_icbc) then
+         DO k = 1, num_metgrid_levels
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%qntemp(i, 1, j) = grid%QNIFA_jan(i,k,j)
+                  grid%qntemp(i, 2, j) = grid%QNIFA_feb(i,k,j)
+                  grid%qntemp(i, 3, j) = grid%QNIFA_mar(i,k,j)
+                  grid%qntemp(i, 4, j) = grid%QNIFA_apr(i,k,j)
+                  grid%qntemp(i, 5, j) = grid%QNIFA_may(i,k,j)
+                  grid%qntemp(i, 6, j) = grid%QNIFA_jun(i,k,j)
+                  grid%qntemp(i, 7, j) = grid%QNIFA_jul(i,k,j)
+                  grid%qntemp(i, 8, j) = grid%QNIFA_aug(i,k,j)
+                  grid%qntemp(i, 9, j) = grid%QNIFA_sep(i,k,j)
+                  grid%qntemp(i,10, j) = grid%QNIFA_oct(i,k,j)
+                  grid%qntemp(i,11, j) = grid%QNIFA_nov(i,k,j)
+                  grid%qntemp(i,12, j) = grid%QNIFA_dec(i,k,j)
+               ENDDO
+            ENDDO
+            CALL monthly_interp_to_date ( grid%qntemp , current_date , grid%qntemp2 , &
+                                          ids , ide , jds , jde , kds , kde , &
+                                          ims , ime , jms , jme , kms , kme , &
+                                          its , ite , jts , jte , kts , kte )
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%QNIFA_now(i,k,j) = grid%qntemp2(i,j)
+               ENDDO
+            ENDDO
+         ENDDO
+         ENDIF
 
          !  Two ways to get the surface pressure.  1) If we have the low-res input surface
          !  pressure and the low-res topography, then we can do a simple hydrostatic
@@ -1201,7 +1437,7 @@ integer::oops1,oops2
             CALL t_to_theta ( grid%t_2 , grid%p , p00 , &
                               ids , ide , jds , jde , kds , kde , &
                               ims , ime , jms , jme , kms , kme , &
-                              its , ite , jts , jte , kts , kte )
+                              its , ite , jts , jte , kts , kte-1 )
          END IF
 
          num_3d_m = num_moist
@@ -1311,6 +1547,80 @@ integer::oops1,oops2
                END IF
             END DO
          END IF
+    
+         IF ( flag_qnr .EQ. 1 ) THEN
+            DO im = PARAM_FIRST_SCALAR, num_3d_s
+               IF ( im .EQ. P_QNR ) THEN
+                  CALL vert_interp ( grid%qnr_gc , grid%pd_gc , scalar(:,:,:,P_QNR) , grid%pb , &
+                                     num_metgrid_levels , 'Q' , &
+                                     interp_type , lagrange_order , extrap_type , &
+                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte )
+               END IF
+            END DO
+         END IF
+
+!..If we have number of water-friendly aerosols from monthly climo data, interpolate to WRF model levels.
+         WRITE(a_message,*) ' flag value of flag_qnwfa is ', flag_qnwfa
+         CALL wrf_debug ( 0 , a_message)
+         IF ( flag_qnwfa .EQ. 1 .and. config_flags%use_aero_icbc) THEN
+            DO im = PARAM_FIRST_SCALAR, num_3d_s
+               IF ( im .EQ. P_QNWFA ) THEN
+                  CALL wrf_debug ( 0 , 'Using Thompson_aerosol_aware so vertically-interpolating QNWFA monthly climo arrays to fill scalar')
+                  CALL vert_interp ( grid%QNWFA_now , grid%pd_gc , scalar(:,:,:,P_QNWFA) , grid%pb , &
+                                     num_metgrid_levels , 'Q' , &
+                                     interp_type , lagrange_order , extrap_type , &
+                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte )
+               END IF
+            END DO
+         ELSEIF ( flag_qnwfa .EQ. 1 .and. (.NOT. config_flags%use_aero_icbc)) THEN
+            DO im = PARAM_FIRST_SCALAR, num_3d_s
+               IF ( im .EQ. P_QNWFA ) THEN
+                  DO j = jts, MIN(jte,jde-1)
+                     DO k = kts, kte
+                        DO i = its, MIN(ite,ide-1)
+                           scalar(i,k,j,P_QNWFA) = 0.
+                        END DO
+                     END DO
+                  END DO
+               END IF
+            END DO
+         END IF
+
+!..If we have number of ice-friendly aerosols from monthly climo data, interpolate to WRF model levels.
+         IF ( flag_qnifa .EQ. 1 .and. config_flags%use_aero_icbc) THEN
+            DO im = PARAM_FIRST_SCALAR, num_3d_s
+               IF ( im .EQ. P_QNIFA ) THEN
+                  CALL vert_interp ( grid%QNIFA_now , grid%pd_gc , scalar(:,:,:,P_QNIFA) , grid%pb , &
+                                     num_metgrid_levels , 'Q' , &
+                                     interp_type , lagrange_order , extrap_type , &
+                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte )
+               END IF
+            END DO
+         ELSEIF ( flag_qnifa .EQ. 1 .and. (.NOT. config_flags%use_aero_icbc)) THEN
+            DO im = PARAM_FIRST_SCALAR, num_3d_s
+               IF ( im .EQ. P_QNIFA ) THEN
+                  DO j = jts, MIN(jte,jde-1)
+                     DO k = kts, kte
+                        DO i = its, MIN(ite,ide-1)
+                           scalar(i,k,j,P_QNIFA) = 0.
+                        END DO
+                     END DO
+                  END DO
+               END IF
+            END DO
+         END IF
 
          !  If this is UM data, put the dry rho-based pressure back into the dry pressure array.
          !  Since the dry pressure is no longer needed, no biggy.
@@ -1365,7 +1675,9 @@ integer::oops1,oops2
       CALL nl_get_iswater ( grid%id , grid%iswater )
       CALL nl_get_islake  ( grid%id , grid%islake )
 
+
       IF ( grid%islake < 0 ) THEN
+         grid%lakeflag=0
          CALL wrf_debug ( 0 , 'Old data, no inland lake information')
 
             DO j=jts,MIN(jde-1,jte)
@@ -1386,6 +1698,7 @@ integer::oops1,oops2
                END DO
             END DO
       ELSE
+         grid%lakeflag=1
          IF ( we_have_tavgsfc ) THEN
 
             CALL wrf_debug ( 0 , 'Using inland lakes with average surface temperature')
@@ -1464,6 +1777,48 @@ integer::oops1,oops2
          grid%ifndsoilw = 0
       END IF
 
+      !  Set flag integers for presence of albsi, snowsi, and icedepth fields
+
+      IF ( config_flags%seaice_albedo_opt == 2 ) THEN
+          grid%ifndalbsi = flag_albsi
+      ELSE
+          grid%ifndalbsi = 0
+      ENDIF
+          
+      IF ( config_flags%seaice_snowdepth_opt == 1 ) THEN
+          grid%ifndsnowsi = flag_snowsi
+      ELSE
+          grid%ifndsnowsi = 0
+      ENDIF
+          
+      IF ( config_flags%seaice_thickness_opt == 1 ) THEN
+          grid%ifndicedepth = flag_icedepth
+      ELSE
+          grid%ifndicedepth = 0
+      ENDIF
+
+      !  Only certain land surface schemes are able to work with the NLCD data.
+
+      CALL nl_get_mminlu ( grid%id , mminlu )
+      write(a_message,*) 'MMINLU = ',trim(mminlu)
+      CALL wrf_debug ( 1 , a_message )
+      write(a_message,*) 'sf_surface_physics = ',model_config_rec%sf_surface_physics(grid%id)
+      CALL wrf_debug ( 1, a_message )
+
+      probs_with_nlcd : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+
+         CASE ( RUCLSMSCHEME, NOAHMPSCHEME, CLMSCHEME, SSIBSCHEME )
+            IF ( TRIM(mminlu) .EQ. 'NLCD40' ) THEN
+               CALL wrf_message ( 'NLCD40 data may be used with SLABSCHEME, LSMSCHEME, PXLSMSCHEME' )
+               CALL wrf_message ( 'Re-run geogrid and choose a different land cover source, or select a different sf_surface_physics option' )
+               CALL wrf_error_fatal ( 'NLCD40 data may not be used with: RUCLSMSCHEME, NOAHMPSCHEME, CLMSCHEME, SSIBSCHEME' )
+            END IF
+
+         CASE ( SLABSCHEME, LSMSCHEME, PXLSMSCHEME )
+               CALL wrf_debug ( 1, 'NLCD40 being used with an OK scheme' )
+
+      END SELECT probs_with_nlcd
+
       !  We require input data for the various LSM schemes.
 
       enough_data : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
@@ -1482,6 +1837,10 @@ integer::oops1,oops2
             IF ( num_st_levels_input .LT. 2 ) THEN
                CALL wrf_error_fatal ( 'Not enough soil temperature data for P-X LSM scheme.')
             END IF
+         CASE (CLMSCHEME)
+            IF ( num_st_levels_input .LT. 2 ) THEN
+               CALL wrf_error_fatal ( 'Not enough soil temperature data for CLM LSM scheme.')
+            END IF
 !---------- fds (06/2010) ---------------------------------
          CASE (SSIBSCHEME)
             IF ( num_st_levels_input .LT. 2 ) THEN
@@ -1493,7 +1852,7 @@ integer::oops1,oops2
 
       interpolate_soil_tmw : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-         CASE ( SLABSCHEME , LSMSCHEME, NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME, SSIBSCHEME )
+         CASE ( SLABSCHEME,LSMSCHEME,NOAHMPSCHEME,RUCLSMSCHEME,PXLSMSCHEME,CLMSCHEME,SSIBSCHEME )
             CALL process_soil_real ( grid%tsk , grid%tmn , grid%tavgsfc,  &
                                   grid%landmask , grid%sst , grid%ht, grid%toposoil, &
                                   st_input , sm_input , sw_input , &
@@ -1519,6 +1878,94 @@ integer::oops1,oops2
       IF ( any_valid_points ) THEN
       IF ( config_flags%surface_input_source .EQ. 1 ) THEN
 
+      !  Spliti NUDAPT  Urban Parameters
+
+         IF ( ( config_flags%sf_urban_physics == 1 ) .OR. ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  grid%LP_URB2D(i,j)  = grid%URB_PARAM(i,91,j)
+                  grid%LB_URB2D(i,j)  = grid%URB_PARAM(i,95,j)
+                  grid%HGT_URB2D(i,j)  = grid%URB_PARAM(i,94,j)
+               END DO
+            END DO
+         ENDIF
+
+         IF ( ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  DO k = 1, 15
+                     grid%HI_URB2D(i,k,j)  = grid%URB_PARAM(i,k+117,j)
+                  END DO
+               END DO
+            END DO
+         ENDIF
+
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               IF ( config_flags%sf_urban_physics==1 ) THEN
+                  grid%MH_URB2D(i,j)  = grid%URB_PARAM(i,92,j)
+                  grid%STDH_URB2D(i,j)  = grid%URB_PARAM(i,93,j)
+               ENDIF
+               grid%H2W_URB2D(i,j)  = grid%URB_PARAM(i,101,j)
+               grid%Z0S_URB2D(i,j)  = grid%URB_PARAM(i,103,j)
+               grid%ZDS_URB2D(i,j)  = grid%URB_PARAM(i,104,j)
+               grid%ZDM_URB2D(i,j)  = grid%URB_PARAM(i,117,j)
+               IF(grid%URB_PARAM(i,100,j).eq.0)THEN
+                  grid%CAR_URB2D(i,j) = 1.0
+               ELSE
+                  grid%CAR_URB2D(i,j) = grid%URB_PARAM(i,100,j)
+               END IF
+               IF(grid%URB_PARAM(i,102,j).eq.0)THEN
+                  grid%SVF_URB2D(i,j) = 1.0
+               ELSE
+                  grid%SVF_URB2D(i,j) = grid%URB_PARAM(i,102,j)
+               END IF
+            END DO
+         END DO
+
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               DO k = 1, 15
+                  grid%FAD0_URB2D(i,k,j)  = grid%URB_PARAM(i,k,j)
+                  grid%FAD135_URB2D(i,k,j)  = grid%URB_PARAM(i,k+15,j)
+                  grid%FAD45_URB2D(i,k,j)  = grid%URB_PARAM(i,k+30,j)
+                  grid%FAD90_URB2D(i,k,j)  = grid%URB_PARAM(i,k+45,j)
+                  grid%PAD_URB2D(i,k,j)  = grid%URB_PARAM(i,k+60,j)
+                  grid%RAD_URB2D(i,k,j)  = grid%URB_PARAM(i,k+75,j)
+               END DO
+            END DO
+         END DO
+
+         DO  j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               DO k = 1, 4
+                  IF ( config_flags%sf_urban_physics==1 ) THEN
+                     grid%LF_URB2D(i,k,j)  = grid%URB_PARAM(i,k+95,j)
+                  ENDIF
+                  grid%Z0M_URB2D(i,k,j)  = grid%URB_PARAM(i,k+112,j)
+               END DO
+            END DO
+         END DO
+
+         DO  j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               grid%Z0R_URB2D(i,1,j)  = grid%URB_PARAM(i,105,j)
+               grid%Z0R_URB2D(i,2,j)  = grid%URB_PARAM(i,107,j)
+               grid%Z0R_URB2D(i,3,j)  = grid%URB_PARAM(i,109,j)
+               grid%Z0R_URB2D(i,4,j)  = grid%URB_PARAM(i,111,j)
+               grid%ZDR_URB2D(i,1,j)  = grid%URB_PARAM(i,106,j)
+               grid%ZDR_URB2D(i,2,j)  = grid%URB_PARAM(i,108,j)
+               grid%ZDR_URB2D(i,3,j)  = grid%URB_PARAM(i,110,j)
+               grid%ZDR_URB2D(i,4,j)  = grid%URB_PARAM(i,112,j)
+            END DO
+         END DO
+
       !  Generate the vegetation and soil category information from the fractional input
       !  data, or use the existing dominant category fields if they exist.
 
@@ -1539,6 +1986,7 @@ integer::oops1,oops2
                                     model_config_rec%iswater(grid%id) )
 
          !  Make all the veg/soil parms the same so as not to confuse the developer.
+
 
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
@@ -1606,6 +2054,7 @@ integer::oops1,oops2
       !  Adjustments for the seaice field PRIOR to the grid%tslb computations.  This is
       !  is for the 5-layer scheme.
 
+
       num_veg_cat      = SIZE ( grid%landusef , DIM=2 )
       num_soil_top_cat = SIZE ( grid%soilctop , DIM=2 )
       num_soil_bot_cat = SIZE ( grid%soilcbot , DIM=2 )
@@ -1645,7 +2094,7 @@ integer::oops1,oops2
 
       fix_tsk_tmn : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-         CASE ( SLABSCHEME , LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME, SSIBSCHEME )
+         CASE ( SLABSCHEME , LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME,CLMSCHEME, SSIBSCHEME )
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
@@ -1746,7 +2195,21 @@ integer::oops1,oops2
                              ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
                            print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
                            iicount = iicount + 1
+
                            grid%smois(i,:,j) = 0.005
+!+---+-----------------------------------------------------------------+
+!  Some bad values of soil moisture are possible (huge negative and positive), but they
+!  appear to occur only along coastlines, so instead of overwriting with small moisture
+!  values, use relatively large moisture val.  Orig code checked for large negative but
+!  not positive values, mods here reset either.  G. Thompson (28 Feb 2008).
+
+!                          grid%smois(i,:,j) = 0.499
+!                       ELSEIF ( (grid%landmask(i,j).gt.0.5) .and. (grid%tslb(i,1,j) .gt. 170 ) .and. &
+!                            ( grid%tslb(i,1,j) .lt. 400 ) .and. (grid%smois(i,1,j) .gt. 1.005 ) ) then
+!                          print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
+!                          iicount = iicount + 1
+!                          grid%smois(i,:,j) = 0.499
+!+---+-----------------------------------------------------------------+
                         END IF
                      END DO
                   END DO
@@ -1768,7 +2231,16 @@ integer::oops1,oops2
                              ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
                            print *,'RUC -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
                            iicount = iicount + 1
-                           grid%smois(i,:,j) = 0.005
+!                          grid%smois(i,:,j) = 0.005
+!+---+-----------------------------------------------------------------+
+!  Same comment as above.
+                           grid%smois(i,:,j) = 0.499
+                        ELSEIF ( (grid%landmask(i,j).gt.0.5) .and. (grid%tslb(i,1,j) .gt. 170 ) .and. &
+                             ( grid%tslb(i,1,j) .lt. 400 ) .and. (grid%smois(i,1,j) .gt. 1.005 ) ) then
+                           print *,'Noah -> Noah: bad soil moisture at i,j =',i,j,grid%smois(i,:,j)
+                           iicount = iicount + 1
+                           grid%smois(i,:,j) = 0.499
+!+---+-----------------------------------------------------------------+
                         END IF
                      END DO
                   END DO
@@ -1776,6 +2248,25 @@ integer::oops1,oops2
                      print *,'RUC -> Noah: total number of small soil moisture locations = ',iicount
                   END IF
                END IF
+
+!+---+-----------------------------------------------------------------+
+               !  Fudge soil moisture higher where canopy water is non-zero.
+               !  G. Thompson (12 Jun 2008)
+
+!              DO j = jts, MIN(jte,jde-1)
+!                DO i = its, MIN(ite,ide-1)
+!                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+!                   if (grid%canwat(i,j) .GT. 1.01 .AND. grid%landmask(i,j) .GT. 0.5 ) THEN
+!                      print *,'  CANWAT: moisten soil a bit more at i,j =',i,j,grid%canwat(i,j)
+!                      grid%smois(i,1,j) = grid%smois(i,1,j) + (grid%canwat(i,j)**0.33333)*0.04
+!                      grid%smois(i,1,j) = MIN(0.499, grid%smois(i,1,j))
+!                      grid%smois(i,2,j) = grid%smois(i,2,j) + (grid%canwat(i,j)**0.33333)*0.01
+!                      grid%smois(i,2,j) = MIN(0.499, grid%smois(i,2,j))
+!                   end if
+!                END DO
+!              END DO
+!+---+-----------------------------------------------------------------+
+
 
             CASE ( RUCLSMSCHEME )
                iicount = 0
@@ -1803,6 +2294,45 @@ integer::oops1,oops2
 !                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) + lqmi(grid%isltyp(i,j)) , 0.005 )
                      END DO
                   END DO
+               END IF
+            CASE ( CLMSCHEME )
+               iicount = 0
+               IF      ( flag_soil_layers == 1 ) THEN
+                  DO j = jts, MIN(jde-1,jte)
+                     DO i = its, MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                        IF ( (grid%landmask(i,j).gt.0.5) .and. ( grid%tslb(i,1,j) .gt. 170 ) .and. &
+                             ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
+                           print *,'CLM -> CLM: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
+                           iicount = iicount + 1
+                           grid%smois(i,:,j) = 0.005
+                        END IF
+                     END DO
+                  END DO
+                  IF ( iicount .GT. 0 ) THEN
+                     print *,'CLM -> CLM: total number of small soil moisture locations = ',iicount
+                  END IF
+               ELSE IF ( flag_soil_levels == 1 ) THEN
+                  DO j = jts, MIN(jde-1,jte)
+                     DO i = its, MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) + lqmi(grid%isltyp(i,j)) , 0.005 )
+                     END DO
+                  END DO
+                  DO j = jts, MIN(jde-1,jte)
+                     DO i = its, MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                        IF ( (grid%landmask(i,j).gt.0.5) .and. ( grid%tslb(i,1,j) .gt. 170 ) .and. &
+                             ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
+                           print *,'CLM -> CLM: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
+                           iicount = iicount + 1
+                           grid%smois(i,:,j) = 0.005
+                        END IF
+                     END DO
+                  END DO
+                  IF ( iicount .GT. 0 ) THEN
+                     print *,'CLM -> CLM: total number of small soil moisture locations = ',iicount
+                  END IF
                END IF
 
          END SELECT account_for_zero_soil_moisture
@@ -1832,6 +2362,7 @@ integer::oops1,oops2
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. NOAHMPSCHEME ) .AND. &
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. RUCLSMSCHEME ).AND. &
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. SSIBSCHEME ).AND. & !fds 
+                          ( model_config_rec%sf_surface_physics(grid%id) .NE. CLMSCHEME ).AND. & 
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. PXLSMSCHEME ) ) THEN
                         print *,'error in the grid%tslb'
                         print *,'i,j=',i,j
@@ -1853,7 +2384,7 @@ integer::oops1,oops2
                                  grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + &
                                                        grid%tmn(i,j)*(0.0 - grid%zs(ns)) ) /(3.0 - 0.0)
                               END DO
-                           CASE ( LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME, SSIBSCHEME )
+                           CASE ( LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME,CLMSCHEME,SSIBSCHEME )
 !                             CALL wrf_error_fatal ( 'Assigned constant soil moisture to 0.3, stopping')
                               DO ns = 1 , model_config_rec%num_soil_layers
                                  grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + &
@@ -2119,6 +2650,15 @@ endif
          END DO
       END DO
 
+!+---+-----------------------------------------------------------------+
+      ! New addition by Greg Thompson to dry out the stratosphere.
+!     CALL wrf_debug ( 0 , ' calling routine to dry stratosphere')
+!     CALL dry_stratos ( grid%t_2, moist(:,:,:,P_QV), grid%phb, &
+!                        ids , ide , jds , jde , kds , kde , &
+!                        ims , ime , jms , jme , kms , kme , &
+!                        its , ite , jts , jte , kts , kte )
+!+---+-----------------------------------------------------------------+
+
       !  Fill in the outer rows and columns to allow us to be sloppy.
 
       IF ( ite .EQ. ide ) THEN
@@ -2204,9 +2744,12 @@ endif
 
                k = kte-1
 
-               qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k,j,P_QV))
-               qvf2 = 1./(1.+qvf1)
-               qvf1 = qvf1*qvf2
+               qtot=0.
+               DO im = PARAM_FIRST_SCALAR, num_3d_m
+                 qtot = qtot + moist(i,k,j,im)
+               ENDDO
+               qvf2 = 1./(1.+qtot)
+               qvf1 = qtot*qvf2
 
                grid%p(i,k,j) = - 0.5*(grid%mu_2(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
                qvf = 1. + rvovrd*moist(i,k,j,P_QV)
@@ -2219,9 +2762,12 @@ endif
                !  inverse density fields (total and perturbation).
 
                DO k=kte-2,1,-1
-                  qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
-                  qvf2 = 1./(1.+qvf1)
-                  qvf1 = qvf1*qvf2
+                  qtot=0.
+                  DO im = PARAM_FIRST_SCALAR, num_3d_m
+                    qtot = qtot + 0.5*(moist(i,k,j,im)+moist(i,k+1,j,im))
+                  ENDDO
+                  qvf2 = 1./(1.+qtot)
+                  qvf1 = qtot*qvf2
                   grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_2(i,j) + qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
                   qvf = 1. + rvovrd*moist(i,k,j,P_QV)
                   grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &
@@ -2335,7 +2881,39 @@ endif
 
          END DO
       END DO
-     
+
+      !  Now we have full pressure on eta levels, get final computation of Qv.
+      !  The use of u_1 (rh) and v_1 (temperature) is temporary.
+
+      grid%v_1 = grid%t_2+t0
+
+      CALL theta_to_t ( grid%v_1 , grid%p_hyd  , p00 , &
+                        ids , ide , jds , jde , kds , kde , &
+                        ims , ime , jms , jme , kms , kme , &
+                        its , ite , jts , jte , kts , kte )
+
+      IF      ( config_flags%rh2qv_method .eq. 1 ) THEN
+         CALL rh_to_mxrat1(grid%u_1, grid%v_1, grid%p_hyd , moist(:,:,:,P_QV) ,       &
+                           config_flags%rh2qv_wrt_liquid ,                        &
+                           config_flags%qv_max_p_safe ,                           &
+                           config_flags%qv_max_flag , config_flags%qv_max_value , &
+                           config_flags%qv_min_p_safe ,                           &
+                           config_flags%qv_min_flag , config_flags%qv_min_value , &
+                           ids , ide , jds , jde , kds , kde ,                    &
+                           ims , ime , jms , jme , kms , kme ,                    &
+                           its , ite , jts , jte , kts , kte-1 )
+      ELSE IF ( config_flags%rh2qv_method .eq. 2 ) THEN
+         CALL rh_to_mxrat2(grid%u_1, grid%v_1, grid%p_hyd , moist(:,:,:,P_QV) ,       &
+                           config_flags%rh2qv_wrt_liquid ,                        &
+                           config_flags%qv_max_p_safe ,                           &
+                           config_flags%qv_max_flag , config_flags%qv_max_value , &
+                           config_flags%qv_min_p_safe ,                           &
+                           config_flags%qv_min_flag , config_flags%qv_min_value , &
+                           ids , ide , jds , jde , kds , kde ,                    &
+                           ims , ime , jms , jme , kms , kme ,                    &
+                           its , ite , jts , jte , kts , kte-1 )
+      END IF
+
       !  If this is data from the SI, then we probably do not have the original
       !  surface data laying around.  Note that these are all the lowest levels
       !  of the respective 3d arrays.  For surface pressure, we assume that the
@@ -2402,13 +2980,145 @@ endif
 
       grid%save_topo_from_real=1
 
+      !  Template for initializing tracer arrays. 
+      !  Right now, a small plane in the middle of the domain at lowest model level is
+      !  defined.
+
+      IF (config_flags%tracer_opt .eq. 2) THEN
+          DO j = (jde + jds)/2 - 4, (jde + jds)/2 + 4, 1
+            DO i = (ide + ids)/2 - 4, (ide + ids)/2 + 4, 1
+               tracer(i, 1, j, im) = 1.
+               IF ( its .LE. i .and. ite .GE. i .and. jts .LE. j .and. jte .GE. j ) THEN
+                 tracer(i, 1, j, P_tr17_1) = 1.
+                 tracer(i, 1, j, P_tr17_2) = 1.
+                 tracer(i, 1, j, P_tr17_3) = 1.
+                 tracer(i, 1, j, P_tr17_4) = 1.
+!                tracer(i, 1, j, P_tr17_5) = 1.
+!                tracer(i, 1, j, P_tr17_6) = 1.
+!                tracer(i, 1, j, P_tr17_7) = 1.
+!                tracer(i, 1, j, P_tr17_8) = 1.
+               END IF
+            END DO
+          END DO
+      END IF
+
+      !  Template for initializing trajectories.  The i, j, and k starting locations
+      !  are specified.  Right now, a small plane in the middle of the domain is 
+      !  selected.
+      
+      grid%traj_i    = -9999
+      grid%traj_j    = -9999
+      grid%traj_k    = -9999
+      grid%traj_lat  = -9999
+      grid%traj_long = -9999
+    
+      IF (config_flags%num_traj .gt. 0 .and. config_flags%traj_opt .gt. 0) THEN
+         icount = 1
+         DO j = (jde + jds)/2 - 2, (jde + jds)/2 + 2, 1 
+            DO i = (ide + ids)/2 - 2, (ide + ids)/2 + 2, 1
+               IF ( its .LE. i    .and. ite .GE. i   .and.  jts .LE. j    .and. jte .GE. j ) THEN
+                  grid%traj_i   (icount) = i
+                  grid%traj_j   (icount) = j
+                  grid%traj_k   (icount) = 10
+                  grid%traj_lat (icount) = grid%xlat(i,j)
+                  grid%traj_long(icount) = grid%xlong(i,j)
+               END IF
+         
+#ifdef DM_PARALLEL
+               grid%traj_i   (icount) = wrf_dm_max_real ( grid%traj_i   (icount) )
+               grid%traj_j   (icount) = wrf_dm_max_real ( grid%traj_j   (icount) )
+               grid%traj_k   (icount) = wrf_dm_max_real ( grid%traj_k   (icount) )
+               grid%traj_lat (icount) = wrf_dm_max_real ( grid%traj_lat (icount) )
+               grid%traj_long(icount) = wrf_dm_max_real ( grid%traj_long(icount) )
+#endif
+         	      
+               icount = icount + 1
+               IF (icount .GT. config_flags%num_traj) THEN
+                  EXIT
+               END IF
+            END DO
+         END DO  
+      END IF
+
+      !  Simple initialization for 3d ocean.  
+
+      IF ( config_flags%sf_ocean_physics .EQ. PWP3DSCHEME ) THEN
+
+         !  From a profile of user defined temps, depths, and salinity - we 
+         !  construct a 3d ocean.  Because this is a 1d profile, domains that
+         !  have varied ocean characteristics that deviate should significantly from 
+         !  the provided initial state will probably give poor results.
+
+         DO k = 1,model_config_rec%ocean_levels
+            grid%om_depth(:,k,:) = model_config_rec%ocean_z(k)
+            grid%om_tmp  (:,k,:) = model_config_rec%ocean_t(k)
+            grid%om_s    (:,k,:) = model_config_rec%ocean_s(k)
+            grid%om_tini (:,k,:) = model_config_rec%ocean_t(k)
+            grid%om_sini (:,k,:) = model_config_rec%ocean_s(k)
+            grid%om_u    (:,k,:) = 0.
+            grid%om_v    (:,k,:) = 0.
+         END DO
+
+         !  Apparently, the mixed layer is 5 m.
+
+         grid%om_ml = 5    
+
+         !  Keep lat, lon info for the ocean model.
+
+         grid%om_lon = grid%xlong
+         grid%om_lat = grid%xlat
+
+         !  If we have access to a non-horizontally isotropic SST, let's 
+         !  use that as a better starting point for the ocean temp.  Note that
+         !  we assume if this is an ice point that implies this is a land point
+         !  for WRF.  If it is a land point, then we do not have any ocean underneath.
+
+         IF ( ( grid%landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) ) THEN
+            DO j = jts, min(jde-1,jte)
+               DO k = 1,model_config_rec%ocean_levels
+                  DO i = its, min(ide-1,ite)
+                     grid%om_tmp(i,k,j) = grid%sst(i,j) - ( grid%om_tini(i,1,j) - grid%om_tini(i,k,j) )
+                  END DO
+               END DO
+            END DO
+   
+            DO j = jts, min(jde-1,jte)
+               DO k = 1,model_config_rec%ocean_levels
+                  DO i = its, min(ide-1,ite)
+                     grid%om_tini(i,k,j) = grid%om_tmp(i,k,j)
+                  END DO
+               END DO
+            END DO
+         END IF
+
+      END IF
+
       ips = its ; ipe = ite ; jps = jts ; jpe = jte ; kps = kts ; kpe = kte
+
+!+---+-----------------------------------------------------------------+
+      !  Added by Greg Thompson.  Pre-set snow depth by latitude, elevation, and day-of-year.
+
+!     CALL wrf_debug ( 0 , ' calling routine to add snow in high mountain peaks')
+!     DO j = jts, min(jde-1,jte)
+!        DO i = its, min(ide-1,ite)
+!           IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+!           grid%snowh(i,j) = snowHires (grid%snowh(i,j), grid%xlat(i,j), grid%ht(i,j), current_date, i,j)
+!           grid%snow(i,j) = grid%snowh(i,j) * 1000. / 5.
+!        END DO
+!     END DO
+!     CALL wrf_debug ( 0 , '   DONE routine to add snow in high mountain peaks')
+!+---+-----------------------------------------------------------------+
+
+
 #ifdef DM_PARALLEL
 #   include "HALO_EM_INIT_1.inc"
 #   include "HALO_EM_INIT_2.inc"
 #   include "HALO_EM_INIT_3.inc"
 #   include "HALO_EM_INIT_4.inc"
 #   include "HALO_EM_INIT_5.inc"
+      IF ( config_flags%sf_ocean_physics .EQ. PWP3DSCHEME ) THEN
+#   include "HALO_EM_INIT_6.inc"
+      END IF
 #endif
 
       RETURN
@@ -2549,7 +3259,7 @@ endif
          CALL const_module_initialize ( p00 , t00 , a , tiso ) 
       ELSE
       ! get these constants from model data
-         CALL wrf_message('ndown: using constants from file')
+         CALL wrf_debug(99,'ndown: using base-state profile constants from input file')
          t00  = grid%t00
          p00  = grid%p00
          a    = grid%tlp
@@ -2561,6 +3271,8 @@ endif
             CALL wrf_error_fatal(TRIM(wrf_err_message))
          ENDIF
       ENDIF
+ 
+      hold_ups = .true.
 
       !  Base state potential temperature and inverse density (alpha = 1/rho) from
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
@@ -2655,6 +3367,7 @@ endif
             grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &
                                  (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
             grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+            grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
 
             !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
             !  inverse density fields (total and perturbation).
@@ -2668,6 +3381,7 @@ endif
                grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &
                            (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
                grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+               grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
             END DO
 
             !  This is the hydrostatic equation used in the model after the small timesteps.  In
@@ -2688,14 +3402,18 @@ endif
 
                grid%ph_2(i,1,j) = grid%phb(i,1,j)
                DO k = 2,kte
-                  pfu = grid%mu0(i,j)*grid%znw(k)   + grid%p_top
-                  pfd = grid%mu0(i,j)*grid%znw(k-1) + grid%p_top
-                  phm = grid%mu0(i,j)*grid%znu(k-1) + grid%p_top
+                  pfu = ( grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k)   + grid%p_top
+                  pfd = ( grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k-1) + grid%p_top
+                  phm = ( grid%mub(i,j)+grid%mu_2(i,j))*grid%znu(k-1) + grid%p_top
                   grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) + grid%alt(i,k-1,j)*phm*LOG(pfd/pfu)
                END DO
 
                DO k = 1,kte
                   grid%ph_2(i,k,j) = grid%ph_2(i,k,j) - grid%phb(i,k,j)
+               END DO
+
+               DO k = 1,kte
+                  grid%ph0(i,k,j) = grid%ph_2(i,k,j) + grid%phb(i,k,j)
                END DO
 
             END IF
@@ -3594,7 +4312,7 @@ end subroutine fillitup
             !  the isobaric original field has the surface from 2-m T and RH, and 10-m U and V).
 
             IF ( lowest_lev_from_sfc ) THEN
-               fnew(i,1,j) = forig(i,ko_above_sfc(i)-1,j)
+               fnew(i,1,j) = forig(i,1,j)
             END IF
 
          END DO
@@ -4020,6 +4738,12 @@ print *,'VERT EXTRAP = ', vert_extrap
       REAL , DIMENSION(target_dim) , INTENT(IN) :: target_x
       REAL , DIMENSION(target_dim) , INTENT(OUT) :: target_y
 
+!  cubic spline defs
+      INTEGER :: K
+      REAL :: DX, ALPHA, BETA, GAMMA, ETA
+      REAL , DIMENSION(all_dim) :: P2
+!  cubic spline defs
+
       !  Brought in for debug purposes, all of the computations are in a single column.
 
       INTEGER , INTENT(IN) :: i,j
@@ -4152,7 +4876,28 @@ print *,'p target= ',target_x
          !  an odd order interpolator.  For the even guys, we'll do it twice
          !  and shift the range one index, then get an average.
 
-         IF      ( MOD(n,2) .NE. 0 ) THEN
+! cubic spline
+         IF ( n .EQ. 9 ) THEN
+            CALL cubic_spline (all_dim-1, all_x, all_y, P2)
+!
+! Find the value of function f(x)
+!
+          DX = all_x(loc_center_right) - all_x(loc_center_left)
+          ALPHA = P2(loc_center_right)/(6*DX)
+          BETA = -P2(loc_center_left)/(6*DX)
+          GAMMA = all_y(loc_center_right)/DX - DX*P2(loc_center_right)/6
+          ETA = DX*P2(loc_center_left)/6 - all_y(loc_center_left)/DX
+          target_y(target_loop) = ALPHA*(target_x(target_loop)-all_x(loc_center_left))*(target_x(target_loop)-all_x(loc_center_left)) &
+                                  *(target_x(target_loop)-all_x(loc_center_left)) &
+                     +BETA*(target_x(target_loop)-all_x(loc_center_right))*(target_x(target_loop)-all_x(loc_center_right)) &
+                                  *(target_x(target_loop)-all_x(loc_center_right)) &
+                     +GAMMA*(target_x(target_loop)-all_x(loc_center_left)) &
+                     +ETA*(target_x(target_loop)-all_x(loc_center_right))
+
+!        IF      ( MOD(n,2) .NE. 0 ) THEN
+!  end cubic spline block
+
+         ELSE IF ( MOD(n,2) .NE. 0 ) THEN
             IF ( ( loc_center_left -(((n+1)/2)-1) .GE.       1 ) .AND. &
                  ( loc_center_right+(((n+1)/2)-1) .LE. all_dim ) ) THEN
                ist  = loc_center_left -(((n+1)/2)-1)
@@ -4202,6 +4947,89 @@ print *,'p target= ',target_x
       END DO
 
    END SUBROUTINE lagrange_setup
+
+!---------------------------------------------------------------------
+
+! cubic spline routines
+
+      SUBROUTINE cubic_spline (N, XI, FI, P2)
+      !
+      ! Function to carry out the cubic-spline approximation
+      ! with the second-order derivatives returned.
+      !
+      INTEGER :: I
+      INTEGER, INTENT (IN) :: N
+      REAL, INTENT (IN), DIMENSION (N):: XI, FI
+      REAL, INTENT (OUT), DIMENSION (N):: P2
+      REAL, DIMENSION (N):: G, H
+      REAL, DIMENSION (N-1):: D, B, C
+!
+! Assign the intervals and function differences
+!
+  DO I = 1, N
+    H(I) = XI(I+1) - XI(I)
+    G(I) = FI(I+1) - FI(I)
+  END DO
+!
+! Evaluate the coefficient matrix elements
+  DO I = 1, N-1
+    D(I) = 2*(H(I+1)+H(I))
+    B(I) = 6*(G(I+1)/H(I+1)-G(I)/H(I))
+    C(I) = H(I+1)
+  END DO
+!
+! Obtain the second-order derivatives
+!
+  CALL TRIDIAGONAL_LINEAR_EQ (N-1, D, C, C, B, G)
+  P2(1) = 0
+  P2(N+1) = 0
+  DO I = 2, N
+    P2(I) = G(I-1)
+  END DO
+
+END SUBROUTINE cubic_spline
+ 
+!---------------------------------------------------------------------
+
+    SUBROUTINE TRIDIAGONAL_LINEAR_EQ (L, D, E, C, B, Z)
+!
+! Function to solve the tridiagonal linear equation set.
+!
+  INTEGER, INTENT (IN) :: L
+  INTEGER :: I
+  REAL, INTENT (IN), DIMENSION (L):: D, E, C, B
+  REAL, INTENT (OUT), DIMENSION (L):: Z
+  REAL, DIMENSION (L):: Y, W
+  REAL, DIMENSION (L-1):: V, T
+!
+! Evaluate the elements in the LU decomposition
+!
+  W(1) = D(1)
+  V(1)  = C(1)
+  T(1)  = E(1)/W(1)
+  DO I = 2, L - 1
+    W(I) = D(I)-V(I-1)*T(I-1)
+    V(I) = C(I)
+    T(I) = E(I)/W(I)
+  END DO
+  W(L) = D(L)-V(L-1)*T(L-1)
+!
+! Forward substitution to obtain y
+!
+  Y(1) = B(1)/W(1)
+  DO I = 2, L
+    Y(I) = (B(I)-V(I-1)*Y(I-1))/W(I)
+  END DO
+!
+! Backward substitution to obtain z
+  Z(L) = Y(L)
+  DO I = L-1, 1, -1
+    Z(I) = Y(I) - T(I)*Z(I+1)
+  END DO
+
+END SUBROUTINE TRIDIAGONAL_LINEAR_EQ
+
+! end cubic spline routines
 
 !---------------------------------------------------------------------
 
@@ -4937,7 +5765,7 @@ print *,'p sfc = ',psfc(i,j)
       !  at which the liquid and ice phase change occurs.
 
       DO j = jts , MIN ( jde-1 , jte )
-         DO k = kts , kte-1
+         DO k = kts , kte
             DO i = its , MIN (ide-1 , ite )
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                rh(i,k,j) = MIN ( MAX ( rh(i,k,j) ,  0. ) , 100. )
@@ -4947,7 +5775,7 @@ print *,'p sfc = ',psfc(i,j)
 
       IF ( wrt_liquid ) THEN
          DO j = jts , MIN ( jde-1 , jte )
-            DO k = kts , kte-1
+            DO k = kts , kte
                DO i = its , MIN (ide-1 , ite )
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
 
@@ -4955,14 +5783,14 @@ print *,'p sfc = ',psfc(i,j)
                   if (t(i,k,j) .ne. 0.) then
                      es=.01*rh(i,k,j)*svp1*10.*EXP(svp2*(t(i,k,j)-svpt0)/(t(i,k,j)-svp3))
                      IF (es .ge. p(i,k,j)/100.)THEN
-                       q(i,k,j)=0.0
-                       WRITE(mess,*) 'Warning: vapor pressure exceeds total pressure, setting Qv to 0'
-                       CALL wrf_debug(0,mess)
+                       q(i,k,j)=1.E-6
+                       WRITE(mess,*) 'Warning: vapor pressure exceeds total pressure, setting Qv to 1.E-6'
+                       CALL wrf_debug(1,mess)
                      ELSE
-                       q(i,k,j)=eps*es/(p(i,k,j)/100.-es)
+                       q(i,k,j)=MAX(eps*es/(p(i,k,j)/100.-es),1.E-6)
                      ENDIF
                   else
-                     q(i,k,j)=0.0
+                     q(i,k,j)=1.E-6
                      WRITE(mess,*) 't(i,j,k) was 0 at ', i,j,k,', setting Qv to 0'
                      CALL wrf_debug(0,mess)
                   endif
@@ -4972,7 +5800,7 @@ print *,'p sfc = ',psfc(i,j)
 
       ELSE
          DO j = jts , MIN ( jde-1 , jte )
-            DO k = kts , kte-1
+            DO k = kts , kte
                DO i = its , MIN (ide-1 , ite )
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
 
@@ -5035,7 +5863,7 @@ print *,'p sfc = ',psfc(i,j)
       !  domain that is above the selected pressure level.
      
       DO j = jts , MIN ( jde-1 , jte )
-         DO k = kts , kte-1
+         DO k = kts , kte
             DO i = its , MIN (ide-1 , ite )
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                IF ( p(i,k,j) .LT. qv_max_p_safe ) THEN
@@ -5265,6 +6093,21 @@ print *,'namelist p_top (Pa) = ',p_top
          znw( 9) = 0.75 * znw( 8) + 0.25 * znw(12)
          znw(10) = 0.50 * znw( 8) + 0.50 * znw(12)
          znw(11) = 0.25 * znw( 8) + 0.75 * znw(12)
+
+         DO k = 8, kte-1
+            pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
+            temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+            t_init = temp*(p00/pb)**(r_d/cp) - t0
+            alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
+            phb(k) = phb(k-1) - (znw(k)-znw(k-1)) * mub*alb(k-1)
+         END DO
+         phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
+
+k=1
+print *,k,'  z (m)            = ',phb(1)/g
+do k = 2 ,kte
+print *,k,'  z (m) and dz (m) = ',phb(k)/g,(phb(k)-phb(k-1))/g
+end do
 
       END IF
 
@@ -6032,6 +6875,123 @@ print *,'namelist p_top (Pa) = ',p_top
    END SUBROUTINE filter_topo
 
 !---------------------------------------------------------------------
+
+
+!+---+-----------------------------------------------------------------+
+! Begin addition by Greg Thompson to dry out the stratosphere.
+! Starting 3 levels below model top, go downward and search for where
+! Theta gradient over three K-levels is less steep than +10 K per 1500 m.
+! This threshold approximates a vertical line on a skew-T chart from
+! approximately 300 to 240 mb, anything more unstable than this reference
+! is probably in the troposphere so pick the K plus 1 point as the
+! tropopause and set mixing ratio to a really small values above.
+!..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
+!..Last modified: 30 Dec 2004
+!+---+-----------------------------------------------------------------+
+
+   subroutine dry_stratos ( theta, qv, phb, &
+                            ids , ide , jds , jde , kds , kde , &
+                            ims , ime , jms , jme , kms , kme , &
+                            its , ite , jts , jte , kts , kte )
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte
+
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN)     :: theta, phb
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT)  :: qv
+
+      !  Local vars
+
+      INTEGER :: i, j, k, kk, istart, iend, jstart, jend, kstart, kend
+      REAL    :: ht1, ht2, theta1, theta2, htz, sat85, p_std_atmos
+      CHARACTER*256:: str_debug
+      ! Saturation vapor pressure at T = -85C.
+      DATA sat85 /0.0235755574/
+
+      do i = 1, 256
+         str_debug(i:i) = char(0)
+      enddo
+
+      istart = its
+      iend   = MIN(ide-1,ite)
+      jstart = jts
+      jend   = MIN(jde-1,jte)
+      kstart = kts
+      kend   = kte-1
+      DO j = jstart, jend
+         DO i = istart, iend
+            DO k = kend-3, kstart, -1
+               ht1 = phb(i,k,j)/9.8
+               ht2 = phb(i,k+2,j)/9.8
+               theta1 = theta(i,k,j)
+               theta2 = theta(i,k+2,j)
+               if ( (((theta2-theta1)/(ht2-ht1)) .lt. 10./1500. ) .AND. (ht1.gt.4000.) ) then
+                  DO kk = k+3, kend
+                     htz = phb(i,kk,j)/9.8
+                     p_std_atmos = exp(log(1.0-htz/44307.692)/0.19)*101325.0
+                     qv(i,kk,j) = 0.622*sat85/(p_std_atmos-sat85)
+                  END DO
+                  goto 79
+               end if
+            END DO
+ 79         continue
+         END DO
+      END DO
+
+   END SUBROUTINE dry_stratos
+
+!+---+-----------------------------------------------------------------+
+!..Hardwire snow cover above a pre-specified altitude.
+!.. Starting altitude for snow (snow_startz) depends on latitude
+!.. and is 3900 m at 35-deg lowering to 250km (linearly) by 65-deg lat.
+!.. Alter WEASD linear function from 0 at snow_startz to 999 mm at 4 km.
+!.. Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
+!.. Last modified: 27 Dec 2008
+!+---+-----------------------------------------------------------------+
+
+      real function snowHires (snow_in, latitude, elev, date_str, i,j)
+      IMPLICIT NONE
+
+      REAL, INTENT(IN):: latitude, elev, snow_in
+      INTEGER, INTENT(IN):: i, j
+      CHARACTER (LEN=24), INTENT(IN) :: date_str
+
+      REAL :: snow_startz, del_lat, season_factor, snow_out
+      REAL :: gmt
+      INTEGER :: day_peak, day_of_year, julyr
+      CHARACTER (LEN=256) :: dbg_msg
+
+      CALL get_julgmt ( date_str , julyr , day_of_year , gmt )
+
+      if (latitude .gt. 0.0) then
+         del_lat = (65.-latitude)/(65.-35.)
+         day_peak = 80
+      else
+         del_lat = (-65.-latitude)/(-65.+35.)
+         day_peak = 264
+      endif
+
+      snow_startz = (3900.-250.)*del_lat + 250.
+      snow_startz = max(250., min(3900., snow_startz))
+
+      season_factor = 1.
+      snow_out = 0.
+      IF (elev .GT. snow_startz) THEN
+         season_factor = ABS(COS((day_of_year - day_peak)*0.5*0.0174533))
+         snow_out = 0.999*(elev-snow_startz)/(4000.-snow_startz)
+         write(dbg_msg,*) 'DEBUG_GT_SNOW ', day_of_year, latitude, elev, snow_in, snow_startz, season_factor, snow_out,i, j
+         CALL wrf_debug (150, dbg_msg)
+      ENDIF
+
+      snowHires = MAX(snow_in, season_factor * snow_out)
+
+      END FUNCTION snowHires
+
+!+---+-----------------------------------------------------------------+
+
 
    SUBROUTINE init_module_initialize
    END SUBROUTINE init_module_initialize

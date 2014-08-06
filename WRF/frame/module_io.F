@@ -90,7 +90,9 @@ SUBROUTINE wrf_ioinit( Status )
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_ioinit' )
   CALL init_io_handles    ! defined below
 #ifdef NETCDF
+  if ( model_config_rec%use_netcdf_classic ) SysDepInfo="use_netcdf_classic"
   CALL ext_ncd_ioinit(   SysDepInfo, ierr(1) )
+  SysDepInfo = " "
 #endif
 #ifdef INTIO
   CALL ext_int_ioinit(   SysDepInfo, ierr(2) )
@@ -228,11 +230,14 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
   CHARACTER*128     :: mess
   CHARACTER*1028    :: tstr, t1
   INTEGER i,j
+  LOGICAL ncd_nofill
 
   WRITE(mess,*) 'module_io.F: in wrf_open_for_write_begin, FileName = ',TRIM(FileName)
   CALL wrf_debug( DEBUG_LVL, mess )
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
+
+  CALL nl_get_ncd_nofill( 1 , ncd_nofill )
 
   io_form = io_form_for_dataset( DataSet )
 
@@ -249,8 +254,13 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
           ELSE
             LocFilename = FileName
           ENDIF
-          CALL ext_ncd_open_for_write_begin ( LocFileName , Comm_compute, Comm_io, SysDepInfo, &
-                                              Hndl , Status )
+          IF ( ncd_nofill ) THEN
+            CALL ext_ncd_open_for_write_begin ( LocFileName , Comm_compute, Comm_io, SysDepInfo // ",NOFILL=.TRUE.", &
+                                                Hndl , Status )
+          ELSE
+            CALL ext_ncd_open_for_write_begin ( LocFileName , Comm_compute, Comm_io, SysDepInfo, &
+                                                Hndl , Status )
+          ENDIF
         ENDIF
         IF ( .NOT. multi_files(io_form) ) THEN
           CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
@@ -379,8 +389,13 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
     END SELECT
   ELSE IF ( use_output_servers() ) THEN
     IF ( io_form .GT. 0 ) THEN
-      CALL wrf_quilt_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
-                                            Hndl , io_form, Status )
+      IF ( ncd_nofill ) THEN
+        CALL wrf_quilt_open_for_write_begin ( FileName , Comm_compute, Comm_io, TRIM(SysDepInfo) // ",NOFILL=.TRUE.", &
+                                              Hndl , io_form, Status )
+      ELSE
+        CALL wrf_quilt_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                                              Hndl , io_form, Status )
+      ENDIF
     ENDIF
   ELSE
     Status = 0
@@ -1154,6 +1169,7 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
+  CALL free_handle( DataHandle )
   IF ( Hndl .GT. -1 ) THEN
     IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package(io_form) )
@@ -1214,7 +1230,6 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
     ELSE
       Status = 0
     ENDIF
-    CALL free_handle( DataHandle )
   ELSE
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
   ENDIF

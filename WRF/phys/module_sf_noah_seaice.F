@@ -15,17 +15,22 @@ MODULE module_sf_noah_seaice
 
   INTEGER, PRIVATE :: ILOC
   INTEGER, PRIVATE :: JLOC
+!$omp threadprivate(iloc, jloc)
 
   REAL, PARAMETER, PRIVATE :: TFREEZ = 273.15
 !
 CONTAINS
 !
-  SUBROUTINE SFLX_SEAICE (IILOC, JJLOC, SEAICE_ALBEDO_OPT,                 &    !C
+  SUBROUTINE SFLX_SEAICE (IILOC, JJLOC, SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, &    !C
+       &                  SEAICE_SNOWDEPTH_OPT, SEAICE_SNOWDEPTH_MAX,      &    !C
+       &                  SEAICE_SNOWDEPTH_MIN,                            &    !C
        &                  FFROZP,DT,ZLVL,NSOIL,                            &    !C
+       &                  SITHICK,                                         &
        &                  LWDN,SOLNET,SFCPRS,PRCP,SFCTMP,Q2,               &    !F
        &                  TH2,Q2SAT,DQSDT2,                                &    !I
-       &                  ALB, SNOALB,TBOT, Z0BRD, Z0, EMISSI,             &    !S
+       &                  SNOALB,TBOT, Z0BRD, Z0, EMISSI,                  &    !S
        &                  T1,STC,SNOWH,SNEQV,ALBEDO, CH,                   &    !H
+       &                  ALBEDOSI, SNOWONSI,                              &
        &                  ETA,SHEAT,ETA_KINEMATIC,FDOWN,                   &    !O
        &                  ESNOW,DEW,ETP,SSOIL,FLX1,FLX2,FLX3,              &    !O
        &                  SNOMLT,SNCOVR,                                   &    !O
@@ -77,10 +82,6 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! 5. CANOPY/SOIL CHARACTERISTICS (S):
 ! ----------------------------------------------------------------------
-!   ALB        BACKROUND SNOW-FREE SURFACE ALBEDO (FRACTION), FOR JULIAN
-!                DAY OF YEAR (USUALLY FROM TEMPORAL INTERPOLATION OF
-!                MONTHLY MEAN VALUES' CALLING PROG MAY OR MAY NOT
-!                INCLUDE DIURNAL SUN ANGLE EFFECT)
 !   SNOALB     UPPER BOUND ON MAXIMUM ALBEDO OVER DEEP SNOW (E.G. FROM
 !                ROBINSON AND KUKLA, 1985, J. CLIM. & APPL. METEOR.)
 !   TBOT       BOTTOM SOIL TEMPERATURE (LOCAL YEARLY-MEAN SFC AIR
@@ -142,19 +143,25 @@ CONTAINS
 ! ----------------------------------------------------------------------
       integer, intent(in) :: iiloc, jjloc
       INTEGER, INTENT(IN) :: SEAICE_ALBEDO_OPT
+      REAL,    INTENT(IN) :: SEAICE_ALBEDO_DEFAULT
+      INTEGER, INTENT(IN) :: SEAICE_SNOWDEPTH_OPT
+      REAL,    INTENT(IN) :: SEAICE_SNOWDEPTH_MAX
+      REAL,    INTENT(IN) :: SEAICE_SNOWDEPTH_MIN
 
       LOGICAL            ::  FRZGRA, SNOWNG
 
       INTEGER,INTENT(IN) ::  NSOIL
 
       REAL, INTENT(IN)   :: DT,DQSDT2,LWDN,PRCP,                   &
-                            Q2,Q2SAT,SFCPRS,SFCTMP, SNOALB,                 &
+                            Q2,Q2SAT,SFCPRS,SFCTMP,SNOALB,ALBEDOSI,          &
                             SOLNET,TBOT,TH2,ZLVL,                            &
                             FFROZP
       REAL, INTENT(OUT)  :: ALBEDO
       REAL, INTENT(INOUT):: CH,                         &
                             SNEQV,SNCOVR,SNOWH,T1,Z0BRD,                    &
-                            EMISSI, ALB
+                            EMISSI
+      REAL, INTENT(IN)   :: SNOWONSI
+      REAL, INTENT(IN)   :: SITHICK
       REAL, INTENT(INOUT):: RIBB
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT) ::  STC
       REAL,DIMENSION(1:NSOIL)::   ZSOIL
@@ -173,11 +180,10 @@ CONTAINS
       REAL :: RHO
       INTEGER  :: KZ, K
 
-      REAL :: T1Celsius
-      REAL :: SFCTcelsius
       REAL :: ALB_SNOW
       REAL :: ALB_ICE
       REAL :: Z0N
+      REAL :: SNCOVRR
 
 ! ----------------------------------------------------------------------
 ! DECLARATIONS - PARAMETERS
@@ -197,17 +203,20 @@ CONTAINS
       SNOMLT = 0.0
 
 ! ----------------------------------------------------------------------
-! SEA-ICE LAYERS ARE EQUAL THICKNESS AND SUM TO 3 METERS
+! SEA-ICE LAYERS ARE EQUAL THICKNESS AND SUM TO <SITHICK> METERS
 ! ----------------------------------------------------------------------
 
       DO KZ = 1,NSOIL
-         ZSOIL (KZ) = -3.* FLOAT (KZ)/ FLOAT (NSOIL)
+         ZSOIL (KZ) = -SITHICK * FLOAT (KZ) / FLOAT (NSOIL)
       END DO
 
 ! ----------------------------------------------------------------------
 
       Z0BRD = 0.001 
-      ALB = 0.55
+!      ALB = 0.82  ! Arctic pre-melt spring and post-melt autumn
+!      ALB = 0.80  ! Antarctica
+!      ALB = 0.50  ! Arctic mid-summer (ice and melt ponds)
+!      ALB = 0.65  ! Arctic bare ice with no snow and no melt ponds
 
 ! ----------------------------------------------------------------------
 !  INITIALIZE PRECIPITATION LOGICALS.
@@ -241,6 +250,29 @@ CONTAINS
          ENDIF
 
       END SELECT
+
+
+      IF ( SEAICE_SNOWDEPTH_OPT == 0 ) THEN
+
+          !
+          ! Enforce bounds on snow depth, maintaining original snow density.
+          !
+
+          SNDENS = SNEQV / SNOWH
+          SNOWH = MAX ( SEAICE_SNOWDEPTH_MIN , MIN ( SNOWH , SEAICE_SNOWDEPTH_MAX ) )
+          SNEQV = SNOWH * SNDENS 
+
+      ELSEIF ( SEAICE_SNOWDEPTH_OPT == 1 ) THEN
+
+          !
+          ! Regardless of the assignments above, we want to enforce
+          ! a specified snow depth and density on sea ice.
+          !
+
+          SNDENS = 0.3
+          SNOWH = SNOWONSI
+          SNEQV = SNOWH * SNDENS
+      ENDIF
 
 ! ----------------------------------------------------------------------
 ! IF INPUT SNOWPACK IS NONZERO, THEN COMPUTE SNOW DENSITY "SNDENS" AND
@@ -314,42 +346,53 @@ CONTAINS
 
          SNCOVR = 1.0
          EMISSI = 0.98
-         ALBEDO = 0.80
+         ALBEDO = SEAICE_ALBEDO_DEFAULT
+!        ALBEDO = 0.82  ! Arctic pre-melt spring and post-melt autumn
+!        ALBEDO = 0.80  ! Antarctica
+!        ALBEDO = 0.50  ! Arctic mid-summer (ice and melt ponds)
+!        ALBEDO = 0.65  ! Arctic bare ice with no snow and no melt ponds
 
       CASE ( 1 ) ! Arctic sea-ice albedo from Mills (2011)
 
-         Z0N = 0.10 ! Approximate roughness length of snow-covered surface
-         SNCOVR = SNOWH / ( SNOWH + Z0N ) ! Snow-cover fraction
-
-         ! 
-         ! Make albedo of snow on sea-ice a function of skin temperature
-         ! 
-         T1celsius = T1 - 273.15
-         IF (T1 < 268.0) THEN
+         !
+         ! Make albedo of snow on sea-ice a function of skin temperature:
+         !
+         IF (T1 < 268.15) THEN
             alb_snow = 0.8
-         ELSEIF ( ( T1 >= 268.0 ) .AND. ( T1 < 273.0 ) ) then
-            alb_snow = 0.65 - ( 0.03 * T1celsius )
+         ELSEIF ( ( T1 >= 268.15 ) .AND. ( T1 < 273.15 ) ) then
+            alb_snow = 0.65 - ( 0.03 * (T1 - 273.15) )
          ELSE
             alb_snow = 0.65
          ENDIF
 
-         ! 
+         !
          ! Make albedo of snow-free sea-ice a function of air temperature
-         ! 
-         SFCTcelsius = SFCTMP - 273.15
-         IF ( SFCTMP <= 273.0 ) THEN
+         !
+         IF ( SFCTMP <= 273.15 ) THEN
             alb_ice = 0.65
-         ELSEIF ( ( SFCTMP > 273.0 ) .and. ( SFCTMP < 278.0 ) ) THEN
-            alb_ice = 0.65 - ( 0.04 *SFCTcelsius )
+         ELSEIF ( ( SFCTMP > 273.15 ) .and. ( SFCTMP < 278.15 ) ) THEN
+            alb_ice = 0.65 - ( 0.04 * (SFCTMP - 273.15) )
          ELSE
             alb_ice = 0.45
          ENDIF
 
-         ! 
+         !
+         ! Define a snow-cover fraction for use only with Mills sea-ice albedo
+         !
+         Z0N = 0.10 ! Approximate roughness length of snow-covered surface
+         SNCOVRR = SNOWH / ( SNOWH + Z0N )
+
+         !
          ! Final albedo over sea-ice point is a combination of the snow 
          ! albedo and the snow-free ice albedo, weighted by the snow cover.
          !
-         ALBEDO = ( SNCOVR * alb_snow ) + ( ( 1.0 - SNCOVR ) * alb_ice )
+         ALBEDO = (SNCOVRR * alb_snow ) + ( ( 1.0 - SNCOVRR) * alb_ice )
+
+      CASE ( 2 ) ! Seaice albedo from 2d field
+
+         SNCOVR = 1.0
+         EMISSI = 0.98
+         ALBEDO = ALBEDOSI
 
       END SELECT
 
@@ -380,10 +423,6 @@ CONTAINS
 ! MID-LAYER SOIL TEMPERATURE
 ! ----------------------------------------------------------------------
       DF1 = DF1A * SNCOVR + DF1 * ( 1.0 - SNCOVR )
-      
-      IF ( DTOT .GT. 2.*DSOIL ) then
-         DTOT = 2.*DSOIL
-      ENDIF
       
       SSOIL = DF1 * ( T1 - STC(1) ) / DTOT
 
@@ -431,6 +470,26 @@ CONTAINS
            SNOMLT,DEW,FLX1,FLX2,FLX3,ESNOW,EMISSI,RIBB,    &
            SEAICE_ALBEDO_OPT)
       ETA_KINEMATIC =  ESNOW
+
+      IF ( SEAICE_SNOWDEPTH_OPT == 0 ) THEN
+
+          !
+          ! Set bounds on snow depth, maintaining snow density.
+          !
+          SNDENS = SNEQV / SNOWH
+          SNOWH = MAX ( SEAICE_SNOWDEPTH_MIN , MIN ( SNOWH , SEAICE_SNOWDEPTH_MAX ) )
+          SNEQV = SNOWH * SNDENS 
+
+      ELSEIF ( SEAICE_SNOWDEPTH_OPT == 1 ) THEN
+
+          !
+          ! Regardless of the results of snopac, we want to enforce
+          ! a specified snow depth and density on sea ice.
+          !
+          SNDENS = 0.3
+          SNOWH = SNOWONSI
+          SNEQV = SNOWH * SNDENS
+      ENDIF
 
 !     Calculate effective mixing ratio at ground level (skin)
       Q1=Q2+ETA_KINEMATIC*CP/RCH
@@ -895,10 +954,6 @@ CONTAINS
 ! ----------------------------------------------------------------------
     ELSE
        T1 = TFREEZ * SNCOVR ** SNOEXP + T12 * (1.0- SNCOVR ** SNOEXP)
-
-       IF ( DTOT .GT. 2.0*DSOIL ) THEN
-          DTOT = 2.0*DSOIL
-       ENDIF
        SSOIL = DF1 * (T1- STC (1)) / DTOT
 
 ! ----------------------------------------------------------------------

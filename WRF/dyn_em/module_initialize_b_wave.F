@@ -18,6 +18,7 @@ MODULE module_initialize_ideal
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
+   CHARACTER (LEN=256) , PRIVATE :: a_message
 
 
 CONTAINS
@@ -77,7 +78,7 @@ CONTAINS
    ! Local data
 
    INTEGER, PARAMETER :: nl_max = 1000
-   REAL, DIMENSION(nl_max) :: zk, p_in, theta, rho, u, v, qv, pd_in
+   REAL, DIMENSION(nl_max) :: zk, p_in, theta, rho_local, u, v, qv, pd_in
    INTEGER :: nl_in
 
    INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc
@@ -155,7 +156,8 @@ CONTAINS
    delt = 0.
    z_scale = .50
    pi = 2.*asin(1.0)
-   write(6,*) ' pi is ',pi
+   write(a_message,*) ' pi is ',pi
+   call wrf_message(a_message)
    nxc = (ide-ids)/4
    nyc = (jde-jds)/2
 
@@ -267,7 +269,7 @@ CONTAINS
 
   dry_sounding   = .true.
   debug = .true.  !  this will produce print of the sounding
-  CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, &
+  CALL get_sounding( zk, p_in, pd_in, theta, rho_local, u, v, qv, dry_sounding, &
                       nl_max, nl_in, u_jet, rho_jet, th_jet, z_jet,      &
                       nz_jet, ny_jet, ny_jet/2, debug                   )
 
@@ -333,7 +335,7 @@ CONTAINS
 !  get sounding for this point
 
   debug = .false.  !  this will turn off print of the sounding
-  CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, &
+  CALL get_sounding( zk, p_in, pd_in, theta, rho_local, u, v, qv, dry_sounding, &
                       nl_max, nl_in, u_jet, rho_jet, th_jet, z_jet,      &
                       nz_jet, ny_jet, j, debug                          )
 
@@ -592,7 +594,7 @@ CONTAINS
   real, dimension(nz_jet,ny_jet) :: u_jet, rho_jet, &
                                     th_jet, z_jet
 
-  real, dimension(nz_jet,ny_jet) :: zk,p,p_dry,theta,rho,u,v,qv
+  real, dimension(nz_jet,ny_jet) :: zk,p,p_dry,theta,rho_local,u,v,qv
   logical :: dry, debug
   integer :: j, nl
 
@@ -611,7 +613,7 @@ CONTAINS
   do j=1,ny_jet
 
     call get_sounding( zk(:,j),p(:,j),p_dry(:,j),theta(:,j),      &
-                       rho(:,j),u(:,j), v(:,j),  qv(:,j),        &
+                       rho_local(:,j),u(:,j), v(:,j),  qv(:,j),        &
                        dry, nz_jet, nl, u_jet, rho_jet, th_jet,  &
                        z_jet, nz_jet, ny_jet, j, debug          )
     debug = .false.
@@ -621,8 +623,7 @@ CONTAINS
   write(6,*) ' lowest level p, th, and rho, highest level p '
 
   do j=1,ny_jet
-    write(6,*) j, p(1,j),theta(1,j),rho(1,j), p(nz_jet,j)
-!    write(6,*) j, p(1,j),theta(1,j)-th_jet(1,j),rho(1,j)-rho_jet(1,j)
+    write(6,*) j, p(1,j),theta(1,j),rho_local(1,j), p(nz_jet,j)
   enddo
 
   call parray( p, nz_jet, ny_jet)
@@ -905,9 +906,12 @@ CONTAINS
    REWIND(10) 
    read(10) ny_in,nz_in
    if((ny_in /= ny ) .or. (nz_in /= nz)) then
-     write(0,*) ' error in input jet dimensions '
-     write(0,*) ' ny, ny_input, nz, nz_input ', ny, ny_in, nz,nz_in
-     write(0,*) ' error exit '
+     write(a_message,*) ' error in input jet dimensions '
+     CALL wrf_message (a_message)
+     write(a_message,*) ' ny, ny_input, nz, nz_input ', ny, ny_in, nz,nz_in
+     CALL wrf_message (a_message)
+     write(a_message,*) ' error exit '
+     CALL wrf_message (a_message)
      call wrf_error_fatal ( ' error in input jet dimensions ' )
    end if
    read(10) field_in

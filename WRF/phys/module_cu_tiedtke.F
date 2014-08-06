@@ -147,8 +147,6 @@ CONTAINS
                 ,U3D,V3D,W,T3D,QV3D,QC3D,QI3D,PI3D,RHO3D        &
                 ,QVFTEN,QVPBLTEN                                &
                 ,DZ8W,PCPS,P8W,XLAND,CU_ACT_FLAG                &
-                ,CUDT, CURR_SECS, ADAPT_STEP_FLAG               &
-                ,CUDTACTTIME                                    &
                 ,ids,ide, jds,jde, kds,kde                      &
                 ,ims,ime, jms,jme, kms,kme                      &
                 ,its,ite, jts,jte, kts,kte                      &
@@ -170,6 +168,8 @@ CONTAINS
 !-- P8w         3D hydrostatic pressure at full levels (Pa)
 !-- Pcps        3D hydrostatic pressure at half levels (Pa)
 !-- PI3D        3D exner function (dimensionless)
+!-- QVFTEN      3D water vapor advection tendency 
+!-- QVPBLTEN    3D water vapor tendency due to a PBL
 !-- RTHCUTEN      Theta tendency due to 
 !                 cumulus scheme precipitation (K/s)
 !-- RUCUTEN       U wind tendency due to 
@@ -192,6 +192,7 @@ CONTAINS
 !-- dz8w        dz between full levels (m)
 !-- QFX         upward moisture flux at the surface (kg/m^2/s)
 !-- DT          time step (s)
+!-- F_QV etc    flag values for tendencies, not used
 !-- ids         start index for i in domain
 !-- ide         end index for i in domain
 !-- jds         start index for j in domain
@@ -272,12 +273,6 @@ CONTAINS
                                                   ,F_QI      &
                                                   ,F_QS
  
-! Adaptive time-step variables
-      REAL,  INTENT(IN   ) :: CUDT
-      REAL,  INTENT(IN   ) :: CURR_SECS
-      LOGICAL,INTENT(IN   ) , OPTIONAL :: ADAPT_STEP_FLAG
-      REAL,  INTENT (INOUT) :: CUDTACTTIME
-
 !--------------------------- LOCAL VARS ------------------------------
 
       REAL,    DIMENSION(ims:ime, jms:jme) ::                           &
@@ -334,8 +329,6 @@ CONTAINS
                                         KX
 
 
-      LOGICAL :: run_param, doing_adapt_dt , decided
-
 !-------other local variables----
       INTEGER,DIMENSION( its:ite ) :: KTYPE
       REAL, DIMENSION( kts:kte )   :: sig1      ! half sigma levels
@@ -343,71 +336,6 @@ CONTAINS
       INTEGER                      :: zz 
 !-----------------------------------------------------------------------
 !
-!
-!***  CHECK TO SEE IF THIS IS A CONVECTION TIMESTEP
-!
-
-!  Initialization for adaptive time step.
-
-   doing_adapt_dt = .FALSE.
-   IF ( PRESENT(adapt_step_flag) ) THEN
-      IF ( adapt_step_flag ) THEN
-         doing_adapt_dt = .TRUE.
-         IF ( cudtacttime .EQ. 0. ) THEN
-            cudtacttime = curr_secs + cudt*60.
-         END IF
-      END IF
-   END IF
-
-!  Do we run through this scheme or not?
-
-!    Test 1:  If this is the initial model time, then yes.
-!                ITIMESTEP=1
-!    Test 2:  If the user asked for the cumulus to be run every time step, then yes.
-!                CUDT=0 or STEPCU=1
-!    Test 3:  If not adaptive dt, and this is on the requested cumulus frequency, then yes.
-!                MOD(ITIMESTEP,STEPCU)=0
-!    Test 4:  If using adaptive dt and the current time is past the last requested activate cumulus time, then yes.
-!                CURR_SECS >= CUDTACTTIME
-
-!  If we do run through the scheme, we set the flag run_param to TRUE and we set the decided flag
-!  to TRUE.  The decided flag says that one of these tests was able to say "yes", run the scheme.
-!  We only proceed to other tests if the previous tests all have left decided as FALSE.
-
-!  If we set run_param to TRUE and this is adaptive time stepping, we set the time to the next
-!  cumulus run.
-
-   decided = .FALSE.
-   run_param = .FALSE.
-   IF ( ( .NOT. decided ) .AND. &
-        ( itimestep .EQ. 1 ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( ( cudt .EQ. 0. ) .OR. ( stepcu .EQ. 1 ) ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( .NOT. doing_adapt_dt ) .AND. &
-        ( MOD(itimestep,stepcu) .EQ. 0 ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( doing_adapt_dt ) .AND. &
-        ( curr_secs .GE. cudtacttime ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-      cudtacttime = curr_secs + cudt*60
-   END IF
-
-!-----------------------------------------------------------------------
-   IF(run_param) THEN
 
       DO J=JTS,JTE
          DO I=ITS,ITE
@@ -545,8 +473,6 @@ CONTAINS
 
 
    ENDDO
-
-   ENDIF
 
    END SUBROUTINE CU_TIEDTKE
 
@@ -2117,7 +2043,7 @@ CONTAINS
 ! New scheme
 ! Let's define the fscale
         else if(orgen .eq. 2 ) then
-        tt(jl) = ptenh(jl,ikb)
+        tt(jl) = ptenh(jl,ikb-1)
         zqsat(jl) = TLUCUA(tt(jl))/paph(jl,ikb-1)
         zqsat(jl) = zqsat(jl)/(1.-VTMPC1*zqsat(jl))
         ttb(jl) = ptenh(jl,ikb)

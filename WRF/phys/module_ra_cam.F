@@ -224,10 +224,13 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                      doabsems,                                     &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     )
+                     its,ite, jts,jte, kts,kte,                    &
+                     coszen                                        )
 
+!ccc To use CLWRF time-varying trace gases
+   USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
    USE module_wrf_error
-   USE module_state_description, ONLY : SSIBSCHEME              !ssib
+   USE module_state_description, ONLY : SSIBSCHEME, CLMSCHEME          !ssib & clm
 
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -358,6 +361,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                                                           F_ICE_PHY, &
                                                          F_RAIN_PHY
 
+  real, dimension(ims:ime,jms:jme), optional, intent(in) :: coszen
 
 ! LOCAL VARIABLES
  
@@ -424,6 +428,16 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    real(r8), dimension(its:ite,kts:kte+1)           :: emstot ! Total emissivity
    CHARACTER(LEN=256) :: msgstr
 
+!ccc
+#ifdef CLWRFGHG
+! CLWRF-UC June.09 
+   REAL(r8)                                         :: co2vmr, n2ovmr, ch4vmr, f11vmr, f12vmr
+#endif
+   LOGICAL, EXTERNAL                                :: wrf_dm_on_monitor
+   CHARACTER(LEN=256)                               :: message
+
+!ccc
+
 #if !defined(MAC_KLUDGE)
    lchnk = 1
    begchunk = ims
@@ -455,6 +469,22 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 ! of interpolation factors to within 32-bit roundoff
 ! assume that day of year is 1 for all input data
 !
+!ccc
+#ifdef CLWRFGHG
+! CLWRF-UC June.09  (Copy from share/wrf_tsin.F)
+
+   CALL read_CAMgases(yr,julian,"CAM",co2vmr,n2ovmr,ch4vmr,f11vmr,f12vmr)
+
+   IF ( wrf_dm_on_monitor() ) THEN
+     WRITE(message,*)'write 1 CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
+     call wrf_debug( 1, message)
+     WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' cfc11:'&
+       ,f11vmr,' cfc12:',f12vmr
+     call wrf_debug( 1, message)
+   ENDIF
+
+#else
+!ccc
    nyrm     = yr - yrdata(1) + 1
    nyrp     = nyrm + 1
    doymodel = yr*365.    + julian
@@ -464,6 +494,16 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    fact1    = (doydatap - doymodel)/deltat
    fact2    = (doymodel - doydatam)/deltat
    co2vmr = (co2(nyrm)*fact1 + co2(nyrp)*fact2)*1.e-06
+!ccc
+   IF ( wrf_dm_on_monitor() ) THEN
+     WRITE(message,*)'CAM interpolated values_____ year:',yr,' julian day:',julian
+     call wrf_debug( 100, message)
+     WRITE(message,*)'CAM co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' cfc11:',f11vmr,&
+       ' cfc12:',f12vmr
+     call wrf_debug( 100, message)
+   ENDIF
+#endif
+!ccc
 
    co2mmr=co2vmr*mwco2/mwdry
 !
@@ -493,19 +533,27 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 
 !  call zenith (calday, clat, clon, coszrs, ncol)
 
-      do i = its,ite
-      ii = i - its + 1
-      ! XT24 is the fractional part of simulation days plus half of RADT expressed in 
-      ! units of minutes
-      ! JULIAN is in days
-      ! RADT is in minutes
-      XT24=MOD(XTIME+RADT*0.5,1440.)
-      TLOCTM=GMT+XT24/60.+XLONG(I,J)/15.
-      HRANG=15.*(TLOCTM-12.)*DEGRAD
-      XXLAT=XLAT(I,J)*DEGRAD
-      clat(ii)=xxlat
-      coszrs(II)=SIN(XXLAT)*SIN(DECLIN)+COS(XXLAT)*COS(DECLIN)*COS(HRANG)
-      enddo
+      if (present(coszen)) then
+         do i=its,ite
+            ii=i-its+1
+            clat(ii)=XLAT(I,J)*DEGRAD
+            coszrs(ii)=coszen(i,j)
+         enddo
+      else
+         do i = its,ite
+            ii = i - its + 1
+            ! XT24 is the fractional part of simulation days plus half of RADT expressed in 
+            ! units of minutes
+            ! JULIAN is in days
+            ! RADT is in minutes
+            XT24=MOD(XTIME+RADT*0.5,1440.)
+            TLOCTM=GMT+XT24/60.+XLONG(I,J)/15.
+            HRANG=15.*(TLOCTM-12.)*DEGRAD
+            XXLAT=XLAT(I,J)*DEGRAD
+            clat(ii)=xxlat
+            coszrs(II)=SIN(XXLAT)*SIN(DECLIN)+COS(XXLAT)*COS(DECLIN)*COS(HRANG)
+         enddo
+      end if
 
 ! moist variables
 
@@ -658,6 +706,32 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
          aldif(ii) = albedo(i,j)
       enddo
    endif
+   CASE (CLMSCHEME)
+   if (xtime .gt. 1.0) then
+      do i = its,ite
+         ii = i - its + 1
+         if (xland(i,j).lt.1.5) then   !land points only
+           asdir(ii) = ALSWVISDIR(i,j) ! CLM visdir albedo
+           asdif(ii) = ALSWVISDIF(i,j) ! CLM visdif albedo
+           aldir(ii) = ALSWNIRDIR(i,j) ! CLM nirdir albedo
+           aldif(ii) = ALSWNIRDIF(i,j) ! CLM nirdif albedo
+         else
+           asdir(ii) = albedo(i,j)
+           asdif(ii) = albedo(i,j)
+           aldir(ii) = albedo(i,j)
+           aldif(ii) = albedo(i,j)
+         endif
+      enddo
+   else
+      do i = its,ite
+         ii = i - its + 1
+         asdir(ii) = albedo(i,j)
+         asdif(ii) = albedo(i,j)
+         aldir(ii) = albedo(i,j)
+         aldif(ii) = albedo(i,j)
+      enddo
+   endif
+
    CASE DEFAULT
       do i = its,ite
       ii = i - its + 1
@@ -685,6 +759,12 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                    fsns, fsnt    ,flns    ,flnt    , &
                    qrs, qrl, flwds, rel, rei,                       &
                    sols, soll, solsd, solld,                  &
+!ccc
+#ifdef CLWRFGHG
+!CLWRF-UC June.09
+                   n2ovmr, ch4vmr, f11vmr, f12vmr  , &
+#endif
+!ccc
                    landfrac, zm, fsds)
 
       do k = kts,kte
@@ -811,6 +891,17 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
         SWNIRDIF(I,J) = solld(ii) !SSiB 
       enddo
       endif
+  CASE (CLMSCHEME)
+      if(dosw)then
+      do i = its,ite
+        ii = i - its + 1
+        SWVISDIR(I,J) = sols(ii)  !CLM
+        SWVISDIF(I,J) = solsd(ii) !CLM
+        SWNIRDIR(I,J) = soll(ii)  !CLM
+        SWNIRDIF(I,J) = solld(ii) !CLM
+      enddo
+      endif
+
    END SELECT
 !-----------------------------
 
@@ -1180,6 +1271,14 @@ subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosolj
             if (AEROSOLt(i, k, m) < speciesmin(m)) then
                write(6,*) 'AEROSOL_INTERPOLATE: negative mass mixing ratio, exiting'
                write(6,*) 'm, column, pver',m, i, k ,AEROSOLt(i, k, m)
+!ccc
+#ifdef CLWRFGHG
+!CLWRF-UC July.09
+               print *,'naer:',naer,' pver:',pver,' ncol:',ncol
+               PRINT *,'ERROR -- error -- ERROR -- error -- ERROR -- error'
+               CALL wrf_error_fatal('CLWRF-module_ra_cam. : AEROSOLt=NaN')
+#endif
+!ccc
                call endrun ()
             end if
          end do
@@ -1464,6 +1563,12 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
                   fsns    ,fsnt    ,flns    ,flnt    , &
                   qrs     ,qrl     ,flwds   ,rel     ,rei     , &
                   sols    ,soll    ,solsd   ,solld   , &
+!ccc
+#ifdef CLWRFGHG
+!CLWRF-UC June.09
+                  n2ovmr, ch4vmr, f11vmr, f12vmr     , &
+#endif
+!ccc
                   landfrac,zm      ,fsds     )
 !----------------------------------------------------------------------- 
 ! 
@@ -1645,6 +1750,14 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
    real(r8) aerosol(pcols, pver, naer_all) ! aerosol mass mixing ratios
    real(r8) scales(naer_all)               ! scaling factors for aerosols
 
+!ccc
+#ifdef CLWRFGHG
+!CLWRF-UC July.09
+   real(r8), INTENT(IN)        ::    n2ovmr, ch4vmr, f11vmr, f12vmr
+#endif
+   LOGICAL, EXTERNAL                                :: wrf_dm_on_monitor
+   CHARACTER (LEN=256)         ::    message
+!ccc
 
 !
 ! Interpolate ozone volume mixing ratio to model levels
@@ -1875,10 +1988,27 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
                        aerosol(:,:,idxVOLC))
 !        call t_stopf("radclwmx")
       else
+!ccc
+#ifdef CLWRFGHG
+         IF ( wrf_dm_on_monitor() ) THEN
+           WRITE(message,*)'CLWRF-CAM_call-trcmix n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' f11vmr:',f11vmr,' f12vmr:',f12vmr
+           CALL wrf_debug(1, message)
+         END IF
+         call trcmix_clwrf(lchnk   ,ncol    ,pcols, pver,  &
+                     pmid    ,clat, n2ovmr, ch4vmr, f11vmr, f12vmr, n2o,   &
+                     ch4, cfc11, cfc12 )
+
+#else
          call trcmix(lchnk   ,ncol    ,pcols, pver,  &
                      pmid    ,clat, n2o     ,ch4     ,                     &
                      cfc11   ,cfc12   )
-
+#endif
+         IF ( wrf_dm_on_monitor() ) THEN
+           WRITE(message,*)'CLWRF post_trcmix_values. n2o:', n2o(pcols/2,pver/2), ' ch4:',      &
+             ch4(pcols/2,pver/2),' cfc11:', cfc11(pcols/2,pver/2),' cfc12:', cfc12(pcols/2,pver/2) 
+           CALL wrf_debug(1, message)
+         END IF 
+!ccc
 !        call t_startf("radclwmx")
          call radclwmx(lchnk     ,ncol    ,pcols, pver, pverp ,        &
                        lwupcgs   ,t       ,qm1(1,1,1)       ,o3vmr ,   &

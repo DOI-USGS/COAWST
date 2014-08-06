@@ -51,7 +51,7 @@
     use PARA_FILE
     implicit none
     integer, save :: NFRACT = 0, &  !add for fractional cloud:=1, fraction; =0, no
-   &                 NAERO  = 1, &  !add for aerosol: =0, no aerosol; = 1, aerosol uniform value included; =2, get data from file
+   &                 NAERO  = 0, &  !add for aerosol: =0, no aerosol; = 1, aerosol uniform value included; =2, get data from file
    &                 NINHO = 0 , &  ! if =0, horizontal homogenious; = 1, inhomogeneous
    &                 NINHO_VERT, &
    &                 NPDE   = 2, &  !add for ice crystal size parameterization:
@@ -8370,19 +8370,10 @@ MODULE module_ra_FLG
 ! NEED HYDROSTATIC PRESSURE HERE (MONOTONIC CHANGE WITH HEIGHT)
 ! PHYD REPLACES P8W, PHYDMID REPLACES P3D
         PHYD(kts) = peven(I,kts,J)
-! first guess
-        DO K = KTS,KTE
-          PHYD(K+1) = PHYD(K) - G*air_den(I,K,J)*DZ3D(I,K,J)
-        ENDDO
-! correction factor FP to match p8w(I,kts,J)-p8w(I,kte,J)
-        FP = (peven(I,kts,J)-peven(I,kte,J))/(PHYD(KTS)-PHYD(KTE))
-! final pass
-        DO K = KTS,KTE
-          PHYD(K+1) = PHYD(K) - G*air_den(I,K,J)*DZ3D(I,K,J)*FP
-!            PHYDMID(K)= 0.5*(PHYD(K)+PHYD(K+1))
-        ENDDO
 
-         
+        DO K = KTS,KTE
+          PHYD(K+1) = peven(I,k+1,J) 
+        ENDDO
 
 !	      pij(1) = peven(i,kmax,j)/100.
 !	      pij(kmax) = peven(i,1,j)/100.
@@ -8536,7 +8527,7 @@ MODULE module_ra_FLG
 !C******************************************************************
 !C--- NPDE=1, papa. in terms of IWC & T (Gu & Liou, 2006)
 !C***********************************************************************
-          if (NPDE.eq.1.and.piwc(k).gt.0.) then
+          if (NPDE.eq.1.and.piwc(k) .gt. 1.e-7) then
 !C--- for temperature between 213K and 253K
 		    if (degrees(i,NK,j).lt.253.         &
                     .and.degrees(i,NK,j).gt.213.) then  !mchen
@@ -8563,7 +8554,7 @@ MODULE module_ra_FLG
 !C***********************************************************************
 !C---- NPDE=2, new de para. in terms of iwc (Liou et al. 2008)
 !C***********************************************************************
-          else if (NPDE.eq.2.and.piwc(k).gt.0.) then
+          else if (NPDE.eq.2.and.piwc(k) .gt. 1.e-7) then
 !C--- for tropics
 !	        if (j.ge.17.and.j.le.28) ncoef = 1
 	    if (abs(xlat(i,j)).lt.30.) ncoef = 1
@@ -8590,6 +8581,7 @@ MODULE module_ra_FLG
                            +cmin(ncoef)*temp_i**2.
 
 !C--- calculate de
+
             pde_mean = exp(pde_mean)
             pde_max = exp(pde_max)
             pde_min = exp(pde_min)
@@ -13792,12 +13784,13 @@ MODULE module_ra_FLG
       endif
       x = exp ( - fq * ( t1 - t0 ) )
       z = lamda * lamda - fq * fq
-! -- change by Yu Gu, 11/15/01
-!      if (abs(z).lt.1.e-4) then
-!      if (z.ge.0.) z = 1.e-4
-!      if (z.lt.0.) z = -1.e-4
-!      endif
-      if(abs(z).le.1.e-4) z = 1.e-4
+! -- change by Yu Gu, 11/15/01; changed back in 3.5
+      if (abs(z).lt.1.e-4) then
+       if (z.ge.0.) z = 1.e-4
+       if (z.lt.0.) z = -1.e-4
+      endif
+! -- the following line is commented out in 3.5
+!     if(abs(z).le.1.e-4) z = 1.e-4
 ! -- cgange over
       cadd0 = fw * ( ( gamma1 - fq ) * alfa + &
      &          beta * gamma2 ) / z
@@ -14154,13 +14147,13 @@ MODULE module_ra_FLG
      &             lamdan,gamman,caddn,cminn, &
      &             caddn0,cminn0,aa,bb,expn,g1g2n )
       do i = 1, n
-! --- change by Yu Gu, 11/15/01
+! --- change by Yu Gu, 11/15/01; changed back in 3.5
         xgy = lamdan(i)*lamdan(i) - beta(i) * beta(i)
-!           if (abs(xgy).lt.1.e-4) then
-!      if (xgy.ge.0.) xgy = 1.e-4
-!      if (xgy.lt.0.) xgy = -1.e-4
-!      endif
-       if(abs(xgy).le.1.e-4) xgy = 1.e-4   !mchen
+       if (abs(xgy).lt.1.e-4) then
+         if (xgy.ge.0.) xgy = 1.e-4
+         if (xgy.lt.0.) xgy = -1.e-4
+       endif
+!      if(abs(xgy).le.1.e-4) xgy = 1.e-4   !mchen
         x = 2.0 * ( 1.0 - w(i) ) * w(i) / xgy
 !          x = 2.0 * ( 1.0 - w(i) ) * w(i) / ( lamdan(i) *
 !     &         lamdan(i) - beta(i) * beta(i) )
@@ -14847,7 +14840,7 @@ MODULE module_ra_FLG
         z=0.
         m=nv
         iq=0
-        do while (iq.eq.0)
+        do while (iq.eq.0 .and. m.ge.1)
           ht(m)=(z*2.+dz(m))/2.
           z=z+dz(m)
           if (z.gt.15.) then

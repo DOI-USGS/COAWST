@@ -7,7 +7,8 @@ RM      =       /bin/rm -f
 CHEM_FILES =	../chem/module_aerosols_sorgam.o \
 		../chem/module_gocart_aerosols.o \
 		../chem/module_mosaic_driver.o \
-		../chem/module_input_tracer.o
+		../chem/module_input_tracer.o \
+		../chem/module_aerosols_soa_vbs.o
 
 deflt :
 		@ echo Please compile the code using ./compile
@@ -68,6 +69,7 @@ wrf : framework_only
 	if [ $(WRF_EM_CORE) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core ; fi
 	if [ $(WRF_NMM_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" nmm_core ; fi
 	if [ $(WRF_EXP_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" exp_core ; fi
+	if [ $(WRF_HYDRO) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrf_hydro ; fi
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf )
 	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
@@ -80,7 +82,7 @@ all_wrfvar :
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
 	if [ $(CRTM) ] ; then \
-	  (cd var/external/crtm; \
+	  (cd var/external/crtm_2.1.3; \
 	   export ABI_CRTM="${ABI_CRTM}"; . configure/$(SFC_CRTM).setup; $(MAKE) $(J) ) ; \
 	fi
 	if [ $(BUFR) ] ; then \
@@ -126,7 +128,7 @@ em_fire : wrf
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_fire/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_fire/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_fire/input_sounding . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -139,10 +141,20 @@ em_quarter_ss : wrf
 	( cd test/em_quarter_ss ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_quarter_ss ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
 	( cd test/em_quarter_ss ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
+	( cd test/em_quarter_ss ; /bin/rm -f bulkdens.asc_s_0_03_0_9 ; ln -s ../../run/bulkdens.asc_s_0_03_0_9 . )
+	( cd test/em_quarter_ss ; /bin/rm -f bulkradii.asc_s_0_03_0_9 ; ln -s ../../run/bulkradii.asc_s_0_03_0_9 . )
+	( cd test/em_quarter_ss ; /bin/rm -f capacity.asc ; ln -s ../../run/capacity.asc . )
+	( cd test/em_quarter_ss ; /bin/rm -f coeff_p.asc ; ln -s ../../run/coeff_p.asc . )
+	( cd test/em_quarter_ss ; /bin/rm -f coeff_q.asc ; ln -s ../../run/coeff_q.asc . )
+	( cd test/em_quarter_ss ; /bin/rm -f constants.asc ; ln -s ../../run/constants.asc . )
+	( cd test/em_quarter_ss ; /bin/rm -f kernels.asc_s_0_03_0_9 ; ln -s ../../run/kernels.asc_s_0_03_0_9 . )
+	( cd test/em_quarter_ss ; /bin/rm -f kernels_z.asc ; ln -s ../../run/kernels_z.asc . )
+	( cd test/em_quarter_ss ; /bin/rm -f masses.asc ; ln -s ../../run/masses.asc . )
+	( cd test/em_quarter_ss ; /bin/rm -f termvels.asc ; ln -s ../../run/termvels.asc . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_quarter_ss/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_quarter_ss/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_quarter_ss/input_sounding . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -158,7 +170,7 @@ em_squall2d_x : wrf
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_squall2d_x/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_squall2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_squall2d_x/input_sounding . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -174,7 +186,7 @@ em_squall2d_y : wrf
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_squall2d_y/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_squall2d_y/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_squall2d_y/input_sounding . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -190,7 +202,7 @@ em_b_wave : wrf
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_b_wave/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_b_wave/namelist.input . )
 	( cd run ; /bin/rm -f input_jet ; ln -s ../test/em_b_wave/input_jet . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -206,7 +218,7 @@ em_les : wrf
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_les/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_les/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_les/input_sounding . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -222,7 +234,7 @@ em_seabreeze2d_x : wrf
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_seabreeze2d_x/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_seabreeze2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_seabreeze2d_x/input_sounding . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -236,7 +248,7 @@ em_tropical_cyclone : wrf
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_tropical_cyclone/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_tropical_cyclone/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_tropical_cyclone/input_sounding . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -250,7 +262,7 @@ em_scm_xy : wrf
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_scm_xy/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_scm_xy/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_scm_xy/input_sounding . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -277,15 +289,35 @@ em_real : wrf
 	  ( cd test/em_esmf_exp ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ; \
                ln -sf ../../run/ETAMPNEW_DATA . ;                      \
-               ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;                      \
+               ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;        \
                ln -sf ../../run/RRTM_DATA . ;                          \
                ln -sf ../../run/RRTMG_LW_DATA . ;                      \
                ln -sf ../../run/RRTMG_SW_DATA . ;                      \
                ln -sf ../../run/CAM_ABS_DATA . ;                       \
                ln -sf ../../run/CAM_AEROPT_DATA . ;                    \
+               cp     ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP4.5 . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP6   . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.A1B    . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.A2     . ;   \
+               ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;               \
+               ln -sf ../../run/CLM_ALB_ICE_DRC_DATA . ;               \
+               ln -sf ../../run/CLM_ASM_ICE_DFS_DATA . ;               \
+               ln -sf ../../run/CLM_ASM_ICE_DRC_DATA . ;               \
+               ln -sf ../../run/CLM_DRDSDT0_DATA . ;                   \
+               ln -sf ../../run/CLM_EXT_ICE_DFS_DATA . ;               \
+               ln -sf ../../run/CLM_EXT_ICE_DRC_DATA . ;               \
+               ln -sf ../../run/CLM_KAPPA_DATA . ;                     \
+               ln -sf ../../run/CLM_TAU_DATA . ;                       \
                ln -sf ../../run/ozone.formatted . ;                    \
                ln -sf ../../run/ozone_lat.formatted . ;                \
                ln -sf ../../run/ozone_plev.formatted . ;               \
+               ln -sf ../../run/aerosol.formatted . ;                  \
+               ln -sf ../../run/aerosol_lat.formatted . ;              \
+               ln -sf ../../run/aerosol_lon.formatted . ;              \
+               ln -sf ../../run/aerosol_plev.formatted . ;             \
+               ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
                   ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -312,15 +344,45 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
              ln -sf ../../run/ETAMPNEW_DATA . ;                     \
-             ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;                     \
+             ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;       \
              ln -sf ../../run/RRTM_DATA . ;                         \
-             ln -sf ../../run/RRTMG_LW_DATA . ;                      \
-             ln -sf ../../run/RRTMG_SW_DATA . ;                      \
-             ln -sf ../../run/CAM_ABS_DATA . ;                         \
-             ln -sf ../../run/CAM_AEROPT_DATA . ;                         \
-             ln -sf ../../run/ozone.formatted . ;                         \
-             ln -sf ../../run/ozone_lat.formatted . ;                         \
-             ln -sf ../../run/ozone_plev.formatted . ;                         \
+             ln -sf ../../run/RRTMG_LW_DATA . ;                     \
+             ln -sf ../../run/RRTMG_SW_DATA . ;                     \
+             ln -sf ../../run/CAM_ABS_DATA . ;                      \
+             ln -sf ../../run/CAM_AEROPT_DATA . ;                   \
+             cp     ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP4.5 . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP6   . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.A1B    . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.A2     . ;  \
+             ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;              \
+             ln -sf ../../run/CLM_ALB_ICE_DRC_DATA . ;              \
+             ln -sf ../../run/CLM_ASM_ICE_DFS_DATA . ;              \
+             ln -sf ../../run/CLM_ASM_ICE_DRC_DATA . ;              \
+             ln -sf ../../run/CLM_DRDSDT0_DATA . ;                  \
+             ln -sf ../../run/CLM_EXT_ICE_DFS_DATA . ;              \
+             ln -sf ../../run/CLM_EXT_ICE_DRC_DATA . ;              \
+             ln -sf ../../run/CLM_KAPPA_DATA . ;                    \
+             ln -sf ../../run/CLM_TAU_DATA . ;                      \
+             ln -sf ../../run/ozone.formatted . ;                   \
+             ln -sf ../../run/ozone_lat.formatted . ;               \
+             ln -sf ../../run/ozone_plev.formatted . ;              \
+             ln -sf ../../run/aerosol.formatted . ;                 \
+             ln -sf ../../run/aerosol_lat.formatted . ;             \
+             ln -sf ../../run/aerosol_lon.formatted . ;             \
+             ln -sf ../../run/aerosol_plev.formatted . ;            \
+             ln -sf ../../run/capacity.asc . ;            \
+             ln -sf ../../run/coeff_p.asc . ;            \
+             ln -sf ../../run/coeff_q.asc . ;            \
+             ln -sf ../../run/constants.asc . ;            \
+             ln -sf ../../run/masses.asc . ;            \
+             ln -sf ../../run/termvels.asc . ;            \
+             ln -sf ../../run/kernels.asc_s_0_03_0_9 . ;            \
+             ln -sf ../../run/kernels_z.asc . ;            \
+             ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;            \
+             ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;            \
+             ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -345,7 +407,7 @@ em_real : wrf
 	( cd run ; /bin/rm -f nup.exe ; ln -s ../main/nup.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
@@ -361,7 +423,7 @@ em_hill2d_x : wrf
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_hill2d_x/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_hill2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_hill2d_x/input_sounding . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -377,7 +439,7 @@ em_grav2d_x : wrf
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_grav2d_x/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_grav2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_grav2d_x/input_sounding . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -393,7 +455,7 @@ em_heldsuarez : wrf
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_heldsuarez/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_heldsuarez/namelist.input . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
@@ -406,7 +468,7 @@ emi_conv : wrf
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
 
 #### emissions opt 3 converter
 
@@ -417,7 +479,7 @@ opt3_conv : wrf
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
 
 #### biogenic emissions converter
 
@@ -428,7 +490,7 @@ bio_conv : wrf
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
 
 bioemiss_conv_megan2 : wrf
 	@ echo '--------------------------------------'
@@ -437,7 +499,7 @@ bioemiss_conv_megan2 : wrf
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd run ; if test -f namelist.input ; then \
 	        /bin/cp -f namelist.input namelist.input.backup ; fi ; \
-	        /bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+	        /bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
 
 #### DMS emissions converter
 
@@ -448,7 +510,7 @@ dms_conv : wrf
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
 
 
 #### Dust errosion factor emissions converter
@@ -460,7 +522,7 @@ dust_conv : wrf
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
 
 #### GOCART background state for oh, no3 and h2o2 converter
 
@@ -471,7 +533,7 @@ gocart_conv : wrf
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
 
 
 #### nmm converter
@@ -486,7 +548,7 @@ nmm_tropical_cyclone : nmm_wrf
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/nmm_tropical_cyclone/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/nmm_tropical_cyclone/namelist.input . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
@@ -519,12 +581,20 @@ nmm_real : nmm_wrf
 	( cd run ; /bin/rm -f real_nmm.exe ; ln -s ../main/real_nmm.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
-		/bin/rm -f namelist.input ; ln -s ../test/nmm_real/namelist.input . )
+		/bin/rm -f namelist.input ; cp ../test/nmm_real/namelist.input . )
 
 
 
 # semi-Lagrangian initializations
 
+
+io :
+	@ echo '--------------------------------------'
+	( cd tools ; $(MAKE) standard.exe )
+	( cd frame ; $(MAKE) io_only )
+	( cd frame ; $(MAKE) module_driver_constants.o pack_utils.o module_machine.o module_internal_header_util.o wrf_debug.o )
+	( cd frame ; $(AR) $(ARFLAGS) ../main/libwrflib.a module_driver_constants.o pack_utils.o module_machine.o  \
+					module_internal_header_util.o module_wrf_error.o wrf_debug.o )
 
 ext :
 	@ echo '--------------------------------------'
@@ -536,9 +606,10 @@ framework :
           cd ../external/io_netcdf ; \
           $(MAKE) NETCDFPATH="$(NETCDFPATH)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+	       LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
           cd ../io_int ; \
-          $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) $(ARCH_LOCAL)" DM_FC="$(DM_FC) $(FCBASEOPTS)"\
                TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf ; \
           cd ../../frame )
@@ -554,18 +625,32 @@ framework :
 
 shared :
 	@ echo '--------------------------------------'
-	( cd share ; $(MAKE) $(J) )
+	if [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "6" ] ; then \
+	  ( cd share ; $(MAKE) -j 6 ) ;  \
+	else \
+	  ( cd share ; $(MAKE) $(J) ) ;  \
+	fi
+
+wrf_hydro :
+	@ echo '----------wrf_hydro-----------------------'
+	if [ $(WRF_HYDRO) -eq 1 ]   ; then (cd hydro/CPL/WRF_cpl; make -f Makefile.cpl) ; fi
 
 chemics :
 	@ echo '--------------------------------------'
 	if [ $(WRF_KPP) -eq 1 ] ; then ( cd chem ; $(MAKE) ) ; fi
-	if [ $(WRF_KPP) -eq 0 ] ; then ( cd chem ; $(MAKE) $(J) ) ; fi
+	if [ $(WRF_KPP) -eq 0 ] ; then \
+	  if  [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "16" ] ; then \
+	    ( cd chem ; $(MAKE) -j 16 ) ;  \
+	  else \
+	    ( cd chem ; $(MAKE) $(J) ) ; \
+	  fi \
+	fi
 #	( cd chem ; $(MAKE) )
 #	( cd chem ; $(MAKE) $(J) )
 
 physics :
 	@ echo '--------------------------------------'
-	( cd phys ; $(MAKE)  $(J) )
+	( cd phys ; $(MAKE) )
 
 em_core :
 	@ echo '--------------------------------------'
@@ -589,6 +674,18 @@ fseek_test :
 	@ cd tools ; /bin/rm -f fseeko_test ; $(SCC) -DTEST_FSEEKO -o fseeko_test fseek_test.c ; cd ..
 	@ cd tools ; /bin/rm -f fseeko64_test ; $(SCC) -DTEST_FSEEKO64 -o fseeko64_test fseek_test.c ; cd ..
 
+# rule used by configure to test if this will compile with netcdf4
+nc4_test:
+	@cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(SCC) -o nc4_test.exe nc4_test.c -I$(NETCDF)/include -L$(NETCDF)/lib -lnetcdf $(NETCDF4_DEP_LIB) ; cd ..
+
+# rule used by configure to test if Fortran 2003 IEEE signaling is available
+fortran_2003_ieee_test:
+	@cd tools ; /bin/rm -f fortran_2003_ieee_test.{exe,o} ; $(SFC) -o fortran_2003_ieee_test.exe fortran_2003_ieee_test.F ; cd ..
+
+# rule used by configure to test if Fortran 2003 ISO_C support is available
+fortran_2003_iso_c_test:
+	@cd tools ; /bin/rm -f fortran_2003_iso_c_test.{exe,o} ; $(SFC) -o fortran_2003_iso_c_test.exe fortran_2003_iso_c_test.F ; cd ..
+
 ### 3.b.  sub-rule to build the expimental core
 
 # uncomment the two lines after exp_core for EXP
@@ -599,11 +696,15 @@ exp_core :
 # uncomment the two lines after nmm_core for NMM
 nmm_core :
 	@ echo '--------------------------------------'
-	( cd dyn_nmm ; $(MAKE) )
+	if [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "16" ] ; then \
+	  ( cd dyn_nmm ; $(MAKE) -j 16 ) ;  \
+	else \
+	  ( cd dyn_nmm ; $(MAKE) $(J) ) ;  \
+	fi
 
 toolsdir :
 	@ echo '--------------------------------------'
-	( cd tools ; $(MAKE) CC_TOOLS="$(CC_TOOLS) -DIWORDSIZE=$(IWORDSIZE) -DMAX_HISTORY=$(MAX_HISTORY)" )
+	( cd tools ; $(MAKE) CC_TOOLS_CFLAGS="$(CC_TOOLS_CFLAGS)" CC_TOOLS="$(CC_TOOLS) -DIWORDSIZE=$(IWORDSIZE) -DMAX_HISTORY=$(MAX_HISTORY)" )
 
 
 #	( cd tools ; $(MAKE) CC_TOOLS="$(CC_TOOLS) -DIO_MASK_SIZE=$(IO_MASK_SIZE)" )

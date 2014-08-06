@@ -4,8 +4,9 @@ OBJSL   = wrf_io.o field_routines.o module_wrfsi_static.o
 OBJS    = $(OBJSL)
 CODE    = ext_ncd_get_dom_ti.code ext_ncd_get_var_td.code ext_ncd_get_var_ti.code ext_ncd_put_dom_ti.code ext_ncd_put_var_td.code ext_ncd_put_var_ti.code transpose.code 
 FFLAGS  =  $(FCFLAGS) -I$(NETCDFPATH)/include -I../ioapi_share
-LIBS    = -L$(NETCDFPATH)/lib -lnetcdf
-CPP1    = $(CPP) -C -P $(TRADFLAG)
+LIBS    = $(LIB_LOCAL) -L$(NETCDFPATH)/lib -lnetcdf
+LIBFFS  = $(LIB_LOCAL) -L$(NETCDFPATH)/lib -lnetcdff -lnetcdf
+CPP1    = $(CPP) -P $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
 
@@ -47,12 +48,12 @@ diffwrf:                diffwrf.F90
 	   $(CPP1) -I$(NETCDFPATH)/include -I../ioapi_share diffwrf.F90 > diffwrf.f ; \
         fi
 	$(FC) -c $(FFLAGS) diffwrf.f
-	@if [ \( -f ../../frame/wrf_debug.o \) -a \( -f ../../frame/module_wrf_error.o \) -a \( -f $(ESMF_MOD_DEPENDENCE) \) ] ; then \
+	@if [ \( -f ../../frame/wrf_debug.o \) -a \( -f ../../frame/module_wrf_error.o \) -a \( -f $(ESMF_MOD_DEPENDENCE) \) -a \( -f ../../frame/clog.o \) ] ; then \
 	  echo "diffwrf io_netcdf is being built now. " ; \
-          if [ -f $(NETCDFPATH)/lib/libnetcdff.a ] ; then \
-            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) $(LIBS) -lnetcdff ;\
+          if [ \( -f $(NETCDFPATH)/lib/libnetcdff.a -o -f $(NETCDFPATH)/lib/libnetcdff.so \) ] ; then \
+            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o ../../frame/clog.o $(ESMF_IO_LIB_EXT) $(LIBFFS) ;\
           else \
-            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) $(LIBS) ;\
+            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o ../../frame/clog.o $(ESMF_IO_LIB_EXT) $(LIBS) ;\
           fi ; \
         else \
 	   echo "***************************************************************************** " ; \
@@ -60,7 +61,7 @@ diffwrf:                diffwrf.F90
 	   echo "***************************************************************************** " ; \
         fi
 
-field_routines.o:	field_routines.F90
+field_routines.o:	field_routines.F90 wrf_io.o
 			$(CPP1) -I../ioapi_share field_routines.F90 > field_routines.f
 			$(FC) -o $@ $(FFLAGS) -c field_routines.f
 

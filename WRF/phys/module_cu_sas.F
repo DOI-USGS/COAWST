@@ -16,8 +16,6 @@ CONTAINS
                  shalconv,shal_pgcon,                               &
                  HPBL2D,EVAP2D,HEAT2D,                              & !Kwon for shallow convection
                  P_QI,P_FIRST_SCALAR,                               & 
-                 CUDT, CURR_SECS, ADAPT_STEP_FLAG,                  &
-                 CUDTACTTIME,                                       & 
                  ids,ide, jds,jde, kds,kde,                         &
                  ims,ime, jms,jme, kms,kme,                         &
                  its,ite, jts,jte, kts,kte                          )
@@ -163,17 +161,15 @@ CONTAINS
                                         V3D,                            &
                                         W
 
-! Adaptive time-step variables
-      REAL,  INTENT(IN   ) :: CUDT
-      REAL,  INTENT(IN   ) :: CURR_SECS
-      LOGICAL,INTENT(IN   ) , OPTIONAL :: ADAPT_STEP_FLAG
-      REAL,  INTENT (INOUT) :: CUDTACTTIME       
-
 !--------------------------- LOCAL VARS ------------------------------
 
       REAL,    DIMENSION(ims:ime, jms:jme) ::                           &
                                         PSFC
 
+      REAL,    DIMENSION(its:ite, jts:jte) ::                           &
+                                        RAINCV1, PRATEC1
+      REAL,    DIMENSION(its:ite, jts:jte) ::                           &
+                                        RAINCV2, PRATEC2
 
       REAL     (kind=kind_phys) ::                                      &
                                         DELT,                           &
@@ -225,75 +221,10 @@ CONTAINS
                                         KX,                             &
                                         NCLOUD 
 
-      LOGICAL :: run_param , doing_adapt_dt , decided
-
       DATA IGPVS/0/
 
 !-----------------------------------------------------------------------
 !
-!***  CHECK TO SEE IF THIS IS A CONVECTION TIMESTEP
-!
-
-!  Initialization for adaptive time step.
-
-   doing_adapt_dt = .FALSE.
-   IF ( PRESENT(adapt_step_flag) ) THEN
-      IF ( adapt_step_flag ) THEN
-         doing_adapt_dt = .TRUE.
-         IF ( cudtacttime .EQ. 0. ) THEN
-            cudtacttime = curr_secs + cudt*60.
-         END IF
-      END IF
-   END IF
-
-!  Do we run through this scheme or not?
-
-!    Test 1:  If this is the initial model time, then yes.
-!                ITIMESTEP=1
-!    Test 2:  If the user asked for the cumulus to be run every time step, then yes.
-!                CUDT=0 or STEPCU=1
-!    Test 3:  If not adaptive dt, and this is on the requested cumulus frequency, then yes.
-!                MOD(ITIMESTEP,STEPCU)=0
-!    Test 4:  If using adaptive dt and the current time is past the last requested activate cumulus time, then yes.
-!                CURR_SECS >= CUDTACTTIME
-
-!  If we do run through the scheme, we set the flag run_param to TRUE and we set the decided flag
-!  to TRUE.  The decided flag says that one of these tests was able to say "yes", run the scheme.
-!  We only proceed to other tests if the previous tests all have left decided as FALSE.
-
-!  If we set run_param to TRUE and this is adaptive time stepping, we set the time to the next
-!  cumulus run.
-
-   decided = .FALSE.
-   run_param = .FALSE.
-   IF ( ( .NOT. decided ) .AND. &
-        ( itimestep .EQ. 1 ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( ( cudt .EQ. 0. ) .OR. ( stepcu .EQ. 1 ) ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( .NOT. doing_adapt_dt ) .AND. &
-        ( MOD(itimestep,stepcu) .EQ. 0 ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( doing_adapt_dt ) .AND. &
-        ( curr_secs .GE. cudtacttime ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-      cudtacttime = curr_secs + cudt*60
-   END IF
-
-!-----------------------------------------------------------------------
 
       if(present(shalconv)) then
          shalconv_use=shalconv
@@ -367,8 +298,6 @@ CONTAINS
          ! Read the warning above though.  It may be advisable for
          ! these to be different.  
       endif
-
-   if_run_param: IF(run_param) THEN
 
       DO J=JTS,JTE
          DO I=ITS,ITE
@@ -475,6 +404,17 @@ CONTAINS
       CALL SASCNVN(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
                   QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
                   KTOP,KCNV,SLIMSK,DOT,NCLOUD,PGCON_USE,massf)
+!
+      do i=its,ite
+        RAINCV1(I,J)=RN(I)*1000./STEPCU
+        PRATEC1(I,J)=RN(I)*1000./(STEPCU * DT)
+      enddo
+!
+      do i=its,ite
+        RAINCV2(I,J)=0.
+        PRATEC2(I,J)=0.
+      enddo
+!
 
       if_shallow_conv: if(shalconv_use==1) then
 #if (NMM_CORE == 1)
@@ -483,6 +423,12 @@ CONTAINS
         call shalcnv(im,im,kx,jcap,delt,del,prsl,ps,phil,ql,        &
      &               q1,t1,u1,v1,rcs,rn,kbot,ktop,kcnv,slimsk,      &
      &               dot,ncloud,hpbl,heat,evap,shal_pgcon_use)
+!
+      DO I=ITS,ITE
+        RAINCV2(I,J)=RN(I)*1000./STEPCU
+        PRATEC2(I,J)=RN(I)*1000./(STEPCU * DT)
+      ENDDO
+!
 #else
 #if (EM_CORE == 1)
         ! NOTE: ARW should be able to call the new shalcnv here, but
@@ -495,9 +441,9 @@ CONTAINS
 #endif
      endif if_shallow_conv
 
-      DO I=ITS,ITE
-        RAINCV(I,J)=RN(I)*1000./STEPCU
-        PRATEC(I,J)=RN(I)*1000./(STEPCU * DT)
+        DO I=ITS,ITE
+        RAINCV(I,J)= RAINCV1(I,J) + RAINCV2(I,J)
+        PRATEC(I,J)= PRATEC1(I,J) + PRATEC2(I,J)
         HBOT(I,J)=KBOT(I)
         HTOP(I,J)=KTOP(I)
       ENDDO
@@ -545,8 +491,6 @@ CONTAINS
       ENDIF
 
    ENDDO big_outer_j_loop    ! Outer most J loop
-
-   ENDIF if_run_param
 
    END SUBROUTINE CU_SAS
 
@@ -4503,7 +4447,7 @@ CONTAINS
      &                     dv1v,    dv2u,    dv2v,    dv3q,         &
      &                     dv3h,    dv3u,    dv3v,    clam,         &
      &                     dz,      dz1,     e1,                    &
-     &                     el2orc,  elocp,   aafac,                 &
+     &                     el2orc,  elocp,   aafac,   cthk,         &
      &                     es,      etah,    h1,      dthk,         &
      &                     evef,    evfact,  evfactl, fact1,        &
      &                     fact2,   factor,  fjcap,                 &
@@ -4540,7 +4484,7 @@ CONTAINS
      &          el2orc=hvap*hvap/(rv*cp))
       parameter(terr=0.,c0=.002,c1=5.e-4,delta=fv)
       parameter(fact1=(cvap-cliq)/rv,fact2=hvap/rv-fact1*t0c)
-      parameter(cincrmax=180.,cincrmin=120.,dthk=25.)
+      parameter(cthk=50.,cincrmax=180.,cincrmin=120.,dthk=25.)
       parameter(h1=0.33333333)
 !c  local variables and arrays
       real(kind=kind_phys) pfld(im,km),    to(im,km),     qo(im,km),    &
@@ -5013,18 +4957,28 @@ CONTAINS
 !c
 !c  turn off shallow convection if cloud top is less than pbl top
 !c
-!     do i=1,im
-!       if(cnvflg(i)) then
-!         kk = kpbl(i)+1
-!         if(ktcon(i).le.kk) cnvflg(i) = .false.
-!       endif
-!     enddo
+     do i=1,im
+       if(cnvflg(i)) then
+         kk = kpbl(i)+1
+         if(ktcon(i).le.kk) cnvflg(i) = .false.
+       endif
+     enddo
+! c
+! c  turn off shallow convection if cloud depth is less than
+! c    a threshold value (cthk)
+! c
+       do i = 1, im
+         if(cnvflg(i)) then
+           tem = pfld(i,kbcon(i))-pfld(i,ktcon(i))
+           if(tem.lt.cthk) cnvflg(i) = .false.
+         endif
+       enddo
 !!
-!     totflg = .true.
-!     do i = 1, im
-!       totflg = totflg .and. (.not. cnvflg(i))
-!     enddo
-!     if(totflg) return
+     totflg = .true.
+     do i = 1, im
+       totflg = totflg .and. (.not. cnvflg(i))
+     enddo
+     if(totflg) return
 !!
 !c
 !c  specify upper limit of mass flux at cloud base

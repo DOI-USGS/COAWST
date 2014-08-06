@@ -156,15 +156,25 @@ drop_comment( char * linei )
             (*(q)   == 'd' || *(q)   == 'D') &&
             (*(q+1) == 'e' || *(q+1) == 'E') &&
             (*(q+2) == 'c' || *(q+2) == 'C') )  return(0) ;
+       /* nor an intel compiler directive, just so. quite. */
+         if ((*(q+3) == '$') &&
+            (*(q)   == 'd' || *(q)   == 'D') &&
+            (*(q+1) == 'i' || *(q+1) == 'I') &&
+            (*(q+2) == 'r' || *(q+2) == 'R') )  return(0) ;
        /* nor a pgi accelerator directive */
          if ((*q == '$') &&
             (*(q+1) == 'a' || *(q+1) == 'A') &&
             (*(q+2) == 'c' || *(q+2) == 'C') &&
             (*(q+3) == 'c' || *(q+3) == 'C') )  return(0) ;
+       /* nor a fujitsu compiler directive */
+         if ((*(q+1) == 'o' || *(q+1) == 'O') &&
+            (*(q+2) == 'c' || *(q+2) == 'C') &&
+            (*(q+3) == 'l' || *(q+3) == 'L') )  return(0) ;
        }
        *p = '\n' ; *(p+1) = '\0' ; return(0) ; 
     }
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int 
@@ -175,5 +185,6 @@ change_to_lower( char * s , int n )
   {
     if ( s[i] >= 'A' && s[i] <= 'Z' ) s[i] = s[i] - 'A' + 'a' ;
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 

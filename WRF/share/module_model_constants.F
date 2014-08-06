@@ -66,7 +66,8 @@
 !
    REAL    , PARAMETER :: n_ccn0       = 1.0E8
 !
-   REAL    , PARAMETER :: DEGRAD       = 3.1415926/180.
+   REAL    , PARAMETER :: piconst      = 3.1415926535897932384626433
+   REAL    , PARAMETER :: DEGRAD       = piconst/180.
    REAL    , PARAMETER :: DPD          = 360./365.
 
    REAL    , PARAMETER ::  SVP1=0.6112
@@ -111,7 +112,7 @@
        REAL , PARAMETER ::  gma=-r_d*(1.-rcp)*0.5
        REAL , PARAMETER ::  p400=40000.0
        REAL , PARAMETER ::  phitp=15000.0
-       REAL , PARAMETER ::  pi2=2.*3.1415926
+       REAL , PARAMETER ::  pi2=2.*3.1415926, pi1=3.1415926
        REAL , PARAMETER ::  plbtm=105000.0
        REAL , PARAMETER ::  plomd=64200.0
        REAL , PARAMETER ::  pmdhi=35000.0
@@ -154,6 +155,13 @@
    !  Fraction into the year (from perhelion) of the
    !  occurrence of the Northern Spring Equinox
    REAL , PARAMETER :: EQUINOX_FRACTION= 0.0
+
+! 2012103
+#if (EM_CORE == 1)
+! for calls to set_tiles
+   INTEGER, PARAMETER :: ZONE_SOLVE_EM = 1
+   INTEGER, PARAMETER :: ZONE_SFS = 2
+#endif
 
  CONTAINS
    SUBROUTINE init_module_model_constants

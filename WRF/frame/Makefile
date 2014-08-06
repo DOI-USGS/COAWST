@@ -7,6 +7,7 @@ RM      =       rm -f
 
 
 MODULES =       mct_wrf_coupler_params.o   \
+                mod_wrf_coupler_kinds.o    \
                 module_parallel.o          \
                 module_driver_constants.o  \
                 module_domain_type.o       \
@@ -32,7 +33,10 @@ MODULES =       mct_wrf_coupler_params.o   \
                 module_comm_nesting_dm.o   \
                 module_dm.o                \
                 module_quilt_outbuf_ops.o  \
-                module_io_quilt.o
+                module_io_quilt.o          \
+		module_intermediate_nmm.o  \
+		module_cpl.o               \
+		module_cpl_oasis3.o
 ALOBJS =\
                 module_alloc_space_0.o       \
                 module_alloc_space_1.o       \
@@ -69,7 +73,8 @@ OBJS    =       \
                 wrf_debug.o                \
                 libmassv.o                 \
                 collect_on_comm.o          \
-                hires_timer.o
+                hires_timer.o              \
+		clog.o
 
 #compile as a .o but do not link into the main library
 SPECIAL =       module_internal_header_util.o pack_utils.o
@@ -188,127 +193,6 @@ md_calls.inc : md_calls.m4
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 
-module_parallel.o: module_domain.o
-
-module_configure.o: \
-		../dyn_em/namelist_remappings_em.h \
-		module_domain_type.o \
-		module_state_description.o \
-                module_wrf_error.o \
-		module_driver_constants.o 
-
-module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
-		module_domain.o \
-		module_driver_constants.o \
-		module_timing.o \
-		module_comm_nesting_dm.o \
-		module_configure.o module_comm_dm.o \
-                module_parallel.o
-module_timing.o: hires_timer.o
-
-module_comm_dm.o: module_comm_dm_0.o module_comm_dm_1.o module_comm_dm_2.o module_comm_dm_3.o module_comm_dm_4.o
-
-module_comm_dm_0.o: module_domain.o module_configure.o
-module_comm_dm_1.o: module_domain.o module_configure.o
-module_comm_dm_2.o: module_domain.o module_configure.o
-module_comm_dm_3.o: module_domain.o module_configure.o
-module_comm_dm_4.o: module_domain.o module_configure.o
-
-module_comm_nesting_dm.o: \
-		module_domain.o \
-		module_configure.o
-
-module_dm_stubs.F: module_domain.o
-
-module_domain.o: module_domain_type.o \
-                 module_alloc_space_0.o \
-                 module_alloc_space_1.o \
-                 module_alloc_space_2.o \
-                 module_alloc_space_3.o \
-                 module_alloc_space_4.o \
-                 module_alloc_space_5.o \
-                 module_alloc_space_6.o \
-                 module_alloc_space_7.o \
-                 module_alloc_space_8.o \
-                 module_alloc_space_9.o \
-                module_driver_constants.o \
-		module_configure.o \
-		module_machine.o  \
-		module_state_description.o \
-                module_wrf_error.o \
-		$(ESMF_MOD_DEPENDENCE)
-
-module_domain_type.o : module_driver_constants.o module_streams.o $(ESMF_MOD_DEPENDENCE)
-
-module_alloc_space_0.o : module_domain_type.o module_configure.o
-module_alloc_space_1.o : module_domain_type.o module_configure.o
-module_alloc_space_2.o : module_domain_type.o module_configure.o
-module_alloc_space_3.o : module_domain_type.o module_configure.o
-module_alloc_space_4.o : module_domain_type.o module_configure.o
-module_alloc_space_5.o : module_domain_type.o module_configure.o
-module_alloc_space_6.o : module_domain_type.o module_configure.o
-module_alloc_space_7.o : module_domain_type.o module_configure.o
-module_alloc_space_8.o : module_domain_type.o module_configure.o
-module_alloc_space_9.o : module_domain_type.o module_configure.o
-
-module_streams.o : module_state_description.o 
-
-module_driver_constants.o: \
-		module_state_description.o \
-                module_wrf_error.o
-
-module_integrate.o: module_domain.o \
-		module_timing.o \
-		module_driver_constants.o \
-		module_state_description.o \
-		module_nesting.o \
-		module_configure.o \
-		atm_coupler.o \
-		mct_wrf_coupler_params.o \
-		$(ESMF_MOD_DEPENDENCE)
-
-module_io.o : md_calls.inc \
-                module_dm.o \
-		module_state_description.o \
-		module_configure.o  \
-                module_streams.o \
-		module_driver_constants.o 
-
-module_io_quilt.o: module_state_description.o \
-                module_dm.o \
-                module_configure.o \
-		module_internal_header_util.o \
-		module_quilt_outbuf_ops.o 
-
-module_machine.o: module_driver_constants.o
-
-module_nesting.o: module_machine.o \
-		module_driver_constants.o \
-		module_configure.o \
-		$(ESMF_MOD_DEPENDENCE) \
-		module_domain.o 
-
-module_quilt_outbuf_ops.o: module_state_description.o module_timing.o
-
-module_tiles.o: module_domain.o \
-		module_driver_constants.o \
-		module_machine.o  \
-		module_configure.o  \
-                module_wrf_error.o
- 
-module_timing.o: \
-		module_state_description.o \
-                module_wrf_error.o
-
-module_wrf_error.o: \
-		wrf_shutdown.o \
-		$(ESMF_MOD_DEPENDENCE)
-
-atm_coupler.o: module_domain.o module_parallel.o mct_wrf_coupler_params.o
-
-mct_wrf_coupler_params.o:
-
-wrf_debug.o: \
-		module_wrf_error.o
+include ../main/depend.common
 
 # DO NOT DELETE

@@ -35,7 +35,7 @@
  max_dom                             = 1,
  e_we                                = 74,    112,   94,
  e_sn                                = 61,    97,    91,
- e_vert                              = 28,    28,    28,
+ e_vert                              = 30,    30,    30,
  p_top_requested                     = 5000,
  num_metgrid_levels                  = 27,
  num_metgrid_soil_levels             = 4,
@@ -53,8 +53,8 @@
 
  &physics
  mp_physics                          = 3,     3,     3,
- ra_lw_physics                       = 1,     1,     1,
- ra_sw_physics                       = 1,     1,     1,
+ ra_lw_physics                       = 4,     4,     4,
+ ra_sw_physics                       = 4,     4,     4,
  radt                                = 30,    30,    30,
  sf_sfclay_physics                   = 1,     1,     1,
  sf_surface_physics                  = 2,     2,     2,
@@ -80,8 +80,8 @@
 
  &dynamics
  w_damping                           = 0,
- diff_opt                            = 1,
- km_opt                              = 4,
+ diff_opt                            = 1,      1,      1,
+ km_opt                              = 4,      4,      4,
  diff_6th_opt                        = 0,      0,      0,
  diff_6th_factor                     = 0.12,   0.12,   0.12,
  base_temp                           = 290.

@@ -20,8 +20,8 @@ CONTAINS
                              , adapt_step_flag , curr_secs      &
                              , psim , psih , wspd , gz1oz0 , br , chklowq &
                              , cu_act_flag , hol , th_phy        &
-                             , pi_phy , p_phy , t_phy , u_phy , v_phy     &
-                             , dz8w , p8w , t8w , rho_phy , rho           &
+                             , pi_phy , p_phy , t_phy     &
+                             , dz8w , p8w , t8w           &
                              , nba_mij, n_nba_mij         & !JDM
                              , nba_rij, n_nba_rij         & !JDM
                              , ids, ide, jds, jde, kds, kde     &
@@ -44,13 +44,13 @@ CONTAINS
             ,halo_em_phys_pbl_sub,halo_em_phys_shcu_sub &
             ,halo_em_fdda_sub,halo_em_phys_diffusion_sub,halo_em_tke_3_sub &
             ,halo_em_tke_5_sub,halo_obs_nudge_sub,period_bdy_em_a1_sub,period_bdy_em_phy_bc_sub &
-            ,period_bdy_em_fdda_bc_sub,period_bdy_em_chem_sub,halo_em_phys_cu_sub
+            ,period_bdy_em_fdda_bc_sub,period_bdy_em_chem_sub,halo_em_phys_cu_sub,halo_em_helicity_sub
 #endif
 
     USE module_driver_constants
     USE module_diffusion_em, ONLY : phy_bc, cal_deform_and_div, compute_diff_metrics, &
                                     vertical_diffusion_2, horizontal_diffusion_2, calculate_km_kh, &
-                                    tke_rhs
+                                    tke_rhs, cal_helicity
     USE module_em, ONLY : calculate_phy_tend
     USE module_fddaobs_driver, ONLY : fddaobs_driver
     USE module_bc, ONLY : set_physical_bc3d, set_physical_bc2d
@@ -58,7 +58,7 @@ CONTAINS
 
     USE module_sfs_driver !JDM
     USE module_stoch, ONLY : update_stoch_ten, update_stoch , calculate_stoch_ten,  & 
-                             do_fftback_along_x,do_fftback_along_y,sp2gp_prep
+                             do_fftback_along_x,do_fftback_along_y,sp2gp_prep,perturb_physics_tend
 
 
     IMPLICIT NONE
@@ -102,13 +102,9 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: pi_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: p_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t_phy
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: u_phy
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: v_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: dz8w
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: p8w
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t8w
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho_phy
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: ru_tendf
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rv_tendf
@@ -171,6 +167,7 @@ CONTAINS
                          grid%SPSTREAMFORCS,grid%SPSTREAMFORCC,              &
                          grid%SPTFORCS,grid%SPTFORCC,                        &
                          grid%VERTSTRUCC,grid%VERTSTRUCS,                    &
+                         grid%VERTAMPT,grid%VERTAMPUV,                      &
                          grid%RU_REAL,grid%RV_REAL,grid%RT_REAL,            & 
                          grid%RU_IMAG,grid%RV_IMAG,grid%RT_IMAG,            & 
                          grid%DX,grid%DY,grid%stoch_vertstruc_opt,           & 
@@ -341,6 +338,8 @@ BENCH_START(cal_phy_tend)
                      grid%rqishten,grid%rqsshten,grid%rqgshten,        &
                      grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN, &
                      grid%RMUNDGDTEN,                                  &
+                     scalar, scalar_tend, num_scalar,                  &
+                     tracer, tracer_tend, num_tracer,                  &
                      ids,ide, jds,jde, kds,kde,                        &
                      ims,ime, jms,jme, kms,kme,                        &
                      grid%i_start(ij), min(grid%i_end(ij),ide-1),      &
@@ -455,6 +454,41 @@ BENCH_START(deform_div_tim)
          !$OMP END PARALLEL DO
 BENCH_END(deform_div_tim)
 
+! Updraft helicity between output times
+
+#ifdef DM_PARALLEL
+#     include "HALO_EM_HELICITY.inc"
+#endif
+
+       IF ( ( config_flags%nwp_diagnostics .eq. 1 ) .OR. &
+            ( ( config_flags%afwa_diag_opt .eq. 1 ) .AND. ( config_flags%afwa_severe_opt .EQ. 1 ) ) ) THEN
+BENCH_START(helicity_tim)
+
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+
+       DO ij = 1 , grid%num_tiles
+
+          CALL wrf_debug ( 200 , ' call cal_helicity' )
+          CALL cal_helicity ( config_flags,grid%u_2,grid%v_2,grid%w_2,  &
+                              grid%uh,                             &
+                              grid%up_heli_max,                    &
+                              grid%ph_2,grid%phb,                  &
+                              grid%msfux,grid%msfuy,               &
+                              grid%msfvx,grid%msfvy,               &
+                              grid%ht,                             &
+                              grid%rdx, grid%rdy, grid%dn, grid%dnw, grid%rdz, grid%rdzw,   &
+                              grid%fnm,grid%fnp,grid%cf1,grid%cf2,grid%cf3,grid%zx,grid%zy, &
+                              ids, ide, jds, jde, kds, kde,        &
+                              ims, ime, jms, jme, kms, kme,        &
+                              grid%i_start(ij), grid%i_end(ij),    &
+                              grid%j_start(ij), grid%j_end(ij),    &
+                              k_start    , k_end                  )
+       ENDDO
+       !$OMP END PARALLEL DO
+BENCH_END(helicity_tim)
+       ENDIF
+
 #ifdef DM_PARALLEL
 #     include "HALO_EM_TKE_D.inc"
 #endif
@@ -480,6 +514,7 @@ BENCH_START(calc_tke_tim)
                                  grid%cf1, grid%cf2, grid%cf3, grid%warm_rain,          &
                                  grid%mix_upper_bound,                                  &
                                  grid%msftx, grid%msfty,                                &
+                                 grid%zx, grid%zy,                                      &
                                  ids,ide, jds,jde, kds,kde,                             &
                                  ims,ime, jms,jme, kms,kme,                             &
                                  grid%i_start(ij), grid%i_end(ij),                      &
@@ -593,6 +628,7 @@ ENDIF
        IF ( config_flags%cu_physics == SASSCHEME      .or.   &
             config_flags%cu_physics == TIEDTKESCHEME  .or.   &
             config_flags%cu_physics == CAMZMSCHEME    .or.   &
+            config_flags%cu_physics == MESO_SAS       .or.   &
             config_flags%cu_physics == NSASSCHEME ) THEN
 #      include "HALO_EM_PHYS_CU.inc"
        ENDIF
@@ -626,12 +662,12 @@ BENCH_START(update_phy_ten_tim)
            i_end   = min( grid%i_end(ij),ide-1 )
            j_start = grid%j_start(ij)
            j_end   = min( grid%j_end(ij),jde-1 )
-           if (config_flags%dfi_radar == 1 .and. grid%dfi_stage == DFI_FWD ) &
+           if (grid%dfi_stage == DFI_FWD ) &
                  CALL wrf_debug ( 200 , ' Zero out cu_physics' )
            DO j = j_start, j_end
            DO k = k_start, min( k_end,kde-1 ) - 1
            DO i = i_start, i_end
-             if (config_flags%dfi_radar == 1 .and. grid%dfi_stage ==DFI_FWD  &
+             if (grid%dfi_stage ==DFI_FWD  &
              .and. grid%dfi_tten_rad(i,k,j) >= 1.0e-7 .and.  &
                    grid%dfi_tten_rad(i,k,j) <= 10.) then
 ! zero out cu-param temp tendency
@@ -648,10 +684,13 @@ BENCH_START(update_phy_ten_tim)
                            grid%rublten,grid%rucuten,grid%rushten,          &
                            grid%rvblten,grid%rvcuten,grid%rvshten,          &
                            grid%rqvblten,grid%rqcblten,grid%rqiblten,       &
+                           grid%rqniblten,                                  & !CAMUWPBL scheme
                            grid%rqvcuten,grid%rqccuten,grid%rqrcuten,       &
                            grid%rqicuten,grid%rqscuten,                     &
+                           grid%rqcncuten,grid%rqincuten,                   & !BSINGH - Added two CU tends
                            grid%rqvshten,grid%rqcshten,grid%rqrshten,       &
                            grid%rqishten,grid%rqsshten,grid%rqgshten,       &
+                           grid%rqcnshten,grid%rqinshten,                   &!BSINGH - Added two SHCU tends
                            grid%RUNDGDTEN,                                  &
                            grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RPHNDGDTEN,  &
                            grid%RQVNDGDTEN,grid%RMUNDGDTEN,                 &
@@ -667,6 +706,28 @@ BENCH_START(update_phy_ten_tim)
        END DO
        !$OMP END PARALLEL DO
 BENCH_END(update_phy_ten_tim)
+
+ IF (grid%stoch_force_opt== 2) then
+ !CASE (PERTURB_TENDF)
+        !$OMP PARALLEL DO   &
+        !$OMP PRIVATE ( ij )
+
+! JB comment:  P_QV is in moist_tend(ims,kms,jms,2)
+        DO ij = 1 , grid%num_tiles
+                 call perturb_physics_tend(grid%gridpointvariance,&
+                        grid%sppt_thresh_fact, grid%rt_tendf_stoch, &
+                        ru_tendf,rv_tendf,t_tendf,moist_tend(ims,kms,jms,2),        &
+                        ids, ide, jds, jde, kds, kde,                &
+                        ims, ime, jms, jme, kms, kme,                &
+                        grid%i_start(ij), grid%i_end(ij),             &
+                        grid%j_start(ij), grid%j_end(ij),             &
+                        k_start, k_end )
+        END DO
+        !$OMP END PARALLEL DO
+  ENDIF
+BENCH_END(update_phy_ten_stoch)
+
+
 
 #ifdef PLANET
        ! do rayleigh (and zonal-average newtonian) damping during
@@ -712,7 +773,7 @@ BENCH_START(tke_rhs_tim)
                          grid%rdz,grid%rdzw,grid%dn,                  &
                          grid%dnw,config_flags%mix_isotropic,         &
                          grid%hfx, grid%qfx, moist(ims,kms,jms,P_QV), &
-                         grid%ustm, rho,                              &
+                         grid%ustm, grid%rho,                         &
                          ids, ide, jds, jde, kds, kde,                &
                          ims, ime, jms, jme, kms, kme,                &
                          grid%i_start(ij), grid%i_end(ij),            &
@@ -750,9 +811,9 @@ BENCH_START(vert_diff_tim)
                                       grid%defor13,grid%defor23,grid%defor33,                   &
                                       nba_mij, num_nba_mij,          & !JDM
                                       grid%div, moist, chem, scalar,tracer,         &
-                                      grid%xkmv, grid%xkhv, config_flags%km_opt,                        &
+                                      grid%xkmv, grid%xkhv, grid%xkmh, config_flags%km_opt,       & ! xkmh added Oct2013
                                       grid%fnm, grid%fnp, grid%dn, grid%dnw, grid%rdz, grid%rdzw, &
-                                      grid%hfx, grid%qfx, grid%ustm, rho,        &
+                                      grid%hfx, grid%qfx, grid%ustm, grid%rho,   &
                                       ids, ide, jds, jde, kds, kde,              &
                                       ims, ime, jms, jme, kms, kme,              &
                                       grid%i_start(ij), grid%i_end(ij),          &
@@ -799,7 +860,7 @@ BENCH_START(hor_diff_tim)
 BENCH_END(hor_diff_tim)
        ENDIF
 
-       IF ( grid%obs_nudge_opt .EQ. 1 ) THEN
+       IF ( grid%obs_nudge_opt .EQ. 1 .AND. grid%xtime <= grid%fdda_end ) THEN
 # ifdef DM_PARALLEL
 #       include "HALO_OBS_NUDGE.inc"
 #endif

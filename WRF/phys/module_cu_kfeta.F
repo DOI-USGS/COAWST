@@ -8,6 +8,11 @@ MODULE module_cu_kfeta
 !   the cumulus parameterization for tropical cyclone prediction: 
 !   Convection trigger. Atmospheric Research, 92, 190 - 211.
 !
+!ckay
+!  WRF v3.5 with diagnosed deep and shallow KF cloud fraction using 
+!  CAM3-CAM5 methodology, along with captured liquid and ice condensates.
+!    JAH & KA (U.S. EPA) -- May 2013
+!
 !--------------------------------------------------------------------
 ! Lookup table variables:
       INTEGER, PARAMETER :: KFNT=250,KFNP=220
@@ -26,8 +31,7 @@ CONTAINS
              ,ims,ime, jms,jme, kms,kme                      &
              ,its,ite, jts,jte, kts,kte                      &
              ,trigger                                        &
-             ,DT,KTAU,DX,CUDT,CURR_SECS,ADAPT_STEP_FLAG      &
-             ,CUDTACTTIME                                    & 
+             ,DT,KTAU,DX,CUDT,ADAPT_STEP_FLAG                &
              ,rho,RAINCV,PRATEC,NCA                          &
              ,U,V,TH,T,W,dz8w,Pcps,pi                        &
              ,W0AVG,XLV0,XLV1,XLS0,XLS1,CP,R,G,EP1           &
@@ -38,6 +42,9 @@ CONTAINS
              ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS       &
              ,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN            &
              ,RQICUTEN,RQSCUTEN, RQVFTEN                     &
+!ckay
+             ,cldfra_dp_KF,cldfra_sh_KF                      &
+             ,qc_KF,qi_KF                                    &
                                                              )
 !
 !-------------------------------------------------------------
@@ -73,13 +80,11 @@ CONTAINS
 !
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         , &
           INTENT(INOUT) ::                                   &
-                                                      W0AVG
+                                                      W0AVG   
 
    REAL,  INTENT(IN   ) :: DT, DX
    REAL,  INTENT(IN   ) :: CUDT
-   REAL,  INTENT(IN   ) :: CURR_SECS
    LOGICAL,OPTIONAL,INTENT(IN   ) :: ADAPT_STEP_FLAG
-   REAL,  INTENT (INOUT) :: CUDTACTTIME       
 !
    REAL, DIMENSION( ims:ime , jms:jme ),                     &
           INTENT(INOUT) ::                           RAINCV
@@ -125,6 +130,13 @@ CONTAINS
                                                   ,F_QI      &
                                                   ,F_QS
 
+!ckay
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         , &
+          INTENT(INOUT) ::                                   &
+                                               cldfra_dp_KF, &
+                                               cldfra_sh_KF, &
+                                                      qc_KF, &
+                                                      qi_KF
 
 ! LOCAL VARS
 
@@ -166,7 +178,6 @@ CONTAINS
    INTEGER :: i,j,k,NTST
    REAL    :: lastdt = -1.0
    REAL    :: W0AVGfctr, W0fctr, W0den
-   LOGICAL :: run_param , doing_adapt_dt , decided
    
 !
    DXSQ=DX*DX
@@ -215,67 +226,6 @@ CONTAINS
       ENDDO
    ENDDO
    lastdt = dt
-
-!  Initialization for adaptive time step.
-
-   doing_adapt_dt = .FALSE.
-   IF ( PRESENT(adapt_step_flag) ) THEN
-      IF ( adapt_step_flag ) THEN
-         doing_adapt_dt = .TRUE.
-         IF ( cudtacttime .EQ. 0. ) THEN
-            cudtacttime = curr_secs + cudt*60.
-         END IF
-      END IF
-   END IF
-
-!  Do we run through this scheme or not?
-
-!    Test 1:  If this is the initial model time, then yes.
-!                KTAU=1
-!    Test 2:  If the user asked for the cumulus to be run every time step, then yes.
-!                CUDT=0 or STEPCU=1
-!    Test 3:  If not adaptive dt, and this is on the requested cumulus frequency, then yes.
-!                MOD(KTAU,NST)=0
-!    Test 4:  If using adaptive dt and the current time is past the last requested activate cumulus time, then yes.
-!                CURR_SECS >= CUDTACTTIME
-
-!  If we do run through the scheme, we set the flag run_param to TRUE and we set the decided flag
-!  to TRUE.  The decided flag says that one of these tests was able to say "yes", run the scheme.
-!  We only proceed to other tests if the previous tests all have left decided as FALSE.
-
-!  If we set run_param to TRUE and this is adaptive time stepping, we set the time to the next
-!  cumulus run.
-
-   decided = .FALSE.
-   run_param = .FALSE.
-   IF ( ( .NOT. decided ) .AND. &
-        ( ktau .EQ. 1 ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( ( cudt .EQ. 0. ) .OR. ( stepcu .EQ. 1 ) ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( .NOT. doing_adapt_dt ) .AND. &
-        ( MOD(ktau,ntst) .EQ. 0 ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( doing_adapt_dt ) .AND. &
-        ( curr_secs .GE. cudtacttime ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-      cudtacttime = curr_secs + cudt*60
-   END IF
-
-   if (run_param) then
 
 ! New trigger function
      IF (trigger.eq.2) THEN         
@@ -445,6 +395,11 @@ CONTAINS
                DQRDT(k)=0.
                DQSDT(k)=0.
                DTDT(k)=0.
+!ckay
+               cldfra_dp_KF(I,k,J)=0.
+               cldfra_sh_KF(I,k,J)=0.
+               qc_KF(I,k,J)=0.
+               qi_KF(I,k,J)=0.
             ENDDO
             RAINCV(I,J)=0.
             CUTOP(I,J)=KTS
@@ -483,7 +438,10 @@ CONTAINS
                  CUTOP,CUBOT,CUDT,                  &
                  ids,ide, jds,jde, kds,kde,         &
                  ims,ime, jms,jme, kms,kme,         &
-                 its,ite, jts,jte, kts,kte)
+                 its,ite, jts,jte, kts,kte,         &
+!ckay
+                 cldfra_dp_KF,cldfra_sh_KF,         &
+                 qc_KF,qi_KF                        )
             IF(PRESENT(rthcuten).AND.PRESENT(rqvcuten)) THEN
               DO K=kts,kte
                  RTHCUTEN(I,K,J)=DTDT(K)/pi(I,K,J)
@@ -528,7 +486,6 @@ CONTAINS
          ENDIF 
        ENDDO     ! i-loop
      ENDDO       ! j-loop
-   ENDIF         ! run_param
 !
    END SUBROUTINE KF_eta_CPS
 ! ****************************************************************************
@@ -546,7 +503,10 @@ CONTAINS
                       CUTOP,CUBOT,CUDT,                    &
                       ids,ide, jds,jde, kds,kde,           &
                       ims,ime, jms,jme, kms,kme,           &
-                      its,ite, jts,jte, kts,kte)
+                      its,ite, jts,jte, kts,kte,           &
+!ckay
+                      cldfra_dp_KF,cldfra_sh_KF,           &
+                      qc_KF,qi_KF                          )
 !-----------------------------------------------------------
 !***** The KF scheme that is currently used in experimental runs of EMCs 
 !***** Eta model....jsk 8/00
@@ -593,6 +553,13 @@ CONTAINS
 
       REAL,    DIMENSION( ims:ime , jms:jme ),             &
             INTENT(INOUT) ::                          NCA
+
+!ckay
+      REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),      &
+            INTENT(INOUT) ::                 cldfra_dp_KF, &
+                                             cldfra_sh_KF, &
+                                                    qc_KF, &
+                                                    qi_KF
 
       REAL, DIMENSION( ims:ime , jms:jme ),                &
             INTENT(INOUT) ::                       RAINCV
@@ -665,6 +632,8 @@ CONTAINS
       INTEGER :: INDLU,NU,NUCHM,NNN,KLFS
    REAL    :: CHMIN,PM15,CHMAX,DTRH,RAD,DPPP
    REAL    :: TVDIFF,DTTOT,ABSOMG,ABSOMGTC,FRDP
+!ckay
+   REAL    :: xcldfra,UMF_new
 
       INTEGER :: KX,K,KL
 !
@@ -895,17 +864,24 @@ usl:   DO
           TLCL=AMIN1(TLCL,TMIX)
           TVLCL=TLCL*(1.+0.608*QMIX)
           ZLCL = ZMIX+(TLCL-TMIX)/GDRY
-          NK = LC-1
-          DO 
-            NK = NK+1
-            KLCL=NK
-            IF(ZLCL.LE.Z0(NK) .or. NK.GT.KL)THEN
-              EXIT
-            ENDIF 
-          ENDDO   
-          IF(NK.GT.KL)THEN
-            RETURN  
-          ENDIF
+     !     NK = LC-1
+     !     DO 
+     !       NK = NK+1
+     !       KLCL=NK
+     !       IF(ZLCL.LE.Z0(NK) .or. NK.GT.KL)THEN
+     !         EXIT
+     !       ENDIF 
+     !     ENDDO   
+     !     IF(NK.GT.KL)THEN
+     !       RETURN  
+     !     ENDIF
+
+       DO NK = LC, KL
+         KLCL = NK
+         IF ( ZLCL.LE.Z0(NK) )  EXIT
+     END DO
+     IF ( ZLCL.GT.Z0(KL) )  RETURN
+
           K=KLCL-1
 ! calculate DLP using Z instead of log(P)
           DLP=(ZLCL-Z0(K))/(Z0(KLCL)-Z0(K))
@@ -1293,6 +1269,11 @@ updraft:    DO NK=K,KL-1
             ELSEIF(TLCL.LT.273.)THEN
               CHMIN = 2.E3
             ENDIF
+!ckay
+            DO NK=K,LTOP
+              qc_KF(I,NK,J)=QLIQ(NK)
+              qi_KF(I,NK,J)=QICE(NK)
+            END DO
 
 !     
 !...If cloud top height is less than the specified minimum for deep 
@@ -1320,15 +1301,28 @@ updraft:    DO NK=K,KL-1
                 DETIC(NK)=0.
                 PPTLIQ(NK)=0.
                 PPTICE(NK)=0.
+!ckay
+                cldfra_dp_KF(I,NK,J)=0.
+                cldfra_sh_KF(I,NK,J)=0.
+                qc_KF(I,NK,J)=0.
+                qi_KF(I,NK,J)=0.
               ENDDO
 !        
             ELSEIF(CLDHGT(LC).GT.CHMIN .and. ABE.GT.1)THEN      ! Deep Convection allowed
               ISHALL=0
+!ckay
+              DO NK=K,LTOP
+                cldfra_sh_KF(I,NK,J)=0.
+              ENDDO
               EXIT usl
             ELSE
 !
 !...TO DISALLOW SHALLOW CONVECTION, COMMENT OUT NEXT LINE !!!!!!!!
               ISHALL = 1
+!ckay
+              DO NK=K,LTOP
+                cldfra_dp_KF(I,NK,J)=0.
+              ENDDO
               IF(NU.EQ.NUCHM)THEN
                 EXIT usl               ! Shallow Convection from this layer
               ELSE
@@ -1341,6 +1335,11 @@ updraft:    DO NK=K,KL-1
                   DETIC(NK)=0.
                   PPTLIQ(NK)=0.
                   PPTICE(NK)=0.
+!ckay
+                  cldfra_dp_KF(I,NK,J)=0.
+                  cldfra_sh_KF(I,NK,J)=0.
+                  qc_KF(I,NK,J)=0.
+                  qi_KF(I,NK,J)=0.
                 ENDDO
               ENDIF
             ENDIF
@@ -1377,7 +1376,7 @@ updraft:    DO NK=K,KL-1
 !
 !...entrainment is allowed at every level except for LTOP, so disallow
 !...entrainment at LTOP and adjust entrainment rates between LET and LTOP
-!...so the the dilution factor due to entyrianment is not changed but 
+!...so the the dilution factor due to entrainment is not changed but 
 !...the actual entrainment rate will change due due forced total 
 !...detrainment in this layer...
 !
@@ -1428,6 +1427,11 @@ updraft:    DO NK=K,KL-1
         UMF(NK)=0.
         WU(NK)=0.
         UER(NK)=0.
+!ckay
+        cldfra_dp_KF(I,NK,J)=0.
+        cldfra_sh_KF(I,NK,J)=0.
+        qc_KF(I,NK,J)=0.
+        qi_KF(I,NK,J)=0.
       ENDIF
       UDR(NK)=0.
       QDT(NK)=0.
@@ -1466,6 +1470,11 @@ updraft:    DO NK=K,KL-1
           TU(NK)=0.
           QU(NK)=0.
           WU(NK)=0.
+!ckay
+          cldfra_dp_KF(I,NK,J)=0.
+          cldfra_sh_KF(I,NK,J)=0.
+          qc_KF(I,NK,J)=0.
+          qi_KF(I,NK,J)=0.
         ENDIF
         THTA0(NK)=0.
         THTAU(NK)=0.
@@ -2184,6 +2193,23 @@ iter:     DO NCOUNT=1,10
 !     
           ENDIF
         ENDDO iter
+!ckay
+! get the cloud fraction for layer NK+1=NK1
+        IF(ISHALL.EQ.1) THEN
+          DO NK=KLCL-1, LTOP1
+            UMF_new = UMF(NK)/DXSQ
+            xcldfra = 0.07*alog(1.+(500.*UMF_new))
+            xcldfra = amax1(0.01,xcldfra)
+            cldfra_sh_KF(I,NK,J) = amin1(0.2,xcldfra)
+          ENDDO
+        ELSE 
+          DO NK=KLCL-1, LTOP1
+            UMF_new = UMF(NK)/DXSQ
+            xcldfra = 0.14*alog(1.+(500.*UMF_new))
+            xcldfra = amax1(0.01,xcldfra)
+            cldfra_dp_KF(I,NK,J) = amin1(0.6,xcldfra)
+          ENDDO
+        ENDIF
 !     
 !...COMPUTE HYDROMETEOR TENDENCIES AS IS DONE FOR T, QV...
 !     

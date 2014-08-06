@@ -95,6 +95,8 @@
     LOGICAL :: this_is_an_ideal_run
     INTEGER :: loop, hypsometric_opt
 
+    CHARACTER (LEN=256) :: a_message
+
 
 !<DESCRIPTION>
 !
@@ -143,8 +145,8 @@
         !  base-state height (phb).
 
         CALL wrf_get_dom_ti_char ( fid , 'TITLE' , input_name , ierr )
-        this_is_an_ideal_run = INDEX(TRIM(input_name) , 'IDEAL' ) .NE. 0
-        IF ( this_is_an_ideal_run ) THEN
+        grid%this_is_an_ideal_run = INDEX(TRIM(input_name) , 'IDEAL' ) .NE. 0
+        IF ( grid%this_is_an_ideal_run ) THEN
           grid%hypsometric_opt = 1
           config_flags%hypsometric_opt = 1
 	  DO loop = 1 , grid%max_dom
@@ -156,12 +158,11 @@
       END IF
 #endif
 
-! simulation start time is a Singleton maintained by head_grid
-    IF ( ( switch .EQ.     input_only  ) .OR. &
-         ( switch .EQ.          restart_only ) ) THEN
+      ! INPUT ONLY (KK)
 
-      IF ( switch .EQ. restart_only .AND. .NOT. config_flags%override_restart_timers ) THEN
-        ! recover the restart alarms from input if avialable
+      IF ( switch .EQ. restart_only ) THEN
+
+        ! recover the restart alarms from input if available
  
         CALL wrf_get_dom_ti_integer( fid , 'MAX_WRF_ALARMS', max_wrf_alarms_compare, 1, icnt, ierr )
         IF ( max_wrf_alarms_compare .NE. MAX_WRF_ALARMS ) THEN
@@ -169,7 +170,7 @@
                                   ') from in code (',MAX_WRF_ALARMS,').  Disregarding info in restart file.'
         ELSE
           curtime = domain_get_current_time( grid )
-          DO i = 1, MAX_WRF_ALARMS
+          DO i = auxinput1_only, MAX_WRF_ALARMS
             IF ( grid%alarms_created(i) .AND. .NOT. i .EQ. boundary_only ) THEN
               write(alarmname,'("WRF_ALARM_ISRINGING_",i2.2)')i
               CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), iring, 1, icnt, ierr )
@@ -183,9 +184,73 @@
                 ! Get and set interval so that we are sure to have both the
                 ! interval and first ring time set correctly
                 CALL WRFU_AlarmGet( grid%alarms(i), ringinterval=interval2 )
+
+                IF (config_flags%override_restart_timers) THEN
+                   IF (i .EQ. restart_only) THEN
+                      seconds = grid%restart_interval_d * 86400 + &
+                                grid%restart_interval_h *  3600 + &
+                                grid%restart_interval_m *    60 + &
+                                grid%restart_interval   *    60 + &
+                                grid%restart_interval_s
+                   ENDIF
+                ENDIF
+
                 CALL WRFU_TimeIntervalSet(interval,S=seconds)
                 ringTime = curtime + interval
                 CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval2, RingTime=ringTime )
+
+              ENDIF
+
+              IF ( iring .EQ. 1 ) THEN
+                CALL WRFU_AlarmRingerOn( grid%alarms( i ) )
+              ELSE
+                CALL WRFU_AlarmRingerOff( grid%alarms( i ) )
+              ENDIF
+            ENDIF
+          ENDDO
+        ENDIF
+
+     
+     !OUTPUT ONLY (KK)
+
+      IF ( switch .EQ. restart_only .AND. .NOT. config_flags%override_restart_timers ) THEN
+
+        ! recover the restart alarms from input if available
+ 
+        CALL wrf_get_dom_ti_integer( fid , 'MAX_WRF_ALARMS', max_wrf_alarms_compare, 1, icnt, ierr )
+        IF ( max_wrf_alarms_compare .NE. MAX_WRF_ALARMS ) THEN
+          WRITE(wrf_err_message,*)'MAX_WRF_ALARMS different in restart file (',max_wrf_alarms_compare,&
+                                  ') from in code (',MAX_WRF_ALARMS,').  Disregarding info in restart file.'
+        ELSE
+          curtime = domain_get_current_time( grid )
+          DO i = 1, auxinput1_only-1
+            IF ( grid%alarms_created(i) .AND. .NOT. i .EQ. boundary_only ) THEN
+              write(alarmname,'("WRF_ALARM_ISRINGING_",i2.2)')i
+              CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), iring, 1, icnt, ierr )
+  
+              write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_",i2.2)')i
+              CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), seconds, 1, icnt, ierr )
+              IF ( ierr .EQ. 0 &
+                   .AND. seconds .GE. 0 ) THEN  ! disallow negative intervals; can happen with wrfbdy datasets
+                                                ! which keep time differently
+  
+                ! Get and set interval so that we are sure to have both the
+                ! interval and first ring time set correctly
+                CALL WRFU_AlarmGet( grid%alarms(i), ringinterval=interval2 )
+
+                IF (config_flags%override_restart_timers) THEN
+                   IF (i .EQ. history_only) THEN
+                      seconds = grid%history_interval_d * 86400 + &
+                                grid%history_interval_h *  3600 + &
+                                grid%history_interval_m *    60 + &
+                                grid%history_interval   *    60 + &
+                                grid%history_interval_s
+                   ENDIF
+                ENDIF
+
+                CALL WRFU_TimeIntervalSet(interval,S=seconds)
+                ringTime = curtime + interval
+                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval, RingTime=ringTime )
 
               ENDIF
 
@@ -333,9 +398,16 @@
     END IF
 
 #if (EM_CORE == 1)
-    IF ( switch .EQ. auxinput2_only ) THEN
+    IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. auxinput2_only ) .OR. ( switch .EQ. auxinput1_only ) ) THEN
        ierr = 0
-       CALL wrf_get_dom_ti_integer ( fid , 'I_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
+       IF      ( ( switch .EQ. input_only ) .OR. ( switch .EQ. auxinput2_only ) ) THEN
+          CALL wrf_get_dom_ti_integer ( fid , 'I_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
+       ELSE IF ( ( switch .EQ. auxinput1_only ) .AND. ( grid%id .GE. 2 ) ) THEN
+          CALL wrf_get_dom_ti_integer ( fid , 'i_parent_start' ,    itmp , 1 , icnt , ierr3 )
+       ELSE IF ( ( switch .EQ. auxinput1_only ) .AND. ( grid%id .EQ. 1 ) ) THEN
+          itmp  = config_flags%i_parent_start
+          ierr3 = 0 
+       END IF
        ierr = max( ierr, ierr3 )
        IF ( itmp .NE. config_flags%i_parent_start ) THEN
           ierr = 1
@@ -344,7 +416,14 @@
           WRITE(wrf_err_message,*)'i_parent_start from gridded input file  = ',itmp
           CALL wrf_message(wrf_err_message)
        END IF
-       CALL wrf_get_dom_ti_integer ( fid , 'J_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
+       IF      ( ( switch .EQ. input_only ) .OR. ( switch .EQ. auxinput2_only ) ) THEN
+          CALL wrf_get_dom_ti_integer ( fid , 'J_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
+       ELSE IF ( ( switch .EQ. auxinput1_only ) .AND. ( grid%id .GE. 2 ) ) THEN
+          CALL wrf_get_dom_ti_integer ( fid , 'j_parent_start' ,    itmp , 1 , icnt , ierr3 )
+       ELSE IF ( ( switch .EQ. auxinput1_only ) .AND. ( grid%id .EQ. 1 ) ) THEN
+          itmp  = config_flags%j_parent_start
+          ierr3 = 0 
+       END IF
        ierr = max( ierr, ierr3 )
        IF ( itmp .NE. config_flags%j_parent_start ) THEN
           ierr = 1
@@ -456,9 +535,19 @@
 
     CALL wrf_get_dom_ti_char ( fid , 'MMINLU', mminlu , ierr )
     IF ( ierr .NE. 0 ) THEN
-       WRITE(wrf_err_message,*)'MMINLU error on input'
-       CALL wrf_debug ( 0 , wrf_err_message )
-       mminlu = " "
+#ifdef WRF_CHEM
+      IF ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+        WRITE(wrf_err_message,*)'MMINLU error on input - will set mminlu to MODIFIED_IGBP_MODIS_NOAH in share/input_wrf.F'
+        mminlu = "MODIFIED_IGBP_MODIS_NOAH"
+      ELSE
+        WRITE(wrf_err_message,*)'MMINLU error on input'
+        mminlu = " "
+      ENDIF
+#else
+      WRITE(wrf_err_message,*)'MMINLU error on input'
+      mminlu = " "
+#endif
+      CALL wrf_debug ( 0 , wrf_err_message )
     ELSE IF ( ( ( mminlu(1:1) .GE. "A" ) .AND. ( mminlu(1:1) .LE. "Z" ) ) .OR. &
               ( ( mminlu(1:1) .GE. "a" ) .AND. ( mminlu(1:1) .LE. "z" ) ) .OR. &
               ( ( mminlu(1:1) .GE. "0" ) .AND. ( mminlu(1:1) .LE. "9" ) ) ) THEN
@@ -478,20 +567,26 @@
     ! The default is set to 24 somewhere, from the number of categories
     ! in the traditional USGS dataset
 
-    call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
-    if ( (ierr .NE. 0) .OR. ( num_land_cat_compare .LT. 1 ) .OR. ( num_land_cat_compare .GT. 1000 ) ) then
-       call wrf_debug( 1 , "Must be old WPS data, assuming 24 levels for NUM_LAND_CAT")
-       num_land_cat_compare = 24
-!      call wrf_error_fatal("Error trying to find global attribute 'NUM_LAND_CAT'")
-    endif
-    if ( config_flags%num_land_cat /= num_land_cat_compare ) then
-       call wrf_message("----------------- ERROR -------------------")
-       WRITE(wrf_err_message,'("namelist    : NUM_LAND_CAT = ",I10)') config_flags%num_land_cat
-       call wrf_message(wrf_err_message)
-       WRITE(wrf_err_message,'("input files : NUM_LAND_CAT = ",I10, " (from geogrid selections).")') num_land_cat_compare
-       call wrf_message(wrf_err_message)
-       call wrf_error_fatal("Mismatch between namelist and wrf input files for dimension NUM_LAND_CAT")
-    endif
+    IF ( switch .EQ. input_only ) THEN
+      call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
+      if ( (ierr .NE. 0) .OR. ( num_land_cat_compare .LT. 1 ) .OR. ( num_land_cat_compare .GT. 1000 ) ) then
+        IF (mminlu == 'MODIFIED_IGBP_MODIS_NOAH') THEN
+          call wrf_debug( 1 , "Must be old WPS data, assuming 20 levels for NUM_LAND_CAT")
+          num_land_cat_compare = 20
+        ELSE
+          call wrf_debug( 1 , "Must be old WPS data, assuming 24 levels for NUM_LAND_CAT")
+          num_land_cat_compare = 24
+        END IF
+      endif
+      if ( config_flags%num_land_cat /= num_land_cat_compare ) then
+        call wrf_message("----------------- ERROR -------------------")
+        WRITE(wrf_err_message,'("namelist    : NUM_LAND_CAT = ",I10)') config_flags%num_land_cat
+        call wrf_message(wrf_err_message)
+        WRITE(wrf_err_message,'("input files : NUM_LAND_CAT = ",I10, " (from geogrid selections).")') num_land_cat_compare
+        call wrf_message(wrf_err_message)
+        call wrf_error_fatal("Mismatch between namelist and wrf input files for dimension NUM_LAND_CAT")
+      endif
+    ENDIF
 
     ! Test here to check that config_flags%num_metgrid_soil_levels in namelist
     ! is equal to what is in the global attributes of the met_em files.  Note that
@@ -500,14 +595,14 @@
     IF ( ( switch .EQ. auxinput1_only ) .AND. &
          ( first_date_nml .EQ. first_date_input ) )  THEN
        CALL wrf_get_dom_ti_integer ( fid, 'NUM_METGRID_SOIL_LEVELS', itmp, 1, icnt, ierr )
-
-#if (EM_CORE == 1)
-       IF ( itmp .EQ. 1 ) THEN
-             call wrf_error_fatal("NUM_METGRID_SOIL_LEVELS must be greater than 1")
-       END IF
-#endif
    
        IF ( ierr .EQ. 0 ) THEN
+
+#if (EM_CORE == 1)
+          IF ( itmp .EQ. 1 ) THEN
+             call wrf_error_fatal("NUM_METGRID_SOIL_LEVELS must be greater than 1")
+          END IF
+#endif
           WRITE(wrf_err_message,*)'input_wrf: global attribute NUM_METGRID_SOIL_LEVELS returns ', itmp
           CALL wrf_debug ( 300 , wrf_err_message )
           IF ( config_flags%num_metgrid_soil_levels /= itmp ) THEN
@@ -578,6 +673,8 @@
     IF ( ierr .NE. 0 ) THEN
          IF (mminlu == 'UMD') THEN
               config_flags%iswater = 14
+         ELSE IF (mminlu == 'MODIFIED_IGBP_MODIS_NOAH') THEN
+              config_flags%iswater = 17
          ELSE
               config_flags%iswater = 16
          ENDIF
@@ -600,6 +697,8 @@
     IF ( ierr .NE.  0 ) THEN
          IF (mminlu == 'UMD') THEN
               config_flags%isice = 14
+         ELSE IF (mminlu == 'MODIFIED_IGBP_MODIS_NOAH') THEN
+              config_flags%isice = 15
          ELSE
               config_flags%isice = 24
          ENDIF
@@ -612,6 +711,8 @@
     CALL wrf_debug ( 300 , wrf_err_message )
     IF ( ierr .NE. 0 ) THEN
          IF (mminlu == 'UMD') THEN
+              config_flags%isurban = 13
+         ELSE IF (mminlu == 'MODIFIED_IGBP_MODIS_NOAH') THEN
               config_flags%isurban = 13
          ELSE
               config_flags%isurban = 1
@@ -823,7 +924,10 @@
         CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
 #if (DA_CORE != 1)
         IF( currentTime .GE. grid%next_bdy_time ) THEN
-          IF ( wrf_dm_on_monitor() ) write(0,*) 'THIS TIME ',this_datestr(1:19),'NEXT TIME ',next_datestr(1:19)
+          IF ( wrf_dm_on_monitor() ) THEN
+             write(a_message,*) 'THIS TIME ',this_datestr(1:19),'NEXT TIME ',next_datestr(1:19)
+             CALL wrf_message ( a_message ) 
+          END IF
           RETURN
         ENDIF
 #endif

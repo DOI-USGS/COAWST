@@ -56,6 +56,7 @@ PROGRAM real_data
 #endif
 
    CHARACTER (LEN=80)     :: message
+   CHARACTER*255 :: mess
 
    INTEGER :: start_year , start_month , start_day 
    INTEGER :: start_hour , start_minute , start_second
@@ -268,7 +269,6 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
 #include "deref_kludge.h"
 
-
    grid%input_from_file = .true.
    grid%input_from_file = .false.
 
@@ -379,7 +379,6 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       CALL wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
 !
       CALL optional_input ( grid , idsi , config_flags )
-	write(0,*) 'maxval st_input(1) within real_nmm: ', maxval(st_input(:,1,:))
       END IF
 !
       CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
@@ -505,7 +504,8 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
            if(ioerror/=0) then
               call wrf_error_fatal('Unable to read MAKBND output from unit 900.')
            endif
-           WRITE(0,*) 'U V T AT 10 10 10 ',UINIT(10,10,10),VINIT(10,10,10),TINIT(10,10,10)
+           WRITE(mess,*) 'U V T AT 10 10 10 ',UINIT(10,10,10),VINIT(10,10,10),TINIT(10,10,10)
+           call wrf_message(mess)
            ! Switch from IKJ to IJK ordering
            DO I = ids,ide-1
               DO J = jds,jde-1
@@ -704,7 +704,7 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max )
    TYPE(domain)                 :: grid
    TYPE (grid_config_rec_type)  :: config_flags
    INTEGER , INTENT(IN)         :: loop , time_loop_max
-
+   character*255 :: mess
    INTEGER :: ids , ide , jds , jde , kds , kde
    INTEGER :: ims , ime , jms , jme , kms , kme
    INTEGER :: ips , ipe , jps , jpe , kps , kpe
@@ -1144,8 +1144,9 @@ character *24 :: temp24 , temp24b
                  write(message,*)'southtend q',k,i,n,qbdy3dtemp2(i,j,k)
                  call wrf_debug(10,message)
                  if (K .eq. 1 ) then
-                    write(0,*) 'S boundary values T,Q : ', I,tbdy3dtemp2(i,j,k),  &
+                    write(mess,*) 'S boundary values T,Q : ', I,tbdy3dtemp2(i,j,k),  &
                          qbdy3dtemp2(i,j,k)
+                    call wrf_debug(1,message)
                  endif
                  N=N+1
               END DO

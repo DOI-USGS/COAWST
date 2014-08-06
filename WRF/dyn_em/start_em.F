@@ -24,8 +24,9 @@
    USE module_comm_dm
 
    USE module_physics_init
-   USE module_fr_sfire_driver_wrf, ONLY : sfire_driver_em_init
-   USE module_stoch, ONLY : SETUP_STOCH,rand_seed, update_stoch
+   USE module_lightning_driver, ONLY : lightning_init
+   USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_init
+   USE module_stoch, ONLY : SETUP_STOCH_SPPT,SETUP_STOCH_SKEBS,rand_seed, update_stoch
 #ifdef WRF_CHEM
    USE module_aerosols_sorgam, ONLY: sum_pm_sorgam
    USE module_gocart_aerosols, ONLY: sum_pm_gocart
@@ -33,6 +34,7 @@
    USE module_input_tracer, ONLY: initialize_tracer
    USE module_aerosols_soa_vbs, only: sum_pm_soa_vbs
 #endif
+   USE module_diag_pld, ONLY : pld
 
 !!debug
 !USE module_compute_geop
@@ -67,7 +69,7 @@
 
    INTEGER     :: i_m
 
-   REAL        :: p00, t00, a, tiso, p_surf, pd_surf, temp
+   REAL        :: p00, t00, a, tiso, p_surf, pd_surf, temp, tiso_tmp
 #ifdef WRF_CHEM
    REAL        RGASUNIV ! universal gas constant [ J/mol-K ]
    PARAMETER ( RGASUNIV = 8.314510 )
@@ -102,8 +104,11 @@
    REAL :: w_max, w_min
    LOGICAL :: w_needs_to_be_set
 !  
-! paj: define variable local
-   REAL    :: alpha
+! Define variables local (topo_wind local vars)
+   REAL    :: alpha, vfac
+
+!..Need to fill special height var for setting up initial condition.  G. Thompson
+   REAL, ALLOCATABLE, DIMENSION(:,:,:) :: z_at_q
 
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
@@ -120,13 +125,14 @@
 #ifndef WRF_CHEM
          ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
 #endif
+   ALLOCATE(z_at_q(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; z_at_q = 0.
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
    IF ( ( MOD (ide-ids,config_flags%parent_grid_ratio) .NE. 0 ) .OR. &
         ( MOD (jde-jds,config_flags%parent_grid_ratio) .NE. 0 ) ) THEN
-      WRITE(message, FMT='("Nested dimensions are illegal for domain ",I2,":  Both &
-         &MOD(",I4,"-",I1,",",I2,") and MOD(",I4,"-",I1,",",I2,") must = 0" )') &
-         grid%id,ide,ids,config_flags%parent_grid_ratio,jde,jds,config_flags%parent_grid_ratio
+      WRITE(message, FMT='(A,I2,":  Both MOD(",I4,"-",I1,",",I2,") and MOD(",I4,"-",I1,",",I2,") must = 0" )') &
+         "Nested dimensions are illegal for domain ",grid%id,ide,ids,config_flags%parent_grid_ratio,&
+         jde,jds,config_flags%parent_grid_ratio
       CALL wrf_error_fatal ( message )
    END IF
 
@@ -176,14 +182,14 @@
        first_trip_for_this_domain = .TRUE.
    ENDIF
 
-!   --- SETUP AND INITIALIZE STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ---
+!   --- SETUP AND INITIALIZE STOCHASTIC PERTURBATION SCHEMES ---
 
    IF ( first_trip_for_this_domain ) THEN
      grid%did_stoch = .FALSE.
    END IF
 
    IF ( ( grid%id == 1 ) .AND. &
-        ( NINT(grid%stoch_force_global_opt) == 1 ) .AND. &
+        ( grid%stoch_force_global_opt == 1 ) .AND. &
         ( .NOT. grid%did_stoch ) ) THEN
 
      grid%did_stoch = .TRUE.
@@ -195,18 +201,55 @@
      CALL wrf_dm_bcast_bytes ( grid%SEED2, IWORDSIZE )
 #endif
 
-     call SETUP_STOCH(grid%VERTSTRUCC,grid%VERTSTRUCS,                   &
+     IF (grid%stoch_force_opt==1) then
+     grid%SPTFORCC=0.0
+     grid%SPTFORCS=0.0
+     call SETUP_STOCH_SKEBS(grid%VERTSTRUCC,grid%VERTSTRUCS,                   &
                       grid%SPT_AMP,grid%SPSTREAM_AMP,                    &
-                      grid%stoch_vertstruc_opt,                          & 
+                      grid%VERTAMPT,grid%VERTAMPUV,                      &
+                      grid%stoch_vertstruc_opt,                          &
                       grid%SEED1,grid%SEED2,grid%time_step,              &
                       grid%DX,grid%DY,                                   &
                       grid%TOT_BACKSCAT_PSI,grid%TOT_BACKSCAT_T,         &
+                      grid%ZTAU_PSI,grid%ZTAU_T,grid%REXPONENT_PSI,grid%REXPONENT_T,               &
+                      grid%KMINFORC,grid%KMAXFORC,grid%LMINFORC,grid%LMAXFORC,     &
+                      grid%KMINFORCT,grid%KMAXFORCT,grid%LMINFORCT,grid%LMAXFORCT, &
+                      grid%KMAXFORCH,grid%LMAXFORCH,grid%KMAXFORCTH,grid%LMAXFORCTH, &
+                      grid%ZSIGMA2_EPS,grid%ZSIGMA2_ETA,                          &
                       ids, ide, jds, jde, kds, kde,                      &
                       ims, ime, jms, jme, kms, kme,                      &
                       its, ite, jts, jte, kts, kte                       )
-    
+     END IF
+     IF (grid%stoch_force_opt==2) then
+
+        call SETUP_STOCH_SPPT(grid%VERTSTRUCC,grid%VERTSTRUCS,            &
+                       grid%SPT_AMP,                                      &
+                       grid%SPTFORCC,grid%SPTFORCS,                       &
+                       grid%VERTAMPT,grid%VERTAMPUV,                      &
+                       grid%stoch_vertstruc_opt,                          &
+                       grid%SEED1,grid%SEED2,grid%time_step,              &
+                       grid%DX,grid%DY,                                   &
+                       grid%gridpointvariance,grid%l_sppt,grid%tau_sppt,  &
+                       grid%KMINFORCT,grid%KMAXFORCT,grid%LMINFORCT,grid%LMAXFORCT, &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH, &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+     ENDIF 
+     do i=1,600
+     CALL UPDATE_STOCH(grid%SPSTREAMFORCS,grid%SPSTREAMFORCC,           &
+                      grid%SPTFORCS,grid%SPTFORCC,                        &
+                      grid%SPT_AMP,grid%SPSTREAM_AMP,                     &
+                      ids, ide, jds, jde, kds, kde,                       &
+                      ims, ime, jms, jme, kms, kme,                       &
+                      its, ite, jts, jte, kts, kte                       )
+     enddo
+
+
     END IF
-!   --- END SETUP STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ----------
+!   --- END SETUP STOCHASTIC PERTURBATION SCHEMES ----------
+
+
 
 ! wig: Add a combined exponential+linear weight on the mother boundaries
 !      following code changes by Ruby Leung. For the nested grid, there
@@ -369,34 +412,46 @@
       END IF
    END IF
 
+   IF ( config_flags%use_baseparam_fr_nml ) then
+      CALL nl_get_base_pres  ( 1 , p00 )
+      CALL nl_get_base_temp  ( 1 , t00 )
+      CALL nl_get_base_lapse ( 1 , a   )
+      CALL nl_get_iso_temp   ( 1 , tiso )
+      IF ( ( t00 .LT. 100. .or. p00 .LT. 10000.) .AND. ( .NOT. grid%this_is_an_ideal_run ) ) THEN
+         WRITE(wrf_err_message,*) 'start_em: BAD BASE STATE for T00 or P00 in namelist.input file'
+         CALL wrf_error_fatal(TRIM(wrf_err_message))
+      END IF
+
+   ELSE
+   ! get these constants from model data
+
+      t00  = grid%t00
+      p00  = grid%p00
+      a    = grid%tlp
+      tiso = grid%tiso
+      IF ( ( t00 .LT. 100. .or. p00 .LT. 10000.) .AND. ( .NOT. grid%this_is_an_ideal_run ) ) THEN
+         WRITE(wrf_err_message,*)&
+         'start_em: did not find base state parameters in wrfinput. Add use_baseparam_fr_nml = .t. in &dynamics and rerun'
+         CALL wrf_error_fatal(TRIM(wrf_err_message))
+      ENDIF
+
+   ENDIF
+
+!  check if tiso in the input file agrees with namelist value
+
+   CALL nl_get_iso_temp   ( 1 , tiso_tmp )
+   IF ( ( tiso_tmp .NE. tiso ) .AND. ( .NOT. grid%this_is_an_ideal_run ) ) THEN
+      WRITE(wrf_err_message,*)&
+      'start_em: namelist iso_temp is not equal to iso_temp in wrfinput. Reset nml value and rerun'
+      CALL wrf_error_fatal(TRIM(wrf_err_message))
+   ENDIF
+
    IF ( .NOT. config_flags%restart .AND. &
         (( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ))) THEN
 
       IF ( config_flags%map_proj .EQ. 0 ) THEN
          CALL wrf_error_fatal ( 'start_domain: Idealized case cannot have a separate nested input file' )
       END IF
-
-      IF ( config_flags%use_baseparam_fr_nml ) then
-      CALL nl_get_base_pres  ( 1 , p00 )
-      CALL nl_get_base_temp  ( 1 , t00 )
-      CALL nl_get_base_lapse ( 1 , a   )
-      CALL nl_get_iso_temp   ( 1 , tiso )
-
-      ELSE
-      ! get these constants from model data
-
-      t00  = grid%t00
-      p00  = grid%p00
-      a    = grid%tlp
-      tiso = grid%tiso
-
-      IF (t00 .LT. 100. .or. p00 .LT. 10000.) THEN
-      WRITE(wrf_err_message,*)&
-      'start_em: did not find base state parameters in wrfinput. Add use_baseparam_fr_nml = .t. in &dynamics and rerun'
-      CALL wrf_error_fatal(TRIM(wrf_err_message))
-      ENDIF
-
-      ENDIF
 
       !  Base state potential temperature and inverse density (alpha = 1/rho) from
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
@@ -498,17 +553,32 @@
      ENDDO
     ELSE
 ! with nests, grid%t_init generally needs recomputations (since it is not interpolated)
-     DO j = jts,min(jte,jde-1)
-     DO k = kts,kte-1
-     DO i = its, min(ite,ide-1)
-       IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
-         grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
-         grid%alb(i,k,j) = -grid%rdnw(k)*(grid%phb(i,k+1,j)-grid%phb(i,k,j))/grid%mub(i,j)
-         grid%t_init(i,k,j) = grid%alb(i,k,j)*(p1000mb/r_d)/((grid%pb(i,k,j)/p1000mb)**cvpm) - t0
-       ENDIF
-     ENDDO
-     ENDDO
-     ENDDO
+     IF ( .NOT. grid%this_is_an_ideal_run ) THEN
+        DO j = jts,min(jte,jde-1)
+        DO k = kts,kte-1
+        DO i = its, min(ite,ide-1)
+          IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
+            grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
+            temp = MAX ( tiso, t00 + A*LOG(grid%pb(i,k,j)/p00) )
+            grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
+            grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
+          ENDIF
+        ENDDO
+        ENDDO
+        ENDDO
+     ELSE
+        DO j = jts,min(jte,jde-1)
+        DO k = kts,kte-1
+        DO i = its, min(ite,ide-1)
+          IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
+            grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
+            grid%alb(i,k,j) = -grid%rdnw(k)*(grid%phb(i,k+1,j)-grid%phb(i,k,j))/grid%mub(i,j)
+            grid%t_init(i,k,j) = grid%alb(i,k,j)*(p1000mb/r_d)/((grid%pb(i,k,j)/p1000mb)**cvpm) - t0
+          ENDIF
+        ENDDO
+        ENDDO
+        ENDDO
+     END IF
     ENDIF
 
 ! Use equations from calc_p_rho_phi to derive p and al from ph: linear in log p
@@ -548,7 +618,37 @@
     ENDDO
     ENDDO
 
+    IF ( .NOT. grid%this_is_an_ideal_run ) THEN
+       DO j=jts,min(jte,jde-1)
+          DO i=its,min(ite,ide-1)
+             p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
+             grid%p_hyd_w(i,1,j) = grid%p(i,1,j) + grid%znw(1)*(p_surf - grid%p_top) + grid%p_top
+             DO k=kts+1,kte
+                grid%p_hyd_w(i,k,j) = ( 2.*(grid%p(i,k-1,j)+grid%pb(i,k-1,j)) - grid%p_hyd_w(i,k-1,j) )
+             ENDDO
+          ENDDO
+       ENDDO
+    ELSE
+       DO j=jts,min(jte,jde-1)
+          DO i=its,min(ite,ide-1)
+             p_surf = grid%mub(i,j)+grid%p_top
+             grid%p_hyd_w(i,1,j) = grid%p(i,1,j) + grid%znw(1)*(p_surf - grid%p_top) + grid%p_top
+             DO k=kts+1,kte
+                grid%p_hyd_w(i,k,j) = ( 2.*(grid%p(i,k-1,j)+grid%pb(i,k-1,j)) - grid%p_hyd_w(i,k-1,j) )
+             ENDDO
+          ENDDO
+       ENDDO
+    END IF
+
    ENDIF
+
+   DO j=jts,min(jte,jde-1)
+      DO k = kts,kte
+         DO i = its, min(ite,ide-1)
+            z_at_q(i,k,j)=(grid%ph_2(i,k,j)+grid%phb(i,k,j))/g
+         ENDDO
+      ENDDO
+   ENDDO
 
    IF ( grid%press_adj .and. ( grid%id .NE. 1 ) .AND. .NOT. ( config_flags%restart ) .AND. &
        ( ( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ) ) ) THEN
@@ -566,6 +666,10 @@
 
    END IF
 
+! set GMT outside of phy_init because phy_init may not be called on this
+! process if, for example, it is a moving nest and if this part of the domain is not
+! being initialized (not the leading edge).
+   CALL domain_setgmtetc( grid, start_of_simulation )
    IF ( first_trip_for_this_domain ) THEN
 
    CALL wrf_debug ( 100 , 'start_domain_em: Before call to phy_init' )
@@ -574,10 +678,9 @@
 ! MPDT is the call frequency for microphysics in minutes (0 means every step)
    MPDT = 0.
 
-! set GMT outside of phy_init because phy_init may not be called on this
-! process if, for example, it is a moving nest and if this part of the domain is not
-! being initialized (not the leading edge).
-   CALL domain_setgmtetc( grid, start_of_simulation )
+!tgs
+   IF(config_flags%cycling) start_of_simulation = .true.
+!  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
 
 !-----------------------------------------------------------------------------
 ! Adaptive time step: Added by T. Hutchinson, WSI  11/6/07
@@ -649,20 +752,16 @@
 ! Phy_init is not necessarily thread-safe; do not multi-thread this loop.
 ! The tiling is to handle the fact that we may be masking off part of the computation.
 !
+
+#ifdef DM_PARALLEL
+if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_run.eq.5)then
+#  include "HALO_EM_HYDRO_NOAHMP_INIT.inc"
+endif
+#endif
+
    DO ij = 1, grid%num_tiles
 
 !tgs do not need physics initialization for backward DFI integration
-     IF ( grid%dfi_opt .NE. DFI_NODFI .and. grid%dfi_stage .EQ. DFI_FST) THEN     !tgs
-        grid%stepra=nint(grid%RADT*60./grid%DT)
-        grid%stepra=max(grid%stepra,1)
-        grid%stepbl=nint(grid%BLDT*60./grid%DT)
-        grid%stepbl=max(grid%stepbl,1)
-        grid%stepcu=nint(grid%CUDT*60./grid%DT)
-        grid%stepcu=max(grid%stepcu,1)
-        grid%stepfg=nint(grid%FGDT*60./grid%DT)
-        grid%stepfg=max(grid%stepfg,1)
-     ENDIF
-     
     IF ( ( grid%dfi_opt .EQ. DFI_NODFI ) .or. &
           ( ( grid%dfi_stage .NE. DFI_BCK ) .and. &
           ( grid%dfi_stage .NE. DFI_STARTBCK ) ) ) THEN    !tgs, mods by tah
@@ -681,6 +780,9 @@
                       grid%stepbl,grid%stepra,grid%stepcu,                   &
                       grid%w0avg, grid%rainnc, grid%rainc, grid%raincv, grid%rainncv,  &
                       grid%snownc, grid%snowncv, grid%graupelnc, grid%graupelncv,  &
+                      z_at_q, grid%qnwfa2d, scalar(ims,kms,jms,1), num_scalar,         & ! G. Thompson
+                      grid%re_cloud, grid%re_ice, grid%re_snow,         & ! G. Thompson
+                      grid%has_reqc, grid%has_reqi, grid%has_reqs,      & ! G. Thompson
                       grid%nca,grid%swrad_scat,                    &
                       grid%cldefi,grid%lowlyr,                          &
                       grid%mass_flux,                              &
@@ -697,12 +799,13 @@
                       grid%landuse_ISICE, grid%landuse_LUCATS,            &
                       grid%landuse_LUSEAS, grid%landuse_ISN,              &
                       grid%lu_state,                                      &
-                      grid%xlat,grid%xlong,grid%albedo,grid%albbck,grid%GMT,grid%JULYR,grid%JULDAY,     &
+                      grid%xlat,grid%xlong,grid%xlong_u,grid%xlat_v,grid%albedo,grid%albbck,grid%GMT,grid%JULYR,grid%JULDAY,     &
                       grid%levsiz, num_ozmixm, num_aerosolc, grid%paerlev,  &
+                      grid%alevsiz, grid%no_src_types,                      &
                       grid%tmn,grid%xland,grid%znt,grid%z0,grid%ust,grid%mol,grid%pblh,grid%tke_pbl,    &
                       grid%exch_h,grid%thc,grid%snowc,grid%mavail,grid%hfx,grid%qfx,grid%rainbl, &
                       grid%tslb,grid%zs,grid%dzs,config_flags%num_soil_layers,grid%warm_rain,  &
-                      grid%adv_moist_cond,                         &
+                      grid%adv_moist_cond, grid%is_CAMMGMP_used,                               &
                       grid%apr_gr,grid%apr_w,grid%apr_mc,grid%apr_st,grid%apr_as,      &
                       grid%apr_capma,grid%apr_capme,grid%apr_capmi,          &
                       grid%xice,grid%xicem,grid%vegfra,grid%snow,grid%canwat,grid%smstav,         &
@@ -718,11 +821,13 @@
                       ims, ime, jms, jme, kms, kme,           &
                       grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte, &
                       config_flags%num_urban_layers,                        & !multi-layer urban
+                      config_flags%num_urban_hi,                            & !multi-layer urban
                       grid%raincv_a,grid%raincv_b,                                    &
                       grid%gd_cloud, grid%gd_cloud2,                                  & ! Optional
                       grid%gd_cloud_a, grid%gd_cloud2_a,                              & ! Optional
-                      grid%gd_cloud_b, grid%gd_cloud2_b,                              & ! Optional
+                      grid%QC_CU, grid%QI_CU,                                         & ! Optional
                       ozmixm,grid%pin,                             &     ! Optional
+                      grid%aerodm,grid%pina,                       &     ! Optional
                       grid%m_ps_1,grid%m_ps_2,grid%m_hybi,aerosolc_1,aerosolc_2,&  ! Optional
                       grid%rundgdten,grid%rvndgdten,grid%rthndgdten,         &     ! Optional
                       grid%rphndgdten,grid%rqvndgdten,grid%rmundgdten,       &     ! Optional
@@ -737,6 +842,10 @@
                       grid%STMASSXY, grid%WOODXY, grid%STBLCPXY, grid%FASTCPXY,                 &   ! Optional Noah-MP
                       grid%XSAIXY,                                                              &   ! Optional Noah-MP
                       grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY,                                  &   ! Optional Noah-MP
+                      grid%SMOISEQ  ,grid%SMCWTDXY ,grid%RECHXY, grid%DEEPRECHXY, grid%AREAXY,  & ! Optional Noah-MP
+                      config_flags%wtddt ,grid%stepwtd ,grid%QRFSXY ,grid%QSPRINGSXY ,grid%QSLATXY, & ! Optional Noah-MP
+                      grid%FDEPTHXY, grid%RIVERBEDXY, grid%EQZWT, grid%RIVERCONDXY, grid%PEXPXY, & ! Optional Noah-MP
+                      grid%msftx, grid%msfty,                              &
                       grid%DZR, grid%DZB, grid%DZG,                          & !Optional urban
                       grid%TR_URB2D,grid%TB_URB2D,grid%TG_URB2D,grid%TC_URB2D,    & !Optional urban
                       grid%QC_URB2D, grid%XXXR_URB2D,grid%XXXB_URB2D,        & !Optional urban
@@ -750,19 +859,108 @@
                       grid%LF_AC_URB3D,grid%CM_AC_URB3D,grid%SFVENT_URB3D,grid%LFVENT_URB3D,   & !multi-layer urban
                       grid%SFWIN1_URB3D,grid%SFWIN2_URB3D, & !multi-layer urban
                       grid%SFW1_URB3D,grid%SFW2_URB3D,grid%SFR_URB3D,grid%SFG_URB3D,     & !multi-layer urban
+                      grid%LP_URB2D,grid%HI_URB2D,grid%LB_URB2D,grid%HGT_URB2D,        & !multi-layer urban
+                      grid%MH_URB2D,grid%STDH_URB2D,grid%LF_URB2D,                     & !SLUCM
                       grid%A_U_BEP,grid%A_V_BEP,grid%A_T_BEP,grid%A_Q_BEP,             & !multi-layer urban
                       grid%A_E_BEP,grid%B_U_BEP,grid%B_V_BEP,grid%B_T_BEP,             & !multi-layer urban
                       grid%B_Q_BEP,grid%B_E_BEP,grid%DLG_BEP,                          & !multi-layer urban
                       grid%DL_U_BEP,grid%SF_BEP,grid%VL_BEP,                           & !multi-layer urban
                       grid%TML,grid%T0ML,grid%HML,grid%H0ML,grid%HUML,grid%HVML,grid%TMOML,     & !Optional oml
+                      grid%lakedepth2d,  grid%savedtke12d,  grid%snowdp2d,   grid%h2osno2d,       & !lake
+                      grid%snl2d,        grid%t_grnd2d,     grid%t_lake3d,   grid%lake_icefrac3d, & !lake
+                      grid%z_lake3d,     grid%dz_lake3d,    grid%t_soisno3d, grid%h2osoi_ice3d,   & !lake
+                      grid%h2osoi_liq3d, grid%h2osoi_vol3d, grid%z3d,        grid%dz3d,           & !lake
+                      grid%zi3d,         grid%watsat3d,     grid%csol3d,     grid%tkmg3d,         & !lake
+                      grid%tkdry3d,      grid%tksatu3d,     grid%lake2d,                            & !lake
+                      config_flags%lakedepth_default,        config_flags%lake_min_elev, grid%lake_depth,     & !lake
+                      grid%lakemask,        grid%lakeflag,  grid%LAKE_DEPTH_FLAG, grid%use_lakedepth,     & !lake
+                      config_flags%sf_surface_mosaic, config_flags%mosaic_cat, config_flags%num_land_cat, & ! Noah tiling
+                      config_flags%maxpatch,           &   ! start of CLM variables
+              grid%numc,grid%nump,grid%snl,grid%snowdp,&   !
+              grid%wtc,grid%wtp,&
+              grid%h2osno,grid%t_grnd,grid%t_veg,grid%h2ocan, &
+              grid%h2ocan_col,grid%t2m_max,grid%t2m_min,&
+              grid%t_ref2m,&
+              grid%h2osoi_liq_s1,&
+              grid%h2osoi_liq_s2,grid%h2osoi_liq_s3,&
+              grid%h2osoi_liq_s4, &
+              grid%h2osoi_liq_s5, &
+              grid%h2osoi_liq1,grid%h2osoi_liq2,&
+              grid%h2osoi_liq3,grid%h2osoi_liq4,&
+              grid%h2osoi_liq5,grid%h2osoi_liq6, &
+              grid%h2osoi_liq7,grid%h2osoi_liq8,&
+              grid%h2osoi_liq9,   &
+              grid%h2osoi_liq10, &
+              grid%h2osoi_ice_s1,grid%h2osoi_ice_s2,&
+              grid%h2osoi_ice_s3, &
+              grid%h2osoi_ice_s4, &
+              grid%h2osoi_ice_s5, &
+              grid%h2osoi_ice1,&
+              grid%h2osoi_ice2,&
+              grid%h2osoi_ice3,grid%h2osoi_ice4,&
+              grid%h2osoi_ice5, &
+              grid%h2osoi_ice6, &
+              grid%h2osoi_ice7,grid%h2osoi_ice8,&
+              grid%h2osoi_ice9,grid%h2osoi_ice10,&
+              grid%t_soisno_s1,grid%t_soisno_s2, &
+              grid%t_soisno_s3,grid%t_soisno_s4, &
+              grid%t_soisno_s5,grid%t_soisno1,&
+              grid%t_soisno2,grid%t_soisno3,&
+              grid%t_soisno4,grid%t_soisno5, &
+              grid%t_soisno6,grid%t_soisno7,&
+              grid%t_soisno8,grid%t_soisno9,&
+              grid%t_soisno10,grid%dzsnow1,grid%dzsnow2,grid%dzsnow3,grid%dzsnow4,&
+              grid%dzsnow5,grid%snowrds1,grid%snowrds2,grid%snowrds3,grid%snowrds4,grid%snowrds5, &
+              grid%t_lake1,grid%t_lake2,&
+              grid%t_lake3,grid%t_lake4, &
+              grid%t_lake5,grid%t_lake6, &
+              grid%t_lake7,grid%t_lake8, &
+              grid%t_lake9,grid%t_lake10,&
+              grid%h2osoi_vol1,grid%h2osoi_vol2, &
+              grid%h2osoi_vol3,grid%h2osoi_vol4, &
+              grid%h2osoi_vol5,&
+              grid%h2osoi_vol6,&
+              grid%h2osoi_vol7,grid%h2osoi_vol8,&
+              grid%h2osoi_vol9,grid%h2osoi_vol10,&
+              grid%ht,                          &
+              grid%ALBEDOsubgrid,grid%LHsubgrid,&
+              grid%HFXsubgrid,grid%LWUPsubgrid,&
+              grid%Q2subgrid,grid%SABVsubgrid,  &
+              grid%SABGsubgrid,grid%NRAsubgrid,&
+              grid%SWUPsubgrid,grid%lhsoi, &
+              grid%lhveg, grid%lhtran, & !end of CLM variables
+                      grid%TSK_SAVE,                        & !Optional fractional seaice
                       grid%itimestep, grid%fdob,            &
                       t00, p00, a,                      & ! for obs_nudge base state
                       grid%TYR, grid%TYRA, grid%TDLY, grid%TLAG, grid%NYEAR, grid%NDAY,grid%tmn_update, &
-                      grid%achfx, grid%aclhf, grid%acgrdflx                 &
+                      grid%achfx, grid%aclhf, grid%acgrdflx,                  &
+                      config_flags%nssl_cccn,                                 &
+                      config_flags%nssl_alphah, config_flags%nssl_alphahl,    &
+                      config_flags%nssl_cnoh, config_flags%nssl_cnohl,        &
+                      config_flags%nssl_cnor, config_flags%nssl_cnos,         &
+                      config_flags%nssl_rho_qh, config_flags%nssl_rho_qhl,    &
+                      config_flags%nssl_rho_qs                                &
+                      ,grid%RQCNCUTEN, grid%RQINCUTEN,grid%rliq             &      !mchen add for cammpmg
+                      ,grid%cldfra_dp,grid%cldfra_sh                        & ! ckay for subgrid cloud
                       ,grid%te_temf,grid%cf3d_temf,grid%wm_temf        & ! WA
                       ,grid%massflux_EDKF, grid%entr_EDKF, grid%detr_EDKF                & 
                       ,grid%thl_up,grid%thv_up,grid%rt_up                                &
                       ,grid%rv_up,grid%rc_up,grid%u_up,grid%v_up,grid%frac_up            &
+                      ,grid%QKE                                               &!JOE-for mynn
+                      ,grid%landusef,grid%landusef2,grid%mosaic_cat_index                            & ! danli mosaic 
+                      ,grid%TSK_mosaic,grid%TSLB_mosaic,grid%SMOIS_mosaic,grid%SH2O_mosaic           & ! danli mosaic
+                      ,grid%CANWAT_mosaic,grid%SNOW_mosaic,grid%SNOWH_mosaic,grid%SNOWC_mosaic       & ! danli mosaic
+                      ,grid%ALBEDO_mosaic,grid%ALBBCK_mosaic, grid%EMISS_mosaic                      & ! danli mosaic
+                      ,grid%EMBCK_mosaic, grid%ZNT_mosaic, grid%Z0_mosaic                            & ! danli mosaic
+                      ,grid%TR_URB2D_mosaic,grid%TB_URB2D_mosaic                                     & ! danli mosaic 
+                      ,grid%TG_URB2D_mosaic,grid%TC_URB2D_mosaic                                     & ! danli mosaic 
+                      ,grid%QC_URB2D_mosaic                                                          & ! danli mosaic
+                      ,grid%TRL_URB3D_mosaic,grid%TBL_URB3D_mosaic                                   & ! danli mosaic 
+                      ,grid%TGL_URB3D_mosaic                                                         & ! danli mosaic 
+                      ,grid%SH_URB2D_mosaic,grid%LH_URB2D_mosaic                                     & ! danli mosaic 
+                      ,grid%G_URB2D_mosaic,grid%RN_URB2D_mosaic                                      & ! danli mosaic 
+                      ,grid%TS_URB2D_mosaic                                                          & ! danli mosaic 
+                      ,grid%TS_RUL2D_mosaic                                                          & ! danli mosaic
                       )
        ENDIF   !tgs
 
@@ -792,6 +990,35 @@
    grid%LU_MASK = 0.
    WHERE ( grid%lu_index .EQ. 16 ) grid%LU_MASK = 1.
 #endif
+
+   call wrf_debug(100,'start_em: calling lightning_init')
+   CALL lightning_init ( itimestep=grid%itimestep, restart=grid%restart, dt=grid%dt, dx=grid%dx   &
+                    ! Namelist control options
+                        ,cu_physics=config_flags%cu_physics,mp_physics=config_flags%mp_physics    &
+                        ,do_radar_ref=config_flags%do_radar_ref                                   &
+                        ,lightning_option=config_flags%lightning_option                           &
+                        ,lightning_dt=config_flags%lightning_dt                                   &
+                        ,lightning_start_seconds=config_flags%lightning_start_seconds             &
+                        ,iccg_prescribed_num=config_flags%iccg_prescribed_num                     &
+                        ,iccg_prescribed_den=config_flags%iccg_prescribed_den                     &
+                        ,cellcount_method=config_flags%cellcount_method                           &
+                    ! Order dependent args for domain, mem, and tile dims
+                        ,ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde             &
+                        ,ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme             &
+                        ,its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte             &
+                    ! IC and CG flash rates and accumulated flash count
+                        ,ic_flashcount=grid%ic_flashcount, ic_flashrate=grid%ic_flashrate        &
+                        ,cg_flashcount=grid%cg_flashcount, cg_flashrate=grid%cg_flashrate        &
+#ifdef WRF_CHEM
+                        ,lnox_opt=config_flags%lnox_opt           &
+                        ,lnox_passive=config_flags%lnox_passive   &
+                        ,lnox_total=tracer(:,:,:,p_lnox_total)    &
+                        ,lnox_ic=tracer(:,:,:,p_lnox_ic)          &
+                        ,lnox_cg=tracer(:,:,:,p_lnox_cg)          &
+#endif
+                    )
+
+    call wrf_debug(100,'start_em: after calling lightning_init')
 
    END IF
 
@@ -871,11 +1098,17 @@
 #  include "HALO_EM_INIT_3.inc"
 #  include "HALO_EM_INIT_4.inc"
 #  include "HALO_EM_INIT_5.inc"
+      IF ( config_flags%sf_ocean_physics .EQ. PWP3DSCHEME ) THEN
+#  include "HALO_EM_INIT_6.inc"
+      END IF
 #  include "PERIOD_BDY_EM_INIT.inc"
 #  include "PERIOD_BDY_EM_MOIST.inc"
 #  include "PERIOD_BDY_EM_TKE.inc"
 #  include "PERIOD_BDY_EM_SCALAR.inc"
 #  include "PERIOD_BDY_EM_CHEM.inc"
+if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_run.eq.5)then
+#  include "HALO_EM_HYDRO_NOAHMP_INIT.inc"
+endif
 #endif
 
 
@@ -965,8 +1198,9 @@
                               ims, ime, jms, jme, kms, kme,                    &
                               its, ite, jts, jte, kts, kte                     ) 
       END IF
+   END IF
 
-
+   IF ( .NOT. config_flags%restart ) THEN
 ! set up slope-radiation constant arrays based on topography
 ! paj: also computes laplacian for topo_wind
 !
@@ -1030,6 +1264,20 @@
                   endif
                endif
             endif
+         ENDDO
+         ENDDO
+!       if topo_wind==2 (D.Ovens, C.Mass)
+       else if (config_flags%topo_wind.eq.2) then
+         DO j = jts,min(jte,jde-1)
+         DO i = its, min(ite,ide-1)
+           if (grid%xland(i,j).lt.1.5) then
+              vfac = amin1(1.575,(grid%var2d(i,j)*0.4/200.+1.175))
+              vfac = vfac * vfac
+           else                      ! over water, leave it alone
+              vfac = 1.
+           endif
+!          print *, j,i,grid%ctopo(i,j),vfac
+           grid%ctopo(i,j)=grid%ctopo(i,j)*vfac
          ENDDO
          ENDDO
        endif
@@ -1213,11 +1461,13 @@
                          grid%tauaerlw5,grid%tauaerlw6,grid%tauaerlw7,grid%tauaerlw8,           &
                          grid%tauaerlw9,grid%tauaerlw10,grid%tauaerlw11,grid%tauaerlw12,        &
                          grid%tauaerlw13,grid%tauaerlw14,grid%tauaerlw15,grid%tauaerlw16,       &
+                         grid%dgnum4d, grid%dgnumwet4d, grid%dgnum_a1, grid%dgnum_a2,           & 
+                         grid%dgnum_a3, grid%dgnumwet_a1, grid%dgnumwet_a2, grid%dgnumwet_a3,   &
                          grid%pm2_5_dry,grid%pm2_5_water,grid%pm2_5_dry_ec,                &
                          grid%last_chem_time_year,grid%last_chem_time_month,               &
                          grid%last_chem_time_day,grid%last_chem_time_hour,                 &
                          grid%last_chem_time_minute,grid%last_chem_time_second,            &
-                         grid%chem_in_opt,grid%kemit,                       &
+                         grid%chem_in_opt,grid%kemit,grid%num_vert_mix,                       &
                          ids , ide , jds , jde , kds , kde ,                &
                          ims , ime , jms , jme , kms , kme ,                &
                          its , ite , jts , jte , kts , kte                  )
@@ -1233,7 +1483,8 @@
                 ids,ide, jds,jde, kds,kde,                                  &
                 ims,ime, jms,jme, kms,kme,                                  &
                 its,ite, jts,jte, kts,kte-1                                 )
-        case (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP)
+        case (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM_KPP, &
+              RACM_ESRLSORG_AQCHEM_KPP,RACMSORG_KPP)
            call sum_pm_sorgam (                                             &
                 grid%alt, chem, grid%h2oaj, grid%h2oai,                                    &
                 grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                 &
@@ -1250,7 +1501,7 @@
 
         case (CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN,CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ, &
               CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ,       &
-              CBMZ_MOSAIC_DMS_8BIN_AQ)
+              CBMZ_MOSAIC_DMS_8BIN_AQ, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
            call sum_pm_mosaic (                                             &
                 grid%alt, chem,                                                  &
                 grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                 &
@@ -1280,8 +1531,8 @@
 
         ! initialize advective tendency diagnostics for non-chem
         if ( grid%itimestep .eq. 0 .and. config_flags%tenddiag .eq. USETENDDIAG ) then
-          grid%advh_t(:,:,:,:) = 0.
-          grid%advz_t(:,:,:,:) = 0.
+          advh_t(:,:,:,:) = 0.
+          advz_t(:,:,:,:) = 0.
         endif
 
    IF (num_chem >= PARAM_FIRST_SCALAR ) THEN
@@ -1364,15 +1615,63 @@
 #  include "PERIOD_BDY_EM_CHEM.inc"
 #endif
 
+DEALLOCATE(z_at_q)
+
+   IF (config_flags%p_lev_diags == PRESS_DIAGS ) THEN
+    CALL wrf_debug ( 200 , ' PLD: pressure level diags' )
+    CALL pld (                                  &
+                 !  Input data for computing
+                  U=grid%u_2                    &
+                 ,V=grid%v_2                    &
+                 ,W=grid%w_2                    &
+                 ,t=grid%t_2                    &
+                 ,qv=moist(:,:,:,P_QV)          &
+                 ,zp=grid%ph_2                  &
+                 ,zb=grid%phb                   &
+                 ,pp=grid%p                     &
+                 ,pb=grid%pb                    &
+                 ,p=grid%p_hyd                  &
+                 ,pw=grid%p_hyd_w               &
+                 !  Map factors, coriolis for diags
+                 ,msfux=grid%msfux              &
+                 ,msfuy=grid%msfuy              &
+                 ,msfvx=grid%msfvx              &
+                 ,msfvy=grid%msfvy              &
+                 ,msftx=grid%msftx              &
+                 ,msfty=grid%msfty              &
+                 ,f=grid%f                      &
+                 ,e=grid%e                      &
+                 !  Namelist info
+                 ,use_tot_or_hyd_p=config_flags%use_tot_or_hyd_p &
+                 ,missing=config_flags%p_lev_missing &
+                 !  The diagnostics, mostly output variables
+                 ,num_press_levels=config_flags%num_press_levels &
+                 ,max_press_levels=max_plevs    &
+                 ,press_levels=model_config_rec%press_levels &
+                 ,p_pl  = grid%p_pl             &  
+                 ,u_pl  = grid%u_pl             &  
+                 ,v_pl  = grid%v_pl             &  
+                 ,t_pl  = grid%t_pl             &  
+                 ,rh_pl = grid%rh_pl            & 
+                 ,ght_pl= grid%ght_pl           &
+                 ,s_pl  = grid%s_pl             &  
+                 ,td_pl = grid%td_pl            &
+                 !  Dimension arguments
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte    )
+   ENDIF
+
+
 !  FIRE
 if(config_flags%ifire.eq.2)then
 
-   call sfire_driver_em_init ( grid , config_flags    &
+   call fire_driver_em_init ( grid , config_flags    &
             ,ids,ide, kds,kde, jds,jde                &
             ,ims,ime, kms,kme, jms,jme                &
             ,ips,ipe, kps,kpe, jps,jpe ) 
 
-   CALL wrf_debug ( 100 , 'start_domain_em: After call to sfire_driver_em_init' )
+   CALL wrf_debug ( 100 , 'start_domain_em: After call to fire_driver_em_init' )
 endif
 
 

@@ -882,7 +882,7 @@ CONTAINS
 !
 !-----------------------------------------------------------------------
 !**********************************************
-      SUBROUTINE SSIB( II, JJ, DDTT, ITIME, ZLAT, SUNANGLE,      &
+      SUBROUTINE SSIB( IX, JX, DDTT, ITIME, ZLAT, SUNANGLE,      &
                           PPL, PPC, RLWDOWN, ZWIND2,             &
                           WWW1, WWW2, WWW3,                      &
                           TC, TGS, TD,                           &
@@ -903,7 +903,7 @@ CONTAINS
    DZO2,WO2,TSSN2,TSSNO2,BWO2,BTO2,CTO2,FIO2,FLO2,BIO2,BLO2,HO2, & ! snow
    DZO3,WO3,TSSN3,TSSNO3,BWO3,BTO3,CTO3,FIO3,FLO3,BIO3,BLO3,HO3, & ! snow
    DZO4,WO4,TSSN4,TSSNO4,BWO4,BTO4,CTO4,FIO4,FLO4,BIO4,BLO4,HO4, & ! snow
-                          DAY, CLOUD, Q2M, TA, BEDO,             &
+                          DAY, CLOUD, Q2M, TA, BEDO, UV10,       & ! add uv10 (01/2014)
                           sw_physics, MMINLU                     &
                                                    )
 !**********************************************
@@ -1234,7 +1234,7 @@ CONTAINS
             DZ,DZO,W,WO,WF,TSSN,TSSNO,BW,BWO,CT,CTO,FI,FIO,FL,FLO,         &
             BL,BLO,BI,BIO,BT,BTO,DMLT,DMLTO,H,HO,S,SO,SS,SSO,DSOL,DHP,     &
             DICEVOL,DLIQVOL,THK,QK,SWE,SNOWDEN,SNOWDEPTH,TKAIR,SNROFF,     &
-            DZSOIL,BPS,rib,CU,XCT,flup,ii,jj)
+            DZSOIL,BPS,rib,CU,XCT,flup,UV10)
 !
       CALL OLD(TSSN,BW,BL,BI,H,FL,FI,W,DZ,SS,CT,BT,DMLT,                   &
                  TSSNO,BWO,BLO,BIO,HO,FLO,FIO,WO,DZO,SSO,CTO,BTO,DMLTO)
@@ -1248,7 +1248,7 @@ CONTAINS
          ZLT,DEFAC,TU,TL,TOPT,RSTFAC,NROOT,ROOTD,PHSOIL,ROOTP,PH1,PH2,     &
          ECT,ECI,EGT,EGI,EGS,HC,HG,EC,EG,EA,RADT,CHF,SHF,ALBEDO,ZLWUP,     &
          THERMK,RHOAIR,ZWIND,UM,USTAR,DRAG,CCX,CG, ISNOW,SNOWDEN,          &
-         BPS,rib,CU,XCT,flup,ii,jj)
+         BPS,rib,CU,XCT,flup,UV10)
 !
       SWE=CAPAC(2)
       SNOWDEPTH=SWE*SNOWDEN
@@ -1296,7 +1296,6 @@ CONTAINS
       ULWSF1=TGEFF*TGEFF*TGEFF*TGEFF*STEFAN
       Q2M=0.622*EA/(PSURF-EA)
       EVAP=ETMASS*HLAT
-      PLANTR=RCC
       CM=(USTAR*USTAR)/(UM*UM)
       CH=1/(UM*RA)
 !
@@ -1322,6 +1321,7 @@ CONTAINS
    DZO3,WO3,TSSN3,TSSNO3,BWO3,BTO3,CTO3,FIO3,FLO3,BIO3,BLO3,HO3, &
    DZO4,WO4,TSSN4,TSSNO4,BWO4,BTO4,CTO4,FIO4,FLO4,BIO4,BLO4,HO4, &
    DZO, WO, TSSN, TSSNO, BWO, BTO, CTO, FIO, FLO, BIO, BLO, HO )
+!
       WWW1=WWW(1)*POROS
       WWW2=WWW(2)*POROS
       WWW3=WWW(3)*POROS
@@ -1366,7 +1366,7 @@ CONTAINS
 !-----------------------------------------------------------------------
 !**********************************************
       SUBROUTINE SSIB_SEAICE                                  &
-                     ( II, JJ, DDTT, ITIME, ZLAT, SUNANGLE,   &
+                     ( IX, JX, DDTT, ITIME, ZLAT, SUNANGLE,   &
                        PPL, PPC, RLWDOWN, ZWIND2,             &
                        WWW1, WWW2, WWW3,                      &
                        TC, TGS, TD,                           &
@@ -1382,7 +1382,7 @@ CONTAINS
                                    XSDN, XSUP, XLDN, XLUP,    & ! output
                        XWAT,                         XXZ0,    & ! output
                        XVEG,                                  & ! output
-                       DAY, CLOUD, Q2M, TA, BEDO,             &
+                       DAY, CLOUD, Q2M, TA, BEDO, UV10,       &
                        sw_physics,ice_threshold               &
                                                    )
 !**********************************************
@@ -1529,10 +1529,15 @@ CONTAINS
         WWW(1)   = 1.
         WWW(2)   = 1.
         WWW(3)   = 1.
-!
+!------------------------------------------------
+!cfds Convert WEASD (kg/m2) to meter
+      SNOA = SNOA/1000.
+      SNOB = SNOB/1000.
+!------------------------------------------------
          CAPAC(1)=SNOB
          CAPAC(2)=SNOA
          SNOWDEN = 3.75   ! mchen add for initialization
+         ISNOW = 1
       IF (ITIME.EQ.1) THEN
          TA=TGS
          CAPAC(1)=0.
@@ -1641,7 +1646,7 @@ CONTAINS
          ZLT,DEFAC,TU,TL,TOPT,RSTFAC,NROOT,ROOTD,PHSOIL,ROOTP,PH1,PH2,     &
          ECT,ECI,EGT,EGI,EGS,HC,HG,EC,EG,EA,RADT,CHF,SHF,ALBEDO,ZLWUP,     &
          THERMK,RHOAIR,ZWIND,UM,USTAR,DRAG,CCX,CG, ISNOW,SNOWDEN,          &
-         BPS,rib,CU,XCT,flup,ii,jj)
+         BPS,rib,CU,XCT,flup,UV10)
 !
       CALL UPDAT1_ICE(DTT ,TC,TGS,TD,CAPAC,DTC,DTG,ECT,ECI,EGT,EGI,           &
          EGS,EG,HC,HG,HFLUX,ETMASS,FILTR,SOILDIF,SOILDRA,ROFF,            &
@@ -1664,12 +1669,11 @@ CONTAINS
       ULWSF1=TGEFF*TGEFF*TGEFF*TGEFF*STEFAN
       Q2M=0.622*EA/(PSURF-EA)
       EVAP=ETMASS*HLAT
-      PLANTR=RCC
       CM=(USTAR*USTAR)/(UM*UM)
       CH=1/(UM*RA)
 !
       FM=VKC/CU
-!      FH=VKC/CT   !fds corrected (02/2012)
+!     FH=VKC/CT   !fds corrected (02/2012)
       FH=VKC/XCT
 !
 !
@@ -2877,12 +2881,12 @@ CONTAINS
 ! ** CONTROL VALUES: FINC,ERTOL,NOX,NONPOS,L:MUST BE SET BY USER
 !-----------------------------------------------------------------------
 !
-!cfds Changes according to Jack (Feb/2008)
+!fds Changes according to Jack (Feb/2008)
  REAL, DIMENSION (3) ::  IWALK, NEX, ITER
  REAL, DIMENSION (3) :: ZINC, A2, Y1
 
-!cfds  DIMENSION  IWALK(3), NEX(3)
-!cfds  DIMENSION  ZINC(3), A2(3), Y1(3),ITER3(3)
+!fds  DIMENSION  IWALK(3), NEX(3)
+!fds  DIMENSION  ZINC(3), A2(3), Y1(3),ITER3(3)
        DATA CONS/1.0/
 !
        ERTOL = 0.05 * FINC
@@ -3758,8 +3762,8 @@ CONTAINS
          if (bedo.gt.1.) then
             sibsu =  0.
             bedo = .1
- print*,'albebo incorrect',ii,jj,bedo,sibsu,swdown, &
-            radn(1,1),radn(1,2),radn(2,1),radn(2,2)
+! print*,'albebo incorrect',ix,jx,bedo,sibsu,swdown, &
+!           radn(1,1),radn(1,2),radn(2,1),radn(2,2)
          endif
       else
          sibsu = 0.0
@@ -3866,8 +3870,7 @@ CONTAINS
 !=======================================================================
 !                                                                       
       SUBROUTINE RASIT5(TRIB,CTNI,CUNI,RA,Z2,Z0,D,ZZWIND,UMM1,        &
-                 RHOA,TMM,U2,USTAR,DRAG,TA,bps,rib,CU,CT,iii,jjj)
-!cxx             RHOA,TMM,U2,USTAR,DRAG,TA,bps0,bps1,rib,CU,CT)
+                 RHOA,TMM,U2,USTAR,DRAG,TA,bps,rib,CU,CT,UV10)
 !                                                      2001,1,11
 !=======================================================================
 !
@@ -3973,6 +3976,10 @@ CONTAINS
       UEST  = USTAR
       DRAG = RHOA * UEST*UEST
       Z2 = Z22
+!
+!fds Calculate 10m wind intensity (Jan/2014)
+     CUNI10 = ALOG((z2+10-D)/Z0)/VKC
+     UV10 = USTAR * (CUNI10+FVV)
 !
 !------------------------------------------------------
       END SUBROUTINE RASIT5
@@ -4220,9 +4227,9 @@ CONTAINS
                h(i) = ho(i) + (b1+b2*tssn(i))*dtt
              end if
              if(tssn(i).gt.273.16) then
-              print*, ' Snow Temp. Wrong in thermal.f',i,tssn(i)  
-              tssn(i)=273.16
-          STOP
+               WRITE( message,* ) 'Warning: Snow Temp above freezing',i,tssn(i)
+               tssn(i)=273.16
+               CALL wrf_message ( message )
              endif
 ! ------------------------------------------------------------------7272
         ELSE IF   (ICASE.EQ.2)  THEN
@@ -4494,8 +4501,7 @@ CONTAINS
          ZLAI,DEFAC,TU,TL,TOPT,RSTFAC,NROOT,ROOTD,PHSOIL,ROOTP,PH1,PH2, &
          ECT,ECI,EGT,EGI,EGS,HC,HG,EC,EG,EA,RADT,CHF,SHF,ALBEDO,ZLWUP,  &
          THERMK,RHOAIR,ZWIND,UM,USTAR,DRAG,CCX,CG, ISNOW,SNOWDEN,       &
-         BPS,rib,CU,XCT,flup,iii,jjj)
-!cxx     BPS,BPS0,BPS1,rib,CU,XCT,flup)
+         BPS,rib,CU,XCT,flup,UV10)
 !
 !=======================================================================
 ! ------------------------------------------------------------------7272
@@ -4601,7 +4607,7 @@ CONTAINS
 1000  CONTINUE
       ICOUNT = ICOUNT + 1
       CALL RASIT5(TRIB,CTNI,CUNI,RA,Z2,Z0,D,ZWIND,UM,                  &
-                  RHOAIR,TM,U2,USTAR,DRAG,TA,bps,rib,CU,XCT,iii,jjj)
+                  RHOAIR,TM,U2,USTAR,DRAG,TA,bps,rib,CU,XCT,UV10)
 !cl    ------------IF ( IFIRST .EQ. 1 ) CALL RBRD1 ------------
         IF ( IFIRST .EQ. 1 ) THEN
 !cl      TCTA = TC - TA
@@ -4683,7 +4689,7 @@ CONTAINS
                    Y1(LX)   = 0.
 2000  CONTINUE
       CALL RASIT5(TRIB,CTNI,CUNI,RA,Z2,Z0,D,ZWIND,UM,                 &
-                  RHOAIR,TM,U2,USTAR,DRAG,TA,bps,rib,CU,XCT,iii,jjj)
+                  RHOAIR,TM,U2,USTAR,DRAG,TA,bps,rib,CU,XCT,UV10)
 !======================================================================
 !cl    CALL DELHF ( HCDTC, HCDTG, HGDTG, HGDTC )
 !     PARTIAL DERIVATIVES OF SENSIBLE HEAT FLUXES
@@ -4910,7 +4916,7 @@ CONTAINS
             DZ,DZO,W,WO,WF,TSSN,TSSNO,BW,BWO,CT,CTO,FI,FIO,FL,FLO,      &
             BL,BLO,BI,BIO,BT,BTO,DMLT,DMLTO,H,HO,S,SO,SS,SSO,DSOL,DHP,  &
             DICEVOL,DLIQVOL,THK,QK,SWE,SNOWDEN,SNOWDEPTH,TKAIR,SNROFF,  &
-            DZSOIL,BPS,rib,CU,XCT,flup,iii,jjj)
+            DZSOIL,BPS,rib,CU,XCT,flup,UV10)
 !
 !=======================================================================
 ! ------------------------------------------------------------------7272
@@ -5043,7 +5049,7 @@ CONTAINS
 1000  CONTINUE
       ICOUNT = ICOUNT + 1
       CALL RASIT5(TRIB,CTNI,CUNI,RA,Z2,Z0,D,ZWIND,UM,                 &
-                  RHOAIR,TM,U2,USTAR,DRAG,TA,bps,rib,CU,XCT,iii,jjj)
+                  RHOAIR,TM,U2,USTAR,DRAG,TA,bps,rib,CU,XCT,UV10)
 !cl    ------------IF ( IFIRST .EQ. 1 ) CALL RBRD1 ------------
         IF ( IFIRST .EQ. 1 ) THEN
 !cl      TCTA = TC - TA
@@ -5238,7 +5244,7 @@ CONTAINS
 2000  CONTINUE
 !
       CALL RASIT5(TRIB,CTNI,CUNI,RA,Z2,Z0,D,ZWIND,UM,                 &
-                  RHOAIR,TM,U2,USTAR,DRAG,TA,bps,rib,CU,XCT,iii,jjj)
+                  RHOAIR,TM,U2,USTAR,DRAG,TA,bps,rib,CU,XCT,UV10)
 !----------------------------------------------------------------------
 !cl    CALL DELHF ( HCDTC, HCDTG, HGDTG, HGDTC )
 !     PARTIAL DERIVATIVES OF SENSIBLE HEAT FLUXES
@@ -5550,7 +5556,7 @@ CONTAINS
       CHF = CCX / DTT * DTC
 !cs  sun change the original statement:   on 12/14/98
 !cs  SHF = CG / DTT * DTG + TIMCON*CG*2. * ( TGS - TD)
-!cs into following part where CG / DTT * DTG is rplaced by Dh_DTT_DTG
+!cs into following part where CG / DTT * DTG is replaced by Dh_DTT_DTG
       IF (ISNOW.eq.0) THEN
         SHF=  Dh_DTT_DTG - dhp(n+1)+ qkn*(TGSOLD-tonm1) &
         +qkn*DTG

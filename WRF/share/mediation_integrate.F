@@ -45,36 +45,43 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    INTEGER                                    :: rc
    TYPE(WRFU_Time) :: currTime, startTime
 #ifdef HWRF
-!zhang's doing
-!   TYPE(WRFU_Time) :: CurrTime  !zhang new
    INTEGER :: hr, min, sec, ms,julyr,julday
    REAL :: GMT
-!end of zhang's doing
 #endif
 
    CHARACTER*256          :: message
 
-! #if (EM_CORE == 1)
-   CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
-   IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
+
+ CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
+ 
+ IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
        (grid%dfi_write_dfi_history .OR. grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI) ) THEN
-! #else
-!   IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
-! #endif
-     IF  ( (config_flags%restart) .AND. ( currTime .EQ. startTime ) ) THEN
+     IF       ( ( config_flags%restart )                    .AND. &
+                ( config_flags%write_hist_at_0h_rst )       .AND. &
+                ( currTime .EQ. startTime )                       ) THEN
+#if ( NMM_CORE == 1 )
+! NMM-only: outputs boundary arrays of certain variables:
+!      call med_boundary_out(grid,config_flags)
+#endif
+
+
        !  output history at beginning of restart if alarm is ringing
        CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
+      
+     ELSE IF  ( ( config_flags%restart )                    .AND. &
+                ( .NOT. config_flags%write_hist_at_0h_rst ) .AND. &
+                ( currTime .EQ. startTime )                       ) THEN
+       !  we do not do anything
      ELSE
        CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
+       
      END IF
      CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
-#if (EM_CORE == 1)
    ELSE IF  ( (config_flags%restart) .AND. ( currTime .EQ. startTime ) .AND. &
               ( config_flags%write_hist_at_0h_rst ) ) THEN
      !  output history at beginning of restart even if alarm is not ringing
      CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
      CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
-#endif
    ENDIF
 
    IF( WRFU_AlarmIsRinging( grid%alarms( INPUTOUT_ALARM ), rc=rc ) ) THEN
@@ -86,7 +93,9 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      IF ( .FALSE.) THEN
        rc = 1  ! dummy statement
      ELSE IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
-       CALL med_hist_out ( grid , ialarm, config_flags )
+       IF ( grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI ) THEN
+          CALL med_hist_out ( grid , ialarm, config_flags )
+       END IF
        CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
      ENDIF
    ENDDO
@@ -98,7 +107,8 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 ! - Get chemistry data
      ELSE IF( ialarm .EQ. AUXINPUT5_ALARM .AND. config_flags%chem_opt > 0 ) THEN
        IF( config_flags%emiss_inpt_opt /= 0 ) THEN
-         IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+         IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) .OR.  &
+         ((config_flags%restart) .AND. ( currTime .EQ. startTime ))) THEN
            call wrf_debug(15,' CALL med_read_wrf_chem_emiss ')
            CALL med_read_wrf_chem_emiss ( grid , config_flags )
            CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
@@ -109,6 +119,22 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
            CALL med_auxinput_in ( grid, ialarm, config_flags )
            CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
          ENDIF
+       ENDIF
+     ELSE IF( ialarm .EQ. AUXINPUT7_ALARM .AND. config_flags%chem_opt > 0 ) THEN
+       IF( config_flags%biomass_burn_opt /= 0 ) THEN
+         IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) .OR.  &
+         ((config_flags%restart) .AND. ( currTime .EQ. startTime ))) THEN
+           CALL med_auxinput_in ( grid, ialarm, config_flags )
+           WRITE ( message , FMT='(A,i3,A,i3)') 'Input data processed for aux input ',&
+                  ialarm - first_auxinput + 1, ' for domain ',grid%id
+           CALL wrf_debug ( 15 , message )
+           CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
+         ENDIF
+       ELSE
+        IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+          CALL med_auxinput_in ( grid, ialarm, config_flags )
+          CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
+        ENDIF
        ENDIF
      ELSE IF( ialarm .EQ. AUXINPUT13_ALARM .AND. config_flags%chem_opt > 0 ) THEN
        IF( config_flags%emiss_opt_vol /= 0 ) THEN
@@ -315,6 +341,11 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_interp_domain
 
+     SUBROUTINE med_interp_domain_small ( parent , nest )
+        USE module_domain	, ONLY : domain
+        TYPE(domain) , POINTER                 :: parent , nest
+     END SUBROUTINE med_interp_domain_small
+
      SUBROUTINE med_initialdata_input_ptr( nest , config_flags )
         USE module_domain	, ONLY : domain
         USE module_configure	, ONLY : grid_config_rec_type
@@ -499,6 +530,14 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      parent%ht_coarse = parent%ht
 
      CALL med_nest_feedback ( parent , nest , config_flags )
+
+! This is the new interpolation for specific 3d arrays that are sensitive to the
+! topography diffs betwixt the CG and the FG.
+     IF ( config_flags%nest_interp_coord .EQ. 1 ) THEN
+       call wrf_debug(1,'mediation_integrate.F, calling   med_interp_domain_small')
+       CALL med_interp_domain_small( parent, nest )
+       call wrf_debug(1,'mediation_integrate.F, back from med_interp_domain_small')
+     END IF
 
 ! set some other initial fields, fill out halos, base fields; re-do parent due
 ! to new terrain elevation from feedback
@@ -722,6 +761,11 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
    endif
 !end of zhang's doing
 
+   ! Do we run the MOIST and SCALAR interp/smooth functions? (u=(), d=(), f=() and s=())
+
+   ! Only run it if a non-bulk scheme is in use, since bulk schemes do
+   ! not use MOIST and SCALAR as prognostic variables (they are
+   ! recalculated on the fly every timestep):
 !zhang's doing for analysis option
   IF(.not. nest%analysis .and. .not. config_flags%restart)THEN    ! initialize for cold-start
 #endif
@@ -769,14 +813,14 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     KPS = parent%sp33
     KPE = parent%ep33
 
-    CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD,  &
-                             parent%PINT,parent%T,parent%Q,parent%CWM,      &
-                             parent%FIS,parent%QSH,parent%PD,parent%pdtop,parent%pt,   &
-                             parent%ETA1,parent%ETA2,                               &
-                             parent%DETA1,parent%DETA2,                             &
-                             IDS,IDE,JDS,JDE,KDS,KDE,                                       &
-                             IMS,IME,JMS,JME,KMS,KME,                                       &
-                             IPS,IPE,JPS,JPE,KPS,KPE                                        )
+    ! CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD,  &
+    !                          parent%PINT,parent%T,parent%Q,parent%CWM,      &
+    !                          parent%FIS,parent%QSH,parent%PD,parent%pdtop,parent%pt,   &
+    !                          parent%ETA1,parent%ETA2,                               &
+    !                          parent%DETA1,parent%DETA2,                             &
+    !                          IDS,IDE,JDS,JDE,KDS,KDE,                                       &
+    !                          IMS,IME,JMS,JME,KMS,KME,                                       &
+    !                          IPS,IPE,JPS,JPE,KPS,KPE                                        )
 
 !  
 !   Set new terrain. Since some terrain adjustment is done within the interpolation calls
@@ -1040,14 +1084,14 @@ SUBROUTINE med_nest_force ( parent , nest )
     KTE = parent%ep33
 
 
-    CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD, &
-                             parent%PINT,parent%T,parent%Q,parent%CWM,     &
-                             parent%FIS,parent%QSH,parent%PD,parent%pdtop,parent%pt,  &
-                             parent%ETA1,parent%ETA2,                              &
-                             parent%DETA1,parent%DETA2,                            &
-                             IDS,IDE,JDS,JDE,KDS,KDE,                                      &
-                             IMS,IME,JMS,JME,KMS,KME,                                      &
-                             ITS,ITE,JTS,JTE,KTS,KTE                                       )
+    ! CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD, &
+    !                          parent%PINT,parent%T,parent%Q,parent%CWM,     &
+    !                          parent%FIS,parent%QSH,parent%PD,parent%pdtop,parent%pt,  &
+    !                          parent%ETA1,parent%ETA2,                              &
+    !                          parent%DETA1,parent%DETA2,                            &
+    !                          IDS,IDE,JDS,JDE,KDS,KDE,                                      &
+    !                          IMS,IME,JMS,JME,KMS,KME,                                      &
+    !                          ITS,ITE,JTS,JTE,KTS,KTE                                       )
 
 #endif
 
@@ -1162,7 +1206,9 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
 !   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST1_ALARM ), rc=rc ) ) THEN
 !     CALL med_hist_out ( grid , AUXHIST1_ALARM , config_flags )
 !   ENDIF
+   IF ( grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI ) THEN
 #include "med_last_solve_io.inc"
+   END IF
 
 ! - RESTART OUTPUT
    IF( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN
@@ -1240,17 +1286,24 @@ SUBROUTINE med_analysis_in ( grid , config_flags )
                          config_flags , "DATASET=RESTART", ierr )
 
    IF ( ierr .NE. 0 ) THEN
-      ! Could not open the analysis file, so notify user.
+      ! Could not open the analysis file, so notify user and abort.
 
-      write(message,'(A,I0,A,A,A)') 'WARNING: Domain ',grid%id,' analysis file ',trim(rstname),' is missing.'
-      call wrf_message(message)
+      write(message,'(A,I0,A,A,A)') 'ERROR: Domain ',grid%id,' analysis file ',trim(rstname),' is missing.'
+      call wrf_error_fatal(message)
+
+      ! It is unsafe to continue with a cold start when the analysis
+      ! file is missing because the model expects that it is being
+      ! restart if an analysis=T.  Hence, some variables will not be
+      ! correctly initialized.
+
+      ! Thus, we never reach this line:
       write(message,'(A,I0,A)') '-------> Domain ',grid%id,' running as a cold start (interp from parent).'
       call wrf_message(message)
 
-      IF ( wrf_dm_on_monitor() ) THEN
-         WRITE (message, '("Failing to read restart for domain ",I8)') grid%id
+      if(wrf_dm_on_monitor()) then
+         WRITE ( message , FMT = '("Failing to read restart for domain ",I8)' ) grid%id
          CALL end_timing ( TRIM(message) )
-      END IF
+      endif
 
       return
    ELSE
@@ -1295,6 +1348,12 @@ SUBROUTINE med_analysis_out ( grid , config_flags )
 !zhang   TYPE(ESMF_Time)                        :: CurrTime
    TYPE(WRFU_Time)                        :: CurrTime
    CHARACTER*80                           :: timestr
+
+   if(.not. config_flags%write_analysis) then
+      write(message,'("Writing of an analysis file is disabled for domain ",I0," because write_analysis=F")') grid%id
+      call wrf_debug(1,message)
+      return
+   endif
 
    IF ( wrf_dm_on_monitor() ) THEN
      CALL start_timing
@@ -1390,6 +1449,56 @@ RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
    RETURN
 END SUBROUTINE med_restart_out
 
+#if ( NMM_CORE == 1 && NMM_NEST == 1)
+#ifdef EXTRA_HWRF_DEBUG_STUFF
+SUBROUTINE med_boundary_out ( grid , config_flags )
+  ! Driver layer
+   USE module_domain	, ONLY : domain , domain_clock_get
+   USE module_io_domain
+   USE module_timing
+   USE module_configure	, ONLY : grid_config_rec_type
+  ! Model layer
+!   USE module_bc_time_utilities
+   USE module_utility
+   use module_bdywrite
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+  ! Local
+   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+   CHARACTER*80                           :: rstname , outname
+   INTEGER                                :: fid , rid, kid
+   CHARACTER (LEN=256)                    :: message
+   INTEGER                                :: ierr
+   INTEGER                                :: myproc
+   CHARACTER*80                           :: timestr
+   TYPE (grid_config_rec_type)            :: kid_config_flags
+
+   IF ( wrf_dm_on_monitor() ) THEN
+     CALL start_timing
+   END IF
+
+! take this out - no effect - LPC
+!   rid=grid%id !zhang's doing
+
+   ! write out this domains boundary file first
+
+   CALL domain_clock_get( grid, current_timestr=timestr )
+   CALL construct_filename2a ( rstname , 'sambdyout_d<domain>_<date>' , grid%id , 2 , timestr )
+
+   call bdywrite(grid,rstname)
+
+   IF ( wrf_dm_on_monitor() ) THEN
+     CALL end_timing('Sam''s Special Boundary Output (TM)')
+   END IF
+   RETURN
+END SUBROUTINE med_boundary_out
+#endif
+#endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #ifdef HWRF
@@ -1658,6 +1767,9 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
    Type (WRFU_Time )                      :: startTime, stopTime, currentTime
    Type (WRFU_TimeInterval )              :: stepTime
 integer myproc,i,j,k
+#ifdef _MULTI_BDY_FILES_
+   CHARACTER(LEN=80)                      :: timestr
+#endif
 
 #include <wrf_io_flags.h>
 
@@ -1693,8 +1805,14 @@ integer myproc,i,j,k
        CALL WRFU_AlarmRingerOff( grid%alarms( BOUNDARY_ALARM ), rc=rc )
        IF ( wrf_dm_on_monitor() ) CALL start_timing
 
+#ifdef _MULTI_BDY_FILES_
+       ! Possibility to have a <date> as part of the bdy_inname.
+       CALL domain_clock_get( grid, current_timestr=timestr )
+       CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , timestr )
+#else
 ! typically a <date> wouldn't be part of the bdy_inname, so just pass a dummy
-       CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , 'dummydate' )
+       CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , " " )
+#endif
 
        CALL wrf_inquire_opened(grid%lbc_fid , TRIM(bdyname) , open_status , ierr ) 
        IF ( open_status .EQ. WRF_FILE_OPENED_FOR_READ ) THEN
@@ -1704,16 +1822,20 @@ integer myproc,i,j,k
        ENDIF
        CALL wrf_dm_bcast_bytes ( lbc_opened , LWORDSIZE )
        IF ( .NOT. lbc_opened ) THEN
-         CALL construct_filename1 ( bdyname , 'wrfbdy' , grid%id , 2 )
-         WRITE(message,*)'Opening: ',TRIM(bdyname)
-         CALL wrf_debug(100,TRIM(message))
-         CALL open_r_dataset ( grid%lbc_fid, TRIM(bdyname) , grid , config_flags , "DATASET=BOUNDARY", ierr )
+#ifdef _MULTI_BDY_FILES_
+         CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , timestr )
+#else
+         CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , " " )
+#endif
+          WRITE(message,*)'Opening: ',TRIM(bdyname)
+          CALL wrf_debug(100,TRIM(message))
+          CALL open_r_dataset ( grid%lbc_fid, TRIM(bdyname) , grid , config_flags , "DATASET=BOUNDARY", ierr )
           IF ( ierr .NE. 0 ) THEN
             WRITE( message, * ) 'med_latbound_in: error opening ',TRIM(bdyname), ' for reading. IERR = ',ierr
             CALL WRF_ERROR_FATAL( message )
           ENDIF
        ELSE
-         CALL wrf_debug( 100 , bdyname // 'already opened' )
+         CALL wrf_debug( 100 , bdyname // ' is already opened' )
        ENDIF
        CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
        CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
@@ -1730,6 +1852,10 @@ integer myproc,i,j,k
          CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
          CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
        ENDDO
+#ifdef _MULTI_BDY_FILES_
+       ! Close the bdy file so that next time around, we'll open it again.
+       CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+#endif
        CALL WRFU_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%next_bdy_time, rc=rc )
 
        IF ( ierr .NE. 0 .and. ierr .NE. WRF_WARN_NETCDF ) THEN

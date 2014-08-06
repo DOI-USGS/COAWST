@@ -6,13 +6,16 @@ MODULE module_tiles
   USE module_configure
 
   INTERFACE set_tiles
-    MODULE PROCEDURE set_tiles1 , set_tiles2, set_tiles3
+    MODULE PROCEDURE set_tiles1 , set_tiles2, set_tiles3, set_tiles_once
   END INTERFACE
 
 CONTAINS
 
 ! CPP macro for error checking
 #define ERROR_TEST(A,O,B) IF( A O B )THEN;WRITE(mess,'(3A4)')'A','O','B';CALL WRF_ERROR_FATAL(mess);ENDIF
+#ifndef MIN_TILE_SIZE
+# define MIN_TILE_SIZE 1
+#endif
 
 ! this version is used to compute only on a boundary of some width
 ! The ids, ide, jds, and jde arguments specify the edge of the boundary (a way of
@@ -149,6 +152,50 @@ CONTAINS
   END SUBROUTINE set_tiles1
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! this version callset set_tiles2 but only if the zone hasn't been cached already
+! Up to MAX_TILING_ZONES allowed
+! 
+  SUBROUTINE set_tiles_once ( zone, grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
+     USE module_domain, ONLY : domain, MAX_TILING_ZONES
+     IMPLICIT NONE
+     TYPE(domain)                   , INTENT(INOUT)  :: grid
+     INTEGER                        , INTENT(IN)     :: zone
+     INTEGER                        , INTENT(IN)     :: ids , ide , jds , jde
+     INTEGER                        , INTENT(IN)     :: ips , ipe , jps , jpe
+       ! Local
+     INTEGER num_tiles, num_tiles_x, num_tiles_y
+     IF ( zone .LT. 1 .OR. zone .GT. MAX_TILING_ZONES ) THEN
+       CALL wrf_error_fatal('set_tiles_once: zone out of range, increase MAX_TILE_ZONES in module_domain_type')
+     ENDIF
+     IF ( .NOT. grid%tiling_latch(zone) ) THEN
+       grid%tiling_latch(zone) = .TRUE.
+       CALL set_tiles2 ( grid, ids, ide, jds, jde, ips, ipe, jps, jpe )
+       num_tiles   = grid%num_tiles
+       num_tiles_x = grid%num_tiles_x
+       num_tiles_y = grid%num_tiles_y
+       ALLOCATE(grid%tile_zones(zone)%i_start(num_tiles))
+       ALLOCATE(grid%tile_zones(zone)%i_end(num_tiles))
+       ALLOCATE(grid%tile_zones(zone)%j_start(num_tiles))
+       ALLOCATE(grid%tile_zones(zone)%j_end(num_tiles))
+       grid%tile_zones(zone)%i_start = grid%i_start 
+       grid%tile_zones(zone)%i_end   = grid%i_end 
+       grid%tile_zones(zone)%j_start = grid%j_start 
+       grid%tile_zones(zone)%j_end   = grid%j_end 
+       grid%tile_zones(zone)%num_tiles = num_tiles
+       grid%tile_zones(zone)%num_tiles_x = num_tiles_x
+       grid%tile_zones(zone)%num_tiles_y = num_tiles_y
+     ELSE
+       grid%i_start = grid%tile_zones(zone)%i_start
+       grid%i_end   = grid%tile_zones(zone)%i_end
+       grid%j_start = grid%tile_zones(zone)%j_start
+       grid%j_end   = grid%tile_zones(zone)%j_end
+       grid%num_tiles = grid%tile_zones(zone)%num_tiles
+       grid%num_tiles_x = grid%tile_zones(zone)%num_tiles_x
+       grid%num_tiles_y = grid%tile_zones(zone)%num_tiles_y
+     ENDIF
+  END SUBROUTINE set_tiles_once
+ 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! this version is used to limit the domain or compute onto halos
   SUBROUTINE set_tiles2 ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
      USE module_domain, ONLY : domain
@@ -168,7 +215,8 @@ CONTAINS
 
      !  Local data.
   
-     INTEGER                                :: num_tiles_x, num_tiles_y, num_tiles
+     INTEGER                                :: num_tiles_x, num_tiles_y, num_tiles_inc,num_tiles
+     INTEGER                                :: tile_strategy,tile_strategy_spec
      INTEGER                                :: tile_sz_x, tile_sz_y
      INTEGER                                :: spx, epx, spy, epy, t, tt, ts, te
      INTEGER                                :: smx, emx, smy, emy
@@ -178,7 +226,9 @@ CONTAINS
 #ifdef _OPENMP
      INTEGER , EXTERNAL        :: omp_get_max_threads
 #endif
-     CHARACTER*80              :: mess
+     CHARACTER*255              :: mess
+     CHARACTER*255              :: envval
+     INTEGER                   :: tnum_tiles, istat
      LOGICAL                   :: verbose ! whether to output tile info messages
 
      data_ordering : SELECT CASE ( model_data_order )
@@ -227,10 +277,80 @@ CONTAINS
 #else
          num_tiles = 1
 #endif
+         CALL get_environment_variable("WRF_NUM_TILES",envval, status=istat)
+         IF ( envval .NE. "" .and. istat .eq. 0) THEN
+           READ (envval,*) tnum_tiles
+           IF ( tnum_tiles .GT. 0 ) THEN
+             num_tiles=tnum_tiles
+             WRITE(mess,'("WRF NUMBER OF TILES FROM ENV WRF_NUM_TILES = ",I3)')num_tiles
+             CALL WRF_MESSAGE ( mess )
+           ENDIF
+         ENDIF
        ENDIF
 ! override num_tiles setting (however gotten) if tile sizes are specified
        CALL nl_get_tile_sz_x( 1, tile_sz_x )
        CALL nl_get_tile_sz_y( 1, tile_sz_y )
+       CALL nl_get_tile_strategy( 1, tile_strategy_spec )
+       CALL nl_get_numtiles_inc( 1, num_tiles_inc )
+       CALL nl_get_numtiles_x( 1, num_tiles_x )
+       CALL nl_get_numtiles_y( 1, num_tiles_y )
+       IF ( num_tiles_x .EQ. 0 ) THEN
+         CALL get_environment_variable ("WRF_NUM_TILES_X",envval, status=istat)
+         IF ( envval .NE. "" .and. istat .eq. 0) THEN
+           READ (envval,*) tnum_tiles
+           IF ( tnum_tiles .GT. 0 ) THEN
+             num_tiles_x=tnum_tiles
+             WRITE(mess,'("WRF NUMBER OF TILES X FROM ENV WRF_NUM_TILES_X = ",I3)')num_tiles_x
+             CALL WRF_MESSAGE ( mess )
+           ENDIF
+         ENDIF
+       ENDIF
+
+       IF ( num_tiles_y .EQ. 0 ) THEN
+         CALL get_environment_variable ("WRF_NUM_TILES_Y",envval, status=istat)
+         IF ( envval .NE. "" .and. istat .eq. 0) THEN
+           READ (envval,*) tnum_tiles
+           IF ( tnum_tiles .GT. 0 ) THEN
+             num_tiles_y=tnum_tiles
+             WRITE(mess,'("WRF NUMBER OF TILES Y FROM ENV WRF_NUM_TILES_Y = ",I3)')num_tiles_y
+             CALL WRF_MESSAGE ( mess )
+           ENDIF
+         ENDIF
+       ENDIF
+
+       IF ( num_tiles_inc .EQ. 0 ) THEN
+         CALL get_environment_variable ("WRF_NUM_TILES_INC",envval, status=istat)
+         IF ( envval .NE. "" .and. istat .eq. 0) THEN
+           READ (envval,*) tnum_tiles
+           IF ( tnum_tiles .GT. 0 ) THEN
+             num_tiles_inc=tnum_tiles
+             WRITE(mess,'("WRF NUMBER OF TILES INCREMENT FROM ENV WRF_NUM_TILES_INC = ",I3)')num_tiles_inc
+             CALL WRF_MESSAGE ( mess )
+           ENDIF
+         ENDIF
+       ENDIF
+       num_tiles_inc=max( num_tiles_inc , 1)
+       IF ( tile_strategy_spec == TILE_NONE) then 
+          tile_strategy=TILE_Y
+          WRITE(mess,*)'Tile Strategy is not specified. Assuming 1D-Y'
+          CALL WRF_MESSAGE ( mess )
+
+         IF ( num_tiles >= (epy-spy+1)/MIN_TILE_SIZE .and. num_tiles_x == 0 .and. num_tiles_y == 0) THEN ! number of tiles is too high. Trying to adjust
+            num_tiles_x=1
+            num_tiles_y=(epy-spy+1)/MIN_TILE_SIZE
+            DO WHILE (num_tiles_x*num_tiles_inc*num_tiles_y <= num_tiles)
+               num_tiles_x=num_tiles_x+1
+            END DO
+          num_tiles_x=num_tiles_x*num_tiles_inc
+          WRITE(mess,'("Total number of tiles is too big for 1D-Y tiling. Going 2D. New tiling is ",I3,"x",I3)') &
+                        num_tiles_x,num_tiles_y
+          CALL WRF_MESSAGE ( mess )
+          tile_strategy=TILE_XY
+         ENDIF
+       ELSE
+          tile_strategy = tile_strategy_spec
+       ENDIF
+
        IF ( tile_sz_x >= 1 .and. tile_sz_y >= 1 ) THEN
         ! figure number of whole tiles and add 1 for any partials in each dim
           num_tiles_x = (epx-spx+1) / tile_sz_x
@@ -239,32 +359,34 @@ CONTAINS
           if ( tile_sz_y*num_tiles_y < epy-spy+1 ) num_tiles_y = num_tiles_y + 1
           num_tiles = num_tiles_x * num_tiles_y
        ELSE
-         IF      ( machine_info%tile_strategy == TILE_X ) THEN
-           num_tiles_x = num_tiles
-           num_tiles_y = 1
-         ELSE IF ( machine_info%tile_strategy == TILE_Y ) THEN
-           num_tiles_x = 1
-           num_tiles_y = num_tiles
-         ELSE ! Default ( machine_info%tile_strategy == TILE_XY ) THEN
-           one = 1
-           call least_aspect( num_tiles, one, one, num_tiles_y, num_tiles_x )
+         IF ( num_tiles_x >= 1 .or. num_tiles_y >= 1 ) THEN
+        ! adjust num_tiles_? if several ones are omited
+           IF ( num_tiles_x >= 1 .and. num_tiles_y >= 1 ) THEN
+              !adjust num_tiles
+               num_tiles=num_tiles_x*num_tiles_y;
+           ELSE IF ( num_tiles_x >= 1 ) THEN
+               num_tiles_y=num_tiles/num_tiles_x;
+           ELSE ! IF ( num_tiles_y >= 1 )  THEN
+               num_tiles_x=num_tiles/num_tiles_y;
+           ENDIF
+         ELSE
+           IF      ( tile_strategy == TILE_X ) THEN
+             num_tiles_x = num_tiles
+             num_tiles_y = 1
+           ELSE IF ( tile_strategy == TILE_Y ) THEN
+             num_tiles_x = 1
+             num_tiles_y = num_tiles
+           ELSE ! ( tile_strategy == TILE_XY ) THEN
+             one = 1
+             call least_aspect( num_tiles, one, one, num_tiles_y, num_tiles_x )
+           ENDIF
          ENDIF
        ENDIF
+!      sanity check 
+       num_tiles=max( num_tiles , 1)
+       num_tiles_x=max( num_tiles_x , 1)
+       num_tiles_y=max( num_tiles_y , 1)
        grid%num_tiles_spec = num_tiles
-       grid%num_tiles_x = num_tiles_x
-       grid%num_tiles_y = num_tiles_y
-     ELSE
-       num_tiles = grid%num_tiles_spec
-       IF      ( machine_info%tile_strategy == TILE_X ) THEN
-         num_tiles_x = num_tiles
-         num_tiles_y = 1
-       ELSE IF ( machine_info%tile_strategy == TILE_Y ) THEN
-         num_tiles_x = 1
-         num_tiles_y = num_tiles
-       ELSE ! Default ( machine_info%tile_strategy == TILE_XY ) THEN
-         one = 1
-         call least_aspect( num_tiles, one, one, num_tiles_y, num_tiles_x )
-       ENDIF
        grid%num_tiles_x = num_tiles_x
        grid%num_tiles_y = num_tiles_y
      ENDIF
@@ -337,7 +459,6 @@ CONTAINS
 
      RETURN
   END SUBROUTINE set_tiles2
-  
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! this version sets the tiles based on a passed in integer mask

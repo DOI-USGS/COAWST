@@ -44,37 +44,71 @@
 !
 !  Intercomponent transfer.
 !
-      USE m_Transfer, ONLY : MCT_Send => send
-      USE m_Transfer, ONLY : MCT_Recv => recv
+      USE m_Transfer, ONLY: MCT_send => send
+      USE m_Transfer, ONLY: MCT_recv => recv
+      USE m_Transfer, ONLY: MCT_isend => isend
+      USE m_Transfer, ONLY: MCT_irecv => irecv
+      USE m_Transfer, ONLY: MCT_waitr => waitrecv
+      USE m_Transfer, ONLY: MCT_waits => waitsend
 !
       USE mct_wrf_coupler_params
+      USE module_parallel
 !
       implicit none
 !
       PRIVATE
 
+      PUBLIC :: INITIALIZE_ATM_ROUTERS
       PUBLIC :: initialize_atm_coupling
+      PUBLIC :: atm_coupling
+# ifdef ROMS_COUPLING
       PUBLIC :: atm2ocn_coupling
+      PUBLIC :: atmfocn_coupling
+# endif
+# ifdef SWAN_COUPLING
+      PUBLIC :: atm2wav_coupling
+      PUBLIC :: atmfwav_coupling
+# endif
       PUBLIC :: finalize_atm_coupling
 
       include 'mpif.h'
 !
 !  Declarations.
 !
-      TYPE(GlobalSegMap) :: GSMapWRF          ! GloabalSegMap variables
- 
-      TYPE(AttrVect) :: atm2ocn_AV            ! AttrVect variables
-      TYPE(AttrVect) :: ocn2atm_AV 
-      type(Router) :: RoutWRFtoROMS           ! Router variables
+
+      TYPE T_GlobalSegMap_G
+        TYPE(GlobalSegMap) :: GSMapWRF         ! GloabalSegMap variables
+      END TYPE T_GlobalSegMap_G
+      TYPE (T_GlobalSegMap_G), ALLOCATABLE :: GlobalSegMap_G(:)
+
+      TYPE T_AttrVect_G
+# if defined ROMS_COUPLING
+        TYPE(AttrVect) :: atm2ocn_AV            ! AttrVect variables
+        TYPE(AttrVect) :: ocn2atm_AV 
+# endif
 # if defined SWAN_COUPLING
-      TYPE(AttrVect) :: atm2wav_AV            ! AttrVect variables
-      TYPE(AttrVect) :: wav2atm_AV            ! AttrVect variables
-      type(Router) :: RoutWRFtoSWAN           ! Router variables
+       TYPE(AttrVect) :: atm2wav_AV            ! AttrVect variables
+       TYPE(AttrVect) :: wav2atm_AV            ! AttrVect variables
+# endif
+      END TYPE T_AttrVect_G
+      TYPE (T_AttrVect_G), ALLOCATABLE :: AttrVect_G(:)
+
+# if defined SWAN_COUPLING
+      TYPE T_Router_W
+        type(Router)   :: WRFtoSWAN           ! Router variables
+      END TYPE T_Router_W
+      TYPE (T_Router_W), ALLOCATABLE :: Router_W(:,:)
+# endif
+# if defined ROMS_COUPLING
+      TYPE T_Router_O
+        type(Router)   :: WRFtoROMS           ! Router variables
+      END TYPE T_Router_O
+      TYPE (T_Router_O), ALLOCATABLE :: Router_O(:,:)
 # endif
 
       CONTAINS
 
-      SUBROUTINE initialize_atm_coupling(grid)
+      SUBROUTINE initialize_atm_coupling(grid, ia)
 !
 !=======================================================================
 !                                                                      !
@@ -85,12 +119,13 @@
 !=======================================================================
 !
       USE module_domain
-!     USE module_dm
-      USE module_parallel
 
       implicit none
-
+!
+!  Imported variable definitions.
+!
       TYPE(domain) , INTENT (IN) :: grid 
+      integer, intent(in) :: ia
 
       include 'mpif.h'
 !
@@ -113,10 +148,21 @@
       CALL mpi_comm_rank (ATM_COMM_WORLD, MyRank, MyError)
       CALL mpi_comm_size (ATM_COMM_WORLD, nprocs, MyError)
 !
+      IF (ia.eq.1) THEN
+        ALLOCATE(GlobalSegMap_G(Natm_grids))
+        ALLOCATE(AttrVect_G(Natm_grids))
+      END IF
+!
 !  Initialize MCT coupled model registry.
 !
-      CALL MCTWorld_init (N_mctmodels,MPI_COMM_WORLD,                   &
-     &                    ATM_COMM_WORLD,ATMid)
+      ATMid=atmids(ia)
+      IF (Natm_grids.gt.1) THEN
+        CALL MCTWorld_init (N_mctmodels,MPI_COMM_WORLD,                 &
+     &                      ATM_COMM_WORLD,myids=atmids)
+      ELSE
+        CALL MCTWorld_init (N_mctmodels,MPI_COMM_WORLD,                 &
+     &                      ATM_COMM_WORLD,ATMid)
+      END IF
 !
 !  Initialize a Global Segment Map for non-haloed transfer of data out
 !  of WRF. Determine non-haloed start and length arrays for this
@@ -147,8 +193,8 @@
       END DO
       gsmsize=Isize*Jsize
 !
-      CALL GlobalSegMap_init (GSMapWRF, start, length, 0,               &
-     &                        ATM_COMM_WORLD, ATMid)
+      CALL GlobalSegMap_init (GlobalSegMap_G(ia)%GSMapWRF,              &
+     &                        start, length, 0, ATM_COMM_WORLD, ATMid)
 # ifdef ROMS_COUPLING
 !
 !  Initialize attribute vector holding the export data code strings of
@@ -246,36 +292,41 @@
       cad=LEN_TRIM(avstring)
       avstring=avstring(1:cad)
 !
-      CALL AttrVect_init (atm2ocn_AV,rlist=TRIM(avstring),lsize=gsmsize)
-      CALL AttrVect_zero (atm2ocn_AV)
+      CALL AttrVect_init (AttrVect_G(ia)%atm2ocn_AV,                    &
+     &                    rlist=TRIM(avstring),lsize=gsmsize)
+      CALL AttrVect_zero (AttrVect_G(ia)%atm2ocn_AV)
 !
 !  Initialize attribute vector holding the export data code string of
 !  the ocean model.
-      CALL AttrVect_init (ocn2atm_AV,rList="SST",lsize=gsmsize)
-      CALL AttrVect_zero (ocn2atm_AV)
-!
-!  Initialize a router to the ocean model component.
-!
-      CALL Router_init (OcnId,GSMapWRF,ATM_COMM_WORLD,RoutWRFtoROMS)
-
+# ifdef MCT_INTERP_OC2AT
+      CALL AttrVect_init (AttrVect_G(ia)%ocn2atm_AV,                    &
+     &                    rList="SST:CPL_MASK",lsize=gsmsize)
+# else
+      CALL AttrVect_init (AttrVect_G(ia)%ocn2atm_AV,                    &
+     &                    rList="SST",lsize=gsmsize)
+# endif
+      CALL AttrVect_zero (AttrVect_G(ia)%ocn2atm_AV)
 # endif
 # ifdef SWAN_COUPLING
 !
 !  Initialize attribute vector holding the export data code string of
 !  the wave model.
 !
-      CALL AttrVect_init (atm2wav_AV, rlist="U10:V10",lsize=gsmsize)
-      CALL AttrVect_zero (atm2wav_AV)
+      CALL AttrVect_init (AttrVect_G(ia)%atm2wav_AV,                    &
+     &                    rlist="U10:V10",lsize=gsmsize)
+      CALL AttrVect_zero (AttrVect_G(ia)%atm2wav_AV)
 !
 !  Initialize attribute vector for data from SWAN.
 !
-      CALL AttrVect_init (wav2atm_AV, rList="HSIGN:WLENP:RTP",         &
+# ifdef MCT_INTERP_OC2AT
+      CALL AttrVect_init (AttrVect_G(ia)%wav2atm_AV,                    &
+     &                    rList="HSIGN:WLENP:RTP:CPL_MASK",             &
      &                    lsize=gsmsize)
-      CALL AttrVect_zero (wav2atm_AV)
-!
-! Initialize a router to the SWAN component.
-!
-      CALL Router_init (WavId,GSMapWRF,ATM_COMM_WORLD,RoutWRFtoSWAN)
+#  else
+      CALL AttrVect_init (AttrVect_G(ia)%wav2atm_AV,                    &
+     &                    rList="HSIGN:WLENP:RTP",lsize=gsmsize)
+#  endif
+      CALL AttrVect_zero (AttrVect_G(ia)%wav2atm_AV)
 # endif
 
       deallocate (start)
@@ -284,7 +335,196 @@
       RETURN
       END SUBROUTINE initialize_atm_coupling
 
-      SUBROUTINE atm2ocn_coupling (grid)
+      SUBROUTINE INITIALIZE_ATM_ROUTERS
+!
+!=======================================================================
+!                                                                      !
+!  Initialize atm routers.                                             !
+!                                                                      !
+!=======================================================================
+
+      implicit none
+!
+!  Local variable declarations.
+!
+      integer :: io, iw, ia
+!
+!  Initialize MCT Routers.
+!
+# ifdef ROMS_COUPLING
+      ALLOCATE(Router_O(Natm_grids,Nocn_grids))
+!
+!  Initialize a router to the ocean model component.
+!
+      DO io=1,Nocn_grids
+        DO ia=1,Natm_grids
+          OCNid=ocnids(io)
+          CALL Router_init (OCNid, GlobalSegMap_G(ia)%GSMapWRF,         &
+     &                      ATM_COMM_WORLD, Router_O(ia,io)%WRFtoROMS)
+        END DO
+      END DO
+# endif
+# ifdef SWAN_COUPLING
+      ALLOCATE(Router_W(Natm_grids,Nwav_grids))
+!
+!  Initialize a router to the wav model component.
+!
+      DO ia=1,Natm_grids
+        DO iw=1,Nwav_grids
+          WAVid=wavids(iw)
+          CALL Router_init (WAVid, GlobalSegMap_G(ia)%GSMapWRF,         &
+     &                      ATM_COMM_WORLD, Router_W(ia,iw)%WRFtoSWAN)
+        END DO
+      END DO
+# endif
+
+      RETURN
+      END SUBROUTINE INITIALIZE_ATM_ROUTERS
+
+      SUBROUTINE atm_coupling(grid, num_steps)
+!
+!=======================================================================
+!                                                                      !
+!  Determine which other model to do the coupling at this time step.   !
+!                                                                      !
+!=======================================================================
+!
+      USE module_domain
+
+      implicit none
+
+!
+!  Imported variable definitions.
+!
+      integer, intent(in) :: num_steps
+!     TYPE(domain) , INTENT (IN) :: grid 
+      TYPE(domain) , POINTER     :: grid 
+      TYPE(domain) , POINTER     :: grid_ptr
+!
+!  Local variable declarations.  
+!
+      integer :: io, iw, ia, offset
+      integer :: kid, num_ksteps
+!
+!  .
+!
+            IF (num_steps.eq.0) THEN
+              offset=0
+            ELSE
+              offset=-1
+            END IF
+# ifdef ROMS_COUPLING
+            ia=1
+            IF (MOD(num_steps+offset, nATM2OCN(1,1)).eq.0) THEN
+              DO io=1,Nocn_grids
+!                IF (MOD(num_steps, nATM2OCN(ia,io)).eq.0) THEN
+                  CALL atm2ocn_coupling (grid,ia,io)
+!                END IF
+              END DO
+              grid_ptr => grid
+              DO WHILE ( ASSOCIATED( grid_ptr ) )
+                DO kid = 1, max_nests
+                  IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+                    ia=ia+1
+!                   offset=0
+                    num_ksteps=grid_ptr%itimestep
+                    DO io=1,Nocn_grids
+!                     write(*,*) 'atm2ocn ', ia,io,num_ksteps, nATM2OCN(ia,io)
+!                      IF (MOD(num_ksteps+offset, nATM2OCN(ia,io)).eq.0) THEN
+                        CALL atm2ocn_coupling (grid_ptr%nests(kid)%ptr,ia,io)
+!                      END IF
+                    END DO
+                  END IF
+                END DO
+                grid_ptr => grid_ptr%sibling
+              END DO
+            END IF
+!
+              ia=1
+           IF (MOD(num_steps+offset, nATMFOCN(1,1)).eq.0) THEN
+              DO io=1,Nocn_grids
+!                IF (MOD(num_steps, nATMFOCN(ia,io)).eq.0) THEN
+                  CALL atmfocn_coupling (grid,ia,io)
+!                END IF
+              END DO
+              grid_ptr => grid
+              DO WHILE ( ASSOCIATED( grid_ptr ) )
+                DO kid = 1, max_nests
+                  IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+                    ia=ia+1
+!                   offset=0
+                    num_ksteps=grid_ptr%itimestep
+                    DO io=1,Nocn_grids
+!                      IF (MOD(num_ksteps+offset, nATMFOCN(ia,io)).eq.0) THEN
+                        CALL atmfocn_coupling (grid_ptr%nests(kid)%ptr,ia,io)
+!                      END IF
+                    END DO
+                  END IF
+                END DO
+                grid_ptr => grid_ptr%sibling
+              END DO
+            END IF
+# endif
+
+# ifdef SWAN_COUPLING
+              ia=1
+            IF (MOD(num_steps+offset, nATM2WAV(1,1)).eq.0) THEN
+              DO iw=1,Nwav_grids
+!                IF (MOD(num_steps, nATM2WAV(ia,iw)).eq.0) THEN
+                  CALL atm2wav_coupling (grid,ia,iw)
+!                END IF
+              END DO
+              grid_ptr => grid
+              DO WHILE ( ASSOCIATED( grid_ptr ) )
+                DO kid = 1, max_nests
+                  IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+                    ia=ia+1
+!                   offset=0
+                    num_ksteps=grid_ptr%itimestep
+                    DO iw=1,Nwav_grids
+!                     write(*,*) 'atm2wav ', ia,iw,num_ksteps, nATM2WAV(ia,iw)
+!                      IF (MOD(num_ksteps+offset, nATM2WAV(ia,iw)).eq.0) THEN
+                        CALL atm2wav_coupling (grid_ptr%nests(kid)%ptr,ia,iw)
+!                      END IF
+                    END DO
+                  END IF
+                END DO
+                grid_ptr => grid_ptr%sibling
+              END DO
+            END IF
+!
+              ia=1
+            IF (MOD(num_steps+offset, nATMFWAV(1,1)).eq.0) THEN
+              DO iw=1,Nwav_grids
+!                IF (MOD(num_steps, nATMFWAV(ia,iw)).eq.0) THEN
+                  CALL atmfwav_coupling (grid,ia,iw)
+!                END IF
+              END DO
+              grid_ptr => grid
+              DO WHILE ( ASSOCIATED( grid_ptr ) )
+                DO kid = 1, max_nests
+                  IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+                    ia=ia+1
+!                   offset=0
+                    num_ksteps=grid_ptr%itimestep
+                    DO iw=1,Nwav_grids
+!                      IF (MOD(num_ksteps+offset, nATMFWAV(ia,iw)).eq.0) THEN
+                        CALL atmfwav_coupling (grid_ptr%nests(kid)%ptr,ia,iw)
+!                      END IF
+                    END DO
+                  END IF
+                END DO
+                grid_ptr => grid_ptr%sibling
+              END DO
+            END IF
+
+# endif
+
+      RETURN
+      END SUBROUTINE atm_coupling
+
+# ifdef ROMS_COUPLING
+      SUBROUTINE atm2ocn_coupling (grid, ia, io)
 !
 !=======================================================================
 !                                                                      !
@@ -324,19 +564,17 @@
 !=======================================================================
 !
       USE module_domain
-      USE module_parallel
 !
       implicit none
       TYPE(domain) , INTENT (IN) :: grid 
+      integer, intent(in) :: ia, io
 !
 !  Local variable declarations.
 !
-      integer :: is, ie, js, je, ij
+      integer :: is, ie, js, je, ij, Tag
       integer :: MyStatus, i, j, Asize, ierr, MyRank
       integer :: MyError, MySize, indx, Istr, Iend, Jstr, Jend
       integer :: Isize, Jsize, INDXG, NPROCS, OFFSET
-
-      integer, dimension(MPI_STATUS_SIZE,4) :: status
 
       real, parameter :: eps=1.0e-10
       real, pointer :: AA(:)
@@ -363,12 +601,12 @@
 !
 !  Get the number of grid point on this processor.
 !
-      Asize=GlobalSegMap_lsize(GSMapWRF,ATM_COMM_WORLD)
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ia)%GSMapWRF,             &
+     &                         ATM_COMM_WORLD)
 !
 !  Allocate attribute vector array used to export/import data.
 !
       allocate ( AA(Asize), stat=ierr )
-# ifdef ROMS_COUPLING
 !
 !-----------------------------------------------------------------------
 !  Export fields from atmosphere (WRF) to ocean (ROMS) model.
@@ -382,7 +620,8 @@
           AA(ij)=grid%GSW(i,j)
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "GSW", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2ocn_AV, "GSW",      &
+     &                           AA, Asize)
 !-----------------------------------------------------------------------
 !     GLW        Long wave raditaion (W m-2).
 !
@@ -393,7 +632,8 @@
           AA(ij)=grid%GLW(i,j)
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "GLW", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2ocn_AV, "GLW",      &
+     &                           AA, Asize)
 #  ifdef ATM2OCN_FLUXES
 !-----------------------------------------------------------------------
 !     LH     Latent heat flux (W m-2).
@@ -405,7 +645,8 @@
           AA(ij)=grid%LH(i,j)
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "LH", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2ocn_AV, "LH",       &
+     &                           AA, Asize)
 !-----------------------------------------------------------------------
 !     HFX     Sensible heat flux (W m-2).
 !
@@ -416,7 +657,8 @@
           AA(ij)=grid%HFX(i,j)
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "HFX", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2ocn_AV, "HFX",      &
+     &                           AA, Asize)
 !-----------------------------------------------------------------------
 !     USTRESS    Surface u-stress (m2 s-2).
 !
@@ -431,7 +673,8 @@
      &           0.5*(grid%u_2(i,1,j)+grid%u_2(i+1,1,j))
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "USTRESS", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2ocn_AV, "USTRESS",  &
+     &                           AA, Asize)
 !-----------------------------------------------------------------------
 !     VSTRESS    Surface v-stress (m2 s-2).
 !
@@ -446,7 +689,8 @@
      &           0.5*(grid%v_2(i,1,j)+grid%v_2(i,1,j+1))
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "VSTRESS", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2ocn_AV, "VSTRESS",  &
+     &                           AA, Asize)
 #  endif
 #  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
 !-----------------------------------------------------------------------
@@ -463,7 +707,8 @@
      &           (287.0*grid%T2(i,j)*(1.0+0.61*grid%Q2(i,j))))
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "MSLP", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2ocn_AV, "MSLP",     &
+     &                           AA, Asize)
 #  endif
 #  if defined BULK_FLUXES || defined ECOSIM || \
      (defined SHORTWAVE && defined ANA_SRFLUX)
@@ -495,7 +740,8 @@
           AA(ij)=cff2/cff3
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "RELH", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2ocn_AV, "RELH",     &
+     &                           AA, Asize)
 !-----------------------------------------------------------------------
 !     T2         Surface 2m air temperature (Convert to C).
 !
@@ -506,9 +752,11 @@
           AA(ij)=grid%T2(i,j)-273.15
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "T2", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2ocn_AV, "T2",       &
+     &                           AA, Asize)
 #  endif
 !-----------------------------------------------------------------------
+#  if defined BULK_FLUXES || defined ECOSIM
 !     U10        U-Wind speed at 10 m (m s-1).
 !
       ij=0
@@ -518,10 +766,11 @@
           AA(ij)=grid%U10(i,j)
         END DO
       END DO
-#  if defined BULK_FLUXES || defined ECOSIM
-      CALL AttrVect_importRAttr (atm2ocn_AV, "U10", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2ocn_AV, "U10",      &
+     &                           AA, Asize)
 #  endif
 !-----------------------------------------------------------------------
+#  if defined BULK_FLUXES || defined ECOSIM
 !     V10        V-Wind speed at 10 m (m s-1).
 !
       ij=0
@@ -531,8 +780,8 @@
           AA(ij)=grid%V10(i,j)
         END DO
       END DO
-#  if defined BULK_FLUXES || defined ECOSIM
-      CALL AttrVect_importRAttr (atm2ocn_AV, "V10", AA, Asize) 
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2ocn_AV, "V10",      &
+     &                           AA, Asize) 
 #  endif
 #  ifdef CLOUDS
 !-----------------------------------------------------------------------
@@ -545,7 +794,8 @@
           AA(ij)=grid%CLDFRA(i,1,j)
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "CLDFRA", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2ocn_AV, "CLDFRA",   &
+     &                           AA, Asize)
 #  endif
 #  if !defined ANA_RAIN && defined EMINUSP
 !-----------------------------------------------------------------------
@@ -558,7 +808,8 @@
           AA(ij)=0.001*(grid%RAINCV(i,j)+grid%RAINNCV(i,j))/grid%dt
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "RAIN", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2ocn_AV, "RAIN",     &
+     &                           AA, Asize)
 #  endif
 #  if defined EMINUSP
 !-----------------------------------------------------------------------
@@ -572,95 +823,117 @@
           AA(ij)=0.001*(grid%QFX(i,j))
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2ocn_AV, "EVAP", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2ocn_AV, "EVAP",     &
+     &                           AA, Asize)
 #  endif
 !-----------------------------------------------------------------------
 !  Send fields to ocean model.
 !
-      CALL MCT_SEND (atm2ocn_AV,RoutWRFtoROMS,MyError)
+      Tag=io*100+ia*10+0
+      CALL MCT_ISEND (AttrVect_G(ia)%atm2ocn_AV,                        &
+     &                Router_O(ia,io)%WRFtoROMS, Tag)
+      CALL MCT_waits (Router_O(ia,io)%WRFtoROMS)
       IF (MYRANK.EQ.0) THEN
-        WRITE (*,*) '== WRF sent atm fields to ROMS'
+        WRITE (*,36) ' ## WRF grid ',ia,                                &
+     &                    ' sent data to ROMS grid ',io
+ 36     FORMAT (a14,i2,a24,i2)
       ENDIF
       IF (MyError.ne.0) THEN
         WRITE (*,*) 'coupling send fail atm_coupler, error= ', MyError
         CALL finalize_atm_coupling
       END IF
 !
-!  Schedule receiving fields from ocean model.
+!  Deallocate communication arrays.
 !
-        CALL MCT_Recv (ocn2atm_AV,RoutWRFtoROMS,MyError)
-        IF (MYRANK.EQ.0) THEN
-          WRITE (*,*) '== WRF recvd ocean fields'
-        END IF
-        IF (MyError.ne.0) THEN
-          WRITE (*,*) 'coupling fail wrfcplr, MyStatus= ', MyError
-          CALL finalize_atm_coupling
-        END IF
-!
-!  SST (Convert to K).
-!
-      CALL AttrVect_exportRAttr (ocn2atm_AV, "SST", AA, Asize)
-      ij=0
-      DO j=js,je
-        DO i=is,ie
-          ij=ij+1
-!         IF (AA(ij).gt.0.10) THEN
-          IF (AA(ij).ne.0.0) THEN
-              grid%sst(i,j)=(AA(ij)+273.15)*(1-grid%landmask(i,j))+     &
-     &                       grid%sst(i,j)*grid%landmask(i,j)
-          END IF
-        END DO
-      END DO
+      deallocate (AA)
+      RETURN
+      END SUBROUTINE atm2ocn_coupling
 # endif
-# if defined SWAN_COUPLING
+
+# ifdef SWAN_COUPLING
+      SUBROUTINE atm2wav_coupling (grid, ia, iw)
+!
+!=======================================================================
+!                                                                      !
+!  This subroutine reads and writes the coupled data streams.          !
+!  Currently, the following data streams are processed:                !
+!                                                                      !
+!  Possible fields exported to the OCEAN Model:                        !
+!                                                                      !
+!     * GSW        Short wave raditaion  (Watts/m2)                    !
+!     * GLW        Long wave raditaion  (Watts/m2)                     !
+!     * LH         Latent heat flux     (Watts/m2)                     !
+!     * HFX        Sensible heat flux   (Watts/m2)                     !
+!     * USTRESS    Surface U-wind stress (Pa)                          !
+!     * VSTRESS    Surface v-stress      (Pa)                          !
+!     * MSLP       Mean Sea Level Pressure (Pa)                        !
+!     * RELH       Surface air relative humidity (percent)             !
+!     * T2         Surface 2m air temperature (Celsius)                !
+!     * U10        U-Wind speed at 10 m (m/s)                          !
+!     * V10        V-Wind speed at 10 m (m/s)                          !
+!     * CLDFRA     Cloud fraction       (percent/100)                  !
+!     * RAIN       Precipitation        (m/s)                          !
+!     * EVAP       Evaporation          (m/s)                          !
+!                                                                      !
+!  Fields exported to the WAVE Model:                                  !
+!     * U10        U-Wind speed at 10 m (m/s)                          !
+!     * V10        V-Wind speed at 10 m (m/s)                          !
+!                                                                      !
+!  Fields acquired from the WAVE Model:                                !
+!                                                                      !
+!     * HISGN      Significant wave heigth (m)                         !
+!     * WLENP      Peak wave length (m)                                !
+!     * RTP        Peak wave period (s)                                !
+!                                                                      !
+!  Fields acquired from the OCEAN Model:                               !
+!                                                                      !
+!     * SST        Sea surface temperature                             !
+!=======================================================================
+!
+      USE module_domain
+!
+      implicit none
+      TYPE(domain) , INTENT (IN) :: grid 
+      integer, intent(in) :: ia, iw
+!
+!  Local variable declarations.
+!
+      integer :: is, ie, js, je, ij, Tag
+      integer :: MyStatus, i, j, Asize, ierr, MyRank
+      integer :: MyError, MySize, indx, Istr, Iend, Jstr, Jend
+      integer :: Isize, Jsize, INDXG, NPROCS, OFFSET
+
+      real, parameter :: eps=1.0e-10
+      real, pointer :: AA(:)
+      real :: cff1, cff2, cff3, rnum, rden, c04, c05
+!  Set grid range.
+!
+      is = grid%sp31
+      ie = grid%ep31
+      js = grid%sp33
+      je = grid%ep33
+      IF (grid%ed31.eq.ie) THEN
+        ie=ie-1
+      END IF
+      IF (grid%ed33.eq.je) THEN
+        je=je-1
+      END IF
+!
 !-----------------------------------------------------------------------
-!  Exchange fields with SWAN.
+!  Send atmosphere fields to ROMS.
 !-----------------------------------------------------------------------
 !
-!  Receive fields from wave model.
+      CALL MPI_COMM_RANK (ATM_COMM_WORLD, MyRank, MyError)
+      CALL MPI_COMM_SIZE (ATM_COMM_WORLD, nprocs, MyError)
 !
-        CALL MCT_Recv (wav2atm_AV,RoutWRFtoSWAN,MyError)
-        IF (MYRANK.EQ.0) THEN
-          WRITE (*,*) '== WRF recvd wave fields'
-        END IF
-        IF (MyError.ne.0) THEN
-          WRITE (*,*) 'coupl fail wrfcplr, MyStatus= ', MyError
-          CALL finalize_atm_coupling
-        END IF
+!  Get the number of grid point on this processor.
 !
-!  Hwave.
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ia)%GSMapWRF,             &
+     &                         ATM_COMM_WORLD)
 !
-      CALL AttrVect_exportRAttr (wav2atm_AV, "HSIGN", AA, Asize)
-      ij=0
-      DO j=js,je
-        DO i=is,ie
-          ij=ij+1
-          grid%hwave(i,j)=MAX(0.0,AA(ij))*(1-grid%landmask(i,j))
-        END DO
-      END DO
+!  Allocate attribute vector array used to export/import data.
 !
-!  Lwave.
-!
-      CALL AttrVect_exportRAttr (wav2atm_AV, "WLENP", AA, Asize)
-      ij=0
-      DO j=js,je
-        DO i=is,ie
-          ij=ij+1
-          grid%lwavep(i,j)=AA(ij)*(1-grid%landmask(i,j))
-        END DO
-      END DO
-!
-!  Pwave_top.
-!
-      CALL AttrVect_exportRAttr (wav2atm_AV, "RTP", AA, Asize)
-      ij=0
-      DO j=js,je
-        DO i=is,ie
-          ij=ij+1
-          grid%pwave(i,j)=MAX(1.0,AA(ij)*(1-grid%landmask(i,j)))
-        END DO
-      END DO
-!
+      allocate ( AA(Asize), stat=ierr )
 !-----------------------------------------------------------------------
 !  Send U10 and V10 to SWAN.
 !-----------------------------------------------------------------------
@@ -673,7 +946,8 @@
           AA(ij)=grid%U10(i,j)
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2wav_AV, "U10", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2wav_AV, "U10",      &
+     &                           AA, Asize)
 !-----------------------------------------------------------------------
 !     V10        V-Wind speed at 10 m (m s-1).
 !
@@ -684,23 +958,370 @@
           AA(ij)=grid%V10(i,j)
         END DO
       END DO
-      CALL AttrVect_importRAttr (atm2wav_AV, "V10", AA, Asize)
+      CALL AttrVect_importRAttr (AttrVect_G(ia)%atm2wav_AV, "V10",      &
+     &                           AA, Asize)
 !
-      CALL MCT_SEND (atm2wav_AV,RoutWRFtoSWAN,MyError)
+      Tag=0+ia*10+iw
+      CALL MCT_ISEND (AttrVect_G(ia)%atm2wav_AV,                        &
+     &                Router_W(ia,iw)%WRFtoSWAN, Tag)
+      CALL MCT_waits (Router_W(ia,iw)%WRFtoSWAN)
       IF (MYRANK.EQ.0) THEN
-        WRITE (*,*) '== WRF sent atm fields to SWAN'
+        WRITE (*,37) ' ## WRF grid ',ia,                                &
+     &                    ' sent data to SWAN grid ',iw
+ 37     FORMAT (a14,i2,a24,i2)
       ENDIF
       IF (MyError.ne.0) THEN
         WRITE (*,*) 'coupling send fail atm_coupler, error= ', MyError
         CALL finalize_atm_coupling
       END IF
-# endif
 !
 !  Deallocate communication arrays.
 !
       deallocate (AA)
       RETURN
-      END SUBROUTINE atm2ocn_coupling
+      END SUBROUTINE atm2wav_coupling
+# endif
+
+# ifdef ROMS_COUPLING
+      SUBROUTINE atmfocn_coupling (grid, ia, io)
+!
+!=======================================================================
+!                                                                      !
+!  This subroutine reads and writes the coupled data streams.          !
+!  Currently, the following data streams are processed:                !
+!                                                                      !
+!  Possible fields exported to the OCEAN Model:                        !
+!                                                                      !
+!     * GSW        Short wave raditaion  (Watts/m2)                    !
+!     * GLW        Long wave raditaion  (Watts/m2)                     !
+!     * LH         Latent heat flux     (Watts/m2)                     !
+!     * HFX        Sensible heat flux   (Watts/m2)                     !
+!     * USTRESS    Surface U-wind stress (Pa)                          !
+!     * VSTRESS    Surface v-stress      (Pa)                          !
+!     * MSLP       Mean Sea Level Pressure (Pa)                        !
+!     * RELH       Surface air relative humidity (percent)             !
+!     * T2         Surface 2m air temperature (Celsius)                !
+!     * U10        U-Wind speed at 10 m (m/s)                          !
+!     * V10        V-Wind speed at 10 m (m/s)                          !
+!     * CLDFRA     Cloud fraction       (percent/100)                  !
+!     * RAIN       Precipitation        (m/s)                          !
+!     * EVAP       Evaporation          (m/s)                          !
+!                                                                      !
+!  Fields exported to the WAVE Model:                                  !
+!     * U10        U-Wind speed at 10 m (m/s)                          !
+!     * V10        V-Wind speed at 10 m (m/s)                          !
+!                                                                      !
+!  Fields acquired from the WAVE Model:                                !
+!                                                                      !
+!     * HISGN      Significant wave heigth (m)                         !
+!     * WLENP      Peak wave length (m)                                !
+!     * RTP        Peak wave period (s)                                !
+!                                                                      !
+!  Fields acquired from the OCEAN Model:                               !
+!                                                                      !
+!     * SST        Sea surface temperature                             !
+!=======================================================================
+!
+      USE module_domain
+!
+      implicit none
+      TYPE(domain) , INTENT (IN) :: grid 
+      integer, intent(in) :: ia, io
+!
+!  Local variable declarations.
+!
+      integer :: is, ie, js, je, ij, Tag
+      integer :: MyStatus, i, j, Asize, ierr, MyRank
+      integer :: MyError, MySize, indx, Istr, Iend, Jstr, Jend
+      integer :: Isize, Jsize, INDXG, NPROCS, OFFSET
+
+      real, parameter :: eps=1.0e-10
+      real, pointer :: AA(:)
+#  ifdef MCT_INTERP_OC2AT
+      real, pointer :: Amask(:)
+#  endif
+      real :: cff1, cff2, cff3, rnum, rden, c04, c05
+!  Set grid range.
+!
+      is = grid%sp31
+      ie = grid%ep31
+      js = grid%sp33
+      je = grid%ep33
+      IF (grid%ed31.eq.ie) THEN
+        ie=ie-1
+      END IF
+      IF (grid%ed33.eq.je) THEN
+        je=je-1
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Send atmosphere fields to ROMS.
+!-----------------------------------------------------------------------
+!
+      CALL MPI_COMM_RANK (ATM_COMM_WORLD, MyRank, MyError)
+      CALL MPI_COMM_SIZE (ATM_COMM_WORLD, nprocs, MyError)
+!
+!  Get the number of grid point on this processor.
+!
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ia)%GSMapWRF,             &
+     &                         ATM_COMM_WORLD)
+!
+!  Allocate attribute vector array used to export/import data.
+!
+      allocate ( AA(Asize), stat=ierr )
+#  ifdef MCT_INTERP_OC2AT
+      allocate ( Amask(Asize), stat=ierr )
+#  endif
+!
+!  Schedule receiving fields from ocean model.
+!
+      Tag=io*100+ia*10+0
+      CALL MCT_irecv (AttrVect_G(ia)%ocn2atm_AV,                        &
+     &                Router_O(ia,io)%WRFtoROMS,Tag)
+!
+!     Wait to make sure the OCN data has arrived.
+!
+      CALL MCT_waitr (AttrVect_G(ia)%ocn2atm_AV,                        &
+     &                Router_O(ia,io)%WRFtoROMS)
+!
+      IF (MYRANK.EQ.0) THEN
+        WRITE (*,38) ' ## WRF grid ',ia,                                &
+     &                    ' recvd data from ROMS grid ',io
+ 38     FORMAT (a13,i2,a27,i2)
+      END IF
+      IF (MyError.ne.0) THEN
+        WRITE (*,*) 'coupling fail wrfcplr, MyStatus= ', MyError
+        CALL finalize_atm_coupling
+      END IF
+!
+!  SST (Convert to K).
+!  USE CPLMASK:  coupling mask (0 for data read in wrflowinput,
+!                               1 data received from the coupler)
+#  ifdef MCT_INTERP_OC2AT
+      CALL AttrVect_exportRAttr (AttrVect_G(ia)%ocn2atm_AV,             &
+     &                           "CPL_MASK", AA, Asize)
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+          Amask(ij)=AA(ij)
+        END DO
+      END DO
+#  endif
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ia)%ocn2atm_AV,             &
+     &                           "SST", AA, Asize)
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+#  ifdef MCT_INTERP_OC2AT
+          grid%sst(i,j)=(AA(ij)+273.15)*Amask(ij)+                      &
+     &                    grid%sst(i,j)*(1.0-Amask(ij))
+#  else
+!          IF (AA(ij).ne.0.) THEN
+           grid%sst(i,j)=AA(ij)+273.15
+!          END IF
+#  endif
+        END DO
+      END DO
+!
+!  Deallocate communication arrays.
+!
+      deallocate (AA)
+#  ifdef MCT_INTERP_OC2AT
+      deallocate (Amask)
+#  endif
+      RETURN
+      END SUBROUTINE atmfocn_coupling
+# endif
+
+# ifdef SWAN_COUPLING
+      SUBROUTINE atmfwav_coupling (grid, ia, iw)
+!
+!=======================================================================
+!                                                                      !
+!  This subroutine reads and writes the coupled data streams.          !
+!  Currently, the following data streams are processed:                !
+!                                                                      !
+!  Possible fields exported to the OCEAN Model:                        !
+!                                                                      !
+!     * GSW        Short wave raditaion  (Watts/m2)                    !
+!     * GLW        Long wave raditaion  (Watts/m2)                     !
+!     * LH         Latent heat flux     (Watts/m2)                     !
+!     * HFX        Sensible heat flux   (Watts/m2)                     !
+!     * USTRESS    Surface U-wind stress (Pa)                          !
+!     * VSTRESS    Surface v-stress      (Pa)                          !
+!     * MSLP       Mean Sea Level Pressure (Pa)                        !
+!     * RELH       Surface air relative humidity (percent)             !
+!     * T2         Surface 2m air temperature (Celsius)                !
+!     * U10        U-Wind speed at 10 m (m/s)                          !
+!     * V10        V-Wind speed at 10 m (m/s)                          !
+!     * CLDFRA     Cloud fraction       (percent/100)                  !
+!     * RAIN       Precipitation        (m/s)                          !
+!     * EVAP       Evaporation          (m/s)                          !
+!                                                                      !
+!  Fields exported to the WAVE Model:                                  !
+!     * U10        U-Wind speed at 10 m (m/s)                          !
+!     * V10        V-Wind speed at 10 m (m/s)                          !
+!                                                                      !
+!  Fields acquired from the WAVE Model:                                !
+!                                                                      !
+!     * HISGN      Significant wave heigth (m)                         !
+!     * WLENP      Peak wave length (m)                                !
+!     * RTP        Peak wave period (s)                                !
+!                                                                      !
+!  Fields acquired from the OCEAN Model:                               !
+!                                                                      !
+!     * SST        Sea surface temperature                             !
+!=======================================================================
+!
+      USE module_domain
+!
+      implicit none
+      TYPE(domain) , INTENT (IN) :: grid 
+      integer, intent(in) :: ia, iw
+!
+!  Local variable declarations.
+!
+      integer :: is, ie, js, je, ij, Tag
+      integer :: MyStatus, i, j, Asize, ierr, MyRank
+      integer :: MyError, MySize, indx, Istr, Iend, Jstr, Jend
+      integer :: Isize, Jsize, INDXG, NPROCS, OFFSET
+
+      real, parameter :: eps=1.0e-10
+      real, pointer :: AA(:)
+#  ifdef MCT_INTERP_WV2AT
+      real, pointer :: Amask(:)
+#  endif
+      real :: cff1, cff2, cff3, rnum, rden, c04, c05
+!  Set grid range.
+!
+      is = grid%sp31
+      ie = grid%ep31
+      js = grid%sp33
+      je = grid%ep33
+      IF (grid%ed31.eq.ie) THEN
+        ie=ie-1
+      END IF
+      IF (grid%ed33.eq.je) THEN
+        je=je-1
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Send atmosphere fields to ROMS.
+!-----------------------------------------------------------------------
+!
+      CALL MPI_COMM_RANK (ATM_COMM_WORLD, MyRank, MyError)
+      CALL MPI_COMM_SIZE (ATM_COMM_WORLD, nprocs, MyError)
+!
+!  Get the number of grid point on this processor.
+!
+      Asize=GlobalSegMap_lsize(GlobalSegMap_G(ia)%GSMapWRF,             &
+     &                         ATM_COMM_WORLD)
+!
+!  Allocate attribute vector array used to export/import data.
+!
+      allocate ( AA(Asize), stat=ierr )
+#  ifdef MCT_INTERP_WV2AT
+      allocate ( Amask(Asize), stat=ierr )
+#  endif
+!
+!  Schedule receiving fields from wave model.
+!
+      Tag=0+ia*10+iw
+      CALL MCT_irecv (AttrVect_G(ia)%wav2atm_AV,                        &
+     &                Router_W(ia,iw)%WRFtoSWAN, Tag)
+!
+!     Wait to make sure the WAV data has arrived.
+!
+      CALL MCT_waitr (AttrVect_G(ia)%wav2atm_AV,                        &
+     &                 Router_W(ia,iw)%WRFtoSWAN)
+!
+      IF (MYRANK.EQ.0) THEN
+        WRITE (*,40) ' ## WRF grid ',ia,                                &
+     &                    ' recvd  data from SWAN grid ',iw
+ 40     FORMAT (a14,i2,a24,i2)
+      END IF
+      IF (MyError.ne.0) THEN
+        WRITE (*,*) 'coupl fail wrfcplr, MyStatus= ', MyError
+        CALL finalize_atm_coupling
+      END IF
+!
+!  CPL_MASK
+!
+#  ifdef MCT_INTERP_OC2AT
+      CALL AttrVect_exportRAttr (AttrVect_G(ia)%wav2atm_AV, "CPL_MASK", &
+     &                           AA, Asize)
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+          Amask(ij)=AA(ij)
+        END DO
+      END DO
+#  endif
+!
+!  Hwave.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ia)%wav2atm_AV, "HSIGN",    &
+     &                           AA, Asize)
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+#  ifdef MCT_INTERP_WV2AT
+          grid%hwave(i,j)=MAX(0.0,AA(ij))*Amask(ij)+                    &
+     &                    grid%hwave(i,j)*(1.0-Amask(ij))
+#  else
+          grid%hwave(i,j)=MAX(0.0,AA(ij))
+#  endif
+        END DO
+      END DO
+!
+!  Lwave.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ia)%wav2atm_AV, "WLENP",    &
+     &                           AA, Asize)
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+#  ifdef MCT_INTERP_WV2AT
+          grid%lwavep(i,j)=MAX(0.0,AA(ij))*Amask(ij)+                   &
+     &                     grid%lwavep(i,j)*(1.0-Amask(ij))
+#  else
+          grid%lwavep(i,j)=MAX(0.0,AA(ij))
+#  endif
+        END DO
+      END DO
+!
+!  Pwave_top.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ia)%wav2atm_AV, "RTP",      &
+     &                           AA, Asize)
+      ij=0
+      DO j=js,je
+        DO i=is,ie
+          ij=ij+1
+#  ifdef MCT_INTERP_WV2AT
+          grid%pwave(i,j)=MAX(1.0,AA(ij))*Amask(ij)+                    &
+     &                     grid%pwave(i,j)*(1.0-Amask(ij))
+#  else
+          grid%pwave(i,j)=MAX(1.0,AA(ij))
+#  endif
+        END DO
+      END DO
+!
+!  Deallocate communication arrays.
+!
+      deallocate (AA)
+#  ifdef MCT_INTERP_WV2AT
+      deallocate (Amask)
+#  endif
+      RETURN
+      END SUBROUTINE atmfwav_coupling
+#endif
 
       SUBROUTINE finalize_atm_coupling
 !
@@ -714,16 +1335,24 @@
 !
 !  Local variable declarations.
 !
-      integer :: MyStatus
+      integer :: ia, MyStatus
 !
 !-----------------------------------------------------------------------
 !  Terminate MPI execution environment.
 !-----------------------------------------------------------------------
 !
-      CALL Router_clean (RoutWRFtoROMS)
-      CALL AttrVect_clean (atm2ocn_AV)
-      CALL AttrVect_clean (ocn2atm_AV)
-      CALL GlobalSegMap_clean (GSMapWRF)
+!     CALL Router_clean (RoutWRFtoROMS)
+      DO ia=1,Natm_grids
+        CALL GlobalSegMap_clean (GlobalSegMap_G(ia)%GSMapWRF)
+# ifdef ROMS_COUPLING
+        CALL AttrVect_clean (AttrVect_G(ia)%atm2ocn_AV)
+        CALL AttrVect_clean (AttrVect_G(ia)%ocn2atm_AV)
+# endif
+# ifdef SWAN_COUPLING
+        CALL AttrVect_clean (AttrVect_G(ia)%atm2wav_AV)
+        CALL AttrVect_clean (AttrVect_G(ia)%wav2atm_AV)
+# endif
+      END DO
       CALL MCTWorld_clean ()
 
       END SUBROUTINE finalize_atm_coupling
