@@ -1,7 +1,7 @@
 /*
 ** svn $Id: make_macros.h 630 2008-06-10 18:56:02Z arango $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -108,10 +108,11 @@
 ** Determine if the ARPACK library is needed.
 */
 
-#if defined PROPAGATOR || defined W4DPSAS ||  defined W4DVAR || \
-    defined IS4DVAR    || defined W4DPSAS_SENSITIVITY        || \
-    defined TL_W4DPSAS || defined W4DVAR_SENSITIVITY         || \
-    defined TL_W4DVAR
+#if defined ARRAY_MODES         || defined CLIPPING           || \
+    defined PROPAGATOR          || defined IS4DVAR            || \
+    defined TL_W4DPSAS          || defined TL_W4DVAR          || \
+    defined W4DPSAS             || defined W4DVAR             || \
+    defined W4DPSAS_SENSITIVITY || defined W4DVAR_SENSITIVITY
   USE_ARPACK := on
 #else
   USE_ARPACK :=

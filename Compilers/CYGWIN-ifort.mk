@@ -1,6 +1,6 @@
 # svn $Id: CYGWIN-ifort.mk 734 2008-09-07 01:58:06Z jcwarner $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2014 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -14,6 +14,10 @@
 # FFLAGS         Flags to the fortran compiler
 # CPP            Name of the C-preprocessor
 # CPPFLAGS       Flags to the C-preprocessor
+# CC             Name of the C compiler
+# CFLAGS         Flags to the C compiler
+# CXX            Name of the C++ compiler
+# CXXFLAGS       Flags to the C++ compiler
 # CLEAN          Name of cleaning executable after C-preprocessing
 # NETCDF_INCDIR  NetCDF include directory
 # NETCDF_LIBDIR  NetCDF libary directory
@@ -31,6 +35,10 @@
            FFLAGS := /align /G7 /MD
               CPP := /usr/bin/cpp
          CPPFLAGS := -P -DCYGWIN -DCYGWIN_ifort -traditional
+               CC := gcc   # ifc?
+              CXX := g++
+           CFLAGS :=
+         CXXFLAGS :=
           LDFLAGS := /link /stack:67108864
                AR := ar
           ARFLAGS := r

@@ -1,6 +1,6 @@
 # svn $Id: Linux-ifort.mk 734 2008-09-07 01:58:06Z jcwarner $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2014 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -13,6 +13,10 @@
 # FFLAGS         Flags to the fortran compiler
 # CPP            Name of the C-preprocessor
 # CPPFLAGS       Flags to the C-preprocessor
+# CC             Name of the C compiler
+# CFLAGS         Flags to the C compiler
+# CXX            Name of the C++ compiler
+# CXXFLAGS       Flags to the C++ compiler
 # CLEAN          Name of cleaning executable after C-preprocessing
 # NETCDF_INCDIR  NetCDF include directory
 # NETCDF_LIBDIR  NetCDF libary directory
@@ -27,7 +31,12 @@
            FFLAGS := -heap-arrays -fp-model precise
               CPP := /usr/bin/cpp
          CPPFLAGS := -P -traditional
+               CC := gcc
+              CXX := g++
+           CFLAGS :=
+         CXXFLAGS :=
           LDFLAGS := -Vaxlib
+
                AR := ar
           ARFLAGS := r
             MKDIR := mkdir -p
@@ -42,18 +51,14 @@
 # Library locations, can be overridden by environment variables.
 #
 
-             LIBS :=
 ifdef USE_NETCDF4
-   NETCDF_INCDIR ?= /opt/intelsoft/netcdf4/include
-   NETCDF_LIBDIR ?= /opt/intelsoft/netcdf4/lib
-     HDF5_LIBDIR ?= /opt/intelsoft/hdf5/lib
+        NC_CONFIG ?= nc-config
+    NETCDF_INCDIR ?= $(shell $(NC_CONFIG) --prefix)/include
+             LIBS := $(shell $(NC_CONFIG) --flibs)
 else
-   NETCDF_INCDIR ?= /opt/intelsoft/netcdf/include
-   NETCDF_LIBDIR ?= /opt/intelsoft/netcdf/lib
-endif
-            LIBS += -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
-ifdef USE_NETCDF4
-            LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz -lnetcdff
+    NETCDF_INCDIR ?= /usr/local/include
+    NETCDF_LIBDIR ?= /usr/local/lib
+             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
 endif
 
 ifdef USE_ARPACK
@@ -82,8 +87,12 @@ endif
 ifdef USE_DEBUG
 #          FFLAGS += -g -check bounds -traceback
            FFLAGS += -g -check uninit -ftrapuv -traceback
+           CFLAGS += -g
+         CXXFLAGS += -g
 else
            FFLAGS += -ip -O3
+           CFLAGS += -O3
+         CXXFLAGS += -O3
  ifeq ($(CPU),i686)
            FFLAGS += -pc80 -xW
  endif
@@ -105,6 +114,10 @@ ifdef USE_ESMF
                      include $(ESMF_MK_DIR)/esmf.mk
            FFLAGS += $(ESMF_F90COMPILEPATHS)
              LIBS += $(ESMF_F90LINKPATHS) -lesmf -lC
+endif
+
+ifdef USE_CXX
+             LIBS += -lstdc++
 endif
 
 ifdef USE_WRF

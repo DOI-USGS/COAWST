@@ -1,6 +1,6 @@
 # svn $Id: SunOS-f95.mk 655 2008-07-25 18:57:05Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2014 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -13,6 +13,10 @@
 # FFLAGS         Flags to the fortran compiler
 # CPP            Name of the C-preprocessor
 # CPPFLAGS       Flags to the C-preprocessor
+# CC             Name of the C compiler
+# CFLAGS         Flags to the C compiler
+# CXX            Name of the C++ compiler
+# CXXFLAGS       Flags to the C++ compiler
 # CLEAN          Name of cleaning executable after C-preprocessing
 # NETCDF_INCDIR  NetCDF include directory
 # NETCDF_LIBDIR  NetCDF libary directory
@@ -27,13 +31,17 @@
            FFLAGS := -u -U
               CPP := /usr/lib/cpp
          CPPFLAGS := -P
+               CC := gcc
+              CXX := g++
+           CFLAGS :=
+         CXXFLAGS :=
           LDFLAGS :=
                AR := ar
           ARFLAGS := r
             MKDIR := mkdir -p
                RM := rm -f
            RANLIB := ranlib
-	     PERL := perl
+             PERL := perl
              TEST := test
 
         MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
@@ -46,29 +54,14 @@ ifdef USE_LARGE
            FFLAGS += -xarch=v9
 endif
 
-             LIBS :=
-ifdef USE_LARGE
- ifdef USE_NETCDF4
-   NETCDF_INCDIR ?= /usr/local/netcdf4/include
-   NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
-     HDF5_LIBDIR ?= /usr/local/hdf5/lib
- else
-   NETCDF_INCDIR ?= /usr/local/include
-   NETCDF_LIBDIR ?= /usr/local/lib64
- endif
-else
- ifdef USE_NETCDF4
-   NETCDF_INCDIR ?= /usr/local/netcdf4/include
-   NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
-     HDF5_LIBDIR ?= /usr/local/hdf5/lib
- else
-   NETCDF_INCDIR ?= /usr/local/include
-   NETCDF_LIBDIR ?= /usr/local/lib
- endif
-endif
-            LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
 ifdef USE_NETCDF4
-            LIBS += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
+        NC_CONFIG ?= nc-config
+    NETCDF_INCDIR ?= $(shell $(NC_CONFIG) --prefix)/include
+             LIBS := $(shell $(NC_CONFIG) --flibs)
+else
+    NETCDF_INCDIR ?= /usr/local/include
+    NETCDF_LIBDIR ?= /usr/local/lib
+             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
 endif
 
 ifdef USE_ARPACK
@@ -93,8 +86,12 @@ endif
 
 ifdef USE_DEBUG
            FFLAGS += -g -C
+           CFLAGS += -g
+         CXXFLAGS += -g
 else
-           FFLAGS += -fast
+           FFLAGS += -O3
+           CFLAGS += -O3
+         CXXFLAGS += -O3
 endif
 
              LIBS += -lnsl
@@ -112,6 +109,10 @@ ifdef USE_ESMF
                      include $(ESMF_MK_DIR)/esmf.mk
            FFLAGS += $(ESMF_F90COMPILEPATHS)
              LIBS += $(ESMF_F90LINKPATHS) -lesmf -lC
+endif
+
+ifdef USE_CXX
+             LIBS += -lstdc++
 endif
 
 ifdef USE_WRF

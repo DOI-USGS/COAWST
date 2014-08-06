@@ -1,6 +1,6 @@
 # svn $Id: CYGWIN-df.mk 734 2008-09-07 01:58:06Z jcwarner $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2014 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -13,6 +13,10 @@
 # FFLAGS         Flags to the fortran compiler
 # CPP            Name of the C-preprocessor
 # CPPFLAGS       Flags to the C-preprocessor
+# CC             Name of the C compiler
+# CFLAGS         Flags to the C compiler
+# CXX            Name of the C++ compiler
+# CXXFLAGS       Flags to the C++ compiler
 # CLEAN          Name of cleaning executable after C-preprocessing
 # NETCDF_INCDIR  NetCDF include directory
 # NETCDF_LIBDIR  NetCDF libary directory
@@ -30,6 +34,10 @@
            FFLAGS := /stand:f95
               CPP := /usr/bin/cpp
          CPPFLAGS := -P -DCYGWIN
+               CC := gcc
+              CXX := g++
+           CFLAGS :=
+         CXXFLAGS :=
           LDFLAGS := /link /nodefaultlib:libcmt /nodefaultlib:libifcore /stack:67108864
                AR := ar
           ARFLAGS := r
@@ -50,18 +58,14 @@
 #
 
 ifdef USE_NETCDF4
-    NETCDF_INCDIR ?= /usr/local/netcdf4/include
-    NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
-      HDF5_LIBDIR ?= /usr/local/hdf5/lib
+        NC_CONFIG ?= nc-config
+    NETCDF_INCDIR ?= $(shell $(NC_CONFIG) --prefix)/include
+             LIBS := $(shell $(NC_CONFIG) --flibs)
 else
-    NETCDF_INCDIR ?= /usr/local/netcdf-win32/include
-    NETCDF_LIBDIR ?= /usr/local/netcdf-win32/lib
+    NETCDF_INCDIR ?= /usr/local/include
+    NETCDF_LIBDIR ?= /usr/local/lib
+             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
 endif
-       NETCDF_LIB := $(NETCDF_LIBDIR)/netcdfs.lib
-ifdef USE_NETCDF4
-       NETCDF_LIB += -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lz
-endif
-
 
 ifdef USE_ARPACK
  ifdef USE_MPI
